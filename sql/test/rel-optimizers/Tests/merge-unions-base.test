@@ -1,0 +1,76 @@
+statement ok
+create table f1 (n int)
+
+statement ok
+create table f2 (n int)
+
+statement ok
+create table f3 (n int)
+
+statement ok
+create table f4 (n int)
+
+statement ok
+insert into f1 values (1), (2)
+
+statement ok
+insert into f2 values      (2), (3)
+
+statement ok
+insert into f3 values           (3), (4)
+
+statement ok
+insert into f4 values                (4), (5)
+
+statement ok
+create view f_uchain as
+    select * from f1
+    union all
+    select * from f2
+    union all
+    select * from f3
+    union all
+    select * from f4
+
+statement ok
+create merge table f12 (n int)
+
+statement ok
+alter table f12 add table f1
+
+statement ok
+alter table f12 add table f2
+
+statement ok
+create merge table f34 (n int)
+
+statement ok
+alter table f34 add table f3
+
+statement ok
+alter table f34 add table f4
+
+statement ok
+create merge table f_merge_rec (n int)
+
+statement ok
+alter table f_merge_rec add table f12
+
+statement ok
+alter table f_merge_rec add table f34
+
+statement ok
+create merge table f_merge (n int)
+
+statement ok
+alter table f_merge add table f1
+
+statement ok
+alter table f_merge add table f2
+
+statement ok
+alter table f_merge add table f3
+
+statement ok
+alter table f_merge add table f4
+

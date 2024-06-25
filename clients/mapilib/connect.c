@@ -24,6 +24,7 @@
 
 #ifdef HAVE_SYS_SOCKET_H
 # include <arpa/inet.h>			/* addr_in */
+# include <unistd.h>			/* gethostname() */
 #else /* UNIX specific */
 #ifdef HAVE_WINSOCK_H			/* Windows specific */
 # include <winsock.h>
@@ -144,6 +145,17 @@ establish_connection(Mapi mid)
 		msg = mapi_handshake(mid);
 	}
 
+	// Switch from MP_CONNECT_TIMEOUT to MP_REPLY_TIMEOUT
+	if (msg == MOK) {
+		long connect_timeout = msetting_long(mid->settings, MP_CONNECT_TIMEOUT);
+		long reply_timeout = msetting_long(mid->settings, MP_REPLY_TIMEOUT);
+		if (connect_timeout > 0 || reply_timeout > 0) {
+			if (reply_timeout < 0)
+				reply_timeout = 0;
+			msg = mapi_timeout(mid, reply_timeout);
+		}
+	}
+
 	return msg;
 }
 
@@ -153,6 +165,7 @@ connect_socket(Mapi mid)
 	assert(!mid->connected);
 	const char *sockname = msettings_connect_unix(mid->settings);
 	const char *tcp_host = msettings_connect_tcp(mid->settings);
+	long timeout = msetting_long(mid->settings, MP_CONNECT_TIMEOUT);
 
 	assert(*sockname || *tcp_host);
 	do {
@@ -164,6 +177,11 @@ connect_socket(Mapi mid)
 		mid->error = MERROR; // in case assert above was not enabled
 		return mid->error;
 	} while (0);
+
+	// the socket code may have set SO_SNDTIMEO and SO_RCVTIMEO but
+	// the mapi layer doesn't know this yet.
+	if (timeout > 0)
+		mapi_timeout(mid, timeout);
 
 	mid->connected = true;
 	return MOK;
@@ -293,6 +311,8 @@ connect_socket_tcp(Mapi mid)
 static SOCKET
 connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 {
+	long timeout = msetting_long(mid->settings, MP_CONNECT_TIMEOUT);
+
 	if (mid->tracelog) {
 		char addrbuf[100] = {0};
 		const char *addrtext;
@@ -311,7 +331,7 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 			port = -1;
 			addrtext = NULL;
 		}
-		mapi_log_record(mid, "CONN", "Trying IP %s port %d", addrtext ? addrtext : "<UNKNOWN>", port);
+		mapi_log_record(mid, "CONN", "Trying IP %s port %d wih timeout %ld", addrtext ? addrtext : "<UNKNOWN>", port, timeout);
 	}
 
 
@@ -332,6 +352,23 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
+	if (timeout > 0) {
+		struct timeval tv = {
+			.tv_sec = timeout / 1000,
+			.tv_usec = timeout % 1000,
+		};
+		/* cast to char * for Windows, no harm on "normal" systems */
+		if (
+			setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv)) == SOCKET_ERROR
+			|| setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv)) == SOCKET_ERROR
+		) {
+			closesocket(s);
+			return mapi_printError(
+				mid, __func__, MERROR,
+				"could not set connect timeout: %s", strerror(errno));
+		}
+	}
+
 	// cast addrlen to int to satisfy Windows.
 	if (connect(s, info->ai_addr, (int)info->ai_addrlen) == SOCKET_ERROR) {
 		mapi_printError(
@@ -342,6 +379,79 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 	}
 
 	return s;
+}
+
+static const char *
+base_name(const char *file)
+{
+	char *p = strrchr(file, '/');
+#ifdef _MSC_VER
+	char *q = strrchr(file, '\\');
+	if (q != NULL) {
+		if (p == NULL || p < q)
+			p = q;
+	}
+#endif
+	if (p)
+		return p + 1;
+	return file;
+}
+
+static void
+send_all_clientinfo(Mapi mid)
+{
+	msettings *mp = mid->settings;
+	void *free_this = NULL;
+	if (!mid->clientinfo_supported)
+		return;
+	if (!msetting_bool(mp, MP_CLIENT_INFO))
+		return;
+
+
+	static char hostname[120] = { 0 };
+	if (hostname[0] == '\0') {
+		if (gethostname(hostname, sizeof(hostname)) != 0)
+			hostname[0] = '\0';
+		hostname[sizeof(hostname) - 1] = '\0';
+	}
+	const char *application_name = msetting_string(mp, MP_CLIENT_APPLICATION);
+	if (!application_name[0]) {
+		application_name = get_bin_path();
+		if (application_name) {
+			free_this = strdup(application_name);
+			application_name = base_name(application_name);
+		}
+	}
+	const char *client_remark = msetting_string(mp, MP_CLIENT_REMARK);
+	long pid = getpid();
+
+	char *buf = NULL;
+	size_t pos = 0, cap = 200;
+
+	if (hostname[0])
+		reallocprintf(&buf, &pos, &cap, "ClientHostname=%s\n", hostname);
+	if (application_name[0])
+		reallocprintf(&buf, &pos, &cap, "ApplicationName=%s\n", application_name);
+	reallocprintf(&buf, &pos, &cap, "ClientLibrary=");
+	if (mid->clientprefix)
+		reallocprintf(&buf, &pos, &cap, "%s / ", mid->clientprefix);
+	reallocprintf(&buf, &pos, &cap, "libmapi %s\n", MONETDB_VERSION);
+	if (client_remark[0])
+		reallocprintf(&buf, &pos, &cap, "ClientRemark=%s\n", client_remark);
+	if (pid > 0)
+		reallocprintf(&buf, &pos, &cap, "ClientPid=%ld\n", pid);
+
+	if (pos > 1) {
+		assert(buf[pos - 1] == '\n');
+		pos--;
+		buf[pos] = '\0';
+	}
+
+	if (pos <= cap)
+		mapi_Xcommand(mid, "clientinfo", buf);
+
+	free(buf);
+	free(free_this);
 }
 
 static MapiMsg
@@ -453,15 +563,22 @@ mapi_handshake(Mapi mid)
 		}
 	}
 
-	/* search for OOBINTR option,
-	 * NOTE this consumes the rest of the challenge */
-	char *rest = strtok_r(NULL, ":", &strtok_state);
-	while (rest != NULL) {
-		if (strcmp(rest, "OOBINTR=1") == 0) {
+	/* skip the binary option */
+	char *binary = strtok_r(NULL, ":", &strtok_state);
+	(void)binary;
+
+	char *oobintr = strtok_r(NULL, ":", &strtok_state);
+	if (oobintr) {
+		if (strcmp(oobintr, "OOBINTR=1") == 0) {
 			mid->oobintr = true;
-			break;
 		}
-		rest = strtok_r(NULL, ":", &strtok_state);
+	}
+
+	char *clientinfo = strtok_r(NULL, ":", &strtok_state);
+	if (clientinfo) {
+		if (strcmp(oobintr, "OOBINTR=1") == 0) {
+			mid->clientinfo_supported = true;
+		}
 	}
 
 	/* hash password, if not already */
@@ -774,6 +891,9 @@ mapi_handshake(Mapi mid)
 	if (mid->handshake_options <= MAPI_HANDSHAKE_TIME_ZONE) {
 		mapi_set_time_zone(mid, msetting_long(mid->settings, MP_TIMEZONE));
 	}
+
+	if (mid->error == MOK)
+		send_all_clientinfo(mid);
 
 	return mid->error;
 

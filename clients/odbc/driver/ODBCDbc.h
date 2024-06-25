@@ -39,6 +39,7 @@
 #include "ODBCEnv.h"
 #include "ODBCError.h"
 #include "mapi.h"
+#include "msettings.h"
 
 
 typedef struct tODBCDRIVERDBC {
@@ -51,12 +52,8 @@ typedef struct tODBCDRIVERDBC {
 	int RetrievedErrors;	/* # of errors already retrieved by SQLError */
 
 	/* connection information */
+	msettings *settings;	/* All connection parameters */
 	char *dsn;		/* Data source name or NULL */
-	char *uid;		/* User ID or NULL */
-	char *pwd;		/* Password for User ID or NULL */
-	char *host;		/* Server host */
-	int port;		/* Server port */
-	char *dbname;		/* Database Name or NULL */
 	bool Connected;		/* whether we are connecte to a server */
 	bool has_comment;	/* whether the server has sys.comments */
 	bool allow_hugeint;	/* whether the application deals with HUGEINT */
@@ -64,7 +61,6 @@ typedef struct tODBCDRIVERDBC {
 	int mapToLongVarchar;	/* when > 0 we map WVARCHAR to WLONGVARCHAR, default 0 */
 	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
-	SQLUINTEGER sql_attr_connection_timeout;
 
 	/* MonetDB connection handle & status information */
 	Mapi mid;		/* connection with server */
@@ -79,6 +75,7 @@ typedef struct tODBCDRIVERDBC {
 	/* can't use ODBCStmt *FirstStmt here because of ordering of
 	   include files */
 	struct tODBCDRIVERSTMT *FirstStmt;	/* first in list or NULL */
+	char setting_touched[MP__MAX];  /* for SQLBrowseConnect. set 0 on init, 1 on touch, other is up to SQLBrowseConnect */
 } ODBCDbc;
 
 
@@ -166,5 +163,15 @@ SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER Valu
  * The return value is a freshly allocated null-terminated string.
  */
 extern char *ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN noscan);
+
+// consumes 'settings'!
+extern SQLRETURN MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings);
+extern SQLRETURN MNDBDriverConnect(ODBCDbc *dbc, SQLHWND WindowHandle, const SQLCHAR *InConnectionString, SQLSMALLINT StringLength1, SQLCHAR *OutConnectionString, SQLSMALLINT BufferLength, SQLSMALLINT *StringLength2Ptr, SQLUSMALLINT DriverCompletion, int tryOnly);
+
+extern bool makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch);
+extern const char* takeFromDataSource(ODBCDbc *dbc, msettings *settings, const char *dsn);
+extern SQLRETURN takeFromConnString(ODBCDbc *dbc, msettings *settings, const SQLCHAR *InConnectionString, SQLSMALLINT StringLength1, char  **dsn_out);
+extern char* buildConnectionString(const char *dsn, const msettings *settings);
+
 
 #endif

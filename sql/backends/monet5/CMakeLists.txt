@@ -192,7 +192,6 @@ target_include_directories(sql
 target_link_libraries(sql
   PRIVATE
   monetdb_config_header
-  mcrypt
   sqlstorage
   sqlcommon
   batstore
@@ -200,6 +199,7 @@ target_link_libraries(sql
   sqlinclude
   copybinary
   monetdb5
+  mapi
   bat)
 
 set_target_properties(sql

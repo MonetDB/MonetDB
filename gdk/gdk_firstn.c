@@ -1067,7 +1067,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BUN n, bool asc, 
 			BAT *bn1, *bn2;
 
 			bn1 = bn;
-			bn2 = BATselect(bi->b, s, BUNtail(*bi, last - bi->b->hseqbase), NULL, true, false, false);
+			bn2 = BATselect(bi->b, s, BUNtail(*bi, last - bi->b->hseqbase), NULL, true, false, false, false);
 			if (bn2 == NULL) {
 				BBPunfix(bn1->batCacheid);
 				return GDK_FAIL;
@@ -1193,7 +1193,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BAT *
 		BAT *bn1, *bn2, *bn3, *bn4;
 
 		bn1 = bn;
-		bn2 = BATselect(g, NULL, &lastg, NULL, true, false, false);
+		bn2 = BATselect(g, NULL, &lastg, NULL, true, false, false, false);
 		if (bn2 == NULL) {
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
@@ -1204,7 +1204,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BATiter *bi, BAT *s, BAT *
 			BBPunfix(bn1->batCacheid);
 			return  GDK_FAIL;
 		}
-		bn4 = BATselect(bi->b, bn3, BUNtail(*bi, last - hseq), NULL, true, false, false);
+		bn4 = BATselect(bi->b, bn3, BUNtail(*bi, last - hseq), NULL, true, false, false, false);
 		BBPunfix(bn3->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);

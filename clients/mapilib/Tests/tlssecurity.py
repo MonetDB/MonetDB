@@ -14,10 +14,8 @@ import os
 import re
 import subprocess
 import sys
-import threading
 
-sys.path.append(os.environ.get('TSTSRCDIR','.'))
-import tlstester
+from MonetDBtesting.tlstester import TLSTesterClient
 
 level = logging.WARNING
 # if sys.platform == 'win32':
@@ -27,45 +25,20 @@ if '-v' in sys.argv:
 #level = logging.DEBUG
 logging.basicConfig(level=level)
 
+# A tmpdir to write certificates to
 tgtdir = os.environ['TSTTRGDIR']
 assert os.path.isdir(tgtdir)
+scratchdir = os.path.join(tgtdir, "scratch")
+logging.debug(f"scratchdir={scratchdir}")
 
-hostnames = ['localhost']
-# Generate certificates and write them to the scratch dir
-# Write them to the scratch dir for inspection by the user.
-certs = tlstester.Certs(hostnames)
-certsdir = os.path.join(tgtdir, "certs")
-try:
-    os.mkdir(certsdir)
-except FileExistsError:
-    pass
-count = 0
-for name, content in certs.all().items():
-    with open(os.path.join(certsdir, name), "wb") as a:
-        a.write(content)
-        count += 1
-logging.debug(f"Wrote {count} files to {certsdir}")
+tlstester = TLSTesterClient(scratchdir)
+
 
 def certpath(name):
-    return os.path.join(certsdir, name)
-def certbytes(name):
-    filename = certpath(name)
-    with open(filename, 'rb') as f:
-        return f.read()
-
-# Start the worker threads
-
-server = tlstester.TLSTester(
-    certs=certs,
-    listen_addr='127.0.0.1',
-    preassigned=dict(),
-    sequential=False,
-    hostnames=hostnames)
-server_thread = threading.Thread(target=server.serve_forever, daemon=True)
-server_thread.start()
+    return tlstester.download(name)
 
 def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, host='localhost', **params):
-    port = server.get_port(portname)
+    port = tlstester.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
     url = f"{scheme}://{host}:{port}/demo"
     if params:
@@ -197,7 +170,7 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # Connect to port 'server1' over TLS, with certhash set to a prefix of the hash
 # of the server certificate in DER form. Have a succesful MAPI exchange.
 
-server1hash = sha256(certs.get_file('server1.der')).hexdigest()
+server1hash = sha256(tlstester.fetch('server1.der')).hexdigest()
 attempt('connect_right_hash', 'server1', None, certhash='sha256:' + server1hash[:6])
 
 # connect_wrong_hash
@@ -218,7 +191,7 @@ attempt('connect_wrong_hash', 'server1', "does not match certhash", certhash='sh
 # Connect to port 'server1' over TLS, with certhash set to a prefix of the hash
 # of the CA1 certificate in DER form. This should fail.
 
-ca1hash = sha256(certs.get_file('ca1.der')).hexdigest()
+ca1hash = sha256(tlstester.fetch('ca1.der')).hexdigest()
 attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='sha256:' + ca1hash[:6])
 
 

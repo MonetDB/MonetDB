@@ -52,7 +52,6 @@ if(HAVE_FITS)
   target_link_libraries(fits
     PRIVATE
     monetdb_config_header
-    mutils
     bat
     monetdb5
     sqlinclude

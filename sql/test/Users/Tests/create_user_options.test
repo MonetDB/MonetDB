@@ -259,3 +259,97 @@ query TTITIITI rowsort
 select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
 ----
 
+
+statement ok
+create user testmaxmem10 with password 'foo' name 'testmaxmem' max_memory '10';
+
+statement ok
+create user testmaxmem10g with password 'foo' name 'testmaxmem' max_memory '10G';
+
+statement ok
+create user testmaxmem10g_lower with password 'foo' name 'testmaxmem' max_memory '10g';
+
+statement ok
+create user testmaxmem10gib with password 'foo' name 'testmaxmem' max_memory '10GiB';
+
+statement ok
+create user testmaxmem10gib_lower with password 'foo' name 'testmaxmem' max_memory '10gib';
+
+statement ok
+create user testmaxmem10gib_upper with password 'foo' name 'testmaxmem' max_memory '10GIB';
+
+statement ok
+create user testmaxmem10k with password 'foo' name 'testmaxmem' max_memory '10K';
+
+statement ok
+create user testmaxmem10k_lower with password 'foo' name 'testmaxmem' max_memory '10k';
+
+statement ok
+create user testmaxmem10kib with password 'foo' name 'testmaxmem' max_memory '10KiB';
+
+statement ok
+create user testmaxmem10kib_lower with password 'foo' name 'testmaxmem' max_memory '10kib';
+
+statement ok
+create user testmaxmem10kib_upper with password 'foo' name 'testmaxmem' max_memory '10KIB';
+
+statement ok
+create user testmaxmem10m with password 'foo' name 'testmaxmem' max_memory '10M';
+
+statement ok
+create user testmaxmem10m_lower with password 'foo' name 'testmaxmem' max_memory '10m';
+
+statement ok
+create user testmaxmem10mib with password 'foo' name 'testmaxmem' max_memory '10MiB';
+
+statement ok
+create user testmaxmem10mib_lower with password 'foo' name 'testmaxmem' max_memory '10mib';
+
+statement ok
+create user testmaxmem10mib_upper with password 'foo' name 'testmaxmem' max_memory '10MIB';
+
+query TI
+select name, max_memory from users where name like 'testmaxmem%' order by name;
+----
+testmaxmem10
+10
+testmaxmem10g
+10000000000
+testmaxmem10g_lower
+10000000000
+testmaxmem10gib
+10737418240
+testmaxmem10gib_lower
+10737418240
+testmaxmem10gib_upper
+10737418240
+testmaxmem10k
+10000
+testmaxmem10k_lower
+10000
+testmaxmem10kib
+10240
+testmaxmem10kib_lower
+10240
+testmaxmem10kib_upper
+10240
+testmaxmem10m
+10000000
+testmaxmem10m_lower
+10000000
+testmaxmem10mib
+10485760
+testmaxmem10mib_lower
+10485760
+testmaxmem10mib_upper
+10485760
+
+-- if one alter user works, they'll probably all work!
+
+statement ok
+alter user testmaxmem10 max_memory '20k';
+
+query I
+select max_memory from users where name ='testmaxmem10';
+----
+20000

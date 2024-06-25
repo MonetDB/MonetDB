@@ -6,7 +6,7 @@ query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
@@ -106,7 +106,7 @@ query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
@@ -137,7 +137,7 @@ query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
-query IIITII rowsort
+query IIITIIT rowsort
 SELECT * FROM sys.keys WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 

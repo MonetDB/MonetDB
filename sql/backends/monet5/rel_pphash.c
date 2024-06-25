@@ -297,7 +297,7 @@ rel2bin_oahash_finish(backend *be, stmt *sub, list *exps_prj_hsh, list *exps_prj
 			s->op4.typeval = *exp_subtype(e);
 			s->nr = getArg(q, 1);
 			s->nrcols = 1;
-			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
 			append(l, s);
 		}
 	}
@@ -319,7 +319,7 @@ rel2bin_oahash_finish(backend *be, stmt *sub, list *exps_prj_hsh, list *exps_prj
 			s->nr = getArg(q, 1);
 			s->nrcols = 1;
 			s->q = q;
-			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
 			append(l, s);
 		}
 	}
@@ -350,7 +350,7 @@ rel2bin_oahash_finish(backend *be, stmt *sub, list *exps_prj_hsh, list *exps_prj
 			s->op4.typeval = *exp_subtype(e);
 			s->nr = getDestVar(q);
 			s->nrcols = 1;
-			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
 			append(l, s);
 		}
 
@@ -374,7 +374,7 @@ rel2bin_oahash_finish(backend *be, stmt *sub, list *exps_prj_hsh, list *exps_prj
 			s->op4.typeval = *exp_subtype(e);
 			s->nr = getDestVar(q);
 			s->nrcols = 1;
-			s = stmt_alias(be, s, exp_find_rel_name(e), exp_name(e));
+			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
 			append(l, s);
 		}
 

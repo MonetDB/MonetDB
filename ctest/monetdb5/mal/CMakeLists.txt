@@ -17,7 +17,6 @@ target_link_libraries(test_malEmbeddedBoot
   mal
   mcrypt
   msabaoth
-  mutils
   stream
   bat
   ${CMAKE_DL_LIBS}
@@ -32,7 +31,6 @@ target_link_libraries(test_malInclude
   mal
   mcrypt
   msabaoth
-  mutils
   stream
   bat
   ${CMAKE_DL_LIBS}

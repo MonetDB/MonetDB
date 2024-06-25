@@ -68,6 +68,7 @@ target_link_libraries(stream
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   matomic
+  mutf8
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:ws2_32>
   Threads::Threads)

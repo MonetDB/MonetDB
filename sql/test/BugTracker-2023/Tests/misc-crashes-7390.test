@@ -208,7 +208,7 @@ CREATE TABLE v0(v1 INT)
 statement ok
 INSERT INTO v0 VALUES (-1),(NULL),(57),(NULL),(NULL)
 
-statement error
+statement ok
 UPDATE v0 SET v1 = v1 % (WITH v0 (v1) AS (SELECT -2147483648 WHERE (v1 < -1 OR v1 = 37 % 127) AND v1 - 85 = 45 AND v1 IS NOT NULL) SELECT DISTINCT -1 FROM v0) + v1
 
 statement ok

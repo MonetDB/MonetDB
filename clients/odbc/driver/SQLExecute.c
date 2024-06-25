@@ -434,6 +434,7 @@ MNDBExecute(ODBCStmt *stmt)
 	int i;
 	ODBCDesc *desc;
 	SQLLEN offset;
+	long timeout;
 
 	/* check statement cursor state, query should be prepared */
 	if (stmt->State == INITED ||
@@ -529,7 +530,8 @@ MNDBExecute(ODBCStmt *stmt)
 		break;
 	case MTIMEOUT:
 		/* Timeout expired / Communication link failure */
-		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		timeout = msetting_long(stmt->Dbc->settings, MP_REPLY_TIMEOUT);
+		addStmtError(stmt, timeout > 0 ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
 		errstr = mapi_result_error(hdl);

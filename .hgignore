@@ -44,6 +44,7 @@ GPATH
 GRTAGS
 TAGS
 tags
+cscope.*
 *.pyo
 *.rej
 *.orig

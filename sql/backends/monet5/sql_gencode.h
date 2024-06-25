@@ -35,6 +35,7 @@ extern void rel_print(mvc *sql, sql_rel *rel, int depth);
 extern void _rel_print(mvc *sql, sql_rel *rel);
 
 extern void _exp_print(mvc *sql, sql_exp *e);
+extern void _exps_print(mvc *sql, list *l);
 
 extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
 extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);

@@ -69,7 +69,7 @@ PLAN select count(*) from mt where i >= 5 and i < 12
 ----
 project (
 | group by (
-| | union (
+| | munion (
 | | | group by (
 | | | | select (
 | | | | | table("sys"."sub1") [ "sub1"."i" NOT NULL UNIQUE as "mt"."i" ]

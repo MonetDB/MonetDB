@@ -44789,6 +44789,11 @@ unsafe pattern clients.setScenario(X_0:str):str
 CLTsetScenario;
 Switch to other scenario handler, return previous one.
 clients
+setinfo
+unsafe pattern clients.setinfo(X_0:str, X_1:str):str
+CLTsetClientInfo;
+set a clientinfo property
+clients
 setmemorylimit
 unsafe pattern clients.setmemorylimit(X_0:int):void
 CLTsetmemorylimit;
@@ -45254,36 +45259,6 @@ pattern generator.join(X_0:bat[:sht], X_1:bat[:sht]) (X_2:bat[:oid], X_3:bat[:oi
 VLTgenerator_join;
 (empty)
 generator
-join
-pattern generator.join(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:bte], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
-VLTgenerator_rangejoin;
-(empty)
-generator
-join
-pattern generator.join(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
-VLTgenerator_rangejoin;
-Overloaded range join operation
-generator
-join
-pattern generator.join(X_0:bat[:flt], X_1:bat[:flt], X_2:bat[:flt], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
-VLTgenerator_rangejoin;
-(empty)
-generator
-join
-pattern generator.join(X_0:bat[:int], X_1:bat[:int], X_2:bat[:int], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
-VLTgenerator_rangejoin;
-(empty)
-generator
-join
-pattern generator.join(X_0:bat[:lng], X_1:bat[:lng], X_2:bat[:lng], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
-VLTgenerator_rangejoin;
-(empty)
-generator
-join
-pattern generator.join(X_0:bat[:sht], X_1:bat[:sht], X_2:bat[:sht], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid])
-VLTgenerator_rangejoin;
-(empty)
-generator
 parameters
 pattern generator.parameters(X_0:bte, X_1:bte):bat[:bte]
 VLTgenerator_noop;
@@ -45413,6 +45388,36 @@ projection
 pattern generator.projection(X_0:bat[:oid], X_1:bat[:timestamp]):bat[:timestamp]
 VLTgenerator_projection;
 Overloaded projection operation
+generator
+rangejoin
+pattern generator.rangejoin(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:bte], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:bit, X_8:bit, X_9:lng) (X_10:bat[:oid], X_11:bat[:oid])
+VLTgenerator_rangejoin;
+(empty)
+generator
+rangejoin
+pattern generator.rangejoin(X_0:bat[:dbl], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:bit, X_8:bit, X_9:lng) (X_10:bat[:oid], X_11:bat[:oid])
+VLTgenerator_rangejoin;
+Overloaded range join operation
+generator
+rangejoin
+pattern generator.rangejoin(X_0:bat[:flt], X_1:bat[:flt], X_2:bat[:flt], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:bit, X_8:bit, X_9:lng) (X_10:bat[:oid], X_11:bat[:oid])
+VLTgenerator_rangejoin;
+(empty)
+generator
+rangejoin
+pattern generator.rangejoin(X_0:bat[:int], X_1:bat[:int], X_2:bat[:int], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:bit, X_8:bit, X_9:lng) (X_10:bat[:oid], X_11:bat[:oid])
+VLTgenerator_rangejoin;
+(empty)
+generator
+rangejoin
+pattern generator.rangejoin(X_0:bat[:lng], X_1:bat[:lng], X_2:bat[:lng], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:bit, X_8:bit, X_9:lng) (X_10:bat[:oid], X_11:bat[:oid])
+VLTgenerator_rangejoin;
+(empty)
+generator
+rangejoin
+pattern generator.rangejoin(X_0:bat[:sht], X_1:bat[:sht], X_2:bat[:sht], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:bit, X_8:bit, X_9:lng) (X_10:bat[:oid], X_11:bat[:oid])
+VLTgenerator_rangejoin;
+(empty)
 generator
 select
 pattern generator.select(X_0:bat[:bte], X_1:bat[:oid], X_2:bte, X_3:bte, X_4:bit, X_5:bit, X_6:bit):bat[:oid]
@@ -49504,6 +49509,11 @@ pattern sql.bind_idxbat(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int, X_5:int, X_
 mvc_bind_idxbat_wrap;
 Bind the 'schema.table.index' BAT with access kind:@0 - base table@1 - inserts@2 - updates
 sql
+check
+pattern sql.check(X_0:str, X_1:str):str
+SQLcheck;
+Return sql string of check constraint.
+sql
 claim
 unsafe pattern sql.claim(X_0:int, X_1:str, X_2:str, X_3:lng) (X_4:oid, X_5:bat[:oid])
 mvc_claim_wrap;
@@ -50180,7 +50190,7 @@ SQLrow_number;
 return the row_numer-ed groups
 sql
 sessions
-pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int])
+pattern sql.sessions() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:timestamp], X_3:bat[:timestamp], X_4:bat[:str], X_5:bat[:int], X_6:bat[:int], X_7:bat[:int], X_8:bat[:int], X_9:bat[:str], X_10:bat[:str], X_11:bat[:str], X_12:bat[:str], X_13:bat[:str], X_14:bat[:lng], X_15:bat[:str])
 sql_sessions_wrap;
 SQL export table of active sessions, their timeouts and idle status
 sql
@@ -50335,8 +50345,13 @@ SQLstddev_pop;
 return the standard deviation population of groups
 sql
 stop_vacuum
+unsafe pattern sql.stop_vacuum(X_0:str, X_1:str):void
+SQLstr_stop_vacuum;
+stop auto vacuum
+sql
+stop_vacuum
 unsafe pattern sql.stop_vacuum(X_0:str, X_1:str, X_2:str):void
-SQLstr_column_stop_vacuum;
+SQLstr_stop_vacuum;
 stop auto vacuum
 sql
 storage
@@ -50495,13 +50510,23 @@ SYSupdate_tables;
 Procedure triggered on update of the sys._tables table
 sql
 vacuum
+unsafe pattern sql.vacuum(X_0:str, X_1:str, X_2:int):void
+SQLstr_auto_vacuum;
+auto vacuum string column of given table with interval(sec)
+sql
+vacuum
 unsafe pattern sql.vacuum(X_0:str, X_1:str, X_2:str, X_3:int):void
-SQLstr_column_auto_vacuum;
+SQLstr_auto_vacuum;
 auto vacuum string column with interval(sec)
 sql
 vacuum
+unsafe pattern sql.vacuum(X_0:str, X_1:str):void
+SQLstr_vacuum;
+vacuum a string column
+sql
+vacuum
 unsafe pattern sql.vacuum(X_0:str, X_1:str, X_2:str):void
-SQLstr_column_vacuum;
+SQLstr_vacuum;
 vacuum a string column
 sql
 variance

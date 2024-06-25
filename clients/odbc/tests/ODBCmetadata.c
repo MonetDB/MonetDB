@@ -36,6 +36,8 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <inttypes.h>
+
+/**** Define the ODBC Version our ODBC driver complies with ****/
 #define ODBCVER 0x0352		/* Important: this must be defined before include of sql.h and sqlext.h */
 #include <sql.h>
 #include <sqlext.h>

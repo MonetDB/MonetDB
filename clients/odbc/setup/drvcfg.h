@@ -32,16 +32,6 @@
 
 #define ODBCVER 0x0351
 
-#ifdef WIN32
-#ifndef LIBMONETODBCS
-#define odbc_export extern __declspec(dllimport)
-#else
-#define odbc_export extern __declspec(dllexport)
-#endif
-#else
-#define odbc_export extern
-#endif
-
 #include <odbcinst.h>
 
 /********************************************************
@@ -148,7 +138,7 @@ extern "C" {
 #endif
 
 /* ONLY IMPLEMENTED IN DRIVER SETUP (not in ODBCINST) */
-	odbc_export int ODBCINSTGetProperties(HODBCINSTPROPERTY hFirstProperty);
+	extern int ODBCINSTGetProperties(HODBCINSTPROPERTY hFirstProperty);
 
 #if defined(__cplusplus)
 }

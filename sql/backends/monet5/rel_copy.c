@@ -664,7 +664,7 @@ rel2bin_copyparpipe(backend *be, sql_rel *rel, list *refs, sql_exp *copyfrom, bo
 			s->nrcols = 1;
 			s->q = q;
 			s->op4.typeval = col->type;
-			s = stmt_alias(be, s, table_name, column_name);
+			s = stmt_alias(be, s, s->label, table_name, column_name);
 			list_append(intermediate_stmts, s);
 		}
 	}

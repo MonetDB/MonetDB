@@ -27,6 +27,7 @@ import tempfile
 from threading import Thread
 import threading
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+import urllib.request
 
 # Our TLS implementation never uses anything less than TLSv1.3.
 assert ssl.HAS_TLSv1_3
@@ -96,6 +97,52 @@ argparser.add_argument(
 argparser.add_argument(
     "-v", "--verbose", action="store_true", help="Log more information"
 )
+
+
+
+class TLSTesterClient:
+    """Connect to TLSTester to figure out port numbers and download certificates"""
+    def __init__(self, scratchdir, base_port=None, host='localhost'):
+        if not base_port:
+            base_port = os.environ['TST_TLSTESTERPORT']
+        self.url = f'http://{host}:{base_port}/'
+        self.scratch = scratchdir
+        try:
+            os.mkdir(scratchdir)
+        except FileExistsError:
+            pass
+        self.filenames = dict()
+        self.contents = dict()
+        self.portmap = dict()
+        for line in self.fetch('').splitlines():
+            name, port = str(line, 'ascii').split(':', 1)
+            self.portmap[name] = int(port)
+            logging.debug(f'port {name} = {port}')
+
+    def get_port(self, name):
+        return self.portmap[name]
+
+    def fetch(self, name):
+        cached = self.contents.get(name)
+        if cached is not None:
+            return cached
+        url = self.url + name
+        logging.debug(f'fetch {url}')
+        with urllib.request.urlopen(url) as response:
+            content = response.read()
+            self.contents[name] = content
+            return content
+
+    def download(self, name):
+        cached = self.filenames.get(name)
+        if cached:
+            return cached
+        content = self.fetch(name)
+        path = os.path.join(self.scratch, name)
+        with open(path, 'wb') as f:
+            f.write(content)
+        self.filenames[name] = path
+        return path
 
 
 class Certs:
@@ -494,6 +541,10 @@ class WebHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.end_headers()
         self.wfile.write(content)
+
+    def log_request(self, code = "-", size = "-"):
+        # be silent
+        pass
 
 
 class MyTCPServer(socketserver.ThreadingTCPServer):

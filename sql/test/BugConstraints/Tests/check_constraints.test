@@ -1,0 +1,53 @@
+statement ok
+create table kw(x integer primary key check(x >= 1), nm varchar(30) check (nm IS NOT NULL AND length(nm) >= 0), constraint kwname_upper check (nm = upper(nm)), constraint kwname_len_1 check (length(nm) > 0) )
+
+statement ok
+insert into kw values(1, 'FIRST')
+
+statement error UPDATE: CHECK constraint violated: kw_x_check
+insert into kw values(0, 'FIRST')
+
+statement eror UPDATE: CHECK constraint violated: kwname_upper
+insert into kw values(2, 'Second')
+
+statement ok
+insert into kw values(3, 'FREE')
+
+statement eror UPDATE: CHECK constraint violated: kwname_len_1
+insert into kw values(4, '')
+
+statement eror UPDATE: CHECK constraint violated: kw_nm_check
+insert into kw values(5, NULL)
+
+query IT rowsort
+select * from kw
+----
+1
+FIRST
+3
+FREE
+
+statement ok
+alter table kw drop constraint kw_x_check
+
+statement ok
+alter table kw drop constraint kw_nm_check
+
+statement ok
+alter table kw drop constraint kwname_upper
+
+statement ok
+alter table kw drop constraint kwname_len_1
+
+statement ok
+insert into kw values(2, 'Second')
+
+statement ok
+insert into kw values(4, '')
+
+statement ok
+insert into kw values(5, NULL)
+
+statement ok
+drop table kw
+

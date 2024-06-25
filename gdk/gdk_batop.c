@@ -125,10 +125,13 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 			r = (GDK_ELIMLIMIT - GDK_STRHASHSIZE) / (len + 12);
 			/* r is estimate of number of strings in
 			 * double-eliminated area */
-			if (r < ci->ncand)
-				len = GDK_ELIMLIMIT + (ci->ncand - r) * len;
+			BUN ecnt = ci->ncand;
+			if (ni->b->tunique_est > 0 && ecnt > ni->b->tunique_est)
+				ecnt = (BUN)ni->b->tunique_est;
+			if (r < ecnt)
+				len = GDK_ELIMLIMIT + (ecnt - r) * len;
 			else
-				len = GDK_STRHASHSIZE + ci->ncand * (len + 12);
+				len = GDK_STRHASHSIZE + ecnt * (len + 12);
 			/* len is total estimated expected size of vheap */
 
 			if (len > ni->vhfree / 2) {

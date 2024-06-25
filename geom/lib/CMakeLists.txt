@@ -28,7 +28,6 @@ if(GEOS_FOUND)
 
   target_link_libraries(geomlib
     PRIVATE
-    mutils
     stream
     bat
     monetdb_config_header

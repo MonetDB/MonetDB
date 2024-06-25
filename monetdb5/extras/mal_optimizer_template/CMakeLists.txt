@@ -26,7 +26,6 @@ target_include_directories(opt_sql_append
 target_link_libraries(opt_sql_append
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   monetdb5)
 

@@ -41,7 +41,6 @@ target_link_libraries(atoms
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   stream
   monetdb_config_header
-  mutils
   mutf8
   bat
   mal)

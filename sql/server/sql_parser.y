@@ -165,6 +165,27 @@ uescape_xform(char *restrict s, const char *restrict esc)
 	return s;
 }
 
+static lng
+size_unit(const char *suffix)
+{
+	if (suffix[0] == '\0')
+		return 1;
+	else if (strcasecmp("k", suffix) == 0)
+		return 1000L;
+	else if (strcasecmp("kib", suffix) == 0)
+		return 1024L;
+	else if (strcasecmp("m", suffix) == 0)
+		return 1000L * 1000L;
+	else if (strcasecmp("mib", suffix) == 0)
+		return 1024L * 1024L;
+	else if (strcasecmp("g", suffix) == 0)
+		return 1000L * 1000L * 1000L;
+	else if (strcasecmp("gib", suffix) == 0)
+		return 1024L * 1024L * 1024L;
+	else
+		return -1;
+}
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -234,7 +255,6 @@ int yydebug=1;
 	default
 	default_value
 	delete_stmt
-	domain_constraint_type
 	drop_statement
 	drop_table_element
 	exec
@@ -1620,6 +1640,17 @@ opt_max_memory:
     /* empty */         { $$ = -1; }
  |  NO MAX_MEMORY       { $$ = 0; }
  |  MAX_MEMORY poslng   { $$ = $2; }
+ |  MAX_MEMORY string   {
+		char *end = NULL;
+		lng size = strtoll($2, &end, 10);
+		lng unit = size_unit(end);
+		if (unit < 0 || size < 0) {
+			$$ = -1;
+			yyerror(m, "Invalid size");
+			YYABORT;
+		}
+		$$ = size * unit;
+	}
  ;
 
 opt_max_workers:
@@ -1740,6 +1771,17 @@ table_def:
 	  append_int(l, $3);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+  | opt_temp VIEW qname opt_column_list AS query_expression_def opt_with_check_option
+	{  dlist *l = L();
+	  append_int(l, $1);
+	  append_list(l, $3);
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
+	  append_int(l, TRUE);
+	  append_int(l, FALSE);
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
+	}
  ;
 
 partition_type:
@@ -2154,8 +2196,7 @@ column_constraint_type:
 			  append_int(l, $4 );
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- |  domain_constraint_type
+ |  CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 table_constraint_type:
@@ -2169,7 +2210,6 @@ table_constraint_type:
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens
     REFERENCES qname opt_column_list opt_match opt_ref_action
-
 			{ dlist *l = L();
 			  append_list(l, $5 );
 			  append_list(l, $3 );
@@ -2177,11 +2217,8 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- ;
-
-domain_constraint_type:
-    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK '(' search_condition ')' 
+			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
@@ -2198,6 +2235,7 @@ like_table:
 view_def:
     create_or_replace VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
+	  append_int(l, SQL_PERSIST);
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
@@ -3420,6 +3458,7 @@ with_list:
 with_list_element:
     ident opt_column_list AS subquery_with_orderby
 	{  dlist *l = L();
+ 	  append_int(l, 0);
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
 	  append_symbol(l, $4);
@@ -7317,8 +7356,11 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_start (ap,format);
 	if (sql->errstr[0] == '\0' || error_code == 5 || error_code == ERR_NOTFOUND)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status || error_code == 5 || error_code == ERR_NOTFOUND)
+	if (!sql->session->status || error_code == 5 || error_code == ERR_NOTFOUND) {
+		if (error_code < 0)
+			error_code = -error_code;
 		sql->session->status = -error_code;
+	}
 	va_end (ap);
 	return NULL;
 }

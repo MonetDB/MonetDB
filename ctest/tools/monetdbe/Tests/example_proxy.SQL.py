@@ -19,6 +19,7 @@ results = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, en
 
 if results.stderr:
     print(results.stderr)
+    exit(1)
 
 lines = results.stdout.splitlines()
 
