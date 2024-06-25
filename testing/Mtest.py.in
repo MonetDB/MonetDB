@@ -2227,6 +2227,16 @@ Database = {TSTDB}
 User = {user or "monetdb"}
 Password = {passwd or "monetdb"}
 Debug =
+
+[MonetDB-Test-Wrong]
+Description = Wrong values for Database, Uid and Pwd
+Driver = {env["LIBDIR"]}/libMonetODBC.so
+Setup = {env["LIBDIR"]}/libMonetODBCs.so
+Host = localhost
+Port = {env["MAPIPORT"]}
+Database = {TSTDB}-Wrong
+User = {user or "monetdb"}-Wrong
+Password = {passwd or "monetdb"}-Wrong
 ''')
             f.close()
             os.environ['ODBCINI'] = os.path.join(TSTTRGDIR, 'odbc.ini')

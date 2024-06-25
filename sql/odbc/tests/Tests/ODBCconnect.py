@@ -14,8 +14,15 @@
 # sqlstate lines of the form '    - STATE: MESSAGE'.
 
 import atexit
+import os
 import subprocess
 import sys
+
+dsn = 'MonetDB-Test'
+dbname = os.environ.get('TSTDB', 'demo')
+user = 'monetdb'
+password = 'monetdb'
+port = os.environ.get('MAPIPORT', 50000)
 
 
 class Execution:
@@ -97,38 +104,35 @@ def show_context():
         print(ex.report(), file=sys.stderr)
 
 
-dbname = 'MonetDB-Test'
-
-
-ex = Execution(dbname)
+ex = Execution(dsn)
 ex.expect('OK')
 ex.end()
 
-ex = Execution(dbname + '-nonexistent')
+ex = Execution(dsn + '-nonexistent')
 ex.expect_fail()
 ex.expect('Error')
 ex.expect('IM002:')  # IM002 not found
 ex.end()
 
-ex = Execution(dbname, '-p', 'wrongpassword')
+ex = Execution(dsn, '-p', 'wrongpassword')
 ex.expect_fail()
 ex.expect('Error')
 ex.expect('28000:')  # 28000 bad credentials
 ex.end()
 
-ex = Execution(dbname, '-u', 'wronguser')
+ex = Execution(dsn, '-u', 'wronguser')
 ex.expect_fail()
 ex.expect('Error')
 ex.expect('28000:')  # 28000 bad credentials
 ex.end()
 
-ex = Execution(dbname, '-p', '')
+ex = Execution(dsn, '-p', '')
 ex.expect_fail()
 ex.expect('Error')
 ex.expect('28000:')  # 28000 bad credentials
 ex.end()
 
-ex = Execution(dbname, '-u', '')
+ex = Execution(dsn, '-u', '')
 ex.expect_fail()
 ex.expect('Error')
 ex.expect('28000:')  # 28000 bad credentials
@@ -136,13 +140,33 @@ ex.end()
 
 # test non-NUL terminated strings
 
-ex = Execution(dbname, '-0')
+ex = Execution(dsn, '-0')
 ex.expect('OK')
 ex.end()
 
-ex = Execution(dbname, '-0', '-u', 'monetdb', '-p', 'monetdb')
+ex = Execution(dsn, '-0', '-u', user, '-p', password)
 ex.expect('OK')
 ex.end()
 
+# test connection strings
+
+ex = Execution('-d', f'DSN={dsn}')
+ex.expect('OK')
+ex.end()
+
+# override things that are already set in the dsn
+ex = Execution('-d', f'DSN={dsn}-Wrong;Database={dbname};Uid={user};Pwd={password}')
+ex.expect('OK')
+ex.end()
+
+# .. even if the DSN= comes last
+ex = Execution('-d', f'Database={dbname};Uid={user};Pwd={password};DSN={dsn}-Wrong')
+ex.expect('OK')
+ex.end()
+
+# test without DSN= clause
+ex = Execution('-d', f'DRIVER={{MonetDB}};Database={dbname};Uid={user};Pwd={password};Port={port}')
+ex.expect('OK')
+ex.end()
 
 ex = None
