@@ -219,8 +219,8 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				cnt_d = exp_op(sql->sa, args, ifthen);
 
 				if (subtype_cmp(avg_t, dbl_t) == 0) {
-					cnt_d = exp_convert(sql->sa, cnt, exp_subtype(cnt), dbl_t);
-					sum = exp_convert(sql->sa, sum, exp_subtype(sum), dbl_t);
+					cnt_d = exp_convert(sql, cnt, exp_subtype(cnt), dbl_t);
+					sum = exp_convert(sql, sum, exp_subtype(sum), dbl_t);
 				}
 
 				args = new_exp_list(sql->sa);
@@ -229,12 +229,12 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				sql_subtype *ct = exp_subtype(cnt_d);
 				/* convert sum flt -> dbl */
 				if (st->type->eclass == EC_FLT && ct->type->eclass == EC_FLT && st->type->localtype < ct->type->localtype) {
-					sum = exp_convert(sql->sa, sum, st, ct);
+					sum = exp_convert(sql, sum, st, ct);
 				} else if (st->type->eclass == EC_FLT) {
 					if (ct->type != st->type) {
 						sql_subtype *dbl_t = sql_bind_localtype("dbl");
 						if (ct->type->eclass != EC_FLT || st->type == dbl_t->type)
-							cnt_d = exp_convert(sql->sa, cnt_d, exp_subtype(cnt_d), st);
+							cnt_d = exp_convert(sql, cnt_d, exp_subtype(cnt_d), st);
 					}
 				}
 				append(args, sum);
@@ -252,9 +252,9 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			}
 
 			if (subtype_cmp(exp_subtype(avg), exp_subtype(navg)) != 0)
-				navg = exp_convert(sql->sa, navg, exp_subtype(navg), exp_subtype(avg));
+				navg = exp_convert(sql, navg, exp_subtype(navg), exp_subtype(avg));
 
-			exp_setname(sql->sa, navg, rname, name );
+			exp_setname(sql, navg, rname, name );
 			m->data = navg;
 		}
 		pexps = new_exp_list(sql->sa);
@@ -386,7 +386,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 
 				if (exp_subtype(e)->type->localtype == TYPE_hge) /* down cast */
-					e = n->data = exp_convert(sql->sa, e, exp_subtype(e), sql_bind_localtype("lng"));
+					e = n->data = exp_convert(sql, e, exp_subtype(e), sql_bind_localtype("lng"));
 			}
 		}
 	}

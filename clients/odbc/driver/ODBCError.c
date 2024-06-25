@@ -373,27 +373,6 @@ appendODBCError(ODBCError **head, ODBCError *err)
 }
 
 
-#if 0				/* unused */
-/*
- * Prepends a valid ODBCError object 'err' to the front of the list
- * of a valid ODBCError object 'head' and return the new head.
- *
- * Precondition: both head and err must be valid (non NULL)
- * Returns: the new head (which is the same as the prepended 'err').
- */
-void
-prependODBCError(ODBCError **head, ODBCError *err)
-{
-	assert(head);
-	assert(err);
-	assert(err->next == NULL);
-
-	err->next = *head;
-	*head = err;
-}
-#endif
-
-
 /*
  * Frees the ODBCError object including its linked ODBCError objects.
  *

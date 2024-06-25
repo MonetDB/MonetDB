@@ -39,11 +39,19 @@ target_link_libraries(ODBCtester
   PRIVATE
   ODBC::ODBC)
 
+add_executable(odbcconnect
+  odbcconnect.c)
+
+target_link_libraries(odbcconnect
+  PRIVATE
+  ODBC::ODBC)
+
 install(TARGETS
   ODBCgetInfo
   ODBCStmtAttr
   ODBCmetadata
   ODBCtester
+  odbcconnect
   RUNTIME
   DESTINATION
   ${CMAKE_INSTALL_BINDIR}
@@ -55,6 +63,7 @@ if(WIN32)
     $<TARGET_PDB_FILE:ODBCStmtAttr>
     $<TARGET_PDB_FILE:ODBCmetadata>
     $<TARGET_PDB_FILE:ODBCtester>
+    $<TARGET_PDB_FILE:odbcconnect>
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     OPTIONAL)
 endif()

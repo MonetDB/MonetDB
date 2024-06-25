@@ -9,7 +9,7 @@ with SQLTestCase() as tc:
     tc.execute('insert into foo  values (\'hello\');').assertSucceeded()
     res = tc.execute("select heapsize from sys.storage('sys', 'foo', 'a');").assertSucceeded()
     heap_init = int(res.data[0][0])
-    for i in range(1000):
+    for i in range(1025):
         tc.execute(f"update foo set a='{str(uuid4())}';").assertSucceeded()
     res = tc.execute("select heapsize from sys.storage('sys', 'foo', 'a');").assertSucceeded()
     heap_large = int(res.data[0][0])

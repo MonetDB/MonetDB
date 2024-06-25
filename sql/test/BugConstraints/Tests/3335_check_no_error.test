@@ -1,0 +1,35 @@
+statement ok
+create table ary(x integer check(x >0 and x <3))
+
+statement ok
+insert into ary values(1)
+
+statement error UPDATE: CHECK constraint violated: ary_x_check
+insert into ary values(0)
+
+statement ok
+insert into ary values(2)
+
+statement error UPDATE: CHECK constraint violated: ary_x_check
+insert into ary values(-1)
+
+statement error UPDATE: CHECK constraint violated: ary_x_check
+insert into ary values(3)
+
+statement error UPDATE: CHECK constraint violated: ary_x_check
+update ary set x = x+1
+
+statement ok
+delete from ary where x = 2
+
+statement ok
+update ary set x = x+1
+
+query I rowsort
+select * from ary
+----
+2
+
+statement ok
+drop table ary
+

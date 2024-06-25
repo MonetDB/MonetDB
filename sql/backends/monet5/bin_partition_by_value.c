@@ -56,7 +56,7 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 
 			sc = column(be, sc);
 			sc = stmt_nth_slice(be, sc, slicer);
-			list_append(newl, stmt_alias(be, sc, tname, cname));
+			list_append(newl, stmt_alias(be, sc, sc->label, tname, cname));
 		}
 		sub = stmt_list(be, newl);
 	}
@@ -273,7 +273,7 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 		grp = stmt_result(be, groupby, 0);
 		ext = stmt_result(be, groupby, 1);
 		cnt = stmt_result(be, groupby, 2);
-		gbcol = stmt_alias(be, gbcol, exp_find_rel_name(e), exp_name(e));
+		gbcol = stmt_alias(be, gbcol, gbcol->label, exp_find_rel_name(e), exp_name(e));
 		list_append(gbexps, gbcol);
 	}
 	/* now aggregate */

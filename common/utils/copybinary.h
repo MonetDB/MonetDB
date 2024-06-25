@@ -13,8 +13,6 @@
 #ifndef COPYBINARY_H
 #define COPYBINARY_H
 
-#include "monetdb_config.h"
-
 typedef struct {
 	uint8_t day;
 	uint8_t month;

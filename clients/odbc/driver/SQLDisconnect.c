@@ -63,11 +63,15 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	mapi_destroy(dbc->mid);
 
 	dbc->mid = NULL;
+	dbc->Connected = false;
+	msettings_reset(dbc->settings);
+	memset(dbc->setting_touched, 0, sizeof(dbc->setting_touched));
 	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
-	dbc->Connected = false;
 	dbc->has_comment = false;
 	dbc->raw_strings = false;
+	free(dbc->dsn);
+	dbc->dsn = NULL;
 
 	return SQL_SUCCESS;
 }

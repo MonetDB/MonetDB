@@ -93,6 +93,10 @@ option(STRICT
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")
 
+option(TAGS
+  "Enable tags usage (ctags and/or cscope) )"
+  OFF)
+
 option(ASSERT
   "Enable asserts (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")

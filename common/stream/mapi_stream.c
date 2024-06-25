@@ -152,8 +152,12 @@ setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 	bool ok;
 	int oob = 0;
 
-	while (!bs->eof)
-		bstream_next(bs);
+	while (!bs->eof) {
+		if (bstream_next(bs) < 0) {
+			msg = mnstr_peek_error(ws);
+			goto end;
+		}
+	}
 	stream *rs = bs->s;
 	assert(isa_block_stream(ws));
 	assert(isa_block_stream(rs));

@@ -60,6 +60,9 @@ _columns
 ids
 DEP_VIEW
 _tables
+check_constraints
+DEP_VIEW
+_tables
 describe_comments
 DEP_VIEW
 _tables
@@ -429,6 +432,9 @@ idxs
 ids
 DEP_VIEW
 keys
+check_constraints
+DEP_VIEW
+keys
 dependency_columns_on_indexes
 DEP_VIEW
 keys
@@ -517,6 +523,9 @@ describe_partition_tables
 DEP_VIEW
 roles
 describe_accessible_tables
+DEP_VIEW
+schemas
+check_constraints
 DEP_VIEW
 schemas
 columns
@@ -877,7 +886,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1821 values hashing to 4841f015a85929eed99bb2099a4e17b8
+1845 values hashing to f9a2dad1816ec201e57ce394ef9b0abd
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name

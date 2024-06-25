@@ -41,6 +41,7 @@ MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)
 	int i;
 	SQLULEN row;
 	SQLLEN offset;
+	long timeout;
 
 	/* stmt->startRow is the (0 based) index of the first row we
 	 * stmt->need to fetch */
@@ -102,7 +103,8 @@ MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)
 					WriteValue(RowStatusArray, SQL_ROW_ERROR);
 				/* Timeout expired / Communication
 				 * link failure */
-				addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+				timeout = msetting_long(stmt->Dbc->settings, MP_REPLY_TIMEOUT);
+				addStmtError(stmt, timeout > 0 ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 				return SQL_ERROR;
 			default:
 				if (RowStatusArray)

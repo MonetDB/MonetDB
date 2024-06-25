@@ -54,7 +54,7 @@ table_column_colnr(int *colnr)
 str
 sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op)
 {
-	if (k->type != fkey) {
+	if (k->type != fkey && k->type != ckey) {
 		const char *keys = (k->type == pkey) ? "primary" : k->type == unndkey ? "nndunique" :  "unique";
 		assert(k->type == pkey || k->type == ukey || k->type == unndkey);
 
@@ -142,6 +142,10 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 				rel_find_table_columns(sql, rel->l, t, cols);
 			if (rel->r)
 				rel_find_table_columns(sql, rel->r, t, cols);
+			break;
+		case op_munion:
+			for (node *n = ((list*)rel->l)->h; n; n = n->next)
+				rel_find_table_columns(sql, n->data, t, cols);
 			break;
 		case op_semi:
 		case op_anti:

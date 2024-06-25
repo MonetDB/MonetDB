@@ -63,22 +63,20 @@ select * from foo_p1
 query T nosort
 plan select * from foo_merge, members_rpl
 ----
-union (
-| union (
+munion (
+| project (
+| | crossproduct (
+| | | table("sys"."foo_p1") [ "foo_p1"."n" UNIQUE as "foo_merge"."n", "foo_p1"."m" as "foo_merge"."m" ],
+| | | table("sys"."members_n1") [ "members_n1"."n" UNIQUE as "members_rpl"."n", "members_n1"."m" UNIQUE as "members_rpl"."m", "members_n1"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
+| | ) [  ]
+| ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ],
+| table (
 | | project (
 | | | crossproduct (
-| | | | table("sys"."foo_p1") [ "foo_p1"."n" UNIQUE as "foo_merge"."n", "foo_p1"."m" as "foo_merge"."m" ],
-| | | | table("sys"."members_n1") [ "members_n1"."n" UNIQUE as "members_rpl"."n", "members_n1"."m" UNIQUE as "members_rpl"."m", "members_n1"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
+| | | | REMOTE("sys"."foo_p2") [ "foo_p2"."n" as "foo_merge"."n", "foo_p2"."m" as "foo_merge"."m" ],
+| | | | REMOTE("sys"."members_n2") [ "members_n2"."n" as "members_rpl"."n", "members_n2"."m" as "members_rpl"."m", "members_n2"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
 | | | ) [  ]
-| | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ],
-| | table (
-| | | project (
-| | | | crossproduct (
-| | | | | REMOTE("sys"."foo_p2") [ "foo_p2"."n" as "foo_merge"."n", "foo_p2"."m" as "foo_merge"."m" ],
-| | | | | REMOTE("sys"."members_n2") [ "members_n2"."n" as "members_rpl"."n", "members_n2"."m" as "members_rpl"."m", "members_n2"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
-| | | | ) [  ]
-| | | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
-| | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ]
+| | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
 | ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ],
 | table (
 | | project (

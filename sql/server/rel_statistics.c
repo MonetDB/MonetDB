@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "rel_optimizer_private.h"
 #include "rel_statistics.h"
+#include "rel_basetable.h"
 #include "rel_rewriter.h"
 
 static sql_exp *
@@ -172,6 +173,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_union:
 		case op_except:
 		case op_inter:
+		case op_munion:
 		case op_project:
 		case op_groupby: {
 			sql_exp *found;
@@ -285,7 +287,7 @@ rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		return;
 	sql_column *c = NULL;
 
-	if ((c = name_find_column(rel, exp_relname(e), exp_name(e), -2, NULL))) {
+	if ((c = rel_base_find_column(rel, e->nid))) {
 		sql_column_get_statistics(sql, c, e);
 	}
 }
@@ -320,7 +322,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 			set_minmax_property(sql, e, PROP_MIN, lval_min);
 	}
 
-	if (is_union(rel->op)) {
+	if (is_union(rel->op) || is_munion(rel->op)) {
 		if (!has_nil(le) && !has_nil(re))
 			set_has_no_nil(e);
 		if (need_distinct(rel) && list_length(rel->exps) == 1)
@@ -344,6 +346,42 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 	}
 	return false;
 }
+
+
+static void
+rel_munion_get_statistics(mvc *sql, sql_rel *rel, list *rels, sql_exp *e, int i)
+{
+	assert(is_munion(rel->op));
+
+	sql_rel *l = rels->h->data;
+	sql_exp *le = list_fetch(l->exps, i);
+	atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX);
+	bool has_nonil = !has_nil(le);
+
+	for(node *n = rels->h->next; n; n = n->next) {
+		sql_rel *r = n->data;
+		sql_exp *re = list_fetch(r->exps, i);
+		atom *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
+
+		if (lval_max && rval_max) {
+			set_minmax_property(sql, e, PROP_MAX, statistics_atom_max(sql, lval_max, rval_max)); /* for union the new max will be the max of the two */
+			lval_max = find_prop_and_get(e->p, PROP_MAX);
+		}
+		if (lval_min && rval_min) {
+			set_minmax_property(sql, e, PROP_MIN, statistics_atom_min(sql, lval_min, rval_min)); /* for union the new min will be the min of the two */
+			lval_min = find_prop_and_get(e->p, PROP_MIN);
+		}
+		has_nonil &= !has_nil(re);
+
+	}
+
+	if (has_nonil)
+		set_has_no_nil(e);
+
+	if (need_distinct(rel) && list_length(rel->exps) == 1)
+		set_unique(e);
+}
+
 
 static sql_exp *
 rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
@@ -647,6 +685,7 @@ set_setop_side(visitor *v, sql_rel *rel, sql_rel *side)
 
 	if (need_distinct(rel))
 		set_distinct(side);
+	side->p = prop_copy(v->sql->sa, rel->p);
 	rel_destroy(rel);
 	return side;
 }
@@ -680,7 +719,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 
 			if ((p = find_prop(e->p, PROP_NUNIQUES))) {
 				euniques = (BUN) p->value.dval;
-			} else if (e->type == e_column && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
+			} else if (e->type == e_column && e->nid && rel_find_exp_and_corresponding_rel(l, e, false, &bt, NULL) && bt && (p = find_prop(bt->p, PROP_COUNT))) {
 				euniques = (BUN) p->value.lval;
 			}
 			/* use min to max range to compute number of possible values in the domain for number types */
@@ -821,6 +860,94 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			set_count_prop(v->sql->sa, rel, 0);
 			set_nodistinct(rel); /* set relations may have distinct flag set */
 			v->changes++;
+		}
+		break;
+	}
+	case op_munion: {
+		list *l = rel->l, *nrels = sa_list(v->sql->sa);
+		BUN cnt = 0;
+		bool needs_pruning = false;
+
+		for (node *n = l->h; n; n = n->next) {
+			sql_rel *r = n->data, *pl = r;
+
+			while (is_sample(pl->op) || is_topn(pl->op)) /* skip topN and sample relations in the middle */
+					pl = pl->l;
+			/* if it's not a projection, then project and propagate statistics */
+			if (!is_project(pl->op) && !is_base(pl->op)) {
+				pl = rel_project(v->sql->sa, pl, rel_projections(v->sql, pl, NULL, 0, 1));
+				set_count_prop(v->sql->sa, pl, get_rel_count(pl->l));
+				pl->exps = exps_exp_visitor_bottomup(v, pl, pl->exps, 0, &rel_propagate_statistics, false);
+			}
+			nrels = append(nrels, pl);
+			/* we need new munion statistics */
+			/* propagate row count */
+			BUN rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
+			/* if PROP_COUNT does not exist we assume at least a row (see get_rel_count def) */
+			if (rv == BUN_NONE) {
+				cnt++;
+				continue;
+			}
+			if (!rv && can_be_pruned)
+				needs_pruning = true;
+			/* overflow check */
+			if (rv > (BUN_MAX - cnt))
+				rv = BUN_MAX;
+			else
+				cnt += rv;
+		}
+		int i = 0;
+		for (node *n = rel->exps->h ; n ; n = n->next, i++)
+			rel_munion_get_statistics(v->sql, rel, nrels, n->data, i);
+
+		if (needs_pruning && !rel_is_ref(rel)) {
+			v->changes++;
+			list *nl = sa_list(l->sa);
+
+			for (node *n = nrels->h; n; n = n->next) {
+				sql_rel *r = n->data;
+				BUN rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
+
+				if (!rv) { /* keep last for now */
+					rel_destroy(r);
+					continue;
+				}
+				nl = append(nl, r);
+			}
+			rel->l = nl;
+			if (list_length(nl) == 1) {
+				sql_rel *l = rel->l = nl->h->data; /* ugh */
+				rel->r = NULL;
+				rel->op = op_project;
+
+				for (node *n = rel->exps->h, *m = l->exps->h ; n && m ; n = n->next, m = m->next) {
+					sql_exp *pe = n->data, *ie = m->data;
+					sql_exp *ne = exp_ref(v->sql, ie);
+					exp_prop_alias(v->sql->sa, ne, pe);
+					n->data = ne;
+				}
+				list_hash_clear(rel->exps);
+			} else if (list_empty(nl)) {
+				/* empty select (project [ nils ] ) */
+				for (node *n = rel->exps->h ; n ; n = n->next) {
+					sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
+					exp_prop_alias(v->sql->sa, a, e);
+					n->data = a;
+				}
+				list_hash_clear(rel->exps);
+				sql_rel *l = rel_project(v->sql->sa, NULL, rel->exps);
+				set_count_prop(v->sql->sa, l, 1);
+				l = rel_select(v->sql->sa, l, exp_atom_bool(v->sql->sa, 0));
+				set_count_prop(v->sql->sa, l, 0);
+				rel->op = op_project;
+				rel->r = NULL;
+				rel->l = l;
+				rel->exps = rel_projections(v->sql, l, NULL, 1, 1);
+				set_count_prop(v->sql->sa, rel, 0);
+				set_nodistinct(rel); /* set relations may have distinct flag set */
+			}
+		} else {
+			set_count_prop(v->sql->sa, rel, cnt);
 		}
 		break;
 	}

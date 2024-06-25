@@ -88,7 +88,7 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER USER ident\n"
 	 "    [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string]\n"
 	 "    [SET SCHEMA ident] [SCHEMA PATH string] [DEFAULT ROLE ident]\n"
-	 "    [MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
+	 "    [MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
@@ -252,7 +252,7 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE USER",
 	 "Create a new database user",
 	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
-	 "[MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
+	 "[MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
 	 "[OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},

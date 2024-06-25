@@ -41,6 +41,7 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		   SQLINTEGER BufferLength,
 		   SQLINTEGER *StringLengthPtr)
 {
+	long timeout;
 	/* check input parameters */
 	if (ValuePtr == NULL) {
 		/* Invalid use of null pointer */
@@ -69,7 +70,10 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		WriteData(ValuePtr, dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE, SQLUINTEGER);
 		break;
 	case SQL_ATTR_CONNECTION_TIMEOUT:	/* SQLUINTEGER */
-		WriteData(ValuePtr, dbc->sql_attr_connection_timeout, SQLUINTEGER);
+		timeout = msetting_long(dbc->settings, MP_REPLY_TIMEOUT);
+		if (timeout < 0)
+			timeout = 0;
+		WriteData(ValuePtr, (SQLUINTEGER)timeout, SQLUINTEGER);
 		break;
 	case SQL_ATTR_LOGIN_TIMEOUT:		/* SQLUINTEGER */
 		/* SQL_LOGIN_TIMEOUT */

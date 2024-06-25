@@ -1,0 +1,19 @@
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+create table t(c int)
+
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+prepare select c * ? from t
+
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+exec 0(1)
+
+@connection(id=c2, username=monetdb, password=monetdb)
+statement ok
+drop table t
+
+@connection(id=c1, username=monetdb, password=monetdb)
+statement error 42S02!SELECT: no such table 't'
+exec 0(1)

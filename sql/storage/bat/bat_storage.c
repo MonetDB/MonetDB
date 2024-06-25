@@ -39,7 +39,7 @@ static int tc_gc_del( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_upd_col( sql_store Store, sql_change *c, ulng oldest);
 static int tc_gc_upd_idx( sql_store Store, sql_change *c, ulng oldest);
 
-static void merge_delta( sql_delta *obat);
+static lng merge_delta( sql_delta *obat);
 
 /* valid
  * !deleted && VALID_4_READ(TS, tr)				existing or newly created segment
@@ -517,6 +517,7 @@ new_segments(sql_trans *tr, size_t cnt)
 	segments *n = (segments*)GDKmalloc(sizeof(segments));
 
 	if (n) {
+		n->nr_reused = 0;
 		n->h = n->t = new_segment(NULL, tr, cnt);
 		if (!n->h) {
 			GDKfree(n);
@@ -703,7 +704,7 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
 					oid nil = oid_nil;
 					/* less then cnt */
-					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);
+					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false, false);
 					if (!s) {
 						bat_destroy(b);
 						return NULL;
@@ -729,6 +730,18 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	int err = 0;
 	BAT *uv = *UV;
 	BUN cnt = BATcount(ui)+BATcount(oi);
+	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
+	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
+
+	if (!ni || (uv && !nv)) {
+		bat_destroy(ni);
+		bat_destroy(nv);
+		bat_destroy(ui);
+		bat_destroy(uv);
+		bat_destroy(oi);
+		bat_destroy(ov);
+		return NULL;
+	}
 	BATiter uvi;
 	BATiter ovi;
 
@@ -750,35 +763,6 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		uipt = uii.base;
 	if (!BATtdensebi(&oii))
 		oipt = oii.base;
-
-	if (uiseqb == oiseqb && uie == oie) { /* full overlap, no values */
-		if (uv) {
-			bat_iterator_end(&uvi);
-			bat_iterator_end(&ovi);
-		}
-		bat_iterator_end(&uii);
-		bat_iterator_end(&oii);
-		if (uv) {
-			*UV = uv;
-		} else {
-			bat_destroy(uv);
-		}
-		bat_destroy(oi);
-		bat_destroy(ov);
-		return ui;
-	}
-	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
-	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
-
-	if (!ni || (uv && !nv)) {
-		bat_destroy(ni);
-		bat_destroy(nv);
-		bat_destroy(ui);
-		bat_destroy(uv);
-		bat_destroy(oi);
-		bat_destroy(ov);
-		return NULL;
-	}
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
@@ -2003,6 +1987,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 	bat->cs.ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
+	if (obat)
+		bat->nr_updates = obat->nr_updates;
 	if (!ATOMIC_PTR_CAS(&c->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_delta(bat, false);
@@ -3236,7 +3222,7 @@ commit_create_delta( sql_trans *tr, sql_table *t, sql_base *base, sql_delta *del
 
 	assert(delta->next == NULL);
 	if (!delta->cs.merged)
-		merge_delta(delta);
+		delta->nr_updates += merge_delta(delta);
 	if (!tr->parent)
 		base->new = 0;
 	return LOG_OK;
@@ -3492,7 +3478,6 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start) {
 			if (log_segment(tr, seg, id) != LOG_OK) {
-				unlock_table(tr->store, id);
 				return LOG_ERR;
 			}
 		}
@@ -3932,6 +3917,8 @@ clear_table(sql_trans *tr, sql_table *t)
 				return clear_ok;
 		}
 	}
+	if (clear)
+		d->segs->nr_reused = 0;
 	return sz;
 }
 
@@ -4157,12 +4144,15 @@ merge_cs( column_storage *cs, const char* caller)
 	return;
 }
 
-static void
+static lng
 merge_delta( sql_delta *obat)
 {
+	lng res = 0;
 	if (obat && obat->next && !obat->cs.merged)
-		merge_delta(obat->next);
+		res += merge_delta(obat->next);
+	res += obat->cs.ucnt;
 	merge_cs(&obat->cs, __func__);
+	return res;
 }
 
 static void
@@ -4254,7 +4244,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 {
 	(void) type; // TODO transaction_layer_revamp remove if remains unused
 
-	sql_delta *delta = ATOMIC_PTR_GET(data);
+	sql_delta *delta = ATOMIC_PTR_GET(data), *idelta = delta;
 
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
 		int ok = LOG_OK;
@@ -4290,7 +4280,7 @@ commit_update_delta( sql_trans *tr, sql_change *change, sql_table* t, sql_base* 
 			delta = delta->next;
 		if (delta && !delta->cs.merged && delta->cs.ts <= oldest) {
 			lock_column(tr->store, base->id); /* lock for concurrent updates (appends) */
-			merge_delta(delta);
+			idelta->nr_updates += merge_delta(delta);
 			unlock_column(tr->store, base->id);
 		}
 	} else if (tr->parent) /* move delta into older and cleanup current save points */
@@ -4467,7 +4457,7 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 	}
 	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
-	sql_delta *d = (sql_delta*)change->data;
+	sql_delta *d = (sql_delta*)change->data, *id = d;
 	if (d && d->next) {
 
 		if (d->cs.ts > oldest)
@@ -4479,7 +4469,7 @@ tc_gc_col( sql_store Store, sql_change *change, ulng oldest)
 			d->next = NULL;
 		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
-		merge_delta(d);
+		id->nr_updates += merge_delta(d);
 		unlock_column(store, c->base.id);
 	}
 	column_destroy(store, c);
@@ -4507,7 +4497,7 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 	}
 	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
-	sql_delta *d = (sql_delta*)change->data;
+	sql_delta *d = (sql_delta*)change->data, *id = d;
 	if (d && d->next) {
 
 		if (d->cs.ts > oldest)
@@ -4519,7 +4509,7 @@ tc_gc_upd_col( sql_store Store, sql_change *change, ulng oldest)
 			d->next = NULL;
 		}
 		lock_column(store, c->base.id); /* lock for concurrent updates (appends) */
-		merge_delta(d);
+		id->nr_updates += merge_delta(d);
 		unlock_column(store, c->base.id);
 	}
 	table_destroy(store, c->t);
@@ -4547,9 +4537,8 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 	}
 	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
-	sql_delta *d = (sql_delta*)change->data;
-	if (d->next) {
-
+	sql_delta *d = (sql_delta*)change->data, *id = d;
+	if (d && d->next) {
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
@@ -4559,7 +4548,7 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng oldest)
 			d->next = NULL;
 		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
-		merge_delta(d);
+		id->nr_updates += merge_delta(d);
 		unlock_column(store, i->base.id);
 	}
 	idx_destroy(store, i);
@@ -4587,9 +4576,8 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 	}
 	if (oldest && oldest >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
-	sql_delta *d = (sql_delta*)change->data;
-	if (d->next) {
-
+	sql_delta *d = (sql_delta*)change->data, *id = d;
+	if (d && d->next) {
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
@@ -4599,7 +4587,7 @@ tc_gc_upd_idx( sql_store Store, sql_change *change, ulng oldest)
 			d->next = NULL;
 		}
 		lock_column(store, i->base.id); /* lock for concurrent updates (appends) */
-		merge_delta(d);
+		id->nr_updates += merge_delta(d);
 		unlock_column(store, i->base.id);
 	}
 	table_destroy(store, i->t);
@@ -4682,6 +4670,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 						ok = LOG_ERR;
 						break;
 					}
+					s->segs->nr_reused += cnt;
 					cnt = 0;
 					break;
 				}
@@ -4701,6 +4690,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 				ok = LOG_ERR;
 				break;
 			}
+			s->segs->nr_reused += (seg->end - seg->start);
 			cnt -= (seg->end - seg->start);
 		}
 	}
@@ -4730,7 +4720,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 			in_transaction = true;
 		}
 		if (in_transaction && !NOT_TO_BE_LOGGED(t))
-			tr->logchanges += (int) total;
+			tr->logchanges += (lng) total;
 		if (*offsets) {
 			BAT *pos = *offsets;
 			assert(BATcount(pos) == total);
@@ -4770,6 +4760,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 					slot = p->end;
 					p->end += cnt;
 					seg->start += cnt;
+					s->segs->nr_reused += cnt;
 					reused = 1;
 					break;
 				}
@@ -4782,6 +4773,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 			seg->ts = tr->tid;
 			seg->deleted = false;
 			slot = seg->start;
+			s->segs->nr_reused += cnt;
 			reused = 1;
 			break;
 		}
@@ -4810,7 +4802,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 			in_transaction = true;
 		}
 		if (in_transaction && !NOT_TO_BE_LOGGED(t))
-			tr->logchanges += (int) cnt;
+			tr->logchanges += (lng) cnt;
 		*offset = slot;
 	}
 	return ok;
@@ -5040,6 +5032,80 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 }
 
 static int
+vacuum_col(sql_trans *tr, sql_column *c, bool force)
+{
+	if (segments_in_transaction(tr, c->t))
+		return LOG_CONFLICT;
+
+	sql_delta *d = NULL;
+
+	/* do we have enough to clean */
+	if ((d = bind_col_data(tr, c, NULL)) == NULL)
+		return LOG_CONFLICT;
+
+	/* do we have enough to clean */
+	if (!force && (d->nr_updates) < 1024)
+		return LOG_OK;
+
+	BAT *b = NULL, *bn = NULL;;
+	if ((b = bind_col(tr, c, 0)) == NULL)
+		return LOG_ERR;
+	if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+		BBPreclaim(b);
+		return LOG_ERR;
+	}
+	int res = swap_bats(tr, c, bn);
+	d->nr_updates = 0;
+	BBPreclaim(b);
+	BBPreclaim(bn);
+	return res;
+}
+
+static int
+vacuum_tab(sql_trans *tr, sql_table *t, bool force)
+{
+	if (segments_in_transaction(tr, t))
+		return LOG_CONFLICT;
+
+	storage *s;
+	if ((s = bind_del_data(tr, t, NULL)) == NULL)
+		return LOG_ERR;
+
+	for( node *n = ol_first_node(t->columns); n; n = n->next) {
+		sql_column *c = n->data;
+
+		if (!ATOMvarsized(c->type.type->localtype))
+			continue;
+		sql_delta *d = NULL;
+
+		/* do we have enough to clean */
+		if ((d = bind_col_data(tr, c, NULL)) == NULL)
+			return LOG_CONFLICT;
+
+		/* do we have enough to clean */
+		if (!force && (d->nr_updates + s->segs->nr_reused) < 1024)
+			continue;
+
+		BAT *b = NULL, *bn = NULL;;
+		if ((b = bind_col(tr, c, 0)) == NULL)
+			return LOG_ERR;
+		if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
+			BBPreclaim(b);
+			return LOG_ERR;
+		}
+		int res = swap_bats(tr, c, bn);
+		d->nr_updates = 0;
+		BBPreclaim(b);
+		BBPreclaim(bn);
+		if (res != LOG_OK)
+			return res;
+	}
+	s->segs->nr_reused = 0;
+	return LOG_OK;
+}
+
+
+static int
 col_compress(sql_trans *tr, sql_column *col, storage_type st, BAT *o, BAT *u)
 {
 	bool update_conflict = false;
@@ -5128,49 +5194,7 @@ bat_storage_init( store_functions *sf)
 
 	sf->clear_table = &clear_table;
 
-	sf->swap_bats = &swap_bats;
+	sf->vacuum_col = &vacuum_col;
+	sf->vacuum_tab = &vacuum_tab;
 	sf->col_compress = &col_compress;
 }
-
-#if 0
-static lng
-log_get_nr_inserted(sql_column *fc, lng *offset)
-{
-	lng cnt = 0;
-
-	if (!fc || GDKinmemory(0))
-		return 0;
-
-	if (fc->base.atime && fc->base.allocated) {
-		sql_delta *fb = fc->data;
-		BAT *ins = temp_descriptor(fb->cs.bid);
-
-		if (ins && BATcount(ins) > 0 && BATcount(ins) > ins->batInserted) {
-			cnt = BATcount(ins) - ins->batInserted;
-		}
-		bat_destroy(ins);
-	}
-	return cnt;
-}
-
-static lng
-log_get_nr_deleted(sql_table *ft, lng *offset)
-{
-	lng cnt = 0;
-
-	if (!ft || GDKinmemory(0))
-		return 0;
-
-	if (ft->base.atime && ft->base.allocated) {
-		storage *fdb = ft->data;
-		BAT *db = temp_descriptor(fdb->cs.bid);
-
-		if (db && BATcount(db) > 0 && BATcount(db) > db->batInserted) {
-			cnt = BATcount(db) - db->batInserted;
-			*offset = db->batInserted;
-		}
-		bat_destroy(db);
-	}
-	return cnt;
-}
-#endif

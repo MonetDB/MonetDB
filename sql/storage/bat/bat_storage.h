@@ -31,6 +31,7 @@ typedef struct column_storage {
 
 typedef struct sql_delta {
 	column_storage cs;
+	lng nr_updates;
 	struct sql_delta *next;	/* possibly older version of the same column/idx */
 } sql_delta;
 
@@ -49,6 +50,7 @@ typedef struct segment {
 /* container structure to allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
+	ulng nr_reused;
 	struct segment *h;
 	struct segment *t;
 } segments;

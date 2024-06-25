@@ -779,6 +779,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *id = NULL, *user = NULL, *login = NULL, *sessiontimeout = NULL,
 		*querytimeout = NULL, *idle = NULL;
 	BAT *opt = NULL, *wlimit = NULL, *mlimit = NULL;
+	BAT *language = NULL, *peer = NULL, *hostname = NULL, *application = NULL, *client = NULL, *clientpid = NULL, *remark = NULL;
 	bat *idId = getArgReference_bat(stk, pci, 0);
 	bat *userId = getArgReference_bat(stk, pci, 1);
 	bat *loginId = getArgReference_bat(stk, pci, 2);
@@ -788,8 +789,17 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *querytimeoutId = getArgReference_bat(stk, pci, 6);
 	bat *wlimitId = getArgReference_bat(stk, pci, 7);
 	bat *mlimitId = getArgReference_bat(stk, pci, 8);
+	bat *languageId = getArgReference_bat(stk, pci, 9);
+	bat *peerId = getArgReference_bat(stk, pci, 10);
+	bat *hostnameId = getArgReference_bat(stk, pci, 11);
+	bat *applicationId = getArgReference_bat(stk, pci, 12);
+	bat *clientId = getArgReference_bat(stk, pci, 13);
+	bat *clientpidId = getArgReference_bat(stk, pci, 14);
+	bat *remarkId = getArgReference_bat(stk, pci, 15);
 	Client c;
-	timestamp ret;
+	timestamp ts;
+	lng pid;
+	const char *s;
 	int timeout;
 	str msg = NULL;
 
@@ -805,20 +815,36 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	wlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
 	mlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
 	idle = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
+	language = COLnew(0, TYPE_str, 0, TRANSIENT);
+	peer = COLnew(0, TYPE_str, 0, TRANSIENT);
+	hostname = COLnew(0, TYPE_str, 0, TRANSIENT);
+	application = COLnew(0, TYPE_str, 0, TRANSIENT);
+	client = COLnew(0, TYPE_str, 0, TRANSIENT);
+	clientpid = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	remark = COLnew(0, TYPE_str, 0, TRANSIENT);
 
 	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL
 		|| idle == NULL || querytimeout == NULL || opt == NULL || wlimit == NULL
-		|| mlimit == NULL) {
+		|| mlimit == NULL || language == NULL || peer == NULL || hostname == NULL
+		|| application == NULL || client == NULL || clientpid == NULL
+		|| remark == NULL) {
 		BBPreclaim(id);
 		BBPreclaim(user);
 		BBPreclaim(login);
 		BBPreclaim(sessiontimeout);
 		BBPreclaim(querytimeout);
 		BBPreclaim(idle);
-
 		BBPreclaim(opt);
 		BBPreclaim(wlimit);
 		BBPreclaim(mlimit);
+		BBPreclaim(language);
+		BBPreclaim(peer);
+		BBPreclaim(hostname);
+		BBPreclaim(application);
+		BBPreclaim(client);
+		BBPreclaim(clientpid);
+		BBPreclaim(remark);
+
 		throw(SQL, "sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -831,8 +857,8 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				username = str_nil;
 			if (BUNappend(user, username, false) != GDK_SUCCEED)
 				goto bailout;
-			ret = timestamp_fromtime(c->login);
-			if (is_timestamp_nil(ret)) {
+			ts = timestamp_fromtime(c->login);
+			if (is_timestamp_nil(ts)) {
 				msg = createException(SQL, "sql.sessions",
 									  SQLSTATE(22003)
 									  "Failed to convert user logged time");
@@ -840,7 +866,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if (BUNappend(id, &c->idx, false) != GDK_SUCCEED)
 				 goto bailout;
-			if (BUNappend(login, &ret, false) != GDK_SUCCEED)
+			if (BUNappend(login, &ts, false) != GDK_SUCCEED)
 				goto bailout;
 			timeout = (int) (c->logical_sessiontimeout);
 			if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
@@ -849,22 +875,42 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
 				goto bailout;
 			if (c->idle) {
-				ret = timestamp_fromtime(c->idle);
-				if (is_timestamp_nil(ret)) {
+				ts = timestamp_fromtime(c->idle);
+				if (is_timestamp_nil(ts)) {
 					msg = createException(SQL, "sql.sessions",
 										  SQLSTATE(22003)
 										  "Failed to convert user logged time");
 					goto bailout;
 				}
 			} else
-				ret = timestamp_nil;
-			if (BUNappend(idle, &ret, false) != GDK_SUCCEED)
+				ts = timestamp_nil;
+			if (BUNappend(idle, &ts, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
 				 goto bailout;
 			if (BUNappend(wlimit, &c->workerlimit, false) != GDK_SUCCEED)
 				goto bailout;
 			if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
+				goto bailout;
+			s = c->peer ? c->peer : str_nil;
+			if (BUNappend(peer, s, false) != GDK_SUCCEED)
+				goto bailout;
+			s = c->client_hostname ? c->client_hostname : str_nil;
+			if (BUNappend(hostname, s, false) != GDK_SUCCEED)
+				goto bailout;
+			s = c->client_application ? c->client_application : str_nil;
+			if (BUNappend(application, s, false) != GDK_SUCCEED)
+				goto bailout;
+			s = c->client_library ? c->client_library : str_nil;
+			if (BUNappend(client, s, false) != GDK_SUCCEED)
+				goto bailout;
+			pid = c->client_pid;
+			if (BUNappend(clientpid, pid ? &pid : &lng_nil, false) != GDK_SUCCEED)
+				goto bailout;
+			s = c->client_remark ? c->client_remark : str_nil;
+			if (BUNappend(remark, s, false) != GDK_SUCCEED)
 				goto bailout;
 		}
 	}
@@ -888,6 +934,21 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(wlimit);
 	*mlimitId = mlimit->batCacheid;
 	BBPkeepref(mlimit);
+	*languageId = language->batCacheid;
+	BBPkeepref(language);
+	*peerId = peer->batCacheid;
+	BBPkeepref(peer);
+	*hostnameId = hostname->batCacheid;
+	BBPkeepref(hostname);
+	*applicationId = application->batCacheid;
+	BBPkeepref(application);
+	*clientId = client->batCacheid;
+	BBPkeepref(client);
+	*clientpidId = clientpid->batCacheid;
+	BBPkeepref(clientpid);
+	*remarkId = remark->batCacheid;
+	BBPkeepref(remark);
+
 	return MAL_SUCCEED;
 
   bailout:
@@ -902,6 +963,13 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(opt->batCacheid);
 	BBPunfix(wlimit->batCacheid);
 	BBPunfix(mlimit->batCacheid);
+	BBPunfix(language->batCacheid);
+	BBPunfix(peer->batCacheid);
+	BBPunfix(hostname->batCacheid);
+	BBPunfix(application->batCacheid);
+	BBPunfix(client->batCacheid);
+	BBPunfix(clientpid->batCacheid);
+	BBPunfix(remark->batCacheid);
 	return msg;
 }
 
@@ -912,6 +980,17 @@ CLTgetSessionID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 	*getArgReference_int(stk, pci, 0) = cntxt->idx;
+	return MAL_SUCCEED;
+}
+
+static str
+CLTsetClientInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	str property = *getArgReference_str(stk, pci, 1);
+	str value = *getArgReference_str(stk, pci, 2);
+
+	MCsetClientInfo(cntxt, property, value);
 	return MAL_SUCCEED;
 }
 
@@ -953,6 +1032,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "getPasswordHash", CLTgetPasswordHash, false, "Return the password hash of the given user", args(1,2, arg("",str),arg("user",str))),
  pattern("clients", "checkPermission", CLTcheckPermission, false, "Check permission for a user, requires hashed password (backendsum)", args(1,3, arg("",void),arg("usr",str),arg("pw",str))),
  pattern("clients", "current_sessionid", CLTgetSessionID, false, "return current session ID", args(1,1, arg("",int))),
+ pattern("clients", "setinfo", CLTsetClientInfo, true, "set a clientinfo property", args(1, 3, arg("",str), arg("property", str), arg("value", str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

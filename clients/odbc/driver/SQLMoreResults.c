@@ -37,6 +37,7 @@ SQLRETURN SQL_API
 SQLMoreResults(SQLHSTMT StatementHandle)
 {
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
+	long timeout;
 
 #ifdef ODBCDEBUG
 	ODBCLOG("SQLMoreResults %p\n", StatementHandle);
@@ -60,7 +61,8 @@ SQLMoreResults(SQLHSTMT StatementHandle)
 		return SQL_ERROR;
 	case MTIMEOUT:
 		/* Timeout expired / Communication link failure */
-		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		timeout = msetting_long(stmt->Dbc->settings, MP_REPLY_TIMEOUT);
+		addStmtError(stmt, timeout > 0 ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
 		return ODBCInitResult(stmt);

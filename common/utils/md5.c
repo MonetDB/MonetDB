@@ -50,7 +50,7 @@ static void MD5Transform(uint32_t [4], const uint8_t [64]);
 static void Encode(uint8_t *, const uint32_t *, unsigned int);
 static void Decode(uint32_t *, const uint8_t *, unsigned int);
 
-static uint8_t PADDING[64] = {
+static uint8_t const PADDING[64] = {
 	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0

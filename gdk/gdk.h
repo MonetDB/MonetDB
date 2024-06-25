@@ -762,7 +762,7 @@ typedef struct {
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 #define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
 #define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
-#define GDKLIBRARY		061050U /* first after Dec2023 */
+#define GDKLIBRARY		061050U /* first in Aug2024 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -1100,7 +1100,7 @@ bat_iterator_nolock(BAT *b)
 {
 	/* does not get matched by bat_iterator_end */
 	if (b) {
-		bool isview = VIEWtparent(b);
+		const bool isview = VIEWtparent(b) != 0;
 		return (BATiter) {
 			.b = b,
 			.h = b->theap,
@@ -2281,7 +2281,7 @@ gdk_export ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const voi
 #define JOIN_BAND	3
 #define JOIN_NE		(-3)
 
-gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti);
+gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti, bool nil_matches);
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);

@@ -19,8 +19,6 @@ add_library(monetdb5 SHARED
 
 target_link_libraries(monetdb5
     PRIVATE
-    mutils
-    mcrypt
     stream
     mapi
     msabaoth

@@ -155,6 +155,9 @@ class MonetDBD:
                 self.runner.print()
                 self.runner.print('ABORT ABORT exception occurred, stopping all databases')
                 self.runner.print()
+                logfile = self.run_monetdbd('get', 'logfile', output=True)
+                self.runner.print(open(logfile.split('\n')[1][7:].strip()).read())
+                self.runner.print()
             self.run_monetdb('stop', '-a')
             self.proc.terminate()
         if exc_type == None:

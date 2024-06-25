@@ -1,0 +1,10 @@
+# ChangeLog file for mapilib
+# This file is updated with Maddlog
+
+* Wed Jun 19 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add new columns to sys.sessions. Column 'language' is usually 'sql'.
+  Column 'peer' is the network address of the client (something like
+  '[::1]:46558' or '<UNIX SOCKET>'). Columns 'hostname', 'application',
+  'client', 'clientpid' and 'remark' can be set by the client.
+  Libmapi/mclient, pymonetdb and monetdb-java have been modified to fill
+  in sensible default values.

@@ -257,16 +257,17 @@ ALGcard(lng *result, const bat *bid)
 }
 
 static str
-ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low,
-		   const void *high, const bit *li, const bit *hi, const bit *anti)
+ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low,
+			  const void *high, const bit *li, const bit *hi, const bit *anti,
+			  const bit *unknown)
 {
 	BAT *b, *s = NULL, *bn;
-	const void *nilptr;
 
 	if ((*li != 0 && *li != 1) ||
 		(*hi != 0 && *hi != 1) || (*anti != 0 && *anti != 1)) {
 		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
 	}
+
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
@@ -276,14 +277,35 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low,
 	}
 	derefStr(b, low);
 	derefStr(b, high);
-	nilptr = ATOMnilptr(b->ttype);
-	if (*li == 1 && *hi == 1 && nilptr != NULL &&
-		ATOMcmp(b->ttype, low, nilptr) == 0 &&
-		ATOMcmp(b->ttype, high, nilptr) == 0) {
-		/* special case: equi-select for NIL */
-		high = NULL;
+
+	bool nanti = *anti, nli = *li, nhi = *hi;
+
+	/* here we don't need open ended parts with nil */
+	if (!nanti && *unknown) {
+		const void *nilptr = ATOMnilptr(b->ttype);
+		if (nilptr) {
+			if (nli && ATOMcmp(b->ttype, low, nilptr) == 0) {
+				low = high;
+				nli = false;
+			}
+			if (nhi && ATOMcmp(b->ttype, high, nilptr) == 0) {
+				high = low;
+				nhi = false;
+			}
+			if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0)	/* ugh sql nil != nil */
+				nanti = true;
+		}
+	} else if (!*unknown) {
+		const void *nilptr = ATOMnilptr(b->ttype);
+		if (nli && nhi && nilptr != NULL &&
+			ATOMcmp(b->ttype, low, nilptr) == 0 &&
+			ATOMcmp(b->ttype, high, nilptr) == 0) {
+			/* special case: equi-select for NIL */
+			high = NULL;
+		}
 	}
-	bn = BATselect(b, s, low, high, *li, *hi, *anti);
+
+	bn = BATselect(b, s, low, high, nli, nhi, nanti, false);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (bn == NULL)
@@ -294,61 +316,17 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low,
 }
 
 static str
-ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low,
-			  const void *high, const bit *li, const bit *hi, const bit *anti,
-			  const bit *unknown)
+ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low,
+		   const void *high, const bit *li, const bit *hi, const bit *anti)
 {
-	BAT *b, *s = NULL, *bn;
-	bit nanti = *anti, nli = *li, nhi = *hi;
-
-	if (!*unknown)
-		return ALGselect2(result, bid, sid, low, high, li, hi, anti);
-
-	if ((nli != 0 && nli != 1) ||
-		(nhi != 0 && nhi != 1) || (nanti != 0 && nanti != 1)) {
-		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
-	}
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-	derefStr(b, low);
-	derefStr(b, high);
-	/* here we don't need open ended parts with nil */
-	if (!nanti) {
-		const void *nilptr = ATOMnilptr(b->ttype);
-		if (nilptr) {
-			if (nli == 1 && ATOMcmp(b->ttype, low, nilptr) == 0) {
-				low = high;
-				nli = 0;
-			}
-			if (nhi == 1 && ATOMcmp(b->ttype, high, nilptr) == 0) {
-				high = low;
-				nhi = 0;
-			}
-			if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0)	/* ugh sql nil != nil */
-				nanti = 1;
-		}
-	}
-
-	bn = BATselect(b, s, low, high, nli, nhi, nanti);
-	BBPunfix(b->batCacheid);
-	BBPreclaim(s);
-	if (bn == NULL)
-		throw(MAL, "algebra.select", GDK_EXCEPTION);
-	*result = bn->batCacheid;
-	BBPkeepref(bn);
-	return MAL_SUCCEED;
+	return ALGselect2nil(result, bid, sid, low, high, li, hi, anti, &(bit){0});
 }
 
 static str
 ALGselect1(bat *result, const bat *bid, const void *low, const void *high,
 		   const bit *li, const bit *hi, const bit *anti)
 {
-	return ALGselect2(result, bid, NULL, low, high, li, hi, anti);
+	return ALGselect2nil(result, bid, NULL, low, high, li, hi, anti, &(bit){0});
 }
 
 static str
@@ -594,7 +572,7 @@ ALGselectNotNil(bat *result, const bat *bid)
 	MT_lock_unset(&b->theaplock);
 	if (!bnonil) {
 		BAT *s;
-		s = BATselect(b, NULL, ATOMnilptr(b->ttype), NULL, true, true, true);
+		s = BATselect(b, NULL, ATOMnilptr(b->ttype), NULL, true, true, true, false);
 		if (s) {
 			BAT *bn = BATproject(s, b);
 			BBPunfix(s->batCacheid);

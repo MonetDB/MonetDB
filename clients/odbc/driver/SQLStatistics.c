@@ -212,7 +212,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		"join sys.schemas s on t.schema_id = s.id "
 		"join sys.objects kc on i.id = kc.id "
 		"join sys._columns c on (t.id = c.table_id and kc.name = c.name) "
-		"%sjoin sys.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1)) "
+		"%sjoin sys.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1, 3)) "
 		"join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
 		"where 1=1",
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER,
@@ -224,7 +224,7 @@ MNDBStatistics(ODBCStmt *stmt,
 	/* Construct the selection condition query part */
 	if (NameLength1 > 0 && CatalogName != NULL) {
 		/* filtering requested on catalog name */
-		if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+		if (strcmp((char *) CatalogName, msetting_string(stmt->Dbc->settings, MP_DATABASE)) != 0) {
 			/* catalog name does not match the database name, so return no rows */
 			pos += snprintf(query + pos, querylen - pos, " and 1=2");
 		}
@@ -261,7 +261,7 @@ MNDBStatistics(ODBCStmt *stmt,
 			"join sys.schemas s on t.schema_id = s.id "
 			"join tmp.objects kc on i.id = kc.id "
 			"join tmp._columns c on (t.id = c.table_id and kc.name = c.name) "
-			"%sjoin tmp.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1))"
+			"%sjoin tmp.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1, 3))"
 			"left outer join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
 			"where 1=1",
 			SQL_INDEX_HASHED, SQL_INDEX_OTHER,
@@ -270,7 +270,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		/* Construct the selection condition query part */
 		if (NameLength1 > 0 && CatalogName != NULL) {
 			/* filtering requested on catalog name */
-			if (strcmp((char *) CatalogName, stmt->Dbc->dbname) != 0) {
+			if (strcmp((char *) CatalogName, msetting_string(stmt->Dbc->settings, MP_DATABASE)) != 0) {
 				/* catalog name does not match the database name, so return no rows */
 				pos += snprintf(query + pos, querylen - pos, " and 1=2");
 			}
@@ -284,7 +284,6 @@ MNDBStatistics(ODBCStmt *stmt,
 			pos += snprintf(query + pos, querylen - pos, " and %s", tab);
 		}
 	}
-	assert(pos < (querylen - 74));
 
 	if (sch)
 		free(sch);

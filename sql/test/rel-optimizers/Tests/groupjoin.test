@@ -13,7 +13,7 @@ project (
 | | table("sys"."integers") [ "integers"."i" as "i1"."i" ],
 | | project (
 | | | table("sys"."integers") [ "integers"."i" ]
-| | ) [ "integers"."i" as "%4"."%4" ]
-| ) [ ("i1"."i") + = ("%4"."%4") ] [ boolean(1) "true" as "%5"."%5" ]
-) [ "i1"."i", "sys"."or"("%5"."%5", "sys"."isnull"("i1"."i") NOT NULL) ]
+| | ) [ "integers"."i" as "%1"."%1" ]
+| ) [ ("i1"."i") + = ("%1"."%1") ] [ boolean(1) "true" as "%4"."%4" ]
+) [ "i1"."i", "sys"."or"("%4"."%4", "sys"."isnull"("i1"."i") NOT NULL) ]
 

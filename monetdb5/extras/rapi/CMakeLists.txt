@@ -33,7 +33,6 @@ if(LIBR_FOUND)
   target_link_libraries(rapi
     PRIVATE
     monetdb_config_header
-    mutils
     bat
     monetdb5
     sqlinclude
