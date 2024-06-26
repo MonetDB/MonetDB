@@ -97,7 +97,7 @@ where n = 1
 project (
 | select (
 | | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."m") = (int(8) "60")) or (("f"."n") in (int(4) "1", int(4) "2")) ]
+| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."m") = (int(8) "60")) ]
 ) [ "f"."n", "f"."m" ]
 
 query T nosort
@@ -109,7 +109,7 @@ where n = 1
 project (
 | select (
 | | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."m") = (int(8) "60")) or (("f"."n") in (int(4) "1", int(4) "2")) ]
+| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."m") = (int(8) "60")) ]
 ) [ "f"."n", "f"."m" ]
 
 query T nosort
@@ -121,7 +121,7 @@ where m = 60
 project (
 | select (
 | | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."m") = (int(8) "60")) or (("f"."n") in (int(4) "1", int(4) "2")) ]
+| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."m") = (int(8) "60")) ]
 ) [ "f"."n", "f"."m" ]
 
 ## chained ors with lhs in [n, (n && m)]
