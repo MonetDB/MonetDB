@@ -44,7 +44,7 @@ next_delim(const char *s, const char *e, char delim, char quote)
 		else if (!inquote && *s == delim)
 			return s;
 	}
-	if (s < e)
+	if (s <= e)
 		return s;
 	return NULL;
 }
@@ -344,6 +344,12 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 			types = ntypes;
 		nr_lines++;
 	}
+	if (types) { /* NULL -> STRING */
+		for(int i = 0; i<nr_fields; i++) {
+			if (types[i].type == CSV_NULL)
+				types[i].type = CSV_STRING;
+		}
+	}
 	return types;
 }
 
@@ -435,7 +441,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				extra_tsep = true;
 			} else if (t) {
 				list_append(typelist, t);
-				list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
+				sql_exp *ne = exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0);
+				set_basecol(ne);
+				list_append(res_exps, ne);
 			} else {
 				GDKfree(types);
 				throw(SQL, SQLSTATE(42000), "csv" "type %s not found\n", st);
