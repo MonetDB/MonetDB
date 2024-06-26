@@ -1524,14 +1524,22 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
                         o.close()
                 else:
-                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
-                        if line != '\n' and not line.startswith('#'):
-                            ssout = F_ERROR
-                            break
-                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
-                        if line != '\n' and not line.startswith('#'):
-                            sserr = F_ERROR
-                            break
+                    for ext in ['out', 'err']:
+                        sigusr1 = False
+                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
+                            if 'SIGUSR1 info start' in line:
+                                sigusr1 = True
+                                continue
+                            elif 'SIGUSR1 info end' in line:
+                                sigusr1 = False
+                                continue
+                            if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
+                                if ext == 'out':
+                                    ssout = F_ERROR
+                                else:
+                                    sserr = F_ERROR
+                                break
+
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
