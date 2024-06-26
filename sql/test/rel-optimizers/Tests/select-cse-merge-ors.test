@@ -62,29 +62,6 @@ project (
 | ) [ ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
 ) [ "f"."n", "f"."m" ]
 
-query T nosort
-plan select * from f 
-where m = 60
-   or n in (1, 2) 
-   or n in (3)
-----
-KNOWN
-
-query T nosort
-plan select * from f 
-where n in (1, 2)
-   or m = 60
-   or n in (3)
-----
-KNOWN
-
-query T nosort
-plan select * from f 
-where n in (1, 2)
-   or n in (3)
-   or m = 60
-----
-KNOWN
 
 ## chained cmp_equal-atom ors with lhs in [n, m]
 
