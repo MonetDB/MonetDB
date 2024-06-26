@@ -52,7 +52,6 @@ if(HAVE_FITS)
   target_link_libraries(fits
     PRIVATE
     monetdb_config_header
-    mutils
     bat
     monetdb5
     sqlinclude
@@ -60,13 +59,13 @@ if(HAVE_FITS)
 
   install(TARGETS fits
     DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT fits)
 
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:fits>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
 endif()

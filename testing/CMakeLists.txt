@@ -54,9 +54,6 @@ endif(HAVE_GEOM)
 if (HAVE_HGE)
   set(HAVE_HGE_FALSE "#")
 endif(HAVE_HGE)
-if (HAVE_ICONV)
-  set(HAVE_ICONV_FALSE "#")
-endif(HAVE_ICONV)
 if (HAVE_LIBBZ2)
   set(HAVE_LIBBZ2_FALSE "#")
 endif(HAVE_LIBBZ2)
@@ -150,6 +147,7 @@ if(PYTHON3_LIBDIR)
     malmapi.py
     helpers.py
     sqltest.py
+    tlstester.py
     utils.py
     DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)

@@ -92,12 +92,13 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 		*m = o;
 		m->session->status = status;
 	} else {
-		unsigned int label = m->label;
+		unsigned int label = m->label, nid = m->nid;
 
 		while (m->topframes > o.topframes)
 			clear_frame(m, m->frames[--m->topframes]);
 		*m = o;
 		m->label = label;
+		m->nid = nid;
 	}
 	m->session->schema = c;
 	return rel;

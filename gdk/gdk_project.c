@@ -571,6 +571,9 @@ project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
 	bn->tnil = false;
 	bn->tnonil = r1i->nonil & r2i->nonil;
 	bn->tkey = false;
+	bn->tunique_est =
+		MIN(li->b->tunique_est?li->b->tunique_est:BATcount(li->b),
+		   r1i->b->tunique_est?r1i->b->tunique_est:BATcount(r1i->b));
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOBATFMT
 		  " -> " ALGOBATFMT "%s " LLFMT "us\n",
 		  ALGOBATPAR(li->b), ALGOBATPAR(r1i->b), ALGOBATPAR(r2i->b),
@@ -817,8 +820,12 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->ttype = r1i.type;
 		bn->twidth = r1i.width;
 		bn->tshift = r1i.shift;
+		bn->tascii = r1i.ascii;
 	}
 
+	bn->tunique_est =
+		MIN(li.b->tunique_est?li.b->tunique_est:BATcount(li.b),
+		   r1i.b->tunique_est?r1i.b->tunique_est:BATcount(r1i.b));
 	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
 		BATtseqbase(bn, oid_nil);
 
@@ -1074,8 +1081,9 @@ BATprojectchain(BAT **bats)
 		}
 		if (stringtrick) {
 			bn->tnil = false;
-			bn->tnonil = b->tnonil;
+			bn->tnonil = bi.nonil;
 			bn->tkey = false;
+			bn->tascii = bi.ascii;
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);
@@ -1136,6 +1144,15 @@ BATprojectchain(BAT **bats)
 	bn->tnonil = nonil & b->tnonil;
 	bn->tseqbase = oid_nil;
 	bn->tkey = (ba[0].cnt <= 1);
+	double est = 0;
+	for (int i = 0; i < n; i++) {
+		double nest = ba[i].b->tunique_est?ba[i].b->tunique_est:BATcount(ba[i].b);
+		if (est)
+			est = MIN(est, nest);
+		else
+			est = nest;
+	}
+	bn->tunique_est = est;
 	/* note, b may point to one of the bats in tobedeleted, so
 	 * reclaim after the last use of b */
 	while (ndelete-- > 0)

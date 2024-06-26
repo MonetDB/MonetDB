@@ -174,8 +174,11 @@ sql_trans_get_dependents(sql_trans* tr, sqlid id,
 				table_api.rids_destroy(rs);
 				return NULL;
 			}
-			if (list_find_id(schema_tables, *(sqlid*)v) == NULL)
+			if (list_find_id(schema_tables, *(sqlid*)v) == NULL) {
+				_DELETE(v);
 				continue;
+			}
+			_DELETE(v);
 		}
 		if (!(v = table_api.column_find_value(tr, dep_dep_id, rid))) {
 			list_destroy(dep_list);
@@ -340,6 +343,12 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 		list_append(l,v);
 	}
 	store->table_api.rids_destroy(users);
+
+	if (list_length(l) == 0) {
+		list_destroy(l);
+		l = NULL;
+	}
+
 	return l;
 }
 

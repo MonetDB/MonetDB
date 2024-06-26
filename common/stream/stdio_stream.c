@@ -15,6 +15,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "mutf8.h"
 
 
 /* ------------------------------------------------------------------ */
@@ -177,43 +178,22 @@ utf8towchar(const char *src)
 {
 	wchar_t *dest;
 	size_t i = 0;
-	size_t j = 0;
-	uint32_t c;
+	uint32_t state = 0, codepoint = 0;
 
 	/* count how many wchar_t's we need, while also checking for
 	 * correctness of the input */
-	while (src[j]) {
-		i++;
-		if ((src[j+0] & 0x80) == 0) {
-			j += 1;
-		} else if ((src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			j += 2;
-		} else if ((src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			j += 3;
-		} else if ((src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c < 0x10000
-			    || c > 0x10FFFF
-			    || (c & 0x1FF800) == 0x00D800)
-				return NULL;
-#if SIZEOF_WCHAR_T == 2
+	for (size_t j = 0; src[j]; j++) {
+		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
+		case UTF8_ACCEPT:
 			i++;
+#if SIZEOF_WCHAR_T == 2
+			i += (codepoint > 0xFFFF);
 #endif
-			j += 4;
-		} else {
+			break;
+		case UTF8_REJECT:
 			return NULL;
+		default:
+			break;
 		}
 	}
 	dest = malloc((i + 1) * sizeof(wchar_t));
@@ -221,74 +201,31 @@ utf8towchar(const char *src)
 		return NULL;
 	/* go through the source string again, this time we can skip
 	 * the correctness tests */
-	i = j = 0;
-	while (src[j]) {
-		if ((src[j+0] & 0x80) == 0) {
-			dest[i++] = src[j+0];
-			j += 1;
-		} else if ((src[j+0] & 0xE0) == 0xC0) {
-			dest[i++] = (src[j+0] & 0x1F) << 6
-				| (src[j+1] & 0x3F);
-			j += 2;
-		} else if ((src[j+0] & 0xF0) == 0xE0) {
-			dest[i++] = (src[j+0] & 0x0F) << 12
-				| (src[j+1] & 0x3F) << 6
-				| (src[j+2] & 0x3F);
-			j += 3;
-		} else if ((src[j+0] & 0xF8) == 0xF0) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
+	i = 0;
+	for (size_t j = 0; src[j]; j++) {
+		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
+		case UTF8_ACCEPT:
 #if SIZEOF_WCHAR_T == 2
-			dest[i++] = 0xD800 | ((c - 0x10000) >> 10);
-			dest[i++] = 0xDE00 | (c & 0x3FF);
+			if (codepoint <= 0xFFFF) {
+				dest[i++] = (wchar_t) codepoint;
+			} else {
+				dest[i++] = (wchar_t) (0xD7C0 + (codepoint >> 10));
+				dest[i++] = (wchar_t) (0xDC00 + (codepoint & 0x3FF));
+			}
 #else
-			dest[i++] = c;
+			dest[i++] = (wchar_t) codepoint;
 #endif
-			j += 4;
+			break;
+		case UTF8_REJECT:
+			/* cannot happen because of first loop */
+			free(dest);
+			return NULL;
+		default:
+			break;
 		}
 	}
 	dest[i] = 0;
 	return dest;
-}
-
-#else
-
-static char *
-cvfilename(const char *filename)
-{
-#if defined(HAVE_NL_LANGINFO) && defined(HAVE_ICONV)
-	char *code_set = nl_langinfo(CODESET);
-
-	if (code_set != NULL && strcmp(code_set, "UTF-8") != 0) {
-		iconv_t cd = iconv_open("UTF-8", code_set);
-
-		if (cd != (iconv_t) -1) {
-			size_t len = strlen(filename);
-			size_t size = 4 * len;
-			char *from = (char *) filename;
-			char *r = malloc(size + 1);
-			char *p = r;
-
-			if (r) {
-				if (iconv(cd, &from, &len, &p, &size) != (size_t) -1) {
-					iconv_close(cd);
-					*p = 0;
-					return r;
-				}
-				free(r);
-			}
-			iconv_close(cd);
-		}
-	}
-#endif
-	/* couldn't use iconv for whatever reason; alternative is to
-	 * use utf8towchar above to convert to a wide character string
-	 * (wcs) and convert that to the locale-specific encoding
-	 * using wcstombs or wcsrtombs (but preferably only if the
-	 * locale's encoding is not UTF-8) */
-	return strdup(filename);
 }
 #endif
 
@@ -317,14 +254,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 			free(wflags);
 	}
 #else
-	{
-		char *fname = cvfilename(filename);
-		if (fname) {
-			fp = fopen(fname, flags);
-			free(fname);
-		} else
-			fp = NULL;
-	}
+	fp = fopen(filename, flags);
 #endif
 	if (fp == NULL) {
 		mnstr_set_open_error(filename, errno, "open failed");
@@ -417,7 +347,7 @@ file_wstream(FILE *restrict fp, bool binary, const char *restrict name)
 stream *
 stdin_rastream(void)
 {
-	const char *name = "<stdin>";
+	const char name[] = "<stdin>";
 	// Make an attempt to skip a BOM marker.
 	// It would be nice to integrate this with with the BOM removal code
 	// in text_stream.c but that is complicated. In text_stream,
@@ -448,7 +378,7 @@ stdin_rastream(void)
 stream *
 stdout_wastream(void)
 {
-	const char *name = "<stdout>";
+	const char name[] = "<stdout>";
 #ifdef _MSC_VER
 	if (isatty(fileno(stdout)))
 		return win_console_out_stream(name);
@@ -459,7 +389,7 @@ stdout_wastream(void)
 stream *
 stderr_wastream(void)
 {
-	const char *name = "<stderr>";
+	const char name[] = "<stderr>";
 #ifdef _MSC_VER
 	if (isatty(fileno(stderr)))
 		return win_console_out_stream(name);
@@ -519,11 +449,7 @@ file_remove(const char *filename)
 		free(wfname);
 	}
 #else
-	char *fname = cvfilename(filename);
-	if (fname) {
-		rc = remove(fname);
-		free(fname);
-	}
+	rc = remove(filename);
 #endif
 	return rc;
 }

@@ -49,16 +49,6 @@
 
 #define ODBCDEBUG	1
 
-#ifdef WIN32
-#ifndef LIBMONETODBC
-#define odbc_export extern __declspec(dllimport)
-#else
-#define odbc_export extern __declspec(dllexport)
-#endif
-#else
-#define odbc_export extern
-#endif
-
 /* standard ODBC driver include files */
 #include <sqltypes.h>		/* ODBC C typedefs */
 /* Note: sqlext.h includes sql.h so it is not needed here to be included */
@@ -101,50 +91,47 @@ extern const wchar_t *ODBCdebug;
 extern const char *ODBCdebug;
 #endif
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
-#ifdef NATIVE_WIN32
-#define ODBCLOG(...)							\
-	do {								\
-		if (ODBCdebug == NULL) {				\
-			if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL) \
-				ODBCdebug = _wcsdup(L"");		\
-			else						\
-				ODBCdebug = _wcsdup(ODBCdebug);		\
-		}							\
-		if (ODBCdebug != NULL && *ODBCdebug != 0) {		\
-			FILE *_f;					\
-			_f = _wfopen(ODBCdebug, L"a");			\
-			if (_f == NULL)					\
-				_f = stderr;				\
-			fprintf(_f, __VA_ARGS__);			\
-			if (_f != stderr)				\
-				fclose(_f);				\
-		}							\
-	} while (0)
-#else
-#define ODBCLOG(...)							\
-	do {								\
-		if (ODBCdebug == NULL) {				\
-			if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)	\
-				ODBCdebug = strdup("");			\
-			else						\
-				ODBCdebug = strdup(ODBCdebug);		\
-		}							\
-		if (ODBCdebug != NULL && *ODBCdebug != 0) {		\
-			FILE *_f;					\
-			_f = fopen(ODBCdebug, "a");			\
-			if (_f == NULL)					\
-				_f = stderr;				\
-			fprintf(_f, __VA_ARGS__);			\
-			if (_f != stderr)				\
-				fclose(_f);				\
-		}							\
-	} while (0)
-#endif
-#else
-extern void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
+extern void setODBCdebug(const char *filename, bool overrideEnvVar);
+
+static inline void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
+
+static inline void
+ODBCLOG(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	if (ODBCdebug == NULL) {
+#ifdef NATIVE_WIN32
+		if ((ODBCdebug = _wgetenv(L"ODBCDEBUG")) == NULL)
+			ODBCdebug = _wcsdup(L"");
+		else
+			ODBCdebug = _wcsdup(ODBCdebug);
+#else
+		if ((ODBCdebug = getenv("ODBCDEBUG")) == NULL)
+			ODBCdebug = strdup("");
+		else
+			ODBCdebug = strdup(ODBCdebug);
 #endif
+	}
+	if (ODBCdebug != NULL && *ODBCdebug != 0) {
+		FILE *f;
+
+#ifdef NATIVE_WIN32
+		f = _wfopen(ODBCdebug, L"a");
+#else
+		f = fopen(ODBCdebug, "a");
+#endif
+		if (f) {
+			vfprintf(f, fmt, ap);
+			fclose(f);
+		} else
+			vfprintf(stderr, fmt, ap);
+	}
+	va_end(ap);
+}
+
 
 char *translateCType(SQLSMALLINT ValueType);
 char *translateSQLType(SQLSMALLINT ParameterType);

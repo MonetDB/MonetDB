@@ -32,7 +32,7 @@ TRACERflush_buffer(void *ret)
 
 
 static str
-TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
+TRACERset_component_level(void *ret, const char *const *comp_id, const char *const *lvl_id)
 {
 	(void) ret;
 	if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
@@ -43,7 +43,7 @@ TRACERset_component_level(void *ret, str *comp_id, str *lvl_id)
 
 
 static str
-TRACERreset_component_level(void *ret, str *comp_id)
+TRACERreset_component_level(void *ret, const char *const *comp_id)
 {
 	(void) ret;
 	if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
@@ -54,7 +54,7 @@ TRACERreset_component_level(void *ret, str *comp_id)
 
 
 static str
-TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
+TRACERset_layer_level(void *ret, const char *const *layer_id, const char *const *lvl_id)
 {
 	(void) ret;
 	if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
@@ -65,7 +65,7 @@ TRACERset_layer_level(void *ret, str *layer_id, str *lvl_id)
 
 
 static str
-TRACERreset_layer_level(void *ret, str *layer_id)
+TRACERreset_layer_level(void *ret, const char *const *layer_id)
 {
 	(void) ret;
 	if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
@@ -76,7 +76,7 @@ TRACERreset_layer_level(void *ret, str *layer_id)
 
 
 static str
-TRACERset_flush_level(void *ret, str *lvl_id)
+TRACERset_flush_level(void *ret, const char *const *lvl_id)
 {
 	(void) ret;
 	if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
@@ -98,7 +98,7 @@ TRACERreset_flush_level(void *ret)
 
 
 static str
-TRACERset_adapter(void *ret, str *adapter_id)
+TRACERset_adapter(void *ret, const char *const *adapter_id)
 {
 	(void) ret;
 	if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)

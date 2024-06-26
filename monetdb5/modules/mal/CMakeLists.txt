@@ -59,7 +59,7 @@ target_compile_definitions(malmodules
 
 target_link_libraries(malmodules
   PRIVATE
-  mutils
+  mutf8
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   mapi
   monetdb_config_header)

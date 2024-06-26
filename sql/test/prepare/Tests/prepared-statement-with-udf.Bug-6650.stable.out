@@ -79,7 +79,7 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 [ "varchar",	0,	0,	"",	"%1",	"cc"	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec  9('a');
-% sys.%1,	sys.%1,	sys.%1 # table_name
+% .%1,	sys.%1,	sys.%1 # table_name
 % aa,	bb,	cc # name
 % varchar,	varchar,	varchar # type
 % 1,	1,	1 # length
@@ -96,7 +96,7 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec 11('a', 'b');
-% sys.tt,	sys.tt,	sys.tt # table_name
+% .tt,	sys.tt,	sys.tt # table_name
 % aa,	bb,	cc # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
@@ -113,7 +113,7 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec 13('a', 'a');
-% sys.%1,	sys.%1,	sys.%1,	sys.something # table_name
+% .%1,	sys.%1,	sys.%1,	sys.something # table_name
 % aa,	bb,	cc,	a # name
 % varchar,	varchar,	varchar,	varchar # type
 % 1,	1,	1,	1 # length
@@ -128,7 +128,7 @@ stdout of test 'prepared-statement-with-udf.Bug-6650` in directory 'sql/test/Bug
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%5",	"%5"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #rollback;
 

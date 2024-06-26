@@ -1,0 +1,6 @@
+
+statement ok
+CREATE TABLE t0 (c0 INT)
+
+statement error
+SELECT * FROM t0 WHERE (SIN(1) IS DISTINCT FROM NOT 1)

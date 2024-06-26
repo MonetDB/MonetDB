@@ -437,80 +437,25 @@ opener_rastream(char *filename)
 }
 
 #ifdef HAVE_CURL
-#include <curl/curl.h>
-
-#ifndef CURL_WRITEFUNC_ERROR
-#define CURL_WRITEFUNC_ERROR 0
-#endif
-
-static size_t
-write_callback(char *buffer, size_t size, size_t nitems, void *userp)
-{
-	stream *s = userp;
-
-	/* size is expected to always be 1 */
-
-	ssize_t sz = mnstr_write(s, buffer, size, nitems);
-	if (sz < 0)
-		return CURL_WRITEFUNC_ERROR; /* indicate failure to library */
-	return (size_t) sz * size;
-}
+#include "curl-stream.h"
 
 static stream *
-open_urlstream(const char *url)
+opener_urlstream(char *url)
 {
-	CURL *handle;
-	stream *s;
-	CURLcode ret;
 	char errbuf[CURL_ERROR_SIZE];
-
-	s = buffer_wastream(NULL, url);
-	if (s == NULL) {
-		return NULL;
-	}
-
-	if ((handle = curl_easy_init()) == NULL) {
-		mnstr_destroy(s);
-		return NULL;
-	}
-
-	errbuf[0] = 0;
-
-	if ((ret = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_URL, url)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEDATA, s)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, 0)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK ||
-	    (ret = curl_easy_perform(handle)) != CURLE_OK) {
-		curl_easy_cleanup(handle);
-		mnstr_destroy(s);
-		if (errbuf[0])
-			fprintf(stderr, "%s\n", errbuf);
-		else
-			fprintf(stderr, "%s\n", curl_easy_strerror(ret));
-		return NULL;
-	}
-	curl_easy_cleanup(handle);
-	(void) mnstr_get_buffer(s);	/* switch to read-only */
+	stream *s = open_urlstream(url,  errbuf);
+	if (s == NULL)
+		fprintf(stderr, "%s\n", errbuf);
 	return s;
 }
 #else
 static stream *
-open_urlstream(const char *url)
+opener_urlstream(char *url)
 {
 	(void) url;
 	return NULL;
 }
 #endif
-
-static stream *
-opener_urlstream(char *url)
-{
-	stream *s = open_urlstream(url);
-	return s;
-}
 
 static stream *
 opener_wstream(char *filename)
@@ -527,6 +472,40 @@ opener_wastream(char *filename)
 	return s;
 }
 
+
+#ifdef HAVE_ICONV
+#include "iconv-stream.h"
+#else
+static stream *
+iconv_rstream(stream *restrict ss, const char *restrict charset, const char *restrict name)
+{
+	if (ss == NULL || charset == NULL || name == NULL)
+		return NULL;
+	if (ss->isutf8 ||
+	    strcmp(charset, "utf-8") == 0 ||
+	    strcmp(charset, "UTF-8") == 0 ||
+	    strcmp(charset, "UTF8") == 0)
+		return ss;
+
+	fprintf(stderr, "ICONV support has been left out of this MonetDB");
+	return NULL;
+}
+
+static stream *
+iconv_wstream(stream *restrict ss, const char *restrict charset, const char *restrict name)
+{
+	if (ss == NULL || charset == NULL || name == NULL)
+		return NULL;
+	if (ss->isutf8 ||
+	    strcmp(charset, "utf-8") == 0 ||
+	    strcmp(charset, "UTF-8") == 0 ||
+	    strcmp(charset, "UTF8") == 0)
+		return ss;
+
+	fprintf(stderr, "ICONV support has been left out of this MonetDB");
+	return NULL;
+}
+#endif
 
 static stream *
 wrapper_read_iconv(stream *s, char *enc)

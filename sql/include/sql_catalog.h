@@ -309,6 +309,8 @@ typedef struct sql_schema {
 } sql_schema;
 
 typedef struct sql_catalog {
+	ATOMIC_TYPE schema_version;
+
 	struct objectset *schemas;
 	struct objectset *objects;
 } sql_catalog;
@@ -534,7 +536,8 @@ typedef enum key_type {
 	pkey,
 	ukey, /* default behavior is that NULLS are distinct, e.g. there can be multiple null values in a column with regular UNIQUE constraint */
 	fkey,
-	unndkey /* NULLS are not distinct, i.e. NULLS act as regular values for uniqueness checks */
+	unndkey, /* NULLS are not distinct, i.e. NULLS act as regular values for uniqueness checks */
+	ckey     /* CHECK constraint behaves as a key type*/
 } key_type;
 
 typedef struct sql_kc {
@@ -571,6 +574,7 @@ typedef struct sql_key {	/* pkey, ukey, fkey */
 	sql_base base;
 	key_type type;		/* pkey, ukey, fkey */
 	sql_idx *idx;		/* idx to accelerate key check */
+	char *check; /* check condition*/
 
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
@@ -757,8 +761,10 @@ typedef struct sql_session {
 	allocator *sa;
 	sql_trans *tr; 		/* active transaction */
 
+	char *def_schema_name; /* users default schema name */
 	char *schema_name; /* transaction's schema name */
 	sql_schema *schema;
+	ATOMIC_TYPE schema_version;
 
 	char ac_on_commit;	/* if 1, auto_commit should be enabled on
 	                           commit, rollback, etc. */

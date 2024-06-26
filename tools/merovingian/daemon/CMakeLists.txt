@@ -35,13 +35,15 @@ target_link_libraries(monetdbd
   monetdb_config_header
   meroutil
   meroutil_headers
-  mutils
   moptions
-  mcrypt
   stream
   mapi
   msabaoth
   Threads::Threads)
+
+set_target_properties(monetdbd
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
 
 install(TARGETS
   monetdbd

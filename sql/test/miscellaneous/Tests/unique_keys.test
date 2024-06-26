@@ -78,7 +78,7 @@ project (
 | | | table("sys"."othertable") [ "othertable"."a" UNIQUE ]
 | | ) [ ("othertable"."a" UNIQUE) = (int(2) "1") ]
 | ) [ ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) = ("othertable"."a" NOT NULL UNIQUE) ]
-) [ "othertable"."a" NOT NULL UNIQUE ]
+) [ int(2) "1" as "othertable"."a" ]
 
 # here 'othertable.a between 2 and 5' can be pushed up too
 query T nosort

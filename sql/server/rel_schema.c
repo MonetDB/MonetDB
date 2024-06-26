@@ -20,7 +20,9 @@
 #include "rel_schema.h"
 #include "rel_remote.h"
 #include "rel_psm.h"
+#include "rel_dump.h"
 #include "rel_propagate.h"
+#include "rel_unnest.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
@@ -122,7 +124,7 @@ view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 		sql_exp *e = m->data;
 		sql_exp *n = e;
 
-		exp_setname(sql->sa, n, name, cname);
+		exp_setname(sql, n, name, cname);
 		set_basecol(n);
 	}
 	/* skip any intern columns */
@@ -252,7 +254,7 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 }
 
 static char *
-table_constraint_name(mvc *sql, symbol *s, sql_table *t)
+table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix;		/* stores the type of this constraint */
@@ -275,8 +277,17 @@ table_constraint_name(mvc *sql, symbol *s, sql_table *t)
 			break;
 		case SQL_CHECK:
 			suffix = "_check";
-			nms = s->data.lval->h;	/* list of check constraint conditions */
-			break;
+			char name[512], name2[512], *nme, *nme2;
+			bool found;
+			do {
+				nme = number2name(name, sizeof(name), ++sql->label);
+				buflen = snprintf(name2, sizeof(name2), "%s_%s%s", t->base.name, nme, suffix);
+				nme2 = name2;
+				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
+			} while (found);
+			buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+			strcpy(buf, nme2);
+			return buf;
 		default:
 			suffix = "_?";
 			nms = NULL;
@@ -360,9 +371,39 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 	return lt->type->eclass == rt->type->eclass || (EC_VARCHAR(lt->type->eclass) && EC_VARCHAR(rt->type->eclass));
 }
 
-static int
-column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
+static key_type
+token2key_type(int token)
 {
+		switch (token) {
+		case SQL_UNIQUE: 					return ukey;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
+		case SQL_PRIMARY_KEY:				return pkey;
+		case SQL_CHECK:						return ckey;
+		}
+		assert(0);
+		return -1;
+}
+
+static sql_rel*
+create_check_plan(sql_query *query, symbol *s, sql_table *t)
+{
+	mvc *sql = query->sql;
+	exp_kind ek = {type_value, card_value, FALSE};
+	sql_rel *rel = rel_basetable(sql, t, t->base.name);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
+	if (!e || !rel || !is_basetable(rel->op))
+		return NULL;
+	rel->exps = rel_base_projection(sql, rel, 0);
+	list *pexps = sa_list(sql->sa);
+	pexps = append(pexps, e);
+	rel = rel_project(sql->sa, rel, pexps);
+	return rel;
+}
+
+static int
+column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
+{
+	mvc *sql = query->sql;
 	int res = SQL_ERR;
 
 	if (isDeclared && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
@@ -372,8 +413,9 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
-	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_UNIQUE) ? ukey : (s->token == SQL_UNIQUE_NULLS_NOT_DISTINCT) ? unndkey : pkey;
+	case SQL_PRIMARY_KEY:
+	case SQL_CHECK: {
+		key_type kt = token2key_type(s->token);
 		sql_key *k;
 		const char *ns = name;
 
@@ -399,7 +441,15 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
-		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+		char* check = NULL;
+		if (kt == ckey) {
+			sql_rel* check_rel = NULL;
+			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
+				return -3;
+			}
+			check = exp2str(sql, check_rel->exps->h->data);
+		}
+		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return res;
@@ -570,10 +620,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		res = SQL_OK;
 	} 	break;
-	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
-		return SQL_ERR;
-	} 	break;
 	default:{
 		res = SQL_ERR;
 	}
@@ -604,7 +650,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
 						return SQL_ERR;
 
-					res = column_constraint_type(sql, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
 				} 	break;
 				case SQL_DEFAULT: {
 					symbol *sym = s->data.sym;
@@ -830,15 +876,17 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 }
 
 static int
-table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t)
 {
+	mvc *sql = query->sql;
 	int res = SQL_OK;
 
 	switch (s->token) {
 	case SQL_UNIQUE:
 	case SQL_UNIQUE_NULLS_NOT_DISTINCT:
-	case SQL_PRIMARY_KEY: {
-		key_type kt = (s->token == SQL_PRIMARY_KEY ? pkey : s->token == SQL_UNIQUE ? ukey : unndkey);
+	case SQL_PRIMARY_KEY:
+	case SQL_CHECK: {
+		key_type kt = token2key_type(s->token);
 		dnode *nms = s->data.lval->h;
 		sql_key *k;
 		const char *ns = name;
@@ -865,8 +913,17 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: an index named '%s' already exists, and it would conflict with the key", kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
+		char* check = NULL;
+		sql_rel* check_rel = NULL;
 
-		switch (mvc_create_ukey(&k, sql, t, name, kt)) {
+		if (kt == ckey) {
+			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
+				return -3;
+			}
+			check = exp2str(sql, check_rel->exps->h->data);
+		}
+
+		switch (mvc_create_ukey(&k, sql, t, name, kt, check)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return SQL_ERR;
@@ -877,8 +934,25 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 			default:
 				break;
 		}
-		for (; nms; nms = nms->next) {
-			char *nm = nms->data.sval;
+		node* n = NULL;
+		if (check) {
+			sql_rel* btrel = check_rel->l;
+			n = btrel->exps->h;
+		}
+		while (true) {
+			const char *nm;
+			if (check) {
+				if (!n)
+					break;
+				sql_exp* e = n->data;
+				nm = e->alias.name;
+				n = n->next;
+			} else {
+				if (!nms)
+					break;
+				nm = nms->data.sval;
+				nms = nms->next;
+			}
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
@@ -914,10 +988,6 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);
 		break;
-	case SQL_CHECK: {
-		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: check constraints not supported");
-		return SQL_ERR;
-	} 	break;
 	default:
 		res = SQL_ERR;
 	}
@@ -929,8 +999,9 @@ table_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql
 }
 
 static int
-table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint(sql_query *query, symbol *s, sql_schema *ss, sql_table *t)
 {
+	mvc *sql = query->sql;
 	int res = SQL_OK;
 
 	if (s->token == SQL_CONSTRAINT) {
@@ -939,10 +1010,11 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		symbol *sym = l->h->next->data.sym;
 
 		if (!opt_name)
-			opt_name = table_constraint_name(sql, sym, t);
+			opt_name = table_constraint_name(sql, sym, ss, t);
+		else if (s->token)
 		if (opt_name == NULL)
 			return SQL_ERR;
-		res = table_constraint_type(sql, opt_name, sym, ss, t);
+		res = table_constraint_type(query, opt_name, sym, ss, t);
 	}
 
 	if (res != SQL_OK) {
@@ -1066,7 +1138,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		res = create_column(query, s, ss, t, alter, isDeclared);
 		break;
 	case SQL_CONSTRAINT:
-		res = table_constraint(sql, s, ss, t);
+		res = table_constraint(query, s, ss, t);
 		break;
 	case SQL_COLUMN_OPTIONS:
 	{
@@ -1487,7 +1559,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 }
 
 static sql_rel *
-rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
+rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
 	mvc *sql = query->sql;
 	const char *name = qname_schema_object(qname);
@@ -1499,10 +1571,19 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	int create = (!instantiate && !deps);
 	sqlid pfoundid = 0, foundid = 0;
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
+	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
 	(void) check;		/* Stefan: unused!? */
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (temp == SQL_GLOBAL_TEMP)
+		temp = SQL_PERSIST; /* just normal view */
+
+	if (temp == SQL_LOCAL_TEMP || temp == SQL_GLOBAL_TEMP) {
+		if (sname && strcmp(sname, "tmp") != 0)
+			return sql_error(sql, 02, SQLSTATE(3F000) "%s VIEW: %s temporary views should be stored in the 'tmp' schema",
+							 action, (temp == SQL_LOCAL_TEMP) ? "local" : "global");
+		s = tmp_schema(sql);
+	} else if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
@@ -1569,7 +1650,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 				rel_destroy(sq);
 				return NULL;
 			}
-			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, SQL_PERSIST, replace);
+			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, temp, replace);
 		}
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);
@@ -1953,10 +2034,18 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	/* New columns need update with default values. Add one more element for new column */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (ol_length(nt->columns) + 1));
 	rel_base_use_tid(sql, bt);
+
+	e = basetable_get_tid_or_add_it(sql, bt);
+	e = exp_ref(sql, e);
+
+	/*
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e->alias.label = rel_base_nid(bt, NULL);
+	*/
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 
 	list *cols = new_exp_list(sql->sa);
+	sql_exp *ne;
 	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -1973,10 +2062,12 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			rel_destroy(r);
 			return NULL;
 		}
-		list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
+		list_append(cols, ne=exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
+		ne->alias.label = rel_base_nid(bt, c);
+		ne->nid = ne->alias.label;
 
 		assert(!updates[c->colnr]);
-		exp_setname(sql->sa, e, c->t->base.name, c->base.name);
+		exp_setname(sql, e, c->t->base.name, c->base.name);
 		updates[c->colnr] = e;
 	}
 	res = rel_update(sql, res, r, updates, list_length(cols)?cols:NULL);
@@ -2301,8 +2392,12 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* new columns need update with default values */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	sql_rel *bt = rel_ddl_basetable_get(res);
+	e->alias.label = rel_base_nid(bt, NULL);
+	e->nid = e->alias.label;
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL);
 	return res;
@@ -2869,14 +2964,16 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		assert(l->h->next->next->next->type == type_int);
+		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->next->type == type_int);
-		ret = rel_create_view(query, l->h->data.lval,
+		assert(l->h->next->next->next->next->next->type == type_int);
+		ret = rel_create_view(query, l->h->data.i_val,
 							  l->h->next->data.lval,
-							  l->h->next->next->data.sym,
-							  l->h->next->next->next->data.i_val,
+							  l->h->next->next->data.lval,
+							  l->h->next->next->next->data.sym,
 							  l->h->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->data.i_val); /* or replace */
+							  l->h->next->next->next->next->next->data.i_val,
+							  l->h->next->next->next->next->next->next->data.i_val); /* or replace */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{

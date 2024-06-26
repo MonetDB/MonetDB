@@ -10,9 +10,9 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 12,	2,	1,	0,	3,	2 # length
-[ "boolean",	1,	0,	"",	"%10",	"c0"	]
-[ "sec_interval",	13,	0,	"",	"%10",	"%1"	]
+% 12,	2,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"t0",	"c0"	]
+[ "sec_interval",	13,	0,	"",	"%1",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
@@ -27,9 +27,9 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	3,	3 # length
-[ "decimal",	2,	1,	"",	"%22",	"%13"	]
-[ "int",	31,	0,	"",	"%22",	"c2"	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "decimal",	2,	1,	"",	"%6",	"%6"	]
+[ "int",	31,	0,	"",	"t1",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
@@ -74,8 +74,8 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	3,	2 # length
-[ "bigint",	63,	0,	"",	"%12",	"%4"	]
+% 7,	2,	1,	0,	2,	2 # length
+[ "bigint",	63,	0,	"",	"%4",	"%4"	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
@@ -93,7 +93,7 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	3,	3 # length
-[ "boolean",	1,	0,	"",	"%11",	"%11"	]
+[ "boolean",	1,	0,	"",	"%12",	"%12"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
@@ -128,15 +128,15 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	3,	3 # length
-[ "boolean",	1,	0,	"",	"%10",	"%10"	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%7",	"%7"	]
 [ "decimal",	9,	6,	NULL,	NULL,	NULL	]
 #PREPARE SELECT "quarter"(date '2021-01-02') IN ("second"(TIME '01:00:00'), (select ? where true));
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	3,	3 # length
-[ "boolean",	1,	0,	"",	"%10",	"%10"	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%7",	"%7"	]
 [ "decimal",	9,	6,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
@@ -153,23 +153,23 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	3,	3 # length
-[ "json",	0,	0,	"",	"%15",	"%15"	]
+[ "json",	0,	0,	"",	"%10",	"%10"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	3,	3 # length
-[ "json",	0,	0,	"",	"%15",	"%15"	]
+[ "json",	0,	0,	"",	"%10",	"%10"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	3,	3 # length
-[ "varchar",	1,	0,	"",	"%22",	"%14"	]
+% 7,	1,	1,	0,	2,	2 # length
+[ "varchar",	1,	0,	"",	"%7",	"%7"	]
 [ "varchar",	1,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
-% .%22 # table_name
-% %14 # name
+% .%7 # table_name
+% %7 # name
 % varchar # type
 % 1 # length
 [ "b"	]

@@ -74,6 +74,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		*h = (Heap) {
 			.farmid = BBPselectfarm(role, tt, offheap),
 			.dirty = true,
+			.refs = ATOMIC_VAR_INIT(1),
 		};
 
 		if (ATOMneedheap(tt)) {
@@ -84,6 +85,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			*vh = (Heap) {
 				.farmid = BBPselectfarm(role, tt, varheap),
 				.dirty = true,
+				.refs = ATOMIC_VAR_INIT(1),
 			};
 		}
 	}
@@ -109,6 +111,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.tnil = false,
 		.tsorted = ATOMlinear(tt),
 		.trevsorted = ATOMlinear(tt),
+		.tascii = tt == TYPE_str,
 		.tseqbase = oid_nil,
 		.tminpos = BUN_NONE,
 		.tmaxpos = BUN_NONE,
@@ -124,13 +127,11 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 
 	if (bn->theap) {
 		bn->theap->parentid = bn->batCacheid;
-		ATOMIC_INIT(&bn->theap->refs, 1);
 		const char *nme = BBP_physical(bn->batCacheid);
 		settailname(bn->theap, nme, tt, width);
 
 		if (bn->tvheap) {
 			bn->tvheap->parentid = bn->batCacheid;
-			ATOMIC_INIT(&bn->tvheap->refs, 1);
 			strconcat_len(bn->tvheap->filename,
 				      sizeof(bn->tvheap->filename),
 				      nme, ".theap", NULL);
@@ -603,6 +604,7 @@ BATclear(BAT *b, bool force)
 				.parentid = b->tvheap->parentid,
 				.dirty = true,
 				.hasfile = b->tvheap->hasfile,
+				.refs = ATOMIC_VAR_INIT(1),
 			};
 			strcpy_len(th->filename, b->tvheap->filename, sizeof(th->filename));
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED) {
@@ -610,7 +612,6 @@ BATclear(BAT *b, bool force)
 				return GDK_FAIL;
 			}
 			tvp = b->tvheap->parentid;
-			ATOMIC_INIT(&th->refs, 1);
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
 		}
@@ -708,7 +709,6 @@ void
 BATdestroy(BAT *b)
 {
 	if (b->tvheap) {
-		ATOMIC_DESTROY(&b->tvheap->refs);
 		GDKfree(b->tvheap);
 	}
 	PROPdestroy_nolock(b);
@@ -716,7 +716,6 @@ BATdestroy(BAT *b)
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
 	if (b->theap) {
-		ATOMIC_DESTROY(&b->theap->refs);
 		GDKfree(b->theap);
 	}
 	if (b->oldtail) {
@@ -834,7 +833,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	    (bi.h == NULL ||
 	     bi.h->parentid == b->batCacheid ||
 	     BBP_desc(bi.h->parentid)->batRestricted == BAT_READ)) {
-		bn = VIEWcreate(b->hseqbase, b);
+		bn = VIEWcreate(b->hseqbase, b, 0, BUN_MAX);
 		if (bn == NULL) {
 			goto bunins_failed;
 		}
@@ -852,7 +851,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		return bn;
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
-		 * setting slowcopy to false) */
+		 * setting slowcopy to true) */
 		if (ATOMsize(tt) != ATOMsize(bi.type)) {
 			/* oops, void materialization */
 			slowcopy = true;
@@ -900,6 +899,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 				memcpy(bn->tvheap->base, bi.vh->base, bi.vhfree);
 				bn->tvheap->free = bi.vhfree;
 				bn->tvheap->dirty = true;
+				bn->tascii = bi.ascii;
 				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
 					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
 			}
@@ -2552,6 +2552,7 @@ BATmode(BAT *b, bool transient)
 
 	BATiter bi = bat_iterator(b);
 	bool mustrelease = false;
+	bool mustretain = false;
 	bat bid = b->batCacheid;
 
 	if (transient != bi.transient) {
@@ -2566,16 +2567,20 @@ BATmode(BAT *b, bool transient)
 			}
 		}
 
-		/* persistent BATs get a logical reference */
+		/* we need to delay the calls to BBPretain and
+		 * BBPrelease until after we have released our reference
+		 * to the heaps (i.e. until after bat_iterator_end),
+		 * because in either case, BBPfree can be called (either
+		 * directly here or in BBPtrim) which waits for the heap
+		 * reference to come down.  BBPretain calls incref which
+		 * waits until the trim that is waiting for us is done,
+		 * so that causes deadlock, and BBPrelease can call
+		 * BBPfree which causes deadlock with a single thread */
 		if (!transient) {
-			BBPretain(bid);
+			/* persistent BATs get a logical reference */
+			mustretain = true;
 		} else if (!bi.transient) {
-			/* we need to delay the release because if there
-			 * is no fix and the bat is loaded, BBPrelease
-			 * can call BBPfree which calls BATfree which
-			 * may hang while waiting for the heap reference
-			 * that we have because of the BAT iterator to
-			 * come down, in other words, deadlock */
+			/* transient BATs loose their logical reference */
 			mustrelease = true;
 		}
 		MT_lock_set(&GDKswapLock(bid));
@@ -2607,8 +2612,10 @@ BATmode(BAT *b, bool transient)
 		MT_lock_unset(&GDKswapLock(bid));
 	}
 	bat_iterator_end(&bi);
-	/* release after bat_iterator_end because of refs to heaps */
-	if (mustrelease)
+	/* retain/release after bat_iterator_end because of refs to heaps */
+	if (mustretain)
+		BBPretain(bid);
+	else if (mustrelease)
 		BBPrelease(bid);
 	return GDK_SUCCEED;
 }
@@ -2622,6 +2629,17 @@ BATmode(BAT *b, bool transient)
 #undef assert
 #define assert(test)	((void) ((test) || (TRC_CRITICAL_ENDIF(CHECK_, "Assertion `%s' failed\n", #test), 0)))
 #endif
+
+static void
+assert_ascii(const char *s)
+{
+	if (!strNil(s)) {
+		while (*s) {
+			assert((*s & 0x80) == 0);
+			s++;
+		}
+	}
+}
 
 /* Assert that properties are set correctly.
  *
@@ -2651,6 +2669,9 @@ BATmode(BAT *b, bool transient)
  *		and one before are not ordered correctly).
  * nokey	Pair of BUN positions that proof not all values are
  *		distinct (i.e. values at given locations are equal).
+ * ascii	Only valid for TYPE_str columns: all strings in the column
+ *		are ASCII, i.e. the UTF-8 encoding for all characters is a
+ *		single byte.
  *
  * Note that the functions BATtseqbase and BATkey also set more
  * properties than you might suspect.  When setting properties on a
@@ -2761,6 +2782,8 @@ BATassertProps(BAT *b)
 	assert(is_oid_nil(b->tseqbase) || b->ttype == TYPE_oid || b->ttype == TYPE_void);
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
+	/* only string columns can be ASCII */
+	assert(!b->tascii || ATOMstorage(b->ttype) == TYPE_str);
 	if (b->ttype == TYPE_void) {
 		assert(b->tshift == 0);
 		assert(b->twidth == 0);
@@ -2912,6 +2935,8 @@ BATassertProps(BAT *b)
 				assert(!b->tnonil || !isnil);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
+				if (b->tascii)
+					assert_ascii(valp);
 				if (minbound && !isnil) {
 					cmp = cmpf(minbound, valp);
 					assert(cmp <= 0);
@@ -2992,6 +3017,8 @@ BATassertProps(BAT *b)
 				assert(!isnil || !notnull);
 				assert(b->ttype != TYPE_flt || !isinf(*(flt*)valp));
 				assert(b->ttype != TYPE_dbl || !isinf(*(dbl*)valp));
+				if (b->tascii)
+					assert_ascii(valp);
 				if (minbound && !isnil) {
 					cmp = cmpf(minbound, valp);
 					assert(cmp <= 0);

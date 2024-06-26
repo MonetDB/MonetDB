@@ -156,7 +156,7 @@ exit_streams(bstream *fin, stream *fout)
 		bstream_destroy(fin);
 }
 
-const char *mal_enableflag = "mal_for_all";
+static const char mal_enableflag[] = "mal_for_all";
 
 static bool
 is_exiting(void *data)
@@ -186,7 +186,7 @@ cleanUpScheduleClient(Client c, str *command, str *err)
 
 
 void
-MSscheduleClient(str command, str challenge, bstream *fin, stream *fout,
+MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fout,
 				 protocol_version protocol, size_t blocksize)
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL,
@@ -341,6 +341,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout,
 
 	// at this point username should have being verified
 	c->username = GDKstrdup(user);
+	if (peer)
+		c->peer = GDKstrdup(peer);
 
 	/* NOTE ABOUT STARTING NEW THREADS
 	 * At this point we have conducted experiments (Jun 2012) with

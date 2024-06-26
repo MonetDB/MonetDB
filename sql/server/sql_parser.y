@@ -165,6 +165,27 @@ uescape_xform(char *restrict s, const char *restrict esc)
 	return s;
 }
 
+static lng
+size_unit(const char *suffix)
+{
+	if (suffix[0] == '\0')
+		return 1;
+	else if (strcasecmp("k", suffix) == 0)
+		return 1000L;
+	else if (strcasecmp("kib", suffix) == 0)
+		return 1024L;
+	else if (strcasecmp("m", suffix) == 0)
+		return 1000L * 1000L;
+	else if (strcasecmp("mib", suffix) == 0)
+		return 1024L * 1024L;
+	else if (strcasecmp("g", suffix) == 0)
+		return 1000L * 1000L * 1000L;
+	else if (strcasecmp("gib", suffix) == 0)
+		return 1024L * 1024L * 1024L;
+	else
+		return -1;
+}
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -204,6 +225,7 @@ int yydebug=1;
 	aggr_or_window_ref
 	alter_statement
 	alter_table_element
+	analyze_statement
 	and_exp
 	assignment
 	atom
@@ -233,7 +255,6 @@ int yydebug=1;
 	default
 	default_value
 	delete_stmt
-	domain_constraint_type
 	drop_statement
 	drop_table_element
 	exec
@@ -528,6 +549,8 @@ int yydebug=1;
 	triggered_statement
 	typelist
 	value_commalist
+	values
+	values_commalist
 	named_value_commalist
 	variable_list
 	variable_ref
@@ -576,7 +599,6 @@ int yydebug=1;
 	opt_index_type
 	opt_match
 	opt_match_type
-	opt_minmax
 	opt_on_commit
 	opt_outer
 	opt_ref_action
@@ -717,7 +739,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
+%token ANALYZE SQL_EXPLAIN SQL_PLAN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -959,6 +981,14 @@ declare:
     DECLARE
 
 	/* schema definition language */
+analyze_statement:
+   ANALYZE qname opt_column_list
+		{ dlist *l = L();
+		append_list(l, $2);
+		append_list(l, $3);
+		$$ = _symbol_create_list( SQL_ANALYZE, l); }
+ ;
+
 sql:
     schema
  |  grant
@@ -968,20 +998,9 @@ sql:
  |  alter_statement
  |  declare_statement
  |  set_statement
- |  ANALYZE qname opt_column_list opt_sample opt_minmax
-		{ dlist *l = L();
-		append_list(l, $2);
-		append_list(l, $3);
-		append_symbol(l, $4);
-		append_int(l, $5);
-		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
+ |  analyze_statement
  |  comment_on_statement
- ;
-
-opt_minmax:
-   /* empty */		{ $$ = 0; }
- | MINMAX		{ $$ = 1; }
  ;
 
 declare_statement:
@@ -1621,6 +1640,17 @@ opt_max_memory:
     /* empty */         { $$ = -1; }
  |  NO MAX_MEMORY       { $$ = 0; }
  |  MAX_MEMORY poslng   { $$ = $2; }
+ |  MAX_MEMORY string   {
+		char *end = NULL;
+		lng size = strtoll($2, &end, 10);
+		lng unit = size_unit(end);
+		if (unit < 0 || size < 0) {
+			$$ = -1;
+			yyerror(m, "Invalid size");
+			YYABORT;
+		}
+		$$ = size * unit;
+	}
  ;
 
 opt_max_workers:
@@ -1741,6 +1771,17 @@ table_def:
 	  append_int(l, $3);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
+  | opt_temp VIEW qname opt_column_list AS query_expression_def opt_with_check_option
+	{  dlist *l = L();
+	  append_int(l, $1);
+	  append_list(l, $3);
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
+	  append_int(l, TRUE);
+	  append_int(l, FALSE);
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
+	}
  ;
 
 partition_type:
@@ -2155,8 +2196,7 @@ column_constraint_type:
 			  append_int(l, $4 );
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- |  domain_constraint_type
+ |  CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 table_constraint_type:
@@ -2170,7 +2210,6 @@ table_constraint_type:
 			{ $$ = _symbol_create_list( SQL_PRIMARY_KEY, $3); }
  |  FOREIGN KEY column_commalist_parens
     REFERENCES qname opt_column_list opt_match opt_ref_action
-
 			{ dlist *l = L();
 			  append_list(l, $5 );
 			  append_list(l, $3 );
@@ -2178,11 +2217,8 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- /*TODO: Implement domain_constraint_type*/
- ;
-
-domain_constraint_type:
-    CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK '(' search_condition ')' 
+			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
  ;
 
 ident_commalist:
@@ -2199,6 +2235,7 @@ like_table:
 view_def:
     create_or_replace VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
+	  append_int(l, SQL_PERSIST);
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
@@ -2389,6 +2426,9 @@ procedure_statement:
     |   declare_statement
     |   set_statement
     |	control_statement
+    |   call_procedure_statement
+    |	call_statement
+    |   analyze_statement
     |   select_statement_single_row
     ;
 
@@ -2400,13 +2440,14 @@ trigger_procedure_statement:
     |   declare_statement
     |   set_statement
     |	control_statement
+    |   call_procedure_statement
+    |	call_statement
+    |   analyze_statement
     |   select_statement_single_row
     ;
 
 control_statement:
-	call_procedure_statement
-    |	call_statement
-    |   while_statement
+        while_statement
     |   if_statement
     |   case_statement
     |	return_statement
@@ -3257,6 +3298,16 @@ value_commalist:
 			{ $$ = append_symbol($1, $3); }
  ;
 
+values:
+    '(' value_commalist ')' { $$ = $2; }
+ ;
+
+values_commalist:
+    values		{ $$ = append_list(L(), $1); }
+ |  values_commalist ',' values
+			{ $$ = append_list($1, $3); }
+ ;
+
 named_value_commalist:
     ident value		{ $$ = append_string(append_symbol(L(), $2), $1); }
  |  named_value_commalist ',' ident value
@@ -3407,6 +3458,7 @@ with_list:
 with_list_element:
     ident opt_column_list AS subquery_with_orderby
 	{  dlist *l = L();
+ 	  append_int(l, 0);
 	  append_list(l, append_string(L(), $1));
 	  append_list(l, $2);
 	  append_symbol(l, $4);
@@ -3699,9 +3751,15 @@ opt_table_name:
  |  table_name  { $$ = $1; }
  ;
 
+all:
+    ALL
+ |  '*'
+ ;
+
 opt_group_by_clause:
-	/* empty */               { $$ = NULL; }
- |  sqlGROUP BY group_by_list { $$ = _symbol_create_list(SQL_GROUPBY, $3); }
+	/* empty */             { $$ = NULL; }
+ |  sqlGROUP BY all 		{ $$ = _symbol_create_list(SQL_GROUPBY, NULL); }
+ |  sqlGROUP BY group_by_list 	{ $$ = _symbol_create_list(SQL_GROUPBY, $3); }
  ;
 
 group_by_list:
@@ -3769,9 +3827,9 @@ and_exp:
  ;
 
 opt_order_by_clause:
-    /* empty */			  { $$ = NULL; }
- |  ORDER BY sort_specification_list
-		{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+    /* empty */			  	{ $$ = NULL; }
+ |  ORDER BY all		  	{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
+ |  ORDER BY sort_specification_list 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
  ;
 
 first_next:
@@ -4038,6 +4096,7 @@ test_for_null:
  |  pred_exp IS sqlNULL     { $$ = _symbol_create_symbol( SQL_IS_NULL, $1 ); }
  ;
 
+
 in_predicate:
     pred_exp NOT_IN '(' value_commalist ')'
 		{ dlist *l = L();
@@ -4049,15 +4108,25 @@ in_predicate:
 		  append_symbol(l, $1);
 		  append_list(l, $4);
 		  $$ = _symbol_create_list(SQL_IN, l ); }
- |  '(' pred_exp_list ')' NOT_IN '(' value_commalist ')'
+ |  '(' pred_exp_list ')' NOT_IN '(' values_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $2);
 		  append_list(l, $6);
 		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
- |  '(' pred_exp_list ')' sqlIN '(' value_commalist ')'
+ |  '(' pred_exp_list ')' sqlIN '(' values_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $2);
 		  append_list(l, $6);
+		  $$ = _symbol_create_list(SQL_IN, l ); }
+ |  '(' pred_exp_list ')' NOT_IN subquery
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  append_list(l, append_symbol(L(), $5));
+		  $$ = _symbol_create_list(SQL_NOT_IN, l ); }
+ |  '(' pred_exp_list ')' sqlIN subquery
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  append_list(l, append_symbol(L(), $5));
 		  $$ = _symbol_create_list(SQL_IN, l ); }
  ;
 
@@ -5956,7 +6025,6 @@ non_reserved_word:
 | MAX_MEMORY	{ $$ = sa_strdup(SA, "max_memory"); }
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
 | MAX_WORKERS	{ $$ = sa_strdup(SA, "max_workers"); }
-| MINMAX	{ $$ = sa_strdup(SA, "minmax"); }
 | MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
 | NATIVE	{ $$ = sa_strdup(SA, "native"); }
@@ -7288,8 +7356,11 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_start (ap,format);
 	if (sql->errstr[0] == '\0' || error_code == 5 || error_code == ERR_NOTFOUND)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status || error_code == 5 || error_code == ERR_NOTFOUND)
+	if (!sql->session->status || error_code == 5 || error_code == ERR_NOTFOUND) {
+		if (error_code < 0)
+			error_code = -error_code;
 		sql->session->status = -error_code;
+	}
 	va_end (ap);
 	return NULL;
 }

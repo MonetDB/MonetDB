@@ -26,8 +26,10 @@
 #include "store_sequence.h"
 #include "sql_partition.h"
 #include "rel_partition.h"
+#include "rel_basetable.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_dump.h"
 #include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -188,6 +190,7 @@ sqlcleanup(backend *be, int err)
 	if (err <0)
 		be->mvc->session->status = err;
 	be->mvc->label = 0;
+	be->mvc->nid = 1;
 	be->no_mitosis = 0;
 	scanner_query_processed(&(be->mvc->scanner));
 	return err;
@@ -346,7 +349,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 
 		if (c->def) {
 			/* TODO please don't place an auto incremented sequence in the default value */
-			const char *next_value_for = "next value for \"sys\".\"seq_";
+			const char next_value_for[] = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
 
 			sa_reset(nsa);
@@ -1292,7 +1295,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
 			if(bn == NULL) {
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);
@@ -1646,7 +1649,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
 
 			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
 			if(bn == NULL) {
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);
@@ -1983,7 +1986,7 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.clear_table", SQLSTATE(42000) "Table clear failed%s", clear_res == (BUN_NONE - 1) ? " due to conflict with another transaction" : "");
 	if (restart_sequences) { /* restart the sequences if it's the case */
 		sql_trans *tr = m->session->tr;
-		const char *next_value_for = "next value for ";
+		const char next_value_for[] = "next value for ";
 
 		for (node *n = ol_first_node(t->columns); n; n = n->next) {
 			sql_column *col = n->data;
@@ -2427,6 +2430,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		nr_parts = *getArgReference_int(stk, pci, 5);
 	}
 	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	b->tunique_est = (double)BATcount(b);
 	if (b) {
 		*res = b->batCacheid;
 		BBPkeepref(b);
@@ -2630,8 +2634,12 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		be->output_format = OFMT_CSV;
 	} else {
-		while (!m->scanner.rs->eof)
-			bstream_next(m->scanner.rs);
+		while (!m->scanner.rs->eof) {
+			if (bstream_next(m->scanner.rs) < 0) {
+				msg = createException(IO, "streams.open", "interrupted");
+				goto wrapup_result_set1;
+			}
+		}
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
@@ -2865,8 +2873,12 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto wrapup_result_set;
 		}
 	} else {
-		while (!m->scanner.rs->eof)
-			bstream_next(m->scanner.rs);
+		while (!m->scanner.rs->eof) {
+			if (bstream_next(m->scanner.rs) < 0) {
+				msg = createException(IO, "streams.open", "interrupted");
+				goto wrapup_result_set;
+			}
+		}
 		s = m->scanner.ws;
 		mnstr_write(s, PROMPT3, sizeof(PROMPT3) - 1, 1);
 		mnstr_printf(s, "w %s\n", filename);
@@ -4307,7 +4319,8 @@ SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// sync with client, copy pasted from mvc_export_table_wrap
 	while (!mvc->scanner.rs->eof)
-		bstream_next(mvc->scanner.rs);
+		if (bstream_next(mvc->scanner.rs) < 0)
+			throw(SQL, "sql.hot_snapshot", "interrupted");
 
 	// The snapshot code flushes from time to time.
 	// Use a callback stream to suppress those.
@@ -4402,8 +4415,10 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr = m->session->tr;
 	storage *t_del = bind_del_data(tr, t, NULL);
 
-	BAT *d = BATdescriptor(t_del->cs.bid);
+	BAT *d = NULL;
 
+	if (t_del)
+		d = BATdescriptor(t_del->cs.bid);
 	if (t_del == NULL || d == NULL)
 		throw(SQL, "sql.persist_unlogged", "Cannot access %s column storage.", tname);
 
@@ -4415,15 +4430,17 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(d->batInserted <= d_bi.count);
 
 		if (d->batInserted < d_bi.count) {
+			int n = ol_length(t->columns);
 
-			int n = 100;
-			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 1));
-			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 1));
+			bat *commit_list = GDKzalloc(sizeof(bat) * (n + 2));
+			BUN *sizes = GDKzalloc(sizeof(BUN) * (n + 2));
 
 			if (commit_list == NULL || sizes == NULL) {
+				bat_iterator_end(&d_bi);
 				MT_lock_unset(&lock_persist_unlogged);
 				GDKfree(commit_list);
 				GDKfree(sizes);
+				BBPreclaim(d);
 				throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 			}
 
@@ -4431,52 +4448,52 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sizes[0] = 0;
 			int i = 1;
 
-			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next) {
+			for (node *ncol = ol_first_node(t->columns); ncol; ncol = ncol->next, i++) {
 
 				sql_column *c = (sql_column *) ncol->data;
 				BAT *b = store->storage_api.bind_col(tr, c, QUICK);
 
 				if (b == NULL) {
+					bat_iterator_end(&d_bi);
 					MT_lock_unset(&lock_persist_unlogged);
 					GDKfree(commit_list);
 					GDKfree(sizes);
+					BBPreclaim(d);
 					throw(SQL, "sql.persist_unlogged", "Cannot access column descriptor.");
-				}
-
-				if (i == n && ncol->next) {
-					n = n * 2;
-					commit_list = GDKrealloc(commit_list, sizeof(bat) * n);
-					sizes = GDKrealloc(sizes, sizeof(BUN) * n);
-				}
-
-				if (commit_list == NULL || sizes == NULL) {
-					MT_lock_unset(&lock_persist_unlogged);
-					GDKfree(commit_list);
-					GDKfree(sizes);
-					throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 				}
 
 				commit_list[i] = b->batCacheid;
 				sizes[i] = d_bi.count;
-				i++;
 			}
 
+			assert(i<n+2);
 			commit_list[i] = d->batCacheid;
 			sizes[i] = d_bi.count;
 			i++;
 
 			if (TMsubcommit_list(commit_list, sizes, i, -1) != GDK_SUCCEED) {
+				bat_iterator_end(&d_bi);
 				MT_lock_unset(&lock_persist_unlogged);
 				GDKfree(commit_list);
 				GDKfree(sizes);
+				BBPreclaim(d);
 				throw(SQL, "sql.persist_unlogged", "Lower level commit operation failed");
 			}
 
 			GDKfree(commit_list);
 			GDKfree(sizes);
 		}
-
 		count = d_bi.count;
+	} else {
+		/* special case of log_tstart: third arg == NULL with second arg
+		 * true is request to rotate log file ASAP */
+		store->logger_api.log_tstart(store, true, NULL);
+		/* special case for sql->debug: if 1024 bit is set,
+		 * store_manager doesn't wait for 30 seconds of idle time before
+		 * attempting to rotate */
+		MT_lock_set(&store->flush);
+		store->debug |= 1024;
+		MT_lock_unset(&store->flush);
 	}
 
 	bat_iterator_end(&d_bi);
@@ -4487,25 +4504,19 @@ SQLpersist_unlogged(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*tableid = COLnew(0, TYPE_int, 0, TRANSIENT),
 		*rowcount = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
-	if (table == NULL || tableid == NULL || rowcount == NULL) {
-		BBPnreclaim(3, table, tableid, rowcount);
-		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
-	}
-
-	if (BUNappend(table, tname, false) != GDK_SUCCEED ||
+	if (table == NULL || tableid == NULL || rowcount == NULL ||
+		BUNappend(table, tname, false) != GDK_SUCCEED ||
 		BUNappend(tableid, &(t->base.id), false) != GDK_SUCCEED ||
 		BUNappend(rowcount, &count, false) != GDK_SUCCEED) {
 		BBPnreclaim(3, table, tableid, rowcount);
 		throw(SQL, "sql.persist_unlogged", SQLSTATE(HY001));
 	}
-
 	*o0 = table->batCacheid;
 	*o1 = tableid->batCacheid;
 	*o2 = rowcount->batCacheid;
 	BBPkeepref(table);
 	BBPkeepref(tableid);
 	BBPkeepref(rowcount);
-
 	return msg;
 }
 
@@ -4917,47 +4928,49 @@ finalize:
 }
 
 static str
-do_str_column_vacuum(sql_trans *tr, sql_column *c, char *sname, char *tname, char *cname)
+do_str_column_vacuum(sql_trans *tr, sql_column *c, bool force)
 {
-	int res;
-	int access = 0;
-	BAT* b = NULL;
-	BAT* bn = NULL;
-	sqlstore *store = tr->store;
-
-	if ((b = store->storage_api.bind_col(tr, c, access)) == NULL)
-		throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "storage_api.bind_col failed for %s.%s.%s", sname, tname, cname);
-	// vacuum varsized bats
 	if (ATOMvarsized(c->type.type->localtype)) {
-		// TODO check for num of updates on the BAT against some threshold
-		// and decide whether to proceed
-		if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(42S22) "COLcopy failed for %s.%s.%s", sname, tname, cname);
-		}
-		if ((res = (int) store->storage_api.swap_bats(tr, c, bn)) != LOG_OK) {
-			BBPreclaim(bn);
-			BBPunfix(b->batCacheid);
+		int res = 0;
+		sqlstore *store = tr->store;
+
+		if ((res = (int) store->storage_api.vacuum_col(tr, c, force)) != LOG_OK) {
 			if (res == LOG_CONFLICT)
-				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.vacuum_col %s.%s.%s", c->t->s->base.name, c->t->base.name, c->base.name);
 			if (res == LOG_ERR)
-				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
-			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.swap_bats %s.%s.%s", sname, tname, cname);
+				throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.vacuum_col %s.%s.%s", c->t->s->base.name, c->t->base.name, c->base.name);
+			throw(SQL, "do_str_column_vacuum", SQLSTATE(HY000) "ERROR in storage_api.vacuum_col %s.%s.%s", c->t->s->base.name, c->t->base.name, c->base.name);
 		}
 	}
-	BBPunfix(b->batCacheid);
-	BBPreclaim(bn);
 	return MAL_SUCCEED;
 }
 
-str
-SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_str_table_vacuum(sql_trans *tr, sql_table *t, bool force)
+{
+	int res = 0;
+	sqlstore *store = tr->store;
+
+	if ((res = (int) store->storage_api.vacuum_tab(tr, t, force)) != LOG_OK) {
+		if (res == LOG_CONFLICT)
+			throw(SQL, "do_str_table_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.vacuum_col %s.%s", t->s->base.name, t->base.name);
+		if (res == LOG_ERR)
+			throw(SQL, "do_str_table_vacuum", SQLSTATE(HY000) "LOG ERROR in storage_api.vacuum_col %s.%s", t->s->base.name, t->base.name);
+		throw(SQL, "do_str_table_vacuum", SQLSTATE(HY000) "ERROR in storage_api.vacuum_col %s.%s", t->s->base.name, t->base.name);
+	}
+	return MAL_SUCCEED;
+}
+
+static str
+SQLstr_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
-	char *cname = *getArgReference_str(stk, pci, 3);
+	char *cname = NULL;
+	if (pci->argc == 4)
+		cname = *getArgReference_str(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4970,31 +4983,37 @@ SQLstr_column_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_column *c = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
-	if (strNil(cname))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (cname && strNil(cname))
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+		throw(SQL, "sql.str_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if (!isTable(t))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
-	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
-	if (c->storage_type)
-		throw(SQL, "sql.str_column_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
+		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
+	if (cname) {
+		if ((c = mvc_bind_column(m, t, cname)) == NULL)
+			throw(SQL, "sql.str_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
+		if (c->storage_type)
+			throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
+	}
 
-	return do_str_column_vacuum(tr, c, sname, tname, cname);
+	if (c)
+		return do_str_column_vacuum(tr, c, true);
+	else
+		return do_str_table_vacuum(tr, t, true);
 }
 
 
 static gdk_return
-str_column_vacuum_callback(int argc, void *argv[]) {
+str_vacuum_callback(int argc, void *argv[])
+{
 	sqlstore *store = (sqlstore *) argv[0];
 	char *sname = (char *) argv[1];
 	char *tname = (char *) argv[2];
@@ -5010,18 +5029,18 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 	(void) argc;
 
 	if ((sa = sa_create(NULL)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create allocator!");
+		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to create session!");
+		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to create session!");
 		sa_destroy(sa);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
-		TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Failed to begin transaction!");
+		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
 		sa_destroy(sa);
 		return GDK_FAIL;
@@ -5029,26 +5048,32 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 
 	do {
 		if((s = find_sql_schema(session->tr, sname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing schema %s!",sname);
+			TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing schema %s!",sname);
 			res = GDK_FAIL;
 			break;
 		}
 
 		if((t = find_sql_table(session->tr, s, tname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing table %s!", tname);
+			TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing table %s!", tname);
 			res = GDK_FAIL;
 			break;
 		}
+		if (cname) {
+			if ((c = find_sql_column(t, cname)) == NULL) {
+				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing column %s!", cname);
+				res = GDK_FAIL;
+				break;
+			}
 
-		if ((c = find_sql_column(t, cname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- Invalid or missing column %s!", cname);
-			res = GDK_FAIL;
-			break;
-		}
-
-		if((msg=do_str_column_vacuum(session->tr, c, sname, tname, cname)) != MAL_SUCCEED) {
-			TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- %s", msg);
-			res = GDK_FAIL;
+			if((msg=do_str_column_vacuum(session->tr, c, false)) != MAL_SUCCEED) {
+				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
+				res = GDK_FAIL;
+			}
+		} else {
+			if((msg=do_str_table_vacuum(session->tr, t, false)) != MAL_SUCCEED) {
+				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
+				res = GDK_FAIL;
+			}
 		}
 
 	} while(0);
@@ -5076,25 +5101,31 @@ str_column_vacuum_callback(int argc, void *argv[]) {
 }
 
 static gdk_return
-str_column_vacuum_callback_args_free(int argc, void *argv[])
+str_vacuum_callback_args_free(int argc, void *argv[])
 {
 	(void) argc;
 	// free up sname, tname, cname. First pointer points to sqlstore so leave it.
 	GDKfree(argv[1]); // sname
 	GDKfree(argv[2]); // tname
-	GDKfree(argv[3]); // cname
+	if (argv[3])
+		GDKfree(argv[3]); // cname
 	return GDK_SUCCEED;
 }
 
-str
-SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
-	char *cname = *getArgReference_str(stk, pci, 3);
-	int interval = *getArgReference_int(stk, pci, 4); // in sec
+	char *cname = NULL;
+	int iarg = 3;
+	if (pci->argc == 5) {
+		cname = *getArgReference_str(stk, pci, 3);
+		iarg++;
+	}
+	int interval = *getArgReference_int(stk, pci, iarg); // in sec
 	char *sname_copy = NULL, *tname_copy = NULL, *cname_copy = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -5107,49 +5138,51 @@ SQLstr_column_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_column *c = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
 	if (strNil(cname))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if (!isTable(t))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
-	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
-	if (c->storage_type)
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
+	if (cname && (c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
+	if (c && c->storage_type)
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
-	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || !(cname_copy = GDKstrdup(cname))) {
+	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || (cname && !(cname_copy = GDKstrdup(cname)))) {
 		GDKfree(sname_copy);
 		GDKfree(tname_copy);
 		GDKfree(cname_copy);
-		throw(SQL, "sql.str_column_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
 
-	if (gdk_add_callback("str_column_vacuum", str_column_vacuum_callback, 4, argv, interval) != GDK_SUCCEED) {
-		str_column_vacuum_callback_args_free(4, argv);
-		throw(SQL, "sql.str_column_auto_vacuum", "adding vacuum callback failed!");
+	if (gdk_add_callback("str_vacuum", str_vacuum_callback, 4, argv, interval) != GDK_SUCCEED) {
+		str_vacuum_callback_args_free(4, argv);
+		throw(SQL, "sql.str_auto_vacuum", "adding vacuum callback failed!");
 	}
 
 	return MAL_SUCCEED;
 }
 
-str
-SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+SQLstr_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
 	char *sname = *getArgReference_str(stk, pci, 1);
 	char *tname = *getArgReference_str(stk, pci, 2);
-	char *cname = *getArgReference_str(stk, pci, 3);
+	char *cname = NULL;
+	if (pci->argc == 4)
+		cname = *getArgReference_str(stk, pci, 3);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5161,25 +5194,25 @@ SQLstr_column_stop_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	sql_column *c = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
-	if (strNil(cname))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
+	if (cname && strNil(cname))
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
 	if ((t = mvc_bind_table(m, s, tname)) == NULL)
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42S02) "Invalid or missing table %s.%s",sname,tname);
 	if (!isTable(t))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (isTempTable(t))
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
-	if ((c = mvc_bind_column(m, t, cname)) == NULL)
-		throw(SQL, "sql.str_column_stop_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42000) "Cannot vacuum column from temporary table");
+	if (cname && (c = mvc_bind_column(m, t, cname)) == NULL)
+		throw(SQL, "sql.str_stop_vacuum", SQLSTATE(42S22) "Column not found in %s.%s.%s",sname,tname,cname);
 
-	if(gdk_remove_callback("str_column_vacuum", str_column_vacuum_callback_args_free) != GDK_SUCCEED)
-		throw(SQL, "sql.str_column_stop_vacuum", "removing vacuum callback failed!");
+	if(gdk_remove_callback("str_vacuum", str_vacuum_callback_args_free) != GDK_SUCCEED)
+		throw(SQL, "sql.str_stop_vacuum", "removing vacuum callback failed!");
 
 	return MAL_SUCCEED;
 }
@@ -5220,6 +5253,8 @@ SQLuser_password(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return msg;
 	}
 	*password = monet5_password_hash(m, username);
+	if (!(*password))
+		throw(SQL, "mvc", SQLSTATE(42000) "SELECT: Failed to retrieve password hash");
 	return MAL_SUCCEED;
 }
 
@@ -5238,6 +5273,37 @@ SQLdecypher(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	return AUTHdecypherValue(pwhash, cypher);
+}
+
+static str
+SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	str *r = getArgReference_str(stk, pci, 0);
+	const char *sname = *getArgReference_str(stk, pci, 1);
+	const char *cname = *getArgReference_str(stk, pci, 2);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	(void)sname;
+	sql_schema *s = mvc_bind_schema(m, sname);
+	if (s) {
+		sql_key *k = mvc_bind_key(m, s, cname);
+		if (k && k->check) {
+			int pos = 0;
+			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
+			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+			if (!(*r = GDKstrdup(exp2sql(m, exp))))
+				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return MAL_SUCCEED;
+		}
+	}
+	if (!(*r = GDKstrdup(str_nil)))
+		throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
 }
 
 static mel_func sql_init_funcs[] = {
@@ -5330,9 +5396,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,1, arg("",str))),
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,2, arg("",str),varargany("a",0))),
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
- pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status", args(9,9, batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int))),
-pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
-pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
+ pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status",args(16,16,batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int),batarg("language", str),batarg("peer", str),batarg("hostname", str),batarg("application", str),batarg("client", str),batarg("clientpid", lng),batarg("remark", str),)),
+ pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
+ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
  pattern("sql", "dump_opt_stats", dump_opt_stats, false, "dump the optimizer rewrite statistics", args(2,2, batarg("rewrite",str),batarg("count",int))),
  pattern("sql", "dump_trace", dump_trace, false, "dump the trace statistics", args(3,3, batarg("ticks",lng),batarg("stmt",str),batarg("stmt",str))),
@@ -6164,9 +6230,13 @@ pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", arg
  pattern("sql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, arg("",dbl),arg("b",hge),arg("c",hge),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "corr", SQLcorr, false, "return the correlation value of groups", args(1,8, batarg("",dbl),optbatarg("b",hge),optbatarg("c",hge),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
 #endif
- pattern("sql", "vacuum", SQLstr_column_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
- pattern("sql", "vacuum", SQLstr_column_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
- pattern("sql", "stop_vacuum", SQLstr_column_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_vacuum, true, "vacuum a string column", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_auto_vacuum, true, "auto vacuum string column with interval(sec)", args(0,4, arg("sname",str),arg("tname",str),arg("cname",str),arg("interval", int))),
+ pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
+ pattern("sql", "vacuum", SQLstr_vacuum, true, "vacuum a string column", args(0,2, arg("sname",str),arg("tname",str))),
+ pattern("sql", "vacuum", SQLstr_auto_vacuum, true, "auto vacuum string column of given table with interval(sec)", args(0,3, arg("sname",str),arg("tname",str),arg("interval", int))),
+ pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
+ pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

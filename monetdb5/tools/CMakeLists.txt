@@ -19,11 +19,10 @@ add_library(monetdb5 SHARED
 
 target_link_libraries(monetdb5
     PRIVATE
-    mutils
-    mcrypt
     stream
     mapi
     msabaoth
+    mutf8
     ${SOCKET_LIBRARIES}
     $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
     $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
@@ -32,6 +31,7 @@ target_link_libraries(monetdb5
 
 set_target_properties(monetdb5
   PROPERTIES
+  OUTPUT_NAME monetdb5-${MONETDB_VERSION}
   VERSION ${MONETDB5_VERSION}
   SOVERSION ${MONETDB5_VERSION_MAJOR})
 

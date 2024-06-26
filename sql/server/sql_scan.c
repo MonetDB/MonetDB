@@ -413,7 +413,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LANGUAGE", LANGUAGE);
 
 	failed += keywords_insert("ANALYZE", ANALYZE);
-	failed += keywords_insert("MINMAX", MINMAX);
 	failed += keywords_insert("EXPLAIN", SQL_EXPLAIN);
 	failed += keywords_insert("PLAN", SQL_PLAN);
 	failed += keywords_insert("TRACE", SQL_TRACE);
@@ -715,9 +714,16 @@ scanner_read_more(struct scanner *lc, size_t n)
 			more = true;
 		}
 		/* we need more query text */
-		if (bstream_next(b) < 0 ||
-		    /* we asked for more data but didn't get any */
-		    (more && b->eof && b->len < b->pos + lc->yycur + n))
+		if (bstream_next(b) < 0) {
+			if (mnstr_errnr(b->s) == MNSTR_INTERRUPT) {
+				// now what?
+				lc->errstr = "Query aborted";
+				lc->aborted = true;
+				mnstr_clearerr(b->s);
+			}
+			return EOF;
+		} else if (/* we asked for more data but didn't get any */
+		    	   (more && b->eof && b->len < b->pos + lc->yycur + n))
 			return EOF;
 		if (more && b->pos + lc->yycur + 2 == b->len && b->buf[b->pos + lc->yycur] == '\200' && b->buf[b->pos + lc->yycur + 1] == '\n') {
 			lc->errstr = "Query aborted";
@@ -1248,6 +1254,19 @@ int scanner_symbol(mvc * c, int cur)
 	case ';':
 		lc->started = 0;
 		return scanner_token(lc, SCOLON);
+	case '!':
+		lc->started = 1;
+		cur = scanner_getc(lc);
+		if (cur < 0)
+			return EOF;
+		else if (cur == '=') {
+			lc->rs->buf[lc->rs->pos + lc->yycur - 2] = '<';
+			lc->rs->buf[lc->rs->pos + lc->yycur - 1] = '>';
+			return scanner_token( lc, COMPARISON);
+		} else {
+			utf8_putchar(lc, cur); //put the char back
+		}
+		return scanner_token(lc, '!');
 	case '<':
 		lc->started = 1;
 		cur = scanner_getc(lc);

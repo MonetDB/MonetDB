@@ -44,7 +44,7 @@ next_delim(const char *s, const char *e, char delim, char quote)
 		else if (!inquote && *s == delim)
 			return s;
 	}
-	if (s < e)
+	if (s <= e)
 		return s;
 	return NULL;
 }
@@ -77,7 +77,7 @@ detect_quote(const char *buf)
 static char
 detect_delimiter(const char *buf, char q, int *nr_fields)
 {
-	const char *delimiter = ",|;\t";
+	const char delimiter[] = ",|;\t";
 	int cnts[DLEN][2] = { 0 }, l = 0;
 
 	const char *cur = buf;
@@ -344,6 +344,12 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 			types = ntypes;
 		nr_lines++;
 	}
+	if (types) { /* NULL -> STRING */
+		for(int i = 0; i<nr_fields; i++) {
+			if (types[i].type == CSV_NULL)
+				types[i].type = CSV_STRING;
+		}
+	}
 	return types;
 }
 
@@ -435,7 +441,9 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				extra_tsep = true;
 			} else if (t) {
 				list_append(typelist, t);
-				list_append(res_exps, exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0));
+				sql_exp *ne = exp_column(sql->sa, NULL, name, t, CARD_MULTI, 1, 0, 0);
+				ne->alias.label = -(sql->nid++);
+				list_append(res_exps, ne);
 			} else {
 				GDKfree(types);
 				throw(SQL, SQLSTATE(42000), "csv" "type %s not found\n", st);
@@ -568,4 +576,3 @@ static mel_func csv_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_csv_mal)
 { mal_module("csv", NULL, csv_init_funcs); }
-

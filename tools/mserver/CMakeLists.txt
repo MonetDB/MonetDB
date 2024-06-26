@@ -48,8 +48,6 @@ target_link_libraries(mserver5
   monetdb_config_header
   matomic
   moptions
-  mutils
-  mcrypt
   bat
   monetdb5
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
@@ -81,7 +79,6 @@ if(TESTING)
     matomic
     moptions
     sql
-    mutils
     bat
     stream
     monetdb5
@@ -102,6 +99,10 @@ if(TESTING)
       OPTIONAL)
   endif()
 endif()
+
+set_target_properties(mserver5
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
 
 install(TARGETS
   mserver5

@@ -81,7 +81,6 @@ target_link_libraries(mal
   monetdb_config_header
   mcrypt
   msabaoth
-  mutils
   stream
   mapi
   bat)

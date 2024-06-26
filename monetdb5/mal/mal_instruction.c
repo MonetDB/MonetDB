@@ -143,6 +143,7 @@ newMalBlk(int elements)
 		.var = v,
 		.vsize = elements,
 		.maxarg = MAXARG,		/* the minimum for each instruction */
+		.workers = ATOMIC_VAR_INIT(1),
 		.ma = ma,
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
@@ -288,7 +289,6 @@ freeMalBlk(MalBlkPtr mb)
 			VALclear(&getVarConstant(mb, i));
 	}
 	freeException(mb->errors);
-	ATOMIC_DESTROY(&mb->workers);
 	ma_destroy(mb->ma);
 #if 0
 	mb->vtop = 0;
@@ -306,7 +306,6 @@ freeMalBlk(MalBlkPtr mb)
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
 	freeException(mb->errors);
-	ATOMIC_DESTROY(&mb->workers);
 	GDKfree(mb);
 #endif
 }

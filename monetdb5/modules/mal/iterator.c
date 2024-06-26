@@ -52,24 +52,21 @@
  * size.
  */
 static str
-ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
+ITRnewChunk(lng *res, bat *vid, const bat *bid, const lng *granule)
 {
 	BAT *b, *view;
-	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
 	}
-	cnt = BATcount(b);
-	view = VIEWcreate(b->hseqbase, b);
+	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
+	 *granule, MIN(BATcount(b),(BUN) *granule)); */
+	view = VIEWcreate(b->hseqbase, b, 0, (BUN) *granule);
 	if (view == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "chop.newChunk", GDK_EXCEPTION);
 	}
 
-	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
-	 *granule, MIN(cnt,(BUN) *granule)); */
-	VIEWbounds(b, view, 0, MIN(cnt, (BUN) *granule));
 	*vid = view->batCacheid;
 	BBPkeepref(view);
 	BBPunfix(b->batCacheid);
@@ -83,7 +80,7 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
  * The granule size may differ in each call.
  */
 static str
-ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
+ITRnextChunk(lng *res, bat *vid, const bat *bid, const lng *granule)
 {
 	BAT *b, *view;
 	BUN i;
@@ -200,7 +197,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-ITRnext_oid(oid *i, oid *step, oid *last)
+ITRnext_oid(oid *i, const oid *step, const oid *last)
 {
 	oid v = *i;
 	v = v + *step;
@@ -211,7 +208,7 @@ ITRnext_oid(oid *i, oid *step, oid *last)
 }
 
 static str
-ITRnext_lng(lng *i, lng *step, lng *last)
+ITRnext_lng(lng *i, const lng *step, const lng *last)
 {
 	lng v = *i;
 	v = v + *step;
@@ -223,7 +220,7 @@ ITRnext_lng(lng *i, lng *step, lng *last)
 
 #ifdef HAVE_HGE
 static str
-ITRnext_hge(hge *i, hge *step, hge *last)
+ITRnext_hge(hge *i, const hge *step, const hge *last)
 {
 	hge v = *i;
 	v = v + *step;
@@ -234,7 +231,7 @@ ITRnext_hge(hge *i, hge *step, hge *last)
 }
 #endif
 static str
-ITRnext_int(int *i, int *step, int *last)
+ITRnext_int(int *i, const int *step, const int *last)
 {
 	int v = *i;
 	v = v + *step;
@@ -245,7 +242,7 @@ ITRnext_int(int *i, int *step, int *last)
 }
 
 static str
-ITRnext_sht(sht *i, sht *step, sht *last)
+ITRnext_sht(sht *i, const sht *step, const sht *last)
 {
 	sht v = *i;
 	v = v + *step;
@@ -256,7 +253,7 @@ ITRnext_sht(sht *i, sht *step, sht *last)
 }
 
 static str
-ITRnext_flt(flt *i, flt *step, flt *last)
+ITRnext_flt(flt *i, const flt *step, const flt *last)
 {
 	flt v = *i;
 	v = v + *step;
@@ -267,7 +264,7 @@ ITRnext_flt(flt *i, flt *step, flt *last)
 }
 
 static str
-ITRnext_dbl(dbl *i, dbl *step, dbl *last)
+ITRnext_dbl(dbl *i, const dbl *step, const dbl *last)
 {
 	dbl v = *i;
 	v = v + *step;

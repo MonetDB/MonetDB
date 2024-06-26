@@ -18,6 +18,7 @@
 #include <string.h>
 #include "mutils.h"
 #include "mstring.h"
+#include "mutf8.h"
 
 #ifdef HAVE_MACH_O_DYLD_H
 # include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
@@ -57,47 +58,25 @@ utf8towchar(const char *src)
 {
 	wchar_t *dest;
 	size_t i = 0;
-	size_t j = 0;
-	uint32_t c;
+	uint32_t state = 0, codepoint = 0;
 
 	if (src == NULL)
 		return NULL;
 
 	/* count how many wchar_t's we need, while also checking for
 	 * correctness of the input */
-	while (src[j]) {
-		i++;
-		if ((src[j+0] & 0x80) == 0) {
-			j += 1;
-		} else if ((src[j+0] & 0xE0) == 0xC0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+0] & 0x1E) != 0) {
-			j += 2;
-		} else if ((src[j+0] & 0xF0) == 0xE0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && ((src[j+0] & 0x0F) != 0
-			       || (src[j+1] & 0x20) != 0)) {
-			j += 3;
-		} else if ((src[j+0] & 0xF8) == 0xF0
-			   && (src[j+1] & 0xC0) == 0x80
-			   && (src[j+2] & 0xC0) == 0x80
-			   && (src[j+3] & 0xC0) == 0x80) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
-			if (c < 0x10000
-			    || c > 0x10FFFF
-			    || (c & 0x1FF800) == 0x00D800) {
-				return NULL;
-			}
-#if SIZEOF_WCHAR_T == 2
+	for (size_t j = 0; src[j]; j++) {
+		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
+		case UTF8_ACCEPT:
 			i++;
+#if SIZEOF_WCHAR_T == 2
+			i += (codepoint > 0xFFFF);
 #endif
-			j += 4;
-		} else {
+			break;
+		case UTF8_REJECT:
 			return NULL;
+		default:
+			break;
 		}
 	}
 	dest = malloc((i + 1) * sizeof(wchar_t));
@@ -105,32 +84,27 @@ utf8towchar(const char *src)
 		return NULL;
 	/* go through the source string again, this time we can skip
 	 * the correctness tests */
-	i = j = 0;
-	while (src[j]) {
-		if ((src[j+0] & 0x80) == 0) {
-			dest[i++] = src[j+0];
-			j += 1;
-		} else if ((src[j+0] & 0xE0) == 0xC0) {
-			dest[i++] = (src[j+0] & 0x1F) << 6
-				| (src[j+1] & 0x3F);
-			j += 2;
-		} else if ((src[j+0] & 0xF0) == 0xE0) {
-			dest[i++] = (src[j+0] & 0x0F) << 12
-				| (src[j+1] & 0x3F) << 6
-				| (src[j+2] & 0x3F);
-			j += 3;
-		} else if ((src[j+0] & 0xF8) == 0xF0) {
-			c = (src[j+0] & 0x07) << 18
-				| (src[j+1] & 0x3F) << 12
-				| (src[j+2] & 0x3F) << 6
-				| (src[j+3] & 0x3F);
+	i = 0;
+	for (size_t j = 0; src[j]; j++) {
+		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
+		case UTF8_ACCEPT:
 #if SIZEOF_WCHAR_T == 2
-			dest[i++] = 0xD800 | ((c - 0x10000) >> 10);
-			dest[i++] = 0xDE00 | (c & 0x3FF);
+			if (codepoint <= 0xFFFF) {
+				dest[i++] = (wchar_t) codepoint;
+			} else {
+				dest[i++] = (wchar_t) (0xD7C0 + (codepoint >> 10));
+				dest[i++] = (wchar_t) (0xDC00 + (codepoint & 0x3FF));
+			}
 #else
-			dest[i++] = c;
+			dest[i++] = (wchar_t) codepoint;
 #endif
-			j += 4;
+			break;
+		case UTF8_REJECT:
+			/* cannot happen because of first loop */
+			free(dest);
+			return NULL;
+		default:
+			break;
 		}
 	}
 	dest[i] = 0;
@@ -864,7 +838,7 @@ get_bin_path(void)
 	uint32_t size = PATH_MAX;
 	if (_NSGetExecutablePath(buf, &size) == 0 &&
 			realpath(buf, _bin_path) != NULL)
-	return _bin_path;
+		return _bin_path;
 #elif defined(BSD) && defined(KERN_PROC_PATHNAME)  /* BSD */
 	int mib[4];
 	size_t cb = sizeof(_bin_path);

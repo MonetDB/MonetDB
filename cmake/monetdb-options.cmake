@@ -93,6 +93,10 @@ option(STRICT
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")
 
+option(TAGS
+  "Enable tags usage (ctags and/or cscope) )"
+  OFF)
+
 option(ASSERT
   "Enable asserts (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")
@@ -131,10 +135,6 @@ option(WITH_READLINE
 
 option(WITH_PCRE
   "Include pcre support"
-  ON)
-
-option(WITH_SNAPPY
-  "Include snappy support"
   ON)
 
 option(WITH_VALGRIND

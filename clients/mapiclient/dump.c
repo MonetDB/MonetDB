@@ -452,6 +452,45 @@ bailout:
 	return false;
 }
 
+static bool
+has_check_constraint(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid,
+						  "select id from sys.functions"
+						  " where schema_id = 2000"
+						  " and name = 'check_constraint'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
 static int
 dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *tid, stream *sqlf)
 {
@@ -1114,35 +1153,40 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
+	const char *cc = has_check_constraint(mid) ? "case when k.type = 4 then sys.check_constraint(s.name, k.name) else null end" : "cast(null as varchar(10))";
 	if (tid)
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "			/* 1 */
 				"k.name, "			/* 2 */
-				"kc.id "			/* 3 */
+				"kc.id, "			/* 3 */
+				"k.type, "			/* 4 */
+			    "%s " /* 5 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k "
 			 "WHERE kc.id = k.id "
 			   "AND k.table_id = %s "
 			   "AND k.type = 1 "
-			 "ORDER BY kc.id, kc.nr", tid);
+			 "ORDER BY kc.id, kc.nr", cc, tid);
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT kc.name, "		/* 0 */
 				"kc.nr, "			/* 1 */
 				"k.name, "			/* 2 */
-				"kc.id "			/* 3 */
+				"kc.id, "			/* 3 */
+				"k.type, "			/* 4 */
+			    "%s " /* 5 */
 			 "FROM sys.objects kc, "
 			      "sys.keys k, "
 			      "sys.schemas s, "
 			      "sys._tables t "
 			 "WHERE kc.id = k.id "
 			   "AND k.table_id = t.id "
-			   "AND k.type = 1 "
+			   "AND k.type in (1, 3, 4) "
 			   "AND t.schema_id = s.id "
 			   "AND s.name = '%s' "
 			   "AND t.name = '%s' "
-			 "ORDER BY kc.id, kc.nr", s, t);
+			 "ORDER BY kc.id, kc.nr", cc, s, t);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	cnt = 0;
@@ -1150,22 +1194,35 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		const char *c_column = mapi_fetch_field(hdl, 0);
 		const char *kc_nr = mapi_fetch_field(hdl, 1);
 		const char *k_name = mapi_fetch_field(hdl, 2);
+		const char *k_type = mapi_fetch_field(hdl, 4);
 
 		if (mapi_error(mid))
 			goto bailout;
 		if (strcmp(kc_nr, "0") == 0) {
 			if (cnt)
 				mnstr_write(sqlf, ")", 1, 1);
+			cnt = 0;
 			mnstr_printf(sqlf, ",\n\t");
 			if (k_name) {
 				mnstr_printf(sqlf, "CONSTRAINT ");
 				dquoted_print(sqlf, k_name, " ");
 			}
-			mnstr_printf(sqlf, "UNIQUE (");
-			cnt = 1;
+			if (strcmp(k_type, "4") == 0) {
+				const char *k_check = mapi_fetch_field(hdl, 5);
+				mnstr_printf(sqlf, "CHECK (%s)", k_check);
+			} else {
+				if (strcmp(k_type, "1") == 0) {
+					mnstr_printf(sqlf, "UNIQUE");
+				} else {
+					mnstr_printf(sqlf, "UNIQUE NULLS NOT DISTINCT");
+				}
+				mnstr_printf(sqlf, " (");
+				cnt = 1;
+			}
 		} else
 			mnstr_printf(sqlf, ", ");
-		dquoted_print(sqlf, c_column, NULL);
+		if (cnt)
+			dquoted_print(sqlf, c_column, NULL);
 		if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
@@ -2654,9 +2711,9 @@ bailout:
 int
 dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool describe, bool useInserts, bool noescape)
 {
-	const char *start_trx = "START TRANSACTION";
-	const char *end = "ROLLBACK";
-	const char *types =
+	const char start_trx[] = "START TRANSACTION";
+	const char end[] = "ROLLBACK";
+	const char types[] =
 		"SELECT s.name, "
 		       "t.systemname, "
 		       "t.sqlname "
@@ -2708,13 +2765,13 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND ui.name <> 'monetdb' "
 		  "AND ui.name <> '.snapshot' "
 		"ORDER BY ui.name";
-	const char *roles =
+	const char roles[] =
 		"SELECT name "
 		"FROM sys.auths "
 		"WHERE name NOT IN (SELECT name FROM sys.db_user_info) "
 		  "AND grantor <> 0 "
 		"ORDER BY name";
-	const char *grants =
+	const char grants[] =
 		/* all grants granting roles to users excepting the default role */
 		"SELECT a1.name, "
 		       "a2.name "
@@ -2727,7 +2784,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND a1.name = ui.name "
 		  "AND a2.id <> ui.default_role "
 		"ORDER BY a1.name, a2.name";
-	const char *table_grants =
+	const char table_grants[] =
 		"SELECT s.name, t.name, "
 		       "a.name, "
 		       "sum(p.privileges), "
@@ -2744,7 +2801,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.grantable = go.id "
 		"GROUP BY s.name, t.name, a.name, g.name, go.opt "
 		"ORDER BY s.name, t.name, a.name, g.name, go.opt";
-	const char *column_grants =
+	const char column_grants[] =
 		"SELECT s.name, t.name, "
 		       "c.name, a.name, "
 		       "pc.privilege_code_name, "
@@ -2766,7 +2823,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND p.grantable = go.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
-	const char *function_grants =
+	const char function_grants[] =
 		"SELECT f.id, "
 			   "s.name, "
 			   "f.name, "
@@ -2803,7 +2860,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 				 "f.id, "
 				 "a.inout DESC, "
 				 "a.number";
-	const char *global_grants =
+	const char global_grants[] =
 		"SELECT a.name, pc.grnt, g.name, go.opt "
 		"FROM sys.privileges p, "
 		     "sys.auths a, "
@@ -2816,22 +2873,22 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.privileges = pc.id "
 		  "AND p.grantable = go.id "
 		"ORDER BY a.name, g.name, go.opt";
-	const char *schemas =
+	const char schemas[] =
 		"SELECT s.name, a.name, rem.remark "
 		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
 		     "sys.auths a "
 		"WHERE s.\"authorization\" = a.id "
 		  "AND s.system = FALSE "
 		"ORDER BY s.name";
-	const char *sequences1 =
+	const char sequences1[] =
 		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
 		     "sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
-	const char *sequences2 =
+	const char sequences2[] =
 		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
-	const char *tables =
+	const char tables[] =
 		"SELECT t.id AS id, "
 			   "s.name AS sname, "
 			   "t.name AS name, "
@@ -2891,7 +2948,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"ORDER BY t1.id, t2.id";
 	/* we must dump views, functions/procedures and triggers in order
 	 * of creation since they can refer to each other */
-	const char *views_functions_triggers =
+	const char views_functions_triggers[] =
 		"with vft (sname, name, id, query, remark) AS ("
 			"SELECT s.name AS sname, " /* views */
 			       "t.name AS name, "

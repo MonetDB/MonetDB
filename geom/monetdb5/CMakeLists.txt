@@ -50,7 +50,6 @@ if(GEOS_FOUND)
 
   target_link_libraries(geomodule
     PRIVATE
-    mutils
     stream
     bat
     geomlib
@@ -70,10 +69,10 @@ if(GEOS_FOUND)
   install(TARGETS
     geomodule
     LIBRARY
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT geom
     ARCHIVE
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     PUBLIC_HEADER
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -81,7 +80,7 @@ if(GEOS_FOUND)
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:geomodule>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
 endif()

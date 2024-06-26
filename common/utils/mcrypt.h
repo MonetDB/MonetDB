@@ -14,7 +14,7 @@
 #define _SEEN_MCRYPT_H 1
 
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#if !defined(LIBMAPI) && !defined(LIBMCRYPT) && !defined(LIBMONETDB5)
+#if !defined(LIBMAPI) && !defined(LIBMCRYPT)
 #define mcrypt_export extern __declspec(dllimport)
 #else
 #define mcrypt_export extern __declspec(dllexport)

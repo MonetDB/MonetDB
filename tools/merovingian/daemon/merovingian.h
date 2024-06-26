@@ -75,7 +75,7 @@ void setLogLevel(loglevel level);
 		}										\
 	} while (0)
 
-extern char *_mero_mserver;
+extern char _mero_mserver[];
 extern dpair _mero_topdp;
 extern pthread_mutex_t _mero_topdp_lock;
 extern volatile int _mero_keep_logging;

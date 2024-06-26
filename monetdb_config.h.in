@@ -122,6 +122,7 @@
 
 #cmakedefine HAVE_DIRENT_H 1
 #cmakedefine HAVE_SYS_SOCKET_H 1
+#cmakedefine HAVE_GETTID 1
 #cmakedefine HAVE_GETTIMEOFDAY 1
 #cmakedefine HAVE_SYS_STAT_H 1
 #cmakedefine HAVE_FDATASYNC 1
@@ -191,7 +192,6 @@
 #cmakedefine HAVE_LIBZ 1
 #cmakedefine HAVE_LIBLZ4 1
 #cmakedefine HAVE_PROJ 1
-#cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_FITS 1
 #cmakedefine HAVE_VALGRIND 1
 #cmakedefine HAVE_NETCDF 1

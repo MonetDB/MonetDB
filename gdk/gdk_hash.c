@@ -873,7 +873,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		case TYPE_uuid:
 			starthash(uuid);
 			break;
-		default:
+		default: {
+			int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 			TIMEOUT_LOOP(p, qry_ctx) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
 				c = hash_any(h, v);
@@ -887,8 +888,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 					for (hb = hget;
 					     hb != BUN_NONE;
 					     hb = HASHgetlink(h, hb)) {
-						if (ATOMcmp(h->type,
-							    v,
+						if (atomcmp(v,
 							    BUNtail(bi, hb)) == 0)
 							break;
 					}
@@ -901,6 +901,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			TIMEOUT_CHECK(qry_ctx,
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			break;
+		}
 		}
 		TRC_DEBUG_IF(ACCELERATOR) if (p < cnt1)
 			TRC_DEBUG_ENDIF(ACCELERATOR,
@@ -949,7 +950,8 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	case TYPE_uuid:
 		finishhash(uuid);
 		break;
-	default:
+	default: {
+		int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 		TIMEOUT_LOOP(ci->ncand - p, qry_ctx) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
 			c = hash_any(h, v);
@@ -959,7 +961,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 				for (hb = hget;
 				     hb != BUN_NONE;
 				     hb = HASHgetlink(h, hb)) {
-					if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+					if (atomcmp(v, BUNtail(bi, hb)) == 0)
 						break;
 				}
 				h->nunique += hb == BUN_NONE;
@@ -972,6 +974,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
+	}
 	}
 	bat_iterator_end(&bi);
 	/* if the number of unique values is equal to the bat count,

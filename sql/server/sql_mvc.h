@@ -160,6 +160,7 @@ typedef struct mvc {
 
 	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
+	int nid;	/* numbers for relational names */
 	list *cascade_action;  /* protection against recursive cascade actions */
 	list *schema_path; /* schema search path for object lookup */
 	uintptr_t sp;
@@ -225,6 +226,7 @@ sql_export int mvc_create_column(sql_column **col, mvc *m, sql_table *t, const c
 extern int mvc_create_column_(sql_column **col, mvc *m, sql_table *t, const char *name, const char *type, unsigned int digits);
 extern int mvc_null(mvc *c, sql_column *col, int flag);
 extern int mvc_default(mvc *c, sql_column *col, char *val);
+extern int mvc_check(mvc *m, sql_column *col, char *check);
 extern int mvc_drop_default(mvc *c, sql_column *col);
 extern int mvc_storage(mvc *c, sql_column *col, char *storage);
 extern int mvc_access(mvc *m, sql_table *t, sht access);
@@ -233,7 +235,7 @@ extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 extern int mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 
-extern int mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt);
+extern int mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt, const char* check);
 extern int mvc_create_fkey(sql_fkey **kres, mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
 extern int mvc_create_kc(mvc *m, sql_key *k, sql_column *c);
 extern int mvc_create_fkc(mvc *m, sql_fkey *fk, sql_column *c);

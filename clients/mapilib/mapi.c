@@ -793,6 +793,7 @@ static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
 
 static ATOMIC_FLAG mapi_initialized = ATOMIC_FLAG_INIT;
+
 /*
  * Blocking
  * --------
@@ -1777,6 +1778,11 @@ mapi_new(msettings *settings)
 	Mapi mid;
 	static ATOMIC_TYPE index = ATOMIC_VAR_INIT(0);
 
+	if (!ATOMIC_TAS(&mapi_initialized)) {
+		if (mnstr_init() < 0)
+			return NULL;
+	}
+
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
 		return NULL;
@@ -1885,11 +1891,6 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 {
 	Mapi mid;
 
-	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init() < 0)
-			return NULL;
-	}
-
 	mid = mapi_new(NULL);
 	if (mid == NULL)
 		return NULL;
@@ -1943,11 +1944,6 @@ mapi_mapi(const char *host, int port, const char *username,
 	  const char *password, const char *lang, const char *dbname)
 {
 	Mapi mid;
-
-	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init() < 0)
-			return NULL;
-	}
 
 	mid = mapi_new(NULL);
 	if (mid == NULL)
@@ -2025,6 +2021,7 @@ mapi_destroy(Mapi mid)
 	free(mid->noexplain);
 	if (mid->errorstr && mid->errorstr != mapi_nomem)
 		free(mid->errorstr);
+	free(mid->clientprefix);
 
 	msettings_destroy(mid->settings);
 
@@ -2248,6 +2245,17 @@ mapi_setfilecallback(Mapi mid,
 	mid->filecontentprivate = mid;
 	mid->putfilecontent_old = putfilecontent;
 	mid->filecontentprivate_old = filecontentprivate;
+}
+
+void
+mapi_setclientprefix(Mapi mid, const char *prefix)
+{
+	free(mid->clientprefix);
+	if (prefix == NULL)
+		mid->clientprefix = NULL;
+	else
+		mid->clientprefix = strdup(prefix);
+
 }
 
 #define testBinding(hdl,fnr)						\

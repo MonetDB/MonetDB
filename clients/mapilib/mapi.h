@@ -105,6 +105,7 @@ mapi_export void mapi_setfilecallback(
 			 const void *data, size_t size),
 	void *priv)
 	__attribute__((__nonnull__(1)));
+mapi_export void mapi_setclientprefix(Mapi mid, const char *prefix);
 
 mapi_export MapiMsg mapi_error(Mapi mid)
 	__attribute__((__nonnull__(1)));

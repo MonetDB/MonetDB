@@ -12,22 +12,22 @@ COPY 3 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 2136089006
 
 query R rowsort
-SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1
-HAVING MIN(ALL (('946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))
-UNION ALL SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1
-HAVING NOT (MIN(ALL (('946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538))))))
-UNION ALL SELECT ALL SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1
-HAVING (MIN(ALL (('946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))) IS NULL
+SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0)))))
+UNION ALL SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0)))))
+UNION ALL SELECT ALL SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0)))))
 ----
+NULL
+NULL
+NULL
 
 query R rowsort
-SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1
-HAVING MIN(ALL (('946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))
-UNION ALL SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1
-HAVING NOT (MIN(ALL (('946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538))))))
-UNION ALL SELECT ALL SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0))))) GROUP BY 0.1
-HAVING (MIN(ALL (('946496923')LIKE(CAST(nullif(0.5, 0.03) AS STRING(538)))))) IS NULL
+SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0)))))
+UNION ALL SELECT SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0)))))
+UNION ALL SELECT ALL SUM(ALL 0.12830007105673624234754015560611151158) FROM t0 WHERE ((sql_min(t0.c0, t0.c0))<>(COALESCE (t0.c0, sql_min(abs(t0.c0), nullif(t0.c0, t0.c0)))))
 ----
+NULL
+NULL
+NULL
 
 statement ok
 ROLLBACK
@@ -57,7 +57,7 @@ else coalesce (case coalesce (dayofmonth(timestamp '1970-01-15 10:08:18'), coale
 cast(t0.c3 as double)) then case least(t0.c1, t0.c1) when case t0.c2 when interval '5' month then '*pf6/+}öq壚,j2\302\205K]sNKk,_%Tu' when 1016331084 then '0.4'
 else '*' end then 0.8 end when sql_min(t0.c3, t0.c3) then coalesce (cast(t0.c2 as decimal), "second"(t0.c3), cast(t0.c2 as decimal),
 0.9) when coalesce (cast(t0.c1 as double), 0.2) then 0.0 else 0.0 end, 0.2) end from t0 where (interval '6' month)
-is not null group by cast(dayofmonth(t0.c0) as string(679)), 0.2
+is not null
 
 statement ok
 ROLLBACK
@@ -68,8 +68,10 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL)
 
-statement error 42000!types sec_interval(13,0) and int(31,0) are not equal
-SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0 GROUP BY 2 IN ((CAST(INTERVAL '-2' SECOND AS INT))%2)
+query I
+SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0
+----
+NULL
 
 statement ok
 ROLLBACK
@@ -106,7 +108,6 @@ query I rowsort
 SELECT ALL COUNT(TIME '06:32:50') FROM t1 LEFT OUTER JOIN t0 ON TRUE
 LEFT OUTER JOIN (SELECT t1.c1, t0.c1, 0.43 FROM t0, t1) AS sub0 ON TRUE
 WHERE ((NOT ((TIME '00:25:07') IN (TIME '07:29:34', TIME '05:21:58', CASE 0.54 WHEN 0.65 THEN TIME '17:23:46' ELSE TIME '05:14:30' END))))
-GROUP BY TIMESTAMP '1969-12-08 01:47:58'
 ----
 3
 
@@ -156,9 +157,10 @@ create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194)
 statement ok
 create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest('Dnwxjm4btQ9cp&\c''a_', '(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(''))not ilike(lower('''wAg_ z ''PPxXßgrd⍮G'))))
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'v2.c0' in query results without an aggregate function
+query I
 select all v2.c0 from v2 right outer join v1 on (('8*By1q)*Oc<n')like(substr('', 1151312829, 406714197)))
-where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second) group by timestamp '1970-01-21 14:05:46'
+where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second)
+----
 
 statement ok
 ROLLBACK
@@ -200,13 +202,13 @@ NULL	"0.48396026646393187"
 
 query R rowsort
 SELECT CAST(SUM(ALL 0.14) AS DECIMAL(10,2)) FROM sys.t0 JOIN sys.t1 ON CAST(CASE t0.c1 WHEN t1.c1 THEN NOT (FALSE) WHEN t1.c1 THEN (t0.c0) NOT  BETWEEN ASYMMETRIC (t1.c0) AND (t0.c0) WHEN t0.c1
-THEN (0.2) IN (0.3) END AS BOOLEAN) GROUP BY NOT (FALSE), COALESCE(((COALESCE(2, 4, 1))<<(COALESCE(5, -6))), ((COALESCE('-8', -4, 6))|(COALESCE(-2, 3, 4, 5, -6))))
+THEN (0.2) IN (0.3) END AS BOOLEAN)
 ----
 0.420
 
 query R rowsort
 SELECT PROD(ALL 0.14) FROM t0 JOIN t1 ON CAST(CASE t0.c1 WHEN t1.c1 THEN NOT (FALSE) WHEN t1.c1 THEN (t0.c0) NOT  BETWEEN ASYMMETRIC (t1.c0) AND (t0.c0) WHEN t0.c1
-THEN (0.2) IN (0.3) END AS BOOLEAN) GROUP BY NOT (FALSE), COALESCE(((COALESCE(2, 4, 1))<<(COALESCE(5, -6))), ((COALESCE('-8', -4, 6))|(COALESCE(-2, 3, 4, 5, -6))))
+THEN (0.2) IN (0.3) END AS BOOLEAN)
 ----
 0.003
 
@@ -291,8 +293,9 @@ SELECT CASE WHEN DATE '1970-01-04' IS NULL THEN CAST(CASE t1.c0 WHEN t1.c0 THEN 
 query T rowsort
 SELECT ALL MAX(ALL CASE WHEN (DATE '1970-01-04') IS NULL THEN CAST(CASE t1.c0 WHEN t1.c0 THEN TIME '11:33:56' END AS VARCHAR(524)) ELSE sql_max('iDfwsFjp藖1J洅ៅR-?0OT^.', '0.6') END) FROM t1
 JOIN (SELECT ALL t0.c0, greatest(CAST(INTERVAL '6' SECOND AS TIME), TIME '10:25:00') FROM t1, t0) AS sub0 ON (COALESCE(-3, -6, 3)) NOT IN (CASE WHEN TRUE THEN -3 END, ((-4)&(-5)), - (6))
-WHERE (('%')ILIKE('6')) GROUP BY COALESCE(CAST(least(0.4, 0.7) AS VARCHAR(506)), CAST(nullif(TIME '14:14:35', TIME '02:49:23') AS VARCHAR(388))), abs(0.6)
+WHERE (('%')ILIKE('6'))
 ----
+NULL
 
 statement ok
 ROLLBACK
@@ -439,16 +442,18 @@ SELECT count(*) FROM t1 CROSS JOIN t0
 0
 
 query I rowsort
-SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2
+SELECT count(*) FROM t1 CROSS JOIN t0
 ----
+0
 
 query I rowsort
-SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))
+SELECT count(*) FROM t1 CROSS JOIN t0 HAVING max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))
 UNION ALL
-SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING NOT (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))))
+SELECT count(*) FROM t1 CROSS JOIN t0 HAVING NOT (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))))
 UNION ALL
-SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))) IS NULL
+SELECT count(*) FROM t1 CROSS JOIN t0 HAVING (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))) IS NULL
 ----
+0
 
 statement ok
 ROLLBACK
@@ -698,8 +703,10 @@ SELECT median(ALL least(+ (0.269109938235654877480840241332771256566047668457031
 least(-650735786, -1123683253) ELSE 1414135574 END FROM v7, v38, v43 RIGHT OUTER JOIN
 (SELECT ALL sql_max(CAST(v28.vc0 AS REAL), ifthenelse(v32.vc1, 56, 104)), ((CAST(v28.vc1 AS DOUBLE))*
 (CAST(TRUE AS TINYINT))), 'u''A#{' FROM v28, v32, v3) AS sub0 ON (((TRUE)AND(TRUE))) = TRUE
-WHERE ((v7.vc1)ILIKE(upper(v43.vc1))) GROUP BY "second"(TIME '10:50:47')
+WHERE ((v7.vc1)ILIKE(upper(v43.vc1)))
 ----
+NULL
+-1123683253
 
 statement ok
 ROLLBACK

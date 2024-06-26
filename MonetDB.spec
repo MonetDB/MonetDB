@@ -8,8 +8,12 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-%global name MonetDB
-%global version 11.50.0
+%global version 11.52.0
+
+%bcond_with compat
+
+%global name MonetDB%{?with_compat:%version}
+
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
@@ -57,7 +61,7 @@
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
 %if %{fedpkgs} && (0%{?rhel} != 7) && (0%{?rhel} != 8)
-# By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
+# By default create the MonetDB-geom package on Fedora and RHEL 7
 %bcond_without geos
 %endif
 
@@ -91,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2023-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2023-SP3/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -117,7 +121,9 @@ BuildRequires: unixODBC-devel
 BuildRequires: readline-devel
 %else
 BuildRequires: pkgconfig(bzip2)
+%if %{without compat}
 BuildRequires: pkgconfig(odbc)
+%endif
 BuildRequires: pkgconfig(readline)
 %endif
 %if %{with fits}
@@ -151,12 +157,11 @@ BuildRequires: pkgconfig(libR)
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
 # BuildRequires: pkgconfig(netcdf)      # -DNETCDF=ON
 # BuildRequires: pkgconfig(proj)        # -DWITH_PROJ=ON
-# BuildRequires: pkgconfig(snappy)      # -DWITH_SNAPPY=ON
 # BuildRequires: pkgconfig(valgrind)    # -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
+Recommends: %{name}-server%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 
@@ -168,8 +173,8 @@ accelerators.  It also has an SQL front end.
 
 This package contains the core components of MonetDB in the form of a
 single shared library.  If you want to use MonetDB, you will certainly
-need this package, but you will also need at least the MonetDB5-server
-package, and most likely also %{name}-SQL-server5, as well as one or
+need this package, but you will also need at least the %{name}-server
+package, and most likely also %{name}-SQL, as well as one or
 more client packages.
 
 %ldconfig_scriptlets
@@ -177,8 +182,9 @@ more client packages.
 %files
 %license COPYING
 %defattr(-,root,root)
-%{_libdir}/libbat.so.*
+%{_libdir}/libbat*.so.*
 
+%if %{without compat}
 %package devel
 Summary: MonetDB development files
 Group: Applications/Databases
@@ -203,8 +209,9 @@ functionality of MonetDB.
 %{_includedir}/monetdb/mstring.h
 %exclude %{_includedir}/monetdb/monetdbe.h
 %{_includedir}/monetdb/monet*.h
-%{_libdir}/libbat.so
+%{_libdir}/libbat*.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
+%endif
 
 %package stream
 Summary: MonetDB stream library
@@ -224,8 +231,9 @@ various other components.
 %files stream
 %license COPYING
 %defattr(-,root,root)
-%{_libdir}/libstream.so.*
+%{_libdir}/libstream*.so.*
 
+%if %{without compat}
 %package stream-devel
 Summary: MonetDB stream library
 Group: Applications/Databases
@@ -246,17 +254,18 @@ library.
 %files stream-devel
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
-%{_libdir}/libstream.so
+%{_libdir}/libstream*.so
 %{_includedir}/monetdb/stream.h
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
+%endif
 
 %package client-lib
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
+Recommends: %{name}-server%{?_isa} = %{version}-%{release}
 %endif
 
 %description client-lib
@@ -274,15 +283,15 @@ you will very likely need this package.
 %files client-lib
 %license COPYING
 %defattr(-,root,root)
-%{_libdir}/libmapi.so.*
+%{_libdir}/libmapi*.so.*
 
 %package client
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
+Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
+Recommends: %{name}-server%{?_isa} = %{version}-%{release}
 %endif
 
 %description client
@@ -299,11 +308,14 @@ MonetDB, you will very likely need this package.
 %files client
 %license COPYING
 %defattr(-,root,root)
-%{_bindir}/mclient
-%{_bindir}/msqldump
+%{_bindir}/mclient*
+%{_bindir}/msqldump*
+%if %{without compat}
 %{_mandir}/man1/mclient.1*
 %{_mandir}/man1/msqldump.1*
+%endif
 
+%if %{without compat}
 %package client-devel
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
@@ -322,11 +334,13 @@ This package contains the files needed to develop with the
 %files client-devel
 %defattr(-,root,root)
 %dir %{_includedir}/monetdb
-%{_libdir}/libmapi.so
+%{_libdir}/libmapi*.so
 %{_includedir}/monetdb/mapi*.h
 %{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
+%endif
 
+%if %{without compat}
 %package client-odbc
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
@@ -365,18 +379,20 @@ fi
 %defattr(-,root,root)
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
+%endif
 
+%if %{without compat}
 %package client-tests
 Summary: MonetDB Client tests package
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
 Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
 Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
 Recommends: python3dist(lz4)
 Recommends: python3dist(scipy)
@@ -401,6 +417,7 @@ developer.
 %{_bindir}/arraytest
 %{_bindir}/bincopydata
 %{_bindir}/murltest
+%{_bindir}/odbcconnect
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -413,32 +430,36 @@ developer.
 %{_bindir}/malsample.pl
 %{_bindir}/sqlsample.php
 %{_bindir}/sqlsample.pl
+%endif
 
 %if %{with geos}
-%package geom-MonetDB5
-Summary: MonetDB5 SQL GIS support module
+%package geom
+Summary: SQL GIS support module for MonetDB
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
+Obsoletes: MonetDB-geom-MonetDB5 < 11.50.0
+Provides: %{name}-geom-MonetDB5 = %{version}-%{release}
+Provides: %{name}-geom-MonetDB5%{?_isa} = %{version}-%{release}
 
-%description geom-MonetDB5
+%description geom
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the GIS (Geographic Information System)
-extensions for MonetDB5-server.
+extensions for %{name}-server.
 
-%files geom-MonetDB5
+%files geom
 %defattr(-,root,root)
-%{_libdir}/monetdb5/lib_geom.so
+%{_libdir}/monetdb5*/lib_geom.so
 %endif
 
 %if %{with rintegration}
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
 
 %description R
 MonetDB is a database management system that is developed from a
@@ -455,15 +476,15 @@ install it.
 
 %files R
 %defattr(-,root,root)
-%{_libdir}/monetdb5/rapi.R
-%{_libdir}/monetdb5/lib_rapi.so
+%{_libdir}/monetdb5*/rapi.R
+%{_libdir}/monetdb5*/lib_rapi.so
 %endif
 
 %if %{with py3integration}
 %package python3
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Requires: python3-numpy
 
 %description python3
@@ -481,14 +502,14 @@ install it.
 
 %files python3
 %defattr(-,root,root)
-%{_libdir}/monetdb5/lib_pyapi3.so
+%{_libdir}/monetdb5*/lib_pyapi3.so
 %endif
 
 %if %{with fits}
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
-Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
 
 %description cfitsio
 MonetDB is a database management system that is developed from a
@@ -501,14 +522,17 @@ format.
 
 %files cfitsio
 %defattr(-,root,root)
-%{_libdir}/monetdb5/lib_fits.so
+%{_libdir}/monetdb5*/lib_fits.so
 %endif
 
-%package -n MonetDB5-libs
+%package libs
 Summary: MonetDB - Monet Database Main Libraries
 Group: Applications/Databases
+Obsoletes: MonetDB5-libs < 11.50.0
+Provides: MonetDB5-libs = %{version}-%{release}
+Provides: MonetDB5-libs%{?_isa} = %{version}-%{release}
 
-%description -n MonetDB5-libs
+%description libs
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
@@ -516,39 +540,38 @@ accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB server component in the form of a set
 of libraries.  You need this package if you want to use the MonetDB
-database system, either as independent program (MonetDB5-server) or as
+database system, either as independent program (%{name}-server) or as
 embedded library (%{name}-embedded).
 
-%ldconfig_scriptlets -n MonetDB5-libs
+%ldconfig_scriptlets libs
 
-%files -n MonetDB5-libs
+%files libs
 %defattr(-,root,root)
-%{_libdir}/libmonetdb5.so.*
-%{_libdir}/libmonetdbsql.so*
-%dir %{_libdir}/monetdb5
+%{_libdir}/libmonetdb5*.so.*
+%{_libdir}/libmonetdbsql*.so*
+%dir %{_libdir}/monetdb5-%{version}
 %if %{with cintegration}
-%{_libdir}/monetdb5/lib_capi.so
+%{_libdir}/monetdb5*/lib_capi.so
 %endif
-%{_libdir}/monetdb5/lib_csv.so
-%{_libdir}/monetdb5/lib_generator.so
+%{_libdir}/monetdb5*/lib_csv.so
+%{_libdir}/monetdb5*/lib_generator.so
 
-%package -n MonetDB5-server
+%package server
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
 Requires(pre): shadow-utils
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
-Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
-Obsoletes: MonetDB5-server-hugeint < 11.38.0
-%if %{with hugeint}
-Provides: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
-%endif
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Obsoletes: MonetDB5-server < 11.50.0
+Provides: MonetDB5-server = %{version}-%{release}
+Provides: MonetDB5-server%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
-Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: %{name}-SQL%{?_isa} = %{version}-%{release}
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 Requires(pre): systemd
 
-%description -n MonetDB5-server
+%description server
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
@@ -557,9 +580,9 @@ accelerators.  It also has an SQL front end.
 This package contains the MonetDB server component.  You need this
 package if you want to use the MonetDB database system.  If you want to
 use the monetdb and monetdbd programs to manage your databases
-(recommended), you also need %{name}-SQL-server5.
+(recommended), you also need %{name}-SQL.
 
-%pre -n MonetDB5-server
+%pre server
 %{?sysusers_create_package:echo 'u monetdb - "MonetDB Server" /var/lib/monetdb' | systemd-sysusers --replace=%_sysusersdir/monetdb.conf -}
 
 getent group monetdb >/dev/null || groupadd --system monetdb
@@ -580,25 +603,33 @@ else
 fi
 exit 0
 
-%files -n MonetDB5-server
+%files server
 %defattr(-,root,root)
+%if %{without compat}
 %{_sysusersdir}/monetdb.conf
 %attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
-%{_bindir}/mserver5
+%endif
+%{_bindir}/mserver5*
+%if %{without compat}
 %{_mandir}/man1/mserver5.1*
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB
 %{_datadir}/doc/MonetDB/*
+%endif
 
-%package -n MonetDB5-server-devel
+%if %{without compat}
+%package server-devel
 Summary: MonetDB development files
 Group: Applications/Databases
-Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Requires: %{name}-devel%{?_isa} = %{version}-%{release}
+Obsoletes: MonetDB5-server-devel < 11.50.0
+Provides: MonetDB5-server-devel = %{version}-%{release}
+Provides: MonetDB5-server-devel%{?_isa} = %{version}-%{release}
 
-%description -n MonetDB5-server-devel
+%description server-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
@@ -607,27 +638,27 @@ accelerators.  It also has an SQL front end.
 This package contains files needed to develop extensions that can be
 used from the MAL level.
 
-%files -n MonetDB5-server-devel
+%files server-devel
 %defattr(-,root,root)
 %{_includedir}/monetdb/mal*.h
 %{_includedir}/monetdb/mel.h
-%{_libdir}/libmonetdb5.so
+%{_libdir}/libmonetdb5*.so
 %{_libdir}/pkgconfig/monetdb5.pc
-
-%package SQL-server5
-Summary: MonetDB5 SQL server modules
-Group: Applications/Databases
-Requires(pre): MonetDB5-server%{?_isa} = %{version}-%{release}
-Obsoletes: %{name}-SQL-server5-hugeint < 11.38.0
-%if %{with hugeint}
-Provides: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %endif
+
+%package SQL
+Summary: MonetDB SQL server modules
+Group: Applications/Databases
+Requires(pre): %{name}-server%{?_isa} = %{version}-%{release}
+Obsoletes: MonetDB-SQL-server5 < 11.50.0
+Provides: %{name}-SQL-server5 = %{version}-%{release}
+Provides: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 %{?systemd_requires}
 
-%description SQL-server5
+%description SQL
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
@@ -636,19 +667,19 @@ accelerators.  It also has an SQL front end.
 This package contains the monetdb and monetdbd programs and the systemd
 configuration.
 
-%post SQL-server5
+%post SQL
 %systemd_post monetdbd.service
 
-%preun SQL-server5
+%preun SQL
 %systemd_preun monetdbd.service
 
-%postun SQL-server5
+%postun SQL
 %systemd_postun_with_restart monetdbd.service
 
-%files SQL-server5
+%files SQL
 %defattr(-,root,root)
-%{_bindir}/monetdb
-%{_bindir}/monetdbd
+%{_bindir}/monetdb*
+%if %{without compat}
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
 # RHEL >= 7, and all current Fedora
@@ -662,14 +693,16 @@ configuration.
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
+%endif
 
-%package SQL-server5-devel
-Summary: MonetDB5 SQL server modules
+%if %{without compat}
+%package SQL-devel
+Summary: MonetDB SQL server modules development files
 Group: Applications/Databases
-Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: MonetDB5-server-devel%{?_isa} = %{version}-%{release}
+Requires: %{name}-SQL%{?_isa} = %{version}-%{release}
+Requires: %{name}-server-devel%{?_isa} = %{version}-%{release}
 
-%description SQL-server5-devel
+%description SQL-devel
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
@@ -677,17 +710,19 @@ accelerators.  It also has an SQL front end.
 
 This package contains files needed to develop SQL extensions.
 
-%files SQL-server5-devel
+%files SQL-devel
 %defattr(-,root,root)
 %{_includedir}/monetdb/opt_backend.h
 %{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
 %{_includedir}/monetdb/store_*.h
+%endif
 
+%if %{without compat}
 %package embedded
 Summary: MonetDB as an embedded library
 Group: Applications/Databases
-Requires: MonetDB5-libs%{?_isa} = %{version}-%{release}
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 
 %description embedded
 MonetDB is a database management system that is developed from a
@@ -749,7 +784,9 @@ Group: Applications/Databases
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: python3dist(pymonetdb)
 BuildArch: noarch
+%endif
 
+%if %{without compat}
 %description testing-python
 MonetDB is a database management system that is developed from a
 main-memory perspective with use of a fully decomposed storage model,
@@ -769,17 +806,19 @@ developer, but if you do want to test, this is the package you need.
 %{_bindir}/sqllogictest.py
 %dir %{python3_sitelib}/MonetDBtesting
 %{python3_sitelib}/MonetDBtesting/*
+%endif
 
+%if %{without compat}
 %package selinux
 Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
 %if "%{?_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{?_selinux_policy_version}
 %endif
-Requires(post):   MonetDB5-server%{?_isa} = %{version}-%{release}
-Requires(postun): MonetDB5-server%{?_isa} = %{version}-%{release}
-Requires(post):   %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires(postun): %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires(post):   %{name}-server%{?_isa} = %{version}-%{release}
+Requires(postun): %{name}-server%{?_isa} = %{version}-%{release}
+Requires(post):   %{name}-SQL%{?_isa} = %{version}-%{release}
+Requires(postun): %{name}-SQL%{?_isa} = %{version}-%{release}
 # we need /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles which are in
 # policycoreutils
 Requires(post):   policycoreutils
@@ -807,7 +846,7 @@ do
   /usr/sbin/semodule -s ${selinuxvariant} -i \
     %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
 done
-/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd* %{_bindir}/mserver5* %{_unitdir}/monetdbd.service &> /dev/null || :
 /usr/bin/systemctl try-restart monetdbd.service
 
 %postun selinux
@@ -820,7 +859,7 @@ if [ $1 -eq 0 ] ; then
   do
     /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
   done
-  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_rundir}/monetdb %{_bindir}/monetdbd* %{_bindir}/mserver5* %{_unitdir}/monetdbd.service &> /dev/null || :
   if [ $active = active ]; then
     /usr/bin/systemctl start monetdbd.service
   fi
@@ -831,9 +870,10 @@ fi
 %docdir %{_datadir}/doc/MonetDB-selinux
 %{_datadir}/doc/MonetDB-selinux/*
 %{_datadir}/selinux/*/monetdb.pp
+%endif
 
 %prep
-%setup -q
+%setup -q -n MonetDB-%{version}
 
 %build
 # from Fedora 40, selinux uses /run where before it used /var/run
@@ -852,7 +892,7 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DGEOM=%{?with_geos:ON}%{!?with_geos:OFF} \
         -DINT128=%{?with_hugeint:ON}%{!?with_hugeint:OFF} \
         -DNETCDF=OFF \
-        -DODBC=ON \
+        -DODBC=%{!?with_compat:ON}%{?with_compat:OFF} \
         -DPY3INTEGRATION=%{?with_py3integration:ON}%{!?with_py3integration:OFF} \
         -DRINTEGRATION=%{?with_rintegration:ON}%{!?with_rintegration:OFF} \
         -DSANITIZER=OFF \
@@ -868,7 +908,6 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
-        -DWITH_SNAPPY=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
@@ -876,51 +915,84 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
 %cmake3_build
 
 %install
-mkdir -p "%{buildroot}/usr"
-for d in etc var; do mkdir "%{buildroot}/$d"; ln -s ../$d "%{buildroot}/usr/$d"; done
+mkdir -p "${RPM_BUILD_ROOT}"/usr
+for d in etc var; do mkdir "${RPM_BUILD_ROOT}"/$d; ln -s ../$d "${RPM_BUILD_ROOT}"/usr/$d; done
 %cmake3_install
-rm "%{buildroot}/usr/var" "%{buildroot}/usr/etc"
+rm "${RPM_BUILD_ROOT}"/usr/var "${RPM_BUILD_ROOT}"/usr/etc
 
 # move file to correct location
-mkdir -p %{buildroot}%{_tmpfilesdir} %{buildroot}%{_sysusersdir}
-mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
-cat > %{buildroot}%{_sysusersdir}/monetdb.conf << EOF
+mkdir -p "${RPM_BUILD_ROOT}"%{_tmpfilesdir} "${RPM_BUILD_ROOT}"%{_sysusersdir}
+mv "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d/monetdbd.conf "${RPM_BUILD_ROOT}"%{_tmpfilesdir}
+cat > "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf << EOF
 u monetdb - "MonetDB Server" /var/lib/monetdb
 EOF
-rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
+rmdir "${RPM_BUILD_ROOT}"%{_sysconfdir}/tmpfiles.d
 
-install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
-install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
-install -d -m 0775 %{buildroot}%{_localstatedir}/log/monetdb
-install -d -m 0775 %{buildroot}%{_rundir}/monetdb
+install -d -m 0750 "${RPM_BUILD_ROOT}"%{_localstatedir}/lib/monetdb
+install -d -m 0770 "${RPM_BUILD_ROOT}"%{_localstatedir}/monetdb5/dbfarm
+install -d -m 0775 "${RPM_BUILD_ROOT}"%{_localstatedir}/log/monetdb
+install -d -m 0775 "${RPM_BUILD_ROOT}"%{_rundir}/monetdb
 
 # remove unwanted stuff
-# .la files
-rm -f %{buildroot}%{_libdir}/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/*.la
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_opt_sql_append.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
-rm -f %{buildroot}%{_libdir}/monetdb5/lib_udf*.so
-rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
-rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
+rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_opt_sql_append.so
+rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_microbenchmark*.so
+rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_udf*.so
+rm -f "${RPM_BUILD_ROOT}"%{_bindir}/monetdb_mtest.sh
+rm -rf "${RPM_BUILD_ROOT}"%{_datadir}/monetdb # /cmake
 
 if [ -x /usr/sbin/hardlink ]; then
-    /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+    /usr/sbin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 else
     # Fedora 31
-    /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
+    /usr/bin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 fi
 
 # update shebang lines for Python scripts
 %if %{?py3_shebang_fix:1}%{!?py3_shebang_fix:0}
     # Fedora has py3_shebang_fix macro
-    %{py3_shebang_fix} %{buildroot}%{_bindir}/*.py
+    %{py3_shebang_fix} "${RPM_BUILD_ROOT}"%{_bindir}/*.py
 %else
     # EPEL does not, but we can use the script directly
-    /usr/bin/pathfix.py -pni "%{__python3} -s" %{buildroot}%{_bindir}/*.py
+    /usr/bin/pathfix.py -pni "%{__python3} -s" "${RPM_BUILD_ROOT}"%{_bindir}/*.py
+%endif
+
+%if %{with compat}
+# delete files that are not going to be installed in compat packages
+rm "${RPM_BUILD_ROOT}"%{_bindir}/{M{convert.py,test.py,z.py},bincopydata,example_proxy,m{alsample.pl,client,ktest.py,onetdb{,d},s{erver5,qldump},urltest},s{ample{0,1,4},hutdowntest,mack0{0,1},ql{logictest.py,sample.p{hp,l}},treamcat},testcondvar}
+rm -r "${RPM_BUILD_ROOT}"%{_datadir}/doc/MonetDB*
+rm "${RPM_BUILD_ROOT}"%{_datadir}/selinux/*/monetdb.pp
+rm -r "${RPM_BUILD_ROOT}"%{_includedir}/monetdb
+rm "${RPM_BUILD_ROOT}"%{_libdir}/*.so "${RPM_BUILD_ROOT}"%{_libdir}/libmonetdbe.so.*
+rm -r "${RPM_BUILD_ROOT}"%{_libdir}/pkgconfig
+rm -r "${RPM_BUILD_ROOT}"%{_localstatedir}/lib/monetdb "${RPM_BUILD_ROOT}"%{_localstatedir}/monetdb5
+rm -r "${RPM_BUILD_ROOT}"%{_mandir}/man1
+rm -r "${RPM_BUILD_ROOT}"%{python3_sitelib}/MonetDBtesting
+rm "${RPM_BUILD_ROOT}"%{_sysconfdir}/logrotate.d/monetdbd
+rm "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf
+rm "${RPM_BUILD_ROOT}"%{_tmpfilesdir}/monetdbd.conf
+rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Thu May 02 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.9-20240502
+- Rebuilt.
+- GH#7422: Aggregate functions with variadic arguments
+- GH#7472: MonetDB server crashes in `tail_type`
+- GH#7473: MonetDB server crashes in `SQLunionfunc`
+- GH#7478: MonetDB server crashes in `exp_equal`
+- GH#7496: Query on view fails to produce a resultset. Assertion triggered
+  in rel2bin_select.
+- GH#7499: create schema + set schema inside a transaction that is rolled
+  back causes the connection to be aborted
+- GH#7501: files remain in backup causing problems at restart
+- GH#7503: MonetDB server crashes using `WHEN MATCHED THEN UPDATE`
+- GH#7504: possible deadlock when a bat is made persistent when it is also
+  getting unloaded
+- GH#7506: MonetDB Dec2023-SP2 crashes at `rel_value_exp2`
+- GH#7507: BBPextend: ERROR: trying to extend BAT pool beyond the limit
+  (163840000)
+- GH#7508: MonetDB Dec2023-SP2 crashes at `exp_ref`
+
 * Tue Apr 09 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.7-20240409
 - Rebuilt.
 - GH#7469: Crash when using `CONTAINS`

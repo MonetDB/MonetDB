@@ -40,6 +40,7 @@ ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLeng
 	const char *err;
 	MapiMsg ret;
 	MapiHdl hdl;
+	long timeout;
 
 	hdl = stmt->hdl;
 
@@ -93,7 +94,8 @@ ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLeng
 		break;
 	case MTIMEOUT:
 		/* Timeout expired / Communication link failure */
-		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		timeout = msetting_long(stmt->Dbc->settings, MP_REPLY_TIMEOUT);
+		addStmtError(stmt, timeout > 0 ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
 		err = mapi_result_error(hdl);

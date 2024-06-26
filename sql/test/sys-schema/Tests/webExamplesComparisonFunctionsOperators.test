@@ -56,8 +56,10 @@ select 2 = 5 as f1, 2 <> 5 as t1
 0
 1
 
-statement error
+query I rowsort
 select 2 != 5 as t1
+----
+1
 
 query I rowsort
 select "<"('aa', 'ab') as tru

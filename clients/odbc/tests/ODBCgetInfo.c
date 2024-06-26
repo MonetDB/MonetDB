@@ -19,10 +19,8 @@
 #include <stdbool.h>
 #include <string.h>
 
-/**** Define the ODBC Version this ODBC driver complies with ****/
-/* also see ODBCGlobal.h */
+/**** Define the ODBC Version our ODBC driver complies with ****/
 #define ODBCVER 0x0352		/* Important: this must be defined before include of sqlext.h */
-
 #include <sql.h>
 #include <sqlext.h>
 

@@ -1,0 +1,14 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SCHEMA test
+
+statement ok
+SET SCHEMA test
+
+statement ok
+ROLLBACK
+
+statement ok
+SET SCHEMA sys

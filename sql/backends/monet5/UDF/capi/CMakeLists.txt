@@ -34,7 +34,6 @@ if(CINTEGRATION)
 
   target_link_libraries(capi
     PRIVATE
-    mutils
     bat
     monetdb5
     monetdb_config_header)
@@ -47,10 +46,10 @@ if(CINTEGRATION)
   install(TARGETS
     capi
     LIBRARY
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT server
     ARCHIVE
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     PUBLIC_HEADER
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -58,7 +57,7 @@ if(CINTEGRATION)
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:capi>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
 endif()

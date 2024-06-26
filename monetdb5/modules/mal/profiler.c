@@ -155,7 +155,7 @@ CMDgetprofilerlimit(int *res)
 }
 
 static str
-CMDsetprofilerlimit(void *res, int *lim)
+CMDsetprofilerlimit(void *res, const int *lim)
 {
 	(void) res;
 	setprofilerlimit(*lim);
@@ -167,7 +167,7 @@ CMDsetprofilerlimit(void *res, int *lim)
  */
 
 static str
-CMDsetHeartbeat(void *res, int *ev)
+CMDsetHeartbeat(void *res, const int *ev)
 {
 	(void) res;
 	setHeartbeat(*ev);
@@ -210,8 +210,8 @@ CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 }
 
 static str
-CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys,
-					 lng *idle, lng *iowait)
+CMDcpuloadPercentage(int *cycles, int *io, const lng *user, const lng *nice,
+					 const lng *sys, const lng *idle, const lng *iowait)
 {
 	lng userN, niceN, sysN, idleN, iowaitN, N;
 	*cycles = 0;

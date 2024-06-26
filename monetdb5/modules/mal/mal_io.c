@@ -232,14 +232,15 @@ static const char type_error[80] =
 static const char niltext[4] = "nil";
 
 static str
-IOprintf_(str *res, str format, ...)
+IOprintf_(str *res, const char *format, ...)
 {
 	va_list ap;
 	int n;
 
 	int prec = 0, dotseen = 0, escaped = 0, type, size, argc = 1;
 	size_t adds = 100, width = 0;
-	char *add, *dst, *buf, *cur, *paramseen = NULL;
+	char *add, *dst, *buf;
+	const char *paramseen = NULL;
 	char *p;
 
 	if (format == NULL) {
@@ -263,7 +264,7 @@ IOprintf_(str *res, str format, ...)
 	}
 
 	va_start(ap, format);
-	for (cur = format; *cur; cur++) {
+	for (const char *cur = format; *cur; cur++) {
 		if (paramseen) {
 			char meta[100];
 			ptrdiff_t extra = 0;
@@ -303,9 +304,9 @@ IOprintf_(str *res, str format, ...)
 			if (ATOMcmp(type, ATOMnilptr(type), p) == 0) {
 				/* value is nil; attempt to print formatted 'nil'
 				   without generating %ls etc. */
-				char *csrc, *ctrg = meta;
+				char *ctrg = meta;
 
-				for (csrc = paramseen; csrc < cur; csrc++) {
+				for (const char *csrc = paramseen; csrc < cur; csrc++) {
 					if (*csrc == '.')
 						break;
 					if (GDKisdigit(*csrc) || *csrc == '-')

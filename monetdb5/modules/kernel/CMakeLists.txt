@@ -51,7 +51,6 @@ target_link_libraries(kernel
   PRIVATE
   $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
   monetdb_config_header
-  mutils
   bat
   mal
   atoms)
@@ -71,12 +70,12 @@ set_target_properties(microbenchmark
 
 install(TARGETS
   microbenchmark
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
   COMPONENT microbenchmark)
 
 if(WIN32)
   install(FILES
     $<TARGET_PDB_FILE:microbenchmark>
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     OPTIONAL)
 endif()

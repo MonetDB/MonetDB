@@ -14,7 +14,7 @@
 #define _MUTILS_H_
 
 #ifdef WIN32
-#if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL)
+#if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL) && !defined(LIBMAPI)
 #define mutils_export extern __declspec(dllimport)
 #else
 #define mutils_export extern __declspec(dllexport)

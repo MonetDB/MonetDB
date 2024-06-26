@@ -130,15 +130,16 @@ connect_socket_unix(Mapi mid)
 {
 	const char *sockname = msettings_connect_unix(mid->settings);
 	assert (*sockname != '\0');
+	long timeout = msetting_long(mid->settings, MP_CONNECT_TIMEOUT);
 
-	mapi_log_record(mid, "CONN", "Connecting to Unix domain socket %s", sockname);
+	mapi_log_record(mid, "CONN", "Connecting to Unix domain socket %s with timeout %ld", sockname, timeout);
 
 	struct sockaddr_un userver;
 	if (strlen(sockname) >= sizeof(userver.sun_path)) {
 		return mapi_printError(mid, __func__, MERROR, "path name '%s' too long", sockname);
 	}
 
-	// Create the socket, taking care of CLOEXEC
+	// Create the socket, taking care of CLOEXEC and SNDTIMEO
 
 #ifdef SOCK_CLOEXEC
 	int s = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
@@ -153,6 +154,22 @@ connect_socket_unix(Mapi mid)
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 	(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
+
+	if (timeout > 0) {
+		struct timeval tv = {
+			.tv_sec = timeout / 1000,
+			.tv_usec = timeout % 1000,
+		};
+		if (
+			setsockopt(s, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) == SOCKET_ERROR
+			|| setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) == SOCKET_ERROR
+		) {
+			closesocket(s);
+			return mapi_printError(
+				mid, __func__, MERROR,
+				"could not set connect timeout: %s", strerror(errno));
+		}
+	}
 
 	// Attempt to connect
 

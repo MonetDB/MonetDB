@@ -42,4 +42,3 @@ These packages are optional.
 
 libcfitsio-dev		# optional: read FITS files
 liblz4-dev		# optional: read and write .lz4 compressed files
-libsnappy-dev		# optional: currently unused

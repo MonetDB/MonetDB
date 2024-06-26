@@ -26,7 +26,6 @@ target_include_directories(opt_sql_append
 target_link_libraries(opt_sql_append
   PRIVATE
   monetdb_config_header
-  mutils
   bat
   monetdb5)
 
@@ -42,12 +41,12 @@ set_target_properties(opt_sql_append
 
 install(TARGETS
   opt_sql_append
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
   COMPONENT server)
 
 if(WIN32)
   install(FILES
     $<TARGET_PDB_FILE:opt_sql_append>
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     OPTIONAL)
 endif()

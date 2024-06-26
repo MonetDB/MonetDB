@@ -44,7 +44,6 @@ if(NETCDF_FOUND)
   target_link_libraries(netcdff
     PRIVATE
     monetdb_config_header
-    mutils
     bat
     monetdb5
     sqlinclude
@@ -61,13 +60,13 @@ if(NETCDF_FOUND)
 
   install(TARGETS
     netcdff
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT server)
 
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:netcdff>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
 endif()

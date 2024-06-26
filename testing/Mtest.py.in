@@ -35,6 +35,8 @@ import socket
 import struct
 import signal
 import fnmatch
+import http
+import http.server
 import glob
 import pymonetdb # check for pymonetdb early: it is essential for our work
 
@@ -376,7 +378,6 @@ CONDITIONALS = {
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
-    'HAVE_ICONV'           : "@HAVE_ICONV_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
     'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBLZMA'         : "@HAVE_LIBLZMA_FALSE@",
@@ -3241,6 +3242,40 @@ def SetExecEnv(exe,port,verbose) :
         print(end='', flush=True)
 ### SetExecEnv(exe,port,procdebug) #
 
+def DummyTlsTester():
+    class DummyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
+        def handle(self):
+            self.requestline = ''
+            self.request_version = ''
+            self.command = ''
+            self.send_error(http.HTTPStatus.INTERNAL_SERVER_ERROR, f"{sys.argv[0]} is not running TLSTestter because the 'cryptography' module is not present")
+    server = http.server.HTTPServer(('localhost', 0), DummyHTTPRequestHandler)
+    port = server.server_address[1]
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    return port
+### DummyTlsTester(exe,port,procdebug) #
+
+def StartTlsTester():
+    try:
+        import cryptography
+    except:
+        # Start a dummy server that only returns errors.
+        return DummyTlsTester()
+    from MonetDBtesting import tlstester
+    hostnames = ['localhost']
+    certs = tlstester.Certs(hostnames)
+    server = tlstester.TLSTester(
+        certs = certs,
+        listen_addr='localhost',
+        preassigned={},
+        sequential=False,
+        hostnames=hostnames)
+    server_thread = threading.Thread(target=server.serve_forever, daemon=True)
+    server_thread.start()
+    return server.get_port('base')
+### StartTlsTester() #
+
 #############################################################################
 #       MAIN
 
@@ -3786,6 +3821,14 @@ def main(argv) :
     env['LIBDIR'] = _configure('@QXlibdir@')
     vars_.append('LIBDIR')
 
+    # start tlstester
+    if not env.get('TST_TLSTESTERPORT'):
+        tlstester_port = StartTlsTester()
+        if tlstester_port:
+            env['TST_TLSTESTERPORT'] = str(tlstester_port)
+    if env.get('TST_TLSTESTERPORT'):
+        vars_.append('TST_TLSTESTERPORT')
+
     # export and display env
     print(file=sys.stderr, end='', flush=True)
     vars_ = vars_ + ['GDK_DBFARM']
@@ -4271,7 +4314,7 @@ VALUES (%s, '%s', '%s', '%s',
                 for f in Failure[x]:
                     what += "        %s\n" % f
         print(file=sys.stderr, end='', flush=True)
-        if verbosity == 0 or verbosity == 1:
+        if not testweb and (verbosity == 0 or verbosity == 1):
             if Failed or errseen:
                 prred('ERROR')
             else:

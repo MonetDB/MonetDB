@@ -88,14 +88,14 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER USER ident\n"
 	 "    [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string]\n"
 	 "    [SET SCHEMA ident] [SCHEMA PATH string] [DEFAULT ROLE ident]\n"
-	 "    [MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
+	 "    [MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"ANALYZE",
-	 "Collect column/table/schema data statistics for analysis and optimizer usage",
-	 "ANALYZE ident [ . ident [ column_list ] ] [SAMPLE size] [MINMAX]",
+	 "Analyze and update column data statistics of column(s) of one or all tables in a schema",
+	 "ANALYZE ident [ . ident [ column_list ] ]",
 	 "ident,column_list",
-	 "See also https://www.monetdb.org/documentation/admin-guide/monitoring/table-statistics/"},
+	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/analyze-statement/"},
 	{"CALL",
 	 "Call a stored procedure",
 	 "CALL qname '(' [ scalar_expression [',' ...] ] ')' | CALL ident '.' ident",
@@ -252,7 +252,7 @@ SQLhelp sqlhelp1[] = {
 	{"CREATE USER",
 	 "Create a new database user",
 	 "CREATE USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string NAME string [SCHEMA ident] [SCHEMA PATH string]\n"
-	 "[MAX_MEMORY posbytes | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
+	 "[MAX_MEMORY posbytes | MAX_MEMORY sizestr | NO MAX_MEMORY] [MAX_WORKERS poscount | NO MAX_WORKERS]\n"
 	 "[OPTIMIZER string] [DEFAULT ROLE ident]",
 	 "ident",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},

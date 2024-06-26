@@ -93,7 +93,6 @@ COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 
 statement error 22012!division by zero.
 SELECT AVG(ALL ((((CAST(((+ (-12))/(sql_min(-12, -67))) AS INT))+(abs(((13)*(10))))))*(((((greatest(12, -11))/(((((34-15)))/(CAST(t0.c0 AS INT))))))*(- (+ (((-29)*(6))))))))), 0.777 FROM t0 WHERE (0.06) NOT  BETWEEN ASYMMETRIC (t0.c0) AND (t0.c0)
-GROUP BY 0.1, 0.7, 0.2, + (+ (- (length('q')))), greatest(upper(upper('623865997')), trim(replace('vAd(Lup}Z', '-1774953973', '0.4235712099498189'), substr('', -19)))
 
 statement ok
 ROLLBACK
@@ -200,9 +199,11 @@ between asymmetric (t0.c0) and (t0.c0)))) is null
 0.939
 
 query RRI rowsort
-SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length('>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower('[]'), rtrim('..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
-FROM t0 WHERE FALSE GROUP BY 1.2807753E7 HAVING MAX(ALL ((t0.c0)>=(NULL)))
+SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length('>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower('[]'), rtrim('..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT) FROM t0 WHERE FALSE
 ----
+NULL
+0.519
+0
 
 statement ok
 ROLLBACK

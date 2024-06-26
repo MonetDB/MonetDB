@@ -108,7 +108,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 
 				if (exp_subtype(e)->type->localtype == TYPE_hge) /* down cast */
-					e = n->data = exp_convert(sql->sa, e, exp_subtype(e), sql_bind_localtype("lng"));
+					e = n->data = exp_convert(sql, e, exp_subtype(e), sql_bind_localtype("lng"));
 			}
 		}
 	}

@@ -1,0 +1,5 @@
+statement error 42000!SELECT: identifier 'x' unknown
+SELECT FIELD(x, '', '', '', '', '', '', '', '', '', '', '', '', '')
+
+statement error 42000!Field function called with not enough arguments
+SELECT FIELD('fieldID99999999999999999999999999999999999999999999999999999999999999999999999')

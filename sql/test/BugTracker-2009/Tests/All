@@ -69,7 +69,7 @@ utf8_bug.SF-2822855
 reorder.SF-2770608
 orIssue.SF-2812504
 recursion-problem.SF-2827784
-select_X_where_bla_EQ_whatever.SF-282597
+select_X_where_bla_EQ_whatever.SF-2825974
 rollback_mistake.SF-2814622
 numeric_data_type_bug.SF-2818176
 insert_into_values_bug.SF-2807609

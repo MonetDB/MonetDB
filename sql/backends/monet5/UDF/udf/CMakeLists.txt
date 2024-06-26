@@ -46,7 +46,6 @@ target_include_directories(udf
 
 target_link_libraries(udf
   PRIVATE
-  mutils
   bat
   monetdb5
   sql
@@ -64,10 +63,10 @@ set_target_properties(udf
 install(TARGETS
   udf
   LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
   COMPONENT server
   ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -75,6 +74,6 @@ install(TARGETS
 if(WIN32)
   install(FILES
     $<TARGET_PDB_FILE:udf>
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     OPTIONAL)
 endif()

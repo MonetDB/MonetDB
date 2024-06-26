@@ -1,0 +1,61 @@
+statement ok
+create table foo (i int CHECK (i > 0), j int CHECK (j > 0))
+
+statement ok
+insert into foo values (1,10), (2, 20), (3, 30)
+
+statement error
+update foo set j = -30 where i = 3
+
+statement error
+update foo set j = -j
+
+statement error
+insert into foo values (4, -40)
+
+statement ok
+insert into foo select * from foo
+
+statement error
+insert into foo select 4, -40
+
+statement ok
+create table bar (i int, j int, constraint check_i_j CHECK (i < j))
+
+statement error
+insert into bar values (30, 20)
+
+statement ok
+insert into bar values (10,20), (20, 30), (30, 40)
+
+statement error
+update bar set i = 50 where i = 30
+
+statement error
+update bar set i = 50, j = 40 where i = 30
+
+statement error
+create table baz(j int check (j > (select max(i) from foo)))
+
+statement error
+create table baz(j int check (j in (select i from foo)))
+
+-- exported from check-constraint.Bug-3335
+
+statement ok
+create table t3335(x integer check(x > 0 and x < 2))
+
+statement ok
+insert into t3335 values(1)
+
+statement error
+insert into t3335 values(0)
+
+statement error
+insert into t3335 values(2)
+
+statement error
+insert into t3335 values(-1)
+
+statement error
+insert into t3335 values(3)

@@ -41,10 +41,8 @@ query I rowsort
 select count(*) having -1 > 0
 ----
 
-query I rowsort
+statement error 42000!SELECT: aggregate functions are not allowed in GROUP BY
 select cast(sum(42) as bigint) group by 1
-----
-42
 
 query I rowsort
 select cast(sum(42) as bigint) limit 2
@@ -601,15 +599,30 @@ select * from myv limit 1
 statement ok
 rollback
 
-statement error
+query II
 select * from (select 1 as c0, 2 as c0) as sub
+----
+1
+2
 
-statement error
+query IIII
 select *,* from (select 1 as c0, 2 as c0) as sub
+----
+1
+2
+1
+2
 
 # for longer projection lists, we use hashing
 statement error
+query IIIII
 select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as d) as sub
+----
+1
+2
+3
+4
+5
 
 query IIIII rowsort
 select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as e) as sub
@@ -620,8 +633,11 @@ select * from (select 1 as a, 2 as b, 3 as c, 4 as d, 5 as e) as sub
 4
 5
 
-statement error
+query II rowsort
 select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub
+----
+1
+2
 
 query T rowsort
 select cast(interval '3' second as clob)
@@ -967,7 +983,7 @@ SELECT count(1) FROM (SELECT 0.642700575141694319114549216465093195438385009765 
 1
 
 query I nosort
-SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 3 IS NOT NULL, 1 - CASE WHEN FALSE THEN 1 ELSE x.x END, 2 IS NULL
+SELECT min(1) FROM (SELECT DISTINCT 1) x(x) GROUP BY 1 - CASE WHEN FALSE THEN 1 ELSE x.x END
 ----
 1
 

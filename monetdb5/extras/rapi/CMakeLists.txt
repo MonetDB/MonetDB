@@ -33,7 +33,6 @@ if(LIBR_FOUND)
   target_link_libraries(rapi
     PRIVATE
     monetdb_config_header
-    mutils
     bat
     monetdb5
     sqlinclude
@@ -51,19 +50,19 @@ if(LIBR_FOUND)
   install(TARGETS
     rapi
     DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT rapi)
 
   install(FILES
     rapi.R
     DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT rapi)
 
   if(WIN32)
     install(FILES
       $<TARGET_PDB_FILE:rapi>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
 endif()

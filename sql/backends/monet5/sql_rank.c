@@ -832,7 +832,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 bailout:
 	unfix_inputs(3, b, p, n);
 	finalize_output(res, r, msg);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
@@ -954,7 +954,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 bailout:
 	unfix_inputs(3, b, s, e);
 	finalize_output(res, r, msg);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str

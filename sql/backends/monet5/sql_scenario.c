@@ -201,7 +201,7 @@ SQLexit(Client c)
 str
 SQLepilogue(void *ret)
 {
-	const char *s = "sql", *m = "msql";
+	const char s[] = "sql", m[] = "msql";
 	char *msg;
 
 	(void) ret;
@@ -819,7 +819,7 @@ SQLtrans(mvc *m)
 		}
 		s = m->session;
 		if (!s->schema) {
-			switch (monet5_user_get_def_schema(m, m->user_id, &s->schema_name)) {
+			switch (monet5_user_get_def_schema(m, m->user_id, &s->def_schema_name)) {
 				case -1:
 					mvc_cancel_session(m);
 					throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -832,6 +832,7 @@ SQLtrans(mvc *m)
 				default:
 					break;
 			}
+			s->schema_name = s->def_schema_name;
 			if (!(s->schema = find_sql_schema(s->tr, s->schema_name))) {
 				mvc_cancel_session(m);
 				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
@@ -1202,6 +1203,26 @@ SQLchannelcmd(Client c, backend *be)
 		v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
 		be->sizeheader = v != 0;
 		in->pos = in->len;	/* HACK: should use parsed length */
+		return MAL_SUCCEED;
+	}
+	if (strncmp(in->buf + in->pos, "clientinfo ", 11) == 0) {
+		in->pos += 11;
+		char *end = in->buf + in->len;
+		char *key = in->buf + in->pos;
+		while (key < end) {
+			char *p = memchr(key, '\n', end - key);
+			if (!p)
+				return createException(SQL, "SQLparser", SQLSTATE(42000) "no trailing newline in clientinfo");
+			*p = '\0';
+			char *q = memchr(key, '=', p - key);
+			if (!q)
+				return createException(SQL, "SQLparser", SQLSTATE(42000) "found no = in clientinfo");
+			*q = '\0';
+			char *value = q + 1;
+			MCsetClientInfo(c, key, *value ? value : NULL);
+			key = p + 1;
+		}
+		in->pos = in->len;
 		return MAL_SUCCEED;
 	}
 	if (strncmp(in->buf + in->pos, "quit", 4) == 0) {

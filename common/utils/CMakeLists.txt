@@ -28,12 +28,11 @@ target_include_directories(mutils
 
 target_link_libraries(mutils
   PRIVATE
-  monetdb_config_header)
+  monetdb_config_header
+  mutf8)
 
 target_compile_definitions(mutils PRIVATE
-  LIBMUTILS
-  LIBGDK
-  LIBMEROUTIL)
+  LIBMUTILS)
 
 set_target_properties(mutils
   PROPERTIES
@@ -72,8 +71,6 @@ target_link_libraries(mcrypt
 
 target_compile_definitions(mcrypt
   PRIVATE
-  LIBMONETDB5
-  LIBMAPI
   LIBMCRYPT)
 
 set_target_properties(mcrypt
@@ -106,8 +103,7 @@ target_link_libraries(msabaoth
 
 target_compile_definitions(msabaoth
   PRIVATE
-  LIBMSABAOTH
-  LIBMONETDB5)
+  LIBMSABAOTH)
 
 set_target_properties(msabaoth
   PROPERTIES
@@ -149,6 +145,32 @@ set_target_properties(mprompt
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER mprompt.h)
+
+add_library(mutf8 STATIC)
+
+target_sources(mutf8
+  PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/mutf8.h
+  PRIVATE
+  mutf8.c
+  mwidth.c)
+
+target_include_directories(mutf8
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+
+target_link_libraries(mutf8
+  monetdb_config_header)
+
+target_compile_definitions(mutf8
+  PRIVATE
+  LIBMUTF8)
+
+set_target_properties(mutf8
+  PROPERTIES
+  POSITION_INDEPENDENT_CODE ON
+  PUBLIC_HEADER mutf8.h)
 
 add_library(copybinary INTERFACE)
 

@@ -75,7 +75,7 @@ statement ok
 create schema bar
 
 statement ok
-create view av as select * from foo.a
+create view bar.av as select * from foo.a
 
 statement error 2BM37!ALTER SCHEMA: unable to rename schema 'foo', there are database objects which depend on it
 alter schema foo rename to foofoo

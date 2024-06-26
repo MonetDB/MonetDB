@@ -11,8 +11,10 @@
 #]]
 
 if(WIN32)
+  configure_file(M5server.bat.in
+    ${CMAKE_CURRENT_BINARY_DIR}/M5server.bat @ONLY)
   install(FILES
-    M5server.bat
+    ${CMAKE_CURRENT_BINARY_DIR}/M5server.bat
     DESTINATION "."
     COMPONENT server)
 endif()

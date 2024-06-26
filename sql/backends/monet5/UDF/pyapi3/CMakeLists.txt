@@ -55,7 +55,6 @@ if(HAVE_LIBPY3)
     Python3::Python
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:Python3::NumPy>
     sql
-    mutils
     bat
     monetdb5
     monetdb_config_header)
@@ -72,10 +71,10 @@ if(HAVE_LIBPY3)
   install(TARGETS
     pyapi3
     LIBRARY
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     COMPONENT server
     ARCHIVE
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
     PUBLIC_HEADER
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
@@ -86,7 +85,7 @@ if(HAVE_LIBPY3)
 
     install(FILES
       $<TARGET_PDB_FILE:pyapi3>
-      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+      DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
     install(FILES
       ${CMAKE_CURRENT_BINARY_DIR}/pyapi_locatepython3.bat

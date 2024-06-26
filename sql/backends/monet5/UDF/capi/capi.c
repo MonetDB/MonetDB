@@ -36,9 +36,9 @@
 #pragma GCC diagnostic ignored "-Wclobbered"
 #endif
 
-const char *mprotect_enableflag = "enable_mprotect";
+static const char mprotect_enableflag[] = "enable_mprotect";
 static bool option_enable_mprotect = false;
-const char *longjmp_enableflag = "enable_longjmp";
+static const char longjmp_enableflag[] = "enable_longjmp";
 static bool option_enable_longjmp = false;
 
 typedef struct _allocated_region {
@@ -342,12 +342,14 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		bat_data->null_value = tpe##_nil;                                      \
 	}
 
-const char *debug_flag = "capi_use_debug";
-const char *cc_flag = "capi_cc";
-const char *cpp_flag = "capi_cpp";
+#ifdef NDEBUG
+static const char debug_flag[] = "capi_use_debug";
+#endif
+static const char cc_flag[] = "capi_cc";
+static const char cpp_flag[] = "capi_cpp";
 
-const char *cflags_pragma = "#pragma CFLAGS ";
-const char *ldflags_pragma = "#pragma LDFLAGS ";
+static const char cflags_pragma[] = "#pragma CFLAGS ";
+static const char ldflags_pragma[] = "#pragma LDFLAGS ";
 
 #define JIT_COMPILER_NAME "cc"
 #define JIT_CPP_COMPILER_NAME "c++"
@@ -481,7 +483,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 									   : JIT_CPP_COMPILER_NAME)
 				: (GDKgetenv(cc_flag) ? GDKgetenv(cc_flag) : JIT_COMPILER_NAME);
 
-	const char *struct_prefix = "struct cudf_data_struct_";
+	const char struct_prefix[] = "struct cudf_data_struct_";
 	const char *funcname;
 
 	BUN expression_hash = 0, funcname_hash = 0;
@@ -672,7 +674,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we place the temporary files in the DELDIR directory
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
-		const char *prefix = TEMPDIR_NAME DIR_SEP_STR;
+		const char prefix[] = TEMPDIR_NAME DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
 		char *deldirpath;
 
