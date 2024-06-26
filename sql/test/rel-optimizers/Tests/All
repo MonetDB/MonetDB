@@ -14,3 +14,4 @@ merge-unions-base
 merge-unions
 merge-ors-base
 merge-ors-single-col-eq-to-cmp_in
+merge-ors-multi-col-eq-to-cmp_in
