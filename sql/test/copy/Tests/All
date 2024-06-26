@@ -16,3 +16,4 @@ columns
 no_escape
 no_escape2
 crlf_normalization
+select-from-file
