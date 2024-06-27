@@ -183,6 +183,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 	SQLCHAR explanation[256];
 	SQLSMALLINT len;
 
+	bool printed_something = false;
 	for (int i = 1; ; i++) {
 		SQLRETURN diag_ret = SQLGetDiagRec(
 			type, handle, i,
@@ -194,9 +195,14 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 			class = NULL;
 		}
 		printf("    - %s: %s\n", state, explanation);
+		printed_something = true;
 	}
 
 	if (!SQL_SUCCEEDED(ret) && ret != SQL_NEED_DATA) {
+		if (!printed_something) {
+			printf("%s: %s\n", class, message);
+			printf("    - failed without explanation\n");
+		}
 		cleanup();
 		exit(1);
 	}
