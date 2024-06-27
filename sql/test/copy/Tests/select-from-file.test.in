@@ -44,13 +44,13 @@ SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' WHERE name_1 = 'aap';
 aap
 
 query IT rowsort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' GROUP BY name_1;
+SELECT count(name_0), name_1 FROM R'$TSTSRCDIR/aapnootmies.csv' GROUP BY name_1;
 ----
 1
 aap
-3
+1
 mies
-2
+1
 noot
 
 query IT nosort
