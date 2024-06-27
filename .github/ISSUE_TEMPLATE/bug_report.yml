@@ -1,0 +1,61 @@
+name: Bug report template
+description: Use this template to report bugs in MonetDB
+labels: ["needs triage"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Describe the bug
+      description: |
+        Clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: |
+        Create a setting with minimal input for an external user to demonstrate the buggy behavior.
+        This includes the relevant part of the database schema description.
+        Performance trace of the rogue query (using the TRACE command).
+    validations:
+      required: false
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: |
+        Clear and concise description of what you expected to happen.
+    validations:
+      required: false
+  - type: input
+    id: mdbversion
+    attributes:
+      label: MonetDB release
+      placeholder: e.g., Dec2023_SP1, 11.49.1
+    validations:
+      required: true
+  - type: dropdown
+    id: binsource
+    attributes:
+      label: Executables source
+      options:
+        - "Release packages"
+        - "Self compiled and installed"
+    validations:
+      required: true
+  - type: input
+    id: osversion
+    attributes:
+      label: Operating System
+      placeholder: e.g., Fedora Linux 39 (Workstation Edition)
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: |
+        Add any other context or screenshots about the problem here.
+    validations:
+      required: false
