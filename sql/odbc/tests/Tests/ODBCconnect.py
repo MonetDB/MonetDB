@@ -56,7 +56,10 @@ class Execution:
         if self.checks:
             parts.append('--- test history: ---')
             for wanted, found in self.checks:
-                parts.append(f'wanted {wanted!r}, found {found!r}')
+                if len(wanted) == 1:
+                    parts.append(f'wanted {wanted[0]!r}, found {found!r}')
+                else:
+                    parts.append(f'wanted all of {wanted!r}, found {found!r}')
             parts.append('--- end ---')
         if self.remaining:
             parts += [
@@ -66,11 +69,13 @@ class Execution:
             ]
         return '\n'.join(parts)
 
-    def expect(self, pattern):
+    def expect(self, pattern, *more_patterns):
+        patterns = [pattern, *more_patterns]
         line = self.next_line()
-        self.checks.append((pattern, line))
-        if pattern not in line:
-            raise Exception(f'Wanted {pattern!r}, found {line!r}')
+        self.checks.append((patterns, line))
+        for p in patterns:
+            if p not in line:
+                raise Exception(f'Wanted {p!r}, found {line!r}')
 
     def next_line(self):
         if not self.remaining:
@@ -169,4 +174,43 @@ ex = Execution('-d', f'DRIVER={{MonetDB}};Database={dbname};Uid={user};Pwd={pass
 ex.expect('OK')
 ex.end()
 
+# non-NUL terminated connection string
+ex = Execution('-0', '-d', f'DSN={dsn}-Wrong;Database={dbname};Uid={user};Pwd={password}')
+ex.expect('OK')
+ex.end()
+
+# Test browsing
+
+ex = Execution('-b', 'Driver={MonetDB}')
+ex.expect('Info')
+ex.expect('08001')
+# browse not complete, uid and pwd mandatory, database optional
+ex.expect('BROWSE', 'UID:User=?', 'PWD:Password=?', '*DATABASE')
+ex.end()
+
+# same as above, but with another iteration of browsing
+ex = Execution('-b', 'Driver={MonetDB}', f'Driver={{MonetDB}};UID={user};PWD={password};Port={port}')
+# first iteration
+ex.expect('Info')
+ex.expect('08001')
+ex.expect('BROWSE', 'UID:User=?', 'PWD:Password=?', '*DATABASE')
+# second iteration
+ex.expect('OK', ';', 'HOST=')
+ex.end()
+
+# similar to above, but not NUL-terminated
+ex = Execution('-0', '-b', 'Driver={MonetDB}')
+ex.expect('Info')
+ex.expect('08001')
+# browse not complete, uid and pwd mandatory, database optional
+ex.expect('BROWSE', 'UID:User=?', 'PWD:Password=?', '*DATABASE')
+ex.end()
+
+# it should also work when the user and password are in the dsn
+ex = Execution('-b', f'DSN={dsn}')
+ex.expect('OK', ';')
+ex.end()
+
+# clear 'ex', otherwise the atexit handler will write things
+# to stderr
 ex = None
