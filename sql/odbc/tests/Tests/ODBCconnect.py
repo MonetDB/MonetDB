@@ -15,6 +15,7 @@
 
 import atexit
 import os
+import shlex
 import subprocess
 import sys
 
@@ -37,7 +38,7 @@ class Execution:
         self.checks = []
 
     def report(self):
-        parts = [f'COMMAND: {self.cmd}',
+        parts = [f'COMMAND: {shlex.join(self.cmd)}',
                  f'EXIT CODE: {self.proc.returncode}', '']
         if self.proc.stdout:
             parts += [
@@ -199,6 +200,20 @@ ex.end()
 ex = Execution('-d', f'DSN={dsn};Autocommit=Off', '-q', 'ROLLBACK')
 ex.expect('OK')         # connect succeeds
 ex.expect('RESULT')     # rollback succeeds
+ex.end()
+
+# test that configuration does not leak to next connection when handle is reused
+ex = Execution('-d',
+    '-q', 'select remark from sys.sessions where sessionid = current_sessionid()',
+    f'DSN={dsn};Client Remark=banana',
+    f'DSN={dsn}'
+)
+ex.expect('OK')
+ex.expect('RESULT')
+ex.expect('- banana;')   # as set by Client Remark property
+ex.expect('OK')
+ex.expect('RESULT')
+ex.expect('- ;')   # this connection did not have a Client Remark
 ex.end()
 
 
