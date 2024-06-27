@@ -51,7 +51,10 @@ static int do_listdrivers(void);
 static int do_listdsns(const char *prefix, SQLSMALLINT dir);
 
 static int do_execute_stmt(void);
-static void ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret);
+
+static void ensure_ok_impl(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret, int lineno);
+
+#define ensure_ok(type, handle, message, ret)    ensure_ok_impl(type, handle, message, ret, __LINE__)
 
 #define MARGIN 100
 static SQLCHAR* sqldup_with_margin(const char *str);
@@ -167,14 +170,23 @@ end:
 
 
 static void
-ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret)
+ensure_ok_impl(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret, int lineno)
 {
+	static const char *filename = NULL;
+	if (!filename) {
+		filename = __FILE__;
+		for (const char *p = filename; *p; p++) {
+			if (*p == '/' || *p == '\\')
+				filename = p + 1;
+		}
+	}
+
 	char *class = "Info";
 	switch (ret) {
 		case SQL_SUCCESS:
 		case SQL_NEED_DATA:
 			if (verbose)
-				printf("Succeeded: %s\n", message);
+				printf(" Succeeded: %s (%s:%d)\n", message, filename, lineno);
 			break;
 		case SQL_SUCCESS_WITH_INFO:
 			class = "Warning";
@@ -183,7 +195,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 			class = "Error";
 			break;
 		default:
-			printf("Internal error: %s: unknown SQLRETURN %d", message, ret);
+			printf("Internal error: %s (%s:%d): unknown SQLRETURN %d", message, filename, lineno, ret);
 			break;
 	}
 
@@ -200,7 +212,7 @@ ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret
 		if (!SQL_SUCCEEDED(diag_ret))
 			break;
 		if (class) {
-			printf("%s: %s\n", class, message);
+			printf("%s: %s (%s:%d)\n", class, message, filename, lineno);
 			class = NULL;
 		}
 		printf("    - %s: %s\n", state, explanation);
