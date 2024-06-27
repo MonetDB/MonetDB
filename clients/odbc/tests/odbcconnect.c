@@ -34,21 +34,23 @@ static const char *USAGE =
 	"        -l              List registered drivers and data sources\n"
 	"        -u USER\n"
 	"        -p PASSWORD\n"
+	"        -q SQL          Execute SQL statement when connection succeeds\n"
 	"        -0              use counted strings rather than nul-terminated arguments\n"
 	"        -v              Be verbose\n"
 	"        TARGET          DSN or with -d and -b, Connection String\n";
 
 typedef int (action_t)(SQLCHAR *);
 
-static int do_actions(action_t action, int ntargets, SQLCHAR **targets);
-
 static action_t do_sqlconnect;
 static action_t do_sqldriverconnect;
 static action_t do_sqlbrowseconnect;
 
+static int do_actions(action_t action, int ntargets, SQLCHAR **targets);
+
 static int do_listdrivers(void);
 static int do_listdsns(const char *prefix, SQLSMALLINT dir);
 
+static int do_execute_stmt(void);
 static void ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret);
 
 #define MARGIN 100
@@ -60,10 +62,13 @@ SQLCHAR *user = NULL;
 SQLSMALLINT user_len = SQL_NTS;
 SQLCHAR *password = NULL;
 SQLSMALLINT password_len = SQL_NTS;
+SQLCHAR *query = NULL;
+SQLSMALLINT query_len = SQL_NTS;
 bool use_counted_strings = false;
 
 SQLHANDLE env = NULL;
 SQLHANDLE conn = NULL;
+SQLHANDLE stmt = NULL;
 
 SQLCHAR outbuf[4096];
 SQLCHAR attrbuf[4096];
@@ -73,6 +78,9 @@ cleanup(void)
 {
 	free(user);
 	free(password);
+	free(query);
+	if (stmt)
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
 	if (conn) {
 		SQLDisconnect(conn);
 		SQLFreeHandle(SQL_HANDLE_DBC, conn);
@@ -102,6 +110,8 @@ main(int argc, char **argv)
 			user = sqldup_with_margin(argv[++i]);
 		else if (strcmp(arg, "-p") == 0 && i + 1 < argc)
 			password = sqldup_with_margin(argv[++i]);
+		else if (strcmp(arg, "-q") == 0 && i + 1 < argc)
+			query = sqldup_with_margin(argv[++i]);
 		else if (strcmp(arg, "-0") == 0)
 			use_counted_strings = true;
 		else if (strcmp(arg, "-v") == 0)
@@ -159,7 +169,6 @@ end:
 static void
 ensure_ok(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETURN ret)
 {
-
 	char *class = "Info";
 	switch (ret) {
 		case SQL_SUCCESS:
@@ -241,11 +250,13 @@ do_sqlconnect(SQLCHAR *target)
 		SQLConnect(conn, target, target_len, user, user_len, password, password_len));
 	printf("OK\n");
 
+	int exitcode = do_execute_stmt();
+
 	ensure_ok(
-		SQL_HANDLE_DBC, conn, "Banana",
+		SQL_HANDLE_DBC, conn, "SQLDisconnect",
 		SQLDisconnect(conn));
 
-	return 0;
+	return exitcode;
 }
 
 static int
@@ -267,11 +278,13 @@ do_sqldriverconnect(SQLCHAR *target)
 
 	printf("OK %s\n", outbuf);
 
+	int exitcode = do_execute_stmt();
+
 	ensure_ok(
-		SQL_HANDLE_DBC, conn, "Banana",
+		SQL_HANDLE_DBC, conn, "SQLDisconnect",
 		SQLDisconnect(conn));
 
-	return 0;
+	return exitcode;
 }
 
 static int
@@ -293,10 +306,15 @@ do_sqlbrowseconnect(SQLCHAR *target)
 		outbuf
 	);
 
+	int exitcode = 0;
+	if (ret != SQL_NEED_DATA)
+		exitcode = do_execute_stmt();
+
+
 	// Do not call SQLDisconnect, SQLBrowseConnect is intended to
 	// be invoked multiple times without disconnecting inbetween
 
-	return 0;
+	return exitcode;
 }
 
 static int
@@ -353,6 +371,64 @@ do_listdsns(const char *prefix, SQLSMALLINT dir)
 }
 
 
+static int
+do_execute_stmt(void)
+{
+	if (query == NULL)
+		return 0;
+
+	if (verbose)
+		printf("Statement: %s\n", query);
+
+	if (use_counted_strings)
+		fuzz_sql_nts(&query, &query_len);
+
+	ensure_ok(
+		SQL_HANDLE_ENV, conn, "allocate stmt handle",
+		SQLAllocHandle(SQL_HANDLE_STMT, conn, &stmt));
+
+	ensure_ok(
+		SQL_HANDLE_STMT, stmt, "SQLExecDirect",
+		SQLExecDirect(stmt, query, query_len));
+
+	do {
+		SQLLEN rowcount = -1;
+		SQLSMALLINT colcount = -1;
+
+		ensure_ok(
+			SQL_HANDLE_STMT, stmt, "SQLRowCount",
+			SQLRowCount(stmt, &rowcount));
+
+		ensure_ok(
+			SQL_HANDLE_STMT, stmt, "SQLNumResultCols",
+			SQLNumResultCols(stmt, &colcount));
+
+		printf("RESULT rows=%ld cols=%d \n", rowcount, colcount);
+
+		while (colcount > 0 && SQL_SUCCEEDED(SQLFetch(stmt))) {
+			printf("    - ");
+			for (int i = 1; i <= colcount; i++) {
+				SQLLEN n;
+				outbuf[0] = '\0';
+				SQLRETURN ret = SQLGetData(stmt, i, SQL_C_CHAR, outbuf, sizeof(outbuf), &n);
+				if (!SQL_SUCCEEDED(ret))
+					ensure_ok(SQL_HANDLE_STMT, stmt, "SQLGetData", ret);
+				printf("%s;", outbuf);
+			}
+			printf("\n");
+		}
+
+	} while (SQL_SUCCEEDED(SQLMoreResults(stmt)));
+
+	ensure_ok(
+		SQL_HANDLE_STMT, stmt, "SQLFreeHandle",
+		SQLFreeHandle(SQL_HANDLE_STMT, stmt));
+	stmt = NULL;
+
+	return 0;
+}
+
+
 static SQLCHAR*
 sqldup_with_margin(const char *str)
 {
@@ -366,7 +442,7 @@ sqldup_with_margin(const char *str)
 static void
 fuzz_sql_nts(SQLCHAR **str, SQLSMALLINT *len)
 {
-	if (*str != NULL) {
+	if (*str != NULL && *len == SQL_NTS) {
 		// append garbage so it's no longer properly NUL terminated,
 		// indicate original length through 'len'
 		size_t n = strlen((char*)*str);
