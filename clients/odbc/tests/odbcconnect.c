@@ -71,6 +71,8 @@ SQLCHAR attrbuf[4096];
 static void
 cleanup(void)
 {
+	free(user);
+	free(password);
 	if (conn) {
 		SQLDisconnect(conn);
 		SQLFreeHandle(SQL_HANDLE_DBC, conn);
@@ -145,8 +147,6 @@ main(int argc, char **argv)
 	}
 
 end:
-	free(user);
-	free(password);
 	for (int i = 0; i < ntargets; i++)
 		free(targets[i]);
 	free(targets);
@@ -235,6 +235,10 @@ do_sqlconnect(SQLCHAR *target)
 		SQLConnect(conn, target, target_len, user, user_len, password, password_len));
 	printf("OK\n");
 
+	ensure_ok(
+		SQL_HANDLE_DBC, conn, "Banana",
+		SQLDisconnect(conn));
+
 	return 0;
 }
 
@@ -256,6 +260,11 @@ do_sqldriverconnect(SQLCHAR *target)
 		));
 
 	printf("OK %s\n", outbuf);
+
+	ensure_ok(
+		SQL_HANDLE_DBC, conn, "Banana",
+		SQLDisconnect(conn));
+
 	return 0;
 }
 
@@ -277,6 +286,10 @@ do_sqlbrowseconnect(SQLCHAR *target)
 		ret == SQL_NEED_DATA ? "BROWSE" : "OK",
 		outbuf
 	);
+
+	// Do not call SQLDisconnect, SQLBrowseConnect is intended to
+	// be invoked multiple times without disconnecting inbetween
+
 	return 0;
 }
 
