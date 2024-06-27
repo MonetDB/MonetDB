@@ -179,6 +179,29 @@ ex = Execution('-0', '-d', f'DSN={dsn}-Wrong;Database={dbname};Uid={user};Pwd={p
 ex.expect('OK')
 ex.end()
 
+# test autocommit, default should be On
+ex = Execution('-d', f'DSN={dsn}', '-q', 'ROLLBACK')
+ex.expect('OK')         # connect succeeds
+ex.expect('Error:')     # rollback fails
+ex.expect('2DM30:')     # because 2DM30: not allowed in autocommit mode
+ex.expect_fail()
+ex.end()
+
+# test autocommit, force On
+ex = Execution('-d', f'DSN={dsn};Autocommit=On', '-q', 'ROLLBACK')
+ex.expect('OK')         # connect succeeds
+ex.expect('Error:')     # rollback fails
+ex.expect('2DM30:')     # because 2DM30: not allowed in autocommit mode
+ex.expect_fail()
+ex.end()
+
+# test autocommit, force Off
+ex = Execution('-d', f'DSN={dsn};Autocommit=Off', '-q', 'ROLLBACK')
+ex.expect('OK')         # connect succeeds
+ex.expect('RESULT')     # rollback succeeds
+ex.end()
+
+
 # Test browsing
 
 ex = Execution('-b', 'Driver={MonetDB}')

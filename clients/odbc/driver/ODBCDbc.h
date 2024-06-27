@@ -59,7 +59,6 @@ typedef struct tODBCDRIVERDBC {
 	bool allow_hugeint;	/* whether the application deals with HUGEINT */
 	bool raw_strings;	/* server uses raw strings */
 	int mapToLongVarchar;	/* when > 0 we map WVARCHAR to WLONGVARCHAR, default 0 */
-	SQLUINTEGER sql_attr_autocommit;
 	SQLUINTEGER sql_attr_metadata_id;
 
 	/* MonetDB connection handle & status information */
