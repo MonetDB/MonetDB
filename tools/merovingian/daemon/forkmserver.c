@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include <string.h> /* char ** */
 #include <time.h> /* localtime */
+#include <fcntl.h>
 
 #include "msabaoth.h"
 #include "utils/utils.h"
@@ -718,6 +719,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		dp->type = MERODB;
 		dp->pid = pid;
 		dp->flag = 0;
+#if defined(FD_CLOEXEC) && defined(HAVE_FCNTL)
+		(void) fcntl(pfdo[0], F_SETFD, FD_CLOEXEC);
+		(void) fcntl(pfde[0], F_SETFD, FD_CLOEXEC);
+#endif
 		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		while (argv[freec] != NULL) {
