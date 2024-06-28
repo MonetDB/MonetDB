@@ -1,4 +1,4 @@
-name: Bug report template
+name: Bug report
 description: Use this template to report bugs in MonetDB
 labels: ["needs triage"]
 body:

@@ -1,4 +1,4 @@
-name: MonetDB other issues
+name: Other issue
 description: Use this template for general issues (documentation bug, help, etc)
 labels: ["needs triage"]
 body:
