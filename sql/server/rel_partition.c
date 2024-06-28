@@ -343,6 +343,8 @@ do_oahash_join(sql_rel *rel)
 		return 0;
 
 	if (!rel->exps)
+		/* it always means 'true', i.e. no retrictions, which can be the case
+		 * for inner, outer, semi, anti joins and cross-product */
 		return 1;
 
 	/* only for equi-joins. */

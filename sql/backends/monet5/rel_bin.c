@@ -3673,6 +3673,10 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	assert(rel->op != op_anti);
 
+	ATOMIC_TYPE use_oahash = (1U<<19);
+	if ((GDKdebug & use_oahash) && rel->oahash)
+		return rel2bin_oahash(be, rel, refs);
+
 	int neededpp = rel->spb && get_need_pipeline(be);
 	if (rel->partition == 1 || rel->op == op_anti) {
 		if (rel->r) { /* first construct the right sub relation */
