@@ -1,3 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sat Jun 29 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The mserver5 program has a new option: --without-geom.  If the server
+  was compiled with geom support (or the geom module was installed in a
+  binary distribution), this option allows the server to start without
+  the geom module, so that it can proceed with a database that was
+  created without geom.
+
