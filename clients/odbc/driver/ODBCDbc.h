@@ -141,14 +141,6 @@ ODBCError *getDbcError(ODBCDbc *dbc);
 void destroyODBCDbc(ODBCDbc *dbc);
 
 int ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr);
-SQLRETURN ODBCConnectionString(SQLRETURN rc, ODBCDbc *dbc,
-			       SQLCHAR *OutConnectionString,
-			       SQLSMALLINT BufferLength,
-			       SQLSMALLINT *StringLength2Ptr,
-			       const char *dsn, const char *uid,
-			       const char *pwd, const char *host,
-			       int port, const char *database,
-			       int mapToLongVarchar);
 SQLRETURN MNDBAllocStmt(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN MNDBConnect(ODBCDbc *dbc, const SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			const SQLCHAR *szUID, SQLSMALLINT nUIDLength,
