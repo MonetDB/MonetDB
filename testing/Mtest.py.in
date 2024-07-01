@@ -2239,7 +2239,7 @@ Description = Wrong values for Database, Uid and Pwd
 Driver = MonetDB
 Host = localhost
 Port = {env["MAPIPORT"]}
-Database = {TSTDB}-Wrong
+Database = {TSTDB}
 User = {user or "monetdb"}-Wrong
 Password = {passwd or "monetdb"}-Wrong
 ''')

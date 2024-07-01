@@ -144,6 +144,16 @@ ex.expect('Error')
 ex.expect('28000:')  # 28000 bad credentials
 ex.end()
 
+# parameters passed directly to SQLConnect override those from the dsn
+ex = Execution(dsn + '-Wrong')
+ex.expect_fail()
+ex.expect('Error')
+ex.expect('28000:')    # this dsn uses the wrong user name and password
+ex.end()
+ex = Execution(dsn + '-Wrong', '-u', user, '-p', password)
+ex.expect('OK')    # but those passes as arguments take precedence
+ex.end()
+
 # test non-NUL terminated strings
 
 ex = Execution(dsn, '-0')
@@ -213,7 +223,7 @@ ex.expect('RESULT')
 ex.expect('- banana;')   # as set by Client Remark property
 ex.expect('OK')
 ex.expect('RESULT')
-ex.expect('- ;')   # this connection did not have a Client Remark
+ex.expect('- ;')   # the second connection does not have a Client Remark
 ex.end()
 
 
