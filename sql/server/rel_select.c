@@ -1322,6 +1322,8 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 
 		for (node * n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+			if (!i->key)
+				continue;
 			switch (i->key->type) {
 			case pkey:
 				pki = i;
