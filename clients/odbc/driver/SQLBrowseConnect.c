@@ -116,6 +116,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	size_t cap = 0;
 	suggest_settings(dbc, &buf, &pos, &cap, 2, "");    // mandatory first
 	suggest_settings(dbc, &buf, &pos, &cap, 0, "*");   // then optional
+	// note that we leave out level 1, they have already been provided
 
 	if (buf && pos) {
 		size_t n = strcpy_len((char*)OutConnectionString, buf, BufferLength);
