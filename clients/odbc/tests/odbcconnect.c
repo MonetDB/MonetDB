@@ -24,6 +24,7 @@
 #include <string.h>
 #include <sql.h>
 #include <sqlext.h>
+#include <sqlucode.h>
 
 static const char *USAGE =
 	"Usage:\n"
@@ -206,7 +207,7 @@ ensure_ok_impl(SQLSMALLINT type, SQLHANDLE handle, const char *message, SQLRETUR
 
 	bool printed_something = false;
 	for (int i = 1; ; i++) {
-		SQLRETURN diag_ret = SQLGetDiagRec(
+		SQLRETURN diag_ret = SQLGetDiagRecA(
 			type, handle, i,
 			state, &error, explanation, sizeof(explanation), &len);
 		if (!SQL_SUCCEEDED(diag_ret))
@@ -259,7 +260,7 @@ do_sqlconnect(SQLCHAR *target)
 
 	ensure_ok(
 		SQL_HANDLE_DBC, conn, "SQLConnect",
-		SQLConnect(conn, target, target_len, user, user_len, password, password_len));
+		SQLConnectA(conn, target, target_len, user, user_len, password, password_len));
 	printf("OK\n");
 
 	int exitcode = do_execute_stmt();
@@ -281,7 +282,7 @@ do_sqldriverconnect(SQLCHAR *target)
 
 	ensure_ok(
 		SQL_HANDLE_DBC, conn, "SQLDriverConnect",
-		SQLDriverConnect(
+		SQLDriverConnectA(
 			conn, NULL,
 			target, target_len,
 			outbuf, sizeof(outbuf), &n,
@@ -307,7 +308,7 @@ do_sqlbrowseconnect(SQLCHAR *target)
 	if (use_counted_strings)
 		fuzz_sql_nts(&target, &target_len);
 
-	SQLRETURN ret = SQLBrowseConnect(
+	SQLRETURN ret = SQLBrowseConnectA(
 		conn,
 		target, target_len,
 		outbuf, sizeof(outbuf), &n
@@ -338,7 +339,7 @@ do_listdrivers(void)
 
 	while (1) {
 		outbuf[0] = attrbuf[0] = '\0';
-		SQLRETURN ret = SQLDrivers(
+		SQLRETURN ret = SQLDriversA(
 			env, dir,
 			outbuf, sizeof(outbuf), &len1,
 			attrbuf, sizeof(attrbuf), &len2
@@ -367,7 +368,7 @@ do_listdsns(const char *prefix, SQLSMALLINT dir)
 
 	while (1) {
 		outbuf[0] = attrbuf[0] = '\0';
-		SQLRETURN ret = SQLDataSources(
+		SQLRETURN ret = SQLDataSourcesA(
 			env, dir,
 			outbuf, sizeof(outbuf), &len1,
 			attrbuf, sizeof(attrbuf), &len2
@@ -401,7 +402,7 @@ do_execute_stmt(void)
 
 	ensure_ok(
 		SQL_HANDLE_STMT, stmt, "SQLExecDirect",
-		SQLExecDirect(stmt, query, query_len));
+		SQLExecDirectA(stmt, query, query_len));
 
 	do {
 		SQLLEN rowcount = -1;
