@@ -144,8 +144,7 @@ int ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **
 SQLRETURN MNDBAllocStmt(ODBCDbc *dbc, SQLHANDLE *pnOutputHandle);
 SQLRETURN MNDBConnect(ODBCDbc *dbc, const SQLCHAR *szDataSource, SQLSMALLINT nDataSourceLength,
 			const SQLCHAR *szUID, SQLSMALLINT nUIDLength,
-			const SQLCHAR *szPWD, SQLSMALLINT nPWDLength,
-			const char *host, int port, const char *dbname, int mapToLongVarchar);
+			const SQLCHAR *szPWD, SQLSMALLINT nPWDLength);
 SQLRETURN MNDBGetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN MNDBSetConnectAttr(ODBCDbc *dbc, SQLINTEGER Attribute, SQLPOINTER ValuePtr, SQLINTEGER StringLength);
 
