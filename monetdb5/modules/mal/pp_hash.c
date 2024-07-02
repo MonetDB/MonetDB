@@ -2158,24 +2158,182 @@ error:
 	return err;
 }
 
+#define vproject() \
+	do { \
+		assert(BATtdense(k) || \
+				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		\
+		oid *res = Tloc(e, 0); \
+		if (!BATtdense(k)) { \
+			TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
+				res[idx] = k->tseqbase; \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
+				res[idx++] = sel[i]; \
+			} \
+		} \
+	} while (0)
+
+#define project(Type) \
+	do { \
+		Type *val = Tloc(k, 0); \
+		Type *res = Tloc(e, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
+			res[idx++] = val[sel[i]]; \
+		} \
+	} while (0)
+
+#define aproject() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
+			void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
+			if (BUNappend(e, v, false) != GDK_SUCCEED) { \
+				err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				break; \
+			} \
+			idx++; \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
+static str
+OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht_sink, bit *first, const ptr *H)
+{
+	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *h = NULL;
+	BUN rescnt = 0;
+	str err = NULL;
+
+	k = BATdescriptor(*key);
+	s = BATdescriptor(*selected);
+	h = BATdescriptor(*ht_sink);
+	if (!k || !s || !h) {
+		err = createException(SQL, "oahash.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	assert(BATcount(s) <= BATcount(k));
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	rescnt = BATcount(s);
+	int tt = k->ttype;
+	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
+	if (!e) {
+		err = createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (rescnt) {
+		BUN idx = 0;
+		oid *sel = Tloc(s, 0);
+
+		switch(tt) {
+			case TYPE_void:
+				vproject();
+				break;
+			case TYPE_bit:
+				project(bit);
+				break;
+			case TYPE_bte:
+				project(bte);
+				break;
+			case TYPE_sht:
+				project(sht);
+				break;
+			case TYPE_int:
+				project(int);
+				break;
+			case TYPE_date:
+				project(date);
+				break;
+			case TYPE_lng:
+				project(lng);
+				break;
+			case TYPE_oid:
+				project(oid);
+				break;
+			case TYPE_daytime:
+				project(daytime);
+				break;
+			case TYPE_timestamp:
+				project(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				project(hge);
+				break;
+#endif
+			case TYPE_flt:
+				project(flt);
+				break;
+			case TYPE_dbl:
+				project(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					aproject();
+				} else {
+					err = createException(MAL, "oahash.project", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.project", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+
+		assert(idx == rescnt);
+	}
+
+	/* NB, this only works once.
+	 * If we want to reuse the hash, we need to reset the position info.
+	 */
+	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
+	o = BATdense(0, tseq, rescnt);
+	if (!o) {
+		err = createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+	o->T.maxval = tseq + rescnt;
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(s->batCacheid);
+	BBPunfix(h->batCacheid);
+
+	*pos = o->batCacheid;
+	BBPkeepref(o);
+
+	BATsetcount(e, rescnt);
+	BATnegateprops(e);
+	*res = e->batCacheid;
+	BBPkeepref(e);
+
+	(void) H;
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(o);
+	BBPreclaim(e);
+	BBPreclaim(k);
+	BBPreclaim(s);
+	BBPreclaim(h);
+	return err;
+}
+
 #define vexpand() \
 	do { \
 		assert(BATtdense(k) || \
 				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
 		\
-		oid val = k->tseqbase; \
 		oid *res = Tloc(e, 0); \
 		if (!BATtdense(k)) { \
 			TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
-				res[idx] = val; \
+				res[idx] = k->tseqbase; \
 			} \
 		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 				gid freq = (gid)ht->frequency[sid[i]]; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
-					res[idx++] = val; \
+					res[idx++] = sel[i]; \
 				} \
-				val++; \
 			} \
 		} \
 	} while (0)
@@ -2567,7 +2725,8 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "probe", OAHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("oahash", "combined_probe", OAHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash payload", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(2,7, batarg("pos",oid),batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
  command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
  { .imp=NULL }
 };
