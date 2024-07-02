@@ -70,3 +70,4 @@ field-arg-error-Bug-7506
 7541-levenshtein
 7542-column-name-resolution
 7545-groupby_on_index_col
+7547-drop-login-trigger-crash

@@ -1,0 +1,44 @@
+query T nosort
+select name from sys.triggers
+----
+system_update_schemas
+
+statement ok
+CREATE OR REPLACE TRIGGER lt1 BEFORE LOGIN  SET SCHEMA tmp
+
+query T nosort
+select name from sys.triggers
+----
+system_update_schemas
+lt1
+
+statement ok
+CREATE OR REPLACE TRIGGER lt2 AFTER LOGIN  SET SCHEMA profiler
+
+query T nosort
+select name from sys.triggers
+----
+system_update_schemas
+lt1
+lt2
+
+skipif knownfail
+statement ok
+drop trigger lt2
+
+skipif knownfail
+statement ok
+drop trigger "lt1"
+
+-- after drop we should be able to recreate trigger again
+skipif knownfail
+statement ok
+CREATE OR REPLACE TRIGGER lt1 BEFORE LOGIN  SET SCHEMA tmp
+
+skipif knownfail
+statement ok
+drop trigger "lt1"
+
+-- Program terminated with signal SIGSEGV, Segmentation fault.
+-- #0  0x00007faa024fa2ca in drop_trigger () from lib64/libmonetdbsql.so.14
+
