@@ -2169,9 +2169,7 @@ error:
 				res[idx] = k->tseqbase; \
 			} \
 		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
-				res[idx++] = sel[i]; \
-			} \
+			memcpy(res, sel, rescnt * sizeof(oid)); \
 		} \
 	} while (0)
 
@@ -2280,8 +2278,6 @@ OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht_sink, bit *fi
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.project", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
-
-		assert(idx == rescnt);
 	}
 
 	/* NB, this only works once.
