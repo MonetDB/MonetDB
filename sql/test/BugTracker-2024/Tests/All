@@ -60,3 +60,4 @@ field-arg-error-Bug-7506
 7536-mclient-forgets-to-flush
 7541-levenshtein
 7542-column-name-resolution
+7547-drop-login-trigger-crash
