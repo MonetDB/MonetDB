@@ -2197,7 +2197,7 @@ error:
 	} while (0)
 
 static str
-OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht_sink, bit *first, const ptr *H)
+OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht, bit *first, const ptr *H)
 {
 	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *h = NULL;
 	BUN rescnt = 0;
@@ -2205,7 +2205,7 @@ OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht_sink, bit *fi
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
-	h = BATdescriptor(*ht_sink);
+	h = BATdescriptor(*ht);
 	if (!k || !s || !h) {
 		err = createException(SQL, "oahash.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
@@ -2721,7 +2721,7 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "probe", OAHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("oahash", "combined_probe", OAHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(2,7, batarg("pos",oid),batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(2,7, batarg("pos",oid),batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("first",bit),arg("pipeline",ptr))),
  command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
  command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
  { .imp=NULL }

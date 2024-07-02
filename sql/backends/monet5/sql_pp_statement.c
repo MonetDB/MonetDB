@@ -576,6 +576,25 @@ stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht,
 }
 
 InstrPtr
+stmt_oahash_project(backend *be, stmt *col, int sel, stmt *ht, bit first, stmt *pp)
+{
+	int tt = tail_type(col)->type->localtype;
+
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("project"), 7);
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* res */
+	q = pushArgument(be->mb, q, col->nr);
+	q = pushArgument(be->mb, q, sel);
+	q = pushArgument(be->mb, q, ht->nr);
+	q = pushBit(be->mb, q, first);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	pushInstruction(be->mb, q);
+	return q;
+}
+
+InstrPtr
 stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit first, stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
