@@ -157,7 +157,7 @@ main(int argc, char **argv)
 		}
 		ret = do_listdrivers();
 		ret |= do_listdsns("SYSTEM", SQL_FETCH_FIRST_SYSTEM);
-		ret |= do_listdsns("SYSTEM", SQL_FETCH_FIRST_USER);
+		ret |= do_listdsns("USER", SQL_FETCH_FIRST_USER);
 	}
 
 end:
