@@ -25,6 +25,10 @@ user = 'monetdb'
 password = 'monetdb'
 port = os.environ.get('MAPIPORT', 50000)
 
+# \u{E1} is LATIN SMALL LETTER A WITH ACUTE
+unicode_text = 'R\u00E1inbow'
+# \u{1F308} is RAINBOW EMOJI
+#unicode_text += '\U0001F308'
 
 class Execution:
     def __init__(self, *odbcconnect_args):
@@ -110,6 +114,10 @@ def show_context():
         print(ex.report(), file=sys.stderr)
 
 
+#######################################################################
+# Test SQLConnect
+#######################################################################
+
 ex = Execution(dsn)
 ex.expect('OK')
 ex.end()
@@ -164,7 +172,21 @@ ex = Execution(dsn, '-0', '-u', user, '-p', password)
 ex.expect('OK')
 ex.end()
 
-# test connection strings
+# test wide characters
+ex = Execution('-w', dsn + '-Wrong', '-u', user, '-p', password)
+ex.expect('OK')
+ex.end()
+
+# test wide characters in combination with non-NUL
+ex = Execution('-0', '-w', dsn + '-Wrong', '-u', user, '-p', password)
+ex.expect('OK')
+ex.end()
+
+
+
+#######################################################################
+# Test SQLDriverConnect
+#######################################################################
 
 ex = Execution('-d', f'DSN={dsn}')
 ex.expect('OK')
@@ -226,8 +248,15 @@ ex.expect('RESULT')
 ex.expect('- ;')   # the second connection does not have a Client Remark
 ex.end()
 
+# test wide characters
+ex = Execution('-w', '-d', f'DSN={dsn};Client Remark={unicode_text}')
+# expect OK followed by connection string containing the rainbow
+ex.expect('OK', f'CLIENTREMARK={unicode_text}')
+ex.end()
 
-# Test browsing
+#######################################################################
+# Test SQLBrowseConnect
+#######################################################################
 
 ex = Execution('-b', 'Driver={MonetDB}')
 ex.expect('Info')
@@ -259,6 +288,41 @@ ex = Execution('-b', f'DSN={dsn}')
 ex.expect('OK', ';')
 ex.end()
 
-# clear 'ex', otherwise the atexit handler will write things
-# to stderr
+# test wide characters
+ex = Execution('-w', '-b', f'DSN={dsn}')
+ex.expect('OK', ';')
+ex.end()
+
+ex = Execution('-w', '-b', f'DSN={dsn};Client Remark={unicode_text}')
+ex.expect('OK', f';CLIENTREMARK={unicode_text}')
+ex.expect
+ex.end()
+
+# also with non-NUL terminated strings
+ex = Execution('-0', '-w', '-b', f'DSN={dsn}')
+ex.expect('OK', ';')
+ex.end()
+
+ex = Execution('-0', '-w', '-b', f'DSN={dsn};Client Remark={unicode_text}')
+ex.expect('OK', f';CLIENTREMARK={unicode_text}')
+ex.expect
+ex.end()
+
+# Also test that queries return unicode ok
+ex = Execution(
+    '-w',
+    '-b', f'DSN={dsn};Client Remark={unicode_text}',
+    '-q', 'select remark from sys.sessions where sessionid = current_sessionid()',
+)
+ex.expect('OK', f';CLIENTREMARK={unicode_text}')
+ex.expect('RESULT')
+ex.expect(unicode_text)
+ex.end()
+
+
+#######################################################################
+#
+# clear 'ex', otherwise the atexit handler will write things to stderr
+#
+#######################################################################
 ex = None
