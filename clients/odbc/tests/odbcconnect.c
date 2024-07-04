@@ -26,6 +26,8 @@
 #include <sqlext.h>
 #include <sqlucode.h>
 
+#include "mutf8.h"
+
 static const char *USAGE =
 	"Usage:\n"
 	"        odbcconnect [-d | -c | -b ] [-v] [-u USER] [-p PASSWORD] TARGET..\n"
@@ -37,6 +39,7 @@ static const char *USAGE =
 	"        -p PASSWORD\n"
 	"        -q SQL          Execute SQL statement when connection succeeds\n"
 	"        -0              use counted strings rather than nul-terminated arguments\n"
+	"        -w              use the wide-char (unicode) interface\n"
 	"        -v              Be verbose\n"
 	"        TARGET          DSN or with -d and -b, Connection String\n";
 
@@ -57,7 +60,13 @@ static void ensure_ok_impl(SQLSMALLINT type, SQLHANDLE handle, const char *messa
 
 #define ensure_ok(type, handle, message, ret)    ensure_ok_impl(type, handle, message, ret, __LINE__)
 
-static void make_arg(const char *arg, SQLCHAR**bufp, SQLSMALLINT *buflen);
+static void make_arg(bool wide, const char *arg, void **bufp, SQLSMALLINT *buflen);
+static void make_arga(const char *arg, void **bufp, SQLSMALLINT *buflen);
+static void make_argw(const char *arg, void **bufp, SQLSMALLINT *buflen, bool bytes_not_chars);
+
+
+static SQLWCHAR *gen_utf16(SQLWCHAR *dest, const char *src, size_t len);
+static void convert_outw_outa(size_t n);
 
 
 int verbose = 0;
@@ -65,13 +74,17 @@ char *user = NULL;
 char *password = NULL;
 char *query = NULL;
 bool use_counted_strings = false;
+bool use_wide = false;
 
 SQLHANDLE env = NULL;
 SQLHANDLE conn = NULL;
 SQLHANDLE stmt = NULL;
 
-SQLCHAR outbuf[4096];
+#define OUTBUF_SIZE 4096
 SQLCHAR attrbuf[4096];
+SQLCHAR outabuf[OUTBUF_SIZE];
+SQLWCHAR outwbuf[OUTBUF_SIZE];
+
 
 // This free-list will be processed by cleanup().
 // It is added to by alloc()
@@ -131,6 +144,8 @@ main(int argc, char **argv)
 			query = argv[++i];
 		else if (strcmp(arg, "-0") == 0)
 			use_counted_strings = true;
+		else if (strcmp(arg, "-w") == 0)
+			use_wide = true;
 		else if (strcmp(arg, "-v") == 0)
 			verbose += 1;
 		else if (arg[0] != '-')
@@ -247,7 +262,8 @@ do_actions(action_t action, int ntargets, char **targets)
 		char *t = targets[i];
 		if (verbose)
 			printf("\nTarget: %s\n", t);
-		outbuf[0] = '\0';
+		outabuf[0] = '\0';
+		outwbuf[0] = 0;
 		int ret = action(t);
 		if (ret)
 			return ret;
@@ -259,21 +275,24 @@ do_actions(action_t action, int ntargets, char **targets)
 static int
 do_sqlconnect(const char *target)
 {
-	SQLCHAR *target_buf;
+	void *target_buf;
 	SQLSMALLINT target_len = SQL_NTS;
-	make_arg(target, &target_buf, &target_len);
+	make_arg(use_wide, target, &target_buf, &target_len);
 
-	SQLCHAR *user_buf;
+	void *user_buf;
 	SQLSMALLINT user_len = SQL_NTS;
-	make_arg(user, &user_buf, &user_len);
+	make_arg(use_wide, user, &user_buf, &user_len);
 
-	SQLCHAR *password_buf;
+	void *password_buf;
 	SQLSMALLINT password_len = SQL_NTS;
-	make_arg(password, &password_buf, &password_len);
+	make_arg(use_wide, password, &password_buf, &password_len);
 
 	ensure_ok(
 		SQL_HANDLE_DBC, conn, "SQLConnect",
-		SQLConnectA(conn, target_buf, target_len, user_buf, user_len, password_buf, password_len));
+		use_wide
+			? SQLConnectW(conn, target_buf, target_len, user_buf, user_len, password_buf, password_len)
+			: SQLConnectA(conn, target_buf, target_len, user_buf, user_len, password_buf, password_len)
+	);
 	printf("OK\n");
 
 	int exitcode = do_execute_stmt();
@@ -288,22 +307,22 @@ do_sqlconnect(const char *target)
 static int
 do_sqldriverconnect(const char *target)
 {
-	SQLCHAR *target_buf;
+	void *target_buf;
 	SQLSMALLINT target_len = SQL_NTS;
-	make_arg(target, &target_buf, &target_len);
+	make_arg(use_wide, target, &target_buf, &target_len);
 
 	SQLSMALLINT n;
 
 	ensure_ok(
 		SQL_HANDLE_DBC, conn, "SQLDriverConnect",
-		SQLDriverConnectA(
-			conn, NULL,
-			target_buf, target_len,
-			outbuf, sizeof(outbuf), &n,
-			SQL_DRIVER_NOPROMPT
-		));
+		use_wide
+			? SQLDriverConnectW(conn, NULL, target_buf, target_len, outwbuf, OUTBUF_SIZE, &n, SQL_DRIVER_NOPROMPT)
+			: SQLDriverConnectA(conn, NULL, target_buf, target_len, outabuf, OUTBUF_SIZE, &n, SQL_DRIVER_NOPROMPT)
+	);
+	if (use_wide)
+		convert_outw_outa(n);
 
-	printf("OK %s\n", outbuf);
+	printf("OK %s\n", outabuf);
 
 	int exitcode = do_execute_stmt();
 
@@ -317,22 +336,22 @@ do_sqldriverconnect(const char *target)
 static int
 do_sqlbrowseconnect(const char *target)
 {
-	SQLCHAR *target_buf;
+	void *target_buf;
 	SQLSMALLINT target_len = SQL_NTS;
-	make_arg(target, &target_buf, &target_len);
+	make_arg(false, target, &target_buf, &target_len);
 
 
 	SQLSMALLINT n;
 
-	SQLRETURN ret = SQLBrowseConnectA(
-		conn,
-		target_buf, target_len,
-		outbuf, sizeof(outbuf), &n
-	);
+	SQLRETURN ret = use_wide
+		? SQLBrowseConnectW(conn, target_buf, target_len, outwbuf, OUTBUF_SIZE, &n)
+		: SQLBrowseConnectA(conn, target_buf, target_len, outabuf, OUTBUF_SIZE, &n);
 	ensure_ok(SQL_HANDLE_DBC, conn, "SQLBrowseConnect", ret);
+	if (use_wide)
+		convert_outw_outa(n);
 	printf("%s %s\n",
 		ret == SQL_NEED_DATA ? "BROWSE" : "OK",
-		outbuf
+		outabuf
 	);
 
 	int exitcode = 0;
@@ -353,10 +372,10 @@ do_listdrivers(void)
 	int count = 0;
 
 	while (1) {
-		outbuf[0] = attrbuf[0] = '\0';
+		outabuf[0] = attrbuf[0] = '\0';
 		SQLRETURN ret = SQLDriversA(
 			env, dir,
-			outbuf, sizeof(outbuf), &len1,
+			outabuf, OUTBUF_SIZE, &len1,
 			attrbuf, sizeof(attrbuf), &len2
 		);
 		if (ret == SQL_NO_DATA)
@@ -364,7 +383,7 @@ do_listdrivers(void)
 		ensure_ok(SQL_HANDLE_ENV, env, "SQLDrivers", ret);
 		dir = SQL_FETCH_NEXT;
 		count += 1;
-		printf("DRIVER={%s}\n", outbuf);
+		printf("DRIVER={%s}\n", outabuf);
 		for (char *p = (char*)attrbuf; *p; p += strlen(p) + 1) {
 			printf("    %s\n", (char*)p);
 		}
@@ -382,17 +401,17 @@ do_listdsns(const char *prefix, SQLSMALLINT dir)
 	SQLSMALLINT len1, len2;
 
 	while (1) {
-		outbuf[0] = attrbuf[0] = '\0';
+		outabuf[0] = attrbuf[0] = '\0';
 		SQLRETURN ret = SQLDataSourcesA(
 			env, dir,
-			outbuf, sizeof(outbuf), &len1,
+			outabuf, OUTBUF_SIZE, &len1,
 			attrbuf, sizeof(attrbuf), &len2
 		);
 		if (ret == SQL_NO_DATA)
 			break;
 		ensure_ok(SQL_HANDLE_ENV, env, "SQLDataSources", ret);
 		dir = SQL_FETCH_NEXT;
-		printf("%s DSN=%s\n    Driver=%s\n", prefix, outbuf, attrbuf);
+		printf("%s DSN=%s\n    Driver=%s\n", prefix, outabuf, attrbuf);
 	}
 
 	return 0;
@@ -402,7 +421,7 @@ do_listdsns(const char *prefix, SQLSMALLINT dir)
 static int
 do_execute_stmt(void)
 {
-	SQLCHAR *query_buf;
+	void *query_buf;
 	SQLSMALLINT query_len = SQL_NTS;
 
 	if (query == NULL)
@@ -411,7 +430,7 @@ do_execute_stmt(void)
 	if (verbose)
 		printf("Statement: %s\n", query);
 
-	make_arg(query, &query_buf, &query_len);
+	make_arg(use_wide, query, &query_buf, &query_len);
 
 	ensure_ok(
 		SQL_HANDLE_ENV, conn, "allocate stmt handle",
@@ -419,7 +438,10 @@ do_execute_stmt(void)
 
 	ensure_ok(
 		SQL_HANDLE_STMT, stmt, "SQLExecDirect",
-		SQLExecDirectA(stmt, query_buf, query_len));
+		use_wide
+			? SQLExecDirectW(stmt, query_buf, query_len)
+			: SQLExecDirectA(stmt, query_buf, query_len)
+	);
 
 	do {
 		SQLLEN rowcount = -1;
@@ -439,11 +461,11 @@ do_execute_stmt(void)
 			printf("    - ");
 			for (int i = 1; i <= colcount; i++) {
 				SQLLEN n;
-				outbuf[0] = '\0';
-				SQLRETURN ret = SQLGetData(stmt, i, SQL_C_CHAR, outbuf, sizeof(outbuf), &n);
+				outabuf[0] = '\0';
+				SQLRETURN ret = SQLGetData(stmt, i, SQL_C_CHAR, outabuf, OUTBUF_SIZE, &n);
 				if (!SQL_SUCCEEDED(ret))
 					ensure_ok(SQL_HANDLE_STMT, stmt, "SQLGetData", ret);
-				printf("%s;", outbuf);
+				printf("%s;", outabuf);
 			}
 			printf("\n");
 		}
@@ -460,7 +482,45 @@ do_execute_stmt(void)
 
 
 static void
-make_arg(const char *arg, SQLCHAR**bufp, SQLSMALLINT *buflen)
+make_arg(bool wide, const char *arg, void**bufp, SQLSMALLINT *buflen)
+{
+	if (arg == NULL) {
+		*bufp = NULL;
+		*buflen = SQL_NTS;
+		return;
+	}
+
+	if (wide)
+		make_argw(arg, bufp, buflen, false);
+	else
+		make_arga(arg, bufp, buflen);
+}
+
+static void
+make_arga(const char *arg, void**bufp, SQLSMALLINT *buflen)
+{
+	size_t len = strlen(arg);
+	char *buf = alloc(len + 100);
+	*bufp = (SQLCHAR*)buf;
+	*buflen = SQL_NTS;
+
+	char *p = buf;
+	memmove(p, arg, len);
+	p += len;
+
+	if (use_counted_strings) {
+		*buflen = (SQLSMALLINT)(p - buf);
+		const char *garbage = "GARBAGE";
+		size_t garbage_len = strlen(garbage);
+		memmove(p, garbage, garbage_len);
+		p += garbage_len;
+	}
+
+	*p = '\0';
+}
+
+static void
+make_argw(const char *arg, void **bufp, SQLSMALLINT *buflen, bool bytes_not_chars)
 {
 	if (arg == NULL) {
 		*bufp = NULL;
@@ -469,20 +529,72 @@ make_arg(const char *arg, SQLCHAR**bufp, SQLSMALLINT *buflen)
 	}
 
 	size_t len = strlen(arg);
-	if (!use_counted_strings) {
-		*bufp = (SQLCHAR*)alloc(len + 1);
-		memmove(*bufp, arg, len);
-		// alloc() has initialized the final byte to \0
-		*buflen = SQL_NTS;
-		return;
+	SQLWCHAR *buf = alloc((len + 100) * 4);
+	*bufp = buf;
+	*buflen = SQL_NTS;
+
+	SQLWCHAR *p = buf;
+	p = gen_utf16(p, arg, len);
+
+	if (use_counted_strings) {
+		*buflen = (SQLSMALLINT)(p - buf);
+		const char *garbage = "GARBAGE";
+		size_t garbage_len = strlen(garbage);
+		p = gen_utf16(p, garbage, garbage_len);
 	}
 
-	const char *garbage = "GARBAGE";
-	size_t garbage_len = strlen(garbage);
-	*bufp = alloc(len + garbage_len + 1);
-	memmove(*bufp, arg, len);
-	memmove(*bufp + len, garbage, garbage_len);
-	// alloc() has initialized the final byte to \0
+	*p = '\0';
 
-	*buflen = (SQLSMALLINT)len;
+	if (bytes_not_chars)
+		*buflen *= 2;
+}
+
+
+static SQLWCHAR*
+gen_utf16(SQLWCHAR *dest, const char *src, size_t len)
+{
+	SQLWCHAR *p = dest;
+	uint32_t state = UTF8_ACCEPT;
+	for (size_t i = 0; i < len; i++) {
+		unsigned char byte = (unsigned char)src[i];
+		uint32_t codepoint;
+		switch (decode(&state, &codepoint, byte)) {
+		case UTF8_ACCEPT:
+			if (codepoint <= 0xFFFF) {
+				*p++ = (SQLWCHAR)codepoint;
+			} else {
+				uint16_t hi = (codepoint - 0x10000) >> 10;
+				uint16_t lo = (codepoint - 0x10000) & 0x3FF;
+				*p++ = (SQLWCHAR)(0xD800 + hi);
+				*p++ = (SQLWCHAR)(0xDC00 + lo);
+			}
+			break;
+		case UTF8_REJECT:
+			fprintf(stderr, "\n\ninvalid utf8!\n");
+			exit(1);
+		default:
+			break;
+		}
+	}
+	if (state != UTF8_ACCEPT) {
+			fprintf(stderr, "\n\nInvalid utf8!\n");
+			exit(1);
+	}
+
+	return p;
+}
+
+static void
+convert_outw_outa(size_t n)
+{
+	// outw mostly holds connection strings and those are mostly ascii
+	for (size_t i = 0; i < n; i++) {
+		SQLWCHAR w = outwbuf[i];
+		if (w > 127) {
+			fprintf(stderr, "Sorry, this test is lazy and should be extended to non-ascii utf-16\n");
+			exit(1);
+		}
+		outabuf[i] = (SQLCHAR)w;
+	}
+	outabuf[n] = '\0';
 }
