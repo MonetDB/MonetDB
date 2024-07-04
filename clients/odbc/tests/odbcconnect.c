@@ -338,7 +338,7 @@ do_sqlbrowseconnect(const char *target)
 {
 	void *target_buf;
 	SQLSMALLINT target_len = SQL_NTS;
-	make_arg(false, target, &target_buf, &target_len);
+	make_arg(use_wide, target, &target_buf, &target_len);
 
 
 	SQLSMALLINT n;
@@ -462,9 +462,13 @@ do_execute_stmt(void)
 			for (int i = 1; i <= colcount; i++) {
 				SQLLEN n;
 				outabuf[0] = '\0';
-				SQLRETURN ret = SQLGetData(stmt, i, SQL_C_CHAR, outabuf, OUTBUF_SIZE, &n);
+				SQLRETURN ret = use_wide
+					? SQLGetData(stmt, i, SQL_C_WCHAR, outwbuf, OUTBUF_SIZE * sizeof(SQLWCHAR), &n)
+					: SQLGetData(stmt, i, SQL_C_CHAR, outabuf, OUTBUF_SIZE, &n);
 				if (!SQL_SUCCEEDED(ret))
 					ensure_ok(SQL_HANDLE_STMT, stmt, "SQLGetData", ret);
+				if (use_wide)
+					convert_outw_outa(n);
 				printf("%s;", outabuf);
 			}
 			printf("\n");
@@ -584,17 +588,54 @@ gen_utf16(SQLWCHAR *dest, const char *src, size_t len)
 	return p;
 }
 
+static inline SQLCHAR
+continuation_byte(uint32_t val, int n)
+{
+	val >>= 6 * n; // chop off right hand bits
+	val &= 0x3F;   // chop off left hand bits
+	val |= 0x80;   // add continuation marker bit
+	return val;
+}
+
 static void
 convert_outw_outa(size_t n)
 {
-	// outw mostly holds connection strings and those are mostly ascii
-	for (size_t i = 0; i < n; i++) {
-		SQLWCHAR w = outwbuf[i];
-		if (w > 127) {
-			fprintf(stderr, "Sorry, this test is lazy and should be extended to non-ascii utf-16\n");
-			exit(1);
+	SQLWCHAR *end = &outwbuf[n];
+	SQLWCHAR *in = &outwbuf[0];
+	SQLCHAR *out = &outabuf[0];
+
+	while (in < end) {
+		SQLWCHAR w = *in++;
+		uint32_t codepoint;
+		if (w < 0xD800 || w >= 0xE000) {
+			codepoint = w;
+		} else if (w < 0xDC00 && in < end && *in >= 0xDC00 && *in < 0xE000) {
+			uint32_t hi = w - 0xD800;
+			uint32_t lo = *in++ - 0xDC00;
+			codepoint = 0x10000 + (hi << 10) + lo;
+		} else {
+			strcpy((char*)out, "!!INVALID UTF-16 OR A BUG IN THE TEST ITSELF!!");
+			break;
 		}
-		outabuf[i] = (SQLCHAR)w;
+		if (codepoint == 0xFEFF && out == &outabuf[0]) {
+			// skip the BOM
+		} else if (codepoint < 0x80) {
+			*out++ = codepoint;
+		} else if (codepoint < 0x800) {
+			*out++ = 0xC0 | (codepoint >> 6);
+			*out++ = continuation_byte(codepoint, 0);
+		} else if (codepoint < 0x10000) {
+			*out++ = 0xE0 | (codepoint >> 12);
+			*out++ = continuation_byte(codepoint, 1);
+			*out++ = continuation_byte(codepoint, 0);
+		} else {
+			assert(codepoint < 0x110000);
+			*out++ = 0xF0 | (codepoint >> 18);
+			*out++ = continuation_byte(codepoint, 2);
+			*out++ = continuation_byte(codepoint, 1);
+			*out++ = continuation_byte(codepoint, 0);
+		}
 	}
-	outabuf[n] = '\0';
+
+	*out = '\0';
 }
