@@ -189,6 +189,18 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		goto end;
 	}
 
+	// Build a connect string for the current connection and put it in the out buffer.
+	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", settings);
+	if (!scratch_alloc)
+		goto failure;
+	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
+	if (StringLength2Ptr)
+		*StringLength2Ptr = (SQLSMALLINT)out_len;
+	if (out_len + 1 > (size_t)BufferLength) {
+		addDbcError(dbc, "01004", NULL, 0);
+		rc = SQL_SUCCESS_WITH_INFO;
+	}
+
 	if (tryOnly) {
 		assert(sqlstate == NULL);
 		goto end;
@@ -200,23 +212,8 @@ MNDBDriverConnect(ODBCDbc *dbc,
 
 	rc = MNDBConnectSettings(dbc, dsn, settings);
 	settings = NULL; // do not free now
-	if (!SQL_SUCCEEDED(rc))
-		goto end; // not to 'failure', all errors have already been logged
 
-
-	// Build a connect string for the current connection
-	// and put it in the buffer.
-	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", dbc->settings);
-	if (!scratch_alloc)
-		goto failure;
-	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
-	if (StringLength2Ptr)
-		*StringLength2Ptr = (SQLSMALLINT)out_len;
-	if (out_len + 1 > (size_t)BufferLength) {
-		addDbcError(dbc, "01004", NULL, 0);
-		rc = SQL_SUCCESS_WITH_INFO;
-	}
-
+	// always go to end, MNDBConnectSettings has already logged any failures
 	goto end;
 
 failure:
@@ -313,7 +310,7 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 		   addDbcError, dbc, return SQL_ERROR);
 
 	rc = MNDBDriverConnect(dbc, WindowHandle, in, SQL_NTS, NULL, 0, &n,
-			       DriverCompletion, 1);  // Try Only
+			       DriverCompletion, 1);  // 1 = Try Only
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	clearDbcErrors(dbc);
