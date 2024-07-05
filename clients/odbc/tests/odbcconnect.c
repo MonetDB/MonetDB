@@ -559,9 +559,9 @@ gen_utf16(SQLWCHAR *dest, const char *src, size_t len)
 {
 	SQLWCHAR *p = dest;
 	uint32_t state = UTF8_ACCEPT;
+	uint32_t codepoint = UTF8_ACCEPT;
 	for (size_t i = 0; i < len; i++) {
 		unsigned char byte = (unsigned char)src[i];
-		uint32_t codepoint;
 		switch (decode(&state, &codepoint, byte)) {
 		case UTF8_ACCEPT:
 			if (codepoint <= 0xFFFF) {
