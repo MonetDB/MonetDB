@@ -284,6 +284,27 @@ ex = Execution('-w', '-d', f'DSN={dsn};Client Remark={unicode_text}')
 ex.expect('OK', f'CLIENTREMARK={unicode_text}')
 ex.end()
 
+# test maptolongvarchar
+ex = Execution(
+    '-d', f'DSN={dsn}',
+    '-q', "SELECT 'xxx' AS a, 'xxxyyyzzz' AS b"
+)
+ex.expect('OK')
+ex.expect('RESULT', 'a:varchar', 'b:varchar')
+ex.expect('-')
+ex.end()
+
+ex = Execution(
+    '-d', f'DSN={dsn};mapToLongVarchar=5',    # enable maptolong
+    '-q', "SELECT 'xxx' AS a, 'xxxyyyzzz' AS b"
+)
+ex.expect('OK')
+ex.expect('RESULT', 'a:varchar', 'b:*varchar')    # second must now be longvarchar
+ex.expect('-')
+ex.end()
+
+
+
 #######################################################################
 # Test SQLBrowseConnect
 #######################################################################

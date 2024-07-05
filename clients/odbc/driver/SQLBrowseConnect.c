@@ -53,7 +53,12 @@ suggest_settings(ODBCDbc *dbc, char **buf, size_t *pos, size_t *cap, char touche
 		mparm parm = entry->parm;
 		if (dbc->setting_touched[(int)parm] == touched_as) {
 			const char *sep = *pos > 0 ? ";" : "";
-			reallocprintf(buf, pos, cap, "%s%s%s:%s=?", sep, prefix, entry->name, entry->alt_name);
+			reallocprintf(
+				buf, pos, cap,
+				"%s%s%s%s%s=?",
+				sep, prefix, entry->name,
+				entry->alt_name ? ":" : "",
+				entry->alt_name ? entry->alt_name : "");
 			if (entry->is_enum) {
 				assert(entry->values != NULL);
 				*pos -= 1;  // eat the '?'

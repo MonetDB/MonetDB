@@ -455,7 +455,45 @@ do_execute_stmt(void)
 			SQL_HANDLE_STMT, stmt, "SQLNumResultCols",
 			SQLNumResultCols(stmt, &colcount));
 
-		printf("RESULT rows=%ld cols=%d \n", rowcount, colcount);
+		printf("RESULT rows=%ld: ", rowcount);
+		char *sep = "";
+		for (int i = 1; i <= colcount; i++) {
+			printf("%s", sep);
+			sep = "; ";
+			SQLSMALLINT n;
+			ensure_ok(
+				SQL_HANDLE_STMT, stmt, "SQLColAttributeW SQL_DESC_NAME",
+				SQLColAttributeW(stmt, i, SQL_DESC_NAME, outwbuf, sizeof(outwbuf) /* in bytes! */, &n, NULL));
+			convert_outw_outa(n);
+			printf("%s", outabuf);
+			SQLLEN typenr;
+			ensure_ok(
+				SQL_HANDLE_STMT, stmt, "SQLColAttributeW SQL_DESC_TYPE",
+				SQLColAttributeW(stmt, i, SQL_DESC_CONCISE_TYPE, NULL, 0, NULL, &typenr));
+			ensure_ok(
+				SQL_HANDLE_STMT, stmt, "SQLColAttributeW SQL_DESC_TYPE_NAME",
+				SQLColAttributeW(stmt, i, SQL_DESC_TYPE_NAME, outwbuf, sizeof(outwbuf) /* in bytes! */, &n, NULL));
+			convert_outw_outa(n);
+			char *marker = typenr == SQL_LONGVARCHAR || typenr == SQL_WLONGVARCHAR ? "*" : "";
+			printf(":%s%s", marker, outabuf);
+			SQLLEN fixed, len, scale;
+			ensure_ok(
+				SQL_HANDLE_STMT, stmt, "SQLColAttributeW SQL_DESC_LENGTH",
+				SQLColAttributeW(stmt, i, SQL_DESC_FIXED_PREC_SCALE, NULL, 0, NULL, &fixed));
+			ensure_ok(
+				SQL_HANDLE_STMT, stmt, "SQLColAttributeW SQL_DESC_LENGTH",
+				SQLColAttributeW(stmt, i, SQL_DESC_LENGTH, NULL, 0, NULL, &len));
+			ensure_ok(
+				SQL_HANDLE_STMT, stmt, "SQLColAttributeW SQL_DESC_SCALE",
+				SQLColAttributeW(stmt, i, SQL_DESC_SCALE, NULL, 0, NULL, &scale));
+			if (!fixed || scale) {
+				if (scale > 0)
+					printf("(%ld,%ld)", len, scale);
+				else
+					printf("(%ld)", len);
+			}
+		}
+		printf("\n");
 
 		while (colcount > 0 && SQL_SUCCEEDED(SQLFetch(stmt))) {
 			printf("    - ");
