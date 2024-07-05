@@ -118,6 +118,15 @@ def show_context():
         print(ex.report(), file=sys.stderr)
         if list_output:
             print(f'\n--- output of odbcconnect -l ---\n{list_output}--- end ---', file=sys.stderr)
+        odbcini = os.getenv('ODBCINI', 'odbc.ini')
+        sysini = os.getenv('ODBCSYSINI', os.getenv('TSTTRGDIR'))
+        fullpath = os.path.join(sysini, odbcini)
+        try:
+            with open(fullpath) as f:
+                content = f.read()
+                print(f'\n--- content of {fullpath} ---\n{content}\n--- end ---', file=sys.stderr)
+        except FileNotFoundError:
+            pass
 
 
 #######################################################################
