@@ -101,6 +101,10 @@ class Execution:
             raise Exception(
                 f'Process exited with code {code!r}, expected {expected!r}')
 
+# Grab the output of 'odbcconnect -l' so we can show it if a test fails
+list_output = None
+ex = Execution('-l')
+list_output = ex.proc.stdout
 
 ex = None
 
@@ -112,6 +116,8 @@ def show_context():
         # ex.end()
         print(file=sys.stderr)
         print(ex.report(), file=sys.stderr)
+        if list_output:
+            print(f'\n--- output of odbcconnect -l ---\n{list_output}--- end ---', file=sys.stderr)
 
 
 #######################################################################
