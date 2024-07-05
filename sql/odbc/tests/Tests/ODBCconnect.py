@@ -254,6 +254,21 @@ ex.expect('RESULT')
 ex.expect('- ;')   # the second connection does not have a Client Remark
 ex.end()
 
+# test error handling when -w is given
+
+# first without the -w to demonstrate the expected behavior
+ex = Execution('-d', f'Driver={{MonetDB}};User={user};Password={password};Database={dbname + "-Wrong"}')
+ex.expect_fail()
+ex.expect('Error')
+ex.expect('08001')  # something wrong with the database
+ex.end()
+# then with the -w
+ex = Execution('-w', '-d', f'Driver={{MonetDB}};User={user};Password={password};Database={dbname + "-Wrong"}')
+ex.expect_fail()
+ex.expect('Error')
+ex.expect('08001')  # something wrong with the database
+ex.end()
+
 # test wide characters
 ex = Execution('-w', '-d', f'DSN={dsn};Client Remark={unicode_text}')
 # expect OK followed by connection string containing the rainbow
