@@ -42,12 +42,13 @@ MNDBSetConnectAttr(ODBCDbc *dbc,
 {
 	(void) StringLength;	/* Stefan: unused!? */
 
+	bool autocommit = false;
 	switch (Attribute) {
 	case SQL_ATTR_AUTOCOMMIT:		/* SQLUINTEGER */
 		switch ((SQLUINTEGER) (uintptr_t) ValuePtr) {
 		case SQL_AUTOCOMMIT_ON:
 		case SQL_AUTOCOMMIT_OFF:
-			bool autocommit = (bool) (SQLUINTEGER) (uintptr_t) ValuePtr;
+			autocommit = (bool) (SQLUINTEGER) (uintptr_t) ValuePtr;
 #ifdef ODBCDEBUG
 			ODBCLOG("SQLSetConnectAttr set autocommit %s\n", autocommit ? "on" : "off");
 #endif
