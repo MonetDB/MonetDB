@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <inttypes.h>
 #include <sql.h>
 #include <sqlext.h>
 #include <sqlucode.h>
@@ -417,6 +418,7 @@ do_listdsns(const char *prefix, SQLSMALLINT dir)
 	return 0;
 }
 
+#define LLFMT                   "%" PRId64
 
 static int
 do_execute_stmt(void)
@@ -455,7 +457,7 @@ do_execute_stmt(void)
 			SQL_HANDLE_STMT, stmt, "SQLNumResultCols",
 			SQLNumResultCols(stmt, &colcount));
 
-		printf("RESULT rows=%ld: ", rowcount);
+		printf("RESULT rows=" LLFMT ": ", (int64_t)rowcount);
 		char *sep = "";
 		for (int i = 1; i <= colcount; i++) {
 			printf("%s", sep);
@@ -488,9 +490,9 @@ do_execute_stmt(void)
 				SQLColAttributeW(stmt, i, SQL_DESC_SCALE, NULL, 0, NULL, &scale));
 			if (!fixed || scale) {
 				if (scale > 0)
-					printf("(%ld,%ld)", len, scale);
+					printf("(" LLFMT "," LLFMT ")", (int64_t)len, (int64_t)scale);
 				else
-					printf("(%ld)", len);
+					printf("("LLFMT ")", (int64_t)len);
 			}
 		}
 		printf("\n");

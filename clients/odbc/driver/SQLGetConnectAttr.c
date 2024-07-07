@@ -62,11 +62,11 @@ MNDBGetConnectAttr(ODBCDbc *dbc,
 		 * SQL_ATTR_ENABLE_AUTO_IPD */
 		WriteData(ValuePtr, SQL_TRUE, SQLUINTEGER);
 		break;
-	case SQL_ATTR_AUTOCOMMIT:		/* SQLUINTEGER */
+	case SQL_ATTR_AUTOCOMMIT: {		/* SQLUINTEGER */
 		/* SQL_AUTOCOMMIT */
 		bool autocommit = msetting_bool(dbc->settings, MP_AUTOCOMMIT);
 		WriteData(ValuePtr, autocommit, SQLUINTEGER);
-		break;
+	  }	break;
 	case SQL_ATTR_CONNECTION_DEAD:		/* SQLUINTEGER */
 		WriteData(ValuePtr, dbc->mid && mapi_is_connected(dbc->mid) ? SQL_CD_FALSE : SQL_CD_TRUE, SQLUINTEGER);
 		break;
