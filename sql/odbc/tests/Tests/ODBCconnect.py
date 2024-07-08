@@ -25,10 +25,17 @@ user = 'monetdb'
 password = 'monetdb'
 port = os.environ.get('MAPIPORT', 50000)
 
-# \u{E1} is LATIN SMALL LETTER A WITH ACUTE
-unicode_text = 'R\u00E1inbow'
+
+# UnixODBC turns out to be broken when it comes to Unicode in connection
+# strings. In SQLBrowseConnectW it basically converts the 16-bit connection
+# string to an 8-bit connection string by dropping the upper bytes and keeping
+# only the lower bytes. The character sequence below has been chosen with this
+# in mind.
+
+# \u{E1} is LATIN SMALL LETTER A WITH ACUTE.
+basic_unicode_text = 'R\u00E1inbow'
 # \u{1F308} is RAINBOW EMOJI
-#unicode_text += '\U0001F308'
+full_unicode_text = basic_unicode_text + '\U0001F308'
 
 class Execution:
     def __init__(self, *odbcconnect_args):
@@ -279,9 +286,11 @@ ex.expect('08001')  # something wrong with the database
 ex.end()
 
 # test wide characters
-ex = Execution('-w', '-d', f'DSN={dsn};Client Remark={unicode_text}')
+# we can use the full character set because UnixODBC's SQLDriverConnect
+# passes the connection string on without looking at it
+ex = Execution('-w', '-d', f'DSN={dsn};Client Remark={full_unicode_text}')
 # expect OK followed by connection string containing the rainbow
-ex.expect('OK', f'CLIENTREMARK={unicode_text}')
+ex.expect('OK', f'CLIENTREMARK={full_unicode_text}')
 ex.end()
 
 # test maptolongvarchar
@@ -340,12 +349,14 @@ ex.expect('OK', ';')
 ex.end()
 
 # test wide characters
+# we use the limited character set because UnixODBC's SQLBrowserConnect
+# messes up code points > 255
 ex = Execution('-w', '-b', f'DSN={dsn}')
 ex.expect('OK', ';')
 ex.end()
 
-ex = Execution('-w', '-b', f'DSN={dsn};Client Remark={unicode_text}')
-ex.expect('OK', f';CLIENTREMARK={unicode_text}')
+ex = Execution('-w', '-b', f'DSN={dsn};Client Remark={basic_unicode_text}')
+ex.expect('OK', f';CLIENTREMARK={basic_unicode_text}')
 ex.expect
 ex.end()
 
@@ -354,20 +365,20 @@ ex = Execution('-0', '-w', '-b', f'DSN={dsn}')
 ex.expect('OK', ';')
 ex.end()
 
-ex = Execution('-0', '-w', '-b', f'DSN={dsn};Client Remark={unicode_text}')
-ex.expect('OK', f';CLIENTREMARK={unicode_text}')
+ex = Execution('-0', '-w', '-b', f'DSN={dsn};Client Remark={basic_unicode_text}')
+ex.expect('OK', f';CLIENTREMARK={basic_unicode_text}')
 ex.expect
 ex.end()
 
 # Also test that queries return unicode ok
 ex = Execution(
     '-w',
-    '-b', f'DSN={dsn};Client Remark={unicode_text}',
+    '-b', f'DSN={dsn};Client Remark={basic_unicode_text}',
     '-q', 'select remark from sys.sessions where sessionid = current_sessionid()',
 )
-ex.expect('OK', f';CLIENTREMARK={unicode_text}')
+ex.expect('OK', f';CLIENTREMARK={basic_unicode_text}')
 ex.expect('RESULT')
-ex.expect(unicode_text)
+ex.expect(basic_unicode_text)
 ex.end()
 
 
