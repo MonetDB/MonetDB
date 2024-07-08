@@ -1,6 +1,5 @@
 The MonetDB Database System
 ===========================
-
 The MonetDB database was originally developed by the `CWI`__ `database
 research group`__ (see https://www.monetdb.org/).  Development has now
 shifted to the spin-off company `MonetDB Solutions`__.
