@@ -60,6 +60,7 @@ field-arg-error-Bug-7506
 7513-uri-authority-parse-issue
 7514-wrong-window-function
 7524-right-outer-join
+HAVE_CUDF?7525-cudf-aggr-var-input
 7528-jarowinkler-null
 7534-is-distinct-from
 7535-create-view-groupby-func
