@@ -128,22 +128,20 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (tbl && strcmp(t->base.name, tbl))
 				continue;
-			tfnd = 1;
 			if (tbl && !isTable(t))
 				throw(SQL, "sql.analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
-			if (!table_privs(m, t, PRIV_SELECT))
-				throw(SQL, "sql.analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
-					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 			if (isTable(t) && ol_first_node(t->columns)) {
+				bool allowed = table_privs(m, t, PRIV_SELECT);
+				tfnd |= allowed;
 				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
 
 					if (col && strcmp(c->base.name, col))
 						continue;
+					if (!allowed && !column_privs(m, c, PRIV_SELECT))
+						continue;
 					cfnd = 1;
-					if (!column_privs(m, c, PRIV_SELECT))
-						throw(SQL, "sql.analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'",
-							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
+					tfnd |= cfnd;
 				}
 			}
 		}
@@ -172,8 +170,11 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (tbl && strcmp(b->name, tbl))
 				continue;
 			if (isTable(t) && ol_first_node(t->columns)) {
+				bool allowed = table_privs(m, t, PRIV_SELECT);
 				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
+					if (!allowed && !column_privs(m, c, PRIV_SELECT))
+						continue;
 					BAT *b, *unq;
 					ptr mn, mx;
 
@@ -285,23 +286,21 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (tname && strcmp(t->base.name, tname))
 				continue;
-			tfnd = 1;
 			if (tname && !isTable(t))
 				throw(SQL, "sql.statistics", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
-			if (!table_privs(m, t, PRIV_SELECT))
-				throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to table '%s.%s'",
-					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 			if (isTable(t) && ol_first_node(t->columns)) {
+				bool allowed = table_privs(m, t, PRIV_SELECT);
+				tfnd |= allowed;
 				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
 
 					if (cname && strcmp(c->base.name, cname))
 						continue;
-					cfnd = 1;
 					nrows++;
-					if (!column_privs(m, c, PRIV_SELECT))
-						throw(SQL, "sql.statistics", SQLSTATE(42000) "STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
-							  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
+					if (!allowed && !column_privs(m, c, PRIV_SELECT))
+						continue;
+					cfnd = 1;
+					tfnd |= cfnd;
 				}
 			}
 		}
@@ -347,8 +346,11 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (tname && strcmp(bt->name, tname))
 					continue;
 				if (isTable(t) && ol_first_node(t->columns)) {
+					bool allowed = table_privs(m, t, PRIV_SELECT);
 					for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 						sql_column *c = (sql_column *) ncol->data;
+						if (!allowed && !column_privs(m, c, PRIV_SELECT))
+							continue;
 						int w;
 						lng cnt;
 						bit un, hnils, issorted, isrevsorted, dict;
