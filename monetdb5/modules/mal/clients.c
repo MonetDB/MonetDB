@@ -797,6 +797,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *clientpidId = getArgReference_bat(stk, pci, 14);
 	bat *remarkId = getArgReference_bat(stk, pci, 15);
 	Client c;
+	bool admin;
 	timestamp ts;
 	lng pid;
 	const char *s;
@@ -848,73 +849,80 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	MT_lock_set(&mal_contextLock);
+	admin = strcmp(cntxt->username, "monetdb") == 0;
 
+	MT_lock_set(&mal_contextLock);
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
-		if (c->mode == RUNCLIENT) {
-			const char *username = c->username;
-			if (!username)
-				username = str_nil;
-			if (BUNappend(user, username, false) != GDK_SUCCEED)
+		if (c->mode != RUNCLIENT)
+			continue;
+
+		bool allowed_to_see = admin || c == cntxt || strcmp(c->username, cntxt->username) == 0;
+		if (!allowed_to_see)
+			continue;
+
+		const char *username = c->username;
+		if (!username)
+			username = str_nil;
+		if (BUNappend(user, username, false) != GDK_SUCCEED)
+			goto bailout;
+		ts = timestamp_fromtime(c->login);
+		if (is_timestamp_nil(ts)) {
+			msg = createException(SQL, "sql.sessions",
+									SQLSTATE(22003)
+									"Failed to convert user logged time");
+			goto bailout;
+		}
+		if (BUNappend(id, &c->idx, false) != GDK_SUCCEED)
 				goto bailout;
-			ts = timestamp_fromtime(c->login);
+		if (BUNappend(login, &ts, false) != GDK_SUCCEED)
+			goto bailout;
+		timeout = (int) (c->logical_sessiontimeout);
+		if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
+			goto bailout;
+		timeout = (int) (c->querytimeout / 1000000);
+		if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
+			goto bailout;
+		if (c->idle) {
+			ts = timestamp_fromtime(c->idle);
 			if (is_timestamp_nil(ts)) {
 				msg = createException(SQL, "sql.sessions",
-									  SQLSTATE(22003)
-									  "Failed to convert user logged time");
+										SQLSTATE(22003)
+										"Failed to convert user logged time");
 				goto bailout;
 			}
-			if (BUNappend(id, &c->idx, false) != GDK_SUCCEED)
-				 goto bailout;
-			if (BUNappend(login, &ts, false) != GDK_SUCCEED)
+		} else
+			ts = timestamp_nil;
+		if (BUNappend(idle, &ts, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
 				goto bailout;
-			timeout = (int) (c->logical_sessiontimeout);
-			if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
-				goto bailout;
-			timeout = (int) (c->querytimeout / 1000000);
-			if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
-				goto bailout;
-			if (c->idle) {
-				ts = timestamp_fromtime(c->idle);
-				if (is_timestamp_nil(ts)) {
-					msg = createException(SQL, "sql.sessions",
-										  SQLSTATE(22003)
-										  "Failed to convert user logged time");
-					goto bailout;
-				}
-			} else
-				ts = timestamp_nil;
-			if (BUNappend(idle, &ts, false) != GDK_SUCCEED)
-				goto bailout;
-			if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
-				 goto bailout;
-			if (BUNappend(wlimit, &c->workerlimit, false) != GDK_SUCCEED)
-				goto bailout;
-			if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
-				goto bailout;
-			if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
-				goto bailout;
-			s = c->peer ? c->peer : str_nil;
-			if (BUNappend(peer, s, false) != GDK_SUCCEED)
-				goto bailout;
-			s = c->client_hostname ? c->client_hostname : str_nil;
-			if (BUNappend(hostname, s, false) != GDK_SUCCEED)
-				goto bailout;
-			s = c->client_application ? c->client_application : str_nil;
-			if (BUNappend(application, s, false) != GDK_SUCCEED)
-				goto bailout;
-			s = c->client_library ? c->client_library : str_nil;
-			if (BUNappend(client, s, false) != GDK_SUCCEED)
-				goto bailout;
-			pid = c->client_pid;
-			if (BUNappend(clientpid, pid ? &pid : &lng_nil, false) != GDK_SUCCEED)
-				goto bailout;
-			s = c->client_remark ? c->client_remark : str_nil;
-			if (BUNappend(remark, s, false) != GDK_SUCCEED)
-				goto bailout;
-		}
+		if (BUNappend(wlimit, &c->workerlimit, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->peer ? c->peer : str_nil;
+		if (BUNappend(peer, s, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_hostname ? c->client_hostname : str_nil;
+		if (BUNappend(hostname, s, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_application ? c->client_application : str_nil;
+		if (BUNappend(application, s, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_library ? c->client_library : str_nil;
+		if (BUNappend(client, s, false) != GDK_SUCCEED)
+			goto bailout;
+		pid = c->client_pid;
+		if (BUNappend(clientpid, pid ? &pid : &lng_nil, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_remark ? c->client_remark : str_nil;
+		if (BUNappend(remark, s, false) != GDK_SUCCEED)
+			goto bailout;
 	}
 	MT_lock_unset(&mal_contextLock);
+
 	*idId = id->batCacheid;
 	BBPkeepref(id);
 	*userId = user->batCacheid;

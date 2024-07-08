@@ -7098,6 +7098,7 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 						" )\n"
 						" external name sql.sessions;\n"
 						"create view sys.sessions as select * from sys.sessions();\n"
+						"grant select on sys.sessions to public;\n"
 						"create procedure sys.setclientinfo(property string, value string)\n"
 						" external name clients.setinfo;\n"
 						"grant execute on procedure sys.setclientinfo(string, string) to public;\n"

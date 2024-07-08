@@ -39,7 +39,7 @@ returns table(
 )
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
--- we won't grant sys.sessions to the public
+grant select on sys.sessions to public;
 
 create procedure sys.setclientinfo(property string, value string)
 	external name clients.setinfo;
