@@ -368,9 +368,29 @@ do_sqlbrowseconnect(const char *target)
 static int
 do_listdrivers(void)
 {
+	SQLRETURN ret;
 	SQLSMALLINT dir = SQL_FETCH_FIRST;
 	SQLSMALLINT len1, len2;
 	int count = 0;
+
+	// unixodbc defines these in sqlext.h:
+	// #define SQL_ATTR_UNIXODBC_SYSPATH           65001
+	// #define SQL_ATTR_UNIXODBC_VERSION           65002
+	ret = SQLGetEnvAttr(env, 65002, outabuf, OUTBUF_SIZE, NULL);
+	if (SQL_SUCCEEDED(ret))
+		printf("SQL_ATTR_UNIXODBC_VERSION=%s\n", outabuf);
+	ret = SQLGetEnvAttr(env, 65001, outabuf, OUTBUF_SIZE, NULL);
+	if (SQL_SUCCEEDED(ret))
+		printf("SQL_ATTR_UNIXODBC_SYSPATH=%s\n", outabuf);
+
+	// SQLGetInfo needs a DBC handle. It does not need to be connected to anything
+	ensure_ok(
+		SQL_HANDLE_ENV, env, "allocate conn handle",
+		SQLAllocHandle(SQL_HANDLE_DBC, env, &conn));
+
+	ret = SQLGetInfoA(conn, SQL_DM_VER, outabuf, OUTBUF_SIZE, NULL);
+	if (SQL_SUCCEEDED(ret))
+		printf("SQL_DM_VER=%s\n", outabuf);
 
 	while (1) {
 		outabuf[0] = attrbuf[0] = '\0';
