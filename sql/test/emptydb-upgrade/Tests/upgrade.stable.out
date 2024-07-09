@@ -407,18 +407,23 @@ create function sys.sessions()
  )
  external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
+grant select on sys.sessions to public;
 create procedure sys.setclientinfo(property string, value string)
  external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;
-create table sys.clientinfo_properties(prop string, session_attr string);
+create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);
 insert into sys.clientinfo_properties values
  ('ClientHostname', 'hostname'),
  ('ApplicationName', 'application'),
  ('ClientLibrary', 'client'),
- ('ClientRemark', 'remark'),
- ('ClientPid', 'clientpid');
+ ('ClientPid', 'clientpid'),
+ ('ClientRemark', 'remark');
+grant select on sys.clientinfo_properties to public;
 update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');
 update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');
+
+Running database upgrade commands:
+alter table sys.clientinfo_properties SET READ ONLY;
 
 Running database upgrade commands:
 DROP TABLE sys.key_types;

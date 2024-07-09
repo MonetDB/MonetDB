@@ -1489,9 +1489,9 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 		}
 		return NULL;
 	}
-	if (!mvc_schema_privs(sql, tr->t->s))
+	if (tr->t && !mvc_schema_privs(sql, tr->t->s))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), tr->t->s->base.name);
-	return rel_drop_trigger(sql, tr->t->s->base.name, tname, if_exists);
+	return rel_drop_trigger(sql, tr->t?tr->t->s->base.name:NULL, tname, if_exists);
 }
 
 static sql_rel*

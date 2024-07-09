@@ -53,7 +53,12 @@ suggest_settings(ODBCDbc *dbc, char **buf, size_t *pos, size_t *cap, char touche
 		mparm parm = entry->parm;
 		if (dbc->setting_touched[(int)parm] == touched_as) {
 			const char *sep = *pos > 0 ? ";" : "";
-			reallocprintf(buf, pos, cap, "%s%s%s:%s=?", sep, prefix, entry->name, entry->alt_name);
+			reallocprintf(
+				buf, pos, cap,
+				"%s%s%s%s%s=?",
+				sep, prefix, entry->name,
+				entry->alt_name ? ":" : "",
+				entry->alt_name ? entry->alt_name : "");
 			if (entry->is_enum) {
 				assert(entry->values != NULL);
 				*pos -= 1;  // eat the '?'
@@ -116,6 +121,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	size_t cap = 0;
 	suggest_settings(dbc, &buf, &pos, &cap, 2, "");    // mandatory first
 	suggest_settings(dbc, &buf, &pos, &cap, 0, "*");   // then optional
+	// note that we leave out level 1, they have already been provided
 
 	if (buf && pos) {
 		size_t n = strcpy_len((char*)OutConnectionString, buf, BufferLength);
