@@ -1500,7 +1500,7 @@ log_commit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdated)
 }
 
 static gdk_return
-check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const char *filename, bool *needsnew)
+check_version(logger *lg, FILE *fp, bool *needsnew)
 {
 	int version = 0;
 
@@ -1510,29 +1510,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 		fclose(fp);
 		return GDK_FAIL;
 	}
-	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
-		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
-		lg->catalog_id = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
-		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
-		if (lg->catalog_bid == NULL || lg->catalog_id == NULL || lg->dcatalog == NULL) {
-			GDKerror("cannot create catalog bats");
-			fclose(fp);
-			return GDK_FAIL;
-		}
-		/* old_logger_load always closes fp */
-		if (old_logger_load(lg, fn, logdir, fp, version, filename) != GDK_SUCCEED) {
-			/*loads drop no longer needed catalog, snapshots bats */
-			/*convert catalog_oid -> catalog_id (lng->int) */
-			GDKerror("Incompatible database version %06d, "
-				 "this server supports version %06d.\n%s",
-				 version, lg->version,
-				 version <
-				 lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
-			return GDK_FAIL;
-		}
-		*needsnew = false;	/* already written a new log file */
-		return GDK_SUCCEED;
-	} else if (version != lg->version) {
+	if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
 		    (*lg->prefuncp) (lg->funcdata, version, lg->version) != GDK_SUCCEED) {
 			GDKerror("Incompatible database version %06d, "
@@ -2019,7 +1997,7 @@ log_json_upgrade_finalize(void)
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_MAX])
+log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 {
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
@@ -2151,7 +2129,7 @@ log_load(const char *fn, const char *logdir, logger *lg, char filename[FILENAME_
 		}
 		if (fp != NULL) {
 			/* check_version always closes fp */
-			if (check_version(lg, fp, fn, logdir, filename, &needsnew) != GDK_SUCCEED) {
+			if (check_version(lg, fp, &needsnew) != GDK_SUCCEED) {
 				fp = NULL;
 				goto error;
 			}
@@ -2424,7 +2402,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->flush_lock, "flush_lock");
 	MT_cond_init(&lg->excl_flush_cv);
 
-	if (log_load(fn, logdir, lg, filename) == GDK_SUCCEED) {
+	if (log_load(fn, lg, filename) == GDK_SUCCEED) {
 		return lg;
 	}
 	return NULL;

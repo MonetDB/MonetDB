@@ -7098,16 +7098,18 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 						" )\n"
 						" external name sql.sessions;\n"
 						"create view sys.sessions as select * from sys.sessions();\n"
+						"grant select on sys.sessions to public;\n"
 						"create procedure sys.setclientinfo(property string, value string)\n"
 						" external name clients.setinfo;\n"
 						"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
-						"create table sys.clientinfo_properties(prop string, session_attr string);\n"
+						"create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);\n"
 						"insert into sys.clientinfo_properties values\n"
 						" ('ClientHostname', 'hostname'),\n"
 						" ('ApplicationName', 'application'),\n"
 						" ('ClientLibrary', 'client'),\n"
-						" ('ClientRemark', 'remark'),\n"
-						" ('ClientPid', 'clientpid');\n"
+						" ('ClientPid', 'clientpid'),\n"
+						" ('ClientRemark', 'remark');\n"
+						"grant select on sys.clientinfo_properties to public;\n"
 						"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
 						"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
 
@@ -7116,7 +7118,12 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					printf("Running database upgrade commands:\n%s\n", query3);
 					fflush(stdout);
 					err = SQLstatementIntern(c, query3, "update", true, false, NULL);
-
+					if (err == MAL_SUCCEED) {
+							const char query3b[] = "alter table sys.clientinfo_properties SET READ ONLY;\n";
+							printf("Running database upgrade commands:\n%s\n", query3b);
+							fflush(stdout);
+							err = SQLstatementIntern(c, query3b, "update", true, false, NULL);
+					}
 					if (err == MAL_SUCCEED) {
 						const char query4[] =
 							"DROP TABLE sys.key_types;\n"
@@ -7129,7 +7136,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 							"(2, 'Foreign Key'),\n"
 							"(3, 'Unique Key With Nulls Not Distinct'),\n"
 							"(4, 'Check Constraint');\n"
-
 							"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
 							"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
 						if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)

@@ -80,7 +80,6 @@ newODBCDbc(ODBCEnv *env)
 	*dbc = (ODBCDbc) {
 		.Env = env,
 		.settings = settings,
-		.sql_attr_autocommit = SQL_AUTOCOMMIT_ON,	/* default is autocommit */
 		.sql_attr_metadata_id = SQL_FALSE,
 		/* add this dbc to start of the administrative linked dbc list */
 		.next = env->FirstDbc,
