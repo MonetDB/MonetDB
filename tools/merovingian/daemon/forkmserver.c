@@ -236,6 +236,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			*dp = (struct _dpair) {
 				.dbname = strdup(database),
 				.fork_lock = PTHREAD_MUTEX_INITIALIZER,
+				.input[0].fd = -1,
+				.input[1].fd = -1,
+				.type = NODB,
+				.pid = -1,
 			};
 			break;
 		}
