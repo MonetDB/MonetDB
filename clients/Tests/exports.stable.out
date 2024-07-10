@@ -1065,6 +1065,7 @@ const char *likeRef;
 const char *likejoinRef;
 const char *likeselectRef;
 const char *likeuselectRef;
+const char *lngRef;
 str loadLibrary(const char *modulename, int flag);
 char *locate_file(const char *basename, const char *ext, bit recurse);
 const char *lockRef;
