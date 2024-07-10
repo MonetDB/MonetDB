@@ -94,8 +94,9 @@ static void
 CLIENTprintinfo(void)
 {
 	int nrun = 0, nfinish = 0, nblock = 0;
-	char buf[32];
-	char tbuf[64];
+	char mmbuf[64];
+	char tmbuf[64];
+	char trbuf[64];
 	struct tm tm;
 
 	MT_lock_set(&mal_contextLock);
@@ -105,15 +106,19 @@ CLIENTprintinfo(void)
 			/* running */
 			nrun++;
 			if (c->qryctx.maxmem)
-				snprintf(buf, sizeof(buf), " (max %"PRIu64")", (uint64_t) c->qryctx.maxmem);
+				snprintf(mmbuf, sizeof(mmbuf), " (max %"PRIu64")", (uint64_t) c->qryctx.maxmem);
 			else
-				buf[0] = 0;
+				mmbuf[0] = 0;
 			if (c->idle) {
 				localtime_r(&c->idle, &tm);
-				strftime(tbuf, sizeof(tbuf), ", idle since %F %H:%M:%S%z", &tm);
+				strftime(tmbuf, sizeof(tmbuf), ", idle since %F %H:%M:%S%z", &tm);
 			} else
-				tbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), buf, tbuf, c->sqlcontext && ((backend *) c->sqlcontext)->mvc && ((backend *) c->sqlcontext)->mvc->session && ((backend *) c->sqlcontext)->mvc->session->tr && ((backend *) c->sqlcontext)->mvc->session->tr->active ? ", active transaction" : "");
+				tmbuf[0] = 0;
+			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc && ((backend *) c->sqlcontext)->mvc->session && ((backend *) c->sqlcontext)->mvc->session->tr && ((backend *) c->sqlcontext)->mvc->session->tr->active)
+				snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
+			else
+				trbuf[0] = 0;
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
