@@ -1758,49 +1758,27 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
-		if (is_semantics) {
+		q = newStmt(mb, algebraRef, thetaselectRef);
+		if (q == NULL)
+			goto bailout;
+		bool subdone = false;
+		if (is_semantics && op1->cand && sub != op1->cand) { /* handle using nilmask */
 			assert(cmptype == cmp_equal || cmptype == cmp_notequal);
-			if (cmptype == cmp_notequal)
-				anti = !anti;
-			if (!op1->cand || !sub || op1->cand == sub) {
-				q = newStmtArgs(mb, algebraRef, selectRef, 9);
-				if (q == NULL)
-					goto bailout;
-				q = pushArgument(mb, q, l);
-				if (sub && !op1->cand) {
-					q = pushArgument(mb, q, sub->nr);
-				} else {
-					assert(!sub || op1->cand == sub);
-					sub = NULL;
-				}
-				q = pushArgument(mb, q, r);
-				q = pushArgument(mb, q, r);
-				q = pushBit(mb, q, TRUE);
-				q = pushBit(mb, q, TRUE);
-				q = pushBit(mb, q, anti);
-			} else { /* nonull use nil mask */
-				stmt *cands = op1->cand;
-				q = newStmtArgs(mb, algebraRef, selectRef, 9);
-				if (q == NULL)
-					goto bailout;
-				q = pushArgument(mb, q, cands->nr);
-				if (sub) {
-					q = pushArgument(mb, q, sub->nr);
-				} else {
-					sub = NULL;
-				}
-				q = pushMsk(mb, q, TRUE); /* mask true */
-				q = pushMsk(mb, q, TRUE); /* mask true */
-
-				q = pushBit(mb, q, TRUE);
-				q = pushBit(mb, q, TRUE);
-				q = pushBit(mb, q, anti);
+			//if (cmptype == cmp_notequal)
+				//anti = !anti;
+			stmt *cands = op1->cand;
+			q = pushArgument(mb, q, cands->nr);
+			r = op2->cand->nr;
+			if (sub) {
+				q = pushArgument(mb, q, sub->nr);
+				subdone = true;
+			} else {
+				sub = NULL;
 			}
 		} else {
-			q = newStmt(mb, algebraRef, thetaselectRef);
-			if (q == NULL)
-				goto bailout;
 			q = pushArgument(mb, q, l);
+		}
+		if (!subdone) {
 			if (sub && !op1->cand) {
 				q = pushArgument(mb, q, sub->nr);
 			} else {
@@ -1808,33 +1786,39 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushNilBat(mb, q);
 				sub = NULL;
 			}
-			q = pushArgument(mb, q, r);
-			switch (cmptype) {
-			case cmp_equal:
+		}
+		q = pushArgument(mb, q, r);
+		switch (cmptype) {
+		case cmp_equal:
+			if (is_semantics)
+				q = pushStr(mb, q, anti?"ne":"eq");
+			else
 				q = pushStr(mb, q, anti?"!=":"==");
-				break;
-			case cmp_notequal:
+			break;
+		case cmp_notequal:
+			if (is_semantics)
+				q = pushStr(mb, q, anti?"eq":"ne");
+			else
 				q = pushStr(mb, q, anti?"==":"!=");
-				break;
-			case cmp_lt:
-				q = pushStr(mb, q, anti?">=":"<");
-				break;
-			case cmp_lte:
-				q = pushStr(mb, q, anti?">":"<=");
-				break;
-			case cmp_gt:
-				q = pushStr(mb, q, anti?"<=":">");
-				break;
-			case cmp_gte:
-				q = pushStr(mb, q, anti?"<":">=");
-				break;
-			default:
-				TRC_ERROR(SQL_EXECUTION, "Impossible select compare\n");
-				if (q)
-					freeInstruction(q);
-				q = NULL;
-				goto bailout;
-			}
+			break;
+		case cmp_lt:
+			q = pushStr(mb, q, anti?">=":"<");
+			break;
+		case cmp_lte:
+			q = pushStr(mb, q, anti?">":"<=");
+			break;
+		case cmp_gt:
+			q = pushStr(mb, q, anti?"<=":">");
+			break;
+		case cmp_gte:
+			q = pushStr(mb, q, anti?"<":">=");
+			break;
+		default:
+			TRC_ERROR(SQL_EXECUTION, "Impossible select compare\n");
+			if (q)
+				freeInstruction(q);
+			q = NULL;
+			goto bailout;
 		}
 	}
 

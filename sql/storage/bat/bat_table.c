@@ -79,7 +79,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		bat_destroy(s);
 		goto return_nil;
 	}
-	r = BATselect(b, s, value, NULL, true, false, false);
+	r = BATselect(b, s, value, NULL, true, false, false, false);
 	bat_destroy(s);
 	bat_destroy(b);
 	if (!r)
@@ -94,7 +94,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 			bat_destroy(s);
 			goto return_nil;
 		}
-		r = BATselect(b, s, value, NULL, true, false, false);
+		r = BATselect(b, s, value, NULL, true, false, false, false);
 		bat_destroy(s);
 		bat_destroy(b);
 		if (!r)
@@ -477,7 +477,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
 		kvh = ATOMnilptr(b->ttype);
 	if (key_value_low) {
-		r = BATselect(b, s, kvl, kvh, true, hi, false);
+		r = BATselect(b, s, kvl, kvh, true, hi, false, false);
 		bat_destroy(s);
 		s = r;
 	}
@@ -504,7 +504,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			if (!kvh && kvl != ATOMnilptr(b->ttype))
 				kvh = ATOMnilptr(b->ttype);
 			assert(kvh);
-			r = BATselect(b, s, kvl, kvh, true, hi, false);
+			r = BATselect(b, s, kvl, kvh, true, hi, false, false);
 			bat_destroy(s);
 			s = r;
 			bat_destroy(b);

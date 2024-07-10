@@ -329,7 +329,7 @@ sql_create_shp(Client c)
 	//Create the new SHPload procedures
 	const char query[] = "create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;\n"
 		"create procedure SHPLoad(fname string, tablename string) external name shp.load;\n"
-		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');";
+		"update sys.functions set system = true where schema_id = 2000 and name in ('shpload');\n";
 	printf("Running database upgrade commands:\n%s\n", query);
 	fflush(stdout);
 	return SQLstatementIntern(c, query, "update", true, false, NULL);
@@ -7098,16 +7098,18 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 						" )\n"
 						" external name sql.sessions;\n"
 						"create view sys.sessions as select * from sys.sessions();\n"
+						"grant select on sys.sessions to public;\n"
 						"create procedure sys.setclientinfo(property string, value string)\n"
 						" external name clients.setinfo;\n"
 						"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
-						"create table sys.clientinfo_properties(prop string);\n"
+						"create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);\n"
 						"insert into sys.clientinfo_properties values\n"
-						" ('ClientHostname'),\n"
-						" ('ApplicationName'),\n"
-						" ('ClientLibrary'),\n"
-						" ('ClientRemark'),\n"
-						" ('ClientPid');\n"
+						" ('ClientHostname', 'hostname'),\n"
+						" ('ApplicationName', 'application'),\n"
+						" ('ClientLibrary', 'client'),\n"
+						" ('ClientPid', 'clientpid'),\n"
+						" ('ClientRemark', 'remark');\n"
+						"grant select on sys.clientinfo_properties to public;\n"
 						"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
 						"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
 
@@ -7116,7 +7118,12 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					printf("Running database upgrade commands:\n%s\n", query3);
 					fflush(stdout);
 					err = SQLstatementIntern(c, query3, "update", true, false, NULL);
-
+					if (err == MAL_SUCCEED) {
+							const char query3b[] = "alter table sys.clientinfo_properties SET READ ONLY;\n";
+							printf("Running database upgrade commands:\n%s\n", query3b);
+							fflush(stdout);
+							err = SQLstatementIntern(c, query3b, "update", true, false, NULL);
+					}
 					if (err == MAL_SUCCEED) {
 						const char query4[] =
 							"DROP TABLE sys.key_types;\n"
@@ -7129,7 +7136,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 							"(2, 'Foreign Key'),\n"
 							"(3, 'Unique Key With Nulls Not Distinct'),\n"
 							"(4, 'Check Constraint');\n"
-
 							"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
 							"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
 						if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
@@ -7203,6 +7209,32 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 		BBPunfix(b->batCacheid);
 	}
 	res_table_destroy(output);
+
+	return err;
+}
+
+static str
+sql_update_default(Client c, mvc *sql, sql_schema *s)
+{
+	char *err = MAL_SUCCEED;
+	sql_subtype tp;
+
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "vacuum", &tp, &tp, F_PROC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char query[] =
+			"create procedure sys.vacuum(sname string, tname string)\n"
+			"external name sql.vacuum;\n"
+			"create procedure sys.vacuum(sname string, tname string, interval int)\n"
+			"external name sql.vacuum;\n"
+			"create procedure sys.stop_vacuum(sname string, tname string)\n"
+			"external name sql.stop_vacuum;\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	}
 
 	return err;
 }
@@ -7406,6 +7438,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_default(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

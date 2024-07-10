@@ -1295,7 +1295,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
 			if(bn == NULL) {
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);
@@ -1649,7 +1649,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
 
 			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false);
+			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
 			if(bn == NULL) {
 				BBPunfix(ui->batCacheid);
 				BBPunfix(uv->batCacheid);
@@ -4949,13 +4949,13 @@ finalize:
 }
 
 static str
-do_str_column_vacuum(sql_trans *tr, sql_column *c)
+do_str_column_vacuum(sql_trans *tr, sql_column *c, bool force)
 {
 	if (ATOMvarsized(c->type.type->localtype)) {
 		int res = 0;
 		sqlstore *store = tr->store;
 
-		if ((res = (int) store->storage_api.vacuum_col(tr, c)) != LOG_OK) {
+		if ((res = (int) store->storage_api.vacuum_col(tr, c, force)) != LOG_OK) {
 			if (res == LOG_CONFLICT)
 				throw(SQL, "do_str_column_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.vacuum_col %s.%s.%s", c->t->s->base.name, c->t->base.name, c->base.name);
 			if (res == LOG_ERR)
@@ -4967,12 +4967,12 @@ do_str_column_vacuum(sql_trans *tr, sql_column *c)
 }
 
 static str
-do_str_table_vacuum(sql_trans *tr, sql_table *t)
+do_str_table_vacuum(sql_trans *tr, sql_table *t, bool force)
 {
 	int res = 0;
 	sqlstore *store = tr->store;
 
-	if ((res = (int) store->storage_api.vacuum_tab(tr, t)) != LOG_OK) {
+	if ((res = (int) store->storage_api.vacuum_tab(tr, t, force)) != LOG_OK) {
 		if (res == LOG_CONFLICT)
 			throw(SQL, "do_str_table_vacuum", SQLSTATE(25S01) "TRANSACTION CONFLICT in storage_api.vacuum_col %s.%s", t->s->base.name, t->base.name);
 		if (res == LOG_ERR)
@@ -5007,7 +5007,7 @@ SQLstr_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Schema name cannot be NULL");
 	if (strNil(tname))
 		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Table name cannot be NULL");
-	if (strNil(cname))
+	if (cname && strNil(cname))
 		throw(SQL, "sql.str_vacuum", SQLSTATE(42000) "Column name cannot be NULL");
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
 		throw(SQL, "sql.str_vacuum", SQLSTATE(3F000) "Invalid or missing schema %s",sname);
@@ -5026,9 +5026,9 @@ SQLstr_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (c)
-		return do_str_column_vacuum(tr, c);
+		return do_str_column_vacuum(tr, c, true);
 	else
-		return do_str_table_vacuum(tr, t);
+		return do_str_table_vacuum(tr, t, true);
 }
 
 
@@ -5086,12 +5086,12 @@ str_vacuum_callback(int argc, void *argv[])
 				break;
 			}
 
-			if((msg=do_str_column_vacuum(session->tr, c)) != MAL_SUCCEED) {
+			if((msg=do_str_column_vacuum(session->tr, c, false)) != MAL_SUCCEED) {
 				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
 				res = GDK_FAIL;
 			}
 		} else {
-			if((msg=do_str_table_vacuum(session->tr, t)) != MAL_SUCCEED) {
+			if((msg=do_str_table_vacuum(session->tr, t, false)) != MAL_SUCCEED) {
 				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
 				res = GDK_FAIL;
 			}

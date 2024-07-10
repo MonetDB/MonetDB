@@ -1834,10 +1834,28 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 			if (left && right && (exps_card(e->r) != CARD_ATOM || !exps_are_atoms(e->r))) {
 				sql_subfunc *f = e->f;
-				for (node *n = l->op4.lval->h ; n ; n = n->next)
-					n->data = column(be, n->data);
-				for (node *n = r->op4.lval->h ; n ; n = n->next)
-					n->data = column(be, n->data);
+				bool first = true;
+				for (node *n = l->op4.lval->h ; n ; n = n->next) {
+					stmt *s = n->data;
+					if (s->nrcols == 0) {
+						if (first)
+							n->data = stmt_const(be, bin_find_smallest_column(be, left), n->data);
+						else
+							n->data = column(be, s);
+					}
+					first = false;
+				}
+				first = true;
+				for (node *n = r->op4.lval->h ; n ; n = n->next) {
+					stmt *s = n->data;
+					if (s->nrcols == 0) {
+						if (first)
+							n->data = stmt_const(be, bin_find_smallest_column(be, right), s);
+						else /* last arg maybe const */
+							n->data = column(be, s);
+					}
+					first = false;
+				}
 				return stmt_genjoin(be, l, r, f, is_anti(e), swapped);
 			}
 			assert(!swapped);

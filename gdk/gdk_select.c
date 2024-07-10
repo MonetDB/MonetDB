@@ -460,8 +460,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 
 /* argument list for type-specific core scan select function call */
 #define scanargs							\
-	bi, ci, bn, tl, th, li, hi, equi, anti, lval, hval, lnil,	\
-	cnt, bi->b->hseqbase, dst, maximum, imprints, algo
+	bi, ci, bn, tl, th, li, hi, equi, anti, nil_matches, lval, hval, \
+	lnil, cnt, bi->b->hseqbase, dst, maximum, imprints, algo
 
 #define PREVVALUEbte(x)	((x) - 1)
 #define PREVVALUEsht(x)	((x) - 1)
@@ -521,9 +521,10 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 static BUN								\
 NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	      const TYPE *tl, const TYPE *th, bool li, bool hi,		\
-	      bool equi, bool anti, bool lval, bool hval,		\
-	      bool lnil, BUN cnt, const oid hseq, oid *restrict dst,	\
-	      BUN maximum, Imprints *imprints, const char **algo)	\
+	      bool equi, bool anti, bool nil_matches, bool lval,	\
+	      bool hval, bool lnil, BUN cnt, const oid hseq,		\
+	      oid *restrict dst, BUN maximum, Imprints *imprints,	\
+	      const char **algo)					\
 {									\
 	TYPE vl = *tl;							\
 	TYPE vh = *th;							\
@@ -574,6 +575,8 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	} else if (anti) {						\
 		if (bi->nonil) {					\
 			choose(NAME, ISDENSE, (v <= vl || v >= vh), TYPE); \
+		} else if (nil_matches) {				\
+			choose(NAME, ISDENSE, is_##TYPE##_nil(v) || v <= vl || v >= vh, TYPE); \
 		} else {						\
 			choose(NAME, ISDENSE, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
 		}							\
@@ -597,9 +600,10 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 static BUN
 fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     const void *tl, const void *th,
-	     bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	     bool lnil, BUN cnt, const oid hseq, oid *restrict dst,
-	     BUN maximum, Imprints *imprints, const char **algo)
+	     bool li, bool hi, bool equi, bool anti, bool nil_matches,
+	     bool lval, bool hval, bool lnil, BUN cnt, const oid hseq,
+	     oid *restrict dst, BUN maximum, Imprints *imprints,
+	     const char **algo)
 {
 	const void *v;
 	const void *restrict nil = ATOMnilptr(bi->type);
@@ -637,9 +641,9 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				v = BUNtail(*bi, o-hseq);
 				if ((*cmp)(tl, v) == 0) {
 					dst = buninsfix(bn, dst, cnt, o,
-						(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							* (dbl) (ncand-p) * 1.1 + 1024),
-						maximum);
+							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+							       * (dbl) (ncand-p) * 1.1 + 1024),
+							maximum);
 					if (dst == NULL) {
 						BBPreclaim(bn);
 						return BUN_NONE;
@@ -654,13 +658,15 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
 				v = BUNtail(*bi, o-hseq);
-				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-					((lval &&
-					((c = (*cmp)(tl, v)) > 0 ||
+				bool isnil = nil != NULL && (*cmp)(v, nil) == 0;
+				if ((nil_matches && isnil) ||
+				    (!isnil &&
+				     ((lval &&
+				       ((c = (*cmp)(tl, v)) > 0 ||
 					(!li && c == 0))) ||
-					(hval &&
-					((c = (*cmp)(th, v)) < 0 ||
-					(!hi && c == 0))))) {
+				      (hval &&
+				       ((c = (*cmp)(th, v)) < 0 ||
+					(!hi && c == 0)))))) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -676,13 +682,15 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next(ci);
 				v = BUNtail(*bi, o-hseq);
-				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-					((lval &&
-					((c = (*cmp)(tl, v)) > 0 ||
+				bool isnil = nil != NULL && (*cmp)(v, nil) == 0;
+				if ((nil_matches && isnil) ||
+				    (!isnil &&
+				     ((lval &&
+				       ((c = (*cmp)(tl, v)) > 0 ||
 					(!li && c == 0))) ||
-					(hval &&
-					((c = (*cmp)(th, v)) < 0 ||
-					(!hi && c == 0))))) {
+				      (hval &&
+				       ((c = (*cmp)(th, v)) < 0 ||
+					(!hi && c == 0)))))) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -702,12 +710,12 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				o = canditer_next_dense(ci);
 				v = BUNtail(*bi, o-hseq);
 				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-					((!lval ||
-					(c = cmp(tl, v)) < 0 ||
-					(li && c == 0)) &&
-					(!hval ||
-					(c = cmp(th, v)) > 0 ||
-					(hi && c == 0)))) {
+				    ((!lval ||
+				      (c = cmp(tl, v)) < 0 ||
+				      (li && c == 0)) &&
+				     (!hval ||
+				      (c = cmp(th, v)) > 0 ||
+				      (hi && c == 0)))) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -724,12 +732,12 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 				o = canditer_next(ci);
 				v = BUNtail(*bi, o-hseq);
 				if ((nil == NULL || (*cmp)(v, nil) != 0) &&
-					((!lval ||
-					(c = cmp(tl, v)) < 0 ||
-					(li && c == 0)) &&
-					(!hval ||
-					(c = cmp(th, v)) > 0 ||
-					(hi && c == 0)))) {
+				    ((!lval ||
+				      (c = cmp(tl, v)) < 0 ||
+				      (li && c == 0)) &&
+				     (!hval ||
+				      (c = cmp(th, v)) > 0 ||
+				      (hi && c == 0)))) {
 					dst = buninsfix(bn, dst, cnt, o,
 							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 							       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -753,9 +761,10 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 static BUN
 fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     const char *tl, const char *th,
-	     bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	     bool lnil, BUN cnt, const oid hseq, oid *restrict dst,
-	     BUN maximum, Imprints *imprints, const char **algo)
+	     bool li, bool hi, bool equi, bool anti, bool nil_matches,
+	     bool lval, bool hval, bool lnil, BUN cnt, const oid hseq,
+	     oid *restrict dst, BUN maximum, Imprints *imprints,
+	     const char **algo)
 {
 	var_t pos;
 	BUN p, ncand = ci->ncand;
@@ -764,8 +773,8 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 
 	if (!equi || !GDK_ELIMDOUBLES(bi->vh))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
-				    lval, hval, lnil, cnt, hseq, dst,
-				    maximum, imprints, algo);
+				    nil_matches, lval, hval, lnil, cnt, hseq,
+				    dst, maximum, imprints, algo);
 	if ((pos = strLocate(bi->vh, tl)) == (var_t) -2) {
 		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
@@ -953,8 +962,9 @@ scan_sel(densescan, _dense)
 static BAT *
 scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	   const void *tl, const void *th,
-	   bool li, bool hi, bool equi, bool anti, bool lval, bool hval,
-	   bool lnil, BUN maximum, Imprints *imprints, const char **algo)
+	   bool li, bool hi, bool equi, bool anti, bool nil_matches,
+	   bool lval, bool hval, bool lnil,
+	   BUN maximum, Imprints *imprints, const char **algo)
 {
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
@@ -1342,26 +1352,30 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
  *
  * If s is non-NULL, it is a list of candidates.  s must be sorted.
  *
- * tl may not be NULL, li, hi, and anti must be either 0 or 1.
+ * tl may not be NULL, li, hi, and anti must be either false or true.
  *
  * If th is NULL, hi is ignored.
  *
- * If anti is 0, qualifying tuples are those whose value is between tl
- * and th (as in x >[=] tl && x <[=] th, where equality depends on li
+ * If anti is false, qualifying tuples are those whose value is between
+ * tl and th (as in x >[=] tl && x <[=] th, where equality depends on li
  * and hi--so if tl > th, nothing will be returned).  If li or hi is
- * 1, the respective boundary is inclusive, otherwise exclusive.  If
- * th is NULL it is taken to be equal to tl, turning this into an
- * equi- or point-select.  Note that for a point select to return
- * anything, li (and hi if th was not NULL) must be 1.  There is a
- * special case if tl is nil and th is NULL.  This is the only way to
- * select for nil values.
+ * true, the respective boundary is inclusive, otherwise exclusive.  If
+ * th is NULL it is taken to be equal to tl, turning this into an equi-
+ * or point-select.  Note that for a point select to return anything, li
+ * (and hi if th was not NULL) must be true.  There is a special case if
+ * tl is nil and th is NULL.  This is the only way to select for nil
+ * values.
  *
- * If anti is 1, the result is the complement of what the result would
- * be if anti were 0, except that nils are filtered out.
+ * If anti is true, the result is the complement of what the result
+ * would be if anti were 0, except that nils are filtered out if
+ * nil_matches is false.
+ *
+ * If nil_matches is true, NIL is considered an ordinary value that
+ * can match, else NIL must be considered to never match.
  *
  * In brief:
- * - if tl==nil and th==NULL and anti==0, return all nils (only way to
- *   get nils);
+ * - if tl==nil and th==NULL and anti==false, return all nils (only way
+ *   to get nils);
  * - it tl==nil and th==nil, return all but nils;
  * - if tl==nil and th!=NULL, no lower bound;
  * - if th==NULL or tl==th, point (equi) select;
@@ -1370,6 +1384,10 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
  * A complete breakdown of the various arguments follows.  Here, v, v1
  * and v2 are values from the appropriate domain, and
  * v != nil, v1 != nil, v2 != nil, v1 < v2.
+ * Note that if nil_matches is true, all the "x != nil" conditions fall
+ * away and for the "equi" or "point" selects, i.e. when tl is nil and
+ * th is either NULL or nil, there is no special handling of nil (so
+ * look at the rows with tl == v and th == v or NULL).
  *	tl	th	li	hi	anti	result list of OIDs for values
  *	-----------------------------------------------------------------
  *	nil	NULL	true	ignored	false	x == nil (only way to get nil)
@@ -1381,36 +1399,36 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
  *	nil	v	ignored	true	false	x <= v
  *	nil	v	ignored	false	true	x >= v
  *	nil	v	ignored	true	true	x > v
- *	v	nil	false	ignored	false	x > v
- *	v	nil	true	ignored	false	x >= v
- *	v	nil	false	ignored	true	x <= v
- *	v	nil	true	ignored	true	x < v
- *	v	NULL	false	ignored	false	NOTHING
  *	v	NULL	true	ignored	false	x == v
+ *	v	NULL	false	ignored	false	NOTHING
+ *	v	NULL	true	ignored	true	x != v && x != nil
  *	v	NULL	false	ignored	true	x != nil
- *	v	NULL	true	ignored	true	x != v
- *	v	v	false	false	false	NOTHING
- *	v	v	true	false	false	NOTHING
- *	v	v	false	true	false	NOTHING
+ *	v	nil	true	ignored	false	x >= v
+ *	v	nil	false	ignored	false	x > v
+ *	v	nil	true	ignored	true	x < v
+ *	v	nil	false	ignored	true	x <= v
  *	v	v	true	true	false	x == v
- *	v	v	false	false	true	x != nil
- *	v	v	true	false	true	x != nil
+ *	v	v	false	true	false	NOTHING
+ *	v	v	true	false	false	NOTHING
+ *	v	v	false	false	false	NOTHING
+ *	v	v	true	true	true	x != v && x != nil
  *	v	v	false	true	true	x != nil
- *	v	v	true	true	true	x != v
- *	v1	v2	false	false	false	v1 < x < v2
- *	v1	v2	true	false	false	v1 <= x < v2
- *	v1	v2	false	true	false	v1 < x <= v2
+ *	v	v	true	false	true	x != nil
+ *	v	v	false	false	true	x != nil
  *	v1	v2	true	true	false	v1 <= x <= v2
- *	v1	v2	false	false	true	x <= v1 or x >= v2
- *	v1	v2	true	false	true	x < v1 or x >= v2
- *	v1	v2	false	true	true	x <= v1 or x > v2
+ *	v1	v2	false	true	false	v1 < x <= v2
+ *	v1	v2	true	false	false	v1 <= x < v2
+ *	v1	v2	false	false	false	v1 < x < v2
  *	v1	v2	true	true	true	x < v1 or x > v2
+ *	v1	v2	false	true	true	x <= v1 or x > v2
+ *	v1	v2	true	false	true	x < v1 or x >= v2
+ *	v1	v2	false	false	true	x <= v1 or x >= v2
  *	v2	v1	ignored	ignored	false	NOTHING
  *	v2	v1	ignored	ignored	true	x != nil
  */
 BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
-	     bool li, bool hi, bool anti)
+	  bool li, bool hi, bool anti, bool nil_matches)
 {
 	bool lval;		/* low value used for comparison */
 	bool lnil;		/* low value is nil */
@@ -1474,38 +1492,52 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	t = bi.type;
 	nil = ATOMnilptr(t);
+	if (nil == NULL)
+		nil_matches = false;
 	/* can we use the base type? */
 	t = ATOMbasetype(t);
-	lnil = nil && ATOMcmp(t, tl, nil) == 0; /* low value = nil? */
-
-	if (!lnil && th != NULL && (!li || !hi) && !anti && ATOMcmp(t, tl, th) == 0) {
-		/* upper and lower bound of range are equal and we
-		 * want an interval that's open on at least one
-		 * side */
-		MT_thread_setalgorithm("select: empty interval");
-		bn = BATdense(0, 0, 0);
-		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
-			  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d -> "
-			  ALGOOPTBATFMT " (" LLFMT " usec): "
-			  "empty interval\n",
-			  ALGOBATPAR(b), ALGOOPTBATPAR(s),
-			  li, hi, anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
-		bat_iterator_end(&bi);
-		return bn;
-	}
-
+	lnil = nil && ATOMcmp(t, tl, nil) == 0; /* low value == nil? */
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
 	equi = th == NULL || (lval && ATOMcmp(t, tl, th) == 0); /* point select? */
+	if (lnil && nil_matches && (th == NULL || ATOMcmp(t, th, nil) == 0)) {
+		/* if nil_matches is set, tl==th==nil is just an equi select */
+		equi = true;
+		lval = true;
+	}
+
 	if (equi) {
 		assert(lval);
 		if (th == NULL)
 			hi = li;
 		th = tl;
 		hval = true;
-	} else if (nil == NULL) {
-		hval = true;
+		if (!anti && (!li || !hi)) {
+			/* upper and lower bound of range are equal (or
+			 * upper is NULL) and we want an interval that's
+			 * open on at least one side (v <= x < v or v <
+			 * x <= v or v < x < v all result in nothing) */
+			MT_thread_setalgorithm("select: empty interval");
+			bn = BATdense(0, 0, 0);
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d -> "
+				  ALGOOPTBATFMT " (" LLFMT " usec): "
+				  "empty interval\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  li, hi, anti, ALGOOPTBATPAR(bn),
+				  GDKusec() - t0);
+			bat_iterator_end(&bi);
+			return bn;
+		}
 	} else {
-		hval = ATOMcmp(t, th, nil) != 0;
+		/* range select: we only care about nil_matches in
+		 * (anti-)equi-select */
+		nil_matches = false;
+		if (nil == NULL) {
+			assert(th != NULL);
+			hval = true;
+		} else {
+			hval = ATOMcmp(t, th, nil) != 0;
+		}
 	}
 	if (anti) {
 		if (lval != hval) {
@@ -1552,16 +1584,31 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			anti = false;
 			lval = false;
 			hval = false;
+			nil_matches = false;
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=0 "
 				  "anti-nil...\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
 		} else if (equi) {
 			equi = false;
-			if (!(li && hi)) {
+			if (!li || !hi) {
 				/* antiselect for nothing: turn into
 				 * range select for nil-nil range
 				 * (i.e. everything but nil) */
+				if (nil_matches) {
+					/* nil is not special, so return
+					 * everything */
+					MT_thread_setalgorithm("select: anti, equi, open, nil_matches");
+					bn = canditer_slice(&ci, 0, ci.ncand);
+					TRC_DEBUG(ALGO, "b=" ALGOBATFMT
+						  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
+						  " (" LLFMT " usec): "
+						  "anti, equi, open, nil_matches\n",
+						  ALGOBATPAR(b), ALGOOPTBATPAR(s), anti,
+						  ALGOOPTBATPAR(bn), GDKusec() - t0);
+					bat_iterator_end(&bi);
+					return bn;
+				}
 				anti = false;
 				lval = false;
 				hval = false;
@@ -1575,7 +1622,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		} else if (ATOMcmp(t, tl, th) > 0) {
 			/* empty range: turn into range select for
 			 * nil-nil range (i.e. everything but nil) */
-			equi = false;
 			anti = false;
 			lval = false;
 			hval = false;
@@ -1651,10 +1697,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			return bn;
 		case range_before:
 		case range_after:
-			if (notnull || b->tnonil) {
-				/* search range does not overlap with BAT range,
-				 * and there are no nils, so we can return
-				 * everything */
+			if (notnull || b->tnonil || nil_matches) {
+				/* search range does not overlap with
+				 * BAT range, and there are no nils (or
+				 * we want to include nils), so we can
+				 * return everything */
 				MT_thread_setalgorithm("select: everything, anti, nonil");
 				bn = canditer_slice(&ci, 0, ci.ncand);
 				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
@@ -1946,7 +1993,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if (anti) {
 			assert(oidxh == NULL);
 			if (bi.sorted) {
-				BUN first = SORTfndlast(b, nil);
+				BUN first = nil_matches ? 0 : SORTfndlast(b, nil);
 				/* match: [first..low) + [high..last) */
 				bn = canditer_slice2val(&ci,
 							first + b->hseqbase,
@@ -1954,7 +2001,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 							high + b->hseqbase,
 							oid_nil);
 			} else {
-				BUN last = SORTfndfirst(b, nil);
+				BUN last = nil_matches ? bi.count : SORTfndfirst(b, nil);
 				/* match: [first..low) + [high..last) */
 				bn = canditer_slice2val(&ci,
 							oid_nil,
@@ -2090,7 +2137,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				smpl = BATslice(b, pos - delta, pos + delta);
 				if (smpl) {
 					slct = BATselect(smpl, NULL, tl,
-							    th, li, hi, anti);
+							 th, li, hi, anti, nil_matches);
 					if (slct) {
 						smpl_cnt += BATcount(smpl);
 						slct_cnt += BATcount(slct);
@@ -2145,7 +2192,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 */
 		Imprints *imprints = NULL;
 		if (!equi &&
-		    /* DISABLES CODE */ (0) && imprintable(bi.type) &&
+		    /* DISABLES CODE */ (0) &&
+		    imprintable(bi.type) &&
 		    (!bi.transient ||
 		     (pb != NULL && !pbi.transient)) &&
 		    BATimprints(b) == GDK_SUCCEED) {
@@ -2169,7 +2217,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 		GDKclrerr();
 		bn = scanselect(&bi, &ci, bn, tl, th, li, hi, equi, anti,
-				lval, hval, lnil, maximum, imprints, &algo);
+				nil_matches, lval, hval, lnil, maximum,
+				imprints, &algo);
 		if (imprints)
 			IMPSdecref(imprints, false);
 	}
@@ -2202,7 +2251,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
  * ">=", "<>", "!=" (the first two are equivalent and the last two are
  * equivalent).  Theta select never returns nils.
  *
- * If value is nil, the result is empty.
+ * If value is nil, the result is empty, except when using eq/ne as
+ * operator.
  */
 BAT *
 BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
@@ -2213,39 +2263,45 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 	BATcheck(val, NULL);
 	BATcheck(op, NULL);
 
+	/* eq/ne are can be used for "is" nil-handling */
+	if (strcmp(op, "eq") == 0)
+		return BATselect(b, s, val, NULL, true, true, false, true);
+	if (strcmp(op, "ne") == 0)
+		return BATselect(b, s, val, NULL, true, true, true, true);
+
 	nil = ATOMnilptr(b->ttype);
 	if (nil && ATOMcmp(b->ttype, val, nil) == 0)
 		return BATdense(0, 0, 0);
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */
-		return BATselect(b, s, val, NULL, true, true, false);
+		return BATselect(b, s, val, NULL, true, true, false, false);
 	}
 	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
 		/* "!=" (equivalent to "<>") */
-		return BATselect(b, s, val, NULL, true, true, true);
+		return BATselect(b, s, val, NULL, true, true, true, false);
 	}
 	if (op[0] == '<') {
 		if (op[1] == 0) {
 			/* "<" */
-			return BATselect(b, s, nil, val, false, false, false);
+			return BATselect(b, s, nil, val, false, false, false, false);
 		}
 		if (op[1] == '=' && op[2] == 0) {
 			/* "<=" */
-			return BATselect(b, s, nil, val, false, true, false);
+			return BATselect(b, s, nil, val, false, true, false, false);
 		}
 		if (op[1] == '>' && op[2] == 0) {
 			/* "<>" (equivalent to "!=") */
-			return BATselect(b, s, val, NULL, true, true, true);
+			return BATselect(b, s, val, NULL, true, true, true, false);
 		}
 	}
 	if (op[0] == '>') {
 		if (op[1] == 0) {
 			/* ">" */
-			return BATselect(b, s, val, nil, false, false, false);
+			return BATselect(b, s, val, nil, false, false, false, false);
 		}
 		if (op[1] == '=' && op[2] == 0) {
 			/* ">=" */
-			return BATselect(b, s, val, nil, true, false, false);
+			return BATselect(b, s, val, nil, true, false, false, false);
 		}
 	}
 	GDKerror("unknown operator.\n");
@@ -2586,7 +2642,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_bte(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
@@ -2613,7 +2669,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_sht(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
@@ -2653,7 +2709,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_int(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
@@ -2693,7 +2749,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_lng(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
@@ -2721,7 +2777,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_hge(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
@@ -2751,7 +2807,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_flt(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,
@@ -2780,7 +2836,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 					continue;
 				ncnt = fullscan_dbl(&li, lci, r1, &vl, &vh,
 						    true, true, false,
-						    false, true, true,
+						    false, false, true, true,
 						    false, cnt,
 						    l->hseqbase, dst1,
 						    maxsize,

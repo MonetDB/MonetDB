@@ -831,6 +831,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {																\
 		TPE f,l,s, low, hgh;											\
 		BUN j; oid *v;													\
+		bool nil_matches = false;										\
 		f = *getArgReference_##TPE(stk,p, 1);							\
 		l = *getArgReference_##TPE(stk,p, 2);							\
 		if ( p->argc == 3)												\
@@ -858,18 +859,26 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			low = NEXTVALUE##TPE(low);									\
 		} else if ( strcmp(oper,">=") == 0){							\
 			low= *getArgReference_##TPE(stk,pci,3);						\
-		} else if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){ \
+		} else if (strcmp(oper, "!=") == 0 || strcmp(oper, "<>") == 0) { \
 			hgh= low= *getArgReference_##TPE(stk,pci,3);				\
-			anti = 1;													\
-		} else if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){	\
+			anti = true;												\
+		} else if (strcmp(oper, "==") == 0 || strcmp(oper, "=") == 0) {	\
 			hgh= low= *getArgReference_##TPE(stk,pci,3);				\
+		} else if (strcmp(oper, "ne") == 0) {							\
+			hgh= low= *getArgReference_##TPE(stk,pci,3);				\
+			anti = true;												\
+			nil_matches = true;											\
+		} else if (strcmp(oper, "eq") == 0) {							\
+			hgh= low= *getArgReference_##TPE(stk,pci,3);				\
+			nil_matches = true;											\
 		} else {														\
 			BBPreclaim(cand);											\
 			BBPreclaim(bn); 											\
 			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
 		}																\
 		for(j=0;j<cap;j++, f+=s, o++)									\
-			if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
+			if (nil_matches && is_##TPE##_nil(low) ? anti :				\
+				((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
 				if(cand == NULL || canditer_contains(&ci, o)) {			\
 					*v++ = o;											\
 					c++;												\
@@ -880,7 +889,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int anti =0,tpe;
+	bool anti = false;
+	int tpe;
 	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
 	struct canditer ci = (struct canditer) {.tpe = cand_dense};
@@ -963,7 +973,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			} else
 			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
-				anti = 1;
+				anti = true;
 			} else
 			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
@@ -1038,7 +1048,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			} else
 			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
-				anti = 1;
+				anti = true;
 			} else
 			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,3, date);
@@ -1116,7 +1126,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			} else
 			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,3, timestamp);
-				anti = 1;
+				anti = true;
 			} else
 			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,3, timestamp);

@@ -78,6 +78,7 @@ Running database upgrade commands:
 create procedure SHPLoad(fname string, schemaname string, tablename string) external name shp.load;
 create procedure SHPLoad(fname string, tablename string) external name shp.load;
 update sys.functions set system = true where schema_id = 2000 and name in ('shpload');
+
 Running database upgrade commands:
 drop function if exists sys.st_intersects(geometry, geometry) cascade;
 drop function if exists sys.st_dwithin(geometry, geometry, double) cascade;
@@ -1098,18 +1099,23 @@ create function sys.sessions()
  )
  external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
+grant select on sys.sessions to public;
 create procedure sys.setclientinfo(property string, value string)
  external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;
-create table sys.clientinfo_properties(prop string);
+create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);
 insert into sys.clientinfo_properties values
- ('ClientHostname'),
- ('ApplicationName'),
- ('ClientLibrary'),
- ('ClientRemark'),
- ('ClientPid');
+ ('ClientHostname', 'hostname'),
+ ('ApplicationName', 'application'),
+ ('ClientLibrary', 'client'),
+ ('ClientPid', 'clientpid'),
+ ('ClientRemark', 'remark');
+grant select on sys.clientinfo_properties to public;
 update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');
 update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');
+
+Running database upgrade commands:
+alter table sys.clientinfo_properties SET READ ONLY;
 
 Running database upgrade commands:
 DROP TABLE sys.key_types;
@@ -1170,4 +1176,13 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT 
 UPDATE sys._tables SET system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('check_constraints','table_constraints');
+
+Running database upgrade commands:
+create procedure sys.vacuum(sname string, tname string)
+external name sql.vacuum;
+create procedure sys.vacuum(sname string, tname string, interval int)
+external name sql.vacuum;
+create procedure sys.stop_vacuum(sname string, tname string)
+external name sql.stop_vacuum;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');
 

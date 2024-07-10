@@ -121,7 +121,7 @@ makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch
 	SQLCHAR *value = malloc(argument_len + 1);
 	if (value == NULL)
 		return false;
-	memmove(value, argument, argument_len);
+	memmove(value, *argument, argument_len);
 	value[argument_len] = '\0';
 
 	*argument = value;
@@ -311,17 +311,14 @@ end:
 
 
 SQLRETURN
+
 MNDBConnect(ODBCDbc *dbc,
 	    const SQLCHAR *ServerName,
 	    SQLSMALLINT NameLength1,
 	    const SQLCHAR *UserName,
 	    SQLSMALLINT NameLength2,
 	    const SQLCHAR *Authentication,
-	    SQLSMALLINT NameLength3,
-	    const char *host,
-	    int port,
-	    const char *dbname,
-	    int mapToLongVarchar)
+	    SQLSMALLINT NameLength3)
 {
 	// These will be passed to addDbcError if you 'goto failure'.
 	// If unset, 'goto failure' will assume an allocation error.
@@ -402,28 +399,10 @@ MNDBConnect(ODBCDbc *dbc,
 			goto failure;
 	}
 
-	if (host != NULL) {
-		error_explanation = msetting_set_string(settings, MP_HOST, host);
-		if (error_explanation != NULL)
-			goto failure;
-	}
-
 	mapiport_env = getenv("MAPIPORT");
-	if (port > 0)
-		error_explanation = msetting_set_long(settings, MP_PORT, port);
-	else if (mapiport_env != NULL)
+	if (mapiport_env != NULL)
 		error_explanation = msetting_parse(settings, MP_PORT, mapiport_env);
 	if (error_explanation != NULL)
-		goto failure;
-
-	if (dbname != NULL) {
-		error_explanation = msetting_set_string(settings, MP_DATABASE, dbname);
-		if (error_explanation != NULL)
-			goto failure;
-	}
-
-	error_explanation = msetting_set_long(settings, MP_MAPTOLONGVARCHAR, mapToLongVarchar);
-	if (error_explanation)
 		goto failure;
 
 #ifdef ODBCDEBUG
@@ -482,7 +461,6 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 	if (mid) {
 		settings = NULL; // will be free'd as part of 'mid' now
 		mapi_setclientprefix(mid, "ODBC " MONETDB_VERSION);
-		mapi_setAutocommit(mid, dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON);
 		mapi_set_size_header(mid, true);
 		mapi_reconnect(mid);
 	}
@@ -546,8 +524,7 @@ SQLConnect(SQLHDBC ConnectionHandle,
 	return MNDBConnect((ODBCDbc *) ConnectionHandle,
 			   ServerName, NameLength1,
 			   UserName, NameLength2,
-			   Authentication, NameLength3,
-			   NULL, 0, NULL, 0);
+			   Authentication, NameLength3);
 }
 
 SQLRETURN SQL_API
@@ -597,8 +574,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 	rc = MNDBConnect(dbc,
 			 ds, SQL_NTS,
 			 uid, SQL_NTS,
-			 pwd, SQL_NTS,
-			 NULL, 0, NULL, 0);
+			 pwd, SQL_NTS);
 
       bailout:
 	if (ds)

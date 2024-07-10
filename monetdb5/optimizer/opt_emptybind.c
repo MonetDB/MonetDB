@@ -34,9 +34,16 @@
 		p = pushType(mb, p, getBatType(tpe));	\
 		setVarType(mb, getArg(p, 0), tpe);		\
 		setVarFixed(mb, getArg(p, 0));			\
-		empty[getArg(p, 0)]= i;					\
+		empty[getArg(p, I)]= i;					\
 	} while (0)
 
+#define emptyresultorleft(I, l)					\
+	do {										\
+		if (empty[getArg(p, l)])				\
+			empty[getArg(p, I)] = i;			\
+		else									\
+			emptyresult(I);						\
+	} while (0)
 
 str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
@@ -232,7 +239,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
 			if (empty[getArg(p, 1)] || empty[getArg(p, 2)]) {
 				actions++;
-				emptyresult(0);
+				emptyresultorleft(0, 2);
 			}
 		}
 		if ((getModuleId(p) == algebraRef || getModuleId(p) == dictRef)
@@ -240,7 +247,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				|| getFunctionId(p) == selectRef)) {
 			if (empty[getArg(p, 1)] || empty[getArg(p, 2)]) {
 				actions++;
-				emptyresult(0);
+				emptyresultorleft(0, 2);
 			}
 		}
 		if (getModuleId(p) == forRef && getFunctionId(p) == decompressRef) {
@@ -253,11 +260,11 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (getFunctionId(p) == decompressRef
 				&& (empty[getArg(p, 1)] || empty[getArg(p, 2)])) {
 				actions++;
-				emptyresult(0);
+				emptyresultorleft(0, 2);
 			}
 			if (getFunctionId(p) == compressRef && empty[getArg(p, 2)]) {
 				actions++;
-				emptyresult(0);
+				emptyresultorleft(0, 2);
 			}
 		}
 		if (getModuleId(p) == batmkeyRef

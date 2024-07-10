@@ -333,11 +333,8 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tnokey[1] = 0;
 	b->theap->dirty = true;
 	BUN cnt = BATcount(b);
-	MT_lock_unset(&b->theaplock);
 
 	uint32_t *restrict dst;
-	/* why hashlock ?? */
-	MT_rwlock_wrlock(&b->thashlock);
 	for (; s ; s=ATOMIC_PTR_GET(&s->next)) {
 		if (s->start >= nr)
 			break;
@@ -404,12 +401,10 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 				cnt = s->end;
 		}
 	}
-	MT_rwlock_wrunlock(&b->thashlock);
 	if (nr > BATcount(b)) {
-		MT_lock_set(&b->theaplock);
 		BATsetcount(b, nr);
-		MT_lock_unset(&b->theaplock);
 	}
+	MT_lock_unset(&b->theaplock);
 
 	bat_destroy(b);
 	return LOG_OK;
@@ -704,7 +699,7 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
 					oid nil = oid_nil;
 					/* less then cnt */
-					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false);
+					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false, false);
 					if (!s) {
 						bat_destroy(b);
 						return NULL;
@@ -730,6 +725,18 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 	int err = 0;
 	BAT *uv = *UV;
 	BUN cnt = BATcount(ui)+BATcount(oi);
+	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
+	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
+
+	if (!ni || (uv && !nv)) {
+		bat_destroy(ni);
+		bat_destroy(nv);
+		bat_destroy(ui);
+		bat_destroy(uv);
+		bat_destroy(oi);
+		bat_destroy(ov);
+		return NULL;
+	}
 	BATiter uvi;
 	BATiter ovi;
 
@@ -751,35 +758,6 @@ merge_updates( BAT *ui, BAT **UV, BAT *oi, BAT *ov)
 		uipt = uii.base;
 	if (!BATtdensebi(&oii))
 		oipt = oii.base;
-
-	if (uiseqb == oiseqb && uie == oie) { /* full overlap, no values */
-		if (uv) {
-			bat_iterator_end(&uvi);
-			bat_iterator_end(&ovi);
-		}
-		bat_iterator_end(&uii);
-		bat_iterator_end(&oii);
-		if (uv) {
-			*UV = uv;
-		} else {
-			bat_destroy(uv);
-		}
-		bat_destroy(oi);
-		bat_destroy(ov);
-		return ui;
-	}
-	BAT *ni = bat_new(TYPE_oid, cnt, SYSTRANS);
-	BAT *nv = uv?bat_new(uv->ttype, cnt, SYSTRANS):NULL;
-
-	if (!ni || (uv && !nv)) {
-		bat_destroy(ni);
-		bat_destroy(nv);
-		bat_destroy(ui);
-		bat_destroy(uv);
-		bat_destroy(oi);
-		bat_destroy(ov);
-		return NULL;
-	}
 	while (uip < uie && oip < oie && !err) {
 		oid uiid = (uipt)?uipt[uip]: uiseqb+uip;
 		oid oiid = (oipt)?oipt[oip]: oiseqb+oip;
@@ -5086,7 +5064,7 @@ swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
 }
 
 static int
-vacuum_col(sql_trans *tr, sql_column *c)
+vacuum_col(sql_trans *tr, sql_column *c, bool force)
 {
 	if (segments_in_transaction(tr, c->t))
 		return LOG_CONFLICT;
@@ -5098,7 +5076,7 @@ vacuum_col(sql_trans *tr, sql_column *c)
 		return LOG_CONFLICT;
 
 	/* do we have enough to clean */
-	if ((d->nr_updates) < 1024)
+	if (!force && (d->nr_updates) < 1024)
 		return LOG_OK;
 
 	BAT *b = NULL, *bn = NULL;;
@@ -5116,7 +5094,7 @@ vacuum_col(sql_trans *tr, sql_column *c)
 }
 
 static int
-vacuum_tab(sql_trans *tr, sql_table *t)
+vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 {
 	if (segments_in_transaction(tr, t))
 		return LOG_CONFLICT;
@@ -5137,8 +5115,8 @@ vacuum_tab(sql_trans *tr, sql_table *t)
 			return LOG_CONFLICT;
 
 		/* do we have enough to clean */
-		if ((d->nr_updates + s->segs->nr_reused) < 1024)
-			return LOG_OK;
+		if (!force && (d->nr_updates + s->segs->nr_reused) < 1024)
+			continue;
 
 		BAT *b = NULL, *bn = NULL;;
 		if ((b = bind_col(tr, c, 0)) == NULL)

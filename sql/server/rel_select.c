@@ -1322,6 +1322,8 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 
 		for (node * n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+			if (!i->key)
+				continue;
 			switch (i->key->type) {
 			case pkey:
 				pki = i;
@@ -2835,51 +2837,17 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		char *compare_op = n->next->data.sval;
 		int quantifier = 0;
 		int is_semantics = 0;
-		bool is_distinct_from = false;
 
 		if (n->next->next->next)
 			quantifier = n->next->next->next->data.i_val + 1;
 		assert(quantifier == 0 || quantifier == 1 || quantifier == 2 || quantifier == 3 || quantifier == 4);
 
 		if (quantifier >= 3) {
-			if (quantifier == 4) {
-				is_distinct_from = true;
+			if (quantifier == 4)
 				compare_op = "<>";
-			}
 			quantifier = 0;
 			is_semantics = 1;
 		}
-		if (is_distinct_from) {
-			sql_exp* ls = rel_value_exp(query, &rel, lo, f|sql_farg, ek);
-			if (!ls)
-				return NULL;
-			sql_exp* rs = rel_value_exp(query, &rel, ro, f|sql_farg, ek);
-			if (!rs)
-				return NULL;
-
-			bool ls_is_non_null_atom = exp_is_atom(ls) && exp_is_not_null(ls);
-			bool rs_is_non_null_atom = exp_is_atom(rs) && exp_is_not_null(rs);
-
-			if (ls_is_non_null_atom || rs_is_non_null_atom) {
-				sql_rel *r = rel_dup(rel);
-				sql_rel* l = rel_compare(query, rel, sc, lo, ro, compare_op, f | sql_or, ek, quantifier, 0);
-				if (!l)
-					return NULL;
-				sql_subtype *t;
-				if (!(t = exp_subtype(rs_is_non_null_atom?ls:rs)))
-					return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter for IS NULL operator");
-				sql_exp* e = exp_compare(sql->sa, rs_is_non_null_atom?ls:rs, exp_atom(sql->sa, atom_general(sql->sa, t, NULL, 0)), cmp_equal);
-				set_has_no_nil(e);
-				set_semantics(e);
-
-				r = rel_select_push_compare_exp_down(sql, r, e, e->l, e->r, NULL, f | sql_or);
-				if (!r)
-					return NULL;
-				return rel_or(sql, rel, l, r, NULL, NULL, NULL);
-			}
-		}
-
-		/* [NOT] DISTINCT FROM */
 		return rel_compare(query, rel, sc, lo, ro, compare_op, f, ek, quantifier, is_semantics);
 	}
 	/* Set Member ship */

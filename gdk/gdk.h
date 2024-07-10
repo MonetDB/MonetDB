@@ -753,13 +753,12 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 #define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 #define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
 #define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
-#define GDKLIBRARY		061050U /* first after Dec2023 */
+#define GDKLIBRARY		061050U /* first in Aug2024 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -2271,7 +2270,7 @@ gdk_export ValPtr BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const voi
 #define JOIN_BAND	3
 #define JOIN_NE		(-3)
 
-gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti);
+gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti, bool nil_matches);
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, role_t role);
