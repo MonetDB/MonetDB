@@ -723,7 +723,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		(void) fcntl(pfdo[0], F_SETFD, FD_CLOEXEC);
 		(void) fcntl(pfde[0], F_SETFD, FD_CLOEXEC);
 #endif
-		pthread_mutex_unlock(&_mero_topdp_lock);
 
 		while (argv[freec] != NULL) {
 			free(argv[freec++]);
@@ -735,6 +734,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		 * and if it hangs, we're just doomed, with the drawback that we
 		 * completely kill the functionality of monetdbd too */
 		do {
+			pthread_mutex_unlock(&_mero_topdp_lock);
+
 			/* give the database a break */
 			sleep_ms(500);
 
@@ -756,12 +757,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			 * waited for), the pid will have been set to -1, so check
 			 * that. */
 			pthread_mutex_lock(&_mero_topdp_lock);
-			if (dp->pid == -1) {
-				pthread_mutex_unlock(&_mero_topdp_lock);
-				break;
-			}
-			pthread_mutex_unlock(&_mero_topdp_lock);
-		} while ((*stats)->state != SABdbRunning);
+		} while (dp->pid != -1 && (*stats)->state != SABdbRunning);
 
 		/* check if the SQL scenario was loaded */
 		if (dp->pid != -1 && (*stats)->state == SABdbRunning &&
@@ -777,14 +773,18 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			if (scen == NULL) {
 				/* we don't know what it's doing, but we don't like it
 				 * any case, so kill it */
-				(void) terminateProcess(dp->dbname, dp->pid, MERODB);
+				pid_t pid = dp->pid;
+				pthread_mutex_unlock(&_mero_topdp_lock);
+				(void) terminateProcess(dp->dbname, pid, MERODB);
 				msab_freeStatus(stats);
 				pthread_mutex_unlock(&dp->fork_lock);
 				return(newErr("database '%s' did not initialise the sql "
 							  "scenario", database));
 			}
 		} else if (dp->pid != -1) {
-			(void) terminateProcess(dp->dbname, dp->pid, MERODB);
+			pid_t pid = dp->pid;
+			pthread_mutex_unlock(&_mero_topdp_lock);
+			(void) terminateProcess(dp->dbname, pid, MERODB);
 			msab_freeStatus(stats);
 			pthread_mutex_unlock(&dp->fork_lock);
 			return(newErr(
@@ -796,6 +796,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		if (dp->pid == -1) {
 			state = (*stats)->state;
 
+			pthread_mutex_unlock(&_mero_topdp_lock);
 			pthread_mutex_unlock(&dp->fork_lock);
 
 			/* starting failed */
@@ -837,6 +838,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			}
 		}
 
+		pthread_mutex_unlock(&_mero_topdp_lock);
 		pthread_mutex_unlock(&dp->fork_lock);
 
 		if ((*stats)->locked) {
