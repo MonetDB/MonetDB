@@ -7061,12 +7061,32 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 			fflush(stdout);
 			err = SQLstatementIntern(c, query1, "update", true, false, NULL);
 			if (err == MAL_SUCCEED) {
-				const char query2[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
+				const char query2[] =
+					"create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
 					"returns table (value date)\n"
 					"external name generator.series;\n"
 					"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
 					"returns table (value date)\n"
 					"external name generator.series;\n"
+					"grant execute on function sys.generate_series(tinyint, tinyint) to public;\n"
+					"grant execute on function sys.generate_series(tinyint, tinyint, tinyint) to public;\n"
+					"grant execute on function sys.generate_series(smallint, smallint) to public;\n"
+					"grant execute on function sys.generate_series(smallint, smallint, smallint) to public;\n"
+					"grant execute on function sys.generate_series(int, int) to public;\n"
+					"grant execute on function sys.generate_series(int, int, int) to public;\n"
+					"grant execute on function sys.generate_series(bigint, bigint) to public;\n"
+					"grant execute on function sys.generate_series(bigint, bigint, bigint) to public;\n"
+					"grant execute on function sys.generate_series(real, real, real) to public;\n"
+					"grant execute on function sys.generate_series(double, double, double) to public;\n"
+					"grant execute on function sys.generate_series(decimal(10,2), decimal(10,2), decimal(10,2)) to public;\n"
+					"grant execute on function sys.generate_series(date, date, interval month) to public;\n"
+					"grant execute on function sys.generate_series(date, date, interval day) to public;\n"
+					"grant execute on function sys.generate_series(timestamp, timestamp, interval second) to public;\n"
+					"grant execute on function sys.generate_series(timestamp, timestamp, interval day) to public;\n"
+#ifdef HAVE_HGE
+					"grant execute on function sys.generate_series(hugeint, hugeint) to public;\n"
+					"grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;\n"
+#endif
 					"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';

@@ -1,0 +1,37 @@
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+create user test with password 'test' name 'test'
+
+@connection(id=c2, username=test, password=test)
+query I
+SELECT * from generate_series(cast(1 as hugeint),3)
+----
+1
+2
+
+@connection(id=c2, username=test, password=test)
+query I
+SELECT * from generate_series(1,cast(4 as hugeint),2)
+----
+1
+3
+
+@connection(id=c2, username=test, password=test)
+query I
+SELECT * from generate_series(5,1,cast(-2 as hugeint))
+----
+5
+3
+
+-- cleanup
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+alter user test set schema sys
+
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+drop schema test
+
+@connection(id=c1, username=monetdb, password=monetdb)
+statement ok
+drop user test

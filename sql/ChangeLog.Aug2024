@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Jul 11 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added execution privilege on all sys.generate_series(first, limit)
+  and sys.generate_series(first, limit, stepsize) functions to public,
+  so all users can now call these table producing generator functions.
+
 * Fri Jun 14 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Extend CREATE USER MAX_MEMORY and ALTER USER MAX_MEMORY to accept
   strings of the form '10MiB', '10G', etc.
