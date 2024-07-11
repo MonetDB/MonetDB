@@ -243,8 +243,10 @@ bool PyType_IsNumpyMaskedArray(PyObject *object)
 {
 	PyObject *type = PyObject_Type(object);
 	PyObject *str = PyObject_Str(type);
-	bool ret = strcmp(PyUnicode_AsUTF8(str),
-					  "<class 'numpy.ma.core.MaskedArray'>") == 0;
+	bool ret = strcmp(PyUnicode_AsUTF8(str), /* numpy < 2.0 */
+					  "<class 'numpy.ma.core.MaskedArray'>") == 0 ||
+		strcmp(PyUnicode_AsUTF8(str), /* numpy >= 2.0 */
+			   "<class 'numpy.ma.MaskedArray'>") == 0;
 	Py_DECREF(str);
 	Py_DECREF(type);
 	return ret;
