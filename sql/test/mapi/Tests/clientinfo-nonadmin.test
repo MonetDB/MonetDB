@@ -60,3 +60,29 @@ user 2a
 user 2b
 
 
+# Having the same role does not mean you can see each others details
+
+statement ok
+CREATE ROLE common
+
+statement ok
+GRANT common TO user1
+
+statement ok
+GRANT common TO user2
+
+@connection(id=user1)
+statement ok
+SET ROLE common
+
+@connection(id=user2a)
+statement ok
+SET ROLE common
+
+# no user2!
+@connection(id=user1)
+query IT rowsort
+SELECT sessionid, remark FROM sys.sessions
+----
+1
+user 1
