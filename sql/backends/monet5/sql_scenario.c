@@ -87,10 +87,60 @@ static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 static str SQLinit(Client c, const char *initpasswd);
 static str master_password = NULL;
 
+#include "mal.h"
+#include "mal_client.h"
+
+static void
+CLIENTprintinfo(void)
+{
+	int nrun = 0, nfinish = 0, nblock = 0;
+	char mmbuf[64];
+	char tmbuf[64];
+	char trbuf[64];
+	struct tm tm;
+
+	MT_lock_set(&mal_contextLock);
+	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		switch (c->mode) {
+		case RUNCLIENT:
+			/* running */
+			nrun++;
+			if (c->qryctx.maxmem)
+				snprintf(mmbuf, sizeof(mmbuf), " (max %"PRIu64")", (uint64_t) c->qryctx.maxmem);
+			else
+				mmbuf[0] = 0;
+			if (c->idle) {
+				localtime_r(&c->idle, &tm);
+				strftime(tmbuf, sizeof(tmbuf), ", idle since %F %H:%M:%S%z", &tm);
+			} else
+				tmbuf[0] = 0;
+			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc && ((backend *) c->sqlcontext)->mvc->session && ((backend *) c->sqlcontext)->mvc->session->tr && ((backend *) c->sqlcontext)->mvc->session->tr->active)
+				snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
+			else
+				trbuf[0] = 0;
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf);
+			break;
+		case FINISHCLIENT:
+			/* finishing */
+			nfinish++;
+			break;
+		case BLOCKCLIENT:
+			/* blocked */
+			nblock++;
+			break;
+		case FREECLIENT:
+			break;
+		}
+	}
+	MT_lock_unset(&mal_contextLock);
+	printf("%d active clients, %d finishing clients, %d blocked clients; max: %d\n",
+		   nrun, nfinish, nblock, MAL_MAXCLIENTS);
+}
+
 static void
 SQLprintinfo(void)
 {
-	/* we need to start printing SQL info here... */
+	CLIENTprintinfo();
 	store_printinfo(SQLstore);
 }
 
