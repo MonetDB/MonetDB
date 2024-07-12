@@ -74,3 +74,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7544-startswith-bug
 7545-groupby_on_index_col
 7547-drop-login-trigger-crash
+7550-select-statistics-auth
