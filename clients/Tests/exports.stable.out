@@ -790,7 +790,6 @@ str AUTHunlockVault(const char *password);
 str AUTHverifyPassword(const char *passwd);
 str BKCmirror(bat *ret, const bat *bid);
 str BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role);
-str CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str COPYrejects_clear(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
