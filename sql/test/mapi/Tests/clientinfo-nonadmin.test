@@ -1,0 +1,62 @@
+
+# admin logs in with ClientRemark and creates users
+
+statement ok
+CALL sys.setclientinfo('ClientRemark', 'admin')
+
+statement ok
+CREATE USER user1 WITH PASSWORD 'bla' NAME 'User 1' SCHEMA sys;
+
+statement ok
+CREATE USER user2 WITH PASSWORD 'bla' NAME 'User 2' SCHEMA sys;
+
+
+# user1 logs in with ClientRemark
+
+@connection(id=user1, username=user1, password=bla)
+statement ok
+CALL sys.setclientinfo('ClientRemark', 'user 1')
+
+
+# user2 logs in twice, with different ClientRemarks
+
+@connection(id=user2a, username=user2, password=bla)
+statement ok
+CALL sys.setclientinfo('ClientRemark', 'user 2a')
+
+@connection(id=user2b, username=user2, password=bla)
+statement ok
+CALL sys.setclientinfo('ClientRemark', 'user 2b')
+
+
+# Now verify what everybody sees
+
+query IT rowsort
+SELECT sessionid, remark FROM sys.sessions
+----
+0
+admin
+1
+user 1
+2
+user 2a
+3
+user 2b
+
+@connection(id=user1)
+query IT rowsort
+SELECT sessionid, remark FROM sys.sessions
+----
+1
+user 1
+
+@connection(id=user2a)
+query IT rowsort
+SELECT sessionid, remark FROM sys.sessions
+----
+2
+user 2a
+3
+user 2b
+
+
