@@ -37,6 +37,7 @@
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_scenario.h"
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "opt_pipes.h"
@@ -3563,6 +3564,9 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *clientpidId = getArgReference_bat(stk, pci, 14);
 	bat *remarkId = getArgReference_bat(stk, pci, 15);
 	Client c;
+	backend *be;
+	sqlid user_id;
+	sqlid role_id;
 	bool admin;
 	timestamp ts;
 	lng pid;
@@ -3615,14 +3619,21 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	admin = strcmp(cntxt->username, "monetdb") == 0;
+	be = cntxt->sqlcontext;
+	user_id = be->mvc->user_id;
+	role_id = be->mvc->role_id;
+	admin = user_id == USER_MONETDB || role_id == ROLE_SYSADMIN;
 
 	MT_lock_set(&mal_contextLock);
 	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->mode != RUNCLIENT)
 			continue;
 
-		bool allowed_to_see = admin || c == cntxt || strcmp(c->username, cntxt->username) == 0;
+		backend *their_be = c->sqlcontext;
+		bool allowed_to_see = admin || c == cntxt ||  their_be->mvc->user_id == user_id;
+		// Note that their role_id is not checked. Just because we have
+		// both been granted a ROLE does not mean you are allowed to see
+		// my private details.
 		if (!allowed_to_see)
 			continue;
 
