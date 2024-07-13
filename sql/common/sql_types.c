@@ -1440,6 +1440,7 @@ sqltypeinit( allocator *sa)
 	}
 
 	for (t = floats; t < dates; t++) {
+		sql_create_func(sa, "nextafter", "mmath", "nextafter", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "power", "mmath", "pow", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "floor", "mmath", "floor", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
 		sql_create_func(sa, "ceil", "mmath", "ceil", FALSE, FALSE, SCALE_FIX, 0, *t, 1, *t);
