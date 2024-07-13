@@ -1,0 +1,96 @@
+
+statement error
+select nextafter()
+----
+
+statement error
+select nextafter('bla','bla')
+----
+
+query I
+select nextafter(NULL,1)
+----
+NULL
+
+query I
+select nextafter(1,NULL)
+----
+NULL
+
+query I
+select nextafter(99, 1)
+----
+98
+
+query I
+select nextafter(cast(99.0 as double), cast(1.0 as double)) < 99
+----
+1
+
+query I
+select nextafter(cast(99.0 as double), cast(99.0 as double)) = 99
+----
+1
+
+query I
+select nextafter(cast(99.0 as double), cast(100.0 as double)) > 99
+----
+1
+
+query I
+select nextafter(nextafter(cast(99.0 as double), cast(100.0 as double)),cast(0 as double)) = 99
+----
+1
+
+query I
+select nextafter(cast(99.0 as float), cast(1.0 as float)) < 99
+----
+1
+
+query I
+select nextafter(cast(99.0 as float), cast(100.0 as float)) > 99
+----
+1
+
+query I
+select nextafter(nextafter(cast(99.0 as float), cast(100.0 as float)),cast(0 as float))  = 99
+----
+1
+
+statement ok
+create table test (a FLOAT)
+
+statement ok
+INSERT INTO test VALUES (10),(20),(30),(40)
+
+query T
+select cast(nextafter(a, cast(0 as float)) as varchar(20)) from test
+----
+9.999999999999998
+19.999999999999996
+29.999999999999996
+39.99999999999999
+
+#9.999999
+#19.999998
+#29.999998
+#39.999996
+
+statement ok
+create table test_twoc (a FLOAT, b FLOAT)
+
+statement ok
+INSERT INTO test_twoc VALUES (10,1),(20,21),(30,1),(40,41)
+
+query T
+select cast(nextafter(a, b) as varchar(20)) from test_twoc
+----
+9.999999999999998
+20.000000000000004
+29.999999999999996
+40.00000000000001
+
+#9.999999
+#20.000002
+#29.999998
+#40.000004
