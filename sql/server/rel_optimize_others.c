@@ -11,6 +11,7 @@
  */
 
 #include "monetdb_config.h"
+#include "rel_optimizer.h"
 #include "rel_optimizer_private.h"
 #include "rel_exp.h"
 #include "rel_select.h"
@@ -1081,6 +1082,13 @@ rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
 	return rel_dce_(v->sql, rel);
+}
+
+/* keep export for other projects */
+sql_rel *
+rel_deadcode_elimination(mvc *sql, sql_rel *rel)
+{
+	return rel_dce_(sql, rel);
 }
 
 run_optimizer
