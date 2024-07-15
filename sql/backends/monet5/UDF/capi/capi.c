@@ -571,15 +571,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	// the first unknown argument is the group, we don't really care for the
 	// rest.
-	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc && !seengrp; i++) {
+	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
 		if (args[i] == NULL) {
-			if (!seengrp && grouped) {
+			if (grouped && (i+2) == (size_t)pci->argc) {
 				args[i] = GDKstrdup("aggr_group");
 				if (!args[i]) {
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
-				seengrp = i; /* Don't be interested in the extents BAT */
+				seengrp = i++; /* Don't be interested in the extents BAT */
+				break;
 			} else {
 				snprintf(argbuf, sizeof(argbuf), "arg%zu", i - pci->retc - 1);
 				args[i] = GDKstrdup(argbuf);

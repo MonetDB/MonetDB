@@ -182,6 +182,11 @@ install(FILES
   DESTINATION ${EXPORT_TARGET_PATH}
   COMPONENT monetdbdev)
 
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/MonetDBConfigVersion.cmake
+  DESTINATION ${EXPORT_TARGET_PATH}
+  COMPONENT monetdbdev)
+
 include(monetdb-packages)
 
 include(CTest)

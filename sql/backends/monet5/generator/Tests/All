@@ -14,3 +14,6 @@ joins02
 thetaselect00
 
 crash.Bug-3609
+
+execute-privilege-for-public
+HAVE_HGE?execute-privilege-for-public-hge

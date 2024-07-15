@@ -1,0 +1,38 @@
+statement ok
+CREATE TABLE t0 (c0 BOOLEAN)
+
+statement ok
+CREATE TABLE t1 (c1 INT)
+
+statement ok
+INSERT INTO t1(c1) VALUES (1)
+
+statement ok
+INSERT INTO t0(c0) VALUES (false)
+
+statement ok
+INSERT INTO t0(c0) VALUES (true)
+
+query II rowsort
+SELECT * FROM t1 LEFT  JOIN t0 ON LEVENSHTEIN(t0.c0, true)
+----
+1
+0
+
+query II rowsort
+SELECT * FROM t1 LEFT  JOIN t0 ON LEVENSHTEIN(t0.c0, true) WHERE t0.c0 UNION ALL SELECT * FROM t1 LEFT  JOIN t0 ON LEVENSHTEIN(t0.c0, true) WHERE (NOT t0.c0) UNION ALL SELECT * FROM t1 LEFT  JOIN t0 ON LEVENSHTEIN(t0.c0, true) WHERE ((t0.c0) IS NULL)
+----
+1
+0
+
+query I rowsort
+SELECT LEVENSHTEIN(true, true)
+----
+0
+
+query I rowsort
+SELECT LEVENSHTEIN(t0.c0, true) FROM t0
+----
+0
+4
+

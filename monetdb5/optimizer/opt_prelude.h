@@ -147,6 +147,7 @@ mal_export const char *likejoinRef;
 mal_export const char *likeRef;
 mal_export const char *likeselectRef;
 mal_export const char *likeuselectRef;
+mal_export const char *lngRef;
 mal_export const char *lockRef;
 mal_export const char *lookupRef;
 mal_export const char *malRef;

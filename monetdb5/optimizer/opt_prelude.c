@@ -149,6 +149,7 @@ const char *leftjoinRef;
 const char *likejoinRef;
 const char *likeRef;
 const char *likeselectRef;
+const char *lngRef;
 const char *lockRef;
 const char *lookupRef;
 const char *malRef;
@@ -413,6 +414,7 @@ optimizerInit(void)
 	likejoinRef = putName("likejoin");
 	likeRef = putName("like");
 	likeselectRef = putName("likeselect");
+	lngRef = putName("lng");
 	lockRef = putName("lock");
 	lookupRef = putName("lookup");
 	malRef = putName("mal");

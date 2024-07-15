@@ -110,7 +110,13 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
 
         # and extract the tar file
         with tarfile.open(fileobj=f) as tar:
-            tar.extractall(dbfarm)
+            try:
+                tar.extraction_filter
+            except AttributeError:
+                # pre 3.12 Python
+                tar.extractall(dbfarm)
+            else:
+                tar.extractall(dbfarm, filter='data')
 
         f.close()
         # and restart the server

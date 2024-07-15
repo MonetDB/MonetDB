@@ -183,7 +183,7 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 		}
 	}
-	if (is_compare(e->type) && e->flag == cmp_equal) { /* predicate_func = TRUE */
+	if (is_compare(e->type) && e->flag == cmp_equal && !is_semantics(e)) { /* predicate_func = TRUE */
 		sql_exp *l = e->l, *r = e->r;
 		if (is_func(l->type) && exp_is_true(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f))))
 			return l;

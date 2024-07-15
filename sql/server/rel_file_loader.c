@@ -40,7 +40,7 @@ fl_register(char *name, fl_add_types_fptr add_types, fl_load_fptr load)
 {
 	file_loader_t *fl = fl_find(name);
 	if (fl) {
-		printf("re-registering %s\n", name);
+		TRC_WARNING(SQL_TRANS,"file_loader re-registering %s\n", name);
 		GDKfree(fl->name);
 		fl->name = NULL;
 	}

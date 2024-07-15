@@ -13,7 +13,9 @@
 create function sys.generate_series(first hugeint, "limit" hugeint)
 returns table (value hugeint)
 external name generator.series;
+grant execute on function sys.generate_series(hugeint, hugeint) to public;
 
 create function sys.generate_series(first hugeint, "limit" hugeint, stepsize hugeint)
 returns table (value hugeint)
 external name generator.series;
+grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;

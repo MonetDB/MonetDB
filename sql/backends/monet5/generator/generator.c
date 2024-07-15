@@ -926,7 +926,6 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 #endif
 	case TYPE_flt: VLTthetasubselect(flt,fabsf);break;
 	case TYPE_dbl: VLTthetasubselect(dbl,fabs);break;
-	break;
 	default:
 		if (tpe == TYPE_date && p->argc == 3) {
 			BBPreclaim(cand);

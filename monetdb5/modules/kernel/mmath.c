@@ -200,6 +200,8 @@ unopM5(_ACOS, acos)
 		binopM5(_ATAN2, atan2)
 		binopM5(_POW, pow)
 		binopM5(_LOG, logbs)
+		binopM5(_NEXTAFTER, nextafter)
+
 static str
 MATHunary_FABSdbl(dbl *res, const dbl *a)
 {
@@ -357,6 +359,8 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "log2", MATHunary_LOG2dbl, false, "The log2(x) function returns the base-2 logarithm of x.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "pow", MATHbinary_POWflt, false, "", args(1,3, arg("",flt),arg("x",flt),arg("y",flt))),
  command("mmath", "pow", MATHbinary_POWdbl, false, "The pow(x,y) function  returns the value of x raised to the power of y.", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
+ command("mmath", "nextafter", MATHbinary_NEXTAFTERflt, false, "The returns the next representable floating-point value of x in the direction of y.", args(1,3, arg("",flt),arg("x",flt),arg("y",flt))),
+ command("mmath", "nextafter", MATHbinary_NEXTAFTERdbl, false, "The returns the next representable floating-point value of x in the direction of y.", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
  command("mmath", "sqrt", MATHunary_SQRTflt, false, "", args(1,2, arg("",flt),arg("y",flt))),
  command("mmath", "sqrt", MATHunary_SQRTdbl, false, "The sqrt(x) function returns the non-negative root of x.", args(1,2, arg("",dbl),arg("y",dbl))),
  command("mmath", "cbrt", MATHunary_CBRTflt, false, "", args(1,2, arg("",flt),arg("y",flt))),
