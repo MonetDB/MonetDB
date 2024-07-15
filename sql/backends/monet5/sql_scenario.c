@@ -100,6 +100,7 @@ CLIENTprintinfo(void)
 	struct tm tm;
 
 	MT_lock_set(&mal_contextLock);
+	printf("Clients:\n");
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		switch (c->mode) {
 		case RUNCLIENT:

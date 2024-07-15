@@ -4987,6 +4987,7 @@ BBPprintinfo(void)
 	}
 	uint32_t nfree = BBP_nfree;
 	BBPtmunlock();
+	printf("BATs:\n");
 	if (bats[1][1][1][1][1].nr > 0)
 		printf("fix, dirty, persistent, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][1][1].nr, bats[1][1][1][1][1].vmsz, bats[1][1][1][1][1].sz);
 	if (bats[1][1][1][1][0].nr > 0)
