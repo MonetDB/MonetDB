@@ -37,6 +37,7 @@
 #include "mal_resolve.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
+#include "mal_scenario.h"
 #include "mal_profiler.h"
 #include "bat5.h"
 #include "opt_pipes.h"
@@ -3543,7 +3544,219 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return CLTsessions(cntxt, mb, stk, pci);
+	BAT *id = NULL, *user = NULL, *login = NULL, *sessiontimeout = NULL,
+		*querytimeout = NULL, *idle = NULL;
+	BAT *opt = NULL, *wlimit = NULL, *mlimit = NULL;
+	BAT *language = NULL, *peer = NULL, *hostname = NULL, *application = NULL, *client = NULL, *clientpid = NULL, *remark = NULL;
+	bat *idId = getArgReference_bat(stk, pci, 0);
+	bat *userId = getArgReference_bat(stk, pci, 1);
+	bat *loginId = getArgReference_bat(stk, pci, 2);
+	bat *idleId = getArgReference_bat(stk, pci, 3);
+	bat *optId = getArgReference_bat(stk, pci, 4);
+	bat *sessiontimeoutId = getArgReference_bat(stk, pci, 5);
+	bat *querytimeoutId = getArgReference_bat(stk, pci, 6);
+	bat *wlimitId = getArgReference_bat(stk, pci, 7);
+	bat *mlimitId = getArgReference_bat(stk, pci, 8);
+	bat *languageId = getArgReference_bat(stk, pci, 9);
+	bat *peerId = getArgReference_bat(stk, pci, 10);
+	bat *hostnameId = getArgReference_bat(stk, pci, 11);
+	bat *applicationId = getArgReference_bat(stk, pci, 12);
+	bat *clientId = getArgReference_bat(stk, pci, 13);
+	bat *clientpidId = getArgReference_bat(stk, pci, 14);
+	bat *remarkId = getArgReference_bat(stk, pci, 15);
+	Client c;
+	backend *be;
+	sqlid user_id;
+	sqlid role_id;
+	bool admin;
+	timestamp ts;
+	lng pid;
+	const char *s;
+	int timeout;
+	str msg = NULL;
+
+	(void) cntxt;
+	(void) mb;
+
+	id = COLnew(0, TYPE_int, 0, TRANSIENT);
+	user = COLnew(0, TYPE_str, 0, TRANSIENT);
+	login = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
+	opt = COLnew(0, TYPE_str, 0, TRANSIENT);
+	sessiontimeout = COLnew(0, TYPE_int, 0, TRANSIENT);
+	querytimeout = COLnew(0, TYPE_int, 0, TRANSIENT);
+	wlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
+	mlimit = COLnew(0, TYPE_int, 0, TRANSIENT);
+	idle = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
+	language = COLnew(0, TYPE_str, 0, TRANSIENT);
+	peer = COLnew(0, TYPE_str, 0, TRANSIENT);
+	hostname = COLnew(0, TYPE_str, 0, TRANSIENT);
+	application = COLnew(0, TYPE_str, 0, TRANSIENT);
+	client = COLnew(0, TYPE_str, 0, TRANSIENT);
+	clientpid = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	remark = COLnew(0, TYPE_str, 0, TRANSIENT);
+
+	if (id == NULL || user == NULL || login == NULL || sessiontimeout == NULL
+		|| idle == NULL || querytimeout == NULL || opt == NULL || wlimit == NULL
+		|| mlimit == NULL || language == NULL || peer == NULL || hostname == NULL
+		|| application == NULL || client == NULL || clientpid == NULL
+		|| remark == NULL) {
+		BBPreclaim(id);
+		BBPreclaim(user);
+		BBPreclaim(login);
+		BBPreclaim(sessiontimeout);
+		BBPreclaim(querytimeout);
+		BBPreclaim(idle);
+		BBPreclaim(opt);
+		BBPreclaim(wlimit);
+		BBPreclaim(mlimit);
+		BBPreclaim(language);
+		BBPreclaim(peer);
+		BBPreclaim(hostname);
+		BBPreclaim(application);
+		BBPreclaim(client);
+		BBPreclaim(clientpid);
+		BBPreclaim(remark);
+
+		throw(SQL, "sql.sessions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	be = cntxt->sqlcontext;
+	user_id = be->mvc->user_id;
+	role_id = be->mvc->role_id;
+	admin = user_id == USER_MONETDB || role_id == ROLE_SYSADMIN;
+
+	MT_lock_set(&mal_contextLock);
+	for (c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
+		if (c->mode != RUNCLIENT)
+			continue;
+
+		backend *their_be = c->sqlcontext;
+		bool allowed_to_see = admin || c == cntxt ||  their_be->mvc->user_id == user_id;
+		// Note that their role_id is not checked. Just because we have
+		// both been granted a ROLE does not mean you are allowed to see
+		// my private details.
+		if (!allowed_to_see)
+			continue;
+
+		const char *username = c->username;
+		if (!username)
+			username = str_nil;
+		if (BUNappend(user, username, false) != GDK_SUCCEED)
+			goto bailout;
+		ts = timestamp_fromtime(c->login);
+		if (is_timestamp_nil(ts)) {
+			msg = createException(SQL, "sql.sessions",
+									SQLSTATE(22003)
+									"Failed to convert user logged time");
+			goto bailout;
+		}
+		if (BUNappend(id, &c->idx, false) != GDK_SUCCEED)
+				goto bailout;
+		if (BUNappend(login, &ts, false) != GDK_SUCCEED)
+			goto bailout;
+		timeout = (int) (c->logical_sessiontimeout);
+		if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
+			goto bailout;
+		timeout = (int) (c->querytimeout / 1000000);
+		if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
+			goto bailout;
+		if (c->idle) {
+			ts = timestamp_fromtime(c->idle);
+			if (is_timestamp_nil(ts)) {
+				msg = createException(SQL, "sql.sessions",
+										SQLSTATE(22003)
+										"Failed to convert user logged time");
+				goto bailout;
+			}
+		} else
+			ts = timestamp_nil;
+		if (BUNappend(idle, &ts, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(opt, &c->optimizer, false) != GDK_SUCCEED)
+				goto bailout;
+		if (BUNappend(wlimit, &c->workerlimit, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->peer ? c->peer : str_nil;
+		if (BUNappend(peer, s, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_hostname ? c->client_hostname : str_nil;
+		if (BUNappend(hostname, s, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_application ? c->client_application : str_nil;
+		if (BUNappend(application, s, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_library ? c->client_library : str_nil;
+		if (BUNappend(client, s, false) != GDK_SUCCEED)
+			goto bailout;
+		pid = c->client_pid;
+		if (BUNappend(clientpid, pid ? &pid : &lng_nil, false) != GDK_SUCCEED)
+			goto bailout;
+		s = c->client_remark ? c->client_remark : str_nil;
+		if (BUNappend(remark, s, false) != GDK_SUCCEED)
+			goto bailout;
+	}
+	MT_lock_unset(&mal_contextLock);
+
+	*idId = id->batCacheid;
+	BBPkeepref(id);
+	*userId = user->batCacheid;
+	BBPkeepref(user);
+	*loginId = login->batCacheid;
+	BBPkeepref(login);
+	*sessiontimeoutId = sessiontimeout->batCacheid;
+	BBPkeepref(sessiontimeout);
+	*querytimeoutId = querytimeout->batCacheid;
+	BBPkeepref(querytimeout);
+	*idleId = idle->batCacheid;
+	BBPkeepref(idle);
+
+	*optId = opt->batCacheid;
+	BBPkeepref(opt);
+	*wlimitId = wlimit->batCacheid;
+	BBPkeepref(wlimit);
+	*mlimitId = mlimit->batCacheid;
+	BBPkeepref(mlimit);
+	*languageId = language->batCacheid;
+	BBPkeepref(language);
+	*peerId = peer->batCacheid;
+	BBPkeepref(peer);
+	*hostnameId = hostname->batCacheid;
+	BBPkeepref(hostname);
+	*applicationId = application->batCacheid;
+	BBPkeepref(application);
+	*clientId = client->batCacheid;
+	BBPkeepref(client);
+	*clientpidId = clientpid->batCacheid;
+	BBPkeepref(clientpid);
+	*remarkId = remark->batCacheid;
+	BBPkeepref(remark);
+
+	return MAL_SUCCEED;
+
+  bailout:
+	MT_lock_unset(&mal_contextLock);
+	BBPunfix(id->batCacheid);
+	BBPunfix(user->batCacheid);
+	BBPunfix(login->batCacheid);
+	BBPunfix(sessiontimeout->batCacheid);
+	BBPunfix(querytimeout->batCacheid);
+	BBPunfix(idle->batCacheid);
+
+	BBPunfix(opt->batCacheid);
+	BBPunfix(wlimit->batCacheid);
+	BBPunfix(mlimit->batCacheid);
+	BBPunfix(language->batCacheid);
+	BBPunfix(peer->batCacheid);
+	BBPunfix(hostname->batCacheid);
+	BBPunfix(application->batCacheid);
+	BBPunfix(client->batCacheid);
+	BBPunfix(clientpid->batCacheid);
+	BBPunfix(remark->batCacheid);
+	return msg;
 }
 
 str
