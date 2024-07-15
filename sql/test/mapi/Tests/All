@@ -10,3 +10,4 @@ HAVE_HGE?python3_int128
 HAVE_HGE?sql_dec38
 HAVE_HGE?python3_dec38
 clientinfo-mclient
+clientinfo-nonadmin

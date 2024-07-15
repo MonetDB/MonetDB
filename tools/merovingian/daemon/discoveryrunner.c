@@ -189,21 +189,21 @@ getRemoteDB(const char *database)
 			} else {
 				walk = stats = malloc(sizeof(sabdb));
 			}
-			walk->dbname = strdup(rdb->dbname);
+			*walk = (sabdb) {
+				.dbname = strdup(rdb->dbname),
+				.locked = false,
+				.state = SABdbRunning,
+				.pid = -1,
+				.scens = malloc(sizeof(sablist)),
+				.conns = malloc(sizeof(sablist)),
+			};
+			*walk->scens = (sablist) {
+				.val = strdup("sql"),
+			};
+			*walk->conns = (sablist) {
+				.val = strdup(rdb->conn),
+			};
 			walk->path = walk->dbname; /* only freed by sabaoth */
-			walk->locked = false;
-			walk->state = SABdbRunning;
-			walk->pid = 0;
-			walk->scens = malloc(sizeof(sablist));
-			walk->scens->val = strdup("sql");
-			walk->scens->next = NULL;
-			walk->conns = malloc(sizeof(sablist));
-			walk->conns->val = strdup(rdb->conn);
-			walk->conns->next = NULL;
-			walk->uri = NULL;
-			walk->secret = NULL;
-			walk->next = NULL;
-			walk->uplog = NULL;
 
 			/* cut out first returned entry, put it down the list
 			 * later, as to implement a round-robin DNS-like

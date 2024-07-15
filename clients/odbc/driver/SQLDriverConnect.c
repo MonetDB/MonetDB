@@ -105,177 +105,6 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 	return 1;
 }
 
-SQLRETURN
-ODBCConnectionString(SQLRETURN rc,
-		     ODBCDbc *dbc,
-		     SQLCHAR *OutConnectionString,
-		     SQLSMALLINT BufferLength,
-		     SQLSMALLINT *StringLength2Ptr,
-		     const char *dsn,
-		     const char *uid,
-		     const char *pwd,
-		     const char *host,
-		     int port,
-		     const char *database,
-		     int mapToLongVarchar)
-{
-	int n;
-#ifdef ODBCDEBUG
-	SQLCHAR *buf = OutConnectionString;
-	int buflen = BufferLength;
-#endif
-
-	if (OutConnectionString == NULL)
-		BufferLength = -1;
-	if (BufferLength > 0) {
-		n = snprintf((char *) OutConnectionString, BufferLength,
-			     "DSN=%s;", dsn ? dsn : "DEFAULT");
-		/* some snprintf's return -1 if buffer too small */
-		if (n < 0)
-			n = BufferLength + 1;	/* make sure it becomes < 0 */
-		BufferLength -= n;
-		OutConnectionString += n;
-	} else {
-		BufferLength = -1;
-	}
-	if (uid) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength, "UID=%s;", uid);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-	}
-	if (pwd) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength, "PWD=%s;", pwd);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-	}
-	if (host) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength, "HOST=%s;", host);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-	}
-	if (port) {
-		char portbuf[10];
-
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength, "PORT=%d;", port);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-		port = snprintf(portbuf, sizeof(portbuf), "%d", port);
-	}
-	if (database) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength, "DATABASE=%s;", database);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-	}
-	if (mapToLongVarchar > 0) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength, "mapToLongVarchar=%d;", mapToLongVarchar);
-			if (n < 0)
-				n = BufferLength + 1;
-			BufferLength -= n;
-			OutConnectionString += n;
-		} else {
-			BufferLength = -1;
-		}
-	}
-	n = 0;
-#ifdef ODBCDEBUG
-#ifdef NATIVE_WIN32
-	if (ODBCdebug && _wgetenv(L"ODBCDEBUG") == NULL) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength,
-				     "LOGFILE=%ls;", ODBCdebug);
-			if (n < 0) {
-				n = 0;
-				BufferLength = -1;
-			} else {
-				BufferLength -= n;
-				OutConnectionString += n;
-			}
-		} else {
-			BufferLength = -1;
-		}
-	}
-#else
-	if (ODBCdebug && getenv("ODBCDEBUG") == NULL) {
-		if (BufferLength > 0) {
-			n = snprintf((char *) OutConnectionString,
-				     BufferLength,
-				     "LOGFILE=%s;", ODBCdebug);
-			if (n < 0) {
-				n = 0;
-				BufferLength = -1;
-			} else {
-				BufferLength -= n;
-				OutConnectionString += n;
-			}
-		} else {
-			BufferLength = -1;
-		}
-	}
-#endif
-#endif
-
-	/* calculate how much space was needed */
-	if (StringLength2Ptr)
-		*StringLength2Ptr = (SQLSMALLINT)
-			(strlen(dsn ? dsn : "DEFAULT") + 5 +
-			 (uid ? strlen(uid) + 5 : 0) +
-			 (pwd ? strlen(pwd) + 5 : 0) +
-			 (host ? strlen(host) + 6 : 0) +
-			 (port ? port + 6 : 0) +
-			 (database ? strlen(database) + 10 : 0)
-			 + n);
-
-#ifdef ODBCDEBUG
-	ODBCLOG("ConnectionString: \"%.*s\" %d\n", buf ? buflen : 6, buf ? (char *) buf : "(null)", buflen);
-#endif
-
-	/* if it didn't fit, say so */
-	if (BufferLength < 0) {
-		/* String data, right-truncated */
-		addDbcError(dbc, "01004", NULL, 0);
-		return SQL_SUCCESS_WITH_INFO;
-	}
-	return rc;
-}
-
 #ifdef ODBCDEBUG
 static char *
 translateDriverCompletion(SQLUSMALLINT DriverCompletion)
@@ -360,6 +189,18 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		goto end;
 	}
 
+	// Build a connect string for the current connection and put it in the out buffer.
+	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", settings);
+	if (!scratch_alloc)
+		goto failure;
+	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
+	if (StringLength2Ptr)
+		*StringLength2Ptr = (SQLSMALLINT)out_len;
+	if (out_len + 1 > (size_t)BufferLength) {
+		addDbcError(dbc, "01004", NULL, 0);
+		rc = SQL_SUCCESS_WITH_INFO;
+	}
+
 	if (tryOnly) {
 		assert(sqlstate == NULL);
 		goto end;
@@ -371,23 +212,8 @@ MNDBDriverConnect(ODBCDbc *dbc,
 
 	rc = MNDBConnectSettings(dbc, dsn, settings);
 	settings = NULL; // do not free now
-	if (!SQL_SUCCEEDED(rc))
-		goto end; // not to 'failure', all errors have already been logged
 
-
-	// Build a connect string for the current connection
-	// and put it in the buffer.
-	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", dbc->settings);
-	if (!scratch_alloc)
-		goto failure;
-	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
-	if (StringLength2Ptr)
-		*StringLength2Ptr = (SQLSMALLINT)out_len;
-	if (out_len + 1 > (size_t)BufferLength) {
-		addDbcError(dbc, "01004", NULL, 0);
-		rc = SQL_SUCCESS_WITH_INFO;
-	}
-
+	// always go to end, MNDBConnectSettings has already logged any failures
 	goto end;
 
 failure:
@@ -484,7 +310,7 @@ SQLDriverConnectW(SQLHDBC ConnectionHandle,
 		   addDbcError, dbc, return SQL_ERROR);
 
 	rc = MNDBDriverConnect(dbc, WindowHandle, in, SQL_NTS, NULL, 0, &n,
-			       DriverCompletion, 1);  // Try Only
+			       DriverCompletion, 1);  // 1 = Try Only
 	if (!SQL_SUCCEEDED(rc))
 		return rc;
 	clearDbcErrors(dbc);

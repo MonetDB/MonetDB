@@ -217,7 +217,7 @@ rel_mark_partition(sql_rel *rel)
 		break;
     case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			// TODO: how are we going to mark rel->partition?
+			// TODO: how are we going to mark (n->data)->partition?
 			res = rel_mark_partition(n->data);
 		}
 	}
@@ -314,6 +314,11 @@ has_groupby(sql_rel *rel)
 static bool
 rel_groupby_partition_safe(sql_rel *rel)
 {
+	if (rel->l) {
+		sql_rel *l = rel->l;
+		if (is_simple_project(l->op) && list_empty(l->exps))
+			return false;
+	}
 	for(node *n = rel->exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 
@@ -456,6 +461,20 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		sql_rel *r = rel->r;
 		if (!is_basetable(r->op))
 			return 0;
+	} else if (rel->op == op_munion) {
+		list *rels = rel->l;
+		int lres = 0, nres = 0;
+		for(node *n = rels->h; n; n = n->next) {
+			lres = rel_partition_(sql, n->data, 0);
+			if (lres == EPB)
+				rel->partition = 1;
+			nres = nres || !lres;
+		}
+		if (pb)
+			rel->spb = 1;
+		if (nres)
+			return 0;
+		res = pb;
 	} else if (is_set(rel->op) || is_merge(rel->op)) {
 		if (rel->l)
 			lres = rel_partition_(sql, rel->l, 0);

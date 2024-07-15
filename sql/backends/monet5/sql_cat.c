@@ -634,12 +634,14 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 	sql_trigger *tri = NULL;
 	sql_schema *s = NULL;
 
-	if (!(s = mvc_bind_schema(sql, sname))) {
+	if (!strNil(sname) && !(s = mvc_bind_schema(sql, sname))) {
 		if (if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 	}
-	if (!mvc_schema_privs(sql, s))
+	if (!s)
+		s = mvc_bind_schema(sql, "sys");
+	if (s && !mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_trigger",SQLSTATE(42000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
 	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL) {

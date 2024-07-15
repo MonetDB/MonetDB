@@ -787,6 +787,10 @@ wrapup:
 	return NULL;
 }
 
+#ifndef NUMPY_CORE_INCLUDE_NUMPY_NPY_2_COMPAT_H_
+#define PyDataType_ELSIZE(x) (x)->elsize
+#endif
+
 str
 PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
 {
@@ -802,7 +806,7 @@ PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
 	}
 
 	ret->result_type = PyArray_DESCR((PyArrayObject *)ret->numpy_array)->type_num; // We read the result type from the resulting array
-	ret->memory_size = PyArray_DESCR((PyArrayObject *)ret->numpy_array)->elsize;
+	ret->memory_size = PyDataType_ELSIZE(PyArray_DESCR((PyArrayObject *)ret->numpy_array));
 	ret->count = PyArray_DIMS((PyArrayObject *)ret->numpy_array)[0];
 	ret->array_data = PyArray_DATA((PyArrayObject *)ret->numpy_array);
 	ret->mask_data = NULL;
@@ -891,7 +895,7 @@ PyObject_PreprocessObject(PyObject *pResult, PyReturn *pyreturn_values, int colu
 			ret->array_data = PyArray_DATA((PyArrayObject *)ret->numpy_array);
 			if (ret->numpy_mask != NULL)
 				ret->mask_data = PyArray_DATA((PyArrayObject *)ret->numpy_mask);
-			ret->memory_size = PyArray_DESCR((PyArrayObject *)ret->numpy_array)->elsize;
+			ret->memory_size = PyDataType_ELSIZE(PyArray_DESCR((PyArrayObject *)ret->numpy_array));
 		} else {
 			msg = PyObject_GetReturnValues(pColO, ret);
 			Py_DECREF(pColO);

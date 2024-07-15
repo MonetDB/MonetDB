@@ -36,7 +36,8 @@ typedef char* err;
 #define NO_ERR (err)0
 
 typedef enum _mtype {
-	MERO = 1,
+	NODB = 0,
+	MERO,
 	MERODB,
 	MEROFUN
 } mtype;

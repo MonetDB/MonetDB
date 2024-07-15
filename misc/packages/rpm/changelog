@@ -1,3 +1,37 @@
+* Sat Jun 29 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.11-20240629
+- Rebuilt.
+- GH#7509: MonetDB Dec2023-SP2 crashes at `sql_init_subtype`
+- GH#7511: MonetDB Dec2023-SP2 crashes with the `PASSWORD_HASH` function
+- GH#7512: MonetDB Dec2023-SP2 crashes with the
+  `GET_MERGE_TABLE_PARTITION_EXPRESSIONS` function
+- GH#7513: MonetDB Dec2023-SP2 crashes with the `GETHOST` function
+- GH#7518: mserver reports errors when starting if geom module is enabled
+  but database was created without
+- GH#7526: deadlock, causing new connections to hang indefinitely
+- GH#7531: loading more than 2147483647 rows gives issue.
+- GH#7536: Truncated file when dumping a table from mclient into a gzipped
+  file
+- GH#7537: MonetDB crashes with a SIGSEGV due to a null pointer
+  dereference when using prepared statements
+- GH#7541: Unexpected result when using `LEVENSHTEIN`
+- GH#7546: monetdbd leaks file descriptors when starting mserver5.
+
+* Sat Jun 29 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.11-20240629
+- monetdb5: The mserver5 program has a new option: --without-geom.  If the server
+  was compiled with geom support (or the geom module was installed in a
+  binary distribution), this option allows the server to start without
+  the geom module, so that it can proceed with a database that was
+  created without geom.
+
+* Wed May 15 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.11-20240629
+- sql: When sys.persist_unlogged is called for a table, it may return that
+  zero rows were persisted.  If this is because the call was done too
+  early, i.e. the table was recently created and the write-ahead log
+  where this was logged has not been processed yet, the call will
+  request an immediate write-ahead log rotation.  This means that the
+  WAL will be processed as soon as possible and a new call to
+  sys.persist_unlogged soon after will likely return a positive result.
+
 * Thu May 02 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.49.9-20240502
 - Rebuilt.
 - GH#7422: Aggregate functions with variadic arguments

@@ -284,6 +284,11 @@ pattern aggr.compute_sum(X_0:bat[:dbl], X_1:bat[:dbl]):bat[:dbl]
 compute_sum;
 compute Kahan/Neumaier summation.
 aggr
+compute_sum
+pattern aggr.compute_sum(X_0:bat[:flt], X_1:bat[:flt]):bat[:flt]
+compute_sum;
+compute Kahan/Neumaier summation.
+aggr
 corr
 command aggr.corr(X_0:bat[:bte], X_1:bat[:bte], X_2:bat[:oid], X_3:bat[:any_1]):bat[:dbl]
 AGGRcorr;
@@ -2760,6 +2765,11 @@ ALGfsum;
 Return the Kahan/Neumaier summation.
 aggr
 sum
+command aggr.sum(X_0:bat[:flt]) (X_1:flt, X_2:flt, X_3:lng)
+ALGfsum_flt;
+Return the Kahan/Neumaier summation.
+aggr
+sum
 command aggr.sum(X_0:bat[:dbl], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
 ALGfsum_skipnil;
 Return the Kahan/Neumaier summation or nil.
@@ -2767,6 +2777,11 @@ aggr
 sum
 command aggr.sum(X_0:bat[:flt], X_1:bit) (X_2:dbl, X_3:dbl, X_4:lng)
 ALGfsum_skipnil;
+Return the Kahan/Neumaier summation or nil.
+aggr
+sum
+command aggr.sum(X_0:bat[:flt], X_1:bit) (X_2:flt, X_3:flt, X_4:lng)
+ALGfsum_skipnil_flt;
 Return the Kahan/Neumaier summation or nil.
 aggr
 sum
@@ -3350,19 +3365,29 @@ CMDBATsum;
 Calculate aggregate sum of B.
 aggr
 sum
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
+LALGsum;
+sum per group.
+aggr
+sum
 pattern aggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:bat[:dbl], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:dbl], X_7:bat[:dbl], X_8:bat[:lng])
-LALGavg;
+LALGsum_float;
 Kahan/Neumaier summation per group.
 aggr
 sum
 pattern aggr.sum(X_0:bat[:oid], X_1:bat[:dbl], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
-LALGavg;
+LALGsum_float;
 Kahan/Neumaier summation per group.
 aggr
 sum
-pattern aggr.sum(X_0:bat[:oid], X_1:bat[:any_2], X_2:ptr, X_3:bat[:oid]):bat[:any_1]
-LALGsum;
-sum per group.
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:bat[:flt], X_3:bat[:lng], X_4:ptr, X_5:bat[:oid]) (X_6:bat[:flt], X_7:bat[:flt], X_8:bat[:lng])
+LALGsum_float;
+Kahan/Neumaier summation per group.
+aggr
+sum
+pattern aggr.sum(X_0:bat[:oid], X_1:bat[:flt], X_2:ptr, X_3:bat[:oid]) (X_4:bat[:flt], X_5:bat[:flt], X_6:bat[:lng])
+LALGsum_float;
+Kahan/Neumaier summation per group.
 aggr
 variance
 command aggr.variance(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:dbl]
@@ -47280,14 +47305,19 @@ LAGGRsum3_lng;
 Grouped tail sum on lng
 lockedaggr
 sum
+unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1]
+LOCKEDAGGRsum1;
+sum values into bat (bat has value, update), using the bat lock
+lockedaggr
+sum
 unsafe pattern lockedaggr.sum(X_0:ptr, X_1:dbl, X_2:dbl, X_3:lng) (X_4:bat[:dbl], X_5:bat[:dbl], X_6:bat[:lng])
-LOCKEDAGGRavg;
+LOCKEDAGGRsum;
 Kahan/neumaier summation, using the bat lock
 lockedaggr
 sum
-unsafe pattern lockedaggr.sum(X_0:ptr, X_1:any_1):bat[:any_1]
+unsafe pattern lockedaggr.sum(X_0:ptr, X_1:flt, X_2:flt, X_3:lng) (X_4:bat[:flt], X_5:bat[:flt], X_6:bat[:lng])
 LOCKEDAGGRsum;
-sum values into bat (bat has value, update), using the bat lock
+Kahan/neumaier summation, using the bat lock
 lockedalgebra
 projection
 command lockedalgebra.projection(X_0:ptr, X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1]
@@ -48013,6 +48043,16 @@ log2arg
 command mmath.log2arg(X_0:flt, X_1:flt):flt
 MATHbinary_LOGflt;
 The log(x) function returns the logarithm of x in the given base.
+mmath
+nextafter
+command mmath.nextafter(X_0:dbl, X_1:dbl):dbl
+MATHbinary_NEXTAFTERdbl;
+The returns the next representable floating-point value of x in the direction of y.
+mmath
+nextafter
+command mmath.nextafter(X_0:flt, X_1:flt):flt
+MATHbinary_NEXTAFTERflt;
+The returns the next representable floating-point value of x in the direction of y.
 mmath
 pi
 command mmath.pi():dbl

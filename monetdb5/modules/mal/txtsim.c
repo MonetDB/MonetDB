@@ -203,8 +203,10 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 	xlen = UTF8_strlen(x);
 	ylen = UTF8_strlen(y);
 
-	if (xlen == ylen && (strcmp(x, y) == 0))
+	if (xlen == ylen && (strcmp(x, y) == 0)) {
+		*res = 0;
 		return MAL_SUCCEED;
+	}
 
 	column = GDKmalloc((xlen + 1) * sizeof(unsigned int));
 	if (column == NULL)

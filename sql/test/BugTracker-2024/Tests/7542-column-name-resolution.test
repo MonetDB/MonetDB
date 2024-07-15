@@ -1,0 +1,13 @@
+
+-- https://github.com/MonetDB/MonetDB/issues/7542
+
+query I nosort
+WITH "E" AS ( SELECT 2 AS "F" )
+  SELECT 3 AS "Z" FROM (
+    SELECT "B"."X" FROM ( SELECT 2 AS "Y" FROM "E" ) AS "A" 
+    LEFT OUTER JOIN ( SELECT 2 AS "X" ) AS "B" ON 1 = 1
+  ) AS "C"
+  ORDER BY "Z" DESC LIMIT 1
+----
+3
+

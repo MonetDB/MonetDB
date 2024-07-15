@@ -327,7 +327,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			if (e->type == e_column) {
 				stmt *s = list_find_column(be, shared, e->l, e->r);
 				assert(s);
-				s = stmt_alias(be, s, s->label, exp_relname(e), exp_name(e));
+				s = stmt_alias(be, s, e->alias.label, exp_relname(e), exp_name(e));
 				append(shared, s);
 				continue;
 			}
@@ -370,7 +370,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			s->op4.typeval = *tpe;
 			s->nr = *v;
 			s->q = q;
-			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			s->q = q;
 			append(shared, s);
 		}
@@ -390,7 +390,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			groupby->q->inout = 1;
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
-			gstmt = stmt_alias(be, gstmt, gstmt->label, exp_find_rel_name(e), exp_name(e));
+			gstmt = stmt_alias(be, gstmt, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			list_append(ngbstmts, gstmt);
 		}
 		gbstmts = ngbstmts;
@@ -454,7 +454,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			s->nr = *v;
 			s->key = s->nrcols = 1;
 			s->q = q;
-			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			s->q = q;
 			append(shared, s);
 		}
@@ -496,7 +496,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 					s->nr = getArg(q, 0);
 					s->q = q;
 					s->key = s->nrcols = exp_card(e);
-					s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+					s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 					n->data = s;
 				} else if (strcmp(sf->func->base.name, "avg") == 0 && EC_APPNUM(tpe->type->eclass)) {
 					stmt *s = n->data;
@@ -515,7 +515,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 					s->nr = getArg(q, 0);
 					s->q = q;
 					s->key = s->nrcols = exp_card(e);
-					s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+					s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 					n->data = s;
 				}
 			}

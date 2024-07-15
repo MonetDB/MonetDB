@@ -113,7 +113,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 
 			exp_label(sql->sa, e, ++sql->label);
 			append(rel->exps, e);
-			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e));
+			e = exp_ref(sql, e);
 		}
 		rel->used |= rewrite_gt_zero_used;
 		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
@@ -174,12 +174,9 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			sql_exp *cnt = rel_find_aggr_exp(sql, rel, nexps, avg, "count");
 			sql_exp *sum = rel_find_aggr_exp(sql, rel, nexps, avg, "sum");
 			sql_subfunc *div, *ifthen, *cmp;
-			const char *rname = NULL, *name = NULL;
 			list *l = avg->l;
 			sql_subtype *avg_input_t = exp_subtype(l->h->data);
 
-			rname = exp_relname(avg);
-			name = exp_name(avg);
 
 			/* create nsum/cnt exp */
 			if (!cnt) {
@@ -254,7 +251,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			if (subtype_cmp(exp_subtype(avg), exp_subtype(navg)) != 0)
 				navg = exp_convert(sql, navg, exp_subtype(navg), exp_subtype(avg));
 
-			exp_setname(sql, navg, rname, name );
+			exp_prop_alias(sql->sa, navg, avg);
 			m->data = navg;
 		}
 		pexps = new_exp_list(sql->sa);
@@ -276,7 +273,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			if (e->type == e_column && !rel_find_exp(rel->l, e))
 				append(pexps, e);
 			else
-				append(pexps, exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_unique(e), is_intern(e)));
+				append(pexps, exp_ref(sql, e));
 		}
 		sql_rel *nrel = rel_groupby(sql, rel_dup(rel->l), rel->r);
 		nrel->parallel = rel->parallel;

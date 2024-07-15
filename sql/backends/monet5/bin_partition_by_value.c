@@ -53,10 +53,11 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 			stmt *sc = n->data;
 			const char *cname = column_name(be->mvc->sa, sc);
 			const char *tname = table_name(be->mvc->sa, sc);
+			int label = sc->label;
 
 			sc = column(be, sc);
 			sc = stmt_nth_slice(be, sc, slicer);
-			list_append(newl, stmt_alias(be, sc, sc->label, tname, cname));
+			list_append(newl, stmt_alias(be, sc, label, tname, cname));
 		}
 		sub = stmt_list(be, newl);
 	}

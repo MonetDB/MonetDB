@@ -721,9 +721,15 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	};
 
 	/* store the database name */
-	snprintf(buf, sizeof(buf), "%s/%s", pathbuf, dbname);
+	int dbnamestart;
+#ifdef _MSC_VER
+	dbnamestart = snprintf(buf, sizeof(buf), "%s/", pathbuf);
+	snprintf(buf + dbnamestart, sizeof(buf) - dbnamestart, "%s", dbname);
+#else
+	snprintf(buf, sizeof(buf), "%s/%n%s", pathbuf, &dbnamestart, dbname);
+#endif
 	sdb->path = strdup(buf);
-	sdb->dbname = sdb->path + strlen(sdb->path) - strlen(dbname);
+	sdb->dbname = sdb->path + dbnamestart;
 
 
 	/* check the state of the server by looking at its gdk lock:
