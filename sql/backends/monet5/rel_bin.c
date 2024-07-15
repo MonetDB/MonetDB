@@ -457,7 +457,8 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
 		if (c->type != st_alias || c->q != c->op1->q) {
-			c = stmt_project(be, cand, c);
+			stmt *s = stmt_project(be, cand, c);
+			c = stmt_as(be, s, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
 			//c = stmt_alias(be, cand, 0, c->tname, c->cname);
 			c = stmt_as(be, cand, c);
@@ -5069,6 +5070,7 @@ rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stm
 		resid = *(int*)m->data;
 		const char *cname = column_name(be->mvc->sa, sc);
 		const char *tname = table_name(be->mvc->sa, sc);
+		int label = sc->label;
 
 		sc = column(be, sc);
 		sc = stmt_project(be, limit, sc);
@@ -5076,7 +5078,7 @@ rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stm
 		sc->q->inout = 0;
 		sc->q = pushArgument(be->mb, sc->q, be->pipeline);
 		sc->nr = sc->q->argv[0] = resid; /* use shared result */
-		list_append(newl, stmt_alias(be, sc, sc->label, tname, cname));
+		list_append(newl, stmt_alias(be, sc, label, tname, cname));
 	}
 	sub = stmt_list(be, newl);
 
@@ -5349,8 +5351,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	n = sub->op4.lval->h;
 	if (n) {
 		stmt *limit = NULL, *sc = n->data;
-		const char *cname = column_name(sql->sa, sc);
-		const char *tname = table_name(sql->sa, sc);
+		//const char *cname = column_name(sql->sa, sc);
+		//const char *tname = table_name(sql->sa, sc);
 		list *newl = sa_list(sql->sa);
 
 		sc = column(be, sc);
@@ -5360,7 +5362,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (pp) {
 			io = stmt_atom_lng(be, 0);
 			il = all;
-			limit = stmt_limit_partitioned(be, stmt_alias(be, sc, sc->label, tname, cname), NULL, NULL, io, il);
+			limit = stmt_limit_partitioned(be, sc /*stmt_alias(be, sc, sc->label, tname, cname)*/, NULL, NULL, io, il);
 			glimit = stmt_result(be, limit, 0);
 			limit = stmt_result(be, limit, 1);
 		} else {
@@ -5369,7 +5371,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
 			const char *cname = column_name(sql->sa, sc);
 			const char *tname = table_name(sql->sa, sc);
 			int label = sc->label;

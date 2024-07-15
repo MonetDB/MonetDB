@@ -4565,7 +4565,7 @@ stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *ali
 stmt *
 stmt_as(backend *be, stmt *s, stmt *org)
 {
-	assert(org->type == st_alias);
+	assert(org->label);
 	return stmt_alias_(be, s, org->label, org->tname, org->cname);
 }
 
@@ -5170,6 +5170,7 @@ stmt_fetch(backend *be, stmt *val)
 	s->op4.typeval = *ct;
 	s->nrcols = 0;
 
+	s->label = val->label;
 	s->tname = val->tname;
 	s->cname = val->cname;
 	s->nr = getDestVar(q);

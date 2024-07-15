@@ -424,6 +424,20 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		sql_rel *r = rel->r;
 		if (!is_basetable(r->op))
 			return 0;
+	} else if (rel->op == op_munion) {
+		list *rels = rel->l;
+		int lres = 0, nres = 0;
+		for(node *n = rels->h; n; n = n->next) {
+			lres = rel_partition_(sql, n->data, 0);
+			if (lres == EPB)
+				rel->partition = 1;
+			nres = nres || !lres;
+		}
+		if (pb)
+			rel->spb = 1;
+		if (nres)
+			return 0;
+		res = pb;
 	} else if (is_set(rel->op) || is_merge(rel->op)) {
 		if (rel->l)
 			lres = rel_partition_(sql, rel->l, 0);
