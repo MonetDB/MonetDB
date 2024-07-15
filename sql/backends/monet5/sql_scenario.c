@@ -100,6 +100,7 @@ CLIENTprintinfo(void)
 	struct tm tm;
 
 	MT_lock_set(&mal_contextLock);
+	printf("Clients:\n");
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		switch (c->mode) {
 		case RUNCLIENT:
@@ -112,6 +113,9 @@ CLIENTprintinfo(void)
 			if (c->idle) {
 				localtime_r(&c->idle, &tm);
 				strftime(tmbuf, sizeof(tmbuf), ", idle since %F %H:%M:%S%z", &tm);
+			} else if (c->lastcmd) {
+				localtime_r(&c->lastcmd, &tm);
+				strftime(tmbuf, sizeof(tmbuf), ", busy since %F %H:%M:%S%z", &tm);
 			} else
 				tmbuf[0] = 0;
 			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc && ((backend *) c->sqlcontext)->mvc->session && ((backend *) c->sqlcontext)->mvc->session->tr && ((backend *) c->sqlcontext)->mvc->session->tr->active)
