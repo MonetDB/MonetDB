@@ -383,7 +383,7 @@ row2cols(backend *be, stmt *sub)
 
 		for (n = sub->op4.lval->h; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
+			assert(sc->label);
 			const char *cname = column_name(be->mvc->sa, sc);
 			const char *tname = table_name(be->mvc->sa, sc);
 			int label = sc->label;
@@ -3057,7 +3057,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		/* first project using equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3067,7 +3067,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3124,7 +3124,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		assert(c->type == st_alias);
+		assert(c->label);
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, jl, column(be, c));
@@ -3135,7 +3135,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (!mark && jr) {
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3355,7 +3355,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		/* first project using equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3365,7 +3365,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3576,7 +3576,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		/* first project after equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3586,7 +3586,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3647,7 +3647,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	/* project all the left columns */
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		assert(c->type == st_alias);
+		assert(c->label);
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, join, column(be, c));
@@ -3846,7 +3846,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		/* first project after equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3856,7 +3856,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3985,7 +3985,7 @@ rel2bin_single(backend *be, stmt *s)
 
 	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *t = n->data;
-		assert(t->type == st_alias);
+		assert(t->label);
 		const char *rnme = table_name(sql->sa, t);
 		const char *nme = column_name(sql->sa, t);
 		int label = t->label;
@@ -4107,7 +4107,7 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m;
 		 n = n->next, m = m->next) {
 		stmt *c1 = n->data;
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		stmt *c2 = m->data;
 		const char *rnme = table_name(sql->sa, c1);
 		const char *nme = column_name(sql->sa, c1);
@@ -4229,7 +4229,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		const char *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
@@ -4329,7 +4329,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		const char *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
@@ -4731,7 +4731,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		for (n=sub->op4.lval->h; n; n = n->next) {
 			stmt *s = n->data;
-			assert(s->type == st_alias);
+			assert(s->label);
 			const char *cname = column_name(sql->sa, s);
 			const char *tname = table_name(sql->sa, s);
 			int label = s->label;
@@ -5431,7 +5431,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
+			assert(sc->label);
 			const char *cname = column_name(sql->sa, sc);
 			const char *tname = table_name(sql->sa, sc);
 			int label = sc->label;
@@ -7748,7 +7748,7 @@ merge_stmt_join_projections(backend *be, stmt *left, stmt *right, stmt *jl, stmt
 	if (left)
 		for (node *n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl ? jl : diff, column(be, c));
@@ -7759,7 +7759,7 @@ merge_stmt_join_projections(backend *be, stmt *left, stmt *right, stmt *jl, stmt
 	if (right)
 		for (node *n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr ? jr : diff, column(be, c));
