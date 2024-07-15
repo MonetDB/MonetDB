@@ -520,7 +520,7 @@ handle_in_tuple_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right
 		else
 			s = cursel;
 	}
-	if (sel && !(depth || !reduce))
+	if (!depth && reduce)
 		s = stmt_uselect(be,
 			s->nrcols == 0?stmt_const(be, bin_find_smallest_column(be, left), s): s,
 			stmt_bool(be, 1), cmp_equal, sel, 0, 0);
