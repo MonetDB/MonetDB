@@ -595,7 +595,7 @@ stmt_oahash_project(backend *be, stmt *col, int sel, stmt *ht, bit first, stmt *
 }
 
 InstrPtr
-stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit first, stmt *pp)
+stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit first, bit append_vals, stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
 
@@ -609,13 +609,14 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink,
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
 	q = pushBit(be->mb, q, first);
+	q = pushBit(be->mb, q, append_vals);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
 }
 
 InstrPtr
-stmt_oahash_fetch_payload(backend *be, int slotid, stmt *hp_sink, stmt *freq_sink, bit first, stmt *pp)
+stmt_oahash_fetch_payload(backend *be, int slotid, stmt *hp_sink, stmt *freq_sink, stmt *probe_col, bit first, bit append_vals, stmt *pp)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
@@ -623,11 +624,13 @@ stmt_oahash_fetch_payload(backend *be, int slotid, stmt *hp_sink, stmt *freq_sin
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* payload */
-	q = pushArgument(be->mb, q, slotid);
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* fetched */
 	q = pushArgument(be->mb, q, hp_sink->nr);
+	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
+	q = pushArgument(be->mb, q, probe_col->nr);
 	q = pushBit(be->mb, q, first);
+	q = pushBit(be->mb, q, append_vals);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;

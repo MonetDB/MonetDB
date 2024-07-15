@@ -2321,14 +2321,20 @@ error:
 		\
 		oid *res = Tloc(e, 0); \
 		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
 				res[idx] = k->tseqbase; \
 			} \
 		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				gid freq = (gid)ht->frequency[sid[i]]; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 					res[idx++] = sel[i]; \
+				} \
+			} \
+			if (append_vals) { \
+				for (BUN i = 0, j = 0; i < keycnt; i++) { \
+					if (j < selcnt && i == sel[j]) j++;\
+					else res[idx++] = i; \
 				} \
 			} \
 		} \
@@ -2338,11 +2344,17 @@ error:
 	do { \
 		Type *val = Tloc(k, 0); \
 		Type *res = Tloc(e, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 			Type v = val[sel[i]]; \
 			gid freq = (gid)ht->frequency[sid[i]]; \
 			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 				res[idx++] = v; \
+			} \
+		} \
+		if (append_vals) { \
+			for (BUN i = 0, j = 0; i < keycnt; i++) { \
+				if (j < selcnt && i == sel[j]) j++;\
+				else res[idx++] = val[i]; \
 			} \
 		} \
 	} while (0)
@@ -2350,7 +2362,7 @@ error:
 #define aexpand() \
 	do { \
 		BATiter bi = bat_iterator(k); \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 			void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
 			gid freq = (gid)ht->frequency[sid[i]]; \
 			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
@@ -2359,6 +2371,20 @@ error:
 					break; \
 				} \
 				idx++; \
+			} \
+		} \
+		if (append_vals) { \
+			for (BUN i = 0, j = 0; i < keycnt; i++) { \
+				if (j < selcnt && i == sel[j]) { \
+					j++; \
+				} else { \
+					void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+					if (BUNappend(e, v, false) != GDK_SUCCEED) { \
+						err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						break; \
+					} \
+					idx++; \
+				} \
 			} \
 		} \
 		bat_iterator_end(&bi); \
@@ -2372,7 +2398,7 @@ error:
 		char **res = Tloc(e, 0); \
 		mallocator *ma = ht->allocators[P->wid]; \
 		if (ATOMstorage(tt) == TYPE_str) { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
 				gid freq = (gid)ht->frequency[sid[i]]; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
@@ -2380,7 +2406,7 @@ error:
 				} \
 			} \
 		} else { /* other ATOMvarsized, e.g. BLOB */ \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
 				gid freq = (gid)ht->frequency[sid[i]]; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
@@ -2393,10 +2419,10 @@ error:
 #endif
 
 static str
-OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, const ptr *H)
+OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, bit *append_vals, const ptr *H)
 {
 	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
-	BUN cnt, rescnt = 0;
+	BUN keycnt, selcnt, ttlcnt = 0, xpdcnt = 0;
 	str err = NULL;
 
 	k = BATdescriptor(*key);
@@ -2415,24 +2441,29 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 	hash_table *ht = (hash_table*)h->T.sink;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	cnt = BATcount(l);
-	if (cnt) {
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-			rescnt += ht->frequency[sid[i]];
+	keycnt = BATcount(k);
+	selcnt = BATcount(s);
+	if (selcnt) {
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
+			xpdcnt += ht->frequency[sid[i]];
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
+	ttlcnt = xpdcnt;
+	if (append_vals) {
+		ttlcnt += (keycnt - selcnt);
+	}
 
 	int tt = k->ttype;
-	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
+	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
 	if (!e) {
 		err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
-	if (cnt) {
+	if (ttlcnt) {
 		BUN idx = 0;
 		oid *sel = Tloc(s, 0);
 
@@ -2489,19 +2520,19 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 		if (err)
 			goto error;
 
-		assert(idx == rescnt);
+		assert(idx == ttlcnt);
 	}
 
 	/* NB, this only works once.
 	 * If we want to reuse the hash, we need to reset the position info.
 	 */
-	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
-	o = BATdense(0, tseq, rescnt);
+	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, ttlcnt) : 0;
+	o = BATdense(0, tseq, ttlcnt);
 	if (!o) {
 		err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
-	o->T.maxval = tseq + rescnt;
+	o->T.maxval = tseq + ttlcnt;
 
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
@@ -2511,7 +2542,7 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 	*pos = o->batCacheid;
 	BBPkeepref(o);
 
-	BATsetcount(e, rescnt);
+	BATsetcount(e, ttlcnt);
 	BATnegateprops(e);
 	*expanded = e->batCacheid;
 	BBPkeepref(e);
@@ -2532,7 +2563,7 @@ error:
 #define vfetch() \
 	do { \
 		oid val = ((oid*)hp->payload)[0]; \
-		oid *res = Tloc(p, 0); \
+		oid *res = Tloc(f, 0); \
 		TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
 			res[idx] = val; \
 		} \
@@ -2543,13 +2574,17 @@ error:
 	do { \
 		int prime = hash_prime_nr[ht->bits-5]; \
 		Type *vals = hp->payload; \
-		Type *res = Tloc(p, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+		Type *res = Tloc(f, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 			gid freq = (gid)ht->frequency[sid[i]]; \
 			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
 				res[idx++] = vals[hsh]; \
 			} \
+		} \
+		if (append_vals) { \
+			for (BUN i = fchcnt; i < ttlcnt; i++) \
+				res[idx++] = Type##_nil; \
 		} \
 	} while (0)
 
@@ -2557,11 +2592,20 @@ error:
 	do { \
 		int prime = hash_prime_nr[ht->bits-5]; \
 		char **vals = hp->payload; \
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 			gid freq = (gid)ht->frequency[sid[i]]; \
 			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
-				if (BUNappend(p, vals[hsh], false) != GDK_SUCCEED) { \
+				if (BUNappend(f, vals[hsh], false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				}\
+				idx++; \
+			} \
+		} \
+		if (append_vals) { \
+			for (BUN i = fchcnt; i < ttlcnt; i++) { \
+				if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) { \
 					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					break; \
 				}\
@@ -2571,10 +2615,10 @@ error:
 	} while (0)
 
 static str
-OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq_sink, bit *first, const ptr *H)
+OAHASHfetch_payload(bat *pos, bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, bat *probe_col, bit *first, bit *append_vals, const ptr *H)
 {
-	BAT *o = NULL, *p = NULL, *l = NULL, *hps = NULL, *hts = NULL;
-	BUN cnt, rescnt =  0;
+	BAT *o = NULL, *f = NULL, *l = NULL, *hps = NULL, *hts = NULL;
+	BUN nllcnt, selcnt, ttlcnt = 0, fchcnt =  0;
 	str err = NULL;
 
 	l = BATdescriptor(*slotid);
@@ -2590,24 +2634,35 @@ OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq
 	hash_table *ht = (hash_table*)hts->T.sink;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	cnt = BATcount(l);
-	if (cnt) {
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-			rescnt += ht->frequency[sid[i]];
+	selcnt = BATcount(l);
+	if (selcnt) {
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
+			fchcnt += ht->frequency[sid[i]];
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
+	ttlcnt = fchcnt;
+	if (append_vals) {
+		BAT *p = BATdescriptor(*probe_col);
+		if (!p) {
+			err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+		nllcnt = BATcount(p) - selcnt;
+		ttlcnt += nllcnt;
+		BBPunfix(p->batCacheid);
+	}
 
 	int tt = hp->type;
-	p = COLnew(hps->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
-	if (!p) {
+	f = COLnew(hps->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	if (!f) {
 		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
-	if (cnt) {
+	if (ttlcnt) {
 		BUN idx = 0;
 
 		switch(tt) {
@@ -2663,19 +2718,19 @@ OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq
 		if (err)
 			goto error;
 
-		assert(idx == rescnt);
+		assert(idx == ttlcnt);
 	}
 
 	/* NB, this only works once.
 	 * If we want to reuse the hash, we need to reset the position info.
 	 */
-	oid tseq = (*first)? ATOMIC_ADD(&hps->T.maxval, rescnt) : 0;
-	o = BATdense(0, tseq, rescnt);
+	oid tseq = (*first)? ATOMIC_ADD(&hps->T.maxval, ttlcnt) : 0;
+	o = BATdense(0, tseq, ttlcnt);
 	if (!o) {
 		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
-	o->T.maxval = tseq + rescnt;
+	o->T.maxval = tseq + ttlcnt;
 
 	BBPunfix(l->batCacheid);
 	BBPunfix(hps->batCacheid);
@@ -2684,16 +2739,16 @@ OAHASHfetch_payload(bat *pos, bat *payload, bat *slotid, bat *hp_sink, bat *freq
 	*pos = o->batCacheid;
 	BBPkeepref(o);
 
-	BATsetcount(p, rescnt);
-	BATnegateprops(p);
-	*payload = p->batCacheid;
-	BBPkeepref(p);
+	BATsetcount(f, ttlcnt);
+	BATnegateprops(f);
+	*fetched = f->batCacheid;
+	BBPkeepref(f);
 
 	(void) H;
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(o);
-	BBPreclaim(p);
+	BBPreclaim(f);
 	BBPreclaim(l);
 	BBPreclaim(hps);
 	BBPreclaim(hts);
@@ -2722,8 +2777,8 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "combined_probe", OAHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(2,7, batarg("pos",oid),batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("first",bit),arg("pipeline",ptr))),
- command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table", args(2,8, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
- command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,7, batarg("pos",oid),batargany("payload",1),batarg("slotid",oid),batargany("hp_sink",1),batargany("freq_sink",2),arg("first",bit),arg("pipeline",ptr))),
+ command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table. If 'first', generate global row IDs. If 'append_vals', append the not 'selected' values (for outer joins).", args(2,9, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
+ command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,9, batarg("pos",oid),batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",1),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
