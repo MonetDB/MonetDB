@@ -312,6 +312,11 @@ has_groupby(sql_rel *rel)
 static bool
 rel_groupby_partition_safe(sql_rel *rel)
 {
+	if (rel->l) {
+		sql_rel *l = rel->l;
+		if (is_simple_project(l->op) && list_empty(l->exps))
+			return false;
+	}
 	for(node *n = rel->exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 
