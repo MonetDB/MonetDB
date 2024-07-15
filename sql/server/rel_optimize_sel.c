@@ -608,7 +608,10 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 		char *cs = "";
 		for (node *m = sl->h; m; m = m->next) {
 			sql_exp *col_exp = ((sql_exp*)m->data)->l;
-			cs = strconcat(cs, strconcat(col_exp->alias.rname, col_exp->alias.name));
+			if (col_exp->alias.rname)
+				cs = strconcat(cs, strconcat(col_exp->alias.rname, col_exp->alias.name));
+			else
+				cs = strconcat(cs, col_exp->alias.name);
 		}
 
 		/* find the eq exp in the hash and append the values */
