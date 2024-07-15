@@ -561,7 +561,7 @@ extern int sql_trans_add_dependency(sql_trans* tr, sqlid id, sql_dependency_chan
 sql_export int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 
 /* later move intop dict.h on this level */
-extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz, role_t role);
+extern BAT *DICTenlarge(BAT *offsets, BUN cnt, BUN sz, int type, role_t role);
 extern BAT *DICTdecompress_(BAT *o, BAT *u, role_t role);
 extern int DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict);
 extern int DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict);
