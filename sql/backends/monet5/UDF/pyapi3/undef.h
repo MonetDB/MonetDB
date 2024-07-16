@@ -20,12 +20,10 @@
 
 #ifdef WIN32
 
-#undef HAVE_IO_H
 #undef PREFIX
 #undef EXEC_PREFIX
 #undef SIZEOF_VOID_P
 #undef SIZEOF_SIZE_T
-#undef HAVE_PUTENV
 #undef HAVE_FTIME
 #undef snprintf
 #undef vsnprintf
