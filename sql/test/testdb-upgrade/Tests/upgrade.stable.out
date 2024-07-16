@@ -489,14 +489,3 @@ UPDATE sys._tables SET system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('check_constraints','table_constraints');
 
-Running database upgrade commands:
-drop procedure if exists sys.gzcompress(string, string);
-drop procedure if exists sys.gzdecompress(string, string);
-drop procedure if exists sys.gztruncate(string, string);
-drop procedure if exists sys.gzexpand(string, string);
-
-Running database upgrade commands:
-drop procedure if exists sys.newdictionary(string, string);
-drop procedure if exists sys.dropdictionary(string, string);
-drop procedure if exists sys.initializedictionary();
-
