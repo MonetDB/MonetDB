@@ -2188,7 +2188,7 @@ error:
 		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
 			void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
 			if (BUNappend(e, v, false) != GDK_SUCCEED) { \
-				err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				err = createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				break; \
 			} \
 			idx++; \
@@ -2331,7 +2331,7 @@ error:
 					res[idx++] = sel[i]; \
 				} \
 			} \
-			if (append_vals) { \
+			if (*append_vals) { \
 				for (BUN i = 0, j = 0; i < keycnt; i++) { \
 					if (j < selcnt && i == sel[j]) j++;\
 					else res[idx++] = i; \
@@ -2351,7 +2351,7 @@ error:
 				res[idx++] = v; \
 			} \
 		} \
-		if (append_vals) { \
+		if (*append_vals) { \
 			for (BUN i = 0, j = 0; i < keycnt; i++) { \
 				if (j < selcnt && i == sel[j]) j++;\
 				else res[idx++] = val[i]; \
@@ -2373,7 +2373,7 @@ error:
 				idx++; \
 			} \
 		} \
-		if (append_vals) { \
+		if (*append_vals) { \
 			for (BUN i = 0, j = 0; i < keycnt; i++) { \
 				if (j < selcnt && i == sel[j]) { \
 					j++; \
@@ -2452,7 +2452,7 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 			goto error;
 	}
 	ttlcnt = xpdcnt;
-	if (append_vals) {
+	if (*append_vals) {
 		ttlcnt += (keycnt - selcnt);
 	}
 
@@ -2582,7 +2582,7 @@ error:
 				res[idx++] = vals[hsh]; \
 			} \
 		} \
-		if (append_vals) { \
+		if (*append_vals) { \
 			for (BUN i = fchcnt; i < ttlcnt; i++) \
 				res[idx++] = Type##_nil; \
 		} \
@@ -2603,7 +2603,7 @@ error:
 				idx++; \
 			} \
 		} \
-		if (append_vals) { \
+		if (*append_vals) { \
 			for (BUN i = fchcnt; i < ttlcnt; i++) { \
 				if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) { \
 					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -2644,7 +2644,7 @@ OAHASHfetch_payload(bat *pos, bat *fetched, bat *hp_sink, bat *slotid, bat *freq
 			goto error;
 	}
 	ttlcnt = fchcnt;
-	if (append_vals) {
+	if (*append_vals) {
 		BAT *p = BATdescriptor(*probe_col);
 		if (!p) {
 			err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
