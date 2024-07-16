@@ -272,6 +272,7 @@ oahash_probe(backend *be, stmt **prb_col, list *exps_cmp_prb, list *stmts_bld_ht
 		rhs_slts = getArg(q, 1);
 		last_prb = q;
 	}
+	/* prb_col MUST be the last key column to match the type of the ht_sink containing the frequencies */
 	if (prb_col)
 		*prb_col = key;
 	return last_prb;
@@ -295,7 +296,8 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, list *stmts_bld_ht, list *st
 		s->op4.typeval = *exp_subtype(e);
 		s->nr = getArg(q, 1);
 		s->nrcols = 1;
-		s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+		s->q = q;
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -322,7 +324,7 @@ oahash_project_prb(backend *be, list *exps_prj_prb, list *stmts_bld_ht, InstrPtr
 		s->nr = getArg(q, 1);
 		s->nrcols = 1;
 		s->q = q;
-		s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -347,7 +349,7 @@ oahash_project_single(backend *be, list *exps_prj, list *stmts_bld_ht, int selec
 		s->nr = getArg(q, 1);
 		s->nrcols = 1;
 		s->q = q;
-		s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -363,40 +365,14 @@ static stmt *
 oahash_collect(backend *be, list *exps_prj_hsh, list *exps_prj_prb, list *stmts_res_hsh, list *stmts_res_prb, list *lh, list *lp, stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
-	int pos = (lh && lh->cnt)?((stmt *)lh->h->data)->nr:((stmt *)lp->h->data)->nr;
-
-	if (lh) {
-		assert(lh->cnt == stmts_res_hsh->cnt && lh->cnt == exps_prj_hsh->cnt);
-		for (node *n = lh->h, *m = stmts_res_hsh->h, *o = exps_prj_hsh->h; n && m && o; n = n->next, m = m->next, o = o->next) {
-			InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
-			if(q == NULL) return NULL;
-
-			InstrPtr qIn = (InstrPtr) n->data;
-			InstrPtr qRes = (InstrPtr) m->data;
-			getArg(q,0) = getDestVar(qRes);
-			setVarType(be->mb, getArg(q,0), getArgType(be->mb, qIn, 1));
-			q = pushArgument(be->mb, q, pos);
-			q = pushArgument(be->mb, q, getArg(qIn, 1));
-			q = pushArgument(be->mb, q, getArg(pp->q, 2)); // pipeline ptr
-			q->inout = 0;
-			pushInstruction(be->mb, q);
-
-			sql_exp *e = o->data;
-			stmt *s = stmt_none(be);
-			s->op4.typeval = *exp_subtype(e);
-			s->nr = getDestVar(q);
-			s->nrcols = 1;
-			s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
-			append(l, s);
-		}
-	}
+	int pos = (lp->cnt)?getArg(((stmt *)lp->h->data)->q,0):getArg(((stmt *)lh->h->data)->q,0);
 
 	assert(lp->cnt == stmts_res_prb->cnt && lp->cnt == exps_prj_prb->cnt);
 	for (node *n = lp->h, *m = stmts_res_prb->h, *o = exps_prj_prb->h; n && m && o; n = n->next, m = m->next, o = o->next) {
 		InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
 		if(q == NULL) return NULL;
 
-		InstrPtr qIn = (InstrPtr) n->data;
+		InstrPtr qIn = ((stmt *)n->data)->q;
 		InstrPtr qRes = (InstrPtr) m->data;
 		getArg(q,0) = getDestVar(qRes);
 		setVarType(be->mb, getArg(q,0), getArgType(be->mb, qIn, 1));
@@ -411,8 +387,34 @@ oahash_collect(backend *be, list *exps_prj_hsh, list *exps_prj_prb, list *stmts_
 		s->op4.typeval = *exp_subtype(e);
 		s->nr = getDestVar(q);
 		s->nrcols = 1;
-		s = stmt_alias(be, s, s->label, exp_find_rel_name(e), exp_name(e));
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
+	}
+
+	if (lh) {
+		assert(lh->cnt == stmts_res_hsh->cnt && lh->cnt == exps_prj_hsh->cnt);
+		for (node *n = lh->h, *m = stmts_res_hsh->h, *o = exps_prj_hsh->h; n && m && o; n = n->next, m = m->next, o = o->next) {
+			InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
+			if(q == NULL) return NULL;
+
+			InstrPtr qIn = ((stmt *)n->data)->q;
+			InstrPtr qRes = (InstrPtr) m->data;
+			getArg(q,0) = getDestVar(qRes);
+			setVarType(be->mb, getArg(q,0), getArgType(be->mb, qIn, 1));
+			q = pushArgument(be->mb, q, pos);
+			q = pushArgument(be->mb, q, getArg(qIn, 1));
+			q = pushArgument(be->mb, q, getArg(pp->q, 2)); // pipeline ptr
+			q->inout = 0;
+			pushInstruction(be->mb, q);
+
+			sql_exp *e = o->data;
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *exp_subtype(e);
+			s->nr = getDestVar(q);
+			s->nrcols = 1;
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+			append(l, s);
+		}
 	}
 
 	return stmt_list(be, l);

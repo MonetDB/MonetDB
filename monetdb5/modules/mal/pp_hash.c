@@ -2778,7 +2778,7 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(2,7, batarg("pos",oid),batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("first",bit),arg("pipeline",ptr))),
  command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table. If 'first', generate global row IDs. If 'append_vals', append the not 'selected' values (for outer joins).", args(2,9, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
- command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,9, batarg("pos",oid),batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",1),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
+ command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,9, batarg("pos",oid),batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",2),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
