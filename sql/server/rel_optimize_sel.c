@@ -524,6 +524,17 @@ exp_cmp_eq_unique_id(sql_exp *e)
 	return exp_unique_id(e->l);
 }
 
+static inline int
+exp_multi_col_key(list *l)
+{
+	int k = exp_unique_id(l->h->data);
+	for (node *n = l->h->next; n; n = n->next) {
+		k <<= 4;
+		k ^= exp_unique_id(n->data);
+	}
+	return k;
+}
+
 typedef struct exp_eq_col_values {
 	/* we need ->first in order to remove it from the list of cmp_eq exps
 	 * in case that we find another occurrence (with a different value)
@@ -605,20 +616,10 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 		list_append_before(mce_ands, n, sl);
 		list_remove_node(mce_ands, NULL, n);
 
-		/* make a hash key out of the concat str of (rname1, name1, rname2, name2..) */
-		char *cs = "";
-		for (node *m = sl->h; m; m = m->next) {
-			sql_exp *col_exp = ((sql_exp*)m->data)->l;
-			if (col_exp->alias.rname)
-				cs = strconcat(cs, strconcat(col_exp->alias.rname, col_exp->alias.name));
-			else
-				cs = strconcat(cs, col_exp->alias.name);
-		}
-
 		/* find the eq exp in the hash and append the values */
 		bool found = false;
 
-		int key = meqh->key(cs);
+		int key = meqh->key(sl);
 		sql_hash_e *he = meqh->buckets[key&(meqh->size-1)];
 
 		for (;he && !found; he = he->chain) {
@@ -794,7 +795,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			/* detect mutli-col cmp_eq exps with multiple (lists of) values */
 			bool multicol_multival = false;
 			if (list_length(mce_ands) > 1) {
-				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&hash_key);
+				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&exp_multi_col_key);
 				multicol_multival = detect_multicol_cmp_eqs(sql, mce_ands, meqh);
 			}
 
