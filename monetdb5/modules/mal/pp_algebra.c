@@ -4137,6 +4137,7 @@ ALGfsum_skipnil(dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *sk
 	BAT *b;
 	str err = MAL_SUCCEED;
 
+	(void)skipnil;
 	if (result == NULL || rcom == NULL || (b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "iaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
