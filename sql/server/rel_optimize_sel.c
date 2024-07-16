@@ -558,15 +558,16 @@ detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
 
 		for (;he && !found; he = he->chain) {
 			eq_cv *cv = he->value;
-			if(!exp_equal(le, cv->col)){
+			if (!exp_equal(le, cv->col)) {
 				cv->vs = append(cv->vs, re);
 				found = col_multivalue_cmp_eq = true;
+				/* remove this and the previous (->first) occurrence (if exists) from eqs */
+				if (cv->first) {
+					list_remove_data(eqs, NULL, cv->first);
+					cv->first = NULL;
+				}
+				list_remove_node(eqs, NULL, n);
 			}
-			if (cv->first) {
-				list_remove_data(eqs, NULL, cv->first);
-				cv->first = NULL;
-			}
-			list_remove_node(eqs, NULL, n);
 		}
 
 		if (!found) {
