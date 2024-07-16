@@ -788,14 +788,14 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			/* detect col cmp_eq exps with multiple values */
 			bool col_multival = false;
 			if (list_length(eqs) > 1) {
-				eqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 64*/, (fkeyvalue)&exp_col_key);
+				eqh = hash_new(sql->sa, 32, (fkeyvalue)&exp_col_key);
 				col_multival = detect_col_cmp_eqs(sql, eqs, eqh);
 			}
 
 			/* detect mutli-col cmp_eq exps with multiple (lists of) values */
 			bool multicol_multival = false;
 			if (list_length(mce_ands) > 1) {
-				meqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 16*/, (fkeyvalue)&exp_multi_col_key);
+				meqh = hash_new(sql->sa, 32, (fkeyvalue)&exp_multi_col_key);
 				multicol_multival = detect_multicol_cmp_eqs(sql, mce_ands, meqh);
 			}
 
