@@ -4256,12 +4256,14 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								goto bailout1;
 
 							MT_rwlock_rdlock(&bs->thashlock);
+							/* one lock, two values: hash size, and
+							 * whether we (may) have a hash */
 							sz = hashinfo(bs->thash, bs->batCacheid);
+							bitval = bs->thash != NULL;
 							MT_rwlock_rdunlock(&bs->thashlock);
 							if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 								goto bailout1;
 
-							bitval = 0; /* HASHispersistent(bs); */
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 								goto bailout1;
 
