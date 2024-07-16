@@ -86,15 +86,11 @@
 #cmakedefine HAVE_DISPATCH_DISPATCH_H 1
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FCNTL_H 1
-#cmakedefine HAVE_IO_H 1
 #cmakedefine HAVE_KVM_H 1
-#cmakedefine HAVE_LIBGEN_H 1
-#cmakedefine HAVE_LIBINTL_H 1
 #cmakedefine HAVE_MACH_MACH_INIT_H 1
 #cmakedefine HAVE_MACH_TASK_H 1
 #cmakedefine HAVE_MACH_O_DYLD_H 1
 #cmakedefine HAVE_NETDB_H 1
-#cmakedefine HAVE_NETINET_IN_H 1
 #cmakedefine HAVE_POLL_H 1
 #cmakedefine HAVE_PROCFS_H 1
 #cmakedefine HAVE_PWD_H 1
@@ -102,7 +98,6 @@
 #cmakedefine HAVE_STROPTS_H 1
 #cmakedefine HAVE_SYS_FILE_H 1
 #cmakedefine HAVE_SYS_IOCTL_H 1
-#cmakedefine HAVE_SYS_SYSCTL_H 1
 #cmakedefine HAVE_SYS_MMAN_H 1
 #cmakedefine HAVE_SYS_PARAM_H 1
 #cmakedefine HAVE_SYS_RANDOM_H 1
@@ -111,7 +106,6 @@
 #cmakedefine HAVE_SYS_TIMES_H 1
 #cmakedefine HAVE_SYS_UIO_H 1
 #cmakedefine HAVE_SYS_UN_H 1
-#cmakedefine HAVE_SYS_WAIT_H 1
 #cmakedefine HAVE_TERMIOS_H 1
 #cmakedefine HAVE_UNISTD_H 1
 #cmakedefine HAVE_WINSOCK_H 1
@@ -157,24 +151,17 @@
 #cmakedefine HAVE_POSIX_FADVISE 1
 #cmakedefine HAVE_POSIX_FALLOCATE 1
 #cmakedefine HAVE_POSIX_MADVISE 1
-#cmakedefine HAVE_PUTENV 1
 #cmakedefine HAVE_SETTHREADDESCRIPTION 1
 #cmakedefine HAVE_SETSID 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
 #cmakedefine HAVE_SIGLONGJMP 1
-#cmakedefine HAVE_STPCPY 1
-#cmakedefine HAVE_STRCASESTR 1
-#cmakedefine HAVE_STRNCASECMP 1
 #cmakedefine HAVE_STRPTIME 1
-#cmakedefine HAVE_STRSIGNAL 1
 #cmakedefine HAVE_SYSCONF 1
 #cmakedefine HAVE_TASK_INFO 1
 #cmakedefine HAVE_TIMES 1
 #cmakedefine HAVE_TM_GMTOFF 1
 #cmakedefine HAVE_UNAME 1
-#cmakedefine HAVE_WCWIDTH 1
-// #cmakedefine HAVE_SEMTIMEDOP
 #cmakedefine HAVE_PTHREAD_KILL 1
 #cmakedefine HAVE_PTHREAD_SETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
@@ -387,7 +374,6 @@ typedef __uint128_t uhge;
 #endif
 
 /* Define to 1 if you have the `strncasecmp' function. */
-#define HAVE_STRNCASECMP 1
 #ifndef strncasecmp
 #define strncasecmp(x,y,z) _strnicmp(x,y,z)
 #endif
