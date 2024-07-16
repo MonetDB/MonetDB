@@ -3293,9 +3293,10 @@ sql_update_jan2022(Client c, mvc *sql)
 				printf("Running database upgrade commands:\n%s\n", query);
 				fflush(stdout);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			} else {
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
 			}
-			sql->session->status = 0; /* if the function was not found clean the error */
-			sql->errstr[0] = '\0';
 		}
 		sa_destroy(sql->sa);
 		if (err)
@@ -5575,9 +5576,10 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
 
 	if (!sql_bind_func(sql, "sys", "jarowinkler", &t2, &t2, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -5828,9 +5830,10 @@ sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 	if (sql_bind_func(sql, s->base.name, "shpattach", &tp, NULL, F_PROC, true, true)) {
 		if ((err = sql_drop_shp(c)) != NULL)
 			return err;
+	} else {
+		sql->session->status = 0; /* if the shpattach function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
-	sql->session->status = 0; /* if the shpattach function was not found clean the error */
-	sql->errstr[0] = '\0';
 #ifdef HAVE_GEOM
 	if (backend_has_module(&(int){0}, "geom")) {
 #ifdef HAVE_SHP
@@ -7246,10 +7249,8 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 			}
 			if (err == MAL_SUCCEED) {
 				sql_subtype tp;
-				sql_find_subtype(&tp, "clob", 0, 0);
-				if (!sql_bind_func(sql, s->base.name, "gzcompress", &tp, &tp, F_PROC, true, true)) {
-					sql->session->status = 0;
-					sql->errstr[0] = '\0';
+				sql_find_subtype(&tp, "varchar", 0, 0);
+				if (sql_bind_func(sql, s->base.name, "gzcompress", &tp, &tp, F_PROC, true, true)) {
 					const char query[] =
 						"drop procedure if exists sys.gzcompress(string, string);\n"
 						"drop procedure if exists sys.gzdecompress(string, string);\n"
@@ -7258,14 +7259,15 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					printf("Running database upgrade commands:\n%s\n", query);
 					fflush(stdout);
 					err = SQLstatementIntern(c, query, "update", true, false, NULL);
+				} else {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
 				}
 			}
 			if (err == MAL_SUCCEED) {
 				sql_subtype tp;
-				sql_find_subtype(&tp, "clob", 0, 0);
-				if (!sql_bind_func(sql, s->base.name, "newdictionary", &tp, &tp, F_PROC, true, true)) {
-					sql->session->status = 0;
-					sql->errstr[0] = '\0';
+				sql_find_subtype(&tp, "varchar", 0, 0);
+				if (sql_bind_func(sql, s->base.name, "newdictionary", &tp, &tp, F_PROC, true, true)) {
 					const char query[] =
 						"drop procedure if exists sys.newdictionary(string, string);\n"
 						"drop procedure if exists sys.dropdictionary(string, string);\n"
@@ -7273,6 +7275,9 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					printf("Running database upgrade commands:\n%s\n", query);
 					fflush(stdout);
 					err = SQLstatementIntern(c, query, "update", true, false, NULL);
+				} else {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
 				}
 			}
 		}

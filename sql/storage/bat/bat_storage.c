@@ -1115,7 +1115,7 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 
 	if (!u)
 		return NULL;
-	BUN max_cnt = (BATcount(u) < 256)?256:64*1024;
+	BUN max_cnt = (BATcount(u) < 256)?256:(BATcount(u)<65536)?65536:INT_MAX;
 	if (DICTprepare4append(&newoffsets, i, u) < 0) {
 		bat_destroy(u);
 		return NULL;
@@ -1123,7 +1123,7 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 		int new = 0;
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
 		if (BATcount(u) >= max_cnt) {
-			if (max_cnt == 64*1024) { /* decompress */
+			if (max_cnt == INT_MAX) { /* decompress */
 				if (!(b = temp_descriptor(cs->bid))) {
 					bat_destroy(u);
 					return NULL;
@@ -1187,7 +1187,7 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 					bat_destroy(u);
 					return NULL;
 				}
-				n = DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i), PERSISTENT);
+				n = DICTenlarge(b, BATcount(b), BATcount(b) + BATcount(i), (BATcount(u)>65536)?TYPE_int:TYPE_sht, PERSISTENT);
 				bat_destroy(b);
 				if (!n) {
 					bat_destroy(newoffsets);
@@ -1696,7 +1696,7 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 		int new = 0;
 		/* returns new offset bat (ie to be appended), possibly with larger type ! */
 		if (BATcount(u) >= max_cnt) {
-			if (max_cnt == 64*1024) { /* decompress */
+			if (max_cnt == INT_MAX) { /* decompress */
 				if (!(b = temp_descriptor(cs->bid))) {
 					bat_destroy(u);
 					return NULL;
@@ -1741,7 +1741,7 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 					bat_destroy(u);
 					return NULL;
 				}
-				n = DICTenlarge(b, BATcount(b), BATcount(b) + cnt, PERSISTENT);
+				n = DICTenlarge(b, BATcount(b), BATcount(b) + cnt, (BATcount(u)>65536)?TYPE_int:TYPE_sht, PERSISTENT);
 				bat_destroy(b);
 				if (!n) {
 					GDKfree(newoffsets);

@@ -145,6 +145,7 @@ GDKlockstatistics(int what)
 	MT_Lock *l;
 	int n = 0;
 
+	printf("Locks:\n");
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
 		printf("GDKlocklistlock is set, so cannot access lock list\n");
 		return;
@@ -285,6 +286,8 @@ dump_threads(void)
 {
 	char buf[1024];
 	thread_lock();
+	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
+		printf("Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
 		MT_Lock *lk = t->lockwait;
 		MT_Sema *sm = t->semawait;
