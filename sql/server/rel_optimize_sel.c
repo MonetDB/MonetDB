@@ -513,7 +513,7 @@ merge_ors(mvc *sql, list *exps, int *changes)
 }
 
 static inline int
-exp_unique_id(sql_exp *e)
+exp_col_key(sql_exp *e)
 {
 	return e->nid ? e->nid : e->alias.label;
 }
@@ -521,16 +521,16 @@ exp_unique_id(sql_exp *e)
 static inline int
 exp_cmp_eq_unique_id(sql_exp *e)
 {
-	return exp_unique_id(e->l);
+	return exp_col_key(e->l);
 }
 
 static inline int
 exp_multi_col_key(list *l)
 {
-	int k = exp_unique_id(l->h->data);
+	int k = exp_col_key(l->h->data);
 	for (node *n = l->h->next; n; n = n->next) {
 		k <<= 4;
-		k ^= exp_unique_id(n->data);
+		k ^= exp_col_key(n->data);
 	}
 	return k;
 }
@@ -788,7 +788,7 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 			/* detect col cmp_eq exps with multiple values */
 			bool col_multival = false;
 			if (list_length(eqs) > 1) {
-				eqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 64*/, (fkeyvalue)&exp_unique_id);
+				eqh = hash_new(sql->sa, 4 /* TODO: HOW MUCH? prob. 64*/, (fkeyvalue)&exp_col_key);
 				col_multival = detect_col_cmp_eqs(sql, eqs, eqh);
 			}
 
