@@ -818,6 +818,8 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 					l = append(l, new);
 					r = append(r, (sql_exp*)i->data);
 					new = exp_or(sql->sa, l, r, 0);
+
+					(*changes)++;
 				}
 			}
 
@@ -838,6 +840,8 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 					l = append(l, new);
 					r = append(r, (sql_exp*)i->data);
 					new = exp_or(sql->sa, l, r, 0);
+
+					(*changes)++;
 				}
 			}
 
@@ -865,9 +869,6 @@ merge_ors_NEW(mvc *sql, list *exps, int *changes)
 
 			list_remove_node(exps, NULL, n);
 			exps = append(exps, new);
-
-			// TODO: should that be per col/multicol group?
-			(*changes)++;
 		}
 	}
 	return exps;
