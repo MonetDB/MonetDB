@@ -669,7 +669,7 @@ generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 }
 
 static list *
-merge_ors_NEW(mvc *sql, list *exps, int *changes)
+merge_ors(mvc *sql, list *exps, int *changes)
 {
 	sql_hash *eqh = NULL, *meqh = NULL;
 	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL, *mins = NULL;
@@ -1020,7 +1020,7 @@ rel_select_cse(visitor *v, sql_rel *rel)
 		rel->exps = cleanup_equal_exps(v->sql, rel, rel->exps, &v->changes); /* (a = b) and (a += b) */
 
 	if (is_select(rel->op) && rel->exps)
-		rel->exps = merge_ors_NEW(v->sql, rel->exps, &v->changes);
+		rel->exps = merge_ors(v->sql, rel->exps, &v->changes);
 
 	if (is_select(rel->op) && rel->exps)
 		rel->exps = merge_notequal(v->sql, rel->exps, &v->changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
