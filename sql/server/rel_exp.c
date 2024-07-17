@@ -1940,7 +1940,8 @@ exp_single_bound_cmp_exp_is_false(sql_exp* e) {
 }
 
 static inline bool
-exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
+exp_two_sided_bound_cmp_exp_is_false(sql_exp* e)
+{
     assert(e->type == e_cmp);
     sql_exp* v = e->l;
     sql_exp* l = e->r;
@@ -1951,7 +1952,8 @@ exp_two_sided_bound_cmp_exp_is_false(sql_exp* e) {
 }
 
 static inline bool
-exp_regular_cmp_exp_is_false(sql_exp* e) {
+exp_regular_cmp_exp_is_false(sql_exp* e)
+{
     assert(e->type == e_cmp);
 
     if (is_semantics(e) && !is_any(e)) return exp_is_cmp_exp_is_false(e);
@@ -2060,6 +2062,17 @@ exp_is_not_null(sql_exp *e)
 	return false;
 }
 
+static int
+exps_have_null(list *l)
+{
+	if (!l)
+		return false;
+	for(node *n = l->h; n; n = n->next)
+		if (exp_is_null(n->data))
+			return true;
+	return false;
+}
+
 int
 exp_is_null(sql_exp *e )
 {
@@ -2089,9 +2102,24 @@ exp_is_null(sql_exp *e )
 			}
 		}
 		return 0;
+	case e_cmp:
+		if (!is_semantics(e)) {
+			if (e->flag == cmp_or) {
+				return (exps_have_null(e->l) && exps_have_null(e->r));
+			} else if (e->flag == cmp_filter) {
+				return (exps_have_null(e->l) || exps_have_null(e->r));
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				return ((e->flag == cmp_in && exp_is_null(e->l)) ||
+						(e->flag == cmp_notin && (exp_is_null(e->l) || exps_have_null(e->r))));
+			} else if (e->f) {
+				return exp_is_null(e->l) || (!is_anti(e) && (exp_is_null(e->r) || exp_is_null(e->f)));
+			} else {
+				return exp_is_null(e->l) || exp_is_null(e->r);
+			}
+		}
+		return 0;
 	case e_aggr:
 	case e_column:
-	case e_cmp:
 	case e_psm:
 		return 0;
 	}
@@ -2645,7 +2673,7 @@ exp_has_func(sql_exp *e)
 }
 
 static int
-exps_has_sideeffect( list *exps)
+exps_have_sideeffect( list *exps)
 {
 	node *n;
 	int has_sideeffect = 0;
@@ -2668,12 +2696,12 @@ exp_has_sideeffect( sql_exp *e )
 			if (f->func->side_effect)
 				return 1;
 			if (e->l)
-				return exps_has_sideeffect(e->l);
+				return exps_have_sideeffect(e->l);
 			return 0;
 		}
 	case e_atom:
 		if (e->f)
-			return exps_has_sideeffect(e->f);
+			return exps_have_sideeffect(e->f);
 		return 0;
 	case e_aggr:
 	case e_cmp:
