@@ -423,95 +423,6 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 	return res;
 }
 
-static int
-are_equality_exps( list *exps, sql_exp **L)
-{
-	sql_exp *l = *L;
-
-	if (list_length(exps) == 1) {
-		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
-
-		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM && !is_semantics(e)) {
-			if (!l) {
-				*L = l = le;
-				if (!is_column(le->type))
-					return 0;
-			}
-			return (exp_match(l, le));
-		}
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e))
-			return (are_equality_exps(e->l, L) && are_equality_exps(e->r, L));
-	}
-	return 0;
-}
-
-static void
-get_exps( list *n, list *l )
-{
-	sql_exp *e = l->h->data, *re = e->r;
-
-	if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
-		list_append(n, re);
-	if (e->type == e_cmp && e->flag == cmp_or) {
-		get_exps(n, e->l);
-		get_exps(n, e->r);
-	}
-}
-
-static sql_exp *
-equality_exps_2_in( mvc *sql, sql_exp *ce, list *l, list *r)
-{
-	list *nl = new_exp_list(sql->sa);
-
-	get_exps(nl, l);
-	get_exps(nl, r);
-
-	return exp_in( sql->sa, ce, nl, cmp_in);
-}
-
-static list *
-merge_ors(mvc *sql, list *exps, int *changes)
-{
-	/* n = 1 OR n = 2 ==> n in (1, 2) */
-	list *nexps = NULL;
-	int needed = 0;
-
-	// blindly looks for any cmp_or in the top list
-	for (node *n = exps->h; n && !needed; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e))
-			needed = 1;
-	}
-
-	if (needed) {
-		nexps = new_exp_list(sql->sa);
-		for (node *n = exps->h; n; n = n->next) {
-			sql_exp *e = n->data, *l = NULL;
-
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && are_equality_exps(e->l, &l) && are_equality_exps(e->r, &l) && l) {
-				(*changes)++;
-				append(nexps, equality_exps_2_in(sql, l, e->l, e->r));
-			} else {
-				append(nexps, e);
-			}
-		}
-	} else {
-		nexps = exps;
-	}
-
-	for (node *n = nexps->h; n ; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->type == e_cmp && e->flag == cmp_or) {
-			e->l = merge_ors(sql, e->l, changes);
-			e->r = merge_ors(sql, e->r, changes);
-		}
-	}
-
-	return nexps;
-}
-
 static inline int
 exp_col_key(sql_exp *e)
 {
@@ -1107,9 +1018,6 @@ rel_select_cse(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) /* cleanup equal expressions */
 		rel->exps = cleanup_equal_exps(v->sql, rel, rel->exps, &v->changes); /* (a = b) and (a += b) */
-
-	if (NULL && is_select(rel->op) && rel->exps)
-		rel->exps = merge_ors(v->sql, rel->exps, &v->changes); /* x = 1 or x = 2 => x in (1, 2)*/
 
 	if (is_select(rel->op) && rel->exps)
 		rel->exps = merge_ors_NEW(v->sql, rel->exps, &v->changes);
