@@ -1,5 +1,5 @@
 statement ok
-CREATE TABLE  IF NOT EXISTS t0 ( c1 INT )
+CREATE TABLE t0 ( c1 INT )
 
 statement ok
 INSERT INTO t0(c1) VALUES (1)
@@ -17,3 +17,6 @@ NULL
 query I
 SELECT * FROM t0 WHERE ((NULL NOT BETWEEN 1 AND 2)=(t0.c1 NOT IN (t0.c1)))
 ----
+
+statement ok
+DROP TABLE t0
