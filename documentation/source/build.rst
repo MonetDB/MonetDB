@@ -104,7 +104,7 @@ Run as Administrator::
   @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
   choco feature enable -n allowGlobalConfirmation
   choco install ActivePerl ant ruby python3 hg git winflexbison3
-  choco install VisualStudio2019community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add microsoft.visualstudio.component.vc.cmake.project"
+  choco install VisualStudio2022community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add microsoft.visualstudio.component.vc.cmake.project"
   refreshenv
 
   cd \
