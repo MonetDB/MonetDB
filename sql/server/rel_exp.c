@@ -1747,6 +1747,27 @@ exps_find_prop(list *exps, rel_prop kind)
 	return NULL;
 }
 
+/* check is one of the exps can be found in this relation */
+static sql_exp* rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res);
+
+static bool
+rel_find_exps_and_corresponding_rel_(sql_rel *rel, list *l, bool subexp, sql_rel **res)
+{
+	int all = 1;
+
+	if (list_empty(l))
+		return true;
+	for(node *n = l->h; n && (subexp || all); n = n->next) {
+		sql_exp *ne = rel_find_exp_and_corresponding_rel_(rel, n->data, subexp, res);
+		if (subexp && ne)
+			return true;
+		all &= (ne?1:0);
+	}
+	if (all)
+		return true;
+	return false;
+}
+
 static sql_exp *
 rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res)
 {
@@ -1773,22 +1794,28 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 		return rel_find_exp_and_corresponding_rel_(rel, e->l, subexp, res);
 	case e_aggr:
 	case e_func:
-		if (e->l) {
-			list *l = e->l;
-			node *n = l->h;
-
-			ne = n->data;
-			while ((subexp || ne != NULL) && n != NULL) {
-				ne = rel_find_exp_and_corresponding_rel_(rel, n->data, subexp, res);
-				if (subexp && ne)
-					break;
-				n = n->next;
-			}
-			return ne;
-		}
-		break;
-		/* fall through */
+		if (e->l)
+			if (rel_find_exps_and_corresponding_rel_(rel, e->l, subexp, res))
+				return e;
+		return NULL;
 	case e_cmp:
+		if (!subexp)
+			return NULL;
+
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (rel_find_exps_and_corresponding_rel_(rel, e->l, subexp, res) ||
+				rel_find_exps_and_corresponding_rel_(rel, e->r, subexp, res))
+				return e;
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (rel_find_exp_and_corresponding_rel_(rel, e->l, subexp, res) ||
+				rel_find_exps_and_corresponding_rel_(rel, e->r, subexp, res))
+				return e;
+		} else if (rel_find_exp_and_corresponding_rel_(rel, e->l, subexp, res) ||
+			    rel_find_exp_and_corresponding_rel_(rel, e->r, subexp, res) ||
+			    (!e->f || rel_find_exp_and_corresponding_rel_(rel, e->f, subexp, res))) {
+				return e;
+		}
+		return NULL;
 	case e_psm:
 		return NULL;
 	case e_atom:
@@ -2104,10 +2131,8 @@ exp_is_null(sql_exp *e )
 		return 0;
 	case e_cmp:
 		if (!is_semantics(e)) {
-			if (e->flag == cmp_or) {
+			if (e->flag == cmp_or || e->flag == cmp_filter) {
 				return (exps_have_null(e->l) && exps_have_null(e->r));
-			} else if (e->flag == cmp_filter) {
-				return (exps_have_null(e->l) || exps_have_null(e->r));
 			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 				return ((e->flag == cmp_in && exp_is_null(e->l)) ||
 						(e->flag == cmp_notin && (exp_is_null(e->l) || exps_have_null(e->r))));
@@ -2712,44 +2737,53 @@ exp_has_sideeffect( sql_exp *e )
 	return 0;
 }
 
-int
-exps_have_unsafe(list *exps, int allow_identity)
+bool
+exps_have_unsafe(list *exps, bool allow_identity, bool card)
 {
 	int unsafe = 0;
 
 	if (list_empty(exps))
 		return 0;
 	for (node *n = exps->h; n && !unsafe; n = n->next)
-		unsafe |= exp_unsafe(n->data, allow_identity);
+		unsafe |= exp_unsafe(n->data, allow_identity, card);
 	return unsafe;
 }
 
-int
-exp_unsafe(sql_exp *e, int allow_identity)
+bool
+exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 {
 	switch (e->type) {
 	case e_convert:
-		return exp_unsafe(e->l, allow_identity);
+		if (card) {
+			sql_subtype *t = exp_totype(e);
+			sql_subtype *f = exp_fromtype(e);
+			if (t->type->eclass == EC_FLT && (f->type->eclass == EC_DEC || f->type->eclass == EC_NUM))
+				return false;
+			if (f->type->localtype > t->type->localtype)
+				return true;
+			return false;
+		}
+		return exp_unsafe(e->l, allow_identity, card);
 	case e_aggr:
 	case e_func: {
 		sql_subfunc *f = e->f;
 
 		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
 			return 1;
-		return exps_have_unsafe(e->l, allow_identity);
+		return exps_have_unsafe(e->l, allow_identity, card);
 	} break;
 	case e_cmp: {
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return exp_unsafe(e->l, allow_identity) || exps_have_unsafe(e->r, allow_identity);
+			return exp_unsafe(e->l, allow_identity, card) || exps_have_unsafe(e->r, allow_identity, card);
 		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return exps_have_unsafe(e->l, allow_identity) || exps_have_unsafe(e->r, allow_identity);
+			return exps_have_unsafe(e->l, allow_identity, card) || exps_have_unsafe(e->r, allow_identity, card);
 		} else {
-			return exp_unsafe(e->l, allow_identity) || exp_unsafe(e->r, allow_identity) || (e->f && exp_unsafe(e->f, allow_identity));
+			return exp_unsafe(e->l, allow_identity, card) || exp_unsafe(e->r, allow_identity, card) || (e->f && exp_unsafe(e->f, allow_identity, card));
 		}
 	} break;
 	case e_atom: {
 		if (e->f)
-			return exps_have_unsafe(e->f, allow_identity);
+			return exps_have_unsafe(e->f, allow_identity, card);
 		return 0;
 	} break;
 	case e_column:

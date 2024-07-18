@@ -3785,7 +3785,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->impl, *mod = mtimeRef;
-	bool add_tz = false, pushed = (v->cand && v->cand == sel);
+	bool add_tz = false, pushed = (v->cand && v->cand == sel), cand = 0;
 
 	if (before) {
 		if (f->type->eclass == EC_TIMESTAMP_TZ && (t->type->eclass == EC_TIMESTAMP || t->type->eclass == EC_TIME)) {
@@ -3816,6 +3816,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 				convert = "timestamptz";
 			mod = calcRef;
 			add_tz = true;
+			cand = 1;
 		} else {
 			return v;
 		}
@@ -3847,17 +3848,28 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	}
 	q = pushArgument(mb, q, v->nr);
 
+	if (cand) {
+		if (sel && !pushed && !v->cand) {
+			q = pushArgument(mb, q, sel->nr);
+			pushed = 1;
+		} else if (v->nrcols > 0) {
+			q = pushNilBat(mb, q);
+		}
+	}
+
 	if (EC_VARCHAR(f->type->eclass))
 		q = pushInt(mb, q, t->digits);
 
 	if (add_tz)
 			q = pushLng(mb, q, be->mvc->timezone);
 
-	if (sel && !pushed && !v->cand) {
-		q = pushArgument(mb, q, sel->nr);
-		pushed = 1;
-	} else if (v->nrcols > 0) {
-		q = pushNilBat(mb, q);
+	if (!cand) {
+		if (sel && !pushed && !v->cand) {
+			q = pushArgument(mb, q, sel->nr);
+			pushed = 1;
+		} else if (v->nrcols > 0) {
+			q = pushNilBat(mb, q);
+		}
 	}
 
 	bool enabled = be->mvc->sa->eb.enabled;

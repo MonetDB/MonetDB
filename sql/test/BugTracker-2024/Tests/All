@@ -77,3 +77,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7550-select-statistics-auth
 7552-nested-expression-with-null
 7553-join-on-startswith-crash
+7045-do-not-push-down-converts
