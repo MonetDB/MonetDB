@@ -402,12 +402,8 @@ CONDITIONALS = {
     'HAVE_JDBCCLIENT_JAR'  : False,
     'HAVE_JDBCTESTS_JAR'   : False,
     'HAVE_JDBCTESTS'       : False,
-#    'HAVE_LIBPANDAS3'      : False,
-    'HAVE_LIBSCIPY3'       : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
-    'HAVE_PYODBC'          : False,
-    'HAVE_PYTHON_LZ4'      : False, # module lz4 is available
     'HAVE_RUBY'            : False,
     'HAVE_CPP'             : False,
     'HAVE_DATA_PATH'       : False,
@@ -416,6 +412,12 @@ CONDITIONALS = {
     'BAD_HOSTNAME'         : False,
     'HAVE_IPV6'            : False,
     'NOWAL'                : False,
+    # optional Python modules
+#    'HAVE_LIBPANDAS3'      : False,
+    'HAVE_LIBSCIPY3'       : False, # import scipy
+    'HAVE_CRYPTOGRAPHY'    : False, # import cryptography
+    'HAVE_PYODBC'          : False, # import pyodbc
+    'HAVE_PYTHON_LZ4'      : False, # import lz4
 }
 
 # a bunch of classes to help with generating (X)HTML files
@@ -3696,6 +3698,13 @@ def main(argv) :
         CONDITIONALS['HAVE_LIBSCIPY3'] = False
     else:
         CONDITIONALS['HAVE_LIBSCIPY3'] = True
+
+    try:
+        import cryptography
+    except ImportError:
+        CONDITIONALS['HAVE_CRYPTOGRAPHY'] = False
+    else:
+        CONDITIONALS['HAVE_CRYPTOGRAPHY'] = True
 
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = True
