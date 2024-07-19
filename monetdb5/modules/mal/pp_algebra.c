@@ -3171,7 +3171,7 @@ compute_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(BUN i = 0; i<n; i++)
 				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : dbl_nil;
 		}
-#if HAVE_HGE
+#ifdef HAVE_HGE
 		else if (a->ttype == TYPE_hge) {
 			lng *ca = Tloc(a, 0);
 			for(BUN i = 0; i<n; i++)
