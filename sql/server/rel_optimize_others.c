@@ -163,7 +163,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		list *l = e->l, *nl = NULL;
 		sql_exp *ne = NULL;
 
-		if (e->type == e_func && exp_unsafe(e,0))
+		if (e->type == e_func && exp_unsafe(e, false, false))
 			return NULL;
 		if (!list_empty(l)) {
 			nl = exps_push_down_prj(sql, l, f, t, false);
@@ -391,7 +391,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 	}
 	/* for count/rank we need atleast one column */
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
-		(is_simple_project(rel->op) && project_unsafe(rel, 0))) {
+		(is_simple_project(rel->op) && project_unsafe(rel, false))) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}

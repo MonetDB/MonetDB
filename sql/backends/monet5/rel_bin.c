@@ -1605,6 +1605,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (from->type->eclass == EC_SEC && to->type->eclass == EC_SEC) {
 			// trivial conversion because EC_SEC is always in milliseconds
 			s = l;
+		} else if (depth && sel && l->nrcols == 0 && left && left->nrcols && exp_unsafe(e, false, true)) {
+			stmt *rows = bin_find_smallest_column(be, left);
+			l = stmt_const(be, rows, l);
+			s = stmt_convert(be, l, sel, from, to);
+		} else if (depth && l->nrcols == 0 && left && left->nrcols && from->type->localtype > to->type->localtype &&
+				exp_unsafe(e, false, true)) {
+			stmt *rows = bin_find_smallest_column(be, left);
+			l = stmt_const(be, rows, l);
+			s = stmt_convert(be, l, sel, from, to);
 		} else {
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
 		}
@@ -2829,12 +2838,12 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 			sql_exp *l = e->l, *r = e->r, *f = e->f;
 
 			if (f) {
-				int ll = rel_find_exp(rel->l, l) != NULL;
-				int rl = rel_find_exp(rel->r, l) != NULL;
-				int lr = rel_find_exp(rel->l, r) != NULL;
-				int rr = rel_find_exp(rel->r, r) != NULL;
-				int lf = rel_find_exp(rel->l, f) != NULL;
-				int rf = rel_find_exp(rel->r, f) != NULL;
+				int ll = rel_has_exp(rel->l, l, true) == 0;
+				int rl = rel_has_exp(rel->r, l, true) == 0;
+				int lr = rel_has_exp(rel->l, r, true) == 0;
+				int rr = rel_has_exp(rel->r, r, true) == 0;
+				int lf = rel_has_exp(rel->l, f, true) == 0;
+				int rf = rel_has_exp(rel->r, f, true) == 0;
 				int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 
 				if ((ll && !rl &&
@@ -2848,15 +2857,15 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 			} else {
 				int ll = 0, lr = 0, rl = 0, rr = 0, cst = 0;
 				if (l->card != CARD_ATOM || !exp_is_atom(l)) {
-					ll = rel_find_exp(rel->l, l) != NULL;
-					rl = rel_find_exp(rel->r, l) != NULL;
+					ll = rel_has_exp(rel->l, l, true) == 0;
+					rl = rel_has_exp(rel->r, l, true) == 0;
 				} else if (anti) {
 					ll = 1;
 					cst = 1;
 				}
 				if (r->card != CARD_ATOM || !exp_is_atom(r)) {
-					lr = rel_find_exp(rel->l, r) != NULL;
-					rr = rel_find_exp(rel->r, r) != NULL;
+					lr = rel_has_exp(rel->l, r, true) == 0;
+					rr = rel_has_exp(rel->r, r, true) == 0;
 				} else if (anti) {
 					rr = cst?0:1;
 				}
@@ -2871,16 +2880,16 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 				sql_exp *ee = n->data;
 
 				if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-					ll |= rel_find_exp(rel->l, ee) != NULL;
-					rl |= rel_find_exp(rel->r, ee) != NULL;
+					ll |= rel_has_exp(rel->l, ee, true) == 0;
+					rl |= rel_has_exp(rel->r, ee, true) == 0;
 				}
 			}
 			for (node *n = r->h ; n ; n = n->next) {
 				sql_exp *ee = n->data;
 
 				if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-					lr |= rel_find_exp(rel->l, ee) != NULL;
-					rr |= rel_find_exp(rel->r, ee) != NULL;
+					lr |= rel_has_exp(rel->l, ee, true) == 0;
+					rr |= rel_has_exp(rel->r, ee, true) == 0;
 				}
 			}
 			if ((ll && !lr && !rl && rr) || (!ll && lr && rl && !rr))

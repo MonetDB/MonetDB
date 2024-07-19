@@ -3689,18 +3689,20 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			node *next = n->next;
 			sql_exp *e = n->data;
 
-			if (left && rel_rebind_exp(v->sql, jl, e)) {
-				if (!is_select(jl->op) || rel_is_ref(jl))
-					r->l = jl = rel_select(v->sql->sa, jl, NULL);
-				rel_select_add_exp(v->sql->sa, jl, e);
-				list_remove_node(exps, NULL, n);
-				v->changes++;
-			} else if (right && rel_rebind_exp(v->sql, jr, e)) {
-				if (!is_select(jr->op) || rel_is_ref(jr))
-					r->r = jr = rel_select(v->sql->sa, jr, NULL);
-				rel_select_add_exp(v->sql->sa, jr, e);
-				list_remove_node(exps, NULL, n);
-				v->changes++;
+			if (!exp_unsafe(e, false, true)) {
+				if (left && rel_rebind_exp(v->sql, jl, e)) {
+					if (!is_select(jl->op) || rel_is_ref(jl))
+						r->l = jl = rel_select(v->sql->sa, jl, NULL);
+					rel_select_add_exp(v->sql->sa, jl, e);
+					list_remove_node(exps, NULL, n);
+					v->changes++;
+				} else if (right && rel_rebind_exp(v->sql, jr, e)) {
+					if (!is_select(jr->op) || rel_is_ref(jr))
+						r->r = jr = rel_select(v->sql->sa, jr, NULL);
+					rel_select_add_exp(v->sql->sa, jr, e);
+					list_remove_node(exps, NULL, n);
+					v->changes++;
+				}
 			}
 			n = next;
 		}
@@ -3711,7 +3713,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 
 	/* merge select and cross product ? */
-	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r)){
+	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r) && !exps_have_unsafe(exps, false, true)) {
 		for (n = exps->h; n;) {
 			node *next = n->next;
 			sql_exp *e = n->data;
@@ -3730,7 +3732,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && r && (is_simple_project(r->op) || (is_groupby(r->op) && !list_empty(r->r))) && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l, *opl = pl;
 		/* we cannot push through window functions (for safety I disabled projects over DDL too) */
-		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 0)) {
+		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, false, false)) {
 			/* introduce selects under the project (if needed) */
 			set_processed(pl);
 			if (!pl->exps)
@@ -3754,7 +3756,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		}
 
 		/* push filters if they match the aggregation key on a window function */
-		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, 0)) {
+		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, false, false)) {
 			set_processed(pl);
 			/* list of aggregation key columns */
 			list *aggColumns = get_aggregation_key_columns(v->sql->sa, r);
@@ -4116,7 +4118,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 		list *l = e->l;
 		int res = 1, lmust = 0;
 
-		if (exp_unsafe(e, 0))
+		if (exp_unsafe(e, false, false))
 			return 0;
 		if (l) for (node *n = l->h; n && res; n = n->next)
 			res &= can_push_func(n->data, rel, &lmust, depth + 1);
@@ -4235,7 +4237,7 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sq
 		sql_rel *l = rel->l, *r = rel->r;
 		int must = 0, mustl = 0, mustr = 0;
 
-		if (exp_unsafe(e, 0))
+		if (exp_unsafe(e, false, false))
 			return e;
 		if (!e->l || exps_are_atoms(e->l))
 			return e;

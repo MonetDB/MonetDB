@@ -1297,6 +1297,8 @@ score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
+	if (e->type == e_convert) /* keep unsafes at the end (TODO improve) */
+		return -1000;
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 600;
