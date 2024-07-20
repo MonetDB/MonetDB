@@ -230,7 +230,7 @@ partition_groupby_results(backend *be, sql_rel *rel)
 }
 
 static stmt *
-partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
+partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededpp)
 {
 	//sql_rel *p = rel->l;
 	//int is_base = (p && is_basetable(p->op));
@@ -244,6 +244,8 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 	 *  usual group by/aggr code
 	 *  m = mat.add(aggr, i)
 	 * done
+	 * if neededpp -> start new pipeline using mats
+	 * else
 	 * b = mat.pack(m)
 	 */
 
@@ -340,23 +342,46 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub)
 	(void)stmt_pp_end(be, pp);
 	/* pack */
 
-	list *nl = sa_list(be->mvc->sa);
-	for(node *n = l->h, *m = results->h; n && m; n = n->next, m = m->next ) {
-		stmt *aggrstmt = n->data;
+	if (!neededpp) {
+		list *nl = sa_list(be->mvc->sa);
+		for(node *n = l->h, *m = results->h; n && m; n = n->next, m = m->next ) {
+			stmt *aggrstmt = n->data;
 
-		InstrPtr mp = newStmt(be->mb, "mat", "pack");
-		mp = pushArgument(be->mb, mp, *(int*)m->data);
-		pushInstruction(be->mb, mp);
-		/* keep names from aggrstmt */
-		aggrstmt = stmt_instruction(be, mp, aggrstmt);
+			InstrPtr mp = newStmt(be->mb, "mat", "pack");
+			mp = pushArgument(be->mb, mp, *(int*)m->data);
+			pushInstruction(be->mb, mp);
+			/* keep names from aggrstmt */
+			aggrstmt = stmt_instruction(be, mp, aggrstmt);
 
-		list_append(nl, aggrstmt);
+			list_append(nl, aggrstmt);
+		}
+		return stmt_list(be, nl);
+	} else {
+		stmt *pp = stmt_pp_start_nrparts(be, 256);//be->nrparts);
+		set_pipeline(be, pp);
+		int ppnr = be->pipeline;
+		be->pipeline = 0;
+
+		list *nl = sa_list(be->mvc->sa);
+		for(node *n = l->h, *m = results->h; n && m; n = n->next, m = m->next ) {
+			stmt *aggrstmt = n->data;
+
+			InstrPtr mp = newStmt(be->mb, "mat", "fetch");
+			mp = pushArgument(be->mb, mp, *(int*)m->data);
+			mp = pushArgument(be->mb, mp, be->pp);
+			pushInstruction(be->mb, mp);
+			/* keep names from aggrstmt */
+			aggrstmt = stmt_instruction(be, mp, aggrstmt);
+
+			list_append(nl, aggrstmt);
+		}
+		be->pipeline = ppnr;
+		return stmt_list(be, nl);
 	}
-	return stmt_list(be, nl);
 }
 
 stmt *
-rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
+rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
 {
 	(void)refs;
 
@@ -393,7 +418,7 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs)
 	if (!mats)
 		return NULL;
 
-	sub = partition_groupby(be, rel, mats, sub);
+	sub = partition_groupby(be, rel, mats, sub, neededpp);
 	return sub;
 }
 

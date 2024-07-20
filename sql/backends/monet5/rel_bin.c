@@ -4712,7 +4712,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
 
 	if (value_partition)
-		return rel2bin_groupby_partition(be, rel, refs);
+		return rel2bin_groupby_partition(be, rel, refs, neededpp);
 
 	sql_rel *p = rel->l;
 	int is_base = (p && is_basetable(p->op));

@@ -55,6 +55,16 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		if (sum && restype != TYPE_dbl && restype != TYPE_flt)
 			sum = 0;
 
+
+		if (op1->type == st_list) {
+			stmt *s = op1->op4.lval->h->data;
+			intype = tail_type(s)->type->localtype;
+		} else {
+			intype = tail_type(op1)->type->localtype;
+		}
+		if (avg && restype == TYPE_dbl && intype != TYPE_dbl && intype != TYPE_flt)
+			restype = intype;
+
 		/* For the single value aggregates, we use the incremental
  		 * aggr. functions from the module 'iaggr' */
 		if (!grp && (strcmp(aggrfunc, "count") == 0 ||
