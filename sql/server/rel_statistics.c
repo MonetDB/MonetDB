@@ -1101,11 +1101,11 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 
 		if (lv != BUN_NONE) {
 			sql_exp *le = rel->exps->h->data, *oe = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
-			if (oe && oe->l && !exp_is_null(oe)) { /* no parameters */
+			if (oe && oe->l && exp_is_not_null(oe)) { /* no parameters */
 				BUN offset = (BUN) ((atom*)oe->l)->data.val.lval;
 				lv = offset >= lv ? 0 : lv - offset;
 			}
-			if (le->l && !exp_is_null(le)) {
+			if (le->l && exp_is_not_null(le)) {
 				BUN limit = (BUN) ((atom*)le->l)->data.val.lval;
 				lv = MIN(lv, limit);
 			}
