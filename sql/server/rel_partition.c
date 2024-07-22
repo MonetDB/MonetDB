@@ -257,6 +257,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 	return rel_mark_partition(rel);
 }
 
+#if 0
 static int
 has_groupby(sql_rel *rel)
 {
@@ -310,6 +311,7 @@ has_groupby(sql_rel *rel)
 	}
 	return 0;
 }
+#endif
 
 static bool
 rel_groupby_partition_safe(sql_rel *rel)
@@ -494,7 +496,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = rel_partition_(sql, rel->r, pb);
 	} else if (is_join(rel->op)) {
 		if (do_oahash_join(rel)) {
-
 			sql_rel *l = rel->l, *r = rel->r;
 			(void) rel_partition_(sql, l, 1);
 			(void) rel_partition_(sql, r, 1);
@@ -518,26 +519,12 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb && is_outerjoin(rel->op))
 			return 0;
 
-		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
-		if (0 && (l || r)) {
-			int lres = rel_partition_(sql, rel->l, 0);
-			int rres = rel_partition_(sql, rel->r, 0);
-			if (!lres || !rres)
-				return 0;
-			if (l && lres == EPB && !r && rres == REL_PARTITION)
-				res = SPB;
-			if (pb) {
-				rel->partition = l?1:2;
-				rel->spb = 1;
-			}
-		} else {
-			if (is_left(rel->op)) /* and pb == 0 */
-				return rel_partition_(sql, rel->l, pb);
-			/* For now we only try to partition in case of a equi-join.
-			 * The other joins are too complex to handle. */
-			if (pb) /* and rel->op == op_join */
-				res = _rel_partition(sql, rel);
-		}
+		if (is_left(rel->op)) /* and pb == 0 */
+			return rel_partition_(sql, rel->l, pb);
+		/* For now we only try to partition in case of a equi-join.
+		 * The other joins are too complex to handle. */
+		if (pb) /* and rel->op == op_join */
+			res = _rel_partition(sql, rel);
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
