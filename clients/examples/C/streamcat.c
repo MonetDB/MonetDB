@@ -422,7 +422,7 @@ opener_rstream(char *filename)
 {
 	stream *s = open_rstream(filename);
 	if (!mnstr_isbinary(s))
-		croak(2, "open_rastream returned binary stream");
+		croak(2, "open_rstream returned text stream");
 	return s;
 }
 

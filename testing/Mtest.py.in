@@ -1524,14 +1524,22 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
                         o.close()
                 else:
-                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
-                        if line != '\n' and not line.startswith('#'):
-                            ssout = F_ERROR
-                            break
-                    for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
-                        if line != '\n' and not line.startswith('#'):
-                            sserr = F_ERROR
-                            break
+                    for ext in ['out', 'err']:
+                        sigusr1 = False
+                        for line in openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}')):
+                            if 'SIGUSR1 info start' in line:
+                                sigusr1 = True
+                                continue
+                            elif 'SIGUSR1 info end' in line:
+                                sigusr1 = False
+                                continue
+                            if (sigusr1 is False) and (line != '\n') and (not line.startswith('#')):
+                                if ext == 'out':
+                                    ssout = F_ERROR
+                                else:
+                                    sserr = F_ERROR
+                                break
+
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -2215,21 +2223,38 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
                 f.close()
 
         if odbc:
-            f = openutf8('odbc.ini', 'w')
-            f.write(f'''\
-[MonetDB-Test]
+            with openutf8('odbcinst.ini', 'w') as f:
+                f.write(f'''\
+[MonetDB]
 Description = Test MonetDB Data Source
 Driver = {env["LIBDIR"]}/libMonetODBC.so
 Setup = {env["LIBDIR"]}/libMonetODBCs.so
+''')
+            with openutf8('odbc.ini', 'w') as f:
+                f.write(f'''\
+[MonetDB-Test]
+Description = Test MonetDB Data Source
+Driver = MonetDB
 Host = localhost
 Port = {env["MAPIPORT"]}
 Database = {TSTDB}
 User = {user or "monetdb"}
 Password = {passwd or "monetdb"}
 Debug =
+
+[MonetDB-Test-Wrong]
+Description = Wrong values for Database, Uid and Pwd
+Driver = MonetDB
+Host = localhost
+Port = {env["MAPIPORT"]}
+Database = {TSTDB}
+User = {user or "monetdb"}-Wrong
+Password = {passwd or "monetdb"}-Wrong
 ''')
-            f.close()
-            os.environ['ODBCINI'] = os.path.join(TSTTRGDIR, 'odbc.ini')
+            orig_odbcsysini = os.environ.pop('ODBCSYSINI', None)
+            orig_odbcini = os.environ.pop('ODBCINI', None)
+            orig_odbcinstini = os.environ.pop('ODBCINSTINI', None)
+            os.environ['ODBCSYSINI'] = TSTTRGDIR
 
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         TIMEOUT = par['TIMEOUT']
@@ -2258,7 +2283,15 @@ Debug =
             print(" %7.3fs " % TX, end='')
 
         if odbc:
-            del os.environ['ODBCINI']
+            if orig_odbcsysini is not None:
+                os.environ['ODBCSYSINI'] = orig_odbcsysini
+            else:
+                del os.environ['ODBCSYSINI']
+            if orig_odbcini is not None:
+                os.environ['ODBCINI'] = orig_odbcini
+            if orig_odbcinstini is not None:
+                os.environ['ODBCINSTINI'] = orig_odbcinstini
+
 
         if tres == 'timeout':
             errcode = F_TIME

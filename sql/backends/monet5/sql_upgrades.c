@@ -3293,9 +3293,10 @@ sql_update_jan2022(Client c, mvc *sql)
 				printf("Running database upgrade commands:\n%s\n", query);
 				fflush(stdout);
 				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			} else {
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
 			}
-			sql->session->status = 0; /* if the function was not found clean the error */
-			sql->errstr[0] = '\0';
 		}
 		sa_destroy(sql->sa);
 		if (err)
@@ -5575,9 +5576,10 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
 
 	if (!sql_bind_func(sql, "sys", "jarowinkler", &t2, &t2, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
@@ -5828,9 +5830,10 @@ sql_update_dec2023_geom(Client c, mvc *sql, sql_schema *s)
 	if (sql_bind_func(sql, s->base.name, "shpattach", &tp, NULL, F_PROC, true, true)) {
 		if ((err = sql_drop_shp(c)) != NULL)
 			return err;
+	} else {
+		sql->session->status = 0; /* if the shpattach function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
-	sql->session->status = 0; /* if the shpattach function was not found clean the error */
-	sql->errstr[0] = '\0';
 #ifdef HAVE_GEOM
 	if (backend_has_module(&(int){0}, "geom")) {
 #ifdef HAVE_SHP
@@ -7061,142 +7064,220 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 			fflush(stdout);
 			err = SQLstatementIntern(c, query1, "update", true, false, NULL);
 			if (err == MAL_SUCCEED) {
-				const char query2[] = "create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
+				sql_subtype tp;
+				sql_find_subtype(&tp, "smallint", 0, 0);
+				if (!sql_bind_func(sql, s->base.name, "generate_series", &tp, &tp, F_UNION, true, true)) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					const char query[] =
+						"create function sys.generate_series(first smallint, \"limit\" smallint)\n"
+						"returns table (value smallint)\n"
+						"external name generator.series;\n"
+						"create function sys.generate_series(first smallint, \"limit\" smallint, stepsize smallint)\n"
+						"returns table (value smallint)\n"
+						"external name generator.series;\n"
+						"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys');\n";
+					printf("Running database upgrade commands:\n%s\n", query);
+					fflush(stdout);
+					err = SQLstatementIntern(c, query, "update", true, false, NULL);
+				}
+			}
+			if (err == MAL_SUCCEED) {
+				const char query[] =
+					"create function sys.generate_series(first date, \"limit\" date, stepsize interval month)\n"
 					"returns table (value date)\n"
 					"external name generator.series;\n"
 					"create function sys.generate_series(first date, \"limit\" date, stepsize interval day)\n"
 					"returns table (value date)\n"
 					"external name generator.series;\n"
+					"grant execute on function sys.generate_series(tinyint, tinyint) to public;\n"
+					"grant execute on function sys.generate_series(tinyint, tinyint, tinyint) to public;\n"
+					"grant execute on function sys.generate_series(smallint, smallint) to public;\n"
+					"grant execute on function sys.generate_series(smallint, smallint, smallint) to public;\n"
+					"grant execute on function sys.generate_series(int, int) to public;\n"
+					"grant execute on function sys.generate_series(int, int, int) to public;\n"
+					"grant execute on function sys.generate_series(bigint, bigint) to public;\n"
+					"grant execute on function sys.generate_series(bigint, bigint, bigint) to public;\n"
+					"grant execute on function sys.generate_series(real, real, real) to public;\n"
+					"grant execute on function sys.generate_series(double, double, double) to public;\n"
+					"grant execute on function sys.generate_series(decimal(10,2), decimal(10,2), decimal(10,2)) to public;\n"
+					"grant execute on function sys.generate_series(date, date, interval month) to public;\n"
+					"grant execute on function sys.generate_series(date, date, interval day) to public;\n"
+					"grant execute on function sys.generate_series(timestamp, timestamp, interval second) to public;\n"
+					"grant execute on function sys.generate_series(timestamp, timestamp, interval day) to public;\n"
+#ifdef HAVE_HGE
+					"grant execute on function sys.generate_series(hugeint, hugeint) to public;\n"
+					"grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;\n"
+#endif
 					"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
-				printf("Running database upgrade commands:\n%s\n", query2);
+				printf("Running database upgrade commands:\n%s\n", query);
 				fflush(stdout);
-				err = SQLstatementIntern(c, query2, "update", true, false, NULL);
-				if (err == MAL_SUCCEED) {
-					const char query3[] =
-						"drop view sys.sessions;\n"
-						"drop function sys.sessions();\n"
-						"create function sys.sessions()\n"
-						" returns table(\n"
-						"  \"sessionid\" int,\n"
-						"  \"username\" string,\n"
-						"  \"login\" timestamp,\n"
-						"  \"idle\" timestamp,\n"
-						"  \"optimizer\" string,\n"
-						"  \"sessiontimeout\" int,\n"
-						"  \"querytimeout\" int,\n"
-						"  \"workerlimit\" int,\n"
-						"  \"memorylimit\" int,\n"
-						"  \"language\" string,\n"
-						"  \"peer\" string,\n"
-						"  \"hostname\" string,\n"
-						"  \"application\" string,\n"
-						"  \"client\" string,\n"
-						"  \"clientpid\" bigint,\n"
-						"  \"remark\" string\n"
-						" )\n"
-						" external name sql.sessions;\n"
-						"create view sys.sessions as select * from sys.sessions();\n"
-						"create procedure sys.setclientinfo(property string, value string)\n"
-						" external name clients.setinfo;\n"
-						"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
-						"create table sys.clientinfo_properties(prop string, session_attr string);\n"
-						"insert into sys.clientinfo_properties values\n"
-						" ('ClientHostname', 'hostname'),\n"
-						" ('ApplicationName', 'application'),\n"
-						" ('ClientLibrary', 'client'),\n"
-						" ('ClientRemark', 'remark'),\n"
-						" ('ClientPid', 'clientpid');\n"
-						"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
-						"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			if (err == MAL_SUCCEED) {
+				const char query[] =
+					"drop view sys.sessions;\n"
+					"drop function sys.sessions();\n"
+					"create function sys.sessions()\n"
+					" returns table(\n"
+					"  \"sessionid\" int,\n"
+					"  \"username\" string,\n"
+					"  \"login\" timestamp,\n"
+					"  \"idle\" timestamp,\n"
+					"  \"optimizer\" string,\n"
+					"  \"sessiontimeout\" int,\n"
+					"  \"querytimeout\" int,\n"
+					"  \"workerlimit\" int,\n"
+					"  \"memorylimit\" int,\n"
+					"  \"language\" string,\n"
+					"  \"peer\" string,\n"
+					"  \"hostname\" string,\n"
+					"  \"application\" string,\n"
+					"  \"client\" string,\n"
+					"  \"clientpid\" bigint,\n"
+					"  \"remark\" string\n"
+					" )\n"
+					" external name sql.sessions;\n"
+					"create view sys.sessions as select * from sys.sessions();\n"
+					"grant select on sys.sessions to public;\n"
+					"create procedure sys.setclientinfo(property string, value string)\n"
+					" external name clients.setinfo;\n"
+					"grant execute on procedure sys.setclientinfo(string, string) to public;\n"
+					"create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);\n"
+					"insert into sys.clientinfo_properties values\n"
+					" ('ClientHostname', 'hostname'),\n"
+					" ('ApplicationName', 'application'),\n"
+					" ('ClientLibrary', 'client'),\n"
+					" ('ClientPid', 'clientpid'),\n"
+					" ('ClientRemark', 'remark');\n"
+					"grant select on sys.clientinfo_properties to public;\n"
+					"update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');\n"
+					"update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');\n";
 
-					t = mvc_bind_table(sql, s, "sessions");
+				t = mvc_bind_table(sql, s, "sessions");
+				t->system = 0; /* make it non-system else the drop view will fail */
+				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			if (err == MAL_SUCCEED) {
+				const char query[] = "alter table sys.clientinfo_properties SET READ ONLY;\n";
+				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			if (err == MAL_SUCCEED) {
+				const char query[] =
+					"DROP TABLE sys.key_types;\n"
+					"CREATE TABLE sys.key_types (\n"
+					"	key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
+					"	key_type_name VARCHAR(35) NOT NULL UNIQUE);\n"
+					"INSERT INTO sys.key_types VALUES\n"
+					"(0, 'Primary Key'),\n"
+					"(1, 'Unique Key'),\n"
+					"(2, 'Foreign Key'),\n"
+					"(3, 'Unique Key With Nulls Not Distinct'),\n"
+					"(4, 'Check Constraint');\n"
+					"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
+					"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
+				if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
+					t->system = 0;
+				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			if (err == MAL_SUCCEED) {
+				const char query[] = "ALTER TABLE sys.key_types SET READ ONLY;\n";
+				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			if (err == MAL_SUCCEED) {
+				const char query[] =
+					"DROP VIEW information_schema.check_constraints CASCADE;\n"
+					"DROP VIEW information_schema.table_constraints CASCADE;\n"
+					"CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT\n"
+					"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+					"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+					"  k.\"name\" AS CONSTRAINT_NAME,\n"
+					"  cast(sys.check_constraint(s.\"name\", k.\"name\") AS varchar(2048)) AS CHECK_CLAUSE,\n"
+					"  t.\"schema_id\" AS schema_id,\n"
+					"  t.\"id\" AS table_id,\n"
+					"  t.\"name\" AS table_name,\n"
+					"  k.\"id\" AS key_id\n"
+					" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\" FROM sys.\"keys\" sk WHERE sk.\"type\" = 4 UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\" FROM tmp.\"keys\" tk WHERE tk.\"type\" = 4) k\n"
+					" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+					" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+					" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+					"GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+
+					"CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT\n"
+					"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
+					"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
+					"  k.\"name\" AS CONSTRAINT_NAME,\n"
+					"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+					"  s.\"name\" AS TABLE_SCHEMA,\n"
+					"  t.\"name\" AS TABLE_NAME,\n"
+					"  cast(CASE k.\"type\" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' WHEN 3 THEN 'UNIQUE NULLS NOT DISTINCT' WHEN 4 THEN 'CHECK' ELSE NULL END AS varchar(26)) AS CONSTRAINT_TYPE,\n"
+					"  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,\n"
+					"  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,\n"
+					"  cast('YES' AS varchar(3)) AS ENFORCED,\n"
+					"  t.\"schema_id\" AS schema_id,\n"
+					"  t.\"id\" AS table_id,\n"
+					"  k.\"id\" AS key_id,\n"
+					"  k.\"type\" AS key_type,\n"
+					"  t.\"system\" AS is_system\n"
+					" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\", sk.\"type\" FROM sys.\"keys\" sk UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\", tk.\"type\" FROM tmp.\"keys\" tk) k\n"
+					" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\", st.\"system\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\", tt.\"system\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
+					" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+					" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
+					"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
+					"\n"
+					"UPDATE sys._tables SET system = true where system <> true\n"
+					" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
+					" and name in ('check_constraints','table_constraints');\n";
+				sql_schema *infoschema = mvc_bind_schema(sql, "information_schema");
+				if ((t = mvc_bind_table(sql, infoschema, "check_constraints")) != NULL)
 					t->system = 0; /* make it non-system else the drop view will fail */
-					printf("Running database upgrade commands:\n%s\n", query3);
+				if ((t = mvc_bind_table(sql, infoschema, "table_constraints")) != NULL)
+					t->system = 0;
+				printf("Running database upgrade commands:\n%s\n", query);
+				fflush(stdout);
+				err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			}
+			if (err == MAL_SUCCEED) {
+				sql_subtype tp;
+				sql_find_subtype(&tp, "varchar", 0, 0);
+				if (sql_bind_func(sql, s->base.name, "gzcompress", &tp, &tp, F_PROC, true, true)) {
+					const char query[] =
+						"drop procedure if exists sys.gzcompress(string, string);\n"
+						"drop procedure if exists sys.gzdecompress(string, string);\n"
+						"drop procedure if exists sys.gztruncate(string, string);\n"
+						"drop procedure if exists sys.gzexpand(string, string);\n";
+					printf("Running database upgrade commands:\n%s\n", query);
 					fflush(stdout);
-					err = SQLstatementIntern(c, query3, "update", true, false, NULL);
-
-					if (err == MAL_SUCCEED) {
-						const char query4[] =
-							"DROP TABLE sys.key_types;\n"
-							"CREATE TABLE sys.key_types (\n"
-							"	key_type_id   SMALLINT NOT NULL PRIMARY KEY,\n"
-							"	key_type_name VARCHAR(35) NOT NULL UNIQUE);\n"
-							"INSERT INTO sys.key_types VALUES\n"
-							"(0, 'Primary Key'),\n"
-							"(1, 'Unique Key'),\n"
-							"(2, 'Foreign Key'),\n"
-							"(3, 'Unique Key With Nulls Not Distinct'),\n"
-							"(4, 'Check Constraint');\n"
-
-							"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
-							"UPDATE sys._tables SET system = true WHERE schema_id = 2000 AND name = 'key_types';\n";
-						if ((t = mvc_bind_table(sql, s, "key_types")) != NULL)
-							t->system = 0;
-						printf("Running database upgrade commands:\n%s\n", query4);
-						fflush(stdout);
-						err = SQLstatementIntern(c, query4, "update", true, false, NULL);
-						if (err == MAL_SUCCEED) {
-							const char query5[] = "ALTER TABLE sys.key_types SET READ ONLY;\n";
-							printf("Running database upgrade commands:\n%s\n", query5);
-							fflush(stdout);
-							err = SQLstatementIntern(c, query5, "update", true, false, NULL);
-							if (err == MAL_SUCCEED) {
-								const char query6[] =
-									"DROP VIEW information_schema.check_constraints CASCADE;\n"
-									"DROP VIEW information_schema.table_constraints CASCADE;\n"
-									"CREATE VIEW INFORMATION_SCHEMA.CHECK_CONSTRAINTS AS SELECT\n"
-									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
-									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
-									"  k.\"name\" AS CONSTRAINT_NAME,\n"
-									"  cast(sys.check_constraint(s.\"name\", k.\"name\") AS varchar(2048)) AS CHECK_CLAUSE,\n"
-									"  t.\"schema_id\" AS schema_id,\n"
-									"  t.\"id\" AS table_id,\n"
-									"  t.\"name\" AS table_name,\n"
-									"  k.\"id\" AS key_id\n"
-									" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\" FROM sys.\"keys\" sk WHERE sk.\"type\" = 4 UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\" FROM tmp.\"keys\" tk WHERE tk.\"type\" = 4) k\n"
-									" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
-									" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
-									" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
-									"GRANT SELECT ON TABLE INFORMATION_SCHEMA.CHECK_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
-
-									"CREATE VIEW INFORMATION_SCHEMA.TABLE_CONSTRAINTS AS SELECT\n"
-									"  cast(NULL AS varchar(1)) AS CONSTRAINT_CATALOG,\n"
-									"  s.\"name\" AS CONSTRAINT_SCHEMA,\n"
-									"  k.\"name\" AS CONSTRAINT_NAME,\n"
-									"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
-									"  s.\"name\" AS TABLE_SCHEMA,\n"
-									"  t.\"name\" AS TABLE_NAME,\n"
-									"  cast(CASE k.\"type\" WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' WHEN 2 THEN 'FOREIGN KEY' WHEN 3 THEN 'UNIQUE NULLS NOT DISTINCT' WHEN 4 THEN 'CHECK' ELSE NULL END AS varchar(26)) AS CONSTRAINT_TYPE,\n"
-									"  cast('NO' AS varchar(3)) AS IS_DEFERRABLE,\n"
-									"  cast('NO' AS varchar(3)) AS INITIALLY_DEFERRED,\n"
-									"  cast('YES' AS varchar(3)) AS ENFORCED,\n"
-									"  t.\"schema_id\" AS schema_id,\n"
-									"  t.\"id\" AS table_id,\n"
-									"  k.\"id\" AS key_id,\n"
-									"  k.\"type\" AS key_type,\n"
-									"  t.\"system\" AS is_system\n"
-									" FROM (SELECT sk.\"id\", sk.\"table_id\", sk.\"name\", sk.\"type\" FROM sys.\"keys\" sk UNION ALL SELECT tk.\"id\", tk.\"table_id\", tk.\"name\", tk.\"type\" FROM tmp.\"keys\" tk) k\n"
-									" INNER JOIN (SELECT st.\"id\", st.\"schema_id\", st.\"name\", st.\"system\" FROM sys.\"_tables\" st UNION ALL SELECT tt.\"id\", tt.\"schema_id\", tt.\"name\", tt.\"system\" FROM tmp.\"_tables\" tt) t ON k.\"table_id\" = t.\"id\"\n"
-									" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
-									" ORDER BY s.\"name\", t.\"name\", k.\"name\";\n"
-									"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT OPTION;\n"
-									"\n"
-									"UPDATE sys._tables SET system = true where system <> true\n"
-									" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
-									" and name in ('check_constraints','table_constraints');\n";
-								sql_schema *infoschema = mvc_bind_schema(sql, "information_schema");
-								if ((t = mvc_bind_table(sql, infoschema, "check_constraints")) != NULL)
-									t->system = 0; /* make it non-system else the drop view will fail */
-								if ((t = mvc_bind_table(sql, infoschema, "table_constraints")) != NULL)
-									t->system = 0;
-								printf("Running database upgrade commands:\n%s\n", query6);
-								fflush(stdout);
-								err = SQLstatementIntern(c, query6, "update", true, false, NULL);
-							}
-						}
-					}
+					err = SQLstatementIntern(c, query, "update", true, false, NULL);
+				} else {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
+			}
+			if (err == MAL_SUCCEED) {
+				sql_subtype tp;
+				sql_find_subtype(&tp, "varchar", 0, 0);
+				if (sql_bind_func(sql, s->base.name, "newdictionary", &tp, &tp, F_PROC, true, true)) {
+					const char query[] =
+						"drop procedure if exists sys.newdictionary(string, string);\n"
+						"drop procedure if exists sys.dropdictionary(string, string);\n"
+						"drop procedure if exists sys.initializedictionary();\n";
+					printf("Running database upgrade commands:\n%s\n", query);
+					fflush(stdout);
+					err = SQLstatementIntern(c, query, "update", true, false, NULL);
+				} else {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
 				}
 			}
 		}

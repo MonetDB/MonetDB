@@ -125,19 +125,19 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 	if (StatementHandle)
 		rc = MNDBGetDiagRec(SQL_HANDLE_STMT,
 				    StatementHandle,
-				    ((ODBCStmt *) StatementHandle)->RetrievedErrors,
+				    ++((ODBCStmt *) StatementHandle)->RetrievedErrors,
 				    state, NativeErrorPtr,
 				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
 	else if (ConnectionHandle)
 		rc = MNDBGetDiagRec(SQL_HANDLE_DBC,
 				    ConnectionHandle,
-				    ((ODBCDbc *) ConnectionHandle)->RetrievedErrors,
+				    ++((ODBCDbc *) ConnectionHandle)->RetrievedErrors,
 				    state, NativeErrorPtr,
 				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
 	else if (EnvironmentHandle)
 		rc = MNDBGetDiagRec(SQL_HANDLE_ENV,
 				    EnvironmentHandle,
-				    ((ODBCEnv *) EnvironmentHandle)->RetrievedErrors,
+				    ++((ODBCEnv *) EnvironmentHandle)->RetrievedErrors,
 				    state, NativeErrorPtr,
 				    errmsg, (SQLSMALLINT) sizeof(errmsg), &n);
 	else

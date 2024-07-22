@@ -50,6 +50,7 @@ const struct attr_setting attr_settings[] = {
 	{ "CLIENTINFO", "Send Client Info", MP_CLIENT_INFO },
 	{ "APPNAME", "Application Name", MP_CLIENT_APPLICATION },
 	{ "CLIENTREMARK", "Client Remark", MP_CLIENT_REMARK },
+	{ "MAPTOLONGVARCHAR", NULL, MP_MAPTOLONGVARCHAR },
 };
 
 const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);

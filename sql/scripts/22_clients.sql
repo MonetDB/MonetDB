@@ -39,18 +39,21 @@ returns table(
 )
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
--- we won't grant sys.sessions to the public
+grant select on sys.sessions to public;
 
 create procedure sys.setclientinfo(property string, value string)
 	external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;
-create table sys.clientinfo_properties(prop string, session_attr string);
+
+create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);
 insert into sys.clientinfo_properties values
 	('ClientHostname', 'hostname'),
 	('ApplicationName', 'application'),
 	('ClientLibrary', 'client'),
-	('ClientRemark', 'remark'),
-	('ClientPid', 'clientpid');
+	('ClientPid', 'clientpid'),
+	('ClientRemark', 'remark');
+alter table sys.clientinfo_properties SET READ ONLY;
+grant select on sys.clientinfo_properties to public;
 
 -- routines to bring the system down quickly
 create procedure sys.shutdown(delay tinyint)

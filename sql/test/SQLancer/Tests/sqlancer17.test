@@ -67,20 +67,18 @@ query T nosort
 plan SELECT 1 FROM v20 WHERE 4 > v20.vc0 and v20.vc1 between 3 and 5
 ----
 project (
-| project (
-| | intersect (
-| | | project (
-| | | | select (
-| | | | |  [  [ tinyint(3) "1", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "%1"."%1" ]
-| | | | ) [ ("%1"."%1" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%1"."%1" NOT NULL), (tinyint(3) "3") <= ("%1"."%1" NOT NULL) <= (tinyint(3) "5") ]
-| | | ) [ "%1"."%1" NOT NULL as "v0"."vc0" ],
-| | | project (
-| | | | select (
-| | | | |  [  [ tinyint(3) "1", tinyint(3) "4", tinyint(3) "5", tinyint(3) "6" ] as "%6"."%6" ]
-| | | | ) [ ("%6"."%6" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%6"."%6" NOT NULL), (tinyint(3) "3") <= ("%6"."%6" NOT NULL) <= (tinyint(3) "5") ]
-| | | ) [ "%6"."%6" NOT NULL as "v0"."vc0" ]
-| | ) [ "v0"."vc0" NOT NULL ]
-| ) [ "sys"."sql_max"(tinyint(1) "1", tinyint(1) "1") NOT NULL as "%13"."%13" ]
+| intersect (
+| | project (
+| | | select (
+| | | |  [  [ tinyint(3) "1", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "%1"."%1" ]
+| | | ) [ ("%1"."%1" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%1"."%1" NOT NULL), (tinyint(3) "3") <= ("%1"."%1" NOT NULL) <= (tinyint(3) "5") ]
+| | ) [ "%1"."%1" NOT NULL as "v0"."vc0" ],
+| | project (
+| | | select (
+| | | |  [  [ tinyint(3) "1", tinyint(3) "4", tinyint(3) "5", tinyint(3) "6" ] as "%6"."%6" ]
+| | | ) [ ("%6"."%6" NOT NULL) ! <= (tinyint(3) "1") ! <= ("%6"."%6" NOT NULL), (tinyint(3) "3") <= ("%6"."%6" NOT NULL) <= (tinyint(3) "5") ]
+| | ) [ "%6"."%6" NOT NULL as "v0"."vc0" ]
+| ) [ "v0"."vc0" NOT NULL ]
 ) [ tinyint(1) "1" ]
 
 statement ok

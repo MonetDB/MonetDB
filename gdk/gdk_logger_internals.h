@@ -93,37 +93,6 @@ struct logger {
 	MT_Cond excl_flush_cv;
 };
 
-struct old_logger {
-	logger *lg;		/* the new logger instance */
-	const char *filename;	/* name of log file */
-	lng changes;
-	lng id;
-	int tid;
-	bool with_ids;
-	stream *log;
-	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
-	/* Store log_bids (int) to circumvent trouble with reference counting */
-	BAT *catalog_bid;	/* int bid column */
-	BAT *catalog_nme;	/* str name column */
-	BAT *catalog_tpe;	/* type of column */
-	BAT *catalog_oid;	/* object identifier of column (the pair type,oid is unique) */
-	BAT *dcatalog;		/* deleted from catalog table */
-	BAT *seqs_id;		/* int id column */
-	BAT *seqs_val;		/* lng value column */
-	BAT *dseqs;		/* deleted from seqs table */
-	BAT *snapshots_bid;	/* int bid column */
-	BAT *snapshots_tid;	/* int tid column */
-	BAT *dsnapshots;	/* deleted from snapshots table */
-	BAT *freed;		/* snapshots can be created and destroyed,
-				   in a single logger transaction.
-				   These snapshot bats should be freed
-				   directly (on transaction
-				   commit). */
-	BAT *add;		/* bat ids of bats being added by upgrade */
-	BAT *del;		/* bat ids of bats being deleted by upgrade */
-};
-
-gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
 gdk_return log_create_types_file(logger *lg, const char *filename);
 
 #endif /* _LOGGER_INTERNALS_H_ */

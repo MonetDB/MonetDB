@@ -1,9 +1,31 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Jul 16 2024 Sjoerd Mullender <sjoerd@acm.org>
+- The "phash" column in the sys.storage() table now indicates whether a
+  hash exists.  If the hash is not loaded but there is a hash available
+  on disk, the phash value is "true", but the "hashes" value is 0.
+
+* Thu Jul 11 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added execution privilege on all sys.generate_series(first, limit)
+  and sys.generate_series(first, limit, stepsize) functions to public,
+  so all users can now call these table producing generator functions.
+
 * Fri Jun 14 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Extend CREATE USER MAX_MEMORY and ALTER USER MAX_MEMORY to accept
   strings of the form '10MiB', '10G', etc.
+
+* Wed May 29 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Extended view sys.sessions and function sys.sessions() with new columns:
+  language, peer, hostname, application, client, clientpid and remark.
+- All users now have SELECT privilege on view sys.sessions, but non-admin
+  users only see their own sessions.
+- Added procedure sys.setclientinfo(property string, value string)
+  to allow the client application to set a specific client info property.
+- Added system table sys.clientinfo_properties that lists the supported
+  client info properties and their associated column name in sys.sessions view.
+  It contains property names: ClientHostname, ApplicationName,
+  ClientLibrary, ClientPid and ClientRemark.
 
 * Mon May 13 2024 Niels Nes <niels@cwi.nl>
 - Extended sys.generate_series() to generate dates. Added 2 new functions:

@@ -423,91 +423,366 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 	return res;
 }
 
-static int
-are_equality_exps( list *exps, sql_exp **L)
+static inline int
+exp_col_key(sql_exp *e)
 {
-	sql_exp *l = *L;
+	return e->nid ? e->nid : e->alias.label;
+}
 
-	if (list_length(exps) == 1) {
-		sql_exp *e = exps->h->data, *le = e->l, *re = e->r;
+static inline int
+exp_cmp_eq_unique_id(sql_exp *e)
+{
+	return exp_col_key(e->l);
+}
 
-		if (e->type == e_cmp && e->flag == cmp_equal && le->card != CARD_ATOM && re->card == CARD_ATOM && !is_semantics(e)) {
-			if (!l) {
-				*L = l = le;
-				if (!is_column(le->type))
-					return 0;
-			}
-			return (exp_match(l, le));
-		}
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e))
-			return (are_equality_exps(e->l, L) && are_equality_exps(e->r, L));
+static inline int
+exp_multi_col_key(list *l)
+{
+	int k = exp_col_key(l->h->data);
+	for (node *n = l->h->next; n; n = n->next) {
+		k <<= 4;
+		k ^= exp_col_key(n->data);
 	}
-	return 0;
+	return k;
+}
+
+typedef struct exp_eq_col_values {
+	/* we need ->first in order to remove it from the list of cmp_eq exps
+	 * in case that we find another occurrence (with a different value)
+	 */
+	sql_exp* first;
+	sql_exp* col; /* column */
+	list *vs;     /* list of values */
+} eq_cv;
+
+typedef struct exp_eq_multi_col_values {
+	/* we need ->first in order to remove it from the list of multi col
+	 * cmp_eq exps in case that we find another occurrence (with different values)
+	 */
+	list *first;
+	list *cols;  /* list of col exps */
+	list *lvs;   /* list of lists of values */
+} eq_mcv;
+
+static bool
+detect_col_cmp_eqs(mvc *sql, list *eqs, sql_hash *eqh)
+{
+	bool col_multivalue_cmp_eq = false;
+	for (node *n = eqs->h; n; n = n->next ) {
+		sql_exp *e = n->data;
+		sql_exp *le = e->l, *re = e->r;
+
+		/* find the le in the hash and append the re in the hash value (ea->list) */
+		bool found = false;
+
+		int key = eqh->key(le);
+		sql_hash_e *he = eqh->buckets[key&(eqh->size-1)];
+
+		for (;he && !found; he = he->chain) {
+			eq_cv *cv = he->value;
+			if (!exp_equal(le, cv->col)) {
+				cv->vs = append(cv->vs, re);
+				found = col_multivalue_cmp_eq = true;
+				/* remove this and the previous (->first) occurrence (if exists) from eqs */
+				if (cv->first) {
+					list_remove_data(eqs, NULL, cv->first);
+					cv->first = NULL;
+				}
+				list_remove_node(eqs, NULL, n);
+			}
+		}
+
+		if (!found) {
+			eq_cv *cv = SA_NEW(sql->sa, eq_cv);
+			cv->first = e;
+			cv->vs = sa_list(sql->sa);
+			cv->vs = append(cv->vs, re);
+			cv->col = le;
+
+			hash_add(eqh, key, cv);
+		}
+	}
+	return col_multivalue_cmp_eq;
+}
+
+static bool
+detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
+{
+	/* we get as input a list of AND associated expressions (hence the entries are lists themselves)
+	 * we need to detect cmp_eq-only AND-associated expressions with the same columns so we can
+	 * group together their values
+	 * e.g. [[n = 1, m = 10], [m = 20, k = 100, l = 3000], [m = 20, n = 2]] has
+	 *      - (m,k,l) group with a single value (20, 100, 3000)
+	 *      - (n,k) group with two values (1, 10) and (2, 20)
+	 * at the end we return true only if we have at least a group of columns with more than a single value
+	 * e.g. in this example (n,k)
+	 */
+	bool multi_multivalue_cmp_eq = false;
+	for (node *n = mce_ands->h; n; n = n->next) {
+		list *l = n->data;
+
+		/* sort the list of the cmp_eq expressions based on the col exp
+		 * NOTE: from now on we only work with the sorted list, sl */
+		list *sl = list_sort(l, (fkeyvalue)&exp_cmp_eq_unique_id, NULL);
+		list_append_before(mce_ands, n, sl);
+		list_remove_node(mce_ands, NULL, n);
+
+		/* find the eq exp in the hash and append the values */
+		bool found = false;
+
+		int key = meqh->key(sl);
+		sql_hash_e *he = meqh->buckets[key&(meqh->size-1)];
+
+		for (;he && !found; he = he->chain) {
+			/* compare the values of the hash_entry with the cols under cmp_eq from the list */
+			bool same_cols = true;
+			eq_mcv *mcv = he->value;
+			for (node *m = sl->h, *k = mcv->cols->h; m && k && same_cols; m = m->next, k = k->next) {
+				sql_exp *col_exp = ((sql_exp*)m->data)->l;
+				if (exp_equal(col_exp, k->data))
+					same_cols = false;
+			}
+			if (same_cols) {
+				/* we found the same multi cmp_eq exp in mce_ands list multiple times! */
+				found = multi_multivalue_cmp_eq = true;
+				/* gather all the values of the list and add them to the hash entry */
+				list *atms = sa_list(sql->sa);
+				for (node *m = sl->h; m; m = m->next)
+					atms = append(atms, ((sql_exp*)m->data)->r);
+				mcv->lvs = append(mcv->lvs, atms);
+				/* remove this and the previous occurrence (which means that's the first time
+				 * that we found the *same* multi cmp_eq exp)
+				 */
+				if (mcv->first) {
+					list_remove_data(mce_ands, NULL, mcv->first);
+					mcv->first = NULL;
+				}
+				list_remove_data(mce_ands, NULL, sl);
+			}
+		}
+
+		if (!found) {
+			eq_mcv *mcv = SA_NEW(sql->sa, eq_mcv);
+			mcv->first = sl;
+			mcv->cols = sa_list(sql->sa);
+			for (node *m = sl->h; m; m = m->next)
+				mcv->cols = append(mcv->cols, ((sql_exp*)m->data)->l);
+			/* for the list of values (atoms) create a list and append it to the lvs list */
+			list *atms = sa_list(sql->sa);
+			for (node *m = sl->h; m; m = m->next)
+				atms = append(atms, ((sql_exp*)m->data)->r);
+			mcv->lvs = sa_list(sql->sa);
+			mcv->lvs = append(mcv->lvs, atms);
+
+			hash_add(meqh, key, mcv);
+		}
+	}
+	return multi_multivalue_cmp_eq;
 }
 
 static void
-get_exps( list *n, list *l )
+exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **mce_ands, list **eqs, list **noneq)
 {
-	sql_exp *e = l->h->data, *re = e->r;
+	/* identify three different groups
+	 * 1. gen_ands: lists of generic expressions (their inner association is AND)
+	 * 2. mce_ands: lists of multi_colum cmp_eq ONLY expressions (same^^^)
+	 * 3. eqs: equality expressions
+	 * 4. neq: non equality col expressions
+	 *
+	 * return true if there is an exp with more than one cmp_eq
+	 */
+    bool eq_only = true;
+    for (node *n = exps->h; n && eq_only; n = n->next) {
+        sql_exp *e = n->data;
+        sql_exp *le = e->l, *re = e->r;
+        eq_only &= (e->type == e_cmp && e->flag == cmp_equal &&
+                    le->card != CARD_ATOM && is_column(le->type) &&
+                    re->card == CARD_ATOM && !is_semantics(e));
+    }
 
-	if (e->type == e_cmp && e->flag == cmp_equal && re->card == CARD_ATOM)
-		list_append(n, re);
-	if (e->type == e_cmp && e->flag == cmp_or) {
-		get_exps(n, e->l);
-		get_exps(n, e->r);
+	if (list_length(exps) > 1) {
+		if (eq_only)
+			*mce_ands = append(*mce_ands, exps);
+		else
+			*gen_ands = append(*gen_ands, exps);
+	} else if (list_length(exps) == 1) {
+		sql_exp *se = exps->h->data;
+		sql_exp *le = se->l, *re = se->r;
+
+		if (se->type == e_cmp && se->flag == cmp_or && !is_anti(se)) {
+			/* for a cmp_or expression go down the tree */
+			exp_or_chain_groups(sql, (list*)le, gen_ands, mce_ands, eqs, noneq);
+			exp_or_chain_groups(sql, (list*)re, gen_ands, mce_ands, eqs, noneq);
+
+		} else if (eq_only) {
+			*eqs = append(*eqs, se);
+		} else {
+			*noneq = append(*noneq, se);
+		}
 	}
 }
 
-static sql_exp *
-equality_exps_2_in( mvc *sql, sql_exp *ce, list *l, list *r)
+static list *
+generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 {
-	list *nl = new_exp_list(sql->sa);
+	/* from single col cmp_eq with multiple atoms in the hash generate
+	 * "e_col in (val0, val1, ...)" (see detect_col_cmp_eqs())
+	 */
+	list *ins = new_exp_list(sql->sa);
+	for (int i = 0; i < eqh->size; i++) {
+		sql_hash_e *he = eqh->buckets[i];
 
-	get_exps(nl, l);
-	get_exps(nl, r);
+		while (he) {
+			eq_cv *cv = he->value;
+			/* NOTE: cmp_eq expressions with a single entry are still in eqs */
+			if (list_length(cv->vs) > 1)
+				ins = append(ins, exp_in(sql->sa, cv->col, cv->vs, cmp_in));
+			he = he->chain;
+		}
+	}
+	return ins;
+}
 
-	return exp_in( sql->sa, ce, nl, cmp_in);
+static list *
+generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
+{
+	/* from multivalue cmp_eq with multiple lists of atoms in the hash generate
+	 * "(col1, col2, ...) in [(val10, val20, ...), (val11, val21, ...), ... ]"
+	 * (see detect_multicol_cmp_eqs())
+	 */
+	list *ins = new_exp_list(sql->sa);
+	for (int i = 0; i < meqh->size; i++) {
+		sql_hash_e *he = meqh->buckets[i];
+		while (he) {
+			eq_mcv *mcv = he->value;
+			/* NOTE: multivalue cmp_eq expressions with a single entry are still in mce_ands */
+			if (list_length(mcv->lvs) > 1) {
+				sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcv->cols), ++sql->label);
+				for (node *a = mcv->lvs->h; a; a = a->next)
+					a->data = exp_values(sql->sa, a->data);
+				ins = append(ins, exp_in(sql->sa, mc, mcv->lvs, cmp_in));
+			}
+			he = he->chain;
+		}
+	}
+	return ins;
 }
 
 static list *
 merge_ors(mvc *sql, list *exps, int *changes)
 {
-	list *nexps = NULL;
-	int needed = 0;
-
-	for (node *n = exps->h; n && !needed; n = n->next) {
+	sql_hash *eqh = NULL, *meqh = NULL;
+	list *eqs = NULL, *neq = NULL, *gen_ands = NULL, *mce_ands = NULL, *ins = NULL, *mins = NULL;
+	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e))
-			needed = 1;
-	}
+		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+			/* NOTE: gen_ands and mce_ands are both a list of lists since the AND association
+			 *       between expressions is expressed with a list
+			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
+			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
+			 *       those (internal) AND list can be then used to
+			 *       reconstructed an OR tree [[e1, e2], [e3, e4, e5]] =>
+			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
+			 *       gen_ands includes general expressions associated with AND
+			 *       mce_ands includes only cmp_eq expressions associated with AND
+			 */
+			gen_ands = new_exp_list(sql->sa);
+			mce_ands = new_exp_list(sql->sa);
+			eqs = new_exp_list(sql->sa);
+			neq = new_exp_list(sql->sa);
 
-	if (needed) {
-		nexps = new_exp_list(sql->sa);
-		for (node *n = exps->h; n; n = n->next) {
-			sql_exp *e = n->data, *l = NULL;
+			/* walk the OR tree */
+			exp_or_chain_groups(sql, e->l, &gen_ands, &mce_ands, &eqs, &neq);
+			exp_or_chain_groups(sql, e->r, &gen_ands, &mce_ands, &eqs, &neq);
 
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && are_equality_exps(e->l, &l) && are_equality_exps(e->r, &l) && l) {
-				(*changes)++;
-				append(nexps, equality_exps_2_in(sql, l, e->l, e->r));
-			} else {
-				append(nexps, e);
+			/* detect col cmp_eq exps with multiple values */
+			bool col_multival = false;
+			if (list_length(eqs) > 1) {
+				eqh = hash_new(sql->sa, 32, (fkeyvalue)&exp_col_key);
+				col_multival = detect_col_cmp_eqs(sql, eqs, eqh);
 			}
+
+			/* detect mutli-col cmp_eq exps with multiple (lists of) values */
+			bool multicol_multival = false;
+			if (list_length(mce_ands) > 1) {
+				meqh = hash_new(sql->sa, 32, (fkeyvalue)&exp_multi_col_key);
+				multicol_multival = detect_multicol_cmp_eqs(sql, mce_ands, meqh);
+			}
+
+			if (!col_multival && !multicol_multival)
+				continue;
+
+			if (col_multival)
+				ins = generate_single_col_cmp_in(sql, eqh);
+
+			if (multicol_multival)
+				mins = generate_multi_col_cmp_in(sql, meqh);
+
+			/* create the new OR tree */
+			sql_exp *new = (ins) ? ins->h->data : mins->h->data;
+
+			if (ins) {
+				for (node *i = ins->h->next; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+
+					(*changes)++;
+				}
+			}
+
+			if (list_length(eqs)) {
+				for (node *i = eqs->h; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+				}
+			}
+
+			if (mins) {
+				for (node *i = ((ins) ? mins->h : mins->h->next); i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+
+					(*changes)++;
+				}
+			}
+
+			if (list_length(mce_ands)) {
+				for (node *i = mce_ands->h; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					l = append(l, new);
+					new = exp_or(sql->sa, l, i->data, 0);
+				}
+			}
+
+			for (node *a = gen_ands->h; a; a = a->next){
+				list *l = new_exp_list(sql->sa);
+				l = append(l, new);
+				new = exp_or(sql->sa, l, a->data, 0);
+			}
+
+			for (node *o = neq->h; o; o = o->next){
+				list *l = new_exp_list(sql->sa);
+				list *r = new_exp_list(sql->sa);
+				l = append(l, new);
+				r = append(r, (sql_exp*)o->data);
+				new = exp_or(sql->sa, l, r, 0);
+			}
+
+			list_remove_node(exps, NULL, n);
+			exps = append(exps, new);
 		}
-	} else {
-		nexps = exps;
 	}
-
-	for (node *n = nexps->h; n ; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->type == e_cmp && e->flag == cmp_or) {
-			e->l = merge_ors(sql, e->l, changes);
-			e->r = merge_ors(sql, e->r, changes);
-		}
-	}
-
-	return nexps;
+	return exps;
 }
 
 #define TRIVIAL_NOT_EQUAL_CMP(e) \
@@ -745,7 +1020,7 @@ rel_select_cse(visitor *v, sql_rel *rel)
 		rel->exps = cleanup_equal_exps(v->sql, rel, rel->exps, &v->changes); /* (a = b) and (a += b) */
 
 	if (is_select(rel->op) && rel->exps)
-		rel->exps = merge_ors(v->sql, rel->exps, &v->changes); /* x = 1 or x = 2 => x in (1, 2)*/
+		rel->exps = merge_ors(v->sql, rel->exps, &v->changes);
 
 	if (is_select(rel->op) && rel->exps)
 		rel->exps = merge_notequal(v->sql, rel->exps, &v->changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
@@ -3414,18 +3689,20 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			node *next = n->next;
 			sql_exp *e = n->data;
 
-			if (left && rel_rebind_exp(v->sql, jl, e)) {
-				if (!is_select(jl->op) || rel_is_ref(jl))
-					r->l = jl = rel_select(v->sql->sa, jl, NULL);
-				rel_select_add_exp(v->sql->sa, jl, e);
-				list_remove_node(exps, NULL, n);
-				v->changes++;
-			} else if (right && rel_rebind_exp(v->sql, jr, e)) {
-				if (!is_select(jr->op) || rel_is_ref(jr))
-					r->r = jr = rel_select(v->sql->sa, jr, NULL);
-				rel_select_add_exp(v->sql->sa, jr, e);
-				list_remove_node(exps, NULL, n);
-				v->changes++;
+			if (!exp_unsafe(e, false, true)) {
+				if (left && rel_rebind_exp(v->sql, jl, e)) {
+					if (!is_select(jl->op) || rel_is_ref(jl))
+						r->l = jl = rel_select(v->sql->sa, jl, NULL);
+					rel_select_add_exp(v->sql->sa, jl, e);
+					list_remove_node(exps, NULL, n);
+					v->changes++;
+				} else if (right && rel_rebind_exp(v->sql, jr, e)) {
+					if (!is_select(jr->op) || rel_is_ref(jr))
+						r->r = jr = rel_select(v->sql->sa, jr, NULL);
+					rel_select_add_exp(v->sql->sa, jr, e);
+					list_remove_node(exps, NULL, n);
+					v->changes++;
+				}
 			}
 			n = next;
 		}
@@ -3436,7 +3713,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 
 	/* merge select and cross product ? */
-	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r)){
+	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r) && !exps_have_unsafe(exps, false, true)) {
 		for (n = exps->h; n;) {
 			node *next = n->next;
 			sql_exp *e = n->data;
@@ -3455,7 +3732,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && r && (is_simple_project(r->op) || (is_groupby(r->op) && !list_empty(r->r))) && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *pl = r->l, *opl = pl;
 		/* we cannot push through window functions (for safety I disabled projects over DDL too) */
-		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, 0)) {
+		if (pl && pl->op != op_ddl && !exps_have_unsafe(r->exps, false, false)) {
 			/* introduce selects under the project (if needed) */
 			set_processed(pl);
 			if (!pl->exps)
@@ -3479,7 +3756,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		}
 
 		/* push filters if they match the aggregation key on a window function */
-		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, 0)) {
+		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, false, false)) {
 			set_processed(pl);
 			/* list of aggregation key columns */
 			list *aggColumns = get_aggregation_key_columns(v->sql->sa, r);
@@ -3841,7 +4118,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 		list *l = e->l;
 		int res = 1, lmust = 0;
 
-		if (exp_unsafe(e, 0))
+		if (exp_unsafe(e, false, false))
 			return 0;
 		if (l) for (node *n = l->h; n && res; n = n->next)
 			res &= can_push_func(n->data, rel, &lmust, depth + 1);
@@ -3960,7 +4237,7 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sq
 		sql_rel *l = rel->l, *r = rel->r;
 		int must = 0, mustl = 0, mustr = 0;
 
-		if (exp_unsafe(e, 0))
+		if (exp_unsafe(e, false, false))
 			return e;
 		if (!e->l || exps_are_atoms(e->l))
 			return e;

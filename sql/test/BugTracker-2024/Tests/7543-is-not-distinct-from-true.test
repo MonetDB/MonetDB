@@ -1,0 +1,21 @@
+query I nosort
+SELECT (NULL NOT IN ('a'))
+----
+NULL
+
+query I nosort
+SELECT ((NULL NOT IN ('a')) IS DISTINCT FROM true)
+----
+1
+
+-- next should return false instead of NULL
+query I nosort
+SELECT ((NULL NOT IN ('a')) IS NOT DISTINCT FROM true)
+----
+0
+
+query I nosort
+SELECT (NOT ((NULL NOT IN ('a')) IS NOT DISTINCT FROM true))
+----
+1
+

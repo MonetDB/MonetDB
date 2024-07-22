@@ -540,13 +540,16 @@ load_trigger(sql_trans *tr, sql_table *t, res_table *rt_triggers, res_table *rt_
 		nt->statement =_STRDUP(v);
 
 	nt->t = t;
-	nt->columns = list_create((fdestroy) &kc_destroy);
+	if (t)
+		nt->columns = list_create((fdestroy) &kc_destroy);
 
-	for ( ; rt_triggercols->cur_row < rt_triggercols->nr_rows; rt_triggercols->cur_row++) {
-		sqlid nid = *(sqlid*)store->table_api.table_fetch_value(rt_triggercols, find_sql_column(objects, "id"));
-		if (nid != nt->base.id)
-			break;
-		load_triggercolumn(tr, nt, rt_triggercols);
+	if (rt_triggercols) {
+		for ( ; rt_triggercols->cur_row < rt_triggercols->nr_rows; rt_triggercols->cur_row++) {
+			sqlid nid = *(sqlid*)store->table_api.table_fetch_value(rt_triggercols, find_sql_column(objects, "id"));
+			if (nid != nt->base.id)
+				break;
+			load_triggercolumn(tr, nt, rt_triggercols);
+		}
 	}
 	return nt;
 }
@@ -1407,7 +1410,7 @@ load_trans(sql_trans* tr)
 			find_sql_column(syskeys, "table_id"),
 			find_sql_column(sysobjects, "id"),
 			find_sql_column(sysobjects, "nr"), NULL);
-	res_table *rt_triggers = store->table_api.table_orderby(tr, systriggers,
+	res_table *rt_tabletriggers = store->table_api.table_orderby(tr, systriggers,
 			find_sql_column(systriggers, "table_id"),
 			find_sql_column(systables, "id"),
 			NULL, NULL,
@@ -1423,9 +1426,13 @@ load_trans(sql_trans* tr)
 			find_sql_column(systriggers, "table_id"),
 			find_sql_column(sysobjects, "id"),
 			find_sql_column(sysobjects, "nr"), NULL);
+	res_table *rt_triggers = store->table_api.table_orderby(tr, systriggers,
+			NULL, NULL, NULL, NULL,
+			find_sql_column(systriggers, "id"),
+			find_sql_column(systriggers, "table_id"), NULL);
 	for ( ; rt_schemas->cur_row < rt_schemas->nr_rows; rt_schemas->cur_row++) {
 		sql_schema *ns = load_schema(tr, rt_schemas, rt_tables, rt_parts,
-				rt_cols, rt_idx, rt_idxcols, rt_keys, rt_keycols, rt_triggers, rt_triggercols);
+				rt_cols, rt_idx, rt_idxcols, rt_keys, rt_keycols, rt_tabletriggers, rt_triggercols);
 		if (ns == NULL) {
 			ok = false;
 			goto finish;
@@ -1439,6 +1446,19 @@ load_trans(sql_trans* tr)
 				tr->tmp = ns;
 		}
 	}
+	if (rt_triggers) {
+		for ( ; rt_triggers->cur_row < rt_triggers->nr_rows; rt_triggers->cur_row++) {
+			sqlid ntid = *(sqlid*)store->table_api.table_fetch_value(rt_triggers, find_sql_column(systriggers, "table_id"));
+			if (ntid != int_nil)
+				continue;
+			sql_trigger *k = load_trigger(tr, NULL, rt_triggers, NULL);
+
+			if (!k || os_add(syss->triggers, tr, k->base.name, &k->base)) {
+				ok = false;
+				goto finish;
+			}
+		}
+	}
 
 finish:
 	store->table_api.table_result_destroy(rt_schemas);
@@ -1449,8 +1469,9 @@ finish:
 	store->table_api.table_result_destroy(rt_idxcols);
 	store->table_api.table_result_destroy(rt_keys);
 	store->table_api.table_result_destroy(rt_keycols);
-	store->table_api.table_result_destroy(rt_triggers);
+	store->table_api.table_result_destroy(rt_tabletriggers);
 	store->table_api.table_result_destroy(rt_triggercols);
+	store->table_api.table_result_destroy(rt_triggers);
 	return ok;
 }
 
@@ -4554,7 +4575,7 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 {
 	sqlstore *store = tr->store;
 	node *n;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
+	sql_schema *syss = find_sql_schema(tr, (!i->t || isGlobal(i->t))?"sys":"tmp");
 	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
 	oid rid = store->table_api.column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
 	int res = LOG_OK;
@@ -4564,14 +4585,16 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 	if ((res = store->table_api.table_delete(tr, systrigger, rid)))
 		return res;
 
-	for (n = i->columns->h; n; n = n->next) {
-		sql_kc *tc = n->data;
+	if (i->t) {
+		for (n = i->columns->h; n; n = n->next) {
+			sql_kc *tc = n->data;
 
-		if ((res = sys_drop_tc(tr, i, tc)))
-			return res;
+			if ((res = sys_drop_tc(tr, i, tc)))
+				return res;
+		}
 	}
 	/* remove trigger from schema */
-	if ((res = os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base))))
+	if ((res = os_del(i->t?i->t->s->triggers:syss->triggers, tr, i->base.name, dup_base(&i->base))))
 		return res;
 	if (!isNew(i) && (res = sql_trans_add_dependency_change(tr, i->base.id, ddl)))
 		return res;
@@ -7050,13 +7073,15 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
-		return res;
+	if (i->t) {
+		if ((res = store_reset_sql_functions(tr, i->t->base.id))) /* reset sql functions depending on the table */
+			return res;
+		node *n = ol_find_name(i->t->triggers, i->base.name);
+		if (n)
+			ol_del(i->t->triggers, store, n);
+	}
 	if ((res = sys_drop_trigger(tr, i)))
 		return res;
-	node *n = ol_find_name(i->t->triggers, i->base.name);
-	if (n)
-		ol_del(i->t->triggers, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
@@ -7455,6 +7480,7 @@ void
 store_printinfo(sqlstore *store)
 {
 	MT_lock_set(&store->commit);
+	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
 	log_printinfo(store->logger);
 	MT_lock_unset(&store->commit);

@@ -119,7 +119,7 @@ MNDBEndTran(SQLSMALLINT HandleType,
 
 	assert(HandleType == SQL_HANDLE_DBC);
 
-	if (dbc->sql_attr_autocommit == SQL_AUTOCOMMIT_ON) {
+	if (msetting_bool(dbc->settings, MP_AUTOCOMMIT)) {
 		/* nothing to do if in autocommit mode */
 		return SQL_SUCCESS;
 	}

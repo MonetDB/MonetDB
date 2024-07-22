@@ -289,7 +289,6 @@ void reinitialize(void)
 void
 childhandler(void)
 {
-	dpair p, q;
 	pid_t pid;
 	int wstatus;
 
@@ -297,9 +296,8 @@ childhandler(void)
 		pthread_mutex_lock(&_mero_topdp_lock);
 
 		/* get the pid from the former child, and locate it in our list */
-		q = _mero_topdp->next;
-		p = q->next;
-		while (p != NULL) {
+
+		for (dpair p = _mero_topdp->next->next; p != NULL; p = p->next) {
 			if (p->pid == pid) {
 				/* log everything that's still in the pipes */
 				logFD(p, 0, "MSG", p->dbname, (long long int)p->pid, _mero_logfile, true);
@@ -333,8 +331,6 @@ childhandler(void)
 				}
 				break;
 			}
-			q = p;
-			p = q->next;
 		}
 
 		pthread_mutex_unlock(&_mero_topdp_lock);

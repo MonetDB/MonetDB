@@ -33,7 +33,6 @@ BATmaxminpos_bte(BAT *o, bte m)
 	bte minval = m<0?GDK_bte_min:0; /* Later once nils use a bitmask we can include -128 in the range */
 	bte maxval = m<0?GDK_bte_max:m;
 
-	assert(o->ttype == TYPE_bte);
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	bte *op = (bte*)Tloc(o, 0);
@@ -80,6 +79,33 @@ BATmaxminpos_sht(BAT *o, sht m)
 	o->tmaxpos = maxpos;
 }
 
+static void
+BATmaxminpos_int(BAT *o, int m)
+{
+	BUN minpos = BUN_NONE, maxpos = BUN_NONE, p, q;
+	int minval = m<0?GDK_int_min:0; /* Later once nils use a bitmask we can include -32768 in the range */
+	int maxval = m<0?GDK_int_max:m;
+
+	assert(o->ttype == TYPE_int);
+	o->tnil = m<0?true:false;
+	o->tnonil = m<=0?false:true;
+	int *op = (int*)Tloc(o, 0);
+	BATloop(o, p, q) {
+		if (op[p] == minval) {
+			minpos = p;
+			break;
+		}
+	}
+	BATloop(o, p, q) {
+		if (op[p] == maxval) {
+			maxpos = p;
+			break;
+		}
+	}
+	o->tminpos = minpos;
+	o->tmaxpos = maxpos;
+}
+
 static str
 DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool smallest_type)
 {
@@ -91,12 +117,12 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 
 	BUN cnt = BATcount(u);
 	/* create hash on u */
-	int tt = (cnt<256)?TYPE_bte:TYPE_sht;
+	int tt = (cnt<256)?TYPE_bte:(cnt<65536)?TYPE_sht:TYPE_int;
 	if (!smallest_type) {
 		BUN cnt = BATcount(b);
-		tt = (cnt<256)?TYPE_bte:TYPE_sht;
+		tt = (cnt<256)?TYPE_bte:(cnt<65536)?TYPE_sht:TYPE_int;
 	}
-	if (cnt >= 64*1024) {
+	if (cnt >= INT_MAX) {
 		bat_destroy(u);
 		throw(SQL, "dict.compress", SQLSTATE(3F000) "dict compress: too many values");
 	}
@@ -153,7 +179,7 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 
 		if (BATcount(u) > 0)
 			BATmaxminpos_bte(o, (bte) (BATcount(u)-1));
-	} else {
+	} else if (tt == TYPE_sht) {
 		sht *op = (sht*)Tloc(o, 0);
 		bool havenil = false;
 		BATloop(b, p, q) {
@@ -172,6 +198,25 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 
 		if (BATcount(u) > 0)
 			BATmaxminpos_sht(o, (sht) (BATcount(u)-1));
+	} else {
+		int *op = (int*)Tloc(o, 0);
+		bool havenil = false;
+		BATloop(b, p, q) {
+			BUN up = 0;
+			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+				op[p] = (int)up;
+				havenil |= is_int_nil(op[p]);
+			}
+		}
+		BATsetcount(o, BATcount(b));
+		o->tsorted = (u->tsorted && bi.sorted);
+		o->trevsorted = false;
+		o->tnil = havenil;
+		o->tnonil = !havenil;
+		o->tkey = bi.key;
+
+		if (BATcount(u) > 0)
+			BATmaxminpos_int(o, (int) (BATcount(u)-1));
 	}
 	bat_iterator_end(&bi);
 	*O = o;
@@ -339,8 +384,7 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 				}
 			}
 		}
-	} else {
-		assert(o->ttype == TYPE_sht);
+	} else if (o->ttype == TYPE_sht) {
 		unsigned short *op = Tloc(o, 0);
 
 		switch (ATOMbasetype(u->ttype)) {
@@ -365,6 +409,35 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 				}
 			}
 		}
+	} else if (o->ttype == TYPE_int) {
+		unsigned int *op = Tloc(o, 0);
+
+		switch (ATOMbasetype(u->ttype)) {
+		case TYPE_int:
+			decompress_loop(int);
+			break;
+		case TYPE_lng:
+			decompress_loop(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			decompress_loop(hge);
+			break;
+#endif
+		default:
+			BATloop(o, p, q) {
+				BUN up = op[p];
+				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+					bat_iterator_end(&oi);
+					bat_destroy(b);
+					return NULL;
+				}
+			}
+		}
+	} else {
+		bat_iterator_end(&oi);
+		bat_destroy(b);
+		return NULL;
 	}
 	bat_iterator_end(&oi);
 	return b;
@@ -438,6 +511,22 @@ convert_oid( BAT *o, int rt)
 				rp[p] = (unsigned short) op[p];
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == sht_nil);
+			}
+		}
+	} else if (rt == TYPE_int) {
+		unsigned short *rp = Tloc(b, 0);
+		if (oi.type == TYPE_void) {
+			BATloop(o, p, q) {
+				rp[p] = (unsigned short) (p+o->tseqbase);
+				brokenrange |= ((short)rp[p] < 0);
+				nil |= ((short)rp[p] == int_nil);
+			}
+		} else {
+			oid *op = Tloc(o, 0);
+			BATloop(o, p, q) {
+				rp[p] = (unsigned short) op[p];
+				brokenrange |= ((short)rp[p] < 0);
+				nil |= ((short)rp[p] == int_nil);
 			}
 		}
 	} else {
@@ -579,6 +668,17 @@ DICTrenumber_intern( BAT *o, BAT *lc, BAT *rc, BUN offcnt)
 
 		for(BUN i = 0; i<cnt; i++) {
 			op[i] = (sht) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
+		}
+		BATsetcount(no, cnt);
+		BATnegateprops(no);
+		no->tkey = oi.key;
+	} else if (oi.type == TYPE_int) {
+		int *op = Tloc(no, 0);
+		oid *c = Tloc(rc, 0);
+		unsigned short *ip = (unsigned short *) oi.base;
+
+		for(BUN i = 0; i<cnt; i++) {
+			op[i] = (int) ((BUN)ip[i]==offcnt?offcnt:c[ip[i]]);
 		}
 		BATsetcount(no, cnt);
 		BATnegateprops(no);
@@ -741,6 +841,9 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				} else if (loi.type == TYPE_sht) {
 					sht val = (sht)p;
 					bn =  BATthetaselect(lo, lc, &val, op);
+				} else if (loi.type == TYPE_int) {
+					int val = (int)p;
+					bn =  BATthetaselect(lo, lc, &val, op);
 				} else
 					assert(0);
 				if (bn && (op[0] == '<' || op[0] == '>' || op[0] == '!') && (!lvi.nonil || lvi.nil)) { /* filter the NULL value out */
@@ -752,6 +855,9 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							nbn =  BATthetaselect(lo, bn, &val, "<>");
 						} else if (loi.type == TYPE_sht) {
 							sht val = (sht)p;
+							nbn =  BATthetaselect(lo, bn, &val, "<>");
+						} else if (loi.type == TYPE_int) {
+							int val = (int)p;
 							nbn =  BATthetaselect(lo, bn, &val, "<>");
 						} else
 							assert(0);
@@ -772,6 +878,9 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						bn =  BATthetaselect(lo, lc, &val, op);
 					} else if (loi.type == TYPE_sht) {
 						sht val = (sht)p;
+						bn =  BATthetaselect(lo, lc, &val, op);
+					} else if (loi.type == TYPE_int) {
+						int val = (int)p;
 						bn =  BATthetaselect(lo, lc, &val, op);
 					} else
 						assert(0);
@@ -891,6 +1000,10 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				sht lpos = (sht)p;
 				sht hpos = (sht)q;
 				bn =  BATselect(lo, lc, &lpos, &hpos, true, hi, anti, false);
+			} else if (loi.type == TYPE_int) {
+				int lpos = (int)p;
+				int hpos = (int)q;
+				bn =  BATselect(lo, lc, &lpos, &hpos, true, hi, anti, false);
 			} else
 				assert(0);
 		} else {
@@ -925,16 +1038,43 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 BAT *
-DICTenlarge(BAT *offsets, BUN cnt, BUN sz, role_t role)
+DICTenlarge(BAT *offsets, BUN cnt, BUN sz, int type, role_t role)
 {
-	BAT *n = COLnew(offsets->hseqbase, TYPE_sht, sz, role);
+	BAT *n = NULL;
+	if (type == TYPE_sht) {
+		if (offsets->ttype != TYPE_bte)
+			return NULL;
+		n = COLnew(offsets->hseqbase, TYPE_sht, sz, role);
 
-	if (!n)
+		if (!n)
+			return NULL;
+		unsigned char *o = Tloc(offsets, 0);
+		unsigned short *no = Tloc(n, 0);
+		for(BUN i = 0; i<cnt; i++) {
+			no[i] = o[i];
+		}
+	} else if (type == TYPE_int) {
+		if (offsets->ttype != TYPE_bte && offsets->ttype != TYPE_sht)
+			return NULL;
+		n = COLnew(offsets->hseqbase, TYPE_int, sz, role);
+		if (!n)
+			return NULL;
+		if (offsets->ttype == TYPE_sht) {
+			unsigned char *o = Tloc(offsets, 0);
+			unsigned int *no = Tloc(n, 0);
+			for(BUN i = 0; i<cnt; i++) {
+				no[i] = o[i];
+			}
+		} else {
+			unsigned short *o = Tloc(offsets, 0);
+			unsigned int *no = Tloc(n, 0);
+			for(BUN i = 0; i<cnt; i++) {
+				no[i] = o[i];
+			}
+		}
+
+	} else {
 		return NULL;
-	unsigned char *o = Tloc(offsets, 0);
-	unsigned short *no = Tloc(n, 0);
-	for(BUN i = 0; i<cnt; i++) {
-		no[i] = o[i];
 	}
 	BATnegateprops(n);
 	n->tnil = offsets->tnil;
@@ -970,7 +1110,7 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat_destroy(m);
 		throw(SQL, "dict.renumber", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	assert(o->ttype == TYPE_bte || o->ttype == TYPE_sht);
+	assert(o->ttype == TYPE_bte || o->ttype == TYPE_sht || o->ttype == TYPE_int);
 	bool havenil = false;
 	if (o->ttype == TYPE_bte) {
 		unsigned char *np = Tloc(n, 0);
@@ -980,13 +1120,21 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			np[i] = mp[op[i]];
 			havenil |= np[i] == 128;
 		}
-	} else {
+	} else if (o->ttype == TYPE_sht) {
 		unsigned short *np = Tloc(n, 0);
 		unsigned short *op = Tloc(o, 0);
 		unsigned short *mp = Tloc(m, 0);
 		for(BUN i = 0; i<cnt; i++) {
 			np[i] = mp[op[i]];
 			havenil |= np[i] == 32768;
+		}
+	} else { /* int case */
+		unsigned int *np = Tloc(n, 0);
+		unsigned int *op = Tloc(o, 0);
+		unsigned int *mp = Tloc(m, 0);
+		for(BUN i = 0; i<cnt; i++) {
+			np[i] = mp[op[i]];
+			havenil |= np[i] == (unsigned int)int_nil;
 		}
 	}
 	BATsetcount(n, cnt);
@@ -1000,13 +1148,20 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (mp[i] > mm)
 				mm = mp[i];
 		BATmaxminpos_bte(n, mm);
-	} else {
+	} else if (o->ttype == TYPE_sht) {
 		unsigned short *mp = Tloc(m, 0);
 		unsigned short mm = 0;
 		for(BUN i = 0; i<BATcount(m); i++)
 			if (mp[i] > mm)
 				mm = mp[i];
 		BATmaxminpos_sht(n, mm);
+	} else {
+		unsigned int *mp = Tloc(m, 0);
+		unsigned int mm = 0;
+		for(BUN i = 0; i<BATcount(m); i++)
+			if (mp[i] > mm)
+				mm = mp[i];
+		BATmaxminpos_int(n, mm);
 	}
 	bat_destroy(o);
 	bat_destroy(m);
@@ -1027,7 +1182,7 @@ DICTrenumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 int
 DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 {
-	int tt = BATcount(dict)>=256?TYPE_sht:TYPE_bte;
+	int tt = BATcount(dict)<255?TYPE_bte:BATcount(dict)<65535?TYPE_sht:TYPE_int;
 	BUN sz = BATcount(vals), nf = 0;
 	BAT *n = COLnew(0, tt, sz, TRANSIENT);
 	bool havenil = false;
@@ -1050,8 +1205,24 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 				f = 1;
 			}
 			if (!f) {
-				if (BATcount(dict) >= 255) {
-					BAT *nn = DICTenlarge(n, i, sz, TRANSIENT);
+				if (BATcount(dict) >= 65535) {
+					if (BATcount(dict) > INT_MAX) {
+						bat_destroy(n);
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					BAT *nn = DICTenlarge(n, i, sz, TYPE_int, TRANSIENT);
+					bat_destroy(n);
+					if (!nn) {
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					n = nn;
+					nf = i;
+					tt = TYPE_int;
+					break;
+				} else if (BATcount(dict) >= 255 && BATcount(dict) < 65535) {
+					BAT *nn = DICTenlarge(n, i, sz, TYPE_sht, TRANSIENT);
 					bat_destroy(n);
 					if (!nn) {
 						bat_iterator_end(&bi);
@@ -1064,7 +1235,6 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 				} else {
 					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
-						assert(0);
 						bat_destroy(n);
 						bat_iterator_end(&bi);
 						return -1;
@@ -1087,11 +1257,22 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 				f = 1;
 			}
 			if (!f) {
-				if (BATcount(dict) >= (64*1024)-1) {
-					assert(0);
+				if (BATcount(dict) >= 65535) {
+					if (BATcount(dict) > INT_MAX) {
+						bat_destroy(n);
+						bat_iterator_end(&bi);
+						return -2;
+					}
+					BAT *nn = DICTenlarge(n, i, sz, TYPE_int, TRANSIENT);
 					bat_destroy(n);
-					bat_iterator_end(&bi);
-					return -2;
+					if (!nn) {
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					n = nn;
+					nf = i;
+					tt = TYPE_int;
+					break;
 				} else {
 					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
@@ -1108,6 +1289,35 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 			}
 		}
 	}
+	if (tt == TYPE_int) {
+		int *op = (int*)Tloc(n, 0);
+		for(BUN i = nf; i<sz; i++) {
+			BUN up = 0;
+			int f = 0;
+			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+				op[i] = (int)up;
+				f = 1;
+			}
+			if (!f) {
+				if (BATcount(dict) >= INT_MAX) {
+						bat_destroy(n);
+						bat_iterator_end(&bi);
+						return -2;
+				} else {
+					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
+						bat_destroy(n);
+						bat_iterator_end(&bi);
+						return -1;
+					}
+					/* reinitialize */
+					ui = bat_iterator_nolock(dict);
+					op[i] = (int) (BATcount(dict)-1);
+					havenil |= is_int_nil(op[i]);
+				}
+			}
+		}
+	}
 	bat_iterator_end(&bi);
 	BATsetcount(n, sz);
 	BATnegateprops(n);
@@ -1117,8 +1327,39 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 	return 0;
 }
 
+static int *
+DICTenlarge_vals_bte_int(bte *offsets, BUN cnt, BUN sz)
+{
+	int *n = GDKmalloc(sizeof(int) * sz);
+
+	if (!n)
+		return NULL;
+	unsigned char *o = (unsigned char*)offsets;
+	unsigned int *no = (unsigned int*)n;
+	for(BUN i = 0; i<cnt; i++) {
+		no[i] = o[i];
+	}
+	return n;
+}
+
+static int *
+DICTenlarge_vals_sht_int(sht *offsets, BUN cnt, BUN sz)
+{
+	int *n = GDKmalloc(sizeof(int) * sz);
+
+	if (!n)
+		return NULL;
+	unsigned short *o = (unsigned short*)offsets;
+	unsigned int *no = (unsigned int*)n;
+	for(BUN i = 0; i<cnt; i++) {
+		no[i] = o[i];
+	}
+	return n;
+}
+
+
 static sht *
-DICTenlarge_vals(bte *offsets, BUN cnt, BUN sz)
+DICTenlarge_vals_sht(bte *offsets, BUN cnt, BUN sz)
 {
 	sht *n = GDKmalloc(sizeof(sht) * sz);
 
@@ -1161,8 +1402,20 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 				f = 1;
 			}
 			if (!f) {
-				if (BATcount(dict) >= 255) {
-					sht *nn = DICTenlarge_vals(n, i, sz);
+				if (BATcount(dict) >= INT_MAX) {
+					GDKfree(n);
+					return -2;
+				} else if (BATcount(dict) >= 65535) {
+					int *nn = DICTenlarge_vals_bte_int(n, i, sz);
+					GDKfree(n);
+					if (!nn)
+						return -1;
+					n = nn;
+					nf = i;
+					tt = TYPE_int;
+					break;
+				} else if (BATcount(dict) >= 255) {
+					sht *nn = DICTenlarge_vals_sht(n, i, sz);
 					GDKfree(n);
 					if (!nn)
 						return -1;
@@ -1173,7 +1426,6 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 				} else {
 					if (BUNappend(dict, val, true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
-						assert(0);
 						GDKfree(n);
 						return -1;
 					}
@@ -1197,20 +1449,56 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 				f = 1;
 			}
 			if (!f) {
-				if (BATcount(dict) >= (64*1024)-1) {
-					assert(0);
+				if (BATcount(dict) >= INT_MAX) {
 					GDKfree(n);
 					return -2;
+				} else if (BATcount(dict) >= 65535) {
+					int *nn = DICTenlarge_vals_sht_int(n, i, sz);
+					GDKfree(n);
+					if (!nn)
+						return -1;
+					n = nn;
+					nf = i;
+					tt = TYPE_int;
+					break;
 				} else {
 					if (BUNappend(dict, val, true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
-						assert(0);
 						GDKfree(n);
 						return -1;
 					}
 					/* reinitialize */
 					ui = bat_iterator_nolock(dict);
 					op[i] = (sht) (BATcount(dict)-1);
+				}
+			}
+		}
+	}
+	if (tt == TYPE_int) {
+		int *op = (int*)n;
+		for(BUN i = nf; i<sz; i++) {
+			BUN up = 0;
+			int f = 0;
+			void *val = (void*)vp;
+			if (varsized)
+				val = *(void**)vp;
+			HASHloop(ui, ui.b->thash, up, val) {
+				op[i] = (int)up;
+				f = 1;
+			}
+			if (!f) {
+				if (BATcount(dict) >= INT_MAX) {
+					GDKfree(n);
+					return -2;
+				} else {
+					if (BUNappend(dict, val, true) != GDK_SUCCEED ||
+					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
+						GDKfree(n);
+						return -1;
+					}
+					/* reinitialize */
+					ui = bat_iterator_nolock(dict);
+					op[i] = (int) (BATcount(dict)-1);
 				}
 			}
 		}

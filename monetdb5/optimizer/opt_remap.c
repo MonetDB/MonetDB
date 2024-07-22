@@ -21,6 +21,21 @@
 #include "opt_inline.h"
 #include "opt_multiplex.h"
 
+static InstrPtr
+pushNilAt(MalBlkPtr mb, InstrPtr p, int pos)
+{
+    int i;
+
+    p = pushNilBat(mb, p);   /* push at end */
+    if (mb->errors == NULL) {
+		int arg = getArg(p, p->argc - 1);
+        for (i = p->argc - 1; i > pos; i--)
+            getArg(p, i) = getArg(p, i - 1);
+        getArg(p, pos) = arg;
+    }
+    return p;
+}
+
 static int
 OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			   Module scope)
@@ -264,11 +279,16 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					q->typeresolved = false;
 					if (q->retc == 1 &&
 						((getModuleId(q) == batcalcRef
-						  && (getFunctionId(q) == mulRef
-							  || getFunctionId(q) == divRef
-							  || getFunctionId(q) == plusRef
-							  || getFunctionId(q) == minusRef
-							  || getFunctionId(q) == modRef))
+						  && (   getFunctionId(q) == mulRef
+							   || getFunctionId(q) == divRef
+							   || getFunctionId(q) == plusRef
+							   || getFunctionId(q) == minusRef
+							   || getFunctionId(q) == modRef
+						       || (q->argc > 3 && (
+							         getFunctionId(q) == intRef
+							      || getFunctionId(q) == lngRef
+							      || getFunctionId(q) == hgeRef))
+							 ))
 						 || getModuleId(q) == batmtimeRef
 						 || getModuleId(q) == batstrRef)) {
 						if (q->argc == 3 &&
@@ -295,6 +315,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 							if (isaBatType(getArgType(mq, q, 2)))
 								q = pushNilBat(mq, q);
 							q = pushArgument(mq, q, a);
+						} else if (q->argc == 5 && getModuleId(q) == batcalcRef) { /* decimal casts */
+							int pos = 3;
+							if (isaBatType(getArgType(mq, q, 1)))
+								q = pushNilAt(mq, q, pos++);
+							if (isaBatType(getArgType(mq, q, 2)))
+								q = pushNilAt(mq, q, pos);
 						}
 					}
 

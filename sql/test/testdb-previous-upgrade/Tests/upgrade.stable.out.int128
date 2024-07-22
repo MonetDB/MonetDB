@@ -1073,6 +1073,23 @@ external name generator.series;
 create function sys.generate_series(first date, "limit" date, stepsize interval day)
 returns table (value date)
 external name generator.series;
+grant execute on function sys.generate_series(tinyint, tinyint) to public;
+grant execute on function sys.generate_series(tinyint, tinyint, tinyint) to public;
+grant execute on function sys.generate_series(smallint, smallint) to public;
+grant execute on function sys.generate_series(smallint, smallint, smallint) to public;
+grant execute on function sys.generate_series(int, int) to public;
+grant execute on function sys.generate_series(int, int, int) to public;
+grant execute on function sys.generate_series(bigint, bigint) to public;
+grant execute on function sys.generate_series(bigint, bigint, bigint) to public;
+grant execute on function sys.generate_series(real, real, real) to public;
+grant execute on function sys.generate_series(double, double, double) to public;
+grant execute on function sys.generate_series(decimal(10,2), decimal(10,2), decimal(10,2)) to public;
+grant execute on function sys.generate_series(date, date, interval month) to public;
+grant execute on function sys.generate_series(date, date, interval day) to public;
+grant execute on function sys.generate_series(timestamp, timestamp, interval second) to public;
+grant execute on function sys.generate_series(timestamp, timestamp, interval day) to public;
+grant execute on function sys.generate_series(hugeint, hugeint) to public;
+grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;
 update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;
 
 Running database upgrade commands:
@@ -1099,18 +1116,23 @@ create function sys.sessions()
  )
  external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
+grant select on sys.sessions to public;
 create procedure sys.setclientinfo(property string, value string)
  external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;
-create table sys.clientinfo_properties(prop string, session_attr string);
+create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);
 insert into sys.clientinfo_properties values
  ('ClientHostname', 'hostname'),
  ('ApplicationName', 'application'),
  ('ClientLibrary', 'client'),
- ('ClientRemark', 'remark'),
- ('ClientPid', 'clientpid');
+ ('ClientPid', 'clientpid'),
+ ('ClientRemark', 'remark');
+grant select on sys.clientinfo_properties to public;
 update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');
 update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');
+
+Running database upgrade commands:
+alter table sys.clientinfo_properties SET READ ONLY;
 
 Running database upgrade commands:
 DROP TABLE sys.key_types;

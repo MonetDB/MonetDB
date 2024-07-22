@@ -986,12 +986,36 @@ update sys.functions set system = true where not system and schema_id = 2000 and
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');
 
 Running database upgrade commands:
+create function sys.generate_series(first smallint, "limit" smallint)
+returns table (value smallint)
+external name generator.series;
+create function sys.generate_series(first smallint, "limit" smallint, stepsize smallint)
+returns table (value smallint)
+external name generator.series;
+update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys');
+
+Running database upgrade commands:
 create function sys.generate_series(first date, "limit" date, stepsize interval month)
 returns table (value date)
 external name generator.series;
 create function sys.generate_series(first date, "limit" date, stepsize interval day)
 returns table (value date)
 external name generator.series;
+grant execute on function sys.generate_series(tinyint, tinyint) to public;
+grant execute on function sys.generate_series(tinyint, tinyint, tinyint) to public;
+grant execute on function sys.generate_series(smallint, smallint) to public;
+grant execute on function sys.generate_series(smallint, smallint, smallint) to public;
+grant execute on function sys.generate_series(int, int) to public;
+grant execute on function sys.generate_series(int, int, int) to public;
+grant execute on function sys.generate_series(bigint, bigint) to public;
+grant execute on function sys.generate_series(bigint, bigint, bigint) to public;
+grant execute on function sys.generate_series(real, real, real) to public;
+grant execute on function sys.generate_series(double, double, double) to public;
+grant execute on function sys.generate_series(decimal(10,2), decimal(10,2), decimal(10,2)) to public;
+grant execute on function sys.generate_series(date, date, interval month) to public;
+grant execute on function sys.generate_series(date, date, interval day) to public;
+grant execute on function sys.generate_series(timestamp, timestamp, interval second) to public;
+grant execute on function sys.generate_series(timestamp, timestamp, interval day) to public;
 update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;
 
 Running database upgrade commands:
@@ -1018,18 +1042,23 @@ create function sys.sessions()
  )
  external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
+grant select on sys.sessions to public;
 create procedure sys.setclientinfo(property string, value string)
  external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;
-create table sys.clientinfo_properties(prop string, session_attr string);
+create table sys.clientinfo_properties(prop varchar(40) NOT NULL, session_attr varchar(40) NOT NULL);
 insert into sys.clientinfo_properties values
  ('ClientHostname', 'hostname'),
  ('ApplicationName', 'application'),
  ('ClientLibrary', 'client'),
- ('ClientRemark', 'remark'),
- ('ClientPid', 'clientpid');
+ ('ClientPid', 'clientpid'),
+ ('ClientRemark', 'remark');
+grant select on sys.clientinfo_properties to public;
 update sys.functions set system = true where schema_id = 2000 and name in ('setclientinfo', 'sessions');
 update sys._tables set system = true where schema_id = 2000 and name in ('clientinfo_properties', 'sessions');
+
+Running database upgrade commands:
+alter table sys.clientinfo_properties SET READ ONLY;
 
 Running database upgrade commands:
 DROP TABLE sys.key_types;
@@ -1090,6 +1119,17 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLE_CONSTRAINTS TO PUBLIC WITH GRANT 
 UPDATE sys._tables SET system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('check_constraints','table_constraints');
+
+Running database upgrade commands:
+drop procedure if exists sys.gzcompress(string, string);
+drop procedure if exists sys.gzdecompress(string, string);
+drop procedure if exists sys.gztruncate(string, string);
+drop procedure if exists sys.gzexpand(string, string);
+
+Running database upgrade commands:
+drop procedure if exists sys.newdictionary(string, string);
+drop procedure if exists sys.dropdictionary(string, string);
+drop procedure if exists sys.initializedictionary();
 
 Running database upgrade commands:
 create procedure sys.vacuum(sname string, tname string)

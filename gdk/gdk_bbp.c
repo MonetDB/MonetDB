@@ -482,20 +482,9 @@ heapinit(BAT *b, const char *buf,
 
 	(void) bbpversion;	/* could be used to implement compatibility */
 
-	minpos = maxpos = (uint64_t) oid_nil; /* for GDKLIBRARY_MINMAX_POS case */
 	size = 0;			      /* for GDKLIBRARY_HSIZE case */
 	storage = STORE_INVALID;	      /* for GDKLIBRARY_HSIZE case */
-	if (bbpversion <= GDKLIBRARY_MINMAX_POS ?
-	    sscanf(buf,
-		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
-		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
-		   " %" SCNu64 " %" SCNu64 " %" SCNu16
-		   "%n",
-		   type, &width, &var, &properties, &nokey0,
-		   &nokey1, &nosorted, &norevsorted, &base,
-		   &free, &size, &storage,
-		   &n) < 12 :
-	    bbpversion <= GDKLIBRARY_HSIZE ?
+	if (bbpversion <= GDKLIBRARY_HSIZE ?
 	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
@@ -1027,8 +1016,7 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrad
 	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
 	    bbpversion != GDKLIBRARY_HASHASH &&
-	    bbpversion != GDKLIBRARY_TAILN &&
-	    bbpversion != GDKLIBRARY_MINMAX_POS) {
+	    bbpversion != GDKLIBRARY_TAILN) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
@@ -1074,19 +1062,15 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrad
 	}
 	if (sz > *bbpsize)
 		*bbpsize = sz;
-	if (bbpversion > GDKLIBRARY_MINMAX_POS) {
-		if (fgets(buf, sizeof(buf), fp) == NULL) {
-			TRC_CRITICAL(GDK, "short BBP");
-			return 0;
-		}
-		if (bbpversion <= GDKLIBRARY_STATUS ?
-		    sscanf(buf, "BBPinfo=" LLSCN " %*d", logno) != 1 :
-		    sscanf(buf, "BBPinfo=" LLSCN, logno) != 1) {
-			TRC_CRITICAL(GDK, "no info value found\n");
-			return 0;
-		}
-	} else {
-		*logno = 0;
+	if (fgets(buf, sizeof(buf), fp) == NULL) {
+		TRC_CRITICAL(GDK, "short BBP");
+		return 0;
+	}
+	if (bbpversion <= GDKLIBRARY_STATUS ?
+	    sscanf(buf, "BBPinfo=" LLSCN " %*d", logno) != 1 :
+	    sscanf(buf, "BBPinfo=" LLSCN, logno) != 1) {
+		TRC_CRITICAL(GDK, "no info value found\n");
+		return 0;
 	}
 	return bbpversion;
 }
@@ -1975,7 +1959,6 @@ BBPinit(bool allow_hge_upgrade)
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
 		}
-		assert(bbpversion > GDKLIBRARY_MINMAX_POS || logno == 0);
 		ATOMIC_SET(&BBPlogno, logno);
 	}
 
@@ -4929,6 +4912,7 @@ BBPprintinfo(void)
 	}
 	uint32_t nfree = BBP_nfree;
 	BBPtmunlock();
+	printf("BATs:\n");
 	if (bats[1][1][1][1][1].nr > 0)
 		printf("fix, dirty, persistent, loaded, hot: %d bats, %zu virtual, %zu malloc\n", bats[1][1][1][1][1].nr, bats[1][1][1][1][1].vmsz, bats[1][1][1][1][1].sz);
 	if (bats[1][1][1][1][0].nr > 0)
