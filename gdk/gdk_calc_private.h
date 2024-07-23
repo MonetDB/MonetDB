@@ -36,7 +36,7 @@
 #include "gdk_cand.h"
 
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
-#define OP_WITH_CHECK(lft, rgt, dst, op, nil, max, on_overflow)		\
+#define OP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\
 	do {								\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst)) ||	\
 		    (dst) < -(max) || (dst) > (max)) {			\
@@ -68,7 +68,7 @@
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 /* integer version using Gnu CC builtin function for overflow check */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	OP_WITH_CHECK(lft, rgt, dst, add, TYPE3##_nil, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
 #else
 /* integer version using generic version */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -102,7 +102,7 @@
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 /* integer version using Gnu CC builtin function for overflow check */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	OP_WITH_CHECK(lft, rgt, dst, sub, TYPE3##_nil, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
 #else
 /* integer version using generic version */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -130,9 +130,9 @@
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 /* integer version using Gnu CC builtin function for overflow check */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	OP_WITH_CHECK(lft, rgt, dst, mul, TYPE3##_nil, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	OP_WITH_CHECK(lft, rgt, dst, mul, lng_nil, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #else
 /* integer version using generic version */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
@@ -195,7 +195,7 @@
 #ifdef HAVE_HGE
 #ifdef HAVE___BUILTIN_ADD_OVERFLOW
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	OP_WITH_CHECK(lft, rgt, dst, mul, hge_nil, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #else
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
