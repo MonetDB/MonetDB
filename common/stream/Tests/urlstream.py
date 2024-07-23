@@ -9,25 +9,6 @@ import time
 
 OUTPUT = io.StringIO()
 
-def wait_for_server(timeout):
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        if port == 0:
-            time.sleep(0.25)
-            continue
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(0.1)
-        try:
-            s.connect(('localhost', port))
-            break
-        except ConnectionRefusedError:
-            time.sleep(0.1)
-        finally:
-            s.close()
-    else:
-        print(f'Warning: waited {timeout} seconds for the server to start but could still not connect', file=OUTPUT)
-
-
 class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         # add a # at the beginning of the line to not mess up Mtest diffs
@@ -66,19 +47,23 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(b'NOT FOUND\n')
 
+b = threading.Barrier(2)
+
 def runserver():
     global port
     addr = ('127.0.0.1', 0)
     srv = http.server.HTTPServer(addr, Handler)
     port = srv.server_port
     print(f"Listening on {port}", file=OUTPUT)
+    b.wait()
     srv.serve_forever()
 
 # Start the http server
 port = 0
 t = threading.Thread(target=lambda: runserver(), daemon=True)
 t.start()
-wait_for_server(5.0)
+# and wait for it to fill in the port
+b.wait()
 
 url = f'http://localhost:{port}'
 
