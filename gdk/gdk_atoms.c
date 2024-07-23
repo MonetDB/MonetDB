@@ -88,6 +88,38 @@ dblCmp(const dbl *l, const dbl *r)
 	return is_dbl_nil(*l) ? -!is_dbl_nil(*r) : is_dbl_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
+static int
+ubteCmp(const ubte *l, const ubte *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
+ushtCmp(const usht *l, const usht *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
+uintCmp(const uint *l, const uint *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
+ulngCmp(const ulng *l, const ulng *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+#ifdef HAVE_HGE
+static int
+uhgeCmp(const uhge *l, const uhge *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+#endif
+
 /*
  * @- inline hash routines
  * Return some positive integer derived from one atom value.
@@ -878,6 +910,137 @@ hgeFromStr(const char *src, size_t *len, hge **dst, bool external)
 }
 #endif
 
+#ifdef HAVE_HGE
+const uhge maxunum = ((uhge) UINT64_C(18446744073709551615) << 64) |
+	(uhge) UINT64_C(18446744073709551615); /* (1 << 128) - 1: 340282366920938463463374607431768211455*/
+#else
+const ulng maxunum = UINT64_C(18446744073709551615); /* (1 << 64) - 1 */
+#endif
+
+static ssize_t
+unumFromStr(const char *src, size_t *len, void **dst, int tp)
+{
+	const char *p = src;
+	size_t sz = ATOMsize(tp);
+#ifdef HAVE_HGE
+	uhge base = 0;
+#else
+	ulng base = 0;
+#endif
+
+	/* a valid unsigned number has the following syntax:
+	 * [0-9]+(LL)? -- PCRE syntax, or in other words
+	 * one or more digits, optional LL
+	 * embedded spaces are not allowed
+	 * the optional LL at the end are only allowed for lng and hge
+	 * values */
+	atommem(sz);
+
+	if (strNil(src)) {
+		GDKerror("not a number");
+		goto bailout;
+	}
+
+	while (GDKisspace(*p))
+		p++;
+	if (!GDKisdigit(*p)) {
+		GDKerror("not a number");
+		goto bailout;
+	}
+	do {
+		int dig = base10(*p);
+		if (base > maxunum / 10 ||
+		    (base == maxunum / 10 && dig > 5)) {
+			/* overflow */
+			goto overflow;
+		}
+		base = 10 * base + dig;
+		p++;
+	} while (GDKisdigit(*p));
+	switch (sz) {
+	case 1:
+		if (base > GDK_ubte_max)
+			goto overflow;
+		**(ubte **) dst = (ubte) base;
+		break;
+	case 2:
+		if (base > GDK_usht_max)
+			goto overflow;
+		**(usht **) dst = (usht) base;
+		break;
+	case 4:
+		if (base > GDK_uint_max)
+			goto overflow;
+		**(uint **) dst = (uint) base;
+		break;
+	case 8:
+#ifndef HAVE_HGE
+		if (base > GDK_ulng_max)
+			goto overflow;
+#endif
+		**(ulng **) dst = (ulng) base;
+		if (p[0] == 'L' && p[1] == 'L')
+			p += 2;
+		break;
+#ifdef HAVE_HGE
+	case 16:
+		**(uhge **) dst = (uhge) base;
+		if (p[0] == 'L' && p[1] == 'L')
+			p += 2;
+		break;
+#endif
+	}
+	while (GDKisspace(*p))
+		p++;
+	return (ssize_t) (p - src);
+
+  overflow:
+	while (GDKisdigit(*p))
+		p++;
+	GDKerror("overflow: \"%.*s\" does not fit in %s\n",
+		 (int) (p - src), src, ATOMname(tp));
+  bailout:
+	memset(*dst, 0, sz);
+	return -1;
+}
+
+static ssize_t
+ubteFromStr(const char *src, size_t *len, ubte **dst, bool external)
+{
+	(void) external;
+	return unumFromStr(src, len, (void **) dst, TYPE_ubte);
+}
+
+static ssize_t
+ushtFromStr(const char *src, size_t *len, usht **dst, bool external)
+{
+	(void) external;
+	return unumFromStr(src, len, (void **) dst, TYPE_usht);
+}
+
+static ssize_t
+uintFromStr(const char *src, size_t *len, uint **dst, bool external)
+{
+	(void) external;
+	return unumFromStr(src, len, (void **) dst, TYPE_uint);
+}
+
+static ssize_t
+ulngFromStr(const char *src, size_t *len, ulng **dst, bool external)
+{
+	(void) external;
+	return unumFromStr(src, len, (void **) dst, TYPE_ulng);
+}
+
+#ifdef HAVE_HGE
+static ssize_t
+uhgeFromStr(const char *src, size_t *len, uhge **dst, bool external)
+{
+	(void) external;
+	return unumFromStr(src, len, (void **) dst, TYPE_uhge);
+}
+#endif
+
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
 TYPE##Read(TYPE *A, size_t *dstlen, stream *s, size_t cnt)		\
@@ -979,7 +1142,48 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 		return strlen(*dst);
 	}
 }
-atom_io(hge, Hge, hge)
+atom_io(hge, Hge, hge);
+#endif
+
+#define uatomtostr(TYPE, FMT, FMTCAST)					\
+static ssize_t								\
+u##TYPE##ToStr(char **dst, size_t *len, const u##TYPE *src, bool external) \
+{									\
+	(void) external;						\
+	atommem(TYPE##Strlen);						\
+	return snprintf(*dst, *len, FMT, FMTCAST *src);			\
+}
+
+uatomtostr(bte, "%hhu", )
+uatomtostr(sht, "%hu", )
+uatomtostr(int, "%u", )
+uatomtostr(lng, ULLFMT, )
+
+#ifdef HAVE_HGE
+#define HGE_LL018FMT "%018" PRId64
+#define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
+#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
+static ssize_t
+uhgeToStr(char **dst, size_t *len, const uhge *src, bool external)
+{
+	atommem(hgeStrlen);
+	if (*src <= (hge) GDK_lng_max) {
+		ulng s = (ulng) *src;
+		return ulngToStr(dst, len, &s, external);
+	}
+	char *p = *dst;
+	uhge v = *src;
+	do {
+		*p++ = (v % 10) + '0';
+		v /= 10;
+	} while (v != 0);
+	for (int i = (int) (p - *dst) - 1, j = 0; i > j; i--, j++) {
+		char c = (*dst)[i];
+		(*dst)[i] = (*dst)[j];
+		(*dst)[j] = c;
+	}
+	return (ssize_t) (p - *dst);
+}
 #endif
 
 ssize_t
@@ -1695,13 +1899,13 @@ atomDesc BATatoms[MAXATOMS] = {
 		.name = "ubte",
 		.storage = TYPE_bte,
 		.linear = true,
-		.size = sizeof(bte),
+		.size = sizeof(ubte),
 		.atomNull = NULL,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) bteFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) bteToStr,
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ubteFromStr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ubteToStr,
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bteRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
-		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomCmp = (int (*)(const void *, const void *)) ubteCmp,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
 	[TYPE_sht] = {
@@ -1721,13 +1925,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.name = "usht",
 		.storage = TYPE_sht,
 		.linear = true,
-		.size = sizeof(sht),
-		.atomNull = NULL,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) shtFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) shtToStr,
+		.size = sizeof(usht),
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ushtFromStr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ushtToStr,
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) shtRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
-		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
+		.atomCmp = (int (*)(const void *, const void *)) ushtCmp,
 		.atomHash = (BUN (*)(const void *)) shtHash,
 	},
 	[TYPE_int] = {
@@ -1747,13 +1950,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.name = "uint",
 		.storage = TYPE_int,
 		.linear = true,
-		.size = sizeof(int),
-		.atomNull = NULL,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) intFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) intToStr,
+		.size = sizeof(uint),
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) uintFromStr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) uintToStr,
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
-		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomCmp = (int (*)(const void *, const void *)) uintCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
 	},
 	[TYPE_oid] = {
@@ -1839,13 +2041,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.name = "ulng",
 		.storage = TYPE_lng,
 		.linear = true,
-		.size = sizeof(lng),
-		.atomNull = NULL,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) lngFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) lngToStr,
+		.size = sizeof(ulng),
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ulngFromStr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ulngToStr,
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
-		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomCmp = (int (*)(const void *, const void *)) ulngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 #ifdef HAVE_HGE
@@ -1866,13 +2067,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.name = "uhge",
 		.storage = TYPE_hge,
 		.linear = true,
-		.size = sizeof(hge),
-		.atomNull = NULL,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) hgeFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) hgeToStr,
+		.size = sizeof(uhge),
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) uhgeFromStr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) uhgeToStr,
 		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) hgeRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
-		.atomCmp = (int (*)(const void *, const void *)) hgeCmp,
+		.atomCmp = (int (*)(const void *, const void *)) uhgeCmp,
 		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 #endif

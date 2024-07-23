@@ -458,9 +458,13 @@ enum {
 typedef bool msk;
 typedef int8_t bit;
 typedef int8_t bte;
+typedef uint8_t ubte;
 typedef int16_t sht;
+typedef uint16_t usht;
+typedef uint32_t uint;
 /* typedef int64_t lng; -- defined in gdk_system.h */
 typedef uint64_t ulng;
+/* hge and uhge are defined in monetdb_config.h */
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
@@ -648,6 +652,13 @@ typedef struct {
 		hge hval;
 #endif
 		uuid uval;
+		ubte ubtval;
+		usht ushval;
+		uint uival;
+		ulng ulval;
+#ifdef HAVE_HGE
+		uhge uhval;
+#endif
 	} val;
 	size_t len;
 	short vtype;
@@ -1952,13 +1963,18 @@ VALptr(const ValRecord *v)
 	case TYPE_void: return (const void *) &v->val.oval;
 	case TYPE_msk: return (const void *) &v->val.mval;
 	case TYPE_bte: return (const void *) &v->val.btval;
+	case TYPE_ubte: return (const void *) &v->val.ubtval;
 	case TYPE_sht: return (const void *) &v->val.shval;
+	case TYPE_usht: return (const void *) &v->val.ushval;
 	case TYPE_int: return (const void *) &v->val.ival;
+	case TYPE_uint: return (const void *) &v->val.uival;
 	case TYPE_flt: return (const void *) &v->val.fval;
 	case TYPE_dbl: return (const void *) &v->val.dval;
+	case TYPE_ulng: return (const void *) &v->val.ulval;
 	case TYPE_lng: return (const void *) &v->val.lval;
 #ifdef HAVE_HGE
 	case TYPE_hge: return (const void *) &v->val.hval;
+	case TYPE_uhge: return (const void *) &v->val.uhval;
 #endif
 	case TYPE_uuid: return (const void *) &v->val.uval;
 	case TYPE_ptr: return (const void *) &v->val.pval;

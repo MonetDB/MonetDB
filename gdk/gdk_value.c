@@ -61,11 +61,20 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_bte:
 		v->val.btval = *(bte *) p;
 		break;
+	case TYPE_ubte:
+		v->val.ubtval = *(ubte *) p;
+		break;
 	case TYPE_sht:
 		v->val.shval = *(sht *) p;
 		break;
+	case TYPE_usht:
+		v->val.ushval = *(usht *) p;
+		break;
 	case TYPE_int:
 		v->val.ival = *(int *) p;
+		break;
+	case TYPE_uint:
+		v->val.uival = *(uint *) p;
 		break;
 	case TYPE_flt:
 		v->val.fval = *(flt *) p;
@@ -76,9 +85,15 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_lng:
 		v->val.lval = *(lng *) p;
 		break;
+	case TYPE_ulng:
+		v->val.ulval = *(ulng *) p;
+		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		v->val.hval = *(hge *) p;
+		break;
+	case TYPE_uhge:
+		v->val.uhval = *(uhge *) p;
 		break;
 #endif
 	case TYPE_uuid:
@@ -203,11 +218,20 @@ VALinit(ValPtr d, int tpe, const void *s)
 	case TYPE_bte:
 		d->val.btval = *(const bte *) s;
 		break;
+	case TYPE_ubte:
+		d->val.ubtval = *(const ubte *) s;
+		break;
 	case TYPE_sht:
 		d->val.shval = *(const sht *) s;
 		break;
+	case TYPE_usht:
+		d->val.ushval = *(const usht *) s;
+		break;
 	case TYPE_int:
 		d->val.ival = *(const int *) s;
+		break;
+	case TYPE_uint:
+		d->val.uival = *(const uint *) s;
 		break;
 	case TYPE_flt:
 		d->val.fval = *(const flt *) s;
@@ -218,9 +242,15 @@ VALinit(ValPtr d, int tpe, const void *s)
 	case TYPE_lng:
 		d->val.lval = *(const lng *) s;
 		break;
+	case TYPE_ulng:
+		d->val.ulval = *(const ulng *) s;
+		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		d->val.hval = *(const hge *) s;
+		break;
+	case TYPE_uhge:
+		d->val.uhval = *(const uhge *) s;
 		break;
 #endif
 	case TYPE_uuid:
@@ -360,8 +390,18 @@ VALisnil(const ValRecord *v)
 		return is_oid_nil(v->val.oval);
 	case TYPE_ptr:
 		return v->val.pval == NULL;
+	case TYPE_ubte:
+	case TYPE_usht:
+	case TYPE_uint:
+	case TYPE_ulng:
+#ifdef HAVE_HGE
+	case TYPE_uhge:
+#endif
+		return false;
 	default:
 		break;
 	}
+	if (ATOMnilptr(v->vtype) == NULL)
+		return false;
 	return (*ATOMcompare(v->vtype))(VALptr(v), ATOMnilptr(v->vtype)) == 0;
 }
