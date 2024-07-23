@@ -704,6 +704,139 @@ dofsum(const void *restrict values, oid seqb,
 		}							\
 	} while (0)
 
+#define AGGR_USUM(TYPE1, TYPE2)						\
+	do {								\
+		TYPE1 x;						\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
+		if (ngrp == 1 && ci->tpe == cand_dense) {		\
+			/* single group, no candidate list */		\
+			TYPE2 sum;					\
+			*algo = "sum: no nils, no candidates, no groups"; \
+			sum = 0;					\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
+				x = vals[ci->seq + i - seqb];		\
+				ADD_WITH_CHECK(x, sum,			\
+					       TYPE2, sum,		\
+					       GDK_##TYPE2##_max,	\
+					       goto overflow);		\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+			*sums = sum;					\
+		} else if (ngrp == 1) {					\
+			/* single group, with candidate list */		\
+			TYPE2 sum;					\
+			*algo = "sum: no nils, with candidates, no groups"; \
+			sum = 0;					\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
+				x = vals[canditer_next(ci) - seqb];	\
+				ADD_WITH_CHECK(x, sum,			\
+					       TYPE2, sum,		\
+					       GDK_##TYPE2##_max,	\
+					       goto overflow);		\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+			*sums = sum;					\
+		} else if (ci->tpe == cand_dense) {			\
+			/* multiple groups, no candidate list */	\
+			*algo = "sum: no nils, no candidates, with groups"; \
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
+					x = vals[ci->seq + i - seqb];	\
+					ADD_WITH_CHECK(			\
+						x,			\
+						sums[gid],		\
+						TYPE2,			\
+						sums[gid],		\
+						GDK_##TYPE2##_max,	\
+						goto overflow);		\
+				}					\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		} else {						\
+			/* multiple groups, with candidate list */	\
+			*algo = "sum: no nils, with candidates, with groups"; \
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
+				i = canditer_next(ci) - seqb;		\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
+					x = vals[i];			\
+					ADD_WITH_CHECK(			\
+						x,			\
+						sums[gid],		\
+						TYPE2,			\
+						sums[gid],		\
+						GDK_##TYPE2##_max,	\
+						goto overflow);		\
+				}					\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		}							\
+	} while (0)
+
+#define AGGR_USUM_NOOVL(TYPE1, TYPE2)					\
+	do {								\
+		TYPE1 x;						\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
+		if (ngrp == 1 && ci->tpe == cand_dense) {		\
+			/* single group, no nils, no candidate list */	\
+			TYPE2 sum;					\
+			sum = 0;					\
+			*algo = "sum: no nils, no candidates, no groups, no nils, no overflow"; \
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
+				sum += vals[ci->seq + i - seqb];	\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+			*sums = sum;					\
+		} else if (ngrp == 1) {					\
+			/* single group, with candidate list */		\
+			TYPE2 sum;					\
+			*algo = "sum: no nils, with candidates, no groups, no overflow"; \
+			sum = 0;					\
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
+				x = vals[canditer_next(ci) - seqb];	\
+				sum += x;				\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+			*sums = sum;					\
+		} else if (ci->tpe == cand_dense) {			\
+			/* multiple groups, no candidate list */	\
+			*algo = "sum: no nils, no candidates, with groups, no nils, no overflow"; \
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
+					x = vals[ci->seq + i - seqb];	\
+					sums[gid] += x;			\
+				}					\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		} else {						\
+			/* multiple groups, with candidate list */	\
+			*algo = "sum: no nils, with candidates, with groups, no overflow"; \
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
+				i = canditer_next(ci) - seqb;		\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					gid = gids ? gids[i] - min : (oid) i; \
+					x = vals[i];			\
+					sums[gid] += x;			\
+				}					\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		}							\
+	} while (0)
+
 static BUN
 dosum(const void *restrict values, bool nonil, oid seqb,
       struct canditer *restrict ci,
@@ -734,9 +867,11 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 	}
 
 	/* allocate bitmap for seen group ids */
-	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
-	if (seen == NULL) {
-		return BUN_NONE;
+	if (ATOMnilptr(tp2) != NULL) {
+		seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
+		if (seen == NULL) {
+			return BUN_NONE;
+		}
 	}
 
 	switch (tp2) {
@@ -745,6 +880,17 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, bte);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_ubte: {
+		ubte *restrict sums = (ubte *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_USUM(ubte, ubte);
 			break;
 		default:
 			goto unsupported;
@@ -768,6 +914,23 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		}
 		break;
 	}
+	case TYPE_usht: {
+		usht *restrict sums = (usht *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			if (ci->ncand < ((BUN) 1 << ((sizeof(usht) - sizeof(ubte)) << 3)))
+				AGGR_USUM_NOOVL(ubte, usht);
+			else
+				AGGR_USUM(ubte, usht);
+			break;
+		case TYPE_usht:
+			AGGR_USUM(usht, usht);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 	case TYPE_int: {
 		int *restrict sums = (int *) results;
 		switch (tp1) {
@@ -785,6 +948,29 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 			break;
 		case TYPE_int:
 			AGGR_SUM(int, int);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_uint: {
+		uint *restrict sums = (uint *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			if (ci->ncand < ((BUN) 1 << ((sizeof(uint) - sizeof(ubte)) << 3)))
+				AGGR_USUM_NOOVL(ubte, uint);
+			else
+				AGGR_USUM(ubte, uint);
+			break;
+		case TYPE_usht:
+			if (ci->ncand < ((BUN) 1 << ((sizeof(uint) - sizeof(usht)) << 3)))
+				AGGR_USUM_NOOVL(usht, uint);
+			else
+				AGGR_USUM(usht, uint);
+			break;
+		case TYPE_uint:
+			AGGR_USUM(uint, uint);
 			break;
 		default:
 			goto unsupported;
@@ -832,6 +1018,47 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		}
 		break;
 	}
+	case TYPE_ulng: {
+		ulng *restrict sums = (ulng *) results;
+		switch (tp1) {
+#if SIZEOF_BUN == 4
+		case TYPE_ubte:
+			AGGR_USUM_NOOVL(ubte, ulng);
+			break;
+		case TYPE_usht:
+			AGGR_USUM_NOOVL(usht, ulng);
+			break;
+		case TYPE_uint:
+			AGGR_USUM_NOOVL(uint, ulng);
+			break;
+#else
+		case TYPE_ubte:
+			if (ci->ncand < ((BUN) 1 << ((sizeof(ulng) - sizeof(ubte)) << 3)))
+				AGGR_USUM_NOOVL(ubte, ulng);
+			else
+				AGGR_USUM(ubte, ulng);
+			break;
+		case TYPE_usht:
+			if (ci->ncand < ((BUN) 1 << ((sizeof(ulng) - sizeof(usht)) << 3)))
+				AGGR_USUM_NOOVL(usht, ulng);
+			else
+				AGGR_USUM(usht, ulng);
+			break;
+		case TYPE_uint:
+			if (ci->ncand < ((BUN) 1 << ((sizeof(ulng) - sizeof(uint)) << 3)))
+				AGGR_USUM_NOOVL(uint, ulng);
+			else
+				AGGR_USUM(uint, ulng);
+			break;
+#endif
+		case TYPE_ulng:
+			AGGR_USUM(ulng, ulng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 #ifdef HAVE_HGE
 	case TYPE_hge: {
 		hge *sums = (hge *) results;
@@ -856,12 +1083,35 @@ dosum(const void *restrict values, bool nonil, oid seqb,
 		}
 		break;
 	}
+	case TYPE_uhge: {
+		uhge *sums = (uhge *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_USUM_NOOVL(ubte, uhge);
+			break;
+		case TYPE_usht:
+			AGGR_USUM_NOOVL(usht, uhge);
+			break;
+		case TYPE_uint:
+			AGGR_USUM_NOOVL(uint, uhge);
+			break;
+		case TYPE_ulng:
+			AGGR_USUM_NOOVL(ulng, uhge);
+			break;
+		case TYPE_uhge:
+			AGGR_USUM(uhge, uhge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 #endif
 	default:
 		goto unsupported;
 	}
 
-	if (nils == 0 && nil_if_empty) {
+	if (nils == 0 && nil_if_empty && seen != NULL) {
 		/* figure out whether there were any empty groups
 		 * (that result in a nil value) */
 		if (ngrp & 0x1F) {
@@ -934,7 +1184,28 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 		return BATconvert(b, s, tp, 0, 0, 0);
 	}
 
-	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	switch (tp) {
+	case TYPE_ubte:
+		bn = BATconstant(min, tp, &(ubte){0}, ngrp, TRANSIENT);
+		break;
+	case TYPE_usht:
+		bn = BATconstant(min, tp, &(usht){0}, ngrp, TRANSIENT);
+		break;
+	case TYPE_uint:
+		bn = BATconstant(min, tp, &(uint){0}, ngrp, TRANSIENT);
+		break;
+	case TYPE_ulng:
+		bn = BATconstant(min, tp, &(ulng){0}, ngrp, TRANSIENT);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_uhge:
+		bn = BATconstant(min, tp, &(uhge){0}, ngrp, TRANSIENT);
+		break;
+#endif
+	default:
+		bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+		break;
+	}
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -1040,12 +1311,26 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 			}
 			* (bte *) res = (bte) n;
 			break;
+		case TYPE_ubte:
+			if (n > GDK_ubte_max) {
+				GDKerror("22003!overflow in sum aggregate.\n");
+				return GDK_FAIL;
+			}
+			* (ubte *) res = (ubte) n;
+			break;
 		case TYPE_sht:
 			if (n > GDK_sht_max) {
 				GDKerror("22003!overflow in sum aggregate.\n");
 				return GDK_FAIL;
 			}
 			* (sht *) res = (sht) n;
+			break;
+		case TYPE_usht:
+			if (n > GDK_usht_max) {
+				GDKerror("22003!overflow in sum aggregate.\n");
+				return GDK_FAIL;
+			}
+			* (usht *) res = (usht) n;
 			break;
 		case TYPE_int:
 #if SIZEOF_BUN > 4
@@ -1056,12 +1341,27 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 #endif
 			* (int *) res = (int) n;
 			break;
+		case TYPE_uint:
+#if SIZEOF_BUN > 4
+			if (n > GDK_uint_max) {
+				GDKerror("22003!overflow in sum aggregate.\n");
+				return GDK_FAIL;
+			}
+#endif
+			* (uint *) res = (uint) n;
+			break;
 		case TYPE_lng:
 			* (lng *) res = (lng) n;
+			break;
+		case TYPE_ulng:
+			* (ulng *) res = (ulng) n;
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			* (hge *) res = (hge) n;
+			break;
+		case TYPE_uhge:
+			* (uhge *) res = (uhge) n;
 			break;
 #endif
 		case TYPE_flt:
@@ -1085,29 +1385,49 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	case TYPE_bte:
 		* (bte *) res = nil_if_empty ? bte_nil : 0;
 		break;
+	case TYPE_ubte:
+		* (ubte *) res = 0;
+		break;
 	case TYPE_sht:
 		* (sht *) res = nil_if_empty ? sht_nil : 0;
+		break;
+	case TYPE_usht:
+		* (usht *) res = 0;
 		break;
 	case TYPE_int:
 		* (int *) res = nil_if_empty ? int_nil : 0;
 		break;
+	case TYPE_uint:
+		* (uint *) res = 0;
+		break;
 	case TYPE_lng:
 		* (lng *) res = nil_if_empty ? lng_nil : 0;
+		break;
+	case TYPE_ulng:
+		* (ulng *) res = 0;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		* (hge *) res = nil_if_empty ? hge_nil : 0;
+		break;
+	case TYPE_uhge:
+		* (uhge *) res = 0;
 		break;
 #endif
 	case TYPE_flt:
 	case TYPE_dbl:
 		switch (b->ttype) {
 		case TYPE_bte:
+		case TYPE_ubte:
 		case TYPE_sht:
+		case TYPE_usht:
 		case TYPE_int:
+		case TYPE_uint:
 		case TYPE_lng:
+		case TYPE_ulng:
 #ifdef HAVE_HGE
 		case TYPE_hge:
+		case TYPE_uhge:
 #endif
 		{
 			/* special case for summing integer types into
@@ -1226,6 +1546,33 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
+#define AGGR_UPROD(TYPE1, TYPE2, TYPE3)					\
+	do {								\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
+		gid = 0;	/* doesn't change if gidincr == false */ \
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
+			i = canditer_next(ci) - seqb;			\
+			if (gids == NULL || !gidincr ||			\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
+				MUL4_WITH_CHECK(			\
+					vals[i],			\
+					prods[gid],			\
+					TYPE2, prods[gid],		\
+					GDK_##TYPE2##_max,		\
+					TYPE3,				\
+					goto overflow);			\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
 #ifdef HAVE_HGE
 #define AGGR_PROD_HGE(TYPE)						\
 	do {								\
@@ -1258,6 +1605,31 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 						     GDK_hge_max,	\
 						     goto overflow);	\
 				}					\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
+#define AGGR_UPROD_UHGE(TYPE)						\
+	do {								\
+		const TYPE *vals = (const TYPE *) values;		\
+		gid = 0;	/* doesn't change if gidincr == false */ \
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
+			i = canditer_next(ci) - seqb;			\
+			if (gids == NULL || !gidincr ||			\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
+				HGEMUL_CHECK(vals[i],			\
+					     prods[gid],		\
+					     prods[gid],		\
+					     GDK_uhge_max,		\
+					     goto overflow);		\
 			}						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
@@ -1298,6 +1670,32 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 							goto overflow); \
 					}				\
 				}					\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
+#define AGGR_UPROD_ULNG(TYPE)						\
+	do {								\
+		const TYPE *restrict vals = (const TYPE *) values;	\
+		gid = 0;	/* doesn't change if gidincr == false */ \
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
+			i = canditer_next(ci) - seqb;			\
+			if (gids == NULL || !gidincr ||			\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
+				LNGMUL_CHECK(				\
+					vals[i],			\
+					prods[gid],			\
+					prods[gid],			\
+					GDK_ulng_max,			\
+					goto overflow);			\
 			}						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
@@ -1345,6 +1743,32 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
+#define AGGR_UPROD_FLOAT(TYPE1, TYPE2)					\
+	do {								\
+		const TYPE1 *restrict vals = (const TYPE1 *) values;	\
+		gid = 0;	/* doesn't change if gidincr == false */ \
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {			\
+			i = canditer_next(ci) - seqb;			\
+			if (gids == NULL || !gidincr ||			\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gidincr) {				\
+					if (gids)			\
+						gid = gids[i] - min;	\
+					else				\
+						gid = (oid) i;		\
+				}					\
+				if (vals[i] > 1 &&			\
+				    GDK_##TYPE2##_max / vals[i] < prods[gid]) { \
+					goto overflow;			\
+				} else {				\
+					prods[gid] *= vals[i];		\
+				}					\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
 static BUN
 doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
        void *restrict results, BUN ngrp, int tp1, int tp2,
@@ -1354,14 +1778,16 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 	BUN nils = 0;
 	BUN i;
 	oid gid;
-	unsigned int *restrict seen; /* bitmask for groups that we've seen */
+	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	/* allocate bitmap for seen group ids */
-	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
-	if (seen == NULL) {
-		return BUN_NONE;
+	if (ATOMnilptr(tp2)) {
+		seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
+		if (seen == NULL) {
+			return BUN_NONE;
+		}
 	}
 
 	switch (tp2) {
@@ -1376,6 +1802,17 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 		}
 		break;
 	}
+	case TYPE_ubte: {
+		ubte *restrict prods = (ubte *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_UPROD(ubte, ubte, usht);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 	case TYPE_sht: {
 		sht *restrict prods = (sht *) results;
 		switch (tp1) {
@@ -1384,6 +1821,20 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 			break;
 		case TYPE_sht:
 			AGGR_PROD(sht, sht, int);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_usht: {
+		usht *restrict prods = (usht *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_UPROD(ubte, usht, uint);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD(usht, usht, uint);
 			break;
 		default:
 			goto unsupported;
@@ -1407,6 +1858,23 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 		}
 		break;
 	}
+	case TYPE_uint: {
+		uint *restrict prods = (uint *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_UPROD(ubte, uint, ulng);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD(usht, uint, ulng);
+			break;
+		case TYPE_uint:
+			AGGR_UPROD(uint, uint, ulng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 #ifdef HAVE_HGE
 	case TYPE_lng: {
 		lng *prods = (lng *) results;
@@ -1422,6 +1890,26 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 			break;
 		case TYPE_lng:
 			AGGR_PROD(lng, lng, hge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
+	case TYPE_ulng: {
+		ulng *prods = (ulng *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_UPROD(ubte, ulng, uhge);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD(usht, ulng, uhge);
+			break;
+		case TYPE_uint:
+			AGGR_UPROD(uint, ulng, uhge);
+			break;
+		case TYPE_ulng:
+			AGGR_UPROD(ulng, ulng, uhge);
 			break;
 		default:
 			goto unsupported;
@@ -1451,6 +1939,29 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 		}
 		break;
 	}
+	case TYPE_uhge: {
+		uhge *prods = (uhge *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_UPROD_UHGE(ubte);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD_UHGE(usht);
+			break;
+		case TYPE_uint:
+			AGGR_UPROD_UHGE(uint);
+			break;
+		case TYPE_ulng:
+			AGGR_UPROD_UHGE(ulng);
+			break;
+		case TYPE_uhge:
+			AGGR_UPROD_UHGE(uhge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 #else
 	case TYPE_lng: {
 		lng *restrict prods = (lng *) results;
@@ -1472,6 +1983,26 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 		}
 		break;
 	}
+	case TYPE_ulng: {
+		ulng *restrict prods = (ulng *) results;
+		switch (tp1) {
+		case TYPE_ubte:
+			AGGR_UPROD_ULNG(ubte);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD_ULNG(usht);
+			break;
+		case TYPE_uint:
+			AGGR_UPROD_ULNG(uint);
+			break;
+		case TYPE_ulng:
+			AGGR_UPROD_ULNG(ulng);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	}
 #endif
 	case TYPE_flt: {
 		flt *restrict prods = (flt *) results;
@@ -1479,18 +2010,33 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 		case TYPE_bte:
 			AGGR_PROD_FLOAT(bte, flt);
 			break;
+		case TYPE_ubte:
+			AGGR_UPROD_FLOAT(ubte, flt);
+			break;
 		case TYPE_sht:
 			AGGR_PROD_FLOAT(sht, flt);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD_FLOAT(usht, flt);
 			break;
 		case TYPE_int:
 			AGGR_PROD_FLOAT(int, flt);
 			break;
+		case TYPE_uint:
+			AGGR_UPROD_FLOAT(uint, flt);
+			break;
 		case TYPE_lng:
 			AGGR_PROD_FLOAT(lng, flt);
+			break;
+		case TYPE_ulng:
+			AGGR_UPROD_FLOAT(ulng, flt);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			AGGR_PROD_FLOAT(hge, flt);
+			break;
+		case TYPE_uhge:
+			AGGR_UPROD_FLOAT(uhge, flt);
 			break;
 #endif
 		case TYPE_flt:
@@ -1507,18 +2053,33 @@ doprod(const void *restrict values, oid seqb, struct canditer *restrict ci,
 		case TYPE_bte:
 			AGGR_PROD_FLOAT(bte, dbl);
 			break;
+		case TYPE_ubte:
+			AGGR_UPROD_FLOAT(ubte, dbl);
+			break;
 		case TYPE_sht:
 			AGGR_PROD_FLOAT(sht, dbl);
+			break;
+		case TYPE_usht:
+			AGGR_UPROD_FLOAT(usht, dbl);
 			break;
 		case TYPE_int:
 			AGGR_PROD_FLOAT(int, dbl);
 			break;
+		case TYPE_uint:
+			AGGR_UPROD_FLOAT(uint, dbl);
+			break;
 		case TYPE_lng:
 			AGGR_PROD_FLOAT(lng, dbl);
+			break;
+		case TYPE_ulng:
+			AGGR_UPROD_FLOAT(ulng, dbl);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			AGGR_PROD_FLOAT(hge, dbl);
+			break;
+		case TYPE_uhge:
+			AGGR_UPROD_FLOAT(uhge, dbl);
 			break;
 #endif
 		case TYPE_flt:
@@ -1608,7 +2169,28 @@ BATgroupprod(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 		return BATconvert(b, s, tp, 0, 0, 0);
 	}
 
-	bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+	switch (tp) {
+	case TYPE_ubte:
+		bn = BATconstant(min, tp, &(bte){1}, ngrp, TRANSIENT);
+		break;
+	case TYPE_usht:
+		bn = BATconstant(min, tp, &(usht){1}, ngrp, TRANSIENT);
+		break;
+	case TYPE_uint:
+		bn = BATconstant(min, tp, &(uint){1}, ngrp, TRANSIENT);
+		break;
+	case TYPE_ulng:
+		bn = BATconstant(min, tp, &(ulng){1}, ngrp, TRANSIENT);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_uhge:
+		bn = BATconstant(min, tp, &(uhge){1}, ngrp, TRANSIENT);
+		break;
+#endif
+	default:
+		bn = BATconstant(min, tp, ATOMnilptr(tp), ngrp, TRANSIENT);
+		break;
+	}
 	if (bn == NULL) {
 		return NULL;
 	}
@@ -1666,18 +2248,33 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 	case TYPE_bte:
 		* (bte *) res = nil_if_empty ? bte_nil : (bte) 1;
 		break;
+	case TYPE_ubte:
+		* (ubte *) res = (ubte) 1;
+		break;
 	case TYPE_sht:
 		* (sht *) res = nil_if_empty ? sht_nil : (sht) 1;
+		break;
+	case TYPE_usht:
+		* (usht *) res = (usht) 1;
 		break;
 	case TYPE_int:
 		* (int *) res = nil_if_empty ? int_nil : (int) 1;
 		break;
+	case TYPE_uint:
+		* (uint *) res = (uint) 1;
+		break;
 	case TYPE_lng:
 		* (lng *) res = nil_if_empty ? lng_nil : (lng) 1;
+		break;
+	case TYPE_ulng:
+		* (ulng *) res = (ulng) 1;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		* (hge *) res = nil_if_empty ? hge_nil : (hge) 1;
+		break;
+	case TYPE_uhge:
+		* (uhge *) res = (uhge) 1;
 		break;
 #endif
 	case TYPE_flt:
@@ -1737,6 +2334,39 @@ BATprod(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 						     rems[gid],		\
 						     cnts[gid]);	\
 				}					\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx, GOTO_BAILOUT());			\
+		for (i = 0; i < ngrp; i++) {				\
+			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
+				dbls[i] = dbl_nil;			\
+				cnts[i] = 0;				\
+				nils++;					\
+			} else {					\
+				dbls[i] = avgs[i] + (dbl) rems[i] / cnts[i]; \
+			}						\
+		}							\
+		GDKfree(avgs);						\
+	} while (0)
+
+#define AGGR_UAVG(TYPE)							\
+	do {								\
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
+		TYPE *restrict avgs = GDKzalloc(ngrp * sizeof(TYPE));	\
+		if (avgs == NULL)					\
+			goto bailout;					\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
+			i = canditer_next(&ci) - b->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				AVERAGE_ITER(TYPE, vals[i],		\
+					     avgs[gid],			\
+					     rems[gid],			\
+					     cnts[gid]);		\
 			}						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx, GOTO_BAILOUT());			\
@@ -1839,8 +2469,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 			return GDK_FAIL;
 		}
 		if (cntsp) {
-			lng zero = 0;
-			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
+			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
@@ -1859,8 +2488,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 		if ((bn = BATconvert(b, s, TYPE_dbl, 0, 0, 0)) == NULL)
 			return GDK_FAIL;
 		if (cntsp) {
-			lng one = 1;
-			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
+			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &(lng){1}, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
@@ -1873,11 +2501,16 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	/* allocate temporary space to do per group calculations */
 	switch (b->ttype) {
 	case TYPE_bte:
+	case TYPE_ubte:
 	case TYPE_sht:
+	case TYPE_usht:
 	case TYPE_int:
+	case TYPE_uint:
 	case TYPE_lng:
+	case TYPE_ulng:
 #ifdef HAVE_HGE
 	case TYPE_hge:
+	case TYPE_uhge:
 #endif
 		rems = GDKzalloc(ngrp * sizeof(lng));
 		if (rems == NULL)
@@ -1912,18 +2545,33 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool
 	case TYPE_bte:
 		AGGR_AVG(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_UAVG(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_AVG(sht);
+		break;
+	case TYPE_usht:
+		AGGR_UAVG(usht);
 		break;
 	case TYPE_int:
 		AGGR_AVG(int);
 		break;
+	case TYPE_uint:
+		AGGR_UAVG(uint);
+		break;
 	case TYPE_lng:
 		AGGR_AVG(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_UAVG(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_AVG(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_UAVG(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -2095,6 +2743,25 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		}
 		break;
 	}
+	case TYPE_ubte: {
+		const ubte *vals = (const ubte *) bi.base;
+		ubte *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			AVERAGE_ITER(ubte, vals[o], avgs[gid], rems[gid], cnts[gid]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i]) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+		}
+#endif
+		break;
+	}
 	case TYPE_sht: {
 		const sht *vals = (const sht *) bi.base;
 		sht *avgs = Tloc(bn, 0);
@@ -2141,6 +2808,25 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			}
 #endif
 		}
+		break;
+	}
+	case TYPE_usht: {
+		const usht *vals = (const usht *) bi.base;
+		usht *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			AVERAGE_ITER(usht, vals[o], avgs[gid], rems[gid], cnts[gid]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i]) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+		}
+#endif
 		break;
 	}
 	case TYPE_int: {
@@ -2191,6 +2877,25 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		}
 		break;
 	}
+	case TYPE_uint: {
+		const uint *vals = (const uint *) bi.base;
+		uint *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			AVERAGE_ITER(uint, vals[o], avgs[gid], rems[gid], cnts[gid]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i]) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+		}
+#endif
+		break;
+	}
 	case TYPE_lng: {
 		const lng *vals = (const lng *) bi.base;
 		lng *avgs = Tloc(bn, 0);
@@ -2237,6 +2942,25 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			}
 #endif
 		}
+		break;
+	}
+	case TYPE_ulng: {
+		const ulng *vals = (const ulng *) bi.base;
+		ulng *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			AVERAGE_ITER(ulng, vals[o], avgs[gid], rems[gid], cnts[gid]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i]) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+		}
+#endif
 		break;
 	}
 #ifdef HAVE_HGE
@@ -2286,6 +3010,27 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			}
 #endif
 		}
+		break;
+	}
+#endif
+#ifdef HAVE_UHGE
+	case TYPE_uhge: {
+		const uhge *vals = (const uhge *) bi.base;
+		uhge *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+			o = canditer_next(&ci) - b->hseqbase;
+			if (ngrp > 1)
+				gid = gids ? gids[o] - min : o;
+			AVERAGE_ITER(uhge, vals[o], avgs[gid], rems[gid], cnts[gid]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i]) {
+				avgs[i]++;
+				rems[i] -= cnts[i];
+			}
+		}
+#endif
 		break;
 	}
 #endif
@@ -2422,6 +3167,22 @@ combine_averages_bte(bte *avgp, lng *remp, lng *cntp,
 }
 
 static inline void
+combine_averages_ubte(ubte *avgp, lng *remp, lng *cntp,
+		      ubte avg1, lng rem1, lng cnt1,
+		      ubte avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+	assert(cnt1 >= 0 && cnt2 >= 0);
+
+	*cntp = cnt;
+	ulng v = avg1 * (ulng) cnt1 + (ulng) rem1 + avg2 * (ulng) cnt2 + (ulng) rem2;
+	ubte a = (ubte) (v / (ulng) cnt);
+	v %= (ulng) cnt;
+	*avgp = a;
+	*remp = v;
+}
+
+static inline void
 combine_averages_sht(sht *avgp, lng *remp, lng *cntp,
 		     sht avg1, lng rem1, lng cnt1,
 		     sht avg2, lng rem2, lng cnt2)
@@ -2444,6 +3205,21 @@ combine_averages_sht(sht *avgp, lng *remp, lng *cntp,
 	*remp = v;
 }
 
+static inline void
+combine_averages_usht(usht *avgp, lng *remp, lng *cntp,
+		      usht avg1, lng rem1, lng cnt1,
+		      usht avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+	assert(cnt1 >= 0 && cnt2 >= 0);
+
+	*cntp = cnt;
+	ulng v = avg1 * (ulng) cnt1 + (ulng) rem1 + avg2 * (ulng) cnt2 + (ulng) rem2;
+	usht a = (usht) (v / (ulng) cnt);
+	v %= (ulng) cnt;
+	*avgp = a;
+	*remp = v;
+}
 
 static inline void
 combine_averages_int(int *avgp, lng *remp, lng *cntp,
@@ -2506,6 +3282,44 @@ combine_averages_int(int *avgp, lng *remp, lng *cntp,
 		rem -= cnt;
 	}
 	*avgp = (int) v;
+	*remp = rem;
+#endif
+}
+
+static inline void
+combine_averages_uint(uint *avgp, lng *remp, lng *cntp,
+		      uint avg1, lng rem1, lng cnt1,
+		      uint avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+	assert(cnt1 >= 0 && cnt2 >= 0);
+
+	*cntp = cnt;
+#ifdef HAVE_HGE
+	uhge v = avg1 * (uhge) cnt1 + (uhge) rem1 + avg2 * (uhge) cnt2 + (uhge) rem2;
+	uint a = (uint) (v / (uhge) cnt);
+	v %= cnt;
+	*avgp = a;
+	*remp = (lng) v;
+#else
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	lng rem = rem1 + rem2;
+	ulng v;
+	uint64_t r;
+	avg1 = (uint) multdiv((uint64_t) avg1, cnt1, cnt, &r);
+	v = avg1;
+	rem += r;
+	avg2 = (uint) multdiv((uint64_t) avg2, cnt2, cnt, &r);
+	v += avg2;
+	rem += r;
+	while (rem >= cnt) { /* max twice */
+		v++;
+		rem -= cnt;
+	}
+	*avgp = (uint) v;
 	*remp = rem;
 #endif
 }
@@ -2575,6 +3389,44 @@ combine_averages_lng(lng *avgp, lng *remp, lng *cntp,
 #endif
 }
 
+static inline void
+combine_averages_ulng(ulng *avgp, lng *remp, lng *cntp,
+		     ulng avg1, lng rem1, lng cnt1,
+		     ulng avg2, lng rem2, lng cnt2)
+{
+	lng cnt = cnt1 + cnt2;
+	assert(cnt1 >= 0 && cnt2 >= 0);
+
+	*cntp = cnt;
+#ifdef HAVE_HGE
+	uhge v = avg1 * (uhge) cnt1 + (uhge) rem1 + avg2 * (uhge) cnt2 + (uhge) rem2;
+	ulng a = (ulng) (v / (uhge) cnt);
+	v %= (uhge) cnt;
+	*avgp = a;
+	*remp = (lng) v;
+#else
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	lng rem = rem1 + rem2;
+	ulng v;
+	uint64_t r;
+	avg1 = (ulng) multdiv((uint64_t) avg1, cnt1, cnt, &r);
+	v = avg1;
+	rem += r;
+	avg2 = (ulng) multdiv((uint64_t) avg2, cnt2, cnt, &r);
+	v += avg2;
+	rem += r;
+	while (rem >= cnt) { /* max twice */
+		v++;
+		rem -= cnt;
+	}
+	*avgp = v;
+	*remp = rem;
+#endif
+}
+
 #ifdef HAVE_HGE
 static inline void
 combine_averages_hge(hge *avgp, lng *remp, lng *cntp,
@@ -2619,6 +3471,35 @@ combine_averages_hge(hge *avgp, lng *remp, lng *cntp,
 	} else {
 		avg2 = (hge) multdiv((uhge) avg2, cnt2, cnt, &r);
 	}
+	v += avg2;
+	rem += r;
+	while (rem >= cnt) { /* max twice */
+		v++;
+		rem -= cnt;
+	}
+	*avgp = v;
+	*remp = rem;
+}
+
+static inline void
+combine_averages_uhge(uhge *avgp, lng *remp, lng *cntp,
+		     uhge avg1, lng rem1, lng cnt1,
+		     uhge avg2, lng rem2, lng cnt2)
+{
+	if (cnt1 == 0) {
+		avg1 = 0;
+		rem1 = 0;
+	}
+	lng cnt = cnt1 + cnt2;
+	lng rem = rem1 + rem2;
+	uhge v;
+	uint64_t r;
+
+	*cntp = cnt;
+	avg1 = (uhge) multdiv((uhge) avg1, cnt1, cnt, &r);
+	v = avg1;
+	rem += r;
+	avg2 = (uhge) multdiv((uhge) avg2, cnt2, cnt, &r);
 	v += avg2;
 	rem += r;
 	while (rem >= cnt) { /* max twice */
@@ -2719,6 +3600,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		}
 		break;
 	}
+	case TYPE_ubte: {
+		const ubte *vals = (const ubte *) bi.base;
+		ubte *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			combine_averages_ubte(&avgs[gid], &rems[gid],
+					      &cnts[gid], avgs[gid],
+					      rems[gid], cnts[gid],
+					      vals[i], orems[i],
+					      ocnts[i]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i])
+				avgs[i]++;
+		}
+#endif
+		break;
+	}
 	case TYPE_sht: {
 		const sht *vals = (const sht *) bi.base;
 		sht *avgs = Tloc(bn, 0);
@@ -2758,6 +3659,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 #endif
 		}
+		break;
+	}
+	case TYPE_usht: {
+		const usht *vals = (const usht *) bi.base;
+		usht *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			combine_averages_usht(&avgs[gid], &rems[gid],
+					      &cnts[gid], avgs[gid],
+					      rems[gid], cnts[gid],
+					      vals[i], orems[i],
+					      ocnts[i]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i])
+				avgs[i]++;
+		}
+#endif
 		break;
 	}
 	case TYPE_int: {
@@ -2801,6 +3722,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		}
 		break;
 	}
+	case TYPE_uint: {
+		const uint *vals = (const uint *) bi.base;
+		uint *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			combine_averages_uint(&avgs[gid], &rems[gid],
+					      &cnts[gid], avgs[gid],
+					      rems[gid], cnts[gid],
+					      vals[i], orems[i],
+					      ocnts[i]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i])
+				avgs[i]++;
+		}
+#endif
+		break;
+	}
 	case TYPE_lng: {
 		const lng *vals = (const lng *) bi.base;
 		lng *avgs = Tloc(bn, 0);
@@ -2840,6 +3781,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 #endif
 		}
+		break;
+	}
+	case TYPE_ulng: {
+		const ulng *vals = (const ulng *) bi.base;
+		ulng *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			combine_averages_ulng(&avgs[gid], &rems[gid],
+					      &cnts[gid], avgs[gid],
+					      rems[gid], cnts[gid],
+					      vals[i], orems[i],
+					      ocnts[i]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i])
+				avgs[i]++;
+		}
+#endif
 		break;
 	}
 #ifdef HAVE_HGE
@@ -2882,6 +3843,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			}
 #endif
 		}
+		break;
+	}
+	case TYPE_uhge: {
+		const uhge *vals = (const uhge *) bi.base;
+		uhge *avgs = Tloc(bn, 0);
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+			if (ngrp > 1)
+				gid = gids ? gids[i] - min : i;
+			combine_averages_uhge(&avgs[gid], &rems[gid],
+					      &cnts[gid], avgs[gid],
+					      rems[gid], cnts[gid],
+					      vals[i], orems[i],
+					      ocnts[i]);
+		}
+#ifndef TRUNCATE_NUMBERS
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
+			if (rems[i] > 0 && 2*rems[i] >= cnts[i])
+				avgs[i]++;
+		}
+#endif
 		break;
 	}
 #endif
@@ -2961,10 +3942,67 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
+#define AVERAGE_UTYPE_LNG_HGE(TYPE,lng_hge)				\
+	do {								\
+		TYPE x, a;						\
+									\
+		/* first try to calculate the sum of all values into a */ \
+		/* lng/hge */						\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
+			i = canditer_next(&ci) - b->hseqbase;		\
+			x = ((const TYPE *) src)[i];			\
+			ADD_WITH_CHECK(x, sum,				\
+				       lng_hge, sum,			\
+				       GDK_##lng_hge##_max,		\
+				       goto overflow##TYPE);		\
+			/* don't count value until after overflow check */ \
+			n++;						\
+		}							\
+		/* the sum fit, so now we can calculate the average */	\
+		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
+		if (0) {						\
+		  overflow##TYPE:					\
+			/* we get here if sum(x[0],...,x[i]) doesn't */	\
+			/* fit in a lng/hge but sum(x[0],...,x[i-1]) did */ \
+			/* the variable sum contains that sum */	\
+			/* the rest of the calculation is done */	\
+			/* according to the loop invariant described */	\
+			/* in the below loop */				\
+			/* note that n necessarily is > 0 (else no */	\
+			/* overflow possible) */			\
+			assert(n > 0);					\
+			if (sum >= 0) {					\
+				a = (TYPE) (sum / n); /* this fits */	\
+				r = (lng) (sum % n);			\
+			} else {					\
+				sum = -sum;				\
+				a = - (TYPE) (sum / n); /* this fits */ \
+				r = (lng) (sum % n);			\
+				if (r) {				\
+					a--;				\
+					r = n - r;			\
+				}					\
+			}						\
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {		\
+				/* loop invariant: */			\
+				/* a + r/n == average(x[0],...,x[n]); */ \
+				/* 0 <= r < n */			\
+				i = canditer_next(&ci) - b->hseqbase;	\
+				x = ((const TYPE *) src)[i];		\
+				AVERAGE_ITER(TYPE, x, a, r, n);		\
+			}						\
+			*avg = a + (dbl) r / n;				\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
 #ifdef HAVE_HGE
 #define AVERAGE_TYPE(TYPE) AVERAGE_TYPE_LNG_HGE(TYPE,hge)
+#define AVERAGE_UTYPE(TYPE) AVERAGE_UTYPE_LNG_HGE(TYPE,uhge)
 #else
 #define AVERAGE_TYPE(TYPE) AVERAGE_TYPE_LNG_HGE(TYPE,lng)
+#define AVERAGE_UTYPE(TYPE) AVERAGE_UTYPE_LNG_HGE(TYPE,ulng)
 #endif
 
 #define AVERAGE_FLOATTYPE(TYPE)						\
@@ -3007,18 +4045,33 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale)
 	case TYPE_bte:
 		AVERAGE_TYPE(bte);
 		break;
+	case TYPE_ubte:
+		AVERAGE_UTYPE(ubte);
+		break;
 	case TYPE_sht:
 		AVERAGE_TYPE(sht);
+		break;
+	case TYPE_usht:
+		AVERAGE_UTYPE(usht);
 		break;
 	case TYPE_int:
 		AVERAGE_TYPE(int);
 		break;
+	case TYPE_uint:
+		AVERAGE_UTYPE(uint);
+		break;
 	case TYPE_lng:
 		AVERAGE_TYPE(lng);
+		break;
+	case TYPE_ulng:
+		AVERAGE_UTYPE(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AVERAGE_TYPE(hge);
+		break;
+	case TYPE_uhge:
+		AVERAGE_UTYPE(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -3101,8 +4154,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	if (ci.ncand == 0 || ngrp == 0) {
 		/* trivial: no counts, so return bat aligned with g
 		 * with zero in the tail */
-		lng zero = 0;
-		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
+		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &(lng){0}, ngrp, TRANSIENT);
 	}
 
 	bn = COLnew(min, TYPE_lng, ngrp, TRANSIENT);
@@ -3116,7 +4168,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 	else
 		gids = (const oid *) Tloc(g, 0);
 
-	if (!skip_nils || b->tnonil) {
+	if (!skip_nils || b->tnonil || ATOMnilptr(b->ttype) == NULL) {
 		/* if nils are nothing special, or if there are no
 		 * nils, we don't need to look at the values at all */
 		if (gids) {
@@ -3239,6 +4291,34 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 		}							\
 	} while (0)
 
+#define AGGR_UCMP(TYPE, OP)						\
+	do {								\
+		const TYPE *restrict vals = (const TYPE *) bi->base;	\
+		if (ngrp == ci->ncand) {				\
+			/* single element groups */			\
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
+				i = canditer_next(ci) - hseq;		\
+				oids[gid] = i + hseq;			\
+				gid++;					\
+			}						\
+			nils = 0;					\
+		} else {						\
+			TIMEOUT_LOOP(ci->ncand, qry_ctx) {		\
+				i = canditer_next(ci) - hseq;		\
+				if (gids == NULL ||			\
+				    (gids[i] >= min && gids[i] <= max)) { \
+					if (gids)			\
+						gid = gids[i] - min;	\
+					if (is_oid_nil(oids[gid])) {	\
+						oids[gid] = i + hseq;	\
+						nils--;			\
+					} else if (OP(vals[i], vals[oids[gid] - hseq])) \
+						oids[gid] = i + hseq;	\
+				}					\
+			}						\
+		}							\
+	} while (0)
+
 /* calculate group minimums with optional candidates list
  *
  * note that this functions returns *positions* of where the minimum
@@ -3272,18 +4352,33 @@ do_groupmin(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	case TYPE_bte:
 		AGGR_CMP(bte, LT);
 		break;
+	case TYPE_ubte:
+		AGGR_UCMP(ubte, LT);
+		break;
 	case TYPE_sht:
 		AGGR_CMP(sht, LT);
+		break;
+	case TYPE_usht:
+		AGGR_UCMP(usht, LT);
 		break;
 	case TYPE_int:
 		AGGR_CMP(int, LT);
 		break;
+	case TYPE_uint:
+		AGGR_UCMP(uint, LT);
+		break;
 	case TYPE_lng:
 		AGGR_CMP(lng, LT);
+		break;
+	case TYPE_ulng:
+		AGGR_UCMP(ulng, LT);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_CMP(hge, LT);
+		break;
+	case TYPE_uhge:
+		AGGR_UCMP(uhge, LT);
 		break;
 #endif
 	case TYPE_flt:
@@ -3394,18 +4489,33 @@ do_groupmax(oid *restrict oids, BATiter *bi, const oid *restrict gids, BUN ngrp,
 	case TYPE_bte:
 		AGGR_CMP(bte, GT);
 		break;
+	case TYPE_ubte:
+		AGGR_UCMP(ubte, GT);
+		break;
 	case TYPE_sht:
 		AGGR_CMP(sht, GT);
+		break;
+	case TYPE_usht:
+		AGGR_UCMP(usht, GT);
 		break;
 	case TYPE_int:
 		AGGR_CMP(int, GT);
 		break;
+	case TYPE_uint:
+		AGGR_UCMP(uint, GT);
+		break;
 	case TYPE_lng:
 		AGGR_CMP(lng, GT);
+		break;
+	case TYPE_ulng:
+		AGGR_UCMP(ulng, GT);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_CMP(hge, GT);
+		break;
+	case TYPE_uhge:
+		AGGR_UCMP(uhge, GT);
 		break;
 #endif
 	case TYPE_flt:
@@ -3949,6 +5059,21 @@ BATmax(BAT *b, void *aggr)
 		}							\
 	} while (0)
 
+#define DO_QUANTILE_AVG_UNSIGNED(TPE)					\
+	do {								\
+		BUN idxlo, idxhi;					\
+		if (ords) {						\
+			idxlo = ords[r + (BUN) lo] - b->hseqbase;	\
+			idxhi = ords[r + (BUN) hi] - b->hseqbase;	\
+		} else {						\
+			idxlo = r + (BUN) lo;				\
+			idxhi = r + (BUN) hi;				\
+		}							\
+		TPE low = *(TPE*) BUNtloc(bi, idxhi);			\
+		TPE high = *(TPE*) BUNtloc(bi, idxlo);			\
+		val = (f - lo) * low + (lo + 1 - f) * high;		\
+	} while (0)
+
 static BAT *
 doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		   bool skip_nils, bool average)
@@ -3978,11 +5103,16 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 	if (average) {
 		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte:
+		case TYPE_ubte:
 		case TYPE_sht:
+		case TYPE_usht:
 		case TYPE_int:
+		case TYPE_uint:
 		case TYPE_lng:
+		case TYPE_ulng:
 #ifdef HAVE_HGE
 		case TYPE_hge:
+		case TYPE_uhge:
 #endif
 		case TYPE_flt:
 		case TYPE_dbl:
@@ -3993,21 +5123,21 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		}
 		dnil = &dbl_nil;
 	}
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
-		GDKerror("%s\n", err);
-		return NULL;
-	}
-	assert(tp == b->ttype);
 	if (!ATOMlinear(tp)) {
 		GDKerror("cannot determine quantile on "
 			 "non-linear type %s\n", ATOMname(tp));
 		return NULL;
 	}
-	if (quantile < 0 || quantile > 1) {
+	if (!is_dbl_nil(quantile) && (quantile < 0 || quantile > 1)) {
 		GDKerror("cannot determine quantile for "
 			 "p=%f (p has to be in [0,1])\n", quantile);
 		return NULL;
 	}
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+		GDKerror("%s\n", err);
+		return NULL;
+	}
+	assert(tp == b->ttype);
 
 	if (BATcount(b) == 0 || ngrp == 0 || is_dbl_nil(quantile)) {
 		/* trivial: no values, thus also no quantiles,
@@ -4106,18 +5236,33 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				case TYPE_bte:
 					DO_QUANTILE_AVG(bte);
 					break;
+				case TYPE_ubte:
+					DO_QUANTILE_AVG_UNSIGNED(ubte);
+					break;
 				case TYPE_sht:
 					DO_QUANTILE_AVG(sht);
+					break;
+				case TYPE_usht:
+					DO_QUANTILE_AVG_UNSIGNED(usht);
 					break;
 				case TYPE_int:
 					DO_QUANTILE_AVG(int);
 					break;
+				case TYPE_uint:
+					DO_QUANTILE_AVG_UNSIGNED(uint);
+					break;
 				case TYPE_lng:
 					DO_QUANTILE_AVG(lng);
+					break;
+				case TYPE_ulng:
+					DO_QUANTILE_AVG_UNSIGNED(ulng);
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
 					DO_QUANTILE_AVG(hge);
+					break;
+				case TYPE_uhge:
+					DO_QUANTILE_AVG_UNSIGNED(uhge);
 					break;
 #endif
 				case TYPE_flt:
@@ -4220,18 +5365,33 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			case TYPE_bte:
 				DO_QUANTILE_AVG(bte);
 				break;
+			case TYPE_ubte:
+				DO_QUANTILE_AVG_UNSIGNED(ubte);
+				break;
 			case TYPE_sht:
 				DO_QUANTILE_AVG(sht);
+				break;
+			case TYPE_usht:
+				DO_QUANTILE_AVG_UNSIGNED(usht);
 				break;
 			case TYPE_int:
 				DO_QUANTILE_AVG(int);
 				break;
+			case TYPE_uint:
+				DO_QUANTILE_AVG_UNSIGNED(uint);
+				break;
 			case TYPE_lng:
 				DO_QUANTILE_AVG(lng);
+				break;
+			case TYPE_ulng:
+				DO_QUANTILE_AVG_UNSIGNED(ulng);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
 				DO_QUANTILE_AVG(hge);
+				break;
+			case TYPE_uhge:
+				DO_QUANTILE_AVG_UNSIGNED(uhge);
 				break;
 #endif
 			case TYPE_flt:
@@ -4341,7 +5501,23 @@ BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				goto overflow;				\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
-			      TIMEOUT_HANDLER(dbl_nil, qry_ctx)); \
+			      TIMEOUT_HANDLER(dbl_nil, qry_ctx));	\
+	} while (0)
+
+#define AGGR_USTDEV_SINGLE(TYPE)					\
+	do {								\
+		TYPE x;							\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
+			x = ((const TYPE *) values)[i];			\
+			n++;						\
+			delta = (dbl) x - mean;				\
+			mean += delta / n;				\
+			m2 += delta * ((dbl) x - mean);			\
+			if (isinf(m2))					\
+				goto overflow;				\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      TIMEOUT_HANDLER(dbl_nil, qry_ctx));	\
 	} while (0)
 
 static dbl
@@ -4358,18 +5534,33 @@ calcvariance(dbl *restrict avgp, const void *restrict values, BUN cnt, int tp, b
 	case TYPE_bte:
 		AGGR_STDEV_SINGLE(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_USTDEV_SINGLE(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_STDEV_SINGLE(sht);
+		break;
+	case TYPE_usht:
+		AGGR_USTDEV_SINGLE(usht);
 		break;
 	case TYPE_int:
 		AGGR_STDEV_SINGLE(int);
 		break;
+	case TYPE_uint:
+		AGGR_USTDEV_SINGLE(uint);
+		break;
 	case TYPE_lng:
 		AGGR_STDEV_SINGLE(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_USTDEV_SINGLE(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_STDEV_SINGLE(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_USTDEV_SINGLE(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -4469,7 +5660,26 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 				goto overflow;				\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
-			      TIMEOUT_HANDLER(dbl_nil, qry_ctx)); \
+			      TIMEOUT_HANDLER(dbl_nil, qry_ctx));	\
+	} while (0)
+
+#define AGGR_UCOVARIANCE_SINGLE(TYPE)					\
+	do {								\
+		TYPE x, y;						\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
+			x = ((const TYPE *) v1)[i];			\
+			y = ((const TYPE *) v2)[i];			\
+			n++;						\
+			delta1 = (dbl) x - mean1;			\
+			mean1 += delta1 / n;				\
+			delta2 = (dbl) y - mean2;			\
+			mean2 += delta2 / n;				\
+			m2 += delta1 * ((dbl) y - mean2);		\
+			if (isinf(m2))					\
+				goto overflow;				\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      TIMEOUT_HANDLER(dbl_nil, qry_ctx));	\
 	} while (0)
 
 static dbl
@@ -4485,18 +5695,33 @@ calccovariance(const void *v1, const void *v2, BUN cnt, int tp, bool issample)
 	case TYPE_bte:
 		AGGR_COVARIANCE_SINGLE(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_UCOVARIANCE_SINGLE(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_COVARIANCE_SINGLE(sht);
+		break;
+	case TYPE_usht:
+		AGGR_UCOVARIANCE_SINGLE(usht);
 		break;
 	case TYPE_int:
 		AGGR_COVARIANCE_SINGLE(int);
 		break;
+	case TYPE_uint:
+		AGGR_UCOVARIANCE_SINGLE(uint);
+		break;
 	case TYPE_lng:
 		AGGR_COVARIANCE_SINGLE(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_UCOVARIANCE_SINGLE(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_COVARIANCE_SINGLE(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_UCOVARIANCE_SINGLE(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -4571,6 +5796,28 @@ BATcalccovariance_sample(BAT *b1, BAT *b2)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
+#define AGGR_UCORRELATION_SINGLE(TYPE)					\
+	do {								\
+		TYPE x, y;						\
+		TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {			\
+			x = ((const TYPE *) v1)[i];			\
+			y = ((const TYPE *) v2)[i];			\
+			n++;						\
+			delta1 = (dbl) x - mean1;			\
+			mean1 += delta1 / n;				\
+			delta2 = (dbl) y - mean2;			\
+			mean2 += delta2 / n;				\
+			aux = (dbl) y - mean2;				\
+			up += delta1 * aux;				\
+			down1 += delta1 * ((dbl) x - mean1);		\
+			down2 += delta2 * aux;				\
+			if (isinf(up) || isinf(down1) || isinf(down2))	\
+				goto overflow;				\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
 dbl
 BATcalccorrelation(BAT *b1, BAT *b2)
 {
@@ -4589,18 +5836,33 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 	case TYPE_bte:
 		AGGR_CORRELATION_SINGLE(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_UCORRELATION_SINGLE(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_CORRELATION_SINGLE(sht);
+		break;
+	case TYPE_usht:
+		AGGR_UCORRELATION_SINGLE(usht);
 		break;
 	case TYPE_int:
 		AGGR_CORRELATION_SINGLE(int);
 		break;
+	case TYPE_uint:
+		AGGR_UCORRELATION_SINGLE(uint);
+		break;
 	case TYPE_lng:
 		AGGR_CORRELATION_SINGLE(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_UCORRELATION_SINGLE(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_CORRELATION_SINGLE(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_UCORRELATION_SINGLE(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -4656,6 +5918,43 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
 			if (cnts[i] == 0 || cnts[i] == BUN_NONE) {	\
+				dbls[i] = dbl_nil;			\
+				mean[i] = dbl_nil;			\
+				nils++;					\
+			} else if (cnts[i] == 1) {			\
+				dbls[i] = issample ? dbl_nil : 0;	\
+				nils2++;				\
+			} else if (isinf(m2[i])) {			\
+				goto overflow;				\
+			} else if (variance) {				\
+				dbls[i] = m2[i] / (cnts[i] - issample);	\
+			} else {					\
+				dbls[i] = sqrt(m2[i] / (cnts[i] - issample)); \
+			}						\
+		}							\
+	} while (0)
+
+#define AGGR_USTDEV(TYPE)						\
+	do {								\
+		const TYPE *restrict vals = (const TYPE *) bi.base;	\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
+			i = canditer_next(&ci) - b->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				cnts[gid]++;				\
+				delta[gid] = (dbl) vals[i] - mean[gid]; \
+				mean[gid] += delta[gid] / cnts[gid];	\
+				m2[gid] += delta[gid] * ((dbl) vals[i] - mean[gid]); \
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
+			if (cnts[i] == 0) {				\
 				dbls[i] = dbl_nil;			\
 				mean[i] = dbl_nil;			\
 				nils++;					\
@@ -4770,18 +6069,33 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	case TYPE_bte:
 		AGGR_STDEV(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_USTDEV(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_STDEV(sht);
+		break;
+	case TYPE_usht:
+		AGGR_USTDEV(usht);
 		break;
 	case TYPE_int:
 		AGGR_STDEV(int);
 		break;
+	case TYPE_uint:
+		AGGR_USTDEV(uint);
+		break;
 	case TYPE_lng:
 		AGGR_STDEV(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_USTDEV(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_STDEV(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_USTDEV(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -4919,6 +6233,43 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		}							\
 	} while (0)
 
+#define AGGR_UCOVARIANCE(TYPE)						\
+	do {								\
+		const TYPE *vals1 = (const TYPE *) b1i.base;		\
+		const TYPE *vals2 = (const TYPE *) b2i.base;		\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
+			i = canditer_next(&ci) - b1->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				cnts[gid]++;				\
+				delta1[gid] = (dbl) vals1[i] - mean1[gid]; \
+				mean1[gid] += delta1[gid] / cnts[gid];	\
+				delta2[gid] = (dbl) vals2[i] - mean2[gid]; \
+				mean2[gid] += delta2[gid] / cnts[gid];	\
+				m2[gid] += delta1[gid] * ((dbl) vals2[i] - mean2[gid]); \
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
+			if (cnts[i] == 0) {				\
+				dbls[i] = dbl_nil;			\
+				nils++;					\
+			} else if (cnts[i] == 1) {			\
+				dbls[i] = issample ? dbl_nil : 0;	\
+				nils2++;				\
+			} else if (isinf(m2[i])) {			\
+				goto overflow;				\
+			} else {					\
+				dbls[i] = m2[i] / (cnts[i] - issample);	\
+			}						\
+		}							\
+	} while (0)
+
 static BAT *
 dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 		  bool skip_nils, bool issample, const char *func)
@@ -4999,18 +6350,33 @@ dogroupcovariance(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp,
 	case TYPE_bte:
 		AGGR_COVARIANCE(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_UCOVARIANCE(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_COVARIANCE(sht);
+		break;
+	case TYPE_usht:
+		AGGR_UCOVARIANCE(usht);
 		break;
 	case TYPE_int:
 		AGGR_COVARIANCE(int);
 		break;
+	case TYPE_uint:
+		AGGR_UCOVARIANCE(uint);
+		break;
 	case TYPE_lng:
 		AGGR_COVARIANCE(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_UCOVARIANCE(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_COVARIANCE(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_UCOVARIANCE(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -5125,6 +6491,44 @@ BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, 
 		}							\
 	} while (0)
 
+#define AGGR_UCORRELATION(TYPE)						\
+	do {								\
+		const TYPE *vals1 = (const TYPE *) b1i.base;		\
+		const TYPE *vals2 = (const TYPE *) b2i.base;		\
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
+			i = canditer_next(&ci) - b1->hseqbase;		\
+			if (gids == NULL ||				\
+			    (gids[i] >= min && gids[i] <= max)) {	\
+				if (gids)				\
+					gid = gids[i] - min;		\
+				else					\
+					gid = (oid) i;			\
+				cnts[gid]++;				\
+				delta1[gid] = (dbl) vals1[i] - mean1[gid]; \
+				mean1[gid] += delta1[gid] / cnts[gid];	\
+				delta2[gid] = (dbl) vals2[i] - mean2[gid]; \
+				mean2[gid] += delta2[gid] / cnts[gid];	\
+				aux = (dbl) vals2[i] - mean2[gid];	\
+				up[gid] += delta1[gid] * aux;		\
+				down1[gid] += delta1[gid] * ((dbl) vals1[i] - mean1[gid]); \
+				down2[gid] += delta2[gid] * aux;	\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {			\
+			if (cnts[i] <= 1 || down1[i] == 0 || down2[i] == 0) { \
+				dbls[i] = dbl_nil;			\
+				nils++;					\
+			} else if (isinf(up[i]) || isinf(down1[i]) || isinf(down2[i])) { \
+				goto overflow;				\
+			} else {					\
+				dbls[i] = (up[i] / cnts[i]) / (sqrt(down1[i] / cnts[i]) * sqrt(down2[i] / cnts[i])); \
+				assert(!is_dbl_nil(dbls[i]));		\
+			}						\
+		}							\
+	} while (0)
+
 BAT *
 BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 {
@@ -5204,18 +6608,33 @@ BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_
 	case TYPE_bte:
 		AGGR_CORRELATION(bte);
 		break;
+	case TYPE_ubte:
+		AGGR_UCORRELATION(ubte);
+		break;
 	case TYPE_sht:
 		AGGR_CORRELATION(sht);
+		break;
+	case TYPE_usht:
+		AGGR_UCORRELATION(usht);
 		break;
 	case TYPE_int:
 		AGGR_CORRELATION(int);
 		break;
+	case TYPE_uint:
+		AGGR_UCORRELATION(uint);
+		break;
 	case TYPE_lng:
 		AGGR_CORRELATION(lng);
+		break;
+	case TYPE_ulng:
+		AGGR_UCORRELATION(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		AGGR_CORRELATION(hge);
+		break;
+	case TYPE_uhge:
+		AGGR_UCORRELATION(uhge);
 		break;
 #endif
 	case TYPE_flt:
