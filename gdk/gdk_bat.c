@@ -822,6 +822,17 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	 * table and that would result in buckets containing values
 	 * beyond the original vheap that we're copying */
 	MT_lock_set(&b->theaplock);
+	BAT *pb = NULL, *pvb = NULL;
+	if (b->theap->parentid != b->batCacheid) {
+		pb = BBP_desc(b->theap->parentid);
+		MT_lock_set(&pb->theaplock);
+	}
+	if (b->tvheap &&
+	    b->tvheap->parentid != b->batCacheid &&
+	    b->tvheap->parentid != b->theap->parentid) {
+		pvb = BBP_desc(b->tvheap->parentid);
+		MT_lock_set(&pvb->theaplock);
+	}
 	bi = bat_iterator_nolock(b);
 	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
 		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
@@ -832,6 +843,10 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	HEAPincref(bi.h);
 	if (bi.vh)
 		HEAPincref(bi.vh);
+	if (pvb)
+		MT_lock_unset(&pvb->theaplock);
+	if (pb)
+		MT_lock_unset(&pb->theaplock);
 	MT_lock_unset(&b->theaplock);
 
 	/* first try case (1); create a view, possibly with different
