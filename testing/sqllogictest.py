@@ -303,8 +303,9 @@ class SQLLogic:
                             if expected_err_msg.lower() == err_msg_received.lower():
                                 return result
                     msg = "statement was expected to fail with" \
-                            + (" error code {}".format(expected_err_code) if expected_err_code else '')\
-                            + (", error message {}".format(str(expected_err_msg)) if expected_err_msg else '')
+                            + (f" error code {expected_err_code}" if expected_err_code else '') \
+                            + (f", error message {repr(expected_err_msg)}" if expected_err_msg else '') \
+                            + f", received code {err_code_received}, message {repr(err_msg_received)}"
                     self.query_error(err_stmt or statement, str(msg), str(e))
                 return result
         except ConnectionError as e:

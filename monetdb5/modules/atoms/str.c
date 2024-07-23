@@ -2875,7 +2875,14 @@ ignorecase(const bat *ic_id, bool *icase, str fname)
 	if ((c = BATdescriptor(*ic_id)) == NULL)
 		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	assert(BATcount(c) >= 1);
+	if (BATcount(c) != 1) {
+		BUN cnt = BATcount(c);
+		BBPreclaim(c);
+		if (cnt == 0)
+			throw(MAL, fname, SQLSTATE(42000) "Missing ignore case value\n");
+		else
+			throw(MAL, fname, SQLSTATE(42000) "Multiple ignore case values passed, only one expected\n");
+	}
 
 	BATiter bi = bat_iterator(c);
 	*icase = *(bit *) BUNtloc(bi, 0);
