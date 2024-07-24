@@ -64,7 +64,7 @@
 
 
 extern void rel_set_exps(sql_rel *rel, list *exps);
-extern int project_unsafe(sql_rel *rel, int allow_identity);
+extern int project_unsafe(sql_rel *rel, bool allow_identity);
 extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
 

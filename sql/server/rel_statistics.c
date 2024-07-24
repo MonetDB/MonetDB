@@ -1101,11 +1101,11 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 
 		if (lv != BUN_NONE) {
 			sql_exp *le = rel->exps->h->data, *oe = list_length(rel->exps) > 1 ? rel->exps->h->next->data : NULL;
-			if (oe && oe->l && !exp_is_null(oe)) { /* no parameters */
+			if (oe && oe->l && exp_is_not_null(oe)) { /* no parameters */
 				BUN offset = (BUN) ((atom*)oe->l)->data.val.lval;
 				lv = offset >= lv ? 0 : lv - offset;
 			}
-			if (le->l && !exp_is_null(le)) {
+			if (le->l && exp_is_not_null(le)) {
 				BUN limit = (BUN) ((atom*)le->l)->data.val.lval;
 				lv = MIN(lv, limit);
 			}
@@ -1297,6 +1297,8 @@ score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
+	if (e->type == e_convert) /* keep unsafes at the end (TODO improve) */
+		return -1000;
 	/* can we find out if the underlying table is sorted */
 	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 600;

@@ -35994,6 +35994,16 @@ command mmath.log2arg(X_0:flt, X_1:flt):flt
 MATHbinary_LOGflt;
 The log(x) function returns the logarithm of x in the given base.
 mmath
+nextafter
+command mmath.nextafter(X_0:dbl, X_1:dbl):dbl
+MATHbinary_NEXTAFTERdbl;
+The returns the next representable floating-point value of x in the direction of y.
+mmath
+nextafter
+command mmath.nextafter(X_0:flt, X_1:flt):flt
+MATHbinary_NEXTAFTERflt;
+The returns the next representable floating-point value of x in the direction of y.
+mmath
 pi
 command mmath.pi():dbl
 MATHpi;

@@ -74,3 +74,10 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7544-startswith-bug
 7545-groupby_on_index_col
 7547-drop-login-trigger-crash
+7550-select-statistics-auth
+7552-nested-expression-with-null
+7553-join-on-startswith-crash
+7045-do-not-push-down-converts
+7554-incorrect-result-between
+7555-incorrect-semijoin-rewrite
+7556-missing-ignore-case

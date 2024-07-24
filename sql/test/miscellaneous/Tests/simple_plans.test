@@ -132,7 +132,7 @@ plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 =
 project (
 | select (
 | | table("sys"."tab0") [ "tab0"."col1", "tab0"."col2" ]
-| ) [ ((("tab0"."col1") in (int(7) "1", int(7) "81")) or (("tab0"."col2") = (int(7) "100"))) or (("tab0"."col1") = (int(7) "100")) ]
+| ) [ (("tab0"."col1") in (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2") = (int(7) "100")) ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
