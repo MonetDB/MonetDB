@@ -2001,14 +2001,17 @@ BUNfnd(BAT *b, const void *v)
 		}
 		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
+		case TYPE_ubte:
 			HASHloop_bte(bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_sht:
+		case TYPE_usht:
 			HASHloop_sht(bi, b->thash, r, v)
 				break;
 			break;
 		case TYPE_int:
+		case TYPE_uint:
 			HASHloop_int(bi, b->thash, r, v)
 				break;
 			break;
@@ -2021,11 +2024,13 @@ BUNfnd(BAT *b, const void *v)
 				break;
 			break;
 		case TYPE_lng:
+		case TYPE_ulng:
 			HASHloop_lng(bi, b->thash, r, v)
 				break;
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
+		case TYPE_uhge:
 			HASHloop_hge(bi, b->thash, r, v)
 				break;
 			break;

@@ -2031,18 +2031,33 @@ BATordered(BAT *b)
 		case TYPE_bte:
 			BAT_ORDERED(bte);
 			break;
+		case TYPE_ubte:
+			BAT_ORDERED(ubte);
+			break;
 		case TYPE_sht:
 			BAT_ORDERED(sht);
+			break;
+		case TYPE_usht:
+			BAT_ORDERED(usht);
 			break;
 		case TYPE_int:
 			BAT_ORDERED(int);
 			break;
+		case TYPE_uint:
+			BAT_ORDERED(uint);
+			break;
 		case TYPE_lng:
 			BAT_ORDERED(lng);
+			break;
+		case TYPE_ulng:
+			BAT_ORDERED(ulng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			BAT_ORDERED(hge);
+			break;
+		case TYPE_uhge:
+			BAT_ORDERED(uhge);
 			break;
 #endif
 		case TYPE_flt:
@@ -2207,18 +2222,33 @@ BATordered_rev(BAT *b)
 		case TYPE_bte:
 			BAT_REVORDERED(bte);
 			break;
+		case TYPE_ubte:
+			BAT_REVORDERED(ubte);
+			break;
 		case TYPE_sht:
 			BAT_REVORDERED(sht);
+			break;
+		case TYPE_usht:
+			BAT_REVORDERED(usht);
 			break;
 		case TYPE_int:
 			BAT_REVORDERED(int);
 			break;
+		case TYPE_uint:
+			BAT_REVORDERED(uint);
+			break;
 		case TYPE_lng:
 			BAT_REVORDERED(lng);
+			break;
+		case TYPE_ulng:
+			BAT_REVORDERED(ulng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			BAT_REVORDERED(hge);
+			break;
+		case TYPE_uhge:
+			BAT_REVORDERED(uhge);
 			break;
 #endif
 		case TYPE_flt:
@@ -2838,19 +2868,23 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				memset(p, 0x00, 4 * ((n + 31) / 32));
 			break;
 		case TYPE_bte:
+		case TYPE_ubte:
 			memset(p, *(bte*)v, n);
 			break;
 		case TYPE_sht:
+		case TYPE_usht:
 			for (i = 0; i < n; i++)
 				((sht *) p)[i] = *(sht *) v;
 			break;
 		case TYPE_int:
+		case TYPE_uint:
 		case TYPE_flt:
 			assert(sizeof(int) == sizeof(flt));
 			for (i = 0; i < n; i++)
 				((int *) p)[i] = *(int *) v;
 			break;
 		case TYPE_lng:
+		case TYPE_ulng:
 		case TYPE_dbl:
 			assert(sizeof(lng) == sizeof(dbl));
 			for (i = 0; i < n; i++)
@@ -2858,6 +2892,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
+		case TYPE_uhge:
 			for (i = 0; i < n; i++)
 				((hge *) p)[i] = *(hge *) v;
 			break;

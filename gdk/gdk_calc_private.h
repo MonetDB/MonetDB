@@ -298,12 +298,17 @@ BUN dofsum(const void *restrict values, oid seqb,
 
 /* format strings for the seven/eight basic types we deal with
  * these are only used in error messages */
-#define FMTbte	"%d"
-#define FMTsht	"%d"
+#define FMTbte	"%"PRId8
+#define FMTubte	"%"PRIu8
+#define FMTsht	"%"PRId16
+#define FMTusht	"%"PRIu16
 #define FMTint	"%d"
+#define FMTuint	"%u"
 #define FMTlng	LLFMT
+#define FMTulng	ULLFMT
 #ifdef HAVE_HGE
 #define FMThge	"%.40Lg (approx. value)"
+#define FMTuhge	"%.40Lg (approx. value)"
 #endif
 #define FMTflt	"%.9g"
 #define FMTdbl	"%.17g"
@@ -312,11 +317,18 @@ BUN dofsum(const void *restrict values, oid seqb,
 /* casts; only required for type hge, since there is no genuine format
  * string for it (i.e., for __int128) (yet?) */
 #define CSTbte
+#define CSTubte
 #define CSTsht
+#define CSTusht
 #define CSTint
+#define CSTuint
 #define CSTlng
+#define CSTulng
 #ifdef HAVE_HGE
 #define CSThge  (long double)
+#endif
+#ifdef HAVE_HGE
+#define CSTuhge  (long double)
 #endif
 #define CSTflt
 #define CSTdbl
@@ -364,6 +376,18 @@ BUN dofsum(const void *restrict values, oid seqb,
 			} else {					\
 				dst[i] = FUNC(src[x]);			\
 			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
+#define UNARY_2TYPE_FUNC_nonil(TYPE1, TYPE2, FUNC)			\
+	do {								\
+		const TYPE1 *restrict src = (const TYPE1 *) bi.base;	\
+		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
+		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {		\
+			x = canditer_next(&ci) - bhseqbase;		\
+			dst[i] = FUNC(src[x]);				\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
@@ -570,53 +594,111 @@ BUN dofsum(const void *restrict values, oid seqb,
 #define BINARY_3TYPE_FUNC_CHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
 	do {								\
 		i = j = 0;						\
-		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
-				if (incr1)				\
-					i = canditer_next_dense(ci1) - candoff1; \
-				if (incr2)				\
-					j = canditer_next_dense(ci2) - candoff2; \
-				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
-				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
-					nils++;				\
-					((TYPE3 *) dst)[k] = TYPE3##_nil; \
-				} else if (CHECK(v1, v2)) {		\
-					GDKerror("%s: shift operand too large in " \
-						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-						 func,			\
-						 CST##TYPE1 v1,		\
-						 CST##TYPE2 v2);	\
-					goto checkfail;			\
-				} else {				\
-					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
-				}					\
+		TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {		\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
+			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
+			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
+			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+				nils++;					\
+				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
+			} else if (CHECK(v1, v2)) {			\
+				GDKerror("%s: shift operand too large in " \
+					 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+					 func,				\
+					 CST##TYPE1 v1,			\
+					 CST##TYPE2 v2);		\
+				goto checkfail;				\
+			} else {					\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
 			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
-		} else {						\
-			TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {	\
-				if (incr1)				\
-					i = canditer_next(ci1) - candoff1; \
-				if (incr2)				\
-					j = canditer_next(ci2) - candoff2; \
-				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
-				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
-				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
-					nils++;				\
-					((TYPE3 *) dst)[k] = TYPE3##_nil; \
-				} else if (CHECK(v1, v2)) {		\
-					GDKerror("%s: shift operand too large in " \
-						 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
-						 func,			\
-						 CST##TYPE1 v1,		\
-						 CST##TYPE2 v2);	\
-					goto checkfail;			\
-				} else {				\
-					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
-				}					\
-			}						\
-			TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 		}							\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
+	} while (0)
+
+/* TYPE2 is unsigned (i.e. no nils) */
+#define BINARY_3TYPE_FUNC_UCHECK(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
+	do {								\
+		i = j = 0;						\
+		TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {		\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
+			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
+			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
+			if (is_##TYPE1##_nil(v1)) {			\
+				nils++;					\
+				((TYPE3 *) dst)[k] = TYPE3##_nil;	\
+			} else if (CHECK(v1, v2)) {			\
+				GDKerror("%s: shift operand too large in " \
+					 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+					 func,				\
+					 CST##TYPE1 v1,			\
+					 CST##TYPE2 v2);		\
+				goto checkfail;				\
+			} else {					\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
+	} while (0)
+
+/* TYPE1 is unsigned (i.e. no nils) */
+#define BINARY_3TYPE_FUNC_CHECKU(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
+	do {								\
+		i = j = 0;						\
+		TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {		\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
+			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
+			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
+			if (is_##TYPE2##_nil(v2)) {			\
+				GDKerror("%s: right operand is nil in "	\
+					 #FUNC"("FMT##TYPE1",nil).\n", \
+					 func, CST##TYPE1 v1);		\
+				goto checkfail;				\
+			} else if (CHECK(v1, v2)) {			\
+				GDKerror("%s: shift operand too large in " \
+					 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+					 func,				\
+					 CST##TYPE1 v1,			\
+					 CST##TYPE2 v2);		\
+				goto checkfail;				\
+			} else {					\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
+	} while (0)
+
+/* both TYPE1 and TYPE2 are unsigned (i.e. no nils) */
+#define BINARY_3TYPE_FUNC_UCHECKU(TYPE1, TYPE2, TYPE3, FUNC, CHECK)	\
+	do {								\
+		i = j = 0;						\
+		TIMEOUT_LOOP_IDX(k, ci1->ncand, qry_ctx) {		\
+			if (incr1)					\
+				i = canditer_next(ci1) - candoff1;	\
+			if (incr2)					\
+				j = canditer_next(ci2) - candoff2;	\
+			TYPE1 v1 = ((const TYPE1 *) lft)[i];		\
+			TYPE2 v2 = ((const TYPE2 *) rgt)[j];		\
+			if (CHECK(v1, v2)) {				\
+				GDKerror("%s: shift operand too large in " \
+					 #FUNC"("FMT##TYPE1","FMT##TYPE2").\n", \
+					 func,				\
+					 CST##TYPE1 v1,			\
+					 CST##TYPE2 v2);		\
+				goto checkfail;				\
+			} else {					\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} while (0)
 
 #if defined(_MSC_VER) && defined(__INTEL_COMPILER)

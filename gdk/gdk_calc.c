@@ -55,13 +55,11 @@ BATcalcnot(BAT *b, BAT *s)
 
 	bhseqbase = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstant(ci.hseq, b->ttype,
-				   ATOMnilptr(b->ttype), ci.ncand, TRANSIENT);
-
 	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci.ncand == 0)
+		return bn;
 
 	BATiter bi = bat_iterator(b);
 	switch (ATOMbasetype(bi.type)) {
@@ -102,18 +100,33 @@ BATcalcnot(BAT *b, BAT *s)
 			UNARY_2TYPE_FUNC_nilcheck(bte, bte, NOT, ON_OVERFLOW1(bte, "NOT"));
 		}
 		break;
+	case TYPE_ubte:
+		UNARY_2TYPE_FUNC_nonil(ubte, ubte, NOT);
+		break;
 	case TYPE_sht:
 		UNARY_2TYPE_FUNC_nilcheck(sht, sht, NOT, ON_OVERFLOW1(sht, "NOT"));
+		break;
+	case TYPE_usht:
+		UNARY_2TYPE_FUNC_nonil(usht, usht, NOT);
 		break;
 	case TYPE_int:
 		UNARY_2TYPE_FUNC_nilcheck(int, int, NOT, ON_OVERFLOW1(int, "NOT"));
 		break;
+	case TYPE_uint:
+		UNARY_2TYPE_FUNC_nonil(uint, uint, NOT);
+		break;
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC_nilcheck(lng, lng, NOT, ON_OVERFLOW1(lng, "NOT"));
+		break;
+	case TYPE_ulng:
+		UNARY_2TYPE_FUNC_nonil(ulng, ulng, NOT);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		UNARY_2TYPE_FUNC_nilcheck(hge, hge, NOT, ON_OVERFLOW1(hge, "NOT"));
+		break;
+	case TYPE_uhge:
+		UNARY_2TYPE_FUNC_nonil(uhge, uhge, NOT);
 		break;
 #endif
 	default:
@@ -166,6 +179,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 			}
 		}
 		break;
+	case TYPE_ubte:
+		ret->val.ubtval = ~v->val.ubtval;
+		break;
 	case TYPE_sht:
 		if (is_sht_nil(v->val.shval))
 			ret->val.shval = sht_nil;
@@ -177,6 +193,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 				return GDK_FAIL;
 			}
 		}
+		break;
+	case TYPE_usht:
+		ret->val.ushval = ~v->val.ushval;
 		break;
 	case TYPE_int:
 		if (is_int_nil(v->val.ival))
@@ -190,6 +209,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 			}
 		}
 		break;
+	case TYPE_uint:
+		ret->val.uival = ~v->val.uival;
+		break;
 	case TYPE_lng:
 		if (is_lng_nil(v->val.lval))
 			ret->val.lval = lng_nil;
@@ -201,6 +223,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 				return GDK_FAIL;
 			}
 		}
+		break;
+	case TYPE_ulng:
+		ret->val.ulval = ~v->val.ulval;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -215,6 +240,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 				return GDK_FAIL;
 			}
 		}
+		break;
+	case TYPE_uhge:
+		ret->val.uhval = ~v->val.uhval;
 		break;
 #endif
 	default:
@@ -248,13 +276,11 @@ BATcalcnegate(BAT *b, BAT *s)
 
 	bhseqbase = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstant(ci.hseq, b->ttype,
-				   ATOMnilptr(b->ttype), ci.ncand, TRANSIENT);
-
 	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci.ncand)
+		return bn;
 
 	BATiter bi = bat_iterator(b);
 	switch (ATOMbasetype(bi.type)) {
@@ -386,13 +412,11 @@ BATcalcabsolute(BAT *b, BAT *s)
 
 	bhseqbase = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstant(ci.hseq, b->ttype,
-				   ATOMnilptr(b->ttype), ci.ncand, TRANSIENT);
-
 	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci.ncand == 0)
+		return bn;
 
 	BATiter bi = bat_iterator(b);
 	switch (ATOMbasetype(bi.type)) {
@@ -418,6 +442,16 @@ BATcalcabsolute(BAT *b, BAT *s)
 		break;
 	case TYPE_dbl:
 		UNARY_2TYPE_FUNC(dbl, dbl, fabs);
+		break;
+	case TYPE_ubte:
+	case TYPE_usht:
+	case TYPE_uint:
+	case TYPE_ulng:
+#ifdef HAVE_HGE
+	case TYPE_uhge:
+#endif
+		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
+			goto bailout;
 		break;
 	default:
 		GDKerror("bad input type %s.\n", ATOMname(bi.type));
@@ -497,6 +531,15 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.dval = fabs(v->val.dval);
 		break;
+	case TYPE_ubte:
+	case TYPE_usht:
+	case TYPE_uint:
+	case TYPE_ulng:
+#ifdef HAVE_HGE
+	case TYPE_uhge:
+#endif
+		*ret = *v;
+		break;
 	default:
 		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
@@ -527,31 +570,44 @@ BATcalciszero(BAT *b, BAT *s)
 
 	bhseqbase = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstant(ci.hseq, TYPE_bit,
-				   ATOMnilptr(TYPE_bit), ci.ncand, TRANSIENT);
-
 	bn = COLnew(ci.hseq, TYPE_bit, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci.ncand == 0)
+		return bn;
 
 	BATiter bi = bat_iterator(b);
 	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bit, ISZERO);
 		break;
+	case TYPE_ubte:
+		UNARY_2TYPE_FUNC_nonil(ubte, bit, ISZERO);
+		break;
 	case TYPE_sht:
 		UNARY_2TYPE_FUNC(sht, bit, ISZERO);
+		break;
+	case TYPE_usht:
+		UNARY_2TYPE_FUNC_nonil(usht, bit, ISZERO);
 		break;
 	case TYPE_int:
 		UNARY_2TYPE_FUNC(int, bit, ISZERO);
 		break;
+	case TYPE_uint:
+		UNARY_2TYPE_FUNC_nonil(uint, bit, ISZERO);
+		break;
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, bit, ISZERO);
+		break;
+	case TYPE_ulng:
+		UNARY_2TYPE_FUNC_nonil(ulng, bit, ISZERO);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		UNARY_2TYPE_FUNC(hge, bit, ISZERO);
+		break;
+	case TYPE_uhge:
+		UNARY_2TYPE_FUNC_nonil(uhge, bit, ISZERO);
 		break;
 #endif
 	case TYPE_flt:
@@ -597,11 +653,17 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.btval = ISZERO(v->val.btval);
 		break;
+	case TYPE_ubte:
+		ret->val.btval = ISZERO(v->val.ubtval);
+		break;
 	case TYPE_sht:
 		if (is_sht_nil(v->val.shval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.shval);
+		break;
+	case TYPE_usht:
+		ret->val.btval = ISZERO(v->val.ushval);
 		break;
 	case TYPE_int:
 		if (is_int_nil(v->val.ival))
@@ -609,11 +671,17 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.btval = ISZERO(v->val.ival);
 		break;
+	case TYPE_uint:
+		ret->val.btval = ISZERO(v->val.uival);
+		break;
 	case TYPE_lng:
 		if (is_lng_nil(v->val.lval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.lval);
+		break;
+	case TYPE_ulng:
+		ret->val.btval = ISZERO(v->val.ulval);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -621,6 +689,9 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.hval);
+		break;
+	case TYPE_uhge:
+		ret->val.btval = ISZERO(v->val.uhval);
 		break;
 #endif
 	case TYPE_flt:
@@ -666,31 +737,44 @@ BATcalcsign(BAT *b, BAT *s)
 
 	bhseqbase = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return BATconstant(ci.hseq, TYPE_bte,
-				   ATOMnilptr(TYPE_bte), ci.ncand, TRANSIENT);
-
 	bn = COLnew(ci.hseq, TYPE_bte, ci.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci.ncand == 0)
+		return bn;
 
 	BATiter bi = bat_iterator(b);
 	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
 		UNARY_2TYPE_FUNC(bte, bte, SIGN);
 		break;
+	case TYPE_ubte:
+		UNARY_2TYPE_FUNC_nonil(ubte, bte, !ISZERO);
+		break;
 	case TYPE_sht:
 		UNARY_2TYPE_FUNC(sht, bte, SIGN);
+		break;
+	case TYPE_usht:
+		UNARY_2TYPE_FUNC_nonil(usht, bte, !ISZERO);
 		break;
 	case TYPE_int:
 		UNARY_2TYPE_FUNC(int, bte, SIGN);
 		break;
+	case TYPE_uint:
+		UNARY_2TYPE_FUNC_nonil(uint, bte, !ISZERO);
+		break;
 	case TYPE_lng:
 		UNARY_2TYPE_FUNC(lng, bte, SIGN);
+		break;
+	case TYPE_ulng:
+		UNARY_2TYPE_FUNC_nonil(ulng, bte, !ISZERO);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		UNARY_2TYPE_FUNC(hge, bte, SIGN);
+		break;
+	case TYPE_uhge:
+		UNARY_2TYPE_FUNC_nonil(uhge, bte, !ISZERO);
 		break;
 #endif
 	case TYPE_flt:
@@ -739,11 +823,17 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.btval = SIGN(v->val.btval);
 		break;
+	case TYPE_ubte:
+		ret->val.btval = !ISZERO(v->val.ubtval);
+		break;
 	case TYPE_sht:
 		if (is_sht_nil(v->val.shval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.shval);
+		break;
+	case TYPE_usht:
+		ret->val.btval = !ISZERO(v->val.ushval);
 		break;
 	case TYPE_int:
 		if (is_int_nil(v->val.ival))
@@ -751,11 +841,17 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 		else
 			ret->val.btval = SIGN(v->val.ival);
 		break;
+	case TYPE_uint:
+		ret->val.btval = !ISZERO(v->val.uival);
+		break;
 	case TYPE_lng:
 		if (is_lng_nil(v->val.lval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.lval);
+		break;
+	case TYPE_ulng:
+		ret->val.btval = !ISZERO(v->val.ulval);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -763,6 +859,9 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.hval);
+		break;
+	case TYPE_uhge:
+		ret->val.btval = !ISZERO(v->val.uhval);
 		break;
 #endif
 	case TYPE_flt:
@@ -819,7 +918,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	bhseqbase = b->hseqbase;
 	canditer_init(&ci, b, s);
 
-	if (b->tnonil || BATtdense(b)) {
+	if (b->tnonil || BATtdense(b) || ATOMnilptr(b->ttype) == NULL) {
 		return BATconstant(ci.hseq, TYPE_bit, &(bit){notnil},
 				   ci.ncand, TRANSIENT);
 	} else if (b->ttype == TYPE_void) {
@@ -972,6 +1071,30 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 		}							\
 	} while (0)
 
+#define MINMAX_UTYPE(TYPE, OP)						\
+	do {								\
+		TYPE *tb1 = b1i.base, *tb2 = b2i.base, *restrict tbn = Tloc(bn, 0); \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {	\
+			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {	\
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
+				tbn[i] = p1 OP p2 ? p1 : p2;		\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		} else {						\
+			TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {	\
+				oid x1 = canditer_next(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2];	\
+				tbn[i] = p1 OP p2 ? p1 : p2;		\
+			}						\
+			TIMEOUT_CHECK(qry_ctx,				\
+				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+		}							\
+	} while (0)
+
 BAT *
 BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
@@ -1005,6 +1128,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci1.ncand == 0)
+		return bn;
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
@@ -1012,18 +1137,33 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	case TYPE_bte:
 		MINMAX_TYPE(bte, <);
 		break;
+	case TYPE_ubte:
+		MINMAX_UTYPE(ubte, <);
+		break;
 	case TYPE_sht:
 		MINMAX_TYPE(sht, <);
+		break;
+	case TYPE_usht:
+		MINMAX_UTYPE(usht, <);
 		break;
 	case TYPE_int:
 		MINMAX_TYPE(int, <);
 		break;
+	case TYPE_uint:
+		MINMAX_UTYPE(uint, <);
+		break;
 	case TYPE_lng:
 		MINMAX_TYPE(lng, <);
+		break;
+	case TYPE_ulng:
+		MINMAX_UTYPE(ulng, <);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_TYPE(hge, <);
+		break;
+	case TYPE_uhge:
+		MINMAX_UTYPE(uhge, <);
 		break;
 #endif
 	case TYPE_flt:
@@ -1164,7 +1304,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						tbn[i] = p2;		\
 					}				\
 				} else {				\
-					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
+					tbn[i] = !is_##TYPE##_nil(p2) && p1 OP p2 ? p1 : p2; \
 				}					\
 			}						\
 			TIMEOUT_CHECK(qry_ctx,				\
@@ -1182,7 +1322,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 						tbn[i] = p2;		\
 					}				\
 				} else {				\
-					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
+					tbn[i] = !is_##TYPE##_nil(p2) && p1 OP p2 ? p1 : p2; \
 				}					\
 			}						\
 			TIMEOUT_CHECK(qry_ctx,				\
@@ -1223,6 +1363,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci1.ncand == 0)
+		return bn;
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
@@ -1230,18 +1372,33 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	case TYPE_bte:
 		MINMAX_NONIL_TYPE(bte, <);
 		break;
+	case TYPE_ubte:
+		MINMAX_UTYPE(ubte, <);
+		break;
 	case TYPE_sht:
 		MINMAX_NONIL_TYPE(sht, <);
+		break;
+	case TYPE_usht:
+		MINMAX_UTYPE(usht, <);
 		break;
 	case TYPE_int:
 		MINMAX_NONIL_TYPE(int, <);
 		break;
+	case TYPE_uint:
+		MINMAX_UTYPE(uint, <);
+		break;
 	case TYPE_lng:
 		MINMAX_NONIL_TYPE(lng, <);
+		break;
+	case TYPE_ulng:
+		MINMAX_UTYPE(ulng, <);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_NONIL_TYPE(hge, <);
+		break;
+	case TYPE_uhge:
+		MINMAX_UTYPE(uhge, <);
 		break;
 #endif
 	case TYPE_flt:
@@ -1399,6 +1556,18 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 	} while (0)
 
+#define MINMAX_CST_UTYPE(TYPE, OP)					\
+	do {								\
+		TYPE *restrict tb = bi.base, *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
+		TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {		\
+			oid x = canditer_next(&ci) - bhseqbase;		\
+			TYPE p1 = tb[x];				\
+			tbn[i] = p1 OP pp2 ? p1 : pp2;			\
+		}							\
+		TIMEOUT_CHECK(qry_ctx,					\
+			      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
+	} while (0)
+
 BAT *
 BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 {
@@ -1427,9 +1596,10 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 
 	canditer_init(&ci, b, s);
 	p2 = VALptr(v);
-	if (ci.ncand == 0 ||
-		cmp(p2, nil) == 0 ||
-		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+	if (ci.ncand == 0)
+		return COLnew(ci.hseq, b->ttype, 0, TRANSIENT);
+	if ((nil != NULL && cmp(p2, nil) == 0) ||
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
 		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
@@ -1441,18 +1611,33 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	case TYPE_bte:
 		MINMAX_CST_TYPE(bte, <);
 		break;
+	case TYPE_ubte:
+		MINMAX_CST_UTYPE(ubte, <);
+		break;
 	case TYPE_sht:
 		MINMAX_CST_TYPE(sht, <);
+		break;
+	case TYPE_usht:
+		MINMAX_CST_UTYPE(usht, <);
 		break;
 	case TYPE_int:
 		MINMAX_CST_TYPE(int, <);
 		break;
+	case TYPE_uint:
+		MINMAX_CST_UTYPE(uint, <);
+		break;
 	case TYPE_lng:
 		MINMAX_CST_TYPE(lng, <);
+		break;
+	case TYPE_ulng:
+		MINMAX_CST_UTYPE(ulng, <);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_CST_TYPE(hge, <);
+		break;
+	case TYPE_uhge:
+		MINMAX_CST_UTYPE(uhge, <);
 		break;
 #endif
 	case TYPE_flt:
@@ -1587,12 +1772,12 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
+		return COLnew(ci.hseq, b->ttype, 0, TRANSIENT);
 
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
-		is_oid_nil(b->tseqbase) &&
-		is_oid_nil(* (const oid *) p2))
+	    is_oid_nil(b->tseqbase) &&
+	    is_oid_nil(* (const oid *) p2))
 		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ci.ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
@@ -1604,18 +1789,33 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	case TYPE_bte:
 		MINMAX_NONIL_CST_TYPE(bte, <);
 		break;
+	case TYPE_ubte:
+		MINMAX_CST_UTYPE(ubte, <);
+		break;
 	case TYPE_sht:
 		MINMAX_NONIL_CST_TYPE(sht, <);
+		break;
+	case TYPE_usht:
+		MINMAX_CST_UTYPE(usht, <);
 		break;
 	case TYPE_int:
 		MINMAX_NONIL_CST_TYPE(int, <);
 		break;
+	case TYPE_uint:
+		MINMAX_CST_UTYPE(uint, <);
+		break;
 	case TYPE_lng:
 		MINMAX_NONIL_CST_TYPE(lng, <);
+		break;
+	case TYPE_ulng:
+		MINMAX_CST_UTYPE(ulng, <);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_NONIL_CST_TYPE(hge, <);
+		break;
+	case TYPE_uhge:
+		MINMAX_CST_UTYPE(uhge, <);
 		break;
 #endif
 	case TYPE_flt:
@@ -1743,6 +1943,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci1.ncand == 0)
+		return bn;
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
@@ -1750,18 +1952,33 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	case TYPE_bte:
 		MINMAX_TYPE(bte, >);
 		break;
+	case TYPE_ubte:
+		MINMAX_UTYPE(ubte, >);
+		break;
 	case TYPE_sht:
 		MINMAX_TYPE(sht, >);
+		break;
+	case TYPE_usht:
+		MINMAX_UTYPE(usht, >);
 		break;
 	case TYPE_int:
 		MINMAX_TYPE(int, >);
 		break;
+	case TYPE_uint:
+		MINMAX_UTYPE(uint, >);
+		break;
 	case TYPE_lng:
 		MINMAX_TYPE(lng, >);
+		break;
+	case TYPE_ulng:
+		MINMAX_UTYPE(ulng, >);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_TYPE(hge, >);
+		break;
+	case TYPE_uhge:
+		MINMAX_UTYPE(uhge, >);
 		break;
 #endif
 	case TYPE_flt:
@@ -1919,6 +2136,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	bn = COLnew(ci1.hseq, ATOMtype(b1->ttype), ci1.ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
+	if (ci1.ncand == 0)
+		return bn;
 
 	BATiter b1i = bat_iterator(b1);
 	BATiter b2i = bat_iterator(b2);
@@ -1926,18 +2145,33 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	case TYPE_bte:
 		MINMAX_NONIL_TYPE(bte, >);
 		break;
+	case TYPE_ubte:
+		MINMAX_UTYPE(ubte, >);
+		break;
 	case TYPE_sht:
 		MINMAX_NONIL_TYPE(sht, >);
+		break;
+	case TYPE_usht:
+		MINMAX_UTYPE(usht, >);
 		break;
 	case TYPE_int:
 		MINMAX_NONIL_TYPE(int, >);
 		break;
+	case TYPE_uint:
+		MINMAX_UTYPE(uint, >);
+		break;
 	case TYPE_lng:
 		MINMAX_NONIL_TYPE(lng, >);
+		break;
+	case TYPE_ulng:
+		MINMAX_UTYPE(ulng, >);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_NONIL_TYPE(hge, >);
+		break;
+	case TYPE_uhge:
+		MINMAX_UTYPE(uhge, >);
 		break;
 #endif
 	case TYPE_flt:
@@ -2110,9 +2344,10 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 
 	canditer_init(&ci, b, s);
 	p2 = VALptr(v);
-	if (ci.ncand == 0 ||
-		cmp(p2, nil) == 0 ||
-		(b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
+	if (ci.ncand == 0)
+		return COLnew(ci.hseq, b->ttype, 0, TRANSIENT);
+	if ((nil != NULL && cmp(p2, nil) == 0) ||
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
 		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
@@ -2124,18 +2359,33 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	case TYPE_bte:
 		MINMAX_CST_TYPE(bte, >);
 		break;
+	case TYPE_ubte:
+		MINMAX_CST_UTYPE(ubte, >);
+		break;
 	case TYPE_sht:
 		MINMAX_CST_TYPE(sht, >);
+		break;
+	case TYPE_usht:
+		MINMAX_CST_UTYPE(usht, >);
 		break;
 	case TYPE_int:
 		MINMAX_CST_TYPE(int, >);
 		break;
+	case TYPE_uint:
+		MINMAX_CST_UTYPE(uint, >);
+		break;
 	case TYPE_lng:
 		MINMAX_CST_TYPE(lng, >);
+		break;
+	case TYPE_ulng:
+		MINMAX_CST_UTYPE(ulng, >);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_CST_TYPE(hge, >);
+		break;
+	case TYPE_uhge:
+		MINMAX_CST_UTYPE(uhge, >);
 		break;
 #endif
 	case TYPE_flt:
@@ -2243,13 +2493,13 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
+		return COLnew(ci.hseq, b->ttype, 0, TRANSIENT);
 
 	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
-		is_oid_nil(b->tseqbase) &&
-		is_oid_nil(* (const oid *) p2))
+	    is_oid_nil(b->tseqbase) &&
+	    is_oid_nil(* (const oid *) p2))
 		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ci.ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ci.ncand, TRANSIENT);
@@ -2261,18 +2511,33 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	case TYPE_bte:
 		MINMAX_NONIL_CST_TYPE(bte, >);
 		break;
+	case TYPE_ubte:
+		MINMAX_CST_UTYPE(ubte, >);
+		break;
 	case TYPE_sht:
 		MINMAX_NONIL_CST_TYPE(sht, >);
+		break;
+	case TYPE_usht:
+		MINMAX_CST_UTYPE(usht, >);
 		break;
 	case TYPE_int:
 		MINMAX_NONIL_CST_TYPE(int, >);
 		break;
+	case TYPE_uint:
+		MINMAX_CST_UTYPE(uint, >);
+		break;
 	case TYPE_lng:
 		MINMAX_NONIL_CST_TYPE(lng, >);
+		break;
+	case TYPE_ulng:
+		MINMAX_CST_UTYPE(ulng, >);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		MINMAX_NONIL_CST_TYPE(hge, >);
+		break;
+	case TYPE_uhge:
+		MINMAX_CST_UTYPE(uhge, >);
 		break;
 #endif
 	case TYPE_flt:
@@ -2401,11 +2666,17 @@ xor_typeswitchloop(const void *lft, bool incr1,
 				BINARY_3TYPE_FUNC_nilcheck(bte, bte, bte, XOR, ON_OVERFLOW(bte, bte, "XOR"));
 		}
 		break;
+	case TYPE_ubte:
+		BINARY_3TYPE_FUNC_nonil(ubte, ubte, ubte, XOR);
+		break;
 	case TYPE_sht:
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil_nilcheck(sht, sht, sht, XOR, ON_OVERFLOW(sht, sht, "XOR"));
 		else
 			BINARY_3TYPE_FUNC_nilcheck(sht, sht, sht, XOR, ON_OVERFLOW(sht, sht, "XOR"));
+		break;
+	case TYPE_usht:
+		BINARY_3TYPE_FUNC_nonil(usht, usht, usht, XOR);
 		break;
 	case TYPE_int:
 		if (nonil)
@@ -2413,11 +2684,17 @@ xor_typeswitchloop(const void *lft, bool incr1,
 		else
 			BINARY_3TYPE_FUNC_nilcheck(int, int, int, XOR, ON_OVERFLOW(int, int, "XOR"));
 		break;
+	case TYPE_uint:
+		BINARY_3TYPE_FUNC_nonil(uint, uint, uint, XOR);
+		break;
 	case TYPE_lng:
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil_nilcheck(lng, lng, lng, XOR, ON_OVERFLOW(lng, lng, "XOR"));
 		else
 			BINARY_3TYPE_FUNC_nilcheck(lng, lng, lng, XOR, ON_OVERFLOW(lng, lng, "XOR"));
+		break;
+	case TYPE_ulng:
+		BINARY_3TYPE_FUNC_nonil(ulng, ulng, ulng, XOR);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -2425,6 +2702,9 @@ xor_typeswitchloop(const void *lft, bool incr1,
 			BINARY_3TYPE_FUNC_nonil_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
 		else
 			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
+		break;
+	case TYPE_uhge:
+		BINARY_3TYPE_FUNC_nonil(uhge, uhge, uhge, XOR);
 		break;
 #endif
 	default:
@@ -2632,11 +2912,17 @@ or_typeswitchloop(const void *lft, bool incr1,
 				BINARY_3TYPE_FUNC(bte, bte, bte, OR);
 		}
 		break;
+	case TYPE_ubte:
+		BINARY_3TYPE_FUNC_nonil(ubte, ubte, ubte, OR);
+		break;
 	case TYPE_sht:
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(sht, sht, sht, OR);
 		else
 			BINARY_3TYPE_FUNC(sht, sht, sht, OR);
+		break;
+	case TYPE_usht:
+		BINARY_3TYPE_FUNC_nonil(usht, usht, usht, OR);
 		break;
 	case TYPE_int:
 		if (nonil)
@@ -2644,11 +2930,17 @@ or_typeswitchloop(const void *lft, bool incr1,
 		else
 			BINARY_3TYPE_FUNC(int, int, int, OR);
 		break;
+	case TYPE_uint:
+		BINARY_3TYPE_FUNC_nonil(uint, uint, uint, OR);
+		break;
 	case TYPE_lng:
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, OR);
 		else
 			BINARY_3TYPE_FUNC(lng, lng, lng, OR);
+		break;
+	case TYPE_ulng:
+		BINARY_3TYPE_FUNC_nonil(ulng, ulng, ulng, OR);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -2656,6 +2948,9 @@ or_typeswitchloop(const void *lft, bool incr1,
 			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, OR);
 		else
 			BINARY_3TYPE_FUNC(hge, hge, hge, OR);
+		break;
+	case TYPE_uhge:
+		BINARY_3TYPE_FUNC_nonil(uhge, uhge, uhge, OR);
 		break;
 #endif
 	default:
@@ -2863,11 +3158,17 @@ and_typeswitchloop(const void *lft, bool incr1,
 				BINARY_3TYPE_FUNC_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
 		}
 		break;
+	case TYPE_ubte:
+		BINARY_3TYPE_FUNC_nonil(ubte, ubte, ubte, AND);
+		break;
 	case TYPE_sht:
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil_nilcheck(sht, sht, sht, AND, ON_OVERFLOW(sht, sht, "AND"));
 		else
 			BINARY_3TYPE_FUNC_nilcheck(sht, sht, sht, AND, ON_OVERFLOW(sht, sht, "AND"));
+		break;
+	case TYPE_usht:
+		BINARY_3TYPE_FUNC_nonil(usht, usht, usht, AND);
 		break;
 	case TYPE_int:
 		if (nonil)
@@ -2875,11 +3176,17 @@ and_typeswitchloop(const void *lft, bool incr1,
 		else
 			BINARY_3TYPE_FUNC_nilcheck(int, int, int, AND, ON_OVERFLOW(int, int, "AND"));
 		break;
+	case TYPE_uint:
+		BINARY_3TYPE_FUNC_nonil(uint, uint, uint, AND);
+		break;
 	case TYPE_lng:
 		if (nonil)
 			BINARY_3TYPE_FUNC_nonil_nilcheck(lng, lng, lng, AND, ON_OVERFLOW(lng, lng, "AND"));
 		else
 			BINARY_3TYPE_FUNC_nilcheck(lng, lng, lng, AND, ON_OVERFLOW(lng, lng, "AND"));
+		break;
+	case TYPE_ulng:
+		BINARY_3TYPE_FUNC_nonil(ulng, ulng, ulng, AND);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
@@ -2887,6 +3194,9 @@ and_typeswitchloop(const void *lft, bool incr1,
 			BINARY_3TYPE_FUNC_nonil_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
 		else
 			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
+		break;
+	case TYPE_uhge:
+		BINARY_3TYPE_FUNC_nonil(uhge, uhge, uhge, AND);
 		break;
 #endif
 	default:
@@ -3057,6 +3367,8 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define LSH(a, b)		((a) << (b))
 
 #define SHIFT_CHECK(a, b)	((b) < 0 || (b) >= 8 * (int) sizeof(a))
+#define SHIFT_UCHECK(a, b)	((b) >= 8 * sizeof(a))
+#define NEG_CHECK(a, b)		((b) < 0)
 #define NO_SHIFT_CHECK(a, b)	0
 
 /* In standard C, left shift is undefined if any of the following
@@ -3067,10 +3379,20 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
  * - left operand times two-to-the-power of the right operand is not
  *   representable in the (promoted) type of the left operand. */
 #define LSH_CHECK(a, b, TYPE)	(SHIFT_CHECK(a, b) || (a) < 0 || (a) > (GDK_##TYPE##_max >> (b)))
+#define LSH_UCHECK(a, b, TYPE)	(SHIFT_UCHECK(a, b) || (a) < 0 || (a) > (GDK_##TYPE##_max >> (b)))
 #define LSH_CHECK_bte(a, b)	LSH_CHECK(a, b, bte)
+#define LSH_UCHECK_bte(a, b)	LSH_UCHECK(a, b, bte)
 #define LSH_CHECK_sht(a, b)	LSH_CHECK(a, b, sht)
+#define LSH_UCHECK_sht(a, b)	LSH_UCHECK(a, b, sht)
 #define LSH_CHECK_int(a, b)	LSH_CHECK(a, b, int)
+#define LSH_UCHECK_int(a, b)	LSH_UCHECK(a, b, int)
 #define LSH_CHECK_lng(a, b)	LSH_CHECK(a, b, lng)
+#define LSH_UCHECK_lng(a, b)	LSH_UCHECK(a, b, lng)
+#ifdef HAVE_HGE
+#define LSH_CHECK_hge(a, b)	LSH_CHECK(a, b, hge)
+#define LSH_CHECK_btehge(a, b)	((b) < 0 || (a) < 0 || (a) > (GDK_hge_max >> (b)))
+#define LSH_UCHECK_hge(a, b)	LSH_UCHECK(a, b, hge)
+#endif
 
 static BUN
 lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
@@ -3095,22 +3417,90 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, LSH,
 						LSH_CHECK_bte);
 			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(bte, ubte, bte, LSH,
+						 LSH_UCHECK_bte);
+			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH,
 						LSH_CHECK_bte);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(bte, usht, bte, LSH,
+						 LSH_UCHECK_bte);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH,
 						LSH_CHECK_bte);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(bte, uint, bte, LSH,
+						 LSH_UCHECK_bte);
+			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH,
 						LSH_CHECK_bte);
 			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(bte, ulng, bte, LSH,
+						 LSH_UCHECK_bte);
+			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			BINARY_3TYPE_FUNC_CHECK(bte, hge, bte, LSH,
+						LSH_CHECK_hge);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(bte, uhge, bte, LSH,
+						 LSH_UCHECK_bte);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_ubte:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, bte, ubte, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, ubte, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, sht, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, usht, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, int, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, uint, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, lng, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, ulng, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, hge, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, uhge, ubte, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3123,22 +3513,90 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, LSH,
 						LSH_CHECK_sht);
 			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(sht, ubte, sht, LSH,
+						 LSH_UCHECK_sht);
+			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH,
 						LSH_CHECK_sht);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(sht, usht, sht, LSH,
+						 LSH_UCHECK_sht);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH,
 						LSH_CHECK_sht);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(sht, uint, sht, LSH,
+						 LSH_UCHECK_sht);
+			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH,
 						LSH_CHECK_sht);
 			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(sht, ulng, sht, LSH,
+						 LSH_UCHECK_sht);
+			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			BINARY_3TYPE_FUNC_CHECK(sht, hge, sht, LSH,
+						LSH_CHECK_sht);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(sht, uhge, sht, LSH,
+						 LSH_UCHECK_sht);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_usht:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(usht, bte, usht, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, ubte, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(usht, sht, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, usht, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(usht, int, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, uint, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(usht, lng, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, ulng, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(usht, hge, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, uhge, usht, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3151,22 +3609,90 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH,
 						LSH_CHECK_int);
 			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(int, ubte, int, LSH,
+						 LSH_UCHECK_int);
+			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH,
 						LSH_CHECK_int);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(int, usht, int, LSH,
+						 LSH_UCHECK_int);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH,
 						LSH_CHECK_int);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(int, uint, int, LSH,
+						 LSH_UCHECK_int);
+			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH,
 						LSH_CHECK_int);
 			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(int, ulng, int, LSH,
+						 LSH_UCHECK_int);
+			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			BINARY_3TYPE_FUNC_CHECK(int, hge, int, LSH,
+						LSH_CHECK_hge);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(int, uhge, int, LSH,
+						 LSH_UCHECK_int);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_uint:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(uint, bte, uint, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, ubte, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(uint, sht, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, usht, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(uint, int, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, uint, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(uint, lng, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, ulng, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(uint, hge, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, uhge, uint, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3179,22 +3705,90 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH,
 						LSH_CHECK_lng);
 			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(lng, ubte, lng, LSH,
+						 LSH_UCHECK_lng);
+			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH,
 						LSH_CHECK_lng);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(lng, usht, lng, LSH,
+						 LSH_UCHECK_lng);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH,
 						LSH_CHECK_lng);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(lng, uint, lng, LSH,
+						 LSH_UCHECK_lng);
+			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH,
 						LSH_CHECK_lng);
 			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(lng, ulng, lng, LSH,
+						 LSH_UCHECK_lng);
+			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 			BINARY_3TYPE_FUNC_CHECK(lng, hge, lng, LSH,
+						LSH_CHECK_hge);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(lng, uhge, lng, LSH,
+						 LSH_UCHECK_lng);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_ulng:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, bte, ulng, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, ubte, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, sht, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, usht, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, int, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, uint, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, lng, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, ulng, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, hge, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, uhge, ulng, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3206,23 +3800,89 @@ lsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC_CHECK(hge, bte, hge, LSH,
-						NO_SHIFT_CHECK);
+						LSH_CHECK_btehge);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(hge, ubte, hge, LSH,
+						 LSH_UCHECK_hge);
 			break;
 		case TYPE_sht:
 			BINARY_3TYPE_FUNC_CHECK(hge, sht, hge, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_hge);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(hge, usht, hge, LSH,
+						 LSH_UCHECK_hge);
 			break;
 		case TYPE_int:
 			BINARY_3TYPE_FUNC_CHECK(hge, int, hge, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_hge);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(hge, uint, hge, LSH,
+						 LSH_UCHECK_hge);
 			break;
 		case TYPE_lng:
 			BINARY_3TYPE_FUNC_CHECK(hge, lng, hge, LSH,
-						SHIFT_CHECK);
+						LSH_CHECK_hge);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(hge, ulng, hge, LSH,
+						 LSH_UCHECK_hge);
 			break;
 		case TYPE_hge:
 			BINARY_3TYPE_FUNC_CHECK(hge, hge, hge, LSH,
+						LSH_CHECK_hge);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(hge, uhge, hge, LSH,
+						 LSH_UCHECK_hge);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_uhge:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, bte, uhge, LSH,
+						NEG_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, ubte, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, sht, uhge, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, usht, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, int, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, uint, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, lng, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, ulng, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, hge, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, uhge, uhge, LSH,
+						 SHIFT_UCHECK);
 			break;
 		default:
 			goto unsupported;
@@ -3442,25 +4102,93 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	case TYPE_bte:
 		switch (tp2) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, RSH,
+			BINARY_3TYPE_FUNC_CHECK(bte, bte, bte, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(bte, ubte, bte, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, RSH,
+			BINARY_3TYPE_FUNC_CHECK(bte, sht, bte, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(bte, usht, bte, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, RSH,
+			BINARY_3TYPE_FUNC_CHECK(bte, int, bte, LSH,
 						SHIFT_CHECK);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(bte, uint, bte, LSH,
+						 SHIFT_UCHECK);
+			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, RSH,
+			BINARY_3TYPE_FUNC_CHECK(bte, lng, bte, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(bte, ulng, bte, LSH,
+						 SHIFT_UCHECK);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			BINARY_3TYPE_FUNC_CHECK(bte, hge, bte, RSH,
+			BINARY_3TYPE_FUNC_CHECK(bte, hge, bte, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(bte, uhge, bte, LSH,
+						 SHIFT_UCHECK);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_ubte:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, bte, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, ubte, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, sht, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, usht, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, int, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, uint, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, lng, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, ulng, ubte, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(ubte, hge, ubte, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(ubte, uhge, ubte, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3470,25 +4198,93 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	case TYPE_sht:
 		switch (tp2) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, RSH,
+			BINARY_3TYPE_FUNC_CHECK(sht, bte, sht, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(sht, ubte, sht, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, RSH,
+			BINARY_3TYPE_FUNC_CHECK(sht, sht, sht, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(sht, usht, sht, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, RSH,
+			BINARY_3TYPE_FUNC_CHECK(sht, int, sht, LSH,
 						SHIFT_CHECK);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(sht, uint, sht, LSH,
+						 SHIFT_UCHECK);
+			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, RSH,
+			BINARY_3TYPE_FUNC_CHECK(sht, lng, sht, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(sht, ulng, sht, LSH,
+						 SHIFT_UCHECK);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			BINARY_3TYPE_FUNC_CHECK(sht, hge, sht, RSH,
+			BINARY_3TYPE_FUNC_CHECK(sht, hge, sht, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(sht, uhge, sht, LSH,
+						 SHIFT_UCHECK);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_usht:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(usht, bte, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, ubte, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(usht, sht, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, usht, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(usht, int, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, uint, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(usht, lng, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, ulng, usht, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(usht, hge, usht, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(usht, uhge, usht, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3498,25 +4294,93 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	case TYPE_int:
 		switch (tp2) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(int, bte, int, RSH,
+			BINARY_3TYPE_FUNC_CHECK(int, bte, int, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(int, ubte, int, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(int, sht, int, RSH,
+			BINARY_3TYPE_FUNC_CHECK(int, sht, int, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(int, usht, int, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(int, int, int, RSH,
+			BINARY_3TYPE_FUNC_CHECK(int, int, int, LSH,
 						SHIFT_CHECK);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(int, uint, int, LSH,
+						 SHIFT_UCHECK);
+			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(int, lng, int, RSH,
+			BINARY_3TYPE_FUNC_CHECK(int, lng, int, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(int, ulng, int, LSH,
+						 SHIFT_UCHECK);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			BINARY_3TYPE_FUNC_CHECK(int, hge, int, RSH,
+			BINARY_3TYPE_FUNC_CHECK(int, hge, int, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(int, uhge, int, LSH,
+						 SHIFT_UCHECK);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_uint:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(uint, bte, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, ubte, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(uint, sht, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, usht, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(uint, int, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, uint, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(uint, lng, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, ulng, uint, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(uint, hge, uint, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(uint, uhge, uint, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3526,25 +4390,93 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	case TYPE_lng:
 		switch (tp2) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, RSH,
+			BINARY_3TYPE_FUNC_CHECK(lng, bte, lng, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(lng, ubte, lng, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, RSH,
+			BINARY_3TYPE_FUNC_CHECK(lng, sht, lng, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(lng, usht, lng, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, RSH,
+			BINARY_3TYPE_FUNC_CHECK(lng, int, lng, LSH,
 						SHIFT_CHECK);
 			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(lng, uint, lng, LSH,
+						 SHIFT_UCHECK);
+			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, RSH,
+			BINARY_3TYPE_FUNC_CHECK(lng, lng, lng, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(lng, ulng, lng, LSH,
+						 SHIFT_UCHECK);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			BINARY_3TYPE_FUNC_CHECK(lng, hge, lng, RSH,
+			BINARY_3TYPE_FUNC_CHECK(lng, hge, lng, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(lng, uhge, lng, LSH,
+						 SHIFT_UCHECK);
+			break;
+#endif
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_ulng:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, bte, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, ubte, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, sht, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, usht, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, int, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, uint, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, lng, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, ulng, ulng, LSH,
+						 SHIFT_UCHECK);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(ulng, hge, ulng, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(ulng, uhge, ulng, LSH,
+						 SHIFT_UCHECK);
 			break;
 #endif
 		default:
@@ -3555,24 +4487,90 @@ rsh_typeswitchloop(const void *lft, int tp1, bool incr1,
 	case TYPE_hge:
 		switch (tp2) {
 		case TYPE_bte:
-			BINARY_3TYPE_FUNC_CHECK(hge, bte, hge, RSH,
-						NO_SHIFT_CHECK);
+			BINARY_3TYPE_FUNC_CHECK(hge, bte, hge, LSH,
+						NEG_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECK(hge, ubte, hge, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_sht:
-			BINARY_3TYPE_FUNC_CHECK(hge, sht, hge, RSH,
+			BINARY_3TYPE_FUNC_CHECK(hge, sht, hge, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECK(hge, usht, hge, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_int:
-			BINARY_3TYPE_FUNC_CHECK(hge, int, hge, RSH,
+			BINARY_3TYPE_FUNC_CHECK(hge, int, hge, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECK(hge, uint, hge, LSH,
+						 SHIFT_UCHECK);
 			break;
 		case TYPE_lng:
-			BINARY_3TYPE_FUNC_CHECK(hge, lng, hge, RSH,
+			BINARY_3TYPE_FUNC_CHECK(hge, lng, hge, LSH,
 						SHIFT_CHECK);
 			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECK(hge, ulng, hge, LSH,
+						 SHIFT_UCHECK);
+			break;
 		case TYPE_hge:
-			BINARY_3TYPE_FUNC_CHECK(hge, hge, hge, RSH,
+			BINARY_3TYPE_FUNC_CHECK(hge, hge, hge, LSH,
 						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECK(hge, uhge, hge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		default:
+			goto unsupported;
+		}
+		break;
+	case TYPE_uhge:
+		switch (tp2) {
+		case TYPE_bte:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, bte, uhge, LSH,
+						NEG_CHECK);
+			break;
+		case TYPE_ubte:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, ubte, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_sht:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, sht, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_usht:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, usht, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_int:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, int, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uint:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, uint, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_lng:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, lng, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_ulng:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, ulng, uhge, LSH,
+						 SHIFT_UCHECK);
+			break;
+		case TYPE_hge:
+			BINARY_3TYPE_FUNC_CHECKU(uhge, hge, uhge, LSH,
+						SHIFT_CHECK);
+			break;
+		case TYPE_uhge:
+			BINARY_3TYPE_FUNC_UCHECKU(uhge, uhge, uhge, LSH,
+						 SHIFT_UCHECK);
 			break;
 		default:
 			goto unsupported;
@@ -3771,19 +4769,29 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 /* between (any "linear" type) */
 
 #define LTbte(a,b)	((a) < (b))
+#define LTubte(a,b)	((a) < (b))
 #define LTsht(a,b)	((a) < (b))
+#define LTusht(a,b)	((a) < (b))
 #define LTint(a,b)	((a) < (b))
+#define LTuint(a,b)	((a) < (b))
 #define LTlng(a,b)	((a) < (b))
+#define LTulng(a,b)	((a) < (b))
 #define LThge(a,b)	((a) < (b))
+#define LTuhge(a,b)	((a) < (b))
 #define LToid(a,b)	((a) < (b))
 #define LTflt(a,b)	((a) < (b))
 #define LTdbl(a,b)	((a) < (b))
 #define LTany(a,b)	((*atomcmp)(a, b) < 0)
 #define EQbte(a,b)	((a) == (b))
+#define EQubte(a,b)	((a) == (b))
 #define EQsht(a,b)	((a) == (b))
+#define EQusht(a,b)	((a) == (b))
 #define EQint(a,b)	((a) == (b))
+#define EQuint(a,b)	((a) == (b))
 #define EQlng(a,b)	((a) == (b))
+#define EQulng(a,b)	((a) == (b))
 #define EQhge(a,b)	((a) == (b))
+#define EQuhge(a,b)	((a) == (b))
 #define EQoid(a,b)	((a) == (b))
 #define EQflt(a,b)	((a) == (b))
 #define EQdbl(a,b)	((a) == (b))
@@ -3791,12 +4799,17 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 
 #define is_any_nil(v)	((v) == NULL || (*atomcmp)((v), nil) == 0)
 
-#define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || (i && EQ##t(a, b)))
-#define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
+#define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || ((i) && EQ##t(a, b)))
+#define less2(a,b,i,t)	(LT##t(a, b) || ((i) && EQ##t(a, b)))
+#define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || ((i) && EQ##t(a, b)))
+#define grtr2(a,b,i,t)	(LT##t(b, a) || ((i) && EQ##t(a, b)))
 #define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
 
 #define between3(v, lo, linc, hi, hinc, TYPE)				\
 	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
+
+#define between2(v, lo, linc, hi, hinc, TYPE)				\
+	(grtr2(v, lo, linc, TYPE) && less2(v, hi, hinc, TYPE))
 
 #define BETWEEN(v, lo, hi, TYPE)					\
 	(is_##TYPE##_nil(v)						\
@@ -3811,7 +4824,18 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 			   between3(v, hi, hinc, lo, linc, TYPE))	\
 		     : between3(v, lo, linc, hi, hinc, TYPE))))
 
-#define BETWEEN_LOOP_TYPE(TYPE, canditer_next)				\
+#define UBETWEEN(v, lo, hi, TYPE)					\
+	((bit) (anti							\
+		? (symmetric						\
+		   ? !(between2(v, lo, linc, hi, hinc, TYPE) ||		\
+		       between2(v, hi, hinc, lo, linc, TYPE))		\
+		   : !between2(v, lo, linc, hi, hinc, TYPE))		\
+		: (symmetric						\
+		   ? (between2(v, lo, linc, hi, hinc, TYPE) ||		\
+		      between2(v, hi, hinc, lo, linc, TYPE))		\
+		   : between2(v, lo, linc, hi, hinc, TYPE))))
+
+#define BETWEEN_LOOP_TYPE(TYPE, BETWEEN, canditer_next)				\
 	do {								\
 		i = j = k = 0;						\
 		TIMEOUT_LOOP_IDX(l, ncand, qry_ctx) {			\
@@ -3865,47 +4889,77 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	switch (tp) {
 	case TYPE_bte:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(bte, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(bte, BETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(bte, canditer_next);
+			BETWEEN_LOOP_TYPE(bte, BETWEEN, canditer_next);
+		break;
+	case TYPE_ubte:
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(ubte, UBETWEEN, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(ubte, UBETWEEN, canditer_next);
 		break;
 	case TYPE_sht:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(sht, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(sht, BETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(sht, canditer_next);
+			BETWEEN_LOOP_TYPE(sht, BETWEEN, canditer_next);
+		break;
+	case TYPE_usht:
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(usht, UBETWEEN, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(usht, UBETWEEN, canditer_next);
 		break;
 	case TYPE_int:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(int, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(int, BETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(int, canditer_next);
+			BETWEEN_LOOP_TYPE(int, BETWEEN, canditer_next);
+		break;
+	case TYPE_uint:
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(uint, UBETWEEN, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(uint, UBETWEEN, canditer_next);
 		break;
 	case TYPE_lng:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(lng, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(lng, BETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(lng, canditer_next);
+			BETWEEN_LOOP_TYPE(lng, BETWEEN, canditer_next);
+		break;
+	case TYPE_ulng:
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(ulng, UBETWEEN, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(ulng, UBETWEEN, canditer_next);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(hge, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(hge, BETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(hge, canditer_next);
+			BETWEEN_LOOP_TYPE(hge, BETWEEN, canditer_next);
+		break;
+	case TYPE_uhge:
+		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
+			BETWEEN_LOOP_TYPE(uhge, UBETWEEN, canditer_next_dense);
+		else
+			BETWEEN_LOOP_TYPE(uhge, UBETWEEN, canditer_next);
 		break;
 #endif
 	case TYPE_flt:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(flt, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(flt, BETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(flt, canditer_next);
+			BETWEEN_LOOP_TYPE(flt, BETWEEN, canditer_next);
 		break;
 	case TYPE_dbl:
 		if (ci->tpe == cand_dense && cilo->tpe == cand_dense && cihi->tpe == cand_dense)
-			BETWEEN_LOOP_TYPE(dbl, canditer_next_dense);
+			BETWEEN_LOOP_TYPE(dbl, UBETWEEN, canditer_next_dense);
 		else
-			BETWEEN_LOOP_TYPE(dbl, canditer_next);
+			BETWEEN_LOOP_TYPE(dbl, UBETWEEN, canditer_next);
 		break;
 	default:
 		assert(tp != TYPE_oid);
@@ -4308,25 +5362,40 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	case TYPE_bte:
 		ret->val.btval = BETWEEN(v->val.btval, lo->val.btval, hi->val.btval, bte);
 		break;
+	case TYPE_ubte:
+		ret->val.btval = UBETWEEN(v->val.ubtval, lo->val.ubtval, hi->val.ubtval, ubte);
+		break;
 	case TYPE_sht:
 		ret->val.btval = BETWEEN(v->val.shval, lo->val.shval, hi->val.shval, sht);
+		break;
+	case TYPE_usht:
+		ret->val.btval = UBETWEEN(v->val.ushval, lo->val.ushval, hi->val.ushval, usht);
 		break;
 	case TYPE_int:
 		ret->val.btval = BETWEEN(v->val.ival, lo->val.ival, hi->val.ival, int);
 		break;
+	case TYPE_uint:
+		ret->val.btval = UBETWEEN(v->val.uival, lo->val.uival, hi->val.uival, uint);
+		break;
 	case TYPE_lng:
 		ret->val.btval = BETWEEN(v->val.lval, lo->val.lval, hi->val.lval, lng);
+		break;
+	case TYPE_ulng:
+		ret->val.btval = UBETWEEN(v->val.ulval, lo->val.ulval, hi->val.ulval, ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		ret->val.btval = BETWEEN(v->val.hval, lo->val.hval, hi->val.hval, hge);
+		break;
+	case TYPE_uhge:
+		ret->val.btval = UBETWEEN(v->val.uhval, lo->val.uhval, hi->val.uhval, uhge);
 		break;
 #endif
 	case TYPE_flt:
 		ret->val.btval = BETWEEN(v->val.fval, lo->val.fval, hi->val.fval, flt);
 		break;
 	case TYPE_dbl:
-		ret->val.btval = BETWEEN(v->val.dval, lo->val.dval, hi->val.dval, dbl);
+		ret->val.btval = UBETWEEN(v->val.dval, lo->val.dval, hi->val.dval, dbl);
 		break;
 	default:
 		nil = ATOMnilptr(t);
