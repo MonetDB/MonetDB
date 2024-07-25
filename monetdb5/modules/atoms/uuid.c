@@ -121,6 +121,7 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 	uuid *restrict bnt = NULL;
 	bat *ret = getArgReference_bat(stk, pci, 0);
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	(void) cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -139,8 +140,9 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	bnt = Tloc(bn, 0);
-	for (BUN i = 0; i < n; i++)
+	TIMEOUT_LOOP_IDX_DECL(i, n, qry_ctx)
 		UUIDgenerateUuid_internal(&(bnt[i]));
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	BATsetcount(bn, n);
 	bn->tnonil = true;
 	bn->tnil = false;
@@ -150,6 +152,9 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
 	return msg;
+  bailout:
+	BBPreclaim(bn);
+	throw(MAL, "uuid.generateuuidint_bulk", "%s", TIMEOUT_MESSAGE(qry_ctx));
 }
 
 static str

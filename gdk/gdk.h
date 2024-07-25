@@ -2349,29 +2349,33 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define QRY_INTERRUPT (-2)	/* client indicated interrupt */
 #define QRY_DISCONNECT (-3)	/* client disconnected */
 
-static inline void
-TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+static const char *
+TIMEOUT_MESSAGE(QryCtx *qc)
 {
-	if (GDKexiting()) {
-		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-			      "%s\n", EXITING_MSG);
-	} else if (qc) {
+	if (GDKexiting())
+		return EXITING_MSG;
+	if (qc) {
 		switch (qc->endtime) {
 		case QRY_TIMEOUT:
-			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-				      "%s\n", TIMEOUT_MSG);
-			break;
+			return TIMEOUT_MSG;
 		case QRY_INTERRUPT:
-			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-				      "%s\n", INTERRUPT_MSG);
-			break;
+			return INTERRUPT_MSG;
 		case QRY_DISCONNECT:
-			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-				      "%s\n", DISCONNECT_MSG);
-			break;
+			return DISCONNECT_MSG;
 		default:
 			MT_UNREACHABLE();
 		}
+	}
+	return NULL;
+}
+
+static inline void
+TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+{
+	const char *e = TIMEOUT_MESSAGE(qc);
+	if (e) {
+		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+			      "%s\n", e);
 	}
 }
 

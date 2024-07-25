@@ -169,9 +169,7 @@ createException(enum malexception type, const char *fcn, const char *format,
 		}
 		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported%s: %s",
-								  strstr(p,
-										 EXITING_MSG) == NULL ? " error" : "",
-								  p);
+								  strstr(p, EXITING_MSG) ? "" : " error", p);
 		GDKclrerr();
 		assert(ret);
 		return ret;
