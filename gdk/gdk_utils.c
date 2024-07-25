@@ -2223,7 +2223,7 @@ sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 }
 
 #define round16(sz) ((sz+15)&~15)
-#define round_block_size(sz) ((sz+SA_BLOCK_SIZE)&~SA_BLOCK_SIZE)
+#define round_block_size(sz) ((sz + (SA_BLOCK_SIZE - 1))&~(SA_BLOCK_SIZE - 1))
 void *
 sa_alloc( allocator *sa, size_t sz )
 {
@@ -2233,13 +2233,14 @@ sa_alloc( allocator *sa, size_t sz )
 	//if (sa->tmp_active && sz >= SA_BLOCK_SIZE)
 	//	assert(0);
 	if (sz > (SA_BLOCK_SIZE - sa->used)) {
-		sz = round_block_size(sz);
 		if (sa->pa)
 			r = (char*)sa_alloc(sa->pa, sz);
-		else if (sz == SA_BLOCK_SIZE && sa->freelist) {
+		else if (sz <= SA_BLOCK_SIZE && sa->freelist) {
 			r = sa_use_freed(sa, SA_BLOCK_SIZE);
-		} else
+		} else {
+			sz = round_block_size(sz);
 			r = GDKmalloc(sz);
+		}
 		if (r == NULL) {
 			if (sa->eb.enabled)
 				eb_error(&sa->eb, "out of memory", 1000);
