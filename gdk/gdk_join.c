@@ -4872,19 +4872,19 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					continue;
 				lng v1, v2;
 				SUBI_WITH_CHECK(*(const lng *)vr,
-					       *(const lng *)c1,
-					       lng, v1,
-					       GDK_lng_max,
-					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(false));
+						*(const lng *)c1,
+						lng, v1,
+						GDK_lng_max,
+						do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(false));
 				if (*(const lng *)vl <= v1 &&
 				    (!linc || *(const lng *)vl != v1))
 					continue;
 				  lmatch1:
-				ADDI_WITH_CHECK(*(const lng *)vr,
-					       *(const lng *)c2,
-					       lng, v2,
-					       GDK_lng_max,
-					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(false));
+				 ADDI_WITH_CHECK(*(const lng *)vr,
+						 *(const lng *)c2,
+						 lng, v2,
+						 GDK_lng_max,
+						 do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(false));
 				if (*(const lng *)vl >= v2 &&
 				    (!hinc || *(const lng *)vl != v2))
 					continue;
@@ -4901,20 +4901,20 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (is_hge_nil(*(const hge *) vr))
 					continue;
 				hge v1, v2;
-				SUBF_WITH_CHECK(*(const hge *)vr,
-					       *(const hge *)c1,
-					       hge, v1,
-					       GDK_hge_max,
-					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(false));
+				SUBI_WITH_CHECK(*(const hge *)vr,
+						*(const hge *)c1,
+						hge, v1,
+						GDK_hge_max,
+						do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(false));
 				if (*(const hge *)vl <= v1 &&
 				    (!linc || *(const hge *)vl != v1))
 					continue;
 				  hmatch1:
 				ADDI_WITH_CHECK(*(const hge *)vr,
-					       *(const hge *)c2,
-					       hge, v2,
-					       GDK_hge_max,
-					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(false));
+						*(const hge *)c2,
+						hge, v2,
+						GDK_hge_max,
+						do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(false));
 				if (*(const hge *)vl >= v2 &&
 				    (!hinc || *(const hge *)vl != v2))
 					continue;
@@ -4944,19 +4944,19 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					continue;
 				dbl v1, v2;
 				SUBF_WITH_CHECK(*(const dbl *)vr,
-					       *(const dbl *)c1,
-					       dbl, v1,
-					       GDK_dbl_max,
-					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(false));
+						*(const dbl *)c1,
+						dbl, v1,
+						GDK_dbl_max,
+						do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(false));
 				if (*(const dbl *)vl <= v1 &&
 				    (!linc || *(const dbl *)vl != v1))
 					continue;
 				  dmatch1:
 				ADDF_WITH_CHECK(*(const dbl *)vr,
-					       *(const dbl *)c2,
-					       dbl, v2,
-					       GDK_dbl_max,
-					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(false));
+						*(const dbl *)c2,
+						dbl, v2,
+						GDK_dbl_max,
+						do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(false));
 				if (*(const dbl *)vl >= v2 &&
 				    (!hinc || *(const dbl *)vl != v2))
 					continue;

@@ -44,6 +44,12 @@
 			on_overflow;					\
 		}							\
 	} while (0)
+#define UOP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\
+	do {								\
+		if (__builtin_##op##_overflow(lft, rgt, &(dst))) {	\
+			on_overflow;					\
+		}							\
+	} while (0)
 #endif
 #endif
 
@@ -71,11 +77,21 @@
 /* integer version using Gnu CC builtin function for overflow check */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	OP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
+#define ADDU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
+	UOP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
 #else
 /* integer version using generic version */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
 	ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
-#endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
+#define ADDU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
+	do {							\
+		if ((max) - (rgt) < (lft)) {			\
+			on_overflow;				\
+		} else {					\
+			(dst) = (TYPE3) (lft) + (rgt);		\
+		}						\
+	} while (0)
+#endif
 
 /* floating point version using generic version */
 #define ADDF_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -105,11 +121,21 @@
 /* integer version using Gnu CC builtin function for overflow check */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	OP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
+#define SUBU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
+	UOP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
 #else
 /* integer version using generic version */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
 	SUB_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
-#endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
+#define SUBU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)	\
+	do {							\
+		if ((rgt) > (lft)) {				\
+			on_overflow;				\
+		} else {					\
+			(dst) = (TYPE3) (lft) - (rgt);		\
+		}						\
+	} while (0)
+#endif
 
 /* floating point version using generic version */
 #define SUBF_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -132,21 +158,37 @@
 /* integer version using Gnu CC builtin function for overflow check */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
+#define MULU4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
+	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #else
 /* integer version using generic version */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
+#define MULU4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)	\
+	do {								\
+		TYPE4 c = (TYPE4) (lft) * (rgt);			\
+		if (c > (TYPE4) (max)) {				\
+			on_overflow;					\
+		} else {						\
+			(dst) = (TYPE3) c;				\
+		}							\
+	} while (0)
 #ifdef HAVE_HGE
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
+#define LNGMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
+	MULU4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
 #elif defined(HAVE___INT128)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, __int128, on_overflow)
+#define LNGMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
+	MULU4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
 #elif defined(_MSC_VER) && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
+#pragma intrinsic(_umul128)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
 		__int64 clo, chi;					\
@@ -154,6 +196,16 @@
 		if ((chi == 0 && clo >= 0 /*&& clo <= (max)*/) ||	\
 		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
 			(dst) = (lng) clo;				\
+		} else {						\
+			on_overflow;					\
+		}							\
+	} while (0)
+#define LNGMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
+	do {								\
+		unsigned __int64 clo, chi;				\
+		clo = _umul128((unsigned __int64) (lft), (unsigned __int64) (rgt), &chi);	\
+		if (chi == 0 /*&& clo <= (max)*/) {			\
+			(dst) = (ulng) clo;				\
 		} else {						\
 			on_overflow;					\
 		}							\
@@ -184,6 +236,26 @@
 		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0 && \
 		     (c) <= (ulng) (max))) {				\
 			(dst) = sign * (lng) c;				\
+		} else {						\
+			on_overflow;					\
+		}							\
+	} while (0)
+#define LNGMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
+	do {								\
+		ulng a = (lft), b = (rgt);				\
+		unsigned int a1, a2, b1, b2;				\
+		ulng c;							\
+									\
+		a1 = (unsigned int) (a >> 32);				\
+		a2 = (unsigned int) a;					\
+		b1 = (unsigned int) (b >> 32);				\
+		b2 = (unsigned int) b;					\
+		/* result = (a1*b1<<64) + (a1*b2+a2*b1<<32) + a2*b2 */	\
+		if ((a1 == 0 || b1 == 0) &&				\
+		    ((c = (ulng) a1 * b2 + (ulng) a2 * b1) & (~(ulng)0 << 31)) == 0 && \
+		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0 && \
+		     (c) <= (ulng) (max))) {				\
+			(dst) = (ulng) c;				\
 		} else {						\
 			on_overflow;					\
 		}							\
@@ -227,7 +299,7 @@
 			on_overflow;					\
 		}							\
 	} while (0)
-#endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
+#endif
 #endif	/* HAVE_HGE */
 
 #define AVERAGE_ITER(TYPE, x, a, r, n)					\

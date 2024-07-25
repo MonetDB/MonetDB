@@ -440,9 +440,9 @@ dofsum(const void *restrict values, oid seqb,
 				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					x = vals[ci->seq + i - seqb];	\
 					ADDI_WITH_CHECK(x, sum,		\
-						       TYPE2, sum,	\
-						       GDK_##TYPE2##_max, \
-						       goto overflow);	\
+							TYPE2, sum,	\
+							GDK_##TYPE2##_max, \
+							goto overflow);	\
 				}					\
 				TIMEOUT_CHECK(qry_ctx,			\
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
@@ -458,9 +458,9 @@ dofsum(const void *restrict values, oid seqb,
 						}			\
 					} else {			\
 						ADDI_WITH_CHECK(x, sum,	\
-							       TYPE2, sum, \
-							       GDK_##TYPE2##_max, \
-							       goto overflow); \
+								TYPE2, sum, \
+								GDK_##TYPE2##_max, \
+								goto overflow); \
 						seenval = true;		\
 					}				\
 				}					\
@@ -486,9 +486,9 @@ dofsum(const void *restrict values, oid seqb,
 					}				\
 				} else {				\
 					ADDI_WITH_CHECK(x, sum,		\
-						       TYPE2, sum,	\
-						       GDK_##TYPE2##_max, \
-						       goto overflow);	\
+							TYPE2, sum,	\
+							GDK_##TYPE2##_max, \
+							goto overflow);	\
 					seenval = true;			\
 				}					\
 			}						\
@@ -715,7 +715,7 @@ dofsum(const void *restrict values, oid seqb,
 			sum = 0;					\
 			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = vals[ci->seq + i - seqb];		\
-				ADD_WITH_CHECK(x, sum,			\
+				ADDU_WITH_CHECK(x, sum,			\
 					       TYPE2, sum,		\
 					       GDK_##TYPE2##_max,	\
 					       goto overflow);		\
@@ -730,10 +730,10 @@ dofsum(const void *restrict values, oid seqb,
 			sum = 0;					\
 			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {	\
 				x = vals[canditer_next(ci) - seqb];	\
-				ADD_WITH_CHECK(x, sum,			\
-					       TYPE2, sum,		\
-					       GDK_##TYPE2##_max,	\
-					       goto overflow);		\
+				ADDU_WITH_CHECK(x, sum,			\
+						TYPE2, sum,		\
+						GDK_##TYPE2##_max,	\
+						goto overflow);		\
 			}						\
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
@@ -746,7 +746,7 @@ dofsum(const void *restrict values, oid seqb,
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[ci->seq + i - seqb];	\
-					ADD_WITH_CHECK(			\
+					ADDU_WITH_CHECK(		\
 						x,			\
 						sums[gid],		\
 						TYPE2,			\
@@ -766,7 +766,7 @@ dofsum(const void *restrict values, oid seqb,
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[i];			\
-					ADD_WITH_CHECK(			\
+					ADDU_WITH_CHECK(		\
 						x,			\
 						sums[gid],		\
 						TYPE2,			\
@@ -1560,7 +1560,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty)
 					else				\
 						gid = (oid) i;		\
 				}					\
-				MUL4_WITH_CHECK(			\
+				MULU4_WITH_CHECK(			\
 					vals[i],			\
 					prods[gid],			\
 					TYPE2, prods[gid],		\
@@ -3895,9 +3895,9 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			if (is_##TYPE##_nil(x))				\
 				continue;				\
 			ADDI_WITH_CHECK(x, sum,				\
-				       lng_hge, sum,			\
-				       GDK_##lng_hge##_max,		\
-				       goto overflow##TYPE);		\
+					lng_hge, sum,			\
+					GDK_##lng_hge##_max,		\
+					goto overflow##TYPE);		\
 			/* don't count value until after overflow check */ \
 			n++;						\
 		}							\
@@ -3951,10 +3951,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
 			i = canditer_next(&ci) - b->hseqbase;		\
 			x = ((const TYPE *) src)[i];			\
-			ADD_WITH_CHECK(x, sum,				\
-				       lng_hge, sum,			\
-				       GDK_##lng_hge##_max,		\
-				       goto overflow##TYPE);		\
+			ADDU_WITH_CHECK(x, sum,				\
+					lng_hge, sum,			\
+					GDK_##lng_hge##_max,		\
+					goto overflow##TYPE);		\
 			/* don't count value until after overflow check */ \
 			n++;						\
 		}							\
