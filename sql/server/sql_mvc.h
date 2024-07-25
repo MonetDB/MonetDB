@@ -322,13 +322,18 @@ extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 
 static inline int mvc_highwater(mvc *sql)
 {
-#if defined(__GNUC__) || defined(__clang__)
-	uintptr_t c = (uintptr_t) __builtin_frame_address(0);
-#else
-	int l = 0;
-	uintptr_t c = (uintptr_t) (&l);
-#endif
 	int rc = 0;
+#ifdef __has_builtin
+#if __has_builtin(__builtin_frame_address)
+	/* we can improve on the previous assignment */
+	uintptr_t c = (uintptr_t) __builtin_frame_address(0);
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+	uintptr_t c = (uintptr_t) (&rc);
+#endif
+#undef BUILTIN_USED
 
 	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
 	if (diff > THREAD_STACK_SIZE - 280 * 1024)

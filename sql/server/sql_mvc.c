@@ -792,11 +792,16 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->pa = pa;
 	m->sa = NULL;
 	m->ta = sa_create(m->pa);
-#if defined(__GNUC__) || defined(__clang__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_frame_address)
 	m->sp = (uintptr_t) __builtin_frame_address(0);
-#else
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
 	m->sp = (uintptr_t)(&m);
 #endif
+#undef BUILTIN_USED
 
 	m->params = NULL;
 	m->sizeframes = MAXPARAMS;

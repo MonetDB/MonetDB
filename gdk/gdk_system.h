@@ -85,19 +85,17 @@
 #endif
 
 /* unreachable code */
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#ifdef __has_builtin
+#if __has_builtin(__builtin_unreachable)
 #define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
-#elif defined(__clang__) || defined(__INTEL_COMPILER)
-#ifdef WIN32
-#define __builtin_unreachable()	GDKfatal("Unreachable C code path reached");
 #endif
-#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
-#elif defined(_MSC_VER)
+#endif
+#ifndef MT_UNREACHABLE
+#if defined(_MSC_VER)
 #define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
 #else
-/* we don't know how to tell the compiler, so call a function that
- * doesn't return */
 #define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
+#endif
 #endif
 
 /* also see gdk.h for these */

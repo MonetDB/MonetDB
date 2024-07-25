@@ -29,7 +29,7 @@
 #define ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, ARG)		\
 	do {								\
 		if (!is_##TPE##_nil(ARG)) {				\
-			ADD_WITH_CHECK(ARG, sum, LNG_HGE, sum,		\
+			ADDI_WITH_CHECK(ARG, sum, LNG_HGE, sum,		\
 				       GDK_LNG_HGE_max,			\
 				       goto avg_overflow##TPE##IMP);	\
 			/* count only when no overflow occurs */	\

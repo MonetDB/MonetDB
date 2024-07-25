@@ -35,15 +35,17 @@
 
 #include "gdk_cand.h"
 
-#ifdef HAVE___BUILTIN_ADD_OVERFLOW
+#ifdef __has_builtin
+#if __has_builtin(__builtin_add_overflow)
 #define OP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\
 	do {								\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst)) ||	\
-		    (dst) < -(max) || (dst) > (max)) {			\
+		    (dst) < -(max) /*|| (dst) > (max)*/) {		\
 			on_overflow;					\
 		}							\
 	} while (0)
-#endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
+#endif
+#endif
 
 /* dst = lft + rgt with overflow check */
 
@@ -65,7 +67,7 @@
 		}						\
 	} while (0)
 
-#ifdef HAVE___BUILTIN_ADD_OVERFLOW
+#ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	OP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
@@ -99,7 +101,7 @@
 		}						\
 	} while (0)
 
-#ifdef HAVE___BUILTIN_ADD_OVERFLOW
+#ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
 	OP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
@@ -119,15 +121,14 @@
 #define MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)	\
 	do {								\
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\
-		if (c < (TYPE4) -(max) ||				\
-		    c > (TYPE4) (max)) {				\
+		if (c < (TYPE4) -(max) /*|| c > (TYPE4) (max)*/) {	\
 			on_overflow;					\
 		} else {						\
 			(dst) = (TYPE3) c;				\
 		}							\
 	} while (0)
 
-#ifdef HAVE___BUILTIN_ADD_OVERFLOW
+#ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
@@ -150,7 +151,7 @@
 	do {								\
 		__int64 clo, chi;					\
 		clo = _mul128((__int64) (lft), (__int64) (rgt), &chi);	\
-		if ((chi == 0 && clo >= 0 && clo <= (max)) ||		\
+		if ((chi == 0 && clo >= 0 /*&& clo <= (max)*/) ||	\
 		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
 			(dst) = (lng) clo;				\
 		} else {						\
@@ -193,7 +194,7 @@
 	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
 
 #ifdef HAVE_HGE
-#ifdef HAVE___BUILTIN_ADD_OVERFLOW
+#ifdef OP_WITH_CHECK
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #else
