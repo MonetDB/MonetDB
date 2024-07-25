@@ -576,39 +576,35 @@ stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht,
 }
 
 InstrPtr
-stmt_oahash_project(backend *be, stmt *col, int sel, stmt *ht, bit first, stmt *pp)
+stmt_oahash_project(backend *be, stmt *col, int sel, stmt *ht, stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
 
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("project"), 7);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* res */
+	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* res */
 	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, ht->nr);
-	q = pushBit(be->mb, q, first);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
 }
 
 InstrPtr
-stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit first, bit append_vals, stmt *pp)
+stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit append_vals, stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
 
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("expand"), 8);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* expanded */
+	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* expanded */
 	q = pushArgument(be->mb, q, col->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
-	q = pushBit(be->mb, q, first);
 	q = pushBit(be->mb, q, append_vals);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
@@ -616,20 +612,18 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink,
 }
 
 InstrPtr
-stmt_oahash_fetch_payload(backend *be, int slotid, stmt *hp_sink, stmt *freq_sink, stmt *probe_col, bit first, bit append_vals, stmt *pp)
+stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sink, stmt *probe_col, bit append_vals, stmt *pp)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("fetch_payload"), 6);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* pos */
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(tt))); /* fetched */
+	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* fetched */
 	q = pushArgument(be->mb, q, hp_sink->nr);
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
 	q = pushArgument(be->mb, q, probe_col->nr);
-	q = pushBit(be->mb, q, first);
 	q = pushBit(be->mb, q, append_vals);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);

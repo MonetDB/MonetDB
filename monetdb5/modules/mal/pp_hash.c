@@ -2197,9 +2197,9 @@ error:
 	} while (0)
 
 static str
-OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht, bit *first, const ptr *H)
+OAHASHproject(bat *res, bat *key, bat *selected, bat *ht, const ptr *H)
 {
-	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *h = NULL;
+	BAT *e = NULL, *k = NULL, *s = NULL, *h = NULL;
 	BUN rescnt = 0;
 	str err = NULL;
 
@@ -2280,23 +2280,9 @@ OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht, bit *first, 
 			goto error;
 	}
 
-	/* NB, this only works once.
-	 * If we want to reuse the hash, we need to reset the position info.
-	 */
-	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, rescnt) : 0;
-	o = BATdense(0, tseq, rescnt);
-	if (!o) {
-		err = createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto error;
-	}
-	o->T.maxval = tseq + rescnt;
-
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
 	BBPunfix(h->batCacheid);
-
-	*pos = o->batCacheid;
-	BBPkeepref(o);
 
 	BATsetcount(e, rescnt);
 	BATnegateprops(e);
@@ -2306,7 +2292,6 @@ OAHASHproject(bat *pos, bat *res, bat *key, bat *selected, bat *ht, bit *first, 
 	(void) H;
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(o);
 	BBPreclaim(e);
 	BBPreclaim(k);
 	BBPreclaim(s);
@@ -2419,9 +2404,9 @@ error:
 #endif
 
 static str
-OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *first, bit *append_vals, const ptr *H)
+OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *append_vals, const ptr *H)
 {
-	BAT *o = NULL, *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
+	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN keycnt, selcnt, ttlcnt = 0, xpdcnt = 0;
 	str err = NULL;
 
@@ -2523,24 +2508,10 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 		assert(idx == ttlcnt);
 	}
 
-	/* NB, this only works once.
-	 * If we want to reuse the hash, we need to reset the position info.
-	 */
-	oid tseq = (*first)? ATOMIC_ADD(&h->T.maxval, ttlcnt) : 0;
-	o = BATdense(0, tseq, ttlcnt);
-	if (!o) {
-		err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto error;
-	}
-	o->T.maxval = tseq + ttlcnt;
-
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPunfix(h->batCacheid);
-
-	*pos = o->batCacheid;
-	BBPkeepref(o);
 
 	BATsetcount(e, ttlcnt);
 	BATnegateprops(e);
@@ -2550,12 +2521,163 @@ OAHASHexpand(bat *pos, bat *expanded, bat *key, bat *selected, bat *slotid, bat 
 	(void) H;
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(o);
 	BBPreclaim(e);
 	BBPreclaim(k);
 	BBPreclaim(s);
 	BBPreclaim(l);
 	BBPreclaim(h);
+	return err;
+}
+
+#define vexpand_cart() \
+	do { \
+		assert(BATtdense(k) || \
+				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		\
+		oid *res = Tloc(e, 0); \
+		if (!BATtdense(k)) { \
+			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
+				res[idx] = k->tseqbase; \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+				oid val = k->tseqbase + i; \
+				TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
+					res[idx++] = val; \
+				} \
+			} \
+		} \
+	} while (0)
+
+#define expand_cart(Type) \
+	do { \
+		Type *val = Tloc(k, 0); \
+		Type *res = Tloc(e, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
+				res[idx++] = val[i]; \
+			} \
+		} \
+	} while (0)
+
+#define aexpand_cart() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
+			TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
+				if (BUNappend(e, v, false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				} \
+				idx++; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
+static str
+OAHASHexpand_cart(bat *expanded, bat *key, bat *res_idx, const ptr *H)
+{
+	BAT *e = NULL, *k = NULL, *r = NULL;
+	BUN keycnt, ttlcnt, repcnt;
+	str err = NULL;
+
+	k = BATdescriptor(*key);
+	r = BATdescriptor(*res_idx);
+	if (!k || !r) {
+		err = createException(SQL, "oahash.expand_cartesian", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	keycnt = BATcount(k);
+	ttlcnt = BATcount(r);
+	assert(keycnt && ttlcnt);
+	if ((ttlcnt % keycnt) != 0) {
+		err = createException(SQL, "oahash.expand_cartesian", SQLSTATE(HY002) "total count is not a multitude of key count");
+		goto error;
+	}
+	repcnt = ttlcnt / keycnt;
+
+	int tt = k->ttype;
+	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	if (!e) {
+		err = createException(SQL, "oahash.expand_cartesian", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	BUN idx = 0;
+	switch(tt) {
+		case TYPE_void:
+			vexpand_cart();
+			break;
+		case TYPE_bit:
+			expand_cart(bit);
+			break;
+		case TYPE_bte:
+			expand_cart(bte);
+			break;
+		case TYPE_sht:
+			expand_cart(sht);
+			break;
+		case TYPE_int:
+			expand_cart(int);
+			break;
+		case TYPE_date:
+			expand_cart(date);
+			break;
+		case TYPE_lng:
+			expand_cart(lng);
+			break;
+		case TYPE_oid:
+			expand_cart(oid);
+			break;
+		case TYPE_daytime:
+			expand_cart(daytime);
+			break;
+		case TYPE_timestamp:
+			expand_cart(timestamp);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			expand_cart(hge);
+			break;
+#endif
+		case TYPE_flt:
+			expand_cart(flt);
+			break;
+		case TYPE_dbl:
+			expand_cart(dbl);
+			break;
+		default:
+			if (ATOMvarsized(tt)) {
+				aexpand_cart();
+			} else {
+				err = createException(MAL, "oahash.expand_cart", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+			}
+	}
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand_cart", RUNTIME_QRY_TIMEOUT));
+	if (err)
+		goto error;
+
+	assert(idx == ttlcnt);
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(r->batCacheid);
+
+	BATsetcount(e, ttlcnt);
+	BATnegateprops(e);
+	*expanded = e->batCacheid;
+	BBPkeepref(e);
+
+	(void) H;
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(e);
+	BBPreclaim(k);
+	BBPreclaim(r);
 	return err;
 }
 
@@ -2615,9 +2737,9 @@ error:
 	} while (0)
 
 static str
-OAHASHfetch_payload(bat *pos, bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, bat *probe_col, bit *first, bit *append_vals, const ptr *H)
+OAHASHfetch_payload(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, bat *probe_col, bit *append_vals, const ptr *H)
 {
-	BAT *o = NULL, *f = NULL, *l = NULL, *hps = NULL, *hts = NULL;
+	BAT *f = NULL, *l = NULL, *hps = NULL, *hts = NULL;
 	BUN nllcnt, selcnt, ttlcnt = 0, fchcnt =  0;
 	str err = NULL;
 
@@ -2721,23 +2843,9 @@ OAHASHfetch_payload(bat *pos, bat *fetched, bat *hp_sink, bat *slotid, bat *freq
 		assert(idx == ttlcnt);
 	}
 
-	/* NB, this only works once.
-	 * If we want to reuse the hash, we need to reset the position info.
-	 */
-	oid tseq = (*first)? ATOMIC_ADD(&hps->T.maxval, ttlcnt) : 0;
-	o = BATdense(0, tseq, ttlcnt);
-	if (!o) {
-		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto error;
-	}
-	o->T.maxval = tseq + ttlcnt;
-
 	BBPunfix(l->batCacheid);
 	BBPunfix(hps->batCacheid);
 	BBPunfix(hts->batCacheid);
-
-	*pos = o->batCacheid;
-	BBPkeepref(o);
 
 	BATsetcount(f, ttlcnt);
 	BATnegateprops(f);
@@ -2747,11 +2855,188 @@ OAHASHfetch_payload(bat *pos, bat *fetched, bat *hp_sink, bat *slotid, bat *freq
 	(void) H;
 	return MAL_SUCCEED;
 error:
-	BBPreclaim(o);
 	BBPreclaim(f);
 	BBPreclaim(l);
 	BBPreclaim(hps);
 	BBPreclaim(hts);
+	return err;
+}
+
+#define fetch_cart(Type) \
+	do { \
+		Type *vals = hp->payload; \
+		Type *res = Tloc(f, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(j, pldcnt, qry_ctx) { \
+				res[idx++] = vals[ps[j]]; \
+			} \
+		} \
+	} while (0)
+
+#define afetch_cart() \
+	do { \
+		char **vals = hp->payload; \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(j, pldcnt, qry_ctx) { \
+				if (BUNappend(f, vals[ps[j]], false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.fetch_payload_cartesian", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				}\
+				idx++; \
+			} \
+		} \
+	} while (0)
+
+static str
+OAHASHfetch_payload_cart(bat *fetched, bat *hp_sink, bat *payload_pos, bat *probe_col, const ptr *H)
+{
+	BAT *f = NULL, *hps = NULL, *pos = NULL, *key = NULL;
+	BUN ttlcnt, keycnt, pldcnt;
+	str err = NULL;
+
+	hps = BATdescriptor(*hp_sink);
+	pos = BATdescriptor(*payload_pos);
+	key = BATdescriptor(*probe_col);
+	if (!hps || !pos || !key) {
+		err = createException(SQL, "oahash.fetch_payload_cartesian", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	hash_payload *hp = (hash_payload*)hps->T.sink;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	keycnt = BATcount(key);
+	pldcnt = BATcount(pos);
+	ttlcnt = keycnt * pldcnt;
+	int tt = hp->type;
+	f = COLnew(hps->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	if (!f) {
+		err = createException(SQL, "oahash.fetch_payload_cartesian", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (ttlcnt) {
+		BUN idx = 0;
+		gid *ps = Tloc(pos, 0);
+
+		switch(tt) {
+			case TYPE_void:
+				fetch_cart(oid);
+				break;
+			case TYPE_bit:
+				fetch_cart(bit);
+				break;
+			case TYPE_bte:
+				fetch_cart(bte);
+				break;
+			case TYPE_sht:
+				fetch_cart(sht);
+				break;
+			case TYPE_int:
+				fetch_cart(int);
+				break;
+			case TYPE_date:
+				fetch_cart(date);
+				break;
+			case TYPE_lng:
+				fetch_cart(lng);
+				break;
+			case TYPE_oid:
+				fetch_cart(oid);
+				break;
+			case TYPE_daytime:
+				fetch_cart(daytime);
+				break;
+			case TYPE_timestamp:
+				fetch_cart(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				fetch_cart(hge);
+				break;
+#endif
+			case TYPE_flt:
+				fetch_cart(flt);
+				break;
+			case TYPE_dbl:
+				fetch_cart(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					afetch_cart();
+				} else {
+					err = createException(MAL, "oahash.fetch_payload_cartesian", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload_cartesian", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+
+		assert(idx == ttlcnt);
+	}
+
+	BBPunfix(hps->batCacheid);
+	BBPunfix(pos->batCacheid);
+	BBPunfix(key->batCacheid);
+
+	BATsetcount(f, ttlcnt);
+	BATnegateprops(f);
+	*fetched = f->batCacheid;
+	BBPkeepref(f);
+
+	(void) H;
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(f);
+	BBPreclaim(hps);
+	BBPreclaim(pos);
+	BBPreclaim(key);
+	return err;
+}
+
+
+static str
+OAHASHget_pos(bat *pos, bat *res, bat *ht_sink, const ptr *H)
+{
+	BAT *p = NULL, *r = NULL, *h = NULL;
+	str err = NULL;
+
+	r = BATdescriptor(*res);
+	h = BATdescriptor(*ht_sink);
+	if (!r || !h) {
+		err = createException(SQL, "oahash.get_positions", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	/* NB, this only works once.
+	 * If we want to reuse the hash, we need to reset the position info.
+	 */
+	BUN ttlcnt = BATcount(r);
+	oid tseq = ATOMIC_ADD(&h->T.maxval, ttlcnt);
+	p = BATdense(0, tseq, ttlcnt);
+	if (!p) {
+		err = createException(SQL, "oahash.get_positions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+	p->T.maxval = tseq + ttlcnt;
+
+	BATsetcount(p, ttlcnt);
+	*pos = p->batCacheid;
+	BBPkeepref(p);
+
+	BBPunfix(r->batCacheid);
+	BBPunfix(h->batCacheid);
+
+	(void) H;
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(p);
+	BBPreclaim(r);
+	BBPreclaim(h);
 	return err;
 }
 
@@ -2776,9 +3061,15 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "probe", OAHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("oahash", "combined_probe", OAHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(2,7, batarg("pos",oid),batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("first",bit),arg("pipeline",ptr))),
- command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table. If 'first', generate global row IDs. If 'append_vals', append the not 'selected' values (for outer joins).", args(2,9, batarg("pos",oid),batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
- command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(2,9, batarg("pos",oid),batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",2),arg("first",bit),arg("append_vals",bit),arg("pipeline",ptr))),
+ command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(1,5, batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("pipeline",ptr))),
+
+ command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table. If 'append_vals', append the not 'selected' values (for outer joins).", args(1,7, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("append_vals",bit),arg("pipeline",ptr))),
+ command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each item in the given column by the size of the hash-side", args(1,4, batargany("expanded",1),batargany("key",1),batargany("res_idx",2),arg("pipeline",ptr))),
+
+ command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(1,7, batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",2),arg("append_vals",bit),arg("pipeline",ptr))),
+ command("oahash", "fetch_payload_cartesian", OAHASHfetch_payload_cart, false, "Fetch all payload for every row of the probe-side.", args(1,5, batargany("fetched",1),batargany("hp_sink",1),batarg("payload_pos",oid),batargany("probe_col",2),arg("pipeline",ptr))),
+
+ command("oahash", "get_positions", OAHASHget_pos, false, "Get the positions of partial results in the collected result.", args(1,4, batarg("pos",oid),batargany("res",1),batargany("ht_sink",2),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
