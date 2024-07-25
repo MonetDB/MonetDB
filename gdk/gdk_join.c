@@ -4898,7 +4898,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (is_hge_nil(*(const hge *) vr))
 					continue;
 				hge v1, v2;
-				SUBF_WITH_CHECK(*(const hge *)vr,
+				SUBI_WITH_CHECK(*(const hge *)vr,
 					       *(const hge *)c1,
 					       hge, v1,
 					       GDK_hge_max,
