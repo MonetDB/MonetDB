@@ -2106,7 +2106,8 @@ eb_error( exception_buffer *eb, char *msg, int val )
 #endif
 }
 
-#define SA_BLOCK (64*1024)
+#define SA_NUM_BLOCKS 64
+#define SA_BLOCK_SIZE (64*1024)
 
 typedef struct freed_t {
 	struct freed_t *n;
@@ -2139,7 +2140,8 @@ sa_free(allocator *pa, void *blk)
 	pa->nr--;
 
 	size_t sz = GDKmallocated(blk);
-	if (sz > (SA_BLOCK + 32)) {
+	// what is the magic 32 ?
+	if (sz > (SA_BLOCK_SIZE + 32)) {
 		GDKfree(blk);
 	} else {
 		freed_t *f = blk;
@@ -2168,7 +2170,7 @@ sa_create(allocator *pa)
 		return NULL;
 	eb_init(&sa->eb);
 	sa->pa = pa;
-	sa->size = 64;
+	sa->size = SA_NUM_BLOCKS;
 	sa->nr = 1;
 	sa->blks = pa?(char**)sa_alloc(pa, sizeof(char*) * sa->size):(char**)GDKmalloc(sizeof(char*) * sa->size);
 	sa->freelist = NULL;
@@ -2177,8 +2179,8 @@ sa_create(allocator *pa)
 			GDKfree(sa);
 		return NULL;
 	}
-	sa->blks[0] = pa?(char*)sa_alloc(pa, SA_BLOCK):(char*)GDKmalloc(SA_BLOCK);
-	sa->usedmem = SA_BLOCK;
+	sa->blks[0] = pa?(char*)sa_alloc(pa, SA_BLOCK_SIZE):(char*)GDKmalloc(SA_BLOCK_SIZE);
+	sa->usedmem = SA_BLOCK_SIZE;
 	if (sa->blks[0] == NULL) {
 		if (!pa)
 			GDKfree(sa->blks);
@@ -2204,7 +2206,7 @@ allocator *sa_reset( allocator *sa )
 	}
 	sa->nr = 1;
 	sa->used = 0;
-	sa->usedmem = SA_BLOCK;
+	sa->usedmem = SA_BLOCK_SIZE;
 	return sa;
 }
 
@@ -2221,21 +2223,23 @@ sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 }
 
 #define round16(sz) ((sz+15)&~15)
+#define round_block_size(sz) ((sz+SA_BLOCK_SIZE)&~SA_BLOCK_SIZE)
 void *
 sa_alloc( allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
 	/* we don't want super large allocs for temp storage */
-	//if (sa->tmp_active && sz >= SA_BLOCK)
+	//if (sa->tmp_active && sz >= SA_BLOCK_SIZE)
 	//	assert(0);
-	if (sz > (SA_BLOCK-sa->used)) {
+	if (sz > (SA_BLOCK_SIZE - sa->used)) {
+		sz = round_block_size(sz);
 		if (sa->pa)
-			r = (char*)sa_alloc(sa->pa, (sz > SA_BLOCK ? sz : SA_BLOCK));
-		else if (sz <= SA_BLOCK && sa->freelist) {
-			r = sa_use_freed(sa, SA_BLOCK);
+			r = (char*)sa_alloc(sa->pa, sz);
+		else if (sz == SA_BLOCK_SIZE && sa->freelist) {
+			r = sa_use_freed(sa, SA_BLOCK_SIZE);
 		} else
-			r = GDKmalloc(sz > SA_BLOCK ? sz : SA_BLOCK);
+			r = GDKmalloc(sz);
 		if (r == NULL) {
 			if (sa->eb.enabled)
 				eb_error(&sa->eb, "out of memory", 1000);
@@ -2259,7 +2263,7 @@ sa_alloc( allocator *sa, size_t sz )
 			}
 			sa->blks = tmp;
 		}
-		if (sz > SA_BLOCK) {
+		if (sz > SA_BLOCK_SIZE) {
 			sa->blks[sa->nr] = sa->blks[sa->nr-1];
 			sa->blks[sa->nr-1] = r;
 			sa->nr ++;
@@ -2268,7 +2272,7 @@ sa_alloc( allocator *sa, size_t sz )
 			sa->blks[sa->nr] = r;
 			sa->nr ++;
 			sa->used = sz;
-			sa->usedmem += SA_BLOCK;
+			sa->usedmem += SA_BLOCK_SIZE;
 		}
 	} else {
 		r = sa->blks[sa->nr-1] + sa->used;
