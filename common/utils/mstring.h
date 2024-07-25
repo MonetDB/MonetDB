@@ -92,8 +92,13 @@ strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 #endif
 #endif
 #ifndef unlikely
+#ifdef _MSC_VER
+#define unlikely(expr)	(__assume(!(expr)), (expr))
+#define likely(expr)	(__assume((expr)), (expr))
+#else
 #define unlikely(expr)	(expr)
 #define likely(expr)	(expr)
+#endif
 #endif
 
 /*
