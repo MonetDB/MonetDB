@@ -1734,7 +1734,7 @@ cleanup:
 				if (is_##TPE2##_nil(curval))		\
 					curval = (TPE2) v;		\
 				else					\
-					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+					ADDI_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 			}						\
 		}							\
 		for (; k < i; k++)					\
@@ -2025,7 +2025,7 @@ nosupport:
 			if (is_##TPE2##_nil(curval))			\
 				curval = (TPE2) ARG;			\
 			else						\
-				MUL4_WITH_CHECK(ARG, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+				MULI4_WITH_CHECK(ARG, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
 		}							\
 	} while(0)
 
@@ -2105,7 +2105,7 @@ nosupport:
 			if (is_##TPE2##_nil(computed))			\
 				computed = VAL;				\
 			else						\
-				MUL4_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+				MULI4_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
 		}							\
 	} while (0)
 #define FINALIZE_AGGREGATE_PROD(NOTHING1, TPE2, NOTHING2)	\

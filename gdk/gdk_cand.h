@@ -82,9 +82,14 @@ static inline int __attribute__((__const__))
 candmask_lobit(uint32_t x)
 {
 	assert(x != 0);
-#if defined(__GNUC__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_ctz)
 	return __builtin_ctz(x) /* ffs(x) - 1 */;
-#elif defined(_MSC_VER)
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 	unsigned long idx;
 	if (_BitScanForward(&idx, x))
 		return (int) idx;
@@ -98,15 +103,22 @@ candmask_lobit(uint32_t x)
 	if ((x & 0x00000003) == 0) { n +=  2; x >>=  2; }
 	return n - (x & 1);
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 /* population count: count number of 1 bits in a value */
 static inline uint32_t __attribute__((__const__))
 candmask_pop(uint32_t x)
 {
-#if defined(__GNUC__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_popcount)
 	return (uint32_t) __builtin_popcount(x);
-#elif defined(_MSC_VER)
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 	return (uint32_t) __popcnt((unsigned int) (x));
 #else
 	/* divide and conquer implementation (the two versions are
@@ -127,6 +139,8 @@ candmask_pop(uint32_t x)
 #endif
 	return x;
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 #define canditer_next_dense(ci)		((ci)->seq + (ci)->next++)

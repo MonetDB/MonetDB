@@ -258,14 +258,19 @@ static bool thread_initialized = false;
 static inline uintptr_t
 THRsp(void)
 {
-#if defined(__GNUC__) || defined(__clang__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_frame_address)
 	return (uintptr_t) __builtin_frame_address(0);
-#else
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
 	int l = 0;
 	uintptr_t sp = (uintptr_t) (&l);
 
 	return sp;
 #endif
+#undef BUILTIN_USED
 }
 
 bool

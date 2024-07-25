@@ -457,13 +457,17 @@ rev(oid x)
 static inline int __attribute__((__const__))
 ctz(oid x)
 {
-#if defined(__GNUC__)
-#if SIZEOF_OID == SIZEOF_INT
+#ifdef __has_builtin
+#if SIZEOF_OID == SIZEOF_INT && __has_builtin(__builtin_ctz)
 	return __builtin_ctz(x);
-#else
+#define BUILTIN_USED
+#elif __has_builtin(__builtin_ctzl)
 	return __builtin_ctzl(x);
+#define BUILTIN_USED
 #endif
-#elif defined(_MSC_VER)
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 #if SIZEOF_OID == SIZEOF_INT
 	unsigned long idx;
 	if (_BitScanForward(&idx, (unsigned long) x))
@@ -491,6 +495,8 @@ ctz(oid x)
 #endif
 	return n - (x & 1);
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,ASSERT,GRPTST) \
