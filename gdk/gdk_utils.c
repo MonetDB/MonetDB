@@ -2234,12 +2234,13 @@ sa_alloc( allocator *sa, size_t sz )
 	//	assert(0);
 	if (sz > (SA_BLOCK_SIZE - sa->used)) {
 		if (sa->pa)
-			r = (char*)sa_alloc(sa->pa, sz);
+			r = (char*)sa_alloc(sa->pa, sz > SA_BLOCK_SIZE ?
+					sz : SA_BLOCK_SIZE);
 		else if (sz <= SA_BLOCK_SIZE && sa->freelist) {
 			r = sa_use_freed(sa, SA_BLOCK_SIZE);
 		} else {
-			sz = round_block_size(sz);
-			r = GDKmalloc(sz);
+			r = GDKmalloc(sz > SA_BLOCK_SIZE ?
+					sz : SA_BLOCK_SIZE);
 		}
 		if (r == NULL) {
 			if (sa->eb.enabled)
