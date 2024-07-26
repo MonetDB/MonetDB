@@ -107,7 +107,7 @@ socket_putoob(const stream *s, char val)
 	return 0;
 }
 
-#ifdef PF_UNIX
+#ifdef AF_UNIX
 /* UNIX domain sockets do not support OOB messages, so we need to do
  * something different */
 #define OOBMSG0	'\377'			/* the two special bytes we send as "OOB" */
@@ -275,7 +275,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 
 			pfd = (struct pollfd) {.fd = s->stream_data.s,
 					       .events = POLLIN};
-#ifdef PF_UNIX
+#ifdef AF_UNIX
 			if (s->putoob != socket_putoob_unix)
 				pfd.events |= POLLPRI;
 #endif
@@ -359,7 +359,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
-#ifdef PF_UNIX
+#ifdef AF_UNIX
 		/* when reading a block size in a block stream
 		 * (elmsize==2,cnt==1), we may actually get an "OOB" message
 		 * when this is a Unix domain socket */
@@ -523,28 +523,37 @@ socket_open(SOCKET sock, const char *name)
 		if (getsockopt(sock, SOL_SOCKET, SO_DOMAIN, (void *) &domain, &len) == SOCKET_ERROR)
 			domain = AF_INET;	/* give it a value if call fails */
 	}
+#else
+	{
+		struct sockaddr_storage a;
+		socklen_t l = (socklen_t) sizeof(a);
+		if (getpeername(sock, (struct sockaddr *) &a, &l) == 0) {
+			if (a.ss_family == AF_UNIX)
+				domain = AF_UNIX;
+		}
+	}
 #endif
-#ifdef PF_UNIX
-	if (domain == PF_UNIX) {
+#ifdef AF_UNIX
+	if (domain == AF_UNIX) {
 		s->getoob = socket_getoob_unix;
 		s->putoob = socket_putoob_unix;
 	}
 #endif
 #if defined(SO_KEEPALIVE) && !defined(WIN32)
-	if (domain != PF_UNIX) {	/* not on UNIX sockets */
+	if (domain != AF_UNIX) {	/* not on UNIX sockets */
 		int opt = 1;
 		(void) setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (void *) &opt, sizeof(opt));
 	}
 #endif
 #if defined(IPTOS_THROUGHPUT) && !defined(WIN32)
-	if (domain != PF_UNIX) {	/* not on UNIX sockets */
+	if (domain != AF_UNIX) {	/* not on UNIX sockets */
 		int tos = IPTOS_THROUGHPUT;
 
 		(void) setsockopt(sock, IPPROTO_IP, IP_TOS, (void *) &tos, sizeof(tos));
 	}
 #endif
 #ifdef TCP_NODELAY
-	if (domain != PF_UNIX) {	/* not on UNIX sockets */
+	if (domain != AF_UNIX) {	/* not on UNIX sockets */
 		int nodelay = 1;
 
 		(void) setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *) &nodelay, sizeof(nodelay));
