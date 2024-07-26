@@ -3730,8 +3730,7 @@ mapi_query_abort(MapiHdl hdl, int reason)
 	mapi_hdl_check(hdl);
 	mid = hdl->mid;
 	assert(mid->active == NULL || mid->active == hdl);
-	if (mid->oobintr && !hdl->aborted) {
-		mnstr_putoob(mid->to, reason);
+	if (mid->oobintr && !hdl->aborted && mnstr_putoob(mid->to, reason) == 0) {
 		hdl->aborted = true;
 		return MOK;
 	}
