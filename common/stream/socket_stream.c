@@ -18,7 +18,9 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
 
 
 /* ------------------------------------------------------------------ */
@@ -68,14 +70,14 @@ socket_getoob(const stream *s)
 		for (;;) {
 			int atmark = 0;
 			char flush[100];
-			if (ioctl(fd, SIOCATMARK, &atmark) < 0) {
+			if (ioctlsocket(fd, SIOCATMARK, &atmark) < 0) {
 				perror("ioctl");
 				break;
 			}
 			if (atmark)
 				break;
-			if (read(fd, flush, sizeof(flush)) < 0) {
-				perror("read");
+			if (recv(fd, flush, sizeof(flush), 0) < 0) {
+				perror("recv");
 				break;
 			}
 		}
@@ -250,22 +252,21 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 {
 #ifdef _MSC_VER
 	int nr = 0;
+	int size;
+	if (elmsize * cnt > INT_MAX)
+		size = (int) (elmsize * (INT_MAX / elmsize));
+	else
+		size = (int) (elmsize * cnt);
 #else
 	ssize_t nr = 0;
-#endif
 	size_t size = elmsize * cnt;
+#endif
 
 	if (s->errkind != MNSTR_NO__ERROR)
 		return -1;
 	if (size == 0)
 		return 0;
 
-#ifdef _MSC_VER
-	/* recv only takes an int parameter, and read does not accept
-	 * sockets */
-	if (size > INT_MAX)
-		size = elmsize * (INT_MAX / elmsize);
-#endif
 	for (;;) {
 		if (s->timeout) {
 			int ret;
@@ -291,14 +292,14 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				for (;;) {
 					int atmark = 0;
 					char flush[100];
-					if (ioctl(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
+					if (ioctlsocket(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
 						perror("ioctl");
 						break;
 					}
 					if (atmark)
 						break;
-					if (read(s->stream_data.s, flush, sizeof(flush)) < 0) {
-						perror("read");
+					if (recv(s->stream_data.s, flush, sizeof(flush), 0) < 0) {
+						perror("recv");
 						break;
 					}
 				}
@@ -353,19 +354,11 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			assert(FD_ISSET(s->stream_data.s, &fds));
 #endif
 		}
-#ifdef _MSC_VER
-		nr = recv(s->stream_data.s, buf, (int) size, 0);
+		nr = recv(s->stream_data.s, buf, size, 0);
 		if (nr == SOCKET_ERROR) {
-			mnstr_set_error_errno(s, MNSTR_READ_ERROR, "recv");
-			return -1;
-		}
-#else
-		nr = read(s->stream_data.s, buf, size);
-		if (nr == -1) {
 			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
-#endif
 #ifdef PF_UNIX
 		/* when reading a block size in a block stream
 		 * (elmsize==2,cnt==1), we may actually get an "OOB" message
