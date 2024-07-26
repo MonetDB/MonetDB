@@ -528,8 +528,7 @@ socket_open(SOCKET sock, const char *name)
 		struct sockaddr_storage a;
 		socklen_t l = (socklen_t) sizeof(a);
 		if (getpeername(sock, (struct sockaddr *) &a, &l) == 0) {
-			if (a.ss_family == AF_UNIX)
-				domain = AF_UNIX;
+			domain = a.ss_family;
 		}
 	}
 #endif
