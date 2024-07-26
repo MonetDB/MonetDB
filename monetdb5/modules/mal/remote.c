@@ -304,6 +304,7 @@ RMTconnectScen(str *ret,
 		/* we support hge, and for remote, we don't know */
 		msg = RMTquery(&hdl, "remote.connect", m, "x := 0:hge;");
 		if (msg) {
+			freeException(msg);
 			c->int128 = false;
 		} else {
 			mapi_close_handle(hdl);
