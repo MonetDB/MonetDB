@@ -18,6 +18,7 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#include <sys/ioctl.h>
 
 
 /* ------------------------------------------------------------------ */
@@ -136,6 +137,21 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				return -1;
 			}
 			if (ret == 1 && pfd.revents & POLLPRI) {
+				/* discard regular data until OOB mark */
+				for (;;) {
+					int atmark = 0;
+					char flush[100];
+					if (ioctl(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
+						perror("ioctl");
+						break;
+					}
+					if (atmark)
+						break;
+					if (read(s->stream_data.s, flush, sizeof(flush)) < 0) {
+						perror("read");
+						break;
+					}
+				}
 				char b = 0;
 				switch (recv(s->stream_data.s, &b, 1, MSG_OOB)) {
 				case 0:
@@ -359,6 +375,21 @@ socket_getoob(const stream *s)
 		if (!FD_ISSET(fd, &fds))
 			return 0;
 #endif
+		/* discard regular data until OOB mark */
+		for (;;) {
+			int atmark = 0;
+			char flush[100];
+			if (ioctl(fd, SIOCATMARK, &atmark) < 0) {
+				perror("ioctl");
+				break;
+			}
+			if (atmark)
+				break;
+			if (read(fd, flush, sizeof(flush)) < 0) {
+				perror("read");
+				break;
+			}
+		}
 		char b = 0;
 		switch (recv(fd, &b, 1, MSG_OOB)) {
 		case 0:
