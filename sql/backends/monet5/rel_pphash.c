@@ -112,14 +112,19 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 	return sub;
 }
 
+/* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
+ */
 static list *
-oahash_prepare_bld_ht(backend *be, list *exps_cmp_hsh, lng sz)
+oahash_prepare_bld_ht(backend *be, list *exps, lng sz)
 {
 	list *stmts_ht = sa_list(be->mvc->sa);
 
+	assert(exps && exps->cnt);
+
 	int curhash = 0;
-	for (node *n = exps_cmp_hsh->h; n; n = n->next) {
+	for (node *n = exps->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
+		// TODO pass 'freq' as a parameter to accommodate ops don't need freqs.
 		bit freq = (n->next == NULL); /* last ht also computes frequencies */
 
 		InstrPtr q = stmt_oahash_new(be, t->type->localtype, sz, freq, curhash);
@@ -132,7 +137,7 @@ oahash_prepare_bld_ht(backend *be, list *exps_cmp_hsh, lng sz)
 		s->nr = curhash = getArg(q, 0);
 		append(stmts_ht, s);
 	}
-	assert(stmts_ht->cnt == exps_cmp_hsh->cnt);
+	assert(stmts_ht->cnt == exps->cnt);
 	return stmts_ht;
 }
 
@@ -176,32 +181,36 @@ oahash_prepare_res(backend *be, list *exps_prj, lng sz)
 	return stmts_res;
 }
 
+/* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
+ */
 static int
-oahash_build_ht(backend *be, list *exps_cmp_hsh, list *stmts_bld_ht, stmt *sub, stmt *pp)
+oahash_build_ht(backend *be, list *exps, list *stmts_bld_ht, stmt *sub, stmt *pp)
 {
 	int err = 0;
-	int slt_ids = 0;
-	stmt *prev_ht = NULL;
 
-	for (node *n = exps_cmp_hsh->h, *inout = stmts_bld_ht->h; n && inout; n = n->next, inout = inout->next) {
+	node *n = exps->h, *inout = stmts_bld_ht->h;
+	if (n && inout) {
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = NULL;
-		if (slt_ids == 0) {
-			q = stmt_oahash_build_table(be, inout->data, key, pp);
-		} else {
-			assert(slt_ids && prev_ht);
-			q = stmt_oahash_build_combined_table(be, inout->data, key, slt_ids, prev_ht, pp);
-		}
+		InstrPtr q = stmt_oahash_build_table(be, inout->data, key, pp);
 		if (q == NULL) return err;
-		slt_ids = getDestVar(q);
-		prev_ht = inout->data;
+		int slt_ids = getDestVar(q);
+		stmt *prev_ht = inout->data;
+		for (n = n->next, inout = inout->next; n && inout; n = n->next, inout = inout->next) {
+			key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			assert(key); /* must find */
+			q = stmt_oahash_build_combined_table(be, inout->data, key, slt_ids, prev_ht, pp);
+			if (q == NULL) return err;
+			slt_ids = getDestVar(q);
+			prev_ht = inout->data;
+		}
+		return slt_ids;
 	}
-	return slt_ids;
+	return err;
 }
 
 static InstrPtr
-oahash_build_freq(backend *be, stmt *prnt_ht, int prnt_slts, int compute_pos, stmt *pp)
+oahash_build_freq(backend *be, stmt *ht, int slt_ids, int compute_pos, stmt *pp)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("compute_frequencies"));
 	if (q == NULL)
@@ -210,16 +219,16 @@ oahash_build_freq(backend *be, stmt *prnt_ht, int prnt_slts, int compute_pos, st
 		/* No payload at the hash-side, hence no need to compute payload_pos.
 		 * The oahash.expand() at the probe-side only needs the frequencies.
 		 */
-		int tt = tail_type(prnt_ht)->type->localtype;
+		int tt = tail_type(ht)->type->localtype;
 		setVarType(be->mb, getArg(q, 0), newBatType(tt));
-		getArg(q, 0) = prnt_ht->nr;
+		getArg(q, 0) = ht->nr;
 		q->inout = 0;
 	} else {
 		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushReturn(be->mb, q, prnt_ht->nr);
+		q = pushReturn(be->mb, q, ht->nr);
 		q->inout = 1;
 	}
-	q = pushArgument(be->mb, q, prnt_slts);
+	q = pushArgument(be->mb, q, slt_ids);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
@@ -300,6 +309,31 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, list *stmts_bld_hp, int rhs_
 	return l;
 }
 
+#if 0
+static list *
+oahash_project_hsh_cart(backend *be, list *exps_prj_hsh, list *stmts_bld_hp, int rhs_slts, stmt *freq_sink, stmt *prb_col, bit append_vals, stmt *pp)
+{
+	list *l = sa_list(be->mvc->sa);
+
+	for (node *n = stmts_bld_hp->h, *o = exps_prj_hsh->h; n && o; n = n->next, o = o->next) {
+		InstrPtr q = stmt_oahash_fetch_payload(be, n->data, rhs_slts, freq_sink, prb_col, append_vals, pp);
+		if (q == NULL) return NULL;
+
+		sql_exp *e = o->data;
+		stmt *s = stmt_none(be);
+		if (s == NULL) return NULL;
+		s->op4.typeval = *exp_subtype(e);
+		s->nr = getArg(q, 0);
+		s->nrcols = 1;
+		s->q = q;
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		append(l, s);
+	}
+	return l;
+}
+#endif
+
+
 static list *
 oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, stmt *freq_sink, bit append_vals, stmt *sub, stmt *pp)
 {
@@ -323,6 +357,32 @@ oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, s
 	}
 	return l;
 }
+
+#if 0
+static list *
+oahash_project_prb_cart(backend *be, list *exps_prj_prb, int matched, int rhs_slts, stmt *freq_sink, bit append_vals, stmt *sub, stmt *pp)
+{
+	list *l = sa_list(be->mvc->sa);
+
+	for (node *o = exps_prj_prb->h; o; o = o->next) {
+		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(key); /* must find */
+		InstrPtr q = stmt_oahash_expand(be, key, matched, rhs_slts, freq_sink, append_vals, pp);
+		if (q == NULL) return NULL;
+
+		sql_exp *e = o->data;
+		stmt *s = stmt_none(be);
+		if (s == NULL) return NULL;
+		s->op4.typeval = *exp_subtype(e);
+		s->nr = getArg(q, 0);
+		s->nrcols = 1;
+		s->q = q;
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		append(l, s);
+	}
+	return l;
+}
+#endif
 
 static list *
 oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink, stmt *sub, stmt *pp)
@@ -522,6 +582,16 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
+rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
+{
+	(void)be;
+	(void)rel;
+	(void)refs;
+	sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash_cart: not implemented yet");
+	return NULL;
+}
+
+static stmt *
 rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
@@ -581,6 +651,10 @@ rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 {
 	switch(rel->op) {
 	case op_join:
+		if (rel->exps)
+			return rel2bin_oahash_equi(be, rel, refs);
+		else
+			return rel2bin_oahash_cart(be, rel, refs);
 	case op_left:
 	case op_right:
 	case op_full:
