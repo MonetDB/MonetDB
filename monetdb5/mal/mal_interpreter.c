@@ -591,7 +591,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
 			if (cntxt->fdin && TIMEOUT_TEST(&cntxt->qryctx)) {
-				cntxt->mode = FINISHCLIENT;
+				if (cntxt->qryctx.endtime != QRY_INTERRUPT)
+					cntxt->mode = FINISHCLIENT;
 				stkpc = stoppc;
 				ret = createException(MAL, "mal.interpreter", "%s",
 									  TIMEOUT_MESSAGE(&cntxt->qryctx));

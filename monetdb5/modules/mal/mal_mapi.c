@@ -185,7 +185,7 @@ doChallenge(void *data)
 
 	if (chdata->peer.ss_family == AF_UNSPEC) {
 		peer = NULL;
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 	} else if (chdata->peer.ss_family == AF_UNIX) {
 		peer = "<UNIX SOCKET>";
 #endif

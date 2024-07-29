@@ -321,6 +321,11 @@ mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap
 	if (s == NULL)
 		return;
 
+	if (s->errkind != MNSTR_NO__ERROR && kind != MNSTR_NO__ERROR) {
+		/* keep the first error */
+		return;
+	}
+
 	s->errkind = kind;
 
 	if (kind == MNSTR_NO__ERROR) {
@@ -364,6 +369,7 @@ static size_t my_strerror_r(int error_nr, char *buf, size_t len);
 void
 mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 {
+	int e = errno;
 	va_list ap;
 	va_start(ap, fmt);
 	mnstr_va_set_error(s, kind, fmt, ap);
@@ -374,7 +380,7 @@ mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 	char *end = &s->errmsg[0] + sizeof(s->errmsg);
 	if (end - start >= 3) {
 		start = stpcpy(start, ": ");
-		start += my_strerror_r(errno, start, end - start);
+		start += my_strerror_r(e, start, end - start);
 	}
 }
 
@@ -455,8 +461,10 @@ my_strerror_r(int error_nr, char *buf, size_t buflen)
 
 void mnstr_copy_error(stream *dst, stream *src)
 {
-	dst->errkind = src->errkind;
-	memcpy(dst->errmsg, src->errmsg, sizeof(dst->errmsg));
+	if (dst->errkind == MNSTR_NO__ERROR) {
+		dst->errkind = src->errkind;
+		memcpy(dst->errmsg, src->errmsg, sizeof(dst->errmsg));
+	}
 }
 
 char *

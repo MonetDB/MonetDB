@@ -37,24 +37,26 @@ socket_getoob(const stream *s)
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
-	fd_set fds;
+	fd_set xfds;
 	struct timeval t = (struct timeval) {
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
+#ifndef _MSC_VER
 #ifdef FD_SETSIZE
 	if (fd >= FD_SETSIZE)
 		return 0;
 #endif
-	FD_ZERO(&fds);
-	FD_SET(fd, &fds);
+#endif
+	FD_ZERO(&xfds);
+	FD_SET(fd, &xfds);
 	if (select(
 #ifdef _MSC_VER
 			0,	/* ignored on Windows */
 #else
 			fd + 1,
 #endif
-			NULL, NULL, &fds, &t) > 0)
+			NULL, NULL, &xfds, &t) > 0)
 #endif
 	{
 #ifdef HAVE_POLL
@@ -63,10 +65,11 @@ socket_getoob(const stream *s)
 		if ((pfd.revents & POLLPRI) == 0)
 			return -1;
 #else
-		if (!FD_ISSET(fd, &fds))
+		if (!FD_ISSET(fd, &xfds))
 			return 0;
 #endif
 		/* discard regular data until OOB mark */
+#ifndef _MSC_VER				/* Windows has to be different... */
 		for (;;) {
 			int atmark = 0;
 			char flush[100];
@@ -81,6 +84,7 @@ socket_getoob(const stream *s)
 				break;
 			}
 		}
+#endif
 		char b = 0;
 		switch (recv(fd, &b, 1, MSG_OOB)) {
 		case 0:
@@ -107,7 +111,7 @@ socket_putoob(const stream *s, char val)
 	return 0;
 }
 
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 /* UNIX domain sockets do not support OOB messages, so we need to do
  * something different */
 #define OOBMSG0	'\377'			/* the two special bytes we send as "OOB" */
@@ -129,9 +133,11 @@ socket_getoob_unix(const stream *s)
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
+#ifndef _MSC_VER
 #ifdef FD_SETSIZE
 	if (fd >= FD_SETSIZE)
 		return 0;
+#endif
 #endif
 	FD_ZERO(&fds);
 	FD_SET(fd, &fds);
@@ -176,7 +182,7 @@ static ssize_t
 socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt)
 {
 	size_t size = elmsize * cnt, res = 0;
-#ifdef NATIVE_WIN32
+#ifdef _MSC_VER
 	int nr = 0;
 #else
 	ssize_t nr = 0;
@@ -191,12 +197,14 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 	errno = 0;
 	while (res < size &&
 	       (
-#ifdef NATIVE_WIN32
-		       /* send works on int, make sure the argument fits */
-		       ((nr = send(s->stream_data.s, (const char *) buf + res, (int) min(size - res, 1 << 16), 0)) > 0)
+		       /* Windows send works on int, make sure the argument fits */
+		       ((nr = send(s->stream_data.s, (const char *) buf + res,
+#ifdef _MSC_VER
+						   (int) min(size - res, 1 << 16)
 #else
-		       ((nr = write(s->stream_data.s, (const char *) buf + res, size - res)) > 0)
+						   size
 #endif
+						   , 0)) > 0)
 		       || (nr < 0 &&	/* syscall failed */
 			   s->timeout > 0 &&	/* potentially timeout */
 #ifdef _MSC_VER
@@ -210,7 +218,7 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 #endif
 			   s->timeout_func != NULL &&	/* callback function exists */
 			   !s->timeout_func(s->timeout_data))	/* callback says don't stop */
-		       ||(nr < 0 &&
+		       || (nr < 0 &&
 #ifdef _MSC_VER
 			  WSAGetLastError() == WSAEINTR
 #else
@@ -275,7 +283,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 
 			pfd = (struct pollfd) {.fd = s->stream_data.s,
 					       .events = POLLIN};
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 			if (s->putoob != socket_putoob_unix)
 				pfd.events |= POLLPRI;
 #endif
@@ -318,7 +326,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			}
 #else
 			struct timeval tv;
-			fd_set fds;
+			fd_set fds, xfds;
 
 			errno = 0;
 #ifdef _MSC_VER
@@ -326,6 +334,8 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 			FD_ZERO(&fds);
 			FD_SET(s->stream_data.s, &fds);
+			FD_ZERO(&xfds);
+			FD_SET(s->stream_data.s, &xfds);
 			tv.tv_sec = s->timeout / 1000;
 			tv.tv_usec = (s->timeout % 1000) * 1000;
 			ret = select(
@@ -334,10 +344,42 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #else
 				s->stream_data.s + 1,
 #endif
-				&fds, NULL, NULL, &tv);
+				&fds, NULL, &xfds, &tv);
 			if (ret == SOCKET_ERROR) {
 				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "select");
 				return -1;
+			}
+			if (ret > 0 && FD_ISSET(s->stream_data.s, &xfds)) {
+				/* discard regular data until OOB mark */
+#ifndef _MSC_VER				/* Windows has to be different... */
+				for (;;) {
+					int atmark = 0;
+					char flush[100];
+					if (ioctlsocket(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
+						perror("ioctl");
+						break;
+					}
+					if (atmark)
+						break;
+					if (recv(s->stream_data.s, flush, sizeof(flush), 0) < 0) {
+						perror("recv");
+						break;
+					}
+				}
+#endif
+				char b = 0;
+				switch (recv(s->stream_data.s, &b, 1, MSG_OOB)) {
+				case 0:
+					/* unexpectedly didn't receive a byte */
+					continue;
+				case 1:
+					mnstr_set_error(s, MNSTR_INTERRUPT, "query abort from client");
+					return -1;
+				case -1:
+					mnstr_set_error_errno(s, MNSTR_READ_ERROR, "recv error");
+					return -1;
+				}
+				continue;		/* try again */
 			}
 #endif
 			if (ret == 0) {
@@ -347,11 +389,10 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				}
 				continue;
 			}
-			assert(ret == 1);
 #ifdef HAVE_POLL
 			assert(pfd.revents & (POLLIN|POLLHUP));
 #else
-			assert(FD_ISSET(s->stream_data.s, &fds));
+			assert(FD_ISSET(s->stream_data.s, &fds) || FD_ISSET(s->stream_data.s, &xfds));
 #endif
 		}
 		nr = recv(s->stream_data.s, buf, size, 0);
@@ -359,7 +400,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 		/* when reading a block size in a block stream
 		 * (elmsize==2,cnt==1), we may actually get an "OOB" message
 		 * when this is a Unix domain socket */
@@ -532,7 +573,7 @@ socket_open(SOCKET sock, const char *name)
 		}
 	}
 #endif
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 	if (domain == AF_UNIX) {
 		s->getoob = socket_getoob_unix;
 		s->putoob = socket_putoob_unix;

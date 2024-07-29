@@ -2401,6 +2401,16 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 
 
 MapiMsg
+mapi_set_rtimeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
+{
+	mapi_check(mid);
+	if (mid->trace)
+		printf("Set timeout to %u\n", timeout);
+	mnstr_settimeout(mid->from, timeout, callback, callback_data);
+	return MOK;
+}
+
+MapiMsg
 mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
 {
 	mapi_check(mid);
