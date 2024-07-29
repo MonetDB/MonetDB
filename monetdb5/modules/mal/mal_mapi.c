@@ -403,10 +403,11 @@ SERVERlistenThread(SOCKET *Sock)
 			msgh.msg_control = ccmsg;
 			msgh.msg_controllen = sizeof(ccmsg);
 
-#ifndef MSG_CMSG_CLOEXEC
-#define MSG_CMSG_CLOEXEC 0
-#endif
+#ifdef MSG_CMSG_CLOEXEC
 			rv = recvmsg(msgsock, &msgh, MSG_CMSG_CLOEXEC);
+#else
+			rv = recvmsg(msgsock, &msgh, 0);
+#endif
 			if (rv == -1) {
 				closesocket(msgsock);
 				continue;
@@ -434,7 +435,7 @@ SERVERlistenThread(SOCKET *Sock)
 				 */
 				c_d = (int *) CMSG_DATA(cmsg);
 				msgsock = *c_d;
-#if MSG_CMSG_CLOEXEC == 0 && defined(HAVE_FCNTL)
+#if !defined(MSG_CMSG_CLOEXEC) && defined(HAVE_FCNTL)
 				(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 			}
