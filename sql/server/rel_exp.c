@@ -1950,7 +1950,8 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 }
 
 static inline bool
-exp_single_bound_cmp_exp_is_false(sql_exp* e) {
+exp_single_bound_cmp_exp_is_false(sql_exp* e)
+{
     assert(e->type == e_cmp);
     sql_exp* l = e->l;
     sql_exp* r = e->r;
@@ -1984,7 +1985,8 @@ exp_regular_cmp_exp_is_false(sql_exp* e)
 }
 
 static inline bool
-exp_or_exp_is_false(sql_exp* e) {
+exp_or_exp_is_false(sql_exp* e)
+{
     assert(e->type == e_cmp && e->flag == cmp_or);
 
 	list* left = e->l;
@@ -2012,7 +2014,8 @@ exp_or_exp_is_false(sql_exp* e) {
 }
 
 static inline bool
-exp_cmp_exp_is_false(sql_exp* e) {
+exp_cmp_exp_is_false(sql_exp* e)
+{
     assert(e->type == e_cmp);
 
     switch (e->flag) {
@@ -2131,7 +2134,7 @@ exp_is_null(sql_exp *e )
 				return ((e->flag == cmp_in && exp_is_null(e->l)) ||
 						(e->flag == cmp_notin && (exp_is_null(e->l) || exps_have_null(e->r))));
 			} else if (e->f) {
-				return exp_is_null(e->l) || (!is_anti(e) && (exp_is_null(e->r) || exp_is_null(e->f)));
+				return exp_is_null(e->l) && exp_is_null(e->r) && exp_is_null(e->f);
 			} else {
 				return exp_is_null(e->l) || exp_is_null(e->r);
 			}
@@ -2660,6 +2663,14 @@ exp_has_func_or_cmp(sql_exp *e, bool cmp)
 			return exps_have_func_or_cmp(e->f, true);
 		return 0;
 	case e_convert:
+		{
+			sql_subtype *t = exp_totype(e);
+			sql_subtype *f = exp_fromtype(e);
+			if (t->type->eclass == EC_FLT && (f->type->eclass == EC_DEC || f->type->eclass == EC_NUM))
+				return exp_has_func_or_cmp(e->l, cmp);
+			if (f->type->localtype > t->type->localtype)
+				return true;
+		}
 		return exp_has_func_or_cmp(e->l, cmp);
 	case e_func:
 		return 1;

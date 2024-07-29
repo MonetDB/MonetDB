@@ -314,13 +314,17 @@ ilog2(BUN x)
 {
 	if (x == 0)
 		return 0;
-#if defined(__GNUC__)
-#if SIZEOF_BUN == 8
+#ifdef __has_builtin
+#if SIZEOF_BUN == 8 && __has_builtin(__builtin_clzll)
 	return (unsigned) (64 - __builtin_clzll((unsigned long long) x));
-#else
+#define BUILTIN_USED
+#elif __has_builtin(__builtin_clz)
 	return (unsigned) (32 - __builtin_clz((unsigned) x));
+#define BUILTIN_USED
 #endif
-#elif defined(_MSC_VER)
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 	unsigned long n;
 	if (
 #if SIZEOF_BUN == 8
@@ -365,6 +369,8 @@ ilog2(BUN x)
 	}
 	return n + (x != 0);
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */

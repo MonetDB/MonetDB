@@ -1,5 +1,5 @@
 HAVE_JDBCTESTS?JDBC_API_Tester
-HAVE_JDBCTESTS?TLSTester
+HAVE_JDBCTESTS&HAVE_CRYPTOGRAPHY?TLSTester
 HAVE_JDBCTESTS?OnClientTester
 HAVE_JDBCCLIENT_JAR?Test_JdbcClient
 # next test should be done AFTER all the other tests have completed

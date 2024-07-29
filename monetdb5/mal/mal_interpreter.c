@@ -591,11 +591,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
-			if (cntxt->fdin && !mnstr_isalive(cntxt->fdin->s)) {
+			if (cntxt->fdin && TIMEOUT_TEST(&cntxt->qryctx)) {
 				cntxt->mode = FINISHCLIENT;
 				stkpc = stoppc;
-				ret = createException(MAL, "mal.interpreter",
-									  "prematurely stopped client");
+				ret = createException(MAL, "mal.interpreter", "%s",
+									  TIMEOUT_MESSAGE(&cntxt->qryctx));
 				break;
 			}
 			lastcheck = runtimeProfile.ticks;

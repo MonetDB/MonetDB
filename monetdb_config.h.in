@@ -437,6 +437,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #ifndef _MSC_VER
 #define SOCKET int
 #define closesocket close
+#define ioctlsocket ioctl
 #endif
 
 #ifndef _In_z_
