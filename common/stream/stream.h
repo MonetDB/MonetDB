@@ -99,6 +99,9 @@ stream_export const char* mnstr_peek_error(const stream *s);
 stream_export mnstr_error_kind mnstr_errnr(const stream *s);
 stream_export const char *mnstr_error_kind_name(mnstr_error_kind k);
 stream_export void mnstr_clearerr(stream *s);
+stream_export void mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 3, 4)));
+
 
 /* all mnstr_readX/mnstr_writeX return
  *  0 on error
