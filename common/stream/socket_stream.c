@@ -289,39 +289,46 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 #endif
 
 			ret = poll(&pfd, 1, (int) s->timeout);
-			if (ret == -1 && errno == EINTR)
-				continue;
-			if (ret == -1 || (pfd.revents & POLLERR)) {
+			if (ret == -1) {
+				if (errno == EINTR)
+					continue;
 				mnstr_set_error_errno(s, MNSTR_READ_ERROR, "poll error");
 				return -1;
 			}
-			if (ret == 1 && pfd.revents & POLLPRI) {
-				/* discard regular data until OOB mark */
-				for (;;) {
-					int atmark = 0;
-					char flush[100];
-					if (ioctlsocket(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
-						perror("ioctl");
-						break;
-					}
-					if (atmark)
-						break;
-					if (recv(s->stream_data.s, flush, sizeof(flush), 0) < 0) {
-						perror("recv");
-						break;
-					}
+			if (ret == 1) {
+				if (pfd.revents & POLLHUP) {
+					/* hung up, return EOF */
+					s->eof = true;
+					return 0;
 				}
-				char b = 0;
-				switch (recv(s->stream_data.s, &b, 1, MSG_OOB)) {
-				case 0:
-					/* unexpectedly didn't receive a byte */
-					continue;
-				case 1:
-					mnstr_set_error(s, MNSTR_INTERRUPT, "query abort from client");
-					return -1;
-				case -1:
-					mnstr_set_error_errno(s, MNSTR_READ_ERROR, "recv error");
-					return -1;
+				if (pfd.revents & POLLPRI) {
+					/* discard regular data until OOB mark */
+					for (;;) {
+						int atmark = 0;
+						char flush[100];
+						if (ioctlsocket(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
+							perror("ioctl");
+							break;
+						}
+						if (atmark)
+							break;
+						if (recv(s->stream_data.s, flush, sizeof(flush), 0) < 0) {
+							perror("recv");
+							break;
+						}
+					}
+					char b = 0;
+					switch (recv(s->stream_data.s, &b, 1, MSG_OOB)) {
+					case 0:
+						/* unexpectedly didn't receive a byte */
+						continue;
+					case 1:
+						mnstr_set_error(s, MNSTR_INTERRUPT, "query abort from client");
+						return -1;
+					case -1:
+						mnstr_set_error_errno(s, MNSTR_READ_ERROR, "recv error");
+						return -1;
+					}
 				}
 			}
 #else
