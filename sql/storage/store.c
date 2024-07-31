@@ -7398,9 +7398,11 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						v->value = NEW_ARRAY(char, vvalue.len);
-						memcpy(v->value, VALget(&vvalue), vvalue.len);
-						v->length = vvalue.len;
+						ok = v->value = NEW_ARRAY(char, vvalue.len);
+						if (ok) {
+							memcpy(v->value, VALget(&vvalue), vvalue.len);
+							v->length = vvalue.len;
+						}
 					}
 					VALclear(&vvalue);
 					if (!ok)
@@ -7425,10 +7427,17 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 
 						p->part.range.minvalue = NEW_ARRAY(char, nil_len);
 						p->part.range.maxvalue = NEW_ARRAY(char, nil_len);
-						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
-						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
-						p->part.range.minlength = nil_len;
-						p->part.range.maxlength = nil_len;
+						if (p->part.range.minvalue == NULL ||
+							p->part.range.maxvalue == NULL) {
+							ok = NULL;
+							_DELETE(p->part.range.minvalue);
+							_DELETE(p->part.range.maxvalue);
+						} else {
+							memcpy(p->part.range.minvalue, nil_ptr, nil_len);
+							memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
+							p->part.range.minlength = nil_len;
+							p->part.range.maxlength = nil_len;
+						}
 					} else {
 						ok = VALconvert(localtype, &vmin);
 						if (ok)
@@ -7436,13 +7445,20 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 						if (ok) {
 							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
 							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);
-							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
-							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
-							p->part.range.minlength = vmin.len;
-							p->part.range.maxlength = vmax.len;
+							if (p->part.range.minvalue == NULL ||
+								p->part.range.maxvalue == NULL) {
+								ok = NULL;
+								_DELETE(p->part.range.minvalue);
+								_DELETE(p->part.range.maxvalue);
+							} else {
+								memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
+								memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
+								p->part.range.minlength = vmin.len;
+								p->part.range.maxlength = vmax.len;
+							}
 						}
 					}
-					if (isPartitionedByColumnTable(p->t))
+					if (ok && isPartitionedByColumnTable(p->t))
 						col_set_range(tr, p, true);
 				}
 				VALclear(&vmin);
