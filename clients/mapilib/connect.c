@@ -576,7 +576,7 @@ mapi_handshake(Mapi mid)
 
 	char *clientinfo = strtok_r(NULL, ":", &strtok_state);
 	if (clientinfo) {
-		if (strcmp(oobintr, "OOBINTR=1") == 0) {
+		if (strcmp(clientinfo, "CLIENTINFO") == 0) {
 			mid->clientinfo_supported = true;
 		}
 	}
