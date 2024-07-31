@@ -97,6 +97,11 @@ CLIENTprintinfo(void)
 	char mmbuf[64];
 	char tmbuf[64];
 	char trbuf[64];
+	char chbuf[64];
+	char cabuf[64];
+	char clbuf[64];
+	char crbuf[64];
+	char cpbuf[64];
 	struct tm tm;
 
 	MT_lock_set(&mal_contextLock);
@@ -122,7 +127,27 @@ CLIENTprintinfo(void)
 				snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
 			else
 				trbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf);
+			if (c->client_hostname)
+				snprintf(chbuf, sizeof(chbuf), ", client host: %s", c->client_hostname);
+			else
+				chbuf[0] = 0;
+			if (c->client_application)
+				snprintf(cabuf, sizeof(cabuf), ", client app: %s", c->client_application);
+			else
+				cabuf[0] = 0;
+			if (c->client_library)
+				snprintf(clbuf, sizeof(clbuf), ", client lib: %s", c->client_library);
+			else
+				clbuf[0] = 0;
+			if (c->client_remark)
+				snprintf(crbuf, sizeof(crbuf), ", client remark: %s", c->client_remark);
+			else
+				crbuf[0] = 0;
+			if (c->client_pid)
+				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
+			else
+				cpbuf[0] = 0;
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
