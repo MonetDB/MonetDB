@@ -319,7 +319,6 @@ void GDKreset(int status);
 void GDKsetbuf(char *);
 void GDKsetdebug(unsigned debug);
 gdk_return GDKsetenv(const char *name, const char *value);
-void GDKsetmallocsuccesscount(lng count);
 stream *GDKstdin;
 stream *GDKstdout;
 ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len, char quote);

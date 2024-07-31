@@ -35074,11 +35074,6 @@ pattern io.printf(X_0:streams, X_1:str, X_2:any...):void
 IOprintfStream;
 Select default format 
 io
-setmallocsuccesscount
-command io.setmallocsuccesscount(X_0:lng):void
-IOsetmallocsuccesscount;
-Set number of mallocs that are allowed to succeed.
-io
 stdin
 pattern io.stdin():bstream
 io_stdin;
