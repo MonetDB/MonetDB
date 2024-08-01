@@ -1551,7 +1551,7 @@ RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		&& BATcount(b) < BATcount(BBP_desc(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
-			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "remote.bincopyto", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		v = COLcopy(b, b->ttype, true, TRANSIENT);
 		BBPunfix(b->batCacheid);

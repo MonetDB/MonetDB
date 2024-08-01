@@ -81,7 +81,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 
@@ -241,7 +241,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 	int geomCollectionType = -1;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		return msg;
 	}
 
@@ -3506,7 +3506,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "aggr.MakeLine", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 
@@ -4862,12 +4862,12 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((bpy = BATdescriptor(*point_y)) == NULL) {
 		BBPunfix(bpx->batCacheid);
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/*Check BATs alignment */
@@ -4931,11 +4931,11 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bpy = BATdescriptor(*point_y)) == NULL) {
 		BBPunfix(bpx->batCacheid);
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/*Check BATs alignment */

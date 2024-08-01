@@ -1874,11 +1874,11 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 		with_strimps_anti = false;
 
 	if (!(b = BATdescriptor(b_id)))
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!is_bat_nil(cb_id) && !(cb = BATdescriptor(cb_id))) {
 		BBPreclaim(b);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
@@ -2756,13 +2756,13 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 
 	if (!(l = BATdescriptor(l_id)) || !(r = BATdescriptor(r_id))) {
 		BBPnreclaim(2, l, r);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((cl_id && !is_bat_nil(cl_id) && (cl = BATdescriptor(cl_id)) == NULL) ||
 		(cr_id && !is_bat_nil(cr_id) && (cr = BATdescriptor(cr_id)) == NULL)) {
 		BBPnreclaim(4, l, r, cl, cr);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	rl = COLnew(0, TYPE_oid, BATcount(l), TRANSIENT);
