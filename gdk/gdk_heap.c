@@ -198,6 +198,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			sz += size;
 			if (qc->maxmem > 0 && sz > qc->maxmem) {
 				ATOMIC_SUB(&qc->datasize, size);
+				GDKfree(nme);
 				GDKerror("Query using too much memory.\n");
 				return GDK_FAIL;
 			}
@@ -293,6 +294,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			if (qc->maxmem > 0 && sz > qc->maxmem) {
 				GDKerror("Query using too much memory.\n");
 				ATOMIC_SUB(&qc->datasize, xsize);
+				GDKfree(path);
 				return GDK_FAIL;
 			}
 		}
