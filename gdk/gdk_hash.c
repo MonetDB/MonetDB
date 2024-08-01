@@ -1004,6 +1004,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 gdk_return
 BAThash(BAT *b)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No hash on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
 		GDKerror("No hash on msk type bats\n");
 		return GDK_FAIL;

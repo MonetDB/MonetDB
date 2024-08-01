@@ -193,6 +193,10 @@ persistOIDX(BAT *b)
 gdk_return
 BATorderidx(BAT *b, bool stable)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No order index on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
