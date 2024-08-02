@@ -7408,7 +7408,10 @@ sql_trans_convert_partitions(sql_trans *tr)
 void
 store_printinfo(sqlstore *store)
 {
-	MT_lock_set(&store->commit);
+	if (!MT_lock_trytime(&store->commit, 1000)) {
+		printf("WAL is currently locked, so no WAL information\n");
+		return;
+	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
 	log_printinfo(store->logger);

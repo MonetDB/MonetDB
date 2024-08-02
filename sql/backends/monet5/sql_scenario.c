@@ -99,7 +99,10 @@ CLIENTprintinfo(void)
 	char trbuf[64];
 	struct tm tm;
 
-	MT_lock_set(&mal_contextLock);
+	if (!MT_lock_trytime(&mal_contextLock, 1000)) {
+		printf("Clients are currently locked, so no client information\n");
+		return;
+	}
 	printf("Clients:\n");
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		switch (c->mode) {

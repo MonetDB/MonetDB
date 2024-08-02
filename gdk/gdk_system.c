@@ -239,6 +239,7 @@ struct mtthread mainthread = {
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_key_t threadkey;
 #define thread_lock()		pthread_mutex_lock(&posthread_lock)
+#define thread_lock_try()	(pthread_mutex_trylock(&posthread_lock) == 0)
 #define thread_unlock()		pthread_mutex_unlock(&posthread_lock)
 #define thread_self()		pthread_getspecific(threadkey)
 #define thread_setself(self)	pthread_setspecific(threadkey, self)
@@ -246,6 +247,7 @@ static pthread_key_t threadkey;
 static CRITICAL_SECTION winthread_cs;
 static DWORD threadkey = TLS_OUT_OF_INDEXES;
 #define thread_lock()		EnterCriticalSection(&winthread_cs)
+#define thread_lock_try()	(TryEnterCriticalSection(&winthread_cs) != 0)
 #define thread_unlock()		LeaveCriticalSection(&winthread_cs)
 #define thread_self()		TlsGetValue(threadkey)
 #define thread_setself(self)	TlsSetValue(threadkey, self)
@@ -285,7 +287,23 @@ void
 dump_threads(void)
 {
 	char buf[1024];
-	thread_lock();
+#if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec++;		/* give it a second */
+	if (pthread_mutex_timedlock(&posthread_lock, &ts) != 0) {
+		printf("Threads are currently locked, so no thread information\n");
+		return;
+	}
+#else
+	if (!thread_lock_try()) {
+		MT_sleep_ms(1000);
+		if (!thread_lock_try()) {
+		printf("Threads are currently locked, so no thread information\n");
+			return;
+		}
+	}
+#endif
 	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
 		printf("Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {

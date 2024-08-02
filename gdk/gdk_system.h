@@ -497,6 +497,24 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
+#if defined(__GNUC__) && defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+#define MT_lock_trytime(l, ms)						\
+	({								\
+		struct timespec ts;					\
+		clock_gettime(CLOCK_REALTIME, &ts);			\
+		ts.tv_nsec += (ms % 1000) * 1000000;			\
+		if (ts.tv_nsec >= 1000000000) {				\
+			ts.tv_nsec -= 1000000000;			\
+			ts.tv_sec++;					\
+		}							\
+		ts.tv_sec += (ms / 1000);				\
+		int ret = pthread_mutex_timedlock(&(l)->lock, &ts);	\
+		if (ret == 0)						\
+			_DBG_LOCK_LOCKER(l);				\
+		ret == 0;						\
+	})
+#endif
+
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
@@ -509,6 +527,7 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);				\
 		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
+
 #define MT_lock_unset(l)				\
 	do {						\
 		_DBG_LOCK_UNLOCKER(l);			\
@@ -624,6 +643,11 @@ MT_rwlock_wrtry(MT_RWLock *l)
 
 typedef pthread_key_t MT_TLS_t;
 
+#endif
+
+#ifndef MT_lock_trytime
+/* simplistic way to try lock with timeout: just sleep */
+#define MT_lock_trytime(l, ms) (MT_lock_try(l) || (MT_sleep_ms(ms), MT_lock_try(l)))
 #endif
 
 gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);

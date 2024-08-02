@@ -4936,6 +4936,15 @@ BBPtmlock(void)
 	BBPtmlockFinish();
 }
 
+static bool
+BBPtrytmlock(int ms)
+{
+	if (!MT_lock_trytime(&GDKtmLock, ms))
+		return false;
+	BBPtmlockFinish();
+	return true;
+}
+
 void
 BBPtmunlock(void)
 {
@@ -4959,7 +4968,10 @@ BBPprintinfo(void)
 	} bats[2][2][2][2][2] = {0};
 	int nbats = 0;
 
-	BBPtmlock();
+	if (!BBPtrytmlock(1000)) {
+		printf("BBP is currently locked, so no BAT information\n");
+		return;
+	}
 	bat sz = (bat) ATOMIC_GET(&BBPsize);
 	for (bat i = 1; i < sz; i++) {
 		MT_lock_set(&GDKswapLock(i));
