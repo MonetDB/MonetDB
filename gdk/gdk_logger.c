@@ -1115,6 +1115,7 @@ log_create_types_file(logger *lg, const char *filename)
 
 #define rotation_lock(lg)	MT_lock_set(&(lg)->rotation_lock)
 #define rotation_unlock(lg)	MT_lock_unset(&(lg)->rotation_lock)
+#define rotation_trylock(lg, ms) MT_lock_trytime(&(lg)->rotation_lock, ms)
 
 static gdk_return
 log_open_output(logger *lg)
@@ -3502,8 +3503,11 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 void
 log_printinfo(logger *lg)
 {
+	if (!rotation_trylock(lg, 1000)) {
+		printf("Logger is currently locked, so no logger information\n");
+		return;
+	}
 	printf("logger %s:\n", lg->fn);
-	rotation_lock(lg);
 	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
 	       lg->id, lg->saved_id);
 	printf("current transaction id %d, saved transaction id %d\n",

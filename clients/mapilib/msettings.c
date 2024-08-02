@@ -418,12 +418,16 @@ void msettings_set_localizer(msettings *mp, const char* (*localizer)(const void 
 const char*
 msetting_string(const msettings *mp, mparm parm)
 {
-	if (mparm_classify(parm) != MPCLASS_STRING)
+	if (mparm_classify(parm) != MPCLASS_STRING) {
 		FATAL();
+		return "";
+	}
 	int i = parm - MP__STRING_START;
 	struct string const *p = &mp->dummy_start_string + 1 + i;
-	if (p >=  &mp->dummy_end_string)
+	if (p >=  &mp->dummy_end_string) {
 		FATAL();
+		return "";
+	}
 	char *s = p->str;
 
 	if (s == NULL) {

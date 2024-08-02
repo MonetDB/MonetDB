@@ -2017,7 +2017,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t len;
 
 		if (!b)
-			throw(MAL, "mapi.put", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);

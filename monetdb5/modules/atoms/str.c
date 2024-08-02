@@ -1874,11 +1874,11 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 		with_strimps_anti = false;
 
 	if (!(b = BATdescriptor(b_id)))
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!is_bat_nil(cb_id) && !(cb = BATdescriptor(cb_id))) {
 		BBPreclaim(b);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
@@ -2756,13 +2756,13 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 
 	if (!(l = BATdescriptor(l_id)) || !(r = BATdescriptor(r_id))) {
 		BBPnreclaim(2, l, r);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((cl_id && !is_bat_nil(cl_id) && (cl = BATdescriptor(cl_id)) == NULL) ||
 		(cr_id && !is_bat_nil(cr_id) && (cr = BATdescriptor(cr_id)) == NULL)) {
 		BBPnreclaim(4, l, r, cl, cr);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	rl = COLnew(0, TYPE_oid, BATcount(l), TRANSIENT);
@@ -2875,19 +2875,22 @@ ignorecase(const bat *ic_id, bool *icase, str fname)
 	if ((c = BATdescriptor(*ic_id)) == NULL)
 		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (BATcount(c) != 1) {
-		BUN cnt = BATcount(c);
+	BUN cnt = BATcount(c);
+	if (cnt < 1) {
 		BBPreclaim(c);
-		if (cnt == 0)
-			throw(MAL, fname, SQLSTATE(42000) "Missing ignore case value\n");
-		else
-			throw(MAL, fname, SQLSTATE(42000) "Multiple ignore case values passed, only one expected\n");
+		throw(MAL, fname, SQLSTATE(42000) "Missing ignore case value\n");
 	}
 
 	BATiter bi = bat_iterator(c);
 	*icase = *(bit *) BUNtloc(bi, 0);
+	for(BUN i = 1; i<cnt; i++) {
+		if (*icase != *(bit*)BUNtloc(bi, i)) {
+			bat_iterator_end(&bi);
+			BBPreclaim(c);
+			throw(MAL, fname, SQLSTATE(42000) "Multiple ignore case values passed, only one expected\n");
+		}
+	}
 	bat_iterator_end(&bi);
-
 	BBPreclaim(c);
 	return MAL_SUCCEED;
 }

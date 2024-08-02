@@ -75,7 +75,7 @@ MNDBPrimaryKeys(ODBCStmt *stmt,
 	ODBCLOG("\"%.*s\" \"%.*s\" \"%.*s\"\n",
 		(int) NameLength1, CatalogName ? (char *) CatalogName : "",
 		(int) NameLength2, SchemaName ? (char *) SchemaName : "",
-		(int) NameLength3, TableName ? (char *) TableName : "");
+		(int) NameLength3, (char *) TableName);
 #endif
 
 	if (stmt->Dbc->sql_attr_metadata_id == SQL_FALSE) {

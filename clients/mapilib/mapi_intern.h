@@ -283,9 +283,9 @@ void mapi_impl_log_record(Mapi mid, const char *filename, long line, const char 
 #define mapi_log_data(mid, mark, start, len)  do { if ((mid)->tracelog) mapi_impl_log_data(mid, __func__, __LINE__, mark, start, len); } while (0)
 #define mapi_log_record(mid, mark, ...)  do { if ((mid)->tracelog) mapi_impl_log_record(mid, __func__, __LINE__, mark, __VA_ARGS__); } while (0)
 
-#define check_stream(mid, s, msg, e)					\
+#define check_stream(mid, s, l, msg, e)					\
 	do {								\
-		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR) {	\
+		if ((s) == NULL || mnstr_errnr(s) != MNSTR_NO__ERROR || (ssize_t) (l) < 0) { \
 			if (mnstr_peek_error(s))			\
 				mapi_printError((mid), __func__, MTIMEOUT, "%s: %s", (msg), mnstr_peek_error(s)); \
 			else						\

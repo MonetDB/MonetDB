@@ -1169,7 +1169,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		int scale		= results[i].scale;
 
 		if (b == NULL) {
-			error = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor");
+			error = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			break;
 		}
 
@@ -1252,7 +1252,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		!(bcolumn	= BATdescriptor(results[5].id))	||
 		!(bimpl		= BATdescriptor(results[6].id)))
 	{
-		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto cleanup;
 	}
 
@@ -2702,7 +2702,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	// otherwise we have to convert the column
 	b = BATdescriptor(result->monetdbe_resultset->cols[column_index].b);
 	if (!b) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", RUNTIME_OBJECT_MISSING));
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING));
 		goto cleanup;
 	}
 	bat_type = b->ttype;

@@ -6,6 +6,7 @@ order_by_on_single_row_view.SF-2950453
 correlated_update_type_mismatch.SF-2947841
 heap_combine_crash.SF-2947763
 rank-over-crash.SF-2926454
+alter-table-restart-crash.SF-2975018
 embedded_record_seperator.SF-2991400
 mat.slice_on_empty_BATs.SF-2994521
 reorder.SF-2995671
@@ -76,7 +77,7 @@ store_function_argument_correctly.Bug-2750
 COPY_INTO_with_backslashes.Bug-2748
 wrong_error_message_dropping_view.Bug-2713
 call_function_without_warning.Bug-2752
-#vacuum
+vacuum
 with-between.Bug-2732
 sequence-restart-with-null.Bug-2648
 constants-optimizer.Bug-2317

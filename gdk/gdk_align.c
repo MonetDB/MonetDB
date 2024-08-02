@@ -238,22 +238,21 @@ BATmaterialize(BAT *b, BUN cap)
 	assert(!isVIEW(b));
 	if (cap == BUN_NONE || cap < BATcapacity(b))
 		cap = BATcapacity(b);
+	MT_lock_set(&b->theaplock);
 	if (b->ttype != TYPE_void) {
 		/* no voids; just call BATextend to make sure of capacity */
+		MT_lock_unset(&b->theaplock);
 		return BATextend(b, cap);
 	}
 
-	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
+	if ((tail = GDKmalloc(sizeof(Heap))) == NULL) {
+		MT_lock_unset(&b->theaplock);
 		return GDK_FAIL;
+	}
 	p = 0;
 	q = BATcount(b);
 	assert(cap >= q - p);
 	TRC_DEBUG(ALGO, "BATmaterialize(" ALGOBATFMT ")\n", ALGOBATPAR(b));
-
-	/* cleanup possible ACC's */
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
 
 	*tail = (Heap) {
 		.farmid = BBPselectfarm(b->batRole, TYPE_oid, offheap),
@@ -263,6 +262,7 @@ BATmaterialize(BAT *b, BUN cap)
 	};
 	settailname(tail, BBP_physical(b->batCacheid), TYPE_oid, 0);
 	if (HEAPalloc(tail, cap, sizeof(oid)) != GDK_SUCCEED) {
+		MT_lock_unset(&b->theaplock);
 		GDKfree(tail);
 		return GDK_FAIL;
 	}
@@ -276,7 +276,6 @@ BATmaterialize(BAT *b, BUN cap)
 			x[p] = t++;
 	}
 	/* point of no return */
-	MT_lock_set(&b->theaplock);
 	assert((ATOMIC_GET(&b->theap->refs) & HEAPREFS) > 0);
 	/* can only look at tvheap when lock is held */
 	if (complex_cand(b)) {

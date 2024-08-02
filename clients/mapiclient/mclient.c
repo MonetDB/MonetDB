@@ -3223,7 +3223,8 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 		close_stream(priv->f);
 		priv->f = NULL;
 		if (fname) {
-			MT_remove(fname);
+			if (MT_remove(fname) < 0)
+				perror(fname);
 			free(fname);
 		}
 		if (filename == NULL)

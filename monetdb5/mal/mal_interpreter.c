@@ -591,11 +591,20 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
 			if (cntxt->fdin && TIMEOUT_TEST(&cntxt->qryctx)) {
-				if (cntxt->qryctx.endtime != QRY_INTERRUPT)
+				if (cntxt->qryctx.endtime != QRY_INTERRUPT && cntxt->qryctx.endtime != QRY_TIMEOUT)
 					cntxt->mode = FINISHCLIENT;
-				stkpc = stoppc;
-				ret = createException(MAL, "mal.interpreter", "%s",
-									  TIMEOUT_MESSAGE(&cntxt->qryctx));
+				switch (cntxt->qryctx.endtime) {
+				case QRY_TIMEOUT:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+					break;
+				case QRY_INTERRUPT:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+					break;
+				default:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) "Client disconnected");
+					cntxt->mode = FINISHCLIENT;
+					break;
+				}
 				break;
 			}
 			lastcheck = runtimeProfile.ticks;
