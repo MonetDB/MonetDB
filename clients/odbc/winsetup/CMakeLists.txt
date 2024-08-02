@@ -33,6 +33,7 @@ target_link_libraries(MonetODBCs
   PRIVATE
   monetdb_config_header
   mutils
+  $<$<PLATFORM_ID:Windows>:odbc32>
   $<$<PLATFORM_ID:Windows>:odbccp32>
   $<$<PLATFORM_ID:Windows>:user32>
   $<$<PLATFORM_ID:Windows>:legacy_stdio_definitions>)

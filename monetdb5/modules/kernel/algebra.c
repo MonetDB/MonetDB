@@ -616,7 +616,7 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 	BAT *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL, *result3 = NULL;
 	BUN est;
-	const char *err = RUNTIME_OBJECT_MISSING;
+	const char *err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 
 	assert(r2id == NULL || rangefunc != NULL);
 

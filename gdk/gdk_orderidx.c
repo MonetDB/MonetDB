@@ -193,6 +193,10 @@ persistOIDX(BAT *b)
 gdk_return
 BATorderidx(BAT *b, bool stable)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No order index on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
@@ -521,7 +525,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 void
 OIDXfree(BAT *b)
 {
-	if (b && b->torderidx) {
+	if (b) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);
@@ -541,7 +545,7 @@ OIDXfree(BAT *b)
 void
 OIDXdestroy(BAT *b)
 {
-	if (b && b->torderidx) {
+	if (b) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);

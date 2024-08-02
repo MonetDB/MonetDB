@@ -451,9 +451,6 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
  * fall-back for other compilers. */
 #include "matomic.h"
 static ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
-#ifndef NDEBUG
-static volatile lng GDK_malloc_success_count = -1;
-#endif
 static ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
 
 size_t _MT_pagesize = 0;	/* variable holding page size */
@@ -824,12 +821,6 @@ MT_init(void)
 
 static int THRinit(void);
 static gdk_return GDKlockHome(int farmid);
-
-#ifndef __COVERITY__
-#ifndef NDEBUG
-static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
-#endif
-#endif
 
 void
 GDKsetdebug(unsigned debug)
@@ -1719,19 +1710,6 @@ GDKmalloc_internal(size_t size, bool clear)
 	size_t nsize;
 
 	assert(size != 0);
-#ifndef NDEBUG
-	/* fail malloc for testing purposes depending on set limit */
-	if (GDK_malloc_success_count > 0) {
-		MT_lock_set(&mallocsuccesslock);
-		if (GDK_malloc_success_count > 0)
-			GDK_malloc_success_count--;
-		MT_lock_unset(&mallocsuccesslock);
-	}
-	if (GDK_malloc_success_count == 0) {
-		GDKerror("allocation failed because of testing limit\n");
-		return NULL;
-	}
-#endif
 #ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (size > SMALL_MALLOC &&
 	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
@@ -1933,15 +1911,6 @@ size_t
 GDKmallocated(const void *s)
 {
 	return ((const size_t *) s)[-1]; /* how much allocated last */
-}
-
-void
-GDKsetmallocsuccesscount(lng count)
-{
-	(void) count;
-#ifndef NDEBUG
-	GDK_malloc_success_count = count;
-#endif
 }
 
 /*

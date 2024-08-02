@@ -1004,6 +1004,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 gdk_return
 BAThash(BAT *b)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No hash on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
 		GDKerror("No hash on msk type bats\n");
 		return GDK_FAIL;
@@ -1354,7 +1358,7 @@ HASHlist(Hash *h, BUN i)
 void
 HASHdestroy(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *hs;
 		MT_rwlock_wrlock(&b->thashlock);
 		hs = b->thash;
@@ -1367,7 +1371,7 @@ HASHdestroy(BAT *b)
 void
 HASHfree(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *h;
 		MT_rwlock_wrlock(&b->thashlock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {

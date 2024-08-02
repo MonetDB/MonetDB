@@ -35074,11 +35074,6 @@ pattern io.printf(X_0:streams, X_1:str, X_2:any...):void
 IOprintfStream;
 Select default format 
 io
-setmallocsuccesscount
-command io.setmallocsuccesscount(X_0:lng):void
-IOsetmallocsuccesscount;
-Set number of mallocs that are allowed to succeed.
-io
 stdin
 pattern io.stdin():bstream
 io_stdin;
@@ -35832,7 +35827,7 @@ mmath
 atan2
 command mmath.atan2(X_0:dbl, X_1:dbl):dbl
 MATHbinary_ATAN2dbl;
-The atan2(x,y) function calculates the arc tangent of the two @variables x and y.  It is similar to calculating the arc@tangent of y / x, except that the signs of both arguments are @used to determine the quadrant of the result.  The value is @returned in radians and is mathematically defined to be between @-PI/2 and PI/2 (inclusive).
+The atan2(x,y) function calculates the arc tangent of the two @variables x and y. It is similar to calculating the arc@tangent of y / x, except that the signs of both arguments are @used to determine the quadrant of the result. The value is @returned in radians and is mathematically defined to be between @-PI/2 and PI/2 (inclusive).
 mmath
 atan2
 command mmath.atan2(X_0:flt, X_1:flt):flt
@@ -35872,7 +35867,7 @@ mmath
 cosh
 command mmath.cosh(X_0:dbl):dbl
 MATHunary_COSHdbl;
-The cosh() function  returns the hyperbolic cosine of x, which is @defined mathematically as (exp(x) + exp(-x)) / 2.
+The cosh() function returns the hyperbolic cosine of x, which is @defined mathematically as (exp(x) + exp(-x)) / 2.
 mmath
 cosh
 command mmath.cosh(X_0:flt):flt
@@ -35912,7 +35907,7 @@ mmath
 fabs
 command mmath.fabs(X_0:dbl):dbl
 MATHunary_FABSdbl;
-The fabs(x) function  returns  the  absolute value of the @floating-point number x.
+The fabs(x) function returns the absolute value of the floating-point number x.
 mmath
 finite
 command mmath.finite(X_0:dbl):bit
@@ -35992,12 +35987,12 @@ mmath
 nextafter
 command mmath.nextafter(X_0:dbl, X_1:dbl):dbl
 MATHbinary_NEXTAFTERdbl;
-The returns the next representable floating-point value of x in the direction of y.
+The nextafter(x,y) function returns the next representable floating-point value of x in the direction of y.
 mmath
 nextafter
 command mmath.nextafter(X_0:flt, X_1:flt):flt
 MATHbinary_NEXTAFTERflt;
-The returns the next representable floating-point value of x in the direction of y.
+The nextafter(x,y) function returns the next representable floating-point value of x in the direction of y.
 mmath
 pi
 command mmath.pi():dbl
@@ -36007,7 +36002,7 @@ mmath
 pow
 command mmath.pow(X_0:dbl, X_1:dbl):dbl
 MATHbinary_POWdbl;
-The pow(x,y) function  returns the value of x raised to the power of y.
+The pow(x,y) function returns the value of x raised to the power of y.
 mmath
 pow
 command mmath.pow(X_0:flt, X_1:flt):flt
@@ -36057,7 +36052,7 @@ mmath
 sinh
 command mmath.sinh(X_0:dbl):dbl
 MATHunary_SINHdbl;
-The sinh() function  returns  the  hyperbolic sine of x, which @is defined mathematically as (exp(x) - exp(-x)) / 2.
+The sinh() function returns the hyperbolic sine of x, which is @defined mathematically as (exp(x) - exp(-x)) / 2.
 mmath
 sinh
 command mmath.sinh(X_0:flt):flt

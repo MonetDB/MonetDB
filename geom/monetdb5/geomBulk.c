@@ -1126,7 +1126,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output

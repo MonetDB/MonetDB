@@ -85,10 +85,7 @@ createExceptionInternal(enum malexception type, const char *fcn,
 	int len;
 	char *msg;
 	va_list ap2;
-#ifndef NDEBUG
-	// if there is an error we allow memory allocation once again
-	GDKsetmallocsuccesscount(-1);
-#endif
+
 	va_copy(ap2, ap);			/* we need to use it twice */
 	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
 	len = vsnprintf(NULL, 0, format, ap);	/* count necessary length */
