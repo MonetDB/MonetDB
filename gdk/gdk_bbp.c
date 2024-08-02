@@ -4967,6 +4967,7 @@ BBPprintinfo(void)
 		int nr;
 	} bats[2][2][2][2][2] = {0};
 	int nbats = 0;
+	int nskip = 0;
 
 	if (!BBPtrytmlock(1000)) {
 		printf("BBP is currently locked, so no BAT information\n");
@@ -4974,13 +4975,19 @@ BBPprintinfo(void)
 	}
 	bat sz = (bat) ATOMIC_GET(&BBPsize);
 	for (bat i = 1; i < sz; i++) {
-		MT_lock_set(&GDKswapLock(i));
+		if (!MT_lock_trytime(&GDKswapLock(i), 1000)) {
+			nskip++;
+			continue;
+		}
 		int r;
 		if ((r = BBP_refs(i)) > 0 || BBP_lrefs(i) > 0) {
 			BAT *b = BBP_desc(i);
+			if (b != NULL && !MT_lock_trytime(&b->theaplock, 1000)) {
+				nskip++;
+				b = NULL;
+			}
 			if (b != NULL) {
 				nbats++;
-				MT_lock_set(&b->theaplock);
 				ATOMIC_BASE_TYPE status = BBP_status(i);
 				struct counters *bt = &bats[r > 0][BATdirty(b)][(status & BBPPERSISTENT) != 0][(status & BBPLOADED) != 0][(status & BBPHOT) != 0];
 				bt->nr++;
@@ -5067,4 +5074,6 @@ BBPprintinfo(void)
 
 	printf("%d bats total, %d in use, %"PRIu32" free bats in common shared list\n",
 	       sz - 1, nbats, nfree);
+	if (nskip > 0)
+		printf("%d bat slots unaccounted for because of locking\n", nskip);
 }
