@@ -65,6 +65,7 @@ typedef struct backend {
 	int pp;			/* pipeline counter of the language.pipeline barrier */
 	int nrparts;	/* nrparts of the .. */
 	int pipeline;	/* pipeline ptr argument of the language.pipeline barrier */
+	int cleanup;	/* variable which needs cleanup at end of block */
 	void *ppstmt;
 
 	int result_id;

@@ -44999,21 +44999,6 @@ command color.ycc(X_0:int, X_1:int, X_2:int):color
 CLRycc;
 Converts an YCC triplets to a color atom
 copy
-buf2str
-command copy.buf2str(X_0:bat[:bte]):str
-COPYbuf2str;
-turn bat[:bte] into str
-copy
-defer_close
-unsafe command copy.defer_close(X_0:streams):bat[:bit]
-COPYdefer_close_stream;
-close stream when returned bat is destroyed
-copy
-fixlines
-unsafe pattern copy.fixlines(X_0:bat[:bte], X_1:bat[:bte], X_2:str, X_3:str, X_4:bit, X_5:bat[:oid], X_6:lng, X_7:lng) (X_8:bat[:bte], X_9:bat[:bte], X_10:lng)
-COPYfixlines;
-Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied
-copy
 from_stdin
 unsafe pattern copy.from_stdin(X_0:lng, X_1:lng, X_2:bit, X_3:str, X_4:str, X_5:bit):streams
 COPYfrom_stdin;
@@ -45023,11 +45008,6 @@ get_blocksize
 unsafe command copy.get_blocksize():int
 COPYget_blocksize;
 get the COPY block size
-copy
-get_parallel
-unsafe command copy.get_parallel():int
-COPYget_parallel;
-get the id of the current COPY INTO implementation
 copy
 parse_decimal
 pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:bte]
@@ -45129,30 +45109,10 @@ unsafe command copy.set_blocksize(X_0:int):int
 COPYset_blocksize;
 set the COPY block size
 copy
-set_parallel
-unsafe command copy.set_parallel(X_0:int):bit
-COPYset_parallel;
-switch between different COPY INTO implementations
-copy
-skiplines
-unsafe command copy.skiplines(X_0:bat[:bte], X_1:lng):lng
-COPYskiplines;
-Skip the first N lines in the buffer
-copy
 splitlines
 pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:lng, X_3:str, X_4:str, X_5:str, X_6:str, X_7:bat[:oid], X_8:bit):bat[:int]...
 COPYsplitlines;
 Find the fields of the individual columns
-copy
-str2buf
-command copy.str2buf(X_0:str):bat[:bte]
-COPYstr2buf;
-turn str into bat[:bte]
-copy
-trackrowids
-unsafe command copy.trackrowids(X_0:bat[:oid], X_1:lng, X_2:oid, X_3:bat[:oid]) (X_4:lng, X_5:bat[:oid])
-COPYtrackrowids;
-keep track of newly claimed rows
 csv
 epilogue
 command csv.epilogue():void

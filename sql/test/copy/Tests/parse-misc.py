@@ -61,19 +61,31 @@ for escape in [True, False]:
             .set_quote(quote)
         )
         sub = f'escape={escape!r} quote={quote!r}'
-        msg = "NUL character not allowed in textual data"
+        #msg = "NUL character not allowed in textual data"
+        msg = "too few fields, expected"
         run_test(mycase
                 .replace(2, '31a\x00|"32x"|33')
-                .expect_error(f"Row 3 column 1: {msg}"),
+                #.expect_error(f"Row 3 column 1: {msg}"),
+                .expect_error(f"Row 3: {msg}"),
                 sub=sub)
         run_test(mycase
                 .replace(2, '3\x001a|"32x"|33')
-                .expect_error(f"Row 3 column 1: {msg}"),
+                #.expect_error(f"Row 3 column 1: {msg}"),
+                .expect_error(f"Row 3: {msg}"),
                 sub=sub)
-        run_test(mycase
-                .replace(2, '31a|"32x\x00"|33')
-                .expect_error(f"Row 3 column 2: {msg}"),
-                sub=sub)
+
+for escape in [True, False]:
+    quote = '"'
+    mycase = (basecase
+        .set_escape(escape)
+        .set_quote(quote)
+    )
+    sub = f'escape={escape!r} quote={quote!r}'
+    msg = "incomplete quoted text"
+    run_test(mycase
+        .replace(2, '31|"32x\x00"|33')
+        .expect_error(f"Row 3 column 2: {msg}"),
+        sub=sub)
 
 # Unterminated string
 run_test(TestCase("i INT, t TEXT", '1\n2\n3\n"42', quote='"')

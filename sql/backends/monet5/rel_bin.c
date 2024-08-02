@@ -1656,8 +1656,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
-		if (0 && SQLrunning && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
-			return rel2bin_copyparpipe(be, NULL, NULL, e, false);
+		if (SQLrunning && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
 			int push_cands = can_push_cands(sel, mod, fimp);
@@ -5852,6 +5852,7 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
+#if 0
 // Call this from the debugger at any time to see how code generation proceeds.
 void dump_code(int);
 static struct {
@@ -6044,26 +6045,17 @@ can_use_copyparpipe(sql_rel *rel)
 
 	return copy_from;
 }
+#endif
 
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
-	dump_code_state.mb = be->mb;
+	//dump_code_state.mb = be->mb;
 	// dump_code(0);
-
-	if (parallel_copy_level() > 0) {
-		sql_exp *copyfrom = can_use_copyparpipe(rel);
-		if (copyfrom != NULL) {
-			// dump_code(0);
-			stmt *ret = rel2bin_copyparpipe(be, rel, refs, copyfrom, true);
-			// dump_code(-1);
-			return ret;
-		}
-	}
 
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *cnt = NULL, *pos = NULL;
 	int idx_ins = 0, len = 0;
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -6075,6 +6067,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
+	// if run with pp
+	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
 
 	if (tr->op == op_basetable) {
 		t = tr->l;
@@ -6089,6 +6083,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the inserts relation */
 		inserts = subrel_bin(be, rel->r, refs);
 	inserts = subrel_project(be, inserts, refs, rel->r);
+	stmt *pp = NULL;
+	pp = get_pipeline(be);
 
 	if (!inserts)
 		return NULL;
@@ -6119,12 +6115,19 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	insert = inserts->op4.lval->h->data;
+	stmt *sum = NULL;
 	if (insert->nrcols == 0) {
 		cnt = stmt_atom_lng(be, 1);
+		sum = cnt;
 	} else {
+		int pp = be->pipeline;
+		be->pipeline = 0;
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+		be->pipeline = pp;
+		/* incremental sum */
+		if (pp)
+			sum = stmt_pp_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
 	}
-	insert = NULL;
 
 	/* by now the aggr.count has been generated */
 	l = sa_list(sql->sa);
@@ -6192,12 +6195,36 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	// dump_code(-1);
 
+	if (pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
+	}
+
 	if (ddl) {
-		ret = ddl;
 		list_prepend(l, ddl);
+		if (pp)
+			(void)stmt_pp_end(be, pp);
 		return stmt_list(be, l);
 	} else {
-		ret = cnt;
+		// combine counts using locked.sum
+		stmt *ret = cnt;
+		if (pp) {
+			ret = stmt_pp_aggr(be, sum, NULL, NULL, sql_bind_func(sql, "sys", "sum", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
+			/* shared result */
+			ret->nr = getArg(ret->q, 0) = cc->nr;
+			ret->q->inout = 0;
+			int nr = getDestVar(ret->q);
+			/* change into bat */
+			getModuleId(ret->q) = getName("lockedaggr");
+			be->mb->var[nr].type = newBatType(TYPE_lng);
+			ret->q = pushArgument(be->mb, ret->q, be->pipeline);
+			/* swap value and pipeline */
+			int arg = getArg(ret->q, 1);
+			getArg(ret->q, 1) = getArg(ret->q, 2);
+			getArg(ret->q, 2) = arg;
+
+			(void)stmt_pp_end(be, pp);
+			ret = stmt_fetch(be, ret); // fetch rowcount result
+		}
 		if (add_to_rowcount_accumulator(be, ret->nr) < 0)
 			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))

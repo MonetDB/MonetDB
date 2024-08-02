@@ -47,8 +47,10 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 	if (fsd == NULL || elmsize != 1) {
 		return -1;
 	}
-	if (fsd->eof)
+	if (fsd->eof) {
+		s->eof = 1;
 		return 0;
+	}
 
 	while (to_write > 0) {
 		/* input conversion */
@@ -60,6 +62,7 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 					return actually_read;	/* this is an error */
 				}
 				fsd->eof |= fsd->s->eof;
+				s->eof = fsd->eof;
 				return (ssize_t) buf_written;	/* skip last line */
 			}
 			/* consume to next newline */
@@ -67,6 +70,7 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 			       nl_buf != '\n')
 				;
 			fsd->eof |= fsd->s->eof;
+			s->eof = fsd->eof;
 
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
 				char *val_start, *val_end;

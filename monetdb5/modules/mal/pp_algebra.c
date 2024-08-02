@@ -113,6 +113,7 @@ LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.sum", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
+
 	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		if (b == NULL)
@@ -136,7 +137,16 @@ LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 		}
 	} else {
-			err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
+			BAT *b = COLnew(0, type, 1, TRANSIENT);
+			if (!b || BUNappend(b, p, true) != GDK_SUCCEED)
+				err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
+			if (!err) {
+				*res = b->batCacheid;
+				BATnegateprops(b);
+				BBPkeepref(b);
+			} else if (b) {
+				BBPunfix(b->batCacheid);
+			}
 	}
 	pipeline_unlock(p);
 	if (err)

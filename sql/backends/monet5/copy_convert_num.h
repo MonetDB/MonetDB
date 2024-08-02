@@ -181,19 +181,19 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
-	int digits = *getArgReference_int(stk, pci, 3);
-	int scale = *getArgReference_int(stk, pci, 4);
-	// arg 5 is a dummy
-	bat failures_bat = *getArgReference_bat(stk, pci, 6);
-	lng starting_row = *getArgReference_lng(stk, pci, 7);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
+	int digits = *getArgReference_int(stk, pci, 4);
+	int scale = *getArgReference_int(stk, pci, 5);
+	// arg 6 is a dummy
+	bat rows = *getArgReference_bat(stk, pci, 7);
 	int col_no = *getArgReference_int(stk, pci, 8);
 	str col_name = *getArgReference_str(stk, pci, 9);
 	str dec_sep = *getArgReference_str(stk, pci, 10);
 	str dec_skip = *getArgReference_str(stk, pci, 11);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
+	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
 
 	struct decimal_parms myparms = {
 		.digits = digits,
@@ -211,11 +211,12 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_decimal",
-		block_bat_id, offsets_bat_id,
+		block_bat_id, p, offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_decimals), &myparms);
 
 end:
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	return msg;
 }
 
@@ -225,22 +226,24 @@ TMPL_SUFFIXED(COPYparse_integer) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
-	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 3);
-	bat failures_bat = *getArgReference_bat(stk, pci, 4);
-	lng starting_row = *getArgReference_lng(stk, pci, 5);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
+	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 4);
+	bat rows = *getArgReference_bat(stk, pci, 5);
 	int col_no = *getArgReference_int(stk, pci, 6);
 	str col_name = *getArgReference_str(stk, pci, 7);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
+	errors.init = 0;
+	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
 
 	str msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_integer" ,
-		block_bat_id, offsets_bat_id,
+		block_bat_id, p, offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), NULL);
 
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	return msg;
 }
 
@@ -254,10 +257,9 @@ TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	bat *result_bat_id = getArgReference_bat(stk, pci, 0);
 	bat values_bat_id = *getArgReference_bat(stk, pci, 1);
 	int factor = *getArgReference_int(stk, pci, 2);
-	bat failures_bat_id = *getArgReference_bat(stk, pci, 3);
-	lng starting_row = *getArgReference_lng(stk, pci, 4);
-	int col_no = *getArgReference_int(stk, pci, 5);
-	str col_name = *getArgReference_str(stk, pci, 6);
+	bat rows = *getArgReference_bat(stk, pci, 3);
+	int col_no = *getArgReference_int(stk, pci, 4);
+	str col_name = *getArgReference_str(stk, pci, 5);
 
 	BAT *values_bat = BATdescriptor(values_bat_id);
 	size_t n = BATcount(values_bat);
@@ -266,14 +268,15 @@ TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	TMPL_TYPE *values;
 	TMPL_TYPE *results;
 
+	struct error_handling errors;
+	errors.init = 0;
+	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
+
 	if (!values_bat)
 		bailout(operatorname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	results_bat = COLnew(0, TMPL_SUFFIXED(TYPE), BATcount(values_bat), TRANSIENT);
 	if (!results_bat)
 		bailout(operatorname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	struct error_handling errors;
-	copy_init_error_handling(&errors, cntxt, failures_bat_id, starting_row, col_no, col_name);
 
 	values = Tloc(values_bat, 0);
 	results = Tloc(results_bat, 0);
@@ -301,7 +304,8 @@ TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 end:
 	if (msg == MAL_SUCCEED)
 		msg = copy_check_too_many_errors(&errors, operatorname);
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	if (values_bat)
 		BBPunfix(values_bat->batCacheid);
 	if (results_bat) {

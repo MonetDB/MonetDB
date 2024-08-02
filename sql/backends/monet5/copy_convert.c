@@ -12,6 +12,7 @@
 #include "mal.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mal_pipelines.h"
 #include "str.h"
 
 #include "copy.h"
@@ -31,25 +32,28 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
 	str msg = MAL_SUCCEED;
-	struct error_handling errors;
 	BAT *ret = NULL;
 	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-	int tpe = getArgGDKType(mb, pci, 3);
-	bat failures_bat = *getArgReference_bat(stk, pci, 4);
-	lng starting_row = *getArgReference_lng(stk, pci, 5);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+	int tpe = getArgGDKType(mb, pci, 4);
+	bat rows = *getArgReference_bat(stk, pci, 5);
 	int col_no = *getArgReference_int(stk, pci, 6);
 	const char *col_name = *getArgReference_str(stk, pci, 7);
 	int n;
 	void *buffer = NULL;
 	size_t buffer_len;
 	const void *nil_ptr;
+	struct error_handling errors;
 
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
+	errors.init = 0;
 
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	n = BATcount(indices);
+	reader *r = (reader*)block->T.sink;
+	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
+	errors.r = r;
 
 	ret = COLnew(0, tpe, n, TRANSIENT);
 	if (!ret)
@@ -58,10 +62,12 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nil_ptr = ATOMnilptr(tpe);
 
 	buffer_len = 0;
+	const char *start = (char*)r->bs->buf[p->wid];
+	const int *offsetp = (int*)Tloc(indices, 0);
 	for (int i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
-		int offset = *(int*)Tloc(indices, i);
-		const char *src = Tloc(block, offset);
+		int offset = offsetp[i];
+		const char *src = start + offset;
 		const void *to_insert;
 
 		if (is_int_nil(offset)) {
@@ -98,7 +104,8 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ret->trevsorted = false;
 end:
 	GDKfree(buffer);
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	if (ret) {
 		if (msg == MAL_SUCCEED) {
 			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
@@ -114,27 +121,202 @@ end:
 	return msg;
 }
 
-static bool
-fits_varchar(const char *s, int maxlen) {
-	int len;
-	// There are three relevant lengths:
-	// 1. the length in bytes, computed by strlen()
-	// 2. the length in Unicode code points, computed by UTF8_strlen()
-	// 3. the width in printable units.
-	// So, width <= codepoint_len <= byte_len.
-	//
-	// We are interested in the width but it is much more
-	// expensive to compute than the other two so we try those first
-	len = strlen(s);
-	if (len <= maxlen)
+static const char *
+fltdbl_sepskip(const char *s, const char sep, const char skip)
+{
+	// The regular fltFromStr/dblFromStr functions do not take decimal commas
+	// and thousands separators into account. When these are in use, this
+	// function first converts them to decimal dots and empty strings,
+	// respectively. We use a fixed size buffer so abnormally long floats such
+	// as
+	// +00000000000000000000000000000000000000000000000000000000000000000000001.5e1
+	// will be rejected.
+
+	if (skip || sep != '.') {
+		/* inplace */
+		char *p = (char*)s, *o = p;
+
+		while (GDKisspace(*s))
+			s++;
+		while (*s != '\0') {
+			char ch = *s++;
+			if (ch == skip) {
+				continue;
+			} else if (ch == sep) {
+				ch = '.';
+			} else if (ch == '.') {
+				// We're mapping sep to '.', if there are already
+				// periods in the input we're losing information
+				return NULL;
+			}
+			*p++ = ch;
+		}
+		// If we're here either we either encountered the end of s or the buffer is
+		// full. In the latter case we still need to write the NUL.
+		// We left room for it.
+		*p = '\0';
+		s = o;
+	}
+	return s;
+}
+
+str
+COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	str msg = MAL_SUCCEED;
+	BAT *ret = NULL;
+	BAT *block = BATdescriptor(*getArgReference_bat(stk, pci, 1));
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	BAT *indices = BATdescriptor(*getArgReference_bat(stk, pci, 3));
+	int tpe = getArgGDKType(mb, pci, 4);
+	bat rows = *getArgReference_bat(stk, pci, 5);
+	int col_no = *getArgReference_int(stk, pci, 6);
+	const char *col_name = *getArgReference_str(stk, pci, 7);
+	str dec_sep = *getArgReference_str(stk, pci, 8);
+	str dec_skip = *getArgReference_str(stk, pci, 9);
+	int n;
+	void *buffer = NULL;
+	size_t buffer_len;
+	const void *nil_ptr;
+	struct error_handling errors;
+
+	const char sep = strNil(dec_sep) ? '.' : dec_sep[0];
+	const char skip = strNil(dec_skip) ? '\0' : dec_skip[0];
+	errors.init = 0;
+
+	if (block == NULL || indices == NULL)
+		bailout("copy.parse_float", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	n = BATcount(indices);
+	reader *r = (reader*)block->T.sink;
+	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
+	errors.r = r;
+
+	ret = COLnew(0, tpe, n, TRANSIENT);
+	if (!ret)
+		bailout("copy.parse_float",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	nil_ptr = ATOMnilptr(tpe);
+
+	const char *start = (char*)r->bs->buf[p->wid];
+	const int *offsetp = (int*)Tloc(indices, 0);
+	for (int i = 0; i < n; i++) {
+		gdk_return ok = GDK_SUCCEED;
+		int offset = offsetp[i];
+		const char *src = start + offset;
+		const void *to_insert;
+
+		if (is_int_nil(offset)) {
+			to_insert = nil_ptr;
+		} else {
+			ssize_t len = -1;
+			src = fltdbl_sepskip(src, sep, skip);
+			if (src) {
+				buffer_len = 0;
+				len = BATatoms[tpe].atomFromStr(src, &buffer_len, &buffer, false);
+				(void)buffer_len;
+			}
+			if (len >= 0) {
+				to_insert = buffer;
+			} else {
+				ok = copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
+				GDKclrerr();
+				to_insert = nil_ptr;
+			}
+		}
+		if (ok != GDK_SUCCEED) {
+			msg = copy_check_too_many_errors(&errors, "copy.parse_float");
+			if (msg != MAL_SUCCEED)
+				goto end;
+			else
+				ok = GDK_SUCCEED;
+		}
+		if (bunfastapp(ret, to_insert) != GDK_SUCCEED)
+			bailout("copy.parse_float", GDK_EXCEPTION);
+	}
+	BATsetcount(ret, n);
+	// we don't know anything about the data we just parsed
+	ret->tkey = false;
+	ret->tnil = false;
+	ret->tnonil = false;
+	ret->tsorted = false;
+	ret->trevsorted = false;
+end:
+	GDKfree(buffer);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
+	if (ret) {
+		if (msg == MAL_SUCCEED) {
+			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
+			BBPkeepref(ret);
+		}
+		else
+			BBPunfix(ret->batCacheid);
+	}
+	if (block)
+		BBPunfix(block->batCacheid);
+	if (indices)
+		BBPunfix(indices->batCacheid);
+	return msg;
+}
+
+static inline bool
+checkUTF8str(const char *v, size_t maxlen, int *err)
+{
+	/* It is unlikely that this functions returns false, because
+	 * it is likely that the string presented is a correctly coded
+	 * UTF-8 string.  So we annotate the tests that are very
+	 * unlikely to succeed, i.e. the ones that lead to a return of
+	 * false, as being expected to return 0 using the
+	 * __builtin_expect function. */
+	size_t j = 0;
+	if (v != NULL) {
+		if (v[0] != '\200' || v[1] != '\0') {
+			/* check that string is correctly encoded UTF-8 */
+			for (size_t i = 0; v[i]; i++, j++) {
+				/* we do not annotate all tests, only the ones
+				 * leading directly to an unlikely return
+				 * statement */
+				if ((v[i] & 0x80) == 0) {
+					;
+				} else if ((v[i] & 0xE0) == 0xC0) {
+					if (__builtin_expect(((v[i] & 0x1E) == 0), 0))
+						return false;
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+				} else if ((v[i] & 0xF0) == 0xE0) {
+					if ((v[i++] & 0x0F) == 0) {
+						if (__builtin_expect(((v[i] & 0xE0) != 0xA0), 0))
+							return false;
+					} else {
+						if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+							return false;
+					}
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+				} else if (__builtin_expect(((v[i] & 0xF8) == 0xF0), 1)) {
+					if ((v[i++] & 0x07) == 0) {
+						if (__builtin_expect(((v[i] & 0x30) == 0), 0))
+							return false;
+					}
+					if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+						return false;
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+						return false;
+				} else {
+					return false;
+				}
+			}
+		}
+	}
+	if (maxlen > 0) {
+		*err = (j>maxlen);
+		return (j<=maxlen);
+	} else {
 		return true;
-	len = UTF8_strlen(s);
-	if (len <= maxlen)
-		return true;
-	len = UTF8_strwidth(s);
-	if (len <= maxlen)
-		return true;
-	return false;
+	}
 }
 
 str
@@ -146,43 +328,51 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
-	int maxlen = *getArgReference_int(stk, pci, 3);
-	bat failures_bat = *getArgReference_bat(stk, pci, 4);
-	lng starting_row = *getArgReference_lng(stk, pci, 5);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
+	int maxlen = *getArgReference_int(stk, pci, 4);
+	bat rows = *getArgReference_bat(stk, pci, 5);
 	int col_no = *getArgReference_int(stk, pci, 6);
 	str col_name = *getArgReference_str(stk, pci, 7);
 
-	struct error_handling errors;
 	BAT *block_bat = BATdescriptor(block_bat_id);
 	BAT *offsets_bat = BATdescriptor(offsets_bat_id);
 	BAT *parsed_bat = NULL;
 	int colwidth = maxlen;
 	int n;
 
+	struct error_handling errors;
+	errors.init = 0;
+
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	reader *r = (reader*)block_bat->T.sink;
+	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
+	errors.r = r;
 
 	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
 
 	n = BATcount(offsets_bat);
+	int err = 0;
+	const char *start = (char*)r->bs->buf[p->wid];
+	const int *offsetp = (int*)Tloc(offsets_bat, 0);
 	for (int i = 0; i < n; i++) {
 		gdk_return ok;
-		int offset = *(int*)Tloc(offsets_bat, i);
+		int offset = offsetp[i];
 		const void *to_insert = str_nil;
 
 		if (is_int_nil(offset)) {
 			ok = GDK_SUCCEED;
 		} else {
-			const char *src = Tloc(block_bat, offset);
-			if (!checkUTF8(src)) {
-				ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
-			} else if (colwidth > 0 && !fits_varchar(src, colwidth)) {
-				ok = copy_report_error(&errors, i, -1, "field too long, max length is %d", colwidth);
+			const char *src = start + offset;
+			if (!checkUTF8str(src, colwidth, &err)) {
+				if (err == 0)
+					ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
+				else
+					ok = copy_report_error(&errors, i, -1, "field too long, max length is %d", colwidth);
 			} else {
 				ok = GDK_SUCCEED;
 				to_insert = src;
@@ -195,7 +385,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else
 				ok = GDK_SUCCEED;
 		}
-		if (bunfastapp(parsed_bat, to_insert) != GDK_SUCCEED)
+		if (bunfastapp_nocheck(parsed_bat, to_insert) != GDK_SUCCEED)
 			bailout("copy.parse_generic", GDK_EXCEPTION);
 	}
 
@@ -208,7 +398,8 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	parsed_bat->trevsorted = false;
 
 end:
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	if (parsed_bat) {
 		if (msg == MAL_SUCCEED) {
 			*parsed_bat_id = parsed_bat->batCacheid;
@@ -225,14 +416,12 @@ end:
 
 }
 
-
-
 str
 parse_fixed_width_column(
 	bat *ret,
 	struct error_handling *errors,
 	const char *fname,
-	bat block_bat_id, bat offsets_bat_id,
+	bat block_bat_id, Pipeline *p, bat offsets_bat_id,
 	int tpe,
 	void (*f)(struct error_handling*, void*, int, void*, char*, int*),
 	void *fx)
@@ -242,17 +431,19 @@ parse_fixed_width_column(
 	BAT *offsets_bat = NULL;
 	BAT *parsed_bat = NULL;
 
-
 	block_bat = BATdescriptor(block_bat_id);
 	offsets_bat = BATdescriptor(offsets_bat_id);
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
+	reader *r = (reader*)block_bat->T.sink;
+	errors->r = r;
+	errors->starting_row = r->line_count[p->wid];
 	parsed_bat = COLnew(0, tpe, BATcount(offsets_bat), TRANSIENT);
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	f(errors, fx, BATcount(offsets_bat), Tloc(parsed_bat, 0), Tloc(block_bat, 0), Tloc(offsets_bat, 0));
+	f(errors, fx, BATcount(offsets_bat), Tloc(parsed_bat, 0), (char*)r->bs->buf[p->wid], Tloc(offsets_bat, 0));
 	msg = copy_check_too_many_errors(errors, fname);
 	if (msg != MAL_SUCCEED)
 		goto end;

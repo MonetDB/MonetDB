@@ -913,6 +913,9 @@ gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
+gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+	__attribute__((__warn_unused_result__));
+	//__attribute__((__visibility__("hidden")));
 
 #define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)

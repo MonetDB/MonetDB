@@ -11,90 +11,211 @@
 #include "gdk.h"
 #include "mel.h"
 #include "mal_exception.h"
+#include "mal_pipelines.h"
+#include "pipeline.h"
 #include "mal_interpreter.h"
+#include "tablet.h"
 
 #include "copy.h"
 #include "rel_copy.h"
 
-// #define BLOCK_DEBUG
+#define COPY_SINK 42
 
-static str
-COPYread(Stream *stream_out_arg, Stream *stream_in_arg, lng *block_size_arg, bat *block_bat_arg)
+static void
+bufferstream_destroy( bufferstream *bs )
 {
-	str msg = MAL_SUCCEED;
-	stream *s = *stream_in_arg;
-	lng block_size = *block_size_arg;
-	bat b = *block_bat_arg;
-	BUN start;
-	BUN newcap;
-	BAT *bat = NULL;
-	lng nread;
-
-	if (s == NULL)
-		goto end;
-
-	bat = BATdescriptor(b);
-	if (!bat)
-		bailout("copy.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (bat->batRole != TRANSIENT) {
-		bailout("copy.read", SQLSTATE(42000) "can only read into transient BAT");
-	}
-
-	newcap = BATcount(bat) + block_size;
-	if (BATcapacity(bat) < newcap && BATextend(bat, newcap) != GDK_SUCCEED) {
-		bailout("copy.read", "%s", GDK_EXCEPTION);
-	}
-
-	start = BATcount(bat);
-	nread = mnstr_read(s, Tloc(bat, start), 1, block_size);
-	if (nread < 0) {
-		bailout("copy.read", SQLSTATE(42000) "%s", mnstr_peek_error(s));
-	}
-
-	BATsetcount(bat, start + nread);
-	bat->batInserted = 0;
-	// it would be very surprising if the bytes we just read were ordered or unique!
-	bat->tkey = false;
-	bat->tnonil = false;
-	bat->tnil = false;
-	bat->tsorted = false;
-	bat->trevsorted = false;
-
-	if (nread == 0){
-		s = NULL;
-	}
-#ifdef BLOCK_DEBUG
-	dump_block("just read", bat);
-#endif
-end:
-	if (msg == MAL_SUCCEED) {
-		*stream_out_arg = s;
-	}
-	if (bat != NULL)
-		BBPunfix(bat->batCacheid);
-	return msg;
+	if (!bs)
+		return ;
+	for (int i = 0; i<bs->nr_bufs; i++)
+		GDKfree(bs->buf[i]);
+	GDKfree(bs->sz);
+	GDKfree(bs->len);
+	GDKfree(bs->pos);
+	GDKfree(bs->jmp);
+	GDKfree(bs->buf);
+	GDKfree(bs->seq);
+	GDKfree(bs);
 }
 
-static str
-COPYskiplines(lng *toskip_out, bat *block_bat, lng *toskip_in)
+static bufferstream *
+bufferstream_create( stream *s, size_t sz, int readers )
 {
-	str msg = MAL_SUCCEED;
-	lng toskip = *toskip_in;
-	BAT *block = NULL;
-	char *start, *pos, *end;
+	if (s) {
+		bufferstream *bs = ZNEW(bufferstream);
+		if (!bs)
+			return NULL;
+
+		bs->sz = ZNEW_ARRAY(size_t, readers);
+		bs->len = ZNEW_ARRAY(size_t, readers);
+		bs->pos = ZNEW_ARRAY(size_t, readers);
+		bs->jmp = ZNEW_ARRAY(size_t, readers);
+		bs->buf = ZNEW_ARRAY(unsigned char*, readers);
+		bs->seq = ZNEW_ARRAY(BUN, readers);
+
+		if (!bs->sz || !bs->len || !bs->pos || !bs->jmp || !bs->buf || !bs->seq) {
+			bufferstream_destroy(bs);
+			return NULL;
+		}
+
+		bs->sz[0] = sz-2;
+		bs->buf[0] = 0;
+		bs->nr_bufs = readers;
+		bs->cur_buf = 0;
+		bs->s = s;
+		for(int i = 0; i<readers; i++)
+			bs->seq[i] = i;
+		return bs;
+	}
+	return NULL;
+}
+
+static ssize_t
+bufferstream_read( bufferstream *bs, int cur)
+{
+	int ocur = bs->cur_buf;
+	assert(bs->eof || !bs->buf[0] || cur == (ocur+1)%bs->nr_bufs);
+	if (bs->eof || mnstr_eof(bs->s)) {
+	    if (bs->pos[ocur] == bs->len[ocur])
+			bs->eof = 1;
+		return 0;
+	}
+	if (!bs->buf[cur]) {
+		bs->sz[cur] = bs->sz[0];
+		bs->buf[cur] = (unsigned char*)GDKmalloc(bs->sz[0] + 2);
+		bs->buf[cur][0] = 0;
+		bs->len[cur] = 0;
+	}
+	bs->cur_buf = cur;
+
+	if (bs->pos[cur] && bs->pos[cur] == bs->len[cur])
+		bs->pos[cur] = bs->len[cur] = 0;
+	if ((bs->pos[ocur] < bs->len[ocur]) || bs->jmp[ocur]) {
+		BUN p = bs->jmp[ocur] ? bs->jmp[ocur] : bs->pos[ocur];
+		memcpy(bs->buf[cur], bs->buf[ocur]+p, bs->len[ocur] - p + 1);
+		bs->len[cur] = bs->len[ocur] - p;
+		if (ocur != cur)
+			bs->len[ocur] = bs->pos[ocur];
+	}
+	bs->pos[cur] = bs->jmp[cur] = 0;
+
+	/* out of space ? */
+	if (!bs->pos[cur] && bs->len[cur] == bs->sz[cur]) {
+		bs->sz[cur] *= 2;
+		bs->sz[cur] += 2;
+		bs->buf[cur] = (unsigned char*)GDKrealloc(bs->buf[cur], bs->sz[cur] + 2);
+	}
+
+	/* read new */
+	ssize_t rd = 0;
+	ssize_t sz = 0;
+	if (!mnstr_eof(bs->s)) {
+		sz = bs->sz[cur] - bs->len[cur];
+		rd = mnstr_read( bs->s, bs->buf[cur]+bs->len[cur], 1, sz);
+	}
+	if (rd < 0)
+		return -1;
+	if (rd < sz) {
+		if (mnstr_eof(bs->s))
+			bs->eof = 1;
+	}
+	bs->len[cur] += rd;
+	/* extra EOS */
+	bs->buf[cur][bs->len[cur]] = 0;
+	assert(bs->len[cur] - bs->pos[cur] <= bs->sz[cur]);
+	return rd;
+}
+
+static inline bool
+bufferstream_jump(bufferstream *bs, unsigned char tsep, int cb)
+{
+	unsigned char *b = bs->buf[cb]+bs->pos[cb];
+	unsigned char *e = bs->buf[cb]+bs->len[cb];
+
+	if (bs->eof || e == b)
+		return true;
+	while(*e!=tsep && e > b)
+		e--;
+	if (e == b)
+		return false;
+	e++;
+	bs->jmp[cb] = e - bs->buf[cb];
+	return e > b;
+}
+
+static inline bool
+bufferstream_jumpN(bufferstream *bs, unsigned char *sep, int len, int cb)
+{
+	unsigned char *b = bs->buf[cb]+bs->pos[cb];
+	unsigned char *e = bs->buf[cb]+bs->len[cb];
+
+	if (bs->eof || e == b)
+		return true;
+	while((*e!=sep[0] || strncmp((char*)e, (char*)sep, len) != 0) && e > b)
+		e--;
+	if (e == b)
+		return false;
+	e+=len;
+	bs->jmp[cb] = e - bs->buf[cb];
+	return e > b;
+}
+
+static void
+reader_destroy(void *sink)
+{
+	reader *r = (reader*)sink;
+	assert(r->sink.type == COPY_SINK);
+	if (r->s)
+		mnstr_close(r->s);
+	if (r->bs)
+		bufferstream_destroy(r->bs);
+	if (r->line_count)
+		GDKfree(r->line_count);
+	GDKfree(r);
+}
+
+static reader *
+reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str line_sep_str, str quote_str, str null_repr, bool escape_enabled, bool best_effort)
+{
+	reader *r = (reader*)GDKzalloc(sizeof(reader));
+	r->sink.destroy = &reader_destroy;
+	r->sink.type = COPY_SINK;
+	r->s = s;
+	r->offset = offset;
+	r->maxcount = maxcount;
+	r->linecount = 0;
+	r->sz = sz<1024?sz+2:sz;
+	r->seqnr = ATOMIC_VAR_INIT(0);
+	r->offset_seqnr = ATOMIC_VAR_INIT(0);
+	r->jump_seqnr = ATOMIC_VAR_INIT(0);
+	r->done = false;
+	r->error = false;
+	r->col_sep_str = (unsigned char*)col_sep_str;
+	r->col_sep_len = strlen(col_sep_str);
+	r->line_sep_str = (unsigned char*)line_sep_str;
+	r->line_sep_len = strlen(line_sep_str);
+	r->quote_str = (unsigned char*)quote_str;
+	r->null_repr = (unsigned char*)null_repr;
+	r->null_repr_len = strlen(null_repr);
+	r->escape_enabled = escape_enabled;
+	r->best_effort = best_effort;
+	return r;
+}
+
+static lng
+COPYskiplines(reader *r, int wid)
+{
+	lng toskip = r->offset, nr = 0;
+	unsigned char *start, *pos, *end;
 
 	if (!toskip)
-		goto end;
+		return 0;
 
-	block = BATdescriptor(*block_bat);
-	if (!block)
-		bailout("copy.skiplines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	start = Tloc(block, 0);
-	pos = start;
-	end = Tloc(block, BATcount(block));
+	start = r->bs->buf[wid];
+	pos = start + r->bs->pos[wid];
+	end = start + r->bs->len[wid];
 	while (toskip && pos < end) {
-		char *p = memchr(pos, '\n', end - pos);
+		/* TODO allow more line seperators */
+		unsigned char *p = memchr(pos, '\n', end - pos);
 		if (!p) {
 			// discard everything but do not decrement toskip
 			pos = end;
@@ -102,274 +223,259 @@ COPYskiplines(lng *toskip_out, bat *block_bat, lng *toskip_in)
 		}
 		pos = p + 1;
 		toskip--;
+		nr++;
 	}
 
-	if (pos > start) {
-		size_t n = end - pos;
-		memmove(start, pos, n);
-		BATsetcount(block, n);
-	}
-
-	end:
-	*toskip_out = toskip;
-	if (block) {
-		BBPunfix(block->batCacheid);
-	}
-	return msg;
+	if (pos > start)
+		r->bs->pos[wid] = pos - start;
+	return nr;
 }
 
 int
-get_sep_char(str sep, bool backslash_escapes)
+check_sep(str sep, bool backslash_escapes)
 {
 	if (strNil(sep) || strlen(sep) == 0)
 		return 0;
-	int c = *sep;
 
-	if (strlen(sep) != 1)
-		return -1;
-
-	switch (c) {
-		case '\\':
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		case 'a':
-		case 'b':
-		case 'c':
-		case 'd':
-		case 'e':
-		case 'f':
-		case 'x':
-		case 'u':
-		case 'U':
-		case 'n':
-		case 'r':
-		case 't':
-			if (backslash_escapes)
-				return -1;
-			break;
-		default:
-			break;
+	for(; *sep; sep++) {
+		int c = *sep;
+		switch (c) {
+			case '\\':
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+			case 'a':
+			case 'b':
+			case 'c':
+			case 'd':
+			case 'e':
+			case 'f':
+			case 'x':
+			case 'u':
+			case 'U':
+			case 'n':
+			case 'r':
+			case 't':
+				if (backslash_escapes)
+					return -1;
+				break;
+			default:
+				break;
+		}
 	}
-	return c;
+	return 1;
+}
+
+static inline const unsigned char *
+find_end_of_lines1nn(struct scan_state *st, BUN *newlines_count, BUN maxcount )
+	/* single char line end and no escape and no quote */
+{
+	bool found = true;
+	int line_sep = st->line_sep;
+	unsigned char *end = st->end;
+	// these are updated
+	unsigned char *pos = st->pos;
+
+	BUN newline_count = 0;
+	const unsigned char *latest_pos = NULL;
+	while (found && pos < end && newline_count < maxcount) {
+		found = false;
+		for (; pos < end; pos++) {
+			if (*pos == line_sep) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			*pos = 0;
+			pos++;
+			newline_count++;
+			latest_pos = pos;
+		}
+	}
+	st->pos = pos;
+	*newlines_count = newline_count;
+	return latest_pos;
+}
+
+static inline const unsigned char *
+find_end_of_lines1(struct scan_state *st, BUN *newlines_count, BUN maxcount )
+{
+	bool found = true;
+	int quote_char = st->quote_char;
+	int line_sep = st->line_sep;
+	bool escape_enabled = st->escape_enabled;
+	unsigned char *end = st->end;
+	// these are updated
+	unsigned char *pos = st->pos;
+	bool quoted = st->quoted;
+	bool escape_pending = st->escape_pending;
+
+	BUN newline_count = 0;
+	const unsigned char *latest_pos = NULL;
+	while (found && pos < end && newline_count < maxcount) {
+		found = false;
+		for (; pos < end; pos++) {
+			if (escape_pending) {
+				escape_pending = false;
+				continue;
+			}
+			if (escape_enabled && *pos == '\\') {
+				escape_pending = true;
+				continue;
+			}
+			bool is_quote = (quote_char != 0 && *pos == quote_char);
+			quoted ^= is_quote;
+			if (!quoted && *pos == line_sep) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			*pos = 0;
+			pos++;
+			newline_count++;
+			latest_pos = pos;
+		}
+	}
+	st->pos = pos;
+	st->quoted = quoted;
+	st->escape_pending = escape_pending;
+	*newlines_count = newline_count;
+	return latest_pos;
+}
+
+static inline const unsigned char *
+find_end_of_linesN(struct scan_state *st, BUN *newlines_count, BUN maxcount )
+{
+	bool found = true;
+	int quote_char = st->quote_char;
+	unsigned char ls0 = st->line_sep_str[0];
+	char *line_sep = (char*)st->line_sep_str;
+	int line_sep_len = st->line_sep_len;
+	bool escape_enabled = st->escape_enabled;
+	unsigned char *end = st->end;
+	// these are updated
+	unsigned char *pos = st->pos;
+	bool quoted = st->quoted;
+	bool escape_pending = st->escape_pending;
+
+	BUN newline_count = 0;
+	const unsigned char *latest_pos = NULL;
+	while (found && pos < end && newline_count < maxcount) {
+		found = false;
+		for (; pos < end; pos++) {
+			if (escape_pending) {
+				escape_pending = false;
+				continue;
+			}
+			if (escape_enabled && *pos == '\\') {
+				escape_pending = true;
+				continue;
+			}
+			bool is_quote = (quote_char != 0 && *pos == quote_char);
+			quoted ^= is_quote;
+			if (!quoted && *pos == ls0 && strncmp((char*)pos, line_sep, line_sep_len) == 0) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			*pos = 0;
+			pos += line_sep_len;
+			newline_count++;
+			latest_pos = pos;
+		}
+	}
+	st->pos = pos;
+	st->quoted = quoted;
+	st->escape_pending = escape_pending;
+	*newlines_count = newline_count;
+	return latest_pos;
 }
 
 static str
-COPYfixlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+COPYfixlines(lng *ret_linecount, BUN *e, reader *r, int wid, struct error_handling *errors)
 {
 	str msg = MAL_SUCCEED;
-	struct error_handling errors;
-
-	(void)mb;
-	bat *ret_left = getArgReference_bat(stk, pci, 0);
-	bat *ret_right = getArgReference_bat(stk, pci, 1);
-	lng *ret_linecount = getArgReference_lng(stk, pci, 2);
-	bat left_block = *getArgReference_bat(stk, pci, 3);
-	bat right_block = *getArgReference_bat(stk, pci, 4);
-	str linesep = *getArgReference_str(stk, pci, 5);
-	str quote = *getArgReference_str(stk, pci, 6);
-	bit escape_arg = *getArgReference_bit(stk, pci, 7);
-	bat failures_bat = *getArgReference_bat(stk, pci, 8);
-	lng starting_row = *getArgReference_lng(stk, pci, 9);
-	lng max_rows = *getArgReference_lng(stk, pci, 10);
-
-	bool backslash_escapes = escape_arg;
 	struct scan_state state = {
-		.quote_char = get_sep_char(quote, backslash_escapes),
-		.line_sep = get_sep_char(linesep, backslash_escapes),
-		.escape_enabled = backslash_escapes,
+		.quote_char = r->quote_char,
+		.line_sep = r->line_sep,
+		.line_sep_str = r->line_sep_str,
+		.line_sep_len = r->line_sep_len,
+		.escape_enabled = r->escape_enabled,
 		.quoted = false,
 		.escape_pending = false,
 	};
-	BAT *left = NULL, *right = NULL;
-	unsigned char *left_data, *right_data;
-	int left_size, left_start, right_size;
-	BAT *new_left = NULL, *new_right = NULL;
-	int newline_count = 0;
-	const unsigned char *latest_newline;
 
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, -1, NULL);
-	// The recoverable only errors copy.fixlines detects do not correspond to
-	// inserted rows.
-	copy_error_handling_inhibit_deletes(&errors);
+	unsigned char *data;
+	BUN size, start;
+	BUN newline_count = 0;
 
-	if (state.line_sep <= 0) // 0 not ok
-		bailout("copy.fixlines", SQLSTATE(42000) "invalid line separator");
-	if (state.quote_char < 0) // 0 is ok
-		bailout("copy.fixlines", SQLSTATE(42000) "invalid quote character");
-	if (state.line_sep == state.quote_char)
-		bailout("copy.fixlines", SQLSTATE(42000) "line separator and quote character cannot be the same");
+	data = r->bs->buf[wid];
+	start = r->bs->pos[wid];
+	size = r->bs->jmp[wid] ? r->bs->jmp[wid] : r->bs->len[wid];
 
-	if (is_bat_nil(left_block) || is_bat_nil(right_block) || is_bit_nil(escape_arg))
-		bailout("copy.fixlines", "arguments must not be nil");
-
-	if ((left = BATdescriptor(left_block)) == NULL || (right = BATdescriptor(right_block)) == NULL)
-		bailout("copy.fixlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (BATcount(left) > (BUN)INT_MAX || BATcount(right) > (BUN)INT_MAX)
-		bailout("copy.fixlines", SQLSTATE(42000) "block size too large");
-	left_data = Tloc(left, 0);
-	left_size = BATcount(left);
-	left_start = left->batInserted;
-	right_data = Tloc(right, 0);
-	right_size = BATcount(right);
-
-	if (left_size < left_start)
-		bailout("copy.fixlines", SQLSTATE(42000) "skip amount out of bounds");
-	if (right->batInserted != 0)
-		bailout("copy.fixlines", SQLSTATE(42000) "right hand skip amount expected to be zero, not " BUNFMT, right->batInserted);
-	if (left->hseqbase != 0 || right->hseqbase != 0)
-		bailout("copy.fixlines", SQLSTATE(42000) "hseqbases must be 0");
-
-#ifdef BLOCK_DEBUG
-	dump_block("fixlines incoming left", left);
-	dump_block("fixlines incoming right", right);
-#endif
-
-	state.start = left_data;
-	state.pos = left_data + left_start;
-	state.end = left_data + left_size;
+	state.start = data;
+	state.pos = data + start;
+	state.end = data + size;
 
 	if (state.pos == state.end) {
-		// This means the left block is empty, invariant is fulfilled, nothing to do
-		new_left = left;
-		new_right = right;
 		*ret_linecount = 0;
-		msg = MAL_SUCCEED;
-		goto end;
+		*e = state.end - data;
+		return MAL_SUCCEED;
 	}
 
-	// Scan 'left' for unquoted newlines. Determine both the total count and the
+	// Scan for unquoted newlines. Determine both the total count and the
 	// position of the last occurrence.
-	latest_newline = NULL;
-	while (state.pos < state.end && newline_count < max_rows) {
-		if (!find_end_of_line(&state))
-			break;
-		latest_newline = state.pos;
-		newline_count++;
-		state.pos++;
-	}
+	const unsigned char *latest_pos = NULL;
+	if (state.line_sep_len == 1 && !state.quote_char && !state.escape_enabled)
+		latest_pos = find_end_of_lines1nn(&state, &newline_count, r->maxcount);
+	else if (state.line_sep_len == 1)
+		latest_pos = find_end_of_lines1(&state, &newline_count, r->maxcount);
+	else
+		latest_pos = find_end_of_linesN(&state, &newline_count, r->maxcount);
 
-	if (newline_count == max_rows) {
-		// We have all the rows we need. The rest of the left block is no longer
-		// needed, and neither is the entirety of the right block
-		new_left = left;
-		new_right = right;
+	if (newline_count == r->maxcount) {
+		/* We have all the rows we need. The rest is no longer needed */
 		*ret_linecount = newline_count;
-		BATsetcount(left, state.pos - left_data);
-		BATsetcount(right, 0);
-		msg = MAL_SUCCEED;
-		goto end;
+		*e = state.pos - state.start;
+		return MAL_SUCCEED;
 	}
 
-	if (!state.escape_pending && !state.quoted && latest_newline == state.end - 1) {
-		// Left block ends in a newline, invariant fulfilled, nothing more to do
-		new_left = left;
-		new_right = right;
-		*ret_linecount = newline_count;
-		msg = MAL_SUCCEED;
-		goto end;
-	}
-
-	if (right_size == 0) {
-		// We have reached the end of the input. The end of the line will
-		// never come.
+	if (state.pos == state.end && latest_pos < state.pos && r->bs->eof) {
 		gdk_return proceed;
 		if (state.quoted)
-			proceed = copy_report_error(&errors, newline_count, -1, "unterminated quoted string");
+			proceed = copy_report_error(errors, newline_count, -1, "unterminated quoted string");
 		else
-			proceed = copy_report_error(&errors, newline_count, -1, "unterminated line at end of file");
-		if (proceed == GDK_FAIL)
-			bailout("copy.fixlines", "%s", copy_error_message(&errors));
-
-		// We must be in BEST EFFORT mode. We have reported the error, now
-		// disregard the incomplete line to make the left block end at a line boundary.
-		BUN new_size = latest_newline ? latest_newline - left_data + 1 : left_start;
-		BATsetcount(left, new_size);
-		BATsetcount(right, 0);
-		new_left = left;
-		new_right = right;
+			proceed = copy_report_error(errors, newline_count, -1, "unterminated line at end of file");
 		*ret_linecount = newline_count;
-		msg = MAL_SUCCEED;
-		goto end;
+		if (proceed == GDK_FAIL)
+			bailout("copy.fixlines", "%s", copy_error_message(errors));
+		*e = latest_pos - state.start;
+		return MAL_SUCCEED;
 	}
 
-	// We have to borrow some data from the next block to complete the final line.
-	// Determine how much.
-	state.start = right_data;
-	state.pos = right_data;
-	state.end = right_data + right_size;
-	if (find_end_of_line(&state)) {
-		// Move some bytes from 'right' to 'left'
-		int borrow = state.pos - right_data + 1;
-		if (BATextend(left, (BUN)left_size + (BUN)borrow) != GDK_SUCCEED) {
-			bailout("copy.fixlines", GDK_EXCEPTION);
-		}
-		memcpy(Tloc(left, left_size), right_data, borrow);
-		BATsetcount(left, (BUN)left_size + (BUN)borrow);
-		right->batInserted = borrow;
-		new_left = left;
-		new_right = right;
-		*ret_linecount = newline_count + 1;
-		msg = MAL_SUCCEED;
-		goto end;
+	if (newline_count) {
+		/* we handled some lines */
+		*ret_linecount = newline_count;
+		*e = latest_pos - state.start;
+		return MAL_SUCCEED;
 	}
 
-	// If we get here, the last line of 'left' is so long it extends all the
-	// way through 'right' into the next block, if there is one.
-	// The best way to satisfy our invariant that 'new_left' must start and end
-	// on line boundaries and 'new_right' must start on a line boundary
-	// is by appending all of 'right' to 'left' and
-	// returning the resulting jumbo block as 'new_right', with an empty
-	// block as 'new_left'.
-	BUN new_size;
-	new_size = (BUN)left_size + (BUN)right_size;
-	if (new_size >= MAX_LINE_LENGTH)
-		bailout("copy.fixlines", SQLSTATE(42000) "line too long: " BUNFMT ", limit set to " BUNFMT, new_size, (BUN)MAX_LINE_LENGTH);
-	if (BATextend(left, new_size) != GDK_SUCCEED) {
-		bailout("copy.fixlines", GDK_EXCEPTION);
+	if (state.pos == state.end && !newline_count && !r->bs->eof) {
+		*ret_linecount = 0;
+		return msg;
 	}
-	memcpy(Tloc(left, left_size), right_data, right_size);
-	BATsetcount(left, (BUN)left_size + (BUN)right_size);
-	BATsetcount(right, 0);
-	assert(right->batInserted == 0);
-	// notice how 'left' and 'right' cross over:
-	new_left = right;
-	new_right = left;
 	*ret_linecount = 0;
-	msg = MAL_SUCCEED;
-
 end:
-	copy_destroy_error_handling(&errors);
-#ifdef BLOCK_DEBUG
-	fprintf(stderr, "fixlines returning %ld lines\n", *ret_linecount);
-	if (new_left)
-		dump_block("fixlines outgoing new_left", new_left);
-	if (new_right)
-		dump_block("fixlines outgoing new_right", new_right);
-	if (left || right)
-		fprintf(stderr, "\n");
-#endif
-
-	if (left != NULL)
-		BBPunfix(left->batCacheid);
-	if (right != NULL)
-		BBPunfix(right->batCacheid);
-	// new_left and new_right are aliases of left and right, but not necessarily in that order.
-	if (new_left != NULL) {
-		*ret_left = new_left->batCacheid;
-		BBPretain(new_left->batCacheid);
-	}
-	if (new_right != NULL) {
-		*ret_right = new_right->batCacheid;
-		BBPretain(new_right->batCacheid);
-	}
 	return msg;
 }
 
@@ -390,39 +496,107 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.escape_pending = false,
 	};
 
-	assert(pci->argc == pci->retc + 9);
+	assert(pci->argc == pci->retc + 3);
 	bat block_bat_id = *getArgReference_bat(stk, pci, pci->retc + 0);
-	lng starting_row = *getArgReference_lng(stk, pci, pci->retc + 1);
-	lng line_count = *getArgReference_lng(stk, pci, pci->retc + 2);
-	str col_sep_str = *getArgReference_str(stk, pci, pci->retc + 3);
-	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 4);
-	str quote_str = *getArgReference_str(stk, pci, pci->retc + 5);
-	str null_repr = *getArgReference_str(stk, pci, pci->retc + 6);
-	bat failures_bat = *getArgReference_bat(stk, pci, pci->retc + 7);
-	state.escape_enabled = *getArgReference_bit(stk, pci, pci->retc + 8);
+	bat rows_bat_id = *getArgReference_bat(stk, pci, pci->retc + 1);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc + 2);
+	reader *r = NULL;
 
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, -1, NULL);
-
-	state.line_sep = get_sep_char(line_sep_str, state.escape_enabled);
-	if (state.line_sep <= 0) // 0 not ok
-		bailout("copy.splitlines", SQLSTATE(42000) "invalid line separator");
-	state.col_sep = get_sep_char(col_sep_str, state.escape_enabled);
-	if (state.col_sep <= 0) // 0 is not ok
-		bailout("copy.splitlines", SQLSTATE(42000) "invalid column separator");
-	state.quote_char = get_sep_char(quote_str, state.escape_enabled);
-	if (state.quote_char < 0) // 0 is ok
-		bailout("copy.splitlines", SQLSTATE(42000) "invalid quote character");
-
-	if (strNil(null_repr))
-		null_repr = NULL;
+	copy_init_error_handling(&errors, cntxt, 0, -1, NULL, rows_bat_id);
 
 	if ((block_bat = BATdescriptor(block_bat_id)) == NULL)
 		bailout("copy.splitlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	state.start = Tloc(block_bat, 0);
-	state.pos = Tloc(block_bat, block_bat->batInserted);
-	state.end = Tloc(block_bat, BATcount(block_bat));
 
-	assert( (line_count == 0) == (BATcount(block_bat) == block_bat->batInserted) );
+	r = (reader*)block_bat->T.sink;
+	errors.r = r;
+
+	while(!r->bs) {
+		pipeline_lock(p);
+		if (!r->bs) {
+			r->line_count = GDKzalloc(sizeof(lng) * p->p->nr_workers);
+			r->bs = bufferstream_create(r->s, r->sz, p->p->nr_workers);
+			/* TODO iff mallocs failed set error in r, such that all threads fail properly */
+		}
+		pipeline_unlock(p);
+	}
+
+	state.line_sep = r->line_sep;
+	state.line_sep_len = r->line_sep_len;
+	state.line_sep_str = r->line_sep_str;
+	state.col_sep = r->col_sep;
+	state.col_sep_len = r->col_sep_len;
+	state.col_sep_str = r->col_sep_str;
+	state.quote_char = r->quote_char;
+	state.escape_enabled = r->escape_enabled;
+
+	/* busy wait, ie take turn using counter */
+	if ((r->done) || r->error)
+		p->p->master_counter = (p->p->nr_workers*-2);
+
+	while (!r->done && !r->error && ATOMIC_GET(&r->seqnr) != r->bs->seq[p->wid])
+		;
+
+	if (!r->done && !r->error) {
+		if (bufferstream_read(r->bs, p->wid) < 0) {
+			bailout("copy.splitlines", SQLSTATE(42000) "unterminated line at end of file");
+		}
+	}
+
+	if (!r->done && !r->error && r->can_jump) {
+		if ((r->line_sep_len == 1 && !bufferstream_jump(r->bs, r->line_sep, p->wid)) ||
+		    (r->line_sep_len != 1 && !bufferstream_jumpN(r->bs, r->line_sep_str, r->line_sep_len, p->wid))) {
+			r->error = true;
+			bailout("copy.splitlines", SQLSTATE(42000) "unterminated line at end of file while jumping");
+		}
+		ATOMIC_INC(&r->seqnr);
+	}
+
+	/* TODO: handle skipping with jumping */
+	if (!r->error && !r->done && r->offset) {
+		lng skipped = COPYskiplines(r, p->wid);
+		r->offset -= skipped;
+		//r->linecount += skipped; ??
+	}
+
+	lng line_count = 0;
+	if (!r->error && !r->done) {
+		state.start = r->bs->buf[p->wid];
+		state.pos = state.start + r->bs->pos[p->wid];
+		state.end = state.start + r->bs->len[p->wid];
+
+		BUN e = 0;
+		r->line_count[p->wid] = r->linecount;
+		errors.starting_row = r->line_count[p->wid];
+		msg = COPYfixlines(&line_count, &e, r, p->wid, &errors);
+		if (msg) {
+			r->error = true;
+			return msg;
+		}
+		if (r->can_jump) {
+			while (!r->done && !r->error && ATOMIC_GET(&r->jump_seqnr) != r->bs->seq[p->wid])
+				;
+		}
+		r->linecount += line_count;
+		state.end = state.start + e;
+		r->bs->pos[p->wid] = e;
+		r->maxcount -= line_count;
+		if (r->maxcount == 0)
+			r->done = 1;
+		if (r->can_jump)
+			ATOMIC_INC(&r->jump_seqnr);
+	}
+	r->bs->seq[p->wid] += p->p->nr_workers;
+	if (r->best_effort) {
+		errors.rows = BATdescriptor(errors.rows_batid);
+		errors.rows->tseqbase = 0;
+		BATsetcount(errors.rows, line_count);
+	}
+
+	if (!r->can_jump)
+		ATOMIC_INC(&r->seqnr);
+
+	if (r->bs->eof)
+		r->done = r->bs->eof;
 
 	return_bats = GDKzalloc(ncols * sizeof(*return_bats));
 	return_indices = GDKzalloc(ncols * sizeof(*return_indices));
@@ -437,12 +611,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return_indices[i] = Tloc(b, 0);
 	}
 
-#ifdef BLOCK_DEBUG
-	dump_block("splitlines", block_bat);
-#endif
-	msg = scan_fields(&errors, &state, null_repr, ncols, line_count, return_indices);
-	if (msg != MAL_SUCCEED)
-		goto end;
+	if (r->col_sep_len > 1)
+		msg = scan_fieldsN(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+	else
+		msg = scan_fields(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
 
 end:
 	copy_destroy_error_handling(&errors);
@@ -462,8 +634,7 @@ end:
 					b->trevsorted = false;
 					BBPkeepref(b);
 					*getArgReference_bat(stk, pci, i) = id;
-				}
-				else {
+				} else {
 					BBPunfix(id);
 				}
 			}
@@ -471,55 +642,125 @@ end:
 		GDKfree(return_bats);
 	}
 	GDKfree(return_indices);
+	if (msg && r)
+		r->error = true;
 	return msg;
 }
 
 static str
-COPYtrackrowids(lng *start, bat *newrows_out_id, bat *newrows_in_id, lng *count, oid *offset, bat *pos_bat_id)
+COPYrows(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
-	BAT *newrows = NULL;
-	BAT *pos = NULL;
+	(void)cntxt;
+	(void)mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	BAT *b = COLnew( 0, TYPE_void, 0, TRANSIENT);
+	if (!b)
+		throw(SQL, "copy.rows",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	newrows = BATdescriptor(*newrows_in_id);
-	if (!newrows)
-		bailout("copy.trackrowids", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	*start = BATcount(newrows);
-	*newrows_out_id = *newrows_in_id;
-	BBPretain(*newrows_out_id);
-
-	if (*count == 0)
-		goto end;
-
-	if (is_bat_nil(*pos_bat_id)) {
-		if (BATextend(newrows, *start + *count) != GDK_SUCCEED)
-			bailout("copy.trackrowid", GDK_EXCEPTION);
-		oid *p = (oid*)Tloc(newrows, *start);
-		for (int i = 0; i < *count; i++) {
-			*p++ = *offset + i;
-		}
-		BATsetcount(newrows, *start + *count);
-	} else {
-		pos = BATdescriptor(*pos_bat_id);
-		if (!pos)
-			bailout("copy.trackrowids", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		if (BATcount(pos) != (BUN)*count)
-			bailout("copy.trackrowids", SQLSTATE(42000) "expected " LLFMT " row ids, got " BUNFMT, *count, BATcount(pos));
-		if (BUNappendmulti(newrows, Tloc(pos, 0), (BUN)*count, false) != GDK_SUCCEED)
-			bailout("copy.trackrowids", GDK_EXCEPTION);
-	}
-	newrows->trevsorted = false;
-	newrows->tseqbase = oid_nil;
-end:
-	if (newrows)
-		BBPunfix(*newrows_in_id);
-	if (pos)
-		BBPunfix(*pos_bat_id);
-	return msg;
+	BATsetcount(b, 0);
+	*res = (b->batCacheid);
+	BBPkeepref(b);
+	return MAL_SUCCEED;
 }
 
+static const char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
+static const char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 
+static str
+COPYnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg = MAL_SUCCEED;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	stream *s = *(stream**)getArgReference(stk, pci, pci->retc);
+	BUN offset = *getArgReference_lng(stk, pci, pci->retc + 1);
+	BUN maxcount = *getArgReference_lng(stk, pci, pci->retc + 2);
+	BUN sz = *getArgReference_lng(stk, pci, pci->retc + 3);
+	str col_sep_str = *getArgReference_str(stk, pci, pci->retc + 4);
+	str line_sep_str = *getArgReference_str(stk, pci, pci->retc + 5);
+	str quote_str = *getArgReference_str(stk, pci, pci->retc + 6);
+	str null_repr = *getArgReference_str(stk, pci, pci->retc + 7);
+	bit escape_enabled = *getArgReference_bit(stk, pci, pci->retc + 8);
+	str fixed_widths = *getArgReference_str(stk, pci, pci->retc + 9);
+	bit best_effort = *getArgReference_bit(stk, pci, pci->retc + 10);
+
+	if (best_effort)
+		COPYrejects_create(cntxt);
+
+	if (!strNil(fixed_widths)) {
+		size_t ncol = 0, current_width_entry = 0, i;
+		size_t *widths;
+		const char* val_start = fixed_widths;
+		size_t width_len = strlen(fixed_widths);
+		stream *ns;
+
+		for (i = 0; i < width_len; i++) {
+			if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
+				ncol++;
+			}
+		}
+		widths = malloc(sizeof(size_t) * ncol); /* use malloc as the widths are eaten by stream_fwf_create outside gdk */
+		if (!widths) {
+			//close_stream(s);
+			throw(MAL, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		for (i = 0; i < width_len; i++) {
+			if (fixed_widths[i] == STREAM_FWF_FIELD_SEP) {
+				widths[current_width_entry++] = (size_t) strtoll(val_start, NULL, 10);
+				val_start = fixed_widths + i + 1;
+			}
+		}
+		/* overwrite other delimiters to the ones the FWF stream uses */
+		col_sep_str = (char*)fwftsep;
+		line_sep_str = (char*)fwfrsep;
+		quote_str = (char*)str_nil;
+
+		ns = stream_fwf_create(s, ncol, widths, STREAM_FWF_FILLER);
+		if (ns == NULL || mnstr_errnr(ns) != MNSTR_NO__ERROR) {
+			msg = createException(IO, "sql.copy_from", SQLSTATE(42000) "%s", mnstr_peek_error(NULL));
+			//close_stream(s);
+			free(widths);
+			return msg;
+		}
+		s = ns;
+	}
+
+	int line_sep = check_sep(line_sep_str, escape_enabled);
+	if (line_sep <= 0) // 0 is not ok
+		bailout("copy.new", SQLSTATE(42000) "invalid line separator");
+	int col_sep = check_sep(col_sep_str, escape_enabled);
+	if (col_sep <= 0) // 0 is not ok
+		bailout("copy.new", SQLSTATE(42000) "invalid column separator");
+	int quote_char = check_sep(quote_str, escape_enabled);
+	if (quote_char < 0 || strlen(quote_str) > 1) // 0 is ok
+		bailout("copy.new", SQLSTATE(42000) "invalid quote character");
+
+	line_sep = (line_sep==1)?line_sep_str[0]:0;
+	col_sep = (col_sep==1)?col_sep_str[0]:0;
+	quote_char = (quote_char==1)?quote_str[0]:0;
+
+	if (strNil(null_repr))
+		null_repr = NULL;
+
+	(void)mb; (void)cntxt;
+	BAT *b = COLnew(0, TYPE_bte, 1024, TRANSIENT);
+	if (!b)
+		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	b->T.sink = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
+	if (!b->T.sink) {
+		BBPreclaim(b);
+		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	reader *r = (reader*)b->T.sink;
+	r->col_sep = col_sep;
+	r->line_sep = line_sep;
+	r->quote_char = quote_char;
+	*res = (b->batCacheid);
+	r->can_jump = (!escape_enabled && !quote_char && r->col_sep_len == 1 && r->offset == 0);
+	BBPkeepref(b);
+end:
+	return msg;
+}
 
 static mel_func copy_init_funcs[] = {
  pattern("copy", "request_upload", COPYrequest_upload, true, "request MAPI file upload",
@@ -532,113 +773,104 @@ static mel_func copy_init_funcs[] = {
 		arg("", streams),
 		arg("offset", lng), arg("lines", lng),
 		arg("stoponemptyline", bit),
-		arg("linesep", str), arg("quote", str), arg("escape", bit),
+		arg("linesep", str), arg("quote", str), arg("escape", bit)
  )),
- command("copy", "read", COPYread, true, "Read 'block_size' bytes into 'block' from 's'",
+ pattern("copy", "new", COPYnew, true, "Create resource for shared reading from stream",
+	args(1, 12,
+		batarg("", bte),
+		arg("s", stream), arg("offset", lng), arg("count", lng), arg("sz", lng),
+		arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), arg("escape", bit),
+		arg("fixed_widths", str), arg("best_effort", bit)
+ )),
+ pattern("copy", "rows", COPYrows, true, "For best effort we use a selection vector too produce the correctly formated rows",
+	args(1, 1,
+		batarg("", oid)
+ )),
+ pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns",
 	args(1, 4,
-		arg("",streams),
-		arg("stream", streams), arg("block_size", lng), batarg("block", bte)
- )),
- command("copy", "skiplines", COPYskiplines, true, "Skip the first N lines in the buffer", args(1, 3,
-	arg("", lng),
-	batarg("block", bte),arg("toskip", lng)
- )),
- pattern("copy", "fixlines", COPYfixlines, true, "Copy bytes from 'right' to 'left' to complete the final line of 'left'. Return left line count and bytes copied",
-	args(3, 11,
-	batarg("new_left", bte), batarg("new_right", bte), arg("linecount", lng),
-	batarg("left", bte), batarg("right", bte), arg("linesep", str), arg("quote", str), arg("escape", bit), batarg("failures", oid), arg("startingrow", lng), arg("maxrows", lng)
- )),
- pattern("copy", "splitlines", COPYsplitlines, false, "Find the fields of the individual columns", args(1, 10,
 	batvararg("", int),
-	batarg("block", bte), arg("startingrow", lng), arg("linecount", lng), arg("col_sep", str), arg("line_sep", str), arg("quote", str), arg("null_repr", str), batarg("failures", oid), arg("escape", bit)
+	batarg("block", bte), batarg("rows", oid), arg("pipeline", ptr)
  )),
- command("copy", "trackrowids", COPYtrackrowids, true, "keep track of newly claimed rows", args(2, 6,
-	arg("", lng), batarg("", oid),
-	batarg("newrows", oid), arg("count", lng), arg("offset",oid), batarg("pos",oid)
- )),
- command("copy", "defer_close", COPYdefer_close_stream, true, "close stream when returned bat is destroyed", args(1,2,
- 	batarg("", bit),
-	arg("s", streams)
- )),
-
  pattern("copy", "parse_generic", COPYparse_generic, false, "Parse using GDK's atomFromStr", args(1, 8,
 	batargany("", 1),
-	batarg("block", bte), batarg("offsets", int), argany("type", 1), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), argany("type", 1), batarg("rows", oid), arg("colno", int), arg("colname", str)
+ )),
+ pattern("copy", "parse_float", COPYparse_float, false, "Parse using GDK's atomFromStr, handle optional seperator and skip char", args(1, 10,
+	batargany("", 1),
+	batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), argany("type", 1), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("sep", str), arg("skip", str)
  )),
  pattern("copy", "parse_string", COPYparse_string, false, "Parse as a string with given max width", args(1, 8,
 	batarg("", str),
-	batarg("block", bte), batarg("offsets", int), arg("maxlen", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("maxlen", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  pattern("copy", "parse_decimal", COPYparse_decimal_bte, false, "Parse as a decimal", args(1, 12,
 	 batarg("", bte),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", bte), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
  pattern("copy", "parse_decimal", COPYparse_decimal_sht, false, "Parse as a decimal", args(1, 12,
 	 batarg("", sht),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", sht), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
  pattern("copy", "parse_decimal", COPYparse_decimal_int, false, "Parse as a decimal", args(1, 12,
 	 batarg("", int),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", int), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
  pattern("copy", "parse_decimal", COPYparse_decimal_lng, false, "Parse as a decimal", args(1, 12,
 	 batarg("", lng),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", lng), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
  #ifdef HAVE_HGE
  pattern("copy", "parse_decimal", COPYparse_decimal_hge, false, "Parse as a decimal", args(1, 12,
 	 batarg("", hge),
-	 batarg("block", bte), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("digits", int), arg("scale", int), arg("type", hge), batarg("rows", oid), arg("colno", int), arg("colname", str), arg("dec_sep", str), arg("dec_skip", str)
  )),
 #endif
 
  pattern("copy", "parse_integer", COPYparse_integer_bte, false, "Parse as an integer", args(1, 8,
 	 batarg("", bte),
-	 batarg("block", bte), batarg("offsets", int), arg("type", bte), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", bte), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  pattern("copy", "parse_integer", COPYparse_integer_sht, false, "Parse as an integer", args(1, 8,
 	 batarg("", sht),
-	 batarg("block", bte), batarg("offsets", int), arg("type", sht), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", sht), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  pattern("copy", "parse_integer", COPYparse_integer_int, false, "Parse as an integer", args(1, 8,
 	 batarg("", int),
-	 batarg("block", bte), batarg("offsets", int), arg("type", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  pattern("copy", "parse_integer", COPYparse_integer_lng, false, "Parse as an integer", args(1, 8,
 	 batarg("", lng),
-	 batarg("block", bte), batarg("offsets", int), arg("type", lng), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", lng), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
  pattern("copy", "parse_integer", COPYparse_integer_hge, false, "Parse as an integer", args(1, 8,
 	 batarg("", hge),
-	 batarg("block", bte), batarg("offsets", int), arg("type", hge), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	 batarg("block", bte), arg("pipeline", ptr), batarg("offsets", int), arg("type", hge), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
 #endif
 
- pattern("copy", "scale", COPYscale_bte, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_bte, true, "scale by a power of 10", args(1, 6,
 	batarg("", bte),
-	batarg("values", bte), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("values", bte), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "scale", COPYscale_sht, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_sht, true, "scale by a power of 10", args(1, 6,
 	batarg("", sht),
-	batarg("values", sht), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("values", sht), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "scale", COPYscale_int, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_int, true, "scale by a power of 10", args(1, 6,
 	batarg("", int),
-	batarg("values", int), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("values", int), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "scale", COPYscale_lng, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_lng, true, "scale by a power of 10", args(1, 6,
 	batarg("", lng),
-	batarg("values", lng), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("values", lng), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- pattern("copy", "scale", COPYscale_hge, true, "scale by a power of 10", args(1, 7,
+ pattern("copy", "scale", COPYscale_hge, true, "scale by a power of 10", args(1, 6,
 	batarg("", hge),
-	batarg("values", hge), arg("scale", int), batarg("failures", oid), arg("startrow", lng), arg("colno", int), arg("colname", str)
+	batarg("values", hge), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
 #endif
-
-
 
 
  command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
@@ -647,24 +879,6 @@ static mel_func copy_init_funcs[] = {
  )),
  command("copy", "get_blocksize", COPYget_blocksize, true, "get the COPY block size", args(1, 1,
 	arg("", int)
- )),
-
- command("copy", "set_parallel", COPYset_parallel, true, "switch between different COPY INTO implementations", args(1, 2,
-	arg("", bit), arg("level", int)
- )),
- command("copy", "get_parallel", COPYget_parallel, true, "get the id of the current COPY INTO implementation", args(1, 1,
-	arg("", int)
- )),
-
-
- // for testing
- command("copy", "str2buf", COPYstr2buf, false, "turn str into bat[:bte]", args(1, 2,
-	batarg("buf", bte),
-	arg("", str),
- )),
- command("copy", "buf2str", COPYbuf2str, false, "turn bat[:bte] into str", args(1, 2,
-	arg("str", str),
-	batarg("", bte),
  )),
 
  { .imp=NULL }

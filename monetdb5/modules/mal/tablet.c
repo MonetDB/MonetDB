@@ -1529,8 +1529,8 @@ SQLproducer(void *p)
 	goto reportlackofinput;
 }
 
-static void
-create_rejects_table(Client cntxt)
+void
+COPYrejects_create(Client cntxt)
 {
 	MT_lock_set(&mal_contextLock);
 	if (cntxt->error_row == NULL) {
@@ -1587,7 +1587,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	};
 
 	/* create the reject tables */
-	create_rejects_table(task.cntxt);
+	COPYrejects_create(task.cntxt);
 	if (task.cntxt->error_row == NULL || task.cntxt->error_fld == NULL
 		|| task.cntxt->error_msg == NULL || task.cntxt->error_input == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil,
@@ -1964,7 +1964,7 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *msg = getArgReference_bat(stk, pci, 2);
 	bat *inp = getArgReference_bat(stk, pci, 3);
 
-	create_rejects_table(cntxt);
+	COPYrejects_create(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
 	MT_lock_set(&errorlock);
