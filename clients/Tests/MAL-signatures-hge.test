@@ -45009,98 +45009,108 @@ unsafe command copy.get_blocksize():int
 COPYget_blocksize;
 get the COPY block size
 copy
+new
+unsafe pattern copy.new(X_0:stream, X_1:lng, X_2:lng, X_3:lng, X_4:str, X_5:str, X_6:str, X_7:str, X_8:bit, X_9:str, X_10:bit):bat[:bte]
+COPYnew;
+Create resource for shared reading from stream
+copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:bte, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:bte]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:bte, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:bte]
 COPYparse_decimal_bte;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:hge, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:hge]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:hge, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:hge]
 COPYparse_decimal_hge;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:int, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:int]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:int, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:int]
 COPYparse_decimal_int;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:lng, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:lng]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:lng, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:lng]
 COPYparse_decimal_lng;
 Parse as a decimal
 copy
 parse_decimal
-pattern copy.parse_decimal(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:int, X_4:sht, X_5:bat[:oid], X_6:lng, X_7:int, X_8:str, X_9:str, X_10:str):bat[:sht]
+pattern copy.parse_decimal(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:int, X_5:sht, X_6:bat[:oid], X_7:int, X_8:str, X_9:str, X_10:str):bat[:sht]
 COPYparse_decimal_sht;
 Parse as a decimal
 copy
+parse_float
+pattern copy.parse_float(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:any_1, X_4:bat[:oid], X_5:int, X_6:str, X_7:str, X_8:str):bat[:any_1]
+COPYparse_float;
+Parse using GDK's atomFromStr, handle optional seperator and skip char
+copy
 parse_generic
-pattern copy.parse_generic(X_0:bat[:bte], X_1:bat[:int], X_2:any_1, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:any_1]
+pattern copy.parse_generic(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:any_1, X_4:bat[:oid], X_5:int, X_6:str):bat[:any_1]
 COPYparse_generic;
 Parse using GDK's atomFromStr
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:bte, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:bte]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:bte, X_4:bat[:oid], X_5:int, X_6:str):bat[:bte]
 COPYparse_integer_bte;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:hge, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:hge]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:hge, X_4:bat[:oid], X_5:int, X_6:str):bat[:hge]
 COPYparse_integer_hge;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:int]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:bat[:oid], X_5:int, X_6:str):bat[:int]
 COPYparse_integer_int;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:lng, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:lng]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:lng, X_4:bat[:oid], X_5:int, X_6:str):bat[:lng]
 COPYparse_integer_lng;
 Parse as an integer
 copy
 parse_integer
-pattern copy.parse_integer(X_0:bat[:bte], X_1:bat[:int], X_2:sht, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:sht]
+pattern copy.parse_integer(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:sht, X_4:bat[:oid], X_5:int, X_6:str):bat[:sht]
 COPYparse_integer_sht;
 Parse as an integer
 copy
 parse_string
-pattern copy.parse_string(X_0:bat[:bte], X_1:bat[:int], X_2:int, X_3:bat[:oid], X_4:lng, X_5:int, X_6:str):bat[:str]
+pattern copy.parse_string(X_0:bat[:bte], X_1:ptr, X_2:bat[:int], X_3:int, X_4:bat[:oid], X_5:int, X_6:str):bat[:str]
 COPYparse_string;
 Parse as a string with given max width
-copy
-read
-unsafe command copy.read(X_0:streams, X_1:lng, X_2:bat[:bte]):streams
-COPYread;
-Read 'block_size' bytes into 'block' from 's'
 copy
 request_upload
 unsafe pattern copy.request_upload(X_0:str, X_1:bit):streams
 COPYrequest_upload;
 request MAPI file upload
 copy
+rows
+unsafe pattern copy.rows():bat[:oid]
+COPYrows;
+For best effort we use a selection vector too produce the correctly formated rows
+copy
 scale
-unsafe pattern copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:bte]
+unsafe pattern copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:bte]
 COPYscale_bte;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:hge]
+unsafe pattern copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:hge]
 COPYscale_hge;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:int]
+unsafe pattern copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:int]
 COPYscale_int;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:lng]
+unsafe pattern copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:lng]
 COPYscale_lng;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:lng, X_4:int, X_5:str):bat[:sht]
+unsafe pattern copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:sht]
 COPYscale_sht;
 scale by a power of 10
 copy
@@ -45110,7 +45120,7 @@ COPYset_blocksize;
 set the COPY block size
 copy
 splitlines
-pattern copy.splitlines(X_0:bat[:bte], X_1:lng, X_2:lng, X_3:str, X_4:str, X_5:str, X_6:str, X_7:bat[:oid], X_8:bit):bat[:int]...
+pattern copy.splitlines(X_0:bat[:bte], X_1:bat[:oid], X_2:ptr):bat[:int]...
 COPYsplitlines;
 Find the fields of the individual columns
 csv
@@ -46485,7 +46495,7 @@ LALGderive;
 Sub Group input.
 group
 group
-command group.group(X_0:ptr, X_1:bat[:any_2]) (X_2:bat[:oid], X_3:bat[:any_1])
+command group.group(X_0:ptr, X_1:bat[:any_1]) (X_2:bat[:oid], X_3:bat[:any_1])
 LALGgroup;
 Group input.
 group
