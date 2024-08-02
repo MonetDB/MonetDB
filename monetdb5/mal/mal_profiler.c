@@ -232,7 +232,7 @@ prepareNonMalEvent(Client cntxt, enum event_phase phase, ulng clk, ulng *tstart,
 }
 
 static inline str
-format_val2json(const ValPtr res)
+format_val2json(const Client c, const ValPtr res)
 {
 	char *buf = NULL;
 	size_t sz = 0;
@@ -267,7 +267,8 @@ format_val2json(const ValPtr res)
 
 	ValRecord val;
 	/* TODO use ta */
-	if (VALinit(NULL, &val, TYPE_str, buf) == NULL) {
+	ma_open(c->ta);
+	if (VALinit(c->ta, &val, TYPE_str, buf) == NULL) {
 		GDKfree(buf);
 		return NULL;
 	}
@@ -277,6 +278,7 @@ format_val2json(const ValPtr res)
 	char *buf2;
 	buf2 = VALformat(&val);
 	VALclear(&val);
+	ma_close(c->ta);
 
 	return buf2;
 }
@@ -503,7 +505,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					GDKfree(tname);
 					if (!ok)
 						goto cleanup_and_exit;
-					cv = format_val2json(&stk->stk[getArg(pci, j)]);
+					cv = format_val2json(cntxt, &stk->stk[getArg(pci, j)]);
 					if (cv)
 						ok = logadd(&logbuf, ",\"value\":%s", cv);
 					GDKfree(cv);
