@@ -1358,7 +1358,7 @@ HASHlist(Hash *h, BUN i)
 void
 HASHdestroy(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *hs;
 		MT_rwlock_wrlock(&b->thashlock);
 		hs = b->thash;
@@ -1371,7 +1371,7 @@ HASHdestroy(BAT *b)
 void
 HASHfree(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *h;
 		MT_rwlock_wrlock(&b->thashlock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {

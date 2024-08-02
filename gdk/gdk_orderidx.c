@@ -525,7 +525,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 void
 OIDXfree(BAT *b)
 {
-	if (b && b->torderidx) {
+	if (b) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);
@@ -545,7 +545,7 @@ OIDXfree(BAT *b)
 void
 OIDXdestroy(BAT *b)
 {
-	if (b && b->torderidx) {
+	if (b) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);

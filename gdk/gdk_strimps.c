@@ -1012,7 +1012,7 @@ STRMPincref(Strimps *strimps)
 void
 STRMPdestroy(BAT *b)
 {
-	if (b && b->tstrimps) {
+	if (b) {
 		MT_lock_set(&b->batIdxLock);
 		if (b->tstrimps == (Strimps *)1) {
 			b->tstrimps = NULL;
@@ -1033,7 +1033,7 @@ STRMPdestroy(BAT *b)
 void
 STRMPfree(BAT *b)
 {
-	if (b && b->tstrimps) {
+	if (b) {
 		Strimps *s;
 		MT_lock_set(&b->batIdxLock);
 		if ((s = b->tstrimps) != NULL && s != (Strimps *)1 && s != (Strimps *)2) {
