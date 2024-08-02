@@ -349,10 +349,14 @@ static BoundingBox *
 boundingBoxLines(GeoLines lines)
 {
 	CartPoint3D c;
-	BoundingBox *bb = GDKzalloc(sizeof(BoundingBox));
+	BoundingBox *bb;
 
 	//If there are no segments, return NULL
 	if (lines.pointCount == 0)
+		return NULL;
+
+	bb = GDKzalloc(sizeof(BoundingBox));
+	if (bb == NULL)
 		return NULL;
 
 	c = geo2cartFromDegrees(lines.points[0]);
@@ -375,26 +379,12 @@ boundingBoxContainsPoint(BoundingBox bb, CartPoint3D pt)
 	return bb.xmin <= pt.x && bb.xmax >= pt.x && bb.ymin <= pt.y && bb.ymax >= pt.y && bb.zmin <= pt.z && bb.zmax >= pt.z;
 }
 
-static BoundingBox*
-boundingBoxCopy(BoundingBox bb)
-{
-	//TODO Malloc fail?
-	BoundingBox *copy = GDKmalloc(sizeof(BoundingBox));
-	copy->xmin = bb.xmin;
-	copy->xmax = bb.xmax;
-	copy->ymin = bb.ymin;
-	copy->ymax = bb.ymax;
-	copy->zmin = bb.zmin;
-	copy->zmax = bb.zmax;
-	return copy;
-}
-
 /* Returns a point outside of the polygon's bounding box, for Point-In-Polygon calculation */
 static GeoPoint
 pointOutsidePolygon(GeoPolygon polygon)
 {
-	BoundingBox bb = *(polygon.bbox);
-	BoundingBox *bb2 = boundingBoxCopy(*(polygon.bbox));
+	BoundingBox bb = *polygon.bbox;
+	BoundingBox bb2 = *polygon.bbox;
 
 	//TODO: From POSTGIS -> CHANGE
 	double grow = M_PI / 180.0 / 60.0;
@@ -446,9 +436,8 @@ pointOutsidePolygon(GeoPolygon polygon)
 		corners[7].z = bb.zmax;
 
 		for (int i = 0; i < 8; i++)
-			if (!boundingBoxContainsPoint(*bb2, corners[i])) {
+			if (!boundingBoxContainsPoint(bb2, corners[i])) {
 				CartPoint3D pt_cart = corners[i];
-				GDKfree(bb2);
 				return rad2DegPoint(cart2geo(pt_cart));
 			}
 		grow *= 2.0;
