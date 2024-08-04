@@ -1670,7 +1670,7 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 static sql_rel * rel_unnest_dependent(mvc *sql, sql_rel *rel);
 
 static sql_rel *
-push_up_table(mvc *sql, sql_rel *rel, list *ad)
+push_up_table(mvc *sql, sql_rel *rel)
 {
 	(void)sql;
 	if (rel && (is_join(rel->op) || is_semi(rel->op)) && is_dependent(rel)) {
@@ -1678,33 +1678,29 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 		sql_exp *id = NULL;
 
 		/* push d into function */
-		if (d && is_distinct_set(sql, d, ad) && tf && is_base(tf->op)) {
+		/* change join's into cross apply, ie tf(rel) -> (results tf, row-id). */
+		if (d && tf && is_base(tf->op)) {
 			if (tf->l) {
 				sql_rel *l = tf->l;
 
 				assert(tf->flag == TABLE_FROM_RELATION || !l->l);
-				if (l->l) {
-					sql_exp *tfe = tf->r;
-					list *ops = tfe->l;
-					if (!(rel->l = d = rel_add_identity(sql, d, &id)))
-						return NULL;
-					id = exp_ref(sql, id);
-					list *exps = rel_projections(sql, l, NULL, 1, 1);
-					list_append(exps, id);
-					l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
-					set_dependent(l);
-					set_processed(l);
-					tf->l = rel_unnest_dependent(sql, l);
-					tf->l = rel_project(sql->sa, tf->l, exps);
-					id = exp_ref(sql, id);
-					list_append(ops, id);
-					id = exp_ref(sql, id);
-				} else {
-					l->l = rel_dup(d);
-					if (is_project(l->op))
-						rel_bind_vars(sql, l, l->exps);
-				}
+				sql_exp *tfe = tf->r;
+				list *ops = tfe->l;
+				if (!(rel->l = d = rel_add_identity(sql, d, &id)))
+					return NULL;
+				id = exp_ref(sql, id);
+				list *exps = rel_projections(sql, l, NULL, 1, 1);
+				list_append(exps, id);
+				l = tf->l = rel_crossproduct(sql->sa, rel_dup(d), l, op_join);
+				set_dependent(l);
+				set_processed(l);
+				tf->l = rel_unnest_dependent(sql, l);
+				tf->l = rel_project(sql->sa, tf->l, exps);
+				id = exp_ref(sql, id);
+				list_append(ops, id);
+				id = exp_ref(sql, id);
 			} else {
+				assert(0);
 				tf->l = rel_dup(d);
 			}
 			/* we should add the identity in the resulting projection list */
@@ -1716,6 +1712,7 @@ push_up_table(mvc *sql, sql_rel *rel, list *ad)
 				list_prepend(tf->exps, ne);
 				ne = exp_ref(sql, ne);
 
+				/* join on id */
 				ne = exp_compare(sql->sa, id, ne, cmp_equal);
 				if (!rel->exps)
 					rel->exps = sa_list(sql->sa);
@@ -1856,8 +1853,8 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				return rel_unnest_dependent(sql, rel);
 			}
 
-			if (r && is_base(r->op) && is_distinct_set(sql, l, ad)) {
-				rel = push_up_table(sql, rel, ad);
+			if (r && is_base(r->op)) {
+				rel = push_up_table(sql, rel); /* rewrite into cross apply */
 				return rel;
 			}
 
