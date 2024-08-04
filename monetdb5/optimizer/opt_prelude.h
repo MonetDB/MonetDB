@@ -268,6 +268,7 @@ mal_export const char *transactionRef;
 mal_export const char *transaction_releaseRef;
 mal_export const char *transaction_rollbackRef;
 mal_export const char *umaskRef;
+mal_export const char *unionfuncRef;
 mal_export const char *uniqueRef;
 mal_export const char *unlockRef;
 mal_export const char *updateRef;

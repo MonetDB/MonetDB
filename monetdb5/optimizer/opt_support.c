@@ -580,6 +580,14 @@ isMultiplex(InstrPtr p)
 			&& getFunctionId(p) == multiplexRef);
 }
 
+inline int
+isUnion(InstrPtr p)
+{
+	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef)
+			&& getFunctionId(p) == multiplexRef) ||
+		   (getModuleId(p) == sqlRef && getFunctionId(p) == unionfuncRef);
+}
+
 int
 isFragmentGroup(InstrPtr p)
 {

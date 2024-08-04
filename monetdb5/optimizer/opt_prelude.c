@@ -268,6 +268,7 @@ const char *transactionRef;
 const char *transaction_releaseRef;
 const char *transaction_rollbackRef;
 const char *umaskRef;
+const char *unionfuncRef;
 const char *uniqueRef;
 const char *unlockRef;
 const char *updateRef;
@@ -528,6 +529,7 @@ optimizerInit(void)
 	transaction_releaseRef = putName("transaction_release");
 	transaction_rollbackRef = putName("transaction_rollback");
 	umaskRef = putName("umask");
+	unionfuncRef = putName("unionfunc");
 	uniqueRef = putName("unique");
 	unlockRef = putName("unlock");
 	updateRef = putName("update");
