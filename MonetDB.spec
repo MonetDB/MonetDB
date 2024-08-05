@@ -204,6 +204,12 @@ functionality of MonetDB.
 %{_includedir}/monetdb/monet*.h
 %{_libdir}/libbat.so
 %{_libdir}/pkgconfig/monetdb-gdk.pc
+%dir %{_datadir}/monetdb
+%dir %{_datadir}/monetdb/cmake
+%{_datadir}/monetdb/cmake/gdkTargets*.cmake
+%{_datadir}/monetdb/cmake/matomicTargets.cmake
+%{_datadir}/monetdb/cmake/mstringTargets.cmake
+%{_datadir}/monetdb/cmake/monetdb_config_headerTargets.cmake
 
 %package stream
 Summary: MonetDB stream library
@@ -249,6 +255,7 @@ library.
 %{_includedir}/monetdb/stream.h
 %{_includedir}/monetdb/stream_socket.h
 %{_libdir}/pkgconfig/monetdb-stream.pc
+%{_datadir}/monetdb/cmake/streamTargets*.cmake
 
 %package client-lib
 Summary: MonetDB - Monet Database Management System Client Programs
@@ -325,6 +332,7 @@ This package contains the files needed to develop with the
 %{_includedir}/monetdb/mapi*.h
 %{_includedir}/monetdb/msettings.h
 %{_libdir}/pkgconfig/monetdb-mapi.pc
+%{_datadir}/monetdb/cmake/mapiTargets*.cmake
 
 %package client-odbc
 Summary: MonetDB ODBC driver
@@ -612,6 +620,7 @@ used from the MAL level.
 %{_includedir}/monetdb/mel.h
 %{_libdir}/libmonetdb5.so
 %{_libdir}/pkgconfig/monetdb5.pc
+%{_datadir}/monetdb/cmake/monetdb5Targets*.cmake
 
 %package SQL-server5
 Summary: MonetDB5 SQL server modules
@@ -667,6 +676,7 @@ Summary: MonetDB5 SQL server modules
 Group: Applications/Databases
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
 Requires: MonetDB5-server-devel%{?_isa} = %{version}-%{release}
+Requires: %{name}-embedded-devel%{?_isa} = %{version}-%{release}
 
 %description SQL-server5-devel
 MonetDB is a database management system that is developed from a
@@ -683,6 +693,8 @@ This package contains files needed to develop SQL extensions.
 %{_includedir}/monetdb/rel_*.h
 %{_includedir}/monetdb/sql*.h
 %{_includedir}/monetdb/store_*.h
+%{_datadir}/monetdb/cmake/MonetDBConfig*.cmake
+%{_datadir}/monetdb/cmake/sqlTargets*.cmake
 
 %package embedded
 Summary: MonetDB as an embedded library
@@ -724,6 +736,7 @@ program that uses MonetDB as an embeddable library.
 %{_libdir}/libmonetdbe.so
 %{_includedir}/monetdb/monetdbe.h
 %{_libdir}/pkgconfig/monetdbe.pc
+%{_datadir}/monetdb/cmake/monetdbeTargets*.cmake
 
 %package embedded-tests
 Summary: MonetDBe tests package
@@ -898,7 +911,6 @@ rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5/lib_opt_sql_append.so
 rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5/lib_udf*.so
 rm -f "${RPM_BUILD_ROOT}"%{_bindir}/monetdb_mtest.sh
-rm -rf "${RPM_BUILD_ROOT}"%{_datadir}/monetdb # /cmake
 
 if [ -x /usr/sbin/hardlink ]; then
     /usr/sbin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
