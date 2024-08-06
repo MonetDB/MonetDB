@@ -182,15 +182,14 @@ gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
 static inline const char *
 GDKstrerror(int errnum, char *buf, size_t buflen)
 {
-#ifdef HAVE_STRERROR_S
-	if (strerror_s(buf, buflen, errnum) == 0)
-		return buf;
-#else
+#if !defined(_GNU_SOURCE) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
 	if (strerror_r(errnum, buf, buflen) == 0)
 		return buf;
-#endif
 	snprintf(buf, buflen, "Unknown error %d", errnum);
 	return buf;
+#else
+	return strerror_r(errnum, buf, buflen);
+#endif
 }
 
 #endif /* GDK_POSIX_H */
