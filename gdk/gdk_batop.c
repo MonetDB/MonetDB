@@ -3066,9 +3066,11 @@ BATcount_no_nil(BAT *b, BAT *s)
 
 	hseq = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (b->tnonil)
-		return ci.ncand;
 	BATiter bi = bat_iterator(b);
+	if (bi.nonil) {
+		bat_iterator_end(&bi);
+		return ci.ncand;
+	}
 	p = bi.base;
 	t = ATOMbasetype(bi.type);
 	switch (t) {
