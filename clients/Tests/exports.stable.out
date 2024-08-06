@@ -1322,6 +1322,7 @@ void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 void typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int p_idx, int silent);
 const char *umaskRef;
+const char *unionfuncRef;
 const char *uniqueRef;
 const char *unlockRef;
 const char *updateRef;

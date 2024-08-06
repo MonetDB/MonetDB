@@ -2251,14 +2251,10 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 				goto doreturn;
 			}
 			for (int64_t i = 0; i < rows; i++) {
-				if (mapi_fetch_row(hdl) == 0) {
-					mapi_close_handle(hdl);
-					fprintf(stderr, "unexepcted error\n");
-					goto doreturn;
-				}
-				tables[i].schema = strdup(mapi_fetch_field(hdl, 0));
-				tables[i].table = strdup(mapi_fetch_field(hdl, 1));
-				if (tables[i].schema == NULL || tables[i].table == NULL) {
+				tables[i].schema = tables[i].table = NULL;
+				if (mapi_fetch_row(hdl) == 0 ||
+					(tables[i].schema = strdup(mapi_fetch_field(hdl, 0))) == NULL ||
+					(tables[i].table = strdup(mapi_fetch_field(hdl, 1))) == NULL) {
 					do {
 						free(tables[i].schema);
 						free(tables[i].table);

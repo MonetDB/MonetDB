@@ -846,6 +846,7 @@ canditer_mask_next(const struct canditer *ci, oid o, bool next)
 				o = 31;
 				if (p == 0)
 					return oid_nil;
+				p--;
 			} else {
 				o--;
 			}
