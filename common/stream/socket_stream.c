@@ -73,10 +73,17 @@ socket_getoob(const stream *s)
 		for (;;) {
 			int atmark = 0;
 			char flush[100];
+#ifdef HAVE_SOCKATMARK
+			if ((atmark = sockatmark(fd)) < 0) {
+				perror("sockatmark");
+				break;
+			}
+#else
 			if (ioctlsocket(fd, SIOCATMARK, &atmark) < 0) {
 				perror("ioctl");
 				break;
 			}
+#endif
 			if (atmark)
 				break;
 			if (recv(fd, flush, sizeof(flush), 0) < 0) {
@@ -306,10 +313,17 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 					for (;;) {
 						int atmark = 0;
 						char flush[100];
+#ifdef HAVE_SOCKATMARK
+						if ((atmark = sockatmark(s->stream_data.s)) < 0) {
+							perror("sockatmark");
+							break;
+						}
+#else
 						if (ioctlsocket(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
 							perror("ioctl");
 							break;
 						}
+#endif
 						if (atmark)
 							break;
 						if (recv(s->stream_data.s, flush, sizeof(flush), 0) < 0) {
@@ -362,10 +376,17 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 				for (;;) {
 					int atmark = 0;
 					char flush[100];
+#ifdef HAVE_SOCKATMARK
+					if ((atmark = sockatmark(s->stream_data.s)) < 0) {
+						perror("sockatmark");
+						break;
+					}
+#else
 					if (ioctlsocket(s->stream_data.s, SIOCATMARK, &atmark) < 0) {
 						perror("ioctl");
 						break;
 					}
+#endif
 					if (atmark)
 						break;
 					if (recv(s->stream_data.s, flush, sizeof(flush), 0) < 0) {
