@@ -5117,11 +5117,11 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 					}
 				}
-				GDKfree(nstk);
+				freeStack(nstk);
 			}
 		}
 finalize:
-		GDKfree(env);
+		freeStack(env);
 		if (nmb)
 			freeMalBlk(nmb);
 		if (omb)
