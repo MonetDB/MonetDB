@@ -1786,12 +1786,6 @@ mapi_new(msettings *settings)
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
 		return NULL;
-	if (settings == NULL)
-		settings = msettings_create();
-	if (settings == NULL) {
-		free(mid);
-		return NULL;
-	}
 
 	/* then fill in some details */
 	*mid = MapiStructDefaults;
@@ -1799,6 +1793,13 @@ mapi_new(msettings *settings)
 	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
 		return NULL;
+	}
+	if (settings == NULL) {
+		settings = msettings_create();
+		if (settings == NULL) {
+			mapi_destroy(mid);
+			return NULL;
+		}
 	}
 	mid->settings = settings;
 	mid->blk.buf[0] = 0;
