@@ -159,13 +159,12 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		s++;
 	}
 
-	for (int i = 0; *s && i < integer_digits; s++) {
+	for (; *s; s++) {
 		if (!isdigit((unsigned char) *s))
 			break;
 		res *= 10;
 		res += (*s - '0');
-		if (res)
-			i++;
+		integer_digits-=(res)?1:0;
 	}
 	if (*s == parms->sep) {
 		s++;
@@ -181,8 +180,8 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 		res *= 10;
 		scale--;
 	}
-	if (*s) {
-		if (isdigit(*s))
+	if (*s || integer_digits < 0) {
+		if (integer_digits < 0 || isdigit(*s))
 			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
 		else
 			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
