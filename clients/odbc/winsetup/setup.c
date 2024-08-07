@@ -110,6 +110,118 @@ struct data {
 };
 
 static void
+TestConnection(HWND hwndDlg, struct data *datap)
+{
+	SQLHANDLE env;
+	SQLHANDLE dbc;
+	SQLRETURN ret;
+	char * boxtitle = "Test Connection to MonetDB server";
+
+	if (SQLAllocHandle(SQL_HANDLE_ENV, NULL, &env) != SQL_SUCCESS) {
+		MessageBox(hwndDlg, "Failed to allocate ODBC environment handle", boxtitle, MB_ICONERROR);
+		return;
+	}
+
+	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
+	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
+	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+#define strSize 16384
+		int pos = 0;
+		char inStr[strSize];
+		char outStr[strSize];
+		SQLSMALLINT outLen;
+
+		// Note: we should construct the connection string WITHOUT the DSN=..; part,
+		// but currently the dsn is required by MonetDB SQLDriverConnect(), so must add it.
+		if (datap->dsn && strlen(datap->dsn) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "DSN=%s;", datap->dsn);
+		}
+		if (datap->uid && strlen(datap->uid) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "UID=%s;", datap->uid);
+		}
+		if (datap->pwd && strlen(datap->pwd) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "PWD=%s;", datap->pwd);
+		}
+		if (datap->host && strlen(datap->host) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "HOST=%s;", datap->host);
+		}
+		if (datap->port && strlen(datap->port) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "PORT=%s;", datap->port);
+		}
+		if (datap->database && strlen(datap->database) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "DATABASE=%s;", datap->database);
+		}
+		// Only when use_tls is "on", add TLS parameters
+		if (datap->use_tls && strcmp(datap->use_tls, "on") == 0) {
+			if (datap->servercert && strlen(datap->servercert) > 0) {
+				pos += snprintf(inStr + pos, strSize - pos, "CERT=%s;", datap->servercert);
+			}
+			if (datap->servercerthash && strlen(datap->servercerthash) > 0) {
+				pos += snprintf(inStr + pos, strSize - pos, "CERTHASH=%s;", datap->servercerthash);
+			}
+			if (datap->clientkey && strlen(datap->clientkey) > 0) {
+				pos += snprintf(inStr + pos, strSize - pos, "CLIENTKEY=%s;", datap->clientkey);
+			}
+			if (datap->clientcert && strlen(datap->clientcert) > 0) {
+				pos += snprintf(inStr + pos, strSize - pos, "CLIENTCERT=%s;", datap->clientcert);
+			}
+		}
+		// Advanced settings
+		if (datap->schema && strlen(datap->schema) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "SCHEMA=%s;", datap->schema);
+		}
+		if (datap->logintimeout && strlen(datap->logintimeout) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "LOGINTIMEOUT=%s;", datap->logintimeout);
+		}
+		if (datap->replytimeout && strlen(datap->replytimeout) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "REPLYTIMEOUT=%s;", datap->replytimeout);
+		}
+		if (datap->replysize && strlen(datap->replysize) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "REPLYSIZE=%s;", datap->replysize);
+		}
+		// in ODBC autocommit is on by default. Only when set to off, add it to the connection string.
+		if (datap->autocommit && strcmp(datap->autocommit, "off") == 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "AUTOCOMMIT=%s;", datap->autocommit);
+		}
+		if (datap->timezone && strlen(datap->timezone) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "TIMEZONE=%s;", datap->timezone);
+		}
+		if (datap->logfile && strlen(datap->logfile) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "LOGFILE=%s;", datap->logfile);
+		}
+		// test the constructed connection string
+		ret = SQLDriverConnect(dbc, hwndDlg, (SQLCHAR *) inStr, SQL_NTS, (SQLCHAR *) outStr, strSize, &outLen, SQL_DRIVER_NOPROMPT);
+		switch (ret) {
+			case SQL_SUCCESS:
+			case SQL_SUCCESS_WITH_INFO:
+				MessageBox(hwndDlg, "Connection successful", boxtitle, MB_OK);
+				ret = SQLDisconnect(dbc);
+				break;
+			case SQL_ERROR:
+			default:
+			{
+				SQLCHAR state[6];
+				SQLINTEGER errnr;
+				SQLCHAR msg[2560];
+				SQLSMALLINT msglen;
+				char buf[2600 + strSize + strSize];
+				// get Error msg
+				ret = SQLGetDiagRec(SQL_HANDLE_DBC, dbc, 1, state, &errnr, msg, sizeof(msg), &msglen);
+				sprintf(buf, "Connection failed!\n\nError message: %s\n\nSQLstate %s, Errnr %d\n\nConnectString used: %s\n\nReturned ConnectString: %s",
+						(char *) msg, (char *) state, (int) errnr, inStr, outStr);
+				MessageBox(hwndDlg, buf, boxtitle, MB_ICONERROR);
+				break;
+			}
+		}
+		ret = SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+#undef strSize
+	} else {
+		MessageBox(hwndDlg, "Failed to allocate ODBC connection handle", boxtitle, MB_ICONERROR);
+	}
+	ret = SQLFreeHandle(SQL_HANDLE_ENV, env);
+}
+
+static void
 MergeFromProfileString(const char *dsn, char **datap, const char *entry, const char *defval)
 {
 	char buf[2048];
@@ -186,6 +298,8 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					free(datap->dsn);
 				datap->dsn = strdup(buf);
 			}
+			/* fall through */
+		case IDC_BUTTON_TEST:
 			/* validate entered string values */
 			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
 			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
@@ -272,13 +386,15 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->logfile)
 				free(datap->logfile);
 			datap->logfile = strdup(buf);
-			/* fall through */
+
+			if (LOWORD(wParam) == IDC_BUTTON_TEST) {
+				TestConnection(hwndDlg, datap);
+				return TRUE;
+			}
+
+			/* fall through in case of IDOK */
 		case IDCANCEL:
 			EndDialog(hwndDlg, LOWORD(wParam));
-			return TRUE;
-		case IDC_BUTTON_TEST:
-			// TODO call SQLDriverConnect()
-			MessageBox(hwndDlg, "Test Connection not yet implemented", NULL, MB_ICONERROR);
 			return TRUE;
 		case IDC_BUTTON_HELP:
 			// TODO invoke webbrowser with url to webpage decribing this dialog.
@@ -322,6 +438,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.host = NULL;
 	data.port = NULL;
 	data.database = NULL;
+	// Advanced settings
 	data.logfile = NULL;
 	data.schema = NULL;
 	data.logintimeout = NULL;

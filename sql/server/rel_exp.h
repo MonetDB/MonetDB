@@ -160,6 +160,7 @@ extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
+/* exp_is_true/false etc return true if the expression is true, on unknown etc false is returned */
 extern int exp_is_true(sql_exp *e);
 extern int exp_is_false(sql_exp *e);
 extern int exp_is_zero(sql_exp *e);
@@ -178,8 +179,9 @@ extern sql_exp *exp_rel_label(mvc *sql, sql_exp *e);
 extern int exp_rel_depth(sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
-extern int exps_have_unsafe(list *exps, int allow_identity);
-extern int exp_unsafe(sql_exp *e, int allow_identity);
+extern bool exps_have_unsafe(list *exps, bool allow_identity, bool card /* on true check for possible cardinality related
+																		  unsafeness (conversions for example) */);
+extern bool exp_unsafe(sql_exp *e, bool allow_identity, bool card);
 extern int exp_has_sideeffect(sql_exp *e);
 
 extern sql_exp *exps_find_prop(list *exps, rel_prop kind);

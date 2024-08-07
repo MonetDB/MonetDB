@@ -94,6 +94,8 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 		c->rd = 0;
+		if (c->len == 0)
+			Sleep(100);
 		if (c->len > 0 && c->wbuf[0] == 26) {	/* control-Z */
 			c->len = 0;
 			s->eof = true;

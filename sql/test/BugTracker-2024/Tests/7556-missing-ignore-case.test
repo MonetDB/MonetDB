@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE  t0 ( c1 INTEGER  )
+
+statement ok
+CREATE VIEW v0(c0) AS SELECT NOT('a') FROM t0 ORDER BY (1)
+
+statement error
+SELECT v0.c0 FROM v0, t0 WHERE (STARTSWITH(t0.c1, v0.c0, v0.c0))
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0

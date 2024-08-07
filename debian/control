@@ -274,7 +274,8 @@ Package: monetdb-sql-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  monetdb-server-dev (= ${source:Version}),
- monetdb-sql (= ${source:Version})
+ monetdb-sql (= ${source:Version})),
+ libmonetdbe-dev (= ${source:Version})
 Replaces: monetdb5-sql-dev (<< 11.50.0)
 Break: monetdb5-sql-dev (<< 11.50.0)
 Description: MonetDB SQL support

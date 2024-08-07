@@ -49,7 +49,10 @@ lazy
 dog
 
 statement ok
-call shrink('sys','vac1')
+call vacuum('sys','vac1','i')
+
+statement ok
+call vacuum('sys','vac1','s')
 
 query IT rowsort
 select * from vac1
@@ -77,7 +80,10 @@ statement ok
 delete from vac1 where i = 8
 
 statement ok
-call shrink('sys','vac1')
+call vacuum('sys','vac1','i')
+
+statement ok
+call vacuum('sys','vac1','s')
 
 query IT rowsort
 select * from vac1
@@ -103,7 +109,10 @@ statement ok
 delete from vac1 where i = 2
 
 statement ok
-call shrink('sys','vac1')
+call vacuum('sys','vac1','i')
+
+statement ok
+call vacuum('sys','vac1','s')
 
 query IT rowsort
 select * from vac1
@@ -127,7 +136,10 @@ statement ok
 delete from vac1 where i > 6
 
 statement ok
-call vacuum('sys','vac1')
+call vacuum('sys','vac1','i')
+
+statement ok
+call vacuum('sys','vac1','s')
 
 query IT rowsort
 select * from vac1

@@ -99,12 +99,12 @@ README-Fedora .... Which version
 Windows
 =======
 
-Run as Administrator::
+Start cmd.exe in "Run as administrator" mode and run commands::
 
   @"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
   choco feature enable -n allowGlobalConfirmation
-  choco install ActivePerl ant ruby python3 hg git winflexbison
-  cinst VisualStudio2019community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add microsoft.visualstudio.component.vc.cmake.project --add microsoft.visualstudio.component.vc.ATLMFC"
+  choco install ActivePerl ant ruby python3 hg git winflexbison3
+  choco install VisualStudio2022community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add microsoft.visualstudio.component.vc.cmake.project"
   refreshenv
 
   cd \
@@ -114,19 +114,19 @@ Run as Administrator::
   vcpkg integrate install
   # needed for 64 bits (with the available python being 64 bit this is needed)
   set VCPKG_DEFAULT_TRIPLET=x64-windows
-  vcpkg install libiconv bzip2 geos libxml2 pcre pcre2 zlib getopt
+  vcpkg install libiconv bzip2 geos libxml2 pcre pcre2 zlib getopt openssl
 
 To compile MonetDB (as normal user)::
 
   hg clone https://dev.monetdb.org/hg/MonetDB/
 
-  "c:\Program Files (x86)\Microsoft Visual Studio\2019\Community\common7\tools\vsdevcmd.bat"
-  "c:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+  "c:\Program Files\Microsoft Visual Studio\2022\Community\common7\tools\vsdevcmd.bat"
+  "c:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 
   cd MonetDB
   mkdir build
   cd build
-  cmake -G "Visual Studio 16 2019" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 ..
+  cmake -G "Visual Studio 17 2022" -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=%HOME%\install -A x64 ..
   cmake --build . --target ALL_BUILD --config Release
   cmake --build . --target INSTALL --config Release
   set PATH=%HOME%\install\bin;%HOME%\install\lib;%HOME%\install\lib\monetdb5;\vcpkg\installed\x64-windows\bin;\vcpkg\installed\x64-windows\debug\bin;%PATH%

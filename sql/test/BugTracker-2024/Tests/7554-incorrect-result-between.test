@@ -1,0 +1,8 @@
+query T
+SELECT (1 BETWEEN NULL AND -1) IS NULL
+----
+False
+
+query I
+SELECT 1 WHERE ((1 BETWEEN NULL AND -1) IS NULL)
+----

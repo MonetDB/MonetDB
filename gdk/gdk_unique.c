@@ -178,11 +178,8 @@ BATunique(BAT *b, BAT *s)
 		     (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    ci.ncand == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
-		BUN lo = 0;
-
 		/* we already have a hash table on b, or b is
-		 * persistent and we could create a hash table, or b
-		 * is a view on a bat that already has a hash table */
+		 * persistent and we could create a hash table */
 		algomsg = "unique: existing hash";
 		MT_rwlock_rdlock(&b->thashlock);
 		hs = b->thash;
@@ -196,18 +193,18 @@ BATunique(BAT *b, BAT *s)
 			o = canditer_next(&ci);
 			p = o - hseq;
 			v = VALUE(p);
-			for (hb = HASHgetlink(hs, p + lo);
-			     hb != BUN_NONE && hb >= lo;
+			for (hb = HASHgetlink(hs, p);
+			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
-				assert(hb < p + lo);
+				assert(hb < p);
 				if (cmp(v, BUNtail(bi, hb)) == 0 &&
-				    canditer_contains(&ci, hb - lo + hseq)) {
+				    canditer_contains(&ci, hb + hseq)) {
 					/* we've seen this value
 					 * before */
 					break;
 				}
 			}
-			if (hb == BUN_NONE || hb < lo) {
+			if (hb == BUN_NONE) {
 				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED) {
 					MT_rwlock_rdunlock(&b->thashlock);
 					hs = NULL;

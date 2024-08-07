@@ -290,6 +290,10 @@ stdout of test 'select_groupby` in directory 'sql/test/miscellaneous` itself:
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	3,	1,	0,	8,	7 # length
 [ "varchar",	256,	0,	"",	"mytable2",	"'col26'"	]
+% myschema.mytable2 # table_name
+% 'col26' # name
+% varchar # type
+% 0 # length
 % .mytable2 # table_name
 % 'col26' # name
 % varchar # type

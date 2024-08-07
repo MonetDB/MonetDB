@@ -234,7 +234,7 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 	    prj && prj->op == op_project && !(rel_is_ref(prj)) && list_empty(prj->r)) {
 		int all = 1;
 
-		if (project_unsafe(rel,0) || project_unsafe(prj,0) || exps_share_expensive_exp(rel->exps, prj->exps))
+		if (project_unsafe(rel, false) || project_unsafe(prj, false) || exps_share_expensive_exp(rel->exps, prj->exps))
 			return rel;
 
 		/* here we try to fix aliases */
@@ -507,8 +507,8 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
-		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l,is_select(rel->op)))) ||
-		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r,0))))))
+		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l, is_select(rel->op)))) ||
+		   (is_join(rel->op) && (r->op == op_project && (!r->l || r->r || project_unsafe(r, false))))))
 			return rel;
 
 		if (l->op == op_project && l->l) {
@@ -1505,7 +1505,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 							(!strcmp(sf->func->base.name, "sql_sub") || !strcmp(sf->func->base.name, "sql_add") || !strcmp(sf->func->base.name, "sql_mul"))) {
 							sql_exp *e1 = (sql_exp*) el->h->data, *e2 = (sql_exp*) el->h->next->data;
 							/* the optimization cannot be done if side-effect calls (e.g. rand()) are present */
-							int e1ok = exp_is_atom(e1) && !exp_unsafe(e1, 1) && !exp_has_sideeffect(e1), e2ok = exp_is_atom(e2) && !exp_unsafe(e2, 1) && !exp_has_sideeffect(e2);
+							int e1ok = exp_is_atom(e1) && !exp_unsafe(e1, true, false) && !exp_has_sideeffect(e1), e2ok = exp_is_atom(e2) && !exp_unsafe(e2, true, false) && !exp_has_sideeffect(e2);
 
 							if ((!e1ok && e2ok) || (e1ok && !e2ok)) {
 								sql_exp *c = e1ok ? e2 : e1;
@@ -3087,7 +3087,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
 
-		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
+		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel, false))
 			return rel;
 
 		sql_rel *r;

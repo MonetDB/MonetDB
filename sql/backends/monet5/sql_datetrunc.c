@@ -63,7 +63,7 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Improper directive ");
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "batcalc.truncate_timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (bn == NULL) {

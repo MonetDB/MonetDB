@@ -311,7 +311,6 @@ end:
 
 
 SQLRETURN
-
 MNDBConnect(ODBCDbc *dbc,
 	    const SQLCHAR *ServerName,
 	    SQLSMALLINT NameLength1,
@@ -324,10 +323,10 @@ MNDBConnect(ODBCDbc *dbc,
 	// If unset, 'goto failure' will assume an allocation error.
 	const char *error_state = NULL;
 	const char *error_explanation = NULL;
+	SQLRETURN ret = SQL_ERROR;
 
 	// These will be free'd / destroyed at the 'end' label at the bottom of this function
 	char *dsn = NULL;
-	Mapi mid = NULL;
 	msettings *settings = NULL;
 	void *scratch = NULL;
 
@@ -418,8 +417,6 @@ MNDBConnect(ODBCDbc *dbc,
 	assert(error_state == NULL);
 	assert(error_explanation == NULL);
 
-	SQLRETURN ret;
-
 	ret = MNDBConnectSettings(dbc, dsn, settings);
 	settings = NULL; // must not be free'd now
 
@@ -433,14 +430,11 @@ failure:
 			error_state = "HY009"; // invalid argument
 	}
 	addDbcError(dbc, error_state, error_explanation, 0);
-	ret = SQL_ERROR;
 
 	// fallthrough
 end:
 	free(dsn);
 	free(scratch);
-	if (mid)
-		mapi_destroy(mid);
 	msettings_destroy(settings);
 
 	return ret;

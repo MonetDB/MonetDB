@@ -379,7 +379,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (re == NULL) {
 									bat_iterator_end(&qdi);
 									bat_iterator_end(&rei);
-									msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+									msg = createException(SQL, "sql.statistics", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 									goto bailout;
 								}
 							}
@@ -430,7 +430,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									BBPunfix(fb->batCacheid);
 									fb = nb;
 									if (fb == NULL) {
-										msg = createException(SQL, "sql.statistics", SQLSTATE(HY005) "Cannot access column descriptor");
+										msg = createException(SQL, "sql.statistics", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 										goto bailout;
 									}
 								}

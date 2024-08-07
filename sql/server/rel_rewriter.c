@@ -187,7 +187,7 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *l = e->l, *r = e->r;
 		if (is_func(l->type) && exp_is_true(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f))))
 			return l;
-		if (is_func(l->type) && exp_is_false(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f)))) {
+		if (is_func(l->type) && exp_is_false(r) && exp_is_not_null(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f)))) {
 			sql_subfunc *sf = l->f;
 			if (is_anyequal_func(sf))
 				return exp_in_func(v->sql, ((list*)l->l)->h->data, ((list*)l->l)->h->next->data, !is_anyequal(sf), 0);

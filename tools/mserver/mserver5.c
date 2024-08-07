@@ -24,10 +24,6 @@
 #include "msabaoth.h"
 #include "mutils.h"
 
-#ifdef HAVE_LIBGEN_H
-#include <libgen.h>
-#endif
-
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else

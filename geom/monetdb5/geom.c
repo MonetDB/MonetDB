@@ -81,7 +81,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 
@@ -241,7 +241,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 	int geomCollectionType = -1;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		return msg;
 	}
 
@@ -297,7 +297,7 @@ wkbCollect (wkb **out, wkb * const *a, wkb * const *b) {
 	int type_a, type_b;
 
 	if ((err = wkbGetCompatibleGeometries(a, b, &geoms[0], &geoms[1])) != MAL_SUCCEED)
-		throw(MAL,"geom.Collect", "%s", err);
+		return err;
 
 	//int srid = GEOSGetSRID_r(geoshandle, ga);
 	type_a = GEOSGeomTypeId_r(geoshandle, geoms[0]);
@@ -3454,8 +3454,7 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	if (size == 1) {
 		msg = wkbFromWKB(outWKB, &aWKB);
 		if (msg) {
-			freeException(msg);
-			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return msg;
 		}
 		return MAL_SUCCEED;
 	}
@@ -3464,14 +3463,21 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	outCoordSeq = GEOSCoordSeq_create_r(geoshandle, size, 2);
 
 	msg = wkbExtractPointToCoordSeq(&outCoordSeq, aWKB, 0);
+	if (msg)
+		return msg;
 	msg = wkbExtractPointToCoordSeq(&outCoordSeq, bWKB, 1);
+	if (msg)
+		return msg;
 
 	// add one more segment for each following row
 	for (i = 2; msg == MAL_SUCCEED && i < size; i++) {
 		msg = wkbExtractPointToCoordSeq(&outCoordSeq, inWKB_array[i], i);
+		if (msg)
+			return msg;
 	}
 	if ((outGeometry = GEOSGeom_createLineString_r(geoshandle, outCoordSeq)) == NULL) {
 		msg = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
+		return msg;
 	}
 	*outWKB = geos2wkb(outGeometry);
 	GEOSGeom_destroy_r(geoshandle, outGeometry);
@@ -3491,7 +3497,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	str msg = MAL_SUCCEED;
 
 	oid min, max;
-	BUN ngrp;
+	BUN ngrp = 0;
 	struct canditer ci;
 
 	oid lastGrp = -1;
@@ -3506,7 +3512,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "aggr.MakeLine", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 
@@ -3590,9 +3596,6 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
-		for (BUN i = 0; i < ngrp; i++)
-			GDKfree(lines[i]);
-		GDKfree(lines);
 		bat_iterator_end(&bi);
 		goto free;
 	}
@@ -3611,6 +3614,11 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 free:
+	if (lines) {
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(lines[i]);
+		GDKfree(lines);
+	}
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (g)
@@ -4862,12 +4870,12 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((bpy = BATdescriptor(*point_y)) == NULL) {
 		BBPunfix(bpx->batCacheid);
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/*Check BATs alignment */
@@ -4931,11 +4939,11 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bpy = BATdescriptor(*point_y)) == NULL) {
 		BBPunfix(bpx->batCacheid);
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/*Check BATs alignment */

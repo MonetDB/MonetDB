@@ -330,14 +330,22 @@ strPut(BAT *b, var_t *dst, const void *V)
  * the input is correct UTF-8.
  */
 
-#ifdef __GNUC__
+#ifdef __has_builtin
+#if __has_builtin(__builtin_expect)
 /* __builtin_expect returns its first argument; it is expected to be
  * equal to the second argument */
 #define unlikely(expr)	__builtin_expect((expr) != 0, 0)
 #define likely(expr)	__builtin_expect((expr) != 0, 1)
+#endif
+#endif
+#ifndef unlikely
+#ifdef _MSC_VER
+#define unlikely(expr)	(__assume(!(expr)), (expr))
+#define likely(expr)	(__assume((expr)), (expr))
 #else
 #define unlikely(expr)	(expr)
 #define likely(expr)	(expr)
+#endif
 #endif
 
 ssize_t
