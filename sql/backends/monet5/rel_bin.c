@@ -8219,11 +8219,76 @@ rel_bin(backend *be, sql_rel *rel)
 	return s;
 }
 
+static stmt *
+rel2bin_materialize(backend *be, sql_rel *rel)
+{
+	sql_rel *r = rel;
+	list *refs = sa_list(be->mvc->sa);
+	stmt *s = NULL;
+
+	if (is_topn(r->op))
+		r = r->l;
+
+	list *shared = NULL;
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+		/* generate results */
+		BUN est = get_rel_count(rel);
+		lng estimate;
+
+		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+			estimate = 1024;
+		} else {
+			estimate = (lng) est;
+		}
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		for(node *n = r->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+
+			InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate);
+			append(shared, q);
+		}
+	}
+	s = subrel_bin(be, rel, refs);
+	s = subrel_project(be, s, refs, rel);
+	stmt *pp = get_pipeline(be);
+	if (pp && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+		/* append results (later first claim position, then append)*/
+		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
+
+		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
+			InstrPtr r = n->data;
+			stmt *i = m->data;
+			sql_exp *e = o->data;
+			sql_subtype *tpe = exp_subtype(e);
+
+			InstrPtr q = newStmt(be->mb, batRef, appendRef);
+			if (q == NULL)
+				return NULL;
+			q = pushArgument(be->mb, q, r->argv[0]);
+			q = pushArgument(be->mb, q, i->nr);
+			q = pushBit(be->mb, q, TRUE);
+			q->argv[0] = r->argv[0];
+
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *tpe;
+			s->nr = r->argv[0];
+			s->q = q;
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+			append(res, s);
+		}
+		s = stmt_list(be, res);
+	}
+	/* end pp */
+	if (pp)
+		stmt_pp_end(be, pp);
+	return s;
+}
+
 stmt *
 output_rel_bin(backend *be, sql_rel *rel, int top)
 {
 	mvc *sql = be->mvc;
-	list *refs = sa_list(sql->sa);
 	mapi_query_t sqltype = sql->type;
 	stmt *s = NULL;
 
@@ -8233,8 +8298,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	be->pp = be->nrparts = 0;
 
-	s = subrel_bin(be, rel, refs);
-	s = subrel_project(be, s, refs, rel);
+	s = rel2bin_materialize(be, rel);
 
 	if (!s)
 		return NULL;
