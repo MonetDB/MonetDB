@@ -73,7 +73,7 @@ BEGIN
             VALUE "InternalName", "MonetODBCs.dll"
             VALUE "LegalCopyright", "Copyright (c) 2024 MonetDB Foundation"
             VALUE "OriginalFilename", "MonetODBCs.dll"
-            VALUE "ProductName", "MonetDB SQL Server"
+            VALUE "ProductName", "MonetDB ODBC Setup"
             VALUE "ProductVersion", sversion(11,51,0)
         END
     END
@@ -91,7 +91,7 @@ END
 // X, Y, WIDTH, HEIGHT
 
 IDD_SETUP_DIALOG DIALOGEX 0, 0, 456, 281
-STYLE DS_MODALFRAME | WS_CAPTION
+STYLE DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION
 CAPTION "MonetDB ODBC Data Source Setup"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
 BEGIN
@@ -155,7 +155,7 @@ BEGIN
     PUSHBUTTON      "Test",IDC_BUTTON_TEST,235,262,50,14
     DEFPUSHBUTTON   "OK",IDOK,290,262,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,345,262,50,14
-    PUSHBUTTON      "Help",IDC_BUTTON_HELP,400,262,50,14
+//    PUSHBUTTON      "Help",IDC_BUTTON_HELP,400,262,50,14
 END
 
 
