@@ -184,7 +184,7 @@ rel_mark_partition(sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
-		if ((is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
+		if ((is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false))
 			return 0;
 		if (rel->l)
 			res = rel_mark_partition(rel->l);
@@ -399,7 +399,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		 * the upper tree to end it, and this topN might be computed
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
-		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1))
+		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false))
 			return 0;
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb);
