@@ -314,6 +314,8 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 
 	if (q == NULL)
 		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
 	if (estimate > 0)
