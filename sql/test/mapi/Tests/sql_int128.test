@@ -164,6 +164,8 @@ CREATE TABLE sql_int128 (i HUGEINT)
 query T python .explain.function_histogram
 explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
 ----
+bat.single
+1
 querylog.define
 1
 sql.affectedRows
