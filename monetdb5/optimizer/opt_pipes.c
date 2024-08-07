@@ -306,10 +306,11 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 			  SQLSTATE(42000) "No overwrite of built in allowed");
 	}
 
+	ma_open(cntxt->ta);
 	/* save old value */
 	oldpipe = pipes[i];
 	pipes[i] = (struct pipeline) {
-		.name = GDKstrdup(name),
+		.name = MA_STRDUP(cntxt->ta, name),
 	};
 	if (pipes[i].name == NULL)
 		goto bailout;
@@ -318,7 +319,7 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 		p++;
 		n++;
 	}
-	if ((pipes[i].def = GDKmalloc(n * sizeof(char *))) == NULL)
+	if ((pipes[i].def = ma_alloc(cntxt->ta, n * sizeof(char *))) == NULL)
 		goto bailout;
 	n = 0;
 	while ((p = strchr(pipe, ';')) != NULL) {
@@ -333,7 +334,7 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 			goto bailout;
 		}
 		if (q > pipe) {
-			if ((pipes[i].def[n++] = GDKstrndup(pipe, q - pipe)) == NULL)
+			if ((pipes[i].def[n++] = MA_STRNDUP(cntxt->ta, pipe, q - pipe)) == NULL)
 				goto bailout;
 		}
 		pipe = p + 1;
@@ -353,14 +354,16 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 		for (n = 0; oldpipe.def[n]; n++)
 			GDKfree(oldpipe.def[n]);
 	GDKfree(oldpipe.def);
+	ma_close(cntxt->ta);
 	return msg;
 
   bailout:
-	GDKfree(pipes[i].name);
-	if (pipes[i].def)
-		for (n = 0; pipes[i].def[n]; n++)
-			GDKfree(pipes[i].def[n]);
-	GDKfree(pipes[i].def);
+	//GDKfree(pipes[i].name);
+	//if (pipes[i].def)
+	//	for (n = 0; pipes[i].def[n]; n++)
+	//		GDKfree(pipes[i].def[n]);
+	//GDKfree(pipes[i].def);
+	ma_close(cntxt->ta);
 	pipes[i] = oldpipe;
 	MT_lock_unset(&pipeLock);
 	if (msg)

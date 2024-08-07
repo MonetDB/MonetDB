@@ -636,6 +636,7 @@ gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to ol
 #define MA_ZNEW_ARRAY( sa, type, size )			(type*)sa_zalloc( sa, ((size)*sizeof(type)))
 #define MA_RENEW_ARRAY( sa, type, ptr, sz, osz )	(type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
 #define MA_STRDUP( sa, s)				sa_strdup(sa, s)
+#define MA_STRNDUP( sa, s, l)				sa_strndup(sa, s, l)
 
 
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
