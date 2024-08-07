@@ -138,6 +138,7 @@
 #cmakedefine HAVE_GETUID 1
 #cmakedefine HAVE_GMTIME_R 1
 #cmakedefine HAVE_LOCALTIME_R 1
+#cmakedefine HAVE_STRERROR_S 1
 #cmakedefine HAVE_STRERROR_R 1
 #cmakedefine HAVE_LOCKF 1
 #cmakedefine HAVE_MADVISE  1
@@ -365,6 +366,18 @@ typedef __uint128_t uhge;
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
+#endif
+
+/* The GNU C library has two variants of strerror_r, the XSI compliant
+ * one which returns int and a GNU specific one which returns char *.
+ * According to the manual, we should check for _GNU_SOURCE to find out
+ * which is used (if defined, it's the char * version), but MUSL C (used
+ * on Alpine Linux) also defined _GNU_SOURCE but only defines the int
+ * version, so that won't fly.  Instead we look at __USE_GNU which only
+ * the GNU library defines (if _GNU_SOURCE is defined) and is the one
+ * actually used in the GNU header file to make the distinction. */
+#if defined(__USE_GNU) && defined(HAVE_STRERROR_R)
+#define STRERROR_R_CHARP 1
 #endif
 
 #ifdef _MSC_VER
