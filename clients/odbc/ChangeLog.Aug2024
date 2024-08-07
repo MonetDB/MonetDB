@@ -1,6 +1,16 @@
 # ChangeLog file for odbc
 # This file is updated with Maddlog
 
+* Wed Aug  7 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Extended ODBC Data Source Setup program on Windows with fields to specify
+  optional Client Information such as Application Name and Client Remark.
+
+* Thu Aug  1 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Extended ODBC Data Source Setup program on Windows with fields to specify
+  new TLS Connection settings.
+- Extended ODBC Data Source Setup program on Windows with a Test-button
+  to quickly test connectivity to a MonetDB server.
+
 * Fri May 24 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - ODBC now supports TLS. It can be configured through the following
   DSN- or Connection String attributes (canonical name / user friendly name):
