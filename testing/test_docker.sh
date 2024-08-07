@@ -7,7 +7,7 @@ podman run -i --platform linux/arm64 --rm --volume $(pwd):/monetdb:z --workdir /
 rm -rf build/*
 podman run -i --platform linux/s390x --rm --volume $(pwd):/monetdb:z --workdir /monetdb alpine:latest <<<"apk add --no-cache bison cmake pkgconf python3  openssl-dev bzip2-dev libbz2 lz4-dev lz4-libs pcre-dev readline-dev xz-dev xz-libs zlib-dev build-base gcc py3-pip py3-cryptography && $TEST"
 rm -rf build/*
-podman run -i --rm --volume $(pwd):/monetdb:z --workdir /monetdb amazonlinux:2 <<<"dnf -y install bison cmake python3 openssl-devel bzip2-devel bzip2-libs lz4-devel lz4-libs pcre-devel readline-devel xz-devel xz-libs zlib-devel gcc pip python3-cryptography && $TEST"
+#podman run -i --rm --volume $(pwd):/monetdb:z --workdir /monetdb amazonlinux:2 <<<"yum -y install bison cmake python3 openssl-devel bzip2-devel bzip2-libs lz4-devel lz4-libs pcre-devel readline-devel xz-devel xz-libs zlib-devel gcc pip python3-cryptography && $TEST"
 rm -rf build/*
 podman run -i --rm --volume $(pwd):/monetdb:z --workdir /monetdb amazonlinux:latest <<<"dnf -y install bison cmake python3 openssl-devel bzip2-devel bzip2-libs lz4-devel lz4-libs pcre-devel readline-devel xz-devel xz-libs zlib-devel gcc pip python3-cryptography && $TEST"
 rm -rf build/*
