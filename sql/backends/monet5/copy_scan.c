@@ -278,11 +278,11 @@ scan_unquoted_no_escapes(struct scan_state *state, unsigned char *sep_found)
 			break;
 	if (sep) {
 		*sep_found = *sep;
-		*sep = 0;
 		if (*sep)
 			state->pos = sep + 1;
 		else
 			state->pos = sep + state->line_sep_len;
+		*sep = 0;
 		return NULL;
 	} else {
 		return "no column- or line separator found";
@@ -521,6 +521,93 @@ scan_fields(
 			} else {
 				copy_report_error(errors, row, col, "%s", err_msg);
 				ok = false;
+			}
+		}
+
+		if (ok && check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
+			ok = false;
+		}
+
+		if (ok) {
+			// The happy path.  Store the field and advance row and col.
+			columns[col][row] = field_offset;
+			if (col < ncols - 1) {
+				col += 1;
+			} else {
+				row += 1;
+				col = 0;
+			}
+			continue;
+		}
+
+		// An error has occurred. BEST EFFORT determines if we want to stop right now
+		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		if (err) {
+			// Bail out now
+			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
+		}
+
+		// We must be in BEST EFFORT mode.
+		// Set all fields to nil and advance to the next line
+		for (int i = 0; i < ncols; i++)
+			columns[i][row] = int_nil;
+		col = 0;
+		row += 1;
+		while(state->pos < state->end && *state->pos)
+			state->pos++;
+		if (!*state->pos)
+			state->pos+=state->line_sep_len;
+	}
+
+	assert(state->pos == state->end || row == nrows);
+
+	if (state->pos < state->end) {
+		throw(MAL, "copy.splitlines", "leftover data at end of buffer");
+	}
+	if (row < nrows) {
+		throw(MAL, "copy.splitlines", "not enough rows found in buffer");
+	}
+
+	return MAL_SUCCEED;
+}
+
+str
+scan_fields1(
+	struct error_handling *errors, struct scan_state *state,
+	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
+{
+	int row = 0;
+	int col = 0;
+	while (state->pos < state->end && row < nrows) {
+		unsigned char sep = 0;
+		int field_offset;
+		bool ok;
+
+		bool field_is_null = (
+			null_repr
+			&& state->pos + null_repr_len < state->end
+			&& (state->pos[null_repr_len] == state->col_sep || !state->pos[null_repr_len])
+			&& strncasecmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
+		);
+
+		ok = true;
+		if (field_is_null) {
+			field_offset = int_nil;
+			sep = state->pos[null_repr_len];
+			state->pos += null_repr_len + 1;
+		} else {
+			field_offset = state->pos - state->start;
+
+			unsigned char *s = state->pos;
+			for (; *s; s++)
+				if (*s == state->col_sep)
+					break;
+			sep = *s;
+			if (*s) {
+				state->pos = s + 1;
+				*s = 0;
+			} else {
+				state->pos = s + state->line_sep_len;
 			}
 		}
 

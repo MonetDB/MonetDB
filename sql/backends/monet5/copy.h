@@ -156,6 +156,10 @@ extern str scan_fields(
 	struct error_handling *errors, struct scan_state *state,
 	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns);
 
+extern str scan_fields1( /* no quote_char, sep len == 1 */
+	struct error_handling *errors, struct scan_state *state,
+	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns);
+
 extern str scan_fieldsN(
 	struct error_handling *errors, struct scan_state *state,
 	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns);

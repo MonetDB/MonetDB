@@ -479,6 +479,25 @@ end:
 	return msg;
 }
 
+static void
+sleep_ns( int ns)
+{
+#ifdef HAVE_NANOSLEEP
+        struct timespec ts;
+
+        ts.tv_sec = (time_t) 0;
+        ts.tv_nsec = ns;
+        while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+                ;
+#else
+        struct timeval tv;
+
+        tv.tv_sec = 0;
+        tv.tv_usec = ((ns+999)/1000);
+        (void) select(0, NULL, NULL, NULL, &tv);
+#endif
+}
+
 static str
 COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -534,7 +553,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p->p->master_counter = (p->p->nr_workers*-2);
 
 	while (!r->done && !r->error && ATOMIC_GET(&r->seqnr) != r->bs->seq[p->wid])
-		;
+		sleep_ns(1);
 
 	if (!r->done && !r->error) {
 		if (bufferstream_read(r->bs, p->wid) < 0) {
@@ -574,7 +593,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (r->can_jump) {
 			while (!r->done && !r->error && ATOMIC_GET(&r->jump_seqnr) != r->bs->seq[p->wid])
-				;
+				sleep_ns(1);
 		}
 		r->linecount += line_count;
 		state.end = state.start + e;
@@ -613,6 +632,8 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (r->col_sep_len > 1)
 		msg = scan_fieldsN(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+	else if (r->can_jump)
+		msg = scan_fields1(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
 	else
 		msg = scan_fields(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
 

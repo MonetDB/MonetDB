@@ -16,8 +16,8 @@
 #define COPY_BLOCKSIZE_SETTING "copy_blocksize"
 #define COPY_PARALLEL_SETTING "copy_parallel"
 
-//#define DEFAULT_COPY_BLOCKSIZE (1024 * 1024)
-#define DEFAULT_COPY_BLOCKSIZE (16 * 1024 * 1024)
+#define DEFAULT_COPY_BLOCKSIZE (256 * 1024)
+//#define DEFAULT_COPY_BLOCKSIZE (32 * 1024 * 1024)
 
 
 extern stmt *exp2bin_copyparpipe(backend *be, sql_exp *copyfrom);

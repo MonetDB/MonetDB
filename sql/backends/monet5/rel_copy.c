@@ -136,6 +136,8 @@ emit_pipelined_loop(
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushStr(mb, q, null_representation);
 	q = pushBit(mb, q, escape);
+	if (fixed_width == NULL)
+		fixed_width = (str)str_nil;
 	q = pushStr(mb, q, fixed_width);
 	q = pushBit(mb, q, best_effort);
 	pushInstruction(mb, q);
@@ -198,8 +200,6 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 		dec_sep = (str)str_nil;
 	if (dec_skip == NULL)
 		dec_skip = (str)str_nil;
-	if (fixed_width == NULL)
-		fixed_width = (str)str_nil;
 
 	int var_col_sep = getStrConstant(mb, col_sep);
 	int var_line_sep = getStrConstant(mb, line_sep);

@@ -79,9 +79,8 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 	return acc;
 }
 
-
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
+TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
 {
 	const char *s = value;
 	int digits = parms->digits;
@@ -140,19 +139,86 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 
 
 
+static TMPL_TYPE
+TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
+{
+	const char *s = value;
+	int digits = parms->digits;
+	int scale = parms->scale;
+	int integer_digits = digits - scale;
+	bool neg = false;
+	TMPL_TYPE res = 0;
+
+	while(isspace((unsigned char) *s))
+		s++;
+
+	if (*s == '-'){
+		neg = true;
+		s++;
+	} else if (*s == '+'){
+		s++;
+	}
+
+	for (int i = 0; *s && i < integer_digits; s++) {
+		if (!isdigit((unsigned char) *s))
+			break;
+		res *= 10;
+		res += (*s - '0');
+		if (res)
+			i++;
+	}
+	if (*s == parms->sep) {
+		s++;
+		for ( ;*s && isdigit((unsigned char)*s) && scale > 0; s++) {
+			res *= 10;
+			res += *s - '0';
+			scale--;
+		}
+	}
+	while(*s && isspace((unsigned char) *s))
+		s++;
+	while (scale > 0) {
+		res *= 10;
+		scale--;
+	}
+	if (*s) {
+		if (isdigit(*s))
+			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
+		else
+			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+		return TMPL_NIL;
+	}
+	if (neg)
+		res = -res;
+	return res;
+}
+
+
+
 static void
 TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_, int count, void *dest_, char *data, int *offsets)
 {
 	struct decimal_parms *parms = parms_;
 	TMPL_TYPE *dest = dest_;
 
-	for (int i = 0; i < count; i++) {
-		int offset = offsets[i];
-		if (is_int_nil(offset)) {
-			dest[i] = TMPL_NIL;
-			continue;
+	if (parms->skip) {
+		for (int i = 0; i < count; i++) {
+			int offset = offsets[i];
+			if (is_int_nil(offset)) {
+				dest[i] = TMPL_NIL;
+				continue;
+			}
+			dest[i] = TMPL_SUFFIXED(parse_one_decimal_skip)(errors, parms, i, data + offset);
 		}
-		dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
+	} else {
+		for (int i = 0; i < count; i++) {
+			int offset = offsets[i];
+			if (is_int_nil(offset)) {
+				dest[i] = TMPL_NIL;
+				continue;
+			}
+			dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
+		}
 	}
 }
 
