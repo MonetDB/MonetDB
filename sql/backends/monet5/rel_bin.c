@@ -8269,6 +8269,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			q = pushArgument(be->mb, q, i->nr);
 			q = pushBit(be->mb, q, TRUE);
 			q->argv[0] = r->argv[0];
+			pushInstruction(be->mb, q);
 
 			stmt *s = stmt_none(be);
 			s->op4.typeval = *tpe;
