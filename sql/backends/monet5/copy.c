@@ -88,7 +88,7 @@ bufferstream_read( bufferstream *bs, int cur)
 	bs->cur_buf = cur;
 
 	if (bs->pos[cur] && bs->pos[cur] == bs->len[cur])
-		bs->pos[cur] = bs->len[cur] = 0;
+		bs->pos[cur] = bs->len[cur] = bs->jmp[cur] = 0;
 	if ((bs->pos[ocur] < bs->len[ocur]) || bs->jmp[ocur]) {
 		BUN p = bs->jmp[ocur] ? bs->jmp[ocur] : bs->pos[ocur];
 		memcpy(bs->buf[cur], bs->buf[ocur]+p, bs->len[ocur] - p + 1);
