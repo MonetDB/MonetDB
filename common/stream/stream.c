@@ -426,24 +426,32 @@ mnstr_set_open_error(const char *name, int errnr, const char *fmt, ...)
 static size_t
 my_strerror_r(int error_nr, char *buf, size_t buflen)
 {
-	// Three cases:
-	// 1. no strerror_r
+	// Four cases:
+	// 1. strerror_s
 	// 2. gnu strerror_r (returns char* and does not always fill buffer)
 	// 3. xsi strerror_r (returns int and always fills the buffer)
+	// 4. no strerror_r and no strerror_s
 	char *to_move;
-#ifndef HAVE_STRERROR_R
-	// Hope for the best
-	to_move = strerror(error_nr);
-#elif !defined(_GNU_SOURCE) || !_GNU_SOURCE
-	// standard strerror_r always writes to buf
+#ifdef HAVE_STRERROR_S
+	int result_code = strerror_s(buf, buflen, error_nr);
+	if (result_code == 0)
+		to_move = NULL;
+	else
+		to_move = "<failed to retrieve error message>";
+#elif defined(HAVE_STRERROR_R)
+#ifdef STRERROR_R_CHARP
+	// gnu strerror_r sometimes only returns static string, needs copy
+	to_move = strerror_r(error_nr, buf, buflen);
+#else
 	int result_code = strerror_r(error_nr, buf, buflen);
 	if (result_code == 0)
 		to_move = NULL;
 	else
 		to_move = "<failed to retrieve error message>";
+#endif
 #else
-	// gnu strerror_r sometimes only returns static string, needs copy
-	to_move = strerror_r(error_nr, buf, buflen);
+	// Hope for the best
+	to_move = strerror(error_nr);
 #endif
 	if (to_move != NULL) {
 		// move to buffer

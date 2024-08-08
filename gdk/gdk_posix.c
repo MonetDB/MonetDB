@@ -1013,7 +1013,7 @@ ctime_r(const time_t *restrict t, char *restrict buf)
 }
 #endif
 
-#ifndef HAVE_STRERROR_R
+#if !defined(HAVE_STRERROR_R) && !defined(HAVE_STRERROR_S)
 static MT_Lock strerrlock = MT_LOCK_INITIALIZER(strerrlock);
 
 int

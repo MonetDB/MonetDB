@@ -154,7 +154,34 @@ end
 query TT rowsort
 select department_name, employee_name from departments as d, LATERAL emps(d.department_id) order by department_name, employee_name
 ----
-112 values hashing to f495ad9b71b9275c39be6a3282a144e2
+ACCOUNTING
+CLARK
+ACCOUNTING
+KING
+ACCOUNTING
+MILLER
+RESEARCH
+ADAMS
+RESEARCH
+FORD
+RESEARCH
+JONES
+RESEARCH
+SCOTT
+RESEARCH
+SMITH
+SALES
+ALLEN
+SALES
+BLAKE
+SALES
+JAMES
+SALES
+MARTIN
+SALES
+TURNER
+SALES
+WARD
 
 statement ok
 DROP FUNCTION emps

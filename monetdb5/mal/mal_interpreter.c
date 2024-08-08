@@ -572,6 +572,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		}
 
+		freeException(ret);
+		ret = MAL_SUCCEED;
+
 		if (stk->status) {
 			/* pause procedure from SYSMON */
 			if (stk->status == 'p') {
@@ -662,8 +665,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-		freeException(ret);
-		ret = MAL_SUCCEED;
 		switch (pci->token) {
 		case ASSIGNsymbol:
 			/* Assignment command

@@ -193,7 +193,7 @@ struct thread_funcs {
 	void *data;
 };
 
-static struct mtthread {
+struct mtthread {
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
@@ -228,13 +228,15 @@ static struct mtthread {
 	uintptr_t sp;
 	char *errbuf;
 	struct freebats freebats;
-} *mtthreads = NULL;
-struct mtthread mainthread = {
+};
+static struct mtthread mainthread = {
 	.threadname = "main thread",
 	.exited = ATOMIC_VAR_INIT(0),
 	.refs = 1,
 	.tid = 1,
 };
+static struct mtthread *mtthreads = &mainthread;
+
 #ifdef HAVE_PTHREAD_H
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_key_t threadkey;
@@ -404,8 +406,6 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
-	mainthread.next = NULL;
-	mtthreads = &mainthread;
 	thread_initialized = true;
 	return true;
 }

@@ -184,12 +184,12 @@ MCgetClient(int id)
 static void
 MCresetProfiler(stream *fdout)
 {
-	if (fdout != maleventstream)
-		return;
 	MT_lock_set(&mal_profileLock);
-	maleventstream = NULL;
-	profilerStatus = 0;
-	profilerMode = 0;
+	if (fdout == maleventstream) {
+		maleventstream = NULL;
+		profilerStatus = 0;
+		profilerMode = 0;
+	}
 	MT_lock_unset(&mal_profileLock);
 }
 

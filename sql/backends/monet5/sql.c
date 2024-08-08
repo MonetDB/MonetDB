@@ -5055,6 +5055,17 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		q = getInstrPtr(nmb, 0);
 
+		int start = 1;
+		if (nmb->stop == 1 && (omb || !npci->fcn || npci->token != PATcall)) {
+			InstrPtr *stmt = nmb->stmt;
+			nmb->stmt = (InstrPtr*)GDKmalloc(sizeof(InstrPtr*)*3);
+			nmb->stmt[0] = NULL; /* no main() */
+			nmb->stmt[1] = NULL; /* no profiling */
+			nmb->stmt[2] = stmt[0];
+			nmb->stop = nmb->ssize = 3;
+			GDKfree(stmt);
+			start = 2;
+		}
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
 			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
 			int i,ii;
@@ -5063,7 +5074,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				/* copy (input) arguments onto destination stack, skipping rowid col */
-				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++) {
+				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++, i++) {
 					ValPtr lhs = &nstk->stk[q->argv[ii]];
 					ptr rhs = (ptr)BUNtail(bi[i], cur);
 
@@ -5072,10 +5083,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
-					if (!omb && npci->fcn)
+					if (!omb && npci->fcn && npci->token == PATcall) /* pattern */
 						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
-						ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+						ret = runMALsequence(cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */
@@ -5093,7 +5104,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 						}
 						i=1;
-						for (ii = 0; i < pci->retc && !ret; i++) {
+						for (ii = 0; i < pci->retc && !ret; ii++, i++) {
 							BAT *b;
 
 							if (!(b = BATdescriptor(omb?env->stk[q->argv[ii]].val.bval:nstk->stk[q->argv[ii]].val.bval)))
@@ -5107,11 +5118,11 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 					}
 				}
-				GDKfree(nstk);
+				freeStack(nstk);
 			}
 		}
 finalize:
-		GDKfree(env);
+		freeStack(env);
 		if (nmb)
 			freeMalBlk(nmb);
 		if (omb)

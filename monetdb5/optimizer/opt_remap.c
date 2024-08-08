@@ -74,7 +74,6 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	p->retc = p->argc = pci->retc;
 
 
-
 	if (plus_one) {
 		p = pushArgument(mb, p, getArg(pci, pci->retc));	// cardinality argument
 	}
@@ -463,7 +462,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
-		if (isMultiplex(p)) {
+		if (isUnion(p)) {
 			/*
 			 * The next step considered is to handle inlined functions.
 			 * It means we have already skipped the most obvious ones,

@@ -7,3 +7,7 @@ debian/tmp/usr/include/monetdb/mstring.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/monet_*.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/monetdb_*.h usr/include/monetdb
 debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/monetdb-gdk.pc usr/lib/x86_64-linux-gnu/pkgconfig
+debian/tmp/usr/share/monetdb/cmake/gdkTargets*.cmake usr/share/monetdb/cmake
+debian/tmp/usr/share/monetdb/cmake/matomicTargets.cmake usr/share/monetdb/cmake
+debian/tmp/usr/share/monetdb/cmake/mstringTargets.cmake usr/share/monetdb/cmake
+debian/tmp/usr/share/monetdb/cmake/monetdb_config_headerTargets.cmake usr/share/monetdb/cmake

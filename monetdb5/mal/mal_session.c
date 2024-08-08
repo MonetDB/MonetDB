@@ -616,16 +616,13 @@ MALreader(Client c)
  * the estimate is more expensive than just counting the lines.
  */
 static int
-prepareMalBlk(MalBlkPtr mb, str s)
+prepareMalBlk(MalBlkPtr mb, const char *s)
 {
 	int cnt = STMT_INCREMENT;
 
-	while (s) {
-		s = strchr(s, '\n');
-		if (s) {
-			s++;
+	if (s && *s) {
+		while ((s = strchr(s + 1, '\n')) != NULL)
 			cnt++;
-		}
 	}
 	cnt = (int) (cnt * 1.1);
 	return resizeMalBlk(mb, cnt);
