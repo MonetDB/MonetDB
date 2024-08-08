@@ -5105,14 +5105,16 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						i=1;
 						for (ii = 0; i < pci->retc && !ret; ii++, i++) {
 							BAT *b;
+							ValPtr vp = omb ? env->stk + q->argv[ii] : nstk->stk + q->argv[ii];
 
-							if (!(b = BATdescriptor(omb?env->stk[q->argv[ii]].val.bval:nstk->stk[q->argv[ii]].val.bval)))
+							if (!(b = BATdescriptor(vp->val.bval)))
 								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 							else if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
 								ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 							if (b) {
 								BBPrelease(b->batCacheid); /* release ref from env stack */
 								BBPunfix(b->batCacheid);   /* free pointer */
+								VALempty(vp);
 							}
 						}
 					}
