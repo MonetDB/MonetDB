@@ -17,6 +17,7 @@
 
 #include "monetdb_config.h"
 #include <windows.h>
+#include <shellapi.h>
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
 #define ALREADY_HAVE_WINDOWS_TYPE 1
@@ -419,8 +420,10 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		case IDC_BUTTON_HELP:
-			// TODO invoke webbrowser with url to webpage decribing this dialog.
-			MessageBox(hwndDlg, "Help not yet implemented", NULL, MB_ICONERROR);
+			// invoke webbrowser with url to webpage decribing this setup dialog.
+			ShellExecute(hwndDlg, NULL,
+					"https://www.monetdb.org/documentation/user-guide/client-interfaces/libraries-drivers/odbc-driver/windows-data-source-setup.html",
+					NULL, NULL, SW_SHOWNORMAL);
 			return TRUE;
 		}
 	default:
