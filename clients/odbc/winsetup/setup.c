@@ -16,6 +16,7 @@
 #endif
 
 #include "monetdb_config.h"
+#include "monetdb_hgversion.h"
 #include <windows.h>
 #include <shellapi.h>
 /* indicate to sqltypes.h that windows.h has already been included and
@@ -28,6 +29,12 @@
 
 static char *DriverName = "MonetDB ODBC Driver";
 static HINSTANCE instance;
+
+#ifdef MERCURIAL_BRANCH
+#define DOCUMENTATION "documentation-" MERCURIAL_BRANCH
+#else
+#define DOCUMENTATION "documentation"
+#endif
 
 static void
 ODBCLOG(const char *fmt, ...)
@@ -422,7 +429,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDC_BUTTON_HELP:
 			// invoke webbrowser with url to webpage decribing this setup dialog.
 			ShellExecute(hwndDlg, NULL,
-					"https://www.monetdb.org/documentation/user-guide/client-interfaces/libraries-drivers/odbc-driver/windows-data-source-setup/",
+					"https://www.monetdb.org/" DOCUMENTATION "/user-guide/client-interfaces/libraries-drivers/odbc-driver/windows-data-source-setup/",
 					NULL, NULL, SW_SHOWNORMAL);
 			return TRUE;
 		}
