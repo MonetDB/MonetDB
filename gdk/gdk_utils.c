@@ -2328,13 +2328,13 @@ sa_close( allocator *sa )
 {
 	assert(sa->tmp_active);
 	sa->tmp_active = 0;
-	sa_reset(sa);
-	//while (sa->tmp_used) {
-	//	assert(sa->used >= sa->tmp_used);
-	//	if (sa->used >= sa->tmp_used) {
-	//		sa->used -= sa->tmp_used;
-	//		sa->usedmem -= sa->tmp_used;
-	//		sa->tmp_used = 0;
-	//	}
-	//}
+	//sa_reset(sa);
+	while (sa->tmp_used) {
+		assert(sa->used >= sa->tmp_used);
+		if (sa->used >= sa->tmp_used) {
+			sa->used -= sa->tmp_used;
+			sa->usedmem -= sa->tmp_used;
+			sa->tmp_used = 0;
+		}
+	}
 }
