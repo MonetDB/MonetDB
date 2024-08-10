@@ -831,7 +831,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		MT_lock_set(&pvb->theaplock);
 	}
 	bi = bat_iterator_nolock(b);
-	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
+	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE && b->tvheap->storage != STORE_NOWN)
 		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
 
 	bat_iterator_incref(&bi);
@@ -869,7 +869,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting slowcopy to true) */
-		if (ATOMsize(tt) != ATOMsize(bi.type)) {
+		if (ATOMsize(tt) != ATOMsize(bi.type) ||
+				(bi.vh && bi.vh->storage == STORE_NOWN)) {
 			/* oops, void materialization */
 			slowcopy = true;
 		} else if (bi.h && bi.h->parentid != b->batCacheid &&

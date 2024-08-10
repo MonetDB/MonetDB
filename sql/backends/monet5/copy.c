@@ -81,9 +81,12 @@ bufferstream_read( bufferstream *bs, int cur)
 	}
 	if (!bs->buf[cur]) {
 		bs->sz[cur] = bs->sz[0];
-		bs->buf[cur] = (unsigned char*)GDKmalloc(bs->sz[0] + 2);
+		bs->buf[cur] = (unsigned char*)GDKmalloc(bs->sz[0] + 2 + 2);
 		bs->buf[cur][0] = 0;
 		bs->len[cur] = 0;
+		/* add nil add end */
+		bs->buf[cur][bs->sz[0]+2] = '\200';
+		bs->buf[cur][bs->sz[0]+3] = 0;
 	}
 	bs->cur_buf = cur;
 
@@ -273,11 +276,10 @@ check_sep(str sep, bool backslash_escapes)
 	return 1;
 }
 
-static inline const unsigned char *
+static const unsigned char *
 find_end_of_lines1nn(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 	/* single char line end and no escape and no quote */
 {
-	bool found = true;
 	int line_sep = st->line_sep;
 	unsigned char *end = st->end;
 	// these are updated
@@ -285,19 +287,15 @@ find_end_of_lines1nn(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 
 	BUN newline_count = 0;
 	const unsigned char *latest_pos = NULL;
-	while (found && pos < end && newline_count < maxcount) {
-		found = false;
+	if (maxcount) {
 		for (; pos < end; pos++) {
 			if (*pos == line_sep) {
-				found = true;
-				break;
+				*pos++ = 0;
+				newline_count++;
+				latest_pos = pos;
+				if (newline_count == maxcount)
+					break;
 			}
-		}
-		if (found) {
-			*pos = 0;
-			pos++;
-			newline_count++;
-			latest_pos = pos;
 		}
 	}
 	st->pos = pos;
@@ -305,7 +303,7 @@ find_end_of_lines1nn(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 	return latest_pos;
 }
 
-static inline const unsigned char *
+static const unsigned char *
 find_end_of_lines1(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 {
 	bool found = true;
@@ -352,7 +350,7 @@ find_end_of_lines1(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 	return latest_pos;
 }
 
-static inline const unsigned char *
+static const unsigned char *
 find_end_of_linesN(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 {
 	bool found = true;

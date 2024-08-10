@@ -6,7 +6,7 @@
 
 
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, const char *value)
+TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, const char *value, int *nils)
 {
 	bool pos = true;
 	TMPL_TYPE acc = 0;
@@ -63,6 +63,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 
 	if (s == value) {
 		copy_report_error(errors, rel_row, -1, "missing integer");
+		(*nils)++;
 		return TMPL_NIL;
 	}
 	if (*s != '\0') {
@@ -70,6 +71,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 			copy_report_error(errors, rel_row, -1, "unexpected decimal digit '%c' while parsing integer", *s);
 		else
 			copy_report_error(errors, rel_row, -1, "unexpected character '%c' while parsing integer", *s);
+		(*nils)++;
 		return TMPL_NIL;
 	}
 
@@ -130,6 +132,7 @@ TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct dec
 			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
 		else
 			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+		parms->nils++;
 		return TMPL_NIL;
 	}
 	if (neg)
@@ -185,6 +188,7 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
 		else
 			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+		parms->nils++;
 		return TMPL_NIL;
 	}
 	if (neg)
@@ -199,12 +203,14 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 {
 	struct decimal_parms *parms = parms_;
 	TMPL_TYPE *dest = dest_;
+	int nils = 0;
 
 	if (parms->skip) {
 		for (int i = 0; i < count; i++) {
 			int offset = offsets[i];
 			if (is_int_nil(offset)) {
 				dest[i] = TMPL_NIL;
+				nils++;
 				continue;
 			}
 			dest[i] = TMPL_SUFFIXED(parse_one_decimal_skip)(errors, parms, i, data + offset);
@@ -214,27 +220,32 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 			int offset = offsets[i];
 			if (is_int_nil(offset)) {
 				dest[i] = TMPL_NIL;
+				nils++;
 				continue;
 			}
 			dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
 		}
 	}
+	parms->nils += nils;
 }
 
 static void
 TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, int count, void *dest_, char *data, int *offsets)
 {
-	(void)parms;
+	int *Nils = (int*)parms;
 	TMPL_TYPE *dest = dest_;
+	int nils = 0;
 
 	for (int i = 0; i < count; i++) {
 		int offset = offsets[i];
 		if (is_int_nil(offset)) {
 			dest[i] = TMPL_NIL;
+			nils++;
 			continue;
 		}
-		dest[i] = TMPL_SUFFIXED(parse_one_integer)(errors, i, data + offset);
+		dest[i] = TMPL_SUFFIXED(parse_one_integer)(errors, i, data + offset, &nils);
 	}
+	*Nils += nils;
 }
 
 
@@ -261,6 +272,7 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
 
 	struct decimal_parms myparms = {
+		.nils = 0,
 		.digits = digits,
 		.scale = scale,
 		.sep = strNil(dec_sep) ? '.' : dec_sep[0],
@@ -302,10 +314,11 @@ TMPL_SUFFIXED(COPYparse_integer) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	errors.init = 0;
 	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
 
+	int nils = 0;
 	str msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_integer" ,
 		block_bat_id, p, offsets_bat_id,
-		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), NULL);
+		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), &nils);
 
 	if (errors.init)
 		copy_destroy_error_handling(&errors);

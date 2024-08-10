@@ -679,7 +679,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	if (ATOMstorage(tpe) == TYPE_str) {
-		if (li.nonil &&
+		if (li.nonil && r1i.b->tvheap->storage != STORE_NOWN &&
 		    r2 == NULL &&
 		    (r1i.count == 0 ||
 		     lcount > (r1i.count >> 3) ||
@@ -708,7 +708,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			bat_iterator_end(&r2i);
 			return bn;
 		}
-	} else if (ATOMvarsized(tpe) &&
+	} else if (ATOMvarsized(tpe) && r1i.b->tvheap->storage != STORE_NOWN &&
 		   li.nonil &&
 		   r2 == NULL &&
 		   (r1i.count == 0 ||

@@ -20,6 +20,7 @@
 #define INSIDE_COPY_CONVERT 1
 
 struct decimal_parms {
+	int nils;
 	int digits;
 	int scale;
 	char sep;
@@ -180,6 +181,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buffer_len;
 	const void *nil_ptr;
 	struct error_handling errors;
+	int nils = 0;
 
 	const char sep = strNil(dec_sep) ? '.' : dec_sep[0];
 	const char skip = strNil(dec_skip) ? '\0' : dec_skip[0];
@@ -208,6 +210,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (is_int_nil(offset)) {
 			to_insert = nil_ptr;
+			nils++;
 		} else {
 			ssize_t len = -1;
 			src = fltdbl_sepskip(src, sep, skip);
@@ -222,6 +225,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ok = copy_report_error(&errors, i, -1, "invalid %s: %s", ATOMname(tpe), src);
 				GDKclrerr();
 				to_insert = nil_ptr;
+				nils++;
 			}
 		}
 		if (ok != GDK_SUCCEED) {
@@ -237,8 +241,8 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(ret, n);
 	// we don't know anything about the data we just parsed
 	ret->tkey = false;
-	ret->tnil = false;
-	ret->tnonil = false;
+	ret->tnil = (nils)?true:false;
+	ret->tnonil = (!nils)?true:false;
 	ret->tsorted = false;
 	ret->trevsorted = false;
 end:
@@ -248,6 +252,7 @@ end:
 	if (ret) {
 		if (msg == MAL_SUCCEED) {
 			*getArgReference_bat(stk, pci, 0) = ret->batCacheid;
+
 			BBPkeepref(ret);
 		}
 		else
@@ -271,43 +276,43 @@ checkUTF8str(const char *v, size_t maxlen, int *err)
 	 * __builtin_expect function. */
 	size_t j = 0;
 	if (v != NULL) {
-		if (v[0] != '\200' || v[1] != '\0') {
-			/* check that string is correctly encoded UTF-8 */
-			for (size_t i = 0; v[i]; i++, j++) {
-				/* we do not annotate all tests, only the ones
-				 * leading directly to an unlikely return
-				 * statement */
-				if ((v[i] & 0x80) == 0) {
-					;
-				} else if ((v[i] & 0xE0) == 0xC0) {
-					if (__builtin_expect(((v[i] & 0x1E) == 0), 0))
-						return false;
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-						return false;
-				} else if ((v[i] & 0xF0) == 0xE0) {
-					if ((v[i++] & 0x0F) == 0) {
-						if (__builtin_expect(((v[i] & 0xE0) != 0xA0), 0))
-							return false;
-					} else {
-						if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
-							return false;
-					}
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-						return false;
-				} else if (__builtin_expect(((v[i] & 0xF8) == 0xF0), 1)) {
-					if ((v[i++] & 0x07) == 0) {
-						if (__builtin_expect(((v[i] & 0x30) == 0), 0))
-							return false;
-					}
-					if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
-						return false;
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
-						return false;
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+		for (; v[j] && (v[j] & 0x80) == 0; j++)
+			;
+		/* check that string is correctly encoded UTF-8 */
+		for (size_t i = j; v[i]; i++, j++) {
+			/* we do not annotate all tests, only the ones
+			 * leading directly to an unlikely return
+			 * statement */
+			if ((v[i] & 0x80) == 0) {
+				;
+			} else if ((v[i] & 0xE0) == 0xC0) {
+				if (__builtin_expect(((v[i] & 0x1E) == 0), 0))
+					return false;
+				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					return false;
+			} else if ((v[i] & 0xF0) == 0xE0) {
+				if ((v[i++] & 0x0F) == 0) {
+					if (__builtin_expect(((v[i] & 0xE0) != 0xA0), 0))
 						return false;
 				} else {
-					return false;
+					if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+						return false;
 				}
+				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					return false;
+			} else if (__builtin_expect(((v[i] & 0xF8) == 0xF0), 1)) {
+				if ((v[i++] & 0x07) == 0) {
+					if (__builtin_expect(((v[i] & 0x30) == 0), 0))
+						return false;
+				}
+				if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+					return false;
+				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					return false;
+				if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					return false;
+			} else {
+				return false;
 			}
 		}
 	}
@@ -317,6 +322,37 @@ checkUTF8str(const char *v, size_t maxlen, int *err)
 	} else {
 		return true;
 	}
+}
+
+static BAT *
+string_sharing_bat(BUN cnt, const char *base)
+{
+	BAT *b = COLnew(0, TYPE_int, cnt, TRANSIENT);
+	Heap *hp = NULL;
+
+	if (!b)
+		return NULL;
+	if ((hp = GDKmalloc(sizeof(Heap))) == NULL){
+		BBPreclaim(b);
+		return NULL;
+    }
+	char *nme = BBP_physical(b->batCacheid);
+    *hp = (Heap) {
+		.farmid = 1,//BBPselectfarm(b->batRole, b->ttype, varheap), // find the inmemory farm
+        .parentid = b->batCacheid,
+        .dirty = true,
+        .refs = ATOMIC_VAR_INIT(1),
+		.storage = STORE_NOWN,
+		.free = GDK_ELIMLIMIT,
+		.size = GDK_ELIMLIMIT,
+    };
+	strconcat_len(hp->filename, sizeof(hp->filename), nme, ".theap", NULL);
+	hp->base = (char*)base;
+	b->tvheap = hp;
+	b->T.type = TYPE_str;
+	/* upgrade filename */
+	strconcat_len(b->theap->filename, sizeof(b->theap->filename), nme, ".tail4", NULL);
+	return b;
 }
 
 str
@@ -350,32 +386,41 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
+	const char *start = (char*)r->bs->buf[p->wid];
+	BUN nil_offset = r->bs->sz[p->wid]+2;
+	/*
 	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
+		*/
+	parsed_bat = string_sharing_bat(BATcount(offsets_bat), start);
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-
 	n = BATcount(offsets_bat);
 	int err = 0;
-	const char *start = (char*)r->bs->buf[p->wid];
 	const int *offsetp = (int*)Tloc(offsets_bat, 0);
+	int *offsetr = (int*)Tloc(parsed_bat, 0);
+	int nils = 0;
 	for (int i = 0; i < n; i++) {
 		gdk_return ok;
 		int offset = offsetp[i];
-		const void *to_insert = str_nil;
+		//const void *to_insert = str_nil;
 
 		if (is_int_nil(offset)) {
 			ok = GDK_SUCCEED;
+			offset = nil_offset;
+			nils++;
 		} else {
 			const char *src = start + offset;
 			if (!checkUTF8str(src, colwidth, &err)) {
+				offset = nil_offset;
+				nils++;
 				if (err == 0)
 					ok = copy_report_error(&errors, i, -1, "incorrectly encoded UTF-8");
 				else
 					ok = copy_report_error(&errors, i, -1, "field too long, max length is %d", colwidth);
 			} else {
 				ok = GDK_SUCCEED;
-				to_insert = src;
+				//to_insert = src;
 			}
 		}
 		if (ok != GDK_SUCCEED) {
@@ -385,15 +430,16 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else
 				ok = GDK_SUCCEED;
 		}
-		if (bunfastapp_nocheck(parsed_bat, to_insert) != GDK_SUCCEED)
-			bailout("copy.parse_generic", GDK_EXCEPTION);
+		//if (bunfastapp_nocheck(parsed_bat, to_insert) != GDK_SUCCEED)
+		//	bailout("copy.parse_generic", GDK_EXCEPTION);
+		offsetr[i] = offset;
 	}
 
 	BATsetcount(parsed_bat, n);
 	// we don't know anything about the data we just parsed
 	parsed_bat->tkey = false;
-	parsed_bat->tnil = false;
-	parsed_bat->tnonil = false;
+	parsed_bat->tnil = (nils)?true:false;
+	parsed_bat->tnonil = (!nils)?true:false;
 	parsed_bat->tsorted = false;
 	parsed_bat->trevsorted = false;
 
@@ -403,7 +449,9 @@ end:
 	if (parsed_bat) {
 		if (msg == MAL_SUCCEED) {
 			*parsed_bat_id = parsed_bat->batCacheid;
-			BBPkeepref(parsed_bat);
+			//BBPkeepref(parsed_bat); -- no BAT_READ
+			BBPretain(parsed_bat->batCacheid);
+			BBPunfix(parsed_bat->batCacheid);
 		} else {
 			BBPunfix(parsed_bat->batCacheid);
 		}
@@ -450,12 +498,15 @@ parse_fixed_width_column(
 
 	BATsetcount(parsed_bat, BATcount(offsets_bat));
 	// we don't know anything about the data we just parsed
+	int nils = fx?*(int*)fx:0;
+	nils += errors->count;
 	parsed_bat->tkey = false;
-	parsed_bat->tnil = false;
-	parsed_bat->tnonil = false;
+	parsed_bat->tnil = nils?true:false;
+	parsed_bat->tnonil = !nils?true:false;
 	parsed_bat->tsorted = false;
 	parsed_bat->trevsorted = false;
-
+	if (BATcount(parsed_bat) <= 1)
+		BATsettrivprop(parsed_bat);
 end:
 	if (parsed_bat) {
 		if (msg == MAL_SUCCEED) {
