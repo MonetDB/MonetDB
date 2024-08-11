@@ -12,8 +12,9 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 	TMPL_TYPE acc = 0;
 	const char *s = value;
 
-	while(isspace((unsigned char) *s))
-		s++;
+	if (*s <= ' ')
+		while(isspace((unsigned char) *s))
+			s++;
 
 	if (*s == '-') {
 		pos = false;
@@ -58,7 +59,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 			s++;
 	}
 
-	while (isspace((unsigned char) *s))
+	while(*s && isspace((unsigned char) *s))
 		s++;
 
 	if (s == value) {
@@ -91,8 +92,9 @@ TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct dec
 	bool neg = false;
 	TMPL_TYPE res = 0;
 
-	while(isspace((unsigned char) *s))
-		s++;
+	if (*s <= ' ')
+		while(isspace((unsigned char) *s))
+			s++;
 
 	if (*s == '-'){
 		neg = true;
@@ -152,8 +154,9 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 	bool neg = false;
 	TMPL_TYPE res = 0;
 
-	while(isspace((unsigned char) *s))
-		s++;
+	if (*s <= ' ')
+		while(isspace((unsigned char) *s))
+			s++;
 
 	if (*s == '-'){
 		neg = true;
