@@ -588,7 +588,7 @@ scan_fields1(
 			&& state->pos + null_repr_len < state->end
 			&& state->pos[0] == null_repr[0]
 			&& (state->pos[null_repr_len] == state->col_sep || !state->pos[null_repr_len])
-			&& strncasecmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
+			&& strncmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
 		);
 
 		if (field_is_null) {

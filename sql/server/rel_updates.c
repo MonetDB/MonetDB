@@ -1596,7 +1596,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	const char *tsep = seps->h->data.sval;
 	char *rsep = seps->h->next->data.sval; /* not const, might need adjusting */
 	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
-	const char *ns = (null_string)?null_string:"null";
+	const char *ns = (null_string)?null_string:"NULL";
 	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
 	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
 	list *collist;
