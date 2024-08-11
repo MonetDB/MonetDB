@@ -581,16 +581,16 @@ scan_fields1(
 	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
 		int field_offset;
-		bool ok;
+		bool ok = true;
 
 		bool field_is_null = (
 			null_repr
 			&& state->pos + null_repr_len < state->end
+			&& state->pos[0] == null_repr[0]
 			&& (state->pos[null_repr_len] == state->col_sep || !state->pos[null_repr_len])
 			&& strncasecmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
 		);
 
-		ok = true;
 		if (field_is_null) {
 			field_offset = int_nil;
 			sep = state->pos[null_repr_len];
@@ -611,7 +611,7 @@ scan_fields1(
 			}
 		}
 
-		if (ok && check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
+		if (check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
 			ok = false;
 		}
 

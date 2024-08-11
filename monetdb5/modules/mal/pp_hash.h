@@ -124,7 +124,20 @@ typedef struct hash_table {
 	int nr_allocators;
 } hash_table;
 
-extern lng str_hsh(str v);
+//extern lng str_hsh(str v);
+static inline lng
+str_hsh( str v )
+{
+    // Source: https://github.com/aappleby/smhasher/blob/master/src/Hashes.cpp
+    lng h = 2166136261UL;
+    const uint8_t* data = (const uint8_t*)v;
+    for (int i = 0; data[i]; i++) {
+        h ^= data[i];
+        h *= 16777619;
+    }
+    return h;
+}
+
 extern hash_table *ht_create(int type, int size, hash_table *p);
 extern void ht_rehash(hash_table *ht);
 
