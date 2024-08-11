@@ -581,7 +581,6 @@ scan_fields1(
 	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
 		int field_offset;
-		bool ok = true;
 
 		bool field_is_null = (
 			null_repr
@@ -603,7 +602,7 @@ scan_fields1(
 				if (*s == state->col_sep)
 					break;
 			sep = *s;
-			if (*s) {
+			if (sep) {
 				state->pos = s + 1;
 				*s = 0;
 			} else {
@@ -611,17 +610,13 @@ scan_fields1(
 			}
 		}
 
-		if (check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
-			ok = false;
-		}
-
-		if (ok) {
+		if (check_row_end(errors, state, row, col, ncols, sep) == GDK_SUCCEED) {
 			// The happy path.  Store the field and advance row and col.
 			columns[col][row] = field_offset;
 			if (col < ncols - 1) {
 				col += 1;
 			} else {
-				row += 1;
+				row++;
 				col = 0;
 			}
 			continue;
