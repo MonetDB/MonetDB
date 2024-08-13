@@ -173,9 +173,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#define GDKwarning(format, ...)					\
+#define GDKwarning(...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, format, ##__VA_ARGS__)
+		      GDK, NULL, __VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
