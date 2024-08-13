@@ -273,7 +273,7 @@ extern char mapi_nomem[];
 void mapi_clrError(Mapi mid)
 	__attribute__((__nonnull__(1)));
 MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
-	__attribute__((__nonnull__(2))) __attribute__((__nonnull__(3)));
+	__attribute__((__nonnull__(2, 3)));
 MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, const char *fmt, ...)
 	__attribute__((__nonnull__(2))) __attribute__((__format__(__printf__, 4, 5)));
 

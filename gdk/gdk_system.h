@@ -43,7 +43,7 @@
 #endif
 #endif
 #if !__has_attribute(__alloc_size__)
-#define __alloc_size__(a)
+#define __alloc_size__(...)
 #endif
 #if !__has_attribute(__cold__)
 #define __cold__
@@ -58,13 +58,13 @@
 #define __designated_init__
 #endif
 #if !__has_attribute(__format__)
-#define __format__(a,b,c)
+#define __format__(...)
 #endif
 #if !__has_attribute(__malloc__)
 #define __malloc__
 #endif
 #if !__has_attribute(__nonnull__)
-#define __nonnull__(a)
+#define __nonnull__(...)
 #endif
 #if !__has_attribute(__nonstring__)
 #define __nonstring__
@@ -76,9 +76,9 @@
 #define __returns_nonnull__
 #endif
 #if !__has_attribute(__visibility__)
-#define __visibility__(a)
+#define __visibility__(...)
 #elif defined(__CYGWIN__)
-#define __visibility__(a)
+#define __visibility__(...)
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__
