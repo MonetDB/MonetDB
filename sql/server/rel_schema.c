@@ -253,6 +253,28 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 	return t;
 }
 
+sql_table *
+mvc_create_remote_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, const char *loc, const char *action)
+{
+	sql_table *t = NULL;
+	switch(mvc_create_remote(&t, sql, s, tname, SQL_DECLARED_TABLE, loc)) {
+		case -1:
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: transaction conflict detected", action);
+		case -4:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: the partition's expression is too long", action);
+		case -5:
+			return NULL;
+		default:
+			break;
+	}
+	if (as_subquery(sql, t, tt_remote, sq, column_spec, action) != 0)
+		return NULL;
+	return t;
+}
+
 static char *
 table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
@@ -1540,18 +1562,32 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
 		/* create table */
-		if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
-			rel_destroy(sq);
-			return NULL;
+		if (tt == tt_remote) {
+			if (!mapiuri_valid(loc))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
+			if ((t = mvc_create_remote_as_subquery(sql, sq, s, name, column_spec, loc, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
+				rel_destroy(sq);
+				return NULL;
+			}
+		} else {
+			if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
+				rel_destroy(sq);
+				return NULL;
+			}
 		}
 
 		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		res = rel_table(sql, ddl_create_table, s->base.name, t, temp);
-		if (with_data) {
-			res = rel_insert(query->sql, res, sq);
-		} else {
+		if (tt == tt_remote) {
+			res = rel_create_remote(sql, ddl_create_table, s->base.name, t, pw_encrypted, username, password);
+			/* we cannot insert in remote so just remove the subquery */
 			rel_destroy(sq);
+		} else {
+			res = rel_table(sql, ddl_create_table, s->base.name, t, (tt == tt_table)?temp:SQL_PERSIST);
+			if (with_data) {
+				res = rel_insert(query->sql, res, sq);
+			} else {
+				rel_destroy(sq);
+			}
 		}
 		return res;
 	}
