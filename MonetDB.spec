@@ -711,6 +711,9 @@ Group: Applications/Databases
 Requires: %{name}-SQL%{?_isa} = %{version}-%{release}
 Requires: %{name}-server-devel%{?_isa} = %{version}-%{release}
 Requires: %{name}-embedded-devel%{?_isa} = %{version}-%{release}
+Obsoletes: %{name}-SQL-server5-devel < 11.50.0
+Provides: %{name}-SQL-server5-devel = %{version}-%{release}
+Provides: %{name}-SQL-server5-devel%{?_isa} = %{version}-%{release}
 
 %description SQL-devel
 MonetDB is a database management system that is developed from a

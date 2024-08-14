@@ -7273,7 +7273,8 @@ sql_session_destroy(sql_session *s)
 {
 	if (s->tr) {
 		sqlstore *store = s->tr->store;
-		store->singleuser--;
+		if (store->singleuser)
+			store->singleuser--;
 	}
 	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);
