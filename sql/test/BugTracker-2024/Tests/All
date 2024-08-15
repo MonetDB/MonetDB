@@ -82,3 +82,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7555-incorrect-semijoin-rewrite
 7556-missing-ignore-case
 7465-fwf-block-boundary-error
+7566-connections-refused

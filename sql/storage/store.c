@@ -7244,8 +7244,10 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 {
 	sql_session *s;
 
-	if (store->singleuser > 1)
+	if (store->singleuser > 1) {
+		TRC_ERROR(SQL_STORE, "No second connection allowed in singleuser mode\n");
 		return NULL;
+	}
 
 	s = ZNEW(sql_session);
 	if (!s)
@@ -7264,7 +7266,7 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 		return NULL;
 	}
 	if (store->singleuser)
-		store->singleuser++;
+		store->singleuser = 2;
 	return s;
 }
 
@@ -7274,7 +7276,7 @@ sql_session_destroy(sql_session *s)
 	if (s->tr) {
 		sqlstore *store = s->tr->store;
 		if (store->singleuser)
-			store->singleuser--;
+			store->singleuser = 1;
 	}
 	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);
