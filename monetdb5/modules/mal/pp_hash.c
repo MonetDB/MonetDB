@@ -51,6 +51,7 @@ log_base2(unsigned int n)
 	return l ;
 }
 
+// FIXME: need to rethink how to _always_ get the correct hash_prime_nr
 static unsigned int
 find_hash_prime(unsigned int n)
 {
@@ -297,7 +298,7 @@ hp_rehash(hash_payload *hp)
 }
 
 static str
-OAHASHnew_payload(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+OAHASHnew_pld(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)cntxt;
 
@@ -642,7 +643,7 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_table(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
+OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
@@ -876,7 +877,7 @@ error:
 				gp[i] = g-1; \
 				bpi++; \
 			} \
-		}\
+		} \
 	} while (0)
 
 #define fderive(Type, BaseType) \
@@ -1037,7 +1038,7 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_combined_table(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
+OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
@@ -1164,7 +1165,7 @@ error:
 }
 
 static str
-OAHASHcompute_frequencies(bat *ht_sink, bat *slot_id, const ptr *H)
+OAHASHcmpt_freq(bat *ht_sink, bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1209,7 +1210,7 @@ error:
 }
 
 static str
-OAHASHcompute_frequencies_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
+OAHASHcmpt_freq_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1344,7 +1345,7 @@ error:
 	} while (0)
 
 static str
-OAHASHadd_payload(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
+OAHASHadd_pld(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool local_storage = false;
@@ -1446,7 +1447,78 @@ error:
 	return err;
 }
 
-#define vhash() \
+#define hash(Type) \
+	do { \
+		*hsh = _hash_##Type(*((Type *) key)); \
+	} while (0)
+
+#define fhash(Type, BaseType) \
+	do { \
+		*hsh = (lng)_hash_##Type(*((BaseType*)key)); \
+	} while (0)
+
+static str
+OAHASHhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+
+	lng *hsh = getArgReference_lng(stk, pci, 0);
+	ptr key = getArgReference(stk, pci, 1);
+	int tt = getArgType(mb, pci, 1);
+
+	switch(ATOMstorage(tt)) {
+		case TYPE_void:
+			hash(oid);
+			break;
+		case TYPE_bit:
+			hash(bit);
+			break;
+		case TYPE_bte:
+			hash(bte);
+			break;
+		case TYPE_sht:
+			hash(sht);
+			break;
+		case TYPE_int:
+			hash(int);
+			break;
+		case TYPE_date:
+			hash(date);
+			break;
+		case TYPE_lng:
+			hash(lng);
+			break;
+		case TYPE_oid:
+			hash(oid);
+			break;
+		case TYPE_daytime:
+			hash(daytime);
+			break;
+		case TYPE_timestamp:
+			hash(timestamp);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			hash(hge);
+			break;
+#endif
+		case TYPE_flt:
+			fhash(flt, int);
+			break;
+		case TYPE_dbl:
+			fhash(dbl, lng);
+			break;
+		default:
+			if (ATOMvarsized(tt)) {
+				*hsh = str_hsh(*(char**)key);
+			} else {
+				return createException(MAL, "oahash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+			}
+	}
+	return MAL_SUCCEED;
+}
+
+#define BATvhash() \
 	do { \
 		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && cnt)); \
 		\
@@ -1466,7 +1538,7 @@ error:
 		} \
 	} while (0)
 
-#define hash(Type) \
+#define BAThash(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
@@ -1476,7 +1548,7 @@ error:
 		} \
 	} while (0)
 
-#define fhash(Type, BaseType) \
+#define BATfhash(Type, BaseType) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
@@ -1486,7 +1558,7 @@ error:
 		} \
 	} while (0)
 
-#define ahash() \
+#define BATahash() \
 	do { \
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
@@ -1500,7 +1572,7 @@ error:
 	} while (0)
 
 static str
-OAHASHhash(bat *hsh, bat *key, const ptr *H)
+BAT_OAHASHhash(bat *hsh, bat *key, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL;
 	BUN cnt;
@@ -1526,49 +1598,49 @@ OAHASHhash(bat *hsh, bat *key, const ptr *H)
 
 		switch(tt) {
 			case TYPE_void:
-				vhash();
+				BATvhash();
 				break;
 			case TYPE_bit:
-				hash(bit);
+				BAThash(bit);
 				break;
 			case TYPE_bte:
-				hash(bte);
+				BAThash(bte);
 				break;
 			case TYPE_sht:
-				hash(sht);
+				BAThash(sht);
 				break;
 			case TYPE_int:
-				hash(int);
+				BAThash(int);
 				break;
 			case TYPE_date:
-				hash(date);
+				BAThash(date);
 				break;
 			case TYPE_lng:
-				hash(lng);
+				BAThash(lng);
 				break;
 			case TYPE_oid:
-				hash(oid);
+				BAThash(oid);
 				break;
 			case TYPE_daytime:
-				hash(daytime);
+				BAThash(daytime);
 				break;
 			case TYPE_timestamp:
-				hash(timestamp);
+				BAThash(timestamp);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				hash(hge);
+				BAThash(hge);
 				break;
 #endif
 			case TYPE_flt:
-				fhash(flt, int);
+				BATfhash(flt, int);
 				break;
 			case TYPE_dbl:
-				fhash(dbl, lng);
+				BATfhash(dbl, lng);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					ahash();
+					BATahash();
 				} else {
 					err = createException(MAL, "oahash.hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 					goto error;
@@ -1585,11 +1657,89 @@ OAHASHhash(bat *hsh, bat *key, const ptr *H)
 	BBPkeepref(h);
 	return MAL_SUCCEED;
 error:
-	BBPunfix(*key);
+	BBPreclaim(k);
+	BBPreclaim(h);
 	return err;
 }
 
-#define vhash_combined() \
+#define hash_cmbd(Type) \
+	do { \
+		*hsh = combine(*prnt, _hash_##Type(*(Type *)key), prime); \
+	} while (0)
+
+#define fhash_cmbd(Type, BaseType) \
+	do { \
+		*hsh = (lng)combine(*prnt, _hash_##Type(*(BaseType*)key), prime); \
+	} while (0)
+static str
+OAHASHhash_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+
+	str ret = MAL_SUCCEED;
+	lng *hsh = getArgReference_lng(stk, pci, 0);
+	ptr key = getArgReference(stk, pci, 1);
+	oid *sltd = getArgReference_oid(stk, pci, 2);
+	oid *prnt = getArgReference_oid(stk, pci, 3);
+
+	*hsh = lng_nil;
+	int tt = getArgType(mb, pci, 1);
+	if (*sltd != oid_nil) {
+		unsigned int prime = find_hash_prime(1);
+		switch(tt) {
+			case TYPE_void:
+				hash_cmbd(oid);
+				break;
+			case TYPE_bit:
+				hash_cmbd(bit);
+				break;
+			case TYPE_bte:
+				hash_cmbd(bte);
+				break;
+			case TYPE_sht:
+				hash_cmbd(sht);
+				break;
+			case TYPE_int:
+				hash_cmbd(int);
+				break;
+			case TYPE_date:
+				hash_cmbd(date);
+				break;
+			case TYPE_lng:
+				hash_cmbd(lng);
+				break;
+			case TYPE_oid:
+				hash_cmbd(oid);
+				break;
+			case TYPE_daytime:
+				hash_cmbd(daytime);
+				break;
+			case TYPE_timestamp:
+				hash_cmbd(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				hash_cmbd(hge);
+				break;
+#endif
+			case TYPE_flt:
+				fhash_cmbd(flt, int);
+				break;
+			case TYPE_dbl:
+				fhash_cmbd(dbl, lng);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					*hsh = combine(*prnt, str_hsh(*(char**)key), prime);
+				} else {
+					ret = createException(MAL, "oahash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
+		}
+	}
+	return ret;
+}
+
+#define BATvhash_cmbd() \
 	do { \
 		assert(BATtdense(k) || \
 				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
@@ -1609,7 +1759,7 @@ error:
 		} \
 	} while (0)
 
-#define hash_combined(Type) \
+#define BAThash_cmbd(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
@@ -1619,7 +1769,7 @@ error:
 		} \
 	} while (0)
 
-#define fhash_combined(Type, BaseType) \
+#define BATfhash_cmbd(Type, BaseType) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
@@ -1629,7 +1779,7 @@ error:
 		} \
 	} while (0)
 
-#define ahash_combined() \
+#define BATahash_cmbd() \
 	do { \
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
@@ -1642,7 +1792,7 @@ error:
 	} while (0)
 
 static str
-OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
+BAT_OAHASHhash_cmbd(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL;
 	BUN cnt;
@@ -1677,49 +1827,49 @@ OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const
 
 		switch(tt) {
 			case TYPE_void:
-				vhash_combined();
+				BATvhash_cmbd();
 				break;
 			case TYPE_bit:
-				hash_combined(bit);
+				BAThash_cmbd(bit);
 				break;
 			case TYPE_bte:
-				hash_combined(bte);
+				BAThash_cmbd(bte);
 				break;
 			case TYPE_sht:
-				hash_combined(sht);
+				BAThash_cmbd(sht);
 				break;
 			case TYPE_int:
-				hash_combined(int);
+				BAThash_cmbd(int);
 				break;
 			case TYPE_date:
-				hash_combined(date);
+				BAThash_cmbd(date);
 				break;
 			case TYPE_lng:
-				hash_combined(lng);
+				BAThash_cmbd(lng);
 				break;
 			case TYPE_oid:
-				hash_combined(oid);
+				BAThash_cmbd(oid);
 				break;
 			case TYPE_daytime:
-				hash_combined(daytime);
+				BAThash_cmbd(daytime);
 				break;
 			case TYPE_timestamp:
-				hash_combined(timestamp);
+				BAThash_cmbd(timestamp);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				hash_combined(hge);
+				BAThash_cmbd(hge);
 				break;
 #endif
 			case TYPE_flt:
-				fhash_combined(flt, int);
+				BATfhash_cmbd(flt, int);
 				break;
 			case TYPE_dbl:
-				fhash_combined(dbl, lng);
+				BATfhash_cmbd(dbl, lng);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					ahash_combined();
+					BATahash_cmbd();
 				} else {
 					err = createException(MAL, "oahash.combined_hash", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 					goto error;
@@ -1738,13 +1888,129 @@ OAHASHcombined_hash(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const
 	BBPkeepref(h);
 	return MAL_SUCCEED;
 error:
+	BBPreclaim(h);
 	BBPreclaim(k);
 	BBPreclaim(s);
 	BBPreclaim(p);
 	return err;
 }
 
-#define vprobe() \
+/* Shared by OAHASHprobe and OAHASHprobe_cmbd*/
+#define probe(Type) \
+	do { \
+		Type *vals = ht->vals; \
+		gid hsh = (*LHS_hash)&ht->mask; \
+		gid slot = ht->gids[hsh]; \
+		while (slot && vals[slot] != *(Type *)LHS_key) { \
+			hsh++; \
+			hsh &= ht->mask; \
+			slot = ht->gids[hsh]; \
+		} \
+		if (slot) { \
+			*LHS_matched = 0; \
+			*RHS_slotid = slot - 1; \
+		} \
+	} while (0)
+
+#define aprobe() \
+	do { \
+		char **vals = ht->vals; \
+		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		gid hsh = (*LHS_hash)&ht->mask; \
+		gid slot = ht->gids[hsh]; \
+		while (slot && atomcmp(vals[slot], *(char**)LHS_key) != 0) { \
+			hsh++; \
+			hsh &= ht->mask; \
+			slot = ht->gids[hsh]; \
+		} \
+		if (slot) { \
+			*LHS_matched = 0; \
+			*RHS_slotid = slot - 1; \
+		} \
+	} while (0)
+
+static str
+OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+
+	str ret = MAL_SUCCEED;
+	oid *LHS_matched = getArgReference_oid(stk, pci, 0);
+	oid *RHS_slotid = getArgReference_oid(stk, pci, 1);
+	ptr LHS_key = getArgReference(stk, pci, 2);
+	lng *LHS_hash = getArgReference_lng(stk, pci, 3);
+	bat *RHS_ht = getArgReference_bat(stk, pci, 4);
+
+	*LHS_matched = oid_nil;
+	*RHS_slotid = oid_nil;
+	int tt = getArgType(mb, pci, 2);
+
+	BAT *t = BATdescriptor(*RHS_ht);
+	if (!t) {
+		return createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	hash_table *ht = (hash_table*)t->T.sink;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	switch(tt) {
+		case TYPE_void:
+			probe(oid);
+			break;
+		case TYPE_bit:
+			probe(bit);
+			break;
+		case TYPE_bte:
+			probe(bte);
+			break;
+		case TYPE_sht:
+			probe(sht);
+			break;
+		case TYPE_int:
+			probe(int);
+			break;
+		case TYPE_date:
+			probe(date);
+			break;
+		case TYPE_lng:
+			probe(lng);
+			break;
+		case TYPE_oid:
+			probe(oid);
+			break;
+		case TYPE_daytime:
+			probe(daytime);
+			break;
+		case TYPE_timestamp:
+			probe(timestamp);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			probe(hge);
+			break;
+#endif
+		case TYPE_flt:
+			probe(flt);
+			break;
+		case TYPE_dbl:
+			probe(dbl);
+			break;
+		default:
+			if (ATOMvarsized(tt)) {
+				aprobe();
+			} else {
+				ret = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+			}
+	}
+	BBPunfix(t->batCacheid);
+	// TODO check for timeout _during_ probe
+	if (!ret) /* don't overwrite existing err msg with timeout msg */
+		TIMEOUT_CHECK(qry_ctx, ret = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
+	return ret;
+}
+
+#define BATvprobe() \
 	do { \
 		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && keycnt)); \
 		\
@@ -1788,7 +2054,7 @@ error:
 		} \
 	} while (0)
 
-#define probe(Type) \
+#define BATprobe(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
@@ -1811,7 +2077,7 @@ error:
 		} \
 	} while (0)
 
-#define aprobe() \
+#define BATaprobe() \
 	do { \
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
@@ -1838,7 +2104,7 @@ error:
 	} while (0)
 
 static str
-OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
+BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
@@ -1870,7 +2136,113 @@ OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat 
 
 		switch(tt) {
 			case TYPE_void:
-				vprobe();
+				BATvprobe();
+				break;
+			case TYPE_bit:
+				BATprobe(bit);
+				break;
+			case TYPE_bte:
+				BATprobe(bte);
+				break;
+			case TYPE_sht:
+				BATprobe(sht);
+				break;
+			case TYPE_int:
+				BATprobe(int);
+				break;
+			case TYPE_date:
+				BATprobe(date);
+				break;
+			case TYPE_lng:
+				BATprobe(lng);
+				break;
+			case TYPE_oid:
+				BATprobe(oid);
+				break;
+			case TYPE_daytime:
+				BATprobe(daytime);
+				break;
+			case TYPE_timestamp:
+				BATprobe(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				BATprobe(hge);
+				break;
+#endif
+			case TYPE_flt:
+				BATprobe(flt);
+				break;
+			case TYPE_dbl:
+				BATprobe(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					BATaprobe();
+				} else {
+					err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(h->batCacheid);
+	BBPunfix(t->batCacheid);
+	BATsetcount(m, mtdcnt);
+	BATsetcount(s, mtdcnt);
+	BATnegateprops(m);
+	BATnegateprops(s);
+	m->tnonil = true;
+	s->tnonil = true;
+	m->tsorted = true;
+	BATkey(m, true);
+	*LHS_matched = m->batCacheid;
+	*RHS_slotid = s->batCacheid;
+	BBPkeepref(m);
+	BBPkeepref(s);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(m);
+	BBPreclaim(s);
+	BBPreclaim(k);
+	BBPreclaim(h);
+	BBPreclaim(t);
+	return err;
+}
+
+static str
+OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+
+	str ret = MAL_SUCCEED;
+	oid *LHS_matched = getArgReference_oid(stk, pci, 0);
+	oid *RHS_slotid = getArgReference_oid(stk, pci, 1);
+	ptr LHS_key = getArgReference(stk, pci, 2);
+	lng *LHS_hash = getArgReference_lng(stk, pci, 3);
+	oid *LHS_sltd = getArgReference_oid(stk, pci, 4);
+	bat *RHS_ht = getArgReference_bat(stk, pci, 5);
+
+	*LHS_matched = oid_nil;
+	*RHS_slotid = oid_nil;
+	int tt = getArgType(mb, pci, 2);
+
+	if (*LHS_sltd != oid_nil) {
+		BAT *t = BATdescriptor(*RHS_ht);
+		if (!t) {
+			return createException(SQL, "oahash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		hash_table *ht = (hash_table*)t->T.sink;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+		switch(tt) {
+			case TYPE_void:
+				probe(oid);
 				break;
 			case TYPE_bit:
 				probe(bit);
@@ -1914,41 +2286,18 @@ OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat 
 				if (ATOMvarsized(tt)) {
 					aprobe();
 				} else {
-					err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-					goto error;
+					ret = createException(MAL, "oahash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				}
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
-		if (err)
-			goto error;
+		BBPunfix(t->batCacheid);
+		// TODO check for timeout _during_ probe
+		if (!ret) /* don't overwrite existing err msg with timeout msg */
+			TIMEOUT_CHECK(qry_ctx, ret = createException(SQL, "oahash.combined_probe", RUNTIME_QRY_TIMEOUT));
 	}
-
-	BBPunfix(k->batCacheid);
-	BBPunfix(h->batCacheid);
-	BBPunfix(t->batCacheid);
-	BATsetcount(m, mtdcnt);
-	BATsetcount(s, mtdcnt);
-	BATnegateprops(m);
-	BATnegateprops(s);
-	m->tnonil = true;
-	s->tnonil = true;
-	m->tsorted = true;
-	BATkey(m, true);
-	*LHS_matched = m->batCacheid;
-	*RHS_slotid = s->batCacheid;
-	BBPkeepref(m);
-	BBPkeepref(s);
-	return MAL_SUCCEED;
-error:
-	BBPreclaim(m);
-	BBPreclaim(s);
-	BBPreclaim(k);
-	BBPreclaim(h);
-	BBPreclaim(t);
-	return err;
+	return ret;
 }
 
-#define combined_vprobe() \
+#define BATvprobe_cmbd() \
 	do { \
 		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
 		\
@@ -1992,7 +2341,7 @@ error:
 		} \
 	} while (0)
 
-#define combined_probe(Type) \
+#define BATprobe_cmbd(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
@@ -2017,7 +2366,7 @@ error:
 		} \
 	} while (0)
 
-#define combined_aprobe() \
+#define BATaprobe_cmbd() \
 	do { \
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
@@ -2045,7 +2394,7 @@ error:
 	} while (0)
 
 static str
-OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
+BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
@@ -2078,49 +2427,49 @@ OAHASHcombined_probe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 
 		switch(tt) {
 			case TYPE_void:
-				combined_vprobe();
+				BATvprobe_cmbd();
 				break;
 			case TYPE_bit:
-				combined_probe(bit);
+				BATprobe_cmbd(bit);
 				break;
 			case TYPE_bte:
-				combined_probe(bte);
+				BATprobe_cmbd(bte);
 				break;
 			case TYPE_sht:
-				combined_probe(sht);
+				BATprobe_cmbd(sht);
 				break;
 			case TYPE_int:
-				combined_probe(int);
+				BATprobe_cmbd(int);
 				break;
 			case TYPE_date:
-				combined_probe(date);
+				BATprobe_cmbd(date);
 				break;
 			case TYPE_lng:
-				combined_probe(lng);
+				BATprobe_cmbd(lng);
 				break;
 			case TYPE_oid:
-				combined_probe(oid);
+				BATprobe_cmbd(oid);
 				break;
 			case TYPE_daytime:
-				combined_probe(daytime);
+				BATprobe_cmbd(daytime);
 				break;
 			case TYPE_timestamp:
-				combined_probe(timestamp);
+				BATprobe_cmbd(timestamp);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				combined_probe(hge);
+				BATprobe_cmbd(hge);
 				break;
 #endif
 			case TYPE_flt:
-				combined_probe(flt);
+				BATprobe_cmbd(flt);
 				break;
 			case TYPE_dbl:
-				combined_probe(dbl);
+				BATprobe_cmbd(dbl);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					combined_aprobe();
+					BATaprobe_cmbd();
 				} else {
 					err = createException(MAL, "oahash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 					goto error;
@@ -2299,7 +2648,125 @@ error:
 	return err;
 }
 
-#define vexpand() \
+#define expand(Type) \
+	do { \
+		Type *res = Tloc(e, 0); \
+		TIMEOUT_LOOP_IDX_DECL(j, ttlcnt, qry_ctx) { \
+			res[idx++] = *(Type *)key; \
+		} \
+	} while (0)
+
+#define aexpand() \
+	do { \
+		TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
+			if (BUNappend(e, *(char**)key, false) != GDK_SUCCEED) { \
+				ret = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				break; \
+			} \
+		} \
+	} while (0)
+static str
+OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+
+	BAT *e = NULL;
+	BUN ttlcnt = 0;
+	str ret = MAL_SUCCEED;
+
+	bat *expanded = getArgReference_bat(stk, pci, 0);
+	ptr key = getArgReference(stk, pci, 1);
+	oid *selected = getArgReference_oid(stk, pci, 2);
+	oid *slotid = getArgReference_oid(stk, pci, 3);
+	bat *freq_sink = getArgReference_bat(stk, pci, 4);
+	bit *outer = getArgReference_bit(stk, pci, 5);
+
+	if (*selected != oid_nil) {
+		BAT *h = BATdescriptor(*freq_sink);
+		if (!h)
+			return createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		ttlcnt = ((hash_table*)h->T.sink)->frequency[*slotid];
+		BBPunfix(h->batCacheid);
+	} else {
+		ttlcnt = (*outer == true);
+	}
+
+	int tt = ATOMstorage(getArgType(mb, pci, 1));
+	e = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	if (!e)
+		return createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	if (ttlcnt) {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		BUN idx = 0;
+
+		switch(tt) {
+			case TYPE_void:
+				expand(oid);
+				break;
+			case TYPE_bit:
+				expand(bit);
+				break;
+			case TYPE_bte:
+				expand(bte);
+				break;
+			case TYPE_sht:
+				expand(sht);
+				break;
+			case TYPE_int:
+				expand(int);
+				break;
+			case TYPE_date:
+				expand(date);
+				break;
+			case TYPE_lng:
+				expand(lng);
+				break;
+			case TYPE_oid:
+				expand(oid);
+				break;
+			case TYPE_daytime:
+				expand(daytime);
+				break;
+			case TYPE_timestamp:
+				expand(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				expand(hge);
+				break;
+#endif
+			case TYPE_flt:
+				expand(flt);
+				break;
+			case TYPE_dbl:
+				expand(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					aexpand();
+				} else {
+					ret = createException(MAL, "oahash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
+		}
+		assert(ret || (idx == ttlcnt));
+		if (!ret)
+			TIMEOUT_CHECK(qry_ctx, ret = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
+	}
+
+	if (ret == MAL_SUCCEED) {
+		BATsetcount(e, ttlcnt);
+		BATnegateprops(e);
+		*expanded = e->batCacheid;
+		BBPkeepref(e);
+	} else {
+		BBPunfix(e->batCacheid);
+	}
+	return ret;
+}
+
+#define BATvexpand() \
 	do { \
 		assert(BATtdense(k) || \
 				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
@@ -2316,16 +2783,16 @@ error:
 					res[idx++] = sel[i]; \
 				} \
 			} \
-			if (*append_vals) { \
+			if (*outer) { \
 				for (BUN i = 0, j = 0; i < keycnt; i++) { \
-					if (j < selcnt && i == sel[j]) j++;\
+					if (j < selcnt && i == sel[j]) j++; \
 					else res[idx++] = i; \
 				} \
 			} \
 		} \
 	} while (0)
 
-#define expand(Type) \
+#define BATexpand(Type) \
 	do { \
 		Type *val = Tloc(k, 0); \
 		Type *res = Tloc(e, 0); \
@@ -2336,15 +2803,15 @@ error:
 				res[idx++] = v; \
 			} \
 		} \
-		if (*append_vals) { \
+		if (*outer) { \
 			for (BUN i = 0, j = 0; i < keycnt; i++) { \
-				if (j < selcnt && i == sel[j]) j++;\
+				if (j < selcnt && i == sel[j]) j++; \
 				else res[idx++] = val[i]; \
 			} \
 		} \
 	} while (0)
 
-#define aexpand() \
+#define BATaexpand() \
 	do { \
 		BATiter bi = bat_iterator(k); \
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
@@ -2358,7 +2825,7 @@ error:
 				idx++; \
 			} \
 		} \
-		if (*append_vals) { \
+		if (*outer) { \
 			for (BUN i = 0, j = 0; i < keycnt; i++) { \
 				if (j < selcnt && i == sel[j]) { \
 					j++; \
@@ -2404,7 +2871,7 @@ error:
 #endif
 
 static str
-OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *append_vals, const ptr *H)
+BAT_OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *outer, const ptr *H)
 {
 	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN keycnt, selcnt, ttlcnt = 0, xpdcnt = 0;
@@ -2437,7 +2904,7 @@ OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink
 			goto error;
 	}
 	ttlcnt = xpdcnt;
-	if (*append_vals) {
+	if (*outer) {
 		ttlcnt += (keycnt - selcnt);
 	}
 
@@ -2454,49 +2921,49 @@ OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink
 
 		switch(tt) {
 			case TYPE_void:
-				vexpand();
+				BATvexpand();
 				break;
 			case TYPE_bit:
-				expand(bit);
+				BATexpand(bit);
 				break;
 			case TYPE_bte:
-				expand(bte);
+				BATexpand(bte);
 				break;
 			case TYPE_sht:
-				expand(sht);
+				BATexpand(sht);
 				break;
 			case TYPE_int:
-				expand(int);
+				BATexpand(int);
 				break;
 			case TYPE_date:
-				expand(date);
+				BATexpand(date);
 				break;
 			case TYPE_lng:
-				expand(lng);
+				BATexpand(lng);
 				break;
 			case TYPE_oid:
-				expand(oid);
+				BATexpand(oid);
 				break;
 			case TYPE_daytime:
-				expand(daytime);
+				BATexpand(daytime);
 				break;
 			case TYPE_timestamp:
-				expand(timestamp);
+				BATexpand(timestamp);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				expand(hge);
+				BATexpand(hge);
 				break;
 #endif
 			case TYPE_flt:
-				expand(flt);
+				BATexpand(flt);
 				break;
 			case TYPE_dbl:
-				expand(dbl);
+				BATexpand(dbl);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					aexpand();
+					BATaexpand();
 				} else {
 					err = createException(MAL, "oahash.expand", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				}
@@ -2681,101 +3148,78 @@ error:
 	return err;
 }
 
-#if 0
-#define vfetch() \
-	do { \
-		oid val = ((oid*)hp->payload)[0]; \
-		oid *res = Tloc(f, 0); \
-		TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
-			res[idx] = val; \
-		} \
-	} while (0)
-#endif
-
 #define fetch(Type) \
 	do { \
+		lng hsh = _hash_lng(slotid); \
 		int prime = hash_prime_nr[ht->bits-5]; \
 		Type *vals = hp->payload; \
 		Type *res = Tloc(f, 0); \
-		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
-			gid freq = (gid)ht->frequency[sid[i]]; \
-			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
-				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
-				res[idx++] = vals[hsh]; \
+		if (slotid != oid_nil) { \
+			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
+				lng vpos = combine(idx, hsh, prime)&ht->mask; \
+				res[idx] = vals[vpos]; \
 			} \
-		} \
-		if (*append_vals) { \
-			for (BUN i = fchcnt; i < ttlcnt; i++) \
-				res[idx++] = Type##_nil; \
+		} else if (outer) { \
+			res[idx++] = Type##_nil; \
 		} \
 	} while (0)
 
 #define afetch() \
 	do { \
+		lng hsh = _hash_lng(slotid); \
 		int prime = hash_prime_nr[ht->bits-5]; \
 		char **vals = hp->payload; \
-		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
-			gid freq = (gid)ht->frequency[sid[i]]; \
-			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
-				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
-				if (BUNappend(f, vals[hsh], false) != GDK_SUCCEED) { \
+		if (slotid != oid_nil) { \
+			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
+				lng vpos = combine(idx, hsh, prime)&ht->mask; \
+				if (BUNappend(f, vals[vpos], false) != GDK_SUCCEED) { \
 					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					break; \
-				}\
-				idx++; \
+				} \
 			} \
-		} \
-		if (*append_vals) { \
-			for (BUN i = fchcnt; i < ttlcnt; i++) { \
-				if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) { \
-					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-					break; \
-				}\
-				idx++; \
+		} else if (outer) { \
+			if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) { \
+				err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				break; \
 			} \
+			idx++; \
 		} \
 	} while (0)
 
 static str
-OAHASHfetch_payload(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, bat *probe_col, bit *append_vals, const ptr *H)
+OAHASHfetch_pld(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *f = NULL, *l = NULL, *hps = NULL, *hts = NULL;
-	BUN nllcnt, selcnt, ttlcnt = 0, fchcnt =  0;
-	str err = NULL;
+	(void) cntxt;
+	(void) mb;
 
-	l = BATdescriptor(*slotid);
+	BAT *f = NULL, *hps = NULL, *hts = NULL;
+	BUN ttlcnt = 0;
+	str err = 0;
+
+	bat *fetched = getArgReference_bat(stk, pci, 0);
+	bat *hp_sink = getArgReference_bat(stk, pci, 1);
+	oid slotid = *(getArgReference_oid(stk, pci, 2));
+	bat *freq_sink = getArgReference_bat(stk, pci, 3);
+	//ptr probe_col = getArgReference(stk, pci, 4);
+	bit outer = *(getArgReference_bit(stk, pci, 5));
+
 	hps = BATdescriptor(*hp_sink);
 	hts = BATdescriptor(*freq_sink);
-	if (!l || !hps || !hts) {
+	if (!hps || !hts) {
 		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
-	gid *sid = Tloc(l, 0);
 	hash_payload *hp = (hash_payload*)hps->T.sink;
 	hash_table *ht = (hash_table*)hts->T.sink;
+	if (slotid != oid_nil) {
+		ttlcnt = ht->frequency[slotid];
+	} else {
+		ttlcnt = (outer == true);
+	}
+
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	selcnt = BATcount(l);
-	if (selcnt) {
-		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			fchcnt += ht->frequency[sid[i]];
-		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
-		if (err)
-			goto error;
-	}
-	ttlcnt = fchcnt;
-	if (*append_vals) {
-		BAT *p = BATdescriptor(*probe_col);
-		if (!p) {
-			err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto error;
-		}
-		nllcnt = BATcount(p) - selcnt;
-		ttlcnt += nllcnt;
-		BBPunfix(p->batCacheid);
-	}
 
 	int tt = hp->type;
 	f = COLnew(hps->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
@@ -2831,7 +3275,200 @@ OAHASHfetch_payload(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, bat
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					afetch();
+					//afetch();
+		lng hsh = _hash_lng(slotid);
+		int prime = hash_prime_nr[ht->bits-5];
+		char **vals = hp->payload;
+		if (slotid != oid_nil) {
+			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) {
+				lng vpos = combine(idx, hsh, prime)&ht->mask;
+				if (BUNappend(f, vals[vpos], false) != GDK_SUCCEED) {
+					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					break;
+				}
+			}
+		} else if (outer) {
+			if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) {
+				err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				break;
+			}
+			idx++;
+		}
+				} else {
+					err = createException(MAL, "oahash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+				}
+		}
+		assert(err || (idx == ttlcnt));
+		if (!err)
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	BBPunfix(hps->batCacheid);
+	BBPunfix(hts->batCacheid);
+	BATsetcount(f, ttlcnt);
+	BATnegateprops(f);
+	*fetched = f->batCacheid;
+	BBPkeepref(f);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(hps);
+	BBPreclaim(hts);
+	return err;
+}
+
+#if 0
+#define BATvfetch() \
+	do { \
+		oid val = ((oid*)hp->payload)[0]; \
+		oid *res = Tloc(f, 0); \
+		TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
+			res[idx] = val; \
+		} \
+	} while (0)
+#endif
+
+#define BATfetch(Type) \
+	do { \
+		int prime = hash_prime_nr[ht->bits-5]; \
+		Type *vals = hp->payload; \
+		Type *res = Tloc(f, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+			gid freq = (gid)ht->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
+				res[idx++] = vals[hsh]; \
+			} \
+		} \
+		if (*outer) { \
+			for (BUN i = fchcnt; i < ttlcnt; i++) \
+				res[idx++] = Type##_nil; \
+		} \
+	} while (0)
+
+#define BATafetch() \
+	do { \
+		int prime = hash_prime_nr[ht->bits-5]; \
+		char **vals = hp->payload; \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+			gid freq = (gid)ht->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+				gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
+				if (BUNappend(f, vals[hsh], false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				} \
+				idx++; \
+			} \
+		} \
+		if (*outer) { \
+			for (BUN i = fchcnt; i < ttlcnt; i++) { \
+				if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				} \
+				idx++; \
+			} \
+		} \
+	} while (0)
+
+static str
+BAT_OAHASHfetch_pld(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, bat *probe_col, bit *outer, const ptr *H)
+{
+	BAT *f = NULL, *l = NULL, *hps = NULL, *hts = NULL;
+	BUN nllcnt, selcnt, ttlcnt = 0, fchcnt =  0;
+	str err = NULL;
+
+	l = BATdescriptor(*slotid);
+	hps = BATdescriptor(*hp_sink);
+	hts = BATdescriptor(*freq_sink);
+	if (!l || !hps || !hts) {
+		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	gid *sid = Tloc(l, 0);
+	hash_payload *hp = (hash_payload*)hps->T.sink;
+	hash_table *ht = (hash_table*)hts->T.sink;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	selcnt = BATcount(l);
+	if (selcnt) {
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
+			fchcnt += ht->frequency[sid[i]];
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+	ttlcnt = fchcnt;
+	if (*outer) {
+		BAT *p = BATdescriptor(*probe_col);
+		if (!p) {
+			err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+		nllcnt = BATcount(p) - selcnt;
+		ttlcnt += nllcnt;
+		BBPunfix(p->batCacheid);
+	}
+
+	int tt = hp->type;
+	f = COLnew(hps->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	if (!f) {
+		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (ttlcnt) {
+		BUN idx = 0;
+
+		switch(tt) {
+			case TYPE_void:
+				BATfetch(oid);
+				break;
+			case TYPE_bit:
+				BATfetch(bit);
+				break;
+			case TYPE_bte:
+				BATfetch(bte);
+				break;
+			case TYPE_sht:
+				BATfetch(sht);
+				break;
+			case TYPE_int:
+				BATfetch(int);
+				break;
+			case TYPE_date:
+				BATfetch(date);
+				break;
+			case TYPE_lng:
+				BATfetch(lng);
+				break;
+			case TYPE_oid:
+				BATfetch(oid);
+				break;
+			case TYPE_daytime:
+				BATfetch(daytime);
+				break;
+			case TYPE_timestamp:
+				BATfetch(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+				BATfetch(hge);
+				break;
+#endif
+			case TYPE_flt:
+				BATfetch(flt);
+				break;
+			case TYPE_dbl:
+				BATfetch(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					BATafetch();
 				} else {
 					err = createException(MAL, "oahash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				}
@@ -2881,7 +3518,7 @@ error:
 				if (BUNappend(f, vals[ps[j]], false) != GDK_SUCCEED) { \
 					err = createException(SQL, "oahash.fetch_payload_cartesian", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					break; \
-				}\
+				} \
 				idx++; \
 			} \
 		} \
@@ -3045,28 +3682,37 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit),batargany("p",2))),
- pattern("oahash", "new_payload", OAHASHnew_payload, false, "", args(1,5, batargany("hp_sink",1),argany("tt",1),arg("nr_payloads",int),batargany("parent",2), batargany("dummy",3))),
+ pattern("oahash", "new_payload", OAHASHnew_pld, false, "", args(1,5, batargany("hp_sink",1),argany("tt",1),arg("nr_payloads",int),batargany("parent",2), batargany("dummy",3))),
 
- command("oahash", "build_table", OAHASHbuild_table, false, "Build a hash table for the given column. Returns the slot ID for each key and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
- command("oahash", "build_combined_table", OAHASHbuild_combined_table, false, "Build a hash table for the given column in combination with the hash table of a parent column. Returns the slot ID for each key and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
+ command("oahash", "build_table", OAHASHbuild_tbl, false, "Build a hash table for the keys. Returns the slot IDs and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
+ command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Build a hash table for the keys in combination with the hash table of its parent column. Returns the slot IDs and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
 
- command("oahash", "compute_frequencies", OAHASHcompute_frequencies, false, "Add the frequencies of the given slot IDs to the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
- command("oahash", "compute_frequencies", OAHASHcompute_frequencies_pos, false, "Add the frequencies of the given slot IDs to the hash-table. In addition, return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
+ command("oahash", "compute_frequencies", OAHASHcmpt_freq, false, "Compute the frequencies of the slot IDs and store them in the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
+ command("oahash", "compute_frequencies", OAHASHcmpt_freq_pos, false, "Compuute the frequencies of the slot IDs and store them in the hash-table. Return combined_hash(slot_id, freq) for payload_pos", args(2,4, batarg("payload_pos",oid),batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),
 
- command("oahash", "add_payload", OAHASHadd_payload, false, "Add 'payload' at 'position' in 'hp_sink'", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("payload_pos",oid),arg("pipeline",ptr))),
+ command("oahash", "add_payload", OAHASHadd_pld, false, "Add 'payload' at 'position' in 'hp_sink'", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("payload_pos",oid),arg("pipeline",ptr))),
 
- command("oahash", "hash", OAHASHhash, false, "Compute the hashs for the given column", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
- command("oahash", "combined_hash", OAHASHcombined_hash, false, "Compute the hashs for the selected items in the given column in combination with the slot IDs of a parent column", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
+ pattern("oahash", "hash", OAHASHhash, false, "Compute the hash for the key", args(1,3, arg("hsh",lng),argany("key",1),arg("pipeline",ptr))),
+ command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
- command("oahash", "probe", OAHASHprobe, false, "Probe the given column with its hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("oahash", "combined_probe", OAHASHcombined_probe, false, "Probe the selected items in the given column with their hashs in the given hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ pattern("oahash", "probe", OAHASHprobe, false, "Probe the (key, hash) in the hash table. Returns (0@0, ht-slotid), or (oid_nil, oid_nil) if no match", args(2,6, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("oahash", "project", OAHASHproject, false, "Project the selected OIDs on the given column", args(1,5, batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("pipeline",ptr))),
+ pattern("oahash", "combined_hash", OAHASHhash_cmbd, false, "If selected, compute the combined hash of key+parent_slotid; otherwise lng_nil", args(1,5, arg("hsh",lng),argany("key",1),arg("selected",oid),arg("parent_slotid",oid),arg("pipeline",ptr))),
+ command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("oahash", "expand", OAHASHexpand, false, "Duplicate the selected items in the given column according to their frequencies denoted in the hash table. If 'append_vals', append the not 'selected' values (for outer joins).", args(1,7, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("append_vals",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", OAHASHprobe_cmbd, false, "If selected, probe the (key, hash) in the hash table. Returns (0@0, RHS_slotid) if there was a match; otherwise (oid_nil, oid_nil)", args(2,7, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),arg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+
+ command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,5, batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("pipeline",ptr))),
+
+ pattern("oahash", "expand", OAHASHexpand, false, "If selected, expand the key according to its frequency in the hash table; otherwise, if 'outer' true, append the key", args(1,7, batargany("expanded",1),argany("key",1),arg("selected",oid),arg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),
+ command("oahash", "expand", BAT_OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys", args(1,7, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),
  command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each item in the given column by the size of the hash-side", args(1,4, batargany("expanded",1),batargany("key",1),batargany("res_idx",2),arg("pipeline",ptr))),
 
- command("oahash", "fetch_payload", OAHASHfetch_payload, false, "For each given hash slot, fetch its associated payloads from the hash-payload.", args(1,7, batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",2),arg("append_vals",bit),arg("pipeline",ptr))),
+ pattern("oahash", "fetch_payload", OAHASHfetch_pld, false, "If selected (i.e. slotid != oid_nil), fetch the payload corresponding to the slotid and expand it according to its frequency in the hash table; otherwise, if 'outer' is true, append NULL", args(1,7, batargany("fetched",1),batargany("hp_sink",1),arg("slotid",oid),batargany("freq_sink",2),argany("probe_col",2),arg("outer",bit),arg("pipeline",ptr))),
+ command("oahash", "fetch_payload", BAT_OAHASHfetch_pld, false, "Fetch the hash-payloads correspond to the slot IDs and expand them according to their frequencies in the hash table. If 'outer' is true, append NULLs for the unmatched keys", args(1,7, batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),batargany("probe_col",2),arg("outer",bit),arg("pipeline",ptr))),
+
  command("oahash", "fetch_payload_cartesian", OAHASHfetch_payload_cart, false, "Fetch all payload for every row of the probe-side.", args(1,5, batargany("fetched",1),batargany("hp_sink",1),batarg("payload_pos",oid),batargany("probe_col",2),arg("pipeline",ptr))),
 
  command("oahash", "get_positions", OAHASHget_pos, false, "Get the positions of partial results in the collected result.", args(1,4, batarg("pos",oid),batargany("res",1),batargany("ht_sink",2),arg("pipeline",ptr))),
