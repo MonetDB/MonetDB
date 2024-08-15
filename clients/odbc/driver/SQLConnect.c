@@ -461,9 +461,13 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 	if (mid == NULL || mapi_error(mid)) {
 		const char *error_state;
 		const char *error_explanation = mid ? mapi_error_str(mid) : NULL;
-		if (error_explanation && strncmp(error_explanation, "InvalidCredentialsException:", 28) == 0)
-			error_state = "28000";
-		else
+		if (error_explanation) {
+			if (strncmp(error_explanation, "InvalidCredentialsException:", 28) == 0)
+				error_state = "28000";
+			else
+			if (strncmp(error_explanation, "could not connect: Connection timed out", 39) == 0)
+				error_state = "HYT00";
+		} else
 			error_state = "08001";
 		addDbcError(dbc, error_state, error_explanation, 0);
 		if (mid)
