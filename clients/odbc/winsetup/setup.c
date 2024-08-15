@@ -209,7 +209,7 @@ TestConnection(HWND hwndDlg, struct data *datap)
 			MessageBox(hwndDlg, "Connection successful", boxtitle, MB_OK | MB_ICONINFORMATION);
 			ret = SQLDisconnect(dbc);
 		} else {
-			SQLCHAR state[6];
+			SQLCHAR state[SQL_SQLSTATE_SIZE + 1];
 			SQLINTEGER errnr;
 			SQLCHAR msg[2560];
 			SQLSMALLINT msglen;
