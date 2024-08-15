@@ -7266,7 +7266,7 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 		return NULL;
 	}
 	if (store->singleuser)
-		store->singleuser++;
+		store->singleuser = 2;
 	return s;
 }
 
@@ -7276,7 +7276,7 @@ sql_session_destroy(sql_session *s)
 	if (s->tr) {
 		sqlstore *store = s->tr->store;
 		if (store->singleuser)
-			store->singleuser--;
+			store->singleuser = 1;
 	}
 	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);
