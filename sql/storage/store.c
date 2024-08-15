@@ -7244,8 +7244,10 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 {
 	sql_session *s;
 
-	if (store->singleuser > 1)
+	if (store->singleuser > 1) {
+		TRC_ERROR(SQL_STORE, "No second connection allowed in singleuser mode\n");
 		return NULL;
+	}
 
 	s = ZNEW(sql_session);
 	if (!s)
