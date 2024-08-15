@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 statement ok
 CREATE TABLE fal(x STRING)
 
@@ -326,7 +328,7 @@ William
 William Franco
 William
 
-query I
+query I nosort
 SELECT COUNT(*) =  55 FROM fal,f WHERE [fal.x] contains [f.y]
 ----
 1
@@ -451,7 +453,7 @@ William
 William Franco
 William
 
-query I
+query I nosort
 SELECT COUNT(*) =  55 FROM fal,f WHERE [fal.x] contains [f.y]
 ----
 1
@@ -461,3 +463,4 @@ DROP TABLE fal CASCADE
 
 statement ok
 DROP TABLE f
+

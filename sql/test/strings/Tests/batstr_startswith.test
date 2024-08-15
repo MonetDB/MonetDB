@@ -62,3 +62,4 @@ SELECT * FROM foo WHERE [foo.x] startswith ['doe', true]
 
 statement ok
 drop table foo
+

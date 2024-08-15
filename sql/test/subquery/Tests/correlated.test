@@ -247,10 +247,9 @@ SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1
 ----
 6
 
-query I rowsort
---SELECT FIRST(i), (SELECT SUM(i1.i)) FROM integers i1
-----
-6
+-- query I rowsort
+-- SELECT FIRST(i), (SELECT SUM(i1.i)) FROM integers i1
+-- ----
 
 query II rowsort
 SELECT MIN(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1

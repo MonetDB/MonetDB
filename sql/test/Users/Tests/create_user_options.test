@@ -259,57 +259,56 @@ query TTITIITI rowsort
 select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
 ----
 
+statement ok
+create user testmaxmem10 with password 'foo' name 'testmaxmem' max_memory '10'
 
 statement ok
-create user testmaxmem10 with password 'foo' name 'testmaxmem' max_memory '10';
+create user testmaxmem10g with password 'foo' name 'testmaxmem' max_memory '10G'
 
 statement ok
-create user testmaxmem10g with password 'foo' name 'testmaxmem' max_memory '10G';
+create user testmaxmem10g_lower with password 'foo' name 'testmaxmem' max_memory '10g'
 
 statement ok
-create user testmaxmem10g_lower with password 'foo' name 'testmaxmem' max_memory '10g';
+create user testmaxmem10gib with password 'foo' name 'testmaxmem' max_memory '10GiB'
 
 statement ok
-create user testmaxmem10gib with password 'foo' name 'testmaxmem' max_memory '10GiB';
+create user testmaxmem10gib_lower with password 'foo' name 'testmaxmem' max_memory '10gib'
 
 statement ok
-create user testmaxmem10gib_lower with password 'foo' name 'testmaxmem' max_memory '10gib';
+create user testmaxmem10gib_upper with password 'foo' name 'testmaxmem' max_memory '10GIB'
 
 statement ok
-create user testmaxmem10gib_upper with password 'foo' name 'testmaxmem' max_memory '10GIB';
+create user testmaxmem10k with password 'foo' name 'testmaxmem' max_memory '10K'
 
 statement ok
-create user testmaxmem10k with password 'foo' name 'testmaxmem' max_memory '10K';
+create user testmaxmem10k_lower with password 'foo' name 'testmaxmem' max_memory '10k'
 
 statement ok
-create user testmaxmem10k_lower with password 'foo' name 'testmaxmem' max_memory '10k';
+create user testmaxmem10kib with password 'foo' name 'testmaxmem' max_memory '10KiB'
 
 statement ok
-create user testmaxmem10kib with password 'foo' name 'testmaxmem' max_memory '10KiB';
+create user testmaxmem10kib_lower with password 'foo' name 'testmaxmem' max_memory '10kib'
 
 statement ok
-create user testmaxmem10kib_lower with password 'foo' name 'testmaxmem' max_memory '10kib';
+create user testmaxmem10kib_upper with password 'foo' name 'testmaxmem' max_memory '10KIB'
 
 statement ok
-create user testmaxmem10kib_upper with password 'foo' name 'testmaxmem' max_memory '10KIB';
+create user testmaxmem10m with password 'foo' name 'testmaxmem' max_memory '10M'
 
 statement ok
-create user testmaxmem10m with password 'foo' name 'testmaxmem' max_memory '10M';
+create user testmaxmem10m_lower with password 'foo' name 'testmaxmem' max_memory '10m'
 
 statement ok
-create user testmaxmem10m_lower with password 'foo' name 'testmaxmem' max_memory '10m';
+create user testmaxmem10mib with password 'foo' name 'testmaxmem' max_memory '10MiB'
 
 statement ok
-create user testmaxmem10mib with password 'foo' name 'testmaxmem' max_memory '10MiB';
+create user testmaxmem10mib_lower with password 'foo' name 'testmaxmem' max_memory '10mib'
 
 statement ok
-create user testmaxmem10mib_lower with password 'foo' name 'testmaxmem' max_memory '10mib';
+create user testmaxmem10mib_upper with password 'foo' name 'testmaxmem' max_memory '10MIB'
 
-statement ok
-create user testmaxmem10mib_upper with password 'foo' name 'testmaxmem' max_memory '10MIB';
-
-query TI
-select name, max_memory from users where name like 'testmaxmem%' order by name;
+query TI nosort
+select name, max_memory from users where name like 'testmaxmem%' order by name
 ----
 testmaxmem10
 10
@@ -347,9 +346,10 @@ testmaxmem10mib_upper
 -- if one alter user works, they'll probably all work!
 
 statement ok
-alter user testmaxmem10 max_memory '20k';
+alter user testmaxmem10 max_memory '20k'
 
-query I
-select max_memory from users where name ='testmaxmem10';
+query I nosort
+select max_memory from users where name ='testmaxmem10'
 ----
 20000
+

@@ -1,5 +1,5 @@
 query IT rowsort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv';
+SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv'
 ----
 1
 aap
@@ -9,16 +9,16 @@ noot
 mies
 
 statement ok
-DROP TABLE IF EXISTS foo;
+DROP TABLE IF EXISTS foo
 
 statement ok
-CREATE TABLE foo(i INT, t TEXT);
+CREATE TABLE foo(i INT, t TEXT)
 
 statement ok
-INSERT INTO foo SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv';
+INSERT INTO foo SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv'
 
 query IT rowsort
-SELECT * FROM foo;
+SELECT * FROM foo
 ----
 1
 aap
@@ -28,7 +28,7 @@ noot
 mies
 
 query IT nosort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' ORDER BY name_1;
+SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' ORDER BY name_1
 ----
 1
 aap
@@ -38,13 +38,13 @@ mies
 noot
 
 query IT nosort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' WHERE name_1 = 'aap';
+SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' WHERE name_1 = 'aap'
 ----
 1
 aap
 
 query IT rowsort
-SELECT count(name_0), name_1 FROM R'$TSTSRCDIR/aapnootmies.csv' GROUP BY name_1;
+SELECT count(name_0), name_1 FROM R'$TSTSRCDIR/aapnootmies.csv' GROUP BY name_1
 ----
 1
 aap
@@ -54,7 +54,8 @@ mies
 noot
 
 query IT nosort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' a WHERE a.name_1 = 'aap';
+SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' a WHERE a.name_1 = 'aap'
 ----
 1
 aap
+

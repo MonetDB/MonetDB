@@ -122,6 +122,9 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     tail='\n'.join(tail)
     return head + '\n' + tail, head, stmt
 
+def dq(s):
+    return s.replace('"', '""')
+
 class SQLLogic:
     def __init__(self, report=None, out=sys.stdout):
         self.dbh = None
@@ -224,40 +227,40 @@ class SQLLogic:
         self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0].replace('"', '""'), row[1].replace('"', '""')))
+                self.crs.execute(f'drop {row[2]} "{dq(row[0])}"."{dq(row[1])}" cascade')
             except pymonetdb.Error:
                 # perhaps already dropped because of the cascade
                 pass
         self.crs.execute('select s.name, f.name, ft.function_type_keyword from functions f, schemas s, function_types ft where not f.system and f.schema_id = s.id and f.type = ft.function_type_id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop all {} "{}"."{}"'.format(row[2], row[0].replace('"', '""'), row[1].replace('"', '""')))
+                self.crs.execute(f'drop all {row[2]} "{dq(row[0])}"."{dq(row[1])}"')
             except pymonetdb.Error:
                 # perhaps already dropped
                 pass
         self.crs.execute('select s.name, q.name from sys.sequences q, schemas s where q.schema_id = s.id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop sequence "{}"."{}"'.format(row[0].replace('"', '""'), row[1].replace('"', '""')))
+                self.crs.execute(f'drop sequence "{dq(row[0])}"."{dq(row[1])}"')
             except pymonetdb.Error:
                 # perhaps already dropped
                 pass
         self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('alter user "{}" SET SCHEMA "sys"'.format(row[0].replace('"', '""')))
+                self.crs.execute(f'alter user "{dq(row[0])}" SET SCHEMA "sys"')
             except pymonetdb.Error:
                 pass
         self.crs.execute('select name from sys.schemas where not system')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop schema "{}" cascade'.format(row[0].replace('"', '""')))
+                self.crs.execute(f'drop schema "{dq(row[0])}" cascade')
             except pymonetdb.Error:
                 pass
         self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop user "{}"'.format(row[0].replace('"', '""')))
+                self.crs.execute(f'drop user "{dq(row[0])}"')
             except pymonetdb.Error:
                 pass
 
@@ -322,9 +325,9 @@ class SQLLogic:
             if expectok:
                 if expected_rowcount is not None:
                     result.append('rowcount')
-                    result.append('{}'.format(affected_rowcount))
+                    result.append(f'{affected_rowcount}')
                     if expected_rowcount != affected_rowcount:
-                        self.query_error(err_stmt or statement, "statement was expecting to succeed with {} rows but received {} rows!".format(expected_rowcount, affected_rowcount))
+                        self.query_error(err_stmt or statement, f"statement was expecting to succeed with {expected_rowcount} rows but received {affected_rowcount} rows!")
                 return result
             msg = None
         self.query_error(err_stmt or statement, expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't", msg)
@@ -386,7 +389,7 @@ class SQLLogic:
         return ndata
 
     def raise_error(self, message):
-        print('Syntax error in test file, line {}:'.format(self.qline), file=self.out)
+        print(f'Syntax error in test file, line {self.qline}:', file=self.out)
         print(message, file=self.out)
         raise SQLLogicSyntaxError(message)
 
@@ -453,7 +456,7 @@ class SQLLogic:
                     rescols.append('T')
             rescols = ''.join(rescols)
             if len(crs.description) != len(columns):
-                self.query_error(query, 'received {} columns, expected {} columns'.format(len(crs.description), len(columns)), data=data)
+                self.query_error(query, f'received {len(crs.description)} columns, expected {len(columns)} columns', data=data)
                 columns = rescols
                 err = True
         else:
@@ -462,7 +465,7 @@ class SQLLogic:
             rescols = 'T'
         if sorting != 'python' and crs.rowcount * len(columns) != nresult:
             if not err:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(crs.rowcount, nresult // len(columns)), data=data)
+                self.query_error(query, f'received {crs.rowcount} rows, expected {nresult // len(columns)} rows', data=data)
                 err = True
         if self.res is not None:
             for row in data:
@@ -556,7 +559,7 @@ class SQLLogic:
             if (len(ndata)):
                 ncols = len(ndata[0])
             if len(ndata)*ncols != nresult:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(len(ndata)*ncols, nresult), data=data)
+                self.query_error(query, f'received {len(ndata)*ncols} rows, expected {nresult} rows', data=data)
                 err = True
             for row in ndata:
                 for col in row:
@@ -652,7 +655,7 @@ class SQLLogic:
         if hashlabel:
             result1.append(hashlabel)
         if len(result) > self.threshold:
-            result2 = ['{} values hashing to {}'.format(len(result), h if resdata is None else resh)]
+            result2 = [f'{len(result)} values hashing to {h if resdata is None else resh}']
         else:
             result2 = result
         return result1, result2
@@ -701,8 +704,10 @@ class SQLLogic:
                     # line = line.replace('\''+val.replace('\\', '\\\\'),
                     #                     '\'${Q'+key+'}')
                     # line = line.replace(val, '${'+key+'}')
-                    line = line.replace('\''+val.replace('\\', '\\\\'),
-                                        '\'$Q'+key)
+                    line = line.replace("r'"+val, "r'$"+key)
+                    line = line.replace("R'"+val, "R'$"+key)
+                    line = line.replace("'"+val.replace('\\', '\\\\'),
+                                        "'$Q"+key)
                     line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
@@ -909,12 +914,13 @@ class SQLLogic:
                         self.writeline(line.rstrip())
                     self.writeline('----')
                     if hash:
-                        self.writeline('{} values hashing to {}'.format(
-                            nresult, hash))
+                        self.writeline(f'{nresult} values hashing to {hash}')
                     else:
                         for line in expected:
                             self.writeline(line)
                 self.writeline()
+            else:
+                self.raise_error(f'unrecognized command {words[0]}')
 
 if __name__ == '__main__':
     import argparse
@@ -962,7 +968,7 @@ if __name__ == '__main__':
             if not opts.nodrop:
                 sql.drop()
             if opts.verbose:
-                print('now testing {}'. format(test))
+                print(f'now testing {test}')
             try:
                 sql.parse(test, approve=opts.approve, verbose=opts.verbose,
                           defines=opts.define, run_until=opts.run_until)

@@ -429,3 +429,4 @@ DROP TABLE fal CASCADE
 
 statement ok
 DROP TABLE f
+

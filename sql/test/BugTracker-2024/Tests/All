@@ -83,3 +83,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7556-missing-ignore-case
 7465-fwf-block-boundary-error
 7566-connections-refused
+7562-interval-overflow

@@ -12,3 +12,4 @@ DROP VIEW v0
 
 statement ok
 DROP TABLE t0
+
