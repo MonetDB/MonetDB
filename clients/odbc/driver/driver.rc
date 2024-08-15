@@ -27,7 +27,7 @@ BEGIN
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "MonetODBC.dll\0"
       VALUE "PrivateBuild", "\0"
-      VALUE "ProductName", "MonetDB SQL Server\0"
+      VALUE "ProductName", "MonetDB ODBC Driver\0"
       VALUE "ProductVersion", sversion(11,51,2)
       VALUE "SpecialBuild", "\0"
     END
