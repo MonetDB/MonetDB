@@ -951,7 +951,8 @@ month_interval_str_imp(int *ret, const char *next, int d, int sk)
 	lng upcast;
 	if (interval_from_str(next, d, sk, &upcast) < 0)
 		return createException(SQL, "batcalc.month_interval_str", SQLSTATE(42000) "Wrong format (%s)", next);
-	assert((lng) GDK_int_min <= upcast && upcast <= (lng) GDK_int_max);
+	if (upcast < (lng) GDK_int_min || upcast > (lng) GDK_int_max)
+		throw(SQL, "batcalc.month_interval_str", SQLSTATE(22003) "value out of range");
 	*ret = (int) upcast;
 	return MAL_SUCCEED;
 }
