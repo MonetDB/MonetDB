@@ -7,7 +7,7 @@ statement ok
 create table abc(col1 int)
 
 @connection(id=c2, username=test, password=test)
-query TTT
+query TTT nosort
 SELECT schema, table, column FROM sys.statistics where schema = 'test'
 ----
 test
@@ -15,7 +15,7 @@ abc
 col1
 
 @connection(id=c2, username=test, password=test)
-query TTT
+query TTT nosort
 SELECT schema, table, column FROM sys.statistics() where schema = 'test'
 ----
 test
@@ -23,7 +23,7 @@ abc
 col1
 
 @connection(id=c2, username=test, password=test)
-query TT
+query TT nosort
 SELECT table_schema, table_name FROM information_schema.tables where table_schema = 'test'
 ----
 test
@@ -44,3 +44,4 @@ drop schema test
 @connection(id=c1, username=monetdb, password=monetdb)
 statement ok
 drop user test
+

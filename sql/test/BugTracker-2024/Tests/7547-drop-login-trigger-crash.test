@@ -34,3 +34,4 @@ CREATE OR REPLACE TRIGGER lt1 BEFORE LOGIN  SET SCHEMA tmp
 
 statement ok
 drop trigger "lt1"
+

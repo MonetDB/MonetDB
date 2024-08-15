@@ -79,9 +79,9 @@ select regexp_replace('abc', 'b|k?', '-', 'e')
 -a--c-
 
 # regex option - empty match w alternative v2
-# even though you would expect -a--c- the pcre lib does not return 
-# the longest match for this particular pattern in offset 1 ('b') but 
-# an empty string match ¯\_(ツ)_/¯ 
+# even though you would expect -a--c- the pcre lib does not return
+# the longest match for this particular pattern in offset 1 ('b') but
+# an empty string match ¯\_(ツ)_/¯
 query T rowsort
 select regexp_replace('abc', 'k?|b', '-', 'e')
 ----

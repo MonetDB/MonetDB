@@ -13,3 +13,4 @@ SELECT 50 , CASE WHEN COUNT ( ) OVER ( ) THEN ( 63 ) END
 ----
 50
 63
+

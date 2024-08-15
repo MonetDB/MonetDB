@@ -2,19 +2,20 @@ statement ok
 CREATE TABLE t0(c0 VARCHAR)
 
 statement ok
-INSERT INTO t0 (c0) VALUES ('a');
+INSERT INTO t0 (c0) VALUES ('a')
 
-query T
+query T nosort
 SELECT t0.c0 FROM t0
 ----
 a
 
-query T
+query I nosort
 SELECT (1 AND ('' IS DISTINCT FROM t0.c0)) FROM t0
 ----
-True
+1
 
-query T
+query T nosort
 SELECT t0.c0 FROM t0 WHERE (1 AND ('' IS DISTINCT FROM t0.c0))
 ----
 a
+

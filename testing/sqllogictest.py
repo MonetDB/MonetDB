@@ -704,8 +704,10 @@ class SQLLogic:
                     # line = line.replace('\''+val.replace('\\', '\\\\'),
                     #                     '\'${Q'+key+'}')
                     # line = line.replace(val, '${'+key+'}')
-                    line = line.replace('\''+val.replace('\\', '\\\\'),
-                                        '\'$Q'+key)
+                    line = line.replace("r'"+val, "r'$"+key)
+                    line = line.replace("R'"+val, "R'$"+key)
+                    line = line.replace("'"+val.replace('\\', '\\\\'),
+                                        "'$Q"+key)
                     line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
