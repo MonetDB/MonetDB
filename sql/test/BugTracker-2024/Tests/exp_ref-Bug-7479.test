@@ -1,25 +1,32 @@
-query T nosort
+query I nosort
 WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS
 ----
 1
 1
 
-query T nosort
+query I nosort
 WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x AS )
 ----
 1
 1
 
-statment error syntax error, unexpected ')' in: "with x as ( select 1 x union select - '199419' ) select 1 from x as where x in ("
+query IRI rowsort
 WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT min ( x ) OVER ( PARTITION BY x ) AS )
 ----
+1
+-199419.000
+1
+1
+1.000
+1
 
-query T nosort
+query I nosort
 WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS )
 ----
 1
 1
 
-statment error GDK reported error: BATsubcross: more than one match
+statement error GDK reported error: BATsubcross: more than one match
 SELECT ( WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS ) )
 ----
+
