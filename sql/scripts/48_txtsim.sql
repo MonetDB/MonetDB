@@ -80,3 +80,24 @@ grant execute on function difference(string, string) to public;
 create function sys.qgramnormalize(x string)
 returns string external name txtsim.qgramnormalize;
 grant execute on function qgramnormalize(string) to public;
+
+
+
+create function signature_sht( val string, n int) returns smallint external name ngram.signature_sht;
+create function signature_int( val string, n int) returns int external name ngram.signature_int;
+create function signature_lng( val string, n int) returns bigint external name ngram.signature_lng;
+create function signature_hge( val string, n int) returns hugeint external name ngram.signature_hge;
+
+
+create filter function "and_sht"( sig smallint, needle smallint) external name ngram."and";
+create filter function "and_int"( sig int, needle int) external name ngram."and";
+create filter function "and_lng"( sig bigint, needle bigint) external name ngram."and";
+create filter function "and_hge"( sig hugeint, needle hugeint) external name ngram."and";
+
+create function popcnt( sig bigint) returns int external name ngram.popcnt;
+create aggregate function "gor" ( sig bigint ) returns bigint external name ngram.gor;
+
+create filter function "c1"( h varchar, needle varchar) external name ngram."c1";
+create filter function "c2"( h varchar, needle varchar) external name ngram."c2";
+create filter function "c3"( h varchar, needle varchar) external name ngram."c3";
+create filter function "c4"( h varchar, needle varchar) external name ngram."c4";
