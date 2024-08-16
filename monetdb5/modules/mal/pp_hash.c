@@ -1466,7 +1466,7 @@ OAHASHhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ptr key = getArgReference(stk, pci, 1);
 	int tt = getArgType(mb, pci, 1);
 
-	switch(ATOMstorage(tt)) {
+	switch(tt) {
 		case TYPE_void:
 			hash(oid);
 			break;
@@ -2691,7 +2691,7 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ttlcnt = (*outer == true);
 	}
 
-	int tt = ATOMstorage(getArgType(mb, pci, 1));
+	int tt = getArgType(mb, pci, 1);
 	e = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
 	if (!e)
 		return createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
