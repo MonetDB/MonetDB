@@ -115,7 +115,7 @@ static void
 monet_hello(void)
 {
 	double sz_mem_h;
-	char *qc = " kMGTPE";
+	const char qc[] = " kMGTPE";
 	int qi = 0;
 
 	printf("# MonetDB 5 server v%s", GDKversion());

@@ -3848,7 +3848,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		}
 		return e;
 	}
-	char *type = "unknown", *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+	const char *type = "unknown";
+	char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 
 	if (!list_empty(exps)) {
 		sql_exp *e = exps->h->data;
@@ -6065,7 +6066,7 @@ rel_setquery(sql_query *query, symbol *q)
 	if (!corresponding && list_length(t1->exps) != list_length(t2->exps)) {
 		int t1nrcols = list_length(t1->exps);
 		int t2nrcols = list_length(t2->exps);
-		char *op = "UNION";
+		const char *op = "UNION";
 		if (q->token == SQL_EXCEPT)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)

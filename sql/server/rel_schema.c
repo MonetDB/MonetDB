@@ -1109,7 +1109,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		(partition_find_part(sql->session->tr, t, NULL) &&
 			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
 			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
-		char *msg = "";
+		const char *msg = "";
 
 		switch (s->token) {
 		case SQL_TABLE:
