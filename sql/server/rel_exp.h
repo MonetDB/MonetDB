@@ -160,6 +160,7 @@ extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
+/* exp_is_true/false etc return true if the expression is true, on unknown etc false is returned */
 extern int exp_is_true(sql_exp *e);
 extern int exp_is_false(sql_exp *e);
 extern int exp_is_zero(sql_exp *e);

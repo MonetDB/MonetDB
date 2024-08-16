@@ -153,12 +153,12 @@ MNDBDriverConnect(ODBCDbc *dbc,
 		goto failure;
 	}
 
+	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT,
+		      addDbcError, dbc, return SQL_ERROR);
+
 	settings = msettings_clone(dbc->settings);
 	if (!settings)
 		goto failure;
-
-	fixODBCstring(InConnectionString, StringLength1, SQLSMALLINT,
-		      addDbcError, dbc, return SQL_ERROR);
 
 #ifdef ODBCDEBUG
 	ODBCLOG("\"%.*s\" %s\n", StringLength1,

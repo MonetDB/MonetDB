@@ -12,3 +12,4 @@ ROLLBACK
 
 statement ok
 SET SCHEMA sys
+

@@ -59,3 +59,4 @@ insert into t3335 values(-1)
 
 statement error
 insert into t3335 values(3)
+

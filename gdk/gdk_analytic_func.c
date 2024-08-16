@@ -1270,7 +1270,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	BATiter si = bat_iterator(s);					\
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base, \
 		*levels_offset = NULL, nlevels = 0;			\
 	bit *np = pi.base, *op = oi.base;				\
 	const void *nil = ATOMnilptr(tpe);				\
@@ -1281,6 +1281,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);		\
 	BAT *st = NULL;							\
 									\
+	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
 		case 3: /* unbounded until current row */		\
@@ -1629,7 +1630,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	BATiter bi = bat_iterator(b);
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	lng curval = 0, *rb = (lng *) Tloc(r, 0);
 	bit *np = pi.base, *op = oi.base;
@@ -1641,6 +1642,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
 
+	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
 		switch (frame_type) {
 		case 3: /* unbounded until current row */
@@ -1734,7 +1736,7 @@ cleanup:
 				if (is_##TPE2##_nil(curval))		\
 					curval = (TPE2) v;		\
 				else					\
-					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+					ADDI_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 			}						\
 		}							\
 		for (; k < i; k++)					\
@@ -1962,13 +1964,14 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
 
+	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
 		switch (frame_type) {
 		case 3: /* unbounded until current row */
@@ -2025,7 +2028,7 @@ nosupport:
 			if (is_##TPE2##_nil(curval))			\
 				curval = (TPE2) ARG;			\
 			else						\
-				MUL4_WITH_CHECK(ARG, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+				MULI4_WITH_CHECK(ARG, curval, TPE2, curval, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
 		}							\
 	} while(0)
 
@@ -2105,7 +2108,7 @@ nosupport:
 			if (is_##TPE2##_nil(computed))			\
 				computed = VAL;				\
 			else						\
-				MUL4_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+				MULI4_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
 		}							\
 	} while (0)
 #define FINALIZE_AGGREGATE_PROD(NOTHING1, TPE2, NOTHING2)	\
@@ -2481,13 +2484,14 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	bit *np = pi.base, *op = oi.base;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
 
+	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
 		switch (frame_type) {
 		case 3: /* unbounded until current row */

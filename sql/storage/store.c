@@ -7244,8 +7244,10 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 {
 	sql_session *s;
 
-	if (store->singleuser > 1)
+	if (store->singleuser > 1) {
+		TRC_ERROR(SQL_STORE, "No second connection allowed in singleuser mode\n");
 		return NULL;
+	}
 
 	s = ZNEW(sql_session);
 	if (!s)
@@ -7264,7 +7266,7 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 		return NULL;
 	}
 	if (store->singleuser)
-		store->singleuser++;
+		store->singleuser = 2;
 	return s;
 }
 
@@ -7273,7 +7275,8 @@ sql_session_destroy(sql_session *s)
 {
 	if (s->tr) {
 		sqlstore *store = s->tr->store;
-		store->singleuser--;
+		if (store->singleuser)
+			store->singleuser = 1;
 	}
 	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);
@@ -7399,9 +7402,11 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						v->value = NEW_ARRAY(char, vvalue.len);
-						memcpy(v->value, VALget(&vvalue), vvalue.len);
-						v->length = vvalue.len;
+						ok = v->value = NEW_ARRAY(char, vvalue.len);
+						if (ok) {
+							memcpy(v->value, VALget(&vvalue), vvalue.len);
+							v->length = vvalue.len;
+						}
 					}
 					VALclear(&vvalue);
 					if (!ok)
@@ -7426,10 +7431,17 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 
 						p->part.range.minvalue = NEW_ARRAY(char, nil_len);
 						p->part.range.maxvalue = NEW_ARRAY(char, nil_len);
-						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
-						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
-						p->part.range.minlength = nil_len;
-						p->part.range.maxlength = nil_len;
+						if (p->part.range.minvalue == NULL ||
+							p->part.range.maxvalue == NULL) {
+							ok = NULL;
+							_DELETE(p->part.range.minvalue);
+							_DELETE(p->part.range.maxvalue);
+						} else {
+							memcpy(p->part.range.minvalue, nil_ptr, nil_len);
+							memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
+							p->part.range.minlength = nil_len;
+							p->part.range.maxlength = nil_len;
+						}
 					} else {
 						ok = VALconvert(localtype, &vmin);
 						if (ok)
@@ -7437,13 +7449,20 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 						if (ok) {
 							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
 							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);
-							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
-							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
-							p->part.range.minlength = vmin.len;
-							p->part.range.maxlength = vmax.len;
+							if (p->part.range.minvalue == NULL ||
+								p->part.range.maxvalue == NULL) {
+								ok = NULL;
+								_DELETE(p->part.range.minvalue);
+								_DELETE(p->part.range.maxvalue);
+							} else {
+								memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
+								memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
+								p->part.range.minlength = vmin.len;
+								p->part.range.maxlength = vmax.len;
+							}
 						}
 					}
-					if (isPartitionedByColumnTable(p->t))
+					if (ok && isPartitionedByColumnTable(p->t))
 						col_set_range(tr, p, true);
 				}
 				VALclear(&vmin);
@@ -7479,7 +7498,10 @@ sql_trans_convert_partitions(sql_trans *tr)
 void
 store_printinfo(sqlstore *store)
 {
-	MT_lock_set(&store->commit);
+	if (!MT_lock_trytime(&store->commit, 1000)) {
+		printf("WAL is currently locked, so no WAL information\n");
+		return;
+	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
 	log_printinfo(store->logger);

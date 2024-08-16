@@ -2,7 +2,7 @@ statement ok
 CREATE TABLE t (i INT)
 
 statement ok
-COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+COPY 2 RECORDS INTO t FROM r'$TSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
 
 statement ok
 CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys
@@ -17,7 +17,7 @@ INSERT INTO t VALUES (888)
 
 @connection(id=usr)
 statement error 42000!COPY INTO: insufficient privileges for user 'copyuser' to copy into table 't'
-COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+COPY 2 RECORDS INTO t FROM r'$TSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
 
 statement ok
 GRANT INSERT ON t TO copyuser
@@ -28,21 +28,21 @@ INSERT INTO t VALUES (888)
 
 @connection(id=usr)
 statement error 42000!COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "t" FROM file ON CLIENT' instead
-COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+COPY 2 RECORDS INTO t FROM r'$TSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
 
 statement ok
 GRANT COPY FROM TO copyuser
 
 @connection(id=usr)
 statement ok
-COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+COPY 2 RECORDS INTO t FROM r'$TSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
 
 statement ok
 REVOKE INSERT ON t FROM copyuser
 
 @connection(id=usr)
 statement error 42000!COPY INTO: insufficient privileges for user 'copyuser' to copy into table 't'
-COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+COPY 2 RECORDS INTO t FROM r'$TSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
 
 statement ok
 GRANT INSERT ON t TO copyuser
@@ -52,7 +52,7 @@ REVOKE COPY FROM FROM copyuser
 
 @connection(id=usr)
 statement error 42000!COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "t" FROM file ON CLIENT' instead
-COPY 2 RECORDS INTO t FROM r'$QTSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
+COPY 2 RECORDS INTO t FROM r'$TSTSRCDIR/copyfrom.csv' USING DELIMITERS ',', E'\n','"'
 
 statement ok
 GRANT SELECT ON t TO copyuser
@@ -69,21 +69,21 @@ SELECT * FROM t
 
 @connection(id=usr)
 statement error 42000!COPY INTO: insufficient privileges: COPY INTO file requires database administrator rights, use 'COPY ... INTO file ON CLIENT' instead
-COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+COPY SELECT * FROM t INTO r'$TSTTRGDIR/copyinto.csv'
 
 statement ok
 GRANT COPY INTO TO copyuser
 
 @connection(id=usr)
 statement ok
-COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+COPY SELECT * FROM t INTO r'$TSTTRGDIR/copyinto.csv'
 
 statement ok
 REVOKE COPY INTO FROM copyuser
 
 @connection(id=usr)
 statement error 42000!COPY INTO: insufficient privileges: COPY INTO file requires database administrator rights, use 'COPY ... INTO file ON CLIENT' instead
-COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+COPY SELECT * FROM t INTO r'$TSTTRGDIR/copyinto.csv'
 
 statement ok
 GRANT COPY INTO TO copyuser
@@ -93,5 +93,5 @@ REVOKE SELECT ON t FROM copyuser
 
 @connection(id=usr)
 statement error 42000!SELECT: access denied for copyuser to table 'sys.t'
-COPY SELECT * FROM t INTO r'$QTSTTRGDIR/copyinto.csv'
+COPY SELECT * FROM t INTO r'$TSTTRGDIR/copyinto.csv'
 

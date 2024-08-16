@@ -208,6 +208,8 @@ mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)
 mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 	__attribute__((__nonnull__(1)));
 
+mapi_export MapiMsg mapi_set_rtimeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
+	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_timeout(Mapi mid, unsigned int time)

@@ -2,3 +2,5 @@ debian/tmp/usr/include/monetdb/opt_backend.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/rel_*.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/sql*.h usr/include/monetdb
 debian/tmp/usr/include/monetdb/store_*.h usr/include/monetdb
+debian/tmp/usr/share/monetdb/cmake/MonetDBConfig*.cmake usr/share/monetdb/cmake
+debian/tmp/usr/share/monetdb/cmake/sqlTargets*.cmake usr/share/monetdb/cmake

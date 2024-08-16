@@ -173,9 +173,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#define GDKwarning(format, ...)					\
+#define GDKwarning(...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, format, ##__VA_ARGS__)
+		      GDK, NULL, __VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
@@ -314,13 +314,17 @@ ilog2(BUN x)
 {
 	if (x == 0)
 		return 0;
-#if defined(__GNUC__)
-#if SIZEOF_BUN == 8
+#ifdef __has_builtin
+#if SIZEOF_BUN == 8 && __has_builtin(__builtin_clzll)
 	return (unsigned) (64 - __builtin_clzll((unsigned long long) x));
-#else
+#define BUILTIN_USED
+#elif __has_builtin(__builtin_clz)
 	return (unsigned) (32 - __builtin_clz((unsigned) x));
+#define BUILTIN_USED
 #endif
-#elif defined(_MSC_VER)
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 	unsigned long n;
 	if (
 #if SIZEOF_BUN == 8
@@ -365,6 +369,8 @@ ilog2(BUN x)
 	}
 	return n + (x != 0);
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */

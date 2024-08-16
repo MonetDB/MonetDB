@@ -193,7 +193,7 @@ struct thread_funcs {
 	void *data;
 };
 
-static struct mtthread {
+struct mtthread {
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
@@ -228,17 +228,20 @@ static struct mtthread {
 	uintptr_t sp;
 	char *errbuf;
 	struct freebats freebats;
-} *mtthreads = NULL;
-struct mtthread mainthread = {
+};
+static struct mtthread mainthread = {
 	.threadname = "main thread",
 	.exited = ATOMIC_VAR_INIT(0),
 	.refs = 1,
 	.tid = 1,
 };
+static struct mtthread *mtthreads = &mainthread;
+
 #ifdef HAVE_PTHREAD_H
 static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_key_t threadkey;
 #define thread_lock()		pthread_mutex_lock(&posthread_lock)
+#define thread_lock_try()	(pthread_mutex_trylock(&posthread_lock) == 0)
 #define thread_unlock()		pthread_mutex_unlock(&posthread_lock)
 #define thread_self()		pthread_getspecific(threadkey)
 #define thread_setself(self)	pthread_setspecific(threadkey, self)
@@ -246,6 +249,7 @@ static pthread_key_t threadkey;
 static CRITICAL_SECTION winthread_cs;
 static DWORD threadkey = TLS_OUT_OF_INDEXES;
 #define thread_lock()		EnterCriticalSection(&winthread_cs)
+#define thread_lock_try()	(TryEnterCriticalSection(&winthread_cs) != 0)
 #define thread_unlock()		LeaveCriticalSection(&winthread_cs)
 #define thread_self()		TlsGetValue(threadkey)
 #define thread_setself(self)	TlsSetValue(threadkey, self)
@@ -258,14 +262,19 @@ static bool thread_initialized = false;
 static inline uintptr_t
 THRsp(void)
 {
-#if defined(__GNUC__) || defined(__clang__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_frame_address)
 	return (uintptr_t) __builtin_frame_address(0);
-#else
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
 	int l = 0;
 	uintptr_t sp = (uintptr_t) (&l);
 
 	return sp;
 #endif
+#undef BUILTIN_USED
 }
 
 bool
@@ -285,7 +294,23 @@ void
 dump_threads(void)
 {
 	char buf[1024];
-	thread_lock();
+#if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec++;		/* give it a second */
+	if (pthread_mutex_timedlock(&posthread_lock, &ts) != 0) {
+		printf("Threads are currently locked, so no thread information\n");
+		return;
+	}
+#else
+	if (!thread_lock_try()) {
+		MT_sleep_ms(1000);
+		if (!thread_lock_try()) {
+		printf("Threads are currently locked, so no thread information\n");
+			return;
+		}
+	}
+#endif
 	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
 		printf("Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
@@ -381,8 +406,6 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
-	mainthread.next = NULL;
-	mtthreads = &mainthread;
 	thread_initialized = true;
 	return true;
 }

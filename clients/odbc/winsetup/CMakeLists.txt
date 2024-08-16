@@ -23,7 +23,8 @@ target_sources(MonetODBCs
 target_include_directories(MonetODBCs
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
+  ${CMAKE_CURRENT_BINARY_DIR}/../../../common/utils)
 
 target_compile_definitions(MonetODBCs
   PRIVATE
@@ -33,6 +34,7 @@ target_link_libraries(MonetODBCs
   PRIVATE
   monetdb_config_header
   mutils
+  $<$<PLATFORM_ID:Windows>:odbc32>
   $<$<PLATFORM_ID:Windows>:odbccp32>
   $<$<PLATFORM_ID:Windows>:user32>
   $<$<PLATFORM_ID:Windows>:legacy_stdio_definitions>)

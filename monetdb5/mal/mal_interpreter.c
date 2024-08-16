@@ -571,6 +571,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		}
 
+		freeException(ret);
+		ret = MAL_SUCCEED;
+
 		if (stk->status) {
 			/* pause procedure from SYSMON */
 			if (stk->status == 'p') {
@@ -590,11 +593,21 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
-			if (cntxt->fdin && !mnstr_isalive(cntxt->fdin->s)) {
-				cntxt->mode = FINISHCLIENT;
-				stkpc = stoppc;
-				ret = createException(MAL, "mal.interpreter",
-									  "prematurely stopped client");
+			if (cntxt->fdin && TIMEOUT_TEST(&cntxt->qryctx)) {
+				if (cntxt->qryctx.endtime != QRY_INTERRUPT && cntxt->qryctx.endtime != QRY_TIMEOUT)
+					cntxt->mode = FINISHCLIENT;
+				switch (cntxt->qryctx.endtime) {
+				case QRY_TIMEOUT:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+					break;
+				case QRY_INTERRUPT:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+					break;
+				default:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) "Client disconnected");
+					cntxt->mode = FINISHCLIENT;
+					break;
+				}
 				break;
 			}
 			lastcheck = runtimeProfile.ticks;
@@ -651,8 +664,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-		freeException(ret);
-		ret = MAL_SUCCEED;
 		switch (pci->token) {
 		case ASSIGNsymbol:
 			/* Assignment command

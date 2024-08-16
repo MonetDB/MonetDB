@@ -2046,7 +2046,7 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tpe))
 		isbat = true;
 	if (isbat && (b = BATdescriptor(*(bat *) ins)) == NULL)
-		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "sql.delete", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (!isbat || (b->ttype != TYPE_oid && b->ttype != TYPE_void && b->ttype != TYPE_msk)) {
 		BBPreclaim(b);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -2468,7 +2468,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk,pci,6);
 	b = BATdescriptor(bid);
 	if ( b == NULL) {
-		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto wrapup_result_set;
 	}
 	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
@@ -2501,7 +2501,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
@@ -2610,7 +2610,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpename = BUNtvar(itertpe,o);
 		b = BATdescriptor(bid);
 		if ( b == NULL)
-			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
@@ -3253,7 +3253,7 @@ not_unique(bit *ret, const bat *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "not_unique", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "not_unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	*ret = FALSE;
@@ -3362,7 +3362,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 		throw(SQL, "SQLbat_alpha", SQLSTATE(42000) "Parameter theta should not be nil");
 	}
 	if ((b = BATdescriptor(*decl)) == NULL) {
-		throw(SQL, "alpha", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "alpha", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
@@ -3407,7 +3407,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
 	dbl *thetas;
 
 	if ((b = BATdescriptor(*thetabid)) == NULL) {
-		throw(SQL, "alpha", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "alpha", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
@@ -3864,10 +3864,10 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 	int c;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, name, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((g = BATdescriptor(*gid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, name, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bi = bat_iterator(b);
 	gi = bat_iterator(g);
@@ -3938,7 +3938,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	int c;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, name, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bi = bat_iterator(b);
 	if (!bi.sorted && !bi.revsorted) {
 		bat_iterator_end(&bi);
@@ -4064,11 +4064,11 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b = NULL, *nb = NULL;
 
 		if (!(b = store->storage_api.bind_col(m->session->tr, c, RDONLY)))
-			throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "sql.drop_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (VIEWtparent(b) && (nb = BBP_desc(VIEWtparent(b)))) {
 			BBPunfix(b->batCacheid);
 			if (!(b = BATdescriptor(nb->batCacheid)))
-				throw(SQL, "sql.drop_hash", SQLSTATE(HY005) "Cannot access column descriptor");
+				throw(SQL, "sql.drop_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		HASHdestroy(b);
 		BBPunfix(b->batCacheid);
@@ -5055,6 +5055,17 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		q = getInstrPtr(nmb, 0);
 
+		int start = 1;
+		if (nmb->stop == 1 && (omb || !npci->fcn || npci->token != PATcall)) {
+			InstrPtr *stmt = nmb->stmt;
+			nmb->stmt = (InstrPtr*)GDKmalloc(sizeof(InstrPtr*)*3);
+			nmb->stmt[0] = NULL; /* no main() */
+			nmb->stmt[1] = NULL; /* no profiling */
+			nmb->stmt[2] = stmt[0];
+			nmb->stop = nmb->ssize = 3;
+			GDKfree(stmt);
+			start = 2;
+		}
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
 			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
 			int i,ii;
@@ -5063,7 +5074,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else {
 				/* copy (input) arguments onto destination stack, skipping rowid col */
-				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++) {
+				for (i = 1, ii = q->retc; ii < q->argc && !ret; ii++, i++) {
 					ValPtr lhs = &nstk->stk[q->argv[ii]];
 					ptr rhs = (ptr)BUNtail(bi[i], cur);
 
@@ -5072,10 +5083,10 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				if (!ret && ii == q->argc) {
 					BAT *fres = NULL;
-					if (!omb && npci->fcn)
+					if (!omb && npci->fcn && npci->token == PATcall) /* pattern */
 						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
-						ret = runMALsequence(cntxt, nmb, 1, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+						ret = runMALsequence(cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */
@@ -5093,25 +5104,27 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 						}
 						i=1;
-						for (ii = 0; i < pci->retc && !ret; i++) {
+						for (ii = 0; i < pci->retc && !ret; ii++, i++) {
 							BAT *b;
+							ValPtr vp = omb ? env->stk + q->argv[ii] : nstk->stk + q->argv[ii];
 
-							if (!(b = BATdescriptor(omb?env->stk[q->argv[ii]].val.bval:nstk->stk[q->argv[ii]].val.bval)))
-								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY005) "Cannot access column descriptor");
+							if (!(b = BATdescriptor(vp->val.bval)))
+								ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 							else if (BATappend(res[i], b, NULL, FALSE) != GDK_SUCCEED)
 								ret = createException(MAL, "sql.unionfunc", GDK_EXCEPTION);
 							if (b) {
 								BBPrelease(b->batCacheid); /* release ref from env stack */
 								BBPunfix(b->batCacheid);   /* free pointer */
+								VALempty(vp);
 							}
 						}
 					}
 				}
-				GDKfree(nstk);
+				freeStack(nstk);
 			}
 		}
 finalize:
-		GDKfree(env);
+		freeStack(env);
 		if (nmb)
 			freeMalBlk(nmb);
 		if (omb)

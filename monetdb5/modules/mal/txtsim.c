@@ -455,9 +455,14 @@ typedef struct {
 static inline int
 popcount64(uint64_t x)
 {
-#if defined(__GNUC__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_popcountll)
 	return (int) __builtin_popcountll(x);
-#elif defined(_MSC_VER)
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 #if SIZEOF_OID == 4
 	/* no __popcnt64 on 32 bit Windows */
 	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
@@ -470,6 +475,8 @@ popcount64(uint64_t x)
 	x = (x & UINT64_C(0x0F0F0F0F0F0F0F0F)) + ((x >> 4) & UINT64_C(0x0F0F0F0F0F0F0F0F));
 	return (int) ((x * UINT64_C(0x0101010101010101)) >> 56);
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 static int

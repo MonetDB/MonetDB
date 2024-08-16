@@ -1712,14 +1712,14 @@ BATnegateprops(BAT *b)
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
-#define GDKerror(format, ...)					\
+#define GDKerror(...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
-		      GDK, NULL, format, ##__VA_ARGS__)
-#define GDKsyserr(errno, format, ...)					\
+		      GDK, NULL, __VA_ARGS__)
+#define GDKsyserr(errno, ...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
 		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
-		      format, ##__VA_ARGS__)
-#define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
+		      __VA_ARGS__)
+#define GDKsyserror(...)	GDKsyserr(errno, __VA_ARGS__)
 
 gdk_export void GDKclrerr(void);
 
@@ -2349,29 +2349,33 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, uint64_t seed);
 #define QRY_INTERRUPT (-2)	/* client indicated interrupt */
 #define QRY_DISCONNECT (-3)	/* client disconnected */
 
-static inline void
-TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+static const char *
+TIMEOUT_MESSAGE(QryCtx *qc)
 {
-	if (GDKexiting()) {
-		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-			      "%s\n", EXITING_MSG);
-	} else if (qc) {
+	if (GDKexiting())
+		return EXITING_MSG;
+	if (qc) {
 		switch (qc->endtime) {
 		case QRY_TIMEOUT:
-			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-				      "%s\n", TIMEOUT_MSG);
-			break;
+			return TIMEOUT_MSG;
 		case QRY_INTERRUPT:
-			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-				      "%s\n", INTERRUPT_MSG);
-			break;
+			return INTERRUPT_MSG;
 		case QRY_DISCONNECT:
-			GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-				      "%s\n", DISCONNECT_MSG);
-			break;
+			return DISCONNECT_MSG;
 		default:
 			MT_UNREACHABLE();
 		}
+	}
+	return NULL;
+}
+
+static inline void
+TIMEOUT_ERROR(QryCtx *qc, const char *file, const char *func, int lineno)
+{
+	const char *e = TIMEOUT_MESSAGE(qc);
+	if (e) {
+		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+			      "%s\n", e);
 	}
 }
 
@@ -2441,7 +2445,7 @@ TIMEOUT_TEST(QryCtx *qc)
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, QC)				\
 	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
 		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
-			if (TIMEOUT_TEST(QC)) {				\
+			if (CTR1 > 0 && TIMEOUT_TEST(QC)) {		\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
@@ -2451,7 +2455,7 @@ TIMEOUT_TEST(QryCtx *qc)
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, QC)				\
 	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
 		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
-			if (TIMEOUT_TEST(QC)) {				\
+			if (CTR1 > 0 && TIMEOUT_TEST(QC)) {		\
 				break;					\
 			} else						\
 				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
@@ -2459,7 +2463,7 @@ TIMEOUT_TEST(QryCtx *qc)
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, QC)					\
 	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
-		if (TIMEOUT_TEST(QC)) {					\
+		if (CTR1 > 0 && TIMEOUT_TEST(QC)) {			\
 			break;						\
 		} else							\
 			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)

@@ -11,3 +11,4 @@
  */
 
 #cmakedefine MERCURIAL_ID "@MERCURIAL_ID@"
+#cmakedefine MERCURIAL_BRANCH "@MERCURIAL_BRANCH@"

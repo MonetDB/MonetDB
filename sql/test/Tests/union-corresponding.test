@@ -96,9 +96,9 @@ NATURAL FULL JOIN buz
 
 statement error
 SELECT * FROM foo
-UNION 
+UNION
 SELECT * FROM bar
-UNION 
+UNION
 SELECT * FROM buz
 
 query I rowsort
@@ -139,7 +139,7 @@ NULL
 
 query I rowsort
 SELECT * FROM buz
-UNION 
+UNION
     CORRESPONDING BY (a)
 SELECT * FROM bar
 ----
@@ -174,7 +174,7 @@ SELECT * FROM bar
 
 query I rowsort
 SELECT * FROM foo
-UNION 
+UNION
     CORRESPONDING BY (a)
 SELECT * FROM bar
 ----
@@ -186,13 +186,13 @@ SELECT * FROM bar
 
 statement error
 SELECT * FROM foo
-UNION 
+UNION
     CORRESPONDING BY (b)
 SELECT * FROM bar
 
 statement error
 SELECT * FROM foo
-UNION 
+UNION
     CORRESPONDING BY (c)
 SELECT * FROM bar
 
@@ -243,7 +243,7 @@ NULL
 
 query T rowsort
 SELECT * FROM foo
-OUTER UNION 
+OUTER UNION
     CORRESPONDING BY (b)
 SELECT * FROM bar
 ----
@@ -266,7 +266,7 @@ bob
 
 query T rowsort
 SELECT * FROM foo
-OUTER UNION 
+OUTER UNION
     CORRESPONDING BY (c)
 SELECT * FROM bar
 ----
@@ -289,7 +289,7 @@ world
 
 query TT rowsort
 SELECT * FROM foo
-OUTER UNION 
+OUTER UNION
     CORRESPONDING BY (c, b)
 SELECT * FROM bar
 ----

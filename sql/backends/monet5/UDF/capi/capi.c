@@ -1046,7 +1046,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				struct cudf_data_struct_oid *t = inputs[index];
 				BAT *ex = BBPquickdesc(*getArgReference_bat(stk, pci, i + 1));
 				if (!ex) {
-					msg = createException(MAL, "cudf.eval", RUNTIME_OBJECT_MISSING);
+					msg = createException(MAL, "cudf.eval", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto wrapup;
 				}
 				t->count = BATcount(ex);

@@ -1303,35 +1303,31 @@ is_non_trivial_select_applied_to_outer_join(sql_rel *rel)
 
 extern list *list_append_before(list *l, node *n, void *data);
 
-static void replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e);
+static void
+replace_column_references_with_nulls_2(mvc *sql, sql_rel *inner_join_side, sql_exp* e);
 
 static void
-replace_column_references_with_nulls_1(mvc *sql, list* crefs, list* exps) {
+replace_column_references_with_nulls_1(mvc *sql, sql_rel *inner_join_side, list* exps) {
 	if (list_empty(exps))
 		return;
 	for(node* n = exps->h; n; n=n->next) {
 		sql_exp* e = n->data;
-		replace_column_references_with_nulls_2(sql, crefs, e);
+		replace_column_references_with_nulls_2(sql, inner_join_side, e);
 	}
 }
 
 static void
-replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
+replace_column_references_with_nulls_2(mvc *sql, sql_rel *inner_join_side, sql_exp* e) {
 	if (e == NULL) {
 		return;
 	}
 
 	switch (e->type) {
 	case e_column:
-		{
-			sql_exp *c = NULL;
-			if (e->nid)
-				c = exps_bind_nid(crefs, e->nid);
-			if (c) {
-				e->type = e_atom;
-				e->l = atom_general(sql->sa, &e->tpe, NULL, 0);
-				e->r = e->f = NULL;
-			}
+		if (rel_find_exp_and_corresponding_rel(inner_join_side, e, true, NULL, NULL)) {
+			e->type = e_atom;
+			e->l = atom_general(sql->sa, &e->tpe, NULL, 0);
+			e->r = e->f = NULL;
 		}
 		break;
 	case e_cmp:
@@ -1347,9 +1343,9 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 			sql_exp* r = e->r;
 			sql_exp* f = e->f;
 
-			replace_column_references_with_nulls_2(sql, crefs, l);
-			replace_column_references_with_nulls_2(sql, crefs, r);
-			replace_column_references_with_nulls_2(sql, crefs, f);
+			replace_column_references_with_nulls_2(sql, inner_join_side, l);
+			replace_column_references_with_nulls_2(sql, inner_join_side, r);
+			replace_column_references_with_nulls_2(sql, inner_join_side, f);
 			break;
 		}
 		case cmp_filter:
@@ -1357,8 +1353,8 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 		{
 			list* l = e->l;
 			list* r = e->r;
-			replace_column_references_with_nulls_1(sql, crefs, l);
-			replace_column_references_with_nulls_1(sql, crefs, r);
+			replace_column_references_with_nulls_1(sql, inner_join_side, l);
+			replace_column_references_with_nulls_1(sql, inner_join_side, r);
 			break;
 		}
 		case cmp_in:
@@ -1366,8 +1362,8 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 		{
 			sql_exp* l = e->l;
 			list* r = e->r;
-			replace_column_references_with_nulls_2(sql, crefs, l);
-			replace_column_references_with_nulls_1(sql, crefs, r);
+			replace_column_references_with_nulls_2(sql, inner_join_side, l);
+			replace_column_references_with_nulls_1(sql, inner_join_side, r);
 			break;
 		}
 		default:
@@ -1377,13 +1373,13 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 	case e_func:
 	{
 		list* l = e->l;
-		replace_column_references_with_nulls_1(sql, crefs, l);
+		replace_column_references_with_nulls_1(sql, inner_join_side, l);
 		break;
 	}
 	case e_convert:
 	{
 		sql_exp* l = e->l;
-		replace_column_references_with_nulls_2(sql, crefs, l);
+		replace_column_references_with_nulls_2(sql, inner_join_side, l);
 		break;
 	}
 	default:
@@ -1397,17 +1393,12 @@ out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, ope
 	/* handle inner_join relations with a simple select */
 	if (is_select(inner_join_side->op) && inner_join_side->l)
 		inner_join_side = inner_join_side->l;
-	if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
-		// Nothing to do here.
-		return sel;
-	}
 
-	list* inner_join_column_references = inner_join_side->exps;
 	list* select_predicates = exps_copy(v->sql, sel->exps);
 
 	for(node* n = select_predicates->h; n; n=n->next) {
 		sql_exp* e = n->data;
-		replace_column_references_with_nulls_2(v->sql, inner_join_column_references, e);
+		replace_column_references_with_nulls_2(v->sql, inner_join_side, e);
 
 		if (exp_is_false(e)) {
 			join->op = new_type;
@@ -2322,9 +2313,14 @@ rels_find_one_rel( sql_rel **rels, int nr, sql_exp *e)
 static inline int
 popcount64(uint64_t x)
 {
-#if defined(__GNUC__)
+#ifdef __has_builtin
+#if __has_builtin(__builtin_popcountll)
 	return (uint32_t) __builtin_popcountll(x);
-#elif defined(_MSC_VER)
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 #if SIZEOF_OID == 4
 	/* no __popcnt64 on 32 bit Windows */
 	return (int) (__popcnt((uint32_t) x) + __popcnt((uint32_t) (x >> 32)));
@@ -2337,6 +2333,8 @@ popcount64(uint64_t x)
 	x = (x & UINT64_C(0x0F0F0F0F0F0F0F0F)) + ((x >> 4) & UINT64_C(0x0F0F0F0F0F0F0F0F));
 	return (x * UINT64_C(0x0101010101010101)) >> 56;
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 static sql_rel *

@@ -1004,6 +1004,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 gdk_return
 BAThash(BAT *b)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No hash on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
 		GDKerror("No hash on msk type bats\n");
 		return GDK_FAIL;
@@ -1011,6 +1015,9 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
+#ifdef __COVERITY__
+	MT_rwlock_wrlock(&b->thashlock);
+#else
 	for (;;) {
 		/* If multiple threads simultaneously try to build a
 		 * hash on a bat, e.g. in order to perform a join, it
@@ -1033,6 +1040,7 @@ BAThash(BAT *b)
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 	}
+#endif
 	/* we have the write lock */
 	if (b->thash == NULL) {
 		struct canditer ci;
@@ -1354,7 +1362,7 @@ HASHlist(Hash *h, BUN i)
 void
 HASHdestroy(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *hs;
 		MT_rwlock_wrlock(&b->thashlock);
 		hs = b->thash;
@@ -1367,7 +1375,7 @@ HASHdestroy(BAT *b)
 void
 HASHfree(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *h;
 		MT_rwlock_wrlock(&b->thashlock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {

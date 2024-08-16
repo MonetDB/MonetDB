@@ -138,6 +138,7 @@
 #cmakedefine HAVE_GETUID 1
 #cmakedefine HAVE_GMTIME_R 1
 #cmakedefine HAVE_LOCALTIME_R 1
+#cmakedefine HAVE_STRERROR_S 1
 #cmakedefine HAVE_STRERROR_R 1
 #cmakedefine HAVE_LOCKF 1
 #cmakedefine HAVE_MADVISE  1
@@ -153,6 +154,7 @@
 #cmakedefine HAVE_POSIX_MADVISE 1
 #cmakedefine HAVE_SETTHREADDESCRIPTION 1
 #cmakedefine HAVE_SETSID 1
+#cmakedefine HAVE_SOCKATMARK 1
 #cmakedefine HAVE_SHUTDOWN 1
 #cmakedefine HAVE_SIGACTION 1
 #cmakedefine HAVE_SIGLONGJMP 1
@@ -163,6 +165,7 @@
 #cmakedefine HAVE_TM_GMTOFF 1
 #cmakedefine HAVE_UNAME 1
 #cmakedefine HAVE_PTHREAD_KILL 1
+#cmakedefine HAVE_PTHREAD_MUTEX_TIMEDLOCK 1
 #cmakedefine HAVE_PTHREAD_SETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
 #cmakedefine HAVE_GETOPT 1
@@ -365,6 +368,18 @@ typedef __uint128_t uhge;
 #include <strings.h>		/* strcasecmp */
 #endif
 
+/* The GNU C library has two variants of strerror_r, the XSI compliant
+ * one which returns int and a GNU specific one which returns char *.
+ * According to the manual, we should check for _GNU_SOURCE to find out
+ * which is used (if defined, it's the char * version), but MUSL C (used
+ * on Alpine Linux) also defined _GNU_SOURCE but only defines the int
+ * version, so that won't fly.  Instead we look at __USE_GNU which only
+ * the GNU library defines (if _GNU_SOURCE is defined) and is the one
+ * actually used in the GNU header file to make the distinction. */
+#if defined(__USE_GNU) && defined(HAVE_STRERROR_R)
+#define STRERROR_R_CHARP 1
+#endif
+
 #ifdef _MSC_VER
 
 #define strdup(s)	_strdup(s)
@@ -437,6 +452,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #ifndef _MSC_VER
 #define SOCKET int
 #define closesocket close
+#define ioctlsocket ioctl
 #endif
 
 #ifndef _In_z_

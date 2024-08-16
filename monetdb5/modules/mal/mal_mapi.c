@@ -185,7 +185,7 @@ doChallenge(void *data)
 
 	if (chdata->peer.ss_family == AF_UNSPEC) {
 		peer = NULL;
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 	} else if (chdata->peer.ss_family == AF_UNIX) {
 		peer = "<UNIX SOCKET>";
 #endif
@@ -403,7 +403,11 @@ SERVERlistenThread(SOCKET *Sock)
 			msgh.msg_control = ccmsg;
 			msgh.msg_controllen = sizeof(ccmsg);
 
+#ifdef MSG_CMSG_CLOEXEC
+			rv = recvmsg(msgsock, &msgh, MSG_CMSG_CLOEXEC);
+#else
 			rv = recvmsg(msgsock, &msgh, 0);
+#endif
 			if (rv == -1) {
 				closesocket(msgsock);
 				continue;
@@ -431,6 +435,9 @@ SERVERlistenThread(SOCKET *Sock)
 				 */
 				c_d = (int *) CMSG_DATA(cmsg);
 				msgsock = *c_d;
+#if !defined(MSG_CMSG_CLOEXEC) && defined(HAVE_FCNTL)
+				(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 			}
 				break;
 			default:
@@ -2010,7 +2017,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t len;
 
 		if (!b)
-			throw(MAL, "mapi.put", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);

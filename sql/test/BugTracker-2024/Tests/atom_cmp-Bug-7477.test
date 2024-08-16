@@ -14,3 +14,4 @@ SELECT - 66 x GROUP BY x HAVING ( abs ( x ) IN ( SELECT 1 x WHERE ( x = ( x = 1 
 query I nosort
 SELECT - 66 x GROUP BY x HAVING ( abs ( x ) IN ( SELECT '' x WHERE ( x = ( x = 1 ) ) UNION SELECT 1 ) )
 ----
+
