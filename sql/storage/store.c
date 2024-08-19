@@ -2802,7 +2802,7 @@ pick_tmp_name(str filename)
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
 	} else {
-		char *tmp = "..tmp.";
+		const char tmp[] = "..tmp.";
 		size_t tmplen = strlen(tmp);
 		memmove(ext + tmplen, ext, strlen(ext) + 1);
 		memmove(ext, tmp, tmplen);

@@ -427,7 +427,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	assert(schema_id == 2000);
 
 	sqlstore *store = m->session->tr->store;
-	char *username = "monetdb";
+	const char *username = "monetdb";
 	char *password = initpasswd ? mcrypt_BackendSum(initpasswd, strlen(initpasswd)) : mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
 	if (password == NULL ||
@@ -439,8 +439,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	}
 	free(password);
 
-	char *fullname = "MonetDB Admin";
-	char *schema_path = default_schema_path;
+	const char *fullname = "MonetDB Admin";
+	const char *schema_path = default_schema_path;
 	// default values
 	char *optimizer = default_optimizer;
 	lng max_memory = 0;
