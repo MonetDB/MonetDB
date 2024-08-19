@@ -16,15 +16,6 @@
 #error this file should not be included outside its source directory
 #endif
 
-/* persist hash heaps for persistent BATs */
-#define PERSISTENTHASH 1
-
-/* persist order index heaps for persistent BATs */
-#define PERSISTENTIDX 1
-
-/* persist strimp heaps for persistent BATs */
-#define PERSISTENTSTRIMP 1
-
 /* only check whether we exceed gdk_vm_maxsize when allocating heaps */
 #define SIZE_CHECK_IN_HEAPS_ONLY 1
 

@@ -310,14 +310,6 @@ BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	if (GDKinmemory(0))
 		return 0;
 
-#ifndef PERSISTENTHASH
-	if (hptype == hashheap)
-		role = TRANSIENT;
-#endif
-#ifndef PERSISTENTIDX
-	if (hptype == orderidxheap)
-		role = TRANSIENT;
-#endif
 	for (i = 0; i < MAXFARMS; i++)
 		if (BBPfarms[i].roles & (1U << (int) role))
 			return i;
@@ -4622,14 +4614,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk || b->tvheap->free == 0);
 			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
 				   strncmp(p + 1, "thashb", 6) == 0) {
-#ifdef PERSISTENTHASH
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
 				if (!delete)
 					b->thash = (Hash *) 1;
-#else
-				delete = true;
-#endif
 			} else if (strncmp(p + 1, "thash", 5) == 0) {
 				/* older versions used .thash which we
 				 * can simply ignore */
@@ -4644,14 +4632,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				if (!delete)
 					b->timprints = (Imprints *) 1;
 			} else if (strncmp(p + 1, "torderidx", 9) == 0) {
-#ifdef PERSISTENTIDX
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
 				if (!delete)
 					b->torderidx = (Heap *) 1;
-#else
-				delete = true;
-#endif
 			} else if (strncmp(p + 1, "tstrimps", 8) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;
