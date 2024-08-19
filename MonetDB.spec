@@ -989,6 +989,11 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Aug 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.3-20240819
+- Rebuilt.
+- GH#7562: Assertion failure when comparing `INTERVAL` value
+- GH#7566: After a while, all new sessions (connections) may get refused
+
 * Mon Aug 12 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.1-20240812
 - Rebuilt.
 - GH#7045: A value filtered in a subquery finds its way to a later filter

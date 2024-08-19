@@ -1,3 +1,11 @@
+monetdb (11.51.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7562: Assertion failure when comparing `INTERVAL` value
+  * GH#7566: After a while, all new sessions (connections) may get refused
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Aug 2024 12:54:58 +0200
+
 monetdb (11.51.1) unstable; urgency=low
 
   * Rebuilt.
