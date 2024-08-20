@@ -17,3 +17,4 @@ query I nosort
 SELECT levenshtein ( 'int' , '2014-10-25 UTC' )
 ----
 14
+

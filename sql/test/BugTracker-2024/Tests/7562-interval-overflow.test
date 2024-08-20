@@ -1,0 +1,9 @@
+statement ok
+CREATE  TABLE  t0(c0 INTERVAL YEAR TO MONTH)
+
+statement ok
+INSERT INTO t0( c0) VALUES ('2-5')
+
+statement error
+SELECT * FROM t0 WHERE (NOT ((t0.c0)>=('--18945599805')))
+

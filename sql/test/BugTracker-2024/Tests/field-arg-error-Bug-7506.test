@@ -3,3 +3,4 @@ SELECT FIELD(x, '', '', '', '', '', '', '', '', '', '', '', '', '')
 
 statement error 42000!Field function called with not enough arguments
 SELECT FIELD('fieldID99999999999999999999999999999999999999999999999999999999999999999999999')
+

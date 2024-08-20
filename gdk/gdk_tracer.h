@@ -148,38 +148,38 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 	 (log_level_t) ATOMIC_GET(&lvl_per_component[COMP]) >= LOG_LEVEL)
 
 
-#define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG, ...)			\
+#define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, ...)			\
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
-		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
+		      LOG_LEVEL, COMP, NULL, __VA_ARGS__)
 
 #ifdef __COVERITY__
 /* hide this for static code analysis: too many false positives */
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)	((void) 0)
 #else
-#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
+#define GDK_TRACER_LOG(LOG_LEVEL, COMP, ...)				\
 	do {								\
 		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
-			GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, MSG,	\
-					    ## __VA_ARGS__);		\
+			GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP,		\
+					    __VA_ARGS__);		\
 		}							\
 	} while (0)
 #endif
 
 
-#define TRC_CRITICAL(COMP, MSG, ...)				\
-	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
+#define TRC_CRITICAL(COMP, ...)					\
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, __VA_ARGS__)
 
-#define TRC_ERROR(COMP, MSG, ...)				\
-	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
+#define TRC_ERROR(COMP, ...)					\
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, __VA_ARGS__)
 
-#define TRC_WARNING(COMP, MSG, ...)				\
-	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
+#define TRC_WARNING(COMP, ...)					\
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, __VA_ARGS__)
 
-#define TRC_INFO(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_INFO, COMP, MSG, ## __VA_ARGS__)
+#define TRC_INFO(COMP, ...)					\
+	GDK_TRACER_LOG(M_INFO, COMP, __VA_ARGS__)
 
-#define TRC_DEBUG(COMP, MSG, ...)				\
-	GDK_TRACER_LOG(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
+#define TRC_DEBUG(COMP, ...)					\
+	GDK_TRACER_LOG(M_DEBUG, COMP, __VA_ARGS__)
 
 
 
@@ -212,20 +212,20 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 	if (GDK_TRACER_TEST(M_DEBUG, COMP))
 
 
-#define TRC_CRITICAL_ENDIF(COMP, MSG, ...)				\
-	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, MSG, ## __VA_ARGS__)
+#define TRC_CRITICAL_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_CRITICAL, COMP, __VA_ARGS__)
 
-#define TRC_ERROR_ENDIF(COMP, MSG, ...)					\
-	GDK_TRACER_LOG_BODY(M_ERROR, COMP, MSG, ## __VA_ARGS__)
+#define TRC_ERROR_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_ERROR, COMP, __VA_ARGS__)
 
-#define TRC_WARNING_ENDIF(COMP, MSG, ...)				\
-	GDK_TRACER_LOG_BODY(M_WARNING, COMP, MSG, ## __VA_ARGS__)
+#define TRC_WARNING_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_WARNING, COMP, __VA_ARGS__)
 
-#define TRC_INFO_ENDIF(COMP, MSG, ...)					\
-	GDK_TRACER_LOG_BODY(M_INFO, COMP, MSG, ## __VA_ARGS__)
+#define TRC_INFO_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_INFO, COMP, __VA_ARGS__)
 
-#define TRC_DEBUG_ENDIF(COMP, MSG, ...)					\
-	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, MSG, ## __VA_ARGS__)
+#define TRC_DEBUG_ENDIF(COMP, ...)				\
+	GDK_TRACER_LOG_BODY(M_DEBUG, COMP, __VA_ARGS__)
 
 
 

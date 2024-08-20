@@ -1,8 +1,9 @@
-query T
+query I nosort
 SELECT (1 BETWEEN NULL AND -1) IS NULL
 ----
-False
+0
 
-query I
+query I nosort
 SELECT 1 WHERE ((1 BETWEEN NULL AND -1) IS NULL)
 ----
+

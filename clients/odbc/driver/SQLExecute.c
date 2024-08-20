@@ -529,9 +529,9 @@ MNDBExecute(ODBCStmt *stmt)
 	case MOK:
 		break;
 	case MTIMEOUT:
-		/* Timeout expired / Communication link failure */
+		/* Connection timeout expired / Communication link failure */
 		timeout = msetting_long(stmt->Dbc->settings, MP_REPLY_TIMEOUT);
-		addStmtError(stmt, timeout > 0 ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
+		addStmtError(stmt, timeout > 0 ? "HYT01" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
 		errstr = mapi_result_error(hdl);

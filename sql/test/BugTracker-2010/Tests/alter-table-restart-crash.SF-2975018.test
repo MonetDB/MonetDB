@@ -29,3 +29,4 @@ DROP TABLE "sf2975018t2"
 
 statement ok
 DROP TABLE "sf2975018t1"
+
