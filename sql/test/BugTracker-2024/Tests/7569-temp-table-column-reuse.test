@@ -1,0 +1,23 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TEMPORARY TABLE nums(x INT, y INT)
+
+statement ok
+INSERT INTO nums
+SELECT value AS x, value AS y
+FROM sys.generate_series(0, 1)
+
+statement ok
+UPDATE nums SET y = 100
+
+query II nosort
+SELECT * FROM nums
+----
+0
+100
+
+statement ok
+ROLLBACK
+
