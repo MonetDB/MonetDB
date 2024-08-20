@@ -1017,7 +1017,7 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
 	BAT *b, *bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batpcre.replace_first", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batpcre.replace_first", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {

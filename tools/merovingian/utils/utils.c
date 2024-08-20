@@ -78,7 +78,7 @@ void
 readConfFileFull(confkeyval *list, FILE *cnf) {
 	char buf[1024];
 	char *key, *val;
-	char *separator = "=";
+	const char *separator = "=";
 	char *err;
 	confkeyval *t = list;
 	int cnt = 0;

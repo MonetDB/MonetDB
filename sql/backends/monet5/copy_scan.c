@@ -229,9 +229,8 @@ scan_quoted(struct scan_state *state)
 
 	while (state->pos <= last) {
 		assert(w <= state->pos);
-		if (state->pos[0] == '\0') {
-			return "NUL character not allowed in textual data";
-		}
+		if (!state->pos[0])
+			break;
 		if (state->pos[0] == state->quote_char) {
 			if (state->pos < last && state->pos[1] == state->quote_char) {
 				// doubled quote, write only one
@@ -247,8 +246,10 @@ scan_quoted(struct scan_state *state)
 			}
 		} else if (state->escape_enabled && state->pos[0] == '\\') {
 			const char *err_msg = scan_backslash_escape(state, &w);
-			if (err_msg)
+			if (err_msg) {
+				state->quoted = false;
 				return err_msg;
+			}
 			continue;
 		} else {
 			// Some other character
@@ -270,24 +271,39 @@ static const char *
 scan_unquoted_no_escapes(struct scan_state *state, unsigned char *sep_found)
 {
 	// is there a col_sep anywhere?
-	unsigned char *pcol = memchr(state->pos, state->col_sep, state->end - state->pos);
-	unsigned char *pline;
-	if (pcol) {
-		// there is a col_sep. is there a line_sep before thatstate->?
-		pline = memchr(state->pos, state->line_sep, pcol - state->pos);
-	} else {
-		// there is no col_sep, is there a line_sep anywhere?
-		pline = memchr(state->pos, state->line_sep, state->end - state->pos);
-	}
-	// pline is either earlier than pcol or there was no pcol.
-	unsigned char *sep = pline ? pline : pcol;
+	//unsigned char *sep = memchr(state->pos, state->col_sep, state->end - state->pos);
+	unsigned char *sep = state->pos;
+	for (; *sep; sep++)
+		if (*sep == state->col_sep)
+			break;
 	if (sep) {
-		if (memchr(state->pos, '\0', sep - state->pos) != NULL) {
-			return "NUL character not allowed in textual data";
-		}
+		*sep_found = *sep;
+		if (*sep)
+			state->pos = sep + 1;
+		else
+			state->pos = sep + state->line_sep_len;
+		*sep = 0;
+		return NULL;
+	} else {
+		return "no column- or line separator found";
+	}
+}
+static const char *
+scan_unquoted_no_escapesN(struct scan_state *state, unsigned char *sep_found)
+{
+	// is there a col_sep anywhere?
+	//unsigned char *sep = memchr(state->pos, state->col_sep, state->end - state->pos);
+	unsigned char *sep = state->pos;
+	for (; *sep; sep++)
+		if (*sep == state->col_sep_str[0] && strncmp((char*)sep, (char*)state->col_sep_str, state->col_sep_len) == 0)
+			break;
+	if (sep) {
 		*sep_found = *sep;
 		*sep = 0;
-		state->pos = sep + 1;
+		if (*sep)
+			state->pos = sep + state->col_sep_len;
+		else
+			state->pos = sep + state->line_sep_len;
 		return NULL;
 	} else {
 		return "no column- or line separator found";
@@ -300,10 +316,39 @@ scan_unquoted_with_escapes(struct scan_state *state, unsigned char *sep_found)
 	unsigned char *w = state->pos;
 	while (state->pos < state->end) {
 		if (*state->pos == '\0') {
-			return "NUL character not allowed in textual data";
-		}
-		if (*state->pos == state->col_sep || *state->pos == state->line_sep) {
+			*sep_found = 0;
+			state->pos += state->line_sep_len;
+			*w = 0;
+			return NULL;
+		} else if (*state->pos == state->col_sep) {
 			*sep_found = *state->pos++;
+			*w = 0;
+			return NULL;
+		}
+		if (*state->pos == '\\') {
+			const char *err_msg = scan_backslash_escape(state, &w);
+			if (err_msg)
+				return err_msg;
+		} else {
+			*w++ = *state->pos++;
+		}
+	}
+	return "no column- or line separator found";
+}
+
+static const char *
+scan_unquoted_with_escapesN(struct scan_state *state, unsigned char *sep_found)
+{
+	unsigned char *w = state->pos;
+	while (state->pos < state->end) {
+		if (*state->pos == '\0') {
+			*sep_found = 0;
+			state->pos += state->line_sep_len;
+			*w = 0;
+			return NULL;
+		} else if (state->pos[0] == state->col_sep_str[0] && strncmp((char*)state->pos, (char*)state->col_sep_str, state->col_sep_len) == 0) {
+			*sep_found = *state->pos;
+			state->pos += state->col_sep_len;
 			*w = 0;
 			return NULL;
 		}
@@ -339,7 +384,10 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 			return err_msg;
 		// It's safe to access state->pos[0] because scan_quoted would have
 		// given an error if we'd reached 'end'.
-		if (state->pos[0] == state->col_sep || state->pos[0] == state->line_sep) {
+		if (!state->pos[0]) {
+			*sep_found = 0;
+			state->pos += state->line_sep_len;
+		} else if (state->pos[0] == state->col_sep) {
 			*sep_found = *state->pos++;
 		} else {
 			return "end quote must be followed by separator";
@@ -358,6 +406,43 @@ scan_field(struct scan_state *state, unsigned char *sep_found)
 	return NULL;
 }
 
+static const char*
+scan_fieldN(struct scan_state *state, unsigned char *sep_found)
+{
+	assert(state->pos < state->end);
+	assert(state->quoted == false);
+	assert(state->escape_pending == false);
+
+	if (state->quote_char && state->pos[0] == state->quote_char) {
+		const char *err_msg = NULL;
+		err_msg = scan_quoted(state);
+		if (err_msg)
+			return err_msg;
+		// It's safe to access state->pos[0] because scan_quoted would have
+		// given an error if we'd reached 'end'.
+		if (!state->pos[0]) {
+			*sep_found = 0;
+			state->pos += state->line_sep_len;
+		} else if (state->pos[0] == state->col_sep_str[0] &&
+				 strncmp((char*)state->pos, (char*)state->col_sep_str, state->col_sep_len) == 0) {
+			*sep_found = *state->pos;
+			state->pos += state->col_sep_len;
+		} else {
+			return "end quote must be followed by separator";
+		}
+	} else {
+		const char *err_msg = NULL;
+		if (state->escape_enabled) {
+			err_msg = scan_unquoted_with_escapesN(state, sep_found);
+		} else {
+			err_msg = scan_unquoted_no_escapesN(state, sep_found);
+		}
+		if (err_msg)
+			return err_msg;
+	}
+	return NULL;
+}
+
 static gdk_return
 check_row_end(
 	struct error_handling *errors, struct scan_state *state,
@@ -365,12 +450,12 @@ check_row_end(
 {
 	if (col == ncols - 1) {
 		// Last column. Expect LINE_SEP or COL_SEP LINE_SEP
-		if (sep == state->line_sep) {
+		if (!sep) {
 			return GDK_SUCCEED;
 		} else if (sep == state->col_sep) {
 			assert(state->pos > state->start && state->pos[-1] == '\0');
-			if (state->pos < state->end && state->pos[0] == state->line_sep) {
-				state->pos++;
+			if (state->pos < state->end && !state->pos[0]) {
+				state->pos += state->line_sep_len;
 				return GDK_SUCCEED;
 			} else {
 				copy_report_error(errors, row, -1, "too many fields, expected %d but found more", ncols);
@@ -381,17 +466,13 @@ check_row_end(
 		// Not the last column. Expect COL_SEP
 		if (sep == state->col_sep) {
 			return GDK_SUCCEED;
-		} else if (sep == state->line_sep) {
+		} else {
 			copy_report_error(errors, row, -1, "too few fields, expected %d but found %d", ncols, col + 1);
 			// If we're in BEST EFFORT mode we're going to try to scan to the
 			// end of the line. But in fact we're already there and have replaced
 			// it with a \0, so the scan would actually skip the next line instead
 			// of the rest of the current line.
 			state->pos--;
-			state->pos[0] = state->line_sep;
-			return GDK_FAIL;
-		} else {
-			copy_report_error(errors, row, col, "internal error: found %d while col_sep is %d and line_sep is %d", sep, state->col_sep, state->line_sep);
 			return GDK_FAIL;
 		}
 	}
@@ -411,11 +492,10 @@ check_row_end(
 str
 scan_fields(
 	struct error_handling *errors, struct scan_state *state,
-	char *null_repr, int ncols, int nrows, int **columns)
+	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
 {
 	int row = 0;
 	int col = 0;
-	size_t null_repr_len = null_repr ? strlen(null_repr) : 0;
 	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
 		int field_offset;
@@ -424,8 +504,8 @@ scan_fields(
 		bool field_is_null = (
 			null_repr
 			&& state->pos + null_repr_len < state->end
-			&& (state->pos[null_repr_len] == state->col_sep || state->pos[null_repr_len] == state->line_sep)
-			&& strncasecmp((char*)state->pos, null_repr, null_repr_len) == 0
+			&& (state->pos[null_repr_len] == state->col_sep || !state->pos[null_repr_len])
+			&& strncasecmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
 		);
 
 		if (field_is_null) {
@@ -473,8 +553,174 @@ scan_fields(
 			columns[i][row] = int_nil;
 		col = 0;
 		row += 1;
-		if (find_end_of_line(state))
+		while(state->pos < state->end && *state->pos)
 			state->pos++;
+		if (!*state->pos)
+			state->pos+=state->line_sep_len;
+	}
+
+	assert(state->pos == state->end || row == nrows);
+
+	if (state->pos < state->end) {
+		throw(MAL, "copy.splitlines", "leftover data at end of buffer");
+	}
+	if (row < nrows) {
+		throw(MAL, "copy.splitlines", "not enough rows found in buffer");
+	}
+
+	return MAL_SUCCEED;
+}
+
+str
+scan_fields1(
+	struct error_handling *errors, struct scan_state *state,
+	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
+{
+	int row = 0;
+	int col = 0;
+	while (state->pos < state->end && row < nrows) {
+		unsigned char sep = 0;
+		int field_offset;
+
+		bool field_is_null = (
+			null_repr
+			&& state->pos + null_repr_len < state->end
+			&& state->pos[0] == null_repr[0]
+			&& (state->pos[null_repr_len] == state->col_sep || !state->pos[null_repr_len])
+			&& strncmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
+		);
+
+		if (field_is_null) {
+			field_offset = int_nil;
+			sep = state->pos[null_repr_len];
+			state->pos += null_repr_len + 1;
+		} else {
+			field_offset = state->pos - state->start;
+
+			unsigned char *s = state->pos;
+			for (; *s; s++)
+				if (*s == state->col_sep)
+					break;
+			sep = *s;
+			if (sep) {
+				state->pos = s + 1;
+				*s = 0;
+			} else {
+				state->pos = s + state->line_sep_len;
+			}
+		}
+
+		if (check_row_end(errors, state, row, col, ncols, sep) == GDK_SUCCEED) {
+			// The happy path.  Store the field and advance row and col.
+			columns[col][row] = field_offset;
+			if (col < ncols - 1) {
+				col += 1;
+			} else {
+				row++;
+				col = 0;
+			}
+			continue;
+		}
+
+		// An error has occurred. BEST EFFORT determines if we want to stop right now
+		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		if (err) {
+			// Bail out now
+			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
+		}
+
+		// We must be in BEST EFFORT mode.
+		// Set all fields to nil and advance to the next line
+		for (int i = 0; i < ncols; i++)
+			columns[i][row] = int_nil;
+		col = 0;
+		row += 1;
+		while(state->pos < state->end && *state->pos)
+			state->pos++;
+		if (!*state->pos)
+			state->pos+=state->line_sep_len;
+	}
+
+	assert(state->pos == state->end || row == nrows);
+
+	if (state->pos < state->end) {
+		throw(MAL, "copy.splitlines", "leftover data at end of buffer");
+	}
+	if (row < nrows) {
+		throw(MAL, "copy.splitlines", "not enough rows found in buffer");
+	}
+
+	return MAL_SUCCEED;
+}
+
+str
+scan_fieldsN( /* ie use col_sep_str */
+	struct error_handling *errors, struct scan_state *state,
+	unsigned char *null_repr, int null_repr_len, int ncols, int nrows, int **columns)
+{
+	int row = 0;
+	int col = 0;
+	while (state->pos < state->end && row < nrows) {
+		unsigned char sep = 0;
+		int field_offset;
+		bool ok;
+
+		bool field_is_null = (
+			null_repr
+			&& state->pos + null_repr_len < state->end
+			&& ((state->pos[null_repr_len] == state->col_sep_str[0] &&
+				 strncmp((char*)state->pos+null_repr_len, (char*)state->col_sep_str, state->col_sep_len) == 0) ||
+				!state->pos[null_repr_len])
+			&& strncasecmp((char*)state->pos, (char*)null_repr, null_repr_len) == 0
+		);
+
+		if (field_is_null) {
+			field_offset = int_nil;
+			sep = state->pos[null_repr_len];
+			state->pos += null_repr_len + 1;
+			ok = true;
+		} else {
+			field_offset = state->pos - state->start;
+			const char *err_msg = scan_fieldN(state, &sep);
+			if (err_msg == NULL) {
+				ok = true;
+			} else {
+				copy_report_error(errors, row, col, "%s", err_msg);
+				ok = false;
+			}
+		}
+
+		if (ok && check_row_end(errors, state, row, col, ncols, sep) == GDK_FAIL) {
+			ok = false;
+		}
+
+		if (ok) {
+			// The happy path.  Store the field and advance row and col.
+			columns[col][row] = field_offset;
+			if (col < ncols - 1) {
+				col += 1;
+			} else {
+				row += 1;
+				col = 0;
+			}
+			continue;
+		}
+
+		// An error has occurred. BEST EFFORT determines if we want to stop right now
+		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		if (err) {
+			// Bail out now
+			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
+		}
+
+		// We must be in BEST EFFORT mode.
+		// Set all fields to nil and advance to the next line
+		for (int i = 0; i < ncols; i++)
+			columns[i][row] = int_nil;
+		col = 0;
+		row += 1;
+		if (find_end_of_lineN(state))
+			state->pos+=state->line_sep_len;
 	}
 
 	assert(state->pos == state->end || row == nrows);

@@ -34,7 +34,9 @@ CREATE TABLE subtable2 (a int, b int, dd real)
 statement ok rowcount 1
 INSERT INTO subtable1 VALUES (4, 2, 1.2)
 
-statement error 22018!conversion of string 'ups' to type lng failed.
+# can be either "conversion of string 'ups' to type lng failed."
+# or "conversion of string to type lng failed."
+statement error 22018!conversion of string ...
 ALTER TABLE nexttest ADD TABLE subtable1 AS PARTITION IN ('ups')
 
 statement ok

@@ -3642,16 +3642,12 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
 			rcost *= 1.1 * ((double) cnt / unique_est);
-#ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
 			MT_lock_set(&r->theaplock);
 			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 				rcost += cnt * 2.0;
 			MT_lock_unset(&r->theaplock);
-#else
-			rcost += cnt * 2.0;
-#endif
 		}
 	}
 	if (cand) {
@@ -4871,7 +4867,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (is_lng_nil(*(const lng *) vr))
 					continue;
 				lng v1, v2;
-				SUB_WITH_CHECK(*(const lng *)vr,
+				SUBI_WITH_CHECK(*(const lng *)vr,
 					       *(const lng *)c1,
 					       lng, v1,
 					       GDK_lng_max,
@@ -4880,7 +4876,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    (!linc || *(const lng *)vl != v1))
 					continue;
 				  lmatch1:
-				ADD_WITH_CHECK(*(const lng *)vr,
+				ADDI_WITH_CHECK(*(const lng *)vr,
 					       *(const lng *)c2,
 					       lng, v2,
 					       GDK_lng_max,
@@ -4901,7 +4897,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (is_hge_nil(*(const hge *) vr))
 					continue;
 				hge v1, v2;
-				SUB_WITH_CHECK(*(const hge *)vr,
+				SUBI_WITH_CHECK(*(const hge *)vr,
 					       *(const hge *)c1,
 					       hge, v1,
 					       GDK_hge_max,
@@ -4910,7 +4906,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    (!linc || *(const hge *)vl != v1))
 					continue;
 				  hmatch1:
-				ADD_WITH_CHECK(*(const hge *)vr,
+				ADDI_WITH_CHECK(*(const hge *)vr,
 					       *(const hge *)c2,
 					       hge, v2,
 					       GDK_hge_max,
@@ -4943,7 +4939,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (is_dbl_nil(*(const dbl *) vr))
 					continue;
 				dbl v1, v2;
-				SUB_WITH_CHECK(*(const dbl *)vr,
+				SUBF_WITH_CHECK(*(const dbl *)vr,
 					       *(const dbl *)c1,
 					       dbl, v1,
 					       GDK_dbl_max,
@@ -4952,7 +4948,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				    (!linc || *(const dbl *)vl != v1))
 					continue;
 				  dmatch1:
-				ADD_WITH_CHECK(*(const dbl *)vr,
+				ADDF_WITH_CHECK(*(const dbl *)vr,
 					       *(const dbl *)c2,
 					       dbl, v2,
 					       GDK_dbl_max,

@@ -1,5 +1,4 @@
-debian/tmp/usr/bin/monetdbd usr/bin
-debian/tmp/usr/bin/monetdb usr/bin
+debian/tmp/usr/bin/monetdb* usr/bin
 debian/tmp/usr/lib/systemd/system/monetdbd.service lib/systemd/system
 debian/tmp/etc/logrotate.d/monetdbd etc/logrotate.d
 debian/tmp/etc/tmpfiles.d/monetdbd.conf usr/lib/tmpfiles.d

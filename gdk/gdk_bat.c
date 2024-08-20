@@ -819,11 +819,26 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	 * table and that would result in buckets containing values
 	 * beyond the original vheap that we're copying */
 	MT_lock_set(&b->theaplock);
+	BAT *pb = NULL, *pvb = NULL;
+	if (b->theap->parentid != b->batCacheid) {
+		pb = BBP_desc(b->theap->parentid);
+		MT_lock_set(&pb->theaplock);
+	}
+	if (b->tvheap &&
+	    b->tvheap->parentid != b->batCacheid &&
+	    b->tvheap->parentid != b->theap->parentid) {
+		pvb = BBP_desc(b->tvheap->parentid);
+		MT_lock_set(&pvb->theaplock);
+	}
 	bi = bat_iterator_nolock(b);
-	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE)
+	if (ATOMstorage(b->ttype) == TYPE_str && b->tvheap->free >= GDK_STRHASHSIZE && b->tvheap->storage != STORE_NOWN)
 		memcpy(strhash, b->tvheap->base, GDK_STRHASHSIZE);
 
 	bat_iterator_incref(&bi);
+	if (pvb)
+		MT_lock_unset(&pvb->theaplock);
+	if (pb)
+		MT_lock_unset(&pb->theaplock);
 	MT_lock_unset(&b->theaplock);
 
 	/* first try case (1); create a view, possibly with different
@@ -854,7 +869,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	} else {
 		/* check whether we need case (4); BUN-by-BUN copy (by
 		 * setting slowcopy to true) */
-		if (ATOMsize(tt) != ATOMsize(bi.type)) {
+		if (ATOMsize(tt) != ATOMsize(bi.type) ||
+				(bi.vh && bi.vh->storage == STORE_NOWN)) {
 			/* oops, void materialization */
 			slowcopy = true;
 		} else if (bi.h && bi.h->parentid != b->batCacheid &&

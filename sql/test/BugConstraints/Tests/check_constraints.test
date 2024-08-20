@@ -7,16 +7,16 @@ insert into kw values(1, 'FIRST')
 statement error UPDATE: CHECK constraint violated: kw_x_check
 insert into kw values(0, 'FIRST')
 
-statement eror UPDATE: CHECK constraint violated: kwname_upper
+statement error UPDATE: CHECK constraint violated: kwname_upper
 insert into kw values(2, 'Second')
 
 statement ok
 insert into kw values(3, 'FREE')
 
-statement eror UPDATE: CHECK constraint violated: kwname_len_1
+statement error UPDATE: CHECK constraint violated: kwname_len_1
 insert into kw values(4, '')
 
-statement eror UPDATE: CHECK constraint violated: kw_nm_check
+statement error UPDATE: CHECK constraint violated: kw_nm_check
 insert into kw values(5, NULL)
 
 query IT rowsort

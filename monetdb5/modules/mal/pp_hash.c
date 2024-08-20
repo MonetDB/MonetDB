@@ -22,6 +22,7 @@ str_cmp(str s1, str s2)
 	return strcmp(s1,s2);
 }
 
+/*
 lng
 str_hsh(str v)
 {
@@ -39,6 +40,7 @@ str_hsh(str v)
 	}
 	return key;
 }
+*/
 
 static unsigned int
 log_base2(unsigned int n)
@@ -166,7 +168,7 @@ _ht_create( int type, size_t size, bool freq, hash_table *p)
 }
 
 hash_table *
-ht_create(int type, size_t size, bool freq, hash_table *p)
+ht_create(int type, int size, bool freq, hash_table *p)
 {
 	if (size < HT_MIN_SIZE)
 		size = HT_MIN_SIZE;

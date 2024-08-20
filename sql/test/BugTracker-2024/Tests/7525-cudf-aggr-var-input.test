@@ -9,18 +9,19 @@ CREATE OR REPLACE AGGREGATE jit_sum(*) RETURNS BIGINT LANGUAGE C
 	for(size_t i = 0; i < arg2.count; i++) {
 	result->data[aggr_group.data[i]] += arg2.data[i];
 	}
-  };
+  }
 
 statement ok
-CREATE TABLE grouped_ints(value INTEGER, groupnr INTEGER);
+CREATE TABLE grouped_ints(value INTEGER, groupnr INTEGER)
 
 statement ok
-INSERT INTO grouped_ints VALUES (1, 0), (2, 1), (3, 0), (4, 1), (5, 0);
+INSERT INTO grouped_ints VALUES (1, 0), (2, 1), (3, 0), (4, 1), (5, 0)
 
-query II
-SELECT groupnr, jit_sum(value) FROM grouped_ints GROUP BY groupnr;
+query II nosort
+SELECT groupnr, jit_sum(value) FROM grouped_ints GROUP BY groupnr
 ----
 0
 9
 1
 6
+

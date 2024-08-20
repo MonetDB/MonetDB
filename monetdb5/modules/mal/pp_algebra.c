@@ -113,6 +113,7 @@ LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			return createException(SQL, "lockedaggr.sum", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
+
 	if (!is_bat_nil(*res)) {
 		BAT *b = BATdescriptor(*res);
 		if (b == NULL)
@@ -136,7 +137,16 @@ LOCKEDAGGRsum1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 		}
 	} else {
-			err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
+			BAT *b = COLnew(0, type, 1, TRANSIENT);
+			if (!b || BUNappend(b, p, true) != GDK_SUCCEED)
+				err = createException(MAL, "lockedaggr.sum", "Result is not initialized");
+			if (!err) {
+				*res = b->batCacheid;
+				BATnegateprops(b);
+				BBPkeepref(b);
+			} else if (b) {
+				BBPunfix(b->batCacheid);
+			}
 	}
 	pipeline_unlock(p);
 	if (err)
@@ -3171,7 +3181,7 @@ compute_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for(BUN i = 0; i<n; i++)
 				cres[i] = cc[i] ? ((dbl)ca[i]) + ((dbl)cr[i])/cc[i] : dbl_nil;
 		}
-#if HAVE_HGE
+#ifdef HAVE_HGE
 		else if (a->ttype == TYPE_hge) {
 			lng *ca = Tloc(a, 0);
 			for(BUN i = 0; i<n; i++)
@@ -4137,6 +4147,7 @@ ALGfsum_skipnil(dbl *result, dbl *rcom, lng *rcnt, const bat *bid, const bit *sk
 	BAT *b;
 	str err = MAL_SUCCEED;
 
+	(void)skipnil;
 	if (result == NULL || rcom == NULL || (b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "iaggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
@@ -4221,7 +4232,7 @@ static mel_func pp_algebra_init_funcs[] = {
  command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",1), arg("pipeline", ptr), batarg("left",oid),batargany("right",1))),
  command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
- command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",2))),
+ command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",1))),
  command("group", "group", LALGderive, false, "Sub Group input.", args(2,6, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batarg("pgid", oid), batargany("phash", 2), batargany("b",1))),
  command("algebra", "projection", LALGproject, false, "Project.", args(1,4, batargany("",1), batarg("gid", oid), batargany("b",1), arg("pipeline", ptr))),
  command("aggr", "count", LALGcount, false, "Count per group.", args(1,6, batarg("",lng), batarg("gid", oid), batargany("", 1), arg("nonil", bit), arg("pipeline", ptr), batarg("pid", oid))),

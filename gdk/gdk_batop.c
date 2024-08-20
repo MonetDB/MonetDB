@@ -83,7 +83,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		 * need to append the offsets */
 		toff = 0;
 		MT_thread_setalgorithm("shared vheap");
-	} else if (mayshare && b->batRole == TRANSIENT && oldcnt == 0) {
+	} else if (mayshare && b->batRole == TRANSIENT && oldcnt == 0 && ni->b->tvheap->storage != STORE_NOWN) {
 		/* we can share the vheaps, so we then only need to
 		 * append the offsets */
 		MT_lock_set(&b->theaplock);
@@ -106,8 +106,9 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 		    unshare_varsized_heap(b) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
-		if (oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
-				    !GDK_ELIMDOUBLES(ni->vh))) {
+		if ((oldcnt == 0 || (!GDK_ELIMDOUBLES(b->tvheap) &&
+				    !GDK_ELIMDOUBLES(ni->vh))) &&
+				    ni->b->tvheap->storage != STORE_NOWN) {
 			/* we'll consider copying the string heap completely
 			 *
 			 * we first estimate how much space the string heap
@@ -3072,9 +3073,11 @@ BATcount_no_nil(BAT *b, BAT *s)
 
 	hseq = b->hseqbase;
 	canditer_init(&ci, b, s);
-	if (b->tnonil)
-		return ci.ncand;
 	BATiter bi = bat_iterator(b);
+	if (bi.nonil) {
+		bat_iterator_end(&bi);
+		return ci.ncand;
+	}
 	p = bi.base;
 	t = ATOMbasetype(bi.type);
 	switch (t) {

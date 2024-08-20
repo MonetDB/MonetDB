@@ -108,24 +108,24 @@ select NULL IS DISTINCT FROM s FROM foo
 0
 
 query I nosort
-select s FROM foo WHERE s IS DISTINCT FROM 20;
+select s FROM foo WHERE s IS DISTINCT FROM 20
 ----
 10
 NULL
 
 query I nosort
-select s FROM foo WHERE s IS NOT DISTINCT FROM 20;
+select s FROM foo WHERE s IS NOT DISTINCT FROM 20
 ----
 20
 
 query I nosort
-select s FROM foo WHERE s + 10 IS DISTINCT FROM s;
+select s FROM foo WHERE s + 10 IS DISTINCT FROM s
 ----
 10
 20
 
 query I nosort
-select s FROM foo WHERE s + 10 IS NOT DISTINCT FROM s;
+select s FROM foo WHERE s + 10 IS NOT DISTINCT FROM s
 ----
 NULL
 
@@ -190,7 +190,6 @@ NULL
 NULL
 30
 
-
 query II rowsort
 select foo.s, bar.s from foo, bar where foo.s is not distinct from bar.s
 ----
@@ -203,7 +202,7 @@ statement ok
 create table baz(s int)
 
 query II rowsort
-SELECT * FROM baz RIGHT JOIN foo ON true WHERE (1 IS DISTINCT FROM baz.s);
+SELECT * FROM baz RIGHT JOIN foo ON true WHERE (1 IS DISTINCT FROM baz.s)
 ----
 NULL
 10
@@ -211,3 +210,4 @@ NULL
 20
 NULL
 NULL
+

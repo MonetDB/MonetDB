@@ -461,7 +461,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 			stmt *s = stmt_project(be, cand, c);
 			c = stmt_as(be, s, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
-			//c = stmt_alias(be, cand, 0, c->tname, c->cname);
 			c = stmt_as(be, cand, c);
 		} else { /* st_alias */
 			stmt *s = c->op1;
@@ -469,7 +468,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 				s = stmt_const(be, cand, s);
 			else
 				s = stmt_project(be, cand, s);
-			//c = stmt_alias(be, s, c->flag, c->tname, c->cname);
 			c = stmt_as(be, s, c);
 		}
 		append(l, c);
@@ -528,7 +526,7 @@ handle_in_tuple_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right
 		else
 			s = cursel;
 	}
-	if (sel && !(depth || !reduce))
+	if (!depth && reduce)
 		s = stmt_uselect(be,
 			s->nrcols == 0?stmt_const(be, bin_find_smallest_column(be, left), s): s,
 			stmt_bool(be, 1), cmp_equal, sel, 0, 0);
@@ -1277,7 +1275,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	return res;
 }
 
-// This is the per-column portion of exp2bin_copyfrombinary
+/* This is the per-column portion of exp2bin_copyfrombinary */
 static stmt *
 emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_var, node *file_node, node *type_node)
 {
@@ -1289,11 +1287,11 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	int data_type = subtype->type->localtype;
 	int bat_type = newBatType(data_type);
 
-	// The sql.importColumn operator takes a 'method' string to determine how to
-	// load the data. This leaves the door open to have multiple loaders for the
-	// same backend type, for example nul- and newline terminated strings.
-	// For the time being we just use the name of the storage type as the method
-	// name.
+	/* The sql.importColumn operator takes a 'method' string to determine how to
+	 * load the data. This leaves the door open to have multiple loaders for the
+	 * same backend type, for example nul- and newline terminated strings.
+	 * For the time being we just use the name of the storage type as the method
+	 * name. */
 	const char *method = ATOMname(data_type);
 
 	int width;
@@ -1313,7 +1311,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	if (p != NULL) {
 		setArgType(mb, p, 0, bat_type);
 		p = pushReturn(mb, p, new_count_var);
-		//
+
 		p = pushStr(mb, p, method);
 		p = pushInt(mb, p, width);
 		p = pushArgument(mb, p, bswap_stmt->nr);
@@ -1337,7 +1335,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	return s;
 }
 
-// Try to predict which column will be quickest to load first
+/* Try to predict which column will be quickest to load first */
 static int
 node_type_score(node *n)
 {
@@ -1366,7 +1364,7 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	sql_exp *bswap_exp = arg_list->h->next->next->next->data;
 	stmt *bswap_stmt = exp_bin(be, bswap_exp, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
-	// If it's ON SERVER we can optimize by running the imports in parallel
+	/* If it's ON SERVER we can optimize by running the imports in parallel */
 	bool onserver = false;
 	if (onclient_exp->type == e_atom) {
 		atom *onclient_atom = onclient_exp->l;
@@ -1378,10 +1376,10 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	node *const first_type = type_list->h;
 	node *file, *type;
 
-	// The first column we load determines the number of rows.
-	// We pass it on to the other columns.
-	// The first column to load should therefore be an 'easy' one.
-	// We identify the columns by the address of their type node.
+	/* The first column we load determines the number of rows.
+	 * We pass it on to the other columns.
+	 * The first column to load should therefore be an 'easy' one.
+	 * We identify the columns by the address of their type node. */
 	node *prototype_file = first_file;
 	node *prototype_type = first_type;
 	int score = node_type_score(prototype_type);
@@ -1394,7 +1392,7 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 		}
 	}
 
-	// Emit the columns
+	/* Emit the columns */
 	int count_var = -1;
 	list *columns = sa_list(sql->sa);
 	if (columns == NULL)
@@ -1414,8 +1412,8 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 		}
 		list_append(columns, s);
 		if (onserver) {
-			// Not threading the count variable from one importColumn to the next
-			// makes it possible to run them in parallel in a dataflow region.
+			/* Not threading the count variable from one importColumn to the next
+			 * makes it possible to run them in parallel in a dataflow region. */
 			count_var = orig_count_var;
 		}
 	}
@@ -1611,8 +1609,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (!l)
 			return NULL;
 		if (from->type->eclass == EC_SEC && to->type->eclass == EC_SEC) {
-			// trivial conversion because EC_SEC is always in milliseconds
+			/* trivial conversion because EC_SEC is always in milliseconds */
 			s = l;
+		} else if (depth && sel && l->nrcols == 0 && left && left->nrcols && exp_unsafe(e, false, true)) {
+			stmt *rows = bin_find_smallest_column(be, left);
+			l = stmt_const(be, rows, l);
+			s = stmt_convert(be, l, sel, from, to);
+		} else if (depth && l->nrcols == 0 && left && left->nrcols && from->type->localtype > to->type->localtype &&
+				exp_unsafe(e, false, true)) {
+			stmt *rows = bin_find_smallest_column(be, left);
+			l = stmt_const(be, rows, l);
+			s = stmt_convert(be, l, sel, from, to);
 		} else {
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
 		}
@@ -1657,8 +1664,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
-		if (0 && SQLrunning && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
-			return rel2bin_copyparpipe(be, NULL, NULL, e, false);
+		if (SQLrunning && f->func->mod && f->func->imp && strcmp(f->func->mod, "sql") == 0 && strcmp(f->func->imp, "copy_from") == 0)
+			return exp2bin_copyparpipe(be, e);
 		if (!list_empty(exps)) {
 			unsigned nrcols = 0;
 			int push_cands = can_push_cands(sel, mod, fimp);
@@ -1755,10 +1762,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				l = sa_list(sql->sa);
 				if (l == NULL)
 					return NULL;
-				if (be->pipeline && grp) {
-					//append(l, stmt_project(be, u, grp));
+				if (be->pipeline && grp)
 					grp = stmt_project(be, u, grp);
-				}
 				append(l, stmt_project(be, u, a));
 			}
 			as = stmt_list(be, l);
@@ -1788,10 +1793,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_column: {
 		if (right) /* check relation names */
-			//s = bin_find_column(be, right, e->l, e->r);
 			s = bin_find_column_nid(be, right, e->nid);
 		if (!s && left)
-			//s = bin_find_column(be, left, e->l, e->r);
 			s = bin_find_column_nid(be, left, e->nid);
 		if (s && grp && !be->pipeline)
 			s = stmt_project(be, ext, s);
@@ -2267,7 +2270,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		assert(!is_func(exp->type));
 		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
-			//const char *rnme = t->base.name;
 
 			if (col)
 				s = stmt_mirror(be, col);
@@ -2275,7 +2277,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				s = dels?dels:stmt_tid(be, t, 0);
 				dels = NULL;
 			}
-			//s = stmt_alias(be, s, exp->alias.label, rnme, TID);
 		} else if (oname[0] == '%') {
 			sql_idx *i = find_sql_idx(t, oname+1);
 
@@ -2283,17 +2284,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
-		//s->tname = rname;
-		//s->cname = exp_name(exp);
-		//s->flag = exp->alias.label;
 		list_append(l, s);
 	}
 	stmt *res = stmt_list(be, l);
@@ -2683,7 +2679,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
-		//stmt *s = bin_find_column(be, sub, exp->l, exp->r);
 		stmt *s = bin_find_column_nid(be, sub, exp->nid);
 
 		if (!s) {
@@ -2867,12 +2862,12 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 			sql_exp *l = e->l, *r = e->r, *f = e->f;
 
 			if (f) {
-				int ll = rel_find_exp(rel->l, l) != NULL;
-				int rl = rel_find_exp(rel->r, l) != NULL;
-				int lr = rel_find_exp(rel->l, r) != NULL;
-				int rr = rel_find_exp(rel->r, r) != NULL;
-				int lf = rel_find_exp(rel->l, f) != NULL;
-				int rf = rel_find_exp(rel->r, f) != NULL;
+				int ll = rel_has_exp(rel->l, l, true) == 0;
+				int rl = rel_has_exp(rel->r, l, true) == 0;
+				int lr = rel_has_exp(rel->l, r, true) == 0;
+				int rr = rel_has_exp(rel->r, r, true) == 0;
+				int lf = rel_has_exp(rel->l, f, true) == 0;
+				int rf = rel_has_exp(rel->r, f, true) == 0;
 				int nrcr1 = 0, nrcr2 = 0, nrcl1 = 0, nrcl2 = 0;
 
 				if ((ll && !rl &&
@@ -2886,15 +2881,15 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 			} else {
 				int ll = 0, lr = 0, rl = 0, rr = 0, cst = 0;
 				if (l->card != CARD_ATOM || !exp_is_atom(l)) {
-					ll = rel_find_exp(rel->l, l) != NULL;
-					rl = rel_find_exp(rel->r, l) != NULL;
+					ll = rel_has_exp(rel->l, l, true) == 0;
+					rl = rel_has_exp(rel->r, l, true) == 0;
 				} else if (anti) {
 					ll = 1;
 					cst = 1;
 				}
 				if (r->card != CARD_ATOM || !exp_is_atom(r)) {
-					lr = rel_find_exp(rel->l, r) != NULL;
-					rr = rel_find_exp(rel->r, r) != NULL;
+					lr = rel_has_exp(rel->l, r, true) == 0;
+					rr = rel_has_exp(rel->r, r, true) == 0;
 				} else if (anti) {
 					rr = cst?0:1;
 				}
@@ -2909,16 +2904,16 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 				sql_exp *ee = n->data;
 
 				if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-					ll |= rel_find_exp(rel->l, ee) != NULL;
-					rl |= rel_find_exp(rel->r, ee) != NULL;
+					ll |= rel_has_exp(rel->l, ee, true) == 0;
+					rl |= rel_has_exp(rel->r, ee, true) == 0;
 				}
 			}
 			for (node *n = r->h ; n ; n = n->next) {
 				sql_exp *ee = n->data;
 
 				if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
-					lr |= rel_find_exp(rel->l, ee) != NULL;
-					rr |= rel_find_exp(rel->r, ee) != NULL;
+					lr |= rel_has_exp(rel->l, ee, true) == 0;
+					rr |= rel_has_exp(rel->r, ee, true) == 0;
 				}
 			}
 			if ((ll && !lr && !rl && rr) || (!ll && lr && rl && !rr))
@@ -4077,7 +4072,6 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 
 	/* for every op4 lval node */
-	//len = list_length(((stmt*)rstmts->h->data)->op4.lval);
 	for (i = 0; i < len; i++) {
 		/* extract t and c name from the first stmt */
 		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
@@ -4506,7 +4500,6 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			exp_label(sql->sa, exp, ++sql->label);
 		if (exp_name(exp)) {
 			s = stmt_rename(be, exp, s);
-			//column_name(sql->sa, s); /* save column name */
 			s->label = exp->alias.label;
 		}
 		list_append(pl, s);
@@ -4721,7 +4714,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	int neededpp = rel->partition && get_need_pipeline(be);
 
 	if (value_partition)
-		return rel2bin_groupby_partition(be, rel, refs);
+		return rel2bin_groupby_partition(be, rel, refs, neededpp);
 
 	sql_rel *p = rel->l;
 	int is_base = (p && is_basetable(p->op));
@@ -4833,7 +4826,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (cursub == NULL)
 		return NULL;
 
-	//assert(!aggrresults || list_length(aggrresults) == list_length(aggrs) + list_length(rel->r));
 	if (aggrs && !aggrs->h && ext)
 		list_append(l, ext);
 	for (n = aggrs->h; n; n = n->next) {
@@ -4843,10 +4835,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		/* first look in the current aggr list (l) and group by column list */
 		if (l && !aggrstmt && aggrexp->type == e_column)
-			//aggrstmt = list_find_column(be, l, aggrexp->l, aggrexp->r);
 			aggrstmt = list_find_column_nid(be, l, aggrexp->nid);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
-			//aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			aggrstmt = list_find_column_nid(be, gbexps, aggrexp->nid);
 			if ((!be->pipeline || !_2phases) && aggrstmt && groupby) {
 				aggrstmt = stmt_project(be, be->pipeline?grp:ext, aggrstmt);
@@ -5172,7 +5162,6 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 	if (topn && rel->r) {
 		list *npl = sa_list(sql->sa);
 		/* distinct, topn returns atleast N (unique groups) */
-		//int distinct = need_distinct(rel);
 
 		InstrPtr q = newStmt(be->mb, getName("heapn"), getName("topn"));
 		int oidbat = newBatType(TYPE_oid);
@@ -5378,8 +5367,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	n = sub->op4.lval->h;
 	if (n) {
 		stmt *limit = NULL, *sc = n->data;
-		//const char *cname = column_name(sql->sa, sc);
-		//const char *tname = table_name(sql->sa, sc);
 		list *newl = sa_list(sql->sa);
 
 		sc = column(be, sc);
@@ -5441,8 +5428,6 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *sc = n->data;
-		//const char *cname = column_name(sql->sa, sc);
-		//const char *tname = table_name(sql->sa, sc);
 
 		 if (!(sample_size = exp_bin(be, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0)))
 			return NULL;
@@ -5677,9 +5662,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		/* foreach column add predicate */
 		stmt_add_column_predicate(be, c->c);
 
-		// foreach column aggregate the nonil (literally 'null') values.
-		// mind that null values are valid fkeys with undefined value so
-		// we won't have an entry for them in the idx_inserts col
+		/* foreach column aggregate the nonil (literally 'null') values.
+		 * mind that null values are valid fkeys with undefined value so
+		 * we won't have an entry for them in the idx_inserts col */
 		s = list_fetch(inserts, c->c->colnr);
 		nonil_rows = stmt_selectnonil(be, s, nonil_rows);
 	}
@@ -5687,9 +5672,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-    // we want to make sure that the data column(s) has the same number
-    // of (nonil) rows as the index column. if that is **not** the case
-    // then we are obviously dealing with an invalid foreign key
+    /* we want to make sure that the data column(s) has the same number
+     * of (nonil) rows as the index column. if that is **not** the case
+     * then we are obviously dealing with an invalid foreign key */
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
@@ -5861,218 +5846,12 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
-// Call this from the debugger at any time to see how code generation proceeds.
-void dump_code(int);
-static struct {
-	MalBlkPtr mb;
-	int pos;
-} dump_code_state;
-void
-dump_code(int starting_point)
-{
-	stream *s = stderr_wastream();
-	MalBlkPtr mb = dump_code_state.mb;
-	int start = starting_point >= 0 ? starting_point : dump_code_state.pos;
-	int stop = mb->stop;
-
-	mnstr_printf(s, "\n");
-	mnstr_printf(s, "Found %d new statements:\n", stop - start);
-	for (int i = start; i < stop; i++) {
-		str line = instruction2str(mb, NULL, getInstrPtr(mb, i), LIST_MAL_ALL);
-		if (line != NULL) {
-			mnstr_printf(s, "%d: %s\n", i, line);
-			GDKfree(line);
-		} else {
-			mnstr_printf(s, "// %d?\n", i);
-		}
-	}
-
-	mnstr_close(s);
-
-	dump_code_state.pos = stop;
-}
-
-static ValPtr
-atom_argument(node *node, int arg, int typ)
-{
-	while (arg-- > 0)
-		node = node->next;
-
-	sql_exp *e = node->data;
-	assert(e != NULL);
-	if (e == NULL)
-		return NULL;
-
-	atom *a = e->l;
-	assert(a != NULL);
-	if (a == NULL)
-		return NULL;
-
-	int atyp = atom_type(a)->type->localtype;
-	assert(atyp == typ);
-	if (atyp != typ)
-		return NULL;
-
-	return &a->data;
-}
-
-// This is basically a long list of reasons not to use the new
-// code. The idea is that we'll gradually add support for more cases and shorten
-// this list until it disappears.
-static sql_exp*
-can_use_copyparpipe(sql_rel *rel)
-{
-	if (rel->flag & UPD_COMP) {
-		// special case copied from rel2bin_insert
-		rel = rel->r;
-	}
-	sql_rel *left = rel->l;
-
-	if (left->op != op_basetable)
-		return NULL;
-	sql_table *destination_table = left->l;
-	if (destination_table->s == NULL) {
-		// no schema means DECLAREd table, apparently those can't or don't need
-		// to use sql.claim.
-		return NULL;
-	}
-
-	// We don't yet know how to deal with indices that need to be updated or
-	// constraints that need to be checked.
-	if (destination_table->pkey != NULL)
-		return NULL;
-	if (destination_table->idxs != NULL && list_length(destination_table->idxs->l) > 0)
-		return NULL;
-	if (destination_table->keys != NULL && list_length(destination_table->keys->l) > 0)
-		return NULL;
-	if (destination_table->triggers != NULL && list_length(destination_table->triggers->l) > 0)
-		return NULL;
-
-
-	sql_rel *projection;
-	sql_rel *incoming;
-	sql_rel *p = rel->r;
-	if (p == NULL)
-		return NULL;
-	if (p->op == op_project) {
-		projection = p;
-		incoming = p->l;
-	} else {
-		projection = NULL;
-		incoming = p;
-	}
-	/* this seems to occur around foreign keys and it scares me */
-	if (projection && rel_is_ref(projection))
-		return NULL;
-
-	if (incoming == NULL) {
-		// happens for example with INSERT INTO foo VALUES (..),
-		// the values are in the projection's exps.
-		return NULL;
-	}
-	if (incoming->op != op_table)
-		return NULL;
-	if (rel_is_ref(incoming))
-		return NULL;
-	if (incoming->flag != TABLE_PROD_FUNC)
-		return NULL;
-
-	// Does anything scary happen in the projection?
-	if (projection) {
-		list *p_exps = projection->exps;
-		list *i_exps = incoming->exps;
-		node *np = p_exps->h;
-		node *ni = i_exps->h;
-		for (; np && ni; np = np->next, ni = ni->next) {
-			// exps are the same
-			sql_exp *p = np->data;
-			sql_exp *i = ni->data;
-			if (p->type != e_column)
-				return NULL;
-			if (i->type != e_column)
-				return NULL;
-			// compare relation name
-			if (p->l == NULL || i->l == NULL || strcmp((char*)p->l, (char*)i->l) != 0)
-				return NULL;
-			// compare column name
-			if (p->r == NULL || i->r == NULL || strcmp((char*)p->r, (char*)i->r) != 0)
-				return NULL;
-		}
-		// lists are same length
-		if ((np == NULL) != (ni == NULL))
-			return NULL;
-	}
-
-	sql_exp *copy_from = incoming->r;
-	if (copy_from->type != e_func)
-		return NULL;
-	sql_subfunc *sf = copy_from->f;
-	if (strcmp(sf->func->mod, "sql") != 0)
-		return NULL;
-	if (strcmp(sf->func->imp, "copy_from") != 0)
-		return NULL;
-
-	// take apart the argument list
-	list *args = copy_from->l;
-	if (args == NULL)
-		return NULL;
-	node *n = args->h;
-	if (n == NULL)
-		return NULL;
-	sql_table *template_table = atom_argument(n, 0, TYPE_ptr)->val.pval;
-	str fixed_width = atom_argument(n, 9, TYPE_str)->val.sval;
-	if (!strNil(fixed_width))
-		return NULL;
-
-	// The sql.copy_from operator takes as its first argument a pointer to the
-	// table to be filled.  It uses this to determine the column types, and
-	// maybe also for other things.
-	//
-	// If we have to reorder the columns, for example COPY INTO foo(i,j) FROM
-	// 'data.csv'(j,i), the table pointer cannot point to foo itself because the
-	// column order is wrong. In that case, the sql->rel translator creates a
-	// special temporary table just like foo but with its columns in the right
-	// order.
-	//
-	// For the time being, we'll only support the easy cases without reordering,
-	// recognizable by these tables being identical.
-	if (template_table != destination_table)
-		return NULL;
-
-	// Because of the check above we don't have to worry about generating
-	// default values.
-
-	// If NULL or uniqueness checks have to be generated we'll take the generic path.
-	for (node *n = ol_first_node(destination_table->columns); n != NULL; n = n->next) {
-		sql_column *c = n->data;
-		if (!c->null)
-			return NULL;
-		if (c->unique > 0)
-			return NULL;
-	}
-
-	return copy_from;
-}
-
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
-	dump_code_state.mb = be->mb;
-	// dump_code(0);
-
-	if (parallel_copy_level() > 0) {
-		sql_exp *copyfrom = can_use_copyparpipe(rel);
-		if (copyfrom != NULL) {
-			// dump_code(0);
-			stmt *ret = rel2bin_copyparpipe(be, rel, refs, copyfrom, true);
-			// dump_code(-1);
-			return ret;
-		}
-	}
-
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *cnt = NULL, *pos = NULL;
 	int idx_ins = 0, len = 0;
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -6084,6 +5863,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
+	/* if run with pp */
+	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
 
 	if (tr->op == op_basetable) {
 		t = tr->l;
@@ -6098,6 +5879,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the inserts relation */
 		inserts = subrel_bin(be, rel->r, refs);
 	inserts = subrel_project(be, inserts, refs, rel->r);
+	stmt *pp = NULL;
+	pp = get_pipeline(be);
 
 	if (!inserts)
 		return NULL;
@@ -6128,12 +5911,19 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	insert = inserts->op4.lval->h->data;
+	stmt *sum = NULL;
 	if (insert->nrcols == 0) {
 		cnt = stmt_atom_lng(be, 1);
+		sum = cnt;
 	} else {
+		int pp = be->pipeline;
+		be->pipeline = 0;
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+		be->pipeline = pp;
+		/* incremental sum */
+		if (pp)
+			sum = stmt_pp_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
 	}
-	insert = NULL;
 
 	/* by now the aggr.count has been generated */
 	l = sa_list(sql->sa);
@@ -6199,14 +5989,36 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 
-	// dump_code(-1);
+	if (pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
+	}
 
 	if (ddl) {
-		ret = ddl;
 		list_prepend(l, ddl);
+		if (pp)
+			(void)stmt_pp_end(be, pp);
 		return stmt_list(be, l);
 	} else {
-		ret = cnt;
+		/* combine counts using locked.sum */
+		stmt *ret = cnt;
+		if (pp) {
+			ret = stmt_pp_aggr(be, sum, NULL, NULL, sql_bind_func(sql, "sys", "sum", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
+			/* shared result */
+			ret->nr = getArg(ret->q, 0) = cc->nr;
+			ret->q->inout = 0;
+			int nr = getDestVar(ret->q);
+			/* change into bat */
+			getModuleId(ret->q) = getName("lockedaggr");
+			be->mb->var[nr].type = newBatType(TYPE_lng);
+			ret->q = pushArgument(be->mb, ret->q, be->pipeline);
+			/* swap value and pipeline */
+			int arg = getArg(ret->q, 1);
+			getArg(ret->q, 1) = getArg(ret->q, 2);
+			getArg(ret->q, 2) = arg;
+
+			(void)stmt_pp_end(be, pp);
+			ret = stmt_fetch(be, ret); /* fetch rowcount result */
+		}
 		if (add_to_rowcount_accumulator(be, ret->nr) < 0)
 			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
@@ -7715,8 +7527,8 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	atom *a = ((sql_exp*)argnode->data)->l;
 	int tpe = a->tpe.type->localtype;
 
-	// With regular COPY INTO <file>, the first argument is a string.
-	// With COPY INTO BINARY, it is an int.
+	/* With regular COPY INTO <file>, the first argument is a string.
+	 * With COPY INTO BINARY, it is an int. */
 	if (tpe == TYPE_str) {
 		atom *tatom = ((sql_exp*) argnode->data)->l;
 		const char *tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
@@ -8416,11 +8228,77 @@ rel_bin(backend *be, sql_rel *rel)
 	return s;
 }
 
+static stmt *
+rel2bin_materialize(backend *be, sql_rel *rel)
+{
+	sql_rel *r = rel;
+	list *refs = sa_list(be->mvc->sa);
+	stmt *s = NULL;
+
+	if (is_topn(r->op))
+		r = r->l;
+
+	list *shared = NULL;
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+		/* generate results */
+		BUN est = get_rel_count(rel);
+		lng estimate;
+
+		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+			estimate = 1024;
+		} else {
+			estimate = (lng) est;
+		}
+		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+		for(node *n = r->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+
+			InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate);
+			append(shared, q);
+		}
+	}
+	s = subrel_bin(be, rel, refs);
+	s = subrel_project(be, s, refs, rel);
+	stmt *pp = get_pipeline(be);
+	if (pp && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+		/* append results (later first claim position, then append)*/
+		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
+
+		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
+			InstrPtr r = n->data;
+			stmt *i = m->data;
+			sql_exp *e = o->data;
+			sql_subtype *tpe = exp_subtype(e);
+
+			InstrPtr q = newStmt(be->mb, batRef, appendRef);
+			if (q == NULL)
+				return NULL;
+			q = pushArgument(be->mb, q, r->argv[0]);
+			q = pushArgument(be->mb, q, i->nr);
+			q = pushBit(be->mb, q, TRUE);
+			q->argv[0] = r->argv[0];
+			pushInstruction(be->mb, q);
+
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *tpe;
+			s->nr = r->argv[0];
+			s->q = q;
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+			append(res, s);
+		}
+		s = stmt_list(be, res);
+	}
+	/* end pp */
+	if (pp)
+		stmt_pp_end(be, pp);
+	return s;
+}
+
 stmt *
 output_rel_bin(backend *be, sql_rel *rel, int top)
 {
 	mvc *sql = be->mvc;
-	list *refs = sa_list(sql->sa);
 	mapi_query_t sqltype = sql->type;
 	stmt *s = NULL;
 
@@ -8430,8 +8308,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	be->pp = be->nrparts = 0;
 
-	s = subrel_bin(be, rel, refs);
-	s = subrel_project(be, s, refs, rel);
+	s = rel2bin_materialize(be, rel);
 
 	if (!s)
 		return NULL;

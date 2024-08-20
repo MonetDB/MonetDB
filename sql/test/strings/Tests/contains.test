@@ -52,3 +52,4 @@ query I nosort
 SELECT contains('Müller Thomas', 'müller', false)
 ----
 0
+

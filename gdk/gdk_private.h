@@ -16,15 +16,6 @@
 #error this file should not be included outside its source directory
 #endif
 
-/* persist hash heaps for persistent BATs */
-#define PERSISTENTHASH 1
-
-/* persist order index heaps for persistent BATs */
-#define PERSISTENTIDX 1
-
-/* persist strimp heaps for persistent BATs */
-#define PERSISTENTSTRIMP 1
-
 /* only check whether we exceed gdk_vm_maxsize when allocating heaps */
 #define SIZE_CHECK_IN_HEAPS_ONLY 1
 
@@ -173,9 +164,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#define GDKwarning(format, ...)					\
+#define GDKwarning(...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, format, ##__VA_ARGS__)
+		      GDK, NULL, __VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
@@ -201,9 +192,6 @@ HASHmask(BUN cnt)
 	return cnt;
 }
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
-	__attribute__((__visibility__("hidden")));
-gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__warn_unused_result__))
@@ -314,13 +302,17 @@ ilog2(BUN x)
 {
 	if (x == 0)
 		return 0;
-#if defined(__GNUC__)
-#if SIZEOF_BUN == 8
+#ifdef __has_builtin
+#if SIZEOF_BUN == 8 && __has_builtin(__builtin_clzll)
 	return (unsigned) (64 - __builtin_clzll((unsigned long long) x));
-#else
+#define BUILTIN_USED
+#elif __has_builtin(__builtin_clz)
 	return (unsigned) (32 - __builtin_clz((unsigned) x));
+#define BUILTIN_USED
 #endif
-#elif defined(_MSC_VER)
+#endif
+#ifndef BUILTIN_USED
+#if defined(_MSC_VER)
 	unsigned long n;
 	if (
 #if SIZEOF_BUN == 8
@@ -365,6 +357,8 @@ ilog2(BUN x)
 	}
 	return n + (x != 0);
 #endif
+#endif
+#undef BUILTIN_USED
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */

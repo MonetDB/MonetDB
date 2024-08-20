@@ -865,9 +865,12 @@ get_bin_path(void)
 			return(_bin_path);
 	}
 #else  /* try Linux approach, also works on Cygwin */
-	if (readlink("/proc/self/exe",
-				_bin_path, sizeof(_bin_path)) != -1)
-			return _bin_path;
+	ssize_t n;
+	if ((n = readlink("/proc/self/exe", _bin_path, sizeof(_bin_path))) != -1
+		&& (size_t) n < sizeof(_bin_path)) {
+		_bin_path[n] = 0;
+		return _bin_path;
+	}
 #endif
 	/* could use argv[0] (passed) to deduce location based on PATH, but
 	 * that's a lot of work and unreliable */

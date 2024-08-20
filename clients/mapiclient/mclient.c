@@ -25,6 +25,7 @@
 #  include "getopt.h"
 # endif
 #endif
+#include "stream.h"
 #include "mapi.h"
 #include <unistd.h>
 #include <string.h>
@@ -38,7 +39,6 @@
 #include <readline/history.h>
 #include "ReadlineTools.h"
 #endif
-#include "stream.h"
 #include "msqldump.h"
 #define LIBMUTILS 1
 #include "mprompt.h"
@@ -1308,6 +1308,10 @@ sigint_handler(int signum)
 	(void) signum;
 
 	state = INTERRUPT;
+#ifndef HAVE_SIGACTION
+	if (signal(signum, sigint_handler) == SIG_ERR)
+		perror("Could not reinstall sigal handler");
+#endif
 #ifdef HAVE_LIBREADLINE
 	readline_int_handler();
 #endif
@@ -2289,7 +2293,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			char *newbuf;
 			state = READING;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
-			if (l == -1 && state == INTERRUPT) {
+			if (l <= 0 && state == INTERRUPT) {
 				/* we were interrupted */
 				mnstr_clearerr(fp);
 				mnstr_write(toConsole, "\n", 1, 1);
@@ -3219,7 +3223,8 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 		close_stream(priv->f);
 		priv->f = NULL;
 		if (fname) {
-			MT_remove(fname);
+			if (MT_remove(fname) < 0)
+				perror(fname);
 			free(fname);
 		}
 		if (filename == NULL)
@@ -3293,8 +3298,19 @@ isfile(FILE *fp)
 	return true;
 }
 
+static bool
+interrupted(void *m)
+{
+	Mapi mid = m;
+	if (state == INTERRUPT) {
+		mnstr_set_error(mapi_get_from(mid), MNSTR_INTERRUPT, NULL);
+		return true;
+	}
+	return false;
+}
+
 static void
-catch_interrupts(void)
+catch_interrupts(Mapi mid)
 {
 #ifdef HAVE_SIGACTION
 	struct sigaction sa;
@@ -3309,6 +3325,7 @@ catch_interrupts(void)
 		perror("Could not install signal handler");
 	}
 #endif
+	mapi_set_rtimeout(mid, 100, interrupted, mid);
 }
 
 int
@@ -3743,7 +3760,7 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
-		catch_interrupts();
+		catch_interrupts(mid);
 
 		if (mode == SQL) {
 			lang = "/SQL";
@@ -3843,7 +3860,7 @@ main(int argc, char **argv)
 
 			if (s == NULL) {
 				if (strcmp(arg, "-") == 0) {
-					catch_interrupts();
+					catch_interrupts(mid);
 					s = stdin_rastream();
 				} else {
 					s = open_rastream(arg);

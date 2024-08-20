@@ -6,14 +6,15 @@
 
 
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, const char *value)
+TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, const char *value, int *nils)
 {
 	bool pos = true;
 	TMPL_TYPE acc = 0;
 	const char *s = value;
 
-	while(isspace((unsigned char) *s))
-		s++;
+	if (*s <= ' ')
+		while(isspace((unsigned char) *s))
+			s++;
 
 	if (*s == '-') {
 		pos = false;
@@ -58,11 +59,12 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 			s++;
 	}
 
-	while (isspace((unsigned char) *s))
+	while(*s && isspace((unsigned char) *s))
 		s++;
 
 	if (s == value) {
 		copy_report_error(errors, rel_row, -1, "missing integer");
+		(*nils)++;
 		return TMPL_NIL;
 	}
 	if (*s != '\0') {
@@ -70,6 +72,7 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 			copy_report_error(errors, rel_row, -1, "unexpected decimal digit '%c' while parsing integer", *s);
 		else
 			copy_report_error(errors, rel_row, -1, "unexpected character '%c' while parsing integer", *s);
+		(*nils)++;
 		return TMPL_NIL;
 	}
 
@@ -79,9 +82,8 @@ TMPL_SUFFIXED(parse_one_integer) (struct error_handling *errors, int rel_row, co
 	return acc;
 }
 
-
 static TMPL_TYPE
-TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
+TMPL_SUFFIXED(parse_one_decimal_skip) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
 {
 	const char *s = value;
 	int digits = parms->digits;
@@ -90,8 +92,9 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 	bool neg = false;
 	TMPL_TYPE res = 0;
 
-	while(isspace((unsigned char) *s))
-		s++;
+	if (*s <= ' ')
+		while(isspace((unsigned char) *s))
+			s++;
 
 	if (*s == '-'){
 		neg = true;
@@ -131,6 +134,64 @@ TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_
 			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
 		else
 			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+		parms->nils++;
+		return TMPL_NIL;
+	}
+	if (neg)
+		res = -res;
+	return res;
+}
+
+
+
+static TMPL_TYPE
+TMPL_SUFFIXED(parse_one_decimal) (struct error_handling *errors, struct decimal_parms *parms, int rel_row, const char *value)
+{
+	const char *s = value;
+	int digits = parms->digits;
+	int scale = parms->scale;
+	int integer_digits = digits - scale;
+	bool neg = false;
+	TMPL_TYPE res = 0;
+
+	if (*s <= ' ')
+		while(isspace((unsigned char) *s))
+			s++;
+
+	if (*s == '-'){
+		neg = true;
+		s++;
+	} else if (*s == '+'){
+		s++;
+	}
+
+	for (; *s; s++) {
+		if (!isdigit((unsigned char) *s))
+			break;
+		res *= 10;
+		res += (*s - '0');
+		integer_digits-=(res)?1:0;
+	}
+	if (*s == parms->sep) {
+		s++;
+		for ( ;*s && isdigit((unsigned char)*s) && scale > 0; s++) {
+			res *= 10;
+			res += *s - '0';
+			scale--;
+		}
+	}
+	while(*s && isspace((unsigned char) *s))
+		s++;
+	while (scale > 0) {
+		res *= 10;
+		scale--;
+	}
+	if (*s || integer_digits < 0) {
+		if (integer_digits < 0 || isdigit(*s))
+			copy_report_error(errors, rel_row, -1, "too many decimal digits while parsing decimal: %s", value);
+		else
+			copy_report_error(errors, rel_row, -1, "unexpected characters while parsing decimal: %s", s);
+		parms->nils++;
 		return TMPL_NIL;
 	}
 	if (neg)
@@ -145,31 +206,49 @@ TMPL_SUFFIXED(parse_many_decimals) (struct error_handling *errors, void *parms_,
 {
 	struct decimal_parms *parms = parms_;
 	TMPL_TYPE *dest = dest_;
+	int nils = 0;
 
-	for (int i = 0; i < count; i++) {
-		int offset = offsets[i];
-		if (is_int_nil(offset)) {
-			dest[i] = TMPL_NIL;
-			continue;
+	if (parms->skip) {
+		for (int i = 0; i < count; i++) {
+			int offset = offsets[i];
+			if (is_int_nil(offset)) {
+				dest[i] = TMPL_NIL;
+				nils++;
+				continue;
+			}
+			dest[i] = TMPL_SUFFIXED(parse_one_decimal_skip)(errors, parms, i, data + offset);
 		}
-		dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
+	} else {
+		for (int i = 0; i < count; i++) {
+			int offset = offsets[i];
+			if (is_int_nil(offset)) {
+				dest[i] = TMPL_NIL;
+				nils++;
+				continue;
+			}
+			dest[i] = TMPL_SUFFIXED(parse_one_decimal)(errors, parms, i, data + offset);
+		}
 	}
+	parms->nils += nils;
 }
 
 static void
 TMPL_SUFFIXED(parse_many_integers) (struct error_handling *errors, void *parms, int count, void *dest_, char *data, int *offsets)
 {
-	(void)parms;
+	int *Nils = (int*)parms;
 	TMPL_TYPE *dest = dest_;
+	int nils = 0;
 
 	for (int i = 0; i < count; i++) {
 		int offset = offsets[i];
 		if (is_int_nil(offset)) {
 			dest[i] = TMPL_NIL;
+			nils++;
 			continue;
 		}
-		dest[i] = TMPL_SUFFIXED(parse_one_integer)(errors, i, data + offset);
+		dest[i] = TMPL_SUFFIXED(parse_one_integer)(errors, i, data + offset, &nils);
 	}
+	*Nils += nils;
 }
 
 
@@ -181,21 +260,22 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
-	int digits = *getArgReference_int(stk, pci, 3);
-	int scale = *getArgReference_int(stk, pci, 4);
-	// arg 5 is a dummy
-	bat failures_bat = *getArgReference_bat(stk, pci, 6);
-	lng starting_row = *getArgReference_lng(stk, pci, 7);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
+	int digits = *getArgReference_int(stk, pci, 4);
+	int scale = *getArgReference_int(stk, pci, 5);
+	// arg 6 is a dummy
+	bat rows = *getArgReference_bat(stk, pci, 7);
 	int col_no = *getArgReference_int(stk, pci, 8);
 	str col_name = *getArgReference_str(stk, pci, 9);
 	str dec_sep = *getArgReference_str(stk, pci, 10);
 	str dec_skip = *getArgReference_str(stk, pci, 11);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
+	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
 
 	struct decimal_parms myparms = {
+		.nils = 0,
 		.digits = digits,
 		.scale = scale,
 		.sep = strNil(dec_sep) ? '.' : dec_sep[0],
@@ -211,11 +291,12 @@ TMPL_SUFFIXED(COPYparse_decimal) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_decimal",
-		block_bat_id, offsets_bat_id,
+		block_bat_id, p, offsets_bat_id,
 		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_decimals), &myparms);
 
 end:
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	return msg;
 }
 
@@ -225,22 +306,25 @@ TMPL_SUFFIXED(COPYparse_integer) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	(void)mb;
 	bat *parsed_bat_id = getArgReference_bat(stk, pci, 0);
 	bat block_bat_id = *getArgReference_bat(stk, pci, 1);
-	bat offsets_bat_id = *getArgReference_bat(stk, pci, 2);
-	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 3);
-	bat failures_bat = *getArgReference_bat(stk, pci, 4);
-	lng starting_row = *getArgReference_lng(stk, pci, 5);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+	bat offsets_bat_id = *getArgReference_bat(stk, pci, 3);
+	// TMPL_TYPE dummy = *getArgReference_TMPL_TYPE(stk, pci, 4);
+	bat rows = *getArgReference_bat(stk, pci, 5);
 	int col_no = *getArgReference_int(stk, pci, 6);
 	str col_name = *getArgReference_str(stk, pci, 7);
 
 	struct error_handling errors;
-	copy_init_error_handling(&errors, cntxt, failures_bat, starting_row, col_no, col_name);
+	errors.init = 0;
+	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
 
+	int nils = 0;
 	str msg = parse_fixed_width_column(
 		parsed_bat_id, &errors, "copy.parse_integer" ,
-		block_bat_id, offsets_bat_id,
-		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), NULL);
+		block_bat_id, p, offsets_bat_id,
+		TMPL_SUFFIXED(TYPE), TMPL_SUFFIXED(parse_many_integers), &nils);
 
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	return msg;
 }
 
@@ -254,10 +338,9 @@ TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	bat *result_bat_id = getArgReference_bat(stk, pci, 0);
 	bat values_bat_id = *getArgReference_bat(stk, pci, 1);
 	int factor = *getArgReference_int(stk, pci, 2);
-	bat failures_bat_id = *getArgReference_bat(stk, pci, 3);
-	lng starting_row = *getArgReference_lng(stk, pci, 4);
-	int col_no = *getArgReference_int(stk, pci, 5);
-	str col_name = *getArgReference_str(stk, pci, 6);
+	bat rows = *getArgReference_bat(stk, pci, 3);
+	int col_no = *getArgReference_int(stk, pci, 4);
+	str col_name = *getArgReference_str(stk, pci, 5);
 
 	BAT *values_bat = BATdescriptor(values_bat_id);
 	size_t n = BATcount(values_bat);
@@ -266,14 +349,15 @@ TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	TMPL_TYPE *values;
 	TMPL_TYPE *results;
 
+	struct error_handling errors;
+	errors.init = 0;
+	copy_init_error_handling(&errors, cntxt, 0, col_no, col_name, rows);
+
 	if (!values_bat)
 		bailout(operatorname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	results_bat = COLnew(0, TMPL_SUFFIXED(TYPE), BATcount(values_bat), TRANSIENT);
 	if (!results_bat)
 		bailout(operatorname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	struct error_handling errors;
-	copy_init_error_handling(&errors, cntxt, failures_bat_id, starting_row, col_no, col_name);
 
 	values = Tloc(values_bat, 0);
 	results = Tloc(results_bat, 0);
@@ -301,7 +385,8 @@ TMPL_SUFFIXED(COPYscale) (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 end:
 	if (msg == MAL_SUCCEED)
 		msg = copy_check_too_many_errors(&errors, operatorname);
-	copy_destroy_error_handling(&errors);
+	if (errors.init)
+		copy_destroy_error_handling(&errors);
 	if (values_bat)
 		BBPunfix(values_bat->batCacheid);
 	if (results_bat) {

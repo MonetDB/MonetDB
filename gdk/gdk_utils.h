@@ -111,9 +111,6 @@ gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
 gdk_export gdk_return GDKinit(struct opt *set, int setlen, bool embedded, const char *caller_revision);
 
-/* used for testing only */
-gdk_export void GDKsetmallocsuccesscount(lng count);
-
 /*
  * Upon closing the session, all persistent BATs should be saved and
  * the transient BATs should be removed.  The buffer pool manager

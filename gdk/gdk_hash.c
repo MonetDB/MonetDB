@@ -81,13 +81,6 @@ HASHclear(Hash *h)
 }
 
 #define HASH_VERSION		6
-/* this is only for the change of hash function of the floating point
- * types, the UUID type and the MBR type; if HASH_VERSION is increased
- * again from 6, the code associated with HASH_VERSION_NOUUID and
- * HASH_VERSION_NOMBR must be deleted */
-#define HASH_VERSION_FLOAT	5
-#define HASH_VERSION_NOMBR	4
-#define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
 void
@@ -477,45 +470,7 @@ BATcheckhash(BAT *b)
 					struct stat st;
 
 					if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-					    (hdata[0] == (
-#ifdef PERSISTENTHASH
-						    ((size_t) 1 << 24) |
-#endif
-						    HASH_VERSION)
-#ifdef HASH_VERSION_NOUUID
-					     /* if not uuid, also allow previous version */
-					     || (hdata[0] == (
-#ifdef PERSISTENTHASH
-							 ((size_t) 1 << 24) |
-#endif
-							 HASH_VERSION_NOUUID) &&
-						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
-						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
-						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
-						 strcmp(ATOMname(b->ttype), "mbr") != 0)
-#endif
-#ifdef HASH_VERSION_NOMBR
-					     /* if not uuid, also allow previous version */
-					     || (hdata[0] == (
-#ifdef PERSISTENTHASH
-							 ((size_t) 1 << 24) |
-#endif
-							 HASH_VERSION_NOMBR) &&
-						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
-						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
-						 strcmp(ATOMname(b->ttype), "mbr") != 0)
-#endif
-#ifdef HASH_VERSION_FLOAT
-					     /* if not floating point, also allow previous version */
-					     || (hdata[0] == (
-#ifdef PERSISTENTHASH
-							 ((size_t) 1 << 24) |
-#endif
-							 HASH_VERSION_FLOAT) &&
-						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
-						 strcmp(ATOMname(b->ttype), "dbl") != 0)
-#endif
-						    ) &&
+					    (hdata[0] == (((size_t) 1 << 24) | HASH_VERSION)) &&
 					    hdata[1] > 0 &&
 					    (
 #ifdef BUN2
@@ -616,11 +571,6 @@ BAThashsave_intern(BAT *b, bool dosync)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if ((h = b->thash) != NULL) {
-#ifndef PERSISTENTHASH
-		/* no need to sync if not persistent */
-		dosync = false;
-#endif
-
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&
@@ -1008,6 +958,10 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 gdk_return
 BAThash(BAT *b)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No hash on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (ATOMstorage(b->ttype) == TYPE_msk) {
 		GDKerror("No hash on msk type bats\n");
 		return GDK_FAIL;
@@ -1015,6 +969,9 @@ BAThash(BAT *b)
 	if (BATcheckhash(b)) {
 		return GDK_SUCCEED;
 	}
+#ifdef __COVERITY__
+	MT_rwlock_wrlock(&b->thashlock);
+#else
 	for (;;) {
 		/* If multiple threads simultaneously try to build a
 		 * hash on a bat, e.g. in order to perform a join, it
@@ -1037,6 +994,7 @@ BAThash(BAT *b)
 			MT_rwlock_rdunlock(&b->thashlock);
 		}
 	}
+#endif
 	/* we have the write lock */
 	if (b->thash == NULL) {
 		struct canditer ci;
@@ -1358,7 +1316,7 @@ HASHlist(Hash *h, BUN i)
 void
 HASHdestroy(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *hs;
 		MT_rwlock_wrlock(&b->thashlock);
 		hs = b->thash;
@@ -1371,7 +1329,7 @@ HASHdestroy(BAT *b)
 void
 HASHfree(BAT *b)
 {
-	if (b && b->thash) {
+	if (b) {
 		Hash *h;
 		MT_rwlock_wrlock(&b->thashlock);
 		if ((h = b->thash) != NULL && h != (Hash *) 1) {

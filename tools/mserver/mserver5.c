@@ -24,10 +24,6 @@
 #include "msabaoth.h"
 #include "mutils.h"
 
-#ifdef HAVE_LIBGEN_H
-#include <libgen.h>
-#endif
-
 #ifndef HAVE_GETOPT_LONG
 #  include "monet_getopt.h"
 #else
@@ -119,7 +115,7 @@ static void
 monet_hello(void)
 {
 	double sz_mem_h;
-	char *qc = " kMGTPE";
+	const char qc[] = " kMGTPE";
 	int qi = 0;
 
 	printf("# MonetDB 5 server v%s", GDKversion());

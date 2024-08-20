@@ -1443,7 +1443,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *bid = getArgReference_bat(stk, pci, 4);
 
 		if (!(b = BATdescriptor(*bid)))
-			throw(SQL, "sql.alter_seq", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "sql.alter_seq", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (BATcount(b) != 1) {
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");

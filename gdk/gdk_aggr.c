@@ -449,7 +449,7 @@ dofsum(const void *restrict values, oid seqb,
 				*seen = ci->ncand > 0;			\
 				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) { \
 					x = vals[ci->seq + i - seqb];	\
-					ADD_WITH_CHECK(x, sum,		\
+					ADDI_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
@@ -467,7 +467,7 @@ dofsum(const void *restrict values, oid seqb,
 							TIMEOUT_LOOP_BREAK; \
 						}			\
 					} else {			\
-						ADD_WITH_CHECK(x, sum,	\
+						ADDI_WITH_CHECK(x, sum,	\
 							       TYPE2, sum, \
 							       GDK_##TYPE2##_max, \
 							       goto overflow); \
@@ -495,7 +495,7 @@ dofsum(const void *restrict values, oid seqb,
 						TIMEOUT_LOOP_BREAK;	\
 					}				\
 				} else {				\
-					ADD_WITH_CHECK(x, sum,		\
+					ADDI_WITH_CHECK(x, sum,		\
 						       TYPE2, sum,	\
 						       GDK_##TYPE2##_max, \
 						       goto overflow);	\
@@ -526,7 +526,7 @@ dofsum(const void *restrict values, oid seqb,
 							sums[gid] = 0;	\
 						}			\
 						if (!is_##TYPE2##_nil(sums[gid])) { \
-							ADD_WITH_CHECK(	\
+							ADDI_WITH_CHECK( \
 								x,	\
 								sums[gid], \
 								TYPE2,	\
@@ -560,7 +560,7 @@ dofsum(const void *restrict values, oid seqb,
 							sums[gid] = 0;	\
 						}			\
 						if (!is_##TYPE2##_nil(sums[gid])) { \
-							ADD_WITH_CHECK(	\
+							ADDI_WITH_CHECK( \
 								x,	\
 								sums[gid], \
 								TYPE2,	\
@@ -1277,7 +1277,7 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, 
 						prods[gid] = 1;		\
 					}				\
 					if (!is_##TYPE2##_nil(prods[gid])) { \
-						MUL4_WITH_CHECK(	\
+						MULI4_WITH_CHECK(	\
 							vals[i],	\
 							prods[gid],	\
 							TYPE2, prods[gid], \
@@ -3209,7 +3209,7 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 				x = ((const TYPE *) src)[i];		\
 				if (is_##TYPE##_nil(x))			\
 					continue;			\
-				ADD_WITH_CHECK(x, sum,			\
+				ADDI_WITH_CHECK(x, sum,			\
 					       lng_hge, sum,		\
 					       GDK_##lng_hge##_max,	\
 					       goto overflow##TYPE);	\

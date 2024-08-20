@@ -18,52 +18,6 @@
 #include "copy.h"
 #include "rel_copy.h"
 
-
-
-struct copy_destructor {
-	Sink sink;
-	stream *stream_to_destroy;
-};
-
-static void
-defer_close(void *sink)
-{
-	struct copy_destructor *destr = (struct copy_destructor*)sink;
-	assert(destr->sink.type == COPY_SINK);
-	if (destr->stream_to_destroy) {
-		mnstr_close(destr->stream_to_destroy);
-	GDKfree(destr);
-	}
-}
-
-str
-COPYdefer_close_stream(bat *container, Stream *s)
-{
-	str msg = MAL_SUCCEED;
-	stream *st = *s;
-	BAT *b = NULL;
-	struct copy_destructor *destr = GDKmalloc(sizeof *destr);
-
-	destr->sink.type = COPY_SINK;
-	destr->sink.destroy = defer_close;
-	destr->stream_to_destroy = st;
-
-	b = COLnew(0, TYPE_bit, 0, TRANSIENT);
-	if (!destr || !b)
-		bailout("copy.defer_close",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	b->T.sink = &destr->sink;
-
-	*container = b->batCacheid;
-	BBPkeepref(b);
-	return MAL_SUCCEED;
-end:
-	GDKfree(destr);
-	if (b)
-		BBPunfix(b->batCacheid);
-	return msg;
-}
-
-
 str
 COPYrequest_upload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -189,9 +143,14 @@ from_stdin_read(void *restrict private, void *restrict buf, size_t elmsize, size
 				omit_last_char = true;
 				break;
 			}
-			if (find_end_of_line(scan)) {
+			if (scan->line_sep_len == 1 && find_end_of_line(scan)) {
 				// pos advanced to the next newline. Include it.
 				scan->pos++;
+				state->at_start_of_line = true;
+				state->lines_left--;
+			} else if (scan->line_sep_len != 1 && find_end_of_lineN(scan)) {
+				// pos advanced to the next newline. Include it.
+				scan->pos += scan->line_sep_len;
 				state->at_start_of_line = true;
 				state->lines_left--;
 			} else {
@@ -258,6 +217,8 @@ COPYfrom_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "copy.from_stdin", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	bool backslash_escapes = escape;
+	int quote_char = check_sep(quote_arg, backslash_escapes);
+	int line_sep = check_sep(linesep_arg, backslash_escapes);
 	*state = (struct from_stdin_state) {
 		.bs = mvc->scanner.rs,
 		.ws = mvc->scanner.ws,
@@ -266,8 +227,10 @@ COPYfrom_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		.lines_left = lines,
 		.at_start_of_line = true,
 		.scan_state = {
-			.quote_char = get_sep_char(quote_arg, backslash_escapes),
-			.line_sep = get_sep_char(linesep_arg, backslash_escapes),
+			.quote_char = quote_char==1 ?quote_arg[0]:0,
+			.line_sep = line_sep==1 ?linesep_arg[0]:0,
+			.line_sep_str = (unsigned char*)linesep_arg,
+			.line_sep_len = strlen(linesep_arg),
 			.escape_enabled = backslash_escapes,
 			.quoted = false,
 			.escape_pending = false,

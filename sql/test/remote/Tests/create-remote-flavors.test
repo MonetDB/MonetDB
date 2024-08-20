@@ -1,0 +1,42 @@
+statement ok
+create table foo (n int, m text)
+
+statement ok
+insert into foo values (1, 'alice'), (2, 'bob')
+
+statement ok
+create table foo_empty (n int, m text)
+
+statement ok
+create remote table rmt_1 (n int) on 'mapi:monetdb://localhost:50001/other'
+
+statement error 42000!CREATE TABLE: cannot create REMOTE TABLE 'with data'
+create remote table rmt_2 as
+    select * from foo with data
+    on 'mapi:monetdb://localhost:50001/other'
+
+statement ok
+create remote table rmt_2 as
+    select * from foo with no data
+    on 'mapi:monetdb://localhost:50001/other'
+
+statement ok
+create remote table rmt_3 (n_rmt, l_rmt) as
+    select * from foo with no data
+    on 'mapi:monetdb://localhost:50001/other'
+
+statement error 42000!CREATE TABLE: cannot create REMOTE TABLE 'with data'
+create remote table rmt_4 as
+    select * from foo_empty with data
+    on 'mapi:monetdb://localhost:50001/other'
+
+statement ok
+create remote table rmt_4 as
+    select * from foo_empty with no data
+    on 'mapi:monetdb://localhost:50001/other'
+
+statement ok
+create remote table rmt_5 (n_rmt, l_rmt) as
+    select * from foo_empty with no data
+    on 'mapi:monetdb://localhost:50001/other'
+

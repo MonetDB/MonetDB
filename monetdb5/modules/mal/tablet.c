@@ -1217,14 +1217,22 @@ mkdfa(const unsigned char *sep, size_t seplen)
 	return dfa;
 }
 
-#ifdef __GNUC__
+#ifdef __has_builtin
+#if __has_builtin(__builtin_expect)
 /* __builtin_expect returns its first argument; it is expected to be
  * equal to the second argument */
 #define unlikely(expr)	__builtin_expect((expr) != 0, 0)
 #define likely(expr)	__builtin_expect((expr) != 0, 1)
+#endif
+#endif
+#ifndef unlikely
+#ifdef _MSC_VER
+#define unlikely(expr)	(__assume(!(expr)), (expr))
+#define likely(expr)	(__assume((expr)), (expr))
 #else
 #define unlikely(expr)	(expr)
 #define likely(expr)	(expr)
+#endif
 #endif
 
 static void
@@ -1529,8 +1537,8 @@ SQLproducer(void *p)
 	goto reportlackofinput;
 }
 
-static void
-create_rejects_table(Client cntxt)
+void
+COPYrejects_create(Client cntxt)
 {
 	MT_lock_set(&mal_contextLock);
 	if (cntxt->error_row == NULL) {
@@ -1587,7 +1595,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	};
 
 	/* create the reject tables */
-	create_rejects_table(task.cntxt);
+	COPYrejects_create(task.cntxt);
 	if (task.cntxt->error_row == NULL || task.cntxt->error_fld == NULL
 		|| task.cntxt->error_msg == NULL || task.cntxt->error_input == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil,
@@ -1964,7 +1972,7 @@ COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *msg = getArgReference_bat(stk, pci, 2);
 	bat *inp = getArgReference_bat(stk, pci, 3);
 
-	create_rejects_table(cntxt);
+	COPYrejects_create(cntxt);
 	if (cntxt->error_row == NULL)
 		throw(MAL, "sql.rejects", "No reject table available");
 	MT_lock_set(&errorlock);

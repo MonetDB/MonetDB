@@ -23,22 +23,6 @@
 #define mutils_export extern
 #endif
 
-#ifndef S_IWGRP
-/* if one doesn't exist, presumably they all don't exist - Not so on MinGW */
-#define S_IRUSR 0000400		/* read permission, owner */
-#define S_IWUSR 0000200		/* write permission, owner */
-#define S_IXUSR 0000100		/* execute permission, owner */
-#define S_IRGRP 0000040		/* read permission, group */
-#define S_IWGRP 0000020		/* write permission, group */
-#define S_IXGRP 0000010		/* execute permission, group */
-#define S_IROTH 0000004		/* read permission, other */
-#define S_IWOTH 0000002		/* write permission, other */
-#define S_IXOTH 0000001		/* execute permission, other */
-#endif
-
-#define MONETDB_MODE (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH)
-#define MONETDB_DIRMODE		(MONETDB_MODE | S_IXUSR | S_IXGRP | S_IXOTH)
-
 #ifdef NATIVE_WIN32
 
 #include <stdio.h>

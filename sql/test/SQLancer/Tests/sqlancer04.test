@@ -68,7 +68,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t0" ("c0" INTERVAL SECOND NOT NULL)
 
-query I
+query I nosort
 SELECT CASE '5'^3 WHEN COUNT(TRUE) THEN 1 END FROM t0
 ----
 NULL
@@ -157,7 +157,7 @@ create view v1(c0, c1) as (select distinct (((t0.c0)=(((1357695262)^(-922564194)
 statement ok
 create view v2(c0) as (select distinct coalesce(abs(interval '-1976292283' month), cast(greatest('Dnwxjm4btQ9cp&\c''a_', '(y7,{q?][NHU,') as interval month)) from t1, t0 where ((upper(''))not ilike(lower('''wAg_ z ''PPxXßgrd⍮G'))))
 
-query I
+query T nosort
 select all v2.c0 from v2 right outer join v1 on (('8*By1q)*Oc<n')like(substr('', 1151312829, 406714197)))
 where (case v1.c0 when v1.c0 then interval '104279220' second end) in (interval '2129103763' second)
 ----

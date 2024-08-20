@@ -15,6 +15,7 @@ return (x)
 }
 
 query I nosort
-select python_aggregate(5,2);
+select python_aggregate(5,2)
 ----
 2
+

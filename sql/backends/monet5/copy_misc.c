@@ -64,31 +64,26 @@ dump_block(const char *msg, BAT *b)
 
 
 void
-copy_init_error_handling(struct error_handling *admin, Client cntxt, bat failures_bat, lng starting_row, int default_col_no, const char *column_name)
+copy_init_error_handling(struct error_handling *admin, Client cntxt, lng starting_row, int default_col_no, const char *column_name, bat rows)
 {
 	admin->cntxt = cntxt;
-	admin->failures_bat_id = failures_bat;
-	admin->failures_bat = NULL;
-	admin->inhibit_deletes = false;
 	admin->count = 0;
 	admin->fatal = false;
 	admin->starting_row = starting_row;
 	admin->default_col_no = default_col_no;
 	admin->column_name = column_name ? GDKstrdup(column_name) : NULL;
 	admin->buffer[0] = '\0';
-}
-
-void copy_error_handling_inhibit_deletes(struct error_handling *admin)
-{
-	admin->inhibit_deletes = true;
+	admin->init = true;
+	admin->rows_batid = rows;
+	admin->rows = NULL;
 }
 
 void
 copy_destroy_error_handling(struct error_handling *admin)
 {
-	if (admin->failures_bat != NULL)
-		BBPunfix(admin->failures_bat->batCacheid);
 	GDKfree(admin->column_name);
+	if (admin->rows)
+		BBPunfix(admin->rows->batCacheid);
 }
 
 static void
@@ -114,6 +109,8 @@ format_error(struct error_handling *restrict admin, lng row_1based, int column_1
 			snprintf(buf, buf_end - buf, "An error occurred during error reporting");
 		}
 	}
+	if (admin->r && !admin->r->best_effort)
+		admin->r->error = true;
 }
 
 static void
@@ -176,24 +173,8 @@ end:
 static bool
 too_many_errors(struct error_handling *admin)
 {
-	bool best_effort = !is_bat_nil(admin->failures_bat_id);
-	return admin->fatal || (admin->count > 0 && !best_effort);
+	return admin->fatal || (admin->count > 0 && !(admin->r && admin->r->best_effort));
 }
-
-static BAT *
-get_failures_bat(struct error_handling *admin)
-{
-	if (is_bat_nil(admin->failures_bat_id))
-		return NULL;
-	if (admin->failures_bat != NULL)
-		return admin->failures_bat;
-
-	admin->failures_bat = BATdescriptor(admin->failures_bat_id);
-	if (admin->failures_bat == NULL)
-		admin->fatal = true;
-	return admin->failures_bat;
-}
-
 
 gdk_return
 copy_report_error(struct error_handling *restrict admin, int rel_row, int column, _In_z_ _Printf_format_string_ const char *restrict format, ...)
@@ -221,21 +202,60 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 	else
 		col_name = NULL;
 	int column_1based = column >= 0 ? column + 1 : int_nil;
+	//assert(column_1based != int_nil || format[0] == 't' || format[1] == 'o');
 	lng row_1based = admin->starting_row + 1 + rel_row;
 	va_start(ap, format);
 	format_error(admin, row_1based, column_1based, col_name, buf, buf_end, format, ap);
 	va_end(ap);
 
 	copy_add_to_rejects(admin->cntxt, row_1based, column_1based, buf);
+	if (admin->r && admin->r->best_effort) {
+		if (!admin->rows)
+			admin->rows = BATdescriptor(admin->rows_batid);
+		if (!admin->rows)
+			return GDK_FAIL;
+		BAT *b = admin->rows;
+		BUN cnt = BATcount(b);
+		if (cnt && !admin->rows->T.vheap) {
+			Heap *mask;
+			if ((mask = GDKmalloc(sizeof(Heap))) == NULL){
+				return GDK_FAIL;
+			}
+			char *nme = BBP_physical(b->batCacheid);
+			*mask = (Heap) {
+				.farmid = 0,//BBPselectfarm(b->batRole, b->ttype, varheap),
+				.parentid = b->batCacheid,
+				.dirty = true,
+				.refs = ATOMIC_VAR_INIT(1),
+			};
+			strconcat_len(mask->filename, sizeof(mask->filename), nme, ".theap", NULL);
 
-	// In BEST EFFORT mode, keep track of the failed lines.
-	if (!admin->inhibit_deletes) {
-		BAT *failures = get_failures_bat(admin);
-		if (failures != NULL) {
-			oid row_as_oid = (oid)(admin->starting_row + rel_row);
-			gdk_return ret = BUNappend(failures, &row_as_oid, false);
-			if (ret != GDK_SUCCEED)
-				admin->fatal = true;
+			BUN nmask = (cnt + 31) / 32;
+			if (mask->farmid < 0 ||
+				HEAPalloc(mask, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t)) != GDK_SUCCEED) {
+				GDKfree(mask);
+				return GDK_FAIL;
+			}
+			ccand_t *c = (ccand_t *) mask->base;
+			*c = (ccand_t) {
+				.type = CAND_MSK,
+				//.mask = true,
+			};
+			mask->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
+			uint32_t *r = (uint32_t*)(mask->base + sizeof(ccand_t));
+			memset(r, ~0, (nmask-1) * sizeof(uint32_t));
+			uint32_t v=0;
+			int w = cnt%32;
+			for(int i = 0; i<w; i++)
+				v |= 1<<i;
+			r[cnt/32] = v;
+			b->tvheap = mask;
+		}
+		if (cnt) {
+			uint32_t *r = (uint32_t*)(admin->rows->tvheap->base + sizeof(ccand_t));
+			int w = rel_row%32;
+			/* unset rel_row bit */
+			r[rel_row/32] &= ~(1<<w);
 		}
 	}
 
@@ -284,79 +304,4 @@ COPYget_blocksize(int *blocksize)
 	int size = GDKgetenv_int(COPY_BLOCKSIZE_SETTING, -1);
 	*blocksize = size > 0 ? size : DEFAULT_COPY_BLOCKSIZE;
 	return MAL_SUCCEED;
-}
-
-str
-COPYset_parallel(bit *dummy, int *level)
-{
-	(void)dummy;
-	char buf[20];
-	snprintf(buf, sizeof(buf), "%d", *level);
-	GDKsetenv(COPY_PARALLEL_SETTING, buf);
-	return MAL_SUCCEED;
-}
-
-str
-COPYget_parallel(int *level)
-{
-	*level = GDKgetenv_int(COPY_PARALLEL_SETTING, int_nil);
-	return MAL_SUCCEED;
-}
-
-str
-COPYstr2buf(bat *bat_id, str *s)
-{
-	str msg = MAL_SUCCEED;
-	str content = *s;
-	size_t content_len = strlen(content);
-	BAT *b = NULL;
-
-	b = COLnew(0, TYPE_bte, content_len, TRANSIENT);
-	if (!b)
-			bailout("copy.str2buf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	memcpy(Tloc(b, 0), content, content_len);
-	BATsetcount(b, content_len);
-
-end:
-	if (b) {
-		if (msg == MAL_SUCCEED) {
-			*bat_id = b->batCacheid;
-			BBPkeepref(b);
-		} else {
-			BBPunfix(b->batCacheid);
-		}
-	}
-	return msg;
-}
-
-str
-COPYbuf2str(str *ret, bat *bat_id)
-{
-	str msg = MAL_SUCCEED;
-	char *s = NULL;
-	BUN len;
-
-	BAT *b = BATdescriptor(*bat_id);
-	if (!b)
-		bailout("copy.buf2str", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	len = BATcount(b);
-
-	for (BUN i = 0; i < len; i++) {
-		if (*(char*)Tloc(b, i) == '\0')
-			bailout("copy.buf2str", "BAT contains a 0 at index "BUNFMT, i);
-	}
-
-	s = GDKmalloc(len + 1);
-	if (!s)
-		bailout("copy.str2buf", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	s[len] = '\0';
-	memcpy(s, Tloc(b, 0), len);
-
-	*ret = s;
-end:
-	if (b)
-		BBPunfix(b->batCacheid);
-	return msg;
 }

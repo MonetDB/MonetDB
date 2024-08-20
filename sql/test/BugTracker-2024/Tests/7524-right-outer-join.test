@@ -1,30 +1,30 @@
-
 statement ok
 CREATE TABLE t0(c0 INT)
 
 statement ok
 CREATE TABLE t1(c0 VARCHAR)
 
-query II
+query TI nosort
 SELECT * FROM t1 LEFT JOIN t0 ON t1.c0 = t0.c0
 ----
 
-query II
+query TI nosort
 SELECT * FROM t1 RIGHT JOIN t0 ON t1.c0 = t0.c0
 ----
 
-query II
+query TI nosort
 SELECT * FROM t1 FULL JOIN t0 ON t1.c0 = t0.c0
 ----
 
-query I
+query T nosort
 SELECT * FROM t1 NATURAL LEFT JOIN t0
 ----
 
-query I
+query I nosort
 SELECT * FROM t1 NATURAL RIGHT JOIN t0
 ----
 
-query I
+query T nosort
 SELECT * FROM t1 NATURAL FULL JOIN t0
 ----
+

@@ -55,6 +55,16 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
 		if (sum && restype != TYPE_dbl && restype != TYPE_flt)
 			sum = 0;
 
+
+		if (op1->type == st_list) {
+			stmt *s = op1->op4.lval->h->data;
+			intype = tail_type(s)->type->localtype;
+		} else {
+			intype = tail_type(op1)->type->localtype;
+		}
+		if (avg && restype == TYPE_dbl && intype != TYPE_dbl && intype != TYPE_flt)
+			restype = intype;
+
 		/* For the single value aggregates, we use the incremental
  		 * aggr. functions from the module 'iaggr' */
 		if (!grp && (strcmp(aggrfunc, "count") == 0 ||
@@ -854,12 +864,16 @@ stmt_pp_create_nrparts_or_dynamic(backend *be, int nrparts, int input)
 
 /* The following functions generate the control stmt-s to start, repeat or end
  * a pipeline block.
+ *
+ * Based on how the block is started the leave,redo and exit bits are later
+ * generated.
  */
 
 
 /* Generates:
  *   language.pipelines(<nrparts>:int);
  */
+// catalog based horizontal slices
 stmt *
 stmt_pp_start_nrparts(backend *be, int nrparts)
 {
@@ -869,10 +883,21 @@ stmt_pp_start_nrparts(backend *be, int nrparts)
 /* Generates:
  *   language.pipelines(X_<input>:int); # dynamic,
  */
+// slicer based sharding
 stmt *
 stmt_pp_start_dynamic(backend *be, int input)
 {
 	return stmt_pp_create_nrparts_or_dynamic(be, 0, input);
+}
+
+/* Generates:
+ *   language.pipelines(X_<input>:int); # dynamic,
+ */
+// file_loader based slices
+stmt *
+stmt_pp_start_generator(backend *be)
+{
+	return stmt_pp_create_nrparts_or_dynamic(be, -1, -1);
 }
 
 int
@@ -888,16 +913,20 @@ stmt_pp_jump(backend *be, stmt *label, int nrparts)
 	if (be->nrparts >= 0)
 		r = newStmtArgs(be->mb, calcRef, "<", 3);
 	else
-		r = newAssignment(be->mb);
+		r = newStmtArgs(be->mb, calcRef, ">", 3);
+		//r = newAssignment(be->mb);
 	if (r == NULL)
 		return -1;
 	r->barrier = REDOsymbol;
 	getArg(r, 0) = label->nr;
-	if (be->nrparts >= 0) {
+	if (be->nrparts < 0) { /* crude stop, ie set counter < -nr_threads */
+		r = pushArgument(be->mb, r, getArg(label->q, 1)); /* current nr */
+		r = pushInt(be->mb, r, 0);
+	} else /*if (be->nrparts >= 0) */{
 		r = pushArgument(be->mb, r, getArg(label->q, 1)); /* current nr */
 		r = pushArgument(be->mb, r, getArg(label->q, 3)); /* nrparts */
-	} else {
-		pushBit(be->mb, r, true);
+	//} else {
+		//pushBit(be->mb, r, true);
 	}
 	(void)nrparts;
 	//r = pushInt(be->mb, r, nrparts);
@@ -919,8 +948,22 @@ stmt_pp_end(backend *be, stmt *label)
 	q->argc = q->retc = 1;
 	q->barrier = EXITsymbol;
 	pushInstruction(be->mb, q);
-	if (q)
+
+	if (q) {
+		if (be->cleanup) {
+			q = newStmt(be->mb, "language", "pass");
+			q = pushArgument(be->mb, q, be->cleanup);
+			pushInstruction(be->mb, q);
+			be->cleanup = 0;
+		}
 		return 0;
+	}
 	return -1;
 }
 
+void
+pp_cleanup(backend *be, int var)
+{
+	assert(be->cleanup == 0);
+	be->cleanup = var;
+}

@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE t1 (c1 BOOLEAN)
+
+statement ok
+CREATE TABLE t0 (c0 INTEGER, PRIMARY KEY(c0) )
+
+statement ok
+INSERT INTO t1(c1) VALUES (true)
+
+statement ok
+INSERT INTO t0(c0) VALUES (2)
+
+statement ok
+INSERT INTO t0(c0) VALUES (1)
+
+query I nosort
+SELECT t1.c1 FROM t0, t1 WHERE (NOT (t1.c1 != CAST(t0.c0 AS BOOLEAN)))
+----
+1
+1
+
+query I nosort
+SELECT t1.c1 FROM t0, t1 WHERE (NOT (t1.c1 != CAST(t0.c0 AS BOOLEAN))) UNION ALL SELECT t1.c1 FROM t0, t1 WHERE (t1.c1 != CAST(t0.c0 AS BOOLEAN))
+----
+1
+1
+
+statement ok
+DROP table t0
+
+statement ok
+DROP table t1
+

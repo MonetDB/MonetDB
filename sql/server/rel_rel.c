@@ -29,7 +29,7 @@ rel_set_exps(sql_rel *rel, list *exps)
 
 /* some projections results are order dependend (row_number etc) */
 int
-project_unsafe(sql_rel *rel, int allow_identity)
+project_unsafe(sql_rel *rel, bool allow_identity)
 {
 	sql_rel *sub = rel->l;
 
@@ -44,7 +44,7 @@ project_unsafe(sql_rel *rel, int allow_identity)
 		sql_exp *e = n->data, *ne;
 
 		/* aggr func in project ! */
-		if (exp_unsafe(e, allow_identity))
+		if (exp_unsafe(e, allow_identity, false))
 			return 1;
 		if ((ne = rel_find_exp(rel, e)) && ne != e)
 			return 1; /* no self referencing */

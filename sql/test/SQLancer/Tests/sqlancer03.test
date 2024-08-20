@@ -986,11 +986,11 @@ SELECT 1 FROM t0 GROUP BY 1 HAVING MAX(TRUE)
 1
 
 query IT rowsort
-SELECT ALL COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim('W', '1')))||(lower(CAST((('3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a)) 
+SELECT ALL COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim('W', '1')))||(lower(CAST((('3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a))
 UNION ALL
-SELECT COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim('W', '1')))||(lower(CAST((('3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a)) 
+SELECT COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim('W', '1')))||(lower(CAST((('3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a))
 UNION ALL
-SELECT ALL COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim('W', '1')))||(lower(CAST((('3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a)) 
+SELECT ALL COUNT(ALL DATE '1970-01-02'), ((rtrim(CAST(0.4 AS STRING), trim('W', '1')))||(lower(CAST((('3')||(INTERVAL '4' MONTH)) AS STRING)))) FROM t0 WHERE ((t0.b)<=(t0.a))
 ----
 6
 0.434

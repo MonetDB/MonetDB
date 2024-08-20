@@ -432,10 +432,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	slices = (int *) GDKzalloc(sizeof(int) * mb->vtop);
 	rslices = (bool *) GDKzalloc(sizeof(bool) * mb->vtop);
 	oclean = (bool *) GDKzalloc(sizeof(bool) * mb->vtop);
-	if (!nvars || !slices || !rslices || !oclean
-		|| newMalBlkStmt(mb,
-						 mb->stop + (5 * push_down_delta) + (2 * nr_topn)) <
-		0) {
+	if (!nvars || !slices || !rslices || !oclean ||
+		newMalBlkStmt(mb, mb->stop + (5 * push_down_delta) + (2 * nr_topn)) < 0) {
 		mb->stmt = old;
 		GDKfree(vars);
 		GDKfree(nvars);

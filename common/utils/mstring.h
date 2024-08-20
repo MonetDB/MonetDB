@@ -83,10 +83,22 @@ strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 	return i;
 }
 
-#ifndef __GNUC__
+#ifdef __has_builtin
+#if __has_builtin(__builtin_expect)
 /* __builtin_expect returns its first argument; it is expected to be
  * equal to the second argument */
-#define __builtin_expect(expr, expect)	(expr)
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#endif
+#endif
+#ifndef unlikely
+#ifdef _MSC_VER
+#define unlikely(expr)	(__assume(!(expr)), (expr))
+#define likely(expr)	(__assume((expr)), (expr))
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
 #endif
 
 /*
@@ -105,12 +117,11 @@ strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 static inline bool
 checkUTF8(const char *v)
 {
-	/* It is unlikely that this functions returns false, because
-	 * it is likely that the string presented is a correctly coded
-	 * UTF-8 string.  So we annotate the tests that are very
-	 * unlikely to succeed, i.e. the ones that lead to a return of
-	 * false, as being expected to return 0 using the
-	 * __builtin_expect function. */
+	/* It is unlikely that this functions returns false, because it is
+	 * likely that the string presented is a correctly coded UTF-8
+	 * string.  So we annotate the tests that are very (un)likely to
+	 * succeed, i.e. the ones that lead to a return of false.  This can
+	 * help the compiler produce more efficient code. */
 	if (v != NULL) {
 		if (v[0] != '\200' || v[1] != '\0') {
 			/* check that string is correctly encoded UTF-8 */
@@ -121,30 +132,30 @@ checkUTF8(const char *v)
 				if ((v[i] & 0x80) == 0) {
 					;
 				} else if ((v[i] & 0xE0) == 0xC0) {
-					if (__builtin_expect(((v[i] & 0x1E) == 0), 0))
+					if (unlikely(((v[i] & 0x1E) == 0)))
 						return false;
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					if (unlikely(((v[++i] & 0xC0) != 0x80)))
 						return false;
 				} else if ((v[i] & 0xF0) == 0xE0) {
 					if ((v[i++] & 0x0F) == 0) {
-						if (__builtin_expect(((v[i] & 0xE0) != 0xA0), 0))
+						if (unlikely(((v[i] & 0xE0) != 0xA0)))
 							return false;
 					} else {
-						if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+						if (unlikely(((v[i] & 0xC0) != 0x80)))
 							return false;
 					}
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					if (unlikely(((v[++i] & 0xC0) != 0x80)))
 						return false;
-				} else if (__builtin_expect(((v[i] & 0xF8) == 0xF0), 1)) {
+				} else if (likely(((v[i] & 0xF8) == 0xF0))) {
 					if ((v[i++] & 0x07) == 0) {
-						if (__builtin_expect(((v[i] & 0x30) == 0), 0))
+						if (unlikely(((v[i] & 0x30) == 0)))
 							return false;
 					}
-					if (__builtin_expect(((v[i] & 0xC0) != 0x80), 0))
+					if (unlikely(((v[i] & 0xC0) != 0x80)))
 						return false;
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					if (unlikely(((v[++i] & 0xC0) != 0x80)))
 						return false;
-					if (__builtin_expect(((v[++i] & 0xC0) != 0x80), 0))
+					if (unlikely(((v[++i] & 0xC0) != 0x80)))
 						return false;
 				} else {
 					return false;
@@ -222,10 +233,7 @@ reallocprintf(char **buf, size_t *pos, size_t *capacity, const char *fmt, ...)
 	return n;
 }
 
-
-
-#ifndef __GNUC__
-#undef __builtin_expect
-#endif
+#undef unlikely
+#undef likely
 
 #endif

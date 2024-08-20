@@ -334,7 +334,7 @@ rollback
 statement error 42000!SELECT: GROUP BY position 2 is not in select list
 select 1 group by 2
 
-42000!SELECT: non-integer constant in GROUP BY
+statement error 42000!SELECT: non-integer constant in GROUP BY
 select -90 from "groupings" group by -90
 
 statement error

@@ -1115,6 +1115,7 @@ log_create_types_file(logger *lg, const char *filename)
 
 #define rotation_lock(lg)	MT_lock_set(&(lg)->rotation_lock)
 #define rotation_unlock(lg)	MT_lock_unset(&(lg)->rotation_lock)
+#define rotation_trylock(lg, ms) MT_lock_trytime(&(lg)->rotation_lock, ms)
 
 static gdk_return
 log_open_output(logger *lg)
@@ -1259,7 +1260,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 		case LOG_UPDATE:
 		case LOG_CREATE:
 		case LOG_DESTROY:
-			if (updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
+			if (tr != NULL && updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
 				BATiter cni = bat_iterator(lg->catalog_id);
 				BUN p;
 				BUN posnew = BUN_NONE;
@@ -3228,8 +3229,8 @@ log_tdone(logger *lg, logged_range *range, ulng commit_ts)
 gdk_return
 log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 {
+	rotation_lock(lg);
 	if (lg->flushnow) {
-		rotation_lock(lg);
 		logged_range *p = lg->current;
 		assert(lg->flush_ranges == lg->current);
 		assert(ATOMIC_GET(&lg->current->flushed_ts) == ATOMIC_GET(&lg->current->last_ts));
@@ -3246,10 +3247,11 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		return log_commit(lg, p, NULL, 0);
 	}
 
-	if (LOG_DISABLED(lg))
+	if (LOG_DISABLED(lg)) {
+		rotation_unlock(lg);
 		return GDK_SUCCEED;
+	}
 
-	rotation_lock(lg);
 	logged_range *frange = do_flush_range_cleanup(lg);
 
 	while (frange->next && frange->id < file_id) {
@@ -3453,7 +3455,7 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 			return GDK_SUCCEED;
 		}
 		/* I am now the exclusive flusher */
-		if (ATOMIC_GET(&lg->nr_flushers)) {
+		while (ATOMIC_GET(&lg->nr_flushers)) {
 			/* I am waiting until all existing flushers are done */
 			MT_cond_wait(&lg->excl_flush_cv, &lg->rotation_lock);
 		}
@@ -3502,8 +3504,11 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 void
 log_printinfo(logger *lg)
 {
+	if (!rotation_trylock(lg, 1000)) {
+		printf("Logger is currently locked, so no logger information\n");
+		return;
+	}
 	printf("logger %s:\n", lg->fn);
-	rotation_lock(lg);
 	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
 	       lg->id, lg->saved_id);
 	printf("current transaction id %d, saved transaction id %d\n",

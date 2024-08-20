@@ -1043,6 +1043,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
 					return 3;
+				cst.bat = isaBatType(tpe);
 				if (tpe != getVarType(curBlk, cstidx)) {
 					cstidx = defConstant(curBlk, tpe, &cst);
 					if (cstidx < 0)

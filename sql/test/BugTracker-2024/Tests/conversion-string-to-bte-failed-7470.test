@@ -10,3 +10,4 @@ query I nosort
 select cast(1 as string)>'a'
 ----
 0
+

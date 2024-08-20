@@ -43,7 +43,7 @@
 #endif
 #endif
 #if !__has_attribute(__alloc_size__)
-#define __alloc_size__(a)
+#define __alloc_size__(...)
 #endif
 #if !__has_attribute(__cold__)
 #define __cold__
@@ -58,13 +58,13 @@
 #define __designated_init__
 #endif
 #if !__has_attribute(__format__)
-#define __format__(a,b,c)
+#define __format__(...)
 #endif
 #if !__has_attribute(__malloc__)
 #define __malloc__
 #endif
 #if !__has_attribute(__nonnull__)
-#define __nonnull__(a)
+#define __nonnull__(...)
 #endif
 #if !__has_attribute(__nonstring__)
 #define __nonstring__
@@ -76,28 +76,26 @@
 #define __returns_nonnull__
 #endif
 #if !__has_attribute(__visibility__)
-#define __visibility__(a)
+#define __visibility__(...)
 #elif defined(__CYGWIN__)
-#define __visibility__(a)
+#define __visibility__(...)
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__
 #endif
 
 /* unreachable code */
-#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#ifdef __has_builtin
+#if __has_builtin(__builtin_unreachable)
 #define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
-#elif defined(__clang__) || defined(__INTEL_COMPILER)
-#ifdef WIN32
-#define __builtin_unreachable()	GDKfatal("Unreachable C code path reached");
 #endif
-#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
-#elif defined(_MSC_VER)
+#endif
+#ifndef MT_UNREACHABLE
+#if defined(_MSC_VER)
 #define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
 #else
-/* we don't know how to tell the compiler, so call a function that
- * doesn't return */
 #define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
+#endif
 #endif
 
 /* also see gdk.h for these */
@@ -496,6 +494,24 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
+#if defined(__GNUC__) && defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+#define MT_lock_trytime(l, ms)						\
+	({								\
+		struct timespec ts;					\
+		clock_gettime(CLOCK_REALTIME, &ts);			\
+		ts.tv_nsec += (ms % 1000) * 1000000;			\
+		if (ts.tv_nsec >= 1000000000) {				\
+			ts.tv_nsec -= 1000000000;			\
+			ts.tv_sec++;					\
+		}							\
+		ts.tv_sec += (ms / 1000);				\
+		int ret = pthread_mutex_timedlock(&(l)->lock, &ts);	\
+		if (ret == 0)						\
+			_DBG_LOCK_LOCKER(l);				\
+		ret == 0;						\
+	})
+#endif
+
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
@@ -508,6 +524,7 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);				\
 		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
+
 #define MT_lock_unset(l)				\
 	do {						\
 		_DBG_LOCK_UNLOCKER(l);			\
@@ -622,6 +639,11 @@ MT_rwlock_wrtry(MT_RWLock *l)
 
 typedef pthread_key_t MT_TLS_t;
 
+#endif
+
+#ifndef MT_lock_trytime
+/* simplistic way to try lock with timeout: just sleep */
+#define MT_lock_trytime(l, ms) (MT_lock_try(l) || (MT_sleep_ms(ms), MT_lock_try(l)))
 #endif
 
 gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);

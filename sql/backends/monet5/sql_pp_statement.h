@@ -44,7 +44,9 @@ extern stmt *stmt_no_slices(backend *be, stmt *col); /* call mal nr of slices */
 
 extern stmt *stmt_pp_start_nrparts(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern stmt *stmt_pp_start_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
+extern stmt *stmt_pp_start_generator(backend *ba); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern int stmt_pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
 extern int stmt_pp_end(backend *ba, stmt *pp);    /* exit: label ; */
+extern void pp_cleanup(backend *ba, int var);    /* register to be cleanup variables at end of pipeline block */
 
 #endif /* _SQL_PP_STATEMENT_H_ */

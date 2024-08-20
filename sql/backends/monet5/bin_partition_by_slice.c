@@ -535,3 +535,4 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 	stmt_set_nrcols(cursub);
 	return cursub;
 }
+

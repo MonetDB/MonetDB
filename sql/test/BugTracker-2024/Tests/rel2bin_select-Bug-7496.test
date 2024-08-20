@@ -35,3 +35,4 @@ SELECT "is_generated", length("is_generated") as data_length FROM columns_7496 W
 
 statement ok
 drop view columns_7496
+
