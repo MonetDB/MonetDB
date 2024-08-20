@@ -705,7 +705,7 @@ cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 	bool needed = false;
 	for(node *n = exps->h; !needed && n; n = n->next) {
 		for (node *m = n->next; !needed && m; m = m->next) {
-			if (exp_match_exp_semantics(n->data, m->data, false))
+			if (exp_match_exp_semantics(n->data, m->data, true))
 				needed = true;
 		}
 	}

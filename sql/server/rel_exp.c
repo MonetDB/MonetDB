@@ -1425,11 +1425,19 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 {
 	if (exp_match(e1, e2))
 		return 1;
-	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
-		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || (semantics && is_semantics(e1) != is_semantics(e2)) ||
+
+	if (is_ascending(e1) != is_ascending(e2) ||
+		nulls_last(e1) != nulls_last(e2) ||
+		zero_if_empty(e1) != zero_if_empty(e2) ||
+		need_no_nil(e1) != need_no_nil(e2) ||
+		is_anti(e1) != is_anti(e2) ||
+		(semantics && is_semantics(e1) != is_semantics(e2)) ||
 		(semantics && is_any(e1) != is_any(e2)) ||
-		is_symmetric(e1) != is_symmetric(e2) || is_unique(e1) != is_unique(e2) || need_distinct(e1) != need_distinct(e2))
+		is_symmetric(e1) != is_symmetric(e2) ||
+		is_unique(e1) != is_unique(e2) ||
+		need_distinct(e1) != need_distinct(e2))
 		return 0;
+
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
