@@ -6107,7 +6107,12 @@ intval:
 		  // errno might be non-zero due to other people's code
 		  errno = 0;
 		  if (l <= 10) {
-			$$ = strtol(s,&end,10);
+			long v = strtol(s,&end,10);
+#if SIZEOF_LONG > SIZEOF_INT
+			if (v > INT_MAX)
+				errno = ERANGE;
+#endif
+			$$ = (int) v;
 		  } else {
 			$$ = 0;
 		  }
