@@ -762,11 +762,35 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	oid o;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	if (!equi || !GDK_ELIMDOUBLES(bi->vh))
+	if (anti && tl == th && !bi->nonil && GDK_ELIMDOUBLES(bi->vh) &&
+	    strcmp(tl, str_nil) != 0 &&
+	    strLocate(bi->vh, str_nil) == (var_t) -2) {
+		/* anti-equi select for non-nil value, and there are no
+		 * nils, so we can use fast path; trigger by setting
+		 * nonil */
+		bi->nonil = true;
+	}
+	if (!((equi ||
+	       (anti && tl == th && (bi->nonil || strcmp(tl, str_nil) == 0))) &&
+	      GDK_ELIMDOUBLES(bi->vh)))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
 				    lval, hval, lnil, cnt, hseq, dst,
 				    maximum, imprints, algo);
 	if ((pos = strLocate(bi->vh, tl)) == (var_t) -2) {
+		if (anti) {
+			/* return the whole shebang */
+			*algo = "select: fullscan anti-equi strelim (all)";
+			if (BATextend(bn, ncand) != GDK_SUCCEED) {
+				BBPreclaim(bn);
+				return BUN_NONE;
+			}
+			dst = Tloc(bn, 0);
+			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+				dst[p] = canditer_next(ci);
+			}
+			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+			return ncand;
+		}
 		*algo = "select: fullscan equi strelim (nomatch)";
 		return 0;
 	}
@@ -774,40 +798,74 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		BBPreclaim(bn);
 		return BUN_NONE;
 	}
-	*algo = "select: fullscan equi strelim";
+	*algo = anti ? "select: fullscan anti-equi strelim" : "select: fullscan equi strelim";
 	assert(pos >= GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
 		const unsigned char *ptr = (const unsigned char *) bi->base;
 		pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next_dense(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		} else {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		}
@@ -817,33 +875,67 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		const unsigned short *ptr = (const unsigned short *) bi->base;
 		pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next_dense(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		} else {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		}
@@ -853,33 +945,67 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) bi->base;
 		if (ci->tpe == cand_dense) {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next_dense(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		} else {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		}
@@ -889,33 +1015,67 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	default: {
 		const var_t *ptr = (const var_t *) bi->base;
 		if (ci->tpe == cand_dense) {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next_dense(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		} else {
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				o = canditer_next(ci);
-				if (ptr[o - hseq] == pos) {
-					dst = buninsfix(bn, dst, cnt, o,
-							(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-							       * (dbl) (ncand-p) * 1.1 + 1024),
-							maximum);
-					if (dst == NULL) {
-						BBPreclaim(bn);
-						return BUN_NONE;
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] != pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
 					}
-					cnt++;
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
 				}
 			}
 		}
@@ -949,6 +1109,17 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 scan_sel(fullscan, )
 scan_sel(densescan, _dense)
 
+#if 0
+/* some programs that produce editor tags files don't recognize the
+ * scanselect function because before it are the scan_del macro
+ * calls that don't look like function definitions or variable
+ * declarations, hence we have this hidden away function to realign the
+ * tags program */
+void
+realign_tags(void)
+{
+}
+#endif
 
 static BAT *
 scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
@@ -976,7 +1147,7 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	cmp = ATOMcompare(bi->type);
 #endif
 
-	assert(!lval || !hval || (*cmp)(tl, th) <= 0);
+	assert(!lval || !hval || tl == th || (*cmp)(tl, th) <= 0);
 
 	dst = (oid *) Tloc(bn, 0);
 
