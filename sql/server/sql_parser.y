@@ -1642,9 +1642,10 @@ opt_max_memory:
  |  MAX_MEMORY poslng   { $$ = $2; }
  |  MAX_MEMORY string   {
 		char *end = NULL;
+		errno = 0;
 		lng size = strtoll($2, &end, 10);
-		lng unit = size_unit(end);
-		if (unit < 0 || size < 0) {
+		lng unit;
+		if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0) {
 			$$ = -1;
 			yyerror(m, "Invalid size");
 			YYABORT;
