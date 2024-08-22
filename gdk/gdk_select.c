@@ -544,10 +544,6 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	(void) hi;							\
 	(void) lval;							\
 	(void) hval;							\
-	assert(li == !anti);						\
-	assert(hi == !anti);						\
-	assert(lval);							\
-	assert(hval);							\
 	size_t counter = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
 	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) { \
@@ -564,6 +560,104 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	} else {							\
 		basesrc = src;						\
 	}								\
+	/* Normalize the variables li, hi, lval, hval, possibly */	\
+	/* changing anti in the process.  This works for all */		\
+	/* (and only) numeric types. */					\
+									\
+	/* Note that the expression x < v is equivalent to x <= */	\
+	/* v' where v' is the next smaller value in the domain */	\
+	/* of v (similarly for x > v).  Also note that for */		\
+	/* floating point numbers there actually is such a */		\
+	/* value.  In fact, there is a function in standard C */	\
+	/* that calculates that value. */				\
+									\
+	/* The result is: */						\
+	/* li == !anti, hi == !anti, lval == true, hval == true */	\
+	/* This means that all ranges that we check for are */		\
+	/* closed ranges.  If a range is one-sided, we fill in */	\
+	/* the minimum resp. maximum value in the domain so that */	\
+	/* we create a closed range. */					\
+	if (anti && li) {						\
+		/* -inf < x < vl === -inf < x <= vl-1 */		\
+		if (vl == MINVALUE##TYPE) {				\
+			/* -inf < x < MIN || *th <[=] x < +inf */	\
+			/* degenerates into half range */		\
+			/* *th <[=] x < +inf */				\
+			anti = false;					\
+			vl = vh;					\
+			li = !hi;					\
+			hval = false;					\
+			/* further dealt with below */			\
+		} else {						\
+			vl = PREVVALUE##TYPE(vl);			\
+			li = false;					\
+		}							\
+	}								\
+	if (anti && hi) {						\
+		/* vl < x < +inf === vl+1 <= x < +inf */		\
+		if (vh == MAXVALUE##TYPE) {				\
+			/* -inf < x <[=] *tl || MAX > x > +inf */	\
+			/* degenerates into half range */		\
+			/* -inf < x <[=] *tl */				\
+			anti = false;					\
+			vh = vl;					\
+			hi = !li;					\
+			lval = false;					\
+			/* further dealt with below */			\
+		} else {						\
+			vh = NEXTVALUE##TYPE(vh);			\
+			hi = false;					\
+		}							\
+	}								\
+	if (!anti) {							\
+		if (lval) {						\
+			/* range bounded on left */			\
+			if (!li) {					\
+				/* open range on left */		\
+				if (vl == MAXVALUE##TYPE) {		\
+					return 0;			\
+				}					\
+				/* vl < x === vl+1 <= x */		\
+				vl = NEXTVALUE##TYPE(vl);		\
+				li = true;				\
+			}						\
+		} else {						\
+			/* -inf, i.e. smallest value */			\
+			vl = MINVALUE##TYPE;				\
+			li = true;					\
+			lval = true;					\
+		}							\
+		if (hval) {						\
+			/* range bounded on right */			\
+			if (!hi) {					\
+				/* open range on right */		\
+				if (vh == MINVALUE##TYPE) {		\
+					return 0;			\
+				}					\
+				/* x < vh === x <= vh-1 */		\
+				vh = PREVVALUE##TYPE(vh);		\
+				hi = true;				\
+			}						\
+		} else {						\
+			/* +inf, i.e. largest value */			\
+			vh = MAXVALUE##TYPE;				\
+			hi = true;					\
+			hval = true;					\
+		}							\
+		if (vl > vh) {						\
+			return 0;					\
+		}							\
+	}								\
+	/* if anti is set, we can now check */				\
+	/* (x <= vl || x >= vh) && x != nil */				\
+	/* if anti is not set, we can check just */			\
+	/* vl <= x && x <= vh */					\
+	/* if equi==true, the check is x == vl */			\
+	/* note that this includes the check for != nil */		\
+	assert(li == !anti);						\
+	assert(hi == !anti);						\
+	assert(lval);							\
+	assert(hval);							\
 	w = canditer_last(ci);						\
 	if (equi) {							\
 		assert(imprints == NULL);				\
@@ -1220,121 +1314,6 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	return bn;
 }
 
-/* Normalize the variables li, hi, lval, hval, possibly changing anti
- * in the process.  This works for all (and only) numeric types.
- *
- * Note that the expression x < v is equivalent to x <= v' where v' is
- * the next smaller value in the domain of v (similarly for x > v).
- * Also note that for floating point numbers there actually is such a
- * value.  In fact, there is a function in standard C that calculates
- * that value.
- *
- * The result of this macro is:
- * li == !anti, hi == !anti, lval == true, hval == true
- * This means that all ranges that we check for are closed ranges.  If
- * a range is one-sided, we fill in the minimum resp. maximum value in
- * the domain so that we create a closed range. */
-#define NORMALIZE(TYPE)							\
-	do {								\
-		if (anti && li) {					\
-			/* -inf < x < vl === -inf < x <= vl-1 */	\
-			if (*(TYPE*)tl == MINVALUE##TYPE) {		\
-				/* -inf < x < MIN || *th <[=] x < +inf */ \
-				/* degenerates into half range */	\
-				/* *th <[=] x < +inf */			\
-				anti = false;				\
-				tl = th;				\
-				li = !hi;				\
-				hval = false;				\
-				/* further dealt with below */		\
-			} else {					\
-				vl.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)tl); \
-				tl = &vl.v_##TYPE;			\
-				li = false;				\
-			}						\
-		}							\
-		if (anti && hi) {					\
-			/* vl < x < +inf === vl+1 <= x < +inf */	\
-			if (*(TYPE*)th == MAXVALUE##TYPE) {		\
-				/* -inf < x <[=] *tl || MAX > x > +inf */ \
-				/* degenerates into half range */	\
-				/* -inf < x <[=] *tl */			\
-				anti = false;				\
-				if (tl == &vl.v_##TYPE) {		\
-					vh.v_##TYPE = vl.v_##TYPE;	\
-					th = &vh.v_##TYPE;		\
-				} else {				\
-					th = tl;			\
-				}					\
-				hi = !li;				\
-				lval = false;				\
-				/* further dealt with below */		\
-			} else {					\
-				vh.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)th); \
-				th = &vh.v_##TYPE;			\
-				hi = false;				\
-			}						\
-		}							\
-		if (!anti) {						\
-			if (lval) {					\
-				/* range bounded on left */		\
-				if (!li) {				\
-					/* open range on left */	\
-					if (*(TYPE*)tl == MAXVALUE##TYPE) { \
-						bat_iterator_end(&bi);	\
-						return BATdense(0, 0, 0); \
-					}				\
-					/* vl < x === vl+1 <= x */	\
-					vl.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)tl); \
-					li = true;			\
-					tl = &vl.v_##TYPE;		\
-				}					\
-			} else {					\
-				/* -inf, i.e. smallest value */		\
-				vl.v_##TYPE = MINVALUE##TYPE;		\
-				li = true;				\
-				tl = &vl.v_##TYPE;			\
-				lval = true;				\
-			}						\
-			if (hval) {					\
-				/* range bounded on right */		\
-				if (!hi) {				\
-					/* open range on right */	\
-					if (*(TYPE*)th == MINVALUE##TYPE) { \
-						bat_iterator_end(&bi);	\
-						return BATdense(0, 0, 0); \
-					}				\
-					/* x < vh === x <= vh-1 */	\
-					vh.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)th); \
-					hi = true;			\
-					th = &vh.v_##TYPE;		\
-				}					\
-			} else {					\
-				/* +inf, i.e. largest value */		\
-				vh.v_##TYPE = MAXVALUE##TYPE;		\
-				hi = true;				\
-				th = &vh.v_##TYPE;			\
-				hval = true;				\
-			}						\
-			if (*(TYPE*)tl > *(TYPE*)th) {			\
-				bat_iterator_end(&bi);			\
-				return BATdense(0, 0, 0);		\
-			}						\
-		}							\
-		assert(lval);						\
-		assert(hval);						\
-		assert(li != anti);					\
-		assert(hi != anti);					\
-		/* if anti is set, we can now check */			\
-		/* (x <= *tl || x >= *th) && x != nil */		\
-		/* if equi==true, the check is x != *tl && x != nil */	\
-		/* if anti is not set, we can check just */		\
-		/* *tl <= x && x <= *th */				\
-		/* if equi==true, the check is x == *tl */		\
-		/* note that this includes the check for != nil */	\
-		/* in the case where equi==true, the check is x == *tl */ \
-	} while (false)
-
 #if SIZEOF_BUN == SIZEOF_INT
 #define CALC_ESTIMATE(TPE)						\
 	do {								\
@@ -1586,6 +1565,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	bool lnil;		/* low value is nil */
 	bool hval;		/* high value used for comparison */
 	bool equi;		/* select for single value (not range) */
+	bool antiequi = false;	/* select for all but single value */
 	bool wanthash = false;	/* use hash (equi must be true) */
 	bool havehash = false;	/* we have a hash (and the hashlock) */
 	bool phash = false;	/* use hash on parent BAT (if view) */
@@ -1599,18 +1579,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	lng vwo = 0;
 	Heap *oidxh = NULL;
 	const char *algo;
-	union {
-		bte v_bte;
-		sht v_sht;
-		int v_int;
-		lng v_lng;
-#ifdef HAVE_HGE
-		hge v_hge;
-#endif
-		flt v_flt;
-		dbl v_dbl;
-		oid v_oid;
-	} vl, vh;
 	enum range_comp_t range;
 	const bool notnull = BATgetprop(b, GDK_NOT_NULL) != NULL;
 	lng t0 = GDKusec();
@@ -1714,45 +1682,32 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  anti, ALGOOPTBATPAR(bn), GDKusec() - t0);
 			bat_iterator_end(&bi);
 			return bn;
-		} else if (equi && lnil) {
-			/* antiselect for nil value: turn into range
-			 * select for nil-nil range (i.e. everything
-			 * but nil) */
-			equi = false;
-			anti = false;
-			lval = false;
-			hval = false;
-			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=0 "
-				  "anti-nil...\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
-		} else if (equi) {
-			equi = false;
-			if (!(li && hi)) {
-				/* antiselect for nothing: turn into
-				 * range select for nil-nil range
-				 * (i.e. everything but nil) */
-				anti = false;
-				lval = false;
-				hval = false;
-				TRC_DEBUG(ALGO, "b="
-					  ALGOBATFMT ",s="
-					  ALGOOPTBATFMT ",anti=0 "
-					  "anti-nothing...\n",
-					  ALGOBATPAR(b),
-					  ALGOOPTBATPAR(s));
+		} else if ((equi && (lnil || !(li && hi))) || ATOMcmp(t, tl, th) > 0) {
+			/* various ways to select for everything except nil */
+
+			bn = BATselect(b, s, nil, NULL, true, true, false);
+			if (bn == NULL) {
+				bat_iterator_end(&bi);
+				return NULL;
 			}
-		} else if (ATOMcmp(t, tl, th) > 0) {
-			/* empty range: turn into range select for
-			 * nil-nil range (i.e. everything but nil) */
-			equi = false;
-			anti = false;
-			lval = false;
-			hval = false;
+			BAT *bn2;
+			if (s) {
+				bn2 = BATdiffcand(s, bn);
+			} else {
+				bn2 = BATnegcands2(ci.seq, bi.count, bn);
+			}
+			bat_iterator_end(&bi);
+			BBPreclaim(bn);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
-				  ",s=" ALGOOPTBATFMT ",anti=0 "
-				  "anti-nil...\n",
-				  ALGOBATPAR(b), ALGOOPTBATPAR(s));
+				  ",s=" ALGOOPTBATFMT ",anti=1,equi=%d -> "
+				  ALGOOPTBATFMT " (" LLFMT " usec): "
+				  "everything except nil\n",
+				  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+				  equi, ALGOOPTBATPAR(bn2), GDKusec() - t0);
+			return bn2; /* also if NULL */
+		} else {
+			antiequi = equi;
+			equi = false;
 		}
 	}
 
@@ -1881,36 +1836,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (ATOMtype(bi.type) == TYPE_oid) {
-		NORMALIZE(oid);
-	} else {
-		switch (t) {
-		case TYPE_bte:
-			NORMALIZE(bte);
-			break;
-		case TYPE_sht:
-			NORMALIZE(sht);
-			break;
-		case TYPE_int:
-			NORMALIZE(int);
-			break;
-		case TYPE_lng:
-			NORMALIZE(lng);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			NORMALIZE(hge);
-			break;
-#endif
-		case TYPE_flt:
-			NORMALIZE(flt);
-			break;
-		case TYPE_dbl:
-			NORMALIZE(dbl);
-			break;
-		}
-	}
-
 	parent = VIEWtparent(b);
 	assert(parent >= 0);
 	BAT *pb;
@@ -1924,7 +1849,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * parent already has a hash, or if b or its parent is
 	 * persistent and the total size wouldn't be too large; check
 	 * for existence of hash last since that may involve I/O */
-	if (equi) {
+	if (equi || antiequi) {
 		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
@@ -2036,28 +1961,31 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* we expect nonil to be set, in which case we
 			 * already know that we're not dealing with a
 			 * nil equiselect (dealt with above) */
-			oid h, l;
 			assert(bi.nonil);
 			assert(bi.sorted);
 			assert(oidxh == NULL);
 			algo = "select: dense";
-			h = * (oid *) th + hi;
-			if (h > bi.tseq)
-				h -= bi.tseq;
-			else
-				h = 0;
-			if ((BUN) h < high)
-				high = (BUN) h;
+			if (hval) {
+				oid h = * (oid *) th + hi;
+				if (h > bi.tseq)
+					h -= bi.tseq;
+				else
+					h = 0;
+				if ((BUN) h < high)
+					high = (BUN) h;
+			}
 
-			l = *(oid *) tl + !li;
-			if (l > bi.tseq)
-				l -= bi.tseq;
-			else
-				l = 0;
-			if ((BUN) l > low)
-				low = (BUN) l;
-			if (low > high)
-				low = high;
+			if (lval) {
+				oid l = *(oid *) tl + !li;
+				if (l > bi.tseq)
+					l -= bi.tseq;
+				else
+					l = 0;
+				if ((BUN) l > low)
+					low = (BUN) l;
+				if (low > high)
+					low = high;
+			}
 		} else if (bi.sorted) {
 			assert(oidxh == NULL);
 			algo = "select: sorted";
@@ -2201,7 +2129,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	assert(oidxh == NULL);
 	/* upper limit for result size */
 	maximum = ci.ncand;
-	if (equi && havehash) {
+	if ((equi || antiequi) && havehash) {
 		/* we can look in the hash struct to see whether all
 		 * values are distinct and set estimate accordingly */
 		if (phash) {
@@ -2212,7 +2140,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	if (estimate == BUN_NONE && (bi.key || (pb != NULL && pbi.key))) {
 		/* exact result size in special cases */
-		if (equi) {
+		if (equi || (antiequi && wanthash)) {
 			estimate = 1;
 		} else if (!anti && lval && hval) {
 			switch (t) {
@@ -2306,6 +2234,27 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (wanthash) {
 		/* hashselect unlocks the hash lock */
 		bn = hashselect(&bi, &ci, bn, tl, maximum, havehash, phash, &algo);
+		if (bn && antiequi) {
+			BAT *bn2;
+			if (s) {
+				bn2 = BATdiffcand(s, bn);
+			} else {
+				bn2 = BATnegcands2(ci.seq, bi.count, bn);
+			}
+			BBPreclaim(bn);
+			bn = bn2;
+			if (!bi.nonil) {
+				bn2 = BATselect(b, s, nil, NULL, true, true, false);
+				if (bn2 == NULL) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+				BAT *bn3 = BATdiffcand(bn, bn2);
+				BBPreclaim(bn2);
+				BBPreclaim(bn);
+				bn = bn3;
+			}
+		}
 	} else {
 		assert(!havehash);
 		/* use imprints if

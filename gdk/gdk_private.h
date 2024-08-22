@@ -87,6 +87,8 @@ BAT *BATload_intern(bat bid, bool lock)
 gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+BAT *BATnegcands2(oid hseq, BUN nr, BAT *odels)
+	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
