@@ -1,0 +1,22 @@
+statement ok
+CREATE  TABLE  t1(c1 VARCHAR(500))
+
+statement ok
+INSERT INTO t1(c1) VALUES ('a')
+
+statement ok
+CREATE VIEW v0(c0) AS SELECT ('a'||NULL) FROM t1
+
+query T
+SELECT * FROM v0
+----
+NULL
+
+query T
+SELECT ((v0.c0 IS NOT DISTINCT FROM v0.c0) AND (v0.c0 = v0.c0)) FROM v0
+----
+NULL
+
+query T
+SELECT * FROM v0 WHERE ((v0.c0 IS NOT DISTINCT FROM v0.c0) AND (v0.c0 = v0.c0));
+----
