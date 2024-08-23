@@ -2648,52 +2648,39 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 }
 
 static gdk_return __attribute__((__warn_unused_result__))
-tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, size_t size, char *buf, size_t bufsize)
 {
-	const ssize_t bufsize = 64 * 1024;
-	gdk_return ret = GDK_FAIL;
-	ssize_t file_size;
-	char *buf = NULL;
-	ssize_t to_read;
+	size_t file_size;
+	size_t to_read;
 
 	file_size = getFileSize(contents);
 	if (file_size < size) {
 		GDKerror("Have to copy %zd bytes but only %zd exist in %s", size, file_size, path);
-		goto end;
+		return GDK_FAIL;
 	}
 
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
 	assert(bufsize >= TAR_BLOCK_SIZE);
 
-	buf = GDKmalloc(bufsize);
-	if (!buf) {
-		GDKerror("could not allocate buffer");
-		goto end;
-	}
 
 	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
-		goto end;
+		return GDK_FAIL;
 
 	to_read = size;
 
 	while (to_read > 0) {
-		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
+		size_t chunk = (to_read <= bufsize) ? to_read : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
-		if (nbytes != chunk) {
+		if (nbytes != (ssize_t)chunk) {
 			GDKerror("Read only %zd/%zd bytes of component %s: %s", nbytes, chunk, path, mnstr_peek_error(contents));
-			goto end;
+			return GDK_FAIL;
 		}
-		ret = tar_write(tarfile, buf, chunk);
-		if (ret != GDK_SUCCEED)
-			goto end;
+		if (tar_write(tarfile, buf, chunk) != GDK_SUCCEED)
+			return GDK_FAIL;
 		to_read -= chunk;
 	}
 
-	ret = GDK_SUCCEED;
-end:
-	if (buf)
-		GDKfree(buf);
-	return ret;
+	return GDK_SUCCEED;
 }
 
 static gdk_return __attribute__((__warn_unused_result__))
@@ -2712,6 +2699,20 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char dest_path[100]; // size imposed by tar format.
 	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
 	stream *infile = NULL;
+	const char *bufsize_env_var = "hot_snapshot_buffer_size";
+	int bufsize = GDKgetenv_int(bufsize_env_var, 1024 * 1024);
+	char *buffer = NULL;
+
+	if (bufsize < TAR_BLOCK_SIZE || (bufsize % TAR_BLOCK_SIZE) != 0) {
+		GDKerror("invalid value for setting %s=%d: must be a multiple of %d",
+			bufsize_env_var, bufsize, TAR_BLOCK_SIZE);
+		goto end;
+	}
+	buffer = GDKmalloc(bufsize);
+	if (!buffer) {
+		GDKerror("could not allocate buffer");
+		goto end;
+	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -2741,7 +2742,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 					GDKerror("%s", mnstr_peek_error(NULL));
 					goto end;
 				}
-				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
+				if (tar_copy_stream(out, dest_path, timestamp, infile, size, buffer, (size_t)bufsize) != GDK_SUCCEED)
 					goto end;
 				close_stream(infile);
 				infile = NULL;
@@ -2767,6 +2768,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 
 end:
 	free(plan);
+	GDKfree(buffer);
 	if (infile)
 		close_stream(infile);
 	return ret;
