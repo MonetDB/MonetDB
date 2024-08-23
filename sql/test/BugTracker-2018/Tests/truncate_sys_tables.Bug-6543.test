@@ -59,7 +59,7 @@ TRUNCATE TABLE sys.storagemodelinput
 statement error
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput
 
-query I
+query I nosort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics
 ----
 0
@@ -67,7 +67,7 @@ SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics
 statement error
 TRUNCATE TABLE sys.statistics
 
-query I
+query I nosort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics
 ----
 0

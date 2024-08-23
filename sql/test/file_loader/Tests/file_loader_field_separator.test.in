@@ -25,7 +25,7 @@ select * from '$QTSTSRCDIR/cars.csv' cars(c)
 ----
 
 query ITTI nosort
-select * from file_loader(r'$QTSTSRCDIR/cars.csv')
+select * from file_loader(r'$TSTSRCDIR/cars.csv')
 ----
 2000
 Ford
@@ -45,11 +45,11 @@ Lightyear
 2022
 
 statement error 42000!syntax error, unexpected YEAR in: "select * from file_loader(...
-select * from file_loader(R'$QTSTSRCDIR/cars.csv') file(id, brand, model, year)
+select * from file_loader(R'$TSTSRCDIR/cars.csv') file(id, brand, model, year)
 ----
 
 query ITTI nosort
-select * from file_loader(r'$QTSTSRCDIR/cars.csv') as cars(id, brand, model, "year")
+select * from file_loader(r'$TSTSRCDIR/cars.csv') as cars(id, brand, model, "year")
 ----
 2000
 Ford
@@ -73,7 +73,7 @@ select * from file_loader('$QTSTSRCDIR/cars.csv') cars(cols)
 ----
 
 query ITTI nosort
-select * from file_loader(r'$QTSTSRCDIR/cars.psv') as cars(id, brand, model, "year")
+select * from file_loader(r'$TSTSRCDIR/cars.psv') as cars(id, brand, model, "year")
 ----
 2000
 Ford
@@ -93,7 +93,7 @@ Lightyear
 2022
 
 query ITTI nosort
-select * from file_loader(r'$QTSTSRCDIR/cars.tsv') as cars(id, brand, model, "year")
+select * from file_loader(r'$TSTSRCDIR/cars.tsv') as cars(id, brand, model, "year")
 ----
 2000
 Ford
@@ -113,7 +113,7 @@ Lightyear
 2022
 
 query ITTI nosort
-select * from file_loader(r'$QTSTSRCDIR/cars_semicolon.csv') as cars(id, brand, model, "year")
+select * from file_loader(r'$TSTSRCDIR/cars_semicolon.csv') as cars(id, brand, model, "year")
 ----
 2000
 Ford

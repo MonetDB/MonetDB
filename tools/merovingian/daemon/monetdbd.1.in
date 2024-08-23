@@ -11,7 +11,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 2023-12-21 MonetDB "MonetDB Applications"
+.TH MONETDBD 1 2024-08-19 MonetDB "MonetDB Applications"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS

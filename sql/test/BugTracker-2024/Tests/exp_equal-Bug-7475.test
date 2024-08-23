@@ -27,3 +27,4 @@ SELECT * FROM ( WITH x AS ( SELECT 1 x ) SELECT 1 , ( SELECT x FROM x ) FROM ( x
 ----
 1
 1
+

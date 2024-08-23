@@ -23,7 +23,8 @@ target_sources(MonetODBCs
 target_include_directories(MonetODBCs
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
+  ${CMAKE_CURRENT_BINARY_DIR}/../../../common/utils)
 
 target_compile_definitions(MonetODBCs
   PRIVATE

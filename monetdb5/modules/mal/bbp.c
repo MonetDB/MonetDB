@@ -437,8 +437,8 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 			if (bn->batCacheid != 0) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
-				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
-				char *mode = "persistent";
+				const char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
+				const char *mode = "persistent";
 				int refs = BBP_refs(i);
 				int lrefs = BBP_lrefs(i);
 

@@ -1,0 +1,35 @@
+
+Usage
+=====
+
+There are multiple ways to use MonetDB5-sql.
+
+The modern way is to do:
+
+ * Enable and start MonetDB in one go::
+
+   $ sudo systemctl enable --now monetdbd.service
+
+This is the old way using System V init scripts, incompatible with the
+above:
+
+ * Set STARTUP to "yes" in /etc/default/monetdb5-sql
+
+ * Start MonetDB::
+ 
+   $ sudo /etc/init.d/monetdb5-sql start
+
+In either case, do this:
+
+ * Add yourself to the "monetdb" group (after this, logout and back in
+   for this to take effect)::
+
+   $ sudo addgroup `whoami` monetdb
+
+ * Now you can create and destroy databases with the "monetdb" command::
+
+   $ monetdb create test
+   $ monetdb release test
+   $ monetdb start test
+   $ mclient test
+

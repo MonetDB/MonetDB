@@ -3,3 +3,4 @@ CREATE TABLE t0(c0 VARCHAR, c1 INTEGER, PRIMARY KEY(c0))
 
 statement error 42000!SELECT: cannot use non GROUP BY column 't0.c0' in query results without an aggregate function
 CREATE VIEW v0(c0) AS SELECT ('a'||t0.c0) FROM t0 GROUP BY (CASE t0.c1 WHEN t0.c1 THEN 'a' END )
+

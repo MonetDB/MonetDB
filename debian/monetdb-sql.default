@@ -1,0 +1,9 @@
+# Defaults for monetdb5-sql initscript
+# sourced by /etc/init.d/monetdb5-sql
+# installed at /etc/default/monetdb5-sql by the maintainer scripts
+
+# should monetdbd be started at system startup (yes/no)
+STARTUP="no"
+
+# the database farm where databases are kept
+DBFARM=/var/lib/monetdb

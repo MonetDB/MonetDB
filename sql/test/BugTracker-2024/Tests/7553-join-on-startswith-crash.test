@@ -4,7 +4,7 @@ CREATE TABLE  t0 (c0 VARCHAR(500) , c1 INT )
 statement ok
 CREATE TABLE  t1 (c0 BOOLEAN )
 
-query ITI
+query ITI nosort
 SELECT * FROM t1 INNER  JOIN t0 ON STARTSWITH(((t0.c1)>=(t0.c0)), t1.c0, ('a' NOT LIKE(t0.c1)))
 ----
 
@@ -13,3 +13,4 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t0
+

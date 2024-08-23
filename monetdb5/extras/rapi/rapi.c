@@ -358,7 +358,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 	return b;
 }
 
-const char* rapi_enableflag = "embedded_r";
+const char rapi_enableflag[] = "embedded_r";
 
 static bool RAPIEnabled(void) {
 	return (GDKgetenv_istrue(rapi_enableflag)
