@@ -691,14 +691,27 @@ stmt_pp_start_generator(backend *be)
 int
 stmt_pp_jump(backend *be, stmt *label, int nrparts)
 {
-	InstrPtr r = newStmtArgs(be->mb, putName("pipeline"), "counter", 2);
-	if (r == NULL)
-		return -1;
-	getArg(r, 0) = getArg(label->q, 1); /* counter */
-	r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
+	InstrPtr r = NULL;
+
+	if (!be->source) {
+		r = newStmtArgs(be->mb, putName("pipeline"), "counter", 2);
+		if (r == NULL)
+			return -1;
+		getArg(r, 0) = getArg(label->q, 1); /* counter */
+		r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
+	} else {
+		r = newStmtArgs(be->mb, putName("pipeline"), "done", 2);
+		if (r == NULL)
+			return -1;
+		getArg(r, 0) = getArg(label->q, 1); /* counter variable */
+		r = pushArgument(be->mb, r, be->source /* source/sink bat */);
+		r = pushArgument(be->mb, r, getArg(label->q, 2) /* pipeline */);
+	}
 	pushInstruction(be->mb, r);
 
-	if (be->nrparts >= 0)
+	if (be->source > 0)
+		r = newStmtArgs(be->mb, calcRef, "==", 3);
+	else if (be->nrparts >= 0)
 		r = newStmtArgs(be->mb, calcRef, "<", 3);
 	else
 		r = newStmtArgs(be->mb, calcRef, ">", 3);

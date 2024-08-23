@@ -8281,8 +8281,10 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 		s = stmt_list(be, res);
 	}
 	/* end pp */
-	if (pp)
+	if (pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
 		stmt_pp_end(be, pp);
+	}
 	return s;
 }
 

@@ -100,6 +100,22 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res = getArgReference_int(stk, pci, 0);
+	bat B = *getArgReference_bat(stk, pci, 1);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 2);
+
+	(void)cntxt; (void)mb;
+	BAT *b = BATdescriptor(B);
+	if (b) {
+		*res = b->T.sink->done(b->T.sink, p->wid);
+		BBPreclaim(b);
+	}
+	return MAL_SUCCEED;
+}
+
 // 	 (mailbox:T, metadata:int) := pipeline.channel(initial_value:T)
 static str
 PPchannel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -260,6 +276,11 @@ bailout:
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2,
 	 arg("", int),
+	 arg("pipeline", ptr)
+ )),
+ pattern("pipeline", "done", PPdone, true, "return counter based on source, != 0 means done", args(1,3,
+	 arg("", int),
+	 batargany("b", 1),
 	 arg("pipeline", ptr)
  )),
  pattern("pipeline", "channel", PPchannel, true, "create a new channel", args(2,3,
