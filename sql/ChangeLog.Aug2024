@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Aug 23 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Increase the buffer size used by hot snapshot from 64kiB to 1MiB,
+  and make it configurable through setting 'hot_snapshot_buffer_size'.
+  It must be a multiple of 512.
