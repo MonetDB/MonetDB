@@ -21,7 +21,7 @@ log_level = logging.WARNING
 log_format = '%(levelname)s:t=%(relativeCreated)d:%(name)s:%(message)s'# if sys.platform == 'win32':
 
 if sys.platform == 'win32':
-    level=logging.DEBUG
+    log_level=logging.DEBUG
 if '-v' in sys.argv:
     log_level = logging.DEBUG
 #level = logging.DEBUG
