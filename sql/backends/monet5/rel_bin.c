@@ -4868,7 +4868,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					m = m->next;
 					sql_subtype *res = sf->res->h->data;
 					int restype = res->type->localtype;
-					if (restype != tail_type(aggrstmt->op1)->type->localtype || restype != TYPE_dbl) {
+					if (rel->r || restype != tail_type(aggrstmt->op1)->type->localtype || restype != TYPE_dbl) {
 						getArg(aggrstmt->q, 2) = *(int*)m->data;
 						m = m->next;
 					}
@@ -8275,6 +8275,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			s->op4.typeval = *tpe;
 			s->nr = r->argv[0];
 			s->q = q;
+			s->nrcols = i->nrcols;
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(res, s);
 		}
