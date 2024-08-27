@@ -371,34 +371,6 @@ sql_update_jan2022(Client c, mvc *sql)
 	sql_schema *s = mvc_bind_schema(sql, "sys");
 	sql_table *t;
 
-	/* this bit of code is to upgrade from a Jan2022 RC to the Jan2022 release */
-	allocator *old_sa = sql->sa;
-	if ((sql->sa = sa_create(sql->pa)) != NULL) {
-		list *l;
-		if ((l = sa_list(sql->sa)) != NULL) {
-			sql_find_subtype(&tp, "varchar", 0, 0);
-			list_append(l, &tp);
-			list_append(l, &tp);
-			list_append(l, &tp);
-			if (sql_bind_func_(sql, s->base.name, "strimp_create", l, F_PROC, true, true)) {
-				/* do the upgrade by removing the two functions */
-				const char query[] =
-					"drop filter function sys.strimp_filter(string, string) cascade;\n"
-					"drop procedure sys.strimp_create(string, string, string) cascade;\n";
-				printf("Running database upgrade commands:\n%s\n", query);
-				fflush(stdout);
-				err = SQLstatementIntern(c, query, "update", true, false, NULL);
-			} else {
-				sql->session->status = 0; /* if the function was not found clean the error */
-				sql->errstr[0] = '\0';
-			}
-		}
-		sa_destroy(sql->sa);
-		if (err)
-			return err;
-	}
-	sql->sa = old_sa;
-
 	sql_find_subtype(&tp, "bigint", 0, 0);
 	if (!sql_bind_func(sql, s->base.name, "epoch", &tp, NULL, F_FUNC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
