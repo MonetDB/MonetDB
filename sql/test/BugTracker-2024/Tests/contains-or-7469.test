@@ -22,3 +22,4 @@ c
 
 statement ok
 DROP TABLE t0
+

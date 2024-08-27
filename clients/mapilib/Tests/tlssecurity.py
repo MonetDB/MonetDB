@@ -17,13 +17,16 @@ import sys
 
 from MonetDBtesting.tlstester import TLSTesterClient
 
-level = logging.WARNING
-# if sys.platform == 'win32':
-#     level=logging.DEBUG
+log_level = logging.WARNING
+log_format = '%(levelname)s:t=%(relativeCreated)d:%(name)s:%(message)s'# if sys.platform == 'win32':
+
+if sys.platform == 'win32':
+    log_level=logging.DEBUG
 if '-v' in sys.argv:
-    level = logging.DEBUG
+    log_level = logging.DEBUG
 #level = logging.DEBUG
-logging.basicConfig(level=level)
+
+logging.basicConfig(level=log_level,format=log_format)
 
 # A tmpdir to write certificates to
 tgtdir = os.environ['TSTTRGDIR']

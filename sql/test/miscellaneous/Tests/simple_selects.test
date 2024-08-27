@@ -599,13 +599,13 @@ select * from myv limit 1
 statement ok
 rollback
 
-query II
+query II nosort
 select * from (select 1 as c0, 2 as c0) as sub
 ----
 1
 2
 
-query IIII
+query IIII nosort
 select *,* from (select 1 as c0, 2 as c0) as sub
 ----
 1

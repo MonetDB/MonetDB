@@ -1,74 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Jul 16 2024 Sjoerd Mullender <sjoerd@acm.org>
-- The "phash" column in the sys.storage() table now indicates whether a
-  hash exists.  If the hash is not loaded but there is a hash available
-  on disk, the phash value is "true", but the "hashes" value is 0.
-
-* Thu Jul 11 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Added execution privilege on all sys.generate_series(first, limit)
-  and sys.generate_series(first, limit, stepsize) functions to public,
-  so all users can now call these table producing generator functions.
-
-* Fri Jun 14 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Extend CREATE USER MAX_MEMORY and ALTER USER MAX_MEMORY to accept
-  strings of the form '10MiB', '10G', etc.
-
-* Wed May 29 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Extended view sys.sessions and function sys.sessions() with new columns:
-  language, peer, hostname, application, client, clientpid and remark.
-- All users now have SELECT privilege on view sys.sessions, but non-admin
-  users only see their own sessions.
-- Added procedure sys.setclientinfo(property string, value string)
-  to allow the client application to set a specific client info property.
-- Added system table sys.clientinfo_properties that lists the supported
-  client info properties and their associated column name in sys.sessions view.
-  It contains property names: ClientHostname, ApplicationName,
-  ClientLibrary, ClientPid and ClientRemark.
-
-* Mon May 13 2024 Niels Nes <niels@cwi.nl>
-- Extended sys.generate_series() to generate dates. Added 2 new functions:
-  sys.generate_series(first date, "limit" date, stepsize interval month) and
-  sys.generate_series(first date, "limit" date, stepsize interval day).
-
-* Wed May  8 2024 Niels Nes <niels@cwi.nl>
-- Added support for select exp, count(*) group by 1 order by 1;
-  ie. using numeric references in group by clause.
-- Added support for GROUP BY ALL. This finds all expressions from the
-  selections which aren't aggregations and groups on those.
-  At least one aggregation must be specified.
-  The ALL keyword can also be replaced by '*', so: GROUP BY *.
-- Added support for ORDER BY ALL. This orders on all columns of the selection.
-  The ALL keyword can also be replaced by '*', so: ORDER BY *.
-
-* Thu May  2 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Removed the obsolete ANALYZE statement syntax options: SAMPLE nn and
-  MINMAX. Both options have been ignored since release Jan2022. Now they
-  are no longer accepted in the ANALYZE statement.
-- The ANALYZE statement can now be used in procedures, functions and triggers.
-
-* Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- Make schema renaming more permissive. A schema can be renamed if it
-  does not contain objects that are a dependency for objects outside
-  the schema. If such dependencies exist, they are shown in the
-  table sys.dependencies.
-
-* Tue Apr  8 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
-  and thousands separator for decimals, temporal types and floats.
-
-* Thu Mar 21 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
-- Introduce IS [NOT] DISTINCT FROM syntax. The syntax allows two values
-  to be compared. The comparison always returns boolean FALSE or TRUE
-  never NULL.
-
-* Wed Mar  6 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
-- SQL2023 feature: Introduce UNIQUE NULLS [NOT] DISTINCT syntax which
-  allows for NULLS to be treated as unique, i.e. a column with this
-  constraint can have one NULL value at most.
-
-- SQL2023 feature: Allow project and ORDER BY expressions on
-  UNIQUE constrained columns when the primary key column is
-  used in a GROUP BY expression.
-
+* Fri Aug 23 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Increase the buffer size used by hot snapshot from 64kiB to 1MiB,
+  and make it configurable through setting 'hot_snapshot_buffer_size'.
+  It must be a multiple of 512.

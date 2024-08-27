@@ -244,7 +244,7 @@ bind_col_exp(mvc *sql, rel_base_t *ba, char *name, sql_column *c)
 static sql_exp *
 bind_col(mvc *sql, sql_rel *rel, char *name, sql_column *c )
 {
-	if (rel_base_use(sql, rel, c->colnr)) {
+	if (!c || rel_base_use(sql, rel, c->colnr)) {
 		/* error */
 		return NULL;
 	}

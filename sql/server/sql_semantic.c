@@ -970,7 +970,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 
 	/* case a strings */
 	if (EC_VARCHAR(lclass) || EC_VARCHAR(rclass)) {
-		char *tpe = "varchar";
+		const char *tpe = "varchar";
 		unsigned int digits = 0;
 		if (!EC_VARCHAR(lclass)) {
 			tpe = r->type->base.name;

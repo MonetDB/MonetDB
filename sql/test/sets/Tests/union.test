@@ -10,7 +10,7 @@ CREATE TABLE weather (city VARCHAR, degrees INTEGER, date DATE)
 statement ok
 INSERT INTO weather VALUES ('Amsterdam', 10, '2022-10-14'), ('Seattle', 8, '2022-10-12')
 
-query T
+query T nosort
 SELECT * FROM capitals UNION ALL CORRESPONDING SELECT * FROM weather
 ----
 Amsterdam
@@ -18,7 +18,7 @@ Berlin
 Amsterdam
 Seattle
 
-query TTIT
+query TTIT nosort
 SELECT * FROM capitals OUTER UNION ALL CORRESPONDING SELECT * FROM weather
 ----
 Amsterdam
@@ -37,3 +37,4 @@ Seattle
 NULL
 8
 2022-10-12
+

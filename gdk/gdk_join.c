@@ -3642,16 +3642,12 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			/* we have an estimate of the number of unique
 			 * values, assume some collisions */
 			rcost *= 1.1 * ((double) cnt / unique_est);
-#ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash for
 			 * non-persistent bats */
 			MT_lock_set(&r->theaplock);
 			if (r->batRole != PERSISTENT /* || r->theap->dirty */ || GDKinmemory(r->theap->farmid))
 				rcost += cnt * 2.0;
 			MT_lock_unset(&r->theaplock);
-#else
-			rcost += cnt * 2.0;
-#endif
 		}
 	}
 	if (cand) {

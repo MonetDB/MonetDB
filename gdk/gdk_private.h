@@ -16,15 +16,6 @@
 #error this file should not be included outside its source directory
 #endif
 
-/* persist hash heaps for persistent BATs */
-#define PERSISTENTHASH 1
-
-/* persist order index heaps for persistent BATs */
-#define PERSISTENTIDX 1
-
-/* persist strimp heaps for persistent BATs */
-#define PERSISTENTSTRIMP 1
-
 /* only check whether we exceed gdk_vm_maxsize when allocating heaps */
 #define SIZE_CHECK_IN_HEAPS_ONLY 1
 
@@ -86,6 +77,8 @@ BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATmaterialize(BAT *b, BUN cap)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+BAT *BATnegcands2(oid hseq, BUN nr, BAT *odels)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
@@ -173,9 +166,9 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#define GDKwarning(format, ...)					\
+#define GDKwarning(...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, format, ##__VA_ARGS__)
+		      GDK, NULL, __VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)

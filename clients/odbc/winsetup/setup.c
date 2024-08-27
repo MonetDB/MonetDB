@@ -16,7 +16,9 @@
 #endif
 
 #include "monetdb_config.h"
+#include "monetdb_hgversion.h"
 #include <windows.h>
+#include <shellapi.h>
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
 #define ALREADY_HAVE_WINDOWS_TYPE 1
@@ -27,6 +29,12 @@
 
 static char *DriverName = "MonetDB ODBC Driver";
 static HINSTANCE instance;
+
+#ifdef MERCURIAL_BRANCH
+#define DOCUMENTATION "documentation-" MERCURIAL_BRANCH
+#else
+#define DOCUMENTATION "documentation"
+#endif
 
 static void
 ODBCLOG(const char *fmt, ...)
@@ -91,6 +99,13 @@ struct data {
 	char *host;
 	char *port;		/* positive integer */
 	char *database;
+	// TLS settings
+	char *use_tls;		/* only on or off allowed */
+	char *servercert;
+	char *servercerthash;
+	char *clientkey;
+	char *clientcert;
+	// Advanced settings
 	char *schema;
 	char *logintimeout;	/* empty, 0 or positive integer (millisecs) */
 	char *replytimeout;	/* empty, 0 or positive integer (millisecs)  */
@@ -98,12 +113,10 @@ struct data {
 	char *autocommit;	/* only on or off allowed */
 	char *timezone;		/* empty, 0 or signed integer (minutes) */
 	char *logfile;
-	// TLS settings
-	char *use_tls;		/* only on or off allowed */
-	char *servercert;
-	char *servercerthash;
-	char *clientkey;
-	char *clientcert;
+	// Client info
+	char *clientinfo;		/* only on or off allowed */
+	char *applicationname;
+	char *clientremark;
 
 	HWND parent;
 	WORD request;
@@ -127,15 +140,12 @@ TestConnection(HWND hwndDlg, struct data *datap)
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 #define strSize 16384
 		int pos = 0;
-		char inStr[strSize];
+		char inStr[strSize];	// Connection string. Keyword names are defined in driver/ODBCAttrs.c
 		char outStr[strSize];
 		SQLSMALLINT outLen;
+		SQLUINTEGER timeout = 5;	// for setup testing we set login timeout to 5 secs
 
-		// Note: we should construct the connection string WITHOUT the DSN=..; part,
-		// but currently the dsn is required by MonetDB SQLDriverConnect(), so must add it.
-		if (datap->dsn && strlen(datap->dsn) > 0) {
-			pos += snprintf(inStr + pos, strSize - pos, "DSN=%s;", datap->dsn);
-		}
+		pos += snprintf(inStr + pos, strSize - pos, "DRIVER=MonetDB ODBC Driver;");
 		if (datap->uid && strlen(datap->uid) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "UID=%s;", datap->uid);
 		}
@@ -153,6 +163,7 @@ TestConnection(HWND hwndDlg, struct data *datap)
 		}
 		// Only when use_tls is "on", add TLS parameters
 		if (datap->use_tls && strcmp(datap->use_tls, "on") == 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "TLS=on;");
 			if (datap->servercert && strlen(datap->servercert) > 0) {
 				pos += snprintf(inStr + pos, strSize - pos, "CERT=%s;", datap->servercert);
 			}
@@ -174,14 +185,14 @@ TestConnection(HWND hwndDlg, struct data *datap)
 			pos += snprintf(inStr + pos, strSize - pos, "LOGINTIMEOUT=%s;", datap->logintimeout);
 		}
 		if (datap->replytimeout && strlen(datap->replytimeout) > 0) {
-			pos += snprintf(inStr + pos, strSize - pos, "REPLYTIMEOUT=%s;", datap->replytimeout);
+			pos += snprintf(inStr + pos, strSize - pos, "CONNECTIONTIMEOUT=%s;", datap->replytimeout);
 		}
 		if (datap->replysize && strlen(datap->replysize) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "REPLYSIZE=%s;", datap->replysize);
 		}
-		// in ODBC autocommit is on by default. Only when set to off, add it to the connection string.
+		// in ODBC autocommit is on by specification. Only when set to off, add it to the connection string.
 		if (datap->autocommit && strcmp(datap->autocommit, "off") == 0) {
-			pos += snprintf(inStr + pos, strSize - pos, "AUTOCOMMIT=%s;", datap->autocommit);
+			pos += snprintf(inStr + pos, strSize - pos, "AUTOCOMMIT=off;");
 		}
 		if (datap->timezone && strlen(datap->timezone) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "TIMEZONE=%s;", datap->timezone);
@@ -189,28 +200,33 @@ TestConnection(HWND hwndDlg, struct data *datap)
 		if (datap->logfile && strlen(datap->logfile) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "LOGFILE=%s;", datap->logfile);
 		}
+
+		ret = SQLSetConnectAttr(dbc, SQL_ATTR_LOGIN_TIMEOUT, &timeout, SQL_IS_INTEGER);
+
 		// test the constructed connection string
 		ret = SQLDriverConnect(dbc, hwndDlg, (SQLCHAR *) inStr, SQL_NTS, (SQLCHAR *) outStr, strSize, &outLen, SQL_DRIVER_NOPROMPT);
-		switch (ret) {
-			case SQL_SUCCESS:
-			case SQL_SUCCESS_WITH_INFO:
-				MessageBox(hwndDlg, "Connection successful", boxtitle, MB_OK);
+		if (ret == SQL_SUCCESS) {
+			MessageBox(hwndDlg, "Connection successful", boxtitle, MB_OK | MB_ICONINFORMATION);
+			ret = SQLDisconnect(dbc);
+		} else {
+			SQLCHAR state[SQL_SQLSTATE_SIZE + 1];
+			SQLINTEGER errnr;
+			SQLCHAR msg[2560];
+			SQLSMALLINT msglen;
+			SQLRETURN ret2;
+			char buf[2600 + strSize + strSize];
+
+			// get Error msg
+			ret2 = SQLGetDiagRec(SQL_HANDLE_DBC, dbc, 1, state, &errnr, msg, sizeof(msg), &msglen);
+			if (ret == SQL_SUCCESS_WITH_INFO) {
+				sprintf(buf, "Connection successful\n\nWarning message: %s\n\nSQLState %s\n\nConnectString used: %s\n\nReturned ConnectString: %s",
+					(char *) msg, (char *) state, inStr, outStr);
+				MessageBox(hwndDlg, buf, boxtitle, MB_OK | MB_ICONWARNING);
 				ret = SQLDisconnect(dbc);
-				break;
-			case SQL_ERROR:
-			default:
-			{
-				SQLCHAR state[6];
-				SQLINTEGER errnr;
-				SQLCHAR msg[2560];
-				SQLSMALLINT msglen;
-				char buf[2600 + strSize + strSize];
-				// get Error msg
-				ret = SQLGetDiagRec(SQL_HANDLE_DBC, dbc, 1, state, &errnr, msg, sizeof(msg), &msglen);
-				sprintf(buf, "Connection failed!\n\nError message: %s\n\nSQLstate %s, Errnr %d\n\nConnectString used: %s\n\nReturned ConnectString: %s",
-						(char *) msg, (char *) state, (int) errnr, inStr, outStr);
+			} else {
+				sprintf(buf, "Connection failed!\n\nError message: %s\n\nSQLState %s, Errnr %d\n\nConnectString used: %s\n\nReturned ConnectString: %s",
+					(char *) msg, (char *) state, (int) errnr, inStr, outStr);
 				MessageBox(hwndDlg, buf, boxtitle, MB_ICONERROR);
-				break;
 			}
 		}
 		ret = SQLFreeHandle(SQL_HANDLE_DBC, dbc);
@@ -280,6 +296,10 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, datap->autocommit ? datap->autocommit : "on");
 		SetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, datap->timezone ? datap->timezone : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, datap->logfile ? datap->logfile : "");
+		// Client Info
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTINFO, datap->clientinfo ? datap->clientinfo : "on");
+		SetDlgItemText(hwndDlg, IDC_EDIT_APPLICNAME, datap->applicationname ? datap->applicationname : "");
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTREMARK, datap->clientremark ? datap->clientremark : "");
 		if (datap->request == ODBC_ADD_DSN && datap->dsn && *datap->dsn)
 			EnableWindow(GetDlgItem(hwndDlg, IDC_EDIT_DSN), FALSE);
 		return TRUE;
@@ -300,15 +320,20 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			/* fall through */
 		case IDC_BUTTON_TEST:
-			/* validate entered string values */
+			/* validate entered string values for on/off fields */
 			GetDlgItemText(hwndDlg, IDC_EDIT_AUTOCOMMIT, buf, sizeof(buf));
 			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
-				MessageBox(hwndDlg, "Autocommit must be set to on or off. Default is on.", NULL, MB_ICONERROR);
+				MessageBox(hwndDlg, "Autocommit must be set to on or off.\nDefault is on.", NULL, MB_ICONERROR);
 				return TRUE;
 			}
 			GetDlgItemText(hwndDlg, IDC_EDIT_USETLS, buf, sizeof(buf));
 			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
-				MessageBox(hwndDlg, "TLS Encrypt must be set to on or off. Default is off.", NULL, MB_ICONERROR);
+				MessageBox(hwndDlg, "TLS Encrypt must be set to on or off.\nDefault is off.", NULL, MB_ICONERROR);
+				return TRUE;
+			}
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTINFO, buf, sizeof(buf));
+			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
+				MessageBox(hwndDlg, "Client Info must be set to on or off.\nDefault is on.", NULL, MB_ICONERROR);
 				return TRUE;
 			}
 
@@ -386,6 +411,19 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			if (datap->logfile)
 				free(datap->logfile);
 			datap->logfile = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTINFO, buf, sizeof(buf));
+			if (datap->clientinfo)
+				free(datap->clientinfo);
+			datap->clientinfo = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_APPLICNAME, buf, sizeof(buf));
+			if (datap->applicationname)
+				free(datap->applicationname);
+			datap->applicationname = strdup(buf);
+			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTREMARK, buf, sizeof(buf));
+			if (datap->clientremark)
+				free(datap->clientremark);
+			datap->clientremark = strdup(buf);
+
 
 			if (LOWORD(wParam) == IDC_BUTTON_TEST) {
 				TestConnection(hwndDlg, datap);
@@ -397,8 +435,10 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		case IDC_BUTTON_HELP:
-			// TODO invoke webbrowser with url to webpage decribing this dialog.
-			MessageBox(hwndDlg, "Help not yet implemented", NULL, MB_ICONERROR);
+			// invoke webbrowser with url to webpage decribing this setup dialog.
+			ShellExecute(hwndDlg, NULL,
+					"https://www.monetdb.org/" DOCUMENTATION "/user-guide/client-interfaces/libraries-drivers/odbc-driver/windows-data-source-setup/",
+					NULL, NULL, SW_SHOWNORMAL);
 			return TRUE;
 		}
 	default:
@@ -438,6 +478,12 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.host = NULL;
 	data.port = NULL;
 	data.database = NULL;
+	// TLS settings
+	data.use_tls = NULL;
+	data.servercert = NULL;
+	data.servercerthash = NULL;
+	data.clientkey = NULL;
+	data.clientcert = NULL;
 	// Advanced settings
 	data.logfile = NULL;
 	data.schema = NULL;
@@ -447,12 +493,10 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	data.autocommit = NULL;
 	data.timezone = NULL;
 	data.logfile = NULL;
-	// TLS settings
-	data.use_tls = NULL;
-	data.servercert = NULL;
-	data.servercerthash = NULL;
-	data.clientkey = NULL;
-	data.clientcert = NULL;
+	// Client Info
+	data.clientinfo = NULL;
+	data.applicationname = NULL;
+	data.clientremark = NULL;
 
 	data.parent = parent;
 	data.request = request;
@@ -494,7 +538,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.schema = strdup(value);
 		else if (strncasecmp("LoginTimeout=", attributes, value - attributes) == 0)
 			data.logintimeout = strdup(value);
-		else if (strncasecmp("ReplyTimeout=", attributes, value - attributes) == 0)
+		else if (strncasecmp("ConnectionTimeout=", attributes, value - attributes) == 0)
 			data.replytimeout = strdup(value);
 		else if (strncasecmp("ReplySize=", attributes, value - attributes) == 0)
 			data.replysize = strdup(value);
@@ -504,6 +548,12 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 			data.timezone = strdup(value);
 		else if (strncasecmp("LogFile=", attributes, value - attributes) == 0)
 			data.logfile = strdup(value);
+		else if (strncasecmp("ClientInfo=", attributes, value - attributes) == 0)
+			data.clientinfo = strdup(value);
+		else if (strncasecmp("AppName=", attributes, value - attributes) == 0)
+			data.applicationname = strdup(value);
+		else if (strncasecmp("ClientRemark=", attributes, value - attributes) == 0)
+			data.clientremark = strdup(value);
 		attributes = value + strlen(value) + 1;
 	}
 
@@ -530,13 +580,16 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.clientcert, "ClientCert", "");
 	MergeFromProfileString(data.dsn, &data.schema, "Schema", "");
 	MergeFromProfileString(data.dsn, &data.logintimeout, "LoginTimeout", "");
-	MergeFromProfileString(data.dsn, &data.replytimeout, "ReplyTimeout", "");
+	MergeFromProfileString(data.dsn, &data.replytimeout, "ConnectionTimeout", "");
 	MergeFromProfileString(data.dsn, &data.replysize, "ReplySize", "");
 	MergeFromProfileString(data.dsn, &data.autocommit, "AutoCommit", "on");
 	MergeFromProfileString(data.dsn, &data.timezone, "TimeZone", "");
 	MergeFromProfileString(data.dsn, &data.logfile, "LogFile", "");
+	MergeFromProfileString(data.dsn, &data.clientinfo, "ClientInfo", "on");
+	MergeFromProfileString(data.dsn, &data.applicationname, "AppName", "");
+	MergeFromProfileString(data.dsn, &data.clientremark, "ClientRemark", "");
 
-	ODBCLOG("ConfigDSN values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
+	ODBCLOG("ConfigDSN values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ConnectionTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
@@ -618,7 +671,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		}
 	}
 
-	ODBCLOG("ConfigDSN writing values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ReplyTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
+	ODBCLOG("ConfigDSN writing values: DSN=%s UID=%s PWD=%s Host=%s Port=%s Database=%s Schema=%s LoginTimeout=%s ConnectionTimeout=%s ReplySize=%s AutoCommit=%s TimeZone=%s LogFile=%s TLSs=%s Cert=%s CertHash=%s ClientKey=%s ClientCert=%s\n",
 		data.dsn ? data.dsn : "(null)",
 		data.uid ? data.uid : "(null)",
 		data.pwd ? data.pwd : "(null)",
@@ -658,11 +711,14 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	 || !SQLWritePrivateProfileString(data.dsn, "ClientCert", data.clientcert, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "Schema", data.schema, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "LoginTimeout", data.logintimeout, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "ReplyTimeout", data.replytimeout, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ConnectionTimeout", data.replytimeout, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "ReplySize", data.replysize, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "AutoCommit", data.autocommit, "odbc.ini")
 	 || !SQLWritePrivateProfileString(data.dsn, "TimeZone", data.timezone, "odbc.ini")
-	 || !SQLWritePrivateProfileString(data.dsn, "LogFile", data.logfile, "odbc.ini")) {
+	 || !SQLWritePrivateProfileString(data.dsn, "LogFile", data.logfile, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ClientInfo", data.clientinfo, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "AppName", data.applicationname, "odbc.ini")
+	 || !SQLWritePrivateProfileString(data.dsn, "ClientRemark", data.clientremark, "odbc.ini")) {
 		if (parent)
 			MessageBox(parent, "Error writing optional configuration data to registry", NULL, MB_ICONERROR);
 		goto finish;
@@ -707,6 +763,12 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 		free(data.timezone);
 	if (data.logfile)
 		free(data.logfile);
+	if (data.clientinfo)
+		free(data.clientinfo);
+	if (data.applicationname)
+		free(data.applicationname);
+	if (data.clientremark)
+		free(data.clientremark);
 
 	ODBCLOG("ConfigDSN returning %s\n", rc ? "TRUE" : "FALSE");
 	return rc;

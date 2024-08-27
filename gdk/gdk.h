@@ -603,7 +603,7 @@ typedef struct allocator {
 	char **blks;
 	size_t used; 	/* memory used in last block */
 	size_t usedmem;	/* used memory */
-	void *freelist;	/* list of freed blocks */
+	void *freelist;	/* list of freed objects */
 
 	size_t tmp_used; /* keeps total of tmp allocated bytes */
 	bool tmp_active; /* currently only one level of temp usage */
@@ -1837,14 +1837,14 @@ BATnegateprops(BAT *b)
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
-#define GDKerror(format, ...)					\
+#define GDKerror(...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
-		      GDK, NULL, format, ##__VA_ARGS__)
-#define GDKsyserr(errno, format, ...)					\
+		      GDK, NULL, __VA_ARGS__)
+#define GDKsyserr(errno, ...)						\
 	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
 		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
-		      format, ##__VA_ARGS__)
-#define GDKsyserror(format, ...)	GDKsyserr(errno, format, ##__VA_ARGS__)
+		      __VA_ARGS__)
+#define GDKsyserror(...)	GDKsyserr(errno, __VA_ARGS__)
 
 gdk_export void GDKclrerr(void);
 

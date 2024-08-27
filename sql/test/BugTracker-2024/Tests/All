@@ -82,3 +82,9 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7555-incorrect-semijoin-rewrite
 7556-missing-ignore-case
 7465-fwf-block-boundary-error
+7566-connections-refused
+7562-interval-overflow
+7569-temp-table-column-reuse
+7571-crash-orderby
+7563-is-distinct-from
+7572-max-length-changes

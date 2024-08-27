@@ -16,7 +16,6 @@
 
 #define ORDERIDX_VERSION	((oid) 3)
 
-#ifdef PERSISTENTIDX
 static void
 BATidxsync(void *arg)
 {
@@ -68,7 +67,6 @@ BATidxsync(void *arg)
 	MT_lock_unset(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
-#endif
 
 /* return TRUE if we have a orderidx on the tail, even if we need to read
  * one from disk */
@@ -101,11 +99,7 @@ BATcheckorderidx(BAT *b)
 				oid hdata[ORDERIDXOFF];
 
 				if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-				    hdata[0] == (
-#ifdef PERSISTENTIDX
-					    ((oid) 1 << 24) |
-#endif
-					    ORDERIDX_VERSION) &&
+				    hdata[0] == (((oid) 1 << 24) | ORDERIDX_VERSION) &&
 				    hdata[1] == (oid) BATcount(b) &&
 				    (hdata[2] == 0 || hdata[2] == 1) &&
 				    fstat(fd, &st) == 0 &&
@@ -171,7 +165,6 @@ createOIDXheap(BAT *b, bool stable)
 void
 persistOIDX(BAT *b)
 {
-#ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount &&
 	    !b->theap->dirty &&
@@ -185,9 +178,6 @@ persistOIDX(BAT *b)
 			BBPunfix(b->batCacheid);
 	} else
 		TRC_DEBUG(ACCELERATOR, "persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
-#else
-	(void) b;
-#endif
 }
 
 gdk_return
@@ -503,7 +493,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	}
 
 	b->torderidx = m;
-#ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
@@ -515,7 +504,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			BBPunfix(b->batCacheid);
 	} else
 		TRC_DEBUG(ACCELERATOR, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
-#endif
 
 	MT_lock_unset(&b->batIdxLock);
 	bat_iterator_end(&bi);

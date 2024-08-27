@@ -17,3 +17,4 @@ drop table t
 @connection(id=c1, username=monetdb, password=monetdb)
 statement error 42S02!SELECT: no such table 't'
 exec 0(1)
+

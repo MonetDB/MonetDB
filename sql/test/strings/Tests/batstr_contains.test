@@ -123,3 +123,4 @@ robert doe
 
 statement ok
 DROP TABLE foo
+

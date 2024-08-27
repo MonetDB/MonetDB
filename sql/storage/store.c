@@ -2557,11 +2557,17 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 
 // Write a tar header to the given stream.
 static gdk_return __attribute__((__warn_unused_result__))
-tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
+tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
 	char *cursor = buf;
 	char *chksum;
+
+	if (size > 077777777777) { // 0_777_7777_7777
+		// doesn't fit header field
+		GDKerror("error writing tar file: member %s too large", path);
+		return GDK_FAIL;
+	}
 
 	// We set the uid/gid fields to 0 and the uname/gname fields to "".
 	// When unpacking as a normal user, they are ignored and the files are
@@ -2574,7 +2580,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U);      // uid[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U);      // gid[8]
-	tar_write_header_field(&cursor, 12, "%011zo", size);      // size[12]
+	tar_write_header_field(&cursor, 12, "%011"PRIo64, size);      // size[12]
 	tar_write_header_field(&cursor, 12, "%011lo", (unsigned long)mtime); // mtime[12]
 	chksum = cursor; // use this later to set the computed checksum
 	tar_write_header_field(&cursor, 8, "%8s", ""); // chksum[8]
@@ -2609,7 +2615,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
  * of TAR_BLOCK_SIZE.
  */
 static gdk_return __attribute__((__warn_unused_result__))
-tar_write(stream *outfile, const char *data, size_t size)
+tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
 	const size_t tail = size % TAR_BLOCK_SIZE;
 	const size_t bulk = size - tail;
@@ -2617,7 +2623,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 	if (bulk) {
 		size_t written = mnstr_write(outfile, data, 1, bulk);
 		if (written != bulk) {
-			GDKerror("Wrote only %zu bytes instead of first %zu", written, bulk);
+			GDKerror("Wrote only %zu bytes of %s instead of first %zu", written, path, bulk);
 			return GDK_FAIL;
 		}
 	}
@@ -2627,7 +2633,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 		memcpy(buf, data + bulk, tail);
 		size_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
 		if (written != TAR_BLOCK_SIZE) {
-			GDKerror("Wrote only %zu tail bytes instead of %d", written, TAR_BLOCK_SIZE);
+			GDKerror("Wrote only %zu tail bytes of %s instead of %d", written, path, TAR_BLOCK_SIZE);
 			return GDK_FAIL;
 		}
 	}
@@ -2644,56 +2650,41 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	if (res != GDK_SUCCEED)
 		return res;
 
-	return tar_write(tarfile, data, size);
+	return tar_write(tarfile, path, data, size);
 }
 
 static gdk_return __attribute__((__warn_unused_result__))
-tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, int64_t size, char *buf, size_t bufsize)
 {
-	const ssize_t bufsize = 64 * 1024;
-	gdk_return ret = GDK_FAIL;
-	ssize_t file_size;
-	char *buf = NULL;
-	ssize_t to_read;
-
-	file_size = getFileSize(contents);
-	if (file_size < size) {
-		GDKerror("Have to copy %zd bytes but only %zd exist in %s", size, file_size, path);
-		goto end;
-	}
-
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
 	assert(bufsize >= TAR_BLOCK_SIZE);
 
-	buf = GDKmalloc(bufsize);
-	if (!buf) {
-		GDKerror("could not allocate buffer");
-		goto end;
-	}
-
 	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
-		goto end;
+		return GDK_FAIL;
 
-	to_read = size;
-
-	while (to_read > 0) {
-		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
+	int64_t to_do = size;
+	while (to_do > 0) {
+		size_t chunk = (to_do <= (int64_t)bufsize) ? (size_t)to_do : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
-		if (nbytes != chunk) {
-			GDKerror("Read only %zd/%zd bytes of component %s: %s", nbytes, chunk, path, mnstr_peek_error(contents));
-			goto end;
+		if (nbytes > 0) {
+			if (tar_write(tarfile, path, buf, nbytes) != GDK_SUCCEED)
+				return GDK_FAIL;
+			to_do -= (int64_t)nbytes;
+			continue;
 		}
-		ret = tar_write(tarfile, buf, chunk);
-		if (ret != GDK_SUCCEED)
-			goto end;
-		to_read -= chunk;
+		// error handling
+		if (nbytes < 0) {
+			GDKerror("Error after reading %"PRId64"/%"PRId64" bytes: %s",
+				size - to_do, size, mnstr_peek_error(contents));
+			return GDK_FAIL;
+		} else {
+			GDKerror("Unexpected end of file after reading %"PRId64"/%"PRId64" bytes of %s",
+				size - to_do, size, path);
+			return GDK_FAIL;
+		}
 	}
 
-	ret = GDK_SUCCEED;
-end:
-	if (buf)
-		GDKfree(buf);
-	return ret;
+	return GDK_SUCCEED;
 }
 
 static gdk_return __attribute__((__warn_unused_result__))
@@ -2712,6 +2703,20 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char dest_path[100]; // size imposed by tar format.
 	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
 	stream *infile = NULL;
+	const char *bufsize_env_var = "hot_snapshot_buffer_size";
+	int bufsize = GDKgetenv_int(bufsize_env_var, 1024 * 1024);
+	char *buffer = NULL;
+
+	if (bufsize < TAR_BLOCK_SIZE || (bufsize % TAR_BLOCK_SIZE) != 0) {
+		GDKerror("invalid value for setting %s=%d: must be a multiple of %d",
+			bufsize_env_var, bufsize, TAR_BLOCK_SIZE);
+		goto end;
+	}
+	buffer = GDKmalloc(bufsize);
+	if (!buffer) {
+		GDKerror("could not allocate buffer");
+		goto end;
+	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -2725,13 +2730,13 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	*src_name++ = DIR_SEP;
 
 	char command;
-	long size;
-	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
+	int64_t size;
+	while (sscanf(p, "%c %"SCNi64" %100s\n%n", &command, &size, src_name, &len) == 3) {
 		GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(end, qry_ctx));
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {
-			GDKerror("malformed snapshot plan for %s: size %ld < 0", src_name, size);
+			GDKerror("malformed snapshot plan for %s: size %"PRId64" < 0", src_name, size);
 			goto end;
 		}
 		switch (command) {
@@ -2741,15 +2746,15 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 					GDKerror("%s", mnstr_peek_error(NULL));
 					goto end;
 				}
-				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
+				if (tar_copy_stream(out, dest_path, timestamp, infile, size, buffer, (size_t)bufsize) != GDK_SUCCEED)
 					goto end;
 				close_stream(infile);
 				infile = NULL;
 				break;
 			case 'w':
-				if (tar_write_data(out, dest_path, timestamp, p, size) != GDK_SUCCEED)
+				if (tar_write_data(out, dest_path, timestamp, p, (size_t)size) != GDK_SUCCEED)
 					goto end;
-				p += size;
+				p += (size_t)size;
 				break;
 			default:
 				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
@@ -2759,14 +2764,16 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	}
 
 	// write a trailing block of zeros. If it succeeds, this function succeeds.
+	char *descr = "end-of-archive marker";
 	char a;
 	a = '\0';
-	ret = tar_write(out, &a, 1);
+	ret = tar_write(out, descr, &a, 1);
 	if (ret == GDK_SUCCEED)
-		ret = tar_write(out, &a, 1);
+		ret = tar_write(out, descr, &a, 1);
 
 end:
 	free(plan);
+	GDKfree(buffer);
 	if (infile)
 		close_stream(infile);
 	return ret;
@@ -2802,7 +2809,7 @@ pick_tmp_name(str filename)
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
 	} else {
-		char *tmp = "..tmp.";
+		const char tmp[] = "..tmp.";
 		size_t tmplen = strlen(tmp);
 		memmove(ext + tmplen, ext, strlen(ext) + 1);
 		memmove(ext, tmp, tmplen);
@@ -7244,8 +7251,10 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 {
 	sql_session *s;
 
-	if (store->singleuser > 1)
+	if (store->singleuser > 1) {
+		TRC_ERROR(SQL_STORE, "No second connection allowed in singleuser mode\n");
 		return NULL;
+	}
 
 	s = ZNEW(sql_session);
 	if (!s)
@@ -7264,7 +7273,7 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 		return NULL;
 	}
 	if (store->singleuser)
-		store->singleuser++;
+		store->singleuser = 2;
 	return s;
 }
 
@@ -7273,7 +7282,8 @@ sql_session_destroy(sql_session *s)
 {
 	if (s->tr) {
 		sqlstore *store = s->tr->store;
-		store->singleuser--;
+		if (store->singleuser)
+			store->singleuser = 1;
 	}
 	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);

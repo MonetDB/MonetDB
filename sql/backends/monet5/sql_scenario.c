@@ -1262,7 +1262,7 @@ SQLchannelcmd(Client c, backend *be)
 			sqlcleanup(be, 0);
 		return msg;
 	}
-	static const char* columnar_protocol = "columnar_protocol ";
+	static const char columnar_protocol[] = "columnar_protocol ";
 	if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
 		v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
 

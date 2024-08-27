@@ -176,22 +176,6 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			return -1;
 		}
 	}
-
-
-	if (elements > mb->vsize) {
-		VarRecord *ovar = mb->var;
-		mb->var = MA_RENEW_ARRAY(mb->ma, VarRecord, mb->var, elements, mb->vsize);
-		if (mb->var) {
-			memset(((char *) mb->var) +sizeof(VarRecord) * mb->vsize, 0,
-				   (elements - mb->vsize) * sizeof(VarRecord));
-			mb->vsize = elements;
-		} else {
-			mb->var = ovar;
-			mb->errors = createMalException(mb, 0, TYPE,
-											SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
-		}
-	}
 	return 0;
 }
 
@@ -1148,13 +1132,11 @@ void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
-	int extra;
 	InstrPtr q;
 	if (p == NULL)
 		return;
-	extra = mb->vsize - mb->vtop;	/* the extra variables already known */
 	if (mb->stop + 1 >= mb->ssize) {
-		int s = ((mb->ssize + extra) / MALCHUNK + 1) * MALCHUNK;
+		int s = (mb->ssize / MALCHUNK + 1) * MALCHUNK;
 		if (resizeMalBlk(mb, s) < 0) {
 			/* we are now left with the situation that the new
 			 * instruction is dangling.  The hack is to take an
