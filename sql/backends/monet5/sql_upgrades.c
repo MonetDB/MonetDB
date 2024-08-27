@@ -240,7 +240,9 @@ sql_update_hugeint(Client c, mvc *sql)
 			"external name generator.series;\n"
 			"create function sys.generate_series(first hugeint, \"limit\" hugeint, stepsize hugeint)\n"
 			"returns table (value hugeint)\n"
-			"external name generator.series;\n");
+			"external name generator.series;\n"
+			"grant execute on function sys.generate_series(hugeint, hugeint) to public;\n"
+			"grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;\n");
 
 	/* 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -297,7 +299,19 @@ sql_update_hugeint(Client c, mvc *sql)
 			"GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
 			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"corr\";\n"
-			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n");
+			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
+			"create aggregate median(val DECIMAL(38)) returns DECIMAL(38)\n"
+			" external name \"aggr\".\"median\";\n"
+			"GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;\n"
+			"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE\n"
+			" external name \"aggr\".\"median_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;\n"
+			"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)\n"
+			" external name \"aggr\".\"quantile\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
+			"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE\n"
+			" external name \"aggr\".\"quantile_avg\";\n"
+			"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;\n");
 
 	/* 40_json_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -306,9 +320,9 @@ sql_update_hugeint(Client c, mvc *sql)
 			"GRANT EXECUTE ON FUNCTION json.filter(json, hugeint) TO PUBLIC;\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
-			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = 2000 and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'median', 'median_avg', 'quantile', 'quantile_avg', 'corr') and schema_id = 2000 and type = %d;\n"
+			"update sys.functions set system = true where system <> true and name in ('stddev_samp', 'stddev_pop', 'var_samp', 'covar_samp', 'var_pop', 'covar_pop', 'corr') and schema_id = 2000 and type = %d;\n"
 			"update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = %d;\n",
 			(int) F_UNION, (int) F_AGGR, (int) F_ANALYTIC, (int) F_FUNC);
 
@@ -4892,11 +4906,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				"create aggregate median(val DECIMAL(18)) returns DECIMAL(18)\n"
 				" external name \"aggr\".\"median\";\n"
 				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(18)) TO PUBLIC;\n"
-#ifdef HAVE_HGE
-				"create aggregate median(val DECIMAL(38)) returns DECIMAL(38)\n"
-				" external name \"aggr\".\"median\";\n"
-				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;\n"
-#endif
 				"create aggregate median_avg(val DECIMAL(2)) returns DOUBLE\n"
 				" external name \"aggr\".\"median_avg\";\n"
 				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(2)) TO PUBLIC;\n"
@@ -4909,11 +4918,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				"create aggregate median_avg(val DECIMAL(18)) returns DOUBLE\n"
 				" external name \"aggr\".\"median_avg\";\n"
 				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(18)) TO PUBLIC;\n"
-#ifdef HAVE_HGE
-				"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE\n"
-				" external name \"aggr\".\"median_avg\";\n"
-				"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;\n"
-#endif
 				"create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2)\n"
 				" external name \"aggr\".\"quantile\";\n"
 				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(2), DOUBLE) TO PUBLIC;\n"
@@ -4926,11 +4930,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				"create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18)\n"
 				" external name \"aggr\".\"quantile\";\n"
 				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(18), DOUBLE) TO PUBLIC;\n"
-#ifdef HAVE_HGE
-				"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)\n"
-				" external name \"aggr\".\"quantile\";\n"
-				"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
-#endif
 				"create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE\n"
 				" external name \"aggr\".\"quantile_avg\";\n"
 				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(2), DOUBLE) TO PUBLIC;\n"
@@ -4943,11 +4942,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				"create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE\n"
 				" external name \"aggr\".\"quantile_avg\";\n"
 				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(18), DOUBLE) TO PUBLIC;\n"
-#ifdef HAVE_HGE
-				"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE\n"
-				" external name \"aggr\".\"quantile_avg\";\n"
-				"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
-#endif
 				"drop function if exists sys.time_to_str(time with time zone, string) cascade;\n"
 				"drop function if exists sys.timestamp_to_str(timestamp with time zone, string) cascade;\n"
 				"create function time_to_str(d time, format string) returns string\n"
@@ -5266,6 +5260,35 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 			printf("Running database upgrade commands:\n%s\n", query1);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query1, "update", true, false, NULL);
+#ifdef HAVE_HGE
+			if (err == MAL_SUCCEED) {
+				sql_subtype tp;
+				sql_find_subtype(&tp, "decimal", 38, 0);
+				if (!sql_bind_func(sql, s->base.name, "median", &tp, NULL, F_AGGR, true, true)) {
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+					const char query0[] =
+						"create aggregate median(val DECIMAL(38)) returns DECIMAL(38)\n"
+						" external name \"aggr\".\"median\";\n"
+						"GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;\n"
+						"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE\n"
+						" external name \"aggr\".\"median_avg\";\n"
+						"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;\n"
+						"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)\n"
+						" external name \"aggr\".\"quantile\";\n"
+						"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
+						"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE\n"
+						" external name \"aggr\".\"quantile_avg\";\n"
+						"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
+						"grant execute on function sys.generate_series(hugeint, hugeint) to public;\n"
+						"grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;\n"
+						"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('median', 'median_avg', 'quantile', 'quantile_avg');\n";
+					printf("Running database upgrade commands:\n%s\n", query0);
+					fflush(stdout);
+					err = SQLstatementIntern(c, query0, "update", true, false, NULL);
+				}
+			}
+#endif
 			if (err == MAL_SUCCEED) {
 				sql_subtype tp;
 				sql_find_subtype(&tp, "smallint", 0, 0);
@@ -5279,7 +5302,7 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 						"create function sys.generate_series(first smallint, \"limit\" smallint, stepsize smallint)\n"
 						"returns table (value smallint)\n"
 						"external name generator.series;\n"
-						"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys');\n";
+						"update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = 2000;\n";
 					printf("Running database upgrade commands:\n%s\n", query);
 					fflush(stdout);
 					err = SQLstatementIntern(c, query, "update", true, false, NULL);
@@ -5308,10 +5331,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 					"grant execute on function sys.generate_series(date, date, interval day) to public;\n"
 					"grant execute on function sys.generate_series(timestamp, timestamp, interval second) to public;\n"
 					"grant execute on function sys.generate_series(timestamp, timestamp, interval day) to public;\n"
-#ifdef HAVE_HGE
-					"grant execute on function sys.generate_series(hugeint, hugeint) to public;\n"
-					"grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;\n"
-#endif
 					"update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;\n";
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';

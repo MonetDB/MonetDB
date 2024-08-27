@@ -29,9 +29,6 @@ GRANT EXECUTE ON AGGREGATE median(DECIMAL(9)) TO PUBLIC;
 create aggregate median(val DECIMAL(18)) returns DECIMAL(18)
  external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(18)) TO PUBLIC;
-create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
- external name "aggr"."median";
-GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
 create aggregate median_avg(val DECIMAL(2)) returns DOUBLE
  external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(2)) TO PUBLIC;
@@ -44,9 +41,6 @@ GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(9)) TO PUBLIC;
 create aggregate median_avg(val DECIMAL(18)) returns DOUBLE
  external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(18)) TO PUBLIC;
-create aggregate median_avg(val DECIMAL(38)) returns DOUBLE
- external name "aggr"."median_avg";
-GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;
 create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2)
  external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(2), DOUBLE) TO PUBLIC;
@@ -59,9 +53,6 @@ GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(9), DOUBLE) TO PUBLIC;
 create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18)
  external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(18), DOUBLE) TO PUBLIC;
-create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)
- external name "aggr"."quantile";
-GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;
 create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE
  external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(2), DOUBLE) TO PUBLIC;
@@ -74,9 +65,6 @@ GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(9), DOUBLE) TO PUBLIC;
 create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE
  external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(18), DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE
- external name "aggr"."quantile_avg";
-GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;
 drop function if exists sys.time_to_str(time with time zone, string) cascade;
 drop function if exists sys.timestamp_to_str(timestamp with time zone, string) cascade;
 create function time_to_str(d time, format string) returns string
@@ -376,13 +364,30 @@ update sys.functions set system = true where not system and schema_id = 2000 and
 update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_tables', 'dump_functions', 'dump_function_grants', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions', 'describe_tables');
 
 Running database upgrade commands:
+create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
+ external name "aggr"."median";
+GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
+create aggregate median_avg(val DECIMAL(38)) returns DOUBLE
+ external name "aggr"."median_avg";
+GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;
+create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)
+ external name "aggr"."quantile";
+GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;
+create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE
+ external name "aggr"."quantile_avg";
+GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;
+grant execute on function sys.generate_series(hugeint, hugeint) to public;
+grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('median', 'median_avg', 'quantile', 'quantile_avg');
+
+Running database upgrade commands:
 create function sys.generate_series(first smallint, "limit" smallint)
 returns table (value smallint)
 external name generator.series;
 create function sys.generate_series(first smallint, "limit" smallint, stepsize smallint)
 returns table (value smallint)
 external name generator.series;
-update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set system = true where system <> true and name in ('generate_series') and schema_id = 2000;
 
 Running database upgrade commands:
 create function sys.generate_series(first date, "limit" date, stepsize interval month)
@@ -406,8 +411,6 @@ grant execute on function sys.generate_series(date, date, interval month) to pub
 grant execute on function sys.generate_series(date, date, interval day) to public;
 grant execute on function sys.generate_series(timestamp, timestamp, interval second) to public;
 grant execute on function sys.generate_series(timestamp, timestamp, interval day) to public;
-grant execute on function sys.generate_series(hugeint, hugeint) to public;
-grant execute on function sys.generate_series(hugeint, hugeint, hugeint) to public;
 update sys.functions set system = true where system <> true and name = 'generate_series' and schema_id = 2000;
 
 Running database upgrade commands:
