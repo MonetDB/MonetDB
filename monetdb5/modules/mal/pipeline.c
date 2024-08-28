@@ -272,6 +272,120 @@ bailout:
 	return msg;
 }
 
+typedef struct pp_resultset_t {
+	Sink s;
+	ATOMIC_TYPE claimed;
+	/* todo per result column a lock */
+
+	MT_Lock l;
+} pp_resultset;
+
+static str
+PPresultset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	bat *rb = getArgReference_bat(stk, pci, 0);
+	pp_resultset *prs = (pp_resultset*)GDKzalloc(sizeof(pp_resultset));
+
+	if (!prs)
+		throw(SQL, "pipeline.resultset",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	BAT *b = COLnew(0, TYPE_bte, 0, TRANSIENT);
+	if (!b) {
+		GDKfree(prs);
+		throw(SQL, "pipeline.resultset",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	b->T.sink = (Sink*)prs;
+	prs->s.destroy = (sink_destroy)&GDKfree;
+	MT_lock_init(&prs->l, "resultset");
+	*rb = b->batCacheid;
+	BBPkeepref(b);
+	return MAL_SUCCEED;
+}
+
+static str
+PPclaim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt; (void)mb;
+	lng *res = getArgReference_lng(stk, pci, 0);
+	bat rb = *getArgReference_bat(stk, pci, 1);
+	lng cnt = *getArgReference_lng(stk, pci, 2);
+
+	BAT *b = BATdescriptor(rb);
+	if (b) {
+		pp_resultset *rs = (pp_resultset*)b->T.sink;
+		*res = ATOMIC_ADD(&rs->claimed, cnt);
+		BBPreclaim(b);
+	}
+	return MAL_SUCCEED;
+}
+
+static void
+sleep_ns( int ns)
+{
+#ifdef HAVE_NANOSLEEP
+        struct timespec ts;
+
+        ts.tv_sec = (time_t) 0;
+        ts.tv_nsec = ns;
+        while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+                ;
+#else
+        struct timeval tv;
+
+        tv.tv_sec = 0;
+        tv.tv_usec = ((ns+999)/1000);
+        (void) select(0, NULL, NULL, NULL, &tv);
+#endif
+}
+
+static str
+PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt; (void)mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat rb = *getArgReference_bat(stk, pci, 1);
+	lng offset = *getArgReference_lng(stk, pci, 2);
+	bat ib = *getArgReference_bat(stk, pci, 3);
+	bit force = *getArgReference_bit(stk, pci, 4);
+	bat rs = *getArgReference_bat(stk, pci, 5);
+
+	BAT *b = BATdescriptor(rb);
+	BAT *i = BATdescriptor(ib);
+	BAT *r = BATdescriptor(rs);
+
+	if (!b || !i || !rs) {
+		BBPreclaim(b);
+		BBPreclaim(i);
+		BBPreclaim(r);
+		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	pp_resultset *pp_rs = (pp_resultset*)r->T.sink;
+	(void)pp_rs;
+
+	if (BATcount(i)) {
+		while(BATcount(b) != (BUN)offset) {
+			/* TODO if error or other issue return */
+			sleep_ns(10);
+		}
+		//MT_lock_set(&pp_rs->l);
+		if (BATappend(b, i, NULL, /*offset,*/ force) != GDK_SUCCEED) {
+		//	MT_lock_unset(&pp_rs->l);
+			BBPreclaim(b);
+			BBPreclaim(i);
+			BBPreclaim(r);
+			throw(MAL, "bat.append", SQLSTATE(HY002) "failed to append");
+		}
+		//MT_lock_unset(&pp_rs->l);
+	}
+	*res = b->batCacheid;
+	BBPkeepref(b);
+	BBPreclaim(i);
+	BBPreclaim(r);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pipeline_init_funcs[] = {
  pattern("pipeline", "counter", PPcounter, true, "return next atomic number [0..n>", args(1,2,
@@ -282,6 +396,22 @@ static mel_func pipeline_init_funcs[] = {
 	 arg("", int),
 	 batargany("b", 1),
 	 arg("pipeline", ptr)
+ )),
+ pattern("pipeline", "resultset", PPresultset, false, "return sink for synchronizing appends into resultset", args(1,1,
+	 batarg("sink", bte)
+ )),
+ pattern("pipeline", "claim", PPclaim, false, "Claim next set of rows", args(1,3,
+	 arg("", lng),
+	 batarg("sink", bte),
+	 arg("cnt", lng)
+ )),
+ pattern("bat", "append", PPappend, false, "Append bat at offset", args(1,6,
+	 batargany("res", 1),
+	 batargany("b", 1),
+	 arg("offset", lng),
+	 batargany("input", 1),
+	 arg("force", bit),
+	 batarg("sink", bte)
  )),
  pattern("pipeline", "channel", PPchannel, true, "create a new channel", args(2,3,
 	 argany("mailbox", 1), arg("channel", int),

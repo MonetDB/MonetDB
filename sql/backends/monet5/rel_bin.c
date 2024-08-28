@@ -8249,12 +8249,30 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			append(shared, q);
 		}
 	}
+
+	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+	pushInstruction(be->mb, q);
+	int prs = getDestVar(q);
+
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
 	stmt *pp = get_pipeline(be);
+	int pipeline = be->pipeline;
+	be->pipeline = 0;
 	if (pp && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
 		/* append results (later first claim position, then append)*/
 		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
+
+		sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+		stmt *i = sub->h->data;
+		stmt *nrrows = stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
+
+		/* count of bat */
+		InstrPtr q = newStmt(be->mb, "pipeline", "claim");
+		q = pushArgument(be->mb, q, prs);
+		q = pushArgument(be->mb, q, nrrows->nr);
+		pushInstruction(be->mb, q);
+		int claimed = getDestVar(q);
 
 		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
 			InstrPtr r = n->data;
@@ -8262,12 +8280,15 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			sql_exp *e = o->data;
 			sql_subtype *tpe = exp_subtype(e);
 
+			/* use claimed offset */
 			InstrPtr q = newStmt(be->mb, batRef, appendRef);
 			if (q == NULL)
 				return NULL;
 			q = pushArgument(be->mb, q, r->argv[0]);
+			q = pushArgument(be->mb, q, claimed);
 			q = pushArgument(be->mb, q, i->nr);
 			q = pushBit(be->mb, q, TRUE);
+			q = pushArgument(be->mb, q, prs);
 			q->argv[0] = r->argv[0];
 			pushInstruction(be->mb, q);
 
@@ -8281,6 +8302,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 		}
 		s = stmt_list(be, res);
 	}
+	be->pipeline = pipeline;
 	/* end pp */
 	if (pp) {
 		(void)stmt_pp_jump(be, pp, be->nrparts);
