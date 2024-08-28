@@ -615,6 +615,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			if (!li) {					\
 				/* open range on left */		\
 				if (vl == MAXVALUE##TYPE) {		\
+					*algo = "select: empty range";	\
 					return 0;			\
 				}					\
 				/* vl < x === vl+1 <= x */		\
@@ -632,6 +633,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			if (!hi) {					\
 				/* open range on right */		\
 				if (vh == MINVALUE##TYPE) {		\
+					*algo = "select: empty range";	\
 					return 0;			\
 				}					\
 				/* x < vh === x <= vh-1 */		\
@@ -645,6 +647,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			hval = true;					\
 		}							\
 		if (vl > vh) {						\
+			*algo = "select: empty range";	\
 			return 0;					\
 		}							\
 	}								\
@@ -889,6 +892,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		return 0;
 	}
 	if (pos == (var_t) -1) {
+		*algo = NULL;
 		BBPreclaim(bn);
 		return BUN_NONE;
 	}
