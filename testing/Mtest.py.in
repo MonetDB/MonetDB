@@ -3299,7 +3299,7 @@ def StartTlsTester():
         # Start a dummy server that only returns errors.
         return DummyTlsTester()
     from MonetDBtesting import tlstester
-    hostnames = ['localhost', '127.0.0.1']  # make certificates also valid for 127.0.0.1
+    hostnames = ['localhost']
     certs = tlstester.Certs(hostnames)
     server = tlstester.TLSTester(
         certs = certs,
