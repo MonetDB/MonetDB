@@ -34,13 +34,13 @@ assert os.path.isdir(tgtdir)
 scratchdir = os.path.join(tgtdir, "scratch")
 logging.debug(f"scratchdir={scratchdir}")
 
-tlstester = TLSTesterClient(scratchdir)
+tlstester = TLSTesterClient(scratchdir, host='127.0.0.1')
 
 
 def certpath(name):
     return tlstester.download(name)
 
-def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, host='localhost', **params):
+def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True, host='127.0.0.1', **params):
     port = tlstester.get_port(portname)
     scheme = 'monetdbs' if tls else 'monetdb'
     url = f"{scheme}://{host}:{port}/demo"
