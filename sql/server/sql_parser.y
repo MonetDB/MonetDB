@@ -2238,8 +2238,7 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- |  CHECK '(' search_condition ')' 
-			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK check_search_condition { $$ = $2; }
  ;
 
 ident_commalist:
