@@ -2276,12 +2276,12 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	char *group_input;
 	str msg = MAL_SUCCEED;
 
+	ma_open(cntxt->ta);
+
 	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0)
 		goto cleanup2;
 	old = mb->stmt;
 	oldtop = mb->stop;
-
-	ma_open(cntxt->ta);
 
 	vars = (int *) ma_alloc(cntxt->ta, sizeof(int) * mb->vtop);
 	//maxvars = mb->vtop;
