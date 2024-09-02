@@ -61,6 +61,18 @@ if(WITH_LZ4)
   find_package(LZ4 1.8.0)
 endif()
 
+if(WITH_SNAPPY)
+  find_package(Snappy)
+endif()
+
+if(WITH_ZSTD)
+  find_package(ZSTD)
+endif()
+
+if(WITH_BROTLI)
+  find_package(BROTLI)
+endif()
+
 if(WITH_PROJ)
   find_package(Proj 6.0)
 endif()

@@ -125,6 +125,18 @@ option(WITH_LZ4
   "Include lz4 support"
   ON)
 
+option(WITH_ZSTD
+  "Include zstd support"
+  ON)
+
+option(WITH_SNAPPY
+  "Include snappy support"
+  ON)
+
+option(WITH_BROTLI
+  "Include brotli support"
+  ON)
+
 option(WITH_PROJ
   "Include proj support"
   ON)
