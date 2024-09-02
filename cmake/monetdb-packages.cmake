@@ -20,16 +20,4 @@ list (APPEND CPACK_SOURCE_IGNORE_FILES "\\\\.hg")
 list (APPEND CPACK_SOURCE_IGNORE_FILES "/test/")
 list (APPEND CPACK_SOURCE_IGNORE_FILES "benchmarks")
 
-include(monetdb-deb-packages)
-include(monetdb-rpm-packages)
-include(monetdb-wix-packages)
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  get_os_release_info(LINUX_DISTRO LINUX_DISTRO_VERSION)
-
-  if ("${LINUX_DISTRO}" STREQUAL "debian")
-    monetdb_debian_extra_files()
-  endif()
-endif()
-
 include(CPack)

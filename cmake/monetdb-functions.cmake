@@ -109,10 +109,6 @@ function(monetdb_cmake_summary)
   message(STATUS "OpenSSL: ${OPENSSL_FOUND}")
   message(STATUS "ODBC: ${ODBC_FOUND}")
   message(STATUS "Sphinx: ${SPHINX_FOUND}")
-  message(STATUS "Createrepo: ${CREATEREPO_FOUND}")
-  message(STATUS "Rpmbuild: ${RPMBUILD_FOUND}")
-  message(STATUS "Dpkg-buildpackage: ${DPKGBUILDPACKAGE_FOUND}")
-  message(STATUS "Reprepro: ${REPREPRO_FOUND}")
   message(STATUS "Semodule: ${SEMODULE_FOUND}")
   message(STATUS "Awk: ${AWK_FOUND}")
   message(STATUS "flags: ${CMAKE_C_FLAGS}")
@@ -198,106 +194,6 @@ function(assert_package_detected)
   monetdb_config_header)
   add_test("testDetect${assert_package_variablename}Detect"
     "test_${assert_package_variablename}_detect_var")
-endfunction()
-
-function(monetdb_debian_extra_files)
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client-dev
-    COMPONENT clientdev)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client${MAPI_VERSION_MAJOR}
-    COMPONENT client)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-client-odbc
-    COMPONENT odbc)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-dev
-    COMPONENT monetdb-dev)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream-dev
-    COMPONENT streamdev)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-stream${STREAM_VERSION_MAJOR}
-    COMPONENT stream)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb${GDK_VERSION_MAJOR}
-    COMPONENT monetdb)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/libmonetdb-dev
-    COMPONENT monetdbdev)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-client-testing
-    COMPONENT clienttest)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-testing-python
-    COMPONENT pytesting)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-testing
-    COMPONENT testing)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb-server-dev
-    COMPONENT serverdev)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-sql
-    COMPONENT sql)
-
-  install(FILES
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/changelog
-    ${CMAKE_SOURCE_DIR}/misc/packages/deb/copyright
-    DESTINATION
-    ${CMAKE_INSTALL_DATAROOTDIR}/doc/monetdb5-server
-    COMPONENT server)
 endfunction()
 
 function(find_selinux_types)
