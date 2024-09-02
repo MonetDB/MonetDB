@@ -1,0 +1,5 @@
+statement ok
+CREATE TABLE  t1(c0 BOOLEAN, c2 VARCHAR(500))
+
+statement ok
+SELECT t1.c2, t1.c0 FROM t1  ORDER BY ((IFNULL('', t1.c0) IS NOT DISTINCT FROM LEFT('1', t1.c0)) LIKE ('1e500' >> 2)) ASC

@@ -14,6 +14,6 @@ project (
 | | project (
 | | | table("sys"."integers") [ "integers"."i" ]
 | | ) [ "integers"."i" as "%1"."%1" ]
-| ) [ ("i1"."i") + = ("%1"."%1") ] [ boolean(1) "true" as "%4"."%4" ]
+| ) [ ("i1"."i") + = ("%1"."%1"), ("i1"."i") = ("%1"."%1") ] [ boolean(1) "true" as "%4"."%4" ]
 ) [ "i1"."i", "sys"."or"("%4"."%4", "sys"."isnull"("i1"."i") NOT NULL) ]
 

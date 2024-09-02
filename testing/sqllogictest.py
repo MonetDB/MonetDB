@@ -769,6 +769,7 @@ class SQLLogic:
             if line == '\n':
                 self.writeline()
                 continue
+            self.qline = self.line
             conn = None
             # look for connection string
             if line.startswith('@connection'):

@@ -815,7 +815,6 @@ developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
-%{_bindir}/Mconvert.py
 %{_bindir}/Mtest.py
 %{_bindir}/Mz.py
 %{_bindir}/mktest.py
