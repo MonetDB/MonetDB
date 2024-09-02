@@ -412,7 +412,9 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel *rel = rel_basetable(sql, t, t->base.name);
-	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery, ek);
+	e->comment = sa_strdup(sql->sa, s->data.lval->h->next->data.sval);
+
 	if (!e || !rel || !is_basetable(rel->op))
 		return NULL;
 	rel->exps = rel_base_projection(sql, rel, 0);
