@@ -1,6 +1,4 @@
-//#include <hdb_config.h>
 #include <monetdb_config.h>
-//#include <gdk.h>
 #include "pqc_thrift.h"
 #include "pqc_filemetadata.h"
 #include "pqc_reader.h"
@@ -14,18 +12,12 @@
 #include <gdk_time.h>
 #include <sql_mem.h>
 
-//#include <utils/mem.h>
-//#include <utils/str.h>
-//#include <utils/file.h>
-//#include <utils/sink.h>
-//#include <utils/resource.h>
-//#include <vector.h>
-//#ifdef HAVE_SNAPPY
+#ifdef HAVE_SNAPPY
 #include <snappy-c.h>
-//#endif
-//#ifdef HAVE_ZSTD
+#endif
+#ifdef HAVE_ZSTD
 #include <zstd.h>
-//#endif
+#endif
 #ifdef HAVE_LIBLZ4
 #include <lz4.h>
 #endif
@@ -60,9 +52,9 @@ gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 }
 #endif
 
-//#ifdef HAVE_BROTLI
+#ifdef HAVE_BROTLI
 #include <brotli/decode.h>
-//#endif
+#endif
 
 typedef unsigned char uchar;
 typedef unsigned short usht;
@@ -506,43 +498,72 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->data_allocated = true;
 			size_t ul = uncompressed_size;
 			if (pr->cc->codec == CC_SNAPPY) {
+#ifdef HAVE_SNAPPY
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (snappy_uncompress(pr->buffer+pos + v2, compressed_size - v2, pr->data, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "Snappy compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_GZIP) {
+#ifdef HAVE_LIBZ
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (gzip_uncompress(pr->data, ul, pr->buffer+pos + v2, compressed_size - v2))
 					return -10;
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "gzip compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_ZSTD) {
+#ifdef HAVE_ZSTD
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (ZSTD_decompress(pr->data, ul, pr->buffer+pos + v2, compressed_size - v2) != ul)
 					return -10;
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "zstd compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
+#ifdef HAVE_LIBLZ4
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				int iul = (int)ul;
 				if (LZ4_decompress_safe(pr->buffer+pos + v2, pr->data, compressed_size - v2, iul) != iul)
 					return -10;
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "lz4 compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_BROTLI) {
+#ifdef HAVE_BROTLI
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (BrotliDecoderDecompress(compressed_size - v2, (u_int8_t*)pr->buffer+pos + v2, &ul, (u_int8_t*)pr->data) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
-			} else
-				assert(0);
+#else
+				TRC_INFO(PARQUET, "brotli compression support is not available\n");
+				return -1;
+#endif
+			} else if (pr->cc->codec == CC_LZO) {
+				TRC_INFO(PARQUET, "lzo compression support is not supported\n");
+				return -1;
+			} else if (pr->cc->codec == CC_LZ4) {
+				TRC_INFO(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				return -1;
+			}
 		} else {
 			pr->data_allocated = false;
 			pr->data = pr->buffer+pos;
-		//	pr->datasize = pr->bufsize-pos;
 			pr->datasize = uncompressed_size;
 			pos += uncompressed_size;
 		}
@@ -558,39 +579,69 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->dictsize = uncompressed_size;
 			size_t ul = uncompressed_size;
 			if (pr->cc->codec == CC_SNAPPY) {
+#ifdef HAVE_SNAPPY
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (snappy_uncompress(pr->buffer+pos + v2, compressed_size - v2, pr->dict, &ul) != SNAPPY_OK)
 					return -10;
 				assert(uncompressed_size == ul);
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "Snappy compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_GZIP) {
+#ifdef HAVE_LIBZ
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (gzip_uncompress(pr->dict, ul, pr->buffer+pos + v2, compressed_size - v2))
 					return -10;
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "gzip compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_ZSTD) {
+#ifdef HAVE_ZSTD
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (ZSTD_decompress(pr->dict, ul, pr->buffer+pos + v2, compressed_size - v2) != ul)
 					return -10;
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "zstd compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_LZ4_RAW) {
+#ifdef HAVE_LIBLZ4
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				int iul = (int)ul;
 				if (LZ4_decompress_safe(pr->buffer+pos + v2, pr->dict, compressed_size - v2, iul) != iul)
 					return -10;
 				pos += compressed_size;
+#else
+				TRC_INFO(PARQUET, "lz4 compression support is not available\n");
+				return -1;
+#endif
 			} else if (pr->cc->codec == CC_BROTLI) {
+#ifdef HAVE_BROTLI
 				/* for v2 add definition and repetition lengths */
 				int v2 = pr->cc->definition_levels_byte_length + pr->cc->repetition_levels_byte_length;
 				if (BrotliDecoderDecompress(compressed_size - v2, (u_int8_t*)pr->buffer+pos + v2, &ul, (u_int8_t*)pr->dict) != BROTLI_DECODER_RESULT_SUCCESS)
 					return -10;
 				pos += compressed_size;
-			} else
-				assert(0);
+#else
+				TRC_INFO(PARQUET, "brotli compression support is not available\n");
+				return -1;
+#endif
+			} else if (pr->cc->codec == CC_LZO) {
+				TRC_INFO(PARQUET, "lzo compression support is not supported\n");
+				return -1;
+			} else if (pr->cc->codec == CC_LZ4) {
+				TRC_INFO(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				return -1;
+			}
 		} else {
 			pr->dict_allocated = false;
 			pr->dict = pr->buffer+pos;
