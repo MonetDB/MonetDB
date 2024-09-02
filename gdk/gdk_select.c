@@ -648,7 +648,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			hval = true;					\
 		}							\
 		if (vl > vh) {						\
-			*algo = "select: empty range";	\
+			*algo = "select: empty range";			\
 			return 0;					\
 		}							\
 	}								\
