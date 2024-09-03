@@ -459,7 +459,7 @@ stmt_oahash_build_table(backend *be, stmt *ht_sink, stmt *key, stmt *pp)
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_table"), 4);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), key->nrcols==0?TYPE_oid:newBatType(TYPE_oid)); /* slot_id */
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht_sink->nr);
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -474,7 +474,7 @@ stmt_oahash_build_combined_table(backend *be, stmt *ht_sink, stmt *key, int prnt
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_combined_table"), 6);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), key->nrcols==0?TYPE_oid:newBatType(TYPE_oid)); /* slot_id */
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht_sink->nr);
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, prnt_slts);
@@ -530,7 +530,7 @@ stmt_oahash_hash(backend *be, stmt *key, stmt *pp)
 	if (q == NULL)
 		return NULL;
 
-	setVarType(be->mb, getArg(q, 0), key->nrcols?newBatType(TYPE_lng):TYPE_lng); /* hsh */
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng)); /* hsh */
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
@@ -543,13 +543,8 @@ stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, stmt *pp)
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("probe"), 6);
 	if (q == NULL)
 		return NULL;
-	if (key->nrcols == 0) {
-		setVarType(be->mb, getArg(q, 0), TYPE_oid); /* LHS_matched */
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_oid)); /* RHS_slotid */
-	} else {
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	}
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, hsh);
 	q = pushArgument(be->mb, q, rhs_ht);
@@ -564,7 +559,7 @@ stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt 
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_hash"), 5);
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), key->nrcols?newBatType(TYPE_lng):TYPE_lng); /* hsh */
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_lng)); /* hsh */
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, prnt_sltid);
@@ -579,13 +574,8 @@ stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht,
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_probe"), 7);
 	if (q == NULL)
 		return NULL;
-	if (key->nrcols == 0) {
-		setVarType(be->mb, getArg(q, 0), TYPE_oid); /* LHS_matched */
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_oid)); /* RHS_slotid */
-	} else {
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
-	}
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, hsh);
 	q = pushArgument(be->mb, q, sel);

@@ -190,14 +190,14 @@ oahash_build_ht(backend *be, list *exps, list *stmts_bld_ht, stmt *sub, stmt *pp
 	if (n && inout) {
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_oahash_build_table(be, inout->data, key, pp);
+		InstrPtr q = stmt_oahash_build_table(be, inout->data, column(be,key), pp);
 		if (q == NULL) return NULL;
 		int slt_ids = getDestVar(q);
 		stmt *prev_ht = inout->data;
 		for (n = n->next, inout = inout->next; n && inout; n = n->next, inout = inout->next) {
 			key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			assert(key); /* must find */
-			q = stmt_oahash_build_combined_table(be, inout->data, key, slt_ids, prev_ht, pp);
+			q = stmt_oahash_build_combined_table(be, inout->data, column(be,key), slt_ids, prev_ht, pp);
 			if (q == NULL) return NULL;
 			slt_ids = getDestVar(q);
 			prev_ht = inout->data;
@@ -227,7 +227,7 @@ oahash_build_freq(backend *be, stmt *ht, stmt *slt_ids, int compute_pos, stmt *p
 		getArg(q, 0) = ht->nr;
 		q->inout = 0;
 	} else {
-		setVarType(be->mb, getArg(q, 0), slt_ids->nrcols==0?TYPE_oid:newBatType(TYPE_oid));
+		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 		q = pushReturn(be->mb, q, ht->nr);
 		q->inout = 1;
 	}
@@ -248,7 +248,7 @@ oahash_build_hp(backend *be, InstrPtr stmt_freq, list *exps_prj_hsh, list *stmts
 	for (node *n = exps_prj_hsh->h, *inout = stmts_bld_hp->h; n && inout; n = n->next, inout = inout->next) {
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
-		stmt *hp = stmt_oahash_add_payload(be, inout->data, payload, payload_pos, pp);
+		stmt *hp = stmt_oahash_add_payload(be, inout->data, column(be,payload), payload_pos, pp);
 		if (hp == NULL) return err;
 	}
 
@@ -268,6 +268,7 @@ oahash_probe(backend *be, stmt **prb_col, list *exps_cmp_prb, list *stmts_bld_ht
 	for (node *n = exps_cmp_prb->h, *m = stmts_bld_ht->h; n && m; n = n->next, m = m->next) {
 		key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
+		key = column(be, key);
 		int rht = ((stmt *)m->data)->nr;
 		InstrPtr q = NULL;
 		if (!matched) {
@@ -345,7 +346,7 @@ oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, s
 	for (node *o = exps_prj_prb->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_oahash_expand(be, key, matched, rhs_slts, freq_sink, outer, pp);
+		InstrPtr q = stmt_oahash_expand(be, column(be,key), matched, rhs_slts, freq_sink, outer, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = o->data;
@@ -395,7 +396,7 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink
 	for (node *o = exps_prj->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_oahash_project(be, key, selected, freq_sink, pp);
+		InstrPtr q = stmt_oahash_project(be, column(be,key), selected, freq_sink, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = o->data;
