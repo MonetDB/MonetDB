@@ -975,6 +975,7 @@ fi
 rm "${RPM_BUILD_ROOT}"%{_bindir}/{M{convert.py,test.py,z.py},bincopydata,example_proxy,m{alsample.pl,client,ktest.py,onetdb{,d},s{erver5,qldump},urltest},s{ample{0,1,4},hutdowntest,mack0{0,1},ql{logictest.py,sample.p{hp,l}},treamcat},testcondvar}
 rm -r "${RPM_BUILD_ROOT}"%{_datadir}/doc/MonetDB*
 rm "${RPM_BUILD_ROOT}"%{_datadir}/selinux/*/monetdb.pp
+rm -r "${RPM_BUILD_ROOT}"%{_datadir}/monetdb
 rm -r "${RPM_BUILD_ROOT}"%{_includedir}/monetdb
 rm "${RPM_BUILD_ROOT}"%{_libdir}/*.so "${RPM_BUILD_ROOT}"%{_libdir}/libmonetdbe.so.*
 rm -r "${RPM_BUILD_ROOT}"%{_libdir}/pkgconfig
