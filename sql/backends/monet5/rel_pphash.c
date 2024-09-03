@@ -183,34 +183,37 @@ oahash_prepare_res(backend *be, list *exps_prj, lng sz)
 
 /* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
  */
-static int
+static stmt *
 oahash_build_ht(backend *be, list *exps, list *stmts_bld_ht, stmt *sub, stmt *pp)
 {
-	int err = 0;
-
 	node *n = exps->h, *inout = stmts_bld_ht->h;
 	if (n && inout) {
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
 		InstrPtr q = stmt_oahash_build_table(be, inout->data, key, pp);
-		if (q == NULL) return err;
+		if (q == NULL) return NULL;
 		int slt_ids = getDestVar(q);
 		stmt *prev_ht = inout->data;
 		for (n = n->next, inout = inout->next; n && inout; n = n->next, inout = inout->next) {
 			key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			assert(key); /* must find */
 			q = stmt_oahash_build_combined_table(be, inout->data, key, slt_ids, prev_ht, pp);
-			if (q == NULL) return err;
+			if (q == NULL) return NULL;
 			slt_ids = getDestVar(q);
 			prev_ht = inout->data;
 		}
-		return slt_ids;
+		/* just a simple wrapper to pass nr and nrcols */
+		stmt *s = stmt_none(be);
+		s->nr = slt_ids;
+		s->nrcols = key->nrcols;
+		s->q = q;
+		return s;
 	}
-	return err;
+	return NULL;
 }
 
 static InstrPtr
-oahash_build_freq(backend *be, stmt *ht, int slt_ids, int compute_pos, stmt *pp)
+oahash_build_freq(backend *be, stmt *ht, stmt *slt_ids, int compute_pos, stmt *pp)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("compute_frequencies"));
 	if (q == NULL)
@@ -224,11 +227,11 @@ oahash_build_freq(backend *be, stmt *ht, int slt_ids, int compute_pos, stmt *pp)
 		getArg(q, 0) = ht->nr;
 		q->inout = 0;
 	} else {
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+		setVarType(be->mb, getArg(q, 0), slt_ids->nrcols==0?TYPE_oid:newBatType(TYPE_oid));
 		q = pushReturn(be->mb, q, ht->nr);
 		q->inout = 1;
 	}
-	q = pushArgument(be->mb, q, slt_ids);
+	q = pushArgument(be->mb, q, slt_ids->nr);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
@@ -548,7 +551,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	/*** HASH PHASE ***/
 	sub = _start_pp(be, rel_hsh, 1, refs);
 	pp = get_pipeline(be);
-	int slt_ids = oahash_build_ht(be, exps_cmp_hsh, stmts_bld_ht, sub, pp);
+	stmt *slt_ids = oahash_build_ht(be, exps_cmp_hsh, stmts_bld_ht, sub, pp);
 	InstrPtr stmt_freq = oahash_build_freq(be, stmts_bld_ht->t->data, slt_ids, exps_prj_hsh->cnt, pp);
 	(void)oahash_build_hp(be, stmt_freq, exps_prj_hsh, stmts_bld_hp, sub, pp);
 	(void)stmt_pp_jump(be, pp, be->nrparts);

@@ -8315,7 +8315,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	if (get_pipeline(be)) {
 		sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: pipelines block not cleaned up");
-		//return NULL;
+		return NULL;
 	}
 
 	if (sqltype == Q_SCHEMA)

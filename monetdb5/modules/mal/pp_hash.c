@@ -338,7 +338,28 @@ error:
 
 /* ***** HASH OPERATORS ***** */
 
-#define aprep_heap(BT, SB, SK, FName) \
+#define aprep_heap(SK, ERR, FName) \
+	do { \
+		pipeline_lock(p); \
+		if (!SK->allocators) { \
+			SK->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*)); \
+			if (!SK->allocators) { \
+				ERR = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			} else { \
+				SK->nr_allocators = p->p->nr_workers; \
+			} \
+		} \
+		pipeline_unlock(p); \
+		assert(p->wid < p->p->nr_workers); \
+		if (SK->allocators && !SK->allocators[p->wid]) { \
+			SK->allocators[p->wid] = ma_create(); \
+			if (!SK->allocators[p->wid]) { \
+				ERR = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			} \
+		} \
+	} while(0)
+
+#define BATaprep_heap(BT, SB, SK, FName) \
 	do { \
 		MT_lock_set(&SB->theaplock); \
 		MT_lock_set(&BT->theaplock); \
@@ -377,7 +398,167 @@ error:
 	} while(0)
 
 #define PRE_CLAIM 256
+
 #define group(Type) \
+	do { \
+		Type ky = *(Type *)key; \
+		Type *vals = h->vals; \
+		\
+		gid k = (gid)_hash_##Type(ky)&h->mask; \
+		gid g = ATOMIC_GET(h->gids+k); \
+		while (g && vals[g] != ky) { \
+			k++; \
+			k &= h->mask; \
+			g = ATOMIC_GET(h->gids+k); \
+		} \
+		\
+		assert(!g); \
+		gid slot = ATOMIC_ADD(&h->last, 1); \
+		g = ++slot; \
+		vals[g] = ky; \
+		if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+			ret = createException(MAL, "oahash.build_table", SQLSTATE(HY002) "unexpected hash"); \
+		} else { \
+			*slot_id = g-1; \
+		} \
+	} while (0)
+
+#define fgroup(Type, BaseType) \
+	do { \
+		Type ky = *(Type *)key; \
+		Type *vals = h->vals; \
+		\
+		gid k = (gid)_hash_##Type(*((BaseType*)key))&h->mask; \
+		gid g = ATOMIC_GET(h->gids+k); \
+		while (g && (!(is_##Type##_nil(ky) && is_##Type##_nil(vals[g])) && vals[g] != ky)) { \
+			k++; \
+			k &= h->mask; \
+			g = ATOMIC_GET(h->gids+k); \
+		} \
+		\
+		assert(!g); \
+		gid slot = ATOMIC_ADD(&h->last, 1); \
+		g = ++slot; \
+		vals[g] = ky; \
+		if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+			ret = createException(MAL, "oahash.build_table", SQLSTATE(HY002) "unexpected hash"); \
+		} else { \
+			*slot_id = g-1; \
+		} \
+	} while (0)
+
+#define agroup_(P) \
+	do { \
+		char *ky = (char *) key; \
+		char **vals = h->vals; \
+		mallocator *ma = h->allocators[P->wid]; \
+		\
+		gid k = (gid)str_hsh(ky)&h->mask; \
+		gid g = ATOMIC_GET(h->gids+k); \
+		while (g && (vals[g] && h->cmp(vals[g], ky) != 0)) { \
+			k++; \
+			k &= h->mask; \
+			g = ATOMIC_GET(h->gids+k); \
+		} \
+		\
+		assert(!g); \
+		gid slot = ATOMIC_ADD(&h->last, 1); \
+		g = ++slot; \
+		vals[g] = (ATOMstorage(tt) == TYPE_str)? \
+					ma_strdup(ma, ky) : ma_copy(ma, ky, h->len(ky)); \
+		if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+			ret = createException(MAL, "oahash.build_table", SQLSTATE(HY002) "unexpected hash"); \
+		} else { \
+			*slot_id = g-1; \
+		} \
+	} while (0)
+
+static str
+OAHASHbuild_tbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+
+	oid *slot_id = getArgReference_oid(stk, pci, 0);
+	bat *ht_sink = getArgReference_bat(stk, pci, 1);
+	ptr key = getArgReference(stk, pci, 2);
+	int tt = getArgType(mb, pci, 2);
+	Pipeline *p = (Pipeline*)getArgReference(stk, pci, 3);
+
+	str ret = NULL;
+
+	/* for now we only work with shared ht_sink in the build phase */
+	assert(*ht_sink && !is_bat_nil(*ht_sink));
+
+	BAT *u = BATdescriptor(*ht_sink);
+	if (!u) {
+		ret = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	hash_table *h = (hash_table*)u->T.sink;
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+
+	*slot_id = oid_nil;
+	ATOMIC_BASE_TYPE expected = 0;
+	switch(tt) {
+		case TYPE_void:
+			group(oid);
+			break;
+		case TYPE_bit:
+			group(bit);
+			break;
+		case TYPE_bte:
+			group(bte);
+			break;
+		case TYPE_sht:
+			group(sht);
+			break;
+		case TYPE_int:
+			group(int);
+			break;
+		case TYPE_date:
+			group(date);
+			break;
+		case TYPE_lng:
+			group(lng);
+			break;
+		case TYPE_oid:
+			group(oid);
+			break;
+		case TYPE_daytime:
+			group(daytime);
+			break;
+		case TYPE_timestamp:
+			group(timestamp);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			group(hge);
+			break;
+#endif
+		case TYPE_flt:
+			fgroup(flt, int);
+			break;
+		case TYPE_dbl:
+			fgroup(dbl, lng);
+			break;
+		default:
+			if (ATOMvarsized(tt)) {
+				aprep_heap(h, ret, "oahash.build_table");
+				agroup_(p);
+			} else {
+				ret = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+			}
+	}
+
+
+	BBPkeepref(u);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(u);
+	return ret;
+}
+
+#define BATgroup(Type) \
 	do { \
 		int slots = 0; \
 		gid slot = 0; \
@@ -415,7 +596,7 @@ error:
 		} \
 	} while (0)
 
-#define vgroup() \
+#define BATvgroup() \
 	do { \
 		assert(BATtdense(b) || \
 				/* A not-dense void BAT must contain only oid_nil.
@@ -491,7 +672,7 @@ error:
 		} \
 	} while (0)
 
-#define fgroup(Type, BaseType) \
+#define BATfgroup(Type, BaseType) \
 	do { \
 		int slots = 0; \
 		gid slot = 0; \
@@ -530,7 +711,7 @@ error:
 		} \
 	} while (0)
 
-#define agroup() \
+#define BATagroup() \
 	do { \
 		int slots = 0; \
 		gid slot = 0; \
@@ -570,7 +751,7 @@ error:
 		bat_iterator_end(&bi); \
 	} while (0)
 
-#define agroup_(P) \
+#define BATagroup_(P) \
 	do { \
 		int slots = 0; \
 		gid slot = 0; \
@@ -645,7 +826,7 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
+BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
@@ -681,53 +862,53 @@ OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 
 		switch(tt) {
 			case TYPE_void:
-				vgroup();
+				BATvgroup();
 				break;
 			case TYPE_bit:
-				group(bit);
+				BATgroup(bit);
 				break;
 			case TYPE_bte:
-				group(bte);
+				BATgroup(bte);
 				break;
 			case TYPE_sht:
-				group(sht);
+				BATgroup(sht);
 				break;
 			case TYPE_int:
-				group(int);
+				BATgroup(int);
 				break;
 			case TYPE_date:
-				group(date);
+				BATgroup(date);
 				break;
 			case TYPE_lng:
-				group(lng);
+				BATgroup(lng);
 				break;
 			case TYPE_oid:
-				group(oid);
+				BATgroup(oid);
 				break;
 			case TYPE_daytime:
-				group(daytime);
+				BATgroup(daytime);
 				break;
 			case TYPE_timestamp:
-				group(timestamp);
+				BATgroup(timestamp);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				group(hge);
+				BATgroup(hge);
 				break;
 #endif
 			case TYPE_flt:
-				fgroup(flt, int);
+				BATfgroup(flt, int);
 				break;
 			case TYPE_dbl:
-				fgroup(dbl, lng);
+				BATfgroup(dbl, lng);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					aprep_heap(b, u, h, "oahash.build_table");
+					BATaprep_heap(b, u, h, "oahash.build_table");
 					if (local_storage) {
-						agroup_(p);
+						BATagroup_(p);
 					} else {
-						agroup();
+						BATagroup();
 					}
 				} else {
 					err = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
@@ -751,7 +932,8 @@ OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	/* pass max id */
 	g->T.maxval = last;
 	g->tkey = FALSE;
-	*ht_sink = u->batCacheid;
+	/* ht_sink is an in&out var, so it should already have the correct bat(Cache)id */
+	//*ht_sink = u->batCacheid;
 	*slot_id = g->batCacheid;
 	BBPkeepref(u);
 	BBPkeepref(g);
@@ -1123,7 +1305,7 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, b
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					aprep_heap(b, u, h, "oahash.build_combined_table");
+					BATaprep_heap(b, u, h, "oahash.build_combined_table");
 					if (local_storage) {
 						aderive_(p);
 					} else {
@@ -1150,7 +1332,8 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, b
 	/* pass max id */
 	g->T.maxval = last;
 	g->tkey = FALSE;
-	*ht_sink = u->batCacheid;
+	/* ht_sink is an in&out var, so it should already have the correct bat(Cache)id */
+	//*ht_sink = u->batCacheid;
 	*slot_id = g->batCacheid;
 	BBPkeepref(u);
 	BBPkeepref(g);
@@ -1419,7 +1602,7 @@ OAHASHadd_pld(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					aprep_heap(pld, res, hp, "oahash.add_payload");
+					BATaprep_heap(pld, res, hp, "oahash.add_payload");
 					if (local_storage) {
 						a_addpld_(p);
 					} else {
@@ -3686,7 +3869,9 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit),batargany("p",2))),
  pattern("oahash", "new_payload", OAHASHnew_pld, false, "", args(1,5, batargany("hp_sink",1),argany("tt",1),arg("nr_payloads",int),batargany("parent",2), batargany("dummy",3))),
 
- command("oahash", "build_table", OAHASHbuild_tbl, false, "Build a hash table for the keys. Returns the slot IDs and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
+ pattern("oahash", "build_table", OAHASHbuild_tbl, false, "Build a hash table for the key. Returns the slot ID and the sink containing the hash table", args(2,4, arg("slot_id",oid),batargany("ht_sink",1),argany("key",1),arg("pipeline",ptr))),
+ command("oahash", "build_table", BAT_OAHASHbuild_tbl, false, "Build a hash table for the keys. Returns the slot IDs and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
+
  command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Build a hash table for the keys in combination with the hash table of its parent column. Returns the slot IDs and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
 
  command("oahash", "compute_frequencies", OAHASHcmpt_freq, false, "Compute the frequencies of the slot IDs and store them in the hash-table", args(1,3, batargany("ht_sink",1),batarg("slot_id",oid),arg("pipeline",ptr))),

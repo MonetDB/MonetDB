@@ -459,7 +459,7 @@ stmt_oahash_build_table(backend *be, stmt *ht_sink, stmt *key, stmt *pp)
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_table"), 4);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
+	setVarType(be->mb, getArg(q, 0), key->nrcols==0?TYPE_oid:newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht_sink->nr);
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
@@ -474,7 +474,7 @@ stmt_oahash_build_combined_table(backend *be, stmt *ht_sink, stmt *key, int prnt
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_combined_table"), 6);
 	if (q == NULL) return NULL;
 
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
+	setVarType(be->mb, getArg(q, 0), key->nrcols==0?TYPE_oid:newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht_sink->nr);
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, prnt_slts);
