@@ -784,16 +784,26 @@ extract_tar_member_filename(const char *block)
 	return buf;
 }
 
-static ssize_t
+static int64_t
 extract_tar_member_size(const char *block)
 {
-	size_t size;
-	char buf[13];
-	memmove(buf, block + 124, 12);
-	buf[12] = '\0';
-	if (sscanf(buf, "%zo", &size) != 1)
-		return -1;
-	return (ssize_t) size;
+	int64_t size;
+	const uint8_t *field = (const uint8_t*)&block[124];
+	if (field[0] >= 0x80) {
+		// binary format
+		size = 0;
+		for (int i = 4; i < 12; i++) {
+			size = (size << 8) + field[i];
+		}
+	} else {
+		// octal format. copy so we can append a trailing \0.
+		char buf[13];
+		memmove(buf, field, 12);
+		buf[12] = '\0';
+		if (sscanf(buf, "%"SCNo64"o", &size) != 1)
+			return -1;
+	}
+	return size;
 }
 
 
@@ -851,7 +861,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 			e = newErr("Could not open %s", destfile);
 			goto bailout;
 		}
-		ssize_t size = extract_tar_member_size(block);
+		int64_t size = extract_tar_member_size(block);
 		while (size > 0) {
 			int read_result = read_tar_block(tarstream, block, &e);
 			if (e != NO_ERR) {
@@ -861,7 +871,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 				e = newErr("unexpected end of tar file");
 				goto bailout;
 			}
-			size_t nwrite = size > TAR_BLOCK_SIZE ? TAR_BLOCK_SIZE : size;
+			size_t nwrite = size > TAR_BLOCK_SIZE ? TAR_BLOCK_SIZE : (size_t)size;
 			size_t written = fwrite(block, 1, nwrite, outfile);
 			if (written < nwrite) {
 				e = newErr("Error writing %s: %s", destfile, strerror(errno));

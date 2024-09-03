@@ -2561,13 +2561,8 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
 	char *cursor = buf;
-	char *chksum;
-
-	if (size > 077777777777) { // 0_777_7777_7777
-		// doesn't fit header field
-		GDKerror("error writing tar file: member %s too large", path);
-		return GDK_FAIL;
-	}
+	char *size_field;
+	char *chksum_field;
 
 	// We set the uid/gid fields to 0 and the uname/gname fields to "".
 	// When unpacking as a normal user, they are ignored and the files are
@@ -2580,9 +2575,10 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U);      // uid[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U);      // gid[8]
-	tar_write_header_field(&cursor, 12, "%011"PRIo64, size);      // size[12]
+	size_field = cursor;
+	cursor += 12;                                      // size[12]
 	tar_write_header_field(&cursor, 12, "%011lo", (unsigned long)mtime); // mtime[12]
-	chksum = cursor; // use this later to set the computed checksum
+	chksum_field = cursor; // use this later to set the computed checksum
 	tar_write_header_field(&cursor, 8, "%8s", ""); // chksum[8]
 	*cursor++ = '0'; // typeflag REGTYPE
 	tar_write_header_field(&cursor, 100, "%s", "");  // linkname[100]
@@ -2593,14 +2589,27 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 	tar_write_header_field(&cursor, 8, "%07o", 0U); // devmajor[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U); // devminor[8]
 	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
-
 	assert(cursor - buf == 500);
 
+	int64_t max_oct_size = 077777777777;    // 0_777_7777_7777, 11 octal digits
+	// max_oct_size = 077; // for testing
+	if (size <= max_oct_size) {
+		tar_write_header_field(&size_field, 12, "%011"PRIo64, size);      // size[12]
+	} else {
+		uint8_t *field = (uint8_t *)size_field;
+		field[0] = 0x80;
+		for (int i = 11; i >= 4; i--) {
+			field[i] = size & 0xFF;
+			size >>= 8;
+		}
+	}
+
+	// checksum
 	unsigned sum = 0;
 	for (int i = 0; i < TAR_BLOCK_SIZE; i++)
 		sum += (unsigned char) buf[i];
 
-	tar_write_header_field(&chksum, 8, "%06o", sum);
+	tar_write_header_field(&chksum_field, 8, "%06o", sum);
 
 	if (mnstr_write(tarfile, buf, TAR_BLOCK_SIZE, 1) != 1) {
 		GDKerror("error writing tar header %s: %s", path, mnstr_peek_error(tarfile));
@@ -2688,7 +2697,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 }
 
 static gdk_return __attribute__((__warn_unused_result__))
-hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
+hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
 	if (plan == NULL)
 		return GDK_FAIL;
@@ -2728,6 +2737,11 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	p += len;
 	src_name = abs_src_path + len - 1; // - 1 because len includes the trailing newline
 	*src_name++ = DIR_SEP;
+
+	// When testing it's sometimes useful to include the plan in the snapshot file
+	// strcpy(dest_name, "_snapshot.plan");
+	// if (tar_write_data(out, dest_path, timestamp, plan, strlen(plan)) != GDK_SUCCEED)
+	// 	goto end;
 
 	char command;
 	int64_t size;
@@ -2772,7 +2786,7 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 		ret = tar_write(out, descr, &a, 1);
 
 end:
-	free(plan);
+	free((char*)plan);
 	GDKfree(buffer);
 	if (infile)
 		close_stream(infile);
