@@ -31,11 +31,11 @@ target_link_libraries(parquet
     monetdb5
     bat
     stream
-	  SNAPPY::SNAPPY
-	  ZLIB::ZLIB
-	  ZSTD::ZSTD
-	  LZ4::LZ4
-	  BROTLI::BROTLI
+    $<$<BOOL:${SNAPPY_FOUND}>:SNAPPY::SNAPPY>
+    $<$<BOOL:${ZLIB_FOUND}>:ZLIB::ZLIB>
+    $<$<BOOL:${ZSTD_FOUND}>:ZSTD::ZSTD>
+    $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
+    $<$<BOOL:${BROTLI_FOUND}>:BROTLI::BROTLI>
   )
 
 set_target_properties(parquet
