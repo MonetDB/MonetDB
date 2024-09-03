@@ -112,6 +112,7 @@ typedef enum {
 	COMP( GEOM )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
+	COMP( PARQUET )				\
 						\
 	COMP( SQL_PARSER )			\
 	COMP( SQL_TRANS )			\

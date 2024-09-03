@@ -1836,7 +1836,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				s = NULL;
 				if (!swapped)
 					s = exp_bin(be, n->data, left, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
-				if (!s && (first || swapped)) {
+				if (!s && right && (first || swapped)) {
 					clean_mal_statements(be, oldstop, oldvtop);
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 					swapped = 1;
@@ -4877,7 +4877,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					m = m->next;
 					sql_subtype *res = sf->res->h->data;
 					int restype = res->type->localtype;
-					if (restype != tail_type(aggrstmt->op1)->type->localtype || restype != TYPE_dbl) {
+					if (rel->r || restype != tail_type(aggrstmt->op1)->type->localtype || restype != TYPE_dbl) {
 						getArg(aggrstmt->q, 2) = *(int*)m->data;
 						m = m->next;
 					}
@@ -8258,12 +8258,30 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			append(shared, q);
 		}
 	}
+
+	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+	pushInstruction(be->mb, q);
+	int prs = getDestVar(q);
+
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
 	stmt *pp = get_pipeline(be);
+	int pipeline = be->pipeline;
+	be->pipeline = 0;
 	if (pp && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
 		/* append results (later first claim position, then append)*/
 		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
+
+		sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+		stmt *i = sub->h->data;
+		stmt *nrrows = stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
+
+		/* count of bat */
+		InstrPtr q = newStmt(be->mb, "pipeline", "claim");
+		q = pushArgument(be->mb, q, prs);
+		q = pushArgument(be->mb, q, nrrows->nr);
+		pushInstruction(be->mb, q);
+		int claimed = getDestVar(q);
 
 		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
 			InstrPtr r = n->data;
@@ -8271,12 +8289,15 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			sql_exp *e = o->data;
 			sql_subtype *tpe = exp_subtype(e);
 
+			/* use claimed offset */
 			InstrPtr q = newStmt(be->mb, batRef, appendRef);
 			if (q == NULL)
 				return NULL;
 			q = pushArgument(be->mb, q, r->argv[0]);
+			q = pushArgument(be->mb, q, claimed);
 			q = pushArgument(be->mb, q, i->nr);
 			q = pushBit(be->mb, q, TRUE);
+			q = pushArgument(be->mb, q, prs);
 			q->argv[0] = r->argv[0];
 			pushInstruction(be->mb, q);
 
@@ -8284,14 +8305,18 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			s->op4.typeval = *tpe;
 			s->nr = r->argv[0];
 			s->q = q;
+			s->nrcols = i->nrcols;
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(res, s);
 		}
 		s = stmt_list(be, res);
 	}
+	be->pipeline = pipeline;
 	/* end pp */
-	if (pp)
+	if (pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
 		stmt_pp_end(be, pp);
+	}
 	return s;
 }
 

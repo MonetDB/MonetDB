@@ -868,35 +868,35 @@ static mel_func copy_init_funcs[] = {
  )),
 #endif
 
- pattern("copy", "scale", COPYscale_bte, true, "scale by a power of 10", args(1, 6,
+ pattern("copy", "scale", COPYscale_bte, false, "scale by a power of 10", args(1, 6,
 	batarg("", bte),
 	batarg("values", bte), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "scale", COPYscale_sht, true, "scale by a power of 10", args(1, 6,
+ pattern("copy", "scale", COPYscale_sht, false, "scale by a power of 10", args(1, 6,
 	batarg("", sht),
 	batarg("values", sht), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "scale", COPYscale_int, true, "scale by a power of 10", args(1, 6,
+ pattern("copy", "scale", COPYscale_int, false, "scale by a power of 10", args(1, 6,
 	batarg("", int),
 	batarg("values", int), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
- pattern("copy", "scale", COPYscale_lng, true, "scale by a power of 10", args(1, 6,
+ pattern("copy", "scale", COPYscale_lng, false, "scale by a power of 10", args(1, 6,
 	batarg("", lng),
 	batarg("values", lng), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
  #ifdef HAVE_HGE
- pattern("copy", "scale", COPYscale_hge, true, "scale by a power of 10", args(1, 6,
+ pattern("copy", "scale", COPYscale_hge, false, "scale by a power of 10", args(1, 6,
 	batarg("", hge),
 	batarg("values", hge), arg("scale", int), batarg("rows", oid), arg("colno", int), arg("colname", str)
  )),
 #endif
 
 
- command("copy", "set_blocksize", COPYset_blocksize, true, "set the COPY block size", args(1, 2,
+ command("copy", "set_blocksize", COPYset_blocksize, false, "set the COPY block size", args(1, 2,
 	arg("", int),
 	arg("blocksize", int)
  )),
- command("copy", "get_blocksize", COPYget_blocksize, true, "get the COPY block size", args(1, 1,
+ command("copy", "get_blocksize", COPYget_blocksize, false, "get the COPY block size", args(1, 1,
 	arg("", int)
  )),
 

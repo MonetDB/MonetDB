@@ -121,11 +121,6 @@ Consider the following single client connection example::
     ----
     6
 
-Alternatively existing ``.sql`` scripts can be converted to sqllogic tests (.test) with ``Mconvert.py``.
-For example::
-
-    $ Mconvert.py  --auto <module>/Tests <convert_me>.sql
-
 All new tests need to be placed in the appropriate test folder and their name respectively in the
 index ``All`` file.
 

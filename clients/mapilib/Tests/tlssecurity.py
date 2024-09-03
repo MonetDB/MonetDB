@@ -17,13 +17,16 @@ import sys
 
 from MonetDBtesting.tlstester import TLSTesterClient
 
-level = logging.WARNING
-# if sys.platform == 'win32':
-#     level=logging.DEBUG
+log_level = logging.WARNING
+log_format = '%(levelname)s:t=%(relativeCreated)d:%(name)s:%(message)s'# if sys.platform == 'win32':
+
+if sys.platform == 'win32':
+    log_level=logging.DEBUG
 if '-v' in sys.argv:
-    level = logging.DEBUG
-#level = logging.DEBUG
-logging.basicConfig(level=level)
+    log_level = logging.DEBUG
+# log_level = logging.DEBUG
+
+logging.basicConfig(level=log_level,format=log_format)
 
 # A tmpdir to write certificates to
 tgtdir = os.environ['TSTTRGDIR']
@@ -46,10 +49,14 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
     logging.debug(f"**** START TEST {experiment}")
     logging.debug(f"Connecting to {url}, expected_error={expected_error_regex}")
-    cmd = ['mclient', '-d', url]
+    test_log_file = os.path.join(scratchdir, portname + '.log')
+    cmd = ['mclient', '-d', url, '-L', test_log_file]
     logging.debug(f"cmd={cmd}")
     proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     logging.debug(f"mclient exited with code {proc.returncode}, err={proc.stderr}")
+    with open(test_log_file, 'r') as f:
+        for line in f:
+            logging.debug(f'mclient log: {line.rstrip()}')
     if proc.returncode != 2:
         msg = str(proc.stderr, 'utf-8')
         print(f"mclient is supposed to exit with status 2, not {proc.returncode}.\n--- stderr ---\n{msg}\n---end stderr ---", file=sys.stderr)
