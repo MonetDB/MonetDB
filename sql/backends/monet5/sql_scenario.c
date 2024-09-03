@@ -754,16 +754,18 @@ SQLinit(Client c, const char *initpasswd)
 			const char *createdb_inline =
 				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
 				//"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
-				/* only system functions until now */
-				"update sys.functions set system = true;\n"
-				/* only system tables until now */
-				"update sys._tables set system = true;\n"
-				/* only system schemas until now */
-				"update sys.schemas set system = true;\n"
+				/* set "system" attribute for all system schemas; be
+				 * explicit about which ones they are (id 2000 is sys,
+				 * 2114 is tmp; these values are immutable) */
+				"update sys.schemas set system = true where id in (2000, 2114) or name in ('json', 'profiler', 'logging', 'information_schema');\n"
 				/* correct invalid FK schema ids, set them to schema id 2000
 				 * (the "sys" schema) */
-				"update sys.types set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n"
-				"update sys.functions set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n";
+				"update sys.types set schema_id = 2000 where schema_id = 0;\n"
+				"update sys.functions set schema_id = 2000 where schema_id = 0;\n"
+				/* set system attribute for all system tables and
+				 * functions (i.e. ones in system schemas) */
+				"update sys.functions set system = true where schema_id in (select id from sys.schemas s where s.system);\n"
+				"update sys._tables set system = true where schema_id in (select id from sys.schemas s where s.system);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
