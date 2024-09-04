@@ -650,7 +650,7 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 	}
 
 	if (batid >= N_BBPINIT * BBPINIT) {
-		TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accomodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, *lineno);
+		TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accommodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, *lineno);
 		return -1;
 	}
 
@@ -2089,7 +2089,7 @@ BBPinit(bool allow_hge_upgrade)
 			 * stored json strings. This will be performed
 			 * by an upgrade function in the GDK that will
 			 * be called at the end of the json module
-			 * initialzation with a callback that actually
+			 * initialization with a callback that actually
 			 * knows how to perform the upgrade. */
 			int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
 			GDKfree(jsonupgradestr);

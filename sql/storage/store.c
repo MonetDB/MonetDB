@@ -3396,7 +3396,7 @@ store_reset_sql_functions(sql_trans *tr, sqlid id)
 		store->table_api.rids_destroy(depends);
 		return res;
 	}
-	/* Get SQL funcions */
+	/* Get SQL functions */
 	sql_table *funcs = find_sql_table(tr, syss, "functions");
 	sql_column *func_id = find_sql_column(funcs, "id");
 	if (!(sql_funcs = store->table_api.rids_select(tr, find_sql_column(funcs, "language"), &sql_lang, &sql_lang, NULL))) {
@@ -3797,7 +3797,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_oldest(store, tr);
-		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
+		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup safely */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 

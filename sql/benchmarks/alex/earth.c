@@ -11,7 +11,7 @@
  */
 
 /**
-    earth : 15 Sattelite photographs of earth
+    earth : 15 Satellite photographs of earth
             8bit unsigned  integer (byte) intensity values
             800 * 800 * 15 pixels
 

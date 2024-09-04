@@ -207,7 +207,7 @@ malIncludeString(Client c, const char *name, str mal, int listing,
 }
 
 /*
- * The include operation parses the file indentified and
+ * The include operation parses the file identified and
  * leaves the MAL code behind in the 'main' function.
  */
 str

@@ -36,7 +36,7 @@
 # for Enterprise Linux (EPEL) repository is not available, you can
 # disable its use by providing rpmbuild or mock with the "--without
 # epel" option.
-# If the EPEL repository is availabe, or if building for Fedora, most
+# If the EPEL repository is available, or if building for Fedora, most
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
 # available and we are not building for Fedora, we set fedpkgs to 0.

@@ -180,7 +180,7 @@
 
 * Mon Sep 19 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
 - Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
-  was on an interger or integer-like column and NULL values are present.
+  was on an integer or integer-like column and NULL values are present.
 
 * Wed Aug 24 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.3-20220921
 - The median_avg and quantile_avg returned bogus results in the
@@ -290,7 +290,7 @@
 - Fixed a bug in the append code for msk (bit mask) bats.
 - Conversions from floating point types to integral types that involve
   multiplication now use the "long double" as intermediate type, thereby
-  loosing as few significant bits as is feasible.
+  losing as few significant bits as is feasible.
 - Found and fixed another source for the now infamous BBPcheckbats error
   that sometimes occurs at startup of the server.
 
@@ -623,7 +623,7 @@
 
 * Tue Feb 28 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.25.11-20170313
 - Fixed a bug when appending string bats that are fully duplicate
-  eliminated.  It could happend that the to-be-appended bat had an empty
+  eliminated.  It could happen that the to-be-appended bat had an empty
   string at an offset and at that same offset in the to-be-appended-to bat
   there happened to be a (sequence of) NULL(s).  Then this offset would be
   used, even though it might nog be the right offset for the empty string

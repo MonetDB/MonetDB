@@ -1310,7 +1310,7 @@ sigint_handler(int signum)
 	state = INTERRUPT;
 #ifndef HAVE_SIGACTION
 	if (signal(signum, sigint_handler) == SIG_ERR)
-		perror("Could not reinstall sigal handler");
+		perror("Could not reinstall signal handler");
 #endif
 #ifdef HAVE_LIBREADLINE
 	readline_int_handler();
@@ -3274,7 +3274,7 @@ usage(const char *prog, int xit)
 	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
 	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
 
-	mnstr_printf(stderr_stream, "\nSQL specific opions \n");
+	mnstr_printf(stderr_stream, "\nSQL specific options \n");
 	mnstr_printf(stderr_stream, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	mnstr_printf(stderr_stream, " -a          | --autocommit       turn off autocommit mode\n");
 	mnstr_printf(stderr_stream, " -R          | --allow-remote     allow remote content\n");
@@ -3414,7 +3414,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
-	/* Windows does't know about SIGPIPE */
+	/* Windows doesn't know about SIGPIPE */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("sigaction");
 #endif

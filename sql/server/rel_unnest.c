@@ -718,7 +718,7 @@ rel_bound_exp(mvc *sql, sql_rel *rel )
 }
 
 /*
- * join j was just rewriten, but some join expressions may now
+ * join j was just rewritten, but some join expressions may now
  * be too low in de relation rel. These need to move up.
  * */
 static void
@@ -2179,7 +2179,7 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 	if (rel_has_freevar(sql, inner)) {
 		list *dv = rel_dependent_var(sql, d, inner);
 		list *fv = rel_freevar(sql, inner);
-		/* check if the inner depends on the new join (d) or one leve up */
+		/* check if the inner depends on the new join (d) or one level up */
 		if (list_length(dv))
 			set_dependent(d);
 		if (list_length(fv) != list_length(dv))
@@ -3603,7 +3603,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				exp_label(v->sql->sa, le, ++v->sql->label);
 			le = exp_ref(v->sql, le);
 
-			if (depth == 1 && is_ddl(rel->op)) { /* exists is at a ddl statment, it must be inside a relation */
+			if (depth == 1 && is_ddl(rel->op)) { /* exists is at a ddl statement, it must be inside a relation */
 				sq = rel_groupby(v->sql, sq, NULL);
 				sql_subfunc *ea = sql_bind_func(v->sql, "sys", is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR, true, true);
 				le = rel_groupby_add_aggr(v->sql, sq, exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, 0));
@@ -3675,7 +3675,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
 		list *l = e->l;
 
-		/* remove unecessary = true expressions under ifthenelse */
+		/* remove unnecessary = true expressions under ifthenelse */
 		for (node *n = l->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -4385,7 +4385,7 @@ exp_inline_arg(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rel_inline_table_func(visitor *v, sql_rel *rel)
 {
-	if (!rel_is_ref(rel) && rel->op == op_table && !rel->l && rel->r) { /* TODO add input relation (rel->l) rewritting */
+	if (!rel_is_ref(rel) && rel->op == op_table && !rel->l && rel->r) { /* TODO add input relation (rel->l) rewriting */
 		sql_exp *opf = rel->r;
 		if (opf->type == e_func) {
 			sql_subfunc *f = opf->f;

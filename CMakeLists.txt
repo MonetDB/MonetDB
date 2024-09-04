@@ -57,7 +57,7 @@ monetdb_default_compiler_options()
 
 include(monetdb-defines)
 
-# required for symbol existance tests
+# required for symbol existence tests
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_definitions(-D_XOPEN_SOURCE -D_GNU_SOURCE)
   set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_GNU_SOURCE")

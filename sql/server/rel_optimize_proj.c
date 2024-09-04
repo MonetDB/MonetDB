@@ -249,7 +249,7 @@ rel_merge_projects_(visitor *v, sql_rel *rel)
 				break;
 			}
 			ne = exp_push_down_prj(v->sql, e, prj, prj->l);
-			/* check if the refered alias name isn't used twice */
+			/* check if the referred alias name isn't used twice */
 			if (ne && ambigious_ref(nexps, ne)) {
 				all = 0;
 				break;
@@ -351,7 +351,7 @@ split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e)
 		list_split_aggr_and_project(sql, aexps, e->l);
 		return e;
 	case e_atom:
-	case e_column: /* constants and columns shouldn't be rewriten */
+	case e_column: /* constants and columns shouldn't be rewritten */
 	case e_psm:
 		return e;
 	}
@@ -504,7 +504,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		if (!l || rel_is_ref(l) || is_topn(l->op) || is_sample(l->op) ||
 		   (is_join(rel->op) && !list_empty(rel->attr)) ||
 		   (is_join(rel->op) && (!r || rel_is_ref(r))) ||
-		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statments left joins */) ||
+		   (is_left(rel->op) && (rel->flag&MERGE_LEFT) /* can't push projections above merge statements left joins */) ||
 		   (is_select(rel->op) && l->op != op_project) ||
 		   (is_join(rel->op) && ((l->op != op_project && r->op != op_project) || is_topn(r->op) || is_sample(r->op))) ||
 		  ((l->op == op_project && (!l->l || l->r || project_unsafe(l, is_select(rel->op)))) ||
@@ -556,7 +556,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		/* also handle right hand of join */
 		if (is_join(rel->op) && r->op == op_project && r->l && list_empty(rel->attr)) {
 			/* Here we also check all expressions of r like above
-			   but also we need to check for ambigious names. */
+			   but also we need to check for ambiguous names. */
 
 			for (n = r->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -578,7 +578,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 		}
 		if (!list_empty(rel->attr))
 			append(exps, exp_ref(v->sql, rel->attr->h->data));
-		/* Here we should check for ambigious names ? */
+		/* Here we should check for ambiguous names ? */
 		if (is_join(rel->op) && r && list_empty(rel->attr)) {
 			t = (l->op == op_project && l->l)?l->l:l;
 			l_exps = rel_projections(v->sql, t, NULL, 1, 1);
@@ -1016,7 +1016,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	 *
 	 * semijoin( A1, union [A1, A2] )
 	 * The union will never return proper column (from A2).
-	 * ie need different solution (probaly pass pnr).
+	 * ie need different solution (probably pass pnr).
 	 */
 	c = exp_find_column_(rel, e->l, pnr, &bt);
 	if (!c)
@@ -1597,7 +1597,7 @@ rel_simplify_groupby_columns(visitor *v, sql_rel *rel)
 			node *next = n->next;
 			sql_exp *e = n->data;
 
-			if (e->used) /* remove unecessary grouping columns */
+			if (e->used) /* remove unnecessary grouping columns */
 				list_remove_node(rel->r, NULL, n);
 			n = next;
 		}
@@ -1812,7 +1812,7 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 		append(nl, r);
 	}
 
-	/* group by on primary keys which define the partioning scheme
+	/* group by on primary keys which define the partitioning scheme
 	 * don't need a finalizing group by */
 	/* how to check if a partition is based on some primary key ?
 	 * */
@@ -1979,7 +1979,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		ur->nrcols = list_length(ur->exps);
 		set_processed(ur);
 
-		/* group by on primary keys which define the partioning scheme
+		/* group by on primary keys which define the partitioning scheme
 		 * don't need a finalizing group by */
 		/* how to check if a partition is based on some primary key ?
 		 * */
@@ -2004,7 +2004,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			for (n = ogbe->h; n; n = n->next) {
 				sql_exp *e = n->data, *ne;
 
-				/* group by in aggreation list */
+				/* group by in aggregation list */
 				ne = exps_uses_exp( rel->exps, e);
 				if (ne)
 					ne = list_find_exp( ul->exps, ne);
@@ -3172,7 +3172,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 			sql_rel *oc = n->data;
 			sql_rel *c = oc;
 
-			/* acount for any group-bys pushed down between stacked munions */
+			/* account for any group-bys pushed down between stacked munions */
 			if (oc->op == op_groupby)
 				c = oc->l;
 
@@ -3386,7 +3386,7 @@ bind_optimize_unions_topdown(visitor *v, global_props *gp)
 
 
 static sql_column *
-is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreing key column for the pk on pkc */
+is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreign key column for the pk on pkc */
 {
 	sql_trans *tr = sql->session->tr;
 	sql_column *c = exp_find_column(rel, e, -2);

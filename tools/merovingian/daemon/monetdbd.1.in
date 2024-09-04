@@ -189,7 +189,7 @@ Changing this property takes effect immediately at runtime.
 .TP
 .B loglevel
 This property defines the level of what messages should be logged.
-It can be: error or warning or information or debug. Defaut is information.
+It can be: error or warning or information or debug. Default is information.
 When loglevel is error, only errors are logged.
 When loglevel is warning, errors and warnings are logged.
 When loglevel is information, errors and warnings and information

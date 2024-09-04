@@ -22,11 +22,11 @@ extern MT_Lock mmath_rse_lock __attribute__((__visibility__("hidden")));
 extern double cot(double);
 extern float cotf(float);
 
-/* degress to radians conversion */
+/* degrees to radians conversion */
 extern double radians(double);
 extern float radiansf(float);
 
-/* radians to degress conversion */
+/* radians to degrees conversion */
 extern double degrees(double);
 extern float degreesf(float);
 

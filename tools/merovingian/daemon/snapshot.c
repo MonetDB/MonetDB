@@ -737,7 +737,7 @@ bailout:
 #define TAR_BLOCK_SIZE (512)
 
 /* Read a full block from the stream.
- * Return 0 on succes, -1 on failure.
+ * Return 0 on success, -1 on failure.
  * Set *err to NULL if the failure is caused by an end of file
  * on a block boundary, non-NULL on read error.
  */

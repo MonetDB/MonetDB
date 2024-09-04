@@ -68,7 +68,7 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 	uint16_t typeid:8, nr:2, isbat:1, vargs:1, opt:1;
 } mel_arg;
 
-/* nr for any tyes 0, 1,2 */
+/* nr for any types 0, 1,2 */
 
 typedef struct __attribute__((__designated_init__)) mel_func {
 	const char *mod;

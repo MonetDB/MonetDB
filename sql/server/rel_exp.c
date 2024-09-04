@@ -3633,7 +3633,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
-	/* TODO we could use the sql_query* struct to set paremeters used as freevars,
+	/* TODO we could use the sql_query* struct to set parameters used as freevars,
 	   but it requires to change a lot of interfaces */
 	/* if (is_freevar(exp))
 		rel = query_fetch_outer(query, is_freevar(exp)-1); */

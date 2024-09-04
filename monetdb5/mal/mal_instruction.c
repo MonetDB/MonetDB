@@ -239,7 +239,7 @@ resetMalBlk(MalBlkPtr mb)
 
 
 /* The freeMalBlk code is quite defensive. It is used to localize an
- * illegal re-use of a MAL blk. */
+ * illegal reuse of a MAL blk. */
 void
 freeMalBlk(MalBlkPtr mb)
 {
@@ -452,7 +452,7 @@ freeInstruction(InstrPtr p)
 
 /* Query optimizers walk their way through a MAL program block. They
  * require some primitives to move instructions around and to remove
- * superflous instructions. The removal is based on the assumption
+ * superfluous instructions. The removal is based on the assumption
  * that indeed the instruction belonged to the block. */
 void
 removeInstruction(MalBlkPtr mb, InstrPtr p)

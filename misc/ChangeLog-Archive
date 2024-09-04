@@ -140,7 +140,7 @@
 - Removed --enable-noexpand configure option.
 
 * Mon Jul  2 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
-- Created seperate RPM and DEB packages for MonetDB/JAQL.
+- Created separate RPM and DEB packages for MonetDB/JAQL.
 
 * Tue Jun  5 2012 Sjoerd Mullender <sjoerd@acm.org> - 11.11.1-20120706
 - Removed --enable-bits option from configure.

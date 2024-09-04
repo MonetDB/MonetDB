@@ -3382,7 +3382,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		rd = stmt_tdiff(be, rd, jr, NULL);
 	}
 
-	if (rel->op == op_left) { /* used for merge statments, this will be cleaned out on the pushcands branch :) */
+	if (rel->op == op_left) { /* used for merge statements, this will be cleaned out on the pushcands branch :) */
 		l2 = sa_list(sql->sa);
 		list_append(l2, left);
 		list_append(l2, right);
@@ -3445,7 +3445,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 
 	res = stmt_list(be, l);
-	res->extra = l2; /* used for merge statments, this will be cleaned out on the pushcands branch :) */
+	res->extra = l2; /* used for merge statements, this will be cleaned out on the pushcands branch :) */
 	return res;
 }
 
@@ -3823,7 +3823,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	/* construct relation */
 	l = sa_list(sql->sa);
 
-	/* We did a full join, thats too much.
+	/* We did a full join, that's too much.
 	   Reduce this using difference and intersect */
 	if (!semijoin_only) {
 		c = stmt_mirror(be, bin_find_smallest_column(be, left));
@@ -4422,7 +4422,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	*/
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
-		/* distinct, topn returns atleast N (unique groups) */
+		/* distinct, topn returns at least N (unique groups) */
 		int distinct = need_distinct(rel);
 		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
 
@@ -5004,7 +5004,7 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 
 			stmt *g = list_fetch(inserts, c->c->colnr), *ins = g;
 
-			/* inserted vaules may be null */
+			/* inserted values may be null */
 			if ((k->type == ukey) && stmt_has_null(ins)) {
 				stmt *nn = stmt_selectnonil(be, ins, NULL);
 				ins = stmt_project(be, nn, ins);
@@ -5084,10 +5084,10 @@ static stmt *
 sql_insert_key(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stmt *pin)
 {
 	/* int insert = 1;
-	 * while insert and has u/pkey and not defered then
+	 * while insert and has u/pkey and not deferred then
 	 *      if u/pkey values exist then
 	 *              insert = 0
-	 * while insert and has fkey and not defered then
+	 * while insert and has fkey and not deferred then
 	 *      find id of corresponding u/pkey
 	 *      if (!found)
 	 *              insert = 0
@@ -6034,7 +6034,7 @@ cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		sql_idx *i = n->data;
 
 		/* check if update is needed,
-		 * ie atleast on of the idx columns is updated
+		 * ie at least on of the idx columns is updated
 		 */
 		if (is_idx_updated(i, updates) == 0)
 			continue;
@@ -6074,7 +6074,7 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 		stmt *is = NULL;
 
 		/* check if update is needed,
-		 * ie atleast on of the idx columns is updated
+		 * ie at least on of the idx columns is updated
 		 */
 		if (is_idx_updated(i, updates) == 0)
 			continue;

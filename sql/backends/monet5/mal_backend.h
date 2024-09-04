@@ -66,7 +66,7 @@ typedef struct backend {
 	lng last_id;
 	lng rowcnt;
 	subbackend *subbackend;
-	str fimp; /* for recurisve functions keep the to be generated MAL function name here */
+	str fimp; /* for recursive functions keep the to be generated MAL function name here */
 } backend;
 
 extern backend *backend_reset(backend *b);
