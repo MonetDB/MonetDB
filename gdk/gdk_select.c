@@ -1742,7 +1742,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (s) {
 				bn2 = BATdiffcand(s, bn);
 			} else {
-				bn2 = BATnegcands2(ci.seq, bi.count, bn);
+				bn2 = BATnegcands(ci.seq, bi.count, bn);
 			}
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
@@ -2288,7 +2288,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (s) {
 				bn2 = BATdiffcand(s, bn);
 			} else {
-				bn2 = BATnegcands2(ci.seq, bi.count, bn);
+				bn2 = BATnegcands(ci.seq, bi.count, bn);
 			}
 			BBPreclaim(bn);
 			bn = bn2;

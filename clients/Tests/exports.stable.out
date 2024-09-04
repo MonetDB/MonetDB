@@ -167,7 +167,7 @@ BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
 void *BATmin_skipnil(BAT *b, void *aggr, bit skipnil);
 gdk_return BATmode(BAT *b, bool transient);
-BAT *BATnegcands(BUN nr, BAT *odels);
+BAT *BATnegcands(oid tseq, BUN nr, BAT *odels);
 BAT *BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s);
 bool BATordered(BAT *b);
 bool BATordered_rev(BAT *b);

@@ -1959,7 +1959,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 					assert(rev->batCount == old_s->batCount - bn->batCount);
 #endif
 				} else
-					rev = BATnegcands(b->batCount, bn);
+					rev = BATnegcands(0, b->batCount, bn);
 
 				BBPreclaim(bn);
 				bn = rev;
