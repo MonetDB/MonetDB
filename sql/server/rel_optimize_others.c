@@ -389,7 +389,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 			}
 		}
 	}
-	/* for count/rank we need atleast one column */
+	/* for count/rank we need at least one column */
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
 		(is_simple_project(rel->op) && project_unsafe(rel, false))) {
 		sql_exp *e = subrel->exps->h->data;
@@ -677,7 +677,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				node *next = n->next;
 				sql_exp *e = n->data;
 
-				/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by rel_exps_mark_used */
+				/* at least one (needed for crossproducts, count(*), rank() and single value projections) !, handled by rel_exps_mark_used */
 				if (!e->used && list_length(rel->exps) > 1)
 					list_remove_node(rel->exps, NULL, n);
 				n = next;
@@ -711,7 +711,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				node *next = n->next;
 				sql_exp *e = n->data;
 
-				/* atleast one (needed for crossproducts, count(*), rank() and single value projections) */
+				/* at least one (needed for crossproducts, count(*), rank() and single value projections) */
 				if (!e->used && list_length(rel->exps) > 1)
 					list_remove_node(rel->exps, NULL, n);
 				n = next;

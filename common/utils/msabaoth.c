@@ -122,7 +122,7 @@ msab_isuuid(const char *restrict s)
 		s[18] != '-' ||
 		s[23] != '-')
 		return 0;
-	/* only hexadecimals and hypens */
+	/* only hexadecimals and hyphens */
 	while (*s) {
 		if (!isxdigit((unsigned char) *s)) {
 			if (*s == '-')

@@ -230,7 +230,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLSetConnectAttr");
 
 	/* Now we are going to read back the values from the test table.
-	   We create two statment handles, one of which will be used
+	   We create two statement handles, one of which will be used
 	   to read the even table entries and the other for the odd
 	   table entries. */
 

@@ -632,7 +632,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		/* The interpreter loop
 		 * The interpreter is geared towards execution a MAL
 		 * procedure together with all its descendant
-		 * invocations. As such, it provides the MAL abtract
+		 * invocations. As such, it provides the MAL abstract
 		 * machine processor.
 		 *
 		 * The value-stack frame of the surrounding scope is
@@ -677,7 +677,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			 * activity is made part of the start-up procedure.
 			 *
 			 * The before after calls should be reconsidered here,
-			 * because their. They seem superflous and the way
+			 * because their. They seem superfluous and the way
 			 * they are used will cause errors in multi-assignment
 			 * statements.
 			 */
@@ -849,7 +849,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			w = instruction2str(mb, 0, pci, FALSE);
 			if (w) {
-				ret = createException(MAL, "interpreter", "unkown operation:%s",
+				ret = createException(MAL, "interpreter", "unknown operation:%s",
 									  w);
 				GDKfree(w);
 			} else {
@@ -1355,7 +1355,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * block.
  * MAL interpretation then continues until it reaches the end of the block.
  * If no exception variable was defined, we should abandon the function
- * alltogether searching for a catch block at a higher layer.
+ * altogether searching for a catch block at a higher layer.
  *
  * For the time being we have ignored cascaded/stacked exceptions.
  * The policy is to pass the first recognized exception to a context
@@ -1367,7 +1367,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * upon leaving the linked library routine.
  *
  * Second, exceptional cases can be handled deeply in the recursion, where they
- * may also be handled, i.e. by issueing an GDKerror message. The upper layers
+ * may also be handled, i.e. by issuing an GDKerror message. The upper layers
  * merely receive a negative integer value to indicate occurrence of an
  * error somewhere in the calling sequence.
  * We then have to also look into GDKerrbuf to see if there was
@@ -1376,7 +1376,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * The policy is to require all C-functions to return a string-pointer.
  * Upon a successful call, it is a NULL string. Otherwise it contains an
  * encoding of the exceptional state encountered. This message
- * starts with the exception identifer, followed by contextual details.
+ * starts with the exception identifier, followed by contextual details.
  */
 
 /*
@@ -1443,7 +1443,7 @@ garbageElement(Client cntxt, ValPtr v)
  * This situation is indicated by the 'global' in the stack frame.
  * Upon termination of the session, the stack should be cleared.
  * Beware that variables may be know polymorphic, their actual
- * type should be saved for variables that recide on a global
+ * type should be saved for variables that reside on a global
  * stack frame.
  */
 void

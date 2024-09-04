@@ -86,7 +86,7 @@ option(PGOTRAIN
   OFF)
 
 option(PGOBUILD
-  "Enable support for the profile generated optimization build (using optained data) (default=OFF)"
+  "Enable support for the profile generated optimization build (using obtained data) (default=OFF)"
   OFF)
 
 option(STRICT

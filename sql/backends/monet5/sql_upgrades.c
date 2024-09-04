@@ -523,7 +523,7 @@ sql_update_jan2022(Client c, mvc *sql)
 	t = mvc_bind_table(sql, s, "fully_qualified_functions");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
-					/* drop dependant stuff from 76_dump.sql */
+					/* drop dependent stuff from 76_dump.sql */
 					"drop function sys.dump_database(boolean) cascade;\n"
 					"drop procedure sys.dump_table_data() cascade;\n"
 					"drop procedure sys._dump_table_data(string, string) cascade;\n"

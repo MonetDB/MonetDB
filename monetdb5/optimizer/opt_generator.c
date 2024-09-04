@@ -158,7 +158,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		} else if (getModuleId(p) == sqlRef
 				   && getFunctionId(p) == putName("exportValue")
 				   && isaBatType(getArgType(mb, p, 0))) {
-			// interface expects scalar type only, not expressable in MAL signature
+			// interface expects scalar type only, not expressible in MAL signature
 			mb->errors = createException(MAL, "generate_series",
 										 SQLSTATE(42000)
 										 "internal error, generate_series is a table producing function");

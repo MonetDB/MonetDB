@@ -921,7 +921,7 @@ typeElm(Client cntxt, int def)
   * The module and import commands have immediate effect.
   * The module statement switches the location for symbol table update
   * to a specific named area. The effect is that all definitions may become
-  * globally known (?) and symbol table should be temporarilly locked
+  * globally known (?) and symbol table should be temporarily locked
   * for updates by concurrent users.
   *
   * @multitable @columnfractions 0.15 0.8
@@ -2150,7 +2150,7 @@ parseAssign(Client cntxt, int cntrl)
 		i = l;
 		goto FCNcallparse2;
 	} else if ((l = idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
-		/* continue with parseing a function/operator call */
+		/* continue with parsing a function/operator call */
 		arg = putNameLen(CURRENT(cntxt), l);
 		if (arg == NULL) {
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);

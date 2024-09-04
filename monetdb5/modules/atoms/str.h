@@ -149,7 +149,7 @@ mal_export int str_strlen(const char *s);
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
    follows this pattern. */
 
-/* Warning, the following functions don't test for NULL values, that's resposibility from the caller */
+/* Warning, the following functions don't test for NULL values, that's responsibility from the caller */
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c)
 		__attribute__((__visibility__("hidden")));

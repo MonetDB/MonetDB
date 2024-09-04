@@ -435,7 +435,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		case IDC_BUTTON_HELP:
-			// invoke webbrowser with url to webpage decribing this setup dialog.
+			// invoke webbrowser with url to webpage describing this setup dialog.
 			ShellExecute(hwndDlg, NULL,
 					"https://www.monetdb.org/" DOCUMENTATION "/user-guide/client-interfaces/libraries-drivers/odbc-driver/windows-data-source-setup/",
 					NULL, NULL, SW_SHOWNORMAL);

@@ -21,7 +21,7 @@
  * In the late 1990s when multi-threading support was introduced in
  * MonetDB, pthreads was just emerging as a standard API and not
  * widely adopted yet.  The earliest MT implementation focused on SGI
- * Unix and provided multi- threading using multiple processses, and
+ * Unix and provided multi- threading using multiple processes, and
  * shared memory.
  *
  * One of the relics of this model, namely the need to pre-allocate

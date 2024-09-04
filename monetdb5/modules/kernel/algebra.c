@@ -28,7 +28,7 @@
  * In particular, this means that
  * string values are passed to the module layer as (str *)
  * and we have to de-reference them before entering the gdk library.
- * This calls for knowlegde on the underlying BAT typs`s
+ * This calls for knowledge on the underlying BAT typs`s
  */
 #define derefStr(b, v)							\
 	do {										\
@@ -391,7 +391,7 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
-	bit any = *Any; /* any or normal comparision semantics */
+	bit any = *Any; /* any or normal comparison semantics */
 
 	if (!g || !m || !p) {
 		if (g) BBPreclaim(g);
@@ -486,7 +486,7 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
-	bit any = *Any; /* any or normal comparision semantics */
+	bit any = *Any; /* any or normal comparison semantics */
 
 	if (!g || !m || !p) {
 		if (g) BBPreclaim(g);
@@ -1788,7 +1788,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
  command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value\nobeys the relation value OP VAL and for which the head value occurs in\nthe tail of the second input BAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "markselect", ALGmarkselect, false, "Group on group-ids, return aggregated anyequal or allnotequal", args(2,6, batarg("",oid), batarg("", bit), batarg("gid",oid), batarg("m", bit), batarg("p", bit), arg("any", bit))),
- command("algebra", "outerselect", ALGouterselect, false, "Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,6, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit))),
+ command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,6, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
  command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),

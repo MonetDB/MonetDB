@@ -17,7 +17,7 @@ OPTIONS:
  -o|--overwrite                     overwrites existing .test
  -d|--dry-run                       dry run
 
-when no --dst-dir specified assumes --src-dir. The curent process is to place converted tests in the same folder as the original tests. 
+when no --dst-dir specified assumes --src-dir. The current process is to place converted tests in the same folder as the original tests. 
 
 Usage scenarios:
 

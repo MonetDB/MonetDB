@@ -88,7 +88,7 @@ rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_tab
 	/* base case */
 	if (tables->cnt == 1) // XXX: or/and h->next == NULL
 		return tables->h->data;
-	/* merge (via union) every *two* consequtive nodes of the list */
+	/* merge (via union) every *two* consecutive nodes of the list */
 	for (node *n = tables->h; n && n->next; n = n->next->next) {
 		/* first (left) node */
 		sql_rel *tl = rel_wrap_select_around_mt_child(v, n->data, info);

@@ -80,7 +80,7 @@ mal_export const char *mal_version(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
- * the only place where it is currently used. Maybe, we should concider
+ * the only place where it is currently used. Maybe, we should consider
  * also moving the implementation there...
  */
 
@@ -216,7 +216,7 @@ typedef struct MALSTK {
  * for use in profiling instructions.
  */
 	struct timeval clock;		/* time this stack was created */
-	char status;				/* srunning 'R' suspended 'S', quiting 'Q' */
+	char status;				/* srunning 'R' suspended 'S', quitting 'Q' */
 	int pcup;					/* saved pc upon a recursive all */
 	oid tag;					/* unique invocation call tag */
 	lng memory;					/* Actual memory claims for highwater mark */

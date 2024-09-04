@@ -27,7 +27,7 @@
  * In case a mat.new() is retained in the code, then it will
  * behave as a mat.pack();
  *
- * The primitives below are chosen to accomodate the SQL
+ * The primitives below are chosen to accommodate the SQL
  * front-end to produce reasonable efficient code.
  */
 #include "monetdb_config.h"

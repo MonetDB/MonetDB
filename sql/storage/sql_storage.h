@@ -133,7 +133,7 @@ typedef struct table_functions {
 } table_functions;
 
 /* delta table setup (ie readonly col + ins + upd + del)
--- binds for column,idx (rdonly, inserts, updates) and delets
+-- binds for column,idx (rdonly, inserts, updates) and deletes
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
@@ -509,7 +509,7 @@ typedef struct sqlstore {
 	list *changes;			/* pending changes to cleanup */
 	sql_hash *dependencies; /* pending dependencies created to cleanup */
 	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
-	list *seqchanges;		/* pending sequence number changes to be add to the first commiting transaction */
+	list *seqchanges;		/* pending sequence number changes to be added to the first committing transaction */
 	sql_hash *sequences;	/* loaded store sequence numbers */
 
 	allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */

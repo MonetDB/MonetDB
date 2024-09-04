@@ -295,7 +295,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 			break;
 		case SQL_FOREIGN_KEY:
 			suffix = "_fkey";
-			nms = s->data.lval->h->next->data.lval->h;	/* list of colums */
+			nms = s->data.lval->h->next->data.lval->h;	/* list of columns */
 			break;
 		case SQL_CHECK:
 			suffix = "_check";

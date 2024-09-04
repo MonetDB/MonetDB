@@ -141,6 +141,5 @@ geom_type2str(int t, int flag)
 			return "ST_GeometryCollection";
 		}
 	}
-	return "UKNOWN";
+	return "UNKNOWN";
 }
-

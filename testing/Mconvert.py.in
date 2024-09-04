@@ -802,7 +802,7 @@ def transform_str_return_code(code):
 
 def returnCode(proc, f = None):
     '''Interpret the return code of a process.
-    If second arg sepcified, write a message to it.'''
+    If second arg specified, write a message to it.'''
     if proc.killed:
         # don't write for timeout, killProc did that already
         return 'timeout'
@@ -1333,7 +1333,7 @@ def CheckSocket2(env,SERVER) :  #,SrvrErr) :
             S[1].close()
             Smsg = Smsg + """
 ! Socket-Check failed for %sserver on <%s> !
-! Giving up after %d attepts !
+! Giving up after %d attempts !
 """ % (SERVER, host, randomPortRepeat)
             return None, Smsg
 
@@ -2416,7 +2416,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
-    parser.add_argument('--auto', action='store_true', help='auto mode wher for each test converted a .test file is created')
+    parser.add_argument('--auto', action='store_true', help='auto mode where for each test converted a .test file is created')
 
     opts = parser.parse_args()
     args = opts.tests

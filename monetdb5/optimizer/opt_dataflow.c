@@ -11,7 +11,7 @@
  */
 
 /*
- * The statemens are all checked for being eligible for dataflow.
+ * The statements are all checked for being eligible for dataflow.
  */
 #include "monetdb_config.h"
 #include "opt_dataflow.h"

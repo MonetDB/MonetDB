@@ -69,7 +69,7 @@
  *    - no call to Driver Setup
  * 3. Application calls libodbcinst.ODBCINSTValidateProperty()
  *    - use as required (ie on leave widget event)
- *    - an assesment of the entire property list is also done
+ *    - an assessment of the entire property list is also done
  *    - this is passed onto the driver setup DLL
  * 4. Application should refresh widgets in case aPromptData or
  *    szValue has changed

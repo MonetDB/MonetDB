@@ -118,7 +118,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			break;
 	}
-	/* set transaction properties after successfuly starting */
+	/* set transaction properties after successfully starting */
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	return MAL_SUCCEED;

@@ -212,9 +212,9 @@
  *
  * Two crude suggestions:
  * - If we are under RSS pressure without unloadable tiles and with
- *   savable tiles, we should consider suspending *all* other threads
+ *   saveable tiles, we should consider suspending *all* other threads
  *   until we manage to unload a tile.
- * - if there are no savable tiles (or in case of read-only maps)
+ * - if there are no saveable tiles (or in case of read-only maps)
  *   we could resort to saving and unloading random tiles.
  *
  * To do better, our BAT algorithms should provide even more detailed

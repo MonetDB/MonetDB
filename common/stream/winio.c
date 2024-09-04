@@ -32,7 +32,7 @@
  * (waiting for input) in the read function.  Instead, we only call
  * the read function when we know there is input available.  This is
  * to prevent a deadlock situation, especially for reading from pipes,
- * when another thread were to also interact with pipes (as happend in
+ * when another thread were to also interact with pipes (as happened in
  * the scipy Python module as used in the sql/backends/monet5/pyapi05
  * test). */
 

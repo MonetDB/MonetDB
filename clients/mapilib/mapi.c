@@ -182,7 +182,7 @@
  * 		fprintf(fp, "usage: %s <host>    <db> <port> <mode> <query>\n", prog);
  * 		fprintf(fp, "  e.g. %s localhost demo 50000  xml    '1+1'\n",   prog);
  * 	} else {
- * 		// CONNECT TO SERVER, default unsecure user/password, language="sql"
+ * 		// CONNECT TO SERVER, default insecure user/password, language="sql"
  * 		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "sql", db);
  * 		MapiHdl hdl;
  * 		if (mid == NULL) {
@@ -1551,7 +1551,7 @@ add_error(struct MapiResultSet *result, char *error)
 	    (isdigit((unsigned char) error[4]) ||
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
-			/* remeber SQLSTATE for first error */
+			/* remember SQLSTATE for first error */
 			strcpy_len(result->sqlstate, error,
 				   sizeof(result->sqlstate));
 		}
@@ -3751,7 +3751,7 @@ mapi_query_abort(MapiHdl hdl, int reason)
 MapiMsg
 mapi_cache_limit(Mapi mid, int limit)
 {
-	/* clean out superflous space TODO */
+	/* clean out superfluous space TODO */
 	msettings_error err = msetting_set_long(mid->settings, MP_REPLYSIZE, limit);
 	if (err)
 		return mapi_setError(mid, err, __func__, MERROR);

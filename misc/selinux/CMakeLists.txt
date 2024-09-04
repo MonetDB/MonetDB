@@ -34,14 +34,14 @@ if(SEMODULE_FOUND)
     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
   file(COPY monetdb.te
     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
-  
+
   # Getting awk to generate the list is tricky. So handle the conversion
   # to a CMake list using cmake code.
   string(REGEX MATCHALL
     "([^\ ]+\ |[^\ ]+$)"
     SELINUX_TYPES_LIST
     "${SELINUX_TYPES}")
-  # Use three seperate execute_process function calls. If you use one
+  # Use three separate execute_process function calls. If you use one
   # call with three commands, they will run in parallel and that will fail.
   foreach(SETYPE IN LISTS SELINUX_TYPES_LIST)
     STRING(STRIP "${SETYPE}" SETYPE)

@@ -166,7 +166,7 @@ command_help(int argc, char *argv[])
 		printf("  have been declared as master with the \"monetdb master\"\n");
 		printf("  command.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
-		printf("Yeah , help on help, how desparate can you be? ;)\n");
+		printf("Yeah, help on help, how desperate can you be? ;)\n");
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of this monetdb utility\n");
