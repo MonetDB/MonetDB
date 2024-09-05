@@ -622,7 +622,7 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink,
 }
 
 InstrPtr
-stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sink, stmt *probe_col, bit outer, stmt *pp)
+stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sink, stmt *norows_prb, bit outer, stmt *pp)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
@@ -633,7 +633,7 @@ stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sin
 	q = pushArgument(be->mb, q, hp_sink->nr);
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
-	q = pushArgument(be->mb, q, probe_col->nr);
+	q = pushLng(be->mb, q, norows_prb->nr);
 	q = pushBit(be->mb, q, outer);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);

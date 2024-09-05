@@ -8228,7 +8228,7 @@ rel_bin(backend *be, sql_rel *rel)
 	return s;
 }
 
-static stmt *
+stmt *
 rel2bin_materialize(backend *be, sql_rel *rel)
 {
 	sql_rel *r = rel;

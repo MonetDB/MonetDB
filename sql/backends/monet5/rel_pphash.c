@@ -257,20 +257,22 @@ oahash_build_hp(backend *be, InstrPtr stmt_freq, list *exps_prj_hsh, list *stmts
 
 /* Generates the parallel block to probe the hash table
  */
-static InstrPtr
-oahash_probe(backend *be, stmt **prb_col, list *exps_cmp_prb, list *stmts_bld_ht, stmt *sub, stmt *pp)
+static stmt *
+oahash_probe(backend *be, list *exps_cmp_prb, list *stmts_bld_ht, stmt *sub, stmt *pp)
 {
-	InstrPtr last_prb = NULL;
-
-	/* stmts_bld_ht is in the same order as the join columns */
+	stmt *key = NULL;
+	sql_exp *e = NULL;
+	InstrPtr q = NULL;
 	int matched = 0, rhs_slts = 0;
-	stmt *key;
+	/* stmts_bld_ht is in the same order as the join columns */
+	// TODO should search for the join columns with exp_bin(), iso. assuming matching order */
 	for (node *n = exps_cmp_prb->h, *m = stmts_bld_ht->h; n && m; n = n->next, m = m->next) {
-		key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		e = n->data;
+		key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
+
 		key = column(be, key);
 		int rht = ((stmt *)m->data)->nr;
-		InstrPtr q = NULL;
 		if (!matched) {
 			q = stmt_oahash_hash(be, key, pp);
 			if (q == NULL) return NULL;
@@ -283,21 +285,28 @@ oahash_probe(backend *be, stmt **prb_col, list *exps_cmp_prb, list *stmts_bld_ht
 		if (q == NULL) return NULL;
 		matched = getArg(q, 0);
 		rhs_slts = getArg(q, 1);
-		last_prb = q;
 	}
-	/* prb_col MUST be the last key column to match the type of the ht_sink containing the frequencies */
-	if (prb_col)
-		*prb_col = key;
-	return last_prb;
+	/* probe of last column is the final res, which also matches the type of the ht_sink containing the frequencies */
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *exp_subtype(e);
+	s->nr = getArg(q, 0);
+	s->nrcols = key->nrcols;
+	s->q = q;
+	s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+	return s;
 }
 
 static list *
-oahash_project_hsh(backend *be, list *exps_prj_hsh, list *stmts_bld_hp, int rhs_slts, stmt *freq_sink, stmt *prb_col, bit outer, stmt *pp)
+oahash_project_hsh(backend *be, list *exps_prj_hsh, list *stmts_bld_hp, int rhs_slts, stmt *freq_sink, stmt *norows_prb, bit outer, stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
+	stmt *sub = stmt_list(be, stmts_bld_hp);
 
-	for (node *n = stmts_bld_hp->h, *o = exps_prj_hsh->h; n && o; n = n->next, o = o->next) {
-		InstrPtr q = stmt_oahash_fetch_payload(be, n->data, rhs_slts, freq_sink, prb_col, outer, pp);
+	for (node *o = exps_prj_hsh->h; o; o = o->next) {
+		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(key); /* must find */
+		InstrPtr q = stmt_oahash_fetch_payload(be, key, rhs_slts, freq_sink, norows_prb, outer, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = o->data;
@@ -312,31 +321,6 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, list *stmts_bld_hp, int rhs_
 	}
 	return l;
 }
-
-#if 0
-static list *
-oahash_project_hsh_cart(backend *be, list *exps_prj_hsh, list *stmts_bld_hp, int rhs_slts, stmt *freq_sink, stmt *prb_col, bit outer, stmt *pp)
-{
-	list *l = sa_list(be->mvc->sa);
-
-	for (node *n = stmts_bld_hp->h, *o = exps_prj_hsh->h; n && o; n = n->next, o = o->next) {
-		InstrPtr q = stmt_oahash_fetch_payload(be, n->data, rhs_slts, freq_sink, prb_col, outer, pp);
-		if (q == NULL) return NULL;
-
-		sql_exp *e = o->data;
-		stmt *s = stmt_none(be);
-		if (s == NULL) return NULL;
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getArg(q, 0);
-		s->nrcols = 1;
-		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-		append(l, s);
-	}
-	return l;
-}
-#endif
-
 
 static list *
 oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, stmt *freq_sink, bit outer, stmt *sub, stmt *pp)
@@ -354,39 +338,13 @@ oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, s
 		if (s == NULL) return NULL;
 		s->op4.typeval = *exp_subtype(e);
 		s->nr = getArg(q, 0);
-		s->nrcols = 1;
+		s->nrcols = key->nrcols;
 		s->q = q;
 		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
 }
-
-#if 0
-static list *
-oahash_project_prb_cart(backend *be, list *exps_prj_prb, int matched, int rhs_slts, stmt *freq_sink, bit outer, stmt *sub, stmt *pp)
-{
-	list *l = sa_list(be->mvc->sa);
-
-	for (node *o = exps_prj_prb->h; o; o = o->next) {
-		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		assert(key); /* must find */
-		InstrPtr q = stmt_oahash_expand(be, key, matched, rhs_slts, freq_sink, outer, pp);
-		if (q == NULL) return NULL;
-
-		sql_exp *e = o->data;
-		stmt *s = stmt_none(be);
-		if (s == NULL) return NULL;
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getArg(q, 0);
-		s->nrcols = 1;
-		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-		append(l, s);
-	}
-	return l;
-}
-#endif
 
 static list *
 oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink, stmt *sub, stmt *pp)
@@ -404,7 +362,39 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink
 		if (s == NULL) return NULL;
 		s->op4.typeval = *exp_subtype(e);
 		s->nr = getArg(q, 0);
-		s->nrcols = 1;
+		s->nrcols = key->nrcols;
+		s->q = q;
+		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		append(l, s);
+	}
+	return l;
+}
+
+static list *
+oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *norows, stmt *pp)
+{
+	list *l = sa_list(be->mvc->sa);
+	int tt;
+
+	for (node *o = exps_prj->h; o; o = o->next) {
+		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(key); /* must find */
+
+		InstrPtr q = newStmt(be->mb, putName("oahash"), putName(func));
+		if (q == NULL) return NULL;
+		tt = tail_type(key)->type->localtype;
+		setVarType(be->mb, getArg(q, 0), newBatType(tt));
+		q = pushArgument(be->mb, q, key->nr);
+		q = pushLng(be->mb, q, norows->nr);
+		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+		pushInstruction(be->mb, q);
+
+		sql_exp *e = o->data;
+		stmt *s = stmt_none(be);
+		if (s == NULL) return NULL;
+		s->op4.typeval = *exp_subtype(e);
+		s->nr = getArg(q, 0);
+		s->nrcols = key->nrcols;
 		s->q = q;
 		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
@@ -561,15 +551,17 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	/*** PROBE PHASE ***/
 	sub = _start_pp(be, rel_prb, 0, refs);
 	pp = get_pipeline(be);
-	stmt *prb_col = NULL;
-	InstrPtr prb_res = oahash_probe(be, &prb_col, exps_cmp_prb, stmts_bld_ht, sub, pp);
+	stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_bld_ht, sub, pp);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
+	sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	stmt *norows_prb = stmt_aggr(be, prb_res, NULL, NULL, cnt, 1, 0, 1);
+
 	bit outer = is_outerjoin(rel->op);
-	int matched = getArg(prb_res, 0), rhs_slts = getArg(prb_res, 1);
+	int matched = getArg(prb_res->q, 0), rhs_slts = getArg(prb_res->q, 1);
 	list *lp = oahash_project_prb(be, exps_prj_prb, matched, rhs_slts, stmts_bld_ht->t->data, outer, sub, pp);
-	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_bld_hp, rhs_slts, stmts_bld_ht->t->data, prb_col, outer, pp);
+	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_bld_hp, rhs_slts, stmts_bld_ht->t->data, norows_prb, outer, pp);
 	assert(lh->cnt || lp->cnt);
 
 	if (neededpp) {
@@ -588,11 +580,73 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 {
-	(void)be;
-	(void)rel;
 	(void)refs;
-	sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash_cart: not implemented yet");
-	return NULL;
+
+	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
+	//list *stmts_res_hsh = NULL, *stmts_res_prb = NULL;
+	stmt *sub = NULL, *pp = NULL;
+	//int neededpp = get_need_pipeline(be); /* remember and reset previous info. */
+
+	assert(rel->l && rel->r);
+	if (rel->oahash == 1) {
+		rel_hsh = rel->l;
+		rel_prb = rel->r;
+	} else {
+		assert(rel->oahash == 2);
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
+	}
+
+	/*** PREPARE PHASE ***/
+	/* find projection columns */
+	exps_prj_hsh = rel_projections(be->mvc, rel_hsh, 0, 1, 1);
+	exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
+	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
+	//if(!neededpp) {
+	//	lng res_sz = _estimate(be->mvc, rel);
+	//	stmts_res_hsh = oahash_prepare_res(be, exps_prj_hsh, res_sz);
+	//	stmts_res_prb = oahash_prepare_res(be, exps_prj_prb, res_sz);
+	//}
+
+	/*** (pseudo) HASH PHASE ***/
+	if (pp_can_not_start(be->mvc, rel_hsh)) {
+		set_need_pipeline(be);
+	} else {
+		set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel_hsh)));
+	}
+	/* rel2bin_materialize() will end the pipeline */
+	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh);
+
+	/*** (pseudo) PROBE PHASE ***/
+	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs);
+	pp = get_pipeline(be);
+
+	/*** PROJECT RESULT PHASE ***/
+	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
+
+	stmt *col = NULL;
+	sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	col = stmts_prb_res->op4.lval->h->data;
+	stmt *norows_prb = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
+	col = stmts_ht->op4.lval->h->data;
+	stmt *norows_hsh = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
+
+	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, norows_hsh, pp);
+	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, norows_prb, pp);
+	assert(lh->cnt || lp->cnt);
+
+	//if (neededpp) {
+		list_merge(lh, lp, NULL);
+		sub = stmt_list(be, lh);
+	//} else {
+	//	int pos = oahash_get_pos(be, lh, lp, stmts_ht->h->data, pp);
+	//	if (!pos) return NULL;
+	//	sub = oahash_collect(be, exps_prj_hsh, exps_prj_prb, stmts_res_hsh, stmts_res_prb, lh, lp, pos, pp);
+	//	(void)stmt_pp_jump(be, pp, be->nrparts);
+	//	(void)stmt_pp_end(be, pp);
+	//}
+	return sub;
 }
 
 static stmt *
@@ -633,11 +687,11 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	/*** PROBE PHASE ***/
 	sub = _start_pp(be, rel_prb, 0, refs);
 	pp = get_pipeline(be);
-	InstrPtr prb_res = oahash_probe(be, NULL, exps_cmp_prb, stmts_bld_ht, sub, pp);
+	stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_bld_ht, sub, pp);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
-	list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res, 0), stmts_bld_ht->t->data, sub, pp);
+	list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), stmts_bld_ht->t->data, sub, pp);
 	if (neededpp) {
 		sub = stmt_list(be, lp);
 	} else {
