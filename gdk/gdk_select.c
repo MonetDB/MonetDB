@@ -110,6 +110,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	oid seq;
 	int (*cmp)(const void *, const void *);
 	BAT *b2 = NULL;
+	BATiter pbi = {0};
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -130,14 +131,18 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		d = bi->baseoff - b2->tbaseoff;
 		l += d;
 		h += d;
-		bat_iterator_end(bi);
-		*bi = bat_iterator(b2);
+		pbi = bat_iterator(b2);
+		bi = &pbi;
+	} else {
+		phash = false;
 	}
 
 	if (!havehash) {
 		if (BAThash(bi->b) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			BBPreclaim(b2);
+			if (phash)
+				bat_iterator_end(&pbi);
 			return NULL;
 		}
 		MT_rwlock_rdlock(&bi->b->thashlock);
@@ -200,10 +205,14 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	bn->tsorted = true;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *dst : oid_nil;
+	if (phash)
+		bat_iterator_end(&pbi);
 	return bn;
 
   bailout:
 	MT_rwlock_rdunlock(&bi->b->thashlock);
+	if (phash)
+		bat_iterator_end(&pbi);
 	BBPreclaim(b2);
 	BBPreclaim(bn);
 	return NULL;
