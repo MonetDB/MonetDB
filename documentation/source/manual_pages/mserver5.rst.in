@@ -84,6 +84,12 @@ MSERVER5 OPTIONS
    file) which should be located in the lib/monetdb5 directory. This
    option can be repeated for different modules.
 
+**--without-geom**
+   Start the server without *geom* support, even if it is available.
+   Normally the server will refuse to start if *geom* is loaded, but the
+   database was created by a server without *geom* support. With this
+   option it is possible to start the server anyway.
+
 **--help**
    Print list of options.
 
