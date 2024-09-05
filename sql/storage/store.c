@@ -76,7 +76,7 @@ store_oldest_pending(sqlstore *store)
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2164)
+	if (id >= 2000 && id <= 2166)
 		return true;
 	return false;
 }
