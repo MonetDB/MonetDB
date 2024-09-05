@@ -348,8 +348,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 		const uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		uint##B##_t mask = 0, innermask;			\
 		const int tpe = ATOMbasetype(bi->type);			\
-		const int lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, tl); \
-		const int hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, th); \
+		const int lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, &vl); \
+		const int hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, &vh); \
 		/* note: (1<<n)-1 gives a sequence of n one bits */	\
 		/* to set bits hbin..lbin inclusive, we would do: */	\
 		/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */ \
@@ -389,9 +389,13 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 		for (BUN ii = 0; ii < B; ii++) {			\
 			if (is_##TYPE##_nil(imp_min) && imp_cnt[ii]) {	\
 				imp_min = basesrc[imprints->stats[ii]];	\
+				break;					\
 			}						\
-			if (is_##TYPE##_nil(imp_max) && imp_cnt[B-1-ii]) { \
-				imp_max = basesrc[imprints->stats[64+B-1-ii]]; \
+		}							\
+		for (BUN ii = B; ii != 0; ii--) {			\
+			if (is_##TYPE##_nil(imp_max) && imp_cnt[ii-1]) { \
+				imp_max = basesrc[imprints->stats[64+ii-1]]; \
+				break;					\
 			}						\
 		}							\
 		assert(!is_##TYPE##_nil(imp_min) &&			\
@@ -2286,16 +2290,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				imprints = pb->timprints;
 				if (imprints != NULL)
 					IMPSincref(imprints);
-				else
-					imprints = NULL;
 				MT_lock_unset(&pb->batIdxLock);
 			} else {
 				MT_lock_set(&b->batIdxLock);
 				imprints = b->timprints;
 				if (imprints != NULL)
 					IMPSincref(imprints);
-				else
-					imprints = NULL;
 				MT_lock_unset(&b->batIdxLock);
 			}
 		}
@@ -2660,16 +2660,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			imprints = tmp->timprints;
 			if (imprints != NULL)
 				IMPSincref(imprints);
-			else
-				imprints = NULL;
 			MT_lock_unset(&tmp->batIdxLock);
 		} else {
 			MT_lock_set(&l->batIdxLock);
 			imprints = l->timprints;
 			if (imprints != NULL)
 				IMPSincref(imprints);
-			else
-				imprints = NULL;
 			MT_lock_unset(&l->batIdxLock);
 		}
 		/* in the unlikely case that the imprints were removed
