@@ -475,7 +475,10 @@ clrInstruction(InstrPtr p)
 void
 freeInstruction(InstrPtr p)
 {
-	(void)p;
+	MalBlkPtr mb_ptr = p->blk;
+	if (mb_ptr && mb_ptr->ma) {
+		sa_free(mb_ptr->ma, p);
+	}
 	//GDKfree(p);
 }
 

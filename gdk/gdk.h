@@ -604,6 +604,7 @@ typedef struct allocator {
 	size_t used; 	/* memory used in last block */
 	size_t usedmem;	/* used memory */
 	void *freelist;	/* list of freed objects */
+	void *freelist_blks;	/* list of freed blks */
 
 	size_t tmp_used; /* keeps total of tmp allocated bytes */
 	bool tmp_active; /* currently only one level of temp usage */
@@ -622,6 +623,7 @@ gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
 gdk_export size_t sa_size( allocator *sa );
 gdk_export void sa_open( allocator *sa );  /* open new frame of tempory allocations */
 gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to old state */
+gdk_export void sa_free( allocator *sa, void *);
 
 #define ma_create(pa)		sa_create(pa)
 #define ma_destroy(ma)		sa_destroy(ma)
