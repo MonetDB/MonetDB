@@ -1752,7 +1752,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 			if (r) {
 				list *obe = r->h->data;
-				if (obe) {
+				if (obe && obe->h) {
 					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
 					/* order by */
 					if (grp) {
