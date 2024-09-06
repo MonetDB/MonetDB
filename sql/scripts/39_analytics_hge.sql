@@ -58,31 +58,31 @@ create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
 
-create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
 
-create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)
+create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38) ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;
 
-create aggregate median_avg(val HUGEINT) returns DOUBLE
+create aggregate median_avg(val HUGEINT) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;
 
-create aggregate median_avg(val DECIMAL(38)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(38)) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;
 
-create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 
-create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;
 
-create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE ORDERED
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
 create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE

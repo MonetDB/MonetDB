@@ -3717,6 +3717,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		return NULL;
 
 	list *obe = NULL;
+	bool handled_order = true;
 	if (args && args->data.sym && args->data.sym->token != SQL_ORDERBY)
 			return NULL;
 	if (args && args->data.sym) { /* handle order by */
@@ -3725,6 +3726,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		obe = rel_order_by(query, &gl, args->data.sym, 0, f);
 		if (!obe)
 			return NULL;
+		handled_order = false;
 	}
 
 	if (all_freevar) {
@@ -3797,8 +3799,22 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 #endif
 							);
 		a = sql_bind_func_result(sql, sname, aname, F_AGGR, true, tpe, 1, exp_subtype(exps->h->data));
-	} else
+	} else {
 		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
+		if (!a && obe && list_length(obe) == 1) { /* try to find aggregation function with requires order by column */
+			list *nexps = append(sa_list(sql->sa), obe->h->data);
+			nexps = list_merge(nexps, exps, (fdup) NULL);
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false);
+			if (a && a->func->order_required) {
+				/* reset error */
+				handled_order = true;
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				exps = nexps;
+				obe = NULL;
+			}
+		}
+	}
 
 	if (a) {
 		found = true;
@@ -3812,7 +3828,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
-		if (!obe && a->func->order_required) {
+		if (!obe && a->func->order_required && !handled_order) {
 			/* TODO preper error on missing order by */
 			return NULL;
 		}
