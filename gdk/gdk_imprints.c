@@ -492,6 +492,23 @@ BATimprints(BAT *b)
 		size_t pages;
 
 		MT_lock_unset(&b->batIdxLock);
+		/* in case there are multiple threads that all want to
+		 * create imprints on slices of the same bat, we use a
+		 * semaphore so that one thread can pass and do the work
+		 * while the other threads wait until the first one is
+		 * done; so when a subsequent thread passes, first check
+		 * whether the work has already been done */
+		MT_sema_down(&b->imprsema);
+		MT_lock_set(&b->batIdxLock);
+		if (b->timprints != NULL) {
+			bat_iterator_end(&bi);
+			if (unfix)
+				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
+			MT_lock_unset(&b->batIdxLock);
+			return GDK_SUCCEED;
+		}
+		MT_lock_unset(&b->batIdxLock);
 		MT_thread_setalgorithm("create imprints");
 
 		if (s2)
@@ -511,6 +528,7 @@ BATimprints(BAT *b)
 			bat_iterator_end(&bi);
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		strconcat_len(imprints->imprints.filename,
@@ -528,6 +546,7 @@ BATimprints(BAT *b)
 			bat_iterator_end(&bi);
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		s2 = BATunique(b, s1);
@@ -537,6 +556,7 @@ BATimprints(BAT *b)
 			bat_iterator_end(&bi);
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		s3 = BATproject(s2, b);
@@ -547,6 +567,7 @@ BATimprints(BAT *b)
 			bat_iterator_end(&bi);
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		s3->tkey = true;	/* we know is unique on tail now */
@@ -558,6 +579,7 @@ BATimprints(BAT *b)
 			bat_iterator_end(&bi);
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		/* s4 now is ordered and unique on tail */
@@ -598,12 +620,15 @@ BATimprints(BAT *b)
 			BBPunfix(s3->batCacheid);
 			BBPunfix(s4->batCacheid);
 			if (b->timprints != NULL) {
+				assert(0);
 				if (unfix)
 					BBPunfix(unfix);
+				MT_sema_up(&b->imprsema);
 				return GDK_SUCCEED; /* we were beaten to it */
 			}
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		imprints->bins = imprints->imprints.base + IMPRINTS_HEADER_SIZE * SIZEOF_SIZE_T;
@@ -676,6 +701,7 @@ BATimprints(BAT *b)
 			TRC_DEBUG(ACCELERATOR, "failed imprints construction: bat %s changed, " LLFMT " usec\n", BATgetId(b), GDKusec() - t0);
 			if (unfix)
 				BBPunfix(unfix);
+			MT_sema_up(&b->imprsema);
 			return GDK_FAIL;
 		}
 		ATOMIC_INIT(&imprints->imprints.refs, 1);
@@ -693,6 +719,7 @@ BATimprints(BAT *b)
 					     MT_THR_DETACHED, name) < 0)
 				BBPunfix(b->batCacheid);
 		}
+		MT_sema_up(&b->imprsema);
 	}
 
 	TRC_DEBUG(ACCELERATOR, "%s: imprints construction " LLFMT " usec\n",

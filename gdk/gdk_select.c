@@ -2326,7 +2326,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 */
 		Imprints *imprints = NULL;
 		if (!equi &&
-		    /* DISABLES CODE */ (0) &&
 		    imprintable(bi.type) &&
 		    (!bi.transient ||
 		     (pb != NULL && !pbi.transient)) &&
@@ -2690,8 +2689,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	} else if (/* DISABLES CODE */ (0) &&
-		   !anti && !symmetric &&
+	} else if (!anti && !symmetric &&
 		   imprintable(li.type) &&
 		   (BATcount(rl) > 2 ||
 		    !li.transient ||

@@ -831,6 +831,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		MT_lock_init(&bn->batIdxLock, name);
 		snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 		MT_rwlock_init(&bn->thashlock, name);
+		snprintf(name, sizeof(name), "imprsema%d", bn->batCacheid); /* fits */
+		MT_sema_init(&bn->imprsema, 1, name);
 		ATOMIC_INIT(&bn->theap->refs, 1);
 
 		if (snprintf(BBP_bak(b.batCacheid), sizeof(BBP_bak(b.batCacheid)), "tmp_%o", (unsigned) b.batCacheid) >= (int) sizeof(BBP_bak(b.batCacheid))) {
