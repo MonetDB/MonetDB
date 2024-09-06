@@ -93,21 +93,17 @@ query R rowsort
 select y from test4 where y between 0 and -1
 ----
 
-query R rowsort
+statement ok
 analyze sys.test1
-----
 
-query R rowsort
+statement ok
 analyze sys.test2
-----
 
-query R rowsort
+statement ok
 analyze sys.test3
-----
 
-query R rowsort
+statement ok
 analyze sys.test4
-----
 
 query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0

@@ -56,7 +56,7 @@ static lng merge_delta( sql_delta *obat);
 #define SEG_VALID_4_DELETE(seg,tr) \
 	(!seg->deleted && VALID_4_READ(seg->ts, tr))
 
-/* Delete (in current trans or by some other finised transaction, or re-used segment which used to be deleted */
+/* Delete (in current trans or by some other finished transaction, or re-used segment which used to be deleted */
 #define SEG_IS_DELETED(seg,tr) \
 	((seg->deleted && (VALID_4_READ(seg->ts, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
 	 (!seg->deleted && !VALID_4_READ(seg->ts, tr)))
@@ -4655,7 +4655,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		lock_table(tr->store, t->base.id);
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
-		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* re-use old deleted or rolledback append */
+		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
 			if ((seg->end - seg->start) >= cnt) {
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && !p->deleted) {
@@ -4747,7 +4747,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
-		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* re-use old deleted or rolledback append */
+		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* reuse old deleted or rolled back append */
 
 			if ((seg->end - seg->start) >= cnt) {
 
@@ -4808,7 +4808,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
  * Claim cnt slots to store the tuples. The claim_tab should claim storage on the level
  * of the global transaction and mark the newly added storage slots unused on the global
  * level but used on the local transaction level. Besides this the local transaction needs
- * to update (and mark unused) any slot inbetween the old end and new slots.
+ * to update (and mark unused) any slot in between the old end and new slots.
  * */
 static int
 claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)

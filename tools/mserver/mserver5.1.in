@@ -363,7 +363,7 @@ directory.
 .TP
 .B mapi_listenaddr
 The TCP/IP interface on which the server will listen for connections.
-Possibilites are:
+Possibilities are:
 .RS
 .TP
 .B localhost
@@ -459,7 +459,7 @@ no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,dead
 The sequential pipeline is identical to the default pipeline, except
 that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
-avoid ambigious output, by avoiding parallelism.
+avoid ambiguous output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
 sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .RE

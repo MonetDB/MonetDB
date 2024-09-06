@@ -338,10 +338,10 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.setmemorylimit", "Illegal session id");
 	if (is_int_nil(limit))
 		throw(MAL, "clients.setmemorylimit",
-			  "The memmory limit cannot be NULL");
+			  "The memory limit cannot be NULL");
 	if (limit < 0)
 		throw(MAL, "clients.setmemorylimit",
-			  "The memmory limit cannot be negative");
+			  "The memory limit cannot be negative");
 
 	lng mlimit = (lng) limit << 20;
 
@@ -798,7 +798,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "quit", CLTquit, true, "Terminate the client session.", args(1,1, arg("",void))),
  pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
  command("clients", "getLogins", CLTLogin, false, "Pseudo bat of client id and login time.", args(2,2, batarg("user",oid),batarg("start",str))),
- pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligble statement.", args(0,1, arg("id",int))),
+ pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligible statement.", args(0,1, arg("id",int))),
  pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "wakeup", CLTwakeup, true, "Wakeup a client process", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "getprofile", CLTgetProfile, false, "Retrieve the profile settings for a client", args(5,5, arg("opt",str),arg("q",int),arg("s",int),arg("w",int),arg("m",int))),

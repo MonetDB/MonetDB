@@ -16,7 +16,7 @@
  * The SQL syntax help synopsis.
  */
 
-/* produce a synposis of the SQL syntax, inspired by a competing product.
+/* produce a synopsis of the SQL syntax, inspired by a competing product.
  * Use the conventional grammar constructs:
  * [ A | B ]    token A or B or none
  * { A | B }    exactly one of the options A or B should be chosen

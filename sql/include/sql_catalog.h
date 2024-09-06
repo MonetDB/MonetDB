@@ -168,7 +168,7 @@ typedef enum comp_type {
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
 
-	/* The followin cmp_* are only used within stmt (not sql_exp) */
+	/* The following cmp_* are only used within stmt (not sql_exp) */
 	cmp_all = 12,			/* special case for crossproducts */
 	cmp_project = 13,		/* special case for projection joins */
 	cmp_joined = 14, 		/* special case already joined */
@@ -260,7 +260,7 @@ extern int os_empty(struct objectset *os, struct sql_trans *tr);
 extern int os_remove(struct objectset *os, struct sql_trans *tr, const char *name);
 extern sql_base *os_find_name(struct objectset *os, struct sql_trans *tr, const char *name);
 extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id);
-/* iterating (for example for location functinos) */
+/* iterating (for example for location functions) */
 extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
@@ -542,7 +542,7 @@ typedef enum key_type {
 
 typedef struct sql_kc {
 	struct sql_column *c;
-	int trunc;		/* 0 not truncated, >0 colum is truncated */
+	int trunc;		/* 0 not truncated, >0 column is truncated */
 } sql_kc;
 
 typedef enum idx_type {

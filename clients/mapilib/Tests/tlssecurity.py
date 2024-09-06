@@ -70,7 +70,7 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
     elif  expected_error_regex is not None and actual_error is not None and re.search(expected_error_regex, actual_error):
         ok = True
     if ok:
-        logging.debug(f"**** END SUCCESFUL TEST {experiment} ")
+        logging.debug(f"**** END SUCCESSFUL TEST {experiment} ")
         return
     logging.error(f"Unexpected result for test {experiment}")
     logging.error(f"When connecting to port '{portname}' using URL {url}")
@@ -86,14 +86,14 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
 
 # connect_plain
 #
-# Connect to port 'plain', without using TLS. Have a succesful MAPI exchange.
+# Connect to port 'plain', without using TLS. Have a successful MAPI exchange.
 
 attempt('connect_plain', 'plain', None, tls=False)
 
 # connect_tls
 #
 # Connect to port 'server1' over TLS, verifying the connection using ca1.crt.
-# Have a succesful MAPI exchange.
+# Have a successful MAPI exchange.
 
 attempt('connect_tls', 'server1', None, cert=certpath('ca1.crt'))
 
@@ -137,7 +137,7 @@ attempt('refuse_expired', 'expiredcert', 'verify failed', cert=certpath('ca1.crt
 # connect_client_auth
 #
 # Connect to port 'clientauth' over TLS, verifying the connection using ca1.crt.
-# Authenticate using client2.key and client2.crt. Have a succesful MAPI
+# Authenticate using client2.key and client2.crt. Have a successful MAPI
 # exchange.
 
 attempt('connect_client_auth', 'clientauth', None, cert=certpath('ca1.crt'), clientcert=certpath('client2.crt'), clientkey=certpath('client2.key'))
@@ -156,15 +156,15 @@ attempt('fail_plain_to_tls', 'server1', 'Connection terminated while starting ha
 
 # connect_server_name
 #
-# Connect to port 'sni' over TLS. Have a succesful MAPI exchange. This indicates
+# Connect to port 'sni' over TLS. Have a successful MAPI exchange. This indicates
 # that the implementation sent a correct Server Name Indication.
 
 attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 
 # connect_alpn_mapi9
 #
-# Connect to port 'alpn_mapi9' over TLS. Have a succesful MAPI exchange. This
-# indicates that the implementation succesfully negotiated ALPN protocol
+# Connect to port 'alpn_mapi9' over TLS. Have a successful MAPI exchange. This
+# indicates that the implementation successfully negotiated ALPN protocol
 # "mapi/9".
 
 ####### Temporarily disable the ALPN header.
@@ -175,7 +175,7 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # connect_right_hash
 #
 # Connect to port 'server1' over TLS, with certhash set to a prefix of the hash
-# of the server certificate in DER form. Have a succesful MAPI exchange.
+# of the server certificate in DER form. Have a successful MAPI exchange.
 
 server1hash = sha256(tlstester.fetch('server1.der')).hexdigest()
 attempt('connect_right_hash', 'server1', None, certhash='sha256:' + server1hash[:6])
@@ -209,7 +209,7 @@ attempt('connect_ca_hash', 'server1', "does not match certhash", certhash='sha25
 # Install ca3.crt in the system root certificate store. This is highly
 # system-specific. Connect to port 'server3' over TLS without passing a
 # certificate to check. The implementation should pick it up from the system
-# store. Have a succesful MAPI exchange.
+# store. Have a successful MAPI exchange.
 #
 # Tested elsewhere, in test systemcertificates
 

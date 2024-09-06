@@ -219,7 +219,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			old[i] = NULL;
 			continue;
 		}
-		/* update the hash structure with another candidate for re-use */
+		/* update the hash structure with another candidate for reuse */
 		TRC_DEBUG(MAL_OPTIMIZER,
 				  "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i,
 				  getArg(p, p->argc - 1), h, hash[h]);

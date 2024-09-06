@@ -140,9 +140,8 @@
 
 #define GETBIN(Z,X,B)				\
 	do {					\
-		int _i;				\
 		Z = 0;				\
-		for (_i = 1; _i < B; _i++)	\
+		for (int _i = 1; _i < B; _i++)	\
 			Z += ((X) >= bins[_i]);	\
 	} while (0)
 

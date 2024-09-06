@@ -227,7 +227,7 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 }
 
 
-/* Read one line (seperated by \n) of at most maxcnt-1 characters from
+/* Read one line (separated by \n) of at most maxcnt-1 characters from
  * the stream.  Returns the number of characters actually read,
  * includes the trailing \n; terminated by a NULL byte. */
 ssize_t

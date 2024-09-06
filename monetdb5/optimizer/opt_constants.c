@@ -95,7 +95,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						|| ATOMcmp(x->value.vtype, VALptr(&x->value),
 								   VALptr(&y->value)) == 0)) {
 
-						/* re-use a constant */
+						/* reuse a constant */
 						alias[i] = index[k];
 						fnd = 1;
 						actions++;

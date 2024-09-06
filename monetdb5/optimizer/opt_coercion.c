@@ -29,7 +29,7 @@ typedef struct {
  * For now, limit to +,-,/,*,% hge expressions
  * Not every combination may be available in the MAL layer, which calls
  * for a separate type check before fixing it.
- * Superflous coercion statements will be garbagecollected later on in the pipeline
+ * Superfluous coercion statements will be garbagecollected later on in the pipeline
  */
 static void
 coercionOptimizerCalcStep(Client cntxt, MalBlkPtr mb, int i, Coercion *coerce)

@@ -259,7 +259,7 @@ find_member_pos(list *l, sql_table *t)
 
    The current implementation chooses the join order based on
    select counts, ie if one of the join sides has been reduced using
-   a select this join is choosen over one without such selections.
+   a select this join is chosen over one without such selections.
  */
 
 /* currently we only find simple column expressions */

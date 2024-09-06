@@ -123,7 +123,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		/* restore the naming, dropping the runtime property 'empty'
-		 * Keep the bind operation, because it is cheap, rather focus on their re-use
+		 * Keep the bind operation, because it is cheap, rather focus on their reuse
 		 */
 
 		if (getFunctionId(p) == emptybindRef) {

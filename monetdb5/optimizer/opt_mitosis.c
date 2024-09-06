@@ -148,7 +148,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	/*
 	 * The number of pieces should be based on the footprint of the
-	 * queryplan, such that preferrably it can be handled without
+	 * query plan, such that preferably it can be handled without
 	 * swapping intermediates.  For the time being we just go for pieces
 	 * that fit into memory in isolation.  A fictive rowcount is derived
 	 * based on argument types, such that all pieces would fit into

@@ -2187,7 +2187,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (!(le->f = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
-		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+		} else { /* if it's not a tuple, enforce coercion on the type for every element on the list */
 			sql_subtype super, *le_tpe = exp_subtype(le), *values_tpe = NULL;
 
 			for (node *m = vals->h; m; m = m->next) { /* first get values supertype */
@@ -3416,7 +3416,7 @@ exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
 			}
 		}
-	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is allready aggregated */
+	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is already aggregated */
 		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
 		sql_exp *a = NULL;
 
@@ -4257,7 +4257,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 		symbol *grouping = o->data.sym;
 		list *next_set = NULL;
 
-		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the genererated sets */
+		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the generated sets */
 			list *other = rel_groupings(query, rel, grouping, selection, f, true, &next_set);
 			if (!other)
 				return NULL;
@@ -5685,7 +5685,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	for (dnode *n = sn->selection->h; n; n = n->next) {
 		/* Here we could get real column expressions
 		 * (including single atoms) but also table results.
-		 * Therefor we try both rel_column_exp
+		 * Therefore we try both rel_column_exp
 		 * and rel_table_exp.
 		 */
 		list *te = NULL;

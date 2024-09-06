@@ -530,7 +530,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			*downcast = true;
 		if (nscore == 0)
 			return 0;
-		nscore *= 100; /* first based on prefered conversions */
+		nscore *= 100; /* first based on preferred conversions */
 		if (nscore < 0) {
 			*downcast = true;
 			nscore = -nscore;

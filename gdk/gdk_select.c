@@ -110,6 +110,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	oid seq;
 	int (*cmp)(const void *, const void *);
 	BAT *b2 = NULL;
+	BATiter pbi = {0};
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -130,14 +131,18 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		d = bi->baseoff - b2->tbaseoff;
 		l += d;
 		h += d;
-		bat_iterator_end(bi);
-		*bi = bat_iterator(b2);
+		pbi = bat_iterator(b2);
+		bi = &pbi;
+	} else {
+		phash = false;
 	}
 
 	if (!havehash) {
 		if (BAThash(bi->b) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			BBPreclaim(b2);
+			if (phash)
+				bat_iterator_end(&pbi);
 			return NULL;
 		}
 		MT_rwlock_rdlock(&bi->b->thashlock);
@@ -200,10 +205,14 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	bn->tsorted = true;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *dst : oid_nil;
+	if (phash)
+		bat_iterator_end(&pbi);
 	return bn;
 
   bailout:
 	MT_rwlock_rdunlock(&bi->b->thashlock);
+	if (phash)
+		bat_iterator_end(&pbi);
 	BBPreclaim(b2);
 	BBPreclaim(bn);
 	return NULL;
@@ -339,8 +348,8 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 		const uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
 		uint##B##_t mask = 0, innermask;			\
 		const int tpe = ATOMbasetype(bi->type);			\
-		const int lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, tl); \
-		const int hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, th); \
+		const int lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, &vl); \
+		const int hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, &vh); \
 		/* note: (1<<n)-1 gives a sequence of n one bits */	\
 		/* to set bits hbin..lbin inclusive, we would do: */	\
 		/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */ \
@@ -380,9 +389,13 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 		for (BUN ii = 0; ii < B; ii++) {			\
 			if (is_##TYPE##_nil(imp_min) && imp_cnt[ii]) {	\
 				imp_min = basesrc[imprints->stats[ii]];	\
+				break;					\
 			}						\
-			if (is_##TYPE##_nil(imp_max) && imp_cnt[B-1-ii]) { \
-				imp_max = basesrc[imprints->stats[64+B-1-ii]]; \
+		}							\
+		for (BUN ii = B; ii != 0; ii--) {			\
+			if (is_##TYPE##_nil(imp_max) && imp_cnt[ii-1]) { \
+				imp_max = basesrc[imprints->stats[64+ii-1]]; \
+				break;					\
 			}						\
 		}							\
 		assert(!is_##TYPE##_nil(imp_min) &&			\
@@ -648,7 +661,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			hval = true;					\
 		}							\
 		if (vl > vh) {						\
-			*algo = "select: empty range";	\
+			*algo = "select: empty range";			\
 			return 0;					\
 		}							\
 	}								\
@@ -1742,7 +1755,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (s) {
 				bn2 = BATdiffcand(s, bn);
 			} else {
-				bn2 = BATnegcands2(ci.seq, bi.count, bn);
+				bn2 = BATnegcands(ci.seq, bi.count, bn);
 			}
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
@@ -2288,7 +2301,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			if (s) {
 				bn2 = BATdiffcand(s, bn);
 			} else {
-				bn2 = BATnegcands2(ci.seq, bi.count, bn);
+				bn2 = BATnegcands(ci.seq, bi.count, bn);
 			}
 			BBPreclaim(bn);
 			bn = bn2;
@@ -2323,16 +2336,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				imprints = pb->timprints;
 				if (imprints != NULL)
 					IMPSincref(imprints);
-				else
-					imprints = NULL;
 				MT_lock_unset(&pb->batIdxLock);
 			} else {
 				MT_lock_set(&b->batIdxLock);
 				imprints = b->timprints;
 				if (imprints != NULL)
 					IMPSincref(imprints);
-				else
-					imprints = NULL;
 				MT_lock_unset(&b->batIdxLock);
 			}
 		}
@@ -2705,16 +2714,12 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 			imprints = tmp->timprints;
 			if (imprints != NULL)
 				IMPSincref(imprints);
-			else
-				imprints = NULL;
 			MT_lock_unset(&tmp->batIdxLock);
 		} else {
 			MT_lock_set(&l->batIdxLock);
 			imprints = l->timprints;
 			if (imprints != NULL)
 				IMPSincref(imprints);
-			else
-				imprints = NULL;
 			MT_lock_unset(&l->batIdxLock);
 		}
 		/* in the unlikely case that the imprints were removed

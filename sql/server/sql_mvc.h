@@ -47,7 +47,7 @@
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_exists	4
-/* to be removed ie are in type (aka dimention) */
+/* to be removed ie are in type (aka dimension) */
 #define card_relation 	5
 #define card_loader 	6
 

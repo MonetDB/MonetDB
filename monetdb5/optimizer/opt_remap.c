@@ -458,7 +458,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL, "optmizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.remap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];

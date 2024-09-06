@@ -19,7 +19,7 @@
 #include "mal_builder.h"
 
 /*
- * The optimizers should all be equiped with debugging code
+ * The optimizers should all be equipped with debugging code
  * to easily trace their performance.
  */
 extern int isSimpleSQL(MalBlkPtr mb);

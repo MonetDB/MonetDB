@@ -20,7 +20,7 @@
  * the library called GDK, an abbreviation of Goblin Database Kernel.
  * Its development was originally rooted in the design of a pure
  * active-object-oriented programming language, before development
- * was shifted towards a re-usable database kernel engine.
+ * was shifted towards a reusable database kernel engine.
  *
  * GDK is a C library that provides ACID properties on a DSM model
  * @tex
@@ -1342,7 +1342,7 @@ bat_iterator_end(BATiter *bip)
 /*
  * @- Internal HEAP Chunk Management
  * Heaps are used in BATs to store data for variable-size atoms.  The
- * implementor must manage malloc()/free() functionality for atoms in
+ * implementer must manage malloc()/free() functionality for atoms in
  * this heap. A standard implementation is provided here.
  *
  * @table @code

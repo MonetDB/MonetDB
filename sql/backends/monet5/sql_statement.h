@@ -135,7 +135,7 @@ typedef struct stmt {
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
-	list *extra;	/* used for merge statments, this will be cleaned out on the pushcands branch :) */
+	list *extra;	/* used for merge statements, this will be cleaned out on the pushcands branch :) */
 } stmt;
 
 /* which MAL modules can push candidates */
@@ -229,7 +229,7 @@ extern void stmt_set_nrcols(stmt *s);
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
 extern stmt *stmt_unique(backend *be, stmt *op1);
 
-/* raise exception incase the condition (cond) holds, continue with stmt res */
+/* raise exception in case the condition (cond) holds, continue with stmt res */
 extern stmt *stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode);
 
 extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
@@ -240,7 +240,7 @@ extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
 /*
  * distinct: compute topn on unique groups
- * dir:      direction of the ordering, ie 1 Ascending, 0 decending
+ * dir:      direction of the ordering, ie 1 Ascending, 0 descending
  * last:     intermediate step or last step
  * order:    is order important or not (firstn vs slice)
  */

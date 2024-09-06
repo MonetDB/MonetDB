@@ -1623,8 +1623,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 			}
 
 			else
-				rev = BATnegcands(b->batCount, bn);
-			/* BAT *rev = BATnegcands(b->batCount, bn); */
+				rev = BATnegcands(0, b->batCount, bn);
+			/* BAT *rev = BATnegcands(0, b->batCount, bn); */
 			BBPunfix(bn->batCacheid);
 			bn = rev;
 		}

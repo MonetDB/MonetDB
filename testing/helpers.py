@@ -94,7 +94,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
     test_index = []
     test_lookup = {}
     lookup  = [
-        # file extention  EXT        CALL      SERVER
+        # file extension  EXT        CALL      SERVER
         ('.py',           '.py',     'python', ''),
         ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
         ('.SQL.py',       '.SQL.py', 'python', 'SQL'),

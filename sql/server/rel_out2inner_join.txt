@@ -50,7 +50,7 @@ The plan currently generated for this query is given by
 | ) [ "foo"."i", "bar"."i" ]                        |
 +---------------------------------------------------+
 
-Notice that the select's filter expression 'bar.i is not null' has the effect that all tuples that are in the assymetric difference foo excluding bar are filtered from the result set of the outer join. For any outer join X left join Y, we call such a filter that depends on the inner part Y of the outer join, a null-rejecting predicate in Y if the predicate evaluates to false if one or more of the attributes in Y is NULL.
+Notice that the select's filter expression 'bar.i is not null' has the effect that all tuples that are in the asymmetric difference foo excluding bar are filtered from the result set of the outer join. For any outer join X left join Y, we call such a filter that depends on the inner part Y of the outer join, a null-rejecting predicate in Y if the predicate evaluates to false if one or more of the attributes in Y is NULL.
 
 We can improve the plan in the case of an outer join followed by a select containing a null-rejecting predicate on the inner part of the outer join by transforming the outer join into an inner join.
 
@@ -71,7 +71,7 @@ So in the above example we can change the plan to
 
 This should even allow for more optimization like potentially pushing down the select underneath the join or even removing it in its entirety.
 
-step 1: figure out at a suitable moment in the relational optimizer when a plan containing a select and an outer join has a high probility to look like this
+step 1: figure out at a suitable moment in the relational optimizer when a plan containing a select and an outer join has a high probability of looking like this
 
 select(
     left_join(

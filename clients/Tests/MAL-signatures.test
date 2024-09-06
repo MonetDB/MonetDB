@@ -2767,17 +2767,17 @@ aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1]):any_1
 zero_or_one;
-if col contains exactly one value return this. Incase of more raise an exception else return nil
+if col contains exactly one value return this. In case of more raise an exception else return nil
 aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1], X_1:bit):any_1
 zero_or_one_error;
-if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil
+if col contains exactly one value return this. In case of more raise an exception if err is true else return nil
 aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1], X_1:bat[:bit]):any_1
 zero_or_one_error_bat;
-if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil
+if col contains exactly one value return this. In case of more raise an exception if err is true else return nil
 alarm
 ctime
 unsafe command alarm.ctime():str
@@ -2967,7 +2967,7 @@ algebra
 outerselect
 command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit])
 ALGouterselect;
-Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
+Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
 pattern algebra.project(X_0:bat[:any_1], X_1:any_2):bat[:any_2]
@@ -3402,7 +3402,7 @@ bat
 partition
 pattern bat.partition(X_0:bat[:any_1]):bat[:any_1]...
 CMDBATpartition;
-Create a serie of slices over the BAT argument. The BUNs are distributed evenly.
+Create a series of slices over the BAT argument. The BUNs are distributed evenly.
 bat
 replace
 command bat.replace(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1]
@@ -3467,7 +3467,7 @@ bat
 single
 pattern bat.single(X_0:any_1):bat[:any_1]
 CMDBATsingle;
-Create a BAT with a single elemenet
+Create a BAT with a single element
 bat
 vacuum
 command bat.vacuum(X_0:bat[:str]):bat[:str]
@@ -26432,7 +26432,7 @@ batxml
 root
 command batxml.root(X_0:bat[:xml], X_1:str, X_2:str):bat[:xml]
 BATXMLroot;
-Contruct the root nodes.
+Construct the root nodes.
 batxml
 serialize
 command batxml.serialize(X_0:bat[:xml]):bat[:str]
@@ -33247,7 +33247,7 @@ clients
 stop
 unsafe pattern clients.stop(X_0:int):void
 CLTstop;
-Stop the query execution at the next eligble statement.
+Stop the query execution at the next eligible statement.
 clients
 stopsession
 unsafe pattern clients.stopsession(X_0:int):void
@@ -34827,7 +34827,7 @@ identifier
 identifier
 command identifier.identifier(X_0:str):identifier
 IDentifier;
-Cast a string to an identifer 
+Cast a string to an identifier 
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit
@@ -34977,7 +34977,7 @@ inspect
 getEnvironment
 command inspect.getEnvironment(X_0:str):str
 INSPECTgetEnvironmentKey;
-Get the value of an environemnt variable
+Get the value of an environment variable
 inspect
 getExistence
 pattern inspect.getExistence(X_0:str, X_1:str):bit
@@ -35052,7 +35052,7 @@ io
 print
 pattern io.print(X_0:bat[:any]...):void
 IOtable;
-BATs are printed with '#' for legend @lines, and the BUNs on seperate lines @between brackets, containing each to @comma separated values (head and tail). @If multiple BATs are passed for printing, @print() performs an implicit natural @join on the void head, producing a multi attribute table.
+BATs are printed with '#' for legend @lines, and the BUNs on separate lines @between brackets, containing each to @comma separated values (head and tail). @If multiple BATs are passed for printing, @print() performs an implicit natural @join on the void head, producing a multi attribute table.
 io
 printf
 pattern io.printf(X_0:str):void
@@ -35302,7 +35302,7 @@ language
 pass
 pattern language.pass(X_0:any_1):void
 MALpass;
-Cheap instruction to disgard storage while retaining the dataflow dependency
+Cheap instruction to discard storage while retaining the dataflow dependency
 logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str])
@@ -37452,7 +37452,7 @@ sql
 copy_from
 unsafe pattern sql.copy_from(X_0:ptr, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:lng, X_8:int, X_9:str, X_10:int, X_11:int, X_12:str, X_13:str):bat[:any]...
 mvc_import_table_wrap;
-Import a table from bstream s with the @given tuple and seperators (sep/rsep)
+Import a table from bstream s with the @given tuple and separators (sep/rsep)
 sql
 copy_rejects
 pattern sql.copy_rejects() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:str])
@@ -37732,7 +37732,7 @@ sql
 eval
 unsafe pattern sql.eval(X_0:str, X_1:bit):void
 SQLstatement;
-Compile and execute a single sql statement (and optionaly set the output to columnar format)
+Compile and execute a single sql statement (and optionally set the output to columnar format)
 sql
 evalAlgebra
 unsafe pattern sql.evalAlgebra(X_0:str, X_1:bit):void

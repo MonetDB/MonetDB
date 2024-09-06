@@ -343,7 +343,7 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 	if (list_length(l) == 0 || list_length(r) == 0)
 		return 0;
 
-	/* first recusive exps_cse */
+	/* first recursive exps_cse */
 	nexps = new_exp_list(sql->sa);
 	for (n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -2472,7 +2472,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				if (rel_mask & (((ulng)1)<<((r2[cje->tmp]-1)%64)))
 					r = rels_a[r2[cje->tmp]];
 			}
-			if (!direct) { /* check if atleast one side in n_rels */
+			if (!direct) { /* check if at least one side in n_rels */
 				if (l && !list_find(n_rels, l, NULL))
 					l = NULL;
 				if (r && !list_find(n_rels, r, NULL))
@@ -2903,7 +2903,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
    		   {semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
 		   into {semi,anti}join (A,B) [ A.c1 == B.c1 ]
 
-		   for semijoin also A.c1 == B.k1 ] [ A.c1 == B.k2 ] could be rewriten
+		   for semijoin also A.c1 == B.k1 ] [ A.c1 == B.k2 ] could be rewritten
 		 */
 		if (l && r && rl &&
 		    is_basetable(l->op) && is_basetable(rl->op) &&

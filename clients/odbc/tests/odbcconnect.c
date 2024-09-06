@@ -360,7 +360,7 @@ do_sqlbrowseconnect(const char *target)
 		exitcode = do_execute_stmt();
 
 	// Do not call SQLDisconnect, SQLBrowseConnect is intended to
-	// be invoked multiple times without disconnecting inbetween
+	// be invoked multiple times without disconnecting in between
 
 	return exitcode;
 }

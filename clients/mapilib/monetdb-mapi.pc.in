@@ -13,7 +13,7 @@ libdir=@CMAKE_INSTALL_FULL_LIBDIR@
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
 Name: monetdb-mapi
-Description: MonetDB MAPI C-client libary
+Description: MonetDB MAPI C-client library
 URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
 Requires.private: monetdb-stream = @MONETDB_VERSION@

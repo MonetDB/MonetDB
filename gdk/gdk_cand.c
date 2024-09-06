@@ -1293,7 +1293,7 @@ canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2
 }
 
 BAT *
-BATnegcands2(oid tseq, BUN nr, BAT *odels)
+BATnegcands(oid tseq, BUN nr, BAT *odels)
 {
 	const char *nme;
 	Heap *dels;
@@ -1360,12 +1360,6 @@ BATnegcands2(oid tseq, BUN nr, BAT *odels)
 		  nr, ALGOBATPAR(odels),
 		  ALGOBATPAR(bn));
 	return bn;
-}
-
-BAT *
-BATnegcands(BUN nr, BAT *odels)
-{
-	return BATnegcands2(0, nr, odels);
 }
 
 BAT *

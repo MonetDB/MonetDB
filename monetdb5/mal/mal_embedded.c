@@ -148,8 +148,8 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 
 /*
  * Upon exit we should attempt to remove all allocated memory explicitly.
- * This seemingly superflous action is necessary to simplify analyis of
- * memory leakage problems later ons and to allow an embedded server to
+ * This seemingly superfluous action is necessary to simplify analysis of
+ * memory leakage problems later on and to allow an embedded server to
  * restart the server properly.
  *
  * It is the responsibility of the enclosing application to finish/cease all
