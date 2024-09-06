@@ -1687,10 +1687,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_aggr: {
 		list *attr = e->l;
+		list *r = e->r;
 		stmt *as = NULL;
 		sql_subfunc *a = e->f;
 
 		assert(sel == NULL);
+			/* cases
+			 * 0) count(*)
+			 * 1) general aggregation
+			 * 2) aggregation with required order (quantile etc)
+			 * 3) aggregation with optional order by, group_concat, xml_agg
+			 * */
 		if (attr && attr->h) {
 			node *en;
 			list *l = sa_list(sql->sa);
@@ -1742,6 +1749,37 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (l == NULL)
 					return NULL;
 				append(l, stmt_project(be, u, a));
+			}
+			if (r) {
+				list *obe = r->h->data;
+				if (obe) {
+					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
+					/* order by */
+					if (grp) {
+						orderby = stmt_order(be, grp, true, true);
+
+						orderby_vals = stmt_result(be, orderby, 0);
+						orderby_ids = stmt_result(be, orderby, 1);
+						orderby_grp = stmt_result(be, orderby, 2);
+					}
+					for (node *n = obe->h; n; n = n->next) {
+						sql_exp *oe = n->data;
+						stmt *os = exp_bin(be, oe, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
+						if (orderby)
+							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
+						else
+							orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
+						orderby_vals = stmt_result(be, orderby, 0);
+						orderby_ids = stmt_result(be, orderby, 1);
+						orderby_grp = stmt_result(be, orderby, 2);
+					}
+					/* depending on type of aggr project input or ordered column */
+					stmt *h = l->h->data;
+					l->h->data = h = stmt_project(be, orderby_ids, h);
+					if (grp)
+						grp = stmt_project(be, orderby_ids, grp);
+					(void)orderby_vals;
+				}
 			}
 			as = stmt_list(be, l);
 		} else {

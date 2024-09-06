@@ -3442,6 +3442,8 @@ exps_valid(sql_query *query, list *exps, int groupby)
 	return NULL;
 }
 
+static list * rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct, int f);
+
 static sql_exp *
 _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *args, int f)
 {
@@ -3491,7 +3493,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool arguments_correlated = true, all_const = true;
 
 		all_freevar = all_aggr?1:0;
-		for (i = 0; args && args->data.sym; args = args->next, i++) {
+		for (i = 0; args && args->data.sym && args->data.sym->token != SQL_ORDERBY; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
@@ -3714,6 +3716,17 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	if ((!exps || exps_card(exps) > CARD_ATOM) && (!res || !groupby))
 		return NULL;
 
+	list *obe = NULL;
+	if (args && args->data.sym && args->data.sym->token != SQL_ORDERBY)
+			return NULL;
+	if (args && args->data.sym) { /* handle order by */
+		int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
+		sql_rel *gl = base?groupby:groupby->l;//, *ogl = gl; /* handle case of subqueries without correlation */
+		obe = rel_order_by(query, &gl, args->data.sym, 0, f);
+		if (!obe)
+			return NULL;
+	}
+
 	if (all_freevar) {
 		query_update_outer(query, res, all_freevar-1);
 	} else if (rel) {
@@ -3725,6 +3738,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	}
 
 	if (!has_args) {	/* count(*) case */
+		obe = NULL; /* no errors, although the order by is useless */
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
@@ -3798,6 +3812,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
+		if (!obe && a->func->order_required) {
+			/* TODO preper error on missing order by */
+			return NULL;
+		}
+		if (obe && !a->func->order_required && !a->func->opt_order)
+			obe = NULL;
+		if (obe) /* add order by expressions */
+			e->r = append(sa_list(sql->sa), obe);
 		if (!groupby)
 			return e;
 		if (all_freevar)

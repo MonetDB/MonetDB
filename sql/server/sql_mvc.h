@@ -209,7 +209,7 @@ extern int mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigne
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
 extern int mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
-						   const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
+						   const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 

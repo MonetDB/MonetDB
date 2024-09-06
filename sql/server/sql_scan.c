@@ -321,6 +321,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("VIEW", VIEW);
 	failed += keywords_insert("WHERE", WHERE);
 	failed += keywords_insert("WITH", WITH);
+	failed += keywords_insert("WITHIN", WITHIN);
 	failed += keywords_insert("WITHOUT", WITHOUT);
 	failed += keywords_insert("DATA", DATA);
 

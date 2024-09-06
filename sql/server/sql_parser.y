@@ -304,6 +304,7 @@ int yydebug=1;
 	opt_offset
 	opt_offset_rows
 	opt_fetch
+	order_by_clause
 	opt_order_by_clause
 	opt_over
 	opt_partition_by
@@ -583,6 +584,7 @@ int yydebug=1;
 	drop_action
 	extract_datetime_field
 	func_def_type
+	func_def_opt_order_spec
 	global_privilege
 	grantor
 	intval
@@ -749,7 +751,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token RETURN
 %token LEADING TRAILING BOTH
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHIN WITHOUT
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED FETCH
@@ -2307,21 +2309,30 @@ func_def_type:
 func_def_opt_return:
 	RETURNS func_data_type	{ $$ = $2; }
 |							{ $$ = NULL; }
+;
+
+func_def_opt_order_spec:
+	WITH ORDER		{ $$ = 1; }
+|	ORDERED			{ $$ = 2; }
+|				{ $$ = 0; }
+;
 
 func_def:
     create_or_replace func_def_type qname
 	'(' opt_paramlist ')'
     func_def_opt_return
+    func_def_opt_order_spec
     EXTERNAL sqlNAME external_function_name
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
 				append_symbol(f, $7);
-				append_list(f, $10);
+				append_list(f, $11);
 				append_list(f, NULL);
 				append_int(f, $2);
 				append_int(f, FUNC_LANG_MAL);
 				append_int(f, $1);
+				append_int(f, $8);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create_or_replace func_def_type qname
 	'(' opt_paramlist ')'
@@ -2336,6 +2347,7 @@ func_def:
 				append_int(f, $2);
 				append_int(f, FUNC_LANG_SQL);
 				append_int(f, $1);
+				append_int(f, 0);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create_or_replace func_def_type qname
 	'(' opt_paramlist ')'
@@ -2375,6 +2387,7 @@ func_def:
 			append_int(f, $2);
 			append_int(f, lang);
 			append_int(f, $1);
+			append_int(f, 0);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
 		}
 ;
@@ -3827,10 +3840,14 @@ and_exp:
  |  pred_exp	{ $$ = $1; }
  ;
 
+order_by_clause:
+    ORDER BY all		  	{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
+ |  ORDER BY sort_specification_list 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+ ;
+
 opt_order_by_clause:
     /* empty */			  	{ $$ = NULL; }
- |  ORDER BY all		  	{ $$ = _symbol_create_list( SQL_ORDERBY, NULL); }
- |  ORDER BY sort_specification_list 	{ $$ = _symbol_create_list( SQL_ORDERBY, $3); }
+ |  order_by_clause
  ;
 
 first_next:
@@ -4854,6 +4871,30 @@ aggr_or_window_ref:
 			$$ = _symbol_create_list( SQL_NOP, l );
 		  }
 		}
+ |  qfunc '(' search_condition_commalist opt_order_by_clause ')'
+		{ dlist *l = L();
+		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
+                  if ($3) {
+                  	for(dnode *dn = $3->h; dn; dn = dn->next)
+                        	append_symbol(l, dn->data.sym);
+                  } else {
+                        append_symbol(l, NULL);
+                  }
+		  append_symbol(l, $4);
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+ |  qfunc '(' search_condition_commalist ')' WITHIN sqlGROUP '(' order_by_clause ')' /* TODO add where part */
+		{ dlist *l = L();
+		  append_list(l, $1);
+		  append_int(l, FALSE); /* ignore distinct */
+                  if ($3) {
+                  	for(dnode *dn = $3->h; dn; dn = dn->next)
+                        	append_symbol(l, dn->data.sym);
+                  } else {
+                        append_symbol(l, NULL);
+                  }
+		  append_symbol(l, $8);
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  qfunc '(' ALL search_condition_commalist ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
@@ -4868,6 +4909,7 @@ aggr_or_window_ref:
 		  } else {
 			append_list(l, $4);
 			$$ = _symbol_create_list( SQL_NOP, l );
+
 		  }
 		}
  |  XML_aggregate
@@ -6773,18 +6815,11 @@ XML_aggregate:
 	{
 	  dlist *aggr = L();
 
-	  if ($4) {
-		if ($3 != NULL && $3->token == SQL_SELECT) {
-			SelectNode *s = (SelectNode*)$3;
-			s->orderby = $4;
-		} else {
-			yyerror(m, "ORDER BY: missing select operator");
-			YYABORT;
-		}
-	  }
 	  append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
 	  append_int(aggr, FALSE); /* ignore distinct */
 	  append_symbol(aggr, $3);
+	  if ($4)
+	  	append_symbol(aggr, $4);
 	  /* int returning not used */
 	  $$ = _symbol_create_list( SQL_AGGR, aggr);
 	}

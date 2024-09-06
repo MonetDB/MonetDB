@@ -277,7 +277,15 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	case e_func: {
 		if (e->l)
 			nr += exps_mark_used(subrel, e->l, local_proj);
-		assert(!e->r);
+		if (e->r) {
+			list *r = e->r;
+			list *obes = r->h->data;
+			nr += exps_mark_used(subrel, obes, local_proj);
+			if (r->h->next) {
+				list *exps = r->h->next->data;
+				nr += exps_mark_used(subrel, exps, local_proj);
+			}
+		}
 		break;
 	}
 	case e_cmp:

@@ -244,6 +244,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		else
 			mnstr_printf(fout, "()");
+		if (e->r) { /* order by exps */
+			list *r = e->r;
+			list *obes = r->h->data;
+			exps_print(sql, fout, obes, depth, refs, 0, 1, decorate, 0);
+			if (r->h->next) {
+				list *exps = r->h->next->data;
+				exps_print(sql, fout, exps, depth, refs, 0, 1, decorate, 0);
+			}
+		}
 	} break;
 	case e_column: {
 		if (is_freevar(e))
