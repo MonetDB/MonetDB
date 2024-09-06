@@ -209,6 +209,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 		MT_lock_destroy(&bn->theaplock);
 		MT_lock_destroy(&bn->batIdxLock);
 		MT_rwlock_destroy(&bn->thashlock);
+		MT_sema_destroy(&bn->imprsema);
 		GDKfree(bn);
 		return NULL;
 	}
