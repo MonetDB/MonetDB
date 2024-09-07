@@ -1337,6 +1337,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._columns",	"sys",	"functions",	"schema_id",	"int",	31,	0,	NULL,	true,	9,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"functions",	"system",	"boolean",	1,	0,	NULL,	true,	10,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"functions",	"semantics",	"boolean",	1,	0,	NULL,	true,	11,	NULL,	NULL	]
+[ "sys._columns",	"sys",	"functions",	"order_specification",	"tinyint",	7,	0,	NULL,	true,	12,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"geometry_columns",	"f_table_catalog",	"varchar",	1,	0,	NULL,	true,	0,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"geometry_columns",	"f_table_schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL,	NULL	]
 [ "sys._columns",	"sys",	"geometry_columns",	"f_table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL,	NULL	]
