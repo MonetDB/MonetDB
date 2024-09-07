@@ -1991,7 +1991,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "schema_id", 2026, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "system", 2027, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1) == NULL ||
-		bootstrap_create_column(tr, t, "order_specification", 2167, "tinyint", 1) == NULL ||
+		bootstrap_create_column(tr, t, "order_specification", 2167, "tinyint", 7) == NULL ||
 
 		(arguments = t = bootstrap_create_table(tr, s, "args", 2028)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2029, "int", 31) == NULL ||

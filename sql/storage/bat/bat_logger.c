@@ -20,6 +20,7 @@
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
+#define CATALOG_AUG2024 52303	/* first in aug2024 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -56,6 +57,13 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_AUG2024
+	if (oldversion == CATALOG_AUG2024) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
 	return GDK_FAIL;
 }
 
@@ -758,6 +766,68 @@ bl_postversion(void *Store, logger *lg)
 	}
 #endif
 
+#ifdef CATALOG_AUG2024
+	if (store->catalog_version <= CATALOG_AUG2024) {
+			/* new TINYINT column sys.functions.order_specification */
+			BAT *ftype = log_temp_descriptor(log_find_bat(lg, 2022)); /* sys.functions.type (int) */
+			BAT *fname = log_temp_descriptor(log_find_bat(lg, 2018)); /* sys.functions.name (str) */
+			if (ftype == NULL || fname == NULL)
+				return GDK_FAIL;
+			bte zero = 0;
+			BAT *order_spec = BATconstant(ftype->hseqbase, TYPE_bte, &zero, BATcount(ftype), PERSISTENT);
+			/* update functions set order_specification=1 where type == aggr and name in ('group_concat', 'listagg', 'xmlagg')
+			 * update functions set order_specification=2 where type == aggr and name = 'quantile' */
+			if (order_spec == NULL) {
+				bat_destroy(ftype);
+				bat_destroy(fname);
+				return GDK_FAIL;
+			}
+			bte *os = (bte*)Tloc(order_spec, 0);
+			int *ft = (int*)Tloc(ftype, 0);
+			BATiter fni = bat_iterator_nolock(fname);
+			for(BUN b = 0; b < BATcount(ftype); b++) {
+				if (ft[b] == F_AGGR) {
+					const char *f = BUNtvar(fni, b);
+					if (strcmp(f, "group_concat") == 0 || strcmp(f, "listagg") == 0 || strcmp(f, "xmlagg") == 0)
+						os[b] = 1;
+					else if (strcmp(f, "quantile") == 0 || strcmp(f, "quantile_avg") == 0)
+						os[b] = 2;
+				}
+			}
+			bat_destroy(ftype);
+			bat_destroy(fname);
+			if ((order_spec = BATsetaccess(order_spec, BAT_READ)) == NULL ||
+				/* 2165 is sys.keys.check */
+				BUNappend(lg->catalog_id, &(int) {2167}, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &order_spec->batCacheid, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_cnt, &(lng){BATcount(order_spec)}, false) != GDK_SUCCEED
+				) {
+				bat_destroy(order_spec);
+				return GDK_FAIL;
+			}
+			BBPretain(order_spec->batCacheid);
+			bat_destroy(order_spec);
+
+			if (tabins(lg, tabins_first, -1, 0,
+					   2076, &(msk) {false},	/* sys._columns */
+					   /* 2167 is sys.functions.order_specification */
+					   2077, &(int) {2167},		/* sys._columns.id */
+					   2078, "order_specification",			/* sys._columns.name */
+					   2079, "tinyint",			/* sys._columns.type */
+					   2080, &(int) {7},		/* sys._columns.type_digits */
+					   2081, &(int) {0},		/* sys._columns.type_scale */
+					   /* 2016 is sys.functions */
+					   2082, &(int) {2016},		/* sys._columns.table_id */
+					   2083, str_nil,			/* sys._columns.default */
+					   2084, &(bit) {TRUE},		/* sys._columns.null */
+					   2085, &(int) {12},		/* sys._columns.number */
+					   2086, str_nil,			/* sys._columns.storage */
+					   0) != GDK_SUCCEED)
+				return GDK_FAIL;
+			tabins_first = false;
+	}
+#endif
 	return GDK_SUCCEED;
 }
 
