@@ -108,7 +108,7 @@ mel_atom identifier_init_atoms[] = {
  { .name="identifier", .basetype="str", .fromstr=IDfromString, .tostr=IDtoString, },  { .cmp=NULL }
 };
 mel_func identifier_init_funcs[] = {
- command("identifier", "identifier", IDentifier, false, "Cast a string to an identifer ", args(1,2, arg("",identifier),arg("s",str))),
+ command("identifier", "identifier", IDentifier, false, "Cast a string to an identifier ", args(1,2, arg("",identifier),arg("s",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

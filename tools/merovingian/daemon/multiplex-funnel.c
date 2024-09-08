@@ -400,7 +400,7 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 		}
 	}
 
-	m->clients = NULL; /* initially noone is connected */
+	m->clients = NULL; /* initially no one is connected */
 
 	if (mfmanager == 0) {
 		pthread_attr_t detach;

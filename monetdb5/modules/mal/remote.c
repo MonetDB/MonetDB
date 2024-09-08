@@ -425,7 +425,7 @@ RMTfindconn(connection *ret, const char *conn)
  * function the caller is in. But also the runtime context is important.
  * The format is rmt<id>_<retvar>_<type>.  Every RMTgetId uses a fresh id,
  * to distinguish amongst different (parallel) execution context.
- * Re-use of this remote identifier should be done with care.
+ * Reuse of this remote identifier should be done with care.
  * The encoding of the type allows for ease of type checking later on.
  */
 static inline str

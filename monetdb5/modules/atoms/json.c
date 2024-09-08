@@ -623,7 +623,7 @@ JSONprelude(void)
 {
 	TYPE_json = ATOMindex("json");
 #ifdef GDKLIBRARY_JSON
-/* Run the gdk upgrade libary function with a callback that
+/* Run the gdk upgrade library function with a callback that
  * performs the actual upgrade.
  */
 	char *jsonupgrade;

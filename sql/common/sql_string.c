@@ -20,7 +20,7 @@
  * some string functions.
  */
 
-/* implace cast to lower case string */
+/* in place cast to lower case string */
 char *
 mkLower(char *s)
 {

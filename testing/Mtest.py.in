@@ -1669,7 +1669,7 @@ def coredumpctl(pid):
 
 def returnCode(proc, f = None):
     '''Interpret the return code of a process.
-    If second arg sepcified, write a message to it.'''
+    If second arg specified, write a message to it.'''
     if proc.killed:
         # don't write for timeout, killProc did that already
         return 'timeout'
@@ -1977,7 +1977,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         SERVER = "SQL"
     else:
         tests = (
-            # file extention  EXT        CALL      SERVER
+            # file extension  EXT        CALL      SERVER
             ('.test',         '.test',   'sqltest','SQL'),
             ('.maltest',      '.maltest','maltest','SQL'),
             ('.py',           '.py',     'python', ''),
@@ -4002,7 +4002,7 @@ def main(argv) :
                     CONDITIONALS['KNOWNFAIL'] = True
                     for ext in ('.test', '.maltest', 'MAL.py', '.SQL.py',
                                 '.sql', '.py', '.R', '.rb', ''):
-                        # extentions .in and .src are never combined
+                        # extensions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
                             break

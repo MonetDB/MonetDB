@@ -1070,7 +1070,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 			p = pe;
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
-		    || !isfinite(d) /* no NaN or Infinte */
+		    || !isfinite(d) /* no NaN or Infinite */
 		    ) {
 			GDKerror("overflow or not a number\n");
 			return -1;

@@ -171,7 +171,7 @@ parse_interval_(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int
 	if (ek != sk) {
 		if (*n != sep) {
 			if (sql)
-				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
+				snprintf(sql->errstr, ERRSIZE, _("Interval field separator \'%c\' missing\n"), sep);
 			return -1;
 		}
 		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);
@@ -274,7 +274,7 @@ parse_interval(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int 
 	if (ek != sk) {
 		if (*n != sep) {
 			if (sql)
-				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
+				snprintf(sql->errstr, ERRSIZE, _("Interval field separator \'%c\' missing\n"), sep);
 			return -1;
 		}
 		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);

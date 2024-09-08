@@ -2373,7 +2373,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.max_file_size = max_file_size >= 0 ? max_file_size : 2147483648,
 
 		.id = 0,
-		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
+		.saved_id = getBBPlogno(),	/* get saved log number from bbp */
 		.nr_flushers = ATOMIC_VAR_INIT(0),
 		.fn = GDKstrdup(fn),
 		.dir = GDKstrdup(filename),

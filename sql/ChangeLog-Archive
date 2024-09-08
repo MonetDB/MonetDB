@@ -150,7 +150,7 @@
 * Fri Jun  9 2023 Sjoerd Mullender <sjoerd@acm.org> - 11.47.5-20230718
 - An upgrade that both creates a new .snapshot user and extends the
   sys.db_user_info table with (among others) a password column did
-  these in such a way that the passord value for the new user was NULL.
+  these in such a way that the password value for the new user was NULL.
   This is fixed by updating the password.
 
 * Fri Jun 16 2023 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.47.3-20230622
@@ -164,7 +164,7 @@
 - New functionality for string matching and similarity: startswith,
   endswith, contains, Levenshtein distance and Jaro-Winkler similarity.
   The functions startswith, endswith and contains have a version where
-  a case insentive flag can be used.
+  a case insensitive flag can be used.
   Also, there are new custom join functionality for startswith, endswith,
   contains, Levenshtein distance and Jaro-Winkler similarity.
 - Renamed previous Levenshtein distance to Damerau-Levenshtein distance.
@@ -257,7 +257,7 @@
 
 * Wed Dec 14 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
 - Fixed cleanup after a failed allocation where the data being cleaned
-  up was unitialized but still used as pointers to memory that also had
+  up was uninitialized but still used as pointers to memory that also had
   to be freed.
 
 * Wed Dec  7 2022 Sjoerd Mullender <sjoerd@acm.org> - 11.45.13-20230124
@@ -344,7 +344,7 @@
 
 * Wed Dec 15 2021 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.43.1-20220103
 - With the storage cleanup in the 11.41.5 (Jul2021) release, the ANALYZE
-  statement was updated to accomodate those changes. The SAMPLE parameter
+  statement was updated to accommodate those changes. The SAMPLE parameter
   is now ignored because ANALYZE generated statistics used by
   relational operators, are required to be precise.
 - In order to mitigate the I/O required to update the 'statistics' table,
@@ -824,7 +824,7 @@
 * Thu Nov 29 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.33.1-20190405
 - Improved and extended storagemodel functionality. Changes include:
 - Added views sys."tablestorage" and sys."schemastorage" for easy and
-  quick assesment of aggregated storage usage per table or per schema.
+  quick assessment of aggregated storage usage per table or per schema.
 - Excluded listing system tables in views sys."storage", sys."tablestorage"
   and sys."schemastorage". You can still use sys."storage"() to query
   storage of system tables and columns.
@@ -1150,7 +1150,7 @@
 
 * Wed Jul  6 2016 Martin Kersten <mk@cwi.nl> - 11.25.1-20161214
 - The syntax of bat.new(:oid,:any) has been changed by dropping the
-  superflous :oid.  All BATs are now binary associations between a void
+  superfluous :oid.  All BATs are now binary associations between a void
   column and a materialized value column.  (except for the internal
   :bat[:void,:void] representation of simple oid ranged tails.)
 
@@ -1264,7 +1264,7 @@
 
 * Wed Jun 29 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.3.5-20110720
 - Fixed incorrect insert counts.
-- Fixed bug 2823: MAL exeption on SQL query with subquery in the where
+- Fixed bug 2823: MAL exception on SQL query with subquery in the where
   part.
 - Redirect error from create scripts back to the first client.  This
   fixes bug 2813.

@@ -29,7 +29,7 @@
  * an index in a locally maintained table. It provides a handle
  * to easily detect havoc clients.
  *
- * A cleaner and simplier interface for distributed processing is available in
+ * A cleaner and simpler interface for distributed processing is available in
  * the module remote.
  */
 #include "monetdb_config.h"
@@ -380,7 +380,7 @@ SERVERlistenThread(SOCKET *Sock)
 			struct cmsghdr *cmsg;
 
 			/* BEWARE: unix domain sockets have a slightly different
-			 * behaviour initialy than normal sockets, because we can
+			 * behaviour initially than normal sockets, because we can
 			 * send filedescriptors or credentials with them.  To do so,
 			 * we need to use sendmsg/recvmsg, which operates on a bare
 			 * socket.  Unfortunately we *have* to send something, so it
@@ -1053,7 +1053,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
  * perform access control.
  *
  * We use a single result set handle. All data should be
- * consumed before continueing.
+ * consumed before continuing.
  *
  * A few extra routines should be defined to
  * dump and inspect the sessions table.

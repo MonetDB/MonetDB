@@ -39,6 +39,7 @@
 
 #ifndef HAVE_STRPTIME
 extern char *strptime(const char *, const char *, struct tm *);
+extern char *strptime2(const char *, const char *, struct tm *, int *);
 #endif
 
 /* interfaces callable from MAL, not used from any C code */
@@ -1169,16 +1170,24 @@ static str
 str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const long gmtoff, const char *type,
 				 const char *malfunc)
 {
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = (struct tm) {
+		.tm_isdst = -1,
+		.tm_mday = 1,
+#ifdef HAVE_TM_GMTOFF
+		.tm_gmtoff = (int) gmtoff,
+#endif
+	};
+	int tz = (int) gmtoff;
 
 	if (strNil(*s) || strNil(*format)) {
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	tm.tm_sec = tm.tm_min = tm.tm_hour = 0;
-	tm.tm_isdst = -1;
-	tm.tm_mday = 1;
+#ifdef HAVE_STRPTIME
 	if (strptime(*s, *format, &tm) == NULL)
+#else
+	if (strptime2(*s, *format, &tm, &tz) == NULL)
+#endif
 		throw(MAL, malfunc,
 			  "format '%s', doesn't match %s '%s'", *format, type, *s);
 	*ret = timestamp_create(date_create(tm.tm_year + 1900,
@@ -1188,26 +1197,10 @@ str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format
 										   tm.tm_min,
 										   tm.tm_sec == 60 ? 59 : tm.tm_sec,
 										   0));
-	/* if strptime filled in DST information (tm_isdst >= 0), then the
-	 * time is in system local time and we convert to GMT by
-	 * subtracting the time zone offset, else we don't touch the time
-	 * returned because it is assumed to already be in GMT */
-	if (tm.tm_isdst >= 0) {
-		int isdst = 0;
-		int tz = local_timezone(&isdst);
-		/* if strptime's information doesn't square with our own
-		 * information about having or not having DST, we compensate
-		 * an hour */
-		if (tm.tm_isdst > 0 && isdst == 0) {
-			tz += 3600;
-		} else if (tm.tm_isdst == 0 && isdst > 0) {
-			tz -= 3600;
-		}
-
-		*ret = timestamp_add_usec(*ret, -tz * LL_CONSTANT(1000000));
-	} else {
-		*ret = timestamp_add_usec(*ret, -gmtoff * LL_CONSTANT(1000000));
-	}
+#ifdef HAVE_TM_GMTOFF
+	tz = tm.tm_gmtoff;
+#endif
+	*ret = timestamp_add_usec(*ret, -tz * LL_CONSTANT(1000000));
 	if (is_timestamp_nil(*ret))
 		throw(MAL, malfunc, "bad %s '%s'", type, *s);
 	return MAL_SUCCEED;

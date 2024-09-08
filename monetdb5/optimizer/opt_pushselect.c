@@ -81,7 +81,7 @@ lastbat_arg(MalBlkPtr mb, InstrPtr p)
 	return 0;
 }
 
-/* check for updates inbetween assignment to variables newv and oldv */
+/* check for updates in between assignment to variables newv and oldv */
 static int
 no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 {
@@ -469,8 +469,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					break;
 				}
 
-				rslices[getArg(q, 0)] = true;	/* mark projectdelta as rewriten */
-				rslices[getArg(p, 0)] = true;	/* mark slice as rewriten */
+				rslices[getArg(q, 0)] = true;	/* mark projectdelta as rewritten */
+				rslices[getArg(p, 0)] = true;	/* mark slice as rewritten */
 
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
@@ -489,7 +489,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				continue;
 			}
 		}
-		/* Leftfetchjoins involving rewriten sliced candidates ids need to be flattend
+		/* Leftfetchjoins involving rewritten sliced candidates ids need to be flattened
 		 * l = projection(t, c); => l = c;
 		 * and
 		 * l = projection(s, ntids); => l = s;
@@ -502,7 +502,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (r && isSlice(r) && rslices[var] && getArg(r, 0) == getArg(p, 1)) {
 				int col = getArg(p, 2);
 
-				if (!rslices[col]) {	/* was the deltaproject rewriten (sliced) */
+				if (!rslices[col]) {	/* was the deltaproject rewritten (sliced) */
 					InstrPtr s = old[vars[col]], u = NULL;
 
 					if (s && getModuleId(s) == algebraRef

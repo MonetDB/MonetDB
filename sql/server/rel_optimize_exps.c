@@ -377,7 +377,7 @@ bind_simplify_math(visitor *v, global_props *gp)
 
 /*
  * Casting decimal values on both sides of a compare expression is expensive,
- * both in preformance (cpu cost) and memory requirements (need for large
+ * both in performance (cpu cost) and memory requirements (need for large
  * types).
  */
 

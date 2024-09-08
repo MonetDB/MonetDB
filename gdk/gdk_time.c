@@ -186,7 +186,7 @@ date_add_month(date dt, int months)
 static inline int
 date_countdays(date dt)
 {
-	static_assert(CNT_OFF % 400 == 0, /* for leapyear function to work */
+	static_assert(CNT_OFF % 400 == 0, /* for leap year function to work */
 		      "CNT_OFF must be multiple of 400");
 	assert(!is_date_nil(dt));
 	int y = date_extract_year(dt);

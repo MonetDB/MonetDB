@@ -404,7 +404,7 @@ stack_push_frame(mvc *sql, const char *name)
 		_DELETE(v);
 		return NULL;
 	}
-	v->frame_number = ++sql->frame; /* The frame number for varialbes on the stack start on level 1 */
+	v->frame_number = ++sql->frame; /* The frame number for variables on the stack start on level 1 */
 	sql->frames[sql->topframes++] = v;
 	return v;
 }

@@ -424,7 +424,7 @@ run_tests_inner(stream *s, int verbose)
 	}
 
 	if (verbose >= 1) {
-		fprintf(stderr, "ran %d succesful tests from %s\n", nstarted - orig_nstarted, filename);
+		fprintf(stderr, "ran %d successful tests from %s\n", nstarted - orig_nstarted, filename);
 	}
 
 	free(location);

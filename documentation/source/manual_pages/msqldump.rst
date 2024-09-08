@@ -73,8 +73,32 @@ OPTIONS
 **--functions** (**-f**)
    Only dump functions definitions.
 
-**--table=**\ *table* (**-t** *table*)
-   Only dump the specified *table*.
+**--table=**\ [\ *schema*\ **.**\ ]\ *table* (**-t** [\ *schema*\ **.**]\ *table*\ )
+   Only dump the specified table. If *schema* is not specified, the
+   user's current schema is used. When either *schema* or *table*
+   contains percent characters, all tables matching the (SQL) search
+   pattern are dumped.
+
+**--output=**\ *filename* (**-o** *filename*\ )
+   Write the dump to the specified file. If *filename* contains a
+   recognized compression scheme suffix, the file will be compressed
+   using that scheme.
+
+**--outputdir=**\ *directory* (**-O** *directory*\ )
+   Write the dump to the file **dump.sql** in the specified directory
+   which is created if it does not exist. The data of the tables will be
+   stored in separate CSV files in the directory. If the
+   **--compression** option is used, the CSV files will be compressed
+   using the specified compression scheme. If both the **--outputdir**
+   option and the **--output** option are specified, the last one is
+   used. The **--outputdir** option is not compatible with the --inserts
+   option.
+
+**--compression=**\ *extension* (**-x** *extension*\ )
+   Compress the CSV files produced with the **--outputdir** option using
+   the specified compression scheme. Depending on how the program is
+   compiled, the following compression schemes are recognized: **gz**,
+   **bz2**, **xz**, and **lz4**.
 
 **--quiet** (**-q**)
    Don't print the welcome message.

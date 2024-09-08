@@ -161,7 +161,7 @@ PREPARE SELECT "'col26'" FROM "myschema"."mytable2" WHERE
 AND "'col14'"='A description of something' AND "'col8'"='2015-08-07')) AND  ( ("'col34'"='home to')) AND  ( ("'col36'"='2013'))) GROUP BY "'col26'"
 LIMIT 1001 OFFSET 0;
 
-exec ** (); --error, from the condition "'col9'"='', it fails to covert '' to date
+exec ** (); --error, from the condition "'col9'"='', it fails to convert '' to date
 
 SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
 ( ( ("'col19'"='Some information of my hobby')) AND 

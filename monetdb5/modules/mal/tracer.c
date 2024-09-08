@@ -11,7 +11,7 @@
  */
 
 /*
- * GDKtracer exposes routines where an occuring failure should reach the
+ * GDKtracer exposes routines where an occurring failure should reach the
  * client immediately. For that reason, GDKtracer reports those errors
  * directly to the stream.
  *

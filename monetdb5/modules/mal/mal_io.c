@@ -620,7 +620,7 @@ mel_func mal_io_init_funcs[] = {
  pattern("io", "stdin", io_stdin, false, "return the input stream to the database client", args(1,1, arg("",bstream))),
  pattern("io", "stdout", io_stdout, false, "return the output stream for the database client", args(1,1, arg("",streams))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value tuple .", args(1,3, arg("",void),argany("val",1),varargany("lst",0))),
- pattern("io", "print", IOtable, false, "BATs are printed with '#' for legend \nlines, and the BUNs on seperate lines \nbetween brackets, containing each to \ncomma separated values (head and tail). \nIf multiple BATs are passed for printing, \nprint() performs an implicit natural \njoin on the void head, producing a multi attribute table.", args(1,2, arg("",void),batvarargany("b1",0))),
+ pattern("io", "print", IOtable, false, "BATs are printed with '#' for legend \nlines, and the BUNs on separate lines \nbetween brackets, containing each to \ncomma separated values (head and tail). \nIf multiple BATs are passed for printing, \nprint() performs an implicit natural \njoin on the void head, producing a multi attribute table.", args(1,2, arg("",void),batvarargany("b1",0))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value.", args(1,2, arg("",void),argany("val",1))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value column .", args(1,2, arg("",void),batargany("val",1))),
  pattern("io", "printf", IOprintf, false, "Select default format ", args(1,3, arg("",void),arg("fmt",str),varargany("val",0))),

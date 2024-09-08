@@ -119,7 +119,7 @@ RemoveMyDriver(const char *drivername)
 	DWORD valtype, valsize, rc;
 
 	/* most of this is equivalent to what SQLRemoveDriver is
-	   suppposed to do, except that it consistently causes a
+	   supposed to do, except that it consistently causes a
 	   crash, so we do it ourselves */
 	snprintf(buf, sizeof(buf), "SOFTWARE\\ODBC\\ODBCINST.INI\\%s",
 			 drivername);

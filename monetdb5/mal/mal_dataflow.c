@@ -19,7 +19,7 @@
  * whose entry is controlled by the function language.dataflow();
  *
  * The dataflow worker tries to follow the sequence of actions
- * as layed out in the plan, but abandon this track when it hits
+ * as laid out in the plan, but abandon this track when it hits
  * a blocking operator, or an instruction for which not all arguments
  * are available or resources become scarce.
  *
@@ -166,7 +166,7 @@ q_enqueue(Queue *q, FlowEvent d)
 
 /*
  * A priority queue over the hot claims of memory may
- * be more effective. It priorizes those instructions
+ * be more effective. It prioritizes those instructions
  * that want to use a big recent result
  */
 

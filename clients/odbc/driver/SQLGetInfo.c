@@ -13,7 +13,7 @@
 /*
  * This code was created by Peter Harvey (mostly during Christmas 98/99).
  * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
+ * distributions and uses of this code (that's about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
  *
  * This file has been modified for the MonetDB project.  See the file
@@ -621,7 +621,7 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_IS_SELECT_INTO;
 		break;
 	case SQL_INTEGRITY:
-		/* N because we currently do not supprt CHECK constraints (see bug 3568) nor deferrable FK constraints. */
+		/* N because we currently do not support CHECK constraints (see bug 3568) nor deferrable FK constraints. */
 		sValue = "N";	/* "Y" */
 		break;
 	case SQL_KEYSET_CURSOR_ATTRIBUTES1:

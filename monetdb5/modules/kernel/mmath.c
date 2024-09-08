@@ -16,7 +16,7 @@
  * The math module
  * This module contains the math commands. The implementation is very simply,
  * the c math library functions are called. See for documentation the
- * ANSI-C/POSIX manuals of the equaly named functions.
+ * ANSI-C/POSIX manuals of the equally named functions.
  *
  * NOTE: the operand itself is being modified, rather than that we produce
  * a new BAT. This to save the expensive copying.

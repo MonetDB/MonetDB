@@ -10,7 +10,7 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-# Test for the existance of these cmake variables, the source code assumes
+# Test for the existence of these cmake variables, the source code assumes
 # that they are set by the buildsystem.
 
 assert_variable_exists(HAVE_CUDF)

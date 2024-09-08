@@ -169,7 +169,7 @@ extern int exp_is_null(sql_exp *e);
 extern int exp_is_rel(sql_exp *e);
 extern int exps_one_is_rel(list *exps);
 extern int exp_is_aggr(sql_rel *r, sql_exp *e); /* check if e is aggregation result of r */
-extern int exp_has_aggr(sql_rel *r, sql_exp *e); /* check if group by expresssion has some aggregate function from r */
+extern int exp_has_aggr(sql_rel *r, sql_exp *e); /* check if group by expression has some aggregate function from r */
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);
 extern int exps_have_func(list *exps);
@@ -188,7 +188,7 @@ extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 
 /* returns 0 when the relation contain the passed expression (or sub expressions if subexp is set) else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp);
-/* return 0 when the relation contain atleast one of the passed expressions (or sub expressions if subexp is set) else < 0 */
+/* return 0 when the relation contain at least one of the passed expressions (or sub expressions if subexp is set) else < 0 */
 extern int rel_has_exps(sql_rel *rel, list *e, bool subexp);
 /* return 1 when the relation contains all of the passed expressions else 0 */
 extern int rel_has_all_exps(sql_rel *rel, list *e);

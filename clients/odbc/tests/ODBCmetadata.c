@@ -256,7 +256,7 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 			ret = SQLGetData(stmt, col, SQL_C_CHAR, buf, sizeof(buf), &indicator);
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData()");
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-				/* some rows of EXPLAIN output (which has only 1 result column) must be surpressed to get stable output */
+				/* some rows of EXPLAIN output (which has only 1 result column) must be suppressed to get stable output */
 				if (columns == 1 &&
 				    (strncmp(buf, "# ", 2) == 0 ||
 				     strncmp(buf, "barrier X_", 10) == 0 ||
@@ -602,7 +602,7 @@ main(int argc, char **argv)
 		"NULL	odbctst	pk2c	TABLE	NULL\n"
 		"NULL	odbctst	pk_uc	TABLE	odbctst.pk_uc table comment\n");
 
-	// All columns of odbctst tables containg 'pk' in their name
+	// All columns of odbctst tables containing 'pk' in their name
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"odbctst", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
 			(SQLCHAR*)"%", SQL_NTS);
@@ -619,7 +619,7 @@ main(int argc, char **argv)
 		"NULL	odbctst	pk_uc	id1	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	odbctst	pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
-	// All columns of all tmp tables containg 'pk' in their name
+	// All columns of all tmp tables containing 'pk' in their name
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
 			(SQLCHAR*)"%%", SQL_NTS);
@@ -637,7 +637,7 @@ main(int argc, char **argv)
 		"NULL	tmp	tmp_pk_uc	id1	4	INTEGER	31	11	0	2	0	NULL	NULL	4	NULL	NULL	1	NO\n"
 		"NULL	tmp	tmp_pk_uc	name1	-9	VARCHAR	99	198	NULL	NULL	1	NULL	NULL	-9	NULL	396	2	YES\n");
 
-	// All columns of all tmp tables containg 'pk' in their name and the column matching name_ pattern
+	// All columns of all tmp tables containing 'pk' in their name and the column matching name_ pattern
 	ret = SQLColumns(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"tmp", SQL_NTS, (SQLCHAR*)"%pk%", SQL_NTS,
 			(SQLCHAR*)"name_", SQL_NTS);

@@ -247,7 +247,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			(QRYqueue[j].status[0] != 'r' && QRYqueue[j].status[0] != 'p')) {
 			QRYqueue[j].mb = mb;
 			QRYqueue[j].tag = stk->tag = mb->tag;
-			QRYqueue[j].stk = stk;	// for status pause 'p'/running '0'/ quiting 'q'
+			QRYqueue[j].stk = stk;	// for status pause 'p'/running '0'/ quitting 'q'
 			QRYqueue[j].finished = 0;
 			QRYqueue[j].start = time(0);
 			q = isaSQLquery(mb);

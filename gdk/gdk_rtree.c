@@ -119,7 +119,7 @@ persistRtree(BAT *b)
 		}
 		BBPunfix(b->batCacheid);
 	}
-	//TODO Should we just return sucess if the rtree is not persisted?
+	//TODO Should we just return success if the rtree is not persisted?
 	return GDK_SUCCEED;
 }
 

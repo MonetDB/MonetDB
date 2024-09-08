@@ -650,7 +650,7 @@ BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,
 	}
 
 	if (batid >= N_BBPINIT * BBPINIT) {
-		TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accomodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, *lineno);
+		TRC_CRITICAL(GDK, "bat ID (%" PRIu64 ") too large to accommodate (max %d), on line %d.", batid, N_BBPINIT * BBPINIT - 1, *lineno);
 		return -1;
 	}
 
@@ -831,6 +831,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		MT_lock_init(&bn->batIdxLock, name);
 		snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 		MT_rwlock_init(&bn->thashlock, name);
+		snprintf(name, sizeof(name), "imprsema%d", bn->batCacheid); /* fits */
+		MT_sema_init(&bn->imprsema, 1, name);
 		ATOMIC_INIT(&bn->theap->refs, 1);
 
 		if (snprintf(BBP_bak(b.batCacheid), sizeof(BBP_bak(b.batCacheid)), "tmp_%o", (unsigned) b.batCacheid) >= (int) sizeof(BBP_bak(b.batCacheid))) {
@@ -2090,7 +2092,7 @@ BBPinit(bool allow_hge_upgrade)
 			 * stored json strings. This will be performed
 			 * by an upgrade function in the GDK that will
 			 * be called at the end of the json module
-			 * initialzation with a callback that actually
+			 * initialization with a callback that actually
 			 * knows how to perform the upgrade. */
 			int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
 			GDKfree(jsonupgradestr);

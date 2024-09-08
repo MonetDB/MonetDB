@@ -3,7 +3,7 @@
 alter_table_drop_constraint.SF-2803477
 mclient-lsql-D
 
-# coversion to logic tests (11/2020): Cleanup tests are not needed.
+# conversion to logic tests (11/2020): Cleanup tests are not needed.
 # alter_table_drop_constraint.SF-2803477_cleanup
 binop.SF.2499537
 incomplete.SF.2536893
@@ -47,7 +47,7 @@ nullstr.SF-2704016
 parallel_bulk-load.SF-2771052.unpack_csv
 parallel_bulk-load.SF-2771052.test
 
-# coversion to logic tests (11/2020): Cleanup tests are not needed.
+# conversion to logic tests (11/2020): Cleanup tests are not needed.
 # parallel_bulk-load.SF-2771052.clean
 wrong_error_message.SF-2637051
 AVG_of_SQRT.SF-2757642
@@ -120,6 +120,6 @@ arithmetic-small-values-null.SF-2921310
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
 
-# coversion to logic tests (11/2020): These tests use explain so we just skip them for now
+# conversion to logic tests (11/2020): These tests use explain so we just skip them for now
 # explain_gives_crash.SF-2741829
 # explain_gives_crash.SF-2741829_cleanup

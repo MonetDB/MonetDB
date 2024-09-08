@@ -27,7 +27,7 @@ rel_set_exps(sql_rel *rel, list *exps)
 	rel->nrcols = list_length(exps);
 }
 
-/* some projections results are order dependend (row_number etc) */
+/* some projections results are order dependent (row_number etc) */
 int
 project_unsafe(sql_rel *rel, bool allow_identity)
 {
@@ -891,7 +891,7 @@ rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 	}
 
 	rel->exps = exps;
-	// TODO: probably setting nrcols is redundant as we have allready done
+	// TODO: probably setting nrcols is redundant as we have already done
 	// that when we create the setop_n_ary. check rel_setop_n_ary()
 	rel->nrcols = ((sql_rel*)((list*)rel->l)->h->data)->nrcols;
 }
@@ -1028,7 +1028,7 @@ rel_select_add_exp(allocator *sa, sql_rel *l, sql_exp *e)
 	if ((l->op != op_select && !is_outerjoin(l->op)) || rel_is_ref(l))
 		return rel_select(sa, l, e);
 
-/* 	allow during AST->relational for bool expresssions as well
+/* 	allow during AST->relational for bool expressions as well
 	if (e->type != e_cmp && e->card > CARD_ATOM) {
 		sql_exp *t = exp_atom_bool(sa, 1);
 		e = exp_compare(sa, e, t, cmp_equal);
@@ -1281,7 +1281,7 @@ exps_reset_props(list *exps, bool setnil)
 	}
 }
 
-/* Return a list with all the projection expressions, that optionaly
+/* Return a list with all the projection expressions, that optionally
  * refer to the tname relation, anywhere in the relational tree
  */
 list *

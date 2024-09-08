@@ -21,7 +21,7 @@
  * are provided that they are aligned.
  *
  * The implementation is focussed on functionality. At a later stage
- * we may postpone string contstruction until it is really needed.
+ * we may postpone string construction until it is really needed.
  */
 
 
@@ -1741,7 +1741,7 @@ mel_func batxml_init_funcs[] = {
  command("batxml", "element", BATXMLelement, false, "The basic building block for XML elements are namespaces, attributes and a sequence of XML elements. The name space and the attributes may be left unspecified(=nil).", args(1,5, batarg("",xml),arg("name",str),arg("ns",xml),arg("attr",xml),batarg("s",xml))),
  command("batxml", "concat", BATXMLconcat, false, "Concatenate the XML values.", args(1,3, batarg("",xml),batarg("left",xml),batarg("right",xml))),
  pattern("batxml", "forest", BATXMLforest, false, "Construct an element list.", args(1,2, batarg("",xml),batvararg("val",xml))),
- command("batxml", "root", BATXMLroot, false, "Contruct the root nodes.", args(1,4, batarg("",xml),batarg("val",xml),arg("version",str),arg("standalone",str))),
+ command("batxml", "root", BATXMLroot, false, "Construct the root nodes.", args(1,4, batarg("",xml),batarg("val",xml),arg("version",str),arg("standalone",str))),
  command("batxml", "isdocument", BATXMLisdocument, false, "Validate the string as a XML document.", args(1,2, batarg("",bit),batarg("val",str))),
  command("xml", "aggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
  command("xml", "subaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),

@@ -925,7 +925,7 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		sql_idx *i = n->data;
 
 		/* check if update is needed,
-		 * ie atleast on of the idx columns is updated
+		 * ie at least on of the idx columns is updated
 		 */
 		if (relup->exps && is_idx_updated(i, relup->exps) == 0)
 			continue;

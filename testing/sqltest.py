@@ -434,7 +434,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
             if len(diff) > 0:
                 err_file = self.test_case.err_file
-                msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
+                msg = "expected to match stable output {} but it didn't\n".format(fout)
                 msg+='\n'.join(diff)
                 self.assertion_errors.append(AssertionError(msg))
                 self.fail(msg)
@@ -452,7 +452,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
-            msg = "expected to match stable error {} but it didnt\'t\n".format(ferr)
+            msg = "expected to match stable error {} but it didn't\n".format(ferr)
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             self.fail(msg)
@@ -575,7 +575,7 @@ class SQLDump():
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
-            msg = "sql dump expected to match stable output {} but it didnt\'t\n".format(fout)
+            msg = "sql dump expected to match stable output {} but it didn't\n".format(fout)
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             print(msg, file=err_file)

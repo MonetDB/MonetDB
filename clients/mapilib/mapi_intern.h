@@ -167,7 +167,7 @@ struct MapiRowBuf {
 		int tupleindex;	/* index of tuple rows */
 		int64_t tuplerev;	/* reverse map of tupleindex */
 		char **anchors;	/* corresponding field pointers */
-		size_t *lens;	/* corresponding field lenghts */
+		size_t *lens;	/* corresponding field lengths */
 	} *line;
 };
 

@@ -564,7 +564,7 @@ int cmd_bstream(char *argv[])
 				dump = false;
 				break;
 			default:
-				croak(1, "unknown opion: %s", *arg);
+				croak(1, "unknown option: %s", *arg);
 				break;
 		}
 	}
