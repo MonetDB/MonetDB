@@ -1986,30 +1986,27 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			MT_lock_unset(&pb->batIdxLock);
 		}
 		if (oidxh) {
-			/* Is query selective enough to use the ordered index ? */
-			/* TODO: Test if this heuristic works in practice */
-			/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < bi.count/1000 ? (BUN)1000: bi.count/1000))*/
-			if ((ORDERfnd(b, oidxh, th) - ORDERfnd(b, oidxh, tl)) < bi.count/3) {
-				if (view) {
-					bat_iterator_end(&bi);
-					bi = bat_iterator(b);
-					poidx = true; /* using parent oidx */
-					vwo = (lng) (view->tbaseoff - bi.baseoff);
-					vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
-					vwh = vwl + canditer_last(&ci) - ci.seq;
-					vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
-					TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
-				} else {
-					vwl = ci.seq;
-					vwh = canditer_last(&ci);
-				}
+			/* Is query selective enough to use the ordered
+			 * index?  Finding the boundaries is 2*log(n)
+			 * where n is the size of the bat, sorting is
+			 * N*log(N) where N is the number of results.
+			 * If the sum is less than n (cost of scan),
+			 * it's cheaper.  However, to find out how large
+			 * N is, we'd have to do the two boundary
+			 * searches.  If we do that, we might as well do
+			 * it all. */
+			if (view) {
+				bat_iterator_end(&bi);
+				bi = bat_iterator(b);
+				poidx = true; /* using parent oidx */
+				vwo = (lng) (view->tbaseoff - bi.baseoff);
+				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
+				vwh = vwl + canditer_last(&ci) - ci.seq;
+				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
+				TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 			} else {
-				if (view) {
-					b = view;
-					view = NULL;
-				}
-				HEAPdecref(oidxh, false);
-				oidxh = NULL;
+				vwl = ci.seq;
+				vwh = canditer_last(&ci);
 			}
 		}
 	}
