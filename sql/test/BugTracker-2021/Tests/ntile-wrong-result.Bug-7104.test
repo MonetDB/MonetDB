@@ -168,7 +168,7 @@ COPY 160 RECORDS INTO stringpower FROM STDIN USING DELIMITERS E' ',E'\n','"'
 64
 522
 
-query II rowsort
+query II nosort
 SELECT NTILE(2) OVER(ORDER BY kw) as tile, NTILE(CAST(2 AS BIGINT)) OVER(ORDER BY kw) as tile2 from stringpower
 ----
 320 values hashing to fa967d46913adf240bb90d0b98419dfb

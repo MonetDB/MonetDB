@@ -413,7 +413,7 @@ copy 408 records into catsrc from stdin delimiters ';',E'\n','"' null as ''
 1854812;5;30;22.106;30.73917;1.5;1.5;0.7963203080294866;0.3234492902578254;0.5111306326679438;"S"
 1854869;5;30;22.20192;30.10339;1.5;1.5;0.800979822968947;0.32690512260564775;0.5015619244029802;"S"
 
-query II rowsort
+query II nosort
 SELECT c1.catsrcid AS t_catsrcid
       ,c2.catsrcid AS wm_catsrcid
   FROM

@@ -145,7 +145,7 @@ SELECT DISTINCT(doctor)
     FROM scenedoctors
 ----
 
-query T rowsort
+query T nosort
 SELECT DISTINCT(name) FROM (
     SELECT name FROM suspect
     UNION

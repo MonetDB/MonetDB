@@ -10,7 +10,7 @@ insert into ttt values(8, '88888888')
 statement ok
 insert into ttt values(2, '22')
 
-query IT rowsort
+query IT nosort
 select i, s from ttt order by 1 asc
 ----
 2

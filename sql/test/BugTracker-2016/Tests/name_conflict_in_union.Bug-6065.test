@@ -1,4 +1,4 @@
-query II rowsort
+query II nosort
 WITH t0(so) AS (
 	SELECT ROW_NUMBER() OVER (ORDER BY v0 ASC) AS so
 FROM (values (0)) as t(v0))

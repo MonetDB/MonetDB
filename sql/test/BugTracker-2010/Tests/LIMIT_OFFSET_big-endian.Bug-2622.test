@@ -342,7 +342,7 @@ query I rowsort
 3
 4
 
-query I rowsort
+query I nosort
         select * from oblo ORDER BY a
 ----
 1
@@ -350,25 +350,25 @@ query I rowsort
 3
 4
 
-query I rowsort
+query I nosort
         select * from oblo ORDER BY a OFFSET 2
 ----
 3
 4
 
-query I rowsort
+query I nosort
         select * from oblo ORDER BY a LIMIT 2
 ----
 1
 2
 
-query I rowsort
+query I nosort
         select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
 2
 3
 
-query I rowsort
+query I nosort
         select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
 3

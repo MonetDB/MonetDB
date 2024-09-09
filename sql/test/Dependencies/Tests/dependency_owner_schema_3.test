@@ -12,7 +12,7 @@ DROP USER monet_test
 statement error
 DROP SCHEMA test_2
 
-query TTT rowsort
+query TTT nosort
 SELECT s.name, u.name, 'DEP_USER' from sys.schemas as s, users u where u.default_schema = s.id order by s.name, u.name
 ----
 sys
@@ -22,7 +22,7 @@ sys
 monetdb
 DEP_USER
 
-query TTT rowsort
+query TTT nosort
 SELECT a.name, s.name, 'DEP_SCHEMA' from sys.schemas as s, auths a where s.owner = a.id order by a.name, s.name
 ----
 monetdb
@@ -44,7 +44,7 @@ monetdb
 tmp
 DEP_SCHEMA
 
-query TTT rowsort
+query TTT nosort
 SELECT distinct t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
 _columns
@@ -804,22 +804,22 @@ value_partitions
 describe_partition_tables
 DEP_VIEW
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
 ----
 
-query TTT rowsort
+query TTT nosort
 (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.triggers tri, sys.tables t, sys.dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8) order by name, trigname
 ----
 schemas
 system_update_schemas
 DEP_TRIGGER
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, fk.name, 'DEP_FKEY' from sys.tables as t, sys.keys as k, sys.keys as fk where fk.rkey = k.id and k.table_id = t.id order by t.name, fk.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT t.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type in (0, 10, 20, 30) ORDER BY t.name, f.name
 ----
 _columns
@@ -883,12 +883,12 @@ table_types
 describe_table
 DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
 1845 values hashing to f9a2dad1816ec201e57ce394ef9b0abd
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
 ----
 action_id
@@ -946,11 +946,11 @@ table_type_name
 table_types_table_type_name_unique
 DEP_KEY
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sys.idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from sys.keys) order by c.name, i.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
 column_id
@@ -1203,11 +1203,11 @@ username
 get_remote_table_expressions
 DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT v.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type in (1, 11, 21, 31) ORDER BY v.name, f.name
 ----
 columns
@@ -1274,15 +1274,15 @@ dump_user_defined_types
 dump_database
 DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT v.name, i.name, 'DEP_INDEX' from sys.tables as v, sys.idxs as i where i.table_id = v.id and i.name not in (select name from sys.keys) and v.type in (1, 11, 21, 31) order by v.name, i.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.objects as tri, sys.dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type in (1, 11, 21, 31) order by v.name, tri.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name
 ----
 decypher
@@ -1331,11 +1331,11 @@ st_srid
 st_transform
 DEP_FUNC
 
-query TTT rowsort
+query TTT nosort
 SELECT f.name, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.objects as tri, sys.dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by f.name, tri.name
 ----
 
-query TTT rowsort
+query TTT nosort
 SELECT k.name, fk.name, 'DEP_FKEY' from sys.keys as k, sys.keys as fk where fk.rkey = k.id order by k.name, fk.name
 ----
 

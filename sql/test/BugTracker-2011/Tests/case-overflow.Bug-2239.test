@@ -13,7 +13,7 @@ copy 3 records into t2239 from stdin
 1228
 1214
 
-query II rowsort
+query II nosort
 select station136,
        cast(((CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
         (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +

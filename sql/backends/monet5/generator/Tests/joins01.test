@@ -7,14 +7,14 @@ insert into tmp values
 (timestamp '2008-03-01 10:00'),
 (timestamp '2008-03-01 20:00')
 
-query T rowsort
+query T nosort
 select * from tmp order by i
 ----
 2008-03-01 00:00:00
 2008-03-01 10:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where X.value = Y.i order by X.value, Y.i
 ----
 2008-03-01 00:00:00
@@ -24,7 +24,7 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where Y.i = X.value order by X.value, Y.i
 ----
 2008-03-01 00:00:00
@@ -34,7 +34,7 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00' order by X.value, Y.i
 ----
 2008-03-01 00:00:00
@@ -42,7 +42,7 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 2008-03-01 10:00:00
 2008-03-01 10:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) X, tmp Y where Y.i = X.value  and value < timestamp '2008-03-01 20:00' order by X.value, Y.i
 ----
 2008-03-01 00:00:00
@@ -50,7 +50,7 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 2008-03-01 10:00:00
 2008-03-01 10:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and value < timestamp '2008-03-01 20:00' and value > timestamp '200-03-01 00:00' order by X.value, Y.i
 ----
 2008-03-01 00:00:00
@@ -58,7 +58,7 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 2008-03-01 10:00:00
 2008-03-01 10:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04 12:00',cast( '10' as interval hour)) as  X, tmp Y where X.value = Y.i and i < timestamp '2008-03-01 20:00' and i > timestamp '200-03-01 00:00' order by X.value, Y.i
 ----
 2008-03-01 00:00:00
@@ -66,7 +66,7 @@ select * from generate_series(timestamp '2008-03-01 00:00',timestamp '2008-03-04
 2008-03-01 10:00:00
 2008-03-01 10:00:00
 
-query T rowsort
+query T nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X order by X.value
 ----
 2008-03-01 10:00:00
@@ -79,7 +79,7 @@ select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01
 2008-03-04 08:00:00
 2008-03-04 18:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i order by X.value, Y.i
 ----
 2008-03-01 10:00:00
@@ -87,7 +87,7 @@ select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where Y.i = X.value order by X.value, Y.i
 ----
 2008-03-01 10:00:00
@@ -95,26 +95,26 @@ select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and value > timestamp '2008-03-01 11:00' order by X.value, Y.i
 ----
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and i > timestamp '2008-03-01 11:00' order by X.value, Y.i
 ----
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query T rowsort
+query T nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X where value > timestamp '2008-03-01 11:00' and value < timestamp '2008-03-01 21:00' order by X.value
 ----
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and value > timestamp '2008-03-01 11:00'
 and value < timestamp '2008-03-01 21:00' order by X.value, Y.i
@@ -122,7 +122,7 @@ and value < timestamp '2008-03-01 21:00' order by X.value, Y.i
 2008-03-01 20:00:00
 2008-03-01 20:00:00
 
-query TT rowsort
+query TT nosort
 select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i
 and i > timestamp '2008-03-01 11:00'
 and i < timestamp '2008-03-01 21:00' order by X.value, Y.i

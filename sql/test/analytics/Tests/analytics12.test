@@ -125,7 +125,7 @@ GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 11
 10
 
-query IIIII rowsort
+query IIIII nosort
 WITH "groupings" AS (
     SELECT
         ROW_NUMBER() OVER (ORDER BY ColID) as "rows",
@@ -138,7 +138,7 @@ WITH "groupings" AS (
                             () )
 ) SELECT "rows", col1, col2, col3, col4 FROM "groupings" ORDER BY col1, col2, col3, col4
 ----
-145 values hashing to abd8ef31848af1cf2547d8dc4bc0cea0
+145 values hashing to a7789e58a58a61a2c997d884ad1915c9
 
 statement ok
 ROLLBACK
