@@ -385,7 +385,7 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 		tt = tail_type(key)->type->localtype;
 		setVarType(be->mb, getArg(q, 0), newBatType(tt));
 		q = pushArgument(be->mb, q, key->nr);
-		q = pushLng(be->mb, q, norows->nr);
+		q = pushArgument(be->mb, q, norows->nr);
 		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 		pushInstruction(be->mb, q);
 
@@ -521,13 +521,13 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	exps_cmp_hsh = exps_cmp->h->data;
 	exps_cmp_prb = exps_cmp->t->data;
 
+	/*** PREPARE PHASE ***/
 	/* find projection columns */
 	// TODO remove join-only columns from these lists
 	exps_prj_hsh = rel_projections(be->mvc, rel_hsh, 0, 1, 1);
 	exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
 	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
 
-	/*** PREPARE PHASE ***/
 	lng bld_sz = _estimate(be->mvc, rel_hsh);
 	stmts_bld_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
 	stmts_bld_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, stmts_bld_ht, bld_sz);
@@ -603,19 +603,9 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	exps_prj_hsh = rel_projections(be->mvc, rel_hsh, 0, 1, 1);
 	exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
 	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
-	//if(!neededpp) {
-	//	lng res_sz = _estimate(be->mvc, rel);
-	//	stmts_res_hsh = oahash_prepare_res(be, exps_prj_hsh, res_sz);
-	//	stmts_res_prb = oahash_prepare_res(be, exps_prj_prb, res_sz);
-	//}
 
 	/*** (pseudo) HASH PHASE ***/
-	if (pp_can_not_start(be->mvc, rel_hsh)) {
-		set_need_pipeline(be);
-	} else {
-		set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel_hsh)));
-	}
-	/* rel2bin_materialize() will end the pipeline */
+	/* nothing to hash, we just want to have a materialised table for this side */
 	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh);
 
 	/*** (pseudo) PROBE PHASE ***/
@@ -626,11 +616,14 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
 
 	stmt *col = NULL;
+	int ppln = be->pipeline;
+	be->pipeline = 0;
 	sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	col = stmts_prb_res->op4.lval->h->data;
 	stmt *norows_prb = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
 	col = stmts_ht->op4.lval->h->data;
 	stmt *norows_hsh = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
+	be->pipeline = ppln;
 
 	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, norows_hsh, pp);
 	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, norows_prb, pp);
