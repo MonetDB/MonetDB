@@ -7,7 +7,7 @@ CREATE TABLE _subqueries(i INTEGER)
 statement ok rowcount 10
 INSERT INTO _subqueries VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)
 
-query I rowsort
+query I nosort
 SELECT * FROM (SELECT * FROM _subqueries order by i asc LIMIT 5) AS result
 ----
 0
@@ -16,23 +16,23 @@ SELECT * FROM (SELECT * FROM _subqueries order by i asc LIMIT 5) AS result
 3
 4
 
-query I rowsort
+query I nosort
 SELECT * FROM (SELECT * FROM _subqueries ORDER BY i DESC LIMIT 5) AS result
 ----
-5
-6
-7
-8
 9
+8
+7
+6
+5
 
-query I rowsort
+query I nosort
 SELECT * FROM (SELECT * FROM _subqueries ORDER BY i DESC LIMIT 5 OFFSET 2) AS result
 ----
-3
-4
-5
-6
 7
+6
+5
+4
+3
 
 query I rowsort
 SELECT MIN(i) FROM (SELECT * FROM _subqueries SAMPLE 1000) AS result

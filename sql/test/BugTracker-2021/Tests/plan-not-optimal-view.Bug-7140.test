@@ -78,7 +78,7 @@ project (
 | ) [ "sys"."sql_mul"("t"."id_r" NOT NULL UNIQUE, int(24) "10000000") NOT NULL as "id_range_base", "%1"."%1" NOT NULL as "nrows", "t"."id_r" NOT NULL UNIQUE ]
 ) [ "id_range_base" NOT NULL, "nrows" NOT NULL ] [ "t"."id_r" ASC NOT NULL UNIQUE ]
 
-query II rowsort
+query II nosort
 select
 id_r * 10000000 as id_range_base,
 count(id_r) as nrows
@@ -142,7 +142,7 @@ project (
 | ) [ "sys"."sql_mul"("t"."id_r" NOT NULL UNIQUE, int(24) "10000000") NOT NULL as "id_range_base", "%1"."%1" NOT NULL as "nrows", "t"."id_r" NOT NULL UNIQUE ]
 ) [ "id_range_base" NOT NULL, "nrows" NOT NULL ] [ "t"."id_r" ASC NOT NULL UNIQUE ]
 
-query II rowsort
+query II nosort
 select
 id_r * 10000000 as id_range_base,
 count(id_r) as nrows

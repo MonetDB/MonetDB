@@ -68,7 +68,7 @@ SQLhelp sqlhelp1[] = {
 	{"ALTER TABLE",
 	 "",
 	 "ALTER TABLE [ IF EXISTS ] qname ADD [ COLUMN ] column_def\n"
-	 "ALTER TABLE [ IF EXISTS ] qname ADD table_constraint\n"
+	 "ALTER TABLE [ IF EXISTS ] qname ADD [ CONSTRAINT ident ] table_constraint\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET DEFAULT value\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident SET [NOT] NULL\n"
 	 "ALTER TABLE [ IF EXISTS ] qname ALTER [ COLUMN ] ident DROP DEFAULT\n"
@@ -910,9 +910,10 @@ SQLhelp sqlhelp2[] = {
 	 NULL,},
 	{"table_constraint",
 	 NULL,
-	 "[ CONSTRAINT ident ] { PRIMARY KEY column_list | UNIQUE column_list |\n"
+	 "[ CONSTRAINT ident ] { CHECK '(' search_condition ')' |\n"
+	 "    PRIMARY KEY column_list | UNIQUE column_list |\n"
 	 "    FOREIGN KEY column_list REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }",
-	 "column_list,match_options,reference_action",
+	 "column_list,search_condition,match_options,reference_action",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
 	{"table_element",
 	 NULL,

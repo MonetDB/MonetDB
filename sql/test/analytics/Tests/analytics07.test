@@ -23,7 +23,7 @@ insert into testintervals3 values (time '08:00:10', -1), (time '19:02:01', 3), (
 statement ok
 start transaction
 
-query IIIIII rowsort
+query IIIIII nosort
 select count(*) over (order by aa range unbounded preceding),
        count(*) over (order by aa range between unbounded preceding and current row),
        count(*) over (order by aa range between current row and unbounded following),
@@ -74,7 +74,7 @@ select count(*) over (order by aa range unbounded preceding),
 1
 7
 
-query IIIIII rowsort
+query IIIIII nosort
 select count(*) over (order by aa range between interval '0' month preceding and interval '0' month following),
        count(*) over (order by aa range between interval '1' month preceding and interval '1' month following),
        count(*) over (order by aa range between interval '2' month preceding and interval '1' month following),
@@ -95,16 +95,16 @@ select count(*) over (order by aa range between interval '0' month preceding and
 1
 1
 1
+2
+2
 1
 2
 1
 1
-1
-1
-1
+2
 2
 1
-1
+2
 1
 1
 1
@@ -113,19 +113,19 @@ select count(*) over (order by aa range between interval '0' month preceding and
 1
 1
 1
-2
-2
 1
 2
 1
 1
-2
-2
+1
+1
 1
 2
+1
+1
 1
 
-query IIIIII rowsort
+query IIIIII nosort
 select count(*) over (order by aa desc range between interval '0' month preceding and interval '0' month following),
        count(*) over (order by aa desc range between interval '1' month preceding and interval '1' month following),
        count(*) over (order by aa desc range between interval '2' month preceding and interval '1' month following),
@@ -141,18 +141,6 @@ select count(*) over (order by aa desc range between interval '0' month precedin
 1
 1
 1
-1
-1
-1
-1
-1
-1
-2
-1
-1
-1
-1
-1
 2
 1
 1
@@ -174,9 +162,21 @@ select count(*) over (order by aa desc range between interval '0' month precedin
 3
 1
 2
+1
+1
+1
+1
+1
+1
+1
+1
+1
+2
+1
+1
 1
 
-query IIIIII rowsort
+query IIIIII nosort
 select count(*) over (order by aa range between interval '0' month preceding and interval '0' month following),
        count(*) over (order by aa range between interval '1' month preceding and interval '1' month following),
        count(*) over (order by aa range between interval '2' month preceding and interval '1' month following),
@@ -197,16 +197,16 @@ select count(*) over (order by aa range between interval '0' month preceding and
 1
 1
 1
+2
+2
 1
 2
 1
 1
-1
-1
-1
+2
 2
 1
-1
+2
 1
 1
 1
@@ -215,19 +215,19 @@ select count(*) over (order by aa range between interval '0' month preceding and
 1
 1
 1
-2
-2
 1
 2
 1
 1
-2
-2
+1
+1
 1
 2
+1
+1
 1
 
-query IIIIII rowsort
+query IIIIII nosort
 select count(*) over (order by aa desc range between interval '0' month preceding and interval '0' month following),
        count(*) over (order by aa desc range between interval '1' month preceding and interval '1' month following),
        count(*) over (order by aa desc range between interval '2' month preceding and interval '1' month following),
@@ -243,18 +243,6 @@ select count(*) over (order by aa desc range between interval '0' month precedin
 1
 1
 1
-1
-1
-1
-1
-1
-1
-2
-1
-1
-1
-1
-1
 2
 1
 1
@@ -276,9 +264,21 @@ select count(*) over (order by aa desc range between interval '0' month precedin
 3
 1
 2
+1
+1
+1
+1
+1
+1
+1
+1
+1
+2
+1
+1
 1
 
-query IIII rowsort
+query IIII nosort
 select count(*) over (order by aa range between interval '0' second preceding and interval '0' second following),
        count(*) over (order by aa range between interval '3' hour preceding and interval '3' hour following),
        count(*) over (order by aa range between interval '60' minute preceding and interval '60' minute following),
@@ -289,12 +289,12 @@ select count(*) over (order by aa range between interval '0' second preceding an
 1
 1
 1
-2
+3
 1
 1
 1
 2
-2
+1
 1
 1
 2
@@ -302,18 +302,18 @@ select count(*) over (order by aa range between interval '0' second preceding an
 1
 1
 3
-1
+2
 1
 1
 3
 2
 1
 1
-3
+2
 2
 1
 
-query IIII rowsort
+query IIII nosort
 select count(*) over (order by aa desc range between interval '0' second preceding and interval '0' second following),
        count(*) over (order by aa desc range between interval '3' hour preceding and interval '3' hour following),
        count(*) over (order by aa desc range between interval '60' minute preceding and interval '60' minute following),
@@ -321,23 +321,7 @@ select count(*) over (order by aa desc range between interval '0' second precedi
 ----
 1
 2
-1
-1
-1
 2
-1
-1
-1
-2
-2
-1
-1
-2
-2
-1
-1
-3
-1
 1
 1
 3
@@ -346,6 +330,22 @@ select count(*) over (order by aa desc range between interval '0' second precedi
 1
 3
 2
+1
+1
+2
+2
+1
+1
+2
+1
+1
+1
+3
+1
+1
+1
+2
+1
 1
 
 statement ok

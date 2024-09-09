@@ -19,7 +19,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -38,7 +38,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -72,7 +72,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -106,7 +106,7 @@ testx
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -140,7 +140,7 @@ testx
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example where val1 >= 5 order by val1, val2
 ----
 5
@@ -162,7 +162,7 @@ testx
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view where val1 > 5 order by val1, val2
 ----
 8
@@ -205,7 +205,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -224,7 +224,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -243,7 +243,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -265,7 +265,7 @@ testx
 statement ok
 delete from example where val1 >= 5
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -302,7 +302,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -321,7 +321,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -340,7 +340,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -362,7 +362,7 @@ testx
 statement ok
 delete from example where val1 = 5
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -381,7 +381,7 @@ testx
 statement ok
 delete from example where val1 = 9
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -397,7 +397,7 @@ texxst
 statement ok
 delete from example where val1 = 8
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -434,7 +434,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -453,7 +453,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -472,7 +472,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -494,7 +494,7 @@ testx
 statement ok
 delete from example where val1 > 5
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -534,7 +534,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -553,7 +553,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -572,7 +572,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -594,7 +594,7 @@ testx
 statement ok
 update example set val3=-1.0 where val1 >= 5
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -640,7 +640,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -659,7 +659,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -678,7 +678,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -700,7 +700,7 @@ testx
 statement ok
 update example set val1 = -5 where val1 = 5
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 -5
@@ -722,7 +722,7 @@ testx
 statement ok
 update example set val1 = -5 where val1 = 9
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 -5
@@ -744,7 +744,7 @@ texxst
 statement ok
 update example set val1 = -5 where val1 = 8
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 -5
@@ -790,7 +790,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -809,7 +809,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0
@@ -828,7 +828,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -850,7 +850,7 @@ testx
 statement ok
 update example set val2 = 'updated' where val1 > 5
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -902,7 +902,7 @@ insert into example values( 8, 'texxst', 0.0001 )
 statement ok
 COMMIT
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -921,7 +921,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0

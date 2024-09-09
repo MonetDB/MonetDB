@@ -16,15 +16,15 @@ NULL|1
 2|0
 2|2
 
-query II rowsort
+query II nosort
 select quantile(i,0.5),j from bug6218 group by j order by j
 ----
 1
 0
-1
-2
 NULL
 1
+1
+2
 
 statement ok
 rollback

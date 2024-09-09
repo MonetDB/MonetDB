@@ -43,11 +43,11 @@ UPDATE t0 SET a2 = (- (- (t0.a1))), a3 = (ascii(CAST(ascii('}悂Y8K*韖5<c>^n8_X
 statement ok
 insert into integers(i) values(((length(reverse(E'8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')))>>(((- (- (528640982)))&(ascii('528640982'))))))
 
-query I rowsort
+query I nosort
 SELECT i from integers order by i
 ----
-0
 NULL
+0
 
 query T rowsort
 select reverse(E'8 \\rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')

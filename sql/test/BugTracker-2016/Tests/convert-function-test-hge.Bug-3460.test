@@ -7,19 +7,19 @@ INSERT into T_hugeint VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (
 statement ok
 INSERT into T_hugeint VALUES (null)
 
-query I rowsort
+query I nosort
 SELECT v FROM T_hugeint ORDER BY v
 ----
--1
--127
+NULL
 -2147483647
 -32767
+-127
+-1
 0
 1
 127
-2147483647
 32767
-NULL
+2147483647
 
 query II rowsort
 SELECT v, convert(v, boolean) from T_hugeint

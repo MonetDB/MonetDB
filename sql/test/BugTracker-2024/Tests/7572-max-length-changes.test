@@ -1,7 +1,7 @@
 statement error
 create table t9s (a9 char(9999999999), v9 varchar(9999999999), c9 clob(9999999999), b9 blob(9999999999), j9 json(9999999999), u9 url(9999999999))
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.columns where name like '_9'
 ----
 
@@ -11,7 +11,7 @@ drop table if exists t9s
 statement error
 create function f9s (a9 char(9999999999), v9 varchar(9999999999), c9 clob(9999999999), b9 blob(9999999999), j9 json(9999999999), u9 url(9999999999)) returns int return 1
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.args where name like '_9'
 ----
 
@@ -21,7 +21,7 @@ drop function if exists f9s
 statement error 22003!Integer value too large or not a number (8589934592) in: "create table t8s (a8 char(8589934592"...
 create table t8s (a8 char(8589934592), v8 varchar(8589934592), c8 clob(8589934592), b8 blob(8589934592), j8 json(8589934592), u8 url(8589934592))
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.columns where name like '_8'
 ----
 
@@ -31,7 +31,7 @@ drop table if exists t8s
 statement error
 create table t8s (a8 char(8589934593), v8 varchar(8589934594), c8 clob(8589934595), b8 blob(8589934596), j8 json(8589934597), u8 url(8589934598))
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.columns where name like '_8'
 ----
 
@@ -41,7 +41,7 @@ drop table if exists t8s
 statement error
 create table t7s (a7 char(2147483647), v7 varchar(2147483648), c7 clob(2147483647), b7 blob(2147483647), j7 json(2147483647), u7 url(2147483648))
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.columns where name like '_7'
 ----
 
@@ -51,7 +51,7 @@ drop table if exists t7s
 statement ok
 create table t2s (a2 char(2147483647), v2 varchar(2147483647), c2 clob(2147483647), b2 blob(2147483647), j2 json(2147483647), u2 url(2147483647))
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.columns where name like '_2'
 ----
 a2
@@ -79,7 +79,7 @@ drop table if exists t2s
 statement error
 create function f7s (a7 char(2147483647), v7 varchar(2147483648), c7 clob(2147483647), b7 blob(2147483647), j7 json(2147483648), u7 url(2147483647)) returns int return 1
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.args where name like '_7'
 ----
 
@@ -89,7 +89,7 @@ drop function if exists f7s
 statement ok
 create function f2s (a2 char(2147483647), v2 varchar(2147483647), c2 clob(2147483647), b2 blob(2147483647), j2 json(2147483647), u2 url(2147483647)) returns int return 1
 
-query TTI
+query TTI nosort
 select name, type, type_digits from sys.args where name like '_2' and func_id in (select id from sys.functions where name = 'f2s')
 ----
 a2
@@ -113,3 +113,4 @@ url
 
 statement ok
 drop function if exists f2s
+

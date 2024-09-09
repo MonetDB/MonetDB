@@ -1,4 +1,4 @@
-query TTTTT rowsort
+query TTTTT nosort
 select cast(null as varchar(1)) as table_cat, s."name" as table_schem, t."name"
 as table_name, case when t."type" = 0 and t."system" = false and t."temporary"
 = 0 then cast('TABLE' as varchar(20)) when t."type" = 0 and t."system" = true

@@ -19,7 +19,7 @@ insert into urlparts values (3857)
 statement ok
 insert into urlparts values (3868)
 
-query I rowsort
+query I nosort
 SELECT * FROM urlparts WHERE urlid=218 OR urlid=219 OR
 urlid=329 OR urlid=3857 OR urlid=3868 order by urlid
 ----
@@ -29,7 +29,7 @@ urlid=329 OR urlid=3857 OR urlid=3868 order by urlid
 3857
 3868
 
-query I rowsort
+query I nosort
 SELECT * FROM urlparts WHERE urlid=3868 OR urlid=3857
 OR urlid=329 OR urlid=219 OR urlid=218 order by urlid
 ----

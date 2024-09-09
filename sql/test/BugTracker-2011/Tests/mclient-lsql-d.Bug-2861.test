@@ -1,4 +1,4 @@
-query TT rowsort
+query TT nosort
 with describe_all_objects as (
  select s.name as sname,
      t.name,
@@ -18,7 +18,7 @@ select type, fullname from describe_all_objects where (ntype & 3) > 0 and not sy
 statement ok
 create table bug2861 (id int)
 
-query TT rowsort
+query TT nosort
 with describe_all_objects as (
  select s.name as sname,
      t.name,
@@ -40,7 +40,7 @@ sys.bug2861
 statement ok
 drop table bug2861
 
-query TT rowsort
+query TT nosort
 with describe_all_objects as (
  select s.name as sname,
      t.name,

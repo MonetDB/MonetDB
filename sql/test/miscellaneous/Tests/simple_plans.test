@@ -10,7 +10,7 @@ create table myy (col1 int, col2 int)
 statement ok
 insert into myy values (1, 1), (2, 0), (3,3), (4,2)
 
-query I rowsort
+query I nosort
 select distinct col1 + col2 from myy order by col1 + col2
 ----
 2

@@ -37,7 +37,7 @@ create role testR1
 statement ok
 create user testu09 with password r'test\tu09' name r'Test\bu09' DEFAULT role testR1
 
-query TTITIITI rowsort
+query TTITIITI nosort
 select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
 ----
 testu03
@@ -152,7 +152,7 @@ statement error 0P000!DROP USER: no such user role 'testu01'
 drop user testu01
 
 -- note: create user statements without SCHEMA ... also create a schema implicitly !!! show them
-query TII rowsort
+query TII nosort
 select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
 ----
 testu03
@@ -251,11 +251,11 @@ statement error 0P000!DROP USER: no such user role 'testu09'
 drop user testu09
 -- this user was already dropped, see above
 
-query TII rowsort
+query TII nosort
 select name, authorization > 3, owner > 3 from sys.schemas where not system and name like 'test%' order by name
 ----
 
-query TTITIITI rowsort
+query TTITIITI nosort
 select name, fullname, default_schema > 2000, schema_path, max_memory, max_workers, optimizer, default_role > 2000 from sys.users where name like 'test%' order by name
 ----
 

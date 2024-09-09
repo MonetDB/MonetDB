@@ -34,7 +34,7 @@ insert into "testTable2" values ('Cat2', 4)
 statement ok
 insert into "testTable2" values (null, null)
 
-query TTI rowsort
+query TTI nosort
 select "A", "B", (
       select count(1)
       from "testTable1" "inner"
@@ -52,7 +52,7 @@ Cat3
 Cat1
 0
 
-query TTI rowsort
+query TTI nosort
 select "A", "B", (
       select count(*)
       from "testTable1" "inner"
@@ -70,7 +70,7 @@ Cat3
 Cat1
 0
 
-query TTI rowsort
+query TTI nosort
 select "A", "B", (
 	select count(1)
 	from "testTable1" "inner"
@@ -88,7 +88,7 @@ Cat3
 Cat1
 0
 
-query TTI rowsort
+query TTI nosort
 select "A", "B", (
 	select count(*)
 	from "testTable1" "inner"
@@ -106,7 +106,7 @@ Cat3
 Cat1
 0
 
-query TRR rowsort
+query TRR nosort
 select "A", "B", (
 	select sum("B")
 	from "testTable2" "inner"
@@ -117,6 +117,9 @@ select "A", "B", (
 ) from "testTable2" "outer"
 order by "A", "B"
 ----
+NULL
+NULL
+NULL
 Cat1
 2.000
 2.000
@@ -126,11 +129,8 @@ Cat2
 Cat2
 4.000
 7.000
-NULL
-NULL
-NULL
 
-query TRR rowsort
+query TRR nosort
 select "A", "B", (
 	select sum("B")
 	from "testTable2" "inner"
@@ -141,6 +141,9 @@ select "A", "B", (
 ) from "testTable2" "outer"
 order by "A", "B"
 ----
+NULL
+NULL
+NULL
 Cat1
 2.000
 NULL
@@ -150,11 +153,8 @@ NULL
 Cat2
 4.000
 NULL
-NULL
-NULL
-NULL
 
-query TRR rowsort
+query TRR nosort
 select "A", "B", (
 	select sum("B")
 	from "testTable2" "inner"
@@ -165,6 +165,9 @@ select "A", "B", (
 ) from "testTable2" "outer"
 order by "A", "B"
 ----
+NULL
+NULL
+NULL
 Cat1
 2.000
 NULL
@@ -173,9 +176,6 @@ Cat2
 NULL
 Cat2
 4.000
-NULL
-NULL
-NULL
 NULL
 
 statement ok

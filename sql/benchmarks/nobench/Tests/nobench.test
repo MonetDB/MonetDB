@@ -235,7 +235,7 @@ group by f.h
 3.000
 1
 
-query TT rowsort
+query TT nosort
 select * from bench10 as "left" inner join bench10 as "right" on (json.filter("left".js,'nested_obj.str') = json.filter("right".js, 'str1'))
  where json.number(json.filter("left".js,'num')) between 0.0 and 3.0 order by "left".js
 ----

@@ -7,21 +7,21 @@ insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2),
 statement ok
 start transaction
 
-query I rowsort
+query I nosort
 select first_value(aa) over (w order by bb) from analytics window w as (partition by bb)
 ----
-15
-15
-15
 3
 3
 3
 NULL
 NULL
 NULL
+15
+15
+15
 NULL
 
-query II rowsort
+query II nosort
 select first_value(aa) over (w1 order by bb),
        last_value(aa) over (w2 order by bb) from analytics window w1 as (w2), w2 as (), w3 as (w1)
 ----
@@ -32,34 +32,25 @@ select first_value(aa) over (w1 order by bb),
 3
 4
 3
-6
-3
-6
-3
-6
-3
 8
 3
 8
 3
 8
+3
+6
+3
+6
+3
+6
 3
 NULL
 
-query III rowsort
+query III nosort
 select first_value(aa) over (w1 partition by bb),
        last_value(aa) over (w2 range unbounded preceding),
        count(aa) over (w3) from analytics window w1 as (w2), w2 as (order by bb), w3 as (w2 partition by bb)
 ----
-15
-6
-3
-15
-6
-3
-15
-6
-3
 3
 4
 3
@@ -78,6 +69,15 @@ NULL
 NULL
 8
 2
+15
+6
+3
+15
+6
+3
+15
+6
+3
 NULL
 NULL
 0
