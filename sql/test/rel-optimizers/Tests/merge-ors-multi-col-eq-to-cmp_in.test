@@ -132,6 +132,17 @@ select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 
 60
 600
 
+skipif threads=1
+query T nosort single-col-3-val-2-col-2-val
+plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."m", "b"."k" ]
+| ) [ (("b"."m") in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
+) [ "b"."m", "b"."k" ]
+
+onlyif threads=1
 query T nosort single-col-3-val-2-col-2-val
 plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
