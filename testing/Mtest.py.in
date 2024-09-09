@@ -52,6 +52,7 @@ single_in_memory = False
 restart = False
 produce_html = True
 ignore_conditions = False
+skip_timeout = False
 
 # extra mserver5 options
 mserver5_opts = []
@@ -2162,6 +2163,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
         elem = SkipTest(env, TST, EXT, reason, length)
+    elif skip_timeout and os.path.isfile(os.path.join(TSTSRCDIR, TST+".timeout")):
+        reason = "test with timeout"
+        elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in listdir(RELSRCDIR):
@@ -3565,6 +3569,7 @@ def main(argv) :
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
     parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
+    parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     global produce_html
@@ -3590,6 +3595,8 @@ def main(argv) :
     stop_crash = opts.stop_crash
     global ignore_conditions
     ignore_conditions = opts.ignore_conditions
+    global skip_timeout
+    skip_timeout = opts.skip_test_with_timeout
     produce_html = opts.produce_html
     addreqs = False
     testweb = opts.testweb
