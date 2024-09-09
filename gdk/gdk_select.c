@@ -1390,14 +1390,14 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		maxincl = false;
 	}
 	bool keep = false;	/* keep lock on parent bat? */
-	if (minprop == NULL || maxprop == NULL) {
+	if (minval == NULL || maxval == NULL) {
 		if (pb != NULL) {
 			MT_lock_set(&pb->theaplock);
-			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
+			if (minval == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
 				keep = true;
 				minval = VALptr(minprop);
 			}
-			if (maxprop == NULL && (maxprop = BATgetprop_nolock(pb, GDK_MAX_BOUND)) != NULL) {
+			if (maxval == NULL && (maxprop = BATgetprop_nolock(pb, GDK_MAX_BOUND)) != NULL) {
 				keep = true;
 				maxval = VALptr(maxprop);
 				maxincl = true;
@@ -1408,20 +1408,20 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		}
 	}
 
-	if (minprop == NULL && maxprop == NULL) {
+	if (minval == NULL && maxval == NULL) {
 		range = range_inside; /* strictly: unknown */
-	} else if (maxprop &&
+	} else if (maxval &&
 		   tl &&
 		   ((c = atomcmp(tl, maxval)) > 0 ||
 		    ((!maxincl || !li) && c == 0))) {
 		range = range_after;
-	} else if (minprop &&
+	} else if (minval &&
 		   th &&
 		   ((c = atomcmp(th, minval)) < 0 ||
 		    (!hi && c == 0))) {
 		range = range_before;
 	} else if (tl == NULL) {
-		if (minprop == NULL) {
+		if (minval == NULL) {
 			c = atomcmp(th, maxval);
 			if (c < 0 || ((maxincl || !hi) && c == 0))
 				range = range_atstart;
@@ -1431,7 +1431,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			c = atomcmp(th, minval);
 			if (c < 0 || (!hi && c == 0))
 				range = range_before;
-			else if (maxprop == NULL)
+			else if (maxval == NULL)
 				range = range_atstart;
 			else {
 				c = atomcmp(th, maxval);
@@ -1442,7 +1442,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			}
 		}
 	} else if (th == NULL) {
-		if (maxprop == NULL) {
+		if (maxval == NULL) {
 			c = atomcmp(tl, minval);
 			if (c >= 0)
 				range = range_atend;
@@ -1452,7 +1452,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			c = atomcmp(tl, maxval);
 			if (c > 0 || ((!maxincl || !li) && c == 0))
 				range = range_after;
-			else if (minprop == NULL)
+			else if (minval == NULL)
 				range = range_atend;
 			else {
 				c = atomcmp(tl, minval);
@@ -1462,13 +1462,13 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 					range = range_contains;
 			}
 		}
-	} else if (minprop == NULL) {
+	} else if (minval == NULL) {
 		c = atomcmp(th, maxval);
 		if (c < 0 || ((maxincl || !hi) && c == 0))
 			range = range_inside;
 		else
 			range = range_atend;
-	} else if (maxprop == NULL) {
+	} else if (maxval == NULL) {
 		c = atomcmp(tl, minval);
 		if (c >= 0)
 			range = range_inside;
