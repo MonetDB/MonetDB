@@ -20,59 +20,59 @@ query T nosort
    PLAN select * from oblo
 ----
 project (
-| table("sys"."oblo") [ "oblo"."a" ]
-) [ "oblo"."a" ]
+| table("sys"."oblo") [ "oblo"."a" NOT NULL ]
+) [ "oblo"."a" NOT NULL ]
 
 query T nosort
    PLAN select * from oblo OFFSET 2
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
 | ) [ bigint(63) NULL, bigint(63) "2" ]
-) [ "oblo"."a" ]
+) [ "oblo"."a" NOT NULL ]
 
 query T nosort
    PLAN select * from oblo LIMIT 2
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
 | ) [ bigint(63) "2" ]
-) [ "oblo"."a" ]
+) [ "oblo"."a" NOT NULL ]
 
 query T nosort
    PLAN select * from oblo LIMIT 1 OFFSET 2
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
 | ) [ bigint(63) "1", bigint(63) "2" ]
-) [ "oblo"."a" ]
+) [ "oblo"."a" NOT NULL ]
 
 query T nosort
    PLAN select * from oblo LIMIT 2 OFFSET 1
 ----
 project (
 | top N (
-| | table("sys"."oblo") [ "oblo"."a" ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
 | ) [ bigint(63) "2", bigint(63) "1" ]
-) [ "oblo"."a" ]
+) [ "oblo"."a" NOT NULL ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a
 ----
 project (
-| table("sys"."oblo") [ "oblo"."a" ]
-) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+| table("sys"."oblo") [ "oblo"."a" NOT NULL ]
+) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 
 query T nosort
    PLAN select * from oblo ORDER BY a OFFSET 2
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
+| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) NULL, bigint(63) "2" ]
 
 query T nosort
@@ -80,8 +80,8 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
+| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) "2" ]
 
 query T nosort
@@ -89,8 +89,8 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
+| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) "2", bigint(63) "1" ]
 
 query T nosort
@@ -98,8 +98,8 @@ query T nosort
 ----
 top N (
 | project (
-| | table("sys"."oblo") [ "oblo"."a" ]
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
+| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) "1", bigint(63) "2" ]
 
 query T python .explain.function_histogram

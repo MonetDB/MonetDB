@@ -215,8 +215,8 @@ PLAN select count(distinct a) from dummyme group by b
 ----
 project (
 | group by (
-| | table("sys"."dummyme") [ "dummyme"."b" ]
-| ) [ "dummyme"."b" ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+| | table("sys"."dummyme") [ "dummyme"."b" NOT NULL ]
+| ) [ "dummyme"."b" NOT NULL ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
 query I nosort
@@ -230,8 +230,8 @@ plan select count(distinct b) from dummyme
 ----
 project (
 | group by (
-| | table("sys"."dummyme") [ "dummyme"."b" ]
-| ) [  ] [ "sys"."count" unique  no nil ("dummyme"."b") NOT NULL UNIQUE as "%1"."%1" ]
+| | table("sys"."dummyme") [ "dummyme"."b" NOT NULL ]
+| ) [  ] [ "sys"."count" unique  no nil ("dummyme"."b" NOT NULL) NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
 query I nosort
@@ -261,9 +261,9 @@ PLAN select count(distinct a + b) from dummyme
 project (
 | group by (
 | | project (
-| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b" ]
-| | ) [ "sys"."sql_add"("dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b") as "%2"."%2" ]
-| ) [  ] [ "sys"."count" unique  no nil ("%2"."%2") NOT NULL UNIQUE as "%1"."%1" ]
+| | | table("sys"."dummyme") [ "dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b" NOT NULL ]
+| | ) [ "sys"."sql_add"("dummyme"."a" NOT NULL UNIQUE HASHCOL , "dummyme"."b" NOT NULL) NOT NULL as "%2"."%2" ]
+| ) [  ] [ "sys"."count" unique  no nil ("%2"."%2" NOT NULL) NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
 query I nosort
