@@ -1365,6 +1365,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	BAT *pb = NULL;
 	int c;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
+	BATiter bi2 = *bi;
 
 	if (tl && (*atomcmp)(tl, ATOMnilptr(bi->type)) == 0)
 		tl = NULL;
@@ -1383,7 +1384,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
 		minval = VALptr(minprop);
 	if (bi->maxpos != BUN_NONE) {
-		maxval = BUNtail(*bi, bi->maxpos);
+		maxval = BUNtail(bi2, bi->maxpos);
 		maxincl = true;
 	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
 		maxval = VALptr(maxprop);
