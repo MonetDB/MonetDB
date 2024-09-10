@@ -1873,11 +1873,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	else
 		pb = NULL;
 	pbi = bat_iterator(pb);
-	/* use hash only for equi-join, and then only if b or its
-	 * parent already has a hash, or if b or its parent is
-	 * persistent and the total size wouldn't be too large; check
-	 * for existence of hash last since that may involve I/O */
-	if (equi || antiequi) {
+	/* use hash only for equi-join if the bat is not sorted, but
+	 * only if b or its parent already has a hash, or if b or its
+	 * parent is persistent and the total size wouldn't be too
+	 * large; check for existence of hash last since that may
+	 * involve I/O */
+	if ((equi || antiequi) && !bi.sorted && !bi.revsorted) {
 		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
@@ -1980,7 +1981,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	}
 
-	if (!havehash && (bi.sorted || bi.revsorted || oidxh != NULL)) {
+	if (bi.sorted || bi.revsorted || (!havehash && oidxh != NULL)) {
 		BUN low = 0;
 		BUN high = bi.count;
 
