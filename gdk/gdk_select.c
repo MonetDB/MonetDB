@@ -1379,11 +1379,21 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 
 	/* keep locked while we look at the property values */
 	MT_lock_set(&bi->b->theaplock);
-	if (bi->minpos != BUN_NONE)
+	if (bi->sorted && (bi->nonil || atomcmp(BUNtail(*bi, 0), ATOMnilptr(bi->type)) != 0))
+		minval = BUNtail(*bi, 0);
+	else if (bi->revsorted && (bi->nonil || atomcmp(BUNtail(*bi, bi->count - 1), ATOMnilptr(bi->type)) != 0))
+		minval = BUNtail(*bi, bi->count - 1);
+	else if (bi->minpos != BUN_NONE)
 		minval = BUNtail(*bi, bi->minpos);
 	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
 		minval = VALptr(minprop);
-	if (bi->maxpos != BUN_NONE) {
+	if (bi->sorted && (bi->nonil || atomcmp(BUNtail(bi2, bi->count - 1), ATOMnilptr(bi->type)) != 0)) {
+		maxval = BUNtail(bi2, bi->count - 1);
+		maxincl = true;
+	} else if (bi->revsorted && (bi->nonil || atomcmp(BUNtail(bi2, 0), ATOMnilptr(bi->type)) != 0)) {
+		maxval = BUNtail(bi2, 0);
+		maxincl = true;
+	} else if (bi->maxpos != BUN_NONE) {
 		maxval = BUNtail(bi2, bi->maxpos);
 		maxincl = true;
 	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
