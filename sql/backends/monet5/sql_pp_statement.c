@@ -454,13 +454,13 @@ stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previ
 }
 
 InstrPtr
-stmt_oahash_build_table(backend *be, stmt *ht_sink, stmt *key, stmt *pp)
+stmt_oahash_build_ht(backend *be, int ht_sink, stmt *key, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_table"), 4);
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
-	q = pushReturn(be->mb, q, ht_sink->nr);
+	q = pushReturn(be->mb, q, ht_sink);
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 1;
@@ -469,58 +469,39 @@ stmt_oahash_build_table(backend *be, stmt *ht_sink, stmt *key, stmt *pp)
 }
 
 InstrPtr
-stmt_oahash_build_combined_table(backend *be, stmt *ht_sink, stmt *key, int prnt_slts, stmt *prnt_ht, stmt *pp)
+stmt_oahash_build_combined_ht(backend *be, int ht_sink, stmt *key, int prnt_slts, int prnt_ht, stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_combined_table"), 6);
 	if (q == NULL) return NULL;
 
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
-	q = pushReturn(be->mb, q, ht_sink->nr);
+	q = pushReturn(be->mb, q, ht_sink);
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, prnt_slts);
-	q = pushArgument(be->mb, q, prnt_ht?prnt_ht->nr:0);
+	q = pushArgument(be->mb, q, prnt_ht);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 1;
 	pushInstruction(be->mb, q);
 	return q;
 }
 
-stmt *
-stmt_oahash_add_payload(backend *be, stmt *hp_sink, stmt *payload, int payload_pos, stmt *pp)
+InstrPtr
+stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos, stmt *pp)
 {
 	MalBlkPtr mb = be->mb;
-	mvc *sql = be->mvc;
 
 	InstrPtr q = newStmtArgs(mb, putName("oahash"), putName("add_payload"), 5);
-	if (q == NULL)
-		goto bailout;
+	if (q == NULL) return NULL;
 
 	int tt = tail_type(payload)->type->localtype;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
-	getArg(q, 0) = hp_sink->nr;
+	getArg(q, 0) = hp_sink;
 	q = pushArgument(mb, q, payload->nr);
 	q = pushArgument(mb, q, payload_pos);
 	q = pushArgument(mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	q->inout = 0;
 	pushInstruction(mb, q);
-
-	stmt *s = stmt_none(be);
-	if (s == NULL)
-		goto bailout;
-
-	s->key = 0;
-	s->nrcols = 1;
-	s->nr = getDestVar(q);
-	s->q = q;
-	s->tname = payload->tname;
-	s->cname = payload->cname;
-	return s;
-
-  bailout:
-	if (q) freeInstruction(q);
-	if (sql->sa->eb.enabled)
-		eb_error(&sql->sa->eb, sql->errstr[0] ? sql->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
-	return NULL;
+	return q;
 }
 
 InstrPtr
@@ -633,7 +614,7 @@ stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sin
 	q = pushArgument(be->mb, q, hp_sink->nr);
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
-	q = pushLng(be->mb, q, norows_prb->nr);
+	q = pushArgument(be->mb, q, norows_prb->nr);
 	q = pushBit(be->mb, q, outer);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
