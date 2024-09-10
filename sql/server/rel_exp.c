@@ -3261,16 +3261,15 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
-		strcmp(sql_func_imp(f->func), "/") == 0) {
+	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX &&
+		(lt->scale || rt->scale) && strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
-		/* TODO make '3' setable by user (division_minimal_scale or so) */
-		scaleL = (lt->scale < 3) ? 3 : lt->scale;
-		scaleL += (scaleL < rt->scale)?(rt->scale - scaleL):0;
+		scaleL = (lt->scale < sql->div_min_scale) ? sql->div_min_scale : lt->scale;
+		scaleL += (scaleL < rt->scale) ? rt->scale - scaleL : 0;
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);

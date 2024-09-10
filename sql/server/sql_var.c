@@ -32,8 +32,9 @@ destroy_sql_var(void *gdata, void *data)
 	_DELETE(svar);
 }
 
-#define SQLglobal(sname, name, val) \
-	if (!(var = push_global_var(sql, sname, name, &ctype)) || !sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
+#define SQL_GLOBAL(sname, name, val)									\
+	if (!(var = push_global_var(sql, sname, name, &ctype)) ||			\
+		!sqlvar_set(var, VALset(&src, ctype.type->localtype, (char*)(val)))) \
 		return -1;
 
 static int
@@ -48,36 +49,38 @@ init_global_variables(mvc *sql)
 	sql_subtype ctype;
 	lng sec = 0;
 	ValRecord src;
-	const char *opt, *sname = "sys";
+	const char *mal_optimizer, *sname = "sys";
 	sql_var *var;
 
 	if (!(sql->global_vars = list_create(destroy_sql_var)))
 		return -1;
-	/* Use hash lookup for global variables */
 	if (!(sql->global_vars->ht = hash_new(NULL, 16, (fkeyvalue)&var_key)))
 		return -1;
 
 	sql_find_subtype(&ctype, "int", 0, 0);
-	SQLglobal(sname, "debug", &sql->debug);
-	SQLglobal(sname, "sql_optimizer", &sql->sql_optimizer);
+	SQL_GLOBAL(sname, "debug", &sql->debug);
+	SQL_GLOBAL(sname, "sql_optimizer", &sql->sql_optimizer);
+	SQL_GLOBAL(sname, "division_min_scale", &sql->div_min_scale);
 
-	sql_find_subtype(&ctype,  "varchar", 1024, 0);
-	SQLglobal(sname, "current_schema", sname);
-	SQLglobal(sname, "current_user", "monetdb");
-	SQLglobal(sname, "current_role", "monetdb");
+	sql_find_subtype(&ctype, "varchar", 1024, 0);
+	SQL_GLOBAL(sname, "current_schema", sname);
+	SQL_GLOBAL(sname, "current_user", "monetdb");
+	SQL_GLOBAL(sname, "current_role", "monetdb");
 
-	/* inherit the optimizer from the server */
-	opt = GDKgetenv("sql_optimizer");
-	if (!opt)
-		opt = "default_pipe";
-	SQLglobal(sname, "optimizer", opt);
+	/* TODO: GDKenv var sql_optimizer change to mal_optimizer */
+	mal_optimizer = GDKgetenv("sql_optimizer");
+	if (!mal_optimizer)
+		mal_optimizer = "default_pipe";
+	/* TODO: Change optmizer to mal_optimizer */
+	SQL_GLOBAL(sname, "optimizer", mal_optimizer);
 
 	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);
-	SQLglobal(sname, "current_timezone", &sec);
+	SQL_GLOBAL(sname, "current_timezone", &sec);
 
 	sql_find_subtype(&ctype, "bigint", 0, 0);
-	SQLglobal(sname, "last_id", &sec);
-	SQLglobal(sname, "rowcnt", &sec);
+	SQL_GLOBAL(sname, "last_id", &sec);
+	SQL_GLOBAL(sname, "rowcnt", &sec);
+
 	return 0;
 }
 
