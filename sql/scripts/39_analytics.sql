@@ -445,3 +445,10 @@ GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;
 create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "sql"."corr";
 GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window sys.group_concat(str string) returns string
+	external name "sql"."str_group_concat";
+GRANT EXECUTE ON WINDOW sys.group_concat(string) TO PUBLIC;
+create window sys.group_concat(str string, sep string) returns string
+	external name "sql"."str_group_concat";
+GRANT EXECUTE ON WINDOW sys.group_concat(string, string) TO PUBLIC;
