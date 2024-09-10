@@ -1,4 +1,4 @@
-query TTT rowsort
+query TTT nosort
 select schemas.name, tables.name, columns.name from
 	columns
 		inner join
@@ -13,7 +13,7 @@ select schemas.name, tables.name, columns.name from
 ----
 438 values hashing to 2bd7ef18b01fbee6f139b64003828536
 
-query TTT rowsort
+query TTT nosort
 select s.name, t.name, c.name from
 	columns c
 		inner join

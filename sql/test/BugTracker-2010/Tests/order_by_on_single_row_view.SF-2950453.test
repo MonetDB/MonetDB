@@ -8,14 +8,14 @@ SELECT * FROM x
 a
 b
 
-query RTT rowsort
+query RTT nosort
 SELECT * FROM x ORDER BY score
 ----
 1.000
 a
 b
 
-query R rowsort
+query R nosort
 SELECT * FROM (SELECT 1.0 as score) AS x ORDER BY x.score
 ----
 1.000

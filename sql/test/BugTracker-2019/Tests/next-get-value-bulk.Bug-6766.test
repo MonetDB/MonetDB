@@ -7,7 +7,7 @@ create sequence myseq as int
 statement ok
 create sequence myotherseq as int
 
-query TTI rowsort
+query TTI nosort
 select 'sys', seq.name, next_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
@@ -17,17 +17,17 @@ sys
 myseq
 1
 
-query TTI rowsort
+query TTI nosort
 select s.name, 'myseq', next_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
 myseq
-2
+3
 sys
 myseq
-3
+2
 
-query TTI rowsort
+query TTI nosort
 select s.name, seq.name, next_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
@@ -37,7 +37,7 @@ sys
 myseq
 4
 
-query TTI rowsort
+query TTI nosort
 select 'sys', seq.name, get_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
@@ -47,7 +47,7 @@ sys
 myseq
 5
 
-query TTI rowsort
+query TTI nosort
 select s.name, 'myseq', get_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
@@ -57,7 +57,7 @@ sys
 myseq
 5
 
-query TTI rowsort
+query TTI nosort
 select s.name, seq.name, get_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
@@ -67,7 +67,7 @@ sys
 myseq
 5
 
-query TTI rowsort
+query TTI nosort
 select s.name, seq.name, "restart"(s.name, seq.name, 1) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys

@@ -39,7 +39,7 @@ insert into Projects values(8, 'Typhon', 4)
 statement ok
 insert into Projects values(10, 'Sphinx', 5)
 
-query ITTITI rowsort
+query ITTITI nosort
 select *
 from Customers c, Projects p
 where c.CustId = p.CustId

@@ -123,6 +123,10 @@ current_user
 varchar
 monetdb
 sys
+division_min_scale
+int
+3
+sys
 optimizer
 varchar
 default_pipe

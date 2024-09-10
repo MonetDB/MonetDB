@@ -38,7 +38,7 @@ INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat2', 7, 7.5, '2013-06-17 18:17
 statement ok
 INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat1', 8, 8.5, '2013-06-18 19:18:18.000000', 9)
 
-query TIRT rowsort
+query TIRT nosort
 select "A" as "cb_a", "B" as "cc_b", "C" as "cd_c", "D" as "ce_d" from (
 	select "t8"."A", "t8"."B", "t8"."C", "t8"."D", "t8"."id" from (
 		select "t7"."A", "t7"."B", "t7"."C", "t7"."D", "t7"."id" from "unitTestDontDelete" as "t7"

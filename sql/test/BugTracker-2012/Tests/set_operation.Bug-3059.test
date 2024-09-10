@@ -45,7 +45,7 @@ COPY 12 RECORDS INTO "sys"."s" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 3	0	1
 0	3	1
 
-query III rowsort
+query III nosort
 SELECT u, v, r FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u, v, r
 ----
 0
@@ -78,7 +78,7 @@ SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as int
 ----
 8
 
-query III rowsort
+query III nosort
 SELECT u, v, r  FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u, v, r
 ----
 0
@@ -99,7 +99,7 @@ SELECT count(*) as c FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff
 ----
 4
 
-query I rowsort
+query I nosort
 SELECT inter.u FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u
 ----
 0
@@ -111,7 +111,7 @@ SELECT inter.u FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORD
 3
 3
 
-query I rowsort
+query I nosort
 SELECT diff.u FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u
 ----
 0
@@ -119,7 +119,7 @@ SELECT diff.u FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY
 2
 3
 
-query I rowsort
+query I nosort
 SELECT inter.u FROM ((SELECT * FROM R) INTERSECT (SELECT * FROM S)) as inter ORDER BY u
 ----
 0

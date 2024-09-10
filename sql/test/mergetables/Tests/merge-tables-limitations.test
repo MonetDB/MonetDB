@@ -250,7 +250,7 @@ statement error 42000!ALTER TABLE: can't add/drop a temporary table into a MERGE
 ALTER TABLE tst.mtbl ADD TABLE tmp.gttbl
 
 --cleanup
-query TT rowsort
+query TT nosort
 select schema, name from tst.my_tables order by 1,2
 ----
 tmp
@@ -286,7 +286,7 @@ DROP TABLE tst.rtbl
 statement ok
 DROP TABLE tst.utbl
 
-query TT rowsort
+query TT nosort
 select schema, name from tst.my_tables order by 1,2
 ----
 tst

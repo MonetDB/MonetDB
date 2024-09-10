@@ -21,19 +21,19 @@ INsert into meditbl values (2147483648)
 statement error
 INsert into meditbl values (-2147483648)
 
-query I rowsort
+query I nosort
 select * from meditbl order by 1
 ----
--1
+NULL
 -2147483647
--32767
 -8388607
+-32767
+-1
 0
 1
-2147483647
 32767
 8388607
-NULL
+2147483647
 
 statement ok
 drop table meditbl

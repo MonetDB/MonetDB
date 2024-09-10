@@ -18,7 +18,7 @@ GRANT ALL ON s1.test to role1
 
 # check that bruce cannot grant role1
 @connection(id=bruce, username=bruce, password=bruce)
-statement error 42000!Role (role1) missing
+statement error HY009!Role (role1) missing
 SET role role1
 
 @connection(id=bruce)

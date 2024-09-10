@@ -201,13 +201,13 @@ number_bits(lng val)
 		val = -val;
 	unsigned bits = 0;
 #ifdef HAVE_HGE
-	hge m = ((hge)1)<<bits;
-	for( ;(val & ~m) > m; bits++)
-		m = ((hge)1)<<bits;
+	hge m = (hge)1 << bits;
+	for( ; (val & ~m) > m; bits++)
+		m = (hge)1 << bits;
 #else
-	lng m = ((lng)1)<<bits;
-	for( ;(val & ~m) > m; bits++)
-		m = ((lng)1)<<bits;
+	lng m = (lng)1 << bits;
+	for( ; (val & ~m) > m; bits++)
+		m = ((lng)1) << bits;
 #endif
 	if (!bits)
 		bits = 1;

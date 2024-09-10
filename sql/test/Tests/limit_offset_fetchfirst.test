@@ -174,7 +174,7 @@ select * from (select * from limittest ORDER BY value OFFSET 50 ROWS FETCH FIRST
 58
 59
 
-query I rowsort
+query I nosort
 select * from (select * from limittest order by 1 desc OFFSET 50 ROWS FETCH FIRST 10 ROWS ONLY) t order by 1 asc OFFSET 5 ROW FETCH FIRST 4 ROWS ONLY
 ----
 166

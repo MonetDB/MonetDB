@@ -130,31 +130,47 @@ select avg(sum(aa)) over () from analytics group by aa
 6.571
 6.571
 
-query I rowsort
+query I nosort
 select cast(sum(aa) * count(aa) / avg(aa) over (order by aa desc rows between current row and unbounded following) as bigint) from analytics group by aa
 ----
-1
-1
-1
 2
 2
 2
+1
+1
 5
+1
 NULL
 
-query RRIR rowsort
+query RRIR nosort
 select avg(sum(aa)) over ( order by aa desc),
        avg(sum(aa)) over (rows unbounded preceding),
        cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
        avg(sum(aa)) over (range unbounded preceding) from analytics group by aa
 ----
+15.000
+15.000
+2
+6.571
 11.500
 11.500
 2
 6.571
-15.000
-15.000
+9.667
+9.667
 2
+6.571
+8.500
+8.500
+1
+6.571
+7.600
+7.600
+1
+6.571
+7.333
+7.333
+5
 6.571
 6.571
 6.571
@@ -163,22 +179,6 @@ select avg(sum(aa)) over ( order by aa desc),
 6.571
 6.571
 NULL
-6.571
-7.333
-7.333
-5
-6.571
-7.600
-7.600
-1
-6.571
-8.500
-8.500
-1
-6.571
-9.667
-9.667
-2
 6.571
 
 query II rowsort
@@ -412,12 +412,12 @@ select min(aa) over (partition by sum(bb)) from analytics
 statement error
 select min(aa) over (partition by sum(aa)) from analytics
 
-query I rowsort
+query I nosort
 select rank() over (order by sum(aa)) from analytics
 ----
 1
 
-query I rowsort
+query I nosort
 select rank() over (order by sum(aa), sum(bb)) from analytics
 ----
 1
@@ -428,7 +428,7 @@ select rank() over (order by sum(aa), bb) from analytics
 statement error
 select min(aa) over (order by sum(bb)) from analytics
 
-query I rowsort
+query I nosort
 select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics
 ----
 1
@@ -440,7 +440,7 @@ select avg(sum(aa)) over (rows unbounded preceding),
 46.000
 1
 
-query I rowsort
+query I nosort
 select 1 from analytics order by sum(sum(aa)) over ()
 ----
 1

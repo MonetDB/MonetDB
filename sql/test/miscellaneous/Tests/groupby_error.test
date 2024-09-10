@@ -154,7 +154,7 @@ SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70
 11
 11
 
-query I rowsort
+query I nosort
 SELECT col0 FROM tab0 ORDER BY tab0.col0
 ----
 15
@@ -202,7 +202,7 @@ SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2
 67
 58
 
-query I rowsort
+query I nosort
 SELECT col0 FROM tab0 ORDER BY sys.tab0.col0
 ----
 15

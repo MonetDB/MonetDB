@@ -7,7 +7,7 @@ create table "ordertest"(str text, orderA int, orderB int, num int)
 statement ok
 insert into "ordertest" values('a',1,1,1), ('a',2,1,10), ('a',3,1,20), ('a',4,1,30)
 
-query TIIIIIII rowsort
+query TIIIIIII nosort
 select *,
 cast(sum("num") over(order by orderA) as bigint) as orderbyA,
 cast(sum("num") over(order by orderA,orderB) as bigint) as orderbyAB,

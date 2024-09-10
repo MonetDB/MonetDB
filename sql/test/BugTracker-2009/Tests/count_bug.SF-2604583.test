@@ -18,7 +18,7 @@ select * from countt1
 7
 5
 
-query I rowsort
+query I nosort
 select cast( ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) as bigint) from countt1 as tt2 order by 1
 ----
 1

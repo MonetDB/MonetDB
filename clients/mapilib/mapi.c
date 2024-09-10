@@ -1217,7 +1217,7 @@ mapi_log_header(Mapi mid, const char *funcname, long line, const char *mark1, co
 	if (firstcall == 0)
 		firstcall = now;
 	double seconds = (double)(now - firstcall) / 1e6;
-	mnstr_printf(mid->tracelog, "\342\226\266 [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line); /* U+25B6: right-pointing triangle */
+	mnstr_printf(mid->tracelog, "\n** [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line);
 }
 
 void
