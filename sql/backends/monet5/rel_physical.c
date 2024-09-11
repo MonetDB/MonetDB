@@ -252,6 +252,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				navg = exp_convert(sql, navg, exp_subtype(navg), exp_subtype(avg));
 
 			exp_prop_alias(sql->sa, navg, avg);
+			assert(navg);
 			m->data = navg;
 		}
 		pexps = new_exp_list(sql->sa);
@@ -262,11 +263,16 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 				sql_subfunc *a = e->f;
 
 				if (strcmp(a->func->base.name, "avg") == 0) {
-					sql_exp *avg = n->data;
+					sql_subtype *rt = exp_subtype(e);
+					sql_subtype *it = first_arg_subtype(e);
+					if ((EC_APPNUM(rt->type->eclass) && !EC_APPNUM(it->type->eclass)) || /* always rewrite floating point average */
+						(rt->type->localtype > it->type->localtype)) {	/* always rewrite if result type is large enough */
+						sql_exp *avg = n->data;
 
-					append(pexps, avg);
-					n = n->next;
-					continue;
+						append(pexps, avg);
+						n = n->next;
+						continue;
+					}
 				}
 			}
 			/* alias for local aggr exp */
