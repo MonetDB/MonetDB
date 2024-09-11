@@ -622,7 +622,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"column_constraint",
 	 NULL,
-	 "[ CONSTRAINT ident ] { NOT NULL | NULL | UNIQUE | PRIMARY KEY | CHECK '(' search_condition ')' |\n"
+	 "[ CONSTRAINT ident ] { NOT NULL | NULL | CHECK '(' search_condition ')' |\n"
+	 "    PRIMARY KEY | UNIQUE | UNIQUE NULLS [ NOT ] DISTINCT |\n"
 	 "    REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }\n",
 	 "column_list,search_condition,match_options,reference_action",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
@@ -911,7 +912,7 @@ SQLhelp sqlhelp2[] = {
 	{"table_constraint",
 	 NULL,
 	 "[ CONSTRAINT ident ] { CHECK '(' search_condition ')' |\n"
-	 "    PRIMARY KEY column_list | UNIQUE column_list |\n"
+	 "    PRIMARY KEY column_list | UNIQUE column_list | UNIQUE NULLS [ NOT ] DISTINCT column_list |\n"
 	 "    FOREIGN KEY column_list REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }",
 	 "column_list,search_condition,match_options,reference_action",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
