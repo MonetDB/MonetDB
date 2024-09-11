@@ -767,6 +767,18 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 					const void *t = BUNtail(vi, p);
 
 					if (q < cnt) {
+						if (b->tnosorted == q)
+							b->tnosorted = 0;
+						if (b->tnorevsorted == q)
+							b->tnorevsorted = 0;
+						if (b->tnokey[0] == q ||
+						    b->tnokey[1] == q) {
+							b->tnokey[0] = 0;
+							b->tnokey[1] = 0;
+						}
+						b->tkey = false;
+						b->tsorted = false;
+						b->tkey = false;
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
 							bat_iterator_end(&vi);

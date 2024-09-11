@@ -923,7 +923,7 @@ NULL	NULL	"XS0130574600"	NULL	"SUNDERLAND (SHG) FINANCE"	NULL	NULL	NULL	"30-Mar-
 "Supranational"	NULL	NULL	"RESFER"	"RESEAU FERRE DE FRANCE"	"N"	"5"	"N"	"11-Mar-2052 00:00:00"	"*"	"4.25  36"	NULL	"AAA"	"N"	NULL	NULL	4.457	4.602	23	15	890
 "Supranational"	NULL	"XS0202407093"	"EIB"	NULL	"N"	NULL	NULL	"12-Oct-2054 00:00:00"	NULL	"4.25  36"	"AAA"	NULL	"N"	NULL	NULL	4.203	4.357	NULL	NULL	891
 
-query TT rowsort
+query TT nosort
 SELECT
         "tne"."clh__grouping_names",
         "tne"."cli__grouping_names_2"
@@ -1307,23 +1307,23 @@ ORDER BY CASE WHEN "clh__grouping_names" = 'Issue Name' THEN 0 WHEN "clh__groupi
         CASE WHEN "cli__grouping_names_2" = 'Field 3' THEN 0 WHEN "cli__grouping_names_2" = 'Coupon' THEN 1 WHEN "cli__grouping_names_2" = 'Ticker' THEN 2 WHEN "cli__grouping_names_2" IS NULL THEN 3 ELSE 4 END ASC     ,
         "cli__grouping_names_2" ASC limit 500000
 ----
-Is Split
-Coupon
-Is Split
-Field 3
-Is Split
-Ticker
-Issue Name
-Coupon
 Issue Name
 Field 3
+Issue Name
+Coupon
 Issue Name
 Ticker
 Maturity Date
-Coupon
-Maturity Date
 Field 3
 Maturity Date
+Coupon
+Maturity Date
+Ticker
+Is Split
+Field 3
+Is Split
+Coupon
+Is Split
 Ticker
 
 statement ok

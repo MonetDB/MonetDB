@@ -1375,6 +1375,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 	BAT *pb = NULL;
 	int c;
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(bi->type);
+	BATiter bi2 = *bi;
 
 	if (tl && (*atomcmp)(tl, ATOMnilptr(bi->type)) == 0)
 		tl = NULL;
@@ -1388,26 +1389,36 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 
 	/* keep locked while we look at the property values */
 	MT_lock_set(&bi->b->theaplock);
-	if (bi->minpos != BUN_NONE)
+	if (bi->sorted && (bi->nonil || atomcmp(BUNtail(*bi, 0), ATOMnilptr(bi->type)) != 0))
+		minval = BUNtail(*bi, 0);
+	else if (bi->revsorted && (bi->nonil || atomcmp(BUNtail(*bi, bi->count - 1), ATOMnilptr(bi->type)) != 0))
+		minval = BUNtail(*bi, bi->count - 1);
+	else if (bi->minpos != BUN_NONE)
 		minval = BUNtail(*bi, bi->minpos);
 	else if ((minprop = BATgetprop_nolock(bi->b, GDK_MIN_BOUND)) != NULL)
 		minval = VALptr(minprop);
-	if (bi->maxpos != BUN_NONE) {
-		maxval = BUNtail(*bi, bi->maxpos);
+	if (bi->sorted && (bi->nonil || atomcmp(BUNtail(bi2, bi->count - 1), ATOMnilptr(bi->type)) != 0)) {
+		maxval = BUNtail(bi2, bi->count - 1);
+		maxincl = true;
+	} else if (bi->revsorted && (bi->nonil || atomcmp(BUNtail(bi2, 0), ATOMnilptr(bi->type)) != 0)) {
+		maxval = BUNtail(bi2, 0);
+		maxincl = true;
+	} else if (bi->maxpos != BUN_NONE) {
+		maxval = BUNtail(bi2, bi->maxpos);
 		maxincl = true;
 	} else if ((maxprop = BATgetprop_nolock(bi->b, GDK_MAX_BOUND)) != NULL) {
 		maxval = VALptr(maxprop);
 		maxincl = false;
 	}
 	bool keep = false;	/* keep lock on parent bat? */
-	if (minprop == NULL || maxprop == NULL) {
+	if (minval == NULL || maxval == NULL) {
 		if (pb != NULL) {
 			MT_lock_set(&pb->theaplock);
-			if (minprop == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
+			if (minval == NULL && (minprop = BATgetprop_nolock(pb, GDK_MIN_BOUND)) != NULL) {
 				keep = true;
 				minval = VALptr(minprop);
 			}
-			if (maxprop == NULL && (maxprop = BATgetprop_nolock(pb, GDK_MAX_BOUND)) != NULL) {
+			if (maxval == NULL && (maxprop = BATgetprop_nolock(pb, GDK_MAX_BOUND)) != NULL) {
 				keep = true;
 				maxval = VALptr(maxprop);
 				maxincl = true;
@@ -1418,20 +1429,20 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 		}
 	}
 
-	if (minprop == NULL && maxprop == NULL) {
+	if (minval == NULL && maxval == NULL) {
 		range = range_inside; /* strictly: unknown */
-	} else if (maxprop &&
+	} else if (maxval &&
 		   tl &&
 		   ((c = atomcmp(tl, maxval)) > 0 ||
 		    ((!maxincl || !li) && c == 0))) {
 		range = range_after;
-	} else if (minprop &&
+	} else if (minval &&
 		   th &&
 		   ((c = atomcmp(th, minval)) < 0 ||
 		    (!hi && c == 0))) {
 		range = range_before;
 	} else if (tl == NULL) {
-		if (minprop == NULL) {
+		if (minval == NULL) {
 			c = atomcmp(th, maxval);
 			if (c < 0 || ((maxincl || !hi) && c == 0))
 				range = range_atstart;
@@ -1441,7 +1452,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			c = atomcmp(th, minval);
 			if (c < 0 || (!hi && c == 0))
 				range = range_before;
-			else if (maxprop == NULL)
+			else if (maxval == NULL)
 				range = range_atstart;
 			else {
 				c = atomcmp(th, maxval);
@@ -1452,7 +1463,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			}
 		}
 	} else if (th == NULL) {
-		if (maxprop == NULL) {
+		if (maxval == NULL) {
 			c = atomcmp(tl, minval);
 			if (c >= 0)
 				range = range_atend;
@@ -1462,7 +1473,7 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 			c = atomcmp(tl, maxval);
 			if (c > 0 || ((!maxincl || !li) && c == 0))
 				range = range_after;
-			else if (minprop == NULL)
+			else if (minval == NULL)
 				range = range_atend;
 			else {
 				c = atomcmp(tl, minval);
@@ -1472,13 +1483,13 @@ BATrange(BATiter *bi, const void *tl, const void *th, bool li, bool hi)
 					range = range_contains;
 			}
 		}
-	} else if (minprop == NULL) {
+	} else if (minval == NULL) {
 		c = atomcmp(th, maxval);
 		if (c < 0 || ((maxincl || !hi) && c == 0))
 			range = range_inside;
 		else
 			range = range_atend;
-	} else if (maxprop == NULL) {
+	} else if (maxval == NULL) {
 		c = atomcmp(tl, minval);
 		if (c >= 0)
 			range = range_inside;
@@ -1907,11 +1918,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	else
 		pb = NULL;
 	pbi = bat_iterator(pb);
-	/* use hash only for equi-join, and then only if b or its
-	 * parent already has a hash, or if b or its parent is
-	 * persistent and the total size wouldn't be too large; check
-	 * for existence of hash last since that may involve I/O */
-	if (equi || antiequi) {
+	/* use hash only for equi-join if the bat is not sorted, but
+	 * only if b or its parent already has a hash, or if b or its
+	 * parent is persistent and the total size wouldn't be too
+	 * large; check for existence of hash last since that may
+	 * involve I/O */
+	if ((equi || antiequi) && !bi.sorted && !bi.revsorted) {
 		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
@@ -1986,35 +1998,32 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			MT_lock_unset(&pb->batIdxLock);
 		}
 		if (oidxh) {
-			/* Is query selective enough to use the ordered index ? */
-			/* TODO: Test if this heuristic works in practice */
-			/*if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < ((BUN)1000 < bi.count/1000 ? (BUN)1000: bi.count/1000))*/
-			if ((ORDERfnd(b, oidxh, th) - ORDERfnd(b, oidxh, tl)) < bi.count/3) {
-				if (view) {
-					bat_iterator_end(&bi);
-					bi = bat_iterator(b);
-					poidx = true; /* using parent oidx */
-					vwo = (lng) (view->tbaseoff - bi.baseoff);
-					vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
-					vwh = vwl + canditer_last(&ci) - ci.seq;
-					vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
-					TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
-				} else {
-					vwl = ci.seq;
-					vwh = canditer_last(&ci);
-				}
+			/* Is query selective enough to use the ordered
+			 * index?  Finding the boundaries is 2*log(n)
+			 * where n is the size of the bat, sorting is
+			 * N*log(N) where N is the number of results.
+			 * If the sum is less than n (cost of scan),
+			 * it's cheaper.  However, to find out how large
+			 * N is, we'd have to do the two boundary
+			 * searches.  If we do that, we might as well do
+			 * it all. */
+			if (view) {
+				bat_iterator_end(&bi);
+				bi = bat_iterator(b);
+				poidx = true; /* using parent oidx */
+				vwo = (lng) (view->tbaseoff - bi.baseoff);
+				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
+				vwh = vwl + canditer_last(&ci) - ci.seq;
+				vwo = (lng) view->hseqbase - (lng) b->hseqbase - vwo;
+				TRC_DEBUG(ALGO, "Switch from " ALGOBATFMT " to " ALGOBATFMT " " OIDFMT "-" OIDFMT " hseq " LLFMT "\n", ALGOBATPAR(view), ALGOBATPAR(b), vwl, vwh, vwo);
 			} else {
-				if (view) {
-					b = view;
-					view = NULL;
-				}
-				HEAPdecref(oidxh, false);
-				oidxh = NULL;
+				vwl = ci.seq;
+				vwh = canditer_last(&ci);
 			}
 		}
 	}
 
-	if (!havehash && (bi.sorted || bi.revsorted || oidxh != NULL)) {
+	if (bi.sorted || bi.revsorted || (!havehash && oidxh != NULL)) {
 		BUN low = 0;
 		BUN high = bi.count;
 
@@ -2326,7 +2335,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 */
 		Imprints *imprints = NULL;
 		if (!equi &&
-		    /* DISABLES CODE */ (0) &&
 		    imprintable(bi.type) &&
 		    (!bi.transient ||
 		     (pb != NULL && !pbi.transient)) &&
@@ -2690,8 +2698,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		cnt = BATcount(r1);
 		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	} else if (/* DISABLES CODE */ (0) &&
-		   !anti && !symmetric &&
+	} else if (!anti && !symmetric &&
 		   imprintable(li.type) &&
 		   (BATcount(rl) > 2 ||
 		    !li.transient ||

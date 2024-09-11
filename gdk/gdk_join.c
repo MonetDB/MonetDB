@@ -4212,7 +4212,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		/* maybe do a hash join on the swapped operands; if we
 		 * do, we need to sort the output, so we take that into
 		 * account as well */
-		bool lhash, plhash, lcand;
+		bool lhash, plhash, lcand, rkey = r->tkey;
 		double lcost;
 
 		lcost = joincost(l, rci.ncand, &lci, &lhash, &plhash, &lcand);
@@ -4220,7 +4220,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			rc = GDK_FAIL;
 			goto doreturn;
 		}
-		if (semi)
+		if (semi && !rkey)
 			lcost += rci.ncand; /* cost of BATunique(r) */
 		/* add cost of sorting; obviously we don't know the
 		 * size, so we guess that the size of the output is
@@ -4229,7 +4229,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (lcost < rcost) {
 			BAT *tmp = sr;
 			BAT *r1, *r2;
-			if (semi) {
+			if (semi && !rkey) {
 				sr = BATunique(r, sr);
 				if (sr == NULL) {
 					rc = GDK_FAIL;
@@ -4240,7 +4240,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			rc = hashjoin(&r2, &r1, NULL, r, l, &rci, &lci, nil_matches,
 				      false, false, false, false, false, false, estimate,
 				      t0, true, lhash, plhash, lcand, func);
-			if (semi)
+			if (semi && !rkey)
 				BBPunfix(sr->batCacheid);
 			if (rc != GDK_SUCCEED)
 				goto doreturn;

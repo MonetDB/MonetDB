@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Sep 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Introduce division_min_scale SQL environment variable for specifying
+  minimum scale of the division result. The default value is 3.
+

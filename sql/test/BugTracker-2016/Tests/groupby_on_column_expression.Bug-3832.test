@@ -39,59 +39,59 @@ INSERT into fields VALUES ('c1 ', 't1 ', 1), ('c2 ', 't1 ', 2), ('c4 ', 't1 ', 4
 statement ok
 INSERT into fields SELECT RTRIM(name) AS name, RTRIM(tablenm) AS tablenm, pos FROM fields
 
-query TTI rowsort
+query TTI nosort
 SELECT * FROM fields ORDER BY tablenm, pos, name
 ----
 c1
 t1
 1
+c2
+t1
+2
+c3
+t1
+3
+c4
+t1
+4
+c1 
+t1 
+1
+c2 
+t1 
+2
+c3 
+t1 
+3
+c4 
+t1 
+4
 c1
 t2
 1
 c1 
-t1 
-1
-c1 
 t2
 1
-c2
-t1
-2
 c2
 t2
 2
 c2 
-t1 
-2
-c2 
 t2
 2
-c3
-t1
-3
-c3
-t3
-3
-c3 
-t1 
-3
-c3 
-t3
-3
-c4
-t1
-4
 c4
 t2
 4
 c4 
-t1 
-4
-c4 
 t2
 4
+c3
+t3
+3
+c3 
+t3
+3
 
-query TIII rowsort
+query TIII nosort
 SELECT name, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY name ORDER BY name
 ----
 c1
@@ -127,7 +127,7 @@ c4
 4
 4
 
-query TIII rowsort
+query TIII nosort
 SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY name ORDER BY RTRIM(name)
 ----
 c1
@@ -163,7 +163,7 @@ c4
 4
 4
 
-query TIII rowsort
+query TIII nosort
 SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY RTRIM(name) ORDER BY RTRIM(name)
 ----
 c1
@@ -183,7 +183,7 @@ c4
 4
 4
 
-query TIII rowsort
+query TIII nosort
 SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM fields GROUP BY nametrimmed ORDER BY nametrimmed
 ----
 c1
@@ -203,7 +203,7 @@ c4
 4
 4
 
-query TIII rowsort
+query TIII nosort
 SELECT RTRIM(name) as nametrimmed, COUNT(*) as count, MAX(pos) as max_pos, MIN(pos) as min_pos FROM (SELECT RTRIM(name) AS name, pos FROM fields) AS fromquery GROUP BY name ORDER BY RTRIM(name)
 ----
 c1

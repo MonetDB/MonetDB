@@ -19,7 +19,7 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR rowsort
+query ITR nosort
 select * from example order by val1, val2
 ----
 0
@@ -38,7 +38,7 @@ texxst
 testx
 9.100
 
-query ITR rowsort
+query ITR nosort
 select * from example_view order by val1, val2
 ----
 0

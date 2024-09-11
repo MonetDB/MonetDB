@@ -24,7 +24,7 @@ select foo,
 7
 5
 
-query IIR rowsort
+query IIR nosort
 select foo,
        sum(foo) over (order by foo) as sumsum1,
        1.0 * sum(foo) over (order by foo) as cumsum2

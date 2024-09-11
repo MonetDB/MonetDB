@@ -7,24 +7,28 @@ create table analytics (aa int, bb int)
 statement ok
 insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(aa, aa) over (partition by bb),
        covar_samp(aa, aa) over (partition by bb order by bb asc),
        covar_samp(aa, aa) over (partition by bb order by bb desc),
        covar_samp(aa, aa) over (order by bb desc) from analytics
 ----
-1.000
-1.000
-1.000
-17.643
-1.000
-1.000
-1.000
-17.643
-1.000
-1.000
-1.000
-17.643
+NULL
+NULL
+NULL
+NULL
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
 12.500
 12.500
 12.500
@@ -37,29 +41,29 @@ select covar_samp(aa, aa) over (partition by bb),
 12.500
 12.500
 21.300
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-30.333
-NULL
-NULL
-NULL
-NULL
+1.000
+1.000
+1.000
+17.643
+1.000
+1.000
+1.000
+17.643
+1.000
+1.000
+1.000
+17.643
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(bb, bb) over (partition by bb),
        covar_samp(bb, bb) over (partition by bb order by bb asc),
        covar_samp(bb, bb) over (partition by bb order by bb desc),
        covar_samp(bb, bb) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 0.000
 0.000
 0.000
@@ -96,12 +100,8 @@ select covar_samp(bb, bb) over (partition by bb),
 0.000
 0.000
 1.067
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select corr(bb, bb) over (partition by bb),
        corr(bb, bb) over (partition by bb order by bb asc),
        corr(bb, bb) over (partition by bb order by bb desc),
@@ -110,6 +110,10 @@ select corr(bb, bb) over (partition by bb),
 NULL
 NULL
 NULL
+NULL
+NULL
+NULL
+NULL
 1.000
 NULL
 NULL
@@ -143,29 +147,17 @@ NULL
 NULL
 NULL
 1.000
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(aa, aa) over (partition by bb),
        covar_pop(aa, aa) over (partition by bb order by bb asc),
        covar_pop(aa, aa) over (partition by bb order by bb desc),
        covar_pop(aa, aa) over (order by bb desc) from analytics
 ----
-0.667
-0.667
-0.667
-15.438
-0.667
-0.667
-0.667
-15.438
-0.667
-0.667
-0.667
-15.438
+NULL
+NULL
+NULL
+NULL
 20.222
 20.222
 20.222
@@ -190,12 +182,20 @@ select covar_pop(aa, aa) over (partition by bb),
 6.250
 6.250
 17.040
-NULL
-NULL
-NULL
-NULL
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(bb, bb) over (partition by bb),
        covar_pop(bb, bb) over (partition by bb order by bb asc),
        covar_pop(bb, bb) over (partition by bb order by bb desc),
@@ -242,7 +242,7 @@ select covar_pop(bb, bb) over (partition by bb),
 0.000
 0.960
 
-query RRRR rowsort
+query RRRR nosort
 select corr(bb, bb) over (partition by bb),
        corr(bb, bb) over (partition by bb order by bb asc),
        corr(bb, bb) over (partition by bb order by bb desc),
@@ -251,6 +251,10 @@ select corr(bb, bb) over (partition by bb),
 NULL
 NULL
 NULL
+NULL
+NULL
+NULL
+NULL
 1.000
 NULL
 NULL
@@ -284,17 +288,17 @@ NULL
 NULL
 NULL
 1.000
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(aa, bb) over (partition by bb),
        covar_samp(aa, bb) over (partition by bb order by bb asc),
        covar_samp(aa, bb) over (partition by bb order by bb desc),
        covar_samp(aa, bb) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 0.000
 0.000
 0.000
@@ -331,17 +335,17 @@ select covar_samp(aa, bb) over (partition by bb),
 0.000
 0.000
 2.429
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(bb, aa) over (partition by bb),
        covar_samp(bb, aa) over (partition by bb order by bb asc),
        covar_samp(bb, aa) over (partition by bb order by bb desc),
        covar_samp(bb, aa) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 0.000
 0.000
 0.000
@@ -378,12 +382,8 @@ select covar_samp(bb, aa) over (partition by bb),
 0.000
 0.000
 2.429
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select corr(bb, aa) over (partition by bb),
        corr(bb, aa) over (partition by bb order by bb asc),
        corr(bb, aa) over (partition by bb order by bb desc),
@@ -392,6 +392,22 @@ select corr(bb, aa) over (partition by bb),
 NULL
 NULL
 NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 0.376
 NULL
 NULL
@@ -413,29 +429,17 @@ NULL
 NULL
 NULL
 0.625
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(aa, bb) over (partition by bb),
        covar_pop(aa, bb) over (partition by bb order by bb asc),
        covar_pop(aa, bb) over (partition by bb order by bb desc),
        covar_pop(aa, bb) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 0.000
 0.000
 0.000
@@ -472,17 +476,17 @@ select covar_pop(aa, bb) over (partition by bb),
 0.000
 0.000
 2.125
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(bb, aa) over (partition by bb),
        covar_pop(bb, aa) over (partition by bb order by bb asc),
        covar_pop(bb, aa) over (partition by bb order by bb desc),
        covar_pop(bb, aa) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 0.000
 0.000
 0.000
@@ -519,12 +523,8 @@ select covar_pop(bb, aa) over (partition by bb),
 0.000
 0.000
 2.125
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select corr(bb, aa) over (partition by bb),
        corr(bb, aa) over (partition by bb order by bb asc),
        corr(bb, aa) over (partition by bb order by bb desc),
@@ -533,6 +533,22 @@ select corr(bb, aa) over (partition by bb),
 NULL
 NULL
 NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 0.376
 NULL
 NULL
@@ -554,71 +570,55 @@ NULL
 NULL
 NULL
 0.625
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(aa, 1) over (partition by bb),
        covar_pop(aa, 1) over (partition by bb order by bb asc),
        covar_pop(aa, 1) over (partition by bb order by bb desc),
        covar_pop(aa, 1) over (order by bb desc) from analytics
 ----
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
 NULL
 NULL
 NULL
 NULL
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(bb, -100) over (partition by bb),
        covar_pop(bb, -100) over (partition by bb order by bb asc),
        covar_pop(bb, -100) over (partition by bb order by bb desc),
@@ -665,7 +665,7 @@ select covar_pop(bb, -100) over (partition by bb),
 0.000
 0.000
 
-query RRRR rowsort
+query RRRR nosort
 select corr(bb, -100) over (partition by bb),
        corr(bb, -100) over (partition by bb order by bb asc),
        corr(bb, -100) over (partition by bb order by bb desc),
@@ -712,101 +712,101 @@ NULL
 NULL
 NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(aa, 1) over (partition by bb),
        covar_samp(aa, 1) over (partition by bb order by bb asc),
        covar_samp(aa, 1) over (partition by bb order by bb desc),
        covar_samp(aa, 1) over (order by bb desc) from analytics
 ----
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
 NULL
 NULL
 NULL
 NULL
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(bb, -100) over (partition by bb),
        covar_samp(bb, -100) over (partition by bb order by bb asc),
        covar_samp(bb, -100) over (partition by bb order by bb desc),
        covar_samp(bb, -100) over (order by bb desc) from analytics
 ----
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
 NULL
 NULL
 NULL
 NULL
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
-query RRRR rowsort
+query RRRR nosort
 select corr(bb, -100) over (partition by bb),
        corr(bb, -100) over (partition by bb order by bb asc),
        corr(bb, -100) over (partition by bb order by bb desc),
@@ -1308,26 +1308,30 @@ NULL
 NULL
 NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_samp(aa, 1) over (rows between 5 preceding and 0 following),
        covar_samp(aa, aa) over (rows between 5 preceding and 2 following),
        covar_samp(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
        covar_samp(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
 ----
-0.000
-0.667
-0.000
+NULL
+1.000
+NULL
 0.000
 0.000
 1.000
 0.000
 0.000
 0.000
-18.967
+0.667
 0.000
 0.000
 0.000
-19.143
+5.500
+NULL
+0.000
+0.000
+24.567
 NULL
 0.000
 0.000
@@ -1335,6 +1339,14 @@ NULL
 0.000
 0.000
 0.000
+19.143
+NULL
+0.000
+0.000
+18.967
+0.000
+0.000
+0.000
 21.300
 0.000
 0.000
@@ -1342,45 +1354,33 @@ NULL
 21.300
 NULL
 NULL
-0.000
-24.567
-NULL
-0.000
-0.000
-5.500
-NULL
-0.000
-NULL
-1.000
-NULL
-0.000
 
-query RR rowsort
+query RR nosort
 select covar_samp(bb, aa) over (rows 2 preceding),
        covar_samp(10, bb) over (partition by bb order by bb rows 2 preceding) from analytics
 ----
+NULL
+NULL
+0.000
+0.000
+0.000
+0.000
+0.000
+NULL
 -0.500
 0.000
 0.000
 0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-0.000
-NULL
-0.000
+3.167
 NULL
 0.667
 0.000
-3.167
-NULL
-NULL
+0.000
+0.000
+0.000
 NULL
 
-query RRRR rowsort
+query RRRR nosort
 select covar_pop(aa, 1) over (order by bb groups between 5 preceding and 0 following),
        covar_pop(aa, aa) over (order by bb groups between 5 preceding and 2 following),
        covar_pop(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
@@ -1427,7 +1427,7 @@ select covar_pop(aa, 1) over (order by bb groups between 5 preceding and 0 follo
 NULL
 NULL
 
-query RR rowsort
+query RR nosort
 select covar_pop(bb, aa) over (order by bb groups 2 preceding),
        covar_pop(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics
 ----
@@ -1443,16 +1443,16 @@ select covar_pop(bb, aa) over (order by bb groups 2 preceding),
 0.000
 0.600
 0.000
+2.125
+0.000
+2.125
+0.000
+2.125
+0.000
 0.760
 0.000
-2.125
-0.000
-2.125
-0.000
-2.125
-0.000
 
-query RRRR rowsort
+query RRRR nosort
 select corr(aa, 1) over (order by bb rows between 5 preceding and 0 following),
        corr(aa, aa) over (order by bb rows between 5 preceding and 2 following),
        corr(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
@@ -1499,43 +1499,43 @@ NULL
 NULL
 NULL
 
-query RRR rowsort
+query RRR nosort
 select corr(bb, aa) over (order by bb rows 2 preceding),
        corr(10, bb) over (partition by bb order by bb rows 2 preceding),
        corr(bb, aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 -1.000
 NULL
 -0.500
-0.225
-NULL
--1.000
-0.910
-NULL
-NULL
 NULL
 NULL
 0.327
 NULL
 NULL
 NULL
+0.225
+NULL
+-1.000
 NULL
 NULL
 NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
+0.910
 NULL
 NULL
 NULL
 NULL
 NULL
 
-query RRRR rowsort
+query RRRR nosort
 select corr(aa, 1) over (order by bb groups between 5 preceding and 0 following),
        corr(aa, aa) over (order by bb groups between 5 preceding and 2 following),
        corr(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
@@ -1582,29 +1582,29 @@ NULL
 NULL
 NULL
 
-query RR rowsort
+query RR nosort
 select corr(bb, aa) over (order by bb groups 2 preceding),
        corr(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+0.584
+NULL
+0.584
+NULL
+0.584
+NULL
+0.625
+NULL
+0.625
+NULL
+0.625
+NULL
 0.376
-NULL
-0.584
-NULL
-0.584
-NULL
-0.584
-NULL
-0.625
-NULL
-0.625
-NULL
-0.625
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 NULL
 
 statement ok

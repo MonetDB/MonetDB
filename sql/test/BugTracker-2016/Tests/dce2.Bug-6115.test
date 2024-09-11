@@ -4,7 +4,7 @@ CREATE TABLE repro_friends(src BIGINT NOT NULL, dst BIGINT NOT NULL, PRIMARY KEY
 statement ok
 CREATE TABLE repro_persons(id BIGINT NOT NULL, firstName VARCHAR(40) NOT NULL)
 
-query IIT rowsort
+query IIT nosort
 WITH
     params AS (
         SELECT

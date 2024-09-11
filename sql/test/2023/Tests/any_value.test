@@ -14,7 +14,7 @@ SELECT any_value(i), j FROM foo GROUP BY j
 20
 2
 
-query II rowsort
+query II nosort
 SELECT i, any_value(i) OVER (ORDER BY i) FROM foo
 ----
 10

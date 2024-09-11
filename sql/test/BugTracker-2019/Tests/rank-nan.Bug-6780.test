@@ -923,7 +923,7 @@ NULL	NULL	"XS0130574600"	NULL	"SUNDERLAND (SHG) FINANCE"	NULL	NULL	NULL	"30-Mar-
 "Supranational"	NULL	NULL	"RESFER"	"RESEAU FERRE DE FRANCE"	"N"	"5"	"N"	"11-Mar-2052 00:00:00"	"*"	"4.25  36"	NULL	"AAA"	"N"	NULL	NULL	4.457	4.602	23	15	890
 "Supranational"	NULL	"XS0202407093"	"EIB"	NULL	"N"	NULL	NULL	"12-Oct-2054 00:00:00"	NULL	"4.25  36"	"AAA"	NULL	"N"	NULL	NULL	4.203	4.357	NULL	NULL	891
 
-query IRTIII rowsort
+query IRTIII nosort
 select *, rank() over (partition by "c2_h_field_2" order by "count_1" desc) as "RANK", dense_rank() over (partition by "c2_h_field_2" order by "count_1" desc) as "DRANK",
 	row_number() over (partition by "c2_h_field_2" order by "count_1" desc, "Ticker") as "RNUMBER"
 from
@@ -940,7 +940,7 @@ from
 ) as "t0"
 where "c2_h_field_2" is null order by "count_1" desc, "Ticker"
 ----
-810 values hashing to a32b36679d557afce22fbdab478b259a
+810 values hashing to d710e3e8e270d1bed64e20e9f33379ec
 
 statement ok
 ROLLBACK

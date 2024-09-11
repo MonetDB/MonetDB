@@ -105,14 +105,14 @@ statement error
 SELECT '' AS nine, INTERVAL_TBL.* FROM INTERVAL_TBL
    WHERE INTERVAL_TBL.f1 > cast('@ 3 seconds ago' as interval second)
 
-query TTT rowsort
+query TTT nosort
 SELECT '' AS fortyfive, r1.*, r2.*
    FROM INTERVAL_TBL r1, INTERVAL_TBL r2
    WHERE r1.f1 > r2.f1
    ORDER BY r1.f1, r2.f1
 ----
 
-query TT rowsort
+query TT nosort
 SELECT '' AS ten, INTERVAL_TBL.* FROM INTERVAL_TBL order by f1 desc
 ----
 (empty)
