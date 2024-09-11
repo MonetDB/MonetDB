@@ -68,20 +68,26 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
-	empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
+	// empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
+	ma_open(cntxt->ta);
+	empty = (int *) ma_zalloc(cntxt->ta, (mb->vsize + extras) * sizeof(int));
 	if (empty == NULL)
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	// updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	size_t updated_size = esize * sizeof(InstrPtr);
+	updated = (InstrPtr *) ma_zalloc(cntxt->ta, updated_size);
 	if (updated == 0) {
-		GDKfree(empty);
+		// GDKfree(empty);
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(empty);
-		GDKfree(updated);
+		// GDKfree(empty);
+		 // GDKfree(updated);
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -110,10 +116,14 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
 			if (etop == esize) {
 				InstrPtr *tmp = updated;
-				updated = GDKrealloc(updated,
-									 (esize += 256) * sizeof(InstrPtr));
+				//updated = GDKrealloc(updated,
+				//					 (esize += 256) * sizeof(InstrPtr));
+				size_t old_size = updated_size;
+				updated = MA_RENEW_ARRAY(cntxt->ta, InstrPtr, updated,
+									 (esize += 256) * sizeof(InstrPtr), old_size);
 				if (updated == NULL) {
-					GDKfree(tmp);
+					// GDKfree(tmp);
+					updated = tmp;
 					msg = createException(MAL, "optimizer.emptybind",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
@@ -289,8 +299,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	//GDKfree(old);
-	GDKfree(empty);
-	GDKfree(updated);
+	// GDKfree(empty);
+	// GDKfree(updated);
+	ma_close(cntxt->ta);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED)
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

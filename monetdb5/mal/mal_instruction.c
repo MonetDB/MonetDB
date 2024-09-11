@@ -201,7 +201,8 @@ resetMalBlk(MalBlkPtr mb)
 	int i;
 
 	for (i = 1/*MALCHUNK*/; i < mb->ssize; i++) {
-		//freeInstruction(mb->stmt[i]);
+		// ss
+		freeInstructionX(mb->stmt[i], mb);
 		mb->stmt[i] = NULL;
 	}
 #if 0
@@ -420,6 +421,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme,
 		/* Flow of control instructions are always marked as an assignment
 		 * with modifier */
 		.token = ASSIGNsymbol,
+		.blk = NULL,
 	};
 	memset(p->argv, 0, args * sizeof(p->argv[0]));
 	p->argv[0] = -1;
@@ -475,10 +477,9 @@ clrInstruction(InstrPtr p)
 void
 freeInstruction(InstrPtr p)
 {
-	MalBlkPtr mb_ptr = p->blk;
-	if (mb_ptr && mb_ptr->ma) {
+	if (p && p->blk && p->blk->ma) {
 		size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
-		sa_free(mb_ptr->ma, p, sz);
+		sa_free(p->blk->ma, p, sz);
 	}
 	//GDKfree(p);
 }
@@ -486,10 +487,9 @@ freeInstruction(InstrPtr p)
 void
 freeInstructionX(InstrPtr p, MalBlkPtr mb)
 {
-	MalBlkPtr mb_ptr = (mb != NULL) ? mb : p->blk;
-	if (mb_ptr && mb_ptr->ma) {
+	if (p && mb && mb->ma) {
 		size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
-		sa_free(mb_ptr->ma, p, sz);
+		sa_free(mb->ma, p, sz);
 	}
 }
 
@@ -1163,18 +1163,18 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			for (i = 1; i < mb->stop; i++) {
 				q = getInstrPtr(mb, i);
 				if (q->token == REMsymbol) {
-					freeInstruction(q);
+					freeInstructionX(q, mb);
 					mb->stmt[i] = p;
 					return;
 				}
 			}
-			freeInstruction(getInstrPtr(mb, 0));
+			freeInstructionX(getInstrPtr(mb, 0), mb);
 			mb->stmt[0] = p;
 			return;
 		}
 	}
 	if (mb->stmt[mb->stop])
-		freeInstruction(mb->stmt[mb->stop]);
+		freeInstructionX(mb->stmt[mb->stop], mb);
 	p->pc = mb->stop;
 	mb->stmt[mb->stop++] = p;
 }
