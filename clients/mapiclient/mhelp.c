@@ -61,9 +61,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"ALTER SEQUENCE",
 	 "",
-	 "ALTER SEQUENCE qname [ AS seq_int_datatype] [ RESTART [WITH intval]] [INCREMENT BY intval]\n"
-	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
-	 "seq_int_datatype,intval",
+	 "ALTER SEQUENCE qname [AS seq_int_datatype] [RESTART [WITH {bigint|subquery}] ] [INCREMENT BY bigint]\n"
+	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE]",
+	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"ALTER TABLE",
 	 "",
@@ -226,9 +226,9 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/schema-definitions/"},
 	{"CREATE SEQUENCE",
 	 "Define a new integer number sequence generator",
-	 "CREATE SEQUENCE qname [ AS seq_int_datatype] [ START [WITH intval]] [INCREMENT BY intval]\n"
-	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
-	 "seq_int_datatype,intval",
+	 "CREATE SEQUENCE qname [AS seq_int_datatype] [START WITH bigint] [INCREMENT BY bigint]\n"
+	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE]",
+	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"CREATE TABLE",
 	 "Create a new table",
@@ -624,8 +624,8 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "[ CONSTRAINT ident ] { NOT NULL | NULL | CHECK '(' search_condition ')' |\n"
 	 "    PRIMARY KEY | UNIQUE | UNIQUE NULLS [ NOT ] DISTINCT |\n"
-	 "    REFERENCES qname [ column_list ] [ match_option ] [ reference_actions ] }\n",
-	 "column_list,search_condition,match_option,reference_actions",
+	 "    REFERENCES qname [ column_list ] [ match_option ] [ reference_actions ] }",
+	 "column_list,search_condition,reference_actions,match_option",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
 	{"control_statement",
 	 NULL,
@@ -676,8 +676,9 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"generated_column",
 	 NULL,
-	 "AUTO_INCREMENT | GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ '(' [ AS seq_int_datatype] [ START [WITH start]]\n"
-	 " [INCREMENT BY increment] [MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NO MAXVALUE] [CACHE cachevalue] [[NO] CYCLE] ')' ]",
+	 "AUTO_INCREMENT | GENERATED { ALWAYS | BY DEFAULT } AS IDENTITY [ '('\n"
+	 "  [AS seq_int_datatype] [START WITH bigint] [INCREMENT BY bigint]\n"
+	 "  [MINVALUE bigint | NO MINVALUE] [MAXVALUE bigint | NO MAXVALUE] [CACHE bigint] [[NO] CYCLE] ')' ]",
 	 "seq_int_datatype",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/"},
 	{"global_privileges",
@@ -733,11 +734,6 @@ SQLhelp sqlhelp2[] = {
 	 NULL,
 	 "INTERVAL { YEAR | MONTH | DAY | HOUR | MINUTE | SECOND [time_precision] | start_field TO end_field }",
 	 "time_precision,start_field,end_field",
-	 NULL},
-	{"intval",
-	 "Integer value",
-	 NULL,
-	 NULL,
 	 NULL},
 	{"isolevel",
 	 NULL,
@@ -929,7 +925,7 @@ SQLhelp sqlhelp2[] = {
 	 "[ CONSTRAINT ident ] { CHECK '(' search_condition ')' |\n"
 	 "    PRIMARY KEY column_list | UNIQUE column_list | UNIQUE NULLS [ NOT ] DISTINCT column_list |\n"
 	 "    FOREIGN KEY column_list REFERENCES qname [ column_list ] [ match_option ] [ reference_actions ] }",
-	 "column_list,search_condition,match_option,reference_actions",
+	 "column_list,search_condition,reference_actions,match_option",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/table-elements/"},
 	{"table_element",
 	 NULL,
@@ -974,7 +970,7 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"transactionmode",
 	 NULL,
-	 "{ READ ONLY | READ WRITE | ISOLATION LEVEL isolevel | DIAGNOSTICS intval } [ , ... ]",
+	 "{ READ ONLY | READ WRITE | ISOLATION LEVEL isolevel | DIAGNOSTICS integer } [ , ... ]",
 	 "isolevel",
 	 "Note: DIAGNOSTICS is not yet implemented"},
 	{"trigger_reference",
