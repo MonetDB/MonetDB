@@ -477,10 +477,22 @@ freeInstruction(InstrPtr p)
 {
 	MalBlkPtr mb_ptr = p->blk;
 	if (mb_ptr && mb_ptr->ma) {
-		sa_free(mb_ptr->ma, p);
+		size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
+		sa_free(mb_ptr->ma, p, sz);
 	}
 	//GDKfree(p);
 }
+
+void
+freeInstructionX(InstrPtr p, MalBlkPtr mb)
+{
+	MalBlkPtr mb_ptr = (mb != NULL) ? mb : p->blk;
+	if (mb_ptr && mb_ptr->ma) {
+		size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
+		sa_free(mb_ptr->ma, p, sz);
+	}
+}
+
 
 /* Query optimizers walk their way through a MAL program block. They
  * require some primitives to move instructions around and to remove

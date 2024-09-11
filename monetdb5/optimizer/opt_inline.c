@@ -101,7 +101,7 @@ inlineMALblock(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	}
 
 	/* copy the remainder of the stable part */
-	freeInstruction(p);
+	freeInstructionX(p, mb);
 	for (i = pc + 1; i < mb->stop; i++) {
 		ns[k++] = mb->stmt[i];
 	}

@@ -2858,7 +2858,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (i = 0; i < slimit; i++) {
 			if (old[i] && old[i]->token == ENDsymbol)	/* don't free optimizer calls */
 				break;
-			freeInstruction(old[i]);
+			freeInstructionX(old[i], mb);
 		}
 		//GDKfree(old);
 	}
