@@ -549,6 +549,8 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 
 	/*** HASH PHASE ***/
 	sub = _start_pp(be, rel_hsh, 1, refs);
+	if (!sub) return NULL;
+
 	pp = get_pipeline(be);
 	int slt_ids = 0;
 	stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
@@ -559,6 +561,8 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 
 	/*** PROBE PHASE ***/
 	sub = _start_pp(be, rel_prb, 0, refs);
+	if (!sub) return NULL;
+
 	pp = get_pipeline(be);
 	stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_ht, sub, pp);
 	if (prb_res == NULL) return NULL;
@@ -625,6 +629,8 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 
 	/*** (pseudo) PROBE PHASE ***/
 	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs);
+	if (!stmts_prb_res) return NULL;
+
 	pp = get_pipeline(be);
 
 	/*** PROJECT RESULT PHASE ***/
@@ -689,6 +695,8 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 
 	/*** HASH PHASE ***/
 	sub = _start_pp(be, rel_hsh, 1, refs);
+	if (!sub) return NULL;
+
 	pp = get_pipeline(be);
 	int slt_ids = 0;
 	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
@@ -697,6 +705,8 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 
 	/*** PROBE PHASE ***/
 	sub = _start_pp(be, rel_prb, 0, refs);
+	if (!sub) return NULL;
+
 	pp = get_pipeline(be);
 	stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_ht, sub, pp);
 	if (prb_res == NULL) return NULL;

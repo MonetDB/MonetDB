@@ -4056,11 +4056,14 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	stmt *rel_stmt = NULL, *sub;
 	int i, len = 0, nr_unions = list_length((list*)rel->l);
 
+	(void)refs;
 	/* convert to stmt and store the munion operands in rstmts list */
 	rstmts = sa_list(sql->sa);
 	for (n = ((list*)rel->l)->h; n; n = n->next) {
-		rel_stmt = subrel_bin(be, n->data, refs);
-		rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+		//rel_stmt = subrel_bin(be, n->data, refs);
+		//rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+		//TODO: this materialize makes munion queries very slow
+		rel_stmt = rel2bin_materialize(be, n->data);
 		if (!rel_stmt)
 			return NULL;
 		list_append(rstmts, rel_stmt);
