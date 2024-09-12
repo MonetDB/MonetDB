@@ -490,11 +490,11 @@ opt_pipes_reset(void)
 {
 	for (int i = 0; i < MAXOPTPIPES; i++)
 		if (pipes[i].name && !pipes[i].builtin) {
-			GDKfree(pipes[i].name);
-			if (pipes[i].def)
-				for (int n = 0; pipes[i].def[n]; n++)
-					GDKfree(pipes[i].def[n]);
-			GDKfree(pipes[i].def);
+			//GDKfree(pipes[i].name);
+			//if (pipes[i].def)
+			//	for (int n = 0; pipes[i].def[n]; n++)
+			//		GDKfree(pipes[i].def[n]);
+			//GDKfree(pipes[i].def);
 			pipes[i] = (struct pipeline) {
 				.name = NULL,
 			};
