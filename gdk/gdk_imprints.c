@@ -302,17 +302,16 @@ bool
 BATcheckimprints(BAT *b)
 {
 	bool ret;
-	BATiter bi = bat_iterator(b);
 
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
 		b = BATdescriptor(VIEWtparent(b));
 		if (b == NULL) {
-			bat_iterator_end(&bi);
 			return false;
 		}
 	}
 
+	BATiter bi = bat_iterator(b);
 	MT_lock_set(&b->batIdxLock);
 	if (b->timprints == (Imprints *) 1) {
 		Imprints *imprints;
