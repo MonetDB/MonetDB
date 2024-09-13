@@ -144,8 +144,6 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	MT_lock_init(&bn->batIdxLock, name);
 	snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 	MT_rwlock_init(&bn->thashlock, name);
-	snprintf(name, sizeof(name), "imprsema%d", bn->batCacheid); /* fits */
-	MT_sema_init(&bn->imprsema, 1, name);
 	return bn;
 }
 
@@ -577,7 +575,6 @@ BATclear(BAT *b, bool force)
 
 	/* kill all search accelerators */
 	HASHdestroy(b);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
@@ -669,7 +666,6 @@ BATfree(BAT *b)
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
 	HASHfree(b);
-	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
 	RTREEfree(b);
@@ -717,7 +713,6 @@ BATdestroy(BAT *b)
 	MT_lock_destroy(&b->theaplock);
 	MT_lock_destroy(&b->batIdxLock);
 	MT_rwlock_destroy(&b->thashlock);
-	MT_sema_destroy(&b->imprsema);
 	if (b->theap) {
 		GDKfree(b->theap);
 	}
@@ -1428,7 +1423,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
-	IMPSdestroy(b);		/* no support for inserts in imprints yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitstring */
 	RTREEdestroy(b);
@@ -1533,7 +1527,6 @@ BUNdelete(BAT *b, oid o)
 		}
 	}
 	MT_lock_unset(&b->theaplock);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
@@ -1697,7 +1690,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			MT_lock_unset(&b->theaplock);
 		}
 		OIDXdestroy(b);
-		IMPSdestroy(b);
 		STRMPdestroy(b);
 		RTREEdestroy(b);
 

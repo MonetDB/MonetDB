@@ -4268,7 +4268,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 								goto bailout1;
 
-							sz = IMPSimprintsize(bs);
+							sz = 0;
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
@@ -4364,7 +4364,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 									goto bailout1;
 
-								sz = IMPSimprintsize(bs);
+								sz = 0;
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
