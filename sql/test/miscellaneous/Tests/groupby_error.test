@@ -114,8 +114,8 @@ query T nosort
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
-| table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
-) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+| table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
+) [ "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL ] [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL ]
 
 query IIII rowsort
 SELECT DISTINCT col0, col1, col2, col0 FROM tab0

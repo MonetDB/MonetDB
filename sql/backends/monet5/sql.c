@@ -5510,7 +5510,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = NULL;
 	str *r = getArgReference_str(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *cname = *getArgReference_str(stk, pci, 2);
+	const char *kname = *getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5519,7 +5519,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)sname;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
-		sql_key *k = mvc_bind_key(m, s, cname);
+		sql_key *k = mvc_bind_key(m, s, kname);
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);

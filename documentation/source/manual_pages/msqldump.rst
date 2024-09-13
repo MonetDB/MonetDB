@@ -48,7 +48,7 @@ OPTIONS
 
 **--host=**\ *hostname* (**-h** *hostname*)
    Specify the name of the host on which the server runs (default:
-   localhost).
+   **localhost**).
 
 **--port=**\ *portnr* (**-p** *portnr*)
    Specify the portnumber of the server (default: 50000).
@@ -91,8 +91,8 @@ OPTIONS
    **--compression** option is used, the CSV files will be compressed
    using the specified compression scheme. If both the **--outputdir**
    option and the **--output** option are specified, the last one is
-   used. The **--outputdir** option is not compatible with the --inserts
-   option.
+   used. The **--outputdir** option is not compatible with the
+   **--inserts** option.
 
 **--compression=**\ *extension* (**-x** *extension*\ )
    Compress the CSV files produced with the **--outputdir** option using
