@@ -305,7 +305,7 @@ BATcheckimprints(BAT *b)
 
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
-		b = BATdescriptor(VIEWtparent(b));
+		b = BBP_desc(VIEWtparent(b));
 		if (b == NULL) {
 			return false;
 		}
@@ -364,8 +364,6 @@ BATcheckimprints(BAT *b)
 					b->timprints = imprints;
 					TRC_DEBUG(ACCELERATOR, ALGOBATFMT " reusing persisted imprints\n", ALGOBATPAR(b));
 					MT_lock_unset(&b->batIdxLock);
-					if (bi.b != b)
-						BBPunfix(b->batCacheid);
 					bat_iterator_end(&bi);
 					return true;
 				}
@@ -379,8 +377,6 @@ BATcheckimprints(BAT *b)
 		GDKclrerr();	/* we're not currently interested in errors */
 	}
 	MT_lock_unset(&b->batIdxLock);
-	if (bi.b != b)
-		BBPunfix(b->batCacheid);
 	bat_iterator_end(&bi);
 	ret = b->timprints != NULL;
 	if( ret)
