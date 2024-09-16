@@ -88,14 +88,14 @@ static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 {
 	stmt *sub = NULL, *pp = NULL;
+	int neededpp = get_need_pipeline(be);
 
 	if (buildphase && get_pipeline(be)) {
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
 	}
 	if (pp_can_not_start(be->mvc, rel)) {
-		if(!be->need_pipeline)
-			set_need_pipeline(be);
+		set_need_pipeline(be);
 	} else {
 		set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel)));
 	}
@@ -107,11 +107,14 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 
 	pp = get_pipeline(be);
 	if (!pp) {
-		(void)get_need_pipeline(be);
 		pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub));
 		set_pipeline(be, pp);
 		sub = rel2bin_slicer(be, sub, 1);
 	}
+	(void)get_need_pipeline(be);
+
+	if (neededpp)
+		set_need_pipeline(be);
 	return sub;
 }
 
