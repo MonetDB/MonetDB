@@ -5524,7 +5524,11 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
 			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
-			if (!(*r = GDKstrdup(exp2sql(m, exp))))
+			if (exp->comment)
+				*r = GDKstrdup(exp->comment);
+			else
+				*r = GDKstrdup(exp2sql(m, exp));
+			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return MAL_SUCCEED;
 		}

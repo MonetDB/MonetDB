@@ -64,14 +64,15 @@ OPTIONS
    When dumping the table data, use INSERT INTO statements, rather than
    COPY INTO + CSV values. INSERT INTO statements are more portable, and
    necessary when the load of the dump is processed by e.g. a JDBC
-   application.
+   application. When the dump is to be used to feed back into MonetDB,
+   COPY INTO is preferred since that is processed more efficiently.
 
 **--noescape** (**-e**)
    When dumping the table data, use the NO ESCAPE option on the COPY
    INTO query.
 
 **--functions** (**-f**)
-   Only dump functions definitions.
+   Only dump function definitions.
 
 **--table=**\ [\ *schema*\ **.**\ ]\ *table* (**-t** [\ *schema*\ **.**]\ *table*\ )
    Only dump the specified table. If *schema* is not specified, the
