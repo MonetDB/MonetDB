@@ -193,6 +193,7 @@ sqlcleanup(backend *be, int err)
 	be->mvc->label = 0;
 	be->mvc->nid = 1;
 	be->no_mitosis = 0;
+	be->client->query = NULL;
 	scanner_query_processed(&(be->mvc->scanner));
 	return err;
 }
