@@ -575,7 +575,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	be->pipeline = 0;
 	stmt *col = exp_bin(be, exps_cmp_prb->h->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 	sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-	stmt *norows_prb = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
+	stmt *norows_prb = col->nrcols == 0? stmt_atom_lng(be,1) : stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
 	be->pipeline = ppln;
 
 	bit outer = is_outerjoin(rel->op);
@@ -644,9 +644,9 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	be->pipeline = 0;
 	sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	col = stmts_prb_res->op4.lval->h->data;
-	stmt *norows_prb = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
+	stmt *norows_prb = col->nrcols == 0? stmt_atom_lng(be,1) : stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
 	col = stmts_ht->op4.lval->h->data;
-	stmt *norows_hsh = stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
+	stmt *norows_hsh = col->nrcols == 0? stmt_atom_lng(be,1) : stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
 	be->pipeline = ppln;
 
 	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, norows_hsh, pp);
