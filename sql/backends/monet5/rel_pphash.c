@@ -187,11 +187,13 @@ oahash_build_ht(backend *be, int *slt_ids, list *exps, list *shared_ht, stmt *su
 	for (node *n = exps->h, *inout = shared_ht->h; n && inout; n = n->next, inout = inout->next) {
 		stmt *key = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
+		key = column(be, key);
+
 		InstrPtr q = NULL;
 		if (prev_ht == 0) {
-			q = stmt_oahash_build_ht(be, getArg((InstrPtr)inout->data,0), column(be,key), pp);
+			q = stmt_oahash_build_ht(be, getArg((InstrPtr)inout->data,0), key, pp);
 		} else {
-			q = stmt_oahash_build_combined_ht(be, getArg((InstrPtr)inout->data,0), column(be,key), *slt_ids, prev_ht, pp);
+			q = stmt_oahash_build_combined_ht(be, getArg((InstrPtr)inout->data,0), key, *slt_ids, prev_ht, pp);
 		}
 		if (q == NULL) return NULL;
 
@@ -244,9 +246,11 @@ oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, s
 	for (node *n = exps_prj_hsh->h, *inout = shared_hp->h; n && inout; n = n->next, inout = inout->next) {
 		stmt *payload = exp_bin(be, n->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(payload); /* must find */
+		payload = column(be, payload);
+
 		/* pld_pos only exists when exps_prj_hsh->cnt > 0, which is True within
 		 * this for loop */
-		InstrPtr q = stmt_oahash_add_payload(be, getArg((InstrPtr)inout->data,0), column(be,payload), pld_pos, pp);
+		InstrPtr q = stmt_oahash_add_payload(be, getArg((InstrPtr)inout->data,0), payload, pld_pos, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = n->data;
@@ -275,8 +279,8 @@ oahash_probe(backend *be, list *exps_cmp_prb, stmt *stmts_ht, stmt *sub, stmt *p
 		e = n->data;
 		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-
 		key = column(be, key);
+
 		int rht = ((stmt *)m->data)->nr;
 		if (!matched) {
 			q = stmt_oahash_hash(be, key, pp);
@@ -310,6 +314,7 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 	for (node *o = exps_prj_hsh->h; o; o = o->next) {
 		stmt *hp_sink = exp_bin(be, o->data, stmts_hp, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(hp_sink); /* must find */
+
 		InstrPtr q = stmt_oahash_fetch_payload(be, hp_sink, rhs_slts, freq_sink, norows_prb, outer, pp);
 		if (q == NULL) return NULL;
 
@@ -334,7 +339,9 @@ oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, s
 	for (node *o = exps_prj_prb->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_oahash_expand(be, column(be,key), matched, rhs_slts, freq_sink, outer, pp);
+		key = column(be, key);
+
+		InstrPtr q = stmt_oahash_expand(be, key, matched, rhs_slts, freq_sink, outer, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = o->data;
@@ -358,7 +365,9 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink
 	for (node *o = exps_prj->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
-		InstrPtr q = stmt_oahash_project(be, column(be,key), selected, freq_sink, pp);
+		key = column(be, key);
+
+		InstrPtr q = stmt_oahash_project(be, key, selected, freq_sink, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = o->data;
@@ -383,6 +392,7 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 	for (node *o = exps_prj->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
+		key = column(be, key);
 
 		InstrPtr q = newStmt(be->mb, putName("oahash"), putName(func));
 		if (q == NULL) return NULL;
