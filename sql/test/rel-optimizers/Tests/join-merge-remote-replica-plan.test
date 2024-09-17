@@ -66,10 +66,10 @@ plan select * from foo_merge, members_rpl
 munion (
 | project (
 | | crossproduct (
-| | | table("sys"."foo_p1") [ "foo_p1"."n" NOT NULL UNIQUE as "foo_merge"."n", "foo_p1"."m" NOT NULL as "foo_merge"."m" ],
-| | | table("sys"."members_n1") [ "members_n1"."n" NOT NULL UNIQUE as "members_rpl"."n", "members_n1"."m" NOT NULL UNIQUE as "members_rpl"."m", "members_n1"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
+| | | table("sys"."foo_p1") [ "foo_p1"."n" UNIQUE as "foo_merge"."n", "foo_p1"."m" as "foo_merge"."m" ],
+| | | table("sys"."members_n1") [ "members_n1"."n" UNIQUE as "members_rpl"."n", "members_n1"."m" UNIQUE as "members_rpl"."m", "members_n1"."%TID%" NOT NULL UNIQUE as "members_rpl"."%TID%" ]
 | | ) [  ]
-| ) [ "foo_merge"."n" NOT NULL, "foo_merge"."m" NOT NULL, "members_rpl"."n" NOT NULL, "members_rpl"."m" NOT NULL ],
+| ) [ "foo_merge"."n", "foo_merge"."m", "members_rpl"."n", "members_rpl"."m" ],
 | table (
 | | project (
 | | | crossproduct (
