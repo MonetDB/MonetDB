@@ -831,8 +831,6 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		MT_lock_init(&bn->batIdxLock, name);
 		snprintf(name, sizeof(name), "hashlock%d", bn->batCacheid); /* fits */
 		MT_rwlock_init(&bn->thashlock, name);
-		snprintf(name, sizeof(name), "imprsema%d", bn->batCacheid); /* fits */
-		MT_sema_init(&bn->imprsema, 1, name);
 		ATOMIC_INIT(&bn->theap->refs, 1);
 
 		if (snprintf(BBP_bak(b.batCacheid), sizeof(BBP_bak(b.batCacheid)), "tmp_%o", (unsigned) b.batCacheid) >= (int) sizeof(BBP_bak(b.batCacheid))) {
@@ -1223,7 +1221,6 @@ fixhashashbat(BAT *b)
 
 	/* we don't maintain index structures */
 	HASHdestroy(b);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
@@ -1504,7 +1501,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 
 	/* A json column should not normally have any index structures */
 	HASHdestroy(b);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy(b);
 	STRMPdestroy(b);
@@ -4390,7 +4386,6 @@ BBPrecover(int farmid)
 			/* don't trust index files after recovery */
 			GDKunlink(farmid, dstpath, path, "thashl");
 			GDKunlink(farmid, dstpath, path, "thashb");
-			GDKunlink(farmid, dstpath, path, "timprints");
 			GDKunlink(farmid, dstpath, path, "torderidx");
 			GDKunlink(farmid, dstpath, path, "tstrimps");
 		}
@@ -4629,10 +4624,8 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				 * simply ignore */
 				delete = true;
 			} else if (strncmp(p + 1, "timprints", 9) == 0) {
-				BAT *b = getdesc(bid);
-				delete = b == NULL;
-				if (!delete)
-					b->timprints = (Imprints *) 1;
+				/* imprints have been removed */
+				delete = true;
 			} else if (strncmp(p + 1, "torderidx", 9) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;

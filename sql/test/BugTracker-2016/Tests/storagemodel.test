@@ -173,7 +173,7 @@ smallint
 writable
 2
 0
-1
+0
 
 statement ok
 call sys.storagemodelinit()

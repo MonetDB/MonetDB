@@ -1,0 +1,15 @@
+query T rowsort
+SELECT json.text('"\\uD83D\\uDC0D"')
+----
+🐍
+
+query T rowsort
+SELECT json.text('"\\u09B8"')
+----
+স
+
+query T rowsort
+SELECT json.text('"\\u00D8"')
+----
+Ø
+

@@ -20,11 +20,10 @@ from MonetDBtesting.tlstester import TLSTesterClient
 log_level = logging.WARNING
 log_format = '%(levelname)s:t=%(relativeCreated)d:%(name)s:%(message)s'# if sys.platform == 'win32':
 
-if sys.platform == 'win32':
-    log_level=logging.DEBUG
-if '-v' in sys.argv:
-    log_level = logging.DEBUG
-# log_level = logging.DEBUG
+# Be verbose but make Mtest ignore it
+log_level = logging.DEBUG
+logging.addLevelName(logging.DEBUG, '#DEBUG')
+logging.addLevelName(logging.INFO, '#INFO')
 
 logging.basicConfig(level=log_level,format=log_format)
 
@@ -47,13 +46,13 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
     if params:
         # should be percent-escaped
         url += '?' + '&'.join(f"{k}={v}" for k, v in params.items())
-    logging.debug(f"**** START TEST {experiment}")
-    logging.debug(f"Connecting to {url}, expected_error={expected_error_regex}")
+    logging.info(f"**** START TEST {experiment}")
+    logging.info(f"Connecting to {url}, expected_error={expected_error_regex}")
     test_log_file = os.path.join(scratchdir, portname + '.log')
     cmd = ['mclient', '-d', url, '-L', test_log_file]
-    logging.debug(f"cmd={cmd}")
+    logging.info(f"cmd={cmd}")
     proc = subprocess.run(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    logging.debug(f"mclient exited with code {proc.returncode}, err={proc.stderr}")
+    logging.info(f"mclient exited with code {proc.returncode}, err={proc.stderr}")
     with open(test_log_file, 'r') as f:
         for line in f:
             logging.debug(f'mclient log: {line.rstrip()}')
@@ -70,7 +69,7 @@ def attempt(experiment: str, portname: str, expected_error_regex: str, tls=True,
     elif  expected_error_regex is not None and actual_error is not None and re.search(expected_error_regex, actual_error):
         ok = True
     if ok:
-        logging.debug(f"**** END SUCCESSFUL TEST {experiment} ")
+        logging.info(f"**** END SUCCESSFUL TEST {experiment} ")
         return
     logging.error(f"Unexpected result for test {experiment}")
     logging.error(f"When connecting to port '{portname}' using URL {url}")

@@ -14,9 +14,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-/* auxiliary functions and structs for imprints */
-#include "gdk_imprints.h"
-
 static inline oid *
 buninsfix(BAT *bn, oid *a, BUN i, oid v, BUN g, BUN m)
 {
@@ -218,227 +215,6 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	return NULL;
 }
 
-/* Imprints select code */
-
-/* inner check, non-dense canditer */
-#define impscheck(TEST,ADD)					\
-	do {							\
-		const oid e = (oid) (i+limit-pr_off+hseq);	\
-		if (im[icnt] & mask) {				\
-			if ((im[icnt] & ~innermask) == 0) {	\
-				while (p < ncand && o < e) {	\
-					v = src[o-hseq];	\
-					if ((ADD) == NULL) {	\
-						goto bailout;	\
-					}			\
-					cnt++;			\
-					p++;			\
-					o = canditer_next(ci);	\
-				}				\
-			} else {				\
-				while (p < ncand && o < e) {	\
-					v = src[o-hseq];	\
-					if ((ADD) == NULL) {	\
-						goto bailout;	\
-					}			\
-					cnt += (TEST) != 0;	\
-					p++;			\
-					o = canditer_next(ci);	\
-				}				\
-			}					\
-		} else {					\
-			while (p < ncand && o < e) {		\
-				p++;				\
-				o = canditer_next(ci);		\
-			}					\
-		}						\
-	} while (false)
-
-/* inner check, dense canditer */
-#define impscheck_dense(TEST,ADD)					\
-	do {								\
-		const oid e = (oid) (i+limit-pr_off+hseq);		\
-		if (im[icnt] & mask) {					\
-			if ((im[icnt] & ~innermask) == 0) {		\
-				while (p < ncand && o < e) {		\
-					v = src[o-hseq];		\
-					if ((ADD) == NULL) {		\
-						goto bailout;		\
-					}				\
-					cnt++;				\
-					p++;				\
-					o = canditer_next_dense(ci);	\
-				}					\
-			} else {					\
-				while (p < ncand && o < e) {		\
-					v = src[o-hseq];		\
-					if ((ADD) == NULL) {		\
-						goto bailout;		\
-					}				\
-					cnt += (TEST) != 0;		\
-					p++;				\
-					o = canditer_next_dense(ci);	\
-				}					\
-			}						\
-		} else {						\
-			BUN skip_sz = MIN(ncand - p, e - o);		\
-			p += skip_sz;					\
-			o += skip_sz;					\
-			ci->next += skip_sz;				\
-		}							\
-	} while (false)
-
-/* main loop for imprints */
-/*
- * icnt is the iterator for imprints
- * dcnt is the iterator for dictionary entries
- * i    is the iterator for the values in imprints
- */
-#define impsloop(ISDENSE,TEST,ADD)					\
-	do {								\
-		BUN dcnt, icnt, limit, i;				\
-		const cchdc_t *restrict d = (cchdc_t *) imprints->dict;	\
-		const uint8_t rpp = ATOMelmshift(IMPS_PAGE >> bi->shift); \
-		o = canditer_next(ci);					\
-		for (i = 0, dcnt = 0, icnt = 0, p = 0;			\
-		     dcnt < imprints->dictcnt && i <= w - hseq + pr_off && p < ncand; \
-		     dcnt++) {						\
-			GDK_CHECK_TIMEOUT(qry_ctx, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-			limit = ((BUN) d[dcnt].cnt) << rpp;		\
-			while (i + limit <= o - hseq + pr_off) {	\
-				i += limit;				\
-				icnt += d[dcnt].repeat ? 1 : d[dcnt].cnt; \
-				dcnt++;					\
-				limit = ((BUN) d[dcnt].cnt) << rpp;	\
-			}						\
-			if (!d[dcnt].repeat) {				\
-				const BUN l = icnt + d[dcnt].cnt;	\
-				limit = (BUN) 1 << rpp;			\
-				while (i + limit <= o - hseq + pr_off) { \
-					icnt++;				\
-					i += limit;			\
-				}					\
-				for (;					\
-				     icnt < l && i <= w - hseq + pr_off; \
-				     icnt++) {				\
-					impscheck##ISDENSE(TEST,ADD);	\
-					i += limit;			\
-				}					\
-			}						\
-			else {						\
-				impscheck##ISDENSE(TEST,ADD);		\
-				i += limit;				\
-				icnt++;					\
-			}						\
-		}							\
-	} while (false)
-
-static inline oid *
-quickins(oid *dst, BUN cnt, oid o, BAT *bn)
-{
-	(void) bn;
-	assert(cnt < BATcapacity(bn));
-	dst[cnt] = o;
-	return dst;
-}
-
-/* construct the mask */
-#define impsmask(ISDENSE,TEST,B)					\
-	do {								\
-		const uint##B##_t *restrict im = (uint##B##_t *) imprints->imps; \
-		uint##B##_t mask = 0, innermask;			\
-		const int tpe = ATOMbasetype(bi->type);			\
-		const int lbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, &vl); \
-		const int hbin = IMPSgetbin(tpe, imprints->bits, imprints->bins, &vh); \
-		/* note: (1<<n)-1 gives a sequence of n one bits */	\
-		/* to set bits hbin..lbin inclusive, we would do: */	\
-		/* mask = ((1 << (hbin + 1)) - 1) - ((1 << lbin) - 1); */ \
-		/* except ((1 << (hbin + 1)) - 1) is not defined if */	\
-		/* hbin == sizeof(uint##B##_t)*8 - 1 */			\
-		/* the following does work, however */			\
-		mask = (((((uint##B##_t) 1 << hbin) - 1) << 1) | 1) - (((uint##B##_t) 1 << lbin) - 1); \
-		innermask = mask;					\
-		if (vl != minval)					\
-			innermask = IMPSunsetBit(B, innermask, lbin);	\
-		if (vh != maxval)					\
-			innermask = IMPSunsetBit(B, innermask, hbin);	\
-		if (anti) {						\
-			uint##B##_t tmp = mask;				\
-			mask = ~innermask;				\
-			innermask = ~tmp;				\
-		}							\
-		/* if there are nils, we may need to check bin 0 */	\
-		if (!bi->nonil)						\
-			innermask = IMPSunsetBit(B, innermask, 0);	\
-									\
-		if (BATcapacity(bn) < maximum) {			\
-			impsloop(ISDENSE, TEST,				\
-				 dst = buninsfix(bn, dst, cnt, o,	\
-						 (BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p) \
-							* (dbl) (ncand-p) * 1.1 + 1024), \
-						 maximum));		\
-		} else {						\
-			impsloop(ISDENSE, TEST, dst = quickins(dst, cnt, o, bn)); \
-		}							\
-	} while (false)
-
-#define checkMINMAX(B, TYPE)						\
-	do {								\
-		const BUN *restrict imp_cnt = imprints->stats + 128;	\
-		imp_min = imp_max = nil;				\
-		for (BUN ii = 0; ii < B; ii++) {			\
-			if (is_##TYPE##_nil(imp_min) && imp_cnt[ii]) {	\
-				imp_min = basesrc[imprints->stats[ii]];	\
-				break;					\
-			}						\
-		}							\
-		for (BUN ii = B; ii != 0; ii--) {			\
-			if (is_##TYPE##_nil(imp_max) && imp_cnt[ii-1]) { \
-				imp_max = basesrc[imprints->stats[64+ii-1]]; \
-				break;					\
-			}						\
-		}							\
-		assert(!is_##TYPE##_nil(imp_min) &&			\
-		       !is_##TYPE##_nil(imp_max));			\
-		if (anti ?						\
-		    vl < imp_min && vh > imp_max :			\
-		    vl > imp_max || vh < imp_min) {			\
-			if (pbat)					\
-				BBPunfix(pbat->batCacheid);		\
-			return 0;					\
-		}							\
-	} while (false)
-
-/* choose number of bits */
-#define bitswitch(ISDENSE, TEST, TYPE)					\
-	do {								\
-		BUN ncand = ci->ncand;					\
-		assert(imprints);					\
-		*algo = parent ? "parent imprints select " #TEST " (canditer_next" #ISDENSE ")" : "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
-		switch (imprints->bits) {				\
-		case 8:							\
-			checkMINMAX(8, TYPE);				\
-			impsmask(ISDENSE,TEST,8);			\
-			break;						\
-		case 16:						\
-			checkMINMAX(16, TYPE);				\
-			impsmask(ISDENSE,TEST,16);			\
-			break;						\
-		case 32:						\
-			checkMINMAX(32, TYPE);				\
-			impsmask(ISDENSE,TEST,32);			\
-			break;						\
-		case 64:						\
-			checkMINMAX(64, TYPE);				\
-			impsmask(ISDENSE,TEST,64);			\
-			break;						\
-		default:						\
-			MT_UNREACHABLE();				\
-		}							\
-	} while (false)
-
-/* scan select without imprints */
-
 /* core scan select loop with & without candidates */
 #define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
@@ -474,7 +250,7 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 /* argument list for type-specific core scan select function call */
 #define scanargs							\
 	bi, ci, bn, tl, th, li, hi, equi, anti, nil_matches, lval, hval, \
-	lnil, cnt, bi->b->hseqbase, dst, maximum, imprints, algo
+	lnil, cnt, bi->b->hseqbase, dst, maximum, algo
 
 #define PREVVALUEbte(x)	((x) - 1)
 #define PREVVALUEsht(x)	((x) - 1)
@@ -520,15 +296,6 @@ quickins(oid *dst, BUN cnt, oid o, BAT *bn)
 #define MAXVALUEflt	GDK_flt_max
 #define MAXVALUEdbl	GDK_dbl_max
 
-#define choose(NAME, ISDENSE, TEST, TYPE)				\
-	do {								\
-		if (imprints) {						\
-			bitswitch(ISDENSE, TEST, TYPE);			\
-		} else {						\
-			scanloop(NAME, canditer_next##ISDENSE, TEST);	\
-		}							\
-	} while (false)
-
 /* definition of type-specific core scan select function */
 #define scanfunc(NAME, TYPE, ISDENSE)					\
 static BUN								\
@@ -536,44 +303,21 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	      const TYPE *tl, const TYPE *th, bool li, bool hi,		\
 	      bool equi, bool anti, bool nil_matches, bool lval,	\
 	      bool hval, bool lnil, BUN cnt, const oid hseq,		\
-	      oid *restrict dst, BUN maximum, Imprints *imprints,	\
-	      const char **algo)					\
+	      oid *restrict dst, BUN maximum, const char **algo)	\
 {									\
 	TYPE vl = *tl;							\
 	TYPE vh = *th;							\
-	TYPE imp_min;							\
-	TYPE imp_max;							\
 	TYPE v;								\
-	const TYPE nil = TYPE##_nil;					\
 	const TYPE minval = MINVALUE##TYPE;				\
 	const TYPE maxval = MAXVALUE##TYPE;				\
 	const TYPE *src = (const TYPE *) bi->base;			\
-	const TYPE *basesrc;						\
-	oid o, w;							\
+	oid o;								\
 	BUN p;								\
-	BUN pr_off = 0;							\
-	bat parent = 0;							\
-	BAT *pbat = NULL;						\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
 	(void) hval;							\
-	size_t counter = 0;						\
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
-	if (imprints && imprints->imprints.parentid != bi->b->batCacheid) { \
-		parent = imprints->imprints.parentid;			\
-		pbat = BATdescriptor(parent);				\
-		if (pbat == NULL) {					\
-			/* can't load parent: don't use imprints */	\
-			imprints = NULL;				\
-			basesrc = src;					\
-		} else {						\
-			basesrc = (const TYPE *) Tloc(pbat, 0);		\
-			pr_off = (BUN) (src - basesrc);			\
-		}							\
-	} else {							\
-		basesrc = src;						\
-	}								\
 	/* Normalize the variables li, hi, lval, hval, possibly */	\
 	/* changing anti in the process.  This works for all */		\
 	/* (and only) numeric types. */					\
@@ -675,34 +419,28 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	w = canditer_last(ci);						\
 	if (equi) {							\
-		assert(imprints == NULL);				\
 		if (lnil)						\
 			scanloop(NAME, canditer_next##ISDENSE, is_##TYPE##_nil(v)); \
 		else							\
 			scanloop(NAME, canditer_next##ISDENSE, v == vl); \
 	} else if (anti) {						\
 		if (bi->nonil) {					\
-			choose(NAME, ISDENSE, (v <= vl || v >= vh), TYPE); \
+			scanloop(NAME, canditer_next##ISDENSE, (v <= vl || v >= vh)); \
 		} else if (nil_matches) {				\
-			choose(NAME, ISDENSE, is_##TYPE##_nil(v) || v <= vl || v >= vh, TYPE); \
+			scanloop(NAME, canditer_next##ISDENSE, is_##TYPE##_nil(v) || v <= vl || v >= vh); \
 		} else {						\
-			choose(NAME, ISDENSE, !is_##TYPE##_nil(v) && (v <= vl || v >= vh), TYPE); \
+			scanloop(NAME, canditer_next##ISDENSE, !is_##TYPE##_nil(v) && (v <= vl || v >= vh)); \
 		}							\
 	} else if (bi->nonil && vl == minval) {				\
-		choose(NAME, ISDENSE, v <= vh, TYPE);			\
+		scanloop(NAME, canditer_next##ISDENSE, v <= vh);			\
 	} else if (vh == maxval) {					\
-		choose(NAME, ISDENSE, v >= vl, TYPE);			\
+		scanloop(NAME, canditer_next##ISDENSE, v >= vl);			\
 	} else {							\
-		choose(NAME, ISDENSE, v >= vl && v <= vh, TYPE);	\
+		scanloop(NAME, canditer_next##ISDENSE, v >= vl && v <= vh);	\
 	}								\
-	if (pbat)							\
-		BBPunfix(pbat->batCacheid);				\
 	return cnt;							\
   bailout:								\
-	if (pbat)							\
-		BBPunfix(pbat->batCacheid);				\
 	BBPreclaim(bn);							\
 	return BUN_NONE;						\
 }
@@ -712,8 +450,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     const void *tl, const void *th,
 	     bool li, bool hi, bool equi, bool anti, bool nil_matches,
 	     bool lval, bool hval, bool lnil, BUN cnt, const oid hseq,
-	     oid *restrict dst, BUN maximum, Imprints *imprints,
-	     const char **algo)
+	     oid *restrict dst, BUN maximum, const char **algo)
 {
 	const void *v;
 	const void *restrict nil = ATOMnilptr(bi->type);
@@ -723,7 +460,6 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	int c;
 
 	(void) maximum;
-	(void) imprints;
 	(void) lnil;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -873,8 +609,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     const char *tl, const char *th,
 	     bool li, bool hi, bool equi, bool anti, bool nil_matches,
 	     bool lval, bool hval, bool lnil, BUN cnt, const oid hseq,
-	     oid *restrict dst, BUN maximum, Imprints *imprints,
-	     const char **algo)
+	     oid *restrict dst, BUN maximum, const char **algo)
 {
 	var_t pos;
 	BUN p, ncand = ci->ncand;
@@ -894,7 +629,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	      GDK_ELIMDOUBLES(bi->vh)))
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
 				    nil_matches, lval, hval, lnil, cnt, hseq,
-				    dst, maximum, imprints, algo);
+				    dst, maximum, algo);
 	if ((pos = strLocate(bi->vh, tl)) == (var_t) -2) {
 		if (anti) {
 			/* return the whole shebang */
@@ -1225,7 +960,7 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	scanfunc(NAME, lng, ISDENSE)		\
 	scanfunc_hge(NAME, ISDENSE)
 
-/* scan/imprints select */
+/* scan select */
 scan_sel(fullscan, )
 scan_sel(densescan, _dense)
 
@@ -1246,7 +981,7 @@ scanselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	   const void *tl, const void *th,
 	   bool li, bool hi, bool equi, bool anti, bool nil_matches,
 	   bool lval, bool hval, bool lnil,
-	   BUN maximum, Imprints *imprints, const char **algo)
+	   BUN maximum, const char **algo)
 {
 #ifndef NDEBUG
 	int (*cmp)(const void *, const void *);
@@ -2328,38 +2063,9 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 	} else {
 		assert(!havehash);
-		/* use imprints if
-		 *   i) bat is persistent, or parent is persistent
-		 *  ii) it is not an equi-select, and
-		 * iii) imprints are supported.
-		 */
-		Imprints *imprints = NULL;
-		if (!equi &&
-		    /* DISABLES CODE */ (0) &&
-		    imprintable(bi.type) &&
-		    (!bi.transient ||
-		     (pb != NULL && !pbi.transient)) &&
-		    BATimprints(b) == GDK_SUCCEED) {
-			if (pb != NULL) {
-				MT_lock_set(&pb->batIdxLock);
-				imprints = pb->timprints;
-				if (imprints != NULL)
-					IMPSincref(imprints);
-				MT_lock_unset(&pb->batIdxLock);
-			} else {
-				MT_lock_set(&b->batIdxLock);
-				imprints = b->timprints;
-				if (imprints != NULL)
-					IMPSincref(imprints);
-				MT_lock_unset(&b->batIdxLock);
-			}
-		}
-		GDKclrerr();
 		bn = scanselect(&bi, &ci, bn, tl, th, li, hi, equi, anti,
 				nil_matches, lval, hval, lnil, maximum,
-				imprints, &algo);
-		if (imprints)
-			IMPSdecref(imprints, false);
+				&algo);
 	}
 	bat_iterator_end(&bi);
 	bat_iterator_end(&pbi);
@@ -2445,707 +2151,4 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 	}
 	GDKerror("unknown operator.\n");
 	return NULL;
-}
-
-#define VALUE(s, x)	(s##vars ?					\
-			 s##vars + VarHeapVal(s##vals, (x), s##width) : \
-			 s##vals + ((x) * s##width))
-#define FVALUE(s, x)	(s##vals + ((x) * s##width))
-
-#define LTany(a,b)	((*cmp)(a, b) < 0)
-#define EQany(a,b)	((*cmp)(a, b) == 0)
-#define is_any_nil(v)	((v) == NULL || (*cmp)((v), nil) == 0)
-
-#define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || (i && EQ##t(a, b)))
-#define grtr3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(b, a) || (i && EQ##t(a, b)))
-#define or3(a,b)	((a) == 1 || (b) == 1 ? 1 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 0)
-#define and3(a,b)	((a) == 0 || (b) == 0 ? 0 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 1)
-#define not3(a)		(is_bit_nil(a) ? bit_nil : !(a))
-
-#define between3(v, lo, linc, hi, hinc, TYPE)				\
-	and3(grtr3(v, lo, linc, TYPE), less3(v, hi, hinc, TYPE))
-
-#define BETWEEN(v, lo, linc, hi, hinc, TYPE)				\
-	(is_##TYPE##_nil(v)						\
-	 ? bit_nil							\
-	 : (bit) (anti							\
-		  ? (symmetric						\
-		     ? not3(or3(between3(v, lo, linc, hi, hinc, TYPE),	\
-				between3(v, hi, hinc, lo, linc, TYPE)))	\
-		     : not3(between3(v, lo, linc, hi, hinc, TYPE)))	\
-		  : (symmetric						\
-		     ? or3(between3(v, lo, linc, hi, hinc, TYPE),	\
-			   between3(v, hi, hinc, lo, linc, TYPE))	\
-		     : between3(v, lo, linc, hi, hinc, TYPE))))
-
-gdk_return
-rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
-	  struct canditer *lci, struct canditer *rci,
-	  bool linc, bool hinc, bool anti, bool symmetric, BUN maxsize)
-{
-	if (!anti && !symmetric) {
-		/* we'll need these */
-		(void) BATordered(l);
-		(void) BATordered_rev(l);
-	}
-	BATiter li = bat_iterator(l);
-	BATiter rli = bat_iterator(rl);
-	BATiter rhi = bat_iterator(rh);
-	const char *rlvals, *rhvals;
-	const char *lvars, *rlvars, *rhvars;
-	int rlwidth, rhwidth;
-	int lwidth;
-	const void *nil = ATOMnilptr(li.type);
-	int (*cmp)(const void *, const void *) = ATOMcompare(li.type);
-	int t;
-	BUN cnt, ncnt, lncand = lci->ncand, rncand = rci->ncand;
-	oid *restrict dst1, *restrict dst2;
-	const void *vrl, *vrh;
-	oid ro;
-	oid rlval = oid_nil, rhval = oid_nil;
-	int sorted = 0;		/* which output column is sorted */
-	BAT *tmp = NULL;
-	const char *algo = NULL;
-	Heap *oidxh = NULL;
-
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-
-	assert(ATOMtype(li.type) == ATOMtype(rli.type));
-	assert(ATOMtype(li.type) == ATOMtype(rhi.type));
-	assert(BATcount(rl) == BATcount(rh));
-	assert(rl->hseqbase == rh->hseqbase);
-	assert(r1->ttype == TYPE_oid);
-	assert(r2 == NULL || r2->ttype == TYPE_oid);
-	assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	assert(li.type != TYPE_void || !is_oid_nil(l->tseqbase));
-	assert(rli.type != TYPE_void || !is_oid_nil(rl->tseqbase));
-	assert(rhi.type != TYPE_void || !is_oid_nil(rh->tseqbase));
-
-	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ","
-		  "rl=" ALGOBATFMT ",rh=" ALGOBATFMT ","
-		  "sl=" ALGOOPTBATFMT ",sr=" ALGOOPTBATFMT ","
-		  "anti=%s,symmetric=%s\n",
-		  ALGOBATPAR(l),
-		  ALGOBATPAR(rl),
-		  ALGOBATPAR(rh),
-		  ALGOOPTBATPAR(lci->s),
-		  ALGOOPTBATPAR(rci->s),
-		  anti ? "true" : "false",
-		  symmetric ? "true" : "false");
-
-	rlvals = rli.type == TYPE_void ? NULL : (const char *) rli.base;
-	rhvals = rhi.type == TYPE_void ? NULL : (const char *) rhi.base;
-	lwidth = li.width;
-	rlwidth = rli.width;
-	rhwidth = rhi.width;
-	dst1 = (oid *) Tloc(r1, 0);
-	dst2 = r2 ? (oid *) Tloc(r2, 0) : NULL;
-
-	t = ATOMtype(li.type);
-	t = ATOMbasetype(t);
-
-	if (li.vh && li.type) {
-		assert(rli.vh && rli.type);
-		assert(rhi.vh && rhi.type);
-		lvars = li.vh->base;
-		rlvars = rli.vh->base;
-		rhvars = rhi.vh->base;
-	} else {
-		assert(rli.vh == NULL);
-		assert(rhi.vh == NULL);
-		lvars = rlvars = rhvars = NULL;
-	}
-
-	if (!anti && !symmetric && !li.sorted && !li.revsorted) {
-		(void) BATcheckorderidx(l);
-		MT_lock_set(&l->batIdxLock);
-		if ((oidxh = l->torderidx) != NULL)
-			HEAPincref(oidxh);
-		MT_lock_unset(&l->batIdxLock);
-#if 0 /* needs checking */
-		if (oidxh == NULL && VIEWtparent(l)) {
-/* if enabled, need to fix/unfix parent bat */
-			BAT *pb = BBP_desc(VIEWtparent(l));
-			(void) BATcheckorderidx(pb);
-			MT_lock_set(&pb->batIdxLock);
-			if ((oidxh = pb->torderidx) != NULL) {
-				HEAPincref(oidxh);
-				l = pb;
-			}
-			MT_lock_unset(&pb->batIdxLock);
-		}
-#endif
-	}
-
-	vrl = &rlval;
-	vrh = &rhval;
-	if (!anti && !symmetric && (li.sorted || li.revsorted || oidxh)) {
-		/* left column is sorted, use binary search */
-		sorted = 2;
-		TIMEOUT_LOOP(rncand, qry_ctx) {
-			BUN low, high;
-
-			ro = canditer_next(rci);
-			if (rlvals) {
-				vrl = VALUE(rl, ro - rl->hseqbase);
-			} else {
-				/* TYPE_void */
-				rlval = ro - rl->hseqbase + rl->tseqbase;
-			}
-			if (rhvals) {
-				vrh = VALUE(rh, ro - rh->hseqbase);
-			} else {
-				/* TYPE_void */
-				rhval = ro - rh->hseqbase + rh->tseqbase;
-			}
-			if (cmp(vrl, nil) == 0 || cmp(vrh, nil) == 0)
-				continue;
-			if (li.sorted) {
-				if (linc)
-					low = SORTfndfirst(l, vrl);
-				else
-					low = SORTfndlast(l, vrl);
-				if (hinc)
-					high = SORTfndlast(l, vrh);
-				else
-					high = SORTfndfirst(l, vrh);
-			} else  if (li.revsorted) {
-				if (hinc)
-					low = SORTfndfirst(l, vrh);
-				else
-					low = SORTfndlast(l, vrh);
-				if (linc)
-					high = SORTfndlast(l, vrl);
-				else
-					high = SORTfndfirst(l, vrl);
-			} else {
-				assert(oidxh);
-				if (linc)
-					low = ORDERfndfirst(l, oidxh, vrl);
-				else
-					low = ORDERfndlast(l, oidxh, vrl);
-				if (hinc)
-					high = ORDERfndlast(l, oidxh, vrh);
-				else
-					high = ORDERfndfirst(l, oidxh, vrh);
-			}
-			if (high <= low)
-				continue;
-			if (li.sorted || li.revsorted) {
-				low = canditer_search(lci, low + l->hseqbase, true);
-				high = canditer_search(lci, high + l->hseqbase, true);
-				assert(high >= low);
-
-				if (BATcapacity(r1) < BATcount(r1) + high - low) {
-					cnt = BATcount(r1) + high - low + 1024;
-					if (cnt > maxsize)
-						cnt = maxsize;
-					BATsetcount(r1, BATcount(r1));
-					if (BATextend(r1, cnt) != GDK_SUCCEED)
-						goto bailout;
-					dst1 = (oid *) Tloc(r1, 0);
-					if (r2) {
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r2, cnt) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-						dst2 = (oid *) Tloc(r2, 0);
-					}
-				}
-				canditer_setidx(lci, low);
-				while (low < high) {
-					dst1[r1->batCount++] = canditer_next(lci);
-					if (r2) {
-						dst2[r2->batCount++] = ro;
-					}
-					low++;
-				}
-			} else {
-				const oid *ord;
-
-				assert(oidxh);
-				ord = (const oid *) oidxh->base + ORDERIDXOFF;
-
-				if (BATcapacity(r1) < BATcount(r1) + high - low) {
-					cnt = BATcount(r1) + high - low + 1024;
-					if (cnt > maxsize)
-						cnt = maxsize;
-					BATsetcount(r1, BATcount(r1));
-					if (BATextend(r1, cnt) != GDK_SUCCEED)
-						goto bailout;
-					dst1 = (oid *) Tloc(r1, 0);
-					if (r2) {
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r2, cnt) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-						dst2 = (oid *) Tloc(r2, 0);
-					}
-				}
-
-				while (low < high) {
-					if (canditer_contains(lci, ord[low])) {
-						dst1[r1->batCount++] = ord[low];
-						if (r2) {
-							dst2[r2->batCount++] = ro;
-						}
-					}
-					low++;
-				}
-			}
-		}
-		if (oidxh)
-			HEAPdecref(oidxh, false);
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-		cnt = BATcount(r1);
-		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	} else if (!anti && !symmetric &&
-		   /* DISABLES CODE */ (0) &&
-		   imprintable(li.type) &&
-		   (BATcount(rl) > 2 ||
-		    !li.transient ||
-		    (VIEWtparent(l) != 0 &&
-/* if enabled, need to fix/unfix parent bat */
-		     /* batTransient access needs to be protected */
-		     !(tmp = BBP_desc(VIEWtparent(l)))->batTransient) ||
-		    BATcheckimprints(l)) &&
-		   BATimprints(l) == GDK_SUCCEED) {
-		/* implementation using imprints on left column
-		 *
-		 * we use imprints if we can (the type is right for
-		 * imprints) and either the left bat is persistent or
-		 * already has imprints, or the right bats are long
-		 * enough (for creating imprints being worth it) */
-		Imprints *imprints = NULL;
-
-		if (tmp) {
-			MT_lock_set(&tmp->batIdxLock);
-			imprints = tmp->timprints;
-			if (imprints != NULL)
-				IMPSincref(imprints);
-			MT_lock_unset(&tmp->batIdxLock);
-		} else {
-			MT_lock_set(&l->batIdxLock);
-			imprints = l->timprints;
-			if (imprints != NULL)
-				IMPSincref(imprints);
-			MT_lock_unset(&l->batIdxLock);
-		}
-		/* in the unlikely case that the imprints were removed
-		 * before we could get at them, take the slow, nested
-		 * loop implementation */
-		if (imprints == NULL)
-			goto nestedloop;
-
-		sorted = 2;
-		cnt = 0;
-		TIMEOUT_LOOP_IDX_DECL(i, rncand, qry_ctx) {
-			maxsize = cnt + (rncand - i) * lncand;
-			ro = canditer_next(rci);
-			if (rlvals) {
-				vrl = FVALUE(rl, ro - rl->hseqbase);
-			} else {
-				/* TYPE_void */
-				rlval = ro - rl->hseqbase + rl->tseqbase;
-			}
-			if (rhvals) {
-				vrh = FVALUE(rh, ro - rh->hseqbase);
-			} else {
-				/* TYPE_void */
-				rhval = ro - rl->hseqbase + rl->tseqbase;
-			}
-			dst1 = (oid *) Tloc(r1, 0);
-			canditer_reset(lci);
-			switch (t) {
-			case TYPE_bte: {
-				bte vl, vh;
-				if (is_bte_nil((vl = *(bte *) vrl)))
-					continue;
-				if (is_bte_nil((vh = *(bte *) vrh)))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUEbte)
-						continue;
-					vl = NEXTVALUEbte(vl);
-				}
-				if (!hinc) {
-					if (vh == MINVALUEbte)
-						continue;
-					vh = PREVVALUEbte(vh);
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_bte(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-			case TYPE_sht: {
-				sht vl, vh;
-				if (is_sht_nil((vl = *(sht *) vrl)))
-					continue;
-				if (is_sht_nil((vh = *(sht *) vrh)))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUEsht)
-						continue;
-					vl = NEXTVALUEsht(vl);
-				}
-				if (!hinc) {
-					if (vh == MINVALUEsht)
-						continue;
-					vh = PREVVALUEsht(vh);
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_sht(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-			case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			case TYPE_oid:
-#endif
-			{
-				int vl, vh;
-				if (is_int_nil((vl = *(int *) vrl)))
-					continue;
-				if (is_int_nil((vh = *(int *) vrh)))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUEint)
-						continue;
-					vl = NEXTVALUEint(vl);
-				}
-				if (!hinc) {
-#if SIZEOF_OID == SIZEOF_INT
-					if (t == TYPE_oid) {
-						if (vh == MINVALUEoid)
-							continue;
-						vh = PREVVALUEoid(vh);
-					} else
-#endif
-					{
-						if (vh == MINVALUEint)
-							continue;
-						vh = PREVVALUEint(vh);
-					}
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_int(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-			case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			case TYPE_oid:
-#endif
-			{
-				lng vl, vh;
-				if (is_lng_nil((vl = *(lng *) vrl)))
-					continue;
-				if (is_lng_nil((vh = *(lng *) vrh)))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUElng)
-						continue;
-					vl = NEXTVALUElng(vl);
-				}
-				if (!hinc) {
-#if SIZEOF_OID == SIZEOF_LNG
-					if (t == TYPE_oid) {
-						if (vh == MINVALUEoid)
-							continue;
-						vh = PREVVALUEoid(vh);
-					} else
-#endif
-					{
-						if (vh == MINVALUElng)
-							continue;
-						vh = PREVVALUElng(vh);
-					}
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_lng(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-#ifdef HAVE_HGE
-			case TYPE_hge: {
-				hge vl, vh;
-				if (is_hge_nil((vl = *(hge *) vrl)))
-					continue;
-				if (is_hge_nil((vh = *(hge *) vrh)))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUEhge)
-						continue;
-					vl = NEXTVALUEhge(vl);
-				}
-				if (!hinc) {
-					if (vh == MINVALUEhge)
-						continue;
-					vh = PREVVALUEhge(vh);
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_hge(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-#endif
-			case TYPE_flt: {
-				flt vl, vh;
-				vl = *(flt *) vrl;
-				if (is_flt_nil(vl))
-					continue;
-				vh = *(flt *) vrh;
-				if (is_flt_nil(vh))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUEflt)
-						continue;
-					vl = NEXTVALUEflt(vl);
-				}
-				if (!hinc) {
-					if (vh == MINVALUEflt)
-						continue;
-					vh = PREVVALUEflt(vh);
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_flt(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-			case TYPE_dbl: {
-				dbl vl, vh;
-				vl = *(dbl *) vrl;
-				if (is_dbl_nil(vl))
-					continue;
-				vh = *(dbl *) vrh;
-				if (is_dbl_nil(vh))
-					continue;
-				if (!linc) {
-					if (vl == MAXVALUEdbl)
-						continue;
-					vl = NEXTVALUEdbl(vl);
-				}
-				if (!hinc) {
-					if (vh == MINVALUEdbl)
-						continue;
-					vh = PREVVALUEdbl(vh);
-				}
-				if (vl > vh)
-					continue;
-				ncnt = fullscan_dbl(&li, lci, r1, &vl, &vh,
-						    true, true, false,
-						    false, false, true, true,
-						    false, cnt,
-						    l->hseqbase, dst1,
-						    maxsize,
-						    imprints, &algo);
-				break;
-			}
-			default:
-				ncnt = BUN_NONE;
-				GDKerror("unsupported type\n");
-				MT_UNREACHABLE();
-			}
-			if (ncnt == BUN_NONE) {
-				IMPSdecref(imprints, false);
-				goto bailout;
-			}
-			assert(ncnt >= cnt || ncnt == 0);
-			if (ncnt == cnt || ncnt == 0)
-				continue;
-			if (r2) {
-				if (BATcapacity(r2) < ncnt) {
-					BATsetcount(r2, cnt);
-					if (BATextend(r2, BATcapacity(r1)) != GDK_SUCCEED) {
-						IMPSdecref(imprints, false);
-						goto bailout;
-					}
-					dst2 = (oid *) Tloc(r2, 0);
-				}
-				while (cnt < ncnt)
-					dst2[cnt++] = ro;
-			} else {
-				cnt = ncnt;
-			}
-		}
-		IMPSdecref(imprints, false);
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-	} else {
-	  nestedloop:;
-		/* nested loop implementation */
-		const void *vl;
-		const char *lvals;
-		oid lval;
-
-		GDKclrerr();	/* not interested in BATimprints errors */
-		sorted = 1;
-		lvals = li.type == TYPE_void ? NULL : (const char *) li.base;
-		vl = &lval;
-		TIMEOUT_LOOP(lncand, qry_ctx) {
-			oid lo;
-
-			lo = canditer_next(lci);
-			if (lvals) {
-				vl = VALUE(l, lo - l->hseqbase);
-				if (cmp(vl, nil) == 0)
-					continue;
-			} else {
-				lval = lo - l->hseqbase + l->tseqbase;
-			}
-			canditer_reset(rci);
-			for (BUN j = 0; j < rncand; j++) {
-				ro = canditer_next(rci);
-				if (rlvals) {
-					vrl = VALUE(rl, ro - rl->hseqbase);
-				} else {
-					/* TYPE_void */
-					rlval = ro - rl->hseqbase + rl->tseqbase;
-				}
-				if (rhvals) {
-					vrh = VALUE(rh, ro - rh->hseqbase);
-				} else {
-					/* TYPE_void */
-					rhval = ro - rh->hseqbase + rh->tseqbase;
-				}
-				if (BETWEEN(vl, vrl, linc, vrh, hinc, any) != 1)
-					continue;
-				if (BATcount(r1) == BATcapacity(r1)) {
-					BUN newcap = BATgrows(r1);
-					if (newcap > maxsize)
-						newcap = maxsize;
-					BATsetcount(r1, BATcount(r1));
-					if (BATextend(r1, newcap) != GDK_SUCCEED)
-						goto bailout;
-					dst1 = (oid *) Tloc(r1, 0);
-					if (r2) {
-						BATsetcount(r2, BATcount(r2));
-						if (BATextend(r2, newcap) != GDK_SUCCEED)
-							goto bailout;
-						assert(BATcapacity(r1) == BATcapacity(r2));
-						dst2 = (oid *) Tloc(r2, 0);
-					}
-				}
-				dst1[r1->batCount++] = lo;
-				if (r2) {
-					dst2[r2->batCount++] = ro;
-				}
-			}
-		}
-		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-		cnt = BATcount(r1);
-		assert(r2 == NULL || BATcount(r1) == BATcount(r2));
-	}
-
-	/* also set other bits of heap to correct value to indicate size */
-	BATsetcount(r1, cnt);
-
-	/* set properties using an extra scan (usually not complete) */
-	dst1 = (oid *) Tloc(r1, 0);
-	r1->tkey = true;
-	r1->tsorted = true;
-	r1->trevsorted = true;
-	r1->tseqbase = 0;
-	r1->tnil = false;
-	r1->tnonil = true;
-	for (ncnt = 1; ncnt < cnt; ncnt++) {
-		if (dst1[ncnt - 1] == dst1[ncnt]) {
-			r1->tseqbase = oid_nil;
-			r1->tkey = false;
-		} else if (dst1[ncnt - 1] < dst1[ncnt]) {
-			r1->trevsorted = false;
-			if (dst1[ncnt - 1] + 1 != dst1[ncnt])
-				r1->tseqbase = oid_nil;
-		} else {
-			assert(sorted != 1);
-			r1->tsorted = false;
-			r1->tseqbase = oid_nil;
-			r1->tkey = false;
-		}
-		if (!(r1->trevsorted | BATtdense(r1) | r1->tkey | ((sorted != 1) & r1->tsorted)))
-			break;
-	}
-	if (BATtdense(r1))
-		r1->tseqbase = cnt > 0 ? dst1[0] : 0;
-	if (r2) {
-		BATsetcount(r2, cnt);
-		dst2 = (oid *) Tloc(r2, 0);
-		r2->tkey = true;
-		r2->tsorted = true;
-		r2->trevsorted = true;
-		r2->tseqbase = 0;
-		r2->tnil = false;
-		r2->tnonil = true;
-		for (ncnt = 1; ncnt < cnt; ncnt++) {
-			if (dst2[ncnt - 1] == dst2[ncnt]) {
-				r2->tseqbase = oid_nil;
-				r2->tkey = false;
-			} else if (dst2[ncnt - 1] < dst2[ncnt]) {
-				r2->trevsorted = false;
-				if (dst2[ncnt - 1] + 1 != dst2[ncnt])
-					r2->tseqbase = oid_nil;
-			} else {
-				assert(sorted != 2);
-				r2->tsorted = false;
-				r2->tseqbase = oid_nil;
-				r2->tkey = false;
-			}
-			if (!(r2->trevsorted | BATtdense(r2) | r2->tkey | ((sorted != 2) & r2->tsorted)))
-				break;
-		}
-		if (BATtdense(r2))
-			r2->tseqbase = cnt > 0 ? dst2[0] : 0;
-	}
-	TRC_DEBUG(ALGO, "l=%s,rl=%s,rh=%s -> "
-		  "(" ALGOBATFMT "," ALGOOPTBATFMT ")\n",
-		  BATgetId(l), BATgetId(rl), BATgetId(rh),
-		  ALGOBATPAR(r1), ALGOOPTBATPAR(r2));
-	bat_iterator_end(&li);
-	bat_iterator_end(&rli);
-	bat_iterator_end(&rhi);
-	return GDK_SUCCEED;
-
-  bailout:
-	bat_iterator_end(&li);
-	bat_iterator_end(&rli);
-	bat_iterator_end(&rhi);
-	BBPreclaim(r1);
-	BBPreclaim(r2);
-	return GDK_FAIL;
 }

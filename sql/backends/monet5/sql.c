@@ -4268,7 +4268,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 								goto bailout1;
 
-							sz = IMPSimprintsize(bs);
+							sz = 0;
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
@@ -4364,7 +4364,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 									goto bailout1;
 
-								sz = IMPSimprintsize(bs);
+								sz = 0;
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
@@ -5510,7 +5510,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = NULL;
 	str *r = getArgReference_str(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *cname = *getArgReference_str(stk, pci, 2);
+	const char *kname = *getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5519,12 +5519,16 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)sname;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
-		sql_key *k = mvc_bind_key(m, s, cname);
+		sql_key *k = mvc_bind_key(m, s, kname);
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
 			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
-			if (!(*r = GDKstrdup(exp2sql(m, exp))))
+			if (exp->comment)
+				*r = GDKstrdup(exp->comment);
+			else
+				*r = GDKstrdup(exp2sql(m, exp));
+			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return MAL_SUCCEED;
 		}

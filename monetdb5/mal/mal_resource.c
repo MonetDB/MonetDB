@@ -95,9 +95,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		MT_rwlock_rdlock(&b->thashlock);
 		itotal = hashinfo(b->thash, d->batCacheid);
 		MT_rwlock_rdunlock(&b->thashlock);
-		t = IMPSimprintsize(b);
-		if (t > itotal)
-			itotal = t;
 		/* We should also consider the ordered index size */
 		t = b->torderidx
 				&& b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;

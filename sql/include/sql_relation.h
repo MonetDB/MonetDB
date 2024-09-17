@@ -72,6 +72,7 @@ typedef struct expression {
 	 symmetric:1; /* compare between symmetric */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
+	str comment;
 } sql_exp;
 
 #define TABLE_PROD_FUNC		1

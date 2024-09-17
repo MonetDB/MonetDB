@@ -348,6 +348,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, exp_relname(e)));
 		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, exp_name(e)));
 	}
+
+	if (e->comment) {
+		str s = ATOMformat(TYPE_str, e->comment);
+		mnstr_printf(fout,  " COMMENT %s ", s);
+		GDKfree(s);
+	}
 	if (comma)
 		mnstr_printf(fout, ", ");
 }
@@ -1763,6 +1769,19 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (rlabel && rlabel == nlabel)
 			exp->alias.label = rlabel;
 	}
+
+	skipWS(r, pos);
+
+
+	//void *ptr = readAtomString(tpe->type->localtype, r, pos);
+	if (strncmp(r+*pos, "COMMENT",  strlen("COMMENT")) == 0) {
+		(*pos)+= (int) strlen("COMMENT");
+		skipWS(r, pos);
+		str comment = readAtomString(TYPE_str, r, pos);
+		exp->comment = sa_strdup(sql->sa, comment);
+		GDKfree(comment);
+	}
+
 	return exp;
 }
 

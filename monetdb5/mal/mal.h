@@ -217,7 +217,7 @@ typedef struct MALSTK {
  * for use in profiling instructions.
  */
 	struct timeval clock;		/* time this stack was created */
-	char status;				/* srunning 'R' suspended 'S', quitting 'Q' */
+	char status;				/* running 'R' suspended 'S', quitting 'Q' */
 	int pcup;					/* saved pc upon a recursive all */
 	oid tag;					/* unique invocation call tag */
 	lng memory;					/* Actual memory claims for highwater mark */
