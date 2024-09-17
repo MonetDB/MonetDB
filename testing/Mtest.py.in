@@ -2116,6 +2116,35 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
                         elem = SkipTest(env, TST, EXT, reason, length)
                 if reason is not None:
                     break
+            elif cond.startswith('PYTHON_VERSION>='):
+                req_vers = cond[16:].split('.')
+                if not negate:
+                    for i in range(3):
+                        if i >= len(req_vers):
+                            break
+                        if int(sys.version_info[i]) > int(req_vers[i]):
+                            break
+                        if int(sys.version_info[i]) < int(req_vers[i]):
+                            reason = "Python version too low"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                else:
+                    for i in range(3):
+                        if i >= len(req_vers):
+                            reason = "Python version too high"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                        if int(sys.version_info[i]) < int(req_vers[i]):
+                            break
+                        if int(sys.version_info[i]) > int(req_vers[i]):
+                            reason = "Python version too high"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                    else:
+                        reason = "Python version too high"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                if reason is not None:
+                    break
             elif cond.startswith('R_VERSION>='):
                 rversion = os.path.join('@LIBR_INCLUDE_DIRS@', 'Rversion.h')
                 if os.path.exists(rversion):
