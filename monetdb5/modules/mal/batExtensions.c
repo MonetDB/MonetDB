@@ -195,36 +195,6 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDBATimprints(void *ret, bat *bid)
-{
-	BAT *b;
-	gdk_return r;
-
-	(void) ret;
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
-
-	r = BATimprints(b);
-	BBPunfix(b->batCacheid);
-	if (r != GDK_SUCCEED)
-		throw(MAL, "bat.imprints", GDK_EXCEPTION);
-	return MAL_SUCCEED;
-}
-
-static str
-CMDBATimprintsize(lng *ret, const bat *bid)
-{
-	BAT *b;
-
-	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bat.imprints", INTERNAL_BAT_ACCESS);
-
-	*ret = IMPSimprintsize(b);
-	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
 CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *r = getArgReference_bat(stk, pci, 0),
@@ -319,22 +289,6 @@ mel_func batExtensions_init_funcs[] = {
  pattern("bat", "single", CMDBATsingle, false, "Create a BAT with a single element", args(1,2, batargany("",1),argany("val",1))),
  pattern("bat", "partition", CMDBATpartition, false, "Create a series of slices over the BAT argument. The BUNs are distributed evenly.", args(1,2, batvarargany("",1),batargany("b",1))),
  pattern("bat", "partition", CMDBATpartition2, false, "Create the n-th slice over the BAT broken into several pieces.", args(1,4, batargany("",1),batargany("b",1),arg("pieces",int),arg("n",int))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",bte))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",sht))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",int))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",lng))),
- command("bat", "imprints", CMDBATimprints, false, "", args(1,2, arg("",void),batarg("b",flt))),
- command("bat", "imprints", CMDBATimprints, false, "Check for existence or create an imprint index on the BAT.", args(1,2, arg("",void),batarg("b",dbl))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",bte))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",sht))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",int))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",lng))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",flt))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "Return the storage size of the imprints index structure.", args(1,2, arg("",lng),batarg("b",dbl))),
-#ifdef HAVE_HGE
- command("bat", "imprints", CMDBATimprints, false, "", args(0,1, batarg("b",hge))),
- command("bat", "imprintsize", CMDBATimprintsize, false, "", args(1,2, arg("",lng),batarg("b",hge))),
-#endif
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
  command("bat", "vacuum", CMDBATvacuum, false, "", args(1,2, batarg("",str),batarg("b",str))),

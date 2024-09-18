@@ -368,25 +368,25 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 				goto end;
 			}
 			if (tpe == TYPE_str) {
-					if (width > 0) {
-						int w = UTF8_strlen(start);
-						if (w > width) {
-							msg = createException(SQL, "sql.importColumn", "string too wide for column");
-							goto end;
-						}
+				if (width > 0 && !strNil(start)) {
+					int w = UTF8_strlen(start);
+					if (w > width) {
+						msg = createException(SQL, "sql.importColumn", "string too wide for column");
+						goto end;
 					}
-					value = start;
+				}
+				value = start;
 			} else {
-					ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
-					if (n <= 0) {
-							msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
-							goto end;
-					}
-					value = buffer;
-			}
-			if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
+				if (n <= 0) {
 					msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
 					goto end;
+				}
+				value = buffer;
+			}
+			if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
+				goto end;
 			}
 		}
 		bs->pos = start - buf_start;

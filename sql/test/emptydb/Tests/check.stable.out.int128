@@ -6416,131 +6416,131 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %10,	delete_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	name,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	type,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	type_digits,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	type_scale,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	table_id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	null,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	boolean,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	5,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% .%1,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns,	._columns # table_name
 % %1,	number,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	name,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	0,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	schema_id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	type,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	system,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	boolean,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	5,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	commit_action,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
+% .%1,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables,	._tables # table_name
 % %1,	access,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
 % varchar,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	id,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	1,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	func_id,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	1,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	name,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	varchar,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	0,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	type,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	varchar,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	0,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	type_digits,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	1,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	type_scale,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	1,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	inout,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	tinyint,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	1,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
+% .%1,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args,	.args # table_name
 % %1,	number,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
 % 0,	1,	1,	1,	0,	0,	1,	1,	1,	1 # length
-% .%1,	sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
+% .%1,	.auths,	.auths,	.auths,	.auths # table_name
 % %1,	id,	id,	name,	grantor # name
 % varchar,	int,	int,	varchar,	int # type
 % 0,	1,	1,	0,	1 # length
-% .%1,	sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
+% .%1,	.auths,	.auths,	.auths,	.auths # table_name
 % %1,	name,	id,	name,	grantor # name
 % varchar,	varchar,	int,	varchar,	int # type
 % 0,	0,	1,	0,	1 # length
-% .%1,	sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name
+% .%1,	.auths,	.auths,	.auths,	.auths # table_name
 % %1,	grantor,	id,	name,	grantor # name
 % varchar,	int,	int,	varchar,	int # type
 % 0,	1,	1,	0,	1 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% .%1,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info # table_name
 % %1,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar,	bigint,	int,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% .%1,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info # table_name
 % %1,	fullname,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar,	bigint,	int,	varchar,	int,	varchar # type
 % 0,	0,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
-% .%1,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% .%1,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info,	.db_user_info # table_name
 % %1,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role,	password # name
 % varchar,	int,	varchar,	varchar,	int,	varchar,	bigint,	int,	varchar,	int,	varchar # type
 % 0,	1,	0,	0,	1,	0,	1,	1,	0,	1,	0 # length
-% .%1,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% .%1,	.dependencies,	.dependencies,	.dependencies,	.dependencies # table_name
 % %1,	id,	id,	depend_id,	depend_type # name
 % varchar,	int,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1 # length
-% .%1,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% .%1,	.dependencies,	.dependencies,	.dependencies,	.dependencies # table_name
 % %1,	depend_id,	id,	depend_id,	depend_type # name
 % varchar,	int,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1 # length
-% .%1,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% .%1,	.dependencies,	.dependencies,	.dependencies,	.dependencies # table_name
 % %1,	depend_type,	id,	depend_id,	depend_type # name
 % varchar,	smallint,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1 # length
@@ -6564,63 +6564,63 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	function_type_keyword,	function_type_id,	function_type_name,	function_type_keyword # name
 % varchar,	varchar,	smallint,	varchar,	varchar # type
 % 0,	0,	1,	0,	0 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	name,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	func,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	mod,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	side_effect,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	varres,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	vararg,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
 % %1,	system,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
 % varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
 % 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% .%1,	.idxs,	.idxs,	.idxs,	.idxs,	.idxs # table_name
 % %1,	id,	id,	table_id,	type,	name # name
 % varchar,	int,	int,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0 # length
-% .%1,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% .%1,	.idxs,	.idxs,	.idxs,	.idxs,	.idxs # table_name
 % %1,	table_id,	id,	table_id,	type,	name # name
 % varchar,	int,	int,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0 # length
-% .%1,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% .%1,	.idxs,	.idxs,	.idxs,	.idxs,	.idxs # table_name
 % %1,	type,	id,	table_id,	type,	name # name
 % varchar,	int,	int,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0 # length
-% .%1,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs,	sys.idxs # table_name
+% .%1,	.idxs,	.idxs,	.idxs,	.idxs,	.idxs # table_name
 % %1,	name,	id,	table_id,	type,	name # name
 % varchar,	varchar,	int,	int,	int,	varchar # type
 % 0,	0,	1,	1,	1,	0 # length
@@ -6640,27 +6640,27 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	key_type_name,	key_type_id,	key_type_name # name
 % varchar,	varchar,	smallint,	varchar # type
 % 0,	0,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% .%1,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
 % %1,	id,	id,	table_id,	type,	name,	rkey,	action,	check # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% .%1,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
 % %1,	table_id,	id,	table_id,	type,	name,	rkey,	action,	check # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% .%1,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
 % %1,	type,	id,	table_id,	type,	name,	rkey,	action,	check # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% .%1,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
 % %1,	name,	id,	table_id,	type,	name,	rkey,	action,	check # name
 % varchar,	varchar,	int,	int,	int,	varchar,	int,	int,	varchar # type
 % 0,	0,	1,	1,	1,	0,	1,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% .%1,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
 % %1,	rkey,	id,	table_id,	type,	name,	rkey,	action,	check # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
-% .%1,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
+% .%1,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys,	.keys # table_name
 % %1,	action,	id,	table_id,	type,	name,	rkey,	action,	check # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	int,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0 # length
@@ -6668,15 +6668,15 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	keyword,	keyword # name
 % varchar,	varchar,	varchar # type
 % 0,	0,	0 # length
-% .%1,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% .%1,	.objects,	.objects,	.objects,	.objects,	.objects # table_name
 % %1,	id,	id,	name,	nr,	sub # name
 % varchar,	int,	int,	varchar,	int,	int # type
 % 0,	1,	1,	0,	1,	1 # length
-% .%1,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% .%1,	.objects,	.objects,	.objects,	.objects,	.objects # table_name
 % %1,	name,	id,	name,	nr,	sub # name
 % varchar,	varchar,	int,	varchar,	int,	int # type
 % 0,	0,	1,	0,	1,	1 # length
-% .%1,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% .%1,	.objects,	.objects,	.objects,	.objects,	.objects # table_name
 % %1,	nr,	id,	name,	nr,	sub # name
 % varchar,	int,	int,	varchar,	int,	int # type
 % 0,	1,	1,	0,	1,	1 # length
@@ -6700,43 +6700,43 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	privilege_code_name,	privilege_code_id,	privilege_code_name # name
 % varchar,	varchar,	int,	varchar # type
 % 0,	0,	1,	0 # length
-% .%1,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% .%1,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges # table_name
 % %1,	obj_id,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % varchar,	int,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1 # length
-% .%1,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% .%1,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges # table_name
 % %1,	auth_id,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % varchar,	int,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1 # length
-% .%1,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% .%1,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges # table_name
 % %1,	privileges,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % varchar,	int,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1 # length
-% .%1,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% .%1,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges # table_name
 % %1,	grantor,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % varchar,	int,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1 # length
-% .%1,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges,	sys.privileges # table_name
+% .%1,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges,	.privileges # table_name
 % %1,	grantable,	obj_id,	auth_id,	privileges,	grantor,	grantable # name
 % varchar,	int,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	1,	1,	1,	1 # length
-% .%1,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .%1,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % %1,	id,	id,	name,	authorization,	owner,	system # name
 % varchar,	int,	int,	varchar,	int,	int,	boolean # type
 % 0,	1,	1,	0,	1,	1,	5 # length
-% .%1,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .%1,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % %1,	name,	id,	name,	authorization,	owner,	system # name
 % varchar,	varchar,	int,	varchar,	int,	int,	boolean # type
 % 0,	0,	1,	0,	1,	1,	5 # length
-% .%1,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .%1,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % %1,	authorization,	id,	name,	authorization,	owner,	system # name
 % varchar,	int,	int,	varchar,	int,	int,	boolean # type
 % 0,	1,	1,	0,	1,	1,	5 # length
-% .%1,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .%1,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % %1,	owner,	id,	name,	authorization,	owner,	system # name
 % varchar,	int,	int,	varchar,	int,	int,	boolean # type
 % 0,	1,	1,	0,	1,	1,	5 # length
-% .%1,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .%1,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas,	.schemas # table_name
 % %1,	system,	id,	name,	authorization,	owner,	system # name
 % varchar,	boolean,	int,	varchar,	int,	int,	boolean # type
 % 0,	5,	1,	0,	1,	1,	5 # length
@@ -6932,15 +6932,15 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	table_type_name,	table_type_id,	table_type_name # name
 % varchar,	varchar,	smallint,	varchar # type
 % 0,	0,	1,	0 # length
-% .%2,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+% .%2,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % %2,	id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%2,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+% .%2,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % %2,	name,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	varchar,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	0,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%2,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+% .%2,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % %2,	schema_id,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
@@ -6948,15 +6948,15 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %2,	type,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%2,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+% .%2,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % %2,	system,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	boolean,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	5,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%2,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+% .%2,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % %2,	commit_action,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
-% .%2,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	sys.tables,	.tables,	sys.tables,	sys.tables,	sys.tables,	.tables # table_name
+% .%2,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % %2,	access,	id,	name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	smallint,	int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 0,	1,	1,	0,	1,	0,	1,	5,	1,	1,	1 # length
@@ -6972,63 +6972,63 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %2,	stmt,	ticks,	stmt,	event # name
 % varchar,	varchar,	bigint,	varchar,	varchar # type
 % 0,	0,	1,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	name,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	varchar,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	0,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	table_id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	time,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	smallint,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	orientation,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	smallint,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	event,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	smallint,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers,	sys.triggers # table_name
+% .%1,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers,	.triggers # table_name
 % %1,	statement,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	varchar,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	0,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	systemname,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	varchar,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	0,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	sqlname,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	varchar,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	0,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	digits,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	scale,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	radix,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	eclass,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%1,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types,	sys.types # table_name
+% .%1,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types,	.types # table_name
 % %1,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
@@ -7040,15 +7040,15 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	role_id,	login_id,	role_id # name
 % varchar,	int,	int,	int # type
 % 0,	1,	1,	1 # length
-% .%1,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% .%1,	.users,	.users,	.users,	.users,	.users,	.users,	.users,	.users,	.users # table_name
 % %1,	name,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar,	bigint,	int,	varchar,	int # type
 % 0,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
-% .%1,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% .%1,	.users,	.users,	.users,	.users,	.users,	.users,	.users,	.users,	.users # table_name
 % %1,	fullname,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
 % varchar,	varchar,	varchar,	varchar,	int,	varchar,	bigint,	int,	varchar,	int # type
 % 0,	0,	0,	0,	1,	0,	1,	1,	0,	1 # length
-% .%1,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users,	sys.users # table_name
+% .%1,	.users,	.users,	.users,	.users,	.users,	.users,	.users,	.users,	.users # table_name
 % %1,	default_schema,	name,	fullname,	default_schema,	schema_path,	max_memory,	max_workers,	optimizer,	default_role # name
 % varchar,	int,	varchar,	varchar,	int,	varchar,	bigint,	int,	varchar,	int # type
 % 0,	1,	0,	0,	1,	0,	1,	1,	0,	1 # length
@@ -7104,27 +7104,27 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	action_name,	action_id,	action_name # name
 % varchar,	varchar,	smallint,	varchar # type
 % 0,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	table_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	type,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	name,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	varchar,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	rkey,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	int,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	update_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
@@ -7132,7 +7132,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %5,	update_action,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	varchar,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	0,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length
-% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	sys.fkeys,	.fkeys,	sys.fkeys # table_name
+% .%5,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys,	.fkeys # table_name
 % %5,	delete_action_id,	id,	table_id,	type,	name,	rkey,	update_action_id,	update_action,	delete_action_id,	delete_action # name
 % varchar,	smallint,	int,	int,	int,	varchar,	int,	smallint,	varchar,	smallint,	varchar # type
 % 0,	1,	1,	1,	1,	0,	1,	1,	0,	1,	0 # length

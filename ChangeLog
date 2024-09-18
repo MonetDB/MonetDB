@@ -1,3 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Mon Sep 16 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Hot snapshot: allow member files larger than 64 GiB. By member files we mean
+  the files inside the resulting .tar file, not the tar file itself. Huge member
+  files are written using a GNU tar extension to the original tar format, which
+  doesn't support more than 8 GiB.
+

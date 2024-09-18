@@ -62,17 +62,17 @@ project (
 | | | | group by (
 | | | | | project (
 | | | | | | select (
-| | | | | | | table("sys"."plantest0") [ "plantest0"."id" ]
-| | | | | | ) [ ("plantest0"."id") >= (bigint(28) "150000000") ]
+| | | | | | | table("sys"."plantest0") [ "plantest0"."id" NOT NULL ]
+| | | | | | ) [ ("plantest0"."id" NOT NULL) >= (bigint(28) "150000000") ]
 | | | | | ) [ "sys"."sql_div"("plantest0"."id" NOT NULL, int(24) "10000000") NOT NULL as "t"."id_r" ]
-| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%1"."%1" ],
+| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count"() NOT NULL as "%1"."%1" ],
 | | | | group by (
 | | | | | project (
 | | | | | | select (
-| | | | | | | table("sys"."plantest1") [ "plantest1"."id" ]
-| | | | | | ) [ ("plantest1"."id") >= (bigint(28) "150000000") ]
+| | | | | | | table("sys"."plantest1") [ "plantest1"."id" NOT NULL ]
+| | | | | | ) [ ("plantest1"."id" NOT NULL) >= (bigint(28) "150000000") ]
 | | | | | ) [ "sys"."sql_div"("plantest1"."id" NOT NULL, int(24) "10000000") NOT NULL as "t"."id_r" ]
-| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%1"."%1" ]
+| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count"() NOT NULL as "%1"."%1" ]
 | | | ) [ "t"."id_r" NOT NULL, "%1"."%1" NOT NULL ]
 | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
 | ) [ "sys"."sql_mul"("t"."id_r" NOT NULL UNIQUE, int(24) "10000000") NOT NULL as "id_range_base", "%1"."%1" NOT NULL as "nrows", "t"."id_r" NOT NULL UNIQUE ]
@@ -123,20 +123,20 @@ project (
 | | | | | project (
 | | | | | | project (
 | | | | | | | select (
-| | | | | | | | table("sys"."plantest0") [ "plantest0"."id" ]
-| | | | | | | ) [ ("plantest0"."id") >= (bigint(28) "150000000") ]
+| | | | | | | | table("sys"."plantest0") [ "plantest0"."id" NOT NULL ]
+| | | | | | | ) [ ("plantest0"."id" NOT NULL) >= (bigint(28) "150000000") ]
 | | | | | | ) [ "plantest0"."id" NOT NULL as "v"."id", "sys"."sql_div"("plantest0"."id" NOT NULL, int(24) "10000000") NOT NULL as "id_div" ]
 | | | | | ) [ "id_div" NOT NULL as "t"."id_r" ]
-| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%1"."%1" ],
+| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count"() NOT NULL as "%1"."%1" ],
 | | | | group by (
 | | | | | project (
 | | | | | | project (
 | | | | | | | select (
-| | | | | | | | table("sys"."plantest1") [ "plantest1"."id" ]
-| | | | | | | ) [ ("plantest1"."id") >= (bigint(28) "150000000") ]
+| | | | | | | | table("sys"."plantest1") [ "plantest1"."id" NOT NULL ]
+| | | | | | | ) [ ("plantest1"."id" NOT NULL) >= (bigint(28) "150000000") ]
 | | | | | | ) [ "plantest1"."id" NOT NULL as "v"."id", "sys"."sql_div"("plantest1"."id" NOT NULL, int(24) "10000000") NOT NULL as "id_div" ]
 | | | | | ) [ "id_div" NOT NULL as "t"."id_r" ]
-| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count" no nil ("t"."id_r" NOT NULL) NOT NULL as "%1"."%1" ]
+| | | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."count"() NOT NULL as "%1"."%1" ]
 | | | ) [ "t"."id_r" NOT NULL, "%1"."%1" NOT NULL ]
 | | ) [ "t"."id_r" NOT NULL ] [ "t"."id_r" NOT NULL, "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
 | ) [ "sys"."sql_mul"("t"."id_r" NOT NULL UNIQUE, int(24) "10000000") NOT NULL as "id_range_base", "%1"."%1" NOT NULL as "nrows", "t"."id_r" NOT NULL UNIQUE ]

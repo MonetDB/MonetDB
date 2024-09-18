@@ -3217,7 +3217,7 @@ bat
 getSize
 command bat.getSize(X_0:bat[:any_1]):lng
 BKCgetSize;
-Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes@rounded to the memory page size (see bbp.getPageSize()).
+Calculate the actual size of the BAT descriptor, heaps, hashes in bytes@rounded to the memory page size (see bbp.getPageSize()).
 bat
 getVHeapSize
 command bat.getVHeapSize(X_0:bat[:any_1]):lng
@@ -3233,66 +3233,6 @@ hasorderidx
 pattern bat.hasorderidx(X_0:bat[:any_1]):bit
 OIDXhasorderidx;
 Return true if order index exists
-bat
-imprints
-command bat.imprints(X_0:bat[:bte]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:dbl]):void
-CMDBATimprints;
-Check for existence or create an imprint index on the BAT.
-bat
-imprints
-command bat.imprints(X_0:bat[:flt]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:int]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:lng]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:sht]):void
-CMDBATimprints;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:bte]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:dbl]):lng
-CMDBATimprintsize;
-Return the storage size of the imprints index structure.
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:flt]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:int]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:lng]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:sht]):lng
-CMDBATimprintsize;
-(empty)
 bat
 info
 command bat.info(X_0:bat[:any_1]) (X_1:bat[:str], X_2:bat[:str])
@@ -3443,11 +3383,6 @@ setHash
 command bat.setHash(X_0:bat[:any_1]):bit
 BKCsetHash;
 Create a hash structure on the column
-bat
-setImprints
-command bat.setImprints(X_0:bat[:any_1]):bit
-BKCsetImprints;
-Create an imprints structure on the column
 bat
 setName
 command bat.setName(X_0:bat[:any_1], X_1:str):void

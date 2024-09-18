@@ -243,6 +243,8 @@ int yydebug=1;
 	column_exp
 	column_option
 	column_options
+	check_parenthesis_open
+	check_search_condition
 	comment_on_statement
 	comparison_predicate
 	control_statement
@@ -430,6 +432,7 @@ int yydebug=1;
 	blobstring
 	calc_ident
 	calc_restricted_ident
+	check_parenthesis_close
 	clob
 	column
 	forest_element_name
@@ -662,6 +665,8 @@ int yydebug=1;
 
 %right <sval> STRING USTRING XSTRING
 %right <sval> X_BODY
+
+%token name
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
@@ -2184,6 +2189,32 @@ opt_match:
  | MATCH opt_match_type		{ $$ = $2; }
  ;
 
+check_parenthesis_open:
+	'('
+	{
+		struct scanner *lc = &m->scanner;
+		lc->as = lc->rs->pos + lc->yycur;
+	}
+;
+
+check_parenthesis_close:
+	')'
+	{
+		struct scanner *lc = &m->scanner;
+		char* check_sql = sa_strndup(SA, lc->rs->buf+lc->as, lc->rs->pos + lc->yycur - lc->as - 1);
+		$$ = check_sql;
+	}
+;
+
+ check_search_condition:
+ check_parenthesis_open search_condition check_parenthesis_close
+ 	{
+		dlist *l = L();
+		append_symbol(l, $2);
+		append_string(l, $3);
+		$$ = _symbol_create_list(SQL_CHECK, l);
+	}
+
 column_constraint_type:
     NOT sqlNULL	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
  |  sqlNULL	{ $$ = _symbol_create( SQL_NULL, NULL); }
@@ -2199,7 +2230,7 @@ column_constraint_type:
 			  append_int(l, $4 );
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- |  CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK check_search_condition { $$ = $2; }
  ;
 
 table_constraint_type:
@@ -2220,8 +2251,7 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- |  CHECK '(' search_condition ')' 
-			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK check_search_condition { $$ = $2; }
  ;
 
 ident_commalist:

@@ -767,6 +767,18 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 					const void *t = BUNtail(vi, p);
 
 					if (q < cnt) {
+						if (b->tnosorted == q)
+							b->tnosorted = 0;
+						if (b->tnorevsorted == q)
+							b->tnorevsorted = 0;
+						if (b->tnokey[0] == q ||
+						    b->tnokey[1] == q) {
+							b->tnokey[0] = 0;
+							b->tnokey[1] = 0;
+						}
+						b->tkey = false;
+						b->tsorted = false;
+						b->tkey = false;
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
 							bat_iterator_end(&vi);
@@ -1156,6 +1168,8 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 		GDKfree(filename);
+	} else {
+		new_range->output_log = NULL;
 	}
 	ATOMIC_INIT(&new_range->refcount, 1);
 	ATOMIC_INIT(&new_range->last_ts, 0);
@@ -3518,7 +3532,8 @@ log_printinfo(logger *lg)
 	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		char buf[32];
-		if (p->output_log == NULL ||
+		if ((lg->debug & 128 || lg->inmemory) ||
+		    p->output_log == NULL ||
 		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
 			buf[0] = 0;
 		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
