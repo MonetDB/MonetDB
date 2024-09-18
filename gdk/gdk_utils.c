@@ -2099,6 +2099,7 @@ sa_free_obj(allocator *pa, void *obj, size_t sz)
 	assert(sz > 0);
 	assert(!pa->pa); // must be root allocator
 	size_t i;
+
 	char *obj_start = (char *) obj;
 	char *obj_end = obj_start + sz;
 
@@ -2115,6 +2116,8 @@ sa_free_obj(allocator *pa, void *obj, size_t sz)
 	f->n = pa->freelist;
 	f->sz = sz;
 	pa->freelist = f;
+	if (pa->inuse > 0)
+		pa->inuse -= 1;
 }
 
 static void
@@ -2155,7 +2158,12 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 		return sa_use_freed_obj(pa->pa, sz);
 	freed_t *prev = NULL;
 	freed_t *curr = pa->freelist;
-	while(curr) {
+	// size_t objects = pa->objects;
+	// size_t inuse = pa->inuse;
+	// size_t nr_free_objects = objects - inuse;
+	int MAX_ITERATIONS = 100;
+	int cntr = 0;
+	while(curr && (cntr <= MAX_ITERATIONS)) {
 		if (sz == curr->sz) {
 			if (prev) {
 				prev->n = curr->n;
@@ -2167,6 +2175,7 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 			prev = curr;
 			curr = curr->n;
 		}
+		cntr += 1;
 	}
 	return NULL;
 }
@@ -2224,6 +2233,8 @@ sa_create(allocator *pa)
 		return NULL;
 	}
 	sa->used = 0;
+	sa->objects = 0;
+	sa->inuse = 0;
 	sa->tmp_active = 0;
 	sa->tmp_used = 0;
 	return sa;
@@ -2242,6 +2253,8 @@ allocator *sa_reset( allocator *sa )
 	sa->nr = 1;
 	sa->used = 0;
 	sa->usedmem = SA_BLOCK_SIZE;
+	sa->objects = 0;
+	sa->inuse = 0;
 	return sa;
 }
 
@@ -2316,6 +2329,8 @@ sa_alloc( allocator *sa, size_t sz )
 		r = sa->blks[sa->nr-1] + sa->used;
 		sa->used += sz;
 	}
+	sa->objects += 1;
+	sa->inuse += 1;
 	return r;
 }
 
