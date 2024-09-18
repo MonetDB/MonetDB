@@ -6,9 +6,9 @@ where n = 1
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ ("f"."n") in (int(4) "1", int(4) "2", int(4) "3") ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ ("f"."n" NOT NULL) in (int(4) "1", int(4) "2", int(4) "3") ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query II rowsort
 select * from f
@@ -58,9 +58,9 @@ where n in (1, 2)
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 ## chained cmp_equal-atom ors with lhs in [n, m]
 
@@ -72,9 +72,9 @@ where n = 1
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."m") = (int(8) "60")) ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."m" NOT NULL) = (int(8) "60")) ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
 plan select * from f
@@ -84,9 +84,9 @@ where n = 1
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."m") = (int(8) "60")) ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."m" NOT NULL) = (int(8) "60")) ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
 plan select * from f
@@ -96,9 +96,9 @@ where m = 60
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."m") = (int(8) "60")) ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."m" NOT NULL) = (int(8) "60")) ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 ## chained ors with lhs in [n, (n && m)]
 
@@ -110,9 +110,9 @@ where (n = 3 and m = 60)
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."n") = (int(4) "3"), ("f"."m") = (int(8) "60")), ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
 plan select * from f
@@ -122,9 +122,9 @@ where n = 1
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."n") = (int(4) "3"), ("f"."m") = (int(8) "60")), ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
 plan select * from f
@@ -134,7 +134,7 @@ where n = 1
 ----
 project (
 | select (
-| | table("sys"."f") [ "f"."n", "f"."m" ]
-| ) [ (("f"."n") in (int(4) "1", int(4) "2")) or (("f"."n") = (int(4) "3"), ("f"."m") = (int(8) "60")), ("f"."n") in (int(4) "3", int(4) "1", int(4) "2") ]
-) [ "f"."n", "f"."m" ]
+| | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
