@@ -6644,7 +6644,7 @@ static stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *stdelete = NULL, *tids = NULL;
+	stmt *stdelete = NULL, *tids = NULL, *s = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
@@ -6655,11 +6655,19 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r) { /* first construct the deletes relation */
 		stmt *rows = subrel_bin(be, rel->r, refs);
+		(void) rel_dup(((sql_rel*) rel->r)->l); // rel_dup in case returning
 		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
 			return NULL;
 		assert(rows->type == st_list);
 		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
+	}
+
+	if (rel->attr) {
+		sql_rel* ret = rel_project(sql->sa, ((sql_rel*) rel->r)->l, rel->attr);
+		s = subrel_bin(be, ret, refs);
+		s = subrel_project(be, s, refs, rel);
+		sql->type = Q_TABLE;
 	}
 	stdelete = sql_delete(be, t, tids);
 	if (sql->cascade_action)
@@ -6669,7 +6677,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	return stdelete;
+	return s?s:stdelete;
 }
 
 struct tablelist {
@@ -7517,7 +7525,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_delete:
 		s = rel2bin_delete(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!rel->attr && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_truncate:

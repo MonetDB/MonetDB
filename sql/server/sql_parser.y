@@ -515,6 +515,7 @@ int yydebug=1;
 	opt_schema_element_list
 	opt_seps
 	opt_decimal_seps
+	opt_returning_clause
 	opt_seq_params
 	opt_typelist
 	opt_with_encrypted_password
@@ -3191,13 +3192,19 @@ opt_endianness:
 	| NATIVE ENDIAN	{ $$ = endian_native; }
 	;
 
+opt_returning_clause:
+    /* empty */				{ $$ = NULL; }
+	| RETURNING selection	{ $$ = $2; }
+	;
+
 delete_stmt:
-    sqlDELETE FROM qname opt_alias_name opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause opt_returning_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_string(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 

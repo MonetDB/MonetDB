@@ -1281,7 +1281,7 @@ rel_truncate(allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
 }
 
 static sql_rel *
-delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
+delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist *opt_returning)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1311,6 +1311,16 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			r = rel_delete(sql->sa, /*rel_basetable(sql, t, alias ? alias : tname)*/rel_dup(bt), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
+		}
+		if (opt_returning) {
+			sql->type = Q_TABLE;
+			list *pexps = sa_list(sql->sa);
+			for (dnode *n = opt_returning->h; n; n = n->next) {
+				sql_rel* inner = r->l;
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel);
+				pexps = append(pexps, ce);
+			}
+			r->attr = pexps;
 		}
 		return r;
 	}
@@ -2197,8 +2207,8 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym);
-		sql->type = Q_UPDATE;
+		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
+		if (!ret->attr) sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_TRUNCATE:

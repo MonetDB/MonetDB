@@ -691,6 +691,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		mnstr_printf(fout, ")");
 		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
+		if (is_modify(rel->op) && rel->attr) /* returning lists */
+			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 	} 	break;
 	default:
 		assert(0);
