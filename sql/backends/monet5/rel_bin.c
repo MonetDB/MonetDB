@@ -6655,7 +6655,6 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r) { /* first construct the deletes relation */
 		stmt *rows = subrel_bin(be, rel->r, refs);
-		(void) rel_dup(((sql_rel*) rel->r)->l); // rel_dup in case returning
 		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
 			return NULL;
