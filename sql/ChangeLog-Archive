@@ -48,6 +48,13 @@
   are no longer accepted in the ANALYZE statement.
 - The ANALYZE statement can now be used in procedures, functions and triggers.
 
+* Thu Apr 23 2024 Yunus Koning <yunus.koning@monetdbsolutions.com> - 11.51.1-20240812
+- Added support for CHECK constraints in CREATE TABLE and ALTER TABLE
+  ADD CONSTRAINT statements. Columns and tables can have multiple CHECK
+  constraints provided their names are unique in the schema of the table.
+  The syntax is: [ CONSTRAINT a_name ] CHECK ( boolean_expression )
+  When no constraint name is specified, a constraint name will be generated.
+
 * Wed Apr 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.51.1-20240812
 - Make schema renaming more permissive. A schema can be renamed if it
   does not contain objects that are a dependency for objects outside
