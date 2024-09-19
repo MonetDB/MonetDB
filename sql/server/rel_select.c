@@ -3473,7 +3473,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in WHERE clause", toUpperCopy(uaname, aname));
 		} else if (is_sql_update_set(f) || is_sql_psm(f)) {
 			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)", toUpperCopy(uaname, aname));
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE, RETURNING clauses (use subquery)", toUpperCopy(uaname, aname));
 		} else if (is_sql_aggr(f)) {
 			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: aggregate functions cannot be nested", toUpperCopy(uaname, aname));

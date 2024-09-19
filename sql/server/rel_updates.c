@@ -1317,7 +1317,9 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			list *pexps = sa_list(sql->sa);
 			for (dnode *n = opt_returning->h; n; n = n->next) {
 				sql_rel* inner = r->l;
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel);
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
+				if (ce == NULL)
+					return sql_error(sql, 02, SQLSTATE(42000) "aggregate functions and subqueries are not allowed in RETURNING clause");
 				pexps = append(pexps, ce);
 			}
 			r->attr = pexps;
@@ -2208,7 +2210,7 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
-		if (!ret->attr) sql->type = Q_UPDATE;
+		if (ret && !ret->attr) sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_TRUNCATE:
