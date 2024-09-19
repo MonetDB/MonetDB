@@ -604,6 +604,7 @@ typedef struct allocator {
 	size_t usedmem;	/* used memory */
 	size_t objects; /* number of objects */
 	size_t inuse;   /* number of objects in use*/
+	size_t freelist_hits; /* number of object reuse*/
 	void *freelist;	/* list of freed objects */
 	void *freelist_blks;	/* list of freed blks */
 

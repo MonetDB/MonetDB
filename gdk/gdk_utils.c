@@ -2170,6 +2170,7 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 			} else {
 				pa->freelist = curr->n;
 			}
+			pa->freelist_hits += 1;
 			return curr;
 		} else {
 			prev = curr;
@@ -2235,6 +2236,7 @@ sa_create(allocator *pa)
 	sa->used = 0;
 	sa->objects = 0;
 	sa->inuse = 0;
+	sa->freelist_hits = 0;
 	sa->tmp_active = 0;
 	sa->tmp_used = 0;
 	return sa;
@@ -2424,7 +2426,10 @@ sa_close( allocator *sa )
 void
 sa_free(allocator *sa, void *obj, size_t sz)
 {
+	sz = round16(sz); // allign size as per sa_alloc
 	if (sz < SA_BLOCK_SIZE) {
 		sa_free_obj(sa, obj, sz);
+	} else {
+		sa_free_blk(sa, obj);
 	}
 }
