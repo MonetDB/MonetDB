@@ -394,7 +394,7 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
 	mats = partition_groupby_prepare(be, rel, &part);
 	if (!mats)
 		return NULL;
-	if (!rel->spb) {
+	if (!rel->spb && !be->need_pipeline) {
 		set_need_pipeline(be);
 	} else {
 		pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));

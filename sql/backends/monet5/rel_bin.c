@@ -4726,7 +4726,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	if (df2) {
 		shared = rel_groupby_prepare_pp(&aggrresults, be, rel, _2phases);
-		if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
+		if ((!rel->spb || pp_can_not_start(be->mvc, rel->l)) && !be->need_pipeline) {
 			set_need_pipeline(be);
 		} else {
 			pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
@@ -5329,7 +5329,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (df2 && all) {
 		projectresults = rel_topn_prepare_pp(be, rel, all);
 
-		if (!rel->spb) {
+		if (!rel->spb && !be->need_pipeline) {
 			set_need_pipeline(be);
 		} else {
 			stmt *pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
@@ -8199,7 +8199,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	if (s && rel_is_ref(rel)) {
 		list_append(refs, rel);
 		list_append(refs, s);
-		if (neededpp) {
+		if (neededpp && !be->need_pipeline) {
 			set_need_pipeline(be);
 			neededpp = 0;
 		}
