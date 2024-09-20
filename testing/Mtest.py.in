@@ -4027,6 +4027,7 @@ def main(argv) :
         testdirs = []
         testlist = []
         dirlist = []
+        cli_test_count = 0
         if len(args) == 1 and not os.path.isdir(args[0]):
             head, tail = os.path.split(args[0])
             if os.path.isfile(args[0]):
@@ -4090,6 +4091,7 @@ def main(argv) :
                     #else:
                         # ERROR/WARNING
                     i = i + 1
+                cli_test_count = len(testlist)
             else:
                 if i < len(args)  and  args[i] == "All":
                     i = i + 1
@@ -4125,6 +4127,8 @@ def main(argv) :
                 else:
                     testdirs.extend(test_dirs)
                     test_count += cnt
+            if cli_test_count:
+                test_count = cli_test_count
 
         if len(testdirs) > 1  and  testlist:
             testlist = []
