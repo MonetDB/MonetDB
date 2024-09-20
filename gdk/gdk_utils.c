@@ -2252,8 +2252,11 @@ allocator *sa_reset( allocator *sa )
 		else
 			sa_free_blk(sa->pa, sa->blks[i]);
 	}
+	if (!sa->pa)
+		sa->freelist_blks = NULL;
 	sa->nr = 1;
 	sa->used = 0;
+	sa->freelist = NULL;
 	sa->usedmem = SA_BLOCK_SIZE;
 	sa->objects = 0;
 	sa->inuse = 0;
@@ -2268,7 +2271,7 @@ sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 	void *r = sa_alloc(sa, sz);
 
 	if (r)
-		memcpy(r, p, oldsz);
+		memmove(r, p, oldsz);
 	return r;
 }
 
