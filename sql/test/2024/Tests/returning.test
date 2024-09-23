@@ -1,0 +1,65 @@
+statement ok
+create table foo (i int , j int);
+
+statement ok
+insert into foo values (1, 10), (2, 20), (3, 30);
+
+query II nosort
+delete from foo where i > 1 returning i*2, j*j as k
+----
+4
+400
+6
+900
+
+query I nosort
+select count(*) from foo
+----
+1
+
+statement ok
+truncate foo
+
+statement ok
+insert into foo values (1, 10), (2, 20), (3, 30);
+
+query II nosort
+update foo set j = -j where i < 3 returning j+5 as bla, i+i
+----
+-5
+2
+-15
+4
+
+statement ok
+truncate foo
+
+statement ok
+insert into foo values (1, 10), (2, 20), (3, 30);
+
+
+query I nosort
+update foo set j = -j returning j+5
+----
+-5
+-15
+-25
+
+query I nosort
+update foo set i = -i returning -j
+----
+10
+20
+30
+
+statement error 42000!SELECT: identifier 'k' unknown
+update foo set i = -i returning k
+
+statement error 42000!SELECT: identifier 'k' unknown
+delete from foo where i > 0 returning k
+
+statement error 42000!SUM: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE, RETURNING clauses (use subquery)
+update foo set i = -i returning sum(i)
+
+statement error 42000!SELECT: subquery not allowed
+update foo set i = -i returning i in (select j from foo)
