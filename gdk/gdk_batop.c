@@ -2269,6 +2269,19 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 {
 	if (n <= 1)		/* trivially sorted */
 		return GDK_SUCCEED;
+	switch (tpe) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+		assert(base == NULL);
+		if (nilslast == reverse && n > 100)
+			return GDKrsort(h, t, n, hs, ts, reverse);
+		break;
+	}
 	if (stable) {
 		if (reverse)
 			return GDKssort_rev(h, t, base, n, hs, ts, tpe);
