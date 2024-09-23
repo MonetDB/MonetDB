@@ -3230,13 +3230,14 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $2);
 	  append_string(l, $3);
 	  append_list(l, $5);
 	  append_symbol(l, $6);
 	  append_symbol(l, $7);
+	  append_list(l, $8);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 

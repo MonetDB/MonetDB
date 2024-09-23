@@ -1194,7 +1194,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 }
 
 static sql_rel *
-update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
+update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, symbol *opt_from, symbol *opt_where, dlist *opt_returning)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1245,7 +1245,21 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		} else {	/* update all */
 			r = res;
 		}
-		return update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		if (opt_returning) {
+			sql->type = Q_TABLE;
+			list *pexps = sa_list(sql->sa);
+			for (dnode *n = opt_returning->h; n; n = n->next) {
+				sql_rel* inner = r->l;
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
+				if (ce == NULL)
+					return sql_error(sql, 02, SQLSTATE(42000) "aggregate functions and subqueries are not allowed in RETURNING clause");
+				pexps = append(pexps, ce);
+			}
+			r->attr = pexps;
+		}
+
+		return r;
 	}
 	return NULL;
 }
@@ -2204,8 +2218,8 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = update_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
-						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym);
-		sql->type = Q_UPDATE;
+						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym, l->h->next->next->next->next->next->data.lval);
+		if (ret && !ret->attr) sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_DELETE:

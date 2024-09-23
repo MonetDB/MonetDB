@@ -6398,6 +6398,37 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
 	}
 
+	stmt* returning = NULL;
+	if (rel->attr) {
+		sql_rel* b = rel->l;
+		int refcnt = b->ref.refcnt; // HACK: forces recalculation of base columns since they are assumed to be updated
+		b->ref.refcnt = 1;
+		returning = subrel_bin(be, b, refs);
+		b->ref.refcnt = refcnt;
+		returning->cand = tids;
+		returning = subrel_project(be, returning, refs, b);
+		list *pl = sa_list(sql->sa);
+		if (pl == NULL)
+			return NULL;
+		stmt *psub = stmt_list(be, pl);
+		if (psub == NULL)
+			return NULL;
+		for (node *en = rel->attr->h; en; en = en->next) {
+			sql_exp *exp = en->data;
+			stmt *s = exp_bin(be, exp, returning, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!exp_name(exp))
+				exp_label(sql->sa, exp, ++sql->label);
+			s = stmt_rename(be, exp, s);
+			s->label = exp->alias.label;
+			list_append(pl, s);
+		}
+		stmt_set_nrcols(psub);
+		returning = psub;
+		returning = subrel_project(be, returning, refs, NULL);
+		sql->type = Q_TABLE;
+	}
+
 	if (cascade_updates(be, t, tids, updates)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
@@ -6426,7 +6457,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql->cascade_action = NULL;
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	return cnt;
+	return returning?returning:cnt;
 }
 
 static int
@@ -6654,6 +6685,11 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(0/*ddl statement*/);
 
 	if (rel->r) { /* first construct the deletes relation */
+		if (rel->attr) {
+			sql_rel* sel = ((sql_rel*) rel->r)->l;
+			assert(is_select(sel->op));
+			(void) rel_dup (sel); // required to prevent recalculating select in rel2bin_delete
+		}
 		stmt *rows = subrel_bin(be, rel->r, refs);
 		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
@@ -6663,7 +6699,8 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (rel->attr) {
-		sql_rel* ret = rel_project(sql->sa, ((sql_rel*) rel->r)->l, rel->attr);
+		sql_rel* sel = ((sql_rel*) rel->r)->l;
+		sql_rel* ret = rel_project(sql->sa, sel, rel->attr);
 		s = subrel_bin(be, ret, refs);
 		s = subrel_project(be, s, refs, rel);
 		sql->type = Q_TABLE;
@@ -7519,7 +7556,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_update:
 		s = rel2bin_update(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!rel->attr && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_delete:
