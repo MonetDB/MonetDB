@@ -69,3 +69,17 @@ insert into t3335 values(3)
 statement ok
 drop table t3335
 
+statement ok
+create table bar(i int, j int check (i < 10))
+
+statement error 40002!INSERT INTO: CHECK constraint violated: bar_j_check
+insert into bar(i) values(10)
+
+statement ok
+insert into bar(i) values(0)
+
+statement error 40002!UPDATE: CHECK constraint violated: bar_j_check
+update bar set i = 10
+
+statement ok
+update bar set i = 1
