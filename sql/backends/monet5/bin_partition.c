@@ -53,7 +53,7 @@ rel_is_not_pp_safe(visitor *v, sql_rel *rel)
 	    rel->op == op_table ||
 		rel->op == op_semi ||
 		rel->op == op_topn ||
-		(is_join(rel->op) && rel->oahash))
+		(is_join(rel->op) && (rel->oahash || rel->spb)))
 		*((int*)v->data) = 1;
 	return rel;
 }

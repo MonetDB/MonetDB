@@ -20,6 +20,7 @@
 #include "rel_rewriter.h"
 
 static int rel_partition_(mvc *sql, sql_rel *rel, int pb);
+static int do_oahash_join(sql_rel *rel);
 
 /* Returns the row count of a base table or any count info we can get fom the
  * PROP_COUNT of this 'rel' (i.e.  get_rel_count()). */
@@ -151,6 +152,8 @@ rel_mark_partition(sql_rel *rel)
 	case op_join:
 	case op_left:
 	case op_right:
+		do_oahash_join(rel);
+		// fall through
 	case op_full:
 	case op_union:
 	case op_inter:
@@ -179,6 +182,8 @@ rel_mark_partition(sql_rel *rel)
 		}
 		break;
 	case op_semi:
+		do_oahash_join(rel);
+		// fall through
 	case op_anti:
 	case op_groupby:
 	case op_project:
