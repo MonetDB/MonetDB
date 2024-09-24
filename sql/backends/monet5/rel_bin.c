@@ -5182,7 +5182,7 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
-	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: CHECK constraint violated: %s", key->base.name);
+	char *msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: CHECK constraint violated: %s", key->base.name);
 	(void)stmt_exception(be, s, msg, 00001);
 }
 

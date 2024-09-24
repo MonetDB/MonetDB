@@ -2269,6 +2269,34 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 {
 	if (n <= 1)		/* trivially sorted */
 		return GDK_SUCCEED;
+	switch (tpe) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_date:
+	case TYPE_daytime:
+	case TYPE_timestamp:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, false);
+		break;
+#ifdef WORDS_BIGENDIAN
+	/* only use radix sort for UUID on big-endian architectures since
+	 * the bytes need to be sorted in the opposite order from
+	 * little-endian */
+	case TYPE_uuid:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, true);
+		break;
+#endif
+	default:
+		break;
+	}
 	if (stable) {
 		if (reverse)
 			return GDKssort_rev(h, t, base, n, hs, ts, tpe);

@@ -3686,20 +3686,6 @@ log_destroy_del(sql_trans *tr, sql_change *change)
 
 	assert(!isTempTable(t));
 	ok = log_destroy_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
-	if (ok == LOG_OK) {
-		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
-			sql_column *c = n->data;
-
-			ok = log_destroy_col_(tr, c);
-		}
-		if (t->idxs) {
-			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
-				sql_idx *i = n->data;
-
-				ok = log_destroy_idx_(tr, i);
-			}
-		}
-	}
 	return ok;
 }
 

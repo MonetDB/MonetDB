@@ -2429,6 +2429,8 @@ do_flush_range_cleanup(logger *lg)
 	logged_range *frange = lg->flush_ranges;
 	logged_range *first = frange;
 
+	if (frange == NULL)
+		return NULL;
 	while (frange->next) {
 		if (ATOMIC_GET(&frange->refcount) > 1)
 			break;
@@ -2532,6 +2534,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 	};
 	lg->current = &dummy;
 	if (log_open_output(lg) != GDK_SUCCEED) {
+		lg->current = NULL;
 		log_destroy(lg);
 		return NULL;
 	}

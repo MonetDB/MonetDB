@@ -466,8 +466,8 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			return res;
 		}
 		char* check = NULL;
+		sql_rel* check_rel = NULL;
 		if (kt == ckey) {
-			sql_rel* check_rel = NULL;
 			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
 				return -3;
 			}
@@ -484,6 +484,32 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			default:
 				break;
 		}
+		if (check) {
+			sql_rel* btrel = check_rel->l;
+			node* n = NULL;
+			for (n = btrel->exps->h; n; n = n->next) {
+				sql_exp* e = n->data;
+				const char *nm = e->alias.name;
+				sql_column *c = mvc_bind_column(sql, t, nm);
+				if (!c) {
+					(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT CHECK: no such column '%s' for table '%s'",
+							nm, t->base.name);
+					return SQL_ERR;
+				}
+				switch (mvc_create_kc(sql, k, c)) {
+					case -1:
+						(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						return SQL_ERR;
+					case -2:
+					case -3:
+						(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: transaction conflict detected");
+						return SQL_ERR;
+					default:
+						break;
+				}
+			}
+		}
+		else
 		switch (mvc_create_kc(sql, k, cs)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
