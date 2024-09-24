@@ -2277,9 +2277,19 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 #ifdef HAVE_HGE
 	case TYPE_hge:
 #endif
+	case TYPE_date:
+	case TYPE_daytime:
+	case TYPE_timestamp:
 		assert(base == NULL);
-		if (nilslast == reverse && n > 100)
-			return GDKrsort(h, t, n, hs, ts, reverse);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, false);
+		break;
+	case TYPE_uuid:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, true);
+		break;
+	default:
 		break;
 	}
 	if (stable) {

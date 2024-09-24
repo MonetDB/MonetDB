@@ -151,7 +151,7 @@ gdk_return GDKremovedir(int farmid, const char *nme)
 gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-gdk_return GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse)
+gdk_return GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool nosign)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
