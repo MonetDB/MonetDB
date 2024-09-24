@@ -6685,11 +6685,6 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(0/*ddl statement*/);
 
 	if (rel->r) { /* first construct the deletes relation */
-		if (rel->attr) {
-			sql_rel* sel = ((sql_rel*) rel->r)->l;
-			assert(is_select(sel->op));
-			(void) rel_dup (sel); // required to prevent recalculating select in rel2bin_delete
-		}
 		stmt *rows = subrel_bin(be, rel->r, refs);
 		rows = subrel_project(be, rows, refs, rel->r);
 		if (!rows)
@@ -6699,7 +6694,13 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (rel->attr) {
-		sql_rel* inner = rel->r?((sql_rel*) rel->r)->l:rel->l;
+		sql_rel* inner = rel->l;
+		if (rel_is_ref(inner)) {
+			s = refs_find_rel(refs, inner);
+			if (s)
+				s->cand = tids;
+		}
+
 		sql_rel* ret = rel_project(sql->sa, inner, rel->attr);
 		s = subrel_bin(be, ret, refs);
 		s = subrel_project(be, s, refs, rel);

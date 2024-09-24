@@ -1331,11 +1331,6 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			list *pexps = sa_list(sql->sa);
 			for (dnode *n = opt_returning->h; n; n = n->next) {
 				sql_rel* inner = r->l;
-				if (r->r) {
-					sql_rel* sel = ((sql_rel*) r->r)->l;
-					assert(is_select(sel->op));
-					(void) rel_dup (sel); // required to prevent recalculating select in rel2bin_delete
-				}
 				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
 				if (ce == NULL)
 					return sql_error(sql, 02, SQLSTATE(42000) "aggregate functions and subqueries are not allowed in RETURNING clause");
