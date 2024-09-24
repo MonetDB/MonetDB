@@ -150,6 +150,7 @@ exp_create(allocator *sa, int type)
 		return NULL;
 	*e = (sql_exp) {
 		.type = (expression_type) type,
+		.p = NULL
 	};
 	return e;
 }
