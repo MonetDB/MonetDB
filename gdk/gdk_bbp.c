@@ -914,26 +914,10 @@ BBPcheckbats(unsigned bbpversion)
 			/* first check string offset heap with width,
 			 * then without */
 			if (MT_stat(path, &statb) < 0) {
-#ifdef GDKLIBRARY_TAILN
-				if (b->ttype == TYPE_str &&
-				    b->twidth < SIZEOF_VAR_T) {
-					size_t taillen = strlen(path) - 1;
-					char tailsave = path[taillen];
-					path[taillen] = 0;
-					if (MT_stat(path, &statb) < 0) {
-						GDKsyserror("cannot stat file %s%c or %s (expected size %zu)\n",
-							    path, tailsave, path, b->theap->free);
-						GDKfree(path);
-						return GDK_FAIL;
-					}
-				} else
-#endif
-				{
-					GDKsyserror("cannot stat file %s (expected size %zu)\n",
-						    path, b->theap->free);
-					GDKfree(path);
-					return GDK_FAIL;
-				}
+				GDKsyserror("cannot stat file %s (expected size %zu)\n",
+					    path, b->theap->free);
+				GDKfree(path);
+				return GDK_FAIL;
 			}
 			if ((size_t) statb.st_size < b->theap->free) {
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
@@ -1015,8 +999,7 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrad
 	    bbpversion != GDKLIBRARY_STATUS &&
 	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
-	    bbpversion != GDKLIBRARY_HASHASH &&
-	    bbpversion != GDKLIBRARY_TAILN) {
+	    bbpversion != GDKLIBRARY_HASHASH) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
@@ -1427,56 +1410,6 @@ fixhashash(bat *hashbats, bat nhashbats)
 			continue;
 		}
 		if (fixhashashbat(b) != GDK_SUCCEED)
-			return GDK_FAIL;
-	}
-	return GDK_SUCCEED;
-}
-#endif
-
-#ifdef GDKLIBRARY_TAILN
-static gdk_return
-movestrbats(void)
-{
-	for (bat bid = 1, nbat = (bat) ATOMIC_GET(&BBPsize); bid < nbat; bid++) {
-		BAT *b = BBP_desc(bid);
-		if (b->batCacheid == 0) {
-			/* not a valid BAT */
-			continue;
-		}
-		if (b->ttype != TYPE_str || b->twidth == SIZEOF_VAR_T || b->batCount == 0)
-			continue;
-		char *oldpath = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
-		char *newpath = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-		int ret = -1;
-		if (oldpath != NULL && newpath != NULL) {
-			struct stat oldst, newst;
-			bool oldexist = MT_stat(oldpath, &oldst) == 0;
-			bool newexist = MT_stat(newpath, &newst) == 0;
-			if (newexist) {
-				if (oldexist) {
-					if (oldst.st_mtime > newst.st_mtime) {
-						GDKerror("both %s and %s exist with %s unexpectedly newer: manual intervention required\n", oldpath, newpath, oldpath);
-						ret = -1;
-					} else {
-						GDKwarning("both %s and %s exist, removing %s\n", oldpath, newpath, oldpath);
-						ret = MT_remove(oldpath);
-					}
-				} else {
-					/* already good */
-					ret = 0;
-				}
-			} else if (oldexist) {
-				TRC_DEBUG(IO_, "rename %s to %s\n", oldpath, newpath);
-				ret = MT_rename(oldpath, newpath);
-			} else {
-				/* neither file exists: may be ok, but
-				 * will be checked later */
-				ret = 0;
-			}
-		}
-		GDKfree(oldpath);
-		GDKfree(newpath);
-		if (ret == -1)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -2023,56 +1956,6 @@ BBPinit(bool allow_hge_upgrade)
 		return GDK_FAIL;
 	}
 
-#ifdef GDKLIBRARY_TAILN
-	char *needstrbatmove;
-	if (GDKinmemory(0)) {
-		needstrbatmove = NULL;
-	} else {
-		if ((needstrbatmove = GDKfilepath(0, BATDIR, "needstrbatmove", NULL)) == NULL) {
-#ifdef GDKLIBRARY_HASHASH
-			GDKfree(hashbats);
-#endif
-			ATOMIC_SET(&GDKdebug, dbg);
-			return GDK_FAIL;
-		}
-		if (bbpversion <= GDKLIBRARY_TAILN) {
-			/* create signal file that we need to rename string
-			 * offset heaps */
-			int fd = MT_open(needstrbatmove, O_WRONLY | O_CREAT);
-			if (fd < 0) {
-				TRC_CRITICAL(GDK, "cannot create signal file needstrbatmove.\n");
-				GDKfree(needstrbatmove);
-#ifdef GDKLIBRARY_HASHASH
-				GDKfree(hashbats);
-#endif
-				ATOMIC_SET(&GDKdebug, dbg);
-				return GDK_FAIL;
-			}
-			close(fd);
-		} else {
-			/* check signal file whether we need to rename string
-			 * offset heaps */
-			int fd = MT_open(needstrbatmove, O_RDONLY);
-			if (fd >= 0) {
-				/* yes, we do */
-				close(fd);
-			} else if (errno == ENOENT) {
-				/* no, we don't: set var to NULL */
-				GDKfree(needstrbatmove);
-				needstrbatmove = NULL;
-			} else {
-				GDKsyserror("unexpected error opening %s\n", needstrbatmove);
-				GDKfree(needstrbatmove);
-#ifdef GDKLIBRARY_HASHASH
-				GDKfree(hashbats);
-#endif
-				ATOMIC_SET(&GDKdebug, dbg);
-				return GDK_FAIL;
-			}
-		}
-	}
-#endif
-
 #ifdef GDKLIBRARY_HASHASH
 	if (nhashbats > 0)
 		res = fixhashash(hashbats, nhashbats);
@@ -2118,25 +2001,6 @@ BBPinit(bool allow_hge_upgrade)
 		return GDK_FAIL;
 	}
 
-#ifdef GDKLIBRARY_TAILN
-	/* we rename the offset heaps after the above commit: in this
-	 * version we accept both the old and new names, but we want to
-	 * convert so that future versions only have the new name */
-	if (needstrbatmove) {
-		/* note, if renaming fails, nothing is lost: a next
-		 * invocation will just try again; an older version of
-		 * mserver will not work because of the TMcommit
-		 * above */
-		if (movestrbats() != GDK_SUCCEED) {
-			GDKfree(needstrbatmove);
-			ATOMIC_SET(&GDKdebug, dbg);
-			return GDK_FAIL;
-		}
-		MT_remove(needstrbatmove);
-		GDKfree(needstrbatmove);
-		needstrbatmove = NULL;
-	}
-#endif
 	ATOMIC_SET(&GDKdebug, dbg);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
