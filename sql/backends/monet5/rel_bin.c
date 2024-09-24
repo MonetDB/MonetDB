@@ -6699,8 +6699,8 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (rel->attr) {
-		sql_rel* sel = ((sql_rel*) rel->r)->l;
-		sql_rel* ret = rel_project(sql->sa, sel, rel->attr);
+		sql_rel* inner = rel->r?((sql_rel*) rel->r)->l:rel->l;
+		sql_rel* ret = rel_project(sql->sa, inner, rel->attr);
 		s = subrel_bin(be, ret, refs);
 		s = subrel_project(be, s, refs, rel);
 		sql->type = Q_TABLE;

@@ -63,3 +63,13 @@ update foo set i = -i returning sum(i)
 
 statement error 42000!SELECT: subquery not allowed
 update foo set i = -i returning i in (select j from foo)
+
+statement error 42000!SELECT: identifier 'k' unknown
+delete from foo returning k
+
+query I nosort
+delete from foo returning i*i
+----
+1
+4
+9

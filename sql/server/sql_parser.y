@@ -6107,7 +6107,6 @@ non_reserved_word:
 | NIL		{ $$ = sa_strdup(SA, "nil"); }
 | PASSING	{ $$ = sa_strdup(SA, "passing"); }
 | REF		{ $$ = sa_strdup(SA, "ref"); }
-| RETURNING	{ $$ = sa_strdup(SA, "returning"); }
 | STRIP		{ $$ = sa_strdup(SA, "strip"); }
 | URI		{ $$ = sa_strdup(SA, "uri"); }
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
