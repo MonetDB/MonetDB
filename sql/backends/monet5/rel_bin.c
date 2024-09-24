@@ -5238,7 +5238,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL, *returning = NULL;
 	int idx_ins = 0, len = 0;
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -5352,6 +5352,34 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
+	if (rel->attr) {
+		list* il = sa_list(sql->sa);
+		sql_rel* inner = rel->l;
+		assert(inner->op == op_basetable);
+		for (n = inner->exps->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+			sql_exp* ce	= n->data;
+			stmt* 	ins	= m->data;
+			stmt*	s	= stmt_rename(be, ce, ins);// label each insert statement with the corresponding col exp label
+			append(il, s);
+		}
+		stmt* inserts2 = stmt_list(be, il);
+
+		list* rl = sa_list(sql->sa);
+		for (n = rel->attr->h; n; n = n->next) {
+			sql_exp *exp = n->data;
+			stmt *s = exp_bin(be, exp, inserts2, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!exp_name(exp))
+				exp_label(sql->sa, exp, ++sql->label);
+			if (exp_name(exp)) {
+				s = stmt_rename(be, exp, s);
+				s->label = exp->alias.label;
+			}
+			append(rl, s);
+		}
+		returning = stmt_list(be, rl);
+		sql->type = Q_TABLE;
+	}
+
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	/* update predicate list */
@@ -5368,7 +5396,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, ret);
-		return ret;
+		return returning?returning:ret;
 	}
 }
 
@@ -7552,7 +7580,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_insert:
 		s = rel2bin_insert(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!rel->attr && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_update:

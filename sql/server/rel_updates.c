@@ -677,7 +677,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 }
 
 static sql_rel *
-insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
+insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dlist *opt_returning)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -691,7 +691,23 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
 		return NULL;
-	return rel_insert_table(query, t, t->base.name, r);
+	sql_rel* ins = rel_insert_table(query, t, t->base.name, r);
+
+	if (opt_returning) {
+		mvc *sql = query->sql;
+		sql->type = Q_TABLE;
+		list *pexps = sa_list(sql->sa);
+		for (dnode *n = opt_returning->h; n; n = n->next) {
+			sql_rel* inner = ins->l;
+			sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
+			if (ce == NULL)
+				return NULL;
+			pexps = append(pexps, ce);
+		}
+		ins->attr = pexps;
+	}
+
+	return ins;
 }
 
 static int
@@ -2206,7 +2222,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = insert_into(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = insert_into(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;

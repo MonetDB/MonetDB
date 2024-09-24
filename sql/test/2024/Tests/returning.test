@@ -73,3 +73,30 @@ delete from foo returning i*i
 1
 4
 9
+
+statement ok
+truncate foo
+
+query I nosort
+insert into foo(j,i) values (1,10), (-1,-10) returning j as bla
+----
+1
+-1
+
+query I nosort
+insert into foo values (1,10), (-1,-10) returning i+2*j
+----
+21
+-21
+
+
+query I nosort
+insert into foo(j) values (10), (-10) returning i IS NOT DISTINCT FROM NULL
+----
+1
+1
+
+query I nosort
+select count(*) from foo
+----
+6

@@ -3293,17 +3293,19 @@ merge_stmt:
  ;
 
 insert_stmt:
-    INSERT INTO qname values_or_query_spec
+    INSERT INTO qname values_or_query_spec opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, NULL);
 	  append_symbol(l, $4);
+	  append_list(l, $5);
 	  $$ = _symbol_create_list( SQL_INSERT, l ); }
- |  INSERT INTO qname column_commalist_parens values_or_query_spec
+ |  INSERT INTO qname column_commalist_parens values_or_query_spec opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_INSERT, l ); }
  ;
 
