@@ -354,6 +354,10 @@ do_oahash_join(sql_rel *rel)
 	if (rel->op == op_full || rel->op == op_anti)
 		return 0;
 
+	/* groupjoin */
+	if (rel->attr && list_length(rel->attr) > 0)
+		return 0;
+
 	if (!rel->exps)
 		/* it always means 'true', i.e. no retrictions, which can be the case
 		 * for inner, outer, semi, anti joins and cross-product */
@@ -521,15 +525,18 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->parallel = 1;
 		}
 
-		if (pb && is_outerjoin(rel->op))
+		//if (pb && is_outerjoin(rel->op))
+		if (pb && rel->op == op_full)
 			return 0;
 
-		if (is_left(rel->op)) /* and pb == 0 */
-			return rel_partition_(sql, rel->l, pb);
 		/* For now we only try to partition in case of a equi-join.
 		 * The other joins are too complex to handle. */
 		if (pb) /* and rel->op == op_join */
 			res = _rel_partition(sql, rel);
+		if (is_left(rel->op)) /* and pb == 0 */
+			return rel_partition_(sql, rel->l, pb);
+		if (is_right(rel->op)) /* and pb == 0 */
+			return rel_partition_(sql, rel->r, pb);
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)

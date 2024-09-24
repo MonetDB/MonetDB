@@ -2989,10 +2989,16 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
+	// TODO replacing subrel_bin with rel2bin_materialize is only a temporary
+	//      workaround for the "nested dataflow blocks not allowed" problem
+	//      when an (oahash) JOIN is in the sub relations. The real solution is
+	//      to add the groupjoin to the OAHASH join.
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(be, rel->l, refs);
+		//left = subrel_bin(be, rel->l, refs);
+		left = rel2bin_materialize(be, rel->l);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(be, rel->r, refs);
+		//right = subrel_bin(be, rel->r, refs);
+		right = rel2bin_materialize(be, rel->r);
 	left = subrel_project(be, left, refs, rel->l);
 	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right)
