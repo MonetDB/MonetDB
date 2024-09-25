@@ -1269,7 +1269,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 				sql_rel* inner = r->l;
 				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
 				if (ce == NULL)
-					return sql_error(sql, 02, SQLSTATE(42000) "aggregate functions and subqueries are not allowed in RETURNING clause");
+					return NULL;
 				pexps = append(pexps, ce);
 			}
 			r->attr = pexps;
@@ -1349,7 +1349,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 				sql_rel* inner = r->l;
 				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
 				if (ce == NULL)
-					return sql_error(sql, 02, SQLSTATE(42000) "aggregate functions and subqueries are not allowed in RETURNING clause");
+					return NULL;
 				pexps = append(pexps, ce);
 			}
 			r->attr = pexps;
