@@ -2284,16 +2284,11 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 		if (nilslast == reverse && (stable || n > 100))
 			return GDKrsort(h, t, n, hs, ts, reverse, false);
 		break;
-#ifdef WORDS_BIGENDIAN
-	/* only use radix sort for UUID on big-endian architectures since
-	 * the bytes need to be sorted in the opposite order from
-	 * little-endian */
 	case TYPE_uuid:
 		assert(base == NULL);
 		if (nilslast == reverse && (stable || n > 100))
 			return GDKrsort(h, t, n, hs, ts, reverse, true);
 		break;
-#endif
 	default:
 		break;
 	}
