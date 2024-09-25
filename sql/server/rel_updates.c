@@ -2232,7 +2232,7 @@ rel_updates(sql_query *query, symbol *s)
 
 		ret = update_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
 						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym, l->h->next->next->next->next->next->data.lval);
-		if (ret && !ret->attr) sql->type = Q_UPDATE;
+		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_DELETE:
@@ -2240,7 +2240,7 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
-		if (ret && !ret->attr) sql->type = Q_UPDATE;
+		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_TRUNCATE:
