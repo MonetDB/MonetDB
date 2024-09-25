@@ -36,7 +36,7 @@ select count(*) from craftsmen c where exists (select 1)
 ----
 2349
 
-query IIITTIRRRR nosort
+query IIITTIRRRR rowsort
 SELECT number, trip, tonnage, departure_Date, arrival_date,
 RANK() OVER ( PARTITION BY trip ORDER BY tonnage ) AS RankAggregation,
 CUME_DIST() OVER ( PARTITION BY trip ORDER BY tonnage nulls first ) as CumeDistGroup1,
@@ -45,9 +45,9 @@ PERCENT_RANK() OVER ( PARTITION BY trip ORDER BY tonnage nulls first ) as Percen
 PERCENT_RANK() OVER ( PARTITION BY trip ORDER BY tonnage nulls last ) as PercentRankGroup2
 FROM voyages WHERE particulars LIKE '%_recked%'
 ----
-3580 values hashing to 1dae27877c63f429ab14924a7c9250ba
+3580 values hashing to 0fb84c30b86984999eb17deaf134a592
 
-query RRRR nosort
+query RRRR rowsort
 SELECT
 CUME_DIST() OVER ( ORDER BY tonnage nulls first ) as CumeDistGroup1,
 CUME_DIST() OVER ( ORDER BY tonnage nulls last ) as CumeDistGroup2,
@@ -55,7 +55,7 @@ PERCENT_RANK() OVER ( ORDER BY tonnage nulls first ) as PercentRankGroup1,
 PERCENT_RANK() OVER ( ORDER BY tonnage nulls last ) as PercentRankGroup2
 FROM voyages WHERE particulars LIKE '%_recked%'
 ----
-1432 values hashing to edc9fc94dae411fcb58f92f145a72e04
+1432 values hashing to e6c06ab2f2514389b6ad904d76571427
 
 query RR rowsort
 SELECT

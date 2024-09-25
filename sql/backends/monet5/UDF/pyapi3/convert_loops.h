@@ -339,7 +339,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				break;                                                         \
 			case NPY_UNICODE:                                                  \
 				NP_COL_BAT_LOOP_FUNC(bat, mtpe, unicode_to_##mtpe,             \
-									 Py_UNICODE, index);                       \
+									 wchar_t, index);                       \
 				break;                                                         \
 			case NPY_OBJECT:                                                   \
 				NP_COL_BAT_LOOP_FUNC(bat, mtpe, pyobject_to_##mtpe,            \
@@ -440,7 +440,7 @@ convert_and_append(BAT* b, const char* text, bool force) {
 				} else {                                                       \
 					utf32_to_utf8(                                             \
 						0, ret->memory_size / 4, utf8_string,                  \
-						(const Py_UNICODE                                      \
+						(const wchar_t                                      \
 							 *)(&data[(index_offset * ret->count + iu) *       \
 									  ret->memory_size]));                     \
 					if (convert_and_append(b, utf8_string, false) != GDK_SUCCEED) {     \

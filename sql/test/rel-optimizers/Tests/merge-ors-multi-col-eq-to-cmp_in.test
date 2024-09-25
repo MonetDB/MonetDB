@@ -16,18 +16,18 @@ plan select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") > (int(4) "3")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query T nosort non-eq-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") > (int(4) "3")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 # order of m,k equality statements are swapped in the last AND expression
 query T nosort non-eq-two-col-2-value
@@ -35,18 +35,18 @@ plan select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") > (int(4) "3")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query T nosort non-eq-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") > (int(4) "3")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query III rowsort
 select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
@@ -63,27 +63,27 @@ plan select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") = (int(4) "1"), ("b"."m") = (int(8) "20")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query T nosort two-col-1-value-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") = (int(4) "1"), ("b"."m") = (int(8) "20")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query T nosort two-col-1-value-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n") = (int(4) "1"), ("b"."m") = (int(8) "20")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query III rowsort
 select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
@@ -104,9 +104,9 @@ plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" ]
-| ) [ (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."m") = (int(8) "40"), ("b"."k") > (int(11) "0")) ]
-) [ "b"."n", "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 onlyif threads=1
 query T nosort
@@ -114,9 +114,9 @@ plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."n", "b"."m", "b"."k" UNIQUE ]
-| ) [ (( [ "b"."m", "b"."k" UNIQUE ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."m") = (int(8) "40"), ("b"."k" UNIQUE) > (int(11) "0")) ]
-) [ "b"."n", "b"."m", "b"."k" UNIQUE ]
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query II rowsort
 select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
@@ -138,9 +138,9 @@ plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m 
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."m", "b"."k" ]
-| ) [ (("b"."m") in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m", "b"."k" ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
-) [ "b"."m", "b"."k" ]
+| | table("sys"."b") [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
+) [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 onlyif threads=1
 query T nosort single-col-3-val-2-col-2-val
@@ -148,7 +148,7 @@ plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m 
 ----
 project (
 | select (
-| | table("sys"."b") [ "b"."m", "b"."k" UNIQUE ]
-| ) [ (("b"."m") in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m", "b"."k" UNIQUE ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
-) [ "b"."m", "b"."k" UNIQUE ]
+| | table("sys"."b") [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
+) [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
 

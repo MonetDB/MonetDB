@@ -36,7 +36,7 @@ int utf8_strlen(const char *utf8_str, bool *ascii)
 	return utf8_char_count;
 }
 
-size_t utf32_strlen(const Py_UNICODE *utf32_str)
+size_t utf32_strlen(const wchar_t *utf32_str)
 {
 	size_t i = 0;
 	while (utf32_str[i] != 0)
@@ -102,7 +102,7 @@ int utf32_char_to_utf8_char(size_t position, char *utf8_storage,
 }
 
 bool ucs2_to_utf8(size_t offset, size_t size, char *utf8_storage,
-				  const Py_UNICODE *ucs2)
+				  const wchar_t *ucs2)
 {
 	size_t i = 0;
 	int position = 0;
@@ -123,7 +123,7 @@ bool ucs2_to_utf8(size_t offset, size_t size, char *utf8_storage,
 }
 
 bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage,
-				   const Py_UNICODE *utf32_input)
+				   const wchar_t *utf32_input)
 {
 	size_t i = 0;
 	int position = 0;
@@ -147,16 +147,16 @@ bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage,
 }
 
 bool unicode_to_utf8(size_t offset, size_t size, char *utf8_storage,
-					 const Py_UNICODE *unicode)
+					 const wchar_t *unicode)
 {
-#if Py_UNICODE_SIZE == 2
+#if SIZEOF_WCHAR_T == 2
 	return ucs2_to_utf8(offset, size, utf8_storage, unicode);
 #else
 	return utf32_to_utf8(offset, size, utf8_storage, unicode);
 #endif
 }
 
-int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage,
+int utf8_char_to_utf32_char(size_t position, wchar_t *utf32_storage,
 							int offset, const unsigned char *utf8_char)
 {
 	unsigned char bytes[4];
@@ -178,7 +178,7 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage,
 		return -1; // invalid utf8 character, the maximum value of the first
 				   // byte is 0xf7
 
-#if Py_UNICODE_SIZE == 2
+#if SIZEOF_WCHAR_T == 2
 	if (utf8_size > 2) {
 		// utf-8 character out of range on a UCS2 python compilation
 		return -1;
@@ -227,7 +227,7 @@ int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage,
 	}
 }
 
-bool utf8_to_utf32(size_t offset, size_t size, Py_UNICODE *utf32_storage,
+bool utf8_to_utf32(size_t offset, size_t size, wchar_t *utf32_storage,
 				   const unsigned char *utf8)
 {
 	size_t i = 0;
