@@ -2217,8 +2217,6 @@ sa_create(allocator *pa)
 	sa->size = SA_NUM_BLOCKS;
 	sa->nr = 1;
 	sa->blks = pa?(char**)sa_alloc(pa, sizeof(char*) * sa->size):(char**)GDKmalloc(sizeof(char*) * sa->size);
-	sa->freelist = NULL;
-	sa->freelist_blks = NULL;
 	if (sa->blks == NULL) {
 		if (!pa)
 			GDKfree(sa);
@@ -2233,6 +2231,8 @@ sa_create(allocator *pa)
 			GDKfree(sa);
 		return NULL;
 	}
+	sa->freelist = NULL;
+	sa->freelist_blks = NULL;
 	sa->used = 0;
 	sa->objects = 0;
 	sa->inuse = 0;
@@ -2354,6 +2354,8 @@ void sa_destroy( allocator *sa )
 	if (sa->pa) {
 		sa_reset(sa);
 		sa_free_blk(sa->pa, sa->blks[0]);
+		// TODO free sa object from parent
+		sa_free_obj(sa->pa, sa, sizeof(allocator));
 		return;
 	}
 	// root allocator

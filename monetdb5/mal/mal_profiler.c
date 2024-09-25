@@ -266,9 +266,9 @@ format_val2json(const Client c, const ValPtr res)
 		return buf;
 
 	ValRecord val;
-	/* TODO use ta */
-	ma_open(c->ta);
-	if (VALinit(c->ta, &val, TYPE_str, buf) == NULL) {
+	/* NOTE c->ta maybe active from caller */
+	allocator *ta = (c->ta && c->ta->tmp_active) ? c->ta : NULL;
+	if (VALinit(ta, &val, TYPE_str, buf) == NULL) {
 		GDKfree(buf);
 		return NULL;
 	}
@@ -278,7 +278,6 @@ format_val2json(const Client c, const ValPtr res)
 	char *buf2;
 	buf2 = VALformat(&val);
 	VALclear(&val);
-	ma_close(c->ta);
 
 	return buf2;
 }

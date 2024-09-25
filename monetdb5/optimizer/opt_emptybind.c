@@ -71,8 +71,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	// empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
 	ma_open(cntxt->ta);
 	empty = (int *) ma_zalloc(cntxt->ta, (mb->vsize + extras) * sizeof(int));
-	if (empty == NULL)
+	if (empty == NULL) {
+		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	// updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	size_t updated_size = esize * sizeof(InstrPtr);

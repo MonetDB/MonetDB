@@ -208,12 +208,12 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	for (; i < limit; i++)
 		pushInstruction(mb, old[i]);
-	ma_close(cntxt->ta);
   bailout:
 	for (; i < slimit; i++) {
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	}
+	ma_close(cntxt->ta);
 	//GDKfree(old);
 
 	/* Defense line against incorrect plans */

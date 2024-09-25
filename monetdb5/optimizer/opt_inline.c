@@ -31,6 +31,7 @@ inlineMALblock(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	nv = (int *) ma_alloc(cntxt->ta, mc->vtop * sizeof(int));
 	if (nv == 0) {
 		//GDKfree(ns);
+		ma_close(cntxt->ta);
 		return -1;
 	}
 
