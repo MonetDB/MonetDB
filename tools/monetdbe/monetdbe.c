@@ -1722,6 +1722,7 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 			return stmt_internal->mdbe->msg;
 		}
 		VALset(&stmt_internal->data[i], tpe, val);
+		// FIX this leaks no free for val
 	} else {
 		VALset(&stmt_internal->data[i], tpe, data);
 	}
