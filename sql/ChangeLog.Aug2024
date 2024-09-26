@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Sep 26 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Improved the violation message of CHECK constraints when violated. It
+  now includes the schema name of the constraint and the check clause.
+
 * Fri Aug 23 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Increase the buffer size used by hot snapshot from 64kiB to 1MiB,
   and make it configurable through setting 'hot_snapshot_buffer_size'.
