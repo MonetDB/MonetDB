@@ -4,19 +4,19 @@ create table ary(x integer check(x >0 and x <3))
 statement ok
 insert into ary values(1)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: ary_x_check
+statement error 40002!INSERT INTO: violated constraint 'sys.ary_x_check' CHECK(x >0 and x <3)
 insert into ary values(0)
 
 statement ok
 insert into ary values(2)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: ary_x_check
+statement error 40002!INSERT INTO: violated constraint 'sys.ary_x_check' CHECK(x >0 and x <3)
 insert into ary values(-1)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: ary_x_check
+statement error 40002!INSERT INTO: violated constraint 'sys.ary_x_check' CHECK(x >0 and x <3)
 insert into ary values(3)
 
-statement error 40002!UPDATE: CHECK constraint violated: ary_x_check
+statement error 40002!UPDATE: violated constraint 'sys.ary_x_check' CHECK(x >0 and x <3)
 update ary set x = x+1
 
 statement ok
