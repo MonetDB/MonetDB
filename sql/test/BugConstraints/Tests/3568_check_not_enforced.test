@@ -4,31 +4,31 @@ CREATE TABLE TBLCHECK(nr int CHECK (nr > 10))
 statement ok
 INSERT INTO TBLCHECK VALUES (11)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (10)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (09)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (01)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (00)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (-01)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (-+02)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (+-+03)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (-+-04)
 
-statement error 40002!INSERT INTO: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!INSERT INTO: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 INSERT INTO TBLCHECK VALUES (+-+-05)
 
 query I rowsort
@@ -36,7 +36,7 @@ SELECT * FROM TBLCHECK
 ----
 11
 
-statement error 40002!UPDATE: CHECK constraint violated: tblcheck_nr_check
+statement error 40002!UPDATE: violated constraint 'sys.tblcheck_nr_check' CHECK(nr > 10)
 UPDATE TBLCHECK SET nr = nr -10
 
 statement ok
