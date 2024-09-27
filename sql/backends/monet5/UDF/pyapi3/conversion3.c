@@ -281,8 +281,10 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 					j = 0;
 					BATloop(b, p, q)
 					{
-						const date* dt = (const date*)BUNtail(li, p);
-						data[j++] = PyDate_FromDate(date_year(*dt), date_month(*dt), date_day(*dt));
+						date dt = *(const date*)BUNtail(li, p);
+						if (is_date_nil(dt))
+							dt = date_create(1, 1, 1);
+						data[j++] = PyDate_FromDate(date_year(dt), date_month(dt), date_day(dt));
 					}
 				}
 				bat_iterator_end(&li);
@@ -299,11 +301,13 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 					j = 0;
 					BATloop(b, p, q)
 					{
-						const daytime* dt = (const daytime*)BUNtail(li, p);
-						data[j++] = PyTime_FromTime(daytime_hour(*dt),
-													daytime_min(*dt),
-													daytime_sec(*dt),
-													daytime_usec(*dt));
+						daytime dt = *(const daytime*)BUNtail(li, p);
+						if (is_daytime_nil(dt))
+							dt = daytime_create(0, 0, 0, 0);
+						data[j++] = PyTime_FromTime(daytime_hour(dt),
+													daytime_min(dt),
+													daytime_sec(dt),
+													daytime_usec(dt));
 					}
 				}
 				bat_iterator_end(&li);
@@ -320,9 +324,9 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 					j = 0;
 					BATloop(b, p, q)
 					{
-						const timestamp* ts = (const timestamp*)BUNtail(li, p);
-						const date dt = timestamp_date(*ts);
-						const daytime dtm = timestamp_daytime(*ts);
+						const timestamp ts = *(const timestamp*)BUNtail(li, p);
+						const date dt = is_timestamp_nil(ts) ? date_create(1, 1, 1) : timestamp_date(ts);
+						const daytime dtm = is_timestamp_nil(ts) ? daytime_create(0, 0, 0, 0) : timestamp_daytime(ts);
 
 						data[j++] = PyDateTime_FromDateAndTime(date_year(dt), date_month(dt), date_day(dt), daytime_hour(dtm), daytime_min(dtm), daytime_sec(dtm), daytime_usec(dtm));
 					}
