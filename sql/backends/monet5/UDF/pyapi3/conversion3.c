@@ -136,11 +136,9 @@ PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 	bool bnonil = b->tnonil;
 	MT_lock_unset(&b->theaplock);
 	if (!bnonil) {
-		PyObject *nme = PyUnicode_FromString("numpy.ma");
-		PyObject *mod = PyImport_Import(nme);
+		PyObject *mod = PyImport_ImportModule("numpy.ma");
 		PyObject *mafunc = PyObject_GetAttrString( mod, "masked_array");
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
-		Py_DECREF(nme);
 
 		if (!nullmask) {
 			Py_DECREF(vararray);
