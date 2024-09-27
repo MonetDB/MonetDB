@@ -4043,6 +4043,8 @@ rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 }
 
+#define E_ATOM_STRING(e) ((atom*)(e)->l)->data.val.sval
+
 static sql_exp *
 rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
@@ -4055,6 +4057,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (!e)
 		return NULL;
+
 	/* strings may need to be truncated */
 	if (EC_VARCHAR(tpe->type->eclass) && tpe->digits > 0) {
 		sql_subtype *et = exp_subtype(e);
@@ -4065,10 +4068,34 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
 	}
+
+	if (e->type == e_atom && tpe->type->eclass == EC_DEC) {
+		sql_subtype *et = exp_subtype(e);
+		if (et->type->eclass == EC_CHAR || et->type->eclass == EC_DEC)
+			tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, et->scale);
+		else if (et->type->eclass == EC_STRING) {
+			char *s = E_ATOM_STRING(e);
+			unsigned int min_precision = 0, min_scale = 0;
+			bool dot_seen = false;
+			for (size_t i = 0; i < strlen(s); i++) {
+				if (isdigit(s[i])) {
+					min_precision++;
+					if (dot_seen)
+						min_scale++;
+				} else if (s[i] == '.') {
+					dot_seen = true;
+				}
+			}
+			tpe = sql_bind_subtype(sql->sa, "decimal", min_precision, min_scale);
+		}
+	}
+
 	if (e)
 		e = exp_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+
 	if (e && e->type == e_convert)
 		exp_label(sql->sa, e, ++sql->label);
+
 	return e;
 }
 
