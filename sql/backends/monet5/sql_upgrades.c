@@ -4391,7 +4391,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			")\n"
 			"external name sql.unclosed_result_sets;\n"
 			"grant execute on function sys.unclosed_result_sets() to public;\n"
-			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');\n";
+			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum', 'unclosed_result_sets');\n";
 			printf("Running database upgrade commands:\n%s\n", query);
 			fflush(stdout);
 			err = SQLstatementIntern(c, query, "update", true, false, NULL);

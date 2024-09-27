@@ -49879,6 +49879,11 @@ unsafe pattern sql.transaction_rollback(X_0:int, X_1:str):void
 SQLtransaction_rollback;
 A transaction statement (type can be commit,release,rollback or start)
 sql
+unclosed_result_sets
+pattern sql.unclosed_result_sets() (X_0:bat[:oid], X_1:bat[:int])
+sql_unclosed_result_sets;
+return query_id/res_id of unclosed result sets
+sql
 unionfunc
 pattern sql.unionfunc(X_0:str, X_1:str, X_2:any...):any...
 SQLunionfunc;
