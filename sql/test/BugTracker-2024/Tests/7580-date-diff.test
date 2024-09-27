@@ -1,0 +1,10 @@
+
+query IIIIII
+select t.d1, t.d2
+, cast(extract(day from (t.d1 - t.d2)) as integer) as verschil
+, cast(extract(day from (t.d1 - t.d2)) as integer) < 100 as f -- false
+, cast(extract(day from (t.d1 - t.d2)) as integer) >=100 as t -- true
+, case when cast(extract(day from (t.d1 - t.d2)) as integer) < 100 then 'false' else 'true' end as true_or_false -- false
+from (select cast('2024-01-18' as date) as d1, cast('2013-06-06' as date) as d2) t
+where abs(cast(extract(day from (t.d1 - t.d2)) as integer)) < 100 -- this is false, not true, so this shouldn't produce any result.
+----
