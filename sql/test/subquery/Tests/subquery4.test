@@ -348,7 +348,7 @@ select iamok()
 statement ok
 drop function iamok
 
-statement error 42000!MIN: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE clauses (use subquery)
+statement error 42000!MIN: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE, RETURNING clauses (use subquery)
 UPDATE another_T SET col1 = MIN(col1)
 
 statement error 42000!SUM: aggregate functions not allowed in WHERE clause
