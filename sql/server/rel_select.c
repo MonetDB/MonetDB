@@ -4071,7 +4071,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (e->type == e_atom && tpe->type->eclass == EC_DEC) {
 		sql_subtype *et = exp_subtype(e);
-		if (et->type->eclass == EC_CHAR || et->type->eclass == EC_DEC)
+		if (et->type->eclass == EC_CHAR || et->type->eclass == EC_NUM)
 			tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, et->scale);
 		else if (et->type->eclass == EC_STRING) {
 			char *s = E_ATOM_STRING(e);
