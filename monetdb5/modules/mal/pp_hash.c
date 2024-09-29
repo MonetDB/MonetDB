@@ -183,10 +183,38 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
+static str
+UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void)cntxt;
+	(void)m;
+
+	bat *res = getArgReference_bat(s, p, 0);
+	bat *in = getArgReference_bat(s, p, 1);
+
+	BAT *i = BATdescriptor(*in);
+	if (!i)
+		return createException(MAL, "hash.ext", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	hash_table *h = (hash_table*)i->T.sink;
+	if (!h || h->s.type != HASH_SINK) {
+		BBPreclaim(i);
+		return createException(MAL, "hash.ext", SQLSTATE(HY002) "Missing hash table");
+	}
+	BAT *r = BATdense(0, 0, h->last);
+	BBPreclaim(i);
+	if (!r) {
+		return createException(MAL, "hash.ext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	*res = r->batCacheid;
+	BBPkeepref(r);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func pp_hash_init_funcs[] = {
  pattern("hash", "new", UHASHnew, false, "", args(1,3, batargany("sink",1),argany("tt",1),arg("size",int))),
  pattern("hash", "new", UHASHnew, false, "", args(1,4, batargany("sink",1),argany("tt",1),arg("size",int), batargany("p",2))),
+ pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext", oid), batargany("in", 1))),
  { .imp=NULL }
 };
 #include "mal_import.h"

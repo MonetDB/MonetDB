@@ -116,7 +116,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	}
 
 	//Create a new BAT column of wkb type, with length equal to the number of groups
-	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
+	if ((out = COLnew(ngrp?min:0, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -3547,7 +3547,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	}
 
 	//Create a new BAT column of wkb type, with length equal to the number of groups
-	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
+	if ((out = COLnew(ngrp?min:0, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}

@@ -3943,6 +3943,114 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	return err;
 }
 
+/* return value position groupcount*p/100 */
+#define qfunc(Type, p, f) \
+	if (tt == TYPE_##Type) { \
+			Type *in = Tloc(b, 0); \
+			Type *o = Tloc(r, 0); \
+		    BUN s = 0; \
+		    oid cur = grp[0]; \
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				if (grp[i] != cur) { \
+					BUN pos = ((i-s-1)*p/100); \
+					o[grp[s]] = in[pos]; \
+					s = i; \
+				} \
+			} \
+			if (s != cnt) { \
+				BUN pos = ((cnt-s-1)*p/100); \
+				o[grp[s]] = in[pos]; \
+			} \
+	}
+
+static str
+LALGquantile(bat *rid, bat *gid, bat *bid, bte *perc)
+{
+	BAT *g = NULL, *b = NULL, *r = NULL;
+	str err = NULL;
+	bte p = *perc;
+
+	if (p < 0 || p > 100) {
+		err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) "percentage out of range %d", p);
+		goto error;
+	}
+
+	g = BATdescriptor(*gid);
+	b = BATdescriptor(*bid);
+	if (g == NULL || b == NULL) {
+		err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	int tt = b->ttype;
+	if (tt != TYPE_bte && tt != TYPE_sht && tt != TYPE_int && tt != TYPE_lng &&
+#ifdef HAVE_HGE
+		tt != TYPE_hge &&
+#endif
+		tt != TYPE_flt && tt != TYPE_dbl) {
+		err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) "incompatible type");
+		goto error;
+	}
+
+	if (!is_bat_nil(*rid)) {
+		if ((r = BATdescriptor(*rid)) == NULL) {
+			err = createException(MAL, "pp aggr.quantile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+	}
+
+	/* ToDo make sure ordering set this */
+	oid max = BATcount(g)?g->T.maxval:0;
+
+	if (!r) {
+		r = COLnew(0, tt, max, TRANSIENT);
+		if (r == NULL) {
+			err = createException(MAL, "pp aggr.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
+	}
+	if (BATcapacity(r) < max) {
+		if (BATextend(r, max) != GDK_SUCCEED) {
+			err = createException(MAL, "pp aggr.max", MAL_MALLOC_FAIL);
+			goto error;
+		}
+	}
+
+	BUN cnt = BATcount(g);
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	oid *grp = Tloc(g, 0);
+
+	qfunc(bte,p,max);
+	qfunc(sht,p,max);
+	qfunc(int,p,max);
+	qfunc(lng,p,max);
+#ifdef HAVE_HGE
+	qfunc(hge,p,max);
+#endif
+	qfunc(flt,p,max);
+	qfunc(dbl,p,max);
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.quantile", RUNTIME_QRY_TIMEOUT));
+	if (err) {
+		goto error;
+	}
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	if (BATcount(r) < max)
+		BATsetcount(r, max);
+	BATnegateprops(r);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
+
+	return MAL_SUCCEED;
+  error:
+	if (g) BBPunfix(g->batCacheid);
+	if (b) BBPunfix(b->batCacheid);
+	if (r) BBPunfix(r->batCacheid);
+	return err;
+}
+
 static str
 ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
 {
@@ -4283,6 +4391,9 @@ static mel_func pp_algebra_init_funcs[] = {
  command("aggr", "avg", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
  command("aggr", "avg", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl))),
  command("aggr", "avg", ALGfsum_skipnil, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", dbl), arg("skipnil",bit))),
+ command("aggr", "ord_quantile", LALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,4, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("p", bte))),
+ //command("aggr", "quantile", LALGquantile, false, "Return the p-th's quantile per group, where p is between 0 and 100", args(1,5, batargany("quantile", 1), batarg("gid", oid), batargany("i", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ /* in combine we return the pth row (or avg) */
  { .imp=NULL }
 };
 #include "mal_import.h"

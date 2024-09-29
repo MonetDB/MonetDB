@@ -2224,6 +2224,14 @@ exp_is_atom( sql_exp *e )
 	return 0;
 }
 
+int
+exp_is_scalar( sql_exp *e )
+{
+	if (exp_is_atom(e))
+		return true;
+	return false;
+}
+
 static int
 exps_are_aggr(sql_rel *r, list *exps)
 {
@@ -3556,6 +3564,17 @@ exp_aggr_is_count(sql_exp *e)
 {
 	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
+	return 0;
+}
+
+int
+exp_aggr_is_countstar(sql_exp *e)
+{
+	if (exp_aggr_is_count(e)) {
+		list *l = e->l;
+		if (list_empty(l))
+			return 1;
+	}
 	return 0;
 }
 

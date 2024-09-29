@@ -344,13 +344,15 @@ static str
 PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt; (void)mb;
-	bat *res = getArgReference_bat(stk, pci, 0);
+	//bat *res = getArgReference_bat(stk, pci, 0);
+	int *resdummy = getArgReference_int(stk, pci, 0);
 	bat rb = *getArgReference_bat(stk, pci, 1);
 	lng offset = *getArgReference_lng(stk, pci, 2);
 	bat ib = *getArgReference_bat(stk, pci, 3);
 	bit force = *getArgReference_bit(stk, pci, 4);
 	bat rs = *getArgReference_bat(stk, pci, 5);
 
+	*resdummy = 0;
 	BAT *b = BATdescriptor(rb);
 	BAT *i = BATdescriptor(ib);
 	BAT *r = BATdescriptor(rs);
@@ -371,7 +373,7 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		//MT_lock_set(&pp_rs->l);
 		if (BATappend(b, i, NULL, /*offset,*/ force) != GDK_SUCCEED) {
-		//	MT_lock_unset(&pp_rs->l);
+			//MT_lock_unset(&pp_rs->l);
 			BBPreclaim(b);
 			BBPreclaim(i);
 			BBPreclaim(r);
@@ -379,8 +381,10 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		//MT_lock_unset(&pp_rs->l);
 	}
-	*res = b->batCacheid;
-	BBPkeepref(b);
+	//*res = b->batCacheid;
+	/* no propchecks */
+	//BBPretain(*res);
+	BBPreclaim(b);
 	BBPreclaim(i);
 	BBPreclaim(r);
 	return MAL_SUCCEED;
@@ -405,8 +409,9 @@ static mel_func pipeline_init_funcs[] = {
 	 batarg("sink", bte),
 	 arg("cnt", lng)
  )),
- pattern("bat", "append", PPappend, false, "Append bat at offset", args(1,6,
-	 batargany("res", 1),
+ pattern("bat", "append", PPappend, true, "Append bat at offset", args(1,6,
+	 //batargany("res", 1),
+	 arg("dummy", int),
 	 batargany("b", 1),
 	 arg("offset", lng),
 	 batargany("input", 1),

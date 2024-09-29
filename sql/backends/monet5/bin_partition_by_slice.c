@@ -117,42 +117,64 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 }
 
 bool
+exp_need_serialize(sql_exp *e)
+{
+	if (is_aggr(e->type)) {
+		sql_subfunc *sf = e->f;
+
+		if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+		    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+		    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool
+rel_groupby_serialize(sql_rel *rel)
+{
+	for(node *n = rel->exps->h; n; n = n->next ) {
+		if (exp_need_serialize(n->data))
+			return true;
+	}
+	return false;
+}
+
+bool
 rel_groupby_can_pp(sql_rel *rel, bool _2phases)
 {
 	if (!is_groupby(rel->op))
 		return false;
 
-	for(node *n = rel->exps->h; n; n = n->next ) {
-		sql_exp *e = n->data;
-
-		if (is_aggr(e->type)) {
-			sql_subfunc *sf = e->f;
-
-			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
-			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
-				return false;
-			}
-		}
-	}
-
 	if (list_empty(rel->r) && !_2phases)
 		return false;
+
 	/* more checks needed */
 	return true;
 }
 
 /* initialize the result variable for the parallel execution */
 list *
-rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2phases)
+rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be, sql_rel *rel, bool _2phases, bool need_serialize)
 {
 	if (!_2phases && list_empty(rel->r)) /* cannot handle global aggregation without 2 phases */
 		return NULL;
 
 	list *shared = NULL;
+	BUN est = get_rel_count(rel->l);
+	lng estimate, card = 1;
+	if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+		estimate = 85000000;
+	} else {
+		estimate = (lng) est;
+	}
+
+	shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
+	*aggrresults = sa_list(be->mvc->sa);
+	if (need_serialize)
+		*serializedresults = sa_list(be->mvc->sa);
 	if (is_groupby(rel->op) && list_empty(rel->r) && !list_empty(rel->exps)) { /* global aggregation */
-		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
-		*aggrresults = sa_list(be->mvc->sa);
 		for( node *n = rel->exps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
@@ -160,7 +182,38 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 			int tt = t->type->localtype;
 			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
 			int sum = e->type == e_aggr && strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(t->type->eclass);
+			bool serialize = need_serialize && exp_need_serialize(e);
 
+			if (serialize) {
+				int curhash = 0;
+				list *inputs = e->l; /* for each input create bat */
+				int need_distinct = need_distinct(e);
+				for(node *n = inputs->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					if (!exp_is_scalar(e)) {
+						sql_subtype *t = exp_subtype(e);
+						InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate*1.1);
+						if (!q)
+							return NULL;
+						append(*serializedresults, q->argv);
+						if (need_distinct) { /* create shared bat, for hash table */
+							sql_subtype *t = exp_subtype(e);
+							int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
+							if (estimate<0) {
+								assert(0);
+								estimate = 85000000;
+							}
+
+							InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, curhash); /* pushed already */
+							if (q == NULL)
+								return NULL;
+							assert(!e->shared);
+							curhash = e->shared = q->argv[0];
+						}
+					}
+				}
+				continue;
+			}
 			if (avg)
 				it = first_arg_subtype(e);
 			if (avg && EC_APPNUM(t->type->eclass) && it && !EC_APPNUM(it->type->eclass))
@@ -188,6 +241,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				return NULL;
 			q = pushNil(be->mb, q, tt);
 			append(*aggrresults, q->argv);
+			pushInstruction(be->mb, q);
 
 			if (need_distinct(e)) { /* create shared bat, for hash table */
 				list *el = e->l;
@@ -205,21 +259,17 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 				assert(!e->shared);
 				e->shared = q->argv[0];
 			}
-			pushInstruction(be->mb, q);
 		}
 	} else if (is_groupby(rel->op) && !list_empty(rel->r) && !list_empty(rel->exps)) {
-		BUN est = get_rel_count(rel->l);
-		lng estimate, card = 1;
 		int curhash = 0;
 
-		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
-			estimate = 85000000;
-		} else {
-			estimate = (lng) est;
-		}
-		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
 		list *gbexps = rel->r;
-		*aggrresults = sa_list(be->mvc->sa);
+		if (need_serialize) {
+			InstrPtr q = stmt_bat_new(be, TYPE_oid, estimate*1.1);
+			if (!q)
+				return NULL;
+			append(*serializedresults, q->argv);
+		}
 		for(node *n = gbexps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
@@ -243,11 +293,53 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 		if (card < estimate)
 			estimate = card;
 		for( node *n = rel->exps->h; n; n = n->next ) {
+			int grphash = grphash;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 			sql_subtype *t = exp_subtype(e), *it = NULL;
 			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
 			int sum = e->type == e_aggr && strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(t->type->eclass);
+			bool serialize = need_serialize && exp_need_serialize(e);
+
+			if (serialize) {
+				list *inputs = e->l; /* for each input create bat */
+				int need_distinct = need_distinct(e);
+				for(node *n = inputs->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					if (!exp_is_scalar(e)) {
+						sql_subtype *t = exp_subtype(e);
+						InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate*1.1);
+						if (!q)
+							return NULL;
+						append(*serializedresults, q->argv);
+						if (need_distinct) { /* create shared bat, for hash table */
+							sql_subtype *t = exp_subtype(e);
+							BUN est = get_rel_count(rel->l);
+							lng estimate;
+
+							if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+								estimate = 85000000;
+							} else {
+								estimate = (lng) est;
+							}
+
+							InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, curhash);
+							if (q == NULL)
+								return NULL;
+							assert(!e->shared);
+							curhash = e->shared = q->argv[0];
+						}
+					}
+				}
+				if (need_distinct) { /* need reduced group (ids) result */
+					InstrPtr q = stmt_bat_new(be, TYPE_oid, estimate*1.1);
+					if (!q)
+						return NULL;
+					append(*serializedresults, q->argv);
+				}
+				curhash = grphash;
+				continue;
+			}
 
 			if (avg)
 				it = first_arg_subtype(e);
@@ -301,7 +393,7 @@ rel_groupby_prepare_pp(list **aggrresults, backend *be, sql_rel *rel, bool _2pha
 }
 
 stmt *
-rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, list *sub)
+rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt *ext, stmt *cnt, stmt *cursub, stmt *pp, list *sub, stmt **cnt_aggr)
 {
 	node *o = sub->h;
 	(void)grp; (void)ext; (void)cnt;
@@ -372,6 +464,8 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			s->q = q;
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			s->q = q;
+			if (i == *cnt_aggr)
+				*cnt_aggr = s;
 			append(shared, s);
 		}
 	} else if (rel && !list_empty(rel->r)) {
@@ -456,6 +550,8 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			s->q = q;
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			s->q = q;
+			if (i == *cnt_aggr)
+				*cnt_aggr = s;
 			append(shared, s);
 		}
 	} else {
@@ -476,6 +572,8 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 		for(node *n = shared->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
 			sql_exp *e = m->data;
 			if (is_aggr(e->type)) {
+				if (exp_need_serialize(e))
+					continue;
 				sql_subfunc *sf = e->f;
 				sql_subtype *tpe = exp_subtype(e);
 				if (/*!list_empty(rel->r) &&*/ strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(tpe->type->eclass)) {
@@ -536,3 +634,28 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 	return cursub;
 }
 
+
+stmt *
+rel_groupby_count_gt_0(backend *be, stmt *cursub, stmt *cnt, int *ext)
+{
+	stmt *c = stmt_uselect(be, cnt, stmt_atom_lng(be, 0), cmp_gt, NULL, 0, 1);
+	if (!c)
+		return NULL;
+
+	list *shared = cursub->op4.lval, *nl = sa_list(be->mvc->sa);
+	if (shared) {
+		for(node *n = shared->h; n; n = n->next) {
+			stmt *col = (stmt*)n->data;
+			col = stmt_project(be, c, col);
+			append(nl, col);
+		}
+	}
+	if (*ext) {
+		InstrPtr q = newStmt(be->mb, algebraRef, projectionRef);
+		q = pushArgument(be->mb, q, c->nr);
+		q = pushArgument(be->mb, q, *ext);
+		pushInstruction(be->mb, q);
+		*ext = getDestVar(q);
+	}
+	return stmt_list(be, nl);
+}

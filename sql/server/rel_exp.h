@@ -159,6 +159,7 @@ extern int exp_match_list( list *l, list *r);
 extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_join_exp(sql_exp *e);
+extern int exp_is_scalar(sql_exp *e); /* single value */
 extern int exp_is_atom(sql_exp *e);
 /* exp_is_true/false etc return true if the expression is true, on unknown etc false is returned */
 extern int exp_is_true(sql_exp *e);
@@ -221,6 +222,7 @@ extern void exps_inout(sql_subfunc *f, list *exps);
 extern void exps_largest_int(sql_subfunc *f, list *exps, lng cnt);
 
 extern int exp_aggr_is_count(sql_exp *e);
+extern int exp_aggr_is_countstar(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);

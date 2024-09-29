@@ -317,18 +317,31 @@ rel_groupby_partition_safe(sql_rel *rel)
 		if (is_simple_project(l->op) && list_empty(l->exps))
 			return false;
 	}
-	for(node *n = rel->exps->h; n; n = n->next ) {
-		sql_exp *e = n->data;
+	if (list_empty(rel->r)) {
+		for(node *n = rel->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
 
-		if (is_aggr(e->type)) {
-			sql_subfunc *sf = e->f;
-			int sum = 0;
+			if (is_aggr(e->type)) {
+				sql_subfunc *sf = e->f;
+				int sum = 0;
 
-			if ((e->l && exps_are_atoms(e->l)) || /* e.g. SUM(42) */
-				!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
-				  strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
-				 (sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
-				return false;
+				if ((e->l && exps_are_atoms(e->l)) || /* e.g. SUM(42) */
+					!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+					strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+					(sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
+					return false;
+			}
+		}
+	}
+	if (!list_empty(rel->r)) {
+		for(node *n = rel->exps->h; n; n = n->next ) {
+			sql_exp *e = n->data;
+
+			if (is_aggr(e->type)) {
+				sql_subfunc *sf = e->f;
+				if (sf->func->lang == FUNC_LANG_R || sf->func->lang == FUNC_LANG_PY)
+					return false;
+			}
 		}
 	}
 	return true;
