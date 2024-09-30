@@ -504,13 +504,9 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
 	/* For the declaration of shared vars at the beginning */
 	list *shared_ht = NULL, *shared_hp = NULL;
-	//list *shared_res_hsh = NULL, *shared_res_prb = NULL;
 	/* build-phase res: hash-table and hash-payload stmts */
 	stmt *stmts_ht = NULL, *stmts_hp = NULL;
-	/* probe-phase res: hash- and probe-side stmts */
-	//stmt *stmts_res_hsh = NULL, *stmts_res_prb = NULL;
 	stmt *sub = NULL, *pp = NULL;
-	//int neededpp = get_need_pipeline(be); /* remember and reset previous info. */
 
 	/* find the hash- vs probe-side */
 	if (rel->op == op_full) {
@@ -548,15 +544,6 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	lng bld_sz = _estimate(be->mvc, rel_hsh);
 	shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
 	shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
-	/* If no one 'neededpp' in the super-tree, we gather the join results */
-	// TODO delay gathering the join results until end of what can be parallelised
-	/*
-	if(!neededpp) {
-		lng res_sz = _estimate(be->mvc, rel);
-		shared_res_hsh = oahash_prepare_res(be, exps_prj_hsh, res_sz);
-		shared_res_prb = oahash_prepare_res(be, exps_prj_prb, res_sz);
-	}
-	*/
 
 	/*** HASH PHASE ***/
 	sub = _start_pp(be, rel_hsh, 1, refs);
@@ -592,19 +579,8 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_hp, rhs_slts, stmts_ht->op4.lval->t->data, norows_prb, outer, pp);
 	assert(lh->cnt || lp->cnt);
 
-	//if (neededpp) {
-		list_merge(lh, lp, NULL);
-		sub = stmt_list(be, lh);
-	/*
-	} else {
-		int pos = oahash_get_pos(be, lh, lp, stmts_bld_ht->t->data, pp);
-		if (!pos) return NULL;
-		sub = oahash_collect(be, exps_prj_hsh, exps_prj_prb, stmts_res_hsh, stmts_res_prb, lh, lp, pos, pp);
-		(void)stmt_pp_jump(be, pp, be->nrparts);
-		(void)stmt_pp_end(be, pp);
-	}
-	*/
-	return sub;
+	list_merge(lh, lp, NULL);
+	return stmt_list(be, lh);
 }
 
 static stmt *
@@ -614,9 +590,6 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
-	//list *stmts_res_hsh = NULL, *stmts_res_prb = NULL;
-	stmt *sub = NULL, *pp = NULL;
-	//int neededpp = get_need_pipeline(be); /* remember and reset previous info. */
 
 	assert(rel->l && rel->r);
 	if (rel->oahash == 1) {
@@ -642,7 +615,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs);
 	if (!stmts_prb_res) return NULL;
 
-	pp = get_pipeline(be);
+	stmt *pp = get_pipeline(be);
 
 	/*** PROJECT RESULT PHASE ***/
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
@@ -661,80 +634,60 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, norows_prb, pp);
 	assert(lh->cnt || lp->cnt);
 
-	//if (neededpp) {
-		list_merge(lh, lp, NULL);
-		sub = stmt_list(be, lh);
-	//} else {
-	//	int pos = oahash_get_pos(be, lh, lp, stmts_ht->h->data, pp);
-	//	if (!pos) return NULL;
-	//	sub = oahash_collect(be, exps_prj_hsh, exps_prj_prb, stmts_res_hsh, stmts_res_prb, lh, lp, pos, pp);
-	//	(void)stmt_pp_jump(be, pp, be->nrparts);
-	//	(void)stmt_pp_end(be, pp);
-	//}
-	return sub;
+	list_merge(lh, lp, NULL);
+	return stmt_list(be, lh);
 }
 
 static stmt *
 rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
-	/* compare columns of hash- and probe-side */
-	list *exps_cmp = find_cmp_exps(be, rel, rel_hsh);
-	list *exps_cmp_hsh = exps_cmp->h->data;
-	list *exps_cmp_prb = exps_cmp->t->data;
-	/* projection columns of the probe-side */
-	list *exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
-	assert(exps_prj_prb->cnt); /* at least one column should be projected */
-	//list *stmts_res_prb = NULL;
 	stmt *sub = NULL, *pp = NULL;
-	//int neededpp = get_need_pipeline(be); /* remember and reset previous info. */
 
-	if (rel->op == op_anti) {
-        sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
-		return NULL;
-	}
-
-	/*** PREPARE PHASE ***/
-	lng sz = _estimate(be->mvc, rel_hsh);
-	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, sz);
-	/*
-	if(!neededpp) {
-		lng res_sz = _estimate(be->mvc, rel);
-		stmts_res_prb = oahash_prepare_res(be, exps_prj_prb, res_sz);
-	}
-	*/
-
-	/*** HASH PHASE ***/
-	sub = _start_pp(be, rel_hsh, 1, refs);
-	if (!sub) return NULL;
-
-	pp = get_pipeline(be);
-	int slt_ids = 0;
-	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
-	(void)stmt_pp_jump(be, pp, be->nrparts);
-	(void)stmt_pp_end(be, pp);
-
-	/*** PROBE PHASE ***/
-	sub = _start_pp(be, rel_prb, 0, refs);
-	if (!sub) return NULL;
-
-	pp = get_pipeline(be);
-	stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_ht, sub, pp);
-	if (prb_res == NULL) return NULL;
-
-	/*** PROJECT RESULT PHASE ***/
-	list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), stmts_ht->op4.lval->t->data, sub, pp);
-	//if (neededpp) {
-		sub = stmt_list(be, lp);
-	/*
+	if (!rel->exps) { /* the always-true case. just return the LHS */
+		// TODO we should already optimise-away this case of semi-join in PLAN
+		sub = subrel_bin(be, rel_prb, refs);
+		sub = subrel_project(be, sub, refs, rel_prb);
 	} else {
-		int pos = oahash_get_pos(be, NULL, lp, stmts_bld_ht->t->data, pp);
-		if (!pos) return NULL;
-		sub = oahash_collect(be, NULL, exps_prj_prb, NULL, stmts_res_prb, NULL, lp, pos, pp);
+		/* compare columns of hash- and probe-side */
+		list *exps_cmp = find_cmp_exps(be, rel, rel_hsh);
+		list *exps_cmp_hsh = exps_cmp->h->data;
+		list *exps_cmp_prb = exps_cmp->t->data;
+		/* projection columns of the probe-side */
+		list *exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
+		assert(exps_prj_prb->cnt); /* at least one column should be projected */
+
+		if (rel->op == op_anti) {
+			sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
+			return NULL;
+		}
+
+		/*** PREPARE PHASE ***/
+		lng sz = _estimate(be->mvc, rel_hsh);
+		list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, sz);
+
+		/*** HASH PHASE ***/
+		sub = _start_pp(be, rel_hsh, 1, refs);
+		if (!sub) return NULL;
+
+		pp = get_pipeline(be);
+		int slt_ids = 0;
+		stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
 		(void)stmt_pp_jump(be, pp, be->nrparts);
 		(void)stmt_pp_end(be, pp);
+
+		/*** PROBE PHASE ***/
+		sub = _start_pp(be, rel_prb, 0, refs);
+		if (!sub) return NULL;
+
+		pp = get_pipeline(be);
+		stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_ht, sub, pp);
+		if (prb_res == NULL) return NULL;
+
+		/*** PROJECT RESULT PHASE ***/
+		list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), stmts_ht->op4.lval->t->data, sub, pp);
+		sub = stmt_list(be, lp);
 	}
-	*/
 	return sub;
 }
 
