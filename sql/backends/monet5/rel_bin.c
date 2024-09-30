@@ -8283,7 +8283,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 
 		sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 		stmt *i = sub->h->data;
-		stmt *nrrows = stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
+		stmt *nrrows = i->nrcols == 0? stmt_atom_lng(be, 1) : stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
 
 		/* count of bat */
 		InstrPtr q = newStmt(be->mb, "pipeline", "claim");
@@ -8304,7 +8304,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 				return NULL;
 			q = pushArgument(be->mb, q, r->argv[0]);
 			q = pushArgument(be->mb, q, claimed);
-			q = pushArgument(be->mb, q, i->nr);
+			q = pushArgument(be->mb, q, column(be, i)->nr);
 			q = pushBit(be->mb, q, TRUE);
 			q = pushArgument(be->mb, q, prs);
 			q->argv[0] = r->argv[0];
