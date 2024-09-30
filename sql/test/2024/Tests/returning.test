@@ -105,13 +105,8 @@ select count(*) from foo
 statement error 42000!SELECT: identifier 'k' unknown
 insert into foo values (1,10), (-1,-10) returning k
 
-
-statement ok
-truncate foo
-
 statement ok
 create function read_dump_rel(rel STRING) RETURNS STRING external name sql.read_dump_rel
-
 
 query T nosort
 select read_dump_rel(
@@ -123,32 +118,31 @@ project (
 select (
 & REF 1 
 ) [ ("foo"."i") < (int(31) "3") ]
-) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL) NOT NULL as "foo"."j" ]
-) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ] [ "sys"."sql_add"("foo"."j" NOT NULL, int(3) "5") NOT NULL as "bla", "sys"."sql_add"("foo"."i", "foo"."i") ]')
+) [ "foo"."%TID%" , "sys"."sql_neg"("foo"."j") as "foo"."j" ]
+) [ "foo"."%TID%" , "foo"."j" ] [ "sys"."sql_add"("foo"."j" , int(3) "5") as "bla", "sys"."sql_add"("foo"."i", "foo"."i") ]')
 ----
-@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."i" NOT NULL UNIQUE) < (int(31) "3") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ] [ "sys"."sql_add"("foo"."j" NOT NULL UNIQUE, int(3) "5") NOT NULL as "bla", "sys"."sql_add"("foo"."i" NOT NULL UNIQUE, "foo"."i" NOT NULL UNIQUE) NOT NULL ]
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."i") < (int(31) "3") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL) NOT NULL as "foo"."j" ]@) [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ] [ "sys"."sql_add"("foo"."j" NOT NULL, int(3) "5") NOT NULL as "bla", "sys"."sql_add"("foo"."i", "foo"."i") ]
 
 query T nosort
 select read_dump_rel(
 'REF 1 (2)
-table("sys"."foo") [ "foo"."i" NUNIQUES 5.000000, "foo"."j" NOT NULL MIN "-10" MAX "10" NUNIQUES 4.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 22
+table("sys"."foo") [ "foo"."i" , "foo"."j" , "foo"."%TID%" ]
 delete(
 & REF 1 
 project (
 select (
 & REF 1 
-) [ ("foo"."i" NUNIQUES 5.000000) > (int(31) "0") ] COUNT 22
-) [ "foo"."%TID%" NOT NULL UNIQUE ] COUNT 22
-) [ "foo"."j" NOT NULL MIN "-10" MAX "10" NUNIQUES 4.000000 ]')
+) [ ("foo"."i" ) > (int(31) "0") ]
+) [ "foo"."%TID%" ]
+) [ "foo"."j" ]')
 ----
-@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@delete(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."i" NOT NULL UNIQUE) > (int(31) "0") ]@) [ "foo"."%TID%" NOT NULL UNIQUE ]@) [ "foo"."j" NOT NULL UNIQUE ]
-
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@delete(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."i") > (int(31) "0") ]@) [ "foo"."%TID%" NOT NULL UNIQUE ]@) [ "foo"."j" NOT NULL ]
 
 query T nosort
 select read_dump_rel(
 'insert(
-table("sys"."foo") [ "foo"."i" NUNIQUES 5.000000, "foo"."j" NOT NULL MIN "-10" MAX "10" NUNIQUES 4.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 22
-[  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "10", int(31)["sys"."sql_neg"(tinyint(4) "10") NOT NULL] NOT NULL ] as "%1"."%1" ]
-) [ "foo"."i" NUNIQUES 5.000000 ]')
+table("sys"."foo") [ "foo"."i", "foo"."j", "foo"."%TID%" ]
+[  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "10", int(31)["sys"."sql_neg"(tinyint(4) "10") ] ] as "%1"."%1" ]
+) [ "foo"."i" ]')
 ----
-@insert(@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "10", int(31)["sys"."sql_neg"(tinyint(4) "10") NOT NULL] NOT NULL ] as "%1"."%1" ]@) [ "foo"."i" NOT NULL UNIQUE ]
+@insert(@table("sys"."foo") [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "10", int(31)["sys"."sql_neg"(tinyint(4) "10") NOT NULL] NOT NULL ] as "%1"."%1" ]@) [ "foo"."i" ]
