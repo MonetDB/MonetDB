@@ -4071,9 +4071,12 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (e->type == e_atom && tpe->type->eclass == EC_DEC) {
 		sql_subtype *et = exp_subtype(e);
-		if (et->type->eclass == EC_CHAR || et->type->eclass == EC_NUM)
-			tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, et->scale);
-		else if (et->type->eclass == EC_STRING) {
+		if (et->type->eclass == EC_NUM) {
+			unsigned int min_precision = atom_num_digits(e->l);
+			if (min_precision > tpe->digits)
+				return sql_error(sql, 02, SQLSTATE(42000) "Precision (%d) should be at least (%d)", tpe->digits, min_precision);
+			tpe = sql_bind_subtype(sql->sa, "decimal", min_precision, et->scale);
+		} else if (EC_VARCHAR(et->type->eclass)) {
 			char *s = E_ATOM_STRING(e);
 			unsigned int min_precision = 0, min_scale = 0;
 			bool dot_seen = false;
