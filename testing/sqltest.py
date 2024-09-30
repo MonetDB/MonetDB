@@ -512,22 +512,19 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
                 self.query = query
                 crs = None
                 try:
-                    conn = self.test_case.conn_ctx.connect()
-                    crs = conn.cursor()
-                    crs.execute(query)
-                    self.rowcount = crs.rowcount
-                    self.rows = crs._rows
-                    if crs.description:
-                        self.data = crs.fetchall()
-                        self.description = crs.description
+                    with self.test_case.conn_ctx.connect() as conn, \
+                         conn.cursor() as crs:
+                        crs.execute(query)
+                        self.rowcount = crs.rowcount
+                        self.rows = crs._rows
+                        if crs.description:
+                            self.data = crs.fetchall()
+                            self.description = crs.description
                 except pymonetdb.Error as e:
                     self.test_run_error = e
                     self.err_code, self.err_message = self._parse_error(e.args[0])
                 except (OSError, ValueError) as e:
                     self.test_run_error = e
-                finally:
-                    if crs is not None:
-                        crs.close()
             self.did_run = True
         return self
 
