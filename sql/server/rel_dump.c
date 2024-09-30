@@ -691,7 +691,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		mnstr_printf(fout, ")");
 		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
-		if (is_modify(rel->op) && rel->attr) /* returning lists */
+		if ((is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op)) && rel->attr) /* returning lists */
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 	} 	break;
 	default:
@@ -1934,6 +1934,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_insert(sql, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+
+		skipWS(r, pos);
+		/* returning clause is signalled by a second expression list */
+		if (r[*pos] == '[' && !(rel->attr = read_exps(sql, lrel, NULL, NULL, r, pos, '[', 0, 1)))
+				return NULL;
+		return rel;
 	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'e' && r[*pos+2] == 'l') {
@@ -1956,6 +1962,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_delete(sql->sa, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+
+		skipWS(r, pos);
+		/* returning clause is signalled by a second expression list */
+		if (r[*pos] == '[' && !(rel->attr = read_exps(sql, lrel, NULL, NULL, r, pos, '[', 0, 1)))
+				return NULL;
+		return rel;
 	}
 
 	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
@@ -2009,6 +2021,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!update_allowed(sql, t, t->base.name, "UPDATE", "update", 0) )
 			return NULL;
 
+		skipWS(r, pos);
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1))) /* columns to be updated */
 			return NULL;
 
@@ -2029,6 +2042,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_update(sql, lrel, rrel, NULL, nexps)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+
+		skipWS(r, pos);
+		/* returning clause is signalled by a second expression list */
+		if (r[*pos] == '[' && !(rel->attr = read_exps(sql, lrel, NULL, NULL, r, pos, '[', 0, 1))) /* columns to be updated */
+				return NULL;
+
+		return rel;
 	}
 
 	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r')
