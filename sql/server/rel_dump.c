@@ -1896,10 +1896,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(void)readInt(r,pos);
 		skipWS(r, pos);
 		(*pos)++; /* ( */
-		(void)readInt(r,pos); /* skip nr refs */
+		int cnt = readInt(r,pos);
 		(*pos)++; /* ) */
 		if (!(rel = rel_read(sql, r, pos, refs)))
 			return NULL;
+		rel->ref.refcnt = cnt;
 		append(refs, rel);
 		skipWS(r,pos);
 	}
@@ -1910,7 +1911,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("REF");
 		skipWS(r, pos);
 		nr = readInt(r,pos); /* skip nr refs */
-		return rel_dup(list_fetch(refs, nr-1));
+		return list_fetch(refs, nr-1);
 	}
 
 	if (r[*pos] == 'i' && r[*pos+1] == 'n' && r[*pos+2] == 's') {
