@@ -697,14 +697,14 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dl
 		mvc *sql = query->sql;
 		sql->type = Q_TABLE;
 		list *pexps = sa_list(sql->sa);
+		sql_rel* inner = ins->l;
 		for (dnode *n = opt_returning->h; n; n = n->next) {
-			sql_rel* inner = ins->l;
-			sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
+			sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
 			if (ce == NULL)
 				return NULL;
 			pexps = append(pexps, ce);
 		}
-		ins->attr = pexps;
+		ins->attr = is_groupby(inner->op) ? inner->exps : pexps;
 	}
 
 	return ins;
@@ -1265,14 +1265,14 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		if (opt_returning) {
 			sql->type = Q_TABLE;
 			list *pexps = sa_list(sql->sa);
+			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_rel* inner = r->l;
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			r->attr = pexps;
+			r->attr = is_groupby(inner->op) ? inner->exps : pexps;
 		}
 
 		return r;
@@ -1345,14 +1345,14 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 		if (opt_returning) {
 			sql->type = Q_TABLE;
 			list *pexps = sa_list(sql->sa);
+			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_rel* inner = r->l;
 				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			r->attr = pexps;
+			r->attr = is_groupby(inner->op) ? inner->exps : pexps;
 		}
 		return r;
 	}

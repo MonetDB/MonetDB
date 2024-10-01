@@ -52,14 +52,16 @@ update foo set i = -i returning -j
 20
 30
 
+query I nosort
+update foo set i = -i returning sum(j)
+----
+-60
+
 statement error 42000!SELECT: identifier 'k' unknown
 update foo set i = -i returning k
 
 statement error 42000!SELECT: identifier 'k' unknown
 delete from foo where i > 0 returning k
-
-statement error 42000!SUM: aggregate functions not allowed in SET, WHILE, IF, ELSE, CASE, WHEN, RETURN, ANALYZE, RETURNING clauses (use subquery)
-update foo set i = -i returning sum(i)
 
 statement error 42000!SELECT: subquery not allowed
 update foo set i = -i returning i in (select j from foo)
