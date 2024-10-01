@@ -4123,10 +4123,13 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	node *n, *m;
 	stmt *left = NULL, *right = NULL, *sub;
 
+	//TODO this is just a workaround for the "nested dataflow blocks" problem until all op_union is replaced by op_munion
 	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(be, rel->l, refs);
+		//left = subrel_bin(be, rel->l, refs);
+		left = rel2bin_materialize(be, rel->l);
 	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(be, rel->r, refs);
+		//right = subrel_bin(be, rel->r, refs);
+		right = rel2bin_materialize(be, rel->r);
 	left = subrel_project(be, left, refs, rel->l);
 	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right)
@@ -8315,6 +8318,8 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 			s->nr = r->argv[0];
 			s->q = q;
 			s->nrcols = i->nrcols;
+			if (e->alias.label == 0)
+				exp_label(be->mvc->sa, e, ++be->mvc->label);
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 			append(res, s);
 		}
