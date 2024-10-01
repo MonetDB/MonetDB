@@ -16,14 +16,14 @@ INSERT into T_boolean VALUES (1), (0)
 statement ok
 INSERT into T_boolean VALUES (null)
 
-query I rowsort
+query I nosort
 SELECT v FROM T_boolean ORDER BY v
 ----
-0
-0
-1
-1
 NULL
+0
+0
+1
+1
 
 query II rowsort
 SELECT v, convert(v, boolean) from T_BOOLEAN
@@ -509,15 +509,15 @@ INSERT into T_blob VALUES ('00'), ('11'), ('0123456789'), ('A0B2C3D4F5'), ('')
 statement ok
 INSERT into T_blob VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_blob ORDER BY v
 ----
+NULL
 (empty)
 00
 0123456789
 11
 A0B2C3D4F5
-NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_blob
@@ -865,15 +865,15 @@ INSERT into T_tinyint VALUES (1), (0), (-1), (-127), (127)
 statement ok
 INSERT into T_tinyint VALUES (null)
 
-query I rowsort
+query I nosort
 SELECT v FROM T_tinyint ORDER BY v
 ----
--1
+NULL
 -127
+-1
 0
 1
 127
-NULL
 
 query II rowsort
 SELECT v, convert(v, boolean) from T_tinyint
@@ -1649,17 +1649,17 @@ INSERT into T_smallint VALUES (1), (0), (-1), (-127), (127), (-32767), (32767)
 statement ok
 INSERT into T_smallint VALUES (null)
 
-query I rowsort
+query I nosort
 SELECT v FROM T_smallint ORDER BY v
 ----
--1
--127
+NULL
 -32767
+-127
+-1
 0
 1
 127
 32767
-NULL
 
 query II rowsort
 SELECT v, convert(v, boolean) from T_smallint
@@ -2591,19 +2591,19 @@ INSERT into T_int VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (-214
 statement ok
 INSERT into T_int VALUES (null)
 
-query I rowsort
+query I nosort
 SELECT v FROM T_int ORDER BY v
 ----
--1
--127
+NULL
 -2147483647
 -32767
+-127
+-1
 0
 1
 127
-2147483647
 32767
-NULL
+2147483647
 
 query II rowsort
 SELECT v, convert(v, boolean) from T_int
@@ -3683,19 +3683,19 @@ INSERT into T_bigint VALUES (1), (0), (-1), (-127), (127), (-32767), (32767), (-
 statement ok
 INSERT into T_bigint VALUES (null)
 
-query I rowsort
+query I nosort
 SELECT v FROM T_bigint ORDER BY v
 ----
--1
--127
+NULL
 -2147483647
 -32767
+-127
+-1
 0
 1
 127
-2147483647
 32767
-NULL
+2147483647
 
 query II rowsort
 SELECT v, convert(v, boolean) from T_bigint
@@ -4775,19 +4775,19 @@ INSERT into T_float VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), 
 statement ok
 INSERT into T_float VALUES (null)
 
-query R rowsort
+query R nosort
 SELECT v FROM T_float ORDER BY v
 ----
--1.000
--127.000
+NULL
 -2147483647.000
 -32767.000
+-127.000
+-1.000
 0.000
 1.000
 127.000
-2147483647.000
 32767.000
-NULL
+2147483647.000
 
 statement ok
 SELECT v, convert(v, boolean) from T_float
@@ -5825,21 +5825,21 @@ INSERT into T_real VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (
 statement ok
 INSERT into T_real VALUES (null)
 
-query R rowsort
+query R nosort
 SELECT v FROM T_real ORDER BY v
 ----
--1.000
--127.000
+NULL
 -2147483600.000
--3.142
 -32767.000
+-127.000
+-3.142
+-1.000
 0.000
 0.120
 1.000
 127.000
-2147483600.000
 32767.000
-NULL
+2147483600.000
 
 statement ok
 SELECT v, convert(v, boolean) from T_real
@@ -6977,21 +6977,21 @@ INSERT into T_double VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0),
 statement ok
 INSERT into T_double VALUES (null)
 
-query R rowsort
+query R nosort
 SELECT v FROM T_double ORDER BY v
 ----
--1.000
--127.000
+NULL
 -2147483647.000
--3.142
 -32767.000
+-127.000
+-3.142
+-1.000
 0.000
 0.120
 1.000
 127.000
-2147483647.000
 32767.000
-NULL
+2147483647.000
 
 statement ok
 SELECT v, convert(v, boolean) from T_double
@@ -8179,21 +8179,21 @@ INSERT into T_num VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (3
 statement ok
 INSERT into T_num VALUES (null)
 
-query R rowsort
+query R nosort
 SELECT v FROM T_num ORDER BY v
 ----
--1.000
--127.000
+NULL
 -2147483647.000
--3.000
 -32767.000
+-127.000
+-3.000
+-1.000
 0.000
 0.000
 1.000
 127.000
-2147483647.000
 32767.000
-NULL
+2147483647.000
 
 statement error
 SELECT v, convert(v, boolean) from T_num
@@ -9395,21 +9395,21 @@ INSERT into T_dec VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (3
 statement ok
 INSERT into T_dec VALUES (null)
 
-query R rowsort
+query R nosort
 SELECT v FROM T_dec ORDER BY v
 ----
--1.000
--127.000
+NULL
 -2147483647.000
--3.142
 -32767.000
+-127.000
+-3.142
+-1.000
 0.000
 0.120
 1.000
 127.000
-2147483647.000
 32767.000
-NULL
+2147483647.000
 
 statement error
 SELECT v, convert(v, boolean) from T_dec
@@ -10597,15 +10597,15 @@ INSERT into T_char VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&*('
 statement ok
 INSERT into T_char VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_char ORDER BY v
 ----
+NULL
 (empty)
 0
 0123456789
 1
 AaZz
-NULL
 ~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TI rowsort
@@ -11132,15 +11132,15 @@ INSERT into T_varchar VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&
 statement ok
 INSERT into T_varchar VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_varchar ORDER BY v
 ----
+NULL
 (empty)
 0
 0123456789
 1
 AaZz
-NULL
 ~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TI rowsort
@@ -11667,15 +11667,15 @@ INSERT into T_clob VALUES ('0'), ('1'), ('0123456789'), ('AaZz'), (r'~!@#$%^&*('
 statement ok
 INSERT into T_clob VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_clob ORDER BY v
 ----
+NULL
 (empty)
 0
 0123456789
 1
 AaZz
-NULL
 ~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TI rowsort
@@ -12202,14 +12202,14 @@ INSERT into T_date VALUES (date '1999-12-31'), (date '2016-01-01'), (date '2016-
 statement ok
 INSERT into T_date VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_date ORDER BY v
 ----
+NULL
 1999-12-31
 2016-01-01
 2016-02-29
 2016-12-31
-NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_date
@@ -12581,12 +12581,12 @@ INSERT into T_time VALUES (time '00:00:00'), (time '23:59:58')
 statement ok
 INSERT into T_time VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_time ORDER BY v
 ----
+NULL
 00:00:00
 23:59:58
-NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_time
@@ -12888,14 +12888,14 @@ INSERT into T_timestamp VALUES (timestamp '1999-12-31 23:59:59'), (timestamp '20
 statement ok
 INSERT into T_timestamp VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_timestamp ORDER BY v
 ----
+NULL
 1999-12-31 23:59:59
 2016-01-01 00:00:00
 2016-02-29 00:00:00
 2016-12-31 23:59:58
-NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_timestamp
@@ -13311,12 +13311,12 @@ INSERT into T_timetz VALUES (time with time zone '00:00:00'), (time with time zo
 statement ok
 INSERT into T_timetz VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_timetz ORDER BY v
 ----
-00:00:00+02:00
-23:59:58+02:00
 NULL
+23:59:58+02:00
+00:00:00+02:00
 
 statement error
 SELECT v, convert(v, boolean) from T_timetz
@@ -13618,14 +13618,14 @@ INSERT into T_timestamptz VALUES (timestamp with time zone '1999-12-31 23:59:59'
 statement ok
 INSERT into T_timestamptz VALUES (null)
 
-query T rowsort
+query T nosort
 SELECT v FROM T_timestamptz ORDER BY v
 ----
+NULL
 1999-12-31 23:59:59+02:00
 2016-01-01 00:00:00+02:00
 2016-02-29 00:00:00+02:00
 2016-12-31 23:59:58+02:00
-NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_timestamptz

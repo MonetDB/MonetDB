@@ -98,7 +98,7 @@ ALTER TABLE logs.test_message ADD TABLE logs.test_message_20190909
 statement ok
 ALTER TABLE logs.test_message ADD TABLE logs.test_message_20190910
 
-query TITT rowsort
+query TITT nosort
 SELECT timestamp AS timestamp, logentry_no AS logentry_no, logsource AS logsource, program AS program
 FROM logs.test_message
 WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'
@@ -106,7 +106,7 @@ ORDER BY timestamp
 LIMIT 2000
 ----
 
-query TIT rowsort
+query TIT nosort
 SELECT timestamp AS timestamp, logentry_no AS logentry_no, logsource AS logsource
 FROM logs.test_message
 WHERE processed_timestamp >= '2019-09-09 01:23:58.949' AND processed_timestamp <= '2019-09-09 17:38:58.949'

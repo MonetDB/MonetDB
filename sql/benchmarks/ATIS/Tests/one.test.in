@@ -179,7 +179,7 @@ ATLANTA
 GEORGIA
 MATL
 
-query TTT rowsort
+query TTT nosort
 select city.city_name,state.state_name,city.city_code from state,city where city.state_code=state.state_code order by city.city_name,state.state_name
 ----
 ATLANTA
@@ -216,47 +216,47 @@ WASHINGTON
 DISTRICT OF COLUMBIA
 WWAS
 
-query TT rowsort
+query TT nosort
 select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code order by month_name.month_number
 ----
-APRIL
-THURSDAY
-FEBRUARY
-TUESDAY
 JANUARY
 MONDAY
-JULY
-SUNDAY
-JUNE
-SATURDAY
+FEBRUARY
+TUESDAY
 MARCH
 WEDNESDAY
+APRIL
+THURSDAY
 MAY
 FRIDAY
+JUNE
+SATURDAY
+JULY
+SUNDAY
 
-query TT rowsort
+query TT nosort
 select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code and day_name.day_code >= 4 order by month_name.month_number
 ----
 APRIL
 THURSDAY
-JULY
-SUNDAY
-JUNE
-SATURDAY
 MAY
 FRIDAY
+JUNE
+SATURDAY
+JULY
+SUNDAY
 
-query IT rowsort
+query IT nosort
 select flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code order by flight.flight_code
 ----
 1158 values hashing to 07d61913957a010682838ee6b1143e28
 
-query T rowsort
+query T nosort
 select fare.fare_code from restrict_carrier,airline,fare where restrict_carrier.airline_code=airline.airline_code and fare.restrict_code=restrict_carrier.restrict_code order by fare.fare_code
 ----
 5692 values hashing to 15f76b6565aff84c2ad9c6243b0b7532
 
-query T rowsort
+query T nosort
 select distinct category from aircraft order by category
 ----
 (empty)
@@ -266,7 +266,7 @@ JET
 PROPELLER
 TURBOPROP
 
-query T rowsort
+query T nosort
 select distinct from_airport from flight order by from_airport
 ----
 ATL
@@ -279,7 +279,7 @@ PHL
 PIT
 SFO
 
-query T rowsort
+query T nosort
 select distinct aircraft_code from flight order by aircraft_code
 ----
 100
@@ -310,17 +310,17 @@ select distinct * from fare
 ----
 4272 values hashing to f56eaeef899632ebee916e30fa9350d4
 
-query I rowsort
+query I nosort
 select distinct flight_code from flight_fare order by flight_code
 ----
 579 values hashing to 40dff75cf7e5726c14d219495d13385b
 
-query IT rowsort
+query IT nosort
 select distinct flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code order by flight.flight_code
 ----
 1158 values hashing to 07d61913957a010682838ee6b1143e28
 
-query TT rowsort
+query TT nosort
 select distinct airline.airline_name,aircraft.aircraft_type from aircraft,airline,flight where flight.aircraft_code=aircraft.aircraft_code and flight.airline_code=airline.airline_code order by airline.airline_name, aircraft.aircraft_type
 ----
 AMERICAN AIRLINES
@@ -412,29 +412,29 @@ SHORTS 330 PASSENGER
 USAIR
 SHORTS 360
 
-query TRI rowsort
+query TRI nosort
 select day_name.day_name,day_name.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name,day_name.day_code order by day_code
 ----
-FRIDAY
-5.000
-64
 MONDAY
 1.000
-64
-SATURDAY
-6.000
-64
-SUNDAY
-7.000
-64
-THURSDAY
-4.000
 64
 TUESDAY
 2.000
 64
 WEDNESDAY
 3.000
+64
+THURSDAY
+4.000
+64
+FRIDAY
+5.000
+64
+SATURDAY
+6.000
+64
+SUNDAY
+7.000
 64
 
 query TI rowsort
@@ -467,29 +467,29 @@ SATURDAY
 MAY
 FRIDAY
 
-query TRI rowsort
+query TRI nosort
 select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code
 ----
-FRIDAY
-5.000
-64
 MONDAY
 1.000
-64
-SATURDAY
-6.000
-64
-SUNDAY
-7.000
-64
-THURSDAY
-4.000
 64
 TUESDAY
 2.000
 64
 WEDNESDAY
 3.000
+64
+THURSDAY
+4.000
+64
+FRIDAY
+5.000
+64
+SATURDAY
+6.000
+64
+SUNDAY
+7.000
 64
 
 query R rowsort
@@ -602,7 +602,7 @@ SSFO
 5
 OOAK
 
-query TI rowsort
+query TI nosort
 select category,count(*) as totalnr from aircraft where engines=2 group by category having count(*)>4 order by category
 ----
 JET
@@ -612,7 +612,7 @@ PROPELLER
 TURBOPROP
 32
 
-query TI rowsort
+query TI nosort
 select category,count(*) from aircraft where engines=2 group by category having count(*)>4 order by category
 ----
 JET
@@ -622,17 +622,17 @@ PROPELLER
 TURBOPROP
 32
 
-query RRT rowsort
+query RRT nosort
 select flight_number,range_miles,fare_class FROM aircraft,flight,flight_class WHERE flight.flight_code=flight_class.flight_code AND flight.aircraft_code=aircraft.aircraft_code AND range_miles<>0 AND (stops=1 OR stops=2) GROUP BY flight_number,range_miles,fare_class order by flight_number, range_miles, fare_class
 ----
-450 values hashing to 6848c17b8f3a43ba6a037911f2b41d00
+450 values hashing to 4890af11f8c2bee357bf53cbbd699d82
 
-query TTRR rowsort
+query TTRR nosort
 select from_airport,to_airport,range_miles,time_elapsed FROM aircraft,flight WHERE aircraft.aircraft_code=flight.aircraft_code AND to_airport <> from_airport AND range_miles<>0 AND time_elapsed<>0 GROUP BY from_airport,to_airport,range_miles,time_elapsed ORDER BY from_airport, to_airport,range_miles,time_elapsed
 ----
-1636 values hashing to e0903cd80e0542b23297eea56c6f8d9f
+1636 values hashing to 19cb87b0d78f04701de53e3043e8d298
 
-query TTTT rowsort
+query TTTT nosort
 SELECT airport.country_name,state.state_name,city.city_name,airport_service.direction FROM airport_service,state,airport,city WHERE airport_service.city_code=city.city_code AND airport_service.airport_code=airport.airport_code AND state.state_code=airport.state_code AND state.state_code=city.state_code AND airport.state_code=city.state_code AND airport.country_name=city.country_name AND airport.country_name=state.country_name AND city.time_zone_code=airport.time_zone_code GROUP BY airport.country_name,state.state_name,city.city_name,airport_service.direction ORDER BY state_name, city_name, direction
 ----
 USA
@@ -680,55 +680,55 @@ TEXAS
 FORT WORTH
 E
 
-query TTTT rowsort
+query TTTT nosort
  SELECT airport.country_name,state.state_name,city.city_name,airport_service.direction FROM airport_service,state,airport,city WHERE airport_service.city_code=city.city_code AND airport_service.airport_code=airport.airport_code AND state.state_code=airport.state_code AND state.state_code=city.state_code AND airport.state_code=city.state_code AND airport.country_name=city.country_name AND airport.country_name=state.country_name AND city.time_zone_code=airport.time_zone_code GROUP BY airport.country_name,state.state_name,city.city_name,airport_service.direction ORDER BY state_name DESC, city_name DESC, direction DESC
 ----
 USA
-CALIFORNIA
-OAKLAND
-SE
-USA
-CALIFORNIA
-OAKLAND
-SW
-USA
-CALIFORNIA
-SAN FRANCISCO
-SE
-USA
-COLORADO
-DENVER
-NE
-USA
-GEORGIA
-ATLANTA
-S
-USA
-MARYLAND
-BALTIMORE
-S
-USA
-MASSACHUSETTS
-BOSTON
-NE
-USA
-PENNSYLVANIA
-PHILADELPHIA
-SW
-USA
-PENNSYLVANIA
-PITTSBURGH
-W
+TEXAS
+FORT WORTH
+E
 USA
 TEXAS
 DALLAS
 NW
 USA
-TEXAS
-FORT WORTH
-E
+PENNSYLVANIA
+PITTSBURGH
+W
+USA
+PENNSYLVANIA
+PHILADELPHIA
+SW
+USA
+MASSACHUSETTS
+BOSTON
+NE
+USA
+MARYLAND
+BALTIMORE
+S
+USA
+GEORGIA
+ATLANTA
+S
+USA
+COLORADO
+DENVER
+NE
+USA
+CALIFORNIA
+SAN FRANCISCO
+SE
+USA
+CALIFORNIA
+OAKLAND
+SW
+USA
+CALIFORNIA
+OAKLAND
+SE
 
-query TTTTRRT rowsort
+query TTTTRRT nosort
  SELECT from_airport,to_airport,fare.fare_class,night,one_way_cost,rnd_trip_cost,class_days FROM compound_class,fare WHERE compound_class.fare_class=fare.fare_class AND one_way_cost <= 825 AND one_way_cost >= 280 AND from_airport='SFO' AND to_airport='DFW' GROUP BY from_airport,to_airport,fare.fare_class,night,one_way_cost,rnd_trip_cost,class_days ORDER BY one_way_cost,fare_class
 ----
 SFO
@@ -740,38 +740,24 @@ NO
 1234567
 SFO
 DFW
-F
-NO
-709.000
-1418.000
-1234567
-SFO
-DFW
-F
-NO
-717.000
-1434.000
-1234567
-SFO
-DFW
-FN
-YES
-496.000
-992.000
-1234567
-SFO
-DFW
-FN
-YES
-504.000
-1008.000
-1234567
-SFO
-DFW
 Y
 NO
 328.000
 0.000
+1234567
+SFO
+DFW
+YN
+YES
+381.000
+762.000
+1234567
+SFO
+DFW
+YN
+YES
+386.000
+772.000
 1234567
 SFO
 DFW
@@ -789,21 +775,35 @@ NO
 1234567
 SFO
 DFW
-YN
+FN
 YES
-381.000
-762.000
+496.000
+992.000
 1234567
 SFO
 DFW
-YN
+FN
 YES
-386.000
-772.000
+504.000
+1008.000
+1234567
+SFO
+DFW
+F
+NO
+709.000
+1418.000
+1234567
+SFO
+DFW
+F
+NO
+717.000
+1434.000
 1234567
 
-query RTRTT rowsort
+query RTRTT nosort
  select engines,category,cruising_speed,from_airport,to_airport FROM aircraft,flight WHERE category='JET' AND ENGINES >= 1 AND aircraft.aircraft_code=flight.aircraft_code AND to_airport <> from_airport AND stops>0 GROUP BY engines,category,cruising_speed,from_airport,to_airport ORDER BY engines, from_airport, to_airport, cruising_speed  DESC
 ----
-145 values hashing to e6173e55777a5ca0b4f24a2f4f696c9f
+145 values hashing to c967a4eeced0a154c7672e73969377fa
 

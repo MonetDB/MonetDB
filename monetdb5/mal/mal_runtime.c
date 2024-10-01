@@ -407,7 +407,6 @@ getBatSpace(BAT *b)
 		MT_rwlock_rdlock(&b->thashlock);
 		space += hashinfo(b->thash, b->batCacheid);
 		MT_rwlock_rdunlock(&b->thashlock);
-		space += IMPSimprintsize(b);
 	}
 	return space;
 }

@@ -17,17 +17,21 @@ insert into employees values
    ('sls', 'Thomas',72),
    ('mgmt', 'Johnson',100)
 
-query TTRR rowsort
+query TTRR nosort
 SELECT dep, name, salary, CUME_DIST() OVER (partition by dep ORDER BY salary) cume_dist_val FROM employees
 ----
-dev
-Brown
-62.000
-1.000
 dev
 Jones
 55.000
 0.500
+dev
+Brown
+62.000
+1.000
+mgmt
+Smith
+81.000
+0.333
 mgmt
 Davies
 84.000
@@ -36,30 +40,26 @@ mgmt
 Johnson
 100.000
 1.000
-mgmt
-Smith
-81.000
-0.333
-sls
-Evans
-87.000
-1.000
-sls
-Taylor
-62.000
-0.400
-sls
-Thomas
-72.000
-0.800
 sls
 Williams
 55.000
 0.200
 sls
+Taylor
+62.000
+0.400
+sls
 Wilson
 72.000
 0.800
+sls
+Thomas
+72.000
+0.800
+sls
+Evans
+87.000
+1.000
 
 query TTRR rowsort
 SELECT dep, name, salary, CUME_DIST() OVER (PARTITION BY dep) cume_dist_val FROM employees

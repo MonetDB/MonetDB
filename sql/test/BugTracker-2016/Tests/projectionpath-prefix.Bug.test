@@ -8,7 +8,7 @@ statement ok
 ALTER TABLE foo ADD CONSTRAINT "fname" FOREIGN KEY ("barname")
 REFERENCES bar ("name") ON DELETE CASCADE
 
-query TTTTITITT rowsort
+query TTTTITITT nosort
 SELECT ps.name, pkt.name, pkkc.name, fkkc.name, fkkc.nr, fkk.name,
 fkk."action", fs.name, fkt.name FROM sys._tables fkt, sys.objects fkkc,
 sys.keys fkk, sys._tables pkt, sys.objects pkkc, sys.keys pkk,

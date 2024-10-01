@@ -16,7 +16,7 @@ b
 c
 1
 
-query ITTTI rowsort
+query ITTTI nosort
 WITH SAWITH0 AS ( select 'a' as c1,
                           'b' as c2,
                           'c' as c3,
@@ -35,7 +35,7 @@ b
 c
 1
 
-query ITTTI rowsort
+query ITTTI nosort
 WITH SAWITH0 AS ( select 'a' as c1,
                           'b' as c2,
                           'c' as c3,
@@ -111,7 +111,7 @@ from  SAWITH0 D1
 NULL
 2
 
-query TI rowsort
+query TI nosort
 WITH SAWITH0 AS ( select 2 as c2 ),
      SAWITH1 AS (select  5 as c2, null as c4
                UNION ALL

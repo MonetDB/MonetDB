@@ -1,4 +1,4 @@
-query TIII rowsort
+query TIII nosort
 select name, authorization, owner, "system" from sys.schemas where name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
 json

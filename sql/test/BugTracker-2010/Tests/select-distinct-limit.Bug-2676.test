@@ -36,7 +36,7 @@ select distinct id from t2676
 3
 4
 
-query I rowsort
+query I nosort
 select distinct id from t2676 order by id asc limit 2
 ----
 1

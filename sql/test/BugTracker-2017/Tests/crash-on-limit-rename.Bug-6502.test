@@ -40,7 +40,7 @@ CREATE TABLE "sys"."lineitem_denormalized_first1k_sanitised" (
 	CONSTRAINT "lineitem_denormalized_first1k_sanitised_PK" PRIMARY KEY ("_visokio_row_id_")
 )
 
-query TRRRTTTI rowsort
+query TRRRTTTI nosort
 SELECT "t4jdu"."c4jdd_store_phone_number_8958366756",
      "t4jdu"."c4jde_line_cost__singleton__3098294",
      "t4jdu"."c4jdf_yyyymmdd__mean__3928221090907",

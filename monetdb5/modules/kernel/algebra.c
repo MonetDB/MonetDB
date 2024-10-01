@@ -981,7 +981,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPreclaim(s);
 	BBPreclaim(g);
 	if (rc != GDK_SUCCEED)
-		throw(MAL, "algebra.firstn", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.firstn", GDK_EXCEPTION);
 	*ret1 = bn->batCacheid;
 	BBPkeepref(bn);
 	if (ret2) {

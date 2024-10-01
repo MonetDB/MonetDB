@@ -26,7 +26,7 @@ CREATE TABLE tab2 (
     CONSTRAINT myconstraint PRIMARY KEY (col4)
 )
 
-query ITTITIIII rowsort
+query ITTITIIII nosort
 SELECT
 tab2.col10,
 tab2.col7,

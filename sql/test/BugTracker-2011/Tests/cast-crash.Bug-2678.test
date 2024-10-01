@@ -8,7 +8,7 @@ CREATE TABLE "sensor_readings_2678" (
         "value"     VARCHAR(30)
 )
 
-query TR rowsort
+query TR nosort
 SELECT
 	CAST(emit_time AS date) AS "date",
 	CAST(avg(CAST(value AS numeric(5,2))) AS numeric(5,2)) AS avgtemperature

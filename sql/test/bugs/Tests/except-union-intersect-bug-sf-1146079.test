@@ -190,24 +190,24 @@ ROLLBACK
 statement ok
 START TRANSACTION
 
-query I rowsort
+query I nosort
 SELECT class FROM a EXCEPT SELECT 16 ORDER BY class
 ----
+2
 11
 17
 18
-2
 
-query I rowsort
+query I nosort
 SELECT class FROM a UNION SELECT 16 ORDER BY class
 ----
+2
 11
 16
 17
 18
-2
 
-query I rowsort
+query I nosort
 SELECT class FROM a INTERSECT SELECT 16 ORDER BY class
 ----
 16
@@ -218,95 +218,95 @@ ROLLBACK
 statement ok
 START TRANSACTION
 
-query II rowsort
+query II nosort
 SELECT * FROM a EXCEPT SELECT * FROM b ORDER BY class, property
 ----
-12
-16
 13
 11
+12
+16
 15
 16
-23
-18
-24
-18
 25
 16
 26
 16
 29
 16
+23
+18
+24
+18
 
-query II rowsort
+query II nosort
 SELECT * FROM a UNION SELECT * FROM b ORDER BY class, property
 ----
-1
-17
-11
-15
-12
-10
-12
-16
-13
-11
-14
-15
-15
-16
-19
-17
 20
 2
-21
-17
-22
-17
-23
-17
-23
-18
-24
+12
+10
+13
+11
+11
+15
+14
 15
 24
-18
+15
 25
 15
+28
+15
+4
+16
+5
+16
+6
+16
+12
+16
+15
+16
 25
 16
 26
 16
-28
-15
 29
 16
-4
-16
-5
-16
-6
-16
-
-query II rowsort
-SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property
-----
 1
 17
 19
 17
-20
-2
 21
 17
 22
 17
+23
+17
+23
+18
+24
+18
+
+query II nosort
+SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property
+----
+20
+2
 4
 16
 5
 16
 6
 16
+1
+17
+19
+17
+21
+17
+22
+17
 
 statement ok
 ROLLBACK
@@ -314,9 +314,10 @@ ROLLBACK
 statement ok
 START TRANSACTION
 
-query I rowsort
+query I nosort
 SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class
 ----
+2
 11
 16
 16
@@ -331,11 +332,11 @@ SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class
 17
 18
 18
-2
 
-query I rowsort
+query I nosort
 SELECT class FROM a UNION ALL SELECT 16 ORDER BY class
 ----
+2
 11
 16
 16
@@ -352,9 +353,8 @@ SELECT class FROM a UNION ALL SELECT 16 ORDER BY class
 17
 18
 18
-2
 
-query I rowsort
+query I nosort
 SELECT class FROM a INTERSECT ALL SELECT 16 ORDER BY class
 ----
 16
@@ -365,27 +365,27 @@ ROLLBACK
 statement ok
 START TRANSACTION
 
-query II rowsort
+query II nosort
 SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property
 ----
-12
-16
 13
 11
+12
+16
 15
 16
-23
-18
-24
-18
 25
 16
 26
 16
 29
 16
+23
+18
+24
+18
 
-query I rowsort
+query I nosort
 SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class
 ----
 11
@@ -397,103 +397,103 @@ SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class
 18
 18
 
-query II rowsort
+query II nosort
 SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property
 ----
-1
-17
-1
-17
-11
-15
+20
+2
+20
+2
 12
 10
-12
-16
 13
 11
+11
+15
 14
 15
-15
-16
-19
-17
-19
-17
-20
-2
-20
-2
-21
-17
-21
-17
-22
-17
-22
-17
-23
-17
-23
-18
 24
 15
-24
-18
 25
 15
+28
+15
+4
+16
+4
+16
+5
+16
+5
+16
+6
+16
+6
+16
+12
+16
+15
+16
 25
 16
 26
 16
-28
-15
 29
 16
-4
-16
-4
-16
-5
-16
-5
-16
-6
-16
-6
-16
-
-query II rowsort
-SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property
-----
+1
+17
 1
 17
 19
 17
-20
-2
+19
+17
+21
+17
 21
 17
 22
 17
+22
+17
+23
+17
+23
+18
+24
+18
+
+query II nosort
+SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property
+----
+20
+2
 4
 16
 5
 16
 6
 16
+1
+17
+19
+17
+21
+17
+22
+17
 
-query I rowsort
+query I nosort
 SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class
 ----
-16
-16
-16
-17
-17
-17
-17
 2
+16
+16
+16
+17
+17
+17
+17
 
 statement ok
 ROLLBACK

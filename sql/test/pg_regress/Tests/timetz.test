@@ -57,7 +57,7 @@ SELECT f1 AS "Ten" FROM TIMETZ_TBL WHERE f1 >= '00:00-07'
 statement ok
 SET TIME ZONE INTERVAL '+04:30' HOUR TO MINUTE
 
-query T rowsort
+query T nosort
 SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1
 ----
 NULL
@@ -65,7 +65,7 @@ NULL
 statement ok
 SET TIME ZONE INTERVAL '+14:00' HOUR TO MINUTE
 
-query T rowsort
+query T nosort
 SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1
 ----
 NULL
@@ -73,7 +73,7 @@ NULL
 statement ok
 SET TIME ZONE INTERVAL '-07:00' HOUR TO MINUTE
 
-query T rowsort
+query T nosort
 SELECT f1 AS "Time TZ" FROM TIMETZ_TBL ORDER BY 1
 ----
 NULL

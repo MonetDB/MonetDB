@@ -7,7 +7,7 @@ INSERT INTO "testing" VALUES('192.168.0.1')
 statement ok
 INSERT INTO "testing" VALUES('255.255.255.0')
 
-query T rowsort
+query T nosort
 SELECT * FROM "testing" ORDER BY addr
 ----
 192.168.0.1

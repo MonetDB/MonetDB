@@ -1,4 +1,3 @@
-
 statement error
 select nextafter()
 ----
@@ -7,52 +6,52 @@ statement error
 select nextafter('bla','bla')
 ----
 
-query I
+query R nosort
 select nextafter(NULL,1)
 ----
 NULL
 
-query I
+query R nosort
 select nextafter(1,NULL)
 ----
 NULL
 
-query I
+query R nosort
 select nextafter(99, 1)
 ----
-98
+99.000
 
-query I
+query I nosort
 select nextafter(cast(99.0 as double), cast(1.0 as double)) < 99
 ----
 1
 
-query I
+query I nosort
 select nextafter(cast(99.0 as double), cast(99.0 as double)) = 99
 ----
 1
 
-query I
+query I nosort
 select nextafter(cast(99.0 as double), cast(100.0 as double)) > 99
 ----
 1
 
-query I
+query I nosort
 select nextafter(nextafter(cast(99.0 as double), cast(100.0 as double)),cast(0 as double)) = 99
 ----
 1
 
-query I
+query I nosort
 select nextafter(cast(99.0 as float), cast(1.0 as float)) < 99
 ----
 1
 
-query I
+query I nosort
 select nextafter(cast(99.0 as float), cast(100.0 as float)) > 99
 ----
 1
 
-query I
+query I nosort
 select nextafter(nextafter(cast(99.0 as float), cast(100.0 as float)),cast(0 as float))  = 99
 ----
 1
@@ -63,7 +62,7 @@ create table test (a FLOAT)
 statement ok
 INSERT INTO test VALUES (10),(20),(30),(40)
 
-query T
+query T nosort
 select cast(nextafter(a, cast(0 as float)) as varchar(20)) from test
 ----
 9.999999999999998
@@ -82,7 +81,7 @@ create table test_twoc (a FLOAT, b FLOAT)
 statement ok
 INSERT INTO test_twoc VALUES (10,1),(20,21),(30,1),(40,41)
 
-query T
+query T nosort
 select cast(nextafter(a, b) as varchar(20)) from test_twoc
 ----
 9.999999999999998

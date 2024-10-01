@@ -13,7 +13,7 @@ insert into x values (2,2,1)
 statement ok
 insert into x values (2,2,2)
 
-query IR rowsort
+query IR nosort
 select id,corr(i,j) from x group by id order by id
 ----
 1

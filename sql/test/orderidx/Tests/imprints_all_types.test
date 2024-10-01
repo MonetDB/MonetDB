@@ -360,7 +360,7 @@ create imprints index "impidx_url55" on all_types ("url55")
 statement error
 create imprints index "impidx_uuid" on all_types ("uuid")
 
-query IT rowsort
+query IT nosort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
 ----
 4
@@ -434,7 +434,7 @@ impidx_timezone
 4
 impidx_tinyint
 
-query I rowsort
+query I nosort
 select "boolean" from all_types order by "boolean" ASC
 ----
 0
@@ -442,7 +442,7 @@ select "boolean" from all_types order by "boolean" ASC
 1
 1
 
-query I rowsort
+query I nosort
 select "tinyint" from all_types order by "tinyint" ASC
 ----
 -10
@@ -450,7 +450,7 @@ select "tinyint" from all_types order by "tinyint" ASC
 10
 10
 
-query I rowsort
+query I nosort
 select "smallint" from all_types order by "smallint" ASC
 ----
 -10000
@@ -458,7 +458,7 @@ select "smallint" from all_types order by "smallint" ASC
 10000
 10000
 
-query I rowsort
+query I nosort
 select "int" from all_types order by "int" ASC
 ----
 -1000000
@@ -466,7 +466,7 @@ select "int" from all_types order by "int" ASC
 1000000
 1000000
 
-query I rowsort
+query I nosort
 select "bigint" from all_types order by "bigint" ASC
 ----
 -10000000000
@@ -474,7 +474,7 @@ select "bigint" from all_types order by "bigint" ASC
 10000000000
 10000000000
 
-query R rowsort
+query R nosort
 select "double" from all_types order by "double" ASC
 ----
 -1000000000000000019884624838656.000
@@ -482,7 +482,7 @@ select "double" from all_types order by "double" ASC
 1000000000000000019884624838656.000
 1000000000000000019884624838656.000
 
-query R rowsort
+query R nosort
 select "real" from all_types order by "real" ASC
 ----
 -100000000000000000000.000
@@ -490,7 +490,7 @@ select "real" from all_types order by "real" ASC
 100000000000000000000.000
 100000000000000000000.000
 
-query R rowsort
+query R nosort
 select "decimal" from all_types order by "decimal" ASC
 ----
 -1.000
@@ -498,7 +498,7 @@ select "decimal" from all_types order by "decimal" ASC
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select "decimal9" from all_types order by "decimal9" ASC
 ----
 -123456789.000
@@ -506,7 +506,7 @@ select "decimal9" from all_types order by "decimal9" ASC
 123456789.000
 123456789.000
 
-query R rowsort
+query R nosort
 select "decimal83" from all_types order by "decimal83" ASC
 ----
 -12345.678
@@ -514,7 +514,7 @@ select "decimal83" from all_types order by "decimal83" ASC
 12345.678
 12345.678
 
-query R rowsort
+query R nosort
 select "float" from all_types order by "float" ASC
 ----
 -3.142
@@ -522,7 +522,7 @@ select "float" from all_types order by "float" ASC
 3.142
 3.142
 
-query R rowsort
+query R nosort
 select "float9" from all_types order by "float9" ASC
 ----
 -3.142
@@ -530,7 +530,7 @@ select "float9" from all_types order by "float9" ASC
 3.142
 3.142
 
-query R rowsort
+query R nosort
 select "float83" from all_types order by "float83" ASC
 ----
 -3.142
@@ -538,7 +538,7 @@ select "float83" from all_types order by "float83" ASC
 3.142
 3.142
 
-query T rowsort
+query T nosort
 select "date" from all_types order by "date" ASC
 ----
 2005-04-15
@@ -546,7 +546,7 @@ select "date" from all_types order by "date" ASC
 2009-04-15
 2009-04-15
 
-query T rowsort
+query T nosort
 select "iY" from all_types order by "iY" ASC
 ----
 -24
@@ -554,7 +554,7 @@ select "iY" from all_types order by "iY" ASC
 24
 24
 
-query T rowsort
+query T nosort
 select "iYM" from all_types order by "iYM" ASC
 ----
 -18
@@ -562,7 +562,7 @@ select "iYM" from all_types order by "iYM" ASC
 18
 18
 
-query T rowsort
+query T nosort
 select "iM" from all_types order by "iM" ASC
 ----
 -3
@@ -570,7 +570,7 @@ select "iM" from all_types order by "iM" ASC
 3
 3
 
-query T rowsort
+query T nosort
 select "id" from all_types order by "id" ASC
 ----
 -20
@@ -578,7 +578,7 @@ select "id" from all_types order by "id" ASC
 20
 20
 
-query T rowsort
+query T nosort
 select "idh" from all_types order by "idh" ASC
 ----
 -2 days, 18:00:00
@@ -586,7 +586,7 @@ select "idh" from all_types order by "idh" ASC
 1 day, 6:00:00
 1 day, 6:00:00
 
-query T rowsort
+query T nosort
 select "idm" from all_types order by "idm" ASC
 ----
 -2 days, 14:40:00
@@ -594,7 +594,7 @@ select "idm" from all_types order by "idm" ASC
 1 day, 9:20:00
 1 day, 9:20:00
 
-query T rowsort
+query T nosort
 select "ids" from all_types order by "ids" ASC
 ----
 -2 days, 20:13:20
@@ -602,7 +602,7 @@ select "ids" from all_types order by "ids" ASC
 1 day, 3:46:40
 1 day, 3:46:40
 
-query T rowsort
+query T nosort
 select "ih" from all_types order by "ih" ASC
 ----
 -1 day, 14:00:00
@@ -610,7 +610,7 @@ select "ih" from all_types order by "ih" ASC
 10:00:00
 10:00:00
 
-query T rowsort
+query T nosort
 select "ihm" from all_types order by "ihm" ASC
 ----
 -1 day, 22:20:00
@@ -618,7 +618,7 @@ select "ihm" from all_types order by "ihm" ASC
 1:40:00
 1:40:00
 
-query T rowsort
+query T nosort
 select "ihs" from all_types order by "ihs" ASC
 ----
 -1 day, 23:26:40
@@ -626,7 +626,7 @@ select "ihs" from all_types order by "ihs" ASC
 0:33:20
 0:33:20
 
-query T rowsort
+query T nosort
 select "im" from all_types order by "im" ASC
 ----
 -1 day, 23:50:00
@@ -634,7 +634,7 @@ select "im" from all_types order by "im" ASC
 0:10:00
 0:10:00
 
-query T rowsort
+query T nosort
 select "ims" from all_types order by "ims" ASC
 ----
 -1 day, 23:58:20
@@ -642,7 +642,7 @@ select "ims" from all_types order by "ims" ASC
 0:01:40
 0:01:40
 
-query T rowsort
+query T nosort
 select "is" from all_types order by "is" ASC
 ----
 -1 day, 23:59:50
@@ -650,7 +650,7 @@ select "is" from all_types order by "is" ASC
 0:00:10
 0:00:10
 
-query T rowsort
+query T nosort
 select "timestamp" from all_types order by "timestamp" ASC
 ----
 1988-07-15 07:30:00
@@ -658,7 +658,7 @@ select "timestamp" from all_types order by "timestamp" ASC
 1995-07-15 07:30:00
 1995-07-15 07:30:00
 
-query T rowsort
+query T nosort
 select "timestamp5" from all_types order by "timestamp5" ASC
 ----
 1988-07-15 07:30:00
@@ -666,7 +666,7 @@ select "timestamp5" from all_types order by "timestamp5" ASC
 1995-07-15 07:30:00
 1995-07-15 07:30:00
 
-query T rowsort
+query T nosort
 select "timestampzone" from all_types order by "timestampzone" ASC
 ----
 1988-07-15 07:30:00+01:00
@@ -674,7 +674,7 @@ select "timestampzone" from all_types order by "timestampzone" ASC
 1995-07-15 07:30:00+01:00
 1995-07-15 07:30:00+01:00
 
-query T rowsort
+query T nosort
 select "timestamp5zone" from all_types order by "timestamp5zone" ASC
 ----
 1988-07-15 07:30:00+01:00
@@ -682,7 +682,7 @@ select "timestamp5zone" from all_types order by "timestamp5zone" ASC
 1995-07-15 07:30:00+01:00
 1995-07-15 07:30:00+01:00
 
-query T rowsort
+query T nosort
 select "time" from all_types order by "time" ASC
 ----
 06:30:00
@@ -690,7 +690,7 @@ select "time" from all_types order by "time" ASC
 07:30:00
 07:30:00
 
-query T rowsort
+query T nosort
 select "time5" from all_types order by "time5" ASC
 ----
 06:30:00
@@ -698,7 +698,7 @@ select "time5" from all_types order by "time5" ASC
 07:30:00
 07:30:00
 
-query T rowsort
+query T nosort
 select "timezone" from all_types order by "timezone" ASC
 ----
 06:30:00+01:00
@@ -706,7 +706,7 @@ select "timezone" from all_types order by "timezone" ASC
 07:30:00+01:00
 07:30:00+01:00
 
-query T rowsort
+query T nosort
 select "time5zone" from all_types order by "time5zone" ASC
 ----
 06:30:00+01:00
@@ -714,7 +714,7 @@ select "time5zone" from all_types order by "time5zone" ASC
 07:30:00+01:00
 07:30:00+01:00
 
-query T rowsort
+query T nosort
 select "blob" from all_types order by "blob" ASC
 ----
 01234567
@@ -722,7 +722,7 @@ select "blob" from all_types order by "blob" ASC
 123456
 123456
 
-query T rowsort
+query T nosort
 select "blob100" from all_types order by "blob100" ASC
 ----
 01234567
@@ -730,7 +730,7 @@ select "blob100" from all_types order by "blob100" ASC
 123456
 123456
 
-query T rowsort
+query T nosort
 select "clob" from all_types order by "clob" ASC
 ----
 0123456
@@ -738,7 +738,7 @@ select "clob" from all_types order by "clob" ASC
 123456
 123456
 
-query T rowsort
+query T nosort
 select "clob100" from all_types order by "clob100" ASC
 ----
 0123456
@@ -746,7 +746,7 @@ select "clob100" from all_types order by "clob100" ASC
 123456
 123456
 
-query T rowsort
+query T nosort
 select "character" from all_types order by "character" ASC
 ----
 A
@@ -754,7 +754,7 @@ A
 x
 x
 
-query T rowsort
+query T nosort
 select "varchar100" from all_types order by "varchar100" ASC
 ----
 Avarchar
@@ -762,7 +762,7 @@ Avarchar
 varchar
 varchar
 
-query T rowsort
+query T nosort
 select "character10" from all_types order by "character10" ASC
 ----
 0123456789
@@ -770,7 +770,7 @@ select "character10" from all_types order by "character10" ASC
 A012345678
 A012345678
 
-query T rowsort
+query T nosort
 select "inet" from all_types order by "inet" ASC
 ----
 120.0.0.0
@@ -778,7 +778,7 @@ select "inet" from all_types order by "inet" ASC
 127.0.0.0
 127.0.0.0
 
-query T rowsort
+query T nosort
 select "inet9" from all_types order by "inet9" ASC
 ----
 120.120.120.129
@@ -786,7 +786,7 @@ select "inet9" from all_types order by "inet9" ASC
 127.127.127.255
 127.127.127.255
 
-query T rowsort
+query T nosort
 select "json" from all_types order by "json" ASC
 ----
 {"A":-123}
@@ -794,7 +794,7 @@ select "json" from all_types order by "json" ASC
 {"a":123}
 {"a":123}
 
-query T rowsort
+query T nosort
 select "json10" from all_types order by "json10" ASC
 ----
 {"B":-456}
@@ -802,7 +802,7 @@ select "json10" from all_types order by "json10" ASC
 {"b":456}
 {"b":456}
 
-query T rowsort
+query T nosort
 select "url" from all_types order by "url" ASC
 ----
 https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
@@ -810,7 +810,7 @@ https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 
-query T rowsort
+query T nosort
 select "url55" from all_types order by "url55" ASC
 ----
 https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
@@ -818,7 +818,7 @@ https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 
-query T rowsort
+query T nosort
 select "uuid" from all_types order by "uuid" ASC
 ----
 76236890-f4e2-4d4f-a02b-ec7a02c3cb50
@@ -826,407 +826,407 @@ select "uuid" from all_types order by "uuid" ASC
 ae106ad4-81fd-4f1a-85e8-5efface60da4
 ae106ad4-81fd-4f1a-85e8-5efface60da4
 
-query I rowsort
+query I nosort
 select "boolean" from all_types order by "boolean" DESC
 ----
-0
-0
 1
 1
+0
+0
 
-query I rowsort
+query I nosort
 select "tinyint" from all_types order by "tinyint" DESC
 ----
--10
--10
 10
 10
+-10
+-10
 
-query I rowsort
+query I nosort
 select "smallint" from all_types order by "smallint" DESC
 ----
--10000
--10000
 10000
 10000
+-10000
+-10000
 
-query I rowsort
+query I nosort
 select "int" from all_types order by "int" DESC
 ----
--1000000
--1000000
 1000000
 1000000
+-1000000
+-1000000
 
-query I rowsort
+query I nosort
 select "bigint" from all_types order by "bigint" DESC
 ----
--10000000000
--10000000000
 10000000000
 10000000000
+-10000000000
+-10000000000
 
-query R rowsort
+query R nosort
 select "double" from all_types order by "double" DESC
 ----
--1000000000000000019884624838656.000
--1000000000000000019884624838656.000
 1000000000000000019884624838656.000
 1000000000000000019884624838656.000
+-1000000000000000019884624838656.000
+-1000000000000000019884624838656.000
 
-query R rowsort
+query R nosort
 select "real" from all_types order by "real" DESC
 ----
--100000000000000000000.000
--100000000000000000000.000
 100000000000000000000.000
 100000000000000000000.000
+-100000000000000000000.000
+-100000000000000000000.000
 
-query R rowsort
+query R nosort
 select "decimal" from all_types order by "decimal" DESC
 ----
--1.000
--1.000
 1.000
 1.000
+-1.000
+-1.000
 
-query R rowsort
+query R nosort
 select "decimal9" from all_types order by "decimal9" DESC
 ----
--123456789.000
--123456789.000
 123456789.000
 123456789.000
+-123456789.000
+-123456789.000
 
-query R rowsort
+query R nosort
 select "decimal83" from all_types order by "decimal83" DESC
 ----
--12345.678
--12345.678
 12345.678
 12345.678
+-12345.678
+-12345.678
 
-query R rowsort
+query R nosort
 select "float" from all_types order by "float" DESC
 ----
--3.142
--3.142
 3.142
 3.142
+-3.142
+-3.142
 
-query R rowsort
+query R nosort
 select "float9" from all_types order by "float9" DESC
 ----
--3.142
--3.142
 3.142
 3.142
+-3.142
+-3.142
 
-query R rowsort
+query R nosort
 select "float83" from all_types order by "float83" DESC
 ----
--3.142
--3.142
 3.142
 3.142
+-3.142
+-3.142
 
-query T rowsort
+query T nosort
 select "date" from all_types order by "date" DESC
 ----
-2005-04-15
-2005-04-15
 2009-04-15
 2009-04-15
+2005-04-15
+2005-04-15
 
-query T rowsort
+query T nosort
 select "iY" from all_types order by "iY" DESC
 ----
--24
--24
 24
 24
+-24
+-24
 
-query T rowsort
+query T nosort
 select "iYM" from all_types order by "iYM" DESC
 ----
--18
--18
 18
 18
+-18
+-18
 
-query T rowsort
+query T nosort
 select "iM" from all_types order by "iM" DESC
 ----
--3
--3
 3
 3
+-3
+-3
 
-query T rowsort
+query T nosort
 select "id" from all_types order by "id" DESC
 ----
--20
--20
 20
 20
+-20
+-20
 
-query T rowsort
+query T nosort
 select "idh" from all_types order by "idh" DESC
 ----
--2 days, 18:00:00
--2 days, 18:00:00
 1 day, 6:00:00
 1 day, 6:00:00
+-2 days, 18:00:00
+-2 days, 18:00:00
 
-query T rowsort
+query T nosort
 select "idm" from all_types order by "idm" DESC
 ----
--2 days, 14:40:00
--2 days, 14:40:00
 1 day, 9:20:00
 1 day, 9:20:00
+-2 days, 14:40:00
+-2 days, 14:40:00
 
-query T rowsort
+query T nosort
 select "ids" from all_types order by "ids" DESC
 ----
--2 days, 20:13:20
--2 days, 20:13:20
 1 day, 3:46:40
 1 day, 3:46:40
+-2 days, 20:13:20
+-2 days, 20:13:20
 
-query T rowsort
+query T nosort
 select "ih" from all_types order by "ih" DESC
 ----
--1 day, 14:00:00
--1 day, 14:00:00
 10:00:00
 10:00:00
+-1 day, 14:00:00
+-1 day, 14:00:00
 
-query T rowsort
+query T nosort
 select "ihm" from all_types order by "ihm" DESC
 ----
--1 day, 22:20:00
--1 day, 22:20:00
 1:40:00
 1:40:00
+-1 day, 22:20:00
+-1 day, 22:20:00
 
-query T rowsort
+query T nosort
 select "ihs" from all_types order by "ihs" DESC
 ----
--1 day, 23:26:40
--1 day, 23:26:40
 0:33:20
 0:33:20
+-1 day, 23:26:40
+-1 day, 23:26:40
 
-query T rowsort
+query T nosort
 select "im" from all_types order by "im" DESC
 ----
--1 day, 23:50:00
--1 day, 23:50:00
 0:10:00
 0:10:00
+-1 day, 23:50:00
+-1 day, 23:50:00
 
-query T rowsort
+query T nosort
 select "ims" from all_types order by "ims" DESC
 ----
--1 day, 23:58:20
--1 day, 23:58:20
 0:01:40
 0:01:40
+-1 day, 23:58:20
+-1 day, 23:58:20
 
-query T rowsort
+query T nosort
 select "is" from all_types order by "is" DESC
 ----
--1 day, 23:59:50
--1 day, 23:59:50
 0:00:10
 0:00:10
+-1 day, 23:59:50
+-1 day, 23:59:50
 
-query T rowsort
+query T nosort
 select "timestamp" from all_types order by "timestamp" DESC
 ----
-1988-07-15 07:30:00
-1988-07-15 07:30:00
 1995-07-15 07:30:00
 1995-07-15 07:30:00
+1988-07-15 07:30:00
+1988-07-15 07:30:00
 
-query T rowsort
+query T nosort
 select "timestamp5" from all_types order by "timestamp5" DESC
 ----
-1988-07-15 07:30:00
-1988-07-15 07:30:00
 1995-07-15 07:30:00
 1995-07-15 07:30:00
+1988-07-15 07:30:00
+1988-07-15 07:30:00
 
-query T rowsort
+query T nosort
 select "timestampzone" from all_types order by "timestampzone" DESC
 ----
-1988-07-15 07:30:00+01:00
-1988-07-15 07:30:00+01:00
 1995-07-15 07:30:00+01:00
 1995-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
 
-query T rowsort
+query T nosort
 select "timestamp5zone" from all_types order by "timestamp5zone" DESC
 ----
-1988-07-15 07:30:00+01:00
-1988-07-15 07:30:00+01:00
 1995-07-15 07:30:00+01:00
 1995-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
+1988-07-15 07:30:00+01:00
 
-query T rowsort
+query T nosort
 select "time" from all_types order by "time" DESC
 ----
-06:30:00
-06:30:00
 07:30:00
 07:30:00
+06:30:00
+06:30:00
 
-query T rowsort
+query T nosort
 select "time5" from all_types order by "time5" DESC
 ----
-06:30:00
-06:30:00
 07:30:00
 07:30:00
+06:30:00
+06:30:00
 
-query T rowsort
+query T nosort
 select "timezone" from all_types order by "timezone" DESC
 ----
-06:30:00+01:00
-06:30:00+01:00
 07:30:00+01:00
 07:30:00+01:00
+06:30:00+01:00
+06:30:00+01:00
 
-query T rowsort
+query T nosort
 select "time5zone" from all_types order by "time5zone" DESC
 ----
-06:30:00+01:00
-06:30:00+01:00
 07:30:00+01:00
 07:30:00+01:00
+06:30:00+01:00
+06:30:00+01:00
 
-query T rowsort
+query T nosort
 select "blob" from all_types order by "blob" DESC
 ----
-01234567
-01234567
 123456
 123456
+01234567
+01234567
 
-query T rowsort
+query T nosort
 select "blob100" from all_types order by "blob100" DESC
 ----
-01234567
-01234567
 123456
 123456
+01234567
+01234567
 
-query T rowsort
+query T nosort
 select "clob" from all_types order by "clob" DESC
 ----
-0123456
-0123456
 123456
 123456
+0123456
+0123456
 
-query T rowsort
+query T nosort
 select "clob100" from all_types order by "clob100" DESC
 ----
-0123456
-0123456
 123456
 123456
+0123456
+0123456
 
-query T rowsort
+query T nosort
 select "character" from all_types order by "character" DESC
 ----
-A
-A
 x
 x
+A
+A
 
-query T rowsort
+query T nosort
 select "varchar100" from all_types order by "varchar100" DESC
 ----
-Avarchar
-Avarchar
 varchar
 varchar
+Avarchar
+Avarchar
 
-query T rowsort
+query T nosort
 select "character10" from all_types order by "character10" DESC
 ----
-0123456789
-0123456789
 A012345678
 A012345678
+0123456789
+0123456789
 
-query T rowsort
+query T nosort
 select "inet" from all_types order by "inet" DESC
 ----
-120.0.0.0
-120.0.0.0
 127.0.0.0
 127.0.0.0
+120.0.0.0
+120.0.0.0
 
-query T rowsort
+query T nosort
 select "inet9" from all_types order by "inet9" DESC
 ----
-120.120.120.129
-120.120.120.129
 127.127.127.255
 127.127.127.255
+120.120.120.129
+120.120.120.129
 
-query T rowsort
+query T nosort
 select "json" from all_types order by "json" DESC
 ----
-{"A":-123}
-{"A":-123}
 {"a":123}
 {"a":123}
+{"A":-123}
+{"A":-123}
 
-query T rowsort
+query T nosort
 select "json10" from all_types order by "json10" DESC
 ----
-{"B":-456}
-{"B":-456}
 {"b":456}
 {"b":456}
+{"B":-456}
+{"B":-456}
 
-query T rowsort
+query T nosort
 select "url" from all_types order by "url" DESC
 ----
-https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
-https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
+https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
+https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 
-query T rowsort
+query T nosort
 select "url55" from all_types order by "url55" DESC
 ----
-https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
-https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
+https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
+https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 
-query T rowsort
+query T nosort
 select "uuid" from all_types order by "uuid" DESC
 ----
-76236890-f4e2-4d4f-a02b-ec7a02c3cb50
-76236890-f4e2-4d4f-a02b-ec7a02c3cb50
 ae106ad4-81fd-4f1a-85e8-5efface60da4
 ae106ad4-81fd-4f1a-85e8-5efface60da4
+76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+76236890-f4e2-4d4f-a02b-ec7a02c3cb50
 
 statement ok
 insert into all_types select * from all_types
 
-query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT nosort
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
 ----
 392 values hashing to 5fbd5da37f5732507e66ce463dd6f8af
 
-query IT rowsort
+query IT nosort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
 ----
 4
@@ -1447,7 +1447,7 @@ drop index "impidx_url55"
 statement error
 drop index "impidx_uuid"
 
-query IT rowsort
+query IT nosort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
 ----
 
@@ -1457,7 +1457,7 @@ drop table all_types
 statement ok
 drop table if exists all_types cascade
 
-query IT rowsort
+query IT nosort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
 ----
 

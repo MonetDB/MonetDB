@@ -28,15 +28,15 @@ INSERT INTO NAMES1 VALUES (1, 'MARY')
 statement ok
 INSERT INTO NAMES1 VALUES (0, 'KERI')
 
-query ITI rowsort
+query ITI nosort
 select * from NAMGRP1 order by EMPNUM desc
 ----
-0
-KERI
-10
 1
 MARY
 20
+0
+KERI
+10
 
 query I rowsort
 SELECT EMPNUM

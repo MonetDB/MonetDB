@@ -57,12 +57,10 @@ COPY 39 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement error
 select row_number() over (order by tables) as row, '1' limit 10
 
-query IT rowsort
+query IT nosort
 select row_number() over (order by name) as row, '1' from tbls limit 10
 ----
 1
-1
-10
 1
 2
 1
@@ -79,6 +77,8 @@ select row_number() over (order by name) as row, '1' from tbls limit 10
 8
 1
 9
+1
+10
 1
 
 statement ok

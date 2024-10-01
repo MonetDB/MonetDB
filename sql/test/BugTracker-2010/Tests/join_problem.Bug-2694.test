@@ -73,7 +73,7 @@ INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyy
     VALUES
     (110, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 11, 0, 2009040111, 11, 'ON', 2009, 4, '2009-04', 2 )
 
-query TITR rowsort
+query TITR nosort
 select t1.opr_date, t1.opr_hr, t1.svalue,  t1.yyyymmddhh - t2.avg_yyyymmddhh
 from time t1
 left join
@@ -88,14 +88,6 @@ order by t1.opr_hr
 OFF
 -2.500
 2009-04-01
-10
-ON
-1.000
-2009-04-01
-11
-ON
-2.000
-2009-04-01
 2
 OFF
 -1.500
@@ -127,8 +119,16 @@ ON
 9
 ON
 0.000
+2009-04-01
+10
+ON
+1.000
+2009-04-01
+11
+ON
+2.000
 
-query TITR rowsort
+query TITR nosort
 select t1.opr_date, t1.opr_hr, t1.svalue,  t1.yyyymmddhh - t2.avg_yyyymmddhh
 from time t1
 join
@@ -143,14 +143,6 @@ order by t1.opr_hr
 OFF
 -2.500
 2009-04-01
-10
-ON
-1.000
-2009-04-01
-11
-ON
-2.000
-2009-04-01
 2
 OFF
 -1.500
@@ -182,6 +174,14 @@ ON
 9
 ON
 0.000
+2009-04-01
+10
+ON
+1.000
+2009-04-01
+11
+ON
+2.000
 
 statement ok
 rollback

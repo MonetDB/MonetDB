@@ -152,12 +152,12 @@ select count(*) from LINEORDER
 ----
 60175
 
-query ITTTIITIIIIITIIII rowsort
+query ITTTIITIIIIITIIII nosort
 select * from DWDATE    order by D_DATEKEY limit 9
 ----
 153 values hashing to 208f3d42f09b64a2c5bdadd8db7d4bec
 
-query ITTTTTT rowsort
+query ITTTTTT nosort
 select * from SUPPLIER  order by S_SUPPKEY limit 9
 ----
 1
@@ -224,7 +224,7 @@ IRAN
 MIDDLE EAST
 20-338-906-3675
 
-query ITTTTTTT rowsort
+query ITTTTTTT nosort
 select * from CUSTOMER  order by C_CUSTKEY limit 9
 ----
 1
@@ -300,7 +300,7 @@ ASIA
 18-338-906-3675
 FURNITURE
 
-query ITTTTTTIT rowsort
+query ITTTTTTIT nosort
 select * from PART      order by P_PARTKEY limit 9
 ----
 1
@@ -385,7 +385,7 @@ SMALL BURNISHED STEEL
 12
 WRAP CASE
 
-query IIIIIITTIIIIIIIIT rowsort
+query IIIIIITTIIIIIIIIT nosort
 select * from LINEORDER order by LO_ORDERKEY, LO_LINENUMBER limit 9
 ----
 153 values hashing to 1f5f562bf00a0bf197569dc56625d60d
@@ -420,7 +420,7 @@ select sum(lo_extendedprice*lo_discount) as revenue
 ----
 213477639
 
-query IIT rowsort
+query IIT nosort
 select sum(lo_revenue), d_year, p_brand1
 	from lineorder, dwdate, part, supplier
 	where lo_orderdate = d_datekey
@@ -431,9 +431,9 @@ select sum(lo_revenue), d_year, p_brand1
 	group by d_year, p_brand1
 	order by d_year, p_brand1
 ----
-465 values hashing to 7a17aefb56671083165cf6c1ec7165c9
+465 values hashing to 6b03cce19ade72ccc414f07d3ab14ca3
 
-query IIT rowsort
+query IIT nosort
 select sum(lo_revenue), d_year, p_brand1
 	from lineorder, dwdate, part, supplier
 	where lo_orderdate = d_datekey
@@ -444,9 +444,9 @@ select sum(lo_revenue), d_year, p_brand1
 	group by d_year, p_brand1
 	order by d_year, p_brand1
 ----
-135 values hashing to d604cf966140b2342b84aaf8da38f8d8
+135 values hashing to 893683b0fc40bc3059befac3895c3a09
 
-query IIT rowsort
+query IIT nosort
 select sum(lo_revenue), d_year, p_brand1
 	from lineorder, dwdate, part, supplier
 	where lo_orderdate = d_datekey
@@ -457,29 +457,29 @@ select sum(lo_revenue), d_year, p_brand1
 	group by d_year, p_brand1
 	order by d_year, p_brand1
 ----
-11180484
-1995
-MFGR#2221
 2535744
 1992
-MFGR#2221
-4605666
-1997
 MFGR#2221
 5646414
 1993
 MFGR#2221
+9516564
+1994
+MFGR#2221
+11180484
+1995
+MFGR#2221
 6838192
 1996
+MFGR#2221
+4605666
+1997
 MFGR#2221
 9102972
 1998
 MFGR#2221
-9516564
-1994
-MFGR#2221
 
-query TTII rowsort
+query TTII nosort
 select c_nation, s_nation, d_year, sum(lo_revenue) as revenue
 	from customer, lineorder, supplier, dwdate
 	where lo_custkey = c_custkey
@@ -491,9 +491,9 @@ select c_nation, s_nation, d_year, sum(lo_revenue) as revenue
 	group by c_nation, s_nation, d_year
 	order by d_year asc, revenue desc
 ----
-600 values hashing to dfed01b3001e93a41c0865d715ee2b97
+600 values hashing to af8825da2b371d53ec970b6a47561ec2
 
-query TTII rowsort
+query TTII nosort
 select c_city, s_city, d_year, sum(lo_revenue) as revenue
 	from customer, lineorder, supplier, dwdate
 	where lo_custkey = c_custkey
@@ -506,7 +506,7 @@ select c_city, s_city, d_year, sum(lo_revenue) as revenue
 	order by d_year asc, revenue desc
 ----
 
-query TTII rowsort
+query TTII nosort
 select c_city, s_city, d_year, sum(lo_revenue) as revenue
 	from customer, lineorder, supplier, dwdate
 	where lo_custkey = c_custkey
@@ -521,7 +521,7 @@ select c_city, s_city, d_year, sum(lo_revenue) as revenue
 	order by d_year asc, revenue desc
 ----
 
-query TTII rowsort
+query TTII nosort
 select c_city, s_city, d_year, sum(lo_revenue) as revenue
 	from customer, lineorder, supplier, dwdate
 	where lo_custkey = c_custkey
@@ -536,7 +536,7 @@ select c_city, s_city, d_year, sum(lo_revenue) as revenue
 	order by d_year asc, revenue desc
 ----
 
-query ITI rowsort
+query ITI nosort
 select d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1
 	from dwdate, customer, supplier, part, lineorder
 	where lo_custkey = c_custkey
@@ -634,7 +634,7 @@ CANADA
 PERU
 41688725
 
-query ITTI rowsort
+query ITTI nosort
 select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
 	from dwdate, customer, supplier, part, lineorder
 	where lo_custkey = c_custkey
@@ -650,7 +650,7 @@ select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
 ----
 304 values hashing to e5636859acb993008b37bfae32f2f9e9
 
-query ITTI rowsort
+query ITTI nosort
 select d_year, s_city, p_brand1, sum(lo_revenue-lo_supplycost) as profit1
 	from dwdate, customer, supplier, part, lineorder
 	where lo_custkey = c_custkey

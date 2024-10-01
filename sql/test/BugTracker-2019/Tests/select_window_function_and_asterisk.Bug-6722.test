@@ -4,7 +4,7 @@ create table test_6722  (part string, qty double)
 statement ok
 insert into test_6722 values ('a', 18), ('a', 13),('a', 16),('b', 15),('b', 16),('c', 17),('c', 18),('c', 12),('d', 12),('d', 12)
 
-query IITR rowsort
+query IITR nosort
 select
  dense_rank() over (order by part, qty) as rank_id,
  row_number() over (order by part, qty) as row_id,
@@ -45,15 +45,15 @@ c
 c
 18.000
 9
+9
+d
+12.000
+9
 10
 d
 12.000
-9
-9
-d
-12.000
 
-query ITRI rowsort
+query ITRI nosort
 select
  (dense_rank() over (order by part, qty)) as rank_id,
  *,
@@ -96,13 +96,13 @@ c
 9
 d
 12.000
-10
+9
 9
 d
 12.000
-9
+10
 
-query TRII rowsort
+query TRII nosort
 select
  *,
  (dense_rank() over (order by part, qty)) as rank_id,
@@ -145,11 +145,11 @@ c
 d
 12.000
 9
-10
+9
 d
 12.000
 9
-9
+10
 
 statement ok
 drop table test_6722

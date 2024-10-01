@@ -1,4 +1,4 @@
-query ITTTTTIII rowsort
+query ITTTTTIII nosort
 SELECT "f"."id",
        "f"."name",
        "f"."mod",

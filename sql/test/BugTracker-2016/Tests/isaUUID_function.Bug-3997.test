@@ -10,7 +10,7 @@ INSERT INTO testUUID (s, u) VALUES ('7393ad7e-4fcf-461a-856e-b70027fe1a9e', conv
 statement ok
 INSERT INTO testUUID (s, u) VALUES ('c005d6fd-20c3-4d01-91a5-bbe676593530', convert('c005d6fd-20c3-4d01-91a5-bbe676593530', uuid))
 
-query TT rowsort
+query TT nosort
 SELECT * FROM testUUID ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
@@ -20,7 +20,7 @@ ad887b3d-08f7-c308-7285-354a1857cbc8
 c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
 
-query TTI rowsort
+query TTI nosort
 SELECT s, u, isaUUID(s) as a_isa_UUID FROM testUUID ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
@@ -33,7 +33,7 @@ c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
 1
 
-query TTI rowsort
+query TTI nosort
 SELECT s, u, isaUUID(u) as u_isa_UUID FROM testUUID ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
@@ -46,7 +46,7 @@ c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
 1
 
-query TT rowsort
+query TT nosort
 SELECT * FROM testUUID WHERE isaUUID(s) = TRUE ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
@@ -56,7 +56,7 @@ ad887b3d-08f7-c308-7285-354a1857cbc8
 c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
 
-query TT rowsort
+query TT nosort
 SELECT * FROM testUUID WHERE isaUUID(u) = TRUE ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e

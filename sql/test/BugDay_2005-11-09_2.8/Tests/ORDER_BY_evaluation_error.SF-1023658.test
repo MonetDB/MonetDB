@@ -8,7 +8,7 @@ WHERE "keys"."id" = "objects"."id"
   AND "keys"."type" = 0
 ----
 
-query IIITIITITIIITITIIIIIITIII rowsort
+query IIITIITITIIITITIIIIIITIII nosort
 SELECT *
 FROM "keys", "objects", "tables", "schemas"
 WHERE "keys"."id" = "objects"."id"

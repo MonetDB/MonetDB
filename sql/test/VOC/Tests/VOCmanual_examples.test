@@ -14,7 +14,7 @@ SELECT * FROM (
    SELECT 'total' AS type, total.* FROM total
 ) AS onboard_people_table
 
-query TI rowsort
+query TI nosort
 SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type
 ----
 craftsmen
@@ -40,7 +40,7 @@ SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%'
 ----
 358
 
-query TI rowsort
+query TI nosort
 SELECT chamber, CAST(AVG(invoice) AS integer) AS average
 FROM invoices
 WHERE invoice IS NOT NULL
@@ -49,18 +49,18 @@ ORDER BY average DESC
 ----
 A
 282997
+Z
+259301
+H
+150182
+R
+149628
 D
 149523
 E
 149518
-H
-150182
 NULL
 83309
-R
-149628
-Z
-259301
 
 statement ok
 CREATE VIEW extended_onboard AS

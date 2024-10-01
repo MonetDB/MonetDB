@@ -516,5 +516,12 @@ create procedure sys.vacuum(sname string, tname string, interval int)
 external name sql.vacuum;
 create procedure sys.stop_vacuum(sname string, tname string)
 external name sql.stop_vacuum;
-update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');
+create function sys.unclosed_result_sets()
+returns table(
+	"query_id" oid,
+	"res_id" int
+)
+external name sql.unclosed_result_sets;
+grant execute on function sys.unclosed_result_sets() to public;
+update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum', 'unclosed_result_sets');
 

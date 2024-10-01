@@ -1,4 +1,4 @@
-query T rowsort
+query T nosort
 SELECT f_table_name FROM geometry_columns ORDER BY f_table_name
 ----
 bridges

@@ -565,7 +565,6 @@ typedef struct {
 } Heap;
 
 typedef struct Hash Hash;
-typedef struct Imprints Imprints;
 typedef struct Strimps Strimps;
 
 #ifdef HAVE_RTREE
@@ -688,7 +687,6 @@ gdk_export bool VALisnil(const ValRecord *v);
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
  *           Hash   *thash;           // linear chained hash table on tail
- *           Imprints *timprints;     // column imprints index on tail
  *           orderidx torderidx;      // order oid index on tail
  *  } BAT;
  * @end verbatim
@@ -745,7 +743,6 @@ typedef struct {
 #ifdef HAVE_RTREE
 	RTree *rtree;		/* rtree geometric index */
 #endif
-	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
 	Strimps *strimps;	/* string imprint index  */
 	Sink *sink;
@@ -758,7 +755,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_TAILN	061043U /* first in Jul2021: str offset heaps names don't take width into account */
 #define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 #define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
@@ -815,7 +811,6 @@ typedef struct BAT {
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
-	MT_Sema imprsema;	/* semaphore to synchronize imprints creation */
 	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
 } BAT;
 
@@ -841,7 +836,6 @@ typedef struct BAT {
 #define tbaseoff	T.baseoff
 #define tvheap		T.vheap
 #define thash		T.hash
-#define timprints	T.imprints
 #define tsink		T.sink
 #define tprops		T.props
 #define tstrimps	T.strimps
@@ -1894,23 +1888,6 @@ bunfastapp_nocheckVAR(BAT *b, const void *v)
 	}
 	return rc;
 }
-
-/*
- * @- Column Imprints Functions
- *
- * @multitable @columnfractions 0.08 0.7
- * @item BAT*
- * @tab
- *  BATimprints (BAT *b)
- * @end multitable
- *
- * The column imprints index structure.
- *
- */
-
-gdk_export gdk_return BATimprints(BAT *b);
-gdk_export void IMPSdestroy(BAT *b);
-gdk_export lng IMPSimprintsize(BAT *b);
 
 /* Strimps exported functions */
 gdk_export gdk_return STRMPcreate(BAT *b, BAT *s);

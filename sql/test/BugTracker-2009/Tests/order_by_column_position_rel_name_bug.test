@@ -79,7 +79,7 @@ CREATE TABLE "sys"."time_by_day" (
 	"fiscal_period" varchar(30)
 )
 
-query TITI rowsort
+query TITI nosort
 select
 	"warehouse"."warehouse_country" as "c0",
        	"time_by_day"."the_year" as "c1",

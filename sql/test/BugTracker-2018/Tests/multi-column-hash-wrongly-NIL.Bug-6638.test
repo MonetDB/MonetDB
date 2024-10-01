@@ -96,33 +96,9 @@ select * from s2
 -1
 -13
 
-query IIII rowsort
+query IIII nosort
 select * from r2 natural join s2 order by x,y
 ----
--1
-9223372036854775807
-12
--12
--9223372036850581504
-1
-11
--11
--9223372036854775807
-4398046511104
-9
--9
-0
-2199023255552
-5
--5
-1
--9223372036850581504
-10
--10
-1
-6597069766656
-7
--7
 11
 21
 1
@@ -139,46 +115,46 @@ select * from r2 natural join s2 order by x,y
 0
 4
 -4
-4398046511104
--9223372036854775807
-8
--8
+0
+2199023255552
+5
+-5
 6597069766656
 1
 6
 -6
+1
+6597069766656
+7
+-7
+4398046511104
+-9223372036854775807
+8
+-8
+-9223372036854775807
+4398046511104
+9
+-9
+1
+-9223372036850581504
+10
+-10
+-9223372036850581504
+1
+11
+-11
+-1
+9223372036854775807
+12
+-12
 9223372036854775807
 -1
 13
 -13
 
-query IIII rowsort
+query IIII nosort
 select * from s2 natural join r2 order by x,y
 ----
--1
-9223372036854775807
--12
-12
--9223372036850581504
-1
--11
-11
--9223372036854775807
-4398046511104
--9
-9
-0
-2199023255552
--5
-5
-1
--9223372036850581504
--10
-10
-1
-6597069766656
--7
-7
 11
 21
 -1
@@ -195,14 +171,38 @@ select * from s2 natural join r2 order by x,y
 0
 -4
 4
-4398046511104
--9223372036854775807
--8
-8
+0
+2199023255552
+-5
+5
 6597069766656
 1
 -6
 6
+1
+6597069766656
+-7
+7
+4398046511104
+-9223372036854775807
+-8
+8
+-9223372036854775807
+4398046511104
+-9
+9
+1
+-9223372036850581504
+-10
+10
+-9223372036850581504
+1
+-11
+11
+-1
+9223372036854775807
+-12
+12
 9223372036854775807
 -1
 -13
@@ -297,29 +297,9 @@ select * from s3
 0
 -4
 
-query IIIII rowsort
+query IIIII nosort
 select * from r3 natural join s3 order by x,y
 ----
-0
-0
-140737488355328
-9
--9
-0
-0
-2147483648
-6
--6
-0
-140737488355328
-0
-8
--8
-0
-2147483648
-0
-5
--5
 11
 21
 31
@@ -335,40 +315,40 @@ select * from r3 natural join s3 order by x,y
 33
 3
 -3
-140737488355328
-0
-0
-7
--7
 2147483648
 0
 0
 4
 -4
+0
+2147483648
+0
+5
+-5
+0
+0
+2147483648
+6
+-6
+140737488355328
+0
+0
+7
+-7
+0
+140737488355328
+0
+8
+-8
+0
+0
+140737488355328
+9
+-9
 
-query IIIII rowsort
+query IIIII nosort
 select * from s3 natural join r3 order by x,y
 ----
-0
-0
-140737488355328
--9
-9
-0
-0
-2147483648
--6
-6
-0
-140737488355328
-0
--8
-8
-0
-2147483648
-0
--5
-5
 11
 21
 31
@@ -384,16 +364,36 @@ select * from s3 natural join r3 order by x,y
 33
 -3
 3
-140737488355328
-0
-0
--7
-7
 2147483648
 0
 0
 -4
 4
+0
+2147483648
+0
+-5
+5
+0
+0
+2147483648
+-6
+6
+140737488355328
+0
+0
+-7
+7
+0
+140737488355328
+0
+-8
+8
+0
+0
+140737488355328
+-9
+9
 
 statement ok
 create table r4 (a bigint, b bigint, c bigint, d bigint, x bigint generated always as identity primary key)
@@ -522,57 +522,15 @@ select * from s4
 0
 -4
 
-query IIIIII rowsort
+query IIIIII nosort
 select * from r4 natural join s4 order by x,y
 ----
-0
-0
-0
-1125899906842624
-11
--11
-0
-0
-0
-16777216
-7
--7
-0
-0
-1125899906842624
-0
-10
--10
-0
-0
-16777216
-0
-6
--6
-0
-1125899906842624
-0
-0
-9
--9
-0
-16777216
-0
-0
-5
--5
 11
 21
 31
 41
 1
 -1
-1125899906842624
-0
-0
-0
-8
--8
 12
 22
 32
@@ -591,58 +549,58 @@ select * from r4 natural join s4 order by x,y
 0
 4
 -4
+0
+16777216
+0
+0
+5
+-5
+0
+0
+16777216
+0
+6
+-6
+0
+0
+0
+16777216
+7
+-7
+1125899906842624
+0
+0
+0
+8
+-8
+0
+1125899906842624
+0
+0
+9
+-9
+0
+0
+1125899906842624
+0
+10
+-10
+0
+0
+0
+1125899906842624
+11
+-11
 
-query IIIIII rowsort
+query IIIIII nosort
 select * from s4 natural join r4 order by x,y
 ----
-0
-0
-0
-1125899906842624
--11
-11
-0
-0
-0
-16777216
--7
-7
-0
-0
-1125899906842624
-0
--10
-10
-0
-0
-16777216
-0
--6
-6
-0
-1125899906842624
-0
-0
--9
-9
-0
-16777216
-0
-0
--5
-5
 11
 21
 31
 41
 -1
 1
-1125899906842624
-0
-0
-0
--8
-8
 12
 22
 32
@@ -661,6 +619,48 @@ select * from s4 natural join r4 order by x,y
 0
 -4
 4
+0
+16777216
+0
+0
+-5
+5
+0
+0
+16777216
+0
+-6
+6
+0
+0
+0
+16777216
+-7
+7
+1125899906842624
+0
+0
+0
+-8
+8
+0
+1125899906842624
+0
+0
+-9
+9
+0
+0
+1125899906842624
+0
+-10
+10
+0
+0
+0
+1125899906842624
+-11
+11
 
 statement ok
 create table r5 (a bigint, b bigint, c bigint, d bigint, e bigint, x bigint generated always as identity primary key)
@@ -835,65 +835,9 @@ select * from s5
 0
 -4
 
-query IIIIIII rowsort
+query IIIIIII nosort
 select * from r5 natural join s5 order by x,y
 ----
-0
-0
-0
-0
-4503599627370496
-13
--13
-0
-0
-0
-0
-524288
-8
--8
-0
-0
-0
-4503599627370496
-0
-12
--12
-0
-0
-0
-524288
-0
-7
--7
-0
-0
-4503599627370496
-0
-0
-11
--11
-0
-0
-524288
-0
-0
-6
--6
-0
-4503599627370496
-0
-0
-0
-10
--10
-0
-524288
-0
-0
-0
-5
--5
 11
 21
 31
@@ -915,13 +859,6 @@ select * from r5 natural join s5 order by x,y
 53
 3
 -3
-4503599627370496
-0
-0
-0
-0
-9
--9
 524288
 0
 0
@@ -929,66 +866,73 @@ select * from r5 natural join s5 order by x,y
 0
 4
 -4
+0
+524288
+0
+0
+0
+5
+-5
+0
+0
+524288
+0
+0
+6
+-6
+0
+0
+0
+524288
+0
+7
+-7
+0
+0
+0
+0
+524288
+8
+-8
+4503599627370496
+0
+0
+0
+0
+9
+-9
+0
+4503599627370496
+0
+0
+0
+10
+-10
+0
+0
+4503599627370496
+0
+0
+11
+-11
+0
+0
+0
+4503599627370496
+0
+12
+-12
+0
+0
+0
+0
+4503599627370496
+13
+-13
 
-query IIIIIII rowsort
+query IIIIIII nosort
 select * from s5 natural join r5 order by x,y
 ----
-0
-0
-0
-0
-4503599627370496
--13
-13
-0
-0
-0
-0
-524288
--8
-8
-0
-0
-0
-4503599627370496
-0
--12
-12
-0
-0
-0
-524288
-0
--7
-7
-0
-0
-4503599627370496
-0
-0
--11
-11
-0
-0
-524288
-0
-0
--6
-6
-0
-4503599627370496
-0
-0
-0
--10
-10
-0
-524288
-0
-0
-0
--5
-5
 11
 21
 31
@@ -1010,13 +954,6 @@ select * from s5 natural join r5 order by x,y
 53
 -3
 3
-4503599627370496
-0
-0
-0
-0
--9
-9
 524288
 0
 0
@@ -1024,6 +961,69 @@ select * from s5 natural join r5 order by x,y
 0
 -4
 4
+0
+524288
+0
+0
+0
+-5
+5
+0
+0
+524288
+0
+0
+-6
+6
+0
+0
+0
+524288
+0
+-7
+7
+0
+0
+0
+0
+524288
+-8
+8
+4503599627370496
+0
+0
+0
+0
+-9
+9
+0
+4503599627370496
+0
+0
+0
+-10
+10
+0
+0
+4503599627370496
+0
+0
+-11
+11
+0
+0
+0
+4503599627370496
+0
+-12
+12
+0
+0
+0
+0
+4503599627370496
+-13
+13
 
 statement ok
 create table r6 (a bigint, b bigint, c bigint, d bigint, e bigint, f bigint, x bigint generated always as identity primary key)
@@ -1044,15 +1044,15 @@ select * from s6
 ----
 105 values hashing to b71c96e07d5a0381c1a308d0cb25327a
 
-query IIIIIIII rowsort
+query IIIIIIII nosort
 select * from r6 natural join s6 order by x,y
 ----
-120 values hashing to ac98d4c3fa90690012987839836c08fa
+120 values hashing to 27e45bcb036a714ae463474255076561
 
-query IIIIIIII rowsort
+query IIIIIIII nosort
 select * from s6 natural join r6 order by x,y
 ----
-120 values hashing to 112b1ed72f96c7db82ad1770229e4ebe
+120 values hashing to 344441249f7f142aae2b57b36e7390fd
 
 statement ok
 create table r7 (a bigint, b bigint, c bigint, d bigint, e bigint, f bigint, g bigint, x bigint generated always as identity primary key)
@@ -1073,15 +1073,15 @@ select * from s7
 ----
 136 values hashing to ec512584d7603ef79d947f442ddda1e3
 
-query IIIIIIIII rowsort
+query IIIIIIIII nosort
 select * from r7 natural join s7 order by x,y
 ----
-153 values hashing to d81a85a615fd5ab44ce7e3bc7678322c
+153 values hashing to 6cefed5e6e894e25b18b9298b865d1e1
 
-query IIIIIIIII rowsort
+query IIIIIIIII nosort
 select * from s7 natural join r7 order by x,y
 ----
-153 values hashing to e5db94d76d899a2f38afaaeb60b13935
+153 values hashing to 810b349638c376dc0a6a9d0b67648b62
 
 statement ok
 create table r8 (a bigint, b bigint, c bigint, d bigint, e bigint, f bigint, g bigint, h bigint, x bigint generated always as identity primary key)
@@ -1102,15 +1102,15 @@ select * from s8
 ----
 171 values hashing to 6f955c9939990addb0f8fa607f039352
 
-query IIIIIIIIII rowsort
+query IIIIIIIIII nosort
 select * from r8 natural join s8 order by x,y
 ----
-190 values hashing to 33a7b72b3148892a6fc814dc1973054e
+190 values hashing to b0eda934db32207549786710e3955824
 
-query IIIIIIIIII rowsort
+query IIIIIIIIII nosort
 select * from s8 natural join r8 order by x,y
 ----
-190 values hashing to c7cd2d8ff157ca5b2ca8b7bef238edc2
+190 values hashing to 337190eb67a3500e353a859f17926e5c
 
 statement ok
 create table r9 (a bigint, b bigint, c bigint, d bigint, e bigint, f bigint, g bigint, h bigint, i bigint, x bigint generated always as identity primary key)
@@ -1131,15 +1131,15 @@ select * from s9
 ----
 210 values hashing to a2157c2ffeaee4a603d76cdab7413de9
 
-query IIIIIIIIIII rowsort
+query IIIIIIIIIII nosort
 select * from r9 natural join s9 order by x,y
 ----
-231 values hashing to 0e6d8126a363bc088efd0ecae3ec6763
+231 values hashing to 67eded6134169aa09d008b01e3cf07c0
 
-query IIIIIIIIIII rowsort
+query IIIIIIIIIII nosort
 select * from s9 natural join r9 order by x,y
 ----
-231 values hashing to 22ecef9f594e503b5dabece586ca4edc
+231 values hashing to 663856dc3f05a1043533cb8f25acc557
 
 statement ok
 alter table r2 add constraint ab_unique unique (a,b)

@@ -4620,7 +4620,7 @@ SELECT COUNT(*) FROM sys."args_cpy"
 ----
 3416
 
-query TTIT rowsort
+query TTIT nosort
 SELECT "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , CAST((SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4666,7 +4666,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , CAST((SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4721,7 +4721,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT cast('' as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , CAST((SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4776,7 +4776,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT DISTINCT cast('' as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , CAST((SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4816,7 +4816,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , CAST((SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS smallint) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4856,7 +4856,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , (SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4896,7 +4896,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , (SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"
@@ -4936,7 +4936,7 @@ storagemodelinit
 0
 sys.storagemodelinit
 
-query TTTIT rowsort
+query TTTIT nosort
 SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
 , (SELECT COUNT(*) FROM "sys"."args_cpy" where "args_cpy"."func_id" = "functions_cpy"."id" and "args_cpy"."number" = 0) AS "PROCEDURE_TYPE"
 , CAST(CASE "functions_cpy"."language" WHEN 0 THEN "functions_cpy"."mod" || '.' || "functions_cpy"."func" ELSE "schemas"."name" || '.' || "functions_cpy"."name" END AS VARCHAR(1500)) AS "SPECIFIC_NAME"

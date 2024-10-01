@@ -3571,6 +3571,47 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+sql_unclosed_result_sets(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	bat *ret_query_id = getArgReference_bat(stk, pci, 0);
+	bat *ret_res_id = getArgReference_bat(stk, pci, 1);
+	backend *be = cntxt->sqlcontext;
+
+	BUN count = 0;
+	for (res_table *p = be->results; p != NULL; p = p->next)
+		count++;
+
+	BAT *query_ids = COLnew(0, TYPE_oid, count, TRANSIENT);
+	BAT *res_ids = COLnew(0, TYPE_int, count, TRANSIENT);
+
+	if (query_ids == NULL || res_ids == NULL) {
+		BBPreclaim(query_ids);
+		BBPreclaim(res_ids);
+		throw(SQL, "sql.sql_unclosed_result_sets", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	for (res_table *p = be->results; p != NULL; p = p->next) {
+		if (BUNappend(query_ids, &p->query_id, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(res_ids, &p->id, false) != GDK_SUCCEED)
+			goto bailout;
+	}
+
+	*ret_query_id = query_ids->batCacheid;
+	BBPkeepref(query_ids);
+	*ret_res_id = res_ids->batCacheid;
+	BBPkeepref(res_ids);
+
+	return MAL_SUCCEED;
+
+bailout:
+	BBPunfix(query_ids->batCacheid);
+	BBPunfix(res_ids->batCacheid);
+	throw(SQL, "sql.sql_unclosed_result_sets", SQLSTATE(42000)"failed to retrieve result tables");
+}
+
+static str
 sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *id = NULL, *user = NULL, *login = NULL, *sessiontimeout = NULL,
@@ -4297,7 +4338,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 								goto bailout1;
 
-							sz = IMPSimprintsize(bs);
+							sz = 0;
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
@@ -4393,7 +4434,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 									goto bailout1;
 
-								sz = IMPSimprintsize(bs);
+								sz = 0;
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
@@ -5539,7 +5580,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = NULL;
 	str *r = getArgReference_str(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *cname = *getArgReference_str(stk, pci, 2);
+	const char *kname = *getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5548,12 +5589,16 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)sname;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
-		sql_key *k = mvc_bind_key(m, s, cname);
+		sql_key *k = mvc_bind_key(m, s, kname);
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
 			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
-			if (!(*r = GDKstrdup(exp2sql(m, exp))))
+			if (exp->comment)
+				*r = GDKstrdup(exp->comment);
+			else
+				*r = GDKstrdup(exp2sql(m, exp));
+			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return MAL_SUCCEED;
 		}
@@ -5654,6 +5699,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,2, arg("",str),varargany("a",0))),
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
  pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status",args(16,16,batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optimizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int),batarg("language", str),batarg("peer", str),batarg("hostname", str),batarg("application", str),batarg("client", str),batarg("clientpid", lng),batarg("remark", str),)),
+ pattern("sql", "unclosed_result_sets", sql_unclosed_result_sets, false, "return query_id/res_id of unclosed result sets", args(2,2, batarg("query_id",oid),batarg("res_id", int))),
  pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
  pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),

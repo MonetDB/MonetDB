@@ -8,7 +8,7 @@ AND "tables"."schema_id" = "schemas"."id" AND
 "tables"."name" LIKE 'x'
 ----
 
-query IIITIITITIIITITIIIIIITIII rowsort
+query IIITIITITIIITITIIIIIITIII nosort
 SELECT * FROM "sys"."keys" AS "keys", "sys"."objects" AS
 "objects", "sys"."tables" AS "tables",
 "sys"."schemas" AS "schemas" WHERE "keys"."id" =
@@ -18,7 +18,7 @@ AND "tables"."schema_id" = "schemas"."id" AND
 "tables"."name" LIKE 'x' ORDER BY "objects"."name"
 ----
 
-query TTTTIT rowsort
+query TTTTIT nosort
 SELECT cast(null AS varchar(1)) AS "TABLE_CAT",
 "schemas"."name" AS "TABLE_SCHEM", "tables"."name" AS
 "TABLE_NAME", "objects"."name" AS "COLUMN_NAME",

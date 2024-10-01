@@ -7,12 +7,16 @@ create table analytics (aa int, bb int)
 statement ok
 insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query TTTT rowsort
+query TTTT nosort
 select group_concat(aa, aa) over (partition by bb),
        group_concat(aa, aa) over (partition by bb order by bb asc),
        group_concat(aa, aa) over (partition by bb order by bb desc),
        group_concat(aa, aa) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 155566
 155566
 155566
@@ -25,18 +29,6 @@ select group_concat(aa, aa) over (partition by bb),
 155566
 155566
 155566
-32244
-32244
-32244
-1555663388332244
-32244
-32244
-32244
-1555663388332244
-32244
-32244
-32244
-1555663388332244
 388
 388
 388
@@ -49,41 +41,29 @@ select group_concat(aa, aa) over (partition by bb),
 388
 388
 1555663388
-NULL
-NULL
-NULL
-NULL
+32244
+32244
+32244
+1555663388332244
+32244
+32244
+32244
+1555663388332244
+32244
+32244
+32244
+1555663388332244
 
-query TTTT rowsort
+query TTTT nosort
 select group_concat(bb, bb) over (partition by bb),
        group_concat(bb, bb) over (partition by bb order by bb asc),
        group_concat(bb, bb) over (partition by bb order by bb desc),
        group_concat(bb, bb) over (order by bb desc) from analytics
 ----
-11111
-11111
-11111
-4333333222222111111
-11111
-11111
-11111
-4333333222222111111
-11111
-11111
-11111
-4333333222222111111
-22222
-22222
-22222
-4333333222222
-22222
-22222
-22222
-4333333222222
-22222
-22222
-22222
-4333333222222
+4
+4
+4
+4
 33333
 33333
 33333
@@ -96,17 +76,41 @@ select group_concat(bb, bb) over (partition by bb),
 33333
 33333
 4333333
-4
-4
-4
-4
+22222
+22222
+22222
+4333333222222
+22222
+22222
+22222
+4333333222222
+22222
+22222
+22222
+4333333222222
+11111
+11111
+11111
+4333333222222111111
+11111
+11111
+11111
+4333333222222111111
+11111
+11111
+11111
+4333333222222111111
 
-query TTTT rowsort
+query TTTT nosort
 select group_concat(aa, bb) over (partition by bb),
        group_concat(aa, bb) over (partition by bb order by bb asc),
        group_concat(aa, bb) over (partition by bb order by bb desc),
        group_concat(aa, bb) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 153536
 153536
 153536
@@ -119,18 +123,6 @@ select group_concat(aa, bb) over (partition by bb),
 153536
 153536
 153536
-31214
-31214
-31214
-1535362328131214
-31214
-31214
-31214
-1535362328131214
-31214
-31214
-31214
-1535362328131214
 328
 328
 328
@@ -143,41 +135,29 @@ select group_concat(aa, bb) over (partition by bb),
 328
 328
 1535362328
-NULL
-NULL
-NULL
-NULL
+31214
+31214
+31214
+1535362328131214
+31214
+31214
+31214
+1535362328131214
+31214
+31214
+31214
+1535362328131214
 
-query TTTT rowsort
+query TTTT nosort
 select group_concat(bb, aa) over (partition by bb),
        group_concat(bb, aa) over (partition by bb order by bb asc),
        group_concat(bb, aa) over (partition by bb order by bb desc),
        group_concat(bb, aa) over (order by bb desc) from analytics
 ----
-12141
-12141
-12141
-4153536323282312141
-12141
-12141
-12141
-4153536323282312141
-12141
-12141
-12141
-4153536323282312141
-23282
-23282
-23282
-4153536323282
-23282
-23282
-23282
-4153536323282
-23282
-23282
-23282
-4153536323282
+4
+4
+4
+4
 35363
 35363
 35363
@@ -190,17 +170,41 @@ select group_concat(bb, aa) over (partition by bb),
 35363
 35363
 41535363
-4
-4
-4
-4
+23282
+23282
+23282
+4153536323282
+23282
+23282
+23282
+4153536323282
+23282
+23282
+23282
+4153536323282
+12141
+12141
+12141
+4153536323282312141
+12141
+12141
+12141
+4153536323282312141
+12141
+12141
+12141
+4153536323282312141
 
-query TTTT rowsort
+query TTTT nosort
 select group_concat(aa, 1) over (partition by bb),
        group_concat(aa, 1) over (partition by bb order by bb asc),
        group_concat(aa, 1) over (partition by bb order by bb desc),
        group_concat(aa, 1) over (order by bb desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
 151516
 151516
 151516
@@ -213,18 +217,6 @@ select group_concat(aa, 1) over (partition by bb),
 151516
 151516
 151516
-31214
-31214
-31214
-1515161318131214
-31214
-31214
-31214
-1515161318131214
-31214
-31214
-31214
-1515161318131214
 318
 318
 318
@@ -237,41 +229,29 @@ select group_concat(aa, 1) over (partition by bb),
 318
 318
 1515161318
-NULL
-NULL
-NULL
-NULL
+31214
+31214
+31214
+1515161318131214
+31214
+31214
+31214
+1515161318131214
+31214
+31214
+31214
+1515161318131214
 
-query TTTT rowsort
+query TTTT nosort
 select group_concat(bb, -100) over (partition by bb),
        group_concat(bb, -100) over (partition by bb order by bb asc),
        group_concat(bb, -100) over (partition by bb order by bb desc),
        group_concat(bb, -100) over (order by bb desc) from analytics
 ----
-1-1001-1001
-1-1001-1001
-1-1001-1001
-4-1003-1003-1003-1002-1002-1002-1001-1001-1001
-1-1001-1001
-1-1001-1001
-1-1001-1001
-4-1003-1003-1003-1002-1002-1002-1001-1001-1001
-1-1001-1001
-1-1001-1001
-1-1001-1001
-4-1003-1003-1003-1002-1002-1002-1001-1001-1001
-2-1002-1002
-2-1002-1002
-2-1002-1002
-4-1003-1003-1003-1002-1002-1002
-2-1002-1002
-2-1002-1002
-2-1002-1002
-4-1003-1003-1003-1002-1002-1002
-2-1002-1002
-2-1002-1002
-2-1002-1002
-4-1003-1003-1003-1002-1002-1002
+4
+4
+4
+4
 3-1003-1003
 3-1003-1003
 3-1003-1003
@@ -284,10 +264,30 @@ select group_concat(bb, -100) over (partition by bb),
 3-1003-1003
 3-1003-1003
 4-1003-1003-1003
-4
-4
-4
-4
+2-1002-1002
+2-1002-1002
+2-1002-1002
+4-1003-1003-1003-1002-1002-1002
+2-1002-1002
+2-1002-1002
+2-1002-1002
+4-1003-1003-1003-1002-1002-1002
+2-1002-1002
+2-1002-1002
+2-1002-1002
+4-1003-1003-1003-1002-1002-1002
+1-1001-1001
+1-1001-1001
+1-1001-1001
+4-1003-1003-1003-1002-1002-1002-1001-1001-1001
+1-1001-1001
+1-1001-1001
+1-1001-1001
+4-1003-1003-1003-1002-1002-1002-1001-1001-1001
+1-1001-1001
+1-1001-1001
+1-1001-1001
+4-1003-1003-1003-1002-1002-1002-1001-1001-1001
 
 query TTTTTT rowsort
 select group_concat(aa, aa) over (),
@@ -422,27 +422,27 @@ create table testmore (a int, b clob)
 statement ok
 insert into testmore values (1, 'another'), (1, 'testing'), (1, 'todo'), (2, 'lets'), (3, 'get'), (2, 'harder'), (3, 'even'), (2, 'more'), (1, ''), (3, 'even'), (2, NULL), (1, '')
 
-query ITTTT rowsort
+query ITTTT nosort
 select a, listagg(a) over (),
        listagg(a) over (order by a),
        listagg(a, min(b)) over (),
        listagg(a, min(b)) over (partition by max(b)) from testmore group by a
 ----
-1
-3,2,1
-1
-3harder21
-1
-2
-3,2,1
-1,2
-3harder21
-2
 3
 3,2,1
 1,2,3
 3harder21
 3
+2
+3,2,1
+1,2
+3harder21
+2
+1
+3,2,1
+1
+3harder21
+1
 
 statement ok
 rollback

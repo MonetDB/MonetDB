@@ -449,7 +449,7 @@ NULL
 
 # see request: https://github.com/MonetDB/MonetDB/issues/7332
 # next case should return similar result as: a IS NOT DISTINCT FROM b syntax
-query III rowsort
+query III nosort
 select a, b, CASE
   WHEN a IS NOT NULL AND b IS NOT NULL
     THEN a = b
@@ -491,7 +491,7 @@ NULL
 
 # see request: https://github.com/MonetDB/MonetDB/issues/7332
 # next case should return similar result as: a IS DISTINCT FROM b syntax
-query III rowsort
+query III nosort
 select a, b, CASE
   WHEN a IS NOT NULL AND b IS NOT NULL
     THEN a <> b

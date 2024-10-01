@@ -8,7 +8,7 @@ statement ok
 dbgmsk_restore := mdb.getDebug()
 
 statement ok
-dbgmsk_unset := 8+8388608
+dbgmsk_unset := 8+2
 
 statement ok
 dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset)
