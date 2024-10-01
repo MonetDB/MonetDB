@@ -52,36 +52,41 @@ _estimate(mvc *sql, sql_rel *rel)
 	return est;
 }
 
-static list *
-find_cmp_exps(backend *be, sql_rel *rel, sql_rel *rel_hsh)
+static void
+find_cmp_exps(list **exps_hsh, list **exps_prb, list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
 {
-	mvc *sql = be->mvc;
-	list *exps = sa_list(sql->sa);
-	list *exps_hsh = sa_list(sql->sa), *exps_prb = sa_list(sql->sa);
+	assert(exps);
 
-	assert(rel->exps);
-
-	/* Find out from which side, i.e hash- or probe-, the sub-expressions of the
-	 * compare-exps belong. When we find one side of a comp-exp in rel_hsh, the
-	 * other side must belong to rel_prb, so we don't verify this. */
-	for (node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *cmpl = e->l, *cmpr = e->r;
+	/* Find out if a sub-expression of the (compare) exps belong to rel_hsh or
+	 * rel_prb or is a constant. */
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;//, *cmp1st = NULL, *cmp2nd = NULL;
 
 		assert(e->type == e_cmp && e->flag == cmp_equal);
 
-		if (rel_find_exp(rel_hsh, cmpl)) {
-			append(exps_hsh, cmpl);
-			append(exps_prb, cmpr);
+		/* search first for the not-atom exp, otherwise rel_find_exp()
+		 * incorrectly returns TRUE for an atom-typed exp */
+		if (exp_is_atom(e->l)) {
+			if (rel_find_exp(rel_hsh, e->r)) {
+				append(*exps_hsh, e->r);
+				append(*exps_prb, e->l);
+			} else {
+				assert(rel_find_exp(rel_prb, e->r));
+				append(*exps_hsh, e->l);
+				append(*exps_prb, e->r);
+			}
 		} else {
-			assert(rel_find_exp(rel_hsh, cmpr));
-			append(exps_hsh, cmpr);
-			append(exps_prb, cmpl);
+			if (rel_find_exp(rel_prb, e->l)) {
+				append(*exps_hsh, e->r);
+				append(*exps_prb, e->l);
+			} else {
+				assert(rel_find_exp(rel_hsh, e->l));
+				append(*exps_hsh, e->l);
+				append(*exps_prb, e->r);
+			}
 		}
-	}
 
-	append(exps, exps_hsh);
-	append(exps, exps_prb);
-	return exps;
+	}
 }
 
 static stmt *
@@ -202,7 +207,8 @@ oahash_build_ht(backend *be, int *slt_ids, list *exps, list *shared_ht, stmt *su
 		s->nr = getArg(q, 1);
 		s->nrcols = key->nrcols;
 		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		if (e->alias.label)
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 
 		*slt_ids = getArg(q,0);
@@ -258,7 +264,8 @@ oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, s
 		s->nr = getArg(q, 0);
 		s->nrcols = 1;
 		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		if (e->alias.label)
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return stmt_list(be, l);
@@ -300,7 +307,6 @@ oahash_probe(backend *be, list *exps_cmp_prb, stmt *stmts_ht, stmt *sub, stmt *p
 	s->nr = getArg(q, 0);
 	s->nrcols = 1;
 	s->q = q;
-	s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 	return s;
 }
 
@@ -323,7 +329,8 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 		s->nr = getArg(q, 0);
 		s->nrcols = 1;
 		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		if (e->alias.label)
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -349,7 +356,8 @@ oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, s
 		s->nr = getArg(q, 0);
 		s->nrcols = key->nrcols;
 		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		if (e->alias.label)
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -375,7 +383,8 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink
 		s->nr = getArg(q, 0);
 		s->nrcols = key->nrcols;
 		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		if (e->alias.label)
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -408,7 +417,8 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 		s->nr = getArg(q, 0);
 		s->nrcols = key->nrcols;
 		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+		if (e->alias.label)
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
 	}
 	return l;
@@ -498,9 +508,10 @@ oahash_collect(backend *be, list *exps_prj_hsh, list *exps_prj_prb, list *stmts_
 static stmt *
 rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 {
+	mvc *sql = be->mvc;
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	/* compare and projection columns of hash- and probe-side */
-	list *exps_cmp_hsh = NULL, *exps_cmp_prb = NULL;
+	list *exps_cmp_hsh = sa_list(sql->sa), *exps_cmp_prb = sa_list(sql->sa);
 	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
 	/* For the declaration of shared vars at the beginning */
 	list *shared_ht = NULL, *shared_hp = NULL;
@@ -530,9 +541,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	list *exps_cmp = find_cmp_exps(be, rel, rel_hsh);
-	exps_cmp_hsh = exps_cmp->h->data;
-	exps_cmp_prb = exps_cmp->t->data;
+	find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
 
 	/*** PREPARE PHASE ***/
 	/* find projection columns */
@@ -641,6 +650,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 {
+	mvc *sql = be->mvc;
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
 	stmt *sub = NULL, *pp = NULL;
 
@@ -650,20 +660,20 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		sub = subrel_project(be, sub, refs, rel_prb);
 	} else {
 		/* compare columns of hash- and probe-side */
-		list *exps_cmp = find_cmp_exps(be, rel, rel_hsh);
-		list *exps_cmp_hsh = exps_cmp->h->data;
-		list *exps_cmp_prb = exps_cmp->t->data;
+		list *exps_cmp_hsh = sa_list(sql->sa), *exps_cmp_prb = sa_list(sql->sa);
+		find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
+
 		/* projection columns of the probe-side */
-		list *exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
+		list *exps_prj_prb = rel_projections(sql, rel_prb, 0, 1, 1);
 		assert(exps_prj_prb->cnt); /* at least one column should be projected */
 
 		if (rel->op == op_anti) {
-			sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
+			sql_error(sql, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
 			return NULL;
 		}
 
 		/*** PREPARE PHASE ***/
-		lng sz = _estimate(be->mvc, rel_hsh);
+		lng sz = _estimate(sql, rel_hsh);
 		list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, sz);
 
 		/*** HASH PHASE ***/
