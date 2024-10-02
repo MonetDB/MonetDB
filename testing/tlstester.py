@@ -38,6 +38,9 @@ with warnings.catch_warnings():
     from cryptography import x509
     from cryptography.hazmat.primitives import serialization, hashes
     from cryptography.hazmat.primitives.asymmetric import rsa
+    # we need default_backed for cryptography 2.X which is what's used
+    # in Ubuntu 20.04 LTS (see two calls below where this is used)
+    from cryptography.hazmat.backends import default_backend
 
 VERSION = "0.3.1"
 
@@ -226,7 +229,7 @@ class Certs:
     ):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=UserWarning)
-            key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+            key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
 
         if parent_name:
             issuer_name = parent_name
@@ -249,7 +252,7 @@ class Certs:
             builder = builder.add_extension(ext, critical=True)
         for ext in noncritical_extensions:
             builder = builder.add_extension(ext, critical=False)
-        cert = builder.sign(issuer_key, hashes.SHA256())
+        cert = builder.sign(issuer_key, hashes.SHA256(), backend=default_backend())
 
         self._keys[subject_name] = key
         self._certs[subject_name] = cert
