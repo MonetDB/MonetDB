@@ -604,7 +604,7 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
 	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
-	p->value.dval = nmax - nmin + 1;
+	p->value.dval = (dbl) (nmax - nmin + 1);
 }
 
 static void
