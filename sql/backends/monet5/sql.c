@@ -4188,15 +4188,11 @@ sql_storage_appendrow(BAT *bs, const char *sname, const char *tname, const char 
 	if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 		goto bailout1;
 
-	MT_rwlock_rdlock(&bs->thashlock);
-	/* one lock, two values: hash size, and
-	 * whether we (may) have a hash */
-	sz = hashinfo(bs->thash, bs->batCacheid);
-	bitval = bs->thash != NULL;
-	MT_rwlock_rdunlock(&bs->thashlock);
+	sz = (lng) HASHsize(bs);
 	if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 		goto bailout1;
 
+	bitval = sz > 0;
 	if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 		goto bailout1;
 
