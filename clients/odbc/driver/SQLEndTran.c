@@ -13,7 +13,7 @@
 /*
  * This code was created by Peter Harvey (mostly during Christmas 98/99).
  * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
+ * distributions and uses of this code (that's about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
  *
  * This file has been modified for the MonetDB project.  See the file
@@ -124,7 +124,7 @@ MNDBEndTran(SQLSMALLINT HandleType,
 		return SQL_SUCCESS;
 	}
 
-	/* construct a statement object and excute a SQL COMMIT or ROLLBACK */
+	/* construct a statement object and execute a SQL COMMIT or ROLLBACK */
 	rc = MNDBAllocStmt(dbc, &StatementHandle);
 	if (SQL_SUCCEEDED(rc)) {
 		ODBCStmt *stmt = (ODBCStmt *) StatementHandle;

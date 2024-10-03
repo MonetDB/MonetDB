@@ -66,7 +66,7 @@ copy 54 records into test3527 from stdin using delimiters ',',E'\n'
 2,2,1
 2,2,2
 
-query III rowsort
+query III nosort
 select a,b,c from test3527 order by a,b,c limit 2
 ----
 0
@@ -76,7 +76,7 @@ select a,b,c from test3527 order by a,b,c limit 2
 0
 0
 
-query III rowsort
+query III nosort
 select distinct a,b,c from test3527 order by a,b,c limit 2
 ----
 0

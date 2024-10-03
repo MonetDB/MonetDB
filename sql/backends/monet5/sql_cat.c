@@ -789,6 +789,12 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 	return MAL_SUCCEED;
 }
 
+static void
+dummy(BAT *b)
+{
+	(void) b;
+}
+
 static str
 drop_index(mvc *sql, char *sname, char *iname)
 {
@@ -807,7 +813,7 @@ drop_index(mvc *sql, char *sname, char *iname)
 	if (i->type == ordered_idx || i->type == imprints_idx) {
 		sql_kc *ic = i->columns->h->data;
 		sql_class icls = ic->c->type.type->eclass;
-		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : (icls == EC_STRING ? STRMPdestroy : IMPSdestroy))))
+		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : (icls == EC_STRING ? STRMPdestroy : dummy))))
 			return msg;
 	}
 	switch (mvc_drop_idx(sql, s, i)) {
@@ -1352,9 +1358,25 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					 * PCRElikeselect.
 					 */
 					r = BATsetstrimps(b);
-				}
-				else {
-					r = BATimprints(b);
+				} else {
+					switch (ATOMbasetype(b->ttype)) {
+					default: {
+						const char *tp = ATOMname(b->ttype);
+						BBPunfix(b->batCacheid);
+						throw(SQL, "sql.alter_table", SQLSTATE(HY005) "Cannot create imprint index %s on type %s", i->base.name, tp);
+					}
+					case TYPE_bte:
+					case TYPE_sht:
+					case TYPE_int:
+					case TYPE_lng:
+#ifdef HAVE_HGE
+					case TYPE_hge:
+#endif
+					case TYPE_flt:
+					case TYPE_dbl:
+						r = GDK_SUCCEED; /* fake imprints creation */
+						break;
+					}
 				}
 
 				BBPunfix(b->batCacheid);

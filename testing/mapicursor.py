@@ -51,7 +51,7 @@ mapping = {
 
 def convert(data, type_code):
     """
-    Calls the appropriate convertion function based upon the python type
+    Calls the appropriate conversion function based upon the python type
     """
 
     # null values should always be replaced by None type

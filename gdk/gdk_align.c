@@ -347,7 +347,6 @@ VIEWdestroy(BAT *b)
 
 	/* remove any leftover private hash structures */
 	HASHdestroy(b);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);

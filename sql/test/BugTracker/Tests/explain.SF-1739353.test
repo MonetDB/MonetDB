@@ -4,21 +4,17 @@ set optimizer='sequential_pipe'
 query T python .explain.function_histogram
 EXPLAIN SELECT "name" FROM "tables"
 ----
-algebra.thetaselect
-2
 bat.pack
 5
 querylog.define
 1
 sql.bind
-4
+2
 sql.mvc
 1
 sql.projectdelta
 1
 sql.resultSet
-1
-sql.subdelta
 1
 sql.tid
 1

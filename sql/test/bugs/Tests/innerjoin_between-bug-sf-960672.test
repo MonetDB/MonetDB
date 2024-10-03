@@ -22,7 +22,7 @@ INSERT INTO d VALUES (6)
 statement ok
 INSERT INTO d VALUES (11)
 
-query III rowsort
+query III nosort
 SELECT h.a, h.b, COUNT(*)
 FROM   h
 INNER JOIN d
@@ -37,7 +37,7 @@ ORDER BY a, b
 20
 1
 
-query III rowsort
+query III nosort
 SELECT h.a, h.b, COUNT(*)
 FROM   h
 INNER JOIN d

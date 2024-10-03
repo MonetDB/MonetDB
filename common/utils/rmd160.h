@@ -47,7 +47,7 @@ typedef    uint8_t              byte;
 typedef    uint32_t             dword;
 
 /* if this line causes a compiler error,
-   adapt the defintion of dword above */
+   adapt the definition of dword above */
 typedef int the_correct_size_was_chosen [sizeof (dword) == 4? 1: -1];
 
 /********************************************************************/

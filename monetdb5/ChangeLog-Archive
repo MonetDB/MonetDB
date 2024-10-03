@@ -136,7 +136,7 @@
 
 * Sat Oct 12 2019 Martin Kersten <mk@cwi.nl> - 11.37.1-20200511
 - The MAL profiler now assigns the SQL TRACE output to the client record
-  thereby avoiding the interaction with other queries, but loosing
+  thereby avoiding the interaction with other queries, but losing
   insight of competing queries. The stethoscope should be used for that.
 
 * Thu Sep  5 2019 Sjoerd Mullender <sjoerd@acm.org> - 11.35.1-20191118
@@ -161,7 +161,7 @@
   day of the month and the number of months since the year -4712
   separately in a single 32 bit integer of which only 26 bits are
   used.  Dates now use the proleptic Gregorian calendar, meaning the
-  normal Gregorian callendar has been extended backward, and before
+  normal Gregorian calendar has been extended backward, and before
   the year 1, we have the year 0.  Both the old and new timestamp
   types are a combination of a daytime and a date value, but since
   those types have changed, the timestamp type has also changed.  The
@@ -382,7 +382,7 @@
   by algebra.subselect.
 
 * Mon Aug 25 2014 Sjoerd Mullender <sjoerd@acm.org> - 11.19.1-20141024
-- Removed algebra.topN and its imlementation BATtopN.  The function was
+- Removed algebra.topN and its implementation BATtopN.  The function was
   not used.
 - Removed aggr.histogram and its implementation BAThistogram.  The
   function was not used, and did not produce output in the "headless"
@@ -466,7 +466,7 @@
 
 * Wed Sep 21 2011 Sjoerd Mullender <sjoerd@acm.org> - 11.5.3-20110925
 - Fixed a problem where MAL variables weren't properly cleared before
-  reuse of the data strucutre.  This problem could cause the data flow
+  reuse of the data structure.  This problem could cause the data flow
   scheduler to generate dependencies between instructions that didn't
   actually exist, which in turn could cause circular dependencies among
   instructions with deadlock as a result.  Bugs 2865 and 2888.

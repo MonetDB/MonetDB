@@ -20,7 +20,7 @@
  * MAL_MALLOC_FAIL
  * An operation allocates space for an object failed.
  * Either the pre-requisites are not satisfied, or the system
- * runs low on resources and can not accomodate the object.
+ * runs low on resources and can not accommodate the object.
  * For failures to create BATs it sometimes indicates that an
  * intermediate BAT size is too large.
  * OPERATION_FAILED

@@ -77,7 +77,7 @@ INSERT INTO employees VALUES (7902,'FORD','ANALYST',7566,to_date('3-12-1981','dd
 statement ok
 INSERT INTO employees VALUES (7934,'MILLER','CLERK',7782,to_date('23-1-1982','dd-mm-yyyy'),1300,NULL,10)
 
-query TT rowsort
+query TT nosort
 SELECT department_name, employee_name FROM
 	departments as d JOIN LATERAL (SELECT employee_name FROM   employees e WHERE  e.department_id = d.department_id) as e on TRUE
 order by department_name, employee_name
@@ -111,7 +111,7 @@ TURNER
 SALES
 WARD
 
-query TT rowsort
+query TT nosort
 SELECT department_name, employee_name FROM
 	departments as d, LATERAL (SELECT employee_name FROM   employees e WHERE  e.department_id = d.department_id) as e
 order by department_name, employee_name
@@ -151,7 +151,7 @@ begin
 	return TABLE(select employee_name from employees e where e.department_id = dep_id);
 end
 
-query TT rowsort
+query TT nosort
 select department_name, employee_name from departments as d, LATERAL emps(d.department_id) order by department_name, employee_name
 ----
 ACCOUNTING

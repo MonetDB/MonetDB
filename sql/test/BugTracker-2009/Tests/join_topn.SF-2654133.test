@@ -10,7 +10,7 @@ insert into x (n,s) values (2, 'two')
 statement ok
 insert into x (n,s) values (3, 'three')
 
-query TIIIIIIIT rowsort
+query TIIIIIIIT nosort
 select name, schema_id, type, system, commit_action, access, temporary, n, s from tables, x where name in ('schemas', 'tables', 'columns') and schema_id = 2000 order by name, n limit 9
 ----
 columns

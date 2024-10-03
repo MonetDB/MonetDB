@@ -562,7 +562,7 @@ acceptConnections(int socks[3])
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
 			/* BEWARE: unix domain sockets have a slightly different
-			 * behaviour initialy than normal sockets, because we can
+			 * behaviour initially than normal sockets, because we can
 			 * send filedescriptors or credentials with them.  To do so,
 			 * we need to use sendmsg/recvmsg, which operates on a bare
 			 * socket.  Unfortunately we *have* to send something, so it

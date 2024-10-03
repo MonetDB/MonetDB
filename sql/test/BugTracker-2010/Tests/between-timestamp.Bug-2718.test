@@ -23,7 +23,7 @@ select * from bug2718
 2010-11-17 13:37:57
 3
 
-query TI rowsort
+query TI nosort
 select t1.time, count(t2.val)
 from bug2718 t1, bug2718 t2
 where t2.time between (t1.time - interval '1' second) and (t1.time + interval '1' second)

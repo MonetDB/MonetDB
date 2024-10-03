@@ -26,28 +26,28 @@ INSERT INTO query_users (user_id, user_name) VALUES (6, 'ralph')
 statement ok
 INSERT INTO query_users (user_id, user_name) VALUES (7, 'fido')
 
-query IT rowsort
+query IT nosort
 select * from query_users order by user_name
 ----
-1
-john
-2
-jack
 3
 ed
-4
-wendy
+7
+fido
+2
+jack
+1
+john
 5
 laura
 6
 ralph
-7
-fido
+4
+wendy
 
 statement ok rowcount 7
 select * from query_users
 
-query IT rowsort
+query IT nosort
 SELECT query_users.user_id, query_users.user_name
 FROM query_users ORDER BY query_users.user_id
 LIMIT 3 OFFSET 2
@@ -64,20 +64,20 @@ SELECT query_users.user_id, query_users.user_name
 FROM query_users
 LIMIT 3 OFFSET 2
 
-query IT rowsort
+query IT nosort
 select * from query_users order BY user_name
 OFFSET 2
 ----
-1
-john
 2
 jack
-4
-wendy
+1
+john
 5
 laura
 6
 ralph
+4
+wendy
 
 statement ok rowcount 5
 select * from query_users

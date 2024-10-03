@@ -477,7 +477,6 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 				mp->lang_is_mal = true;
 			else if (strstr(value, "sql") == value)
 				mp->lang_is_sql = true;
-			else if (strcmp(value, "`"))
 			break;
 		default:
 			break;

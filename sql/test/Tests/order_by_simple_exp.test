@@ -35,7 +35,7 @@ INSERT INTO test01 VALUES (18,'ABE',29)
 statement ok
 INSERT INTO test01 VALUES (19,'ABF',30)
 
-query T rowsort
+query T nosort
 select col1
 from test01
 group by col1
@@ -46,7 +46,7 @@ ABD
 ABE
 ABF
 
-query T rowsort
+query T nosort
 select col1 as c0
 from test01
 group by col1
@@ -57,7 +57,7 @@ ABD
 ABE
 ABF
 
-query T rowsort
+query T nosort
 select col1 as c0
 from test01
 group by col1

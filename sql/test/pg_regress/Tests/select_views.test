@@ -2,7 +2,7 @@ query TTT rowsort
 SELECT * FROM street
 ----
 
-query TT rowsort
+query TT nosort
 SELECT name, thepath FROM iexit ORDER BY 1, 2
 ----
 

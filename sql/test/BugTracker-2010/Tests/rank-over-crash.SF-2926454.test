@@ -20,7 +20,7 @@ insert into score_table values('bar','english',45)
 statement ok
 insert into score_table values('bar','history',75)
 
-query TII rowsort
+query TII nosort
 select
 s_name,
 cast(sum(score) as bigint) as totalscore,
@@ -28,12 +28,12 @@ rank() over (order by sum(score) desc)
 from score_table
 group by s_name
 ----
-bar
-120
-2
 foo
 180
 1
+bar
+120
+2
 
 statement ok
 drop table score_table

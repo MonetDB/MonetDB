@@ -10,7 +10,7 @@ INSERT INTO people (id,name) SELECT 1,'Michael Jordan'
 statement ok
 INSERT INTO people (id,name) SELECT 2,'Lionel Messi'
 
-query IT rowsort
+query IT nosort
 SELECT * FROM people ORDER BY id
 ----
 0
@@ -26,7 +26,7 @@ START TRANSACTION
 statement ok
 UPDATE people SET id = -1 WHERE name='Phil Ivey'
 
-query IT rowsort
+query IT nosort
 SELECT * FROM people ORDER BY id
 ----
 -1
@@ -39,7 +39,7 @@ Lionel Messi
 statement ok
 UPDATE people SET id = -2 WHERE name='Phil Ivey'
 
-query IT rowsort
+query IT nosort
 SELECT * FROM people ORDER BY id
 ----
 -2
@@ -52,7 +52,7 @@ Lionel Messi
 statement ok
 COMMIT
 
-query IT rowsort
+query IT nosort
 SELECT * FROM people ORDER BY id
 ----
 -2

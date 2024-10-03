@@ -98,14 +98,14 @@ create table tmp(i tinyint)
 statement ok
 insert into tmp values(3),(4),(5)
 
-query I rowsort
+query I nosort
 select * from tmp order by i
 ----
 3
 4
 5
 
-query II rowsort
+query II nosort
 select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i order by X.value, Y.i
 ----
 3
@@ -113,7 +113,7 @@ select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i order by X.va
 5
 5
 
-query II rowsort
+query II nosort
 select * from generate_series(9,0,-2) X, tmp Y where Y.i = X.value order by X.value, Y.i
 ----
 3
@@ -121,13 +121,13 @@ select * from generate_series(9,0,-2) X, tmp Y where Y.i = X.value order by X.va
 5
 5
 
-query II rowsort
+query II nosort
 select * from generate_series(9,0,-2) X, tmp Y where X.value = Y.i and value <5 order by X.value, Y.i
 ----
 3
 3
 
-query II rowsort
+query II nosort
 select * from generate_series(9,0,-2) as  X, tmp Y where X.value = Y.i and value <7 and value >3 order by X.value, Y.i
 ----
 5

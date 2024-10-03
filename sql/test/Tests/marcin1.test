@@ -34,7 +34,7 @@ insert into t2marcin2 values(3,1)
 statement ok
 commit
 
-query IIII rowsort
+query IIII nosort
 select * from t1marcin1,t2marcin2 order by t1marcin1.id, t1marcin1.val, t2marcin2.id, t2marcin2.val
 ----
 1

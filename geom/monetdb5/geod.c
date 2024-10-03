@@ -13,7 +13,7 @@
 #include "geod.h"
 
 /**
-*  Convertions
+*  Conversions
 *
 **/
 
@@ -741,7 +741,7 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 }
 
 //The distance_min_limit argument is used for DWithin and Intersects.
-//If we get to the minimum distance for the predicate, return immediatly
+//If we get to the minimum distance for the predicate, return immediately
 //It is equal to 0 if the operation is Distance
 static double
 geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)

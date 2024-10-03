@@ -729,7 +729,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		return GDK_FAIL;
 	}
 
-	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	RTREEdestroy(b);
@@ -1029,7 +1028,6 @@ BATdel(BAT *b, BAT *d)
 	assert(d->tkey);
 	if (BATcount(d) == 0)
 		return GDK_SUCCEED;
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
 	PROPdestroy(b);
@@ -1224,7 +1222,6 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	BATiter ni = bat_iterator(n);
 
 	OIDXdestroy(b);
-	IMPSdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
 	TSKdestroy(b);
@@ -2276,6 +2273,29 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 {
 	if (n <= 1)		/* trivially sorted */
 		return GDK_SUCCEED;
+	switch (tpe) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_date:
+	case TYPE_daytime:
+	case TYPE_timestamp:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, false);
+		break;
+	case TYPE_uuid:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, true);
+		break;
+	default:
+		break;
+	}
 	if (stable) {
 		if (reverse)
 			return GDKssort_rev(h, t, base, n, hs, ts, tpe);

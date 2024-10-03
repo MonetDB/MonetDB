@@ -42,7 +42,7 @@ DBI test script for MonetDB 4.3.16
 
 This scripts will call all methods as defined in DBI 1.37 (Perl 5.8.1).
 It basically is copy of the DBI pod text interchanged with the actual
-funtion calls.
+function calls.
 
 As the creation of handles depends on execution of functions on higher
 levels, the script is not able to exactly analyse what's working and what's
@@ -576,7 +576,7 @@ print "test# $testnr - result : $res\n";
 
 print "trying to determine whether trace() is used by monetdb and mapi\n";
 print "-------------------------------------------------------------\n";
-#this might be used to determine whether the driver actualy uses 'TraceLevel'...
+#this might be used to determine whether the driver actually uses 'TraceLevel'...
 $level = 0;
 
 $dbh->trace($level, undef);
@@ -1197,7 +1197,7 @@ As bin_param also fails at the moment this is skipped for now.
 The plain execute() is assumed to work. (if it doesn't almost nothing in this script
 will work...)
 
-We do check excution with bind parameters:
+We do check execution with bind parameters:
   $sth = $dbh->prepare("select * from countries where cty_name like ?;");
   @bind_values = ['N%'];
   $rv = $sth->execute(@bind_values) 

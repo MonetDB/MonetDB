@@ -610,7 +610,7 @@ Frances Coles
 Mary Jane Kelly
 2
 
-query TI rowsort
+query TI nosort
 select i.name, count(v.victim) AS cases from inspector i JOIN inspector_victim v ON (v.inspector = i.name)
 GROUP BY i.name HAVING count(v.victim) > 1 order by i.name
 ----

@@ -12,7 +12,7 @@
 
 PWD=`pwd`
 
-# client setings
+# client settings
 ORACLE_BASE=/net/db1/export/scratch1/oracle
 export ORACLE_HOME=$ORACLE_BASE/oracle-9i
 export ORAENV_HOME=$ORACLE_BASE/bin

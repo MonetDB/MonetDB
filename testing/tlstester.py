@@ -416,6 +416,32 @@ class TLSTester:
         for t in threads:
             t.join()
 
+    def spawn_server(self, name, server_class, addr, port, handler):
+        fam = server_class.address_family.name
+        try:
+            server = server_class((addr, port), handler)
+        except Exception as e:
+            log.debug(f"Could not bind {name} to {fam} = {addr} port {port}: {e}")
+            raise
+        bound_addr, bound_port = server.server_address[:2]
+        log.debug(f"Bound {name}: {fam} = {bound_addr} port {bound_port}")
+        self.portmap[name] = bound_port
+        self.workers.append(server.serve_forever)
+        return bound_port
+
+    def spawn_servers(self, name, server_classes, addr, port, handler):
+        exceptions = []
+        for server_class in server_classes:
+            try:
+                # update 'port' so all servers use the same port number
+                port = self.spawn_server(name, server_class, addr, port, handler)
+            except OSError as e:
+                exceptions.append(e)
+        if len(exceptions) == len(server_classes):
+            e = exceptions[0]
+            log.error(f"Could not spawn any listener for {name} on {addr}: {e}")
+            raise e
+
     def spawn_http(self, name: str, only_preassigned: bool):
         if only_preassigned and name not in self.preassigned:
             return
@@ -425,11 +451,7 @@ class TLSTester:
         handler = lambda req, addr, server: WebHandler(
             req, addr, server, self.certs, self.portmap
         )
-        server = http.server.HTTPServer((self.listen_addr, port), handler)
-        port = server.server_address[1]
-        log.debug(f"Bound port {name} to {port}")
-        self.portmap[name] = port
-        self.workers.append(server.serve_forever)
+        self.spawn_servers(name, [MyHTTPServer, MyHTTP6Server], self.listen_addr, port, handler)
 
     def spawn_mapi(self, name: str, only_preassigned, ctx: SSLContext, check_alpn=None, redirect_to=None):
         if only_preassigned and name not in self.preassigned:
@@ -438,11 +460,7 @@ class TLSTester:
             return
         port = self.allocate_port(name)
         handler = lambda req, addr, server: MapiHandler(req, addr, server, self, name, ctx, check_alpn, redirect_to)
-        server = MyTCPServer((self.listen_addr, port), handler)
-        port = server.server_address[1]
-        log.debug(f"Bound port {name} to {port}")
-        self.portmap[name] = port
-        self.workers.append(server.serve_forever)
+        self.spawn_servers(name, [MyTCPServer, MyTCP6Server], self.listen_addr, port, handler)
 
     def spawn_forward(self, name, ctx: SSLContext):
         if name in self.portmap:
@@ -451,11 +469,8 @@ class TLSTester:
         handler = lambda req, addr, server: ForwardHandler(
             req, addr, server, name, ctx, self.forward_to
         )
-        server = MyTCPServer((self.listen_addr, local_port), handler)
-        port = server.server_address[1]
-        log.debug(f"Bound port {name} to {port}")
-        self.portmap[name] = port
-        self.workers.append(server.serve_forever)
+        self.spawn_servers(name, [MyTCPServer, MyTCP6Server], self.listen_addr, local_port, handler)
+
 
     def allocate_port(self, name):
         if name in self.preassigned:
@@ -551,6 +566,14 @@ class MyTCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     pass
 
+class MyTCP6Server(MyTCPServer):
+    address_family = socket.AF_INET6
+
+class MyHTTPServer(http.server.HTTPServer):
+    pass
+
+class MyHTTP6Server(MyHTTPServer):
+    address_family = socket.AF_INET6
 
 class MapiHandler(socketserver.BaseRequestHandler):
     tlstester: TLSTester

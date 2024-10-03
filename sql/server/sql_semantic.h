@@ -53,7 +53,7 @@ extern char *qname_catalog(dlist *qname);
 extern sql_subtype *result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r);
 
 typedef enum {
-	type_set,	/* set operations have very limiting coersion rules */
+	type_set,	/* set operations have very limiting coercion rules */
 	type_equal,
 	type_equal_no_any,
 	type_cast	/* also truncate */
@@ -77,4 +77,3 @@ extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 extern char * toUpperCopy(char *dest, const char *src);
 
 #endif /*_SQL_SEMANTIC_H_*/
-

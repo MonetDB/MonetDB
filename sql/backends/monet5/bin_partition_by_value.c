@@ -73,6 +73,7 @@ rel_groupby_partition(backend *be, sql_rel *rel)
 	(void)be;
 	bool partition = false;
 
+#if 0
 	for(node *n = rel->exps->h; n && !partition; n = n->next ) {
 		sql_exp *e = n->data;
 
@@ -87,6 +88,7 @@ rel_groupby_partition(backend *be, sql_rel *rel)
 			}
 		}
 	}
+#endif
 	/* check size */
 	BUN est = get_rel_count(rel);
 	if (est == BUN_NONE)

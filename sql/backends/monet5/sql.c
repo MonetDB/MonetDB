@@ -2514,7 +2514,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scale = BATdescriptor(scaleId);
 	if (tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set;
-	/* mimick the old rsColumn approach; */
+	/* mimic the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
@@ -2623,7 +2623,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scale = BATdescriptor(scaleId);
 	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set1;
-	/* mimick the old rsColumn approach; */
+	/* mimic the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
@@ -2749,7 +2749,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scale = BATdescriptor(scaleId);
 	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set;
-	/* mimick the old rsColumn approach; */
+	/* mimic the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
@@ -2860,7 +2860,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	scale = BATdescriptor(scaleId);
 	if (tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set;
-	/* mimick the old rsColumn approach; */
+	/* mimic the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
 	iteratr = bat_iterator(atr);
 	itertpe = bat_iterator(tpe);
@@ -3568,6 +3568,47 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPkeepref(t[i]);
 	}
 	return MAL_SUCCEED;
+}
+
+static str
+sql_unclosed_result_sets(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	bat *ret_query_id = getArgReference_bat(stk, pci, 0);
+	bat *ret_res_id = getArgReference_bat(stk, pci, 1);
+	backend *be = cntxt->sqlcontext;
+
+	BUN count = 0;
+	for (res_table *p = be->results; p != NULL; p = p->next)
+		count++;
+
+	BAT *query_ids = COLnew(0, TYPE_oid, count, TRANSIENT);
+	BAT *res_ids = COLnew(0, TYPE_int, count, TRANSIENT);
+
+	if (query_ids == NULL || res_ids == NULL) {
+		BBPreclaim(query_ids);
+		BBPreclaim(res_ids);
+		throw(SQL, "sql.sql_unclosed_result_sets", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	for (res_table *p = be->results; p != NULL; p = p->next) {
+		if (BUNappend(query_ids, &p->query_id, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(res_ids, &p->id, false) != GDK_SUCCEED)
+			goto bailout;
+	}
+
+	*ret_query_id = query_ids->batCacheid;
+	BBPkeepref(query_ids);
+	*ret_res_id = res_ids->batCacheid;
+	BBPkeepref(res_ids);
+
+	return MAL_SUCCEED;
+
+bailout:
+	BBPunfix(query_ids->batCacheid);
+	BBPunfix(res_ids->batCacheid);
+	throw(SQL, "sql.sql_unclosed_result_sets", SQLSTATE(42000)"failed to retrieve result tables");
 }
 
 static str
@@ -4297,7 +4338,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 								goto bailout1;
 
-							sz = IMPSimprintsize(bs);
+							sz = 0;
 							if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 								goto bailout1;
 							/*printf(" indices "BUNFMT, bs->thash?bs->thash->heap.size:0); */
@@ -4393,7 +4434,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 									goto bailout1;
 
-								sz = IMPSimprintsize(bs);
+								sz = 0;
 								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 									goto bailout1;
 								/*printf(" indices "BUNFMT, bs->thash?bs->thash->heaplink.size+bs->thash->heapbckt.size:0); */
@@ -5539,7 +5580,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = NULL;
 	str *r = getArgReference_str(stk, pci, 0);
 	const char *sname = *getArgReference_str(stk, pci, 1);
-	const char *cname = *getArgReference_str(stk, pci, 2);
+	const char *kname = *getArgReference_str(stk, pci, 2);
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -5548,12 +5589,16 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)sname;
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
-		sql_key *k = mvc_bind_key(m, s, cname);
+		sql_key *k = mvc_bind_key(m, s, kname);
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
 			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
-			if (!(*r = GDKstrdup(exp2sql(m, exp))))
+			if (exp->comment)
+				*r = GDKstrdup(exp->comment);
+			else
+				*r = GDKstrdup(exp2sql(m, exp));
+			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return MAL_SUCCEED;
 		}
@@ -5573,7 +5618,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "set_protocol", SQLset_protocol, true, "Configures the result set protocol", args(1,2, arg("",int), arg("protocol",int))),
  pattern("sql", "mvc", SQLmvc, false, "Get the multiversion catalog context. \nNeeded for correct statement dependencies\n(ie sql.update, should be after sql.bind in concurrent execution)", args(1,1, arg("",int))),
  pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement", args(1,2, arg("",void),arg("cmd",str))),
- pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionaly set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
+ pattern("sql", "eval", SQLstatement, true, "Compile and execute a single sql statement (and optionally set the output to columnar format)", args(1,3, arg("",void),arg("cmd",str),arg("columnar",bit))),
  pattern("sql", "include", SQLinclude, true, "Compile and execute a sql statements on the file", args(1,2, arg("",void),arg("fname",str))),
  pattern("sql", "evalAlgebra", RAstatement, true, "Compile and execute a single 'relational algebra' statement", args(1,3, arg("",void),arg("cmd",str),arg("optimize",bit))),
  pattern("sql", "register", RAstatement2, true, "", args(1,5, arg("",int),arg("mod",str),arg("fname",str),arg("rel_stmt",str),arg("sig",str))),
@@ -5643,7 +5688,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), batargany("col", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "export_bin_column", mvc_bin_export_column_wrap, true, "export column as binary", args(1, 5, arg("", lng), argany("val", 1), arg("byteswap", bit), arg("filename", str), arg("onclient", int))),
  pattern("sql", "affectedRows", mvc_affected_rows_wrap, true, "export the number of affected rows by the current query", args(1,3, arg("",int),arg("mvc",int),arg("nr",lng))),
- pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
+ pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and separators (sep/rsep)", args(1,15, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int),arg("decsep",str),arg("decskip",str))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
  pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 8, batargany("", 0),arg("", oid), arg("method",str),arg("width",int),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
@@ -5653,7 +5698,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,1, arg("",str))),
  pattern("sql", "argRecord", SQLargRecord, false, "Glue together the calling sequence", args(1,2, arg("",str),varargany("a",0))),
  pattern("sql", "sql_variables", sql_variables, false, "return the table with session variables", args(4,4, batarg("sname",str),batarg("name",str),batarg("type",str),batarg("value",str))),
- pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status",args(16,16,batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optmizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int),batarg("language", str),batarg("peer", str),batarg("hostname", str),batarg("application", str),batarg("client", str),batarg("clientpid", lng),batarg("remark", str),)),
+ pattern("sql", "sessions", sql_sessions_wrap, false, "SQL export table of active sessions, their timeouts and idle status",args(16,16,batarg("id",int),batarg("user",str),batarg("start",timestamp),batarg("idle",timestamp),batarg("optimizer",str),batarg("stimeout",int),batarg("qtimeout",int),batarg("wlimit",int),batarg("mlimit",int),batarg("language", str),batarg("peer", str),batarg("hostname", str),batarg("application", str),batarg("client", str),batarg("clientpid", lng),batarg("remark", str),)),
+ pattern("sql", "unclosed_result_sets", sql_unclosed_result_sets, false, "return query_id/res_id of unclosed result sets", args(2,2, batarg("query_id",oid),batarg("res_id", int))),
  pattern("sql", "password", SQLuser_password, false, "Return password hash of user", args(1,2, arg("",str),arg("user",str))),
  pattern("sql", "decypher", SQLdecypher, false, "Return decyphered password", args(1,2, arg("",str),arg("hash",str))),
  pattern("sql", "dump_cache", dump_cache, false, "dump the content of the query cache", args(2,2, batarg("query",str),batarg("count",int))),
@@ -6243,9 +6289,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, arg("",str),arg("b",str),arg("sep",str),arg("p",bit),arg("o",bit),arg("t",int),arg("s",oid),arg("e",oid))),
  pattern("batsql", "str_group_concat", SQLstrgroup_concat, false, "return the string concatenation of groups with a custom separator", args(1,8, batarg("",str),optbatarg("b",str),optbatarg("sep",str),optbatarg("p",bit),optbatarg("o",bit),arg("t",int),optbatarg("s",oid),optbatarg("e",oid))),
  /* sql_subquery */
- command("aggr", "zero_or_one", zero_or_one, false, "if col contains exactly one value return this. Incase of more raise an exception else return nil", args(1,2, argany("",1),batargany("col",1))),
- command("aggr", "zero_or_one", zero_or_one_error, false, "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),arg("err",bit))),
- command("aggr", "zero_or_one", zero_or_one_error_bat, false, "if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),batarg("err",bit))),
+ command("aggr", "zero_or_one", zero_or_one, false, "if col contains exactly one value return this. In case of more raise an exception else return nil", args(1,2, argany("",1),batargany("col",1))),
+ command("aggr", "zero_or_one", zero_or_one_error, false, "if col contains exactly one value return this. In case of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),arg("err",bit))),
+ command("aggr", "zero_or_one", zero_or_one_error_bat, false, "if col contains exactly one value return this. In case of more raise an exception if err is true else return nil", args(1,3, argany("",1),batargany("col",1),batarg("err",bit))),
  command("aggr", "subzero_or_one", SQLsubzero_or_one, false, "", args(1,5, batargany("",1),batargany("b",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),
  command("aggr", "all", SQLall, false, "if all values in b are equal return this, else nil", args(1,2, argany("",1),batargany("b",1))),
  pattern("aggr", "suball", SQLall_grp, false, "if all values in l are equal (per group) return the value, else nil", args(1,5, batargany("",1),batargany("l",1),batarg("g",oid),batarg("e",oid),arg("no_nil",bit))),

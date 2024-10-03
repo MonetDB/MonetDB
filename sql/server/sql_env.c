@@ -54,30 +54,43 @@ str
 sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 {
 	if (strcmp(s->base.name, "sys") == 0) {
-		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "sql_optimizer") == 0) {
+		if (strcmp(name, "debug") == 0 ||
+			strcmp(name, "current_timezone") == 0 ||
+			strcmp(name, "sql_optimizer") == 0 ||
+			strcmp(name, "division_min_scale") == 0) {
 			VAR_UPCAST sgn = val_get_number(ptr);
-
 			if (VALisnil(ptr))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
+				throw(SQL, "sql_update_var", SQLSTATE(HY009)
+					  "Variable '%s.%s' cannot be NULL", s->base.name, name);
 			if (sgn <= (VAR_UPCAST) GDK_int_min)
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too small for '%s.%s'\n", s->base.name, name);
+				throw(SQL, "sql_update_var", SQLSTATE(HY009)
+					  "Value too small for '%s.%s'", s->base.name, name);
 			if (sgn > (VAR_UPCAST) GDK_int_max)
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too large for '%s.%s'\n", s->base.name, name);
-
+				throw(SQL, "sql_update_var", SQLSTATE(HY009)
+					  "Value too large for '%s.%s'", s->base.name, name);
 			if (/* DISABLES CODE */ (0) && strcmp(name, "debug") == 0) {
 				m->debug = (int) sgn;
 			} else if (strcmp(name, "current_timezone") == 0) {
 				m->timezone = (int) sgn;
+			} else if (strcmp(name, "division_min_scale") == 0) {
+				if (sgn >= 0)
+					m->div_min_scale = (unsigned int) sgn;
+				else
+					throw(SQL, "sql_update_var", SQLSTATE(HY009)
+						  "Positive value required for '%s.%s'", s->base.name, name);
 			} else {
 				m->sql_optimizer = (int) sgn;
 			}
 		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
 			if (VALisnil(ptr))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
+				throw(SQL,"sql.update_var", SQLSTATE(HY009)
+					  "Variable '%s.%s' cannot be NULL", s->base.name, name);
 			if (strcmp(name, "current_schema") == 0 && !mvc_set_schema(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", ptr->val.sval);
+				throw(SQL,"sql.update_var", SQLSTATE(3F000)
+					  "Schema (%s) missing\n", ptr->val.sval);
 			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", ptr->val.sval);
+				throw(SQL,"sql.update_var", SQLSTATE(HY009)
+					  "Role (%s) missing\n", ptr->val.sval);
 		}
 	}
 	return NULL;

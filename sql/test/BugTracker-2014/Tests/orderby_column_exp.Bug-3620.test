@@ -1,6 +1,6 @@
-query I rowsort
+query I nosort
 SELECT val FROM (SELECT 1 AS val UNION ALL SELECT 2) AS foo ORDER BY -val ASC
 ----
-1
 2
+1
 

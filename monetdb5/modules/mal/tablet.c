@@ -1320,7 +1320,7 @@ SQLproducer(void *p)
 		if (unlikely(end - s + task->b->len - task->b->pos >= task->rowlimit[cur])) {
 			/* the input buffer should be extended, but 'base' is not shared
 			   between the threads, which we can not now update.
-			   Mimick an ateof instead; */
+			   Mimic an ateof instead; */
 			tablet_error(task, rowno, lineno, int_nil, "record too long", "");
 			ateof[cur] = true;
 /*			TRC_DEBUG(MAL_SERVER, "Bailout on SQLload confronted with too large record\n");*/

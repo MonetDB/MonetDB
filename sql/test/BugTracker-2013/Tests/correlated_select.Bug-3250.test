@@ -38,7 +38,7 @@ NULL
 1
 42
 
-query IIII rowsort
+query IIII nosort
 select id, n, flag, (select count(*) from mytest as i where i.id <
 	mytest.id and i.n = mytest.n) from mytest order by id
 ----
@@ -67,7 +67,7 @@ NULL
 42
 4
 
-query IIII rowsort
+query IIII nosort
 select id, n, flag, (select count(*) from mytest as i where i.id <
 	mytest.id and i.n = mytest.n and flag is not null) from mytest order by id
 ----

@@ -129,7 +129,7 @@ chkFlow(MalBlkPtr mb)
 			v = getDestVar(p);
 			if (btop > 0 && var[btop - 1] != v)
 				throw(MAL, "chkFlow",
-					  "%s.%s exit-label '%s' doesnot match '%s'",
+					  "%s.%s exit-label '%s' does not match '%s'",
 					  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, v, name),
 					  getVarNameIntoBuffer(mb, var[btop - 1], name));
 			if (btop == 0)

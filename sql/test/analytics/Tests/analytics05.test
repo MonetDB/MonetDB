@@ -37,7 +37,7 @@ statement error
 select count(*) over w, cast(sum(aa) over w as bigint)
     from analytics
 
-query IIR rowsort
+query IIR nosort
 select count(*) over w, cast(sum(aa) over z as bigint), avg(aa) over z
     from analytics window w as (rows between 5 preceding and 0 following), z as (order by bb range unbounded preceding)
 ----
@@ -72,12 +72,11 @@ select count(*) over w, cast(sum(aa) over z as bigint), avg(aa) over z
 46
 5.750
 
-query I rowsort
+query I nosort
 with helper as (select count(*) over w as counted from analytics window w as (order by bb))
     select count(*) over w from helper window w as (rows unbounded preceding)
 ----
 1
-10
 2
 3
 4
@@ -86,6 +85,7 @@ with helper as (select count(*) over w as counted from analytics window w as (or
 7
 8
 9
+10
 
 query I rowsort
 select count(*) over w window w as ()

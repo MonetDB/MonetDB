@@ -41,6 +41,14 @@ external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 grant select on sys.sessions to public;
 
+create function sys.unclosed_result_sets()
+returns table(
+	"query_id" oid,
+	"res_id" int
+)
+external name sql.unclosed_result_sets;
+grant execute on function sys.unclosed_result_sets() to public;
+
 create procedure sys.setclientinfo(property string, value string)
 	external name clients.setinfo;
 grant execute on procedure sys.setclientinfo(string, string) to public;

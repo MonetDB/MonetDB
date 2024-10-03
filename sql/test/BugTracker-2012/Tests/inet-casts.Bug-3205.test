@@ -10,7 +10,7 @@ insert into tab3205 values(2, inet '127.0.0.1')
 statement ok
 insert into tab3205 values(3, cast('127.0.0.1' as inet))
 
-query IT rowsort
+query IT nosort
 select * from tab3205 order by pos
 ----
 1
@@ -20,7 +20,7 @@ select * from tab3205 order by pos
 3
 127.0.0.1
 
-query IT rowsort
+query IT nosort
 select * from tab3205 where col = '127.0.0.1' order by pos
 ----
 1
@@ -30,7 +30,7 @@ select * from tab3205 where col = '127.0.0.1' order by pos
 3
 127.0.0.1
 
-query IT rowsort
+query IT nosort
 select * from tab3205 where col = inet '127.0.0.1' order by pos
 ----
 1
@@ -40,7 +40,7 @@ select * from tab3205 where col = inet '127.0.0.1' order by pos
 3
 127.0.0.1
 
-query IT rowsort
+query IT nosort
 select * from tab3205 where col = cast('127.0.0.1' as inet) order by pos
 ----
 1
@@ -50,7 +50,7 @@ select * from tab3205 where col = cast('127.0.0.1' as inet) order by pos
 3
 127.0.0.1
 
-query IT rowsort
+query IT nosort
 select * from tab3205 where col = inet '127.0.0.1' order by pos
 ----
 1
@@ -60,7 +60,7 @@ select * from tab3205 where col = inet '127.0.0.1' order by pos
 3
 127.0.0.1
 
-query IT rowsort
+query IT nosort
 select * from tab3205 where col = inet '127.0.0.1' order by pos
 ----
 1
@@ -70,7 +70,7 @@ select * from tab3205 where col = inet '127.0.0.1' order by pos
 3
 127.0.0.1
 
-query IT rowsort
+query IT nosort
 select * from tab3205 order by pos
 ----
 1

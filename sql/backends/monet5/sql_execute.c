@@ -115,7 +115,7 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 
 	resultset = pushArgument(mb,resultset, getArg(q,0));
 
-	/* build colum defs */
+	/* build column defs */
 	cols = newStmt(mb,batRef, newRef);
 	if (cols == NULL) {
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);

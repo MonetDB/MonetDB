@@ -814,17 +814,14 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 		qc_destroy(m->qc);
 		return NULL;
 	}
-	if (init_global_variables(m) < 0) {
-		qc_destroy(m->qc);
-		list_destroy(m->global_vars);
-		return NULL;
-	}
+
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
 	m->timezone = 0;
 	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
+	m->div_min_scale = 3;
 
 	m->emode = m_normal;
 	m->emod = mod_none;
@@ -835,6 +832,12 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->nid = 1;
 	m->cascade_action = NULL;
 	m->runs = NULL;
+
+	if (init_global_variables(m) < 0) {
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
+		return NULL;
+	}
 
 	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);

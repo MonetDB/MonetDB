@@ -1282,7 +1282,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 				MT_lock_unset(&sql_gencodeLock);
 				return 1;
 			} else if (nfargs == argc && (nfres == retc || (retc == 1 && (IS_FILT(f) || IS_PROC(f))))) {
-				/* I removed this code because, it was triggering many errors on te SQL <-> MAL translation */
+				/* I removed this code because, it was triggering many errors on the SQL <-> MAL translation */
 				/* Check for types of inputs and outputs. SQL procedures and filter functions always return 1 value in the MAL implementation
 				bool all_match = true;
 				if (nfres != 0) { if function has output variables, test types are equivalent
@@ -1294,7 +1294,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any) any type is excluded from isaBatType
 							nmal_tpe = getBatType(nmal_tpe);
 
-						 any/void types allways match
+						 any/void types always match
 						if (nsql_tpe != TYPE_any && nmal_tpe != TYPE_any && nsql_tpe != TYPE_void && nmal_tpe != TYPE_void)
 							all_match = nsql_tpe == nmal_tpe;
 					}
@@ -1309,7 +1309,7 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 						if (isaBatType(nmal_tpe) || (nmal_tpe & 0377) == TYPE_any)  any type is excluded from isaBatType
 							nmal_tpe = getBatType(nmal_tpe);
 
-						 any/void types allways match
+						 any/void types always match
 						if (nsql_tpe != TYPE_any && nmal_tpe != TYPE_any && nsql_tpe != TYPE_void && nmal_tpe != TYPE_void)
 							all_match = nsql_tpe == nmal_tpe;
 					}
@@ -1554,7 +1554,7 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
 	/* optimize the code, but beforehand add it to the cache, so recursive functions will be found */
-	/* 'sql' module is shared, so adquire mal context lock to avoid race conditions while adding new function symbols */
+	/* 'sql' module is shared, so acquire mal context lock to avoid race conditions while adding new function symbols */
 	MT_lock_set(&sql_gencodeLock);
 	if (!f->instantiated) {
 		insertSymbol(mod, c->curprg);

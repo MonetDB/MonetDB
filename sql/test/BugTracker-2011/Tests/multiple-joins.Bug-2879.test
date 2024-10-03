@@ -22,7 +22,7 @@ INSERT INTO triples (s, p, o) VALUES
 ('<http://example/x>', '<http://example/p>', '<http://example/b>'),
 ('<http://example/x>', '<http://example/p>', '<http://example/c>')
 
-query TTTT rowsort
+query TTTT nosort
 SELECT M_1.VC_4 AS V_1, M_1.VC_3 AS V_2, M_1.VC_1 AS V_3, M_1.VC_2 AS V_4
 FROM
   ( SELECT COALESCE(T_2.o, T_4.o) AS VC_1, COALESCE(T_3.o, T_5.o) AS VC_2,

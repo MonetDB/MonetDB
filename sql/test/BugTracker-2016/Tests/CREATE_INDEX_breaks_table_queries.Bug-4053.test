@@ -63,7 +63,7 @@ CREATE INDEX "articolo_idx" ON "sys"."farmap_movimento" ("articolo_id")
 statement ok
 CREATE INDEX "farmacia_idx" ON "sys"."farmap_movimento" ("farmacia_id")
 
-query IIIITIITTTTITTTTTTTTTTTTTTTTTTTTTRRRRRRRRRRRRRIIIIII rowsort
+query IIIITIITTTTITTTTTTTTTTTTTTTTTTTTTRRRRRRRRRRRRRIIIIII nosort
 SELECT * FROM "sys"."farmap_movimento" ORDER BY "id"
 ----
 

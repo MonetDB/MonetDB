@@ -4,15 +4,15 @@ CREATE TABLE obale (nm VARCHAR(99) )
 statement ok
 INSERT INTO obale VALUES ('a'), ('b'), ('b'), (NULL)
 
-query T rowsort
+query T nosort
 SELECT nm FROM obale ORDER BY 1 desc
 ----
-NULL
+b
+b
 a
-b
-b
+NULL
 
-query T rowsort
+query T nosort
 SELECT nm FROM obale ORDER BY upper(nm)
 ----
 NULL
@@ -20,7 +20,7 @@ a
 b
 b
 
-query T rowsort
+query T nosort
 SELECT nm FROM obale ORDER BY nm || nm
 ----
 NULL
@@ -28,7 +28,7 @@ a
 b
 b
 
-query T rowsort
+query T nosort
 SELECT nm as alias1 FROM obale ORDER BY alias1, nm
 ----
 NULL
@@ -42,7 +42,7 @@ SELECT nm as alias1 FROM obale ORDER BY upper(alias1)
 statement error
 SELECT nm as alias1 FROM obale ORDER BY nm || alias1
 
-query TT rowsort
+query TT nosort
 SELECT nm, upper(nm) as alias1 FROM obale ORDER BY alias1
 ----
 NULL
@@ -54,7 +54,7 @@ B
 b
 B
 
-query TT rowsort
+query TT nosort
 SELECT nm, nm||nm as alias1 FROM obale ORDER BY alias1
 ----
 NULL
@@ -66,18 +66,18 @@ bb
 b
 bb
 
-query TII rowsort
+query TII nosort
 SELECT nm, COUNT(nm) countnm, COUNT(DISTINCT nm) countdnm FROM obale GROUP BY nm ORDER BY countnm desc, countdnm
 ----
-NULL
-0
-0
-a
-1
-1
 b
 2
 1
+a
+1
+1
+NULL
+0
+0
 
 statement error
 SELECT nm, COUNT(nm) countnm, COUNT(DISTINCT nm) countdnm FROM obale GROUP BY nm ORDER BY countdnm - countnm

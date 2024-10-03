@@ -300,7 +300,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 		*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 	prop *est;
 
-	/* for the intersection, if both expresssions don't overlap, it can be pruned */
+	/* for the intersection, if both expressions don't overlap, it can be pruned */
 	if (is_inter(rel->op) && !has_nil(le) && !has_nil(re) &&
 		((rval_max && lval_min && atom_cmp(rval_max, lval_min) < 0) || (rval_min && lval_max && atom_cmp(rval_min, lval_max) > 0)))
 		return true;
@@ -605,7 +605,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					(is_anti(e) ? ((lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0) || (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0) || atom_cmp(rval_min, fval_max) > 0) :
 					 ((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
 			} else if (!fe) {
-				if (!is_semantics(e)) /* trival not null cmp null case */
+				if (!is_semantics(e)) /* trivial not null cmp null case */
 					always_false |= !is_anti(e) && ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
 				switch (e->flag) {
 				case cmp_equal:

@@ -34,7 +34,7 @@
  * property bid. This can be used to access the BAT and involve
  * more properties into the decision procedure.
  * [to be done]
- * Also make sure you don't re-use variables, because then the
+ * Also make sure you don't reuse variables, because then the
  * row count becomes non-deterministic.
  */
 str

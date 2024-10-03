@@ -46,7 +46,7 @@
  * case characters.
  *
  * The search(str,chr) function searches for the first occurrence of a
- * character from the begining of the string. The search(chr,str)
+ * character from the beginning of the string. The search(chr,str)
  * searches for the last occurrence (or first from the end of the
  * string). The last search function locates the position of first
  * occurrence of the string s2 in string s. All search functions
@@ -1959,7 +1959,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 					assert(rev->batCount == old_s->batCount - bn->batCount);
 #endif
 				} else
-					rev = BATnegcands(b->batCount, bn);
+					rev = BATnegcands(0, b->batCount, bn);
 
 				BBPreclaim(bn);
 				bn = rev;

@@ -430,7 +430,7 @@ _os_rollback(objectversion *ov, sqlstore *store)
 
  	/*
 	 * We have to use the readers-writer lock here,
-	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
+	 * since the pointer containing the address of the older objectversion might be concurrently overwritten if the older itself has just been put in the under_destruction state .
 	 */
 	lock_reader(ov->os);
 	objectversion* name_based_older = ov->name_based_older;
@@ -455,13 +455,13 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	}
 	else if (!name_based_older) {
 		// this is a terminal node. i.e. this objectversion does not have name based committed history
-		if (ov->name_based_head) // The oposite can happen during an early conflict in os_add or os_del.
+		if (ov->name_based_head) // The opposite can happen during an early conflict in os_add or os_del.
 			os_remove_name_based_chain(ov->os, ov);
 	}
 
  	/*
 	 * We have to use the readers-writer lock here,
-	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
+	 * since the pointer containing the address of the older objectversion might be concurrently overwritten if the older itself has just been put in the under_destruction state .
 	 */
 	lock_reader(ov->os);
 	objectversion* id_based_older = ov->id_based_older;
@@ -807,9 +807,9 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 		bte state = os_atmc_get_state(oo);
 		if (state != active) {
-			// This can only happen if the parent oo was a comitted deleted at some point.
+			// This can only happen if the parent oo was a committed deleted at some point.
 			assert(state == deleted || state == under_destruction || state == block_destruction);
-			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
+			/* Since our parent oo is committed deleted objectversion, we might have a conflict with
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
@@ -859,9 +859,9 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 		bte state = os_atmc_get_state(oo);
 		if (state != active) {
-			// This can only happen if the parent oo was a comitted deleted at some point.
+			// This can only happen if the parent oo was a committed deleted at some point.
 			assert(state == deleted || state == under_destruction || state == block_destruction);
-			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
+			/* Since our parent oo is committed deleted objectversion, we might have a conflict with
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;

@@ -1040,7 +1040,7 @@ M,EUROPE,Sweden,Ume? Municipality,Flurkmark,1994-12-02,99435,Drink,Cold drinks,W
 M,EUROPE,Sweden,Ume? Municipality,Flurkmark,1994-12-02,99435,Drink,Cold drinks,Water,P.6x50cl.Vichy St.Yorre,670,75,-81.61026900,37.59382400,Bluefield (24898) West Virginia,Peronel G. Dalingridge,+1-722-231-4900,NAMER,USA,West Virginia,Bluefield,2010-10-12,2010-01-01,2010-10-01,2010-10-01,201010,20101012,12OCT2010,5.00,0.04,4.96,99.200
 M,EUROPE,Sweden,Ume? Municipality,Flurkmark,1994-12-02,99435,Food,Health foods,Fruits,Hawthorn,10386,75,-81.61026900,37.59382400,Bluefield (24898) West Virginia,Peronel G. Dalingridge,+1-722-231-4900,NAMER,USA,West Virginia,Bluefield,2010-10-12,2010-01-01,2010-10-01,2010-10-01,201010,20101012,12OCT2010,0.67,0.33,0.34,50.746
 
-query R rowsort
+query R nosort
 select line_margin
 from lineitem_denormalized_first1k
 where

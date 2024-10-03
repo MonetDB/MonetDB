@@ -85,7 +85,7 @@ select count(*) from sys.tracelog() where stmt like '%batcalc.between%'
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%algebra.thetaselect%'
 ----
-48
+47
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%bat.replace%'

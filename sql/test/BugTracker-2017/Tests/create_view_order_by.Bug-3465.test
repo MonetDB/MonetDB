@@ -50,10 +50,10 @@ NULL
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from user_tables ORDER BY name DESC, schema_id
 ----
-my_tables
+test10
 2000
 NULL
 0
@@ -61,7 +61,7 @@ NULL
 0
 0
 0
-test10
+my_tables
 2000
 NULL
 0
@@ -130,44 +130,12 @@ create view user_views as select * from my_tables where not system and query is 
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from user_views ORDER BY query DESC, name ASC, schema_id
 ----
-all_tables
+user_views
 2000
-create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
-1
-0
-0
-0
-0
-all_tbl_objs
-2000
-create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name@;
-1
-0
-0
-0
-0
-all_views
-2000
-create view all_views as select * from user_views union select * from system_views order by schema_id, name@;
-1
-0
-0
-0
-0
-system_tables
-2000
-create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
-1
-0
-0
-0
-0
-system_views
-2000
-create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
 1
 0
 0
@@ -181,9 +149,41 @@ create view user_tables as select * from my_tables where not system and query is
 0
 0
 0
-user_views
+system_views
 2000
-create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
+create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+1
+0
+0
+0
+0
+system_tables
+2000
+create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+1
+0
+0
+0
+0
+all_views
+2000
+create view all_views as select * from user_views union select * from system_views order by schema_id, name@;
+1
+0
+0
+0
+0
+all_tbl_objs
+2000
+create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name@;
+1
+0
+0
+0
+0
+all_tables
+2000
+create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
 1
 0
 0
@@ -210,10 +210,10 @@ NULL
 1
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from system_tables ORDER BY name DESC, schema_id LIMIT 10
 ----
-dependency_types
+table_types
 2000
 NULL
 10
@@ -221,7 +221,7 @@ NULL
 0
 1
 0
-table_types
+dependency_types
 2000
 NULL
 10
@@ -250,20 +250,20 @@ create view sys.optimizers as select * from sys.optimizers();
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from system_views ORDER BY query DESC, name ASC, schema_id LIMIT 10
 ----
-environment
+optimizers
 2000
-create view sys.environment as select * from sys.env();
+create view sys.optimizers as select * from sys.optimizers();
 11
 1
 0
 0
 0
-optimizers
+environment
 2000
-create view sys.optimizers as select * from sys.optimizers();
+create view sys.environment as select * from sys.env();
 11
 1
 0
@@ -306,18 +306,10 @@ NULL
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from all_tables ORDER BY name DESC, schema_id LIMIT 10
 ----
-dependency_types
-2000
-NULL
-10
-1
-0
-1
-0
-my_tables
+test10
 2000
 NULL
 0
@@ -333,13 +325,21 @@ NULL
 0
 1
 0
-test10
+my_tables
 2000
 NULL
 0
 0
 0
 0
+0
+dependency_types
+2000
+NULL
+10
+1
+0
+1
 0
 
 query TITIIIII rowsort
@@ -418,60 +418,12 @@ create view user_views as select * from my_tables where not system and query is 
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from all_views ORDER BY query DESC, name ASC, schema_id LIMIT 10
 ----
-all_tables
+user_views
 2000
-create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
-1
-0
-0
-0
-0
-all_tbl_objs
-2000
-create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name@;
-1
-0
-0
-0
-0
-all_views
-2000
-create view all_views as select * from user_views union select * from system_views order by schema_id, name@;
-1
-0
-0
-0
-0
-environment
-2000
-create view sys.environment as select * from sys.env();
-11
-1
-0
-0
-0
-optimizers
-2000
-create view sys.optimizers as select * from sys.optimizers();
-11
-1
-0
-0
-0
-system_tables
-2000
-create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
-1
-0
-0
-0
-0
-system_views
-2000
-create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
 1
 0
 0
@@ -485,26 +437,41 @@ create view user_tables as select * from my_tables where not system and query is
 0
 0
 0
-user_views
+system_views
 2000
-create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
+create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
 1
 0
 0
 0
 0
-
-query TITIIIII rowsort
-select * from all_tbl_objs
-----
-104 values hashing to 002a9539bba14a999d0bf0f03a00def1
-
-query TITIIIII rowsort
-select * from all_tbl_objs ORDER BY query DESC, name ASC, schema_id LIMIT 10
-----
-all_tables
+system_tables
 2000
-create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
+create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+1
+0
+0
+0
+0
+optimizers
+2000
+create view sys.optimizers as select * from sys.optimizers();
+11
+1
+0
+0
+0
+environment
+2000
+create view sys.environment as select * from sys.env();
+11
+1
+0
+0
+0
+all_views
+2000
+create view all_views as select * from user_views union select * from system_views order by schema_id, name@;
 1
 0
 0
@@ -518,9 +485,90 @@ create view all_tbl_objs as select * from all_tables union select * from all_vie
 0
 0
 0
+all_tables
+2000
+create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
+1
+0
+0
+0
+0
+
+query TITIIIII rowsort
+select * from all_tbl_objs
+----
+104 values hashing to 002a9539bba14a999d0bf0f03a00def1
+
+query TITIIIII nosort
+select * from all_tbl_objs ORDER BY query DESC, name ASC, schema_id LIMIT 10
+----
+user_views
+2000
+create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
+1
+0
+0
+0
+0
+user_tables
+2000
+create view user_tables as select * from my_tables where not system and query is null order by schema_id, name@;
+1
+0
+0
+0
+0
+system_views
+2000
+create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+1
+0
+0
+0
+0
+system_tables
+2000
+create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+1
+0
+0
+0
+0
+optimizers
+2000
+create view sys.optimizers as select * from sys.optimizers();
+11
+1
+0
+0
+0
+environment
+2000
+create view sys.environment as select * from sys.env();
+11
+1
+0
+0
+0
 all_views
 2000
 create view all_views as select * from user_views union select * from system_views order by schema_id, name@;
+1
+0
+0
+0
+0
+all_tbl_objs
+2000
+create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name@;
+1
+0
+0
+0
+0
+all_tables
+2000
+create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
 1
 0
 0
@@ -534,56 +582,8 @@ NULL
 0
 1
 0
-environment
-2000
-create view sys.environment as select * from sys.env();
-11
-1
-0
-0
-0
-optimizers
-2000
-create view sys.optimizers as select * from sys.optimizers();
-11
-1
-0
-0
-0
-system_tables
-2000
-create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
-1
-0
-0
-0
-0
-system_views
-2000
-create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
-1
-0
-0
-0
-0
-user_tables
-2000
-create view user_tables as select * from my_tables where not system and query is null order by schema_id, name@;
-1
-0
-0
-0
-0
-user_views
-2000
-create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
-1
-0
-0
-0
-0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from user_tables
 UNION
 select * from user_views
@@ -662,12 +662,28 @@ create view user_views as select * from my_tables where not system and query is 
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from user_views
 UNION ALL
 select * from user_tables
 ORDER by query, name
 ----
+my_tables
+2000
+NULL
+0
+0
+0
+0
+0
+test10
+2000
+NULL
+0
+0
+0
+0
+0
 all_tables
 2000
 create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
@@ -692,14 +708,6 @@ create view all_views as select * from user_views union select * from system_vie
 0
 0
 0
-my_tables
-2000
-NULL
-0
-0
-0
-0
-0
 system_tables
 2000
 create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
@@ -712,14 +720,6 @@ system_views
 2000
 create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
 1
-0
-0
-0
-0
-test10
-2000
-NULL
-0
 0
 0
 0
@@ -741,7 +741,7 @@ create view user_views as select * from my_tables where not system and query is 
 0
 0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 select * from user_views
 UNION
 select * from user_tables
@@ -752,6 +752,22 @@ select * from system_tables
 ORDER BY system, query, name DESC
 LIMIT 10
 ----
+test10
+2000
+NULL
+0
+0
+0
+0
+0
+my_tables
+2000
+NULL
+0
+0
+0
+0
+0
 all_tables
 2000
 create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name@;
@@ -776,14 +792,6 @@ create view all_views as select * from user_views union select * from system_vie
 0
 0
 0
-my_tables
-2000
-NULL
-0
-0
-0
-0
-0
 system_tables
 2000
 create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
@@ -795,6 +803,22 @@ create view system_tables as select * from my_tables where system and query is n
 system_views
 2000
 create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name@;
+1
+0
+0
+0
+0
+user_tables
+2000
+create view user_tables as select * from my_tables where not system and query is null order by schema_id, name@;
+1
+0
+0
+0
+0
+user_views
+2000
+create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
 1
 0
 0
@@ -808,39 +832,15 @@ NULL
 0
 1
 0
-test10
-2000
-NULL
-0
-0
-0
-0
-0
-user_tables
-2000
-create view user_tables as select * from my_tables where not system and query is null order by schema_id, name@;
-1
-0
-0
-0
-0
-user_views
-2000
-create view user_views as select * from my_tables where not system and query is not null order by schema_id, name@;
-1
-0
-0
-0
-0
 
-query TITIIIII rowsort
+query TITIIIII nosort
 (select * from user_tables UNION ALL select * from user_views)
 INTERSECT
 (select * from system_tables UNION select * from system_views)
 ORDER BY name DESC
 ----
 
-query TITIIIII rowsort
+query TITIIIII nosort
 (select * from user_tables UNION ALL select * from user_views)
 EXCEPT
 (select * from user_views UNION select * from user_tables)

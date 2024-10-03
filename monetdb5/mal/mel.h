@@ -73,7 +73,7 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 		shared:1;	/* mark arguments as shared among the various pipeline execution workers, shared implies inout */
 } mel_arg;
 
-/* nr for any tyes 0, 1,2 */
+/* nr for any types 0, 1,2 */
 
 typedef struct __attribute__((__designated_init__)) mel_func {
 	const char *mod;

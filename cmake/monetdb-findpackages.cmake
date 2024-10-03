@@ -142,13 +142,8 @@ if(WITH_OPENSSL)
 endif()
 
 find_package(Sphinx)
-find_package(Createrepo)
-find_package(Rpmbuild)
-find_package(DpkgBuildpackage)
-find_package(Reprepro)
 find_package(Semodule)
 find_package(Awk)
-find_package(Candle)
 
 if(TAGS)
   find_program(CTAGS_PATH ctags)
@@ -160,4 +155,3 @@ if(TAGS)
     message(STATUS "Found cscope: ${CSCOPE_PATH}")
   endif(CSCOPE_PATH)
 endif(TAGS)
-

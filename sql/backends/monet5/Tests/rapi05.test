@@ -11,7 +11,7 @@ statement ok
 CREATE FUNCTION kmeans(data float, ncluster integer) returns integer
 language R {kmeans(data,ncluster)$cluster}
 
-query I rowsort
+query I nosort
 SELECT cluster FROM (SELECT MIN(x) AS minx, MAX(x) AS maxx, kmeans(x,5) AS cluster FROM xdata
 	GROUP BY cluster) as cdata ORDER BY cluster
 ----

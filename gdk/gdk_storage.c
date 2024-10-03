@@ -881,7 +881,6 @@ void
 BATdelete(BAT *b)
 {
 	HASHdestroy(b);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	PROPdestroy_nolock(b);
 	STRMPdestroy(b);

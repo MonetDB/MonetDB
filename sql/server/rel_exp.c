@@ -2224,6 +2224,14 @@ exp_is_atom( sql_exp *e )
 	return 0;
 }
 
+int
+exp_is_scalar( sql_exp *e )
+{
+	if (exp_is_atom(e))
+		return true;
+	return false;
+}
+
 static int
 exps_are_aggr(sql_rel *r, list *exps)
 {
@@ -3274,16 +3282,15 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
-		strcmp(sql_func_imp(f->func), "/") == 0) {
+	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX &&
+		(lt->scale || rt->scale) && strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
-		/* TODO make '3' setable by user (division_minimal_scale or so) */
-		scaleL = (lt->scale < 3) ? 3 : lt->scale;
-		scaleL += (scaleL < rt->scale)?(rt->scale - scaleL):0;
+		scaleL = (lt->scale < sql->div_min_scale) ? sql->div_min_scale : lt->scale;
+		scaleL += (scaleL < rt->scale) ? rt->scale - scaleL : 0;
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);
@@ -3559,6 +3566,17 @@ exp_aggr_is_count(sql_exp *e)
 	return 0;
 }
 
+int
+exp_aggr_is_countstar(sql_exp *e)
+{
+	if (exp_aggr_is_count(e)) {
+		list *l = e->l;
+		if (list_empty(l))
+			return 1;
+	}
+	return 0;
+}
+
 list *
 check_distinct_exp_names(mvc *sql, list *exps)
 {
@@ -3646,7 +3664,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
-	/* TODO we could use the sql_query* struct to set paremeters used as freevars,
+	/* TODO we could use the sql_query* struct to set parameters used as freevars,
 	   but it requires to change a lot of interfaces */
 	/* if (is_freevar(exp))
 		rel = query_fetch_outer(query, is_freevar(exp)-1); */

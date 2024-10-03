@@ -57,7 +57,7 @@ struct scanner {
 	 *
 	 * Because we need to be backward compatible (i.e. we need have ``select
 	 * char_length('a\nb')`` return 3) the next 2 members will probably stay for
-	 * the forseeable future.
+	 * the foreseeable future.
 	 */
 	bool next_string_is_raw;
 	bool raw_string_mode;

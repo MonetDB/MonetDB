@@ -20,7 +20,7 @@ Creating a table returning SQL function
 
 calling a SQL function (SELECT * from bbp();)
 
-    First the outer statements are transormed into nested relational plans
+    First the outer statements are transformed into nested relational plans
 
     the BBP() is recognized as a function cal rel2bin_table;
 

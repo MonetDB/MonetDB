@@ -655,65 +655,65 @@ select count(*) from victim where eyes='blue'
 ----
 2
 
-query TTT rowsort
+query TTT nosort
 select first_name, surname, picture from victim order by surname
 ----
-Ada
-Wilson
-http://www.casebook.org/images/victims_wilson.jpg
+Carrie
+Brown
+http://www.casebook.org/images/victims_brown.jpg
+Annie
+Chapman
+http://www.casebook.org/images/victims_chapman.jpg
+Frances
+Coles
+http://www.casebook.org/images/victims_coles.jpg
+Catherine
+Eddowes
+http://www.casebook.org/images/eddowes1.jpg
+NULL
+Fairy Fay
+http://www.casebook.org/images/victims_fairy.jpg
+Annie
+Farmer
+http://www.casebook.org/images/victims_farmer.jpg
+Elisabeth
+Jackson
+http://www.casebook.org/images/victims_jackson.jpg
+Mary
+Kelly
+http://www.casebook.org/images/victims_kelly.jpg
 Alice
 MacKenzie
 http://www.casebook.org/images/victims_mckenzie.jpg
 Annie
-Chapman
-http://www.casebook.org/images/victims_chapman.jpg
-Annie
-Farmer
-http://www.casebook.org/images/victims_farmer.jpg
-Annie
 Millwood
 http://www.casebook.org/images/victims_millwood.jpg
-Carrie
-Brown
-http://www.casebook.org/images/victims_brown.jpg
-Catherine
-Eddowes
-http://www.casebook.org/images/eddowes1.jpg
-Elisabeth
-Jackson
-http://www.casebook.org/images/victims_jackson.jpg
-Elisabeth
-Stride
-http://www.casebook.org/images/victims_stride.jpg
-Emma
-Smith
-http://www.casebook.org/images/victims_smith.jpg
-Frances
-Coles
-http://www.casebook.org/images/victims_coles.jpg
-Martha
-Tabram
-http://www.casebook.org/images/victims_tabram.jpg
-Mary
-Kelly
-http://www.casebook.org/images/victims_kelly.jpg
-Mary
-Walker
-http://www.casebook.org/images/victims_nichols.jpg
-NULL
-Fairy Fay
-http://www.casebook.org/images/victims_fairy.jpg
-NULL
-Pinchin Street Murder, possibly Lydia Hart
-http://www.casebook.org/images/victims_pinchin.jpg
 Rose
 Mylett
 http://www.casebook.org/images/victims_mylett.jpg
 Whitehall
 Mystery
 http://www.casebook.org/images/victims_whitehall.jpg
+NULL
+Pinchin Street Murder, possibly Lydia Hart
+http://www.casebook.org/images/victims_pinchin.jpg
+Emma
+Smith
+http://www.casebook.org/images/victims_smith.jpg
+Elisabeth
+Stride
+http://www.casebook.org/images/victims_stride.jpg
+Martha
+Tabram
+http://www.casebook.org/images/victims_tabram.jpg
+Mary
+Walker
+http://www.casebook.org/images/victims_nichols.jpg
+Ada
+Wilson
+http://www.casebook.org/images/victims_wilson.jpg
 
-query TT rowsort
+query TT nosort
 select surname, location from victim order by surname
 ----
 Brown

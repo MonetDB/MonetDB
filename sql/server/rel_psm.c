@@ -610,7 +610,7 @@ has_return( list *l )
 {
 	node *n = l->t;
 
-	/* last statment of sequential block */
+	/* last statement of sequential block */
 	if (n && exp_has_return(n->data))
 		return 1;
 	return 0;

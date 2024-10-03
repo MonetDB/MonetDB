@@ -928,7 +928,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* subgrouping byte-sized values with a limited number
 		 * of groups, use 65536 entry array to keep track of
 		 * doled out group ids; note that we can't possibly have
-		 * more than 65536 goups, so the group id fits in a
+		 * more than 65536 groups, so the group id fits in a
 		 * uint16_t */
 		GRP_small_values(16, 8, (uint16_t) (w[p] | (grps[p] << 8)));
 	} else if (g == NULL && t == TYPE_sht) {

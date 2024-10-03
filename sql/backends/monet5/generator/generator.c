@@ -1393,7 +1393,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	/* adminstrative wrapup of the projection */
+	/* administrative wrapup of the projection */
 	BBPunfix(b->batCacheid);
 	if( bn){
 		BATsetcount(bn,c);

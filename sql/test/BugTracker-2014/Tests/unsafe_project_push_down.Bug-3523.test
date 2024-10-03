@@ -7,11 +7,11 @@ create table foo (id int)
 statement ok
 insert into foo values (42)
 
-query I rowsort
+query I nosort
 select id-row_number() over (order by id) from (select id from foo union all select id from foo) as z
 ----
-40
 41
+40
 
 statement ok
 rollback

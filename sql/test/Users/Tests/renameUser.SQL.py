@@ -42,7 +42,7 @@ with SQLTestCase() as mdb:
         #   the new user (A) cannot make use of the role assign to the inital user (now B).
         mdb.execute("CREATE USER april with password 'april' name 'second' schema bank;").assertSucceeded()
         tc2.connect(username="april", password="april")
-        tc2.execute("SET role bankAdmin;").assertFailed(err_code="42000", err_message="Role (bankadmin) missing")
+        tc2.execute("SET role bankAdmin;").assertFailed(err_code="HY009", err_message="Role (bankadmin) missing")
         tc2.execute("DROP TABLE accounts;").assertFailed(err_code="42000", err_message="DROP TABLE: access denied for april to schema 'bank'")
         tc2.execute("CREATE TABLE accounts2(nr int, name VARCHAR(100));").assertFailed(err_code="42000", err_message="CREATE TABLE: insufficient privileges for user 'april' in schema 'bank'")
         tc2.execute("INSERT INTO accounts VALUES (24, 'abc'), (42, 'xyz');").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'april' to insert into table 'accounts'")
@@ -78,4 +78,3 @@ with SQLTestCase() as mdb:
     mdb.execute("DROP USER april;").assertSucceeded()
     mdb.execute("DROP SCHEMA bank;").assertSucceeded()
     mdb.execute("DROP ROLE bankAdmin;").assertSucceeded()
-

@@ -662,7 +662,6 @@ PYAPI3PyAPIprelude(void) {
 		wchar_t* program = L"mserver5";
 		wchar_t* argv[] = { program, NULL };
 		str msg = MAL_SUCCEED;
-		PyObject *tmp;
 
 		static_assert(PY_MAJOR_VERSION == 3, "Python 3.X required");
 #if PY_MINOR_VERSION >= 11
@@ -705,10 +704,8 @@ PYAPI3PyAPIprelude(void) {
 		}
 		_pytypes_init();
 		_loader_init();
-		tmp = PyUnicode_FromString("marshal");
-		marshal_module = PyImport_Import(tmp);
+		marshal_module = PyImport_ImportModule("marshal");
 		init_DateTimeAPI();
-		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
 			MT_lock_unset(&pyapiLock);
 			return createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to load Marshal module.");

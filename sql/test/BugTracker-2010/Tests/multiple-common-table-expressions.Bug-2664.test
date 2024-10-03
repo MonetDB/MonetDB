@@ -43,7 +43,7 @@ COPY 29 RECORDS INTO "t2664" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 5215	"callhistory"	2000	NULL	0	true	0	false
 5232	"querylog"	2000	"create view querylog as\nselect qd.*, ql.ctime, ql.arguments, ql.exec, ql.result, ql.foot, ql.memory, ql.tuples, ql.inblock, ql.oublock from queryhistory qd, callhistory ql\nwhere qd.id = ql.id;"	1	true	0	false
 
-query I rowsort
+query I nosort
 with t(id) as (select id from "t2664")
 select id from "t2664"
  where id in (select id from t)
@@ -80,7 +80,7 @@ select id from "t2664"
 5215
 5232
 
-query I rowsort
+query I nosort
 with t(id) as (select id from "t2664"),
      x(id) as (select id from "t2664" where id in (select id from t))
 select * from t

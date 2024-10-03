@@ -66,7 +66,7 @@ statement ok
     INSERT INTO emp VALUES
 (7934,'MILLER','CLERK',7782,'1982-01-23',1300.00,NULL,10)
 
-query TTTT rowsort
+query TTTT nosort
     SELECT e.job, e.ename, ep.ename, epp.ename
       FROM emp e
      LEFT JOIN (SELECT * FROM emp) ep ON (e.mgr = ep.empno)

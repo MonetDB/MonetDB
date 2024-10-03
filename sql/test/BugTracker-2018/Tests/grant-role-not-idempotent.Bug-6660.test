@@ -2,7 +2,7 @@ statement ok
 create user mydummyuser with password 'mydummyuser' name 'mydummyuser' schema sys
 
 @connection(id=user, username=mydummyuser, password=mydummyuser)
-statement error 42000!Role (sysadmin) missing
+statement error HY009!Role (sysadmin) missing
 set role sysadmin
 
 query I nosort

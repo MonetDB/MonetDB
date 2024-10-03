@@ -122,7 +122,7 @@ CREATE INDEX "i_customer_id" ON "customer" ("customer_id")
 statement ok
 CREATE INDEX "i_customer_lname" ON "customer" ("lname")
 
-query TTTT rowsort
+query TTTT nosort
 select
 	"product_class"."product_family" as "c0",
 	"product_class"."product_department" as "c1",

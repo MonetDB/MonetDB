@@ -229,37 +229,19 @@ NULL
 Shorts
 100
 
-query TTI rowsort
+query TTI nosort
 SELECT
     Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales
 GROUP BY CUBE(Product_Category, Product_Name) ORDER BY Product_Category, Product_Name
 ----
-Fashion
-NULL
-600
-Fashion
-Shirt
-500
-Fashion
-Shorts
-100
-Game
-Mobo Game
-200
-Game
-NULL
-600
-Game
-PKO Game
-400
-NULL
-Mobo Game
-200
 NULL
 NULL
 1200
 NULL
+Mobo Game
+200
+NULL
 PKO Game
 400
 NULL
@@ -268,6 +250,24 @@ Shirt
 NULL
 Shorts
 100
+Fashion
+NULL
+600
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+NULL
+600
+Game
+Mobo Game
+200
+Game
+PKO Game
+400
 
 statement error
 SELECT
@@ -933,19 +933,19 @@ GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Cate
 ----
 500
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
 ORDER BY SUM(TotalSales)
 ----
 100
-1200
 200
 400
 500
 600
 600
+1200
 
 query I rowsort
 SELECT
@@ -955,20 +955,20 @@ HAVING SUM(TotalSales) > 600
 ----
 1200
 
-query I rowsort
+query I nosort
 SELECT
     DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
 ORDER BY CAST(SUM(TotalSales) as BIGINT)
 ----
 100
-1200
 200
 400
 500
 600
+1200
 
-query I rowsort
+query I nosort
 SELECT
     CAST(SUM(TotalSales) as BIGINT) AS TotalSales
 FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)

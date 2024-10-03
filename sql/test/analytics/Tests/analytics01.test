@@ -21,7 +21,7 @@ select percent_rank() over (partition by aa) from analytics
 0.000
 0.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (partition by aa order by aa asc) from analytics
 ----
 0.000
@@ -35,7 +35,7 @@ select percent_rank() over (partition by aa order by aa asc) from analytics
 0.000
 0.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (partition by aa order by aa desc) from analytics
 ----
 0.000
@@ -49,7 +49,7 @@ select percent_rank() over (partition by aa order by aa desc) from analytics
 0.000
 0.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (order by aa) from analytics
 ----
 0.000
@@ -63,7 +63,7 @@ select percent_rank() over (order by aa) from analytics
 0.889
 1.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (order by aa desc) from analytics
 ----
 0.000
@@ -91,7 +91,7 @@ select percent_rank() over (partition by bb) from analytics
 0.000
 0.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (partition by bb order by bb asc) from analytics
 ----
 0.000
@@ -105,7 +105,7 @@ select percent_rank() over (partition by bb order by bb asc) from analytics
 0.000
 0.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (partition by bb order by bb desc) from analytics
 ----
 0.000
@@ -119,7 +119,7 @@ select percent_rank() over (partition by bb order by bb desc) from analytics
 0.000
 0.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (order by bb) from analytics
 ----
 0.000
@@ -133,7 +133,7 @@ select percent_rank() over (order by bb) from analytics
 0.667
 1.000
 
-query R rowsort
+query R nosort
 select percent_rank() over (order by bb desc) from analytics
 ----
 0.000
@@ -161,7 +161,7 @@ select cume_dist() over (partition by aa) from analytics
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (partition by aa order by aa asc) from analytics
 ----
 1.000
@@ -175,7 +175,7 @@ select cume_dist() over (partition by aa order by aa asc) from analytics
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (partition by aa order by aa desc) from analytics
 ----
 1.000
@@ -189,7 +189,7 @@ select cume_dist() over (partition by aa order by aa desc) from analytics
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (order by aa) from analytics
 ----
 0.200
@@ -203,7 +203,7 @@ select cume_dist() over (order by aa) from analytics
 0.900
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (order by aa desc) from analytics
 ----
 0.100
@@ -231,7 +231,7 @@ select cume_dist() over (partition by bb) from analytics
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (partition by bb order by bb asc) from analytics
 ----
 1.000
@@ -245,7 +245,7 @@ select cume_dist() over (partition by bb order by bb asc) from analytics
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (partition by bb order by bb desc) from analytics
 ----
 1.000
@@ -259,7 +259,7 @@ select cume_dist() over (partition by bb order by bb desc) from analytics
 1.000
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (order by bb) from analytics
 ----
 0.300
@@ -273,7 +273,7 @@ select cume_dist() over (order by bb) from analytics
 0.900
 1.000
 
-query R rowsort
+query R nosort
 select cume_dist() over (order by bb desc) from analytics
 ----
 0.100
@@ -301,7 +301,7 @@ select ntile(1) over (partition by aa) from analytics
 1
 1
 
-query I rowsort
+query I nosort
 select ntile(1) over (partition by aa order by aa asc) from analytics
 ----
 1
@@ -315,7 +315,7 @@ select ntile(1) over (partition by aa order by aa asc) from analytics
 1
 1
 
-query I rowsort
+query I nosort
 select ntile(1) over (partition by aa order by aa desc) from analytics
 ----
 1
@@ -329,7 +329,7 @@ select ntile(1) over (partition by aa order by aa desc) from analytics
 1
 1
 
-query I rowsort
+query I nosort
 select ntile(1) over (order by aa) from analytics
 ----
 1
@@ -343,7 +343,7 @@ select ntile(1) over (order by aa) from analytics
 1
 1
 
-query I rowsort
+query I nosort
 select ntile(1) over (order by aa desc) from analytics
 ----
 1
@@ -371,35 +371,35 @@ select ntile(3) over (partition by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select ntile(3) over (partition by bb order by bb asc) from analytics
 ----
 1
-1
-1
-1
-2
-2
 2
 3
+1
+2
 3
+1
+2
 3
+1
 
-query I rowsort
+query I nosort
 select ntile(3) over (partition by bb order by bb desc) from analytics
 ----
 1
 1
-1
-1
-2
-2
 2
 3
+1
+2
 3
+1
+2
 3
 
-query I rowsort
+query I nosort
 select ntile(3) over (order by bb) from analytics
 ----
 1
@@ -413,7 +413,7 @@ select ntile(3) over (order by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select ntile(3) over (order by bb desc) from analytics
 ----
 1
@@ -441,21 +441,21 @@ select ntile(10) over (partition by aa) from analytics
 2
 2
 
-query I rowsort
+query I nosort
 select ntile(10) over (partition by aa order by aa asc) from analytics
 ----
 1
-1
-1
-1
-1
-1
+2
 1
 1
 2
-2
+1
+1
+1
+1
+1
 
-query I rowsort
+query I nosort
 select ntile(10) over (partition by aa order by aa desc) from analytics
 ----
 1
@@ -464,16 +464,15 @@ select ntile(10) over (partition by aa order by aa desc) from analytics
 1
 1
 1
-1
-1
 2
+1
+1
 2
 
-query I rowsort
+query I nosort
 select ntile(10) over (order by aa) from analytics
 ----
 1
-10
 2
 3
 4
@@ -482,12 +481,12 @@ select ntile(10) over (order by aa) from analytics
 7
 8
 9
+10
 
-query I rowsort
+query I nosort
 select ntile(10) over (order by aa desc) from analytics
 ----
 1
-10
 2
 3
 4
@@ -496,6 +495,7 @@ select ntile(10) over (order by aa desc) from analytics
 7
 8
 9
+10
 
 query I rowsort
 select ntile(aa) over (partition by aa) from analytics
@@ -511,21 +511,21 @@ select ntile(aa) over (partition by aa) from analytics
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select ntile(aa) over (partition by aa order by aa asc) from analytics
 ----
-1
-1
-1
-1
-1
+NULL
+NULL
 1
 1
 2
-NULL
-NULL
+1
+1
+1
+1
+1
 
-query I rowsort
+query I nosort
 select ntile(aa) over (partition by aa order by aa desc) from analytics
 ----
 1
@@ -534,26 +534,26 @@ select ntile(aa) over (partition by aa order by aa desc) from analytics
 1
 1
 1
-1
 2
+1
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select ntile(aa) over (order by aa) from analytics
 ----
+NULL
+NULL
 1
 1
-10
 2
 2
 4
 4
 7
-NULL
-NULL
+10
 
-query I rowsort
+query I nosort
 select ntile(aa) over (order by aa desc) from analytics
 ----
 1
@@ -581,61 +581,61 @@ select ntile(aa) over (partition by bb) from analytics
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select ntile(aa) over (partition by bb order by bb asc) from analytics
 ----
 1
 1
+3
+NULL
+2
+3
 1
 2
-2
 3
-3
-3
-NULL
 NULL
 
-query I rowsort
+query I nosort
 select ntile(aa) over (partition by bb order by bb desc) from analytics
 ----
-1
-1
+NULL
 1
 2
+3
+NULL
 2
 3
+1
+1
 3
-3
-NULL
-NULL
 
-query I rowsort
+query I nosort
 select ntile(aa) over (order by bb) from analytics
 ----
 1
 1
 1
+NULL
 2
 4
+7
 4
 5
-7
-NULL
 NULL
 
-query I rowsort
+query I nosort
 select ntile(aa) over (order by bb desc) from analytics
 ----
+NULL
 2
 2
 2
+NULL
 2
-2
-3
-4
 5
-NULL
-NULL
+3
+2
+4
 
 query I rowsort
 select ntile(bb) over (partition by aa) from analytics
@@ -651,21 +651,21 @@ select ntile(bb) over (partition by aa) from analytics
 2
 2
 
-query I rowsort
+query I nosort
 select ntile(bb) over (partition by aa order by aa asc) from analytics
 ----
 1
-1
-1
-1
-1
-1
+2
 1
 1
 2
-2
+1
+1
+1
+1
+1
 
-query I rowsort
+query I nosort
 select ntile(bb) over (partition by aa order by aa desc) from analytics
 ----
 1
@@ -674,12 +674,12 @@ select ntile(bb) over (partition by aa order by aa desc) from analytics
 1
 1
 1
-1
-1
 2
+1
+1
 2
 
-query I rowsort
+query I nosort
 select ntile(bb) over (order by aa) from analytics
 ----
 1
@@ -689,11 +689,11 @@ select ntile(bb) over (order by aa) from analytics
 1
 1
 2
+3
 2
 3
-3
 
-query I rowsort
+query I nosort
 select ntile(bb) over (order by aa desc) from analytics
 ----
 1
@@ -702,8 +702,8 @@ select ntile(bb) over (order by aa desc) from analytics
 1
 1
 1
-1
 2
+1
 2
 4
 
@@ -721,7 +721,7 @@ select ntile(bb) over (partition by bb) from analytics
 2
 3
 
-query I rowsort
+query I nosort
 select ntile(bb) over (partition by bb order by bb asc) from analytics
 ----
 1
@@ -729,27 +729,27 @@ select ntile(bb) over (partition by bb order by bb asc) from analytics
 1
 1
 1
-1
-1
 2
+1
 2
 3
+1
 
-query I rowsort
+query I nosort
 select ntile(bb) over (partition by bb order by bb desc) from analytics
 ----
 1
 1
-1
-1
-1
-1
-1
-2
 2
 3
+1
+1
+2
+1
+1
+1
 
-query I rowsort
+query I nosort
 select ntile(bb) over (order by bb) from analytics
 ----
 1
@@ -763,7 +763,7 @@ select ntile(bb) over (order by bb) from analytics
 3
 4
 
-query I rowsort
+query I nosort
 select ntile(bb) over (order by bb desc) from analytics
 ----
 1
@@ -771,11 +771,11 @@ select ntile(bb) over (order by bb desc) from analytics
 1
 1
 1
-1
-1
-1
 2
 2
+1
+1
+1
 
 query I rowsort
 select first_value(aa) over (partition by aa) from analytics
@@ -791,10 +791,11 @@ select first_value(aa) over (partition by aa) from analytics
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select first_value(aa) over (partition by aa order by aa asc) from analytics
 ----
-15
+NULL
+NULL
 2
 3
 3
@@ -802,24 +803,23 @@ select first_value(aa) over (partition by aa order by aa asc) from analytics
 5
 6
 8
-NULL
-NULL
+15
 
-query I rowsort
+query I nosort
 select first_value(aa) over (partition by aa order by aa desc) from analytics
 ----
 15
-2
-3
-3
-4
-5
-6
 8
+6
+5
+4
+3
+3
+2
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select first_value(aa) over (order by aa) from analytics
 ----
 NULL
@@ -833,7 +833,7 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select first_value(aa) over (order by aa desc) from analytics
 ----
 15
@@ -861,35 +861,35 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select first_value(aa) over (partition by bb order by bb asc) from analytics
 ----
-15
-15
-15
 3
 3
 3
 NULL
 NULL
 NULL
+15
+15
+15
 NULL
 
-query I rowsort
+query I nosort
 select first_value(aa) over (partition by bb order by bb desc) from analytics
 ----
+NULL
 15
 15
 15
+NULL
+NULL
+NULL
 3
 3
 3
-NULL
-NULL
-NULL
-NULL
 
-query I rowsort
+query I nosort
 select first_value(aa) over (order by bb) from analytics
 ----
 3
@@ -903,7 +903,7 @@ select first_value(aa) over (order by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select first_value(aa) over (order by bb desc) from analytics
 ----
 NULL
@@ -931,35 +931,35 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(aa, 1) over (partition by bb order by bb asc) from analytics
 ----
-15
-15
-15
 3
 3
 3
 NULL
 NULL
 NULL
+15
+15
+15
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(aa, 1) over (partition by bb order by bb desc) from analytics
 ----
+NULL
 15
 15
 15
+NULL
+NULL
+NULL
 3
 3
 3
-NULL
-NULL
-NULL
-NULL
 
-query I rowsort
+query I nosort
 select nth_value(aa, 1) over (order by bb) from analytics
 ----
 3
@@ -973,7 +973,7 @@ select nth_value(aa, 1) over (order by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select nth_value(aa, 1) over (order by bb desc) from analytics
 ----
 NULL
@@ -1001,59 +1001,59 @@ select last_value(bb) over (partition by aa) from analytics
 4
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (partition by aa order by aa asc) from analytics
 ----
-1
-1
-2
-2
-2
-3
-3
-3
 4
 4
+1
+2
+2
+1
+3
+3
+2
+3
 
-query I rowsort
+query I nosort
 select last_value(bb) over (partition by aa order by aa desc) from analytics
 ----
+3
+2
+3
+3
 1
+2
+2
 1
-2
-2
-2
-3
-3
-3
 4
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (order by aa) from analytics
 ----
-1
-1
-2
-2
-2
-3
-3
-3
 4
 4
+1
+2
+2
+1
+3
+3
+2
+3
 
-query I rowsort
+query I nosort
 select last_value(bb) over (order by aa desc) from analytics
 ----
+3
+2
+3
+3
 1
+2
+2
 1
-2
-2
-2
-3
-3
-3
 4
 4
 
@@ -1071,7 +1071,7 @@ select last_value(bb) over (partition by bb) from analytics
 3
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (partition by bb order by bb asc) from analytics
 ----
 1
@@ -1085,21 +1085,21 @@ select last_value(bb) over (partition by bb order by bb asc) from analytics
 3
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (partition by bb order by bb desc) from analytics
 ----
-1
-1
-1
-2
-2
-2
-3
-3
-3
 4
+3
+3
+3
+2
+2
+2
+1
+1
+1
 
-query I rowsort
+query I nosort
 select last_value(bb) over (order by bb) from analytics
 ----
 1
@@ -1113,19 +1113,19 @@ select last_value(bb) over (order by bb) from analytics
 3
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (order by bb desc) from analytics
 ----
-1
-1
-1
-2
-2
-2
-3
-3
-3
 4
+3
+3
+3
+2
+2
+2
+1
+1
+1
 
 query I rowsort
 select nth_value(bb, 3) over (partition by bb) from analytics
@@ -1141,7 +1141,7 @@ select nth_value(bb, 3) over (partition by bb) from analytics
 3
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(bb, 3) over (partition by bb order by bb asc) from analytics
 ----
 1
@@ -1155,21 +1155,21 @@ select nth_value(bb, 3) over (partition by bb order by bb asc) from analytics
 3
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(bb, 3) over (partition by bb order by bb desc) from analytics
 ----
-1
-1
-1
-2
-2
-2
-3
-3
-3
 NULL
+3
+3
+3
+2
+2
+2
+1
+1
+1
 
-query I rowsort
+query I nosort
 select nth_value(bb, 3) over (order by bb) from analytics
 ----
 1
@@ -1183,19 +1183,19 @@ select nth_value(bb, 3) over (order by bb) from analytics
 1
 1
 
-query I rowsort
+query I nosort
 select nth_value(bb, 3) over (order by bb desc) from analytics
 ----
-3
-3
-3
-3
-3
-3
-3
-3
-3
 NULL
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select lag(bb) over (partition by aa) from analytics
@@ -1211,61 +1211,61 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lag(bb) over (partition by aa order by aa asc) from analytics
 ----
-1
+NULL
 2
 NULL
 NULL
-NULL
+1
 NULL
 NULL
 NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lag(bb) over (partition by aa order by aa desc) from analytics
 ----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 1
+NULL
+NULL
 2
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 
-query I rowsort
+query I nosort
 select lag(bb) over (order by aa) from analytics
 ----
-1
-1
-1
-2
-2
-2
-3
-3
-4
 NULL
+2
+4
+1
+1
+2
+1
+3
+3
+2
 
-query I rowsort
+query I nosort
 select lag(bb) over (order by aa desc) from analytics
 ----
-1
-1
-1
-2
-2
-2
-3
-3
-3
 NULL
+3
+2
+3
+3
+1
+1
+2
+1
+2
 
 query I rowsort
 select lead(bb) over (partition by bb) from analytics
@@ -1281,35 +1281,35 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (partition by bb order by bb asc) from analytics
 ----
 1
 1
+NULL
 2
 2
+NULL
 3
 3
-NULL
-NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (partition by bb order by bb desc) from analytics
 ----
-1
-1
-2
-2
+NULL
 3
 3
 NULL
+2
+2
 NULL
-NULL
+1
+1
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (order by bb) from analytics
 ----
 1
@@ -1323,18 +1323,18 @@ select lead(bb) over (order by bb) from analytics
 4
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (order by bb desc) from analytics
 ----
-1
-1
-1
-2
-2
-2
 3
 3
 3
+2
+2
+2
+1
+1
+1
 NULL
 
 query I nosort
@@ -1832,33 +1832,33 @@ one
 one
 one
 
-query T rowsort
+query T nosort
 select first_value(aa) over (partition by bb order by bb asc) from stressme
 ----
-NULL
+one
+one
+one
 NULL
 NULL
 check
 check
 check
-one
-one
-one
+NULL
 
-query T rowsort
+query T nosort
 select first_value(aa) over (partition by bb order by bb desc) from stressme
 ----
 NULL
+check
+check
+check
 NULL
 NULL
-check
-check
-check
 one
 one
 one
 
-query T rowsort
+query T nosort
 select first_value(aa) over (order by bb) from stressme
 ----
 one
@@ -1871,7 +1871,7 @@ one
 one
 one
 
-query T rowsort
+query T nosort
 select first_value(aa) over (order by bb desc) from stressme
 ----
 NULL
@@ -1897,33 +1897,33 @@ select first_value(bb) over (partition by aa) from stressme
 3
 3
 
-query I rowsort
+query I nosort
 select first_value(bb) over (partition by aa order by aa asc) from stressme
 ----
-1
-1
-1
 2
 2
+1
+3
+3
 2
+1
 3
-3
-3
+1
 
-query I rowsort
+query I nosort
 select first_value(bb) over (partition by aa order by aa desc) from stressme
 ----
 1
+3
 1
+2
+3
+3
 1
 2
 2
-2
-3
-3
-3
 
-query I rowsort
+query I nosort
 select first_value(bb) over (order by aa) from stressme
 ----
 2
@@ -1936,7 +1936,7 @@ select first_value(bb) over (order by aa) from stressme
 2
 2
 
-query I rowsort
+query I nosort
 select first_value(bb) over (order by aa desc) from stressme
 ----
 1
@@ -1962,54 +1962,54 @@ stress
 stress
 stress
 
-query T rowsort
+query T nosort
 select last_value(aa) over (partition by bb order by bb asc) from stressme
 ----
+stress
+stress
+stress
+ok
+ok
+please
+please
+please
 NULL
-ok
-ok
-please
-please
-please
-stress
-stress
-stress
 
-query T rowsort
+query T nosort
 select last_value(aa) over (partition by bb order by bb desc) from stressme
 ----
 NULL
+please
+please
+please
 ok
 ok
-please
-please
-please
 stress
 stress
 stress
 
-query T rowsort
+query T nosort
 select last_value(aa) over (order by bb) from stressme
 ----
+stress
+stress
+stress
+ok
+ok
+please
+please
+please
 NULL
-ok
-ok
-please
-please
-please
-stress
-stress
-stress
 
-query T rowsort
+query T nosort
 select last_value(aa) over (order by bb desc) from stressme
 ----
 NULL
+please
+please
+please
 ok
 ok
-please
-please
-please
 stress
 stress
 stress
@@ -2027,55 +2027,55 @@ select last_value(bb) over (partition by aa) from stressme
 4
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (partition by aa order by aa asc) from stressme
 ----
+4
+4
 1
-1
-1
+3
+3
 2
+1
 3
-3
-3
-4
-4
+1
 
-query I rowsort
+query I nosort
 select last_value(bb) over (partition by aa order by aa desc) from stressme
 ----
 1
-1
+3
 1
 2
 3
 3
-3
+1
 4
 4
 
-query I rowsort
+query I nosort
 select last_value(bb) over (order by aa) from stressme
 ----
+4
+4
 1
-1
-1
+3
+3
 2
+1
 3
-3
-3
-4
-4
+1
 
-query I rowsort
+query I nosort
 select last_value(bb) over (order by aa desc) from stressme
 ----
 1
-1
+3
 1
 2
 3
 3
-3
+1
 4
 4
 
@@ -2092,33 +2092,33 @@ one
 one
 one
 
-query T rowsort
+query T nosort
 select nth_value(aa, 1) over (partition by bb order by bb asc) from stressme
 ----
-NULL
+one
+one
+one
 NULL
 NULL
 check
 check
 check
-one
-one
-one
+NULL
 
-query T rowsort
+query T nosort
 select nth_value(aa, 1) over (partition by bb order by bb desc) from stressme
 ----
 NULL
+check
+check
+check
 NULL
 NULL
-check
-check
-check
 one
 one
 one
 
-query T rowsort
+query T nosort
 select nth_value(aa, 1) over (order by bb) from stressme
 ----
 one
@@ -2131,7 +2131,7 @@ one
 one
 one
 
-query T rowsort
+query T nosort
 select nth_value(aa, 1) over (order by bb desc) from stressme
 ----
 NULL
@@ -2157,7 +2157,7 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query T nosort
 select nth_value(aa, 5) over (partition by bb order by bb asc) from stressme
 ----
 NULL
@@ -2170,7 +2170,7 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query T nosort
 select nth_value(aa, 5) over (partition by bb order by bb desc) from stressme
 ----
 NULL
@@ -2183,7 +2183,7 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query T nosort
 select nth_value(aa, 5) over (order by bb) from stressme
 ----
 NULL
@@ -2196,7 +2196,7 @@ ok
 ok
 ok
 
-query T rowsort
+query T nosort
 select nth_value(aa, 5) over (order by bb desc) from stressme
 ----
 NULL
@@ -2222,33 +2222,33 @@ select nth_value(bb, 1) over (partition by aa) from stressme
 3
 3
 
-query I rowsort
+query I nosort
 select nth_value(bb, 1) over (partition by aa order by aa asc) from stressme
 ----
-1
-1
-1
 2
 2
+1
+3
+3
 2
+1
 3
-3
-3
+1
 
-query I rowsort
+query I nosort
 select nth_value(bb, 1) over (partition by aa order by aa desc) from stressme
 ----
 1
+3
 1
+2
+3
+3
 1
 2
 2
-2
-3
-3
-3
 
-query I rowsort
+query I nosort
 select nth_value(bb, 1) over (order by aa) from stressme
 ----
 2
@@ -2261,7 +2261,7 @@ select nth_value(bb, 1) over (order by aa) from stressme
 2
 2
 
-query I rowsort
+query I nosort
 select nth_value(bb, 1) over (order by aa desc) from stressme
 ----
 1
@@ -2287,7 +2287,7 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(bb, 5) over (partition by aa order by aa asc) from stressme
 ----
 NULL
@@ -2300,7 +2300,7 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(bb, 5) over (partition by aa order by aa desc) from stressme
 ----
 NULL
@@ -2313,31 +2313,31 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select nth_value(bb, 5) over (order by aa) from stressme
 ----
-3
-3
-3
-3
-3
 NULL
 NULL
 NULL
 NULL
+3
+3
+3
+3
+3
 
-query I rowsort
+query I nosort
 select nth_value(bb, 5) over (order by aa desc) from stressme
 ----
-3
-3
-3
-3
-3
 NULL
 NULL
 NULL
 NULL
+3
+3
+3
+3
+3
 
 query T rowsort
 select lag(aa) over (partition by bb) from stressme
@@ -2352,57 +2352,57 @@ check
 me
 one
 
-query T rowsort
+query T nosort
 select lag(aa) over (partition by bb order by bb asc) from stressme
 ----
 NULL
-NULL
-NULL
-NULL
-NULL
+one
 another
+NULL
+NULL
+NULL
 check
 me
-one
+NULL
 
-query T rowsort
+query T nosort
 select lag(aa) over (partition by bb order by bb desc) from stressme
 ----
 NULL
 NULL
-NULL
-NULL
-NULL
-another
 check
 me
+NULL
+NULL
+NULL
 one
+another
 
-query T rowsort
+query T nosort
 select lag(aa) over (order by bb) from stressme
 ----
 NULL
-NULL
+one
 another
+stress
+NULL
+ok
 check
 me
-ok
-one
 please
-stress
 
-query T rowsort
+query T nosort
 select lag(aa) over (order by bb desc) from stressme
 ----
 NULL
 NULL
-NULL
-another
 check
 me
+please
+NULL
 ok
 one
-please
+another
 
 query T rowsort
 select lead(aa) over (partition by bb) from stressme
@@ -2417,57 +2417,57 @@ ok
 please
 stress
 
-query T rowsort
+query T nosort
 select lead(aa) over (partition by bb order by bb asc) from stressme
 ----
-NULL
-NULL
-NULL
-NULL
 another
-me
-ok
-please
 stress
+NULL
+ok
+NULL
+me
+please
+NULL
+NULL
 
-query T rowsort
+query T nosort
 select lead(aa) over (partition by bb order by bb desc) from stressme
 ----
 NULL
+me
+please
 NULL
-NULL
+ok
 NULL
 another
-me
-ok
-please
 stress
+NULL
 
-query T rowsort
+query T nosort
 select lead(aa) over (order by bb) from stressme
 ----
-NULL
-NULL
-NULL
 another
+stress
+NULL
+ok
 check
 me
-ok
 please
-stress
+NULL
+NULL
 
-query T rowsort
+query T nosort
 select lead(aa) over (order by bb desc) from stressme
 ----
-NULL
-NULL
-another
 check
 me
+please
+NULL
 ok
 one
-please
+another
 stress
+NULL
 
 query I rowsort
 select lag(bb) over (partition by aa) from stressme
@@ -2482,9 +2482,10 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lag(bb) over (partition by aa order by aa asc) from stressme
 ----
+NULL
 2
 NULL
 NULL
@@ -2493,46 +2494,45 @@ NULL
 NULL
 NULL
 NULL
-NULL
 
-query I rowsort
+query I nosort
 select lag(bb) over (partition by aa order by aa desc) from stressme
 ----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 2
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 
-query I rowsort
+query I nosort
 select lag(bb) over (order by aa) from stressme
 ----
-1
-1
-2
-2
-3
-3
-3
-4
 NULL
+2
+4
+1
+3
+3
+2
+1
+3
 
-query I rowsort
+query I nosort
 select lag(bb) over (order by aa desc) from stressme
 ----
-1
-1
-1
-2
-2
-3
-3
-3
 NULL
+1
+3
+1
+2
+3
+3
+1
+2
 
 query I rowsort
 select lead(bb) over (partition by aa) from stressme
@@ -2547,7 +2547,7 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (partition by aa order by aa asc) from stressme
 ----
 4
@@ -2560,42 +2560,42 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (partition by aa order by aa desc) from stressme
 ----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 4
 NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (order by aa) from stressme
 ----
-1
-1
-1
-2
-3
-3
-3
 4
+1
+3
+3
+2
+1
+3
+1
 NULL
 
-query I rowsort
+query I nosort
 select lead(bb) over (order by aa desc) from stressme
 ----
-1
+3
 1
 2
+3
+3
+1
 2
-3
-3
-3
 4
 NULL
 
@@ -2677,7 +2677,7 @@ create table t1 (col1 int, col2 int)
 statement ok
 insert into t1 values (8481, 0), (8489, 0), (8489, 1), (8498, 0), (8498, 1), (8498, 2), (8507, 0), (8507, 1), (8507, 2)
 
-query IIIII rowsort
+query IIIII nosort
 select col1, col2, lag(col2) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2), lag(col2, 3) over (partition by col1 ORDER BY col2) from t1
 ----
 8481
@@ -2726,14 +2726,17 @@ NULL
 0
 NULL
 
-query III rowsort
+query III nosort
 select lag(col2, -1) over (partition by col1 ORDER BY col2), lag(col2, 1) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2) from t1
 ----
+NULL
+NULL
+NULL
 1
 NULL
 NULL
-1
 NULL
+0
 NULL
 1
 NULL
@@ -2741,50 +2744,47 @@ NULL
 2
 0
 NULL
+NULL
+1
+0
+1
+NULL
+NULL
 2
 0
 NULL
 NULL
-0
-NULL
-NULL
 1
 0
-NULL
-1
-0
-NULL
-NULL
-NULL
 
-query III rowsort
+query III nosort
 select lead(col2, -1) over (partition by col1 ORDER BY col2), lead(col2, 1) over (partition by col1 ORDER BY col2), lead(col2, 2) over (partition by col1 ORDER BY col2) from t1
 ----
+NULL
+NULL
+NULL
+NULL
+1
+NULL
+0
+NULL
+NULL
+NULL
+1
+2
 0
 2
 NULL
+1
+NULL
+NULL
+NULL
+1
+2
 0
 2
 NULL
-0
-NULL
-NULL
 1
-NULL
-NULL
-1
-NULL
-NULL
-NULL
-1
-2
-NULL
-1
-2
-NULL
-1
-NULL
-NULL
 NULL
 NULL
 
@@ -2807,7 +2807,7 @@ COPY 8 RECORDS INTO "sys"."test1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 "World"	11	"2017-12-02 01:02:00.000000"
 "World"	15	"2017-12-02 02:02:00.000000"
 
-query TRR rowsort
+query TRR nosort
 SELECT CAST(t0.start_time AS DATE) AS start_time,
 FIRST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS first_point,
 LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS last_point
@@ -2816,24 +2816,24 @@ WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 0
 ----
 2017-12-01
 20.000
+90.000
+2017-12-01
+20.000
+90.000
+2017-12-01
+20.000
+90.000
+2017-12-01
+20.000
+90.000
+2017-12-01
+20.000
 50.000
 2017-12-01
 20.000
 50.000
-2017-12-01
-20.000
-90.000
-2017-12-01
-20.000
-90.000
-2017-12-01
-20.000
-90.000
-2017-12-01
-20.000
-90.000
 
-query TRR rowsort
+query TRR nosort
 SELECT DISTINCT CAST(t0.start_time AS DATE) AS start_time,
 FIRST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS first_point,
 LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0.start_time) AS last_point
@@ -2842,10 +2842,10 @@ WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 0
 ----
 2017-12-01
 20.000
-50.000
+90.000
 2017-12-01
 20.000
-90.000
+50.000
 
 statement ok
 CREATE TABLE "sys"."test2" (
@@ -2866,7 +2866,7 @@ COPY 8 RECORDS INTO "sys"."test2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 "Prashant"	11	"2017-12-02 01:02:00.000000"
 "Prashant"	15	"2017-12-02 02:02:00.000000"
 
-query TI rowsort
+query TI nosort
 SELECT distinct "name" ,
 first_value("points") over (partition by cast("start_time" as date) order by cast("start_time" as date))
 FROM test2
@@ -2875,11 +2875,11 @@ order by "name"
 Ashish
 20
 Prashant
-11
-Prashant
 20
+Prashant
+11
 
-query TI rowsort
+query TI nosort
 SELECT distinct "name" ,
 first_value("points") over (partition by cast("start_time" as date), "name" order by cast("start_time" as date))
 FROM test2

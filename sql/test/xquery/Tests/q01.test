@@ -1,4 +1,4 @@
-query II rowsort
+query II nosort
 WITH
 a0000(item1_pre, iter_nat) AS
   (SELECT DISTINCT c0004.pre, 1 AS iter_nat

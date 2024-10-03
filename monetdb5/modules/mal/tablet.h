@@ -14,7 +14,7 @@
  * @+ Implementation
  * The implementation needs the stream abstraction, which also provides
  * primitives to compress/decompress files on the fly.
- * The file can plain ASCII, gzipped or bzipped, decided by the extention
+ * The file can plain ASCII, gzipped or bzipped, decided by the extension
  * (none, gz or bz2). The default is plain ASCII, which is formatted to
  * pre presented on the screen directly.
  */

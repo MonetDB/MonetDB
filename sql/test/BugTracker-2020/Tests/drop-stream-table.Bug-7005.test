@@ -4,7 +4,7 @@ CREATE  STREAM TABLE strt  (id int primary key, nm varchar(123) NOT NULL)
 statement ok
 CREATE merge TABLE strt  (id int primary key, nm varchar(123) NOT NULL)
 
-query TT rowsort
+query TT nosort
 with describe_all_objects as (
  select s.name as sname,
      t.name,
@@ -30,7 +30,7 @@ SELECT table_id, * FROM sys._columns WHERE (table_id) NOT IN (SELECT id FROM sys
 statement ok
 DROP TABLE strt
 
-query TT rowsort
+query TT nosort
 with describe_all_objects as (
  select s.name as sname,
      t.name,

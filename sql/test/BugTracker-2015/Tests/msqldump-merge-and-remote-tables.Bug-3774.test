@@ -10,7 +10,7 @@ ALTER TABLE mt1 ADD TABLE t1
 statement ok
 CREATE REMOTE  TABLE rt1 (t int)  on 'mapi:monetdb://localhost:50000/test'
 
-query TT rowsort
+query TT nosort
 with describe_all_objects as (
  select s.name as sname,
      t.name,

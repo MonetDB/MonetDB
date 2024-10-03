@@ -122,7 +122,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 static bool
 isCorrectInline(MalBlkPtr mb)
 {
-	/* make sure we have a simple inline function with a singe return */
+	/* make sure we have a simple inline function with a single return */
 	InstrPtr p;
 	int i, retseen = 0;
 

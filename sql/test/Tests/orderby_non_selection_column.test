@@ -22,18 +22,18 @@ insert into lim_prob values ('mydir2/', 'mytest2', 'mydir2/mytest2')
 statement ok
 insert into lim_prob values ('mydir1/', 'mytest3', 'mydir1/mytest3')
 
-query T rowsort
+query T nosort
 select test     from lim_prob order by dir_test limit 10
 ----
 mytest1
-mytest1
 mytest2
-mytest2
-mytest3
 mytest3
 mytest4
+mytest1
+mytest2
+mytest3
 
-query T rowsort
+query T nosort
 select dir      from lim_prob order by dir_test limit 10
 ----
 mydir1/
@@ -44,7 +44,7 @@ mydir2/
 mydir2/
 mydir2/
 
-query T rowsort
+query T nosort
 select dir_test from lim_prob order by dir,test limit 10
 ----
 mydir1/mytest1

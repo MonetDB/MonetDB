@@ -139,7 +139,7 @@
   recorded pid is running. If not, we start stethoscope, assuming that
   something went wrong before.
 - Changed the monetdb stop command to try to stop stethoscope before
-  stoping the server. The error conditions that can arrise from attempting
+  stopping the server. The error conditions that can arrise from attempting
   to stop stethoscope are:
   - The database is not running.
   - The profilerlogpath is not set.
@@ -386,7 +386,7 @@
 
 * Thu Jul 01 2010 Fabian Groffen <fabian@cwi.nl> - Jun2010-SP1
 - When a startup failure causes a shutdown, make sure we log this
-  incident in the logfile, together with a message that the deamon was
+  incident in the logfile, together with a message that the daemon was
   shut down due to this fatal condition.
 
 * Tue Jun 01 2010 Fabian Groffen <fabian@cwi.nl> - Jun2010
@@ -404,7 +404,7 @@
   merovingian now yields in a version message followed by a server exit.
 
 * Wed Apr 07 2010 Fabian Groffen <fabian@cwi.nl> - Feb2010-SP2
-- Fix logic in buffer enlargments, causing bug #2982104.  These bug
+- Fix logic in buffer enlargements, causing bug #2982104.  These bug
   became visible when receiving more data from merovingian(1) than would
   fit in the originally allocated buffers.  This could happen quite
   easily for instance with `monetdb status` when there are many
@@ -548,7 +548,7 @@
 
 * Mon Jun 08 2009 Fabian Groffen <fabian@cwi.nl> - Aug2009
 - Avoid multiple questions by merging them into a single confirmation for the
-  destroy command.  This accidently fixes a bug where a response such as 'yes'
+  destroy command.  This accidentally fixes a bug where a response such as 'yes'
   would abort the next database removal.
 
 * Thu Jun 04 2009 Fabian Groffen <fabian@cwi.nl> - Aug2009
