@@ -519,7 +519,7 @@
  * zero is returned upon encountering an error or when the database value
  * is NULL; this can be analyzed in using @code{mapi\_error()}.
  *
- * @item size_t mapi_fetch_fiels_len(MapiHdl hdl, int fnr)
+ * @item size_t mapi_fetch_field_len(MapiHdl hdl, int fnr)
  *
  * Return the length of the C-string representation excluding trailing NULL
  * byte of the value.  Zero is returned upon encountering an error, when the
