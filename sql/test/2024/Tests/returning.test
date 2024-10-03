@@ -57,6 +57,31 @@ update foo set i = -i returning sum(j)
 ----
 -60
 
+query II nosort
+update foo set i = -i where i >0 returning sum(j), count(j)
+----
+-60
+3
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+update foo set i = -i returning sum(j), i
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'foo.i' in query results without an aggregate function
+update foo set i = -i returning i, sum(j)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+delete from foo where i > 0 returning sum(j), i
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'foo.i' in query results without an aggregate function
+delete from foo where i > 0 returning i, sum(j)
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
+insert into foo select * from foo returning sum(j), i
+
+statement error 42000!SELECT: cannot use non GROUP BY column 'foo.i' in query results without an aggregate function
+insert into foo select * from foo returning i, sum(j)
+
+
 statement error 42000!SELECT: identifier 'k' unknown
 update foo set i = -i returning k
 
@@ -75,6 +100,23 @@ delete from foo returning i*i
 1
 4
 9
+
+statement ok
+insert into foo values (1, 10), (2, 20), (3, 30);
+
+query I nosort
+delete from foo returning sum(j)
+----
+60
+
+statement ok
+insert into foo values (1, 10), (2, 20), (3, 30);
+
+
+query I nosort
+delete from foo where i > 0 returning sum(j)
+----
+60
 
 statement ok
 truncate foo
@@ -103,6 +145,16 @@ select count(*) from foo
 ----
 6
 
+
+query I nosort
+insert into foo values (1,10), (-1,10) returning sum(j)
+----
+20
+
+query I nosort
+insert into foo select * from foo returning sum(j)
+----
+20
 
 statement error 42000!SELECT: identifier 'k' unknown
 insert into foo values (1,10), (-1,-10) returning k

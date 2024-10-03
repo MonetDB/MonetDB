@@ -5352,7 +5352,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
-	if (rel->attr) {
+	if (rel->returning) {
 		list* il = sa_list(sql->sa);
 		sql_rel* inner = rel->l;
 		assert(inner->op == op_basetable);
@@ -5362,21 +5362,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			stmt*	s	= stmt_rename(be, ce, ins);// label each insert statement with the corresponding col exp label
 			append(il, s);
 		}
-		stmt* inserts2 = stmt_list(be, il);
-
-		list* rl = sa_list(sql->sa);
-		for (n = rel->attr->h; n; n = n->next) {
-			sql_exp *exp = n->data;
-			stmt *s = exp_bin(be, exp, inserts2, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-			if (!exp_name(exp))
-				exp_label(sql->sa, exp, ++sql->label);
-			if (exp_name(exp)) {
-				s = stmt_rename(be, exp, s);
-				s->label = exp->alias.label;
-			}
-			append(rl, s);
-		}
-		returning = stmt_list(be, rl);
+		returning = stmt_list(be, il);
 		sql->type = Q_TABLE;
 	}
 
@@ -6427,7 +6413,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 	stmt* returning = NULL;
-	if (rel->attr) {
+	if (rel->returning) {
 		sql_rel* b = rel->l;
 		int refcnt = b->ref.refcnt; // HACK: forces recalculation of base columns since they are assumed to be updated
 		b->ref.refcnt = 1;
@@ -6435,25 +6421,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		b->ref.refcnt = refcnt;
 		returning->cand = tids;
 		returning = subrel_project(be, returning, refs, b);
-		list *pl = sa_list(sql->sa);
-		if (pl == NULL)
-			return NULL;
-		stmt *psub = stmt_list(be, pl);
-		if (psub == NULL)
-			return NULL;
-		for (node *en = rel->attr->h; en; en = en->next) {
-			sql_exp *exp = en->data;
-			stmt *s = exp_bin(be, exp, returning, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-
-			if (!exp_name(exp))
-				exp_label(sql->sa, exp, ++sql->label);
-			s = stmt_rename(be, exp, s);
-			s->label = exp->alias.label;
-			list_append(pl, s);
-		}
-		stmt_set_nrcols(psub);
-		returning = psub;
-		returning = subrel_project(be, returning, refs, NULL);
 		sql->type = Q_TABLE;
 	}
 
@@ -6703,7 +6670,7 @@ static stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *stdelete = NULL, *tids = NULL, *s = NULL;
+	stmt *stdelete = NULL, *tids = NULL, *returning = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
@@ -6721,19 +6688,13 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
 	}
 
-	if (rel->attr) {
-		sql_rel* inner = rel->l;
-		if (rel_is_ref(inner)) {
-			s = refs_find_rel(refs, inner);
-			if (s)
-				s->cand = tids;
-		}
-
-		sql_rel* ret = rel_project(sql->sa, inner, rel->attr);
-		s = subrel_bin(be, ret, refs);
-		s = subrel_project(be, s, refs, rel);
+	if (rel->returning) {
+		returning = subrel_bin(be, rel->l, refs);
+		returning->cand = tids;
+		returning = subrel_project(be, returning, refs, rel->l);
 		sql->type = Q_TABLE;
 	}
+
 	stdelete = sql_delete(be, t, tids);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
@@ -6742,7 +6703,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	return s?s:stdelete;
+	return returning?returning:stdelete;
 }
 
 struct tablelist {
@@ -7580,17 +7541,17 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_insert:
 		s = rel2bin_insert(be, rel, refs);
-		if (!rel->attr && sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_update:
 		s = rel2bin_update(be, rel, refs);
-		if (!rel->attr && sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_delete:
 		s = rel2bin_delete(be, rel, refs);
-		if (!rel->attr && sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_truncate:

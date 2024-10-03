@@ -695,7 +695,6 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dl
 
 	if (opt_returning) {
 		mvc *sql = query->sql;
-		sql->type = Q_TABLE;
 		list *pexps = sa_list(sql->sa);
 		sql_rel* inner = ins->l;
 		for (dnode *n = opt_returning->h; n; n = n->next) {
@@ -704,7 +703,14 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dl
 				return NULL;
 			pexps = append(pexps, ce);
 		}
-		ins->attr = is_groupby(inner->op) ? inner->exps : pexps;
+		ins->returning = 1;
+
+		if (is_groupby(inner->op)) {
+			inner->l = ins;
+			ins = rel_project(sql->sa, inner, pexps);
+		}
+		else
+			ins = rel_project(sql->sa, ins, pexps);
 	}
 
 	return ins;
@@ -1250,6 +1256,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			res = rel_crossproduct(sql->sa, res, tables, op_join);
 			set_single(res);
 		}
+		query_push_outer(query, res, sql_where);
 		if (opt_where) {
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
@@ -1262,8 +1269,9 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			r = res;
 		}
 		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		query_pop_outer(query);
 		if (opt_returning) {
-			sql->type = Q_TABLE;
+			r->returning = 1;
 			list *pexps = sa_list(sql->sa);
 			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
@@ -1272,7 +1280,12 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			r->attr = is_groupby(inner->op) ? inner->exps : pexps;
+			if (is_groupby(inner->op)) {
+				inner->l = r;
+				r = rel_project(sql->sa, inner, pexps);
+			}
+			else
+				r = rel_project(sql->sa, r, pexps);
 		}
 
 		return r;
@@ -1332,8 +1345,11 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 									 get_string_global_var(sql, "current_user"), tname);
 			}
 			rel_base_use_tid(sql, r);
+
+			query_push_outer(query, r, sql_where);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
+			query_pop_outer(query);
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
@@ -1343,16 +1359,21 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			r = rel_delete(sql->sa, r, NULL);
 		}
 		if (opt_returning) {
-			sql->type = Q_TABLE;
+			r->returning = 1;
 			list *pexps = sa_list(sql->sa);
 			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery | sql_update_set);
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			r->attr = is_groupby(inner->op) ? inner->exps : pexps;
+			if (is_groupby(inner->op)) {
+				inner->l = r;
+				r = rel_project(sql->sa, inner, pexps);
+			}
+			else
+				r = rel_project(sql->sa, r, pexps);
 		}
 		return r;
 	}
