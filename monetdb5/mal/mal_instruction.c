@@ -478,8 +478,8 @@ void
 freeInstruction(InstrPtr p)
 {
 	if (p && p->blk && p->blk->ma) {
-		size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
-		sa_free(p->blk->ma, p, sz);
+		// size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
+		sa_free(p->blk->ma, p);
 	}
 	//GDKfree(p);
 }
@@ -488,8 +488,8 @@ void
 freeInstructionX(InstrPtr p, MalBlkPtr mb)
 {
 	if (p && mb && mb->ma) {
-		size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
-		sa_free(mb->ma, p, sz);
+		// size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
+		sa_free(mb->ma, p);
 	}
 }
 

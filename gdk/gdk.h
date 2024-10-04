@@ -625,7 +625,7 @@ gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
 gdk_export size_t sa_size( allocator *sa );
 gdk_export void sa_open( allocator *sa );  /* open new frame of tempory allocations */
 gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to old state */
-gdk_export void sa_free( allocator *sa, void *, size_t sz);
+gdk_export void sa_free( allocator *sa, void *);
 
 #define ma_create(pa)		sa_create(pa)
 #define ma_destroy(ma)		sa_destroy(ma)
@@ -633,6 +633,7 @@ gdk_export void sa_free( allocator *sa, void *, size_t sz);
 #define ma_zalloc(ma, sz)	(void*)sa_zalloc(ma, sz)
 #define ma_open(ma)		sa_open(ma)
 #define ma_close(ma)		sa_close(ma)
+#define ma_free(ma, obj)	sa_free(ma, obj)
 
 #define MA_NEW( sa, type )				((type*)sa_alloc( sa, sizeof(type)))
 #define MA_ZNEW( sa, type )				((type*)sa_zalloc( sa, sizeof(type)))
