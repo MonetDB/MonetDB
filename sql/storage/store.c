@@ -1376,7 +1376,7 @@ load_trans(sql_trans* tr)
 			NULL, NULL,
 			find_sql_column(systables, "schema_id"), /* order also on schema_id */
 			find_sql_column(syscols, "table_id"),
-			find_sql_column(syscols, "id"), NULL);
+			find_sql_column(syscols, "number"), NULL);
 
 	res_table *rt_idx = store->table_api.table_orderby(tr, sysidx,
 			find_sql_column(sysidx, "table_id"),

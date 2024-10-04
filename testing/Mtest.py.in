@@ -3614,10 +3614,20 @@ def main(argv) :
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
     else:
         parser.add_argument('--produce-html', action='store_true', dest='produce_html', help='produce HTML files')
+    parser.add_argument('--loglevel', action='store', help='log level')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
     args = opts.tests
+
+    if opts.loglevel:
+        import logging
+        try:
+            level = getattr(logging, opts.loglevel.upper())
+        except:
+            print(f'unknown log level {opts.loglevel}', file=sys.stderr)
+            sys.exit(1)
+        logging.basicConfig(level=level)
 
     recursive = opts.recursive
     global testweb
