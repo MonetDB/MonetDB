@@ -691,8 +691,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		mnstr_printf(fout, ")");
 		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
-		if ((is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op)) && rel->attr) /* returning lists */
-			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 	} 	break;
 	default:
 		assert(0);
@@ -1934,11 +1932,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_insert(sql, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
-
-		skipWS(r, pos);
-		/* returning clause is signalled by a second expression list */
-		if (r[*pos] == '[' && !(rel->attr = read_exps(sql, lrel, NULL, NULL, r, pos, '[', 0, 1)))
-				return NULL;
 		return rel;
 	}
 
@@ -1963,10 +1956,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(rel = rel_delete(sql->sa, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
 
-		skipWS(r, pos);
-		/* returning clause is signalled by a second expression list */
-		if (r[*pos] == '[' && !(rel->attr = read_exps(sql, lrel, NULL, NULL, r, pos, '[', 0, 1)))
-				return NULL;
 		return rel;
 	}
 
@@ -2025,7 +2014,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1))) /* columns to be updated */
 			return NULL;
 
-		for (node *n = rel->exps->h ; n ; n = n->next) {
+		for (node *n = exps->h ; n ; n = n->next) {
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
@@ -2042,11 +2031,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_update(sql, lrel, rrel, NULL, nexps)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
-
-		skipWS(r, pos);
-		/* returning clause is signalled by a second expression list */
-		if (r[*pos] == '[' && !(rel->attr = read_exps(sql, lrel, NULL, NULL, r, pos, '[', 0, 1))) /* columns to be updated */
-				return NULL;
 
 		return rel;
 	}
@@ -2262,7 +2246,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
+		bool is_modify = (is_insert(nrel->op) || is_update(nrel->op) || is_delete(nrel->op));
+		if (!(exps = read_exps(sql, is_modify?nrel->l : nrel, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
 		set_processed(rel);
@@ -2375,6 +2360,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
 			set_processed(rel); /* don't search beyond the group by */
 			/* first group projected expressions, then group by columns, then left relation projections */
+			if (is_insert(nrel->op) || is_update(nrel->op) || is_delete(nrel->op))
+				nrel = nrel->l;
 			if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
 				return NULL;
 			rel->exps = exps;

@@ -162,41 +162,110 @@ insert into foo values (1,10), (-1,-10) returning k
 statement ok
 create function read_dump_rel(rel STRING) RETURNS STRING external name sql.read_dump_rel
 
+statement ok
+truncate table foo;
+
+statement ok
+insert into foo values (1, 10), (2, 10), (3, 10);
+
+# insert into foo(j) values (40), (50) returning sum(i)
+query T nosort
+select read_dump_rel(
+'project (
+group by (
+insert(
+table("sys"."foo") [ "foo"."i" NOT NULL MIN "1" MAX "3" NUNIQUES 3.000000, "foo"."j" NOT NULL MIN "10" MAX "30" NUNIQUES 3.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+[  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]
+)
+) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL NUNIQUES 3.000000 MAX "3" MIN "1") as "%5"."%5" ]
+) [ "%5"."%5" ]')
+----
+@project (@group by (@insert(@table("sys"."foo") [ "foo"."i" NOT NULL, "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]@)@) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL) as "%5"."%5" ]@) [ "%5"."%5" ]
+
+# update foo set j = -j where j > 10 returning sum(i)
 query T nosort
 select read_dump_rel(
 'REF 1 (2)
-table("sys"."foo")[ "foo"."i", "foo"."j", "foo"."%TID%" ]
+table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000, "foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+project (
+group by (
 update(
 & REF 1 
 project (
 select (
 & REF 1 
-) [ ("foo"."i") < (int(31) "3") ]
-) [ "foo"."%TID%" , "sys"."sql_neg"("foo"."j") as "foo"."j" ]
-) [ "foo"."%TID%" , "foo"."j" ] [ "sys"."sql_add"("foo"."j" , int(3) "5") as "bla", "sys"."sql_add"("foo"."i", "foo"."i") ]')
+) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
+) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) NOT NULL NUNIQUES 3.000000 MIN "-30" MAX "-10" as "foo"."j" ] COUNT 3
+) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ]
+) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000) UNIQUE NUNIQUES 1.000000 as "%1"."%1" ] COUNT 1
+) [ "%1"."%1" UNIQUE NUNIQUES 1.000000 ] COUNT 1')
 ----
-@ REF 1 (2)@table("sys"."foo") [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."i") < (int(31) "3") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL) NOT NULL as "foo"."j" ]@) [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ] [ "sys"."sql_add"("foo"."j" NOT NULL, int(3) "5") NOT NULL as "bla", "sys"."sql_add"("foo"."i", "foo"."i") ]
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@group by (@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE ]@) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE) UNIQUE as "%1"."%1" ]@) [ "%1"."%1" UNIQUE ]
 
+# delete from foo where j > 10 returning sum(i)
 query T nosort
 select read_dump_rel(
 'REF 1 (2)
-table("sys"."foo") [ "foo"."i" , "foo"."j" , "foo"."%TID%" ]
+table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000, "foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+project (
+group by (
 delete(
 & REF 1 
 project (
 select (
 & REF 1 
-) [ ("foo"."i" ) > (int(31) "0") ]
-) [ "foo"."%TID%" ]
-) [ "foo"."j" ]')
+) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
+) [ "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+)
+) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000) UNIQUE NUNIQUES 1.000000 as "%1"."%1" ] COUNT 1
+) [ "%1"."%1" UNIQUE NUNIQUES 1.000000 ] COUNT 1')
 ----
-@ REF 1 (2)@table("sys"."foo") [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@delete(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."i") > (int(31) "0") ]@) [ "foo"."%TID%" NOT NULL UNIQUE ]@) [ "foo"."j" NOT NULL ]
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@group by (@delete(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE ]@)@) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE) UNIQUE as "%1"."%1" ]@) [ "%1"."%1" UNIQUE ]
 
+# insert into foo(j) values (40), (50) returning i
 query T nosort
 select read_dump_rel(
-'insert(
-table("sys"."foo") [ "foo"."i", "foo"."j", "foo"."%TID%" ]
-[  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "10", int(31)["sys"."sql_neg"(tinyint(4) "10") ] ] as "%1"."%1" ]
-) [ "foo"."i" ]')
+'project (
+insert(
+table("sys"."foo") [ "foo"."i" NOT NULL MIN "1" MAX "3" NUNIQUES 3.000000, "foo"."j" NOT NULL MIN "10" MAX "30" NUNIQUES 3.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+[  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]
+)
+) [ "foo"."i" NOT NULL NUNIQUES 3.000000 MAX "3" MIN "1" ]')
 ----
-@insert(@table("sys"."foo") [ "foo"."i", "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "10", int(31)["sys"."sql_neg"(tinyint(4) "10") NOT NULL] NOT NULL ] as "%1"."%1" ]@) [ "foo"."i" ]
+@project (@insert(@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]@)@) [ "foo"."i" NOT NULL UNIQUE ]
+
+# update foo set j = -j where j > 10 returning i
+query T nosort
+select read_dump_rel(
+'REF 1 (2)
+table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000, "foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+project (
+update(
+& REF 1
+project (
+select (
+& REF 1
+) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
+) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) NOT NULL NUNIQUES 3.000000 MIN "-30" MAX "-10" as "foo"."j" ] COUNT 3
+) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ]
+) [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000 ]')
+----
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE ]@) [ "foo"."i" NOT NULL UNIQUE ]
+
+# delete from foo where j > 10 returning i
+query T nosort
+select read_dump_rel(
+'REF 1 (2)
+table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000, "foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000, "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+project (
+delete(
+& REF 1
+project (
+select (
+& REF 1
+) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
+) [ "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
+)
+) [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000 ]');
+----
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@delete(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE ]@)@) [ "foo"."i" NOT NULL UNIQUE ]
