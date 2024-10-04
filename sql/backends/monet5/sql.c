@@ -5553,12 +5553,12 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	list *refs = sa_list(m->sa);
 	if (refs == NULL)
-		throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 
 	int pos = 0;
 	sql_rel* rel = rel_read(m, input, &pos, refs);
 	if (!rel)
-		throw(SQL, "SQLread_dump_rel", SQLSTATE(42000) "failed to load json");
+		throw(SQL, "SQLread_dump_rel", SQLSTATE(42000) "failed to read relational plan");
 
 	buffer *b = NULL;
 	stream *s = NULL;
@@ -5566,22 +5566,31 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = buffer_create(1024);
 	if(b == NULL)
-		throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	s = buffer_wastream(b, "exp_dump");
 	if(s == NULL)
-		throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 
 	refs = sa_list(m->sa);
 	if (refs == NULL)
-		throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 
 	rel_print_refs(m, s, rel, 0, refs, 0);
 	rel_print_(m, s, rel, 0, refs, 0);
 	res = buffer_get_buf(b);
 
 	if (!(*r = GDKstrdup(res)))
-		throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+
+	mnstr_destroy(s);
 	return MAL_SUCCEED;
+
+bailout:
+	if (s)
+		mnstr_destroy(s);
+	else if (b)
+		buffer_destroy(b);
+	throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 
