@@ -2758,16 +2758,15 @@ error:
 	} while (0)
 
 static str
-OAHASHproject(bat *res, bat *key, bat *selected, bat *ht, const ptr *H)
+OAHASHproject(bat *res, bat *key, bat *selected, const ptr *H)
 {
-	BAT *e = NULL, *k = NULL, *s = NULL, *h = NULL;
+	BAT *e = NULL, *k = NULL, *s = NULL;
 	BUN rescnt = 0;
 	str err = NULL;
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
-	h = BATdescriptor(*ht);
-	if (!k || !s || !h) {
+	if (!k || !s) {
 		err = createException(SQL, "oahash.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
@@ -2843,7 +2842,6 @@ OAHASHproject(bat *res, bat *key, bat *selected, bat *ht, const ptr *H)
 
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
-	BBPunfix(h->batCacheid);
 
 	BATsetcount(e, rescnt);
 	BATnegateprops(e);
@@ -2856,7 +2854,6 @@ error:
 	BBPreclaim(e);
 	BBPreclaim(k);
 	BBPreclaim(s);
-	BBPreclaim(h);
 	return err;
 }
 
@@ -3918,7 +3915,7 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "combined_probe", OAHASHprobe_cmbd, false, "If selected, probe the (key, hash) in the hash table. Returns (0@0, RHS_slotid) if there was a match; otherwise (oid_nil, oid_nil)", args(2,7, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),arg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,5, batargany("res",1),batargany("key",1),batarg("selected",oid),batargany("ht",2),arg("pipeline",ptr))),
+ command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 
  pattern("oahash", "expand", OAHASHexpand, false, "If selected, expand the key according to its frequency in the hash table; otherwise, if 'outer' true, append the key", args(1,7, batargany("expanded",1),argany("key",1),arg("selected",oid),arg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),
  command("oahash", "expand", BAT_OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys", args(1,7, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),

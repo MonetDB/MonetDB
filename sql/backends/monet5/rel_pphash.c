@@ -346,7 +346,7 @@ oahash_project_prb(backend *be, list *exps_prj_prb, int matched, int rhs_slts, s
 }
 
 static list *
-oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink, stmt *sub, stmt *pp)
+oahash_project_single(backend *be, list *exps_prj, int selected, stmt *sub, stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
 
@@ -355,7 +355,7 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *freq_sink
 		assert(key); /* must find */
 		key = column(be, key);
 
-		InstrPtr q = stmt_oahash_project(be, key, selected, freq_sink, pp);
+		InstrPtr q = stmt_oahash_project(be, key, selected, pp);
 		if (q == NULL) return NULL;
 
 		sql_exp *e = o->data;
@@ -596,7 +596,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/
-		list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), stmts_ht->op4.lval->t->data, sub, pp);
+		list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), sub, pp);
 		sub = stmt_list(be, lp);
 	}
 	return sub;
