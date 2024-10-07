@@ -81,7 +81,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 			if (blockExit(p) && block == getArg(p, 0)) {
 				block = -1;
 				skip = 0;
-				freeInstruction(p);
+				freeInstructionX(p, mb);
 				mb->stmt[i] = 0;
 				continue;
 			}
@@ -99,7 +99,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					block = getArg(p, 0);
 					skip = 0;
 					action++;
-					freeInstruction(p);
+					freeInstructionX(p, mb);
 					mb->stmt[i] = 0;
 					continue;
 				}
@@ -108,7 +108,7 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 					   && getArgType(mb, p, 1) == TYPE_bit && multipass == 0)
 				multipass++;
 			if (skip) {
-				freeInstruction(p);
+				freeInstructionX(p, mb);
 				mb->stmt[i] = 0;
 			} else
 				mb->stmt[j++] = p;
