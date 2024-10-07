@@ -5527,6 +5527,9 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	str msg = NULL;
+	buffer *b = NULL;
+	stream *s = NULL;
+	char *res = NULL;
 	str *r = getArgReference_str(stk, pci, 0);
 	char *input = *getArgReference_str(stk, pci, 1);
 
@@ -5543,10 +5546,6 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_rel* rel = rel_read(m, input, &pos, refs);
 	if (!rel)
 		throw(SQL, "SQLread_dump_rel", SQLSTATE(42000) "failed to read relational plan");
-
-	buffer *b = NULL;
-	stream *s = NULL;
-	char *res = NULL;
 
 	b = buffer_create(1024);
 	if(b == NULL)
