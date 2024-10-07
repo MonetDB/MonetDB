@@ -2256,8 +2256,9 @@ sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 static void *
 _sa_alloc_internal( allocator *sa, size_t sz )
 {
+	assert(sz > 0);
 	sz = round16(sz);
-	char *r = sa_use_freed(sa, sz - SA_HEADER_SIZE);
+	char *r = sa_use_freed(sa, sz);
 	if (r)
 		return r;
 	/* we don't want super large allocs for temp storage */
@@ -2321,7 +2322,7 @@ sa_alloc( allocator *sa, size_t sz )
 	char* r = (char*) _sa_alloc_internal(sa, nsize);
 	if (r) {
 		// store size in header
-		*((size_t *) r) = nsize - SA_HEADER_SIZE;
+		*((size_t *) r) = nsize;
 		return r + SA_HEADER_SIZE;
 	}
 	return NULL;
@@ -2460,7 +2461,7 @@ sa_free(allocator *sa, void *obj)
 	char* ptr = (char *) obj - SA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);
 	if (sz < SA_BLOCK_SIZE) {
-		sa_free_obj(sa, obj, sz);
+		sa_free_obj(sa, ptr, sz);
 	} else {
 		sa_free_blk(sa, ptr);
 	}
