@@ -461,7 +461,6 @@ main(int argc, char *argv[])
 #else
 		{"snapshotcompression", strdup(".tar"),     0,                 STR},
 #endif
-		{"keepalive",     strdup("60"),            60,                 INT},
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};

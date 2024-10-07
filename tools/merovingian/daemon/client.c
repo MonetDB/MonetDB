@@ -18,7 +18,6 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <netinet/tcp.h>
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
@@ -58,8 +57,6 @@ struct clientdata {
 	char challenge[32];
 };
 
-static void configureKeepAlive(int sock, int keepalive);
-
 static void *
 handleClient(void *data)
 {
@@ -83,7 +80,6 @@ handleClient(void *data)
 	int sock;
 	bool isusock;
 	struct threads *self;
-	int keepalive;
 
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	pthread_setname_np(
@@ -98,11 +94,6 @@ handleClient(void *data)
 	self = ((struct clientdata *) data)->self;
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
-
-	keepalive = getConfNum(_mero_props, "keepalive");
-	if (keepalive > 0)
-		configureKeepAlive(sock, keepalive);
-
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
 	if (fdin == NULL) {
 		self->dead = true;
@@ -669,30 +660,4 @@ error:
 		closesocket(socks[1]);
 	}
 	return(newErr("accept connection: %s", msg));
-}
-
-static void
-configureKeepAlive(int sock, const int keepalive)
-{
-	if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPIDLE, &keepalive, sizeof(keepalive)) < 0) {
-		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPIDLE on socket: %s", strerror(errno));
-		return;
-	}
-
-	if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive, sizeof(keepalive)) < 0) {
-		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPINTVL on socket: %s", strerror(errno));
-		return;
-	}
-
-	const int keepcnt = 127; // fixed value, maximum allowed
-	if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt)) < 0) {
-		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPCNT on socket: %s", strerror(errno));
-		return;
-	}
-
-	const int enabled = 1;
-	if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &enabled, sizeof(enabled)) < 0) {
-		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set SO_KEEPALIVE on socket: %s", strerror(errno));
-		return;
-	}
 }
