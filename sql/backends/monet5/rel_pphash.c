@@ -161,24 +161,6 @@ oahash_prepare_bld_hp(backend *be, list *exps_prj_hsh, int prnt, lng sz)
 	return shared_hp;
 }
 
-#if 0
-static list *
-oahash_prepare_res(backend *be, list *exps_prj, lng sz)
-{
-	list *shared = sa_list(be->mvc->sa);
-
-	for (node *n = exps_prj->h; n; n = n->next) {
-		sql_subtype *t = exp_subtype((sql_exp*)n->data);
-		InstrPtr q = stmt_bat_new(be, t->type->localtype, sz);
-		if (q == NULL) return NULL;
-		q->inout = 0;
-		append(shared, q);
-	}
-	assert(shared->cnt == exps_prj->cnt);
-	return shared;
-}
-#endif
-
 /* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
  */
 static stmt *
@@ -423,87 +405,6 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 	}
 	return l;
 }
-
-#if 0
-static int
-oahash_get_pos(backend *be, list *lh, list *lp, stmt *ht, stmt *pp)
-{
-	int pos = 0;
-	stmt *res = lp->cnt? lp->h->data : lh->h->data;
-
-	InstrPtr q = newStmt(be->mb, getName("oahash"), getName("get_positions"));
-	if (q == NULL) return pos;
-
-	pos = getArg(q, 0);
-	setVarType(be->mb, pos, newBatType(TYPE_oid));
-	q = pushArgument(be->mb, q, res->nr);
-	q = pushArgument(be->mb, q, ht->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2)); // pipeline ptr
-	pushInstruction(be->mb, q);
-
-	return pos;
-}
-
-static stmt *
-oahash_collect(backend *be, list *exps_prj_hsh, list *exps_prj_prb, list *stmts_res_hsh, list *stmts_res_prb, list *lh, list *lp, int pos, stmt *pp)
-{
-	list *l = sa_list(be->mvc->sa);
-
-	assert(lp->cnt == stmts_res_prb->cnt && lp->cnt == exps_prj_prb->cnt);
-	for (node *n = lp->h, *m = stmts_res_prb->h, *o = exps_prj_prb->h; n && m && o; n = n->next, m = m->next, o = o->next) {
-		InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
-		if(q == NULL) return NULL;
-
-		InstrPtr qIn = ((stmt *)n->data)->q;
-		InstrPtr qRes = (InstrPtr) m->data;
-		getArg(q,0) = getDestVar(qRes);
-		setVarType(be->mb, getArg(q,0), getArgType(be->mb, qIn, 0));
-		q = pushArgument(be->mb, q, pos);
-		q = pushArgument(be->mb, q, getArg(qIn, 0));
-		q = pushArgument(be->mb, q, getArg(pp->q, 2)); // pipeline ptr
-		q->inout = 0;
-		pushInstruction(be->mb, q);
-
-		sql_exp *e = o->data;
-		stmt *s = stmt_none(be);
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getDestVar(q);
-		s->nrcols = 1;
-		s->q = q;
-		s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-		append(l, s);
-	}
-
-	if (lh) {
-		assert(lh->cnt == stmts_res_hsh->cnt && lh->cnt == exps_prj_hsh->cnt);
-		for (node *n = lh->h, *m = stmts_res_hsh->h, *o = exps_prj_hsh->h; n && m && o; n = n->next, m = m->next, o = o->next) {
-			InstrPtr q = newStmt(be->mb, getName("algebra"), projectionRef);
-			if(q == NULL) return NULL;
-
-			InstrPtr qIn = ((stmt *)n->data)->q;
-			InstrPtr qRes = (InstrPtr) m->data;
-			getArg(q,0) = getDestVar(qRes);
-			setVarType(be->mb, getArg(q,0), getArgType(be->mb, qIn, 0));
-			q = pushArgument(be->mb, q, pos);
-			q = pushArgument(be->mb, q, getArg(qIn, 0));
-			q = pushArgument(be->mb, q, getArg(pp->q, 2)); // pipeline ptr
-			q->inout = 0;
-			pushInstruction(be->mb, q);
-
-			sql_exp *e = o->data;
-			stmt *s = stmt_none(be);
-			s->op4.typeval = *exp_subtype(e);
-			s->nr = getDestVar(q);
-			s->nrcols = 1;
-			s->q = q;
-			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-			append(l, s);
-		}
-	}
-
-	return stmt_list(be, l);
-}
-#endif
 
 static stmt *
 rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
