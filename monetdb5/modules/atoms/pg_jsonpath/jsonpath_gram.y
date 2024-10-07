@@ -14,15 +14,6 @@
  *-------------------------------------------------------------------------
  */
 
-#include "postgres.h"
-
-#include "catalog/pg_collation.h"
-#include "fmgr.h"
-#include "jsonpath_internal.h"
-#include "miscadmin.h"
-#include "nodes/pg_list.h"
-#include "regex/regex.h"
-#include "utils/builtins.h"
 
 static JsonPathParseItem *makeItemType(JsonPathItemType type);
 static JsonPathParseItem *makeItemString(JsonPathString *s);

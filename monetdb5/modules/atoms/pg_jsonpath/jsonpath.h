@@ -14,11 +14,7 @@
 #ifndef JSONPATH_H
 #define JSONPATH_H
 
-#include "executor/tablefunc.h"
-#include "fmgr.h"
-#include "nodes/pg_list.h"
-#include "nodes/primnodes.h"
-#include "utils/jsonb.h"
+#include "postgres_defines.h"
 
 typedef struct
 {
@@ -31,6 +27,7 @@ typedef struct
 #define JSONPATH_LAX		(0x80000000)
 #define JSONPATH_HDRSZ		(offsetof(JsonPath, data))
 
+/*
 static inline JsonPath *
 DatumGetJsonPathP(Datum d)
 {
@@ -46,6 +43,7 @@ DatumGetJsonPathPCopy(Datum d)
 #define PG_GETARG_JSONPATH_P(x)			DatumGetJsonPathP(PG_GETARG_DATUM(x))
 #define PG_GETARG_JSONPATH_P_COPY(x)	DatumGetJsonPathPCopy(PG_GETARG_DATUM(x))
 #define PG_RETURN_JSONPATH_P(p)			PG_RETURN_POINTER(p)
+*/
 
 #define jspIsScalar(type) ((type) >= jpiNull && (type) <= jpiBool)
 
@@ -199,7 +197,7 @@ extern bool jspGetNext(JsonPathItem *v, JsonPathItem *a);
 extern void jspGetArg(JsonPathItem *v, JsonPathItem *a);
 extern void jspGetLeftArg(JsonPathItem *v, JsonPathItem *a);
 extern void jspGetRightArg(JsonPathItem *v, JsonPathItem *a);
-extern Numeric jspGetNumeric(JsonPathItem *v);
+// extern Numeric jspGetNumeric(JsonPathItem *v);
 extern bool jspGetBool(JsonPathItem *v);
 extern char *jspGetString(JsonPathItem *v, int32 *len);
 extern bool jspGetArraySubscript(JsonPathItem *v, JsonPathItem *from,
@@ -259,7 +257,7 @@ struct JsonPathParseItem
 		}			like_regex;
 
 		/* scalars */
-		Numeric numeric;
+		// Numeric numeric;
 		bool		boolean;
 		struct
 		{
@@ -296,6 +294,7 @@ typedef struct JsonPathVariable
 
 
 /* SQL/JSON query functions */
+/*
 extern bool JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars);
 extern Datum JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper,
 						   bool *empty, bool *error, List *vars,
@@ -303,8 +302,8 @@ extern Datum JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper,
 extern JsonbValue *JsonPathValue(Datum jb, JsonPath *jp, bool *empty,
 								 bool *error, List *vars,
 								 const char *column_name);
-
+*/
 /* For JSON_TABLE() */
-extern PGDLLIMPORT const TableFuncRoutine JsonbTableRoutine;
+// extern PGDLLIMPORT const TableFuncRoutine JsonbTableRoutine;
 
 #endif

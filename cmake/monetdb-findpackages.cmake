@@ -11,6 +11,7 @@
 #]]
 
 # Detect required packages
+find_package(FLEX)
 find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)

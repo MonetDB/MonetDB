@@ -61,18 +61,7 @@
  *-------------------------------------------------------------------------
  */
 
-#include "postgres.h"
-
-#include "catalog/pg_type.h"
-#include "lib/stringinfo.h"
-#include "libpq/pqformat.h"
-#include "miscadmin.h"
-#include "nodes/miscnodes.h"
-#include "nodes/nodeFuncs.h"
-#include "utils/fmgrprotos.h"
-#include "utils/formatting.h"
-#include "utils/json.h"
-#include "utils/jsonpath.h"
+#include "jsonpath.h"
 
 
 static Datum jsonPathFromCstring(char *in, int len, struct Node *escontext);
@@ -94,6 +83,7 @@ static int	operationPriority(JsonPathItemType op);
 /*
  * jsonpath type input function
  */
+/*
 Datum
 jsonpath_in(PG_FUNCTION_ARGS)
 {
@@ -102,6 +92,7 @@ jsonpath_in(PG_FUNCTION_ARGS)
 
 	return jsonPathFromCstring(in, len, fcinfo->context);
 }
+*/
 
 /*
  * jsonpath type recv function
@@ -111,6 +102,7 @@ jsonpath_in(PG_FUNCTION_ARGS)
  * can change the binary format sent in future if necessary. For now,
  * only version 1 is supported.
  */
+/*
 Datum
 jsonpath_recv(PG_FUNCTION_ARGS)
 {
@@ -126,10 +118,12 @@ jsonpath_recv(PG_FUNCTION_ARGS)
 
 	return jsonPathFromCstring(str, nbytes, NULL);
 }
+*/
 
 /*
  * jsonpath type output function
  */
+/*
 Datum
 jsonpath_out(PG_FUNCTION_ARGS)
 {
@@ -137,12 +131,14 @@ jsonpath_out(PG_FUNCTION_ARGS)
 
 	PG_RETURN_CSTRING(jsonPathToCstring(NULL, in, VARSIZE(in)));
 }
+*/
 
 /*
  * jsonpath type send function
  *
  * Just send jsonpath as a version number, then a string of text
  */
+/*
 Datum
 jsonpath_send(PG_FUNCTION_ARGS)
 {
@@ -161,6 +157,7 @@ jsonpath_send(PG_FUNCTION_ARGS)
 
 	PG_RETURN_BYTEA_P(pq_endtypsend(&buf));
 }
+*/
 
 /*
  * Converts C-string to a jsonpath value.
@@ -169,6 +166,7 @@ jsonpath_send(PG_FUNCTION_ARGS)
  * flattenJsonPathParseItem() does second pass turning AST into binary
  * representation of jsonpath.
  */
+/*
 static Datum
 jsonPathFromCstring(char *in, int len, struct Node *escontext)
 {
@@ -180,13 +178,14 @@ jsonPathFromCstring(char *in, int len, struct Node *escontext)
 		return (Datum) 0;
 
 	if (!jsonpath)
+		return TODO_ERROR;
 		ereturn(escontext, (Datum) 0,
 				(errcode(ERRCODE_INVALID_TEXT_REPRESENTATION),
 				 errmsg("invalid input syntax for type %s: \"%s\"", "jsonpath",
 						in)));
 
 	initStringInfo(&buf);
-	enlargeStringInfo(&buf, 4 * len /* estimation */ );
+	enlargeStringInfo(&buf, 4 * len );
 
 	appendStringInfoSpaces(&buf, JSONPATH_HDRSZ);
 
@@ -202,6 +201,7 @@ jsonPathFromCstring(char *in, int len, struct Node *escontext)
 
 	PG_RETURN_JSONPATH_P(res);
 }
+*/
 
 /*
  * Converts jsonpath value to a C-string.
@@ -209,6 +209,7 @@ jsonPathFromCstring(char *in, int len, struct Node *escontext)
  * If 'out' argument is non-null, the resulting C-string is stored inside the
  * StringBuffer.  The resulting string is always returned.
  */
+/*
 static char *
 jsonPathToCstring(StringInfo out, JsonPath *in, int estimated_len)
 {
@@ -230,6 +231,7 @@ jsonPathToCstring(StringInfo out, JsonPath *in, int estimated_len)
 
 	return out->data;
 }
+*/
 
 /*
  * Recursive function converting given jsonpath parse item and all its
@@ -1214,6 +1216,7 @@ jspGetBool(JsonPathItem *v)
 	return (bool) *v->content.value.data;
 }
 
+/*
 Numeric
 jspGetNumeric(JsonPathItem *v)
 {
@@ -1221,6 +1224,7 @@ jspGetNumeric(JsonPathItem *v)
 
 	return (Numeric) v->content.value.data;
 }
+*/
 
 char *
 jspGetString(JsonPathItem *v, int32 *len)

@@ -12,6 +12,8 @@
 
 add_library(atoms OBJECT)
 
+add_subdirectory(pg_jsonpath)
+
 target_sources(atoms
   PRIVATE
   streams.c streams.h
@@ -43,7 +45,8 @@ target_link_libraries(atoms
   monetdb_config_header
   mutf8
   bat
-  mal)
+  mal
+  pg_jsonpath)
 
 target_compile_definitions(atoms
   PRIVATE
