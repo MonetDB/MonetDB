@@ -91,3 +91,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7570-timestamp-str
 7574-startswith-bug
 7580-date-diff
+7582-ddl-exists

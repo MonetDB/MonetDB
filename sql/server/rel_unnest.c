@@ -3603,7 +3603,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				exp_label(v->sql->sa, le, ++v->sql->label);
 			le = exp_ref(v->sql, le);
 
-			if (depth == 1 && is_ddl(rel->op)) { /* exists is at a ddl statement, it must be inside a relation */
+			if (depth >= 1 && is_ddl(rel->op)) { /* exists is at a ddl statement, it must be inside at least a relation */
 				sq = rel_groupby(v->sql, sq, NULL);
 				sql_subfunc *ea = sql_bind_func(v->sql, "sys", is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR, true, true);
 				le = rel_groupby_add_aggr(v->sql, sq, exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, 0));
