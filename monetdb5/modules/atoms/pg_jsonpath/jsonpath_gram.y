@@ -15,6 +15,8 @@
  */
 
 
+#include "jsonpath_internal.h"
+
 static JsonPathParseItem *makeItemType(JsonPathItemType type);
 static JsonPathParseItem *makeItemString(JsonPathString *s);
 static JsonPathParseItem *makeItemVariable(JsonPathString *s);
@@ -29,19 +31,21 @@ static JsonPathParseItem *makeItemUnary(JsonPathItemType type,
 static JsonPathParseItem *makeItemList(List *list);
 static JsonPathParseItem *makeIndexArray(List *list);
 static JsonPathParseItem *makeAny(int first, int last);
+/*
 static bool makeItemLikeRegex(JsonPathParseItem *expr,
 							  JsonPathString *pattern,
 							  JsonPathString *flags,
 							  JsonPathParseItem ** result,
 							  struct Node *escontext);
+*/
 
 /*
  * Bison doesn't allocate anything that needs to live across parser calls,
  * so we can easily have it use palloc instead of malloc.  This prevents
  * memory leaks if we error out during parsing.
  */
-#define YYMALLOC palloc
-#define YYFREE   pfree
+#define YYMALLOC malloc
+#define YYFREE   free
 
 %}
 
@@ -162,6 +166,7 @@ predicate:
 									{ $$ = makeItemUnary(jpiIsUnknown, $2); }
 	| expr STARTS_P WITH_P starts_with_initial
 									{ $$ = makeItemBinary(jpiStartsWith, $1, $4); }
+/*
 	| expr LIKE_REGEX_P STRING_P
 	{
 		JsonPathParseItem *jppitem;
@@ -176,6 +181,7 @@ predicate:
 			YYABORT;
 		$$ = jppitem;
 	}
+*/
 	;
 
 starts_with_initial:
@@ -428,6 +434,7 @@ makeItemKey(JsonPathString *s)
 static JsonPathParseItem *
 makeItemNumeric(JsonPathString *s)
 {
+	(void) s; // TODO
 	JsonPathParseItem *v;
 
 	v = makeItemType(jpiNumeric);
@@ -543,12 +550,13 @@ makeAny(int first, int last)
 {
 	JsonPathParseItem *v = makeItemType(jpiAny);
 
-	v->value.anybounds.first = (first >= 0) ? first : PG_UINT32_MAX;
-	v->value.anybounds.last = (last >= 0) ? last : PG_UINT32_MAX;
+	v->value.anybounds.first = (first >= 0) ? (uint32) first : PG_UINT32_MAX;
+	v->value.anybounds.last = (last >= 0) ? (uint32) last : PG_UINT32_MAX;
 
 	return v;
 }
 
+/*
 static bool
 makeItemLikeRegex(JsonPathParseItem *expr, JsonPathString *pattern,
 				  JsonPathString *flags, JsonPathParseItem ** result,
@@ -561,8 +569,9 @@ makeItemLikeRegex(JsonPathParseItem *expr, JsonPathString *pattern,
 	v->value.like_regex.expr = expr;
 	v->value.like_regex.pattern = pattern->val;
 	v->value.like_regex.patternlen = pattern->len;
-
+*/
 	/* Parse the flags string, convert to bitmask.  Duplicate flags are OK. */
+/*
 	v->value.like_regex.flags = 0;
 	for (i = 0; flags && i < flags->len; i++)
 	{
@@ -592,12 +601,14 @@ makeItemLikeRegex(JsonPathParseItem *expr, JsonPathString *pattern,
 				break;
 		}
 	}
-
+*/
 	/* Convert flags to what pg_regcomp needs */
+/*
 	if ( !jspConvertRegexFlags(v->value.like_regex.flags, &cflags, escontext))
 		 return false;
-
+*/
 	/* check regex validity */
+/*
 	{
 		regex_t     re_tmp;
 		pg_wchar   *wpattern;
@@ -627,21 +638,26 @@ makeItemLikeRegex(JsonPathParseItem *expr, JsonPathString *pattern,
 
 	return true;
 }
-
+*/
 /*
  * Convert from XQuery regex flags to those recognized by our regex library.
  */
+/*
 bool
 jspConvertRegexFlags(uint32 xflags, int *result, struct Node *escontext)
 {
+*/
 	/* By default, XQuery is very nearly the same as Spencer's AREs */
+/*
 	int			cflags = REG_ADVANCED;
-
+*/
 	/* Ignore-case means the same thing, too, modulo locale issues */
+/*
 	if (xflags & JSP_REGEX_ICASE)
 		cflags |= REG_ICASE;
-
+*/
 	/* Per XQuery spec, if 'q' is specified then 'm', 's', 'x' are ignored */
+/*
 	if (xflags & JSP_REGEX_QUOTE)
 	{
 		cflags &= ~REG_ADVANCED;
@@ -649,12 +665,14 @@ jspConvertRegexFlags(uint32 xflags, int *result, struct Node *escontext)
 	}
 	else
 	{
+*/
 		/* Note that dotall mode is the default in POSIX */
+/*
 		if (!(xflags & JSP_REGEX_DOTALL))
 			cflags |= REG_NLSTOP;
 		if (xflags & JSP_REGEX_MLINE)
 			cflags |= REG_NLANCH;
-
+*/
 		/*
 		 * XQuery's 'x' mode is related to Spencer's expanded mode, but it's
 		 * not really enough alike to justify treating JSP_REGEX_WSPACE as
@@ -662,6 +680,7 @@ jspConvertRegexFlags(uint32 xflags, int *result, struct Node *escontext)
 		 * future we'll modify the regex library to have an option for
 		 * XQuery-style ignore-whitespace mode.
 		 */
+/*
 		if (xflags & JSP_REGEX_WSPACE)
 			ereturn(escontext, false,
 					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
@@ -672,3 +691,4 @@ jspConvertRegexFlags(uint32 xflags, int *result, struct Node *escontext)
 
 	return true;
 }
+*/

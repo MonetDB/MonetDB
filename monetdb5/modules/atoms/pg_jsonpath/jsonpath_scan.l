@@ -15,18 +15,12 @@
  *-------------------------------------------------------------------------
  */
 
-#include "postgres.h"
-
 /*
  * NB: include jsonpath_gram.h only AFTER including jsonpath_internal.h,
  * because jsonpath_internal.h contains the declaration for JsonPathString.
  */
 #include "jsonpath_internal.h"
 #include "jsonpath_gram.h"
-
-#include "mb/pg_wchar.h"
-#include "nodes/miscnodes.h"
-#include "nodes/pg_list.h"
 }
 
 %{
@@ -554,6 +548,20 @@ addchar(bool init, char c)
 	scanstring.val[scanstring.len] = c;
 	if (c != '\0')
 		scanstring.len++;
+}
+
+/* initial jsonpath parser context */
+struct Node *
+init_escontext()
+{
+	struct Node * escontext = GDKmalloc(struct Node);
+
+	if (!escontext)
+		return NULL;
+
+	escontext->sa = sa_create(NULL);
+
+	return escontext;
 }
 
 /* Interface to jsonpath parser */

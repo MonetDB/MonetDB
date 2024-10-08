@@ -14,6 +14,7 @@
 #ifndef JSONPATH_INTERNAL_H
 #define JSONPATH_INTERNAL_H
 
+
 /* struct JsonPathString is shared between scan and gram */
 typedef struct JsonPathString
 {
@@ -22,7 +23,8 @@ typedef struct JsonPathString
 	int			total;
 } JsonPathString;
 
-#include "utils/jsonpath.h"
+#include "jsonpath.h"
+#include "postgres_defines_internal.h"
 #include "jsonpath_gram.h"
 
 #define YY_DECL extern int     jsonpath_yylex(YYSTYPE *yylval_param, \

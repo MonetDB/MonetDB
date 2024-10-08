@@ -197,12 +197,12 @@ extern bool jspGetNext(JsonPathItem *v, JsonPathItem *a);
 extern void jspGetArg(JsonPathItem *v, JsonPathItem *a);
 extern void jspGetLeftArg(JsonPathItem *v, JsonPathItem *a);
 extern void jspGetRightArg(JsonPathItem *v, JsonPathItem *a);
-// extern Numeric jspGetNumeric(JsonPathItem *v);
+extern Numeric jspGetNumeric(JsonPathItem *v);
 extern bool jspGetBool(JsonPathItem *v);
 extern char *jspGetString(JsonPathItem *v, int32 *len);
 extern bool jspGetArraySubscript(JsonPathItem *v, JsonPathItem *from,
 								 JsonPathItem *to, int i);
-extern bool jspIsMutable(JsonPath *path, List *varnames, List *varexprs);
+// extern bool jspIsMutable(JsonPath *path, List *varnames, List *varexprs);
 
 extern const char *jspOperationName(JsonPathItemType type);
 
@@ -257,7 +257,7 @@ struct JsonPathParseItem
 		}			like_regex;
 
 		/* scalars */
-		// Numeric numeric;
+		Numeric numeric;
 		bool		boolean;
 		struct
 		{
@@ -273,12 +273,14 @@ typedef struct JsonPathParseResult
 	bool		lax;
 } JsonPathParseResult;
 
+extern struct Node * init_escontext();
+
 extern JsonPathParseResult *parsejsonpath(const char *str, int len,
 										  struct Node *escontext);
-
+/*
 extern bool jspConvertRegexFlags(uint32 xflags, int *result,
 								 struct Node *escontext);
-
+*/
 /*
  * Struct for details about external variables passed into jsonpath executor
  */

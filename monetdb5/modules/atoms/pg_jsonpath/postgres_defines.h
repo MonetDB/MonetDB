@@ -4,16 +4,17 @@
 #define POSTGRES_DEFINES
 
 
+#include "monetdb_config.h"
+#include "gdk.h"
 
 // c.h
 #define FLEXIBLE_ARRAY_MEMBER	/* empty */
 
-#include "monetdb_config.h"
-#include "sql_list.h"
 
 typedef uint32_t uint32;
-typedef list List;
 typedef int int32;
+typedef sht int16;
+typedef uint16_t uint16;
 
 
 // jsonb.h
@@ -42,31 +43,39 @@ enum jbvType
 // postgres.h
 typedef uintptr_t Datum;
 
-// stringinfo.h
-typedef struct StringInfoData
-{
-	char	   *data;
-	int			len;
-	int			maxlen;
-	int			cursor;
-} StringInfoData;
-
-typedef StringInfoData *StringInfo;
-
 // postgres_ext.h
 typedef unsigned int Oid;
 
+struct Node;
 
-struct Node {};
+// numeric.c
+typedef int16 NumericDigit;
+struct NumericShort
+{
+	uint16		n_header;		/* Sign + display scale + weight */
+	NumericDigit n_data[FLEXIBLE_ARRAY_MEMBER]; /* Digits */
+};
 
-/* Often-useful macro for checking if a soft error was reported */
-#define SOFT_ERROR_OCCURRED(escontext) (false)
+struct NumericLong
+{
+	uint16		n_sign_dscale;	/* Sign + display scale */
+	int16		n_weight;		/* Weight of 1st digit	*/
+	NumericDigit n_data[FLEXIBLE_ARRAY_MEMBER]; /* Digits */
+};
 
+union NumericChoice
+{
+	uint16		n_header;		/* Header word */
+	struct NumericLong n_long;	/* Long form (4-byte header) */
+	struct NumericShort n_short;	/* Short form (2-byte header) */
+};
 
-#define TODO_ERROR 0
-#define ereturn(context, dummy_value, ...)	return TODO_ERROR;
-
-#define errcode(X)	/* TODO */
-#define errmsg(X)	/* TODO */
+struct NumericData
+{
+	int32		vl_len_;		/* varlena header (do not touch directly!) */
+	union NumericChoice choice; /* choice of format */
+};
+struct NumericData;
+typedef struct NumericData *Numeric;
 
 #endif

@@ -1636,6 +1636,8 @@ JSONfilterArrayDefault_hge(json *ret, const json *js, const hge *index, const ch
 }
 #endif
 
+#include "jsonpath.h"
+
 static str
 JSONfilter(json *ret, const json *js, const char *const *expr)
 {
@@ -1644,6 +1646,14 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
+
+	struct Node* escontext = init_escontext();
+	if (!escontext)
+		throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	JsonPathParseResult* result = parsejsonpath(*expr, strlen(*expr), escontext);
+	(void) result;
+
 	return JSONfilterInternal(ret, js, expr, 0);
 }
 

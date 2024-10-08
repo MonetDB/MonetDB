@@ -1216,7 +1216,6 @@ jspGetBool(JsonPathItem *v)
 	return (bool) *v->content.value.data;
 }
 
-/*
 Numeric
 jspGetNumeric(JsonPathItem *v)
 {
@@ -1224,7 +1223,6 @@ jspGetNumeric(JsonPathItem *v)
 
 	return (Numeric) v->content.value.data;
 }
-*/
 
 char *
 jspGetString(JsonPathItem *v, int32 *len)
@@ -1280,6 +1278,7 @@ static enum JsonPathDatatypeStatus jspIsMutableWalker(JsonPathItem *jpi,
  * Function to check whether jsonpath expression is mutable to be used in the
  * planner function contain_mutable_functions().
  */
+/*
 bool
 jspIsMutable(JsonPath *path, List *varnames, List *varexprs)
 {
@@ -1297,7 +1296,7 @@ jspIsMutable(JsonPath *path, List *varnames, List *varexprs)
 
 	return cxt.mutable;
 }
-
+*/
 /*
  * Recursive walker for jspIsMutable()
  */
