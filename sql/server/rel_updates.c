@@ -677,7 +677,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 }
 
 static sql_rel *
-insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
+insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dlist *opt_returning)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -691,7 +691,29 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
 		return NULL;
-	return rel_insert_table(query, t, t->base.name, r);
+	sql_rel* ins = rel_insert_table(query, t, t->base.name, r);
+
+	if (opt_returning) {
+		mvc *sql = query->sql;
+		list *pexps = sa_list(sql->sa);
+		sql_rel* inner = ins->l;
+		for (dnode *n = opt_returning->h; n; n = n->next) {
+			sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+			if (ce == NULL)
+				return NULL;
+			pexps = append(pexps, ce);
+		}
+		ins->returning = 1;
+
+		if (is_groupby(inner->op)) {
+			inner->l = ins;
+			ins = rel_project(sql->sa, inner, pexps);
+		}
+		else
+			ins = rel_project(sql->sa, ins, pexps);
+	}
+
+	return ins;
 }
 
 static int
@@ -1194,7 +1216,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 }
 
 static sql_rel *
-update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, symbol *opt_from, symbol *opt_where)
+update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, symbol *opt_from, symbol *opt_where, dlist *opt_returning)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1234,6 +1256,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			res = rel_crossproduct(sql->sa, res, tables, op_join);
 			set_single(res);
 		}
+		query_push_outer(query, res, sql_where);
 		if (opt_where) {
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
@@ -1245,7 +1268,27 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		} else {	/* update all */
 			r = res;
 		}
-		return update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		query_pop_outer(query);
+		if (opt_returning) {
+			r->returning = 1;
+			list *pexps = sa_list(sql->sa);
+			sql_rel* inner = r->l;
+			for (dnode *n = opt_returning->h; n; n = n->next) {
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+				if (ce == NULL)
+					return NULL;
+				pexps = append(pexps, ce);
+			}
+			if (is_groupby(inner->op)) {
+				inner->l = r;
+				r = rel_project(sql->sa, inner, pexps);
+			}
+			else
+				r = rel_project(sql->sa, r, pexps);
+		}
+
+		return r;
 	}
 	return NULL;
 }
@@ -1281,7 +1324,7 @@ rel_truncate(allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
 }
 
 static sql_rel *
-delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
+delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist *opt_returning)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1302,8 +1345,11 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 									 get_string_global_var(sql, "current_user"), tname);
 			}
 			rel_base_use_tid(sql, r);
+
+			query_push_outer(query, r, sql_where);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
+			query_pop_outer(query);
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
@@ -1311,6 +1357,23 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			r = rel_delete(sql->sa, /*rel_basetable(sql, t, alias ? alias : tname)*/rel_dup(bt), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
+		}
+		if (opt_returning) {
+			r->returning = 1;
+			list *pexps = sa_list(sql->sa);
+			sql_rel* inner = r->l;
+			for (dnode *n = opt_returning->h; n; n = n->next) {
+				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+				if (ce == NULL)
+					return NULL;
+				pexps = append(pexps, ce);
+			}
+			if (is_groupby(inner->op)) {
+				inner->l = r;
+				r = rel_project(sql->sa, inner, pexps);
+			}
+			else
+				r = rel_project(sql->sa, r, pexps);
 		}
 		return r;
 	}
@@ -2180,7 +2243,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = insert_into(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym);
+		ret = insert_into(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -2189,7 +2252,7 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = update_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
-						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym);
+						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -2197,7 +2260,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym);
+		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
 		sql->type = Q_UPDATE;
 	}
 		break;
