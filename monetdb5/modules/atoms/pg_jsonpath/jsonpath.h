@@ -273,7 +273,7 @@ typedef struct JsonPathParseResult
 	bool		lax;
 } JsonPathParseResult;
 
-extern struct Node * init_escontext();
+extern struct Node * init_escontext(void);
 
 extern JsonPathParseResult *parsejsonpath(const char *str, int len,
 										  struct Node *escontext);

@@ -428,7 +428,7 @@ static const JsonPathKeyword keywords[] = {
 
 /* Check if current scanstring value is a keyword */
 static enum yytokentype
-checkKeyword()
+checkKeyword(void)
 {
 	int			res = IDENT_P;
 	int			diff;
@@ -552,9 +552,9 @@ addchar(bool init, char c)
 
 /* initial jsonpath parser context */
 struct Node *
-init_escontext()
+init_escontext(void)
 {
-	struct Node * escontext = GDKmalloc(struct Node);
+	struct Node * escontext = GDKmalloc(sizeof(struct Node));
 
 	if (!escontext)
 		return NULL;
@@ -624,13 +624,8 @@ addUnicodeChar(int ch, struct Node *escontext)
 		 * conversion function. Otherwise call the normal form which provides
 		 * more detailed errors.
 		 */
-
-		if (! escontext  || ! IsA(escontext, ErrorSaveContext))
-			pg_unicode_to_server(ch, (unsigned char *) cbuf);
-		else if (!pg_unicode_to_server_noerror(ch, (unsigned char *) cbuf))
-			ereturn(escontext, false,
-					(errcode(ERRCODE_SYNTAX_ERROR),
-					 errmsg("could not convert Unicode to server encoding")));
+		if (!pg_unicode_to_server_noerror(ch, (unsigned char *) cbuf))
+			ereturn(escontext, "could not convert Unicode to server encoding");
 		addstring(false, cbuf, strlen(cbuf));
 	}
 	return true;

@@ -27,6 +27,7 @@ typedef struct JsonPathString
 #include "postgres_defines_internal.h"
 #include "jsonpath_gram.h"
 
+#define YY_USER_INIT (void) result;
 #define YY_DECL extern int     jsonpath_yylex(YYSTYPE *yylval_param, \
 							  JsonPathParseResult **result, \
 							  struct Node *escontext)
