@@ -49539,6 +49539,11 @@ pattern sql.rank(X_0:any_1, X_1:bit, X_2:bit):int
 SQLrank;
 return the ranked groups
 sql
+read_dump_rel
+pattern sql.read_dump_rel(X_0:str):str
+SQLread_dump_rel;
+Reads sql_rel string into sql_rel object and then writes it to the return value
+sql
 register
 unsafe pattern sql.register(X_0:str, X_1:str, X_2:str, X_3:str):int
 RAstatement2;
