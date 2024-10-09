@@ -208,6 +208,7 @@ select 'missing reference in querylog_calls id', id, * from sys.querylog_calls w
 select 'missing reference in querylog_history id', id, * from sys.querylog_history where (id) not in (select id from sys.querylog_catalog);
 select 'missing reference in querylog_history owner', owner, * from sys.querylog_history where (owner) not in (select name from sys.users);
 select 'missing reference in querylog_history pipe', pipe, * from sys.querylog_history where (pipe) not in (select name from sys.optimizers);
+select 'missing reference in remote_user_info table_id', table_id, * from sys.remote_user_info where (table_id) not in (select id from sys._tables);
 select 'missing reference in sessions username', "username", * from sys.sessions where ("username") not in (select name from sys.users);
 select 'missing reference in sessions optimizer', optimizer, * from sys.sessions where (optimizer) not in (select name from sys.optimizers);
 select 'missing reference in statistics column_id', column_id, * from sys.statistics where (column_id) not in (select id from (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns) as c);
@@ -6256,6 +6257,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %5,	pipe,	id,	owner,	defined,	query,	pipe,	plan,	mal,	optimize,	start,	stop,	arguments,	tuples,	run,	ship,	cpu,	io # name
 % varchar,	varchar,	oid,	varchar,	timestamp,	varchar,	varchar,	varchar,	int,	bigint,	timestamp,	timestamp,	varchar,	bigint,	bigint,	bigint,	int,	int # type
 % 0,	0,	3,	0,	26,	0,	0,	0,	1,	1,	26,	26,	0,	1,	1,	1,	1,	1 # length
+% .%4,	sys.remote_user_info,	sys.remote_user_info,	sys.remote_user_info,	sys.remote_user_info # table_name
+% %4,	table_id,	table_id,	username,	password # name
+% varchar,	int,	int,	varchar,	varchar # type
+% 0,	1,	1,	0,	0 # length
 % .%5,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions,	.sessions # table_name
 % %5,	username,	sessionid,	username,	login,	idle,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit,	language,	peer,	hostname,	application,	client,	clientpid,	remark # name
 % varchar,	varchar,	int,	varchar,	timestamp,	timestamp,	varchar,	int,	int,	int,	int,	varchar,	varchar,	varchar,	varchar,	varchar,	bigint,	varchar # type
