@@ -10,12 +10,7 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-add_library(monetdb5 SHARED
-  $<TARGET_OBJECTS:mal>
-  $<TARGET_OBJECTS:atoms>
-  $<TARGET_OBJECTS:malmodules>
-  $<TARGET_OBJECTS:kernel>
-  $<TARGET_OBJECTS:optimizer>)
+add_library(monetdb5 SHARED)
 
 target_link_libraries(monetdb5
     PRIVATE
@@ -27,6 +22,14 @@ target_link_libraries(monetdb5
     $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
     $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
     $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
+    mal
+    atoms
+    malmodules
+    kernel
+    optimizer
+    pg_jsonpath
+    sqlinclude
+    sqlcommon
     bat)
 
 set_target_properties(monetdb5

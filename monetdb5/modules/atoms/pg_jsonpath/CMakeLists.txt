@@ -25,17 +25,8 @@ BISON_TARGET(jsonpath_parser
 
   target_sources(pg_jsonpath
   PRIVATE
-  # ${CMAKE_CURRENT_SOURCE_DIR}/jsonpath.c
-  jsonpath_internal.h
-  postgres_defines.h
-  postgres_defines_internal.h
-  ${FLEX_jsonpath_scanner_OUTPUT_HEADER}
   ${FLEX_jsonpath_scanner_OUTPUTS}
-  ${BISON_jsonpath_parser_OUTPUT_HEADER}
-  ${BISON_jsonpath_parser_OUTPUT_SOURCE}
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/jsonpath.h
-  )
+  ${BISON_jsonpath_parser_OUTPUT_SOURCE})
 
 target_link_libraries(pg_jsonpath
   PRIVATE
@@ -46,11 +37,9 @@ target_link_libraries(pg_jsonpath
 
 target_include_directories(pg_jsonpath
   PRIVATE
-  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
 
 target_compile_definitions(pg_jsonpath
