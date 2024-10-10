@@ -69,13 +69,16 @@ pg_strtoint32(const char *s)
 
 #define CHECK_FOR_INTERRUPTS() /* EMPTY */
 
-#define DatumGetNumeric(X) (NULL) // TODO
-#define DirectFunctionCall3 	/* TODO */
-#define CStringGetDatum 	/* TODO */
-#define ObjectIdGetDatum // TODO
-#define Int32GetDatum // TODO
-#define DirectFunctionCall1 // TODO
-#define NumericGetDatum // TODO
+#define DatumGetNumeric(X) (X)
+#define numeric_in atoi
+#define DirectFunctionCall3(func, A, B, C) 	func(A)
+#define CStringGetDatum(X)	(X)
+#define ObjectIdGetDatum(X)	(X)
+#define Int32GetDatum(X)	(X)
+#define DirectFunctionCall1(func, A)	(func A)
+#define NumericGetDatum(X) (X)
+#define numeric_uminus	-
+
 
 #define for_each_from(cell, list, N) \
 cell = list->h; \

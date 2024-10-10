@@ -48,6 +48,7 @@ typedef unsigned int Oid;
 
 struct Node;
 
+#if 0
 // numeric.c
 typedef int16 NumericDigit;
 struct NumericShort
@@ -77,5 +78,7 @@ struct NumericData
 };
 struct NumericData;
 typedef struct NumericData *Numeric;
+#endif
 
+typedef lng Numeric;
 #endif
