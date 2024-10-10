@@ -82,7 +82,7 @@ pg_strtoint32(const char *s)
 
 #define for_each_from(cell, list, N) \
 cell = list->h; \
-{int i = 0; while (i < N && cell->next) {cell = cell->next;}} \
+for (int i = 0; i < N; i++) {cell = cell->next;} \
 for (;cell;cell = cell->next)
 
 #define foreach(cell, list) for_each_from(cell, list, 0)
