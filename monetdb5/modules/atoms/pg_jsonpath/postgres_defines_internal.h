@@ -39,7 +39,7 @@ typedef struct Node
 #define errcode(X)	/* TODO */
 #define errmsg(X)	/* TODO */
 
-#define palloc(X)	GDKmalloc(X)
+#define palloc(X)	GDKzalloc(X)
 #define pfree(X)	GDKfree(X)
 #define repalloc(M,NSIZE) GDKrealloc(M, NSIZE)
 
