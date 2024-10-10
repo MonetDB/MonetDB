@@ -13,7 +13,7 @@
 add_library(pg_jsonpath OBJECT)
 
 FLEX_TARGET(jsonpath_scanner
-    jsonpath_scan.l 
+    jsonpath_scan.l
     ${CMAKE_CURRENT_BINARY_DIR}/jsonpath_scan.c
     DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/jsonpath_scan.h)
 
@@ -23,10 +23,18 @@ BISON_TARGET(jsonpath_parser
   COMPILE_FLAGS "-d -p json -Wno-conflicts-sr -Wno-conflicts-rr"
   DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/jsonpath_gram.h)
 
-  target_sources(pg_jsonpath
+target_sources(pg_jsonpath
   PRIVATE
   ${FLEX_jsonpath_scanner_OUTPUTS}
   ${BISON_jsonpath_parser_OUTPUT_SOURCE})
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/jsonpath_scan.l
+  ${CMAKE_CURRENT_BINARY_DIR}/jsonpath_scan.l
+  COPYONLY)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/jsonpath_gram.y
+  ${CMAKE_CURRENT_BINARY_DIR}/jsonpath_gram.y
+  COPYONLY)
 
 target_link_libraries(pg_jsonpath
   PRIVATE
