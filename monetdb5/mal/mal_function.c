@@ -790,7 +790,7 @@ chkDeclarations(MalBlkPtr mb)
 				blks[++top] = blkId;
 			}
 			if (blockExit(p) && top > 0) {
-				if (dflow == blkId) {
+				if (dflow == blks[top]) {
 					dflow = -1;
 				} else
 					/*
