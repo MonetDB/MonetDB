@@ -20,7 +20,7 @@
 gdk_return
 GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool isuuid)
 {
-	size_t *counts = GDKmalloc(hs * NBUCKETS * sizeof(size_t));
+	size_t (*counts)[NBUCKETS] = GDKmalloc(hs * sizeof(counts[0]));
 	size_t pos[NBUCKETS];
 	uint8_t *h1 = h;
 	uint8_t *h2;
@@ -57,24 +57,25 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		ts = 0;
 	}
 
-	memset(counts, 0, hs * NBUCKETS * sizeof(size_t));
+	memset(counts, 0, hs * sizeof(counts[0]));
 #ifndef WORDS_BIGENDIAN
-	if (isuuid /* UUID, treat like big-endian */)
+	if (isuuid /* UUID, treat like big-endian */) {
 #endif
 		for (size_t i = 0, o = 0; i < n; i++, o += hs) {
 			for (size_t j = 0, k = hs - 1; j < hs; j++, k--) {
 				uint8_t v = h1[o + k];
-				counts[(j << RADIX) + v]++;
+				counts[j][v]++;
 			}
 		}
 #ifndef WORDS_BIGENDIAN
-	else
+	} else {
 		for (size_t i = 0, o = 0; i < n; i++, o += hs) {
 			for (size_t j = 0; j < hs; j++) {
 				uint8_t v = h1[o + j];
-				counts[(j << RADIX) + v]++;
+				counts[j][v]++;
 			}
 		}
+	}
 #endif
 	/* When sorting in ascending order, the negative numbers occupy
 	 * the second half of the buckets in the last iteration; when
@@ -82,19 +83,19 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 	 * first half.  In either case, at the end we need to put the
 	 * second half first and the first half after. */
 	size_t negpos = 0;
-	for (size_t j = 0, b = 0, k = hs - 1; j < hs; j++, b += NBUCKETS, k--) {
-		size_t nb = counts[b] > 0;
+	for (size_t j = 0, k = hs - 1; j < hs; j++, k--) {
+		size_t nb = counts[j][0] > 0;
 		if (reverse) {
 			pos[NBUCKETS - 1] = 0;
 			for (size_t i = NBUCKETS - 1; i > 0; i--) {
-				pos[i - 1] = pos[i] + counts[b + i];
-				nb += counts[b + i] > 0;
+				pos[i - 1] = pos[i] + counts[j][i];
+				nb += counts[j][i] > 0;
 			}
 		} else {
 			pos[0] = 0;
 			for (size_t i = 1; i < NBUCKETS; i++) {
-				pos[i] = pos[i - 1] + counts[b + i - 1];
-				nb += counts[b + i] > 0;
+				pos[i] = pos[i - 1] + counts[j][i - 1];
+				nb += counts[j][i] > 0;
 			}
 		}
 		/* we're only interested in the position in the last

@@ -515,6 +515,7 @@ int yydebug=1;
 	opt_schema_element_list
 	opt_seps
 	opt_decimal_seps
+	opt_returning_clause
 	opt_seq_params
 	opt_typelist
 	opt_with_encrypted_password
@@ -3191,13 +3192,19 @@ opt_endianness:
 	| NATIVE ENDIAN	{ $$ = endian_native; }
 	;
 
+opt_returning_clause:
+    /* empty */				{ $$ = NULL; }
+	| RETURNING selection	{ $$ = $2; }
+	;
+
 delete_stmt:
-    sqlDELETE FROM qname opt_alias_name opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause opt_returning_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_string(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
@@ -3223,13 +3230,14 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $2);
 	  append_string(l, $3);
 	  append_list(l, $5);
 	  append_symbol(l, $6);
 	  append_symbol(l, $7);
+	  append_list(l, $8);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
@@ -3285,17 +3293,19 @@ merge_stmt:
  ;
 
 insert_stmt:
-    INSERT INTO qname values_or_query_spec
+    INSERT INTO qname values_or_query_spec opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, NULL);
 	  append_symbol(l, $4);
+	  append_list(l, $5);
 	  $$ = _symbol_create_list( SQL_INSERT, l ); }
- |  INSERT INTO qname column_commalist_parens values_or_query_spec
+ |  INSERT INTO qname column_commalist_parens values_or_query_spec opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_INSERT, l ); }
  ;
 
@@ -6099,7 +6109,6 @@ non_reserved_word:
 | NIL		{ $$ = sa_strdup(SA, "nil"); }
 | PASSING	{ $$ = sa_strdup(SA, "passing"); }
 | REF		{ $$ = sa_strdup(SA, "ref"); }
-| RETURNING	{ $$ = sa_strdup(SA, "returning"); }
 | STRIP		{ $$ = sa_strdup(SA, "strip"); }
 | URI		{ $$ = sa_strdup(SA, "uri"); }
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }

@@ -251,6 +251,17 @@ using the **set** command. The following properties can be set:
    use redirects instead of proxies. Changing this property takes effect
    immediately at runtime.
 
+**keepalive**
+   Specifies the keepalive interval for incoming connections. If this is
+   set to a positive number, *monetdbd* configures the system to send
+   automatic periodic keepalive probes on all client connections. This
+   can help keep firewalls from killing connections that seem idle but
+   are in fact waiting for a long running query to finish. The default
+   is 60 seconds. When 127 consecutive probes have failed, the
+   connection is closed. With the default setting of 60 seconds this
+   means the connection is closed when the client has been unreachable
+   for more than two hours.
+
 REMOTE DATABASES
 ================
 
