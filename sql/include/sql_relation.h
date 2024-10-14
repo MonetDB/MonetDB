@@ -313,6 +313,7 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
+	 returning:1, /*update|delete|insert relations return modified records*/
 
 	 parallel:1,	/* suitable for parallel pipeline? */
 	 partition:2,	/* partition input relation?

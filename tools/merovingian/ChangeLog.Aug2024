@@ -1,3 +1,8 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
+* Mon Oct  7 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Tweak socket parameters to simulate network activity on client connections.
+  This prevents firewalls from killing connections that seem idle but are
+  actually waiting for a long-running query. Can be controlled with a new
+  'keepalive' option to monetdbd.

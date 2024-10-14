@@ -562,6 +562,40 @@ BATcheckhash(BAT *b)
 	return h != NULL;
 }
 
+/* figure out size of the hash (sum of the sizes of the two hash files)
+ * without loading them */
+size_t
+HASHsize(BAT *b)
+{
+	size_t sz = 0;
+	MT_rwlock_rdlock(&b->thashlock);
+	if (b->thash == NULL) {
+		sz = 0;
+	} else if (b->thash != (Hash *) 1) {
+		sz = b->thash->heaplink.size + b->thash->heapbckt.size;
+	} else {
+		int farmid = BBPselectfarm(b->batRole, b->ttype, hashheap);
+		if (farmid >= 0) {
+			const char *nme = BBP_physical(b->batCacheid);
+			char *fname = GDKfilepath(farmid, BATDIR, nme, "thashb");
+			if (fname != NULL) {
+				struct stat st;
+				if (stat(fname, &st) == 0) {
+					sz = (size_t) st.st_size;
+					fname[strlen(fname) - 1] = 'l';
+					if (stat(fname, &st) == 0)
+						sz += (size_t) st.st_size;
+					else
+						sz = 0;
+				}
+				GDKfree(fname);
+			}
+		}
+	}
+	MT_rwlock_rdunlock(&b->thashlock);
+	return sz;
+}
+
 static void
 BAThashsave_intern(BAT *b, bool dosync)
 {
