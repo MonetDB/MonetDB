@@ -2420,7 +2420,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (groups) {
 			if (BATtkey(b)) {
 				/* singleton groups */
-				gn = BATdense(0, 0, BATcount(b));
+				gn = BATdense(b->hseqbase, 0, BATcount(b));
 				if (gn == NULL)
 					goto error;
 			} else {
@@ -2428,7 +2428,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				const oid *o = 0;
 				assert(BATcount(b) == 1 ||
 				       (b->tsorted && b->trevsorted));
-				gn = BATconstant(0, TYPE_oid, &o, BATcount(b), TRANSIENT);
+				gn = BATconstant(b->hseqbase, TYPE_oid, &o, BATcount(b), TRANSIENT);
 				if (gn == NULL)
 					goto error;
 			}
