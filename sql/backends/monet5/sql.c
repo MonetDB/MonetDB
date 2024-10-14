@@ -21,15 +21,16 @@
 #include "sql.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
+#include "sql_query.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
 #include "sql_partition.h"
-#include "rel_partition.h"
 #include "rel_basetable.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_dump.h"
+#include "rel_select.h"
 #include "rel_physical.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -153,8 +154,6 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Tbegin = Tend;
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
-	if (rel)
-		rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	if (rel && (be->mvc->emode != m_plan || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0))
