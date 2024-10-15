@@ -746,7 +746,7 @@ sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 }
 
 
-static sqlid local_id = 1;
+static sqlid local_id;
 
 static sql_type *
 sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *impl)
@@ -1712,7 +1712,7 @@ sqltypeinit( allocator *sa)
 void
 types_init(allocator *sa)
 {
-	local_id = 1;
+	local_id = 4;				/* 1 to 3 are user id's */
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
