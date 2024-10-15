@@ -26,7 +26,10 @@ BISON_TARGET(jsonpath_parser
 target_sources(pg_jsonpath
   PRIVATE
   ${FLEX_jsonpath_scanner_OUTPUTS}
-  ${BISON_jsonpath_parser_OUTPUT_SOURCE})
+  ${BISON_jsonpath_parser_OUTPUT_SOURCE}
+  yyjson.c # for now just build yyjson directly into pg_jsonpath
+  jsonpath.c
+  jsonpath_exec.c)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/jsonpath_scan.l
   ${CMAKE_CURRENT_BINARY_DIR}/jsonpath_scan.l
@@ -41,7 +44,8 @@ target_link_libraries(pg_jsonpath
   monetdb_config_header
   bat
   sqlinclude
-  sqlcommon)
+  sqlcommon
+  mal)
 
 target_include_directories(pg_jsonpath
   PRIVATE
