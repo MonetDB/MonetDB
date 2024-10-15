@@ -1,15 +1,9 @@
-
-
 #ifndef POSTGRES_DEFINES_INTERNAL
 #define POSTGRES_DEFINES_INTERNAL
-
-
-
 
 #include "monetdb_config.h"
 #include "sql_list.h"
 
-typedef list List;
 typedef node ListCell;
 
 // stringinfo.h
@@ -44,6 +38,7 @@ typedef struct Node
 #define repalloc(M,NSIZE) GDKrealloc(M, NSIZE)
 
 #define Max(A,B) MAX(A, B)
+#define Min(A,B) MIN(A, B)
 
 #define SA	(escontext->sa)
 #define list_make1(X) sa_list_append(SA, NULL, X)
@@ -52,6 +47,8 @@ typedef struct Node
 
 #define linitial(L) (L->h ? L->h->data : NULL)
 #define lsecond(L) list_fetch(L, 1)
+#define list_second_cell(L) ((L)->h->next)
+#define lnext(L, c) ((c)->next)
 
 static inline int32
 pg_strtoint32(const char *s)
@@ -67,7 +64,8 @@ pg_strtoint32(const char *s)
 	return res;
 }
 
-#define CHECK_FOR_INTERRUPTS() /* EMPTY */
+#define check_stack_depth()		/* TODO */
+#define CHECK_FOR_INTERRUPTS()	/* TODO */
 
 #define DatumGetNumeric(X) (X)
 #define numeric_in atoi
@@ -77,7 +75,6 @@ pg_strtoint32(const char *s)
 #define Int32GetDatum(X)	(X)
 #define DirectFunctionCall1(func, A)	(func A)
 #define NumericGetDatum(X) (X)
-#define numeric_uminus	-
 
 
 #define for_each_from(cell, list, N) \
@@ -93,9 +90,11 @@ for (;cell;cell = cell->next)
 #define NIL NULL
 #define PG_UINT32_MAX ((uint32) UINT32_MAX)
 
-#define ereport(c, m)  (void) fmt; (void) msg;
+#include "mal_exception.h"
+#define ereport(TYPE, X) createException(MAL, "pg_jsonpath", "TODO_ERROR")
 #define ERROR "TODO"
 #define errmsg_internal(frmt, msg) "TODO"
+#define elog(TYPE, X, ...) (void ) "TODO";
 
 #define errsave(a,b) (void) result; (void) escontext; (void) message;
 
@@ -219,6 +218,126 @@ pg_unicode_to_server_noerror(pg_wchar c, unsigned char *s)
 	unicode_to_utf8(c, s);
 	s[pg_utf_mblen(s)] = '\0';
 	return true;
+}
+
+#define PG_USED_FOR_ASSERTS_ONLY
+
+// postgres error codes
+#define ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM "ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM"
+#define ERRCODE_SQL_JSON_SCALAR_REQUIRED "ERRCODE_SQL_JSON_SCALAR_REQUIRED"
+#define ERRCODE_NON_NUMERIC_SQL_JSON_ITEM "ERRCODE_NON_NUMERIC_SQL_JSON_ITEM"
+
+// jsonb.h
+/* convenience macros for accessing a JsonbContainer struct */
+#define JsonContainerSize(jc)		((jc)->header & JB_CMASK)
+#define JsonContainerIsScalar(jc)	(((jc)->header & JB_FSCALAR) != 0)
+#define JsonContainerIsObject(jc)	(((jc)->header & JB_FOBJECT) != 0)
+#define JsonContainerIsArray(jc)	(((jc)->header & JB_FARRAY) != 0)
+
+bool yyjson_is_null(yyjson_val *val);  // null
+bool yyjson_is_true(yyjson_val *val);  // true
+bool yyjson_is_false(yyjson_val *val); // false
+bool yyjson_is_bool(yyjson_val *val);  // true/false
+bool yyjson_is_uint(yyjson_val *val);  // uint64_t
+bool yyjson_is_sint(yyjson_val *val);  // int64_t
+bool yyjson_is_int(yyjson_val *val);   // uint64_t/int64_t
+bool yyjson_is_real(yyjson_val *val);  // double
+bool yyjson_is_num(yyjson_val *val);   // uint64_t/int64_t/double
+bool yyjson_is_str(yyjson_val *val);   // string
+bool yyjson_is_arr(yyjson_val *val);   // array
+bool yyjson_is_obj(yyjson_val *val);   // object
+bool yyjson_is_ctn(yyjson_val *val);   // array/object
+bool yyjson_is_raw(yyjson_val *val);   // raw string
+
+#define IsAJsonbScalar(jsonbval)	(yyjson_is_null(jsonbval) || yyjson_is_num(jsonbval) || yyjson_is_str(jsonbval) /* there is no datetime in yyjson */)
+
+// jsonb.h
+typedef uint32 JEntry;
+typedef struct JsonbContainer
+{
+	uint32		header;			/* number of elements or key/value pairs, and
+								 * flags */
+	JEntry		children[FLEXIBLE_ARRAY_MEMBER];
+
+	/* the data for each child node follows. */
+} JsonbContainer;
+
+/* flags for the header-field in JsonbContainer */
+#define JB_CMASK				0x0FFFFFFF	/* mask for count field */
+#define JB_FSCALAR				0x10000000	/* flag bits */
+#define JB_FOBJECT				0x20000000
+#define JB_FARRAY				0x40000000
+
+// c.h
+struct varlena
+{
+	char		vl_len_[4];		/* Do not touch this field directly! */
+	char		vl_dat[FLEXIBLE_ARRAY_MEMBER];	/* Data content is here */
+};
+
+#define VARHDRSZ		((int32) sizeof(int32))
+
+/*
+ * These widely-used datatypes are just a varlena header and the data bytes.
+ * There is no terminating null or anything like that --- the data length is
+ * always VARSIZE_ANY_EXHDR(ptr).
+ */
+typedef struct varlena text;
+
+static inline Numeric
+numeric_add_opt_error(Numeric num1, Numeric num2, bool *have_error)
+{
+	(void) have_error;
+	return num1 + num2;
+}
+
+static inline Numeric
+numeric_sub_opt_error(Numeric num1, Numeric num2, bool *have_error)
+{
+	(void) have_error;
+	return num1 - num2;
+}
+
+static inline Numeric
+numeric_mul_opt_error(Numeric num1, Numeric num2, bool *have_error)
+{
+	(void) have_error;
+	return num1 * num2;
+}
+
+static inline Numeric
+numeric_div_opt_error(Numeric num1, Numeric num2, bool *have_error)
+{
+	(void) have_error;
+	return num1 / num2;
+}
+
+static inline Numeric
+numeric_mod_opt_error(Numeric num1, Numeric num2, bool *have_error)
+{
+	(void) have_error;
+	return num1 % num2;
+}
+
+static inline Numeric numeric_uminus(Numeric num)
+{
+	return - num;
+}
+
+#define forboth(lc1, list1, lc2, list2) for (lc1 = list1->h, lc2 = list2->h; lc1 != NULL && lc2 != NULL; lc1 = lc1->next, lc2 = lc2->next )
+
+typedef str String;
+
+static inline Numeric
+numeric_abs(Numeric num)
+{
+	return (num > 0) ? num : - num;
+}
+
+static inline Datum
+Int64GetDatum(int64 X)
+{
+	return (Datum) X;
 }
 
 #endif

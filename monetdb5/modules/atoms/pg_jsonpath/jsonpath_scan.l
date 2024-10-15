@@ -44,6 +44,7 @@ static bool parseHexChar(char *s, struct Node *escontext);
 static void
 fprintf_to_ereport(const char *fmt, const char *msg)
 {
+	(void) fmt; (void) msg;
 	ereport(ERROR, (errmsg_internal("%s", msg)));
 }
 

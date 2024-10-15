@@ -4,9 +4,9 @@
 #define POSTGRES_DEFINES
 
 
+#include "yyjson.h"
 #include "monetdb_config.h"
 #include "gdk.h"
-
 // c.h
 #define FLEXIBLE_ARRAY_MEMBER	/* empty */
 
@@ -15,6 +15,7 @@ typedef uint32_t uint32;
 typedef int int32;
 typedef sht int16;
 typedef uint16_t uint16;
+typedef lng int64;
 
 
 // jsonb.h
@@ -81,4 +82,23 @@ typedef struct NumericData *Numeric;
 #endif
 
 typedef lng Numeric;
-#endif
+
+typedef yyjson_val JsonbValue;
+
+
+// primnodes.h
+typedef enum JsonWrapper
+{
+	JSW_UNSPEC,
+	JSW_NONE,
+	JSW_CONDITIONAL,
+	JSW_UNCONDITIONAL,
+} JsonWrapper;
+
+#define DatumGetJsonbP(jb) ((JsonbValue*) jb)
+
+typedef yyjson_val Jsonb;
+
+typedef struct list List;
+
+#endif // POSTGRES_DEFINES

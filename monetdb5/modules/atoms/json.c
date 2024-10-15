@@ -13,6 +13,11 @@
 /*
  * (c) 2013 Martin Kersten
  */
+#ifdef free
+#undef free
+#endif
+#include "yyjson.h"
+
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "mal.h"
@@ -1636,6 +1641,7 @@ JSONfilterArrayDefault_hge(json *ret, const json *js, const hge *index, const ch
 }
 #endif
 
+
 #include "jsonpath.h"
 
 static str
@@ -1651,10 +1657,19 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	if (!escontext)
 		throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	JsonPathParseResult* result = parsejsonpath(*expr, strlen(*expr), escontext);
-	(void) result;
+	JsonPathParseResult* path = parsejsonpath(*expr, strlen(*expr), escontext);
 
-	return JSONfilterInternal(ret, js, expr, 0);
+	yyjson_doc *doc = yyjson_read(*js, strlen(*js), 0);
+	yyjson_val *root = yyjson_doc_get_root(doc);
+	bool empty;
+	bool error;
+	const char *column_name = NULL;
+	yyjson_val *res = JsonPathValue((Datum) root, path, &empty, &error, NULL, column_name); // TODO pass the result as yyjson document
+	char* tmp_res = yyjson_val_write(res, 0, NULL); // TODO use different allocation or doc write
+	*ret = GDKstrdup(tmp_res);
+	free(tmp_res);
+	return MAL_SUCCEED;
+	// return JSONfilterInternal(ret, js, expr, 0);
 }
 
 // glue all values together with an optional separator
