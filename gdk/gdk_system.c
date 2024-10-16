@@ -1115,7 +1115,7 @@ MT_kill_threads(void)
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
 		if (t == self)
 			continue;
-		TRC_INFO(GDK, "Killing thread %s\n", t->threadname);
+		GDKwarning("Killing thread %s\n", t->threadname);
 		killed |= MT_kill_thread(t);
 	}
 	thread_unlock();
