@@ -652,7 +652,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 					/* free value if it was not added to found list */
 					if (jspHasNext(jsp) || !found)
-						pfree(v);
+						(void) v; // pfree(v); TODO properly free v
 				}
 				else if (!jspIgnoreStructuralErrors(cxt))
 				{
@@ -1098,12 +1098,6 @@ executeItemUnwrapTargetArray(JsonPathExecContext *cxt, JsonPathItem *jsp,
 							 JsonbValue *jb, JsonValueList *found,
 							 bool unwrapElements)
 {
-	if (JsonbType(jb) != jbvBinary)
-	{
-		Assert(JsonbType(jb) != jbvArray);
-		elog(ERROR, "invalid jsonb array value type: %d", JsonbType(jb));
-	}
-
 	return executeAnyItem
 		(cxt, jsp, jb, found, 1, 1, 1,
 		 false, unwrapElements);
