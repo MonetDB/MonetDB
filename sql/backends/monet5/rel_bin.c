@@ -2849,7 +2849,7 @@ releqjoin(backend *be, list *l1, list *l2, list *exps, int used_hash, int need_l
 	return res;
 }
 
-static bool
+bool
 can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 {
 	bool can_join = 0;
@@ -2941,8 +2941,6 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 	}
 }
 
-
-#define is_equi_exp_(e) ((e)->flag == cmp_equal)
 
 static list *
 get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps, bool *equality_only)
@@ -3239,12 +3237,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
-	ATOMIC_TYPE use_oahash = (1U<<19);
 
 	if (rel->attr && list_length(rel->attr) > 0)
 		return rel2bin_groupjoin(be, rel, refs);
 
-	if ((GDKdebug & use_oahash) && rel->oahash)
+	if (rel->oahash > 0)
 		return rel2bin_oahash(be, rel, refs);
 
 	// TODO: GROUP BY and topN code at rel->partition, so, either the rel->spb below is an error or it means something else */
@@ -3693,8 +3690,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	assert(rel->op != op_anti);
 
-	ATOMIC_TYPE use_oahash = (1U<<19);
-	if ((GDKdebug & use_oahash) && rel->oahash)
+	if (rel->oahash > 0)
 		return rel2bin_oahash(be, rel, refs);
 
 	int neededpp = rel->spb && get_need_pipeline(be);

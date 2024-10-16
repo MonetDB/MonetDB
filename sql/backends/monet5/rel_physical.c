@@ -16,6 +16,7 @@
 #include "rel_rewriter.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
+#include "rel_bin.h"
 
 static int rel_partition_(mvc *sql, sql_rel *rel, int pb);
 static int do_oahash_join(sql_rel *rel);
@@ -354,32 +355,41 @@ rel_groupby_partition_safe(sql_rel *rel)
 	return true;
 }
 
+static bool only_equi_joins(sql_rel *rel)
+{
+	if (list_empty(rel->exps))
+		return true;
+
+	for(node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (!is_equi_exp_(e) || !can_join_exp(rel, e, false) || is_any(e))
+			return false;
+	}
+	return true;
+}
+
 static int
 do_oahash_join(sql_rel *rel)
 {
-	ATOMIC_TYPE use_oahash = (1U<<19);
-	if (!(GDKdebug & use_oahash))
+	ATOMIC_TYPE oahash_enabled = (1U<<19);
+	if (!(GDKdebug & oahash_enabled))
 		return 0;
 
 	// TODO full outer and anti-join
 	if (rel->op == op_full || rel->op == op_anti)
 		return 0;
 
-	/* groupjoin */
+	// TODO groupjoin
 	if (rel->attr && list_length(rel->attr) > 0)
 		return 0;
 
+	// TODO the always-true case, i.e. no retrictions, which can happen in
+	//      inner-, outer-, semi-, anti- and cross-joins
 	if (!rel->exps)
-		/* it always means 'true', i.e. no retrictions, which can be the case
-		 * for inner, outer, semi, anti joins and cross-product */
-		return 1;
+		return 0;
 
-	/* only for equi-joins. */
-	for (node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		if (!is_compare(e->type) || e->flag != cmp_equal)
+	if (!only_equi_joins(rel))
 			return 0;
-	}
 
 	return 1;
 }
