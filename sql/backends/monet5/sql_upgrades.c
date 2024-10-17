@@ -3747,10 +3747,10 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				"update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
 				"update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
 				"update sys.args set type = 'varchar' where type in ('clob', 'char');\n"
-				"drop aggregate median(decimal);\n"
-				"drop aggregate median_avg(decimal);\n"
-				"drop aggregate quantile(decimal, double);\n"
-				"drop aggregate quantile_avg(decimal, double);\n"
+				"drop aggregate median(decimal(18,3));\n"
+				"drop aggregate median_avg(decimal(18,3));\n"
+				"drop aggregate quantile(decimal(18,3), double);\n"
+				"drop aggregate quantile_avg(decimal(18,3), double);\n"
 				"create aggregate median(val DECIMAL(2)) returns DECIMAL(2)\n"
 				" external name \"aggr\".\"median\";\n"
 				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;\n"
@@ -4444,7 +4444,6 @@ SQLupgrades(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	if ((err = check_sys_tables(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
@@ -4455,54 +4454,44 @@ SQLupgrades(Client c, mvc *m)
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_hugeint(c, m)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			goto handle_error;
 		}
 	}
 #endif
 
 	if ((err = sql_update_jan2022(c, m)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_sep2022(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_geom(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_sp1(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_sp4(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
@@ -4514,6 +4503,7 @@ SQLupgrades(Client c, mvc *m)
 	return 0;
 
 handle_error:
+	GDKfatal("%s\n", err);
 	freeException(err);
 	return -1;
 }

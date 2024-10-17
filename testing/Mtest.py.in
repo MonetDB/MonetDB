@@ -1460,24 +1460,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             interrupted = True
         finally:
             if pSrvr is not None:
-                try:
-                    dbh = pymonetdb.connect(username='monetdb',
-                                            password='monetdb',
-                                            hostname=HOST,
-                                            port=int(pSrvr.port),
-                                            database=TSTDB,
-                                            autocommit=True)
-                except KeyboardInterrupt:
-                    interrupted = True
-                except:
-                    pass
-                else:
-                    crs = dbh.cursor()
-                    crs.execute("select count(*), max(id) from sys.bbp()")
-                    nbats, maxid = crs.fetchall()[0]
-                    crs.close()
-                    dbh.close()
-                    pSrvr.sendusr1()
+                pSrvr.sendusr1()
                 pSrvr.terminate()
                 pSrvr = None
                 if produce_html:
@@ -2938,6 +2921,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                         Srvr.remove('--forcemito')
                     except ValueError:
                         pass
+                    Srvr.append(f'-d{1 << 24}') # NOSYNCMASK
                 if threads is not None:
                     for i in range(len(Srvr)):
                         if Srvr[i].startswith('gdk_nr_threads='):
