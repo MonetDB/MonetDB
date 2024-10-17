@@ -1,3 +1,10 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Oct 17 2024 Niels Nes <niels@cwi.nl>
+- Changed generic Decimal handling (ie without digits/scale), old cased
+  mapped always into dec(18,3) now this is only done in case of create of
+  a column. In other cases the coercion to the correct decimal type is
+  based on the input data type. For *api (LANG*PY/C(pp)/R) we no longer
+  allow generic decimal type in the function definitions.
+
