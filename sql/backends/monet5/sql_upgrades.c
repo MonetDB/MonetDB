@@ -4374,7 +4374,6 @@ SQLupgrades(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	if ((err = check_sys_tables(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
@@ -4385,60 +4384,51 @@ SQLupgrades(Client c, mvc *m)
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_hugeint(c, m)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			goto handle_error;
 		}
 	}
 #endif
 
 	if ((err = sql_update_jan2022(c, m)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_sep2022(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_geom(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_sp1(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_sp4(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	return 0;
 
 handle_error:
+	GDKfatal("%s\n", err);
 	freeException(err);
 	return -1;
 }
