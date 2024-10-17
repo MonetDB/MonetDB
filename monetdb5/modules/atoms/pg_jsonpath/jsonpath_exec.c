@@ -228,15 +228,11 @@ static JsonPathExecResult executeKeyValueMethod(JsonPathExecContext *cxt,
 												JsonPathItem *jsp, JsonbValue *jb, JsonValueList *found);
 static JsonPathExecResult appendBoolResult(JsonPathExecContext *cxt,
 										   JsonPathItem *jsp, JsonValueList *found, JsonPathBool res);
-static JsonbValue *getJsonPathItem(JsonPathExecContext *cxt, JsonPathItem *item,
-				yyjson_alc* alc);
 static JsonbValue *GetJsonPathVar(void *cxt, char *varName, int varNameLen,
 								  JsonbValue **baseObject, int *baseObjectId);
 static int	CountJsonPathVars(void *cxt);
 static yyjson_mut_val*
 JsonItemFromDatum(Datum val, Oid typid, int32 typmod, yyjson_mut_doc* mut_doc);
-static yyjson_mut_val* getJsonPathVariable(JsonPathExecContext *cxt, JsonPathItem *variable,
-					yyjson_mut_doc *mut_doc);
 static int	JsonbArraySize(JsonbValue *jb);
 static JsonPathBool executeComparison(JsonPathItem *cmp, JsonbValue *lv,
 									  JsonbValue *rv, void *p);
@@ -398,7 +394,55 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 					yyjson_alc_pool_init(&alc, buf, 1024);
 					palc = &alc;
 				}
-				v = getJsonPathItem(cxt, jsp, palc);
+				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(palc);
+				yyjson_mut_val* mut_val = NULL;
+				
+				switch (jsp->type)
+				{
+					case jpiNull:
+						mut_val = yyjson_mut_null(mut_doc);
+						break;
+					case jpiBool:
+						mut_val = yyjson_mut_bool(mut_doc, jspGetBool(jsp));
+						break;
+					case jpiNumeric:
+						mut_val = yyjson_mut_int(mut_doc, jspGetNumeric(jsp));
+						break;
+					case jpiString:
+						mut_val = yyjson_mut_str(mut_doc, jspGetString(jsp, NULL)); //TODO use _set_ for immutables
+						break;
+					case jpiVariable:
+						{
+							char	   *varName;
+							int			varNameLength;
+							JsonbValue*	baseObject;
+							int			baseObjectId;
+							JsonbValue *v;
+
+							Assert(jsp->type == jpiVariable);
+							varName = jspGetString(jsp, &varNameLength);
+
+							if (cxt->vars == NULL ||
+								(v = cxt->getVar_(cxt->vars, varName, varNameLength,
+												&baseObject, &baseObjectId)) == NULL)
+								ereport(ERROR,
+										(errcode(ERRCODE_UNDEFINED_OBJECT),
+										errmsg("could not find jsonpath variable \"%s\"",
+												pnstrdup(varName, varNameLength))));
+
+							if (baseObjectId > 0)
+							{
+								setBaseObject(cxt, baseObject, baseObjectId);
+								// TODO: yyjson_mem when using a stack allocator this might be to big
+								mut_val =  yyjson_val_mut_copy(mut_doc,  v);
+							}
+						}
+						break;
+					default:
+						elog(ERROR, "unexpected jsonpath item type");
+				}
+				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_val, palc);
+				v = yyjson_doc_get_root(doc);
 
 				res = executeNextItem(cxt, jsp, elem,
 									  v, found, hasNext);
@@ -718,8 +762,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 				res = executeNextItem(cxt, jsp, NULL, jbv,
 									  found, false);
-				yyjson_doc_free(doc);
-				yyjson_mut_doc_free(mut_doc);
 			}
 			break;
 
@@ -748,9 +790,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 				res = executeNextItem(cxt, jsp, NULL, jbv, found, false);
 
-				yyjson_doc_free(doc);
-				yyjson_mut_doc_free(mut_doc);
-
 			}
 			break;
 
@@ -765,20 +804,19 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 				if (JsonbType(jb) == jbvNumeric)
 				{
 					// TODO requires a Numeric type that can handle decimals
-					double		val;
 					lng nval = yyjson_get_int(jb);
-					char *tmp = NULL;
-					size_t len = 0;
-					(void) lngToStr(&tmp, &len, &nval, true);
-					len = sizeof(dbl);
-					dbl* pval = &val;
-					(void) dblFromStr(tmp, &len, &pval, true);
+					double val = (double) nval;
 					// TODO errors
 					if (isinf(val) || isnan(val))
 						RETURN_ERROR(ereport(ERROR,
 											 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
 											  errmsg("NaN or Infinity is not allowed for jsonpath item method .%s()",
 													 jspOperationName(jsp->type)))));
+					// TODO: have a single mutable doc hanging around for these kind of allocations
+					yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+					yyjson_mut_val * mut_jbv = yyjson_mut_double(mut_doc, val);
+					yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+					jb = yyjson_doc_get_root(doc);
 					res = jperOk;
 				}
 				else if (JsonbType(jb) == jbvString)
@@ -796,11 +834,11 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 											  errmsg("NaN or Infinity is not allowed for jsonpath item method .%s()",
 													 jspOperationName(jsp->type)))));
 					
-					yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);// TODO: have a single mutable doc hanging around for these kind of allocations
+					// TODO: have a single mutable doc hanging around for these kind of allocations
+					yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
 					yyjson_mut_val * mut_jbv = yyjson_mut_double(mut_doc, val);
 					yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
 					jb = yyjson_doc_get_root(doc);
-					// TODO when should this be freed ? yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc);
 					res = jperOk;
 				}
 
@@ -810,7 +848,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										  errmsg("jsonpath item method .%s() can only be applied to a string or numeric value",
 												 jspOperationName(jsp->type)))));
 
-				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
+				res = executeNextItem(cxt, jsp, NULL, jb, found, false);
 			}
 			break;
 
@@ -855,7 +893,10 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 				res = executeNextItem(cxt, jsp, elem,
 									  lastjbv, found, hasNext);
-				// TODO check when this should happen yyjson_doc_free(doc);, yyjson_mut_doc_free(mut_doc);
+				if (hasNext) {
+					yyjson_doc_free(doc);
+					yyjson_mut_doc_free(mut_doc);
+				}
 			}
 			break;
 
@@ -888,19 +929,19 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
 										  errmsg("jsonpath item method .%s() can only be applied to a string or numeric value",
 												 jspOperationName(jsp->type)))));
-				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+				yyjson_alc alc;
+				char buf[STACK_ALLOCATED_BUFFER_SIZE];
+				yyjson_alc_pool_init(&alc, buf, 1024);
+				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(&alc);
 				yyjson_mut_val * mut_jbv = yyjson_mut_int(mut_doc, (lng) datum);
-				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, &alc);
 				jb = yyjson_doc_get_root(doc);
-
 				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
-				// TODO yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc);
 			}
 			break;
 
 		case jpiBoolean:
 			{
-				JsonbValue	jbv;
 				bool		bval;
 
 				if (unwrap && JsonbType(jb) == jbvArray)
@@ -934,13 +975,14 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										  errmsg("jsonpath item method .%s() can only be applied to a boolean, string, or numeric value",
 												 jspOperationName(jsp->type)))));
 
-				(void) jbv;
-				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+				yyjson_alc alc;
+				char buf[STACK_ALLOCATED_BUFFER_SIZE];
+				yyjson_alc_pool_init(&alc, buf, 1024);
+				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(&alc);
 				yyjson_mut_val * mut_jbv = yyjson_mut_bool(mut_doc, bval);
-				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, &alc);
 				jb = yyjson_doc_get_root(doc);
 				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
-				yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc); /*TODO figure out Cleanup*/ 
 			}
 			break;
 
@@ -978,14 +1020,16 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 												 jspOperationName(jsp->type)))));
 
 				// TODO get Numeric  type with decimal(precision, scale) function to work and import it here
-				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+
+				yyjson_alc alc;
+				char buf[STACK_ALLOCATED_BUFFER_SIZE];
+				yyjson_alc_pool_init(&alc, buf, 1024);
+				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(&alc);
 				yyjson_mut_val * mut_jbv = yyjson_mut_int(mut_doc, num);
-				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, &alc);
 				jb = yyjson_doc_get_root(doc);
 
 				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
-
-				yyjson_doc_free(doc);yyjson_mut_doc_free(mut_doc);  // TODO memory management
 			}
 			break;
 
@@ -1018,14 +1062,15 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										  errmsg("jsonpath item method .%s() can only be applied to a string or numeric value",
 												 jspOperationName(jsp->type)))));
 				// TODO must be Numeric
-				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+				yyjson_alc alc;
+				char buf[STACK_ALLOCATED_BUFFER_SIZE];
+				yyjson_alc_pool_init(&alc, buf, 1024);
+				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(&alc);
 				yyjson_mut_val * mut_jbv = yyjson_mut_int(mut_doc, (int) datum);
-				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, &alc);
 				jb = yyjson_doc_get_root(doc);
 
 				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
-
-				yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc);				
 			}
 			break;
 
@@ -1070,16 +1115,18 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 				}
 
 				Assert(tmp != NULL);	/* We must have set tmp above */
-				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+				yyjson_alc alc;
+				char buf[STACK_ALLOCATED_BUFFER_SIZE];
+				yyjson_alc_pool_init(&alc, buf, 1024);
+				yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(&alc);
 				yyjson_mut_val * mut_jbv = yyjson_mut_str(mut_doc, tmp);
-				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, &alc);
 				jb = yyjson_doc_get_root(doc);
 
 				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
 
 				if (cleanup_tmp)
 					GDKfree(tmp);
-				yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc); // TODO cleanup
 			}
 			break;
 
@@ -1128,6 +1175,7 @@ executeNextItem(JsonPathExecContext *cxt,
 
 	if (found)
 		JsonValueListAppend(found, copy ? copyJsonbValue(v) : v);
+		// TODO: yyjson_mem if copy when free
 
 	return jperOk;
 }
@@ -1576,18 +1624,14 @@ executeBinaryArithmExpr(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	}
 
 	if (!(elem = jsp->next) && !found)
-		return jperOk;
+		return jperOk; // TODO: weird why do func if not using the result perhaps check when found is empty
 
-	// TODO: was palloc-ed
 	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
 	yyjson_mut_val * mut_jbv = yyjson_mut_int(mut_doc, res);
 	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
 	lval = yyjson_doc_get_root(doc);
 	
 	return executeNextItem(cxt, jsp, elem, lval, found, false);
-
-	// yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc); TODO when to be freed?
-
 }
 
 /*
@@ -1635,17 +1679,13 @@ executeUnaryArithmExpr(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										 jspOperationName(jsp->type)))));
 		}
 
-		yyjson_mut_doc *mut_doc = NULL; yyjson_doc* doc = NULL;
 		if (func)
 		{
-			yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
-			yyjson_mut_val * mut_jbv = yyjson_mut_int(mut_doc, func(yyjson_get_int(val))); // TODO PROper numeric type
-			yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
-			val = yyjson_doc_get_root(doc);
+			// TODO: yyjson_mem not clean to modify an immutable
+			yyjson_set_int(val, func(yyjson_get_int(val)));
 		}
 
 		jper2 = executeNextItem(cxt, jsp, elem, val, found, false);
-		if (mut_doc) {assert(doc); yyjson_doc_free(doc);yyjson_mut_doc_free(mut_doc);}
 
 		if (jperIsError(jper2))
 			return jper2;
@@ -1736,7 +1776,6 @@ executeNumericItemMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	jb = yyjson_doc_get_root(doc);
 
 	return executeNextItem(cxt, jsp, next, jb, found, false);
-	// yyjson_doc_free(doc); yyjson_mut_doc_free(mut_doc); TODO when to free
 }
 
 /*
@@ -1800,7 +1839,8 @@ executeKeyValueMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 	hasNext = (next = jsp->next);
 
-	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
+	yyjson_alc *alc = yyjson_alc_dyn_new();
+	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(alc);
 	yyjson_mut_val * keystr =  yyjson_mut_strcpy(mut_doc, "key");
 	yyjson_mut_val * valstr =  yyjson_mut_strcpy(mut_doc, "value");
 	yyjson_mut_val * idstr =  yyjson_mut_strcpy(mut_doc, "id");
@@ -1829,25 +1869,23 @@ executeKeyValueMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		(void) yyjson_mut_obj_add(mut_obj, valstr, mut_val); // TODO: error handling
 		(void) yyjson_mut_obj_add(mut_obj, idstr, id); // TODO: error handling
 
-		yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_obj, NULL); // TODO allocate on the stack
+		yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_obj, alc); // TODO allocate on the stack
 		yyjson_val* obj = yyjson_doc_get_root(doc);
 		baseObject = setBaseObject(cxt, obj, cxt->lastGeneratedObjectId++);
 		res = executeNextItem(cxt, jsp, next, obj, found, true);
-		yyjson_doc_free(doc);
 
 		cxt->baseObject = baseObject;
 
 		if (jperIsError(res))
 		{
-			yyjson_mut_doc_free(mut_doc);
-			return res;
+			break;
 		}
 
 		if (res == jperOk && !found)
 			break;
 	}
 
-	yyjson_mut_doc_free(mut_doc);
+	yyjson_alc_dyn_free(alc);
 	return res;
 }
 
@@ -1864,7 +1902,10 @@ appendBoolResult(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	if (!(next = jsp->next) && !found)
 		return jperOk;			/* found singleton boolean value */
 
-	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL); // TODO allocate on the stack
+	yyjson_alc alc;
+	char buf[STACK_ALLOCATED_BUFFER_SIZE];
+	yyjson_alc_pool_init(&alc, buf, 1024);
+	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(&alc);
 	yyjson_mut_val * mut_jbv;
 
 	if (res == jpbUnknown)
@@ -1876,49 +1917,12 @@ appendBoolResult(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		mut_jbv = yyjson_mut_bool(mut_doc, true);
 	}
 
-	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, &alc);
 	yyjson_val* jbv = yyjson_doc_get_root(doc);
 
 	return executeNextItem(cxt, jsp, next, jbv, found, true);
 }
 
-/*
- * Convert jsonpath's scalar or variable node to actual jsonb value.
- *
- * If node is a variable then its id returned, otherwise 0 returned.
- */
-JsonbValue*
-getJsonPathItem(JsonPathExecContext *cxt, JsonPathItem *item,
-				yyjson_alc* alc)
-{
-	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(alc);
-	yyjson_mut_val* mut_val;
-	
-	switch (item->type)
-	{
-		case jpiNull:
-			mut_val = yyjson_mut_null(mut_doc);
-			break;
-		case jpiBool:
-			mut_val = yyjson_mut_bool(mut_doc, jspGetBool(item));
-			break;
-		case jpiNumeric:
-			mut_val = yyjson_mut_int(mut_doc, jspGetNumeric(item));
-			break;
-		case jpiString:
-			mut_val = yyjson_mut_str(mut_doc, jspGetString(item, NULL)); //TODO use _set_ for immutables
-			break;
-		case jpiVariable:
-			mut_val = getJsonPathVariable(cxt, item, mut_doc);
-			if (mut_val == NULL) return NULL;
-			break;
-		default:
-			elog(ERROR, "unexpected jsonpath item type");
-			return NULL; // TODO HANDLE ERROR?
-	}
-	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_val, alc);
-	return yyjson_doc_get_root(doc);
-}
 
 /*
  * Returns the computed value of a JSON path variable with given name.
@@ -1953,6 +1957,7 @@ GetJsonPathVar(void *cxt, char *varName, int varNameLen,
 		return NULL;
 	}
 
+	// TODO: yyjson_mem: correctly free the doc objects
 	yyjson_mut_doc *mut_doc = yyjson_mut_doc_new(NULL);
 	yyjson_mut_val * mut_jbv;
 
@@ -1964,6 +1969,7 @@ GetJsonPathVar(void *cxt, char *varName, int varNameLen,
 		mut_jbv = JsonItemFromDatum(var->value, var->typid, var->typmod, mut_doc);
 
 	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, NULL);
+	yyjson_mut_doc_free(mut_doc);
 	result = yyjson_doc_get_root(doc);
 
 	*baseObject = result;
@@ -1994,37 +2000,6 @@ JsonItemFromDatum(Datum val, Oid typid, int32 typmod, yyjson_mut_doc* mut_doc)
 	return NULL;
 }
 
-/*
- * Get the value of variable passed to jsonpath executor
- */
-static yyjson_mut_val*
-getJsonPathVariable(JsonPathExecContext *cxt, JsonPathItem *variable,
-					yyjson_mut_doc *mut_doc)
-{
-	char	   *varName;
-	int			varNameLength;
-	JsonbValue*	baseObject;
-	int			baseObjectId;
-	JsonbValue *v;
-
-	Assert(variable->type == jpiVariable);
-	varName = jspGetString(variable, &varNameLength);
-
-	if (cxt->vars == NULL ||
-		(v = cxt->getVar_(cxt->vars, varName, varNameLength,
-						 &baseObject, &baseObjectId)) == NULL)
-		ereport(ERROR,
-				(errcode(ERRCODE_UNDEFINED_OBJECT),
-				 errmsg("could not find jsonpath variable \"%s\"",
-						pnstrdup(varName, varNameLength))));
-
-	if (baseObjectId > 0)
-	{
-		setBaseObject(cxt, baseObject, baseObjectId);
-		return yyjson_val_mut_copy(mut_doc,  v);
-	}
-	return NULL;
-}
 
 /**************** Support functions for JsonPath execution *****************/
 
@@ -2365,6 +2340,7 @@ wrapItemsInArray(const JsonValueList *items)
 		yyjson_mut_arr_add_val(mut_arr, mut_val);
 	}
 	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_arr, NULL);
+	yyjson_mut_doc_free(mut_doc);
 	yyjson_val* arr = yyjson_doc_get_root(doc);
 	return arr;
 }
