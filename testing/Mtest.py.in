@@ -2884,6 +2884,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                         Srvr.remove('--forcemito')
                     except ValueError:
                         pass
+                    Srvr.append(f'-d{1 << 24}') # NOSYNCMASK
                 if threads is not None:
                     for i in range(len(Srvr)):
                         if Srvr[i].startswith('gdk_nr_threads='):
