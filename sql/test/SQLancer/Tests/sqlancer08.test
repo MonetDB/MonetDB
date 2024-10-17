@@ -170,10 +170,10 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((ascii(ltrim(replace('', 'l/
 statement ok
 ROLLBACK
 
-statement error 42000!Decimal (0.2.3) doesn't have format (3.2)
+statement error 42000!Decimal (0.2.3) doesn't have format (10.2)
 select cast('0.2.3' as decimal(10,2))
 
-statement error 42000!Decimal (+0..2) doesn't have format (2.1)
+statement error 42000!Decimal (+0..2) doesn't have format (10.2)
 select cast('+0..2' as decimal(10,2))
 
 statement ok
