@@ -357,8 +357,7 @@ rel_groupby_partition_safe(sql_rel *rel)
 
 static bool only_equi_joins(sql_rel *rel)
 {
-	if (list_empty(rel->exps))
-		return true;
+	assert(!list_empty(rel->exps));
 
 	for(node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -385,7 +384,7 @@ do_oahash_join(sql_rel *rel)
 
 	// TODO the always-true case, i.e. no retrictions, which can happen in
 	//      inner-, outer-, semi-, anti- and cross-joins
-	if (!rel->exps)
+	if (list_empty(rel->exps))
 		return 0;
 
 	if (!only_equi_joins(rel))
