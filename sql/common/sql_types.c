@@ -244,6 +244,8 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 	if (t->digits && res->digits > t->digits)
 		res->digits = t->digits;
 	res->scale = scale;
+	if (!digits && !scale && t->eclass == EC_DEC)
+		res->scale = res->digits = 0;
 }
 
 sql_subtype *
@@ -252,6 +254,15 @@ sql_create_subtype(allocator *sa, sql_type *t, unsigned int digits, unsigned int
 	sql_subtype *res = SA_ZNEW(sa, sql_subtype);
 
 	sql_init_subtype(res, t, digits, scale);
+	return res;
+}
+
+static sql_subtype *
+create_subtype(allocator *sa, sql_type *t)
+{
+	sql_subtype *res = SA_ZNEW(sa, sql_subtype);
+
+	sql_init_subtype(res, t, t->digits, 0);
 	return res;
 }
 
@@ -799,10 +810,10 @@ sql_create_func_(allocator *sa, const char *name, const char *mod, const char *i
 
 	for (int i = 0; i < nargs; i++) {
 		sql_type *tpe = va_arg(valist, sql_type*);
-		list_append(ops, create_arg(sa, NULL, sql_create_subtype(sa, tpe, 0, 0), ARG_IN));
+		list_append(ops, create_arg(sa, NULL, create_subtype(sa, tpe), ARG_IN));
 	}
 	if (res)
-		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+		fres = create_arg(sa, NULL, create_subtype(sa, res), ARG_OUT);
 	base_init(sa, &t->base, local_id++, false, name);
 
 	t->imp = sa_strdup(sa, imp);

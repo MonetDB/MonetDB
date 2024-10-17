@@ -1094,6 +1094,9 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	if (l->h->next->next)
 		opt_list = l->h->next->next->data.lval;
 
+	if (ctype && ctype->type->eclass == EC_DEC && !ctype->digits && !ctype->scale) /* default 18,3 */
+		ctype = sql_bind_subtype(query->sql->sa, "decimal", 18, 3);
+
 	if (cname && ctype) {
 		sql_column *cs = NULL;
 
