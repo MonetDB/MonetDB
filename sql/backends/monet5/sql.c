@@ -5562,16 +5562,22 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rel_print_(m, s, rel, 0, refs, 0);
 	res = buffer_get_buf(b);
 
+	if (res == NULL)
+		goto bailout;
 	if (!(*r = GDKstrdup(res)))
 		goto bailout;
 
-	mnstr_destroy(s);
+	free(res);
+	close_stream(s);
+	buffer_destroy(b);
 	return MAL_SUCCEED;
 
 bailout:
+	if (res)
+		free(res);
 	if (s)
 		mnstr_destroy(s);
-	else if (b)
+	if (b)
 		buffer_destroy(b);
 	throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
