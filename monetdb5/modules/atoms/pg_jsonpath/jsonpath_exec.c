@@ -2209,12 +2209,9 @@ setBaseObject(JsonPathExecContext *cxt, JsonbValue *jbv, int32 id)
 }
 
 
-#define TODO_get_list_as_context(L) List* escontext = (L)->list;
-
 static void
 JsonValueListAppend(JsonValueList *jvl, JsonbValue *jbv)
 {
-	TODO_get_list_as_context(jvl);
 	if (jvl->singleton)
 	{
 		jvl->list = list_make2(jvl->singleton, jbv);

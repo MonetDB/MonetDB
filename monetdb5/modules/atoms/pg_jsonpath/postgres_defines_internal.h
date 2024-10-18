@@ -40,9 +40,8 @@ typedef struct Node
 #define Max(A,B) MAX(A, B)
 #define Min(A,B) MIN(A, B)
 
-#define SA	(escontext->sa)
-#define list_make1(X) sa_list_append(SA, NULL, X)
-#define list_make2(X, Y) list_append(sa_list_append(SA, NULL, X), Y)
+#define list_make1(X) list_add(NULL, X)
+#define list_make2(X, Y) list_append(list_add(NULL, X), Y)
 #define lappend(X, Y) list_append(X, Y)
 
 #define linitial(L) (L->h ? L->h->data : NULL)
