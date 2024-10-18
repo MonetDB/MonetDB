@@ -2371,7 +2371,7 @@ JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars)
  * Returns NULL instead of throwing errors if 'error' is not NULL, setting
  * *error to true.  *empty is set to true if no match is found.
  */
-Datum
+JsonbValue *
 JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 			  bool *error, List *vars,
 			  const char *column_name)
@@ -2390,7 +2390,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 	{
 		*error = true;
 		*empty = false;
-		return (Datum) 0;
+		return NULL;
 	}
 
 	/*
@@ -2428,7 +2428,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 	}
 
 	if (wrap)
-		return (Datum) wrapItemsInArray(&found); // TODO track the yyjson_doc
+		return wrapItemsInArray(&found); // TODO track the yyjson_doc
 
 	/* No wrapping means only one item is expected. */
 	if (count > 1)
@@ -2436,7 +2436,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 		if (error)
 		{
 			*error = true;
-			return (Datum) 0;
+			return NULL;
 		}
 
 		if (column_name)
@@ -2453,10 +2453,10 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 	}
 
 	if (singleton)
-		return (Datum) singleton; // TODO track the yyjson_doc
+		return singleton; // TODO track the yyjson_doc
 
 	*empty = true;
-	return (Datum) NULL;
+	return NULL;
 }
 
 /*

@@ -1663,8 +1663,13 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	yyjson_val *root = yyjson_doc_get_root(doc);
 	bool empty;
 	bool error;
+	List* vars = NULL;
 	const char *column_name = NULL;
-	yyjson_val *res = JsonPathValue((Datum) root, path, &empty, &error, NULL, column_name); // TODO pass the result as yyjson document
+	// TODO pass the result as yyjson document
+	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name);
+	if (!res)
+		throw(MAL, "json.unfold", SQLSTATE(HY013) "JsonPathQuery error");
+
 	char* tmp_res = yyjson_val_write(res, 0, NULL); // TODO use different allocation or doc write
 	*ret = GDKstrdup(tmp_res);
 	free(tmp_res);
