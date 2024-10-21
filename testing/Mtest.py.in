@@ -4030,7 +4030,6 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    CONDITIONALS['KNOWNFAIL'] = True
                     for ext in ('.test', '.maltest', 'MAL.py', '.SQL.py',
                                 '.sql', '.py', '.R', '.rb', ''):
                         # extensions .in and .src are never combined
@@ -4046,7 +4045,6 @@ def main(argv) :
                     else:
                         ErrXit("%s: not a valid test name" % args[0])
             elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-                CONDITIONALS['KNOWNFAIL'] = True
                 args = [head, tail]
 
         if len(args) == 1:
@@ -4062,7 +4060,6 @@ def main(argv) :
             elif args[0] != "All":
                 #TODO:
                 # check, whether args[0] in All
-                CONDITIONALS['KNOWNFAIL'] = True
                 testlist.append(args[0])
         elif len(args) > 1:
             i = 0
@@ -4075,7 +4072,6 @@ def main(argv) :
                     # WARNING/ERROR
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-                CONDITIONALS['KNOWNFAIL'] = True
                 while i < len(args):
                     if os.sep not in args[i]:
                         #TODO:
