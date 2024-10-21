@@ -840,6 +840,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		case jpiTimestamp:
 		case jpiTimestampTz:
 			assert (0);
+			// TODO: remove datetime functionality
 			return jperError;
 
 		case jpiKeyValue:
