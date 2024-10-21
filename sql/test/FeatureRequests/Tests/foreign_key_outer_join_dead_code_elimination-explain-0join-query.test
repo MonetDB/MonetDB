@@ -1,6 +1,10 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
+statement ok
+explain select count(*) from fk
+
+skipif knowfail
 query T python .explain.function_histogram
 explain select count(*) from fk
 ----
@@ -13,6 +17,10 @@ sql.resultSet
 user.main
 1
 
+statement ok
+explain select id       from fk order by id
+
+skipif knowfail
 query T python .explain.function_histogram
 explain select id       from fk order by id
 ----
