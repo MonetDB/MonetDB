@@ -96,10 +96,10 @@ update sys.args set type_digits = 31 where type = 'int' and type_digits <> 31;
 update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;
 update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;
 update sys.args set type = 'varchar' where type in ('clob', 'char');
-drop aggregate median(decimal(18,3));
-drop aggregate median_avg(decimal(18,3));
-drop aggregate quantile(decimal(18,3), double);
-drop aggregate quantile_avg(decimal(18,3), double);
+drop aggregate median(decimal);
+drop aggregate median_avg(decimal);
+drop aggregate quantile(decimal, double);
+drop aggregate quantile_avg(decimal, double);
 create aggregate median(val DECIMAL(2)) returns DECIMAL(2)
  external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;
