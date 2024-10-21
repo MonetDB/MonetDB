@@ -140,7 +140,7 @@ jspOperationName(JsonPathItemType type)
 		case jpiTimestampTz:
 			return "timestamp_tz";
 		default:
-			elog(ERROR, "unrecognized jsonpath item type: %d", type);
+			// elog(ERROR, "unrecognized jsonpath item type: %d", type); TODO error handling
 			return NULL;
 	}
 }

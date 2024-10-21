@@ -174,7 +174,7 @@ extern const char *jspOperationName(JsonPathItemType type);
  * Parsing support data structures.
  */
 
-extern struct Node * init_escontext(void);
+extern struct Node * init_escontext(char* errmsg);
 
 extern JsonPathParseResult *parsejsonpath(const char *str, int len,
 										  struct Node *escontext);
@@ -197,12 +197,12 @@ typedef struct JsonPathVariable
 
 
 /* SQL/JSON query functions */
-extern bool JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc);
+extern bool JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc, char* errmsg);
 extern JsonbValue *JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper,
 						   bool *empty, bool *error, List *vars,
-						   const char *column_name, yyjson_alc* alc);
+						   const char *column_name, yyjson_alc* alc, char* errmsg);
 extern JsonbValue *JsonPathValue(Datum jb, JsonPath *jp, bool *empty,
 								 bool *error, List *vars,
-								 const char *column_name, yyjson_alc* alc);
+								 const char *column_name, yyjson_alc* alc, char* errmsg);
 
 #endif

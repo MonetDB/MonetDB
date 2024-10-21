@@ -37,16 +37,6 @@ static enum yytokentype checkKeyword(void);
 static bool parseUnicode(char *s, int l, struct Node *escontext);
 static bool parseHexChar(char *s, struct Node *escontext);
 
-/* Avoid exit() on fatal scanner errors (a bit ugly -- see yy_fatal_error) */
-#undef fprintf
-#define fprintf(file, fmt, msg)  fprintf_to_ereport(fmt, msg)
-
-static void
-fprintf_to_ereport(const char *fmt, const char *msg)
-{
-	(void) fmt; (void) msg;
-	ereport(ERROR, (errmsg_internal("%s", msg)));
-}
 
 /* LCOV_EXCL_START */
 
@@ -553,7 +543,7 @@ addchar(bool init, char c)
 
 /* initial jsonpath parser context */
 struct Node *
-init_escontext(void)
+init_escontext(char* errmsg)
 {
 	struct Node * escontext = GDKmalloc(sizeof(struct Node));
 
@@ -561,6 +551,13 @@ init_escontext(void)
 		return NULL;
 
 	escontext->sa = sa_create(NULL);
+
+	if (!escontext->sa) {
+		GDKfree(escontext);
+		return NULL;
+	}
+
+	escontext->_errmsg = errmsg;
 
 	return escontext;
 }
@@ -626,7 +623,9 @@ addUnicodeChar(int ch, struct Node *escontext)
 		 * more detailed errors.
 		 */
 		if (!pg_unicode_to_server_noerror(ch, (unsigned char *) cbuf))
-			ereturn(escontext, "could not convert Unicode to server encoding");
+			ereturn(escontext, false,
+					(errcode(ERRCODE_SYNTAX_ERROR),
+					 errmsg("could not convert Unicode to server encoding")));
 		addstring(false, cbuf, strlen(cbuf));
 	}
 	return true;

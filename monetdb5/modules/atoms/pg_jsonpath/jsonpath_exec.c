@@ -101,6 +101,7 @@ typedef struct JsonPathExecContext
 	bool		throwErrors;	/* with "false" all suppressible errors are
 								 * suppressed */
 	bool		useTz;
+	char* _errmsg;
 } JsonPathExecContext;
 
 /* Context for LIKE_REGEX execution. */
@@ -169,8 +170,7 @@ typedef struct JsonTablePlanRowSource
 do { \
 	if (jspThrowErrors(cxt)) \
 		throw_error; \
-	else \
-		return jperError; \
+	return jperError; \
 } while (0)
 
 typedef JsonPathBool (*JsonPathPredicateCallback) (JsonPathItem *jsp,
@@ -183,7 +183,7 @@ static JsonPathExecResult executeJsonPath(JsonPath *path, void *vars,
 										  JsonPathGetVarCallback getVar_,
 										  JsonPathCountVarsCallback countVars,
 										  Jsonb *json, bool throwErrors,
-										  JsonValueList *result, bool useTz, yyjson_alc* alc);
+										  JsonValueList *result, bool useTz, JsonPathExecContext* cxt);
 static JsonPathExecResult executeItem(JsonPathExecContext *cxt,
 									  JsonPathItem *jsp, JsonbValue *jb, JsonValueList *found);
 static JsonPathExecResult executeItemOptUnwrapTarget(JsonPathExecContext *cxt,
@@ -237,7 +237,7 @@ JsonItemFromDatum(Datum val, Oid typid, int32 typmod, yyjson_mut_doc* mutable_do
 static int	JsonbArraySize(JsonbValue *jb);
 static JsonPathBool executeComparison(JsonPathItem *cmp, JsonbValue *lv,
 									  JsonbValue *rv, void *p);
-static JsonPathBool compareItems(int32 op, JsonbValue *jb1, JsonbValue *jb2,
+static JsonPathBool compareItems(JsonPathExecContext *cxt, int32 op, JsonbValue *jb1, JsonbValue *jb2,
 								 bool useTz);
 static int	compareNumeric(Numeric a, Numeric b);
 static JsonPathExecResult getArrayIndex(JsonPathExecContext *cxt,
@@ -288,9 +288,8 @@ static JsonPathExecResult
 executeJsonPath(JsonPath *path, void *vars, JsonPathGetVarCallback getVar_,
 				JsonPathCountVarsCallback countVars,
 				Jsonb *json, bool throwErrors, JsonValueList *result,
-				bool useTz, yyjson_alc* alc)
+				bool useTz, JsonPathExecContext* cxt)
 {
-	JsonPathExecContext cxt;
 	JsonPathExecResult res;
 	JsonPathItem* jsp;
 	JsonbValue*	jbv;
@@ -300,22 +299,21 @@ executeJsonPath(JsonPath *path, void *vars, JsonPathGetVarCallback getVar_,
 	
 	jbv = json;
 
-	cxt.vars = vars;
-	cxt.getVar_ = getVar_;
-	cxt.laxMode = (path->lax);
-	cxt.ignoreStructuralErrors = cxt.laxMode;
-	cxt.root = cxt.current = jbv;
-	cxt.baseObject.jbc = NULL;
-	cxt.baseObject.id = 0;
+	cxt->vars = vars;
+	cxt->getVar_ = getVar_;
+	cxt->laxMode = (path->lax);
+	cxt->ignoreStructuralErrors = cxt->laxMode;
+	cxt->root = cxt->current = jbv;
+	cxt->baseObject.jbc = NULL;
+	cxt->baseObject.id = 0;
 	/* 1 + number of base objects in vars */
-	cxt.lastGeneratedObjectId = 1 + countVars(vars);
-	cxt.innermostArraySize = -1;
-	cxt.throwErrors = throwErrors;
-	cxt.useTz = useTz;
-	cxt.alc = alc;
-	cxt.mutable_doc = yyjson_mut_doc_new(alc);
+	cxt->lastGeneratedObjectId = 1 + countVars(vars);
+	cxt->innermostArraySize = -1;
+	cxt->throwErrors = throwErrors;
+	cxt->useTz = useTz;
+	cxt->mutable_doc = yyjson_mut_doc_new(cxt->alc);
 
-	if (jspStrictAbsenceOfErrors(&cxt) && !result)
+	if (jspStrictAbsenceOfErrors(cxt) && !result)
 	{
 		/*
 		 * In strict mode we must get a complete list of values to check that
@@ -323,7 +321,7 @@ executeJsonPath(JsonPath *path, void *vars, JsonPathGetVarCallback getVar_,
 		 */
 		JsonValueList vals = {0};
 
-		res = executeItem(&cxt, jsp, jbv, &vals);
+		res = executeItem(cxt, jsp, jbv, &vals);
 
 		if (jperIsError(res))
 			return res;
@@ -331,7 +329,7 @@ executeJsonPath(JsonPath *path, void *vars, JsonPathGetVarCallback getVar_,
 		return JsonValueListIsEmpty(&vals) ? jperNotFound : jperOk;
 	}
 
-	res = executeItem(&cxt, jsp, jbv, result);
+	res = executeItem(cxt, jsp, jbv, result);
 
 	Assert(!throwErrors || !jperIsError(res));
 
@@ -415,11 +413,12 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 							if (cxt->vars == NULL ||
 								(v = cxt->getVar_(cxt->vars, cxt->alc , varName, varNameLength,
-												&baseObject, &baseObjectId)) == NULL)
+												&baseObject, &baseObjectId)) == NULL) {
 								ereport(ERROR,
 										(errcode(ERRCODE_UNDEFINED_OBJECT),
-										errmsg("could not find jsonpath variable \"%s\"",
-												pnstrdup(varName, varNameLength))));
+										errmsg("could not find jsonpath variable \"%s\"", varName)));
+								return jperError;
+												}
 
 							if (baseObjectId > 0)
 							{
@@ -430,6 +429,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						break;
 					default:
 						elog(ERROR, "unexpected jsonpath item type");
+						return jperError;
 				}
 				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_val, cxt->alc);
 				v = yyjson_doc_get_root(doc);
@@ -510,8 +510,10 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 			{
 				bool		hasNext = (elem = jsp->next);
 
-				if (JsonbType(jb) != jbvBinary)
+				if (JsonbType(jb) != jbvBinary) {
 					elog(ERROR, "invalid jsonb object type: %d", JsonbType(jb));
+					return jperError;
+				}
 
 				return executeAnyItem
 					(cxt, hasNext ? elem : NULL,
@@ -687,15 +689,9 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 				else if (!jspIgnoreStructuralErrors(cxt))
 				{
 					Assert(found);
-
-					if (!jspThrowErrors(cxt))
-						return jperError;
-
-					ereport(ERROR,
+					RETURN_ERROR(ereport(ERROR,
 							(errcode(ERRCODE_SQL_JSON_MEMBER_NOT_FOUND), \
-							 errmsg("JSON object does not contain key \"%s\"",
-									pnstrdup(key.val.string.val,
-											 key.val.string.len))));
+							 errmsg("JSON object does not contain key \"%s\"", key))));
 				}
 			}
 			else if (unwrap && JsonbType(jb) == jbvArray)
@@ -856,8 +852,10 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 				int			last;
 				bool		hasNext = (elem = jsp->next);
 
-				if (cxt->innermostArraySize < 0)
+				if (cxt->innermostArraySize < 0) {
 					elog(ERROR, "evaluating jsonpath LAST outside of array subscript");
+					return jperError;
+				}
 
 				if (!hasNext && !found)
 				{
@@ -1047,10 +1045,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 				{
 					case jbvString:
 
-						/*
-						 * Value is not necessarily null-terminated, so we do
-						 * pnstrdup() here.
-						 */
 						tmp = (char*) yyjson_get_str(jb);
 						break;
 					case jbvNumeric:
@@ -1089,6 +1083,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 		default:
 			elog(ERROR, "unrecognized jsonpath item type: %d", jsp->type);
+			return jperError;
 	}
 
 	return res;
@@ -1205,8 +1200,10 @@ executeBoolItem(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	/* since this function recurses, it could be driven to stack overflow */
 	check_stack_depth();
 
-	if (!canHaveNext && jspHasNext(jsp))
+	if (!canHaveNext && jspHasNext(jsp)) {
 		elog(ERROR, "boolean jsonpath item cannot have next item");
+		assert(0); // cannot happen
+	}
 
 	switch (jsp->type)
 	{
@@ -1318,6 +1315,7 @@ executeBoolItem(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 		default:
 			elog(ERROR, "invalid boolean jsonpath item type: %d", jsp->type);
+			assert(0); // cannot happen
 			return jpbUnknown;
 	}
 }
@@ -1967,7 +1965,7 @@ executeComparison(JsonPathItem *cmp, JsonbValue *lv, JsonbValue *rv, void *p)
 {
 	JsonPathExecContext *cxt = (JsonPathExecContext *) p;
 
-	return compareItems(cmp->type, lv, rv, cxt->useTz);
+	return compareItems(cxt, cmp->type, lv, rv, cxt->useTz);
 }
 
 /*
@@ -2005,7 +2003,7 @@ compareStrings(const char *mbstr1, int mblen1,
  * Compare two SQL/JSON items using comparison operation 'op'.
  */
 static JsonPathBool
-compareItems(int32 op, JsonbValue *jb1, JsonbValue *jb2, bool useTz)
+compareItems(JsonPathExecContext *cxt, int32 op, JsonbValue *jb1, JsonbValue *jb2, bool useTz)
 {
 	int			cmp;
 	bool		res;
@@ -2061,6 +2059,7 @@ compareItems(int32 op, JsonbValue *jb1, JsonbValue *jb2, bool useTz)
 
 		default:
 			elog(ERROR, "invalid jsonb value type %d", JsonbType(jb1));
+			assert(0); // should not happen
 	}
 
 	switch (op)
@@ -2085,6 +2084,7 @@ compareItems(int32 op, JsonbValue *jb1, JsonbValue *jb2, bool useTz)
 			break;
 		default:
 			elog(ERROR, "unrecognized jsonpath operation: %d", op);
+			assert(0); // cannot happen
 			return jpbUnknown;
 	}
 
@@ -2284,13 +2284,19 @@ wrapItemsInArray(yyjson_alc* alc, const JsonValueList *items)
  * *error to true.
  */
 bool
-JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc)
+JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc, char* errmsg)
 {
 	JsonPathExecResult res;
 
+	JsonPathExecContext cxt = {0};
+	cxt.alc = alc;
+	cxt._errmsg = errmsg;
+
 	res = executeJsonPath(jp, vars,
 						  GetJsonPathVar, CountJsonPathVars,
-						  DatumGetJsonbP(jb), !error, NULL, true, alc);
+						  DatumGetJsonbP(jb), !error, NULL, true, &cxt);
+	if (!jperIsError(res) || errmsg[0])
+		return false; // throw exception
 
 	Assert(error || !jperIsError(res));
 
@@ -2309,7 +2315,7 @@ JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc)
 JsonbValue *
 JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 			  bool *error, List *vars,
-			  const char *column_name, yyjson_alc* alc)
+			  const char *column_name, yyjson_alc* alc, char* errmsg)
 {
 	JsonbValue *singleton;
 	bool		wrap;
@@ -2317,9 +2323,14 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 	JsonPathExecResult res;
 	int			count;
 
+	JsonPathExecContext _cxt = {0};
+	_cxt.alc = alc;
+	_cxt._errmsg = errmsg;
+	JsonPathExecContext* cxt = &_cxt;
+
 	res = executeJsonPath(jp, vars,
 						  GetJsonPathVar, CountJsonPathVars,
-						  DatumGetJsonbP(jb), !error, &found, true, alc);
+						  DatumGetJsonbP(jb), !error, &found, true, cxt);
 	Assert(error || !jperIsError(res));
 	if (error && jperIsError(res))
 	{
@@ -2359,6 +2370,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 	else
 	{
 		elog(ERROR, "unrecognized json wrapper %d", (int) wrapper);
+		return NULL; // TODO I don't think it can happen
 		wrap = false;
 	}
 
@@ -2374,17 +2386,21 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 			return NULL;
 		}
 
-		if (column_name)
+		if (column_name) {
 			ereport(ERROR,
 					(errcode(ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM),
 					 errmsg("JSON path expression for column \"%s\" should return single item without wrapper",
 							column_name),
 					 errhint("Use the WITH WRAPPER clause to wrap SQL/JSON items into an array.")));
-		else
+			return NULL;
+		}
+		else {
 			ereport(ERROR,
 					(errcode(ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM),
 					 errmsg("JSON path expression in JSON_QUERY should return single item without wrapper"),
 					 errhint("Use the WITH WRAPPER clause to wrap SQL/JSON items into an array.")));
+			return NULL;
+		}
 	}
 
 	if (singleton)
@@ -2402,16 +2418,21 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
  */
 JsonbValue *
 JsonPathValue(Datum jb, JsonPath *jp, bool *empty, bool *error, List *vars,
-			  const char *column_name, yyjson_alc* alc)
+			  const char *column_name, yyjson_alc* alc, char* errmsg)
 {
 	JsonbValue *res;
 	JsonValueList found = {0};
 	JsonPathExecResult jper PG_USED_FOR_ASSERTS_ONLY;
 	int			count;
 
+	JsonPathExecContext _cxt = {0};
+	_cxt.alc = alc;
+	_cxt._errmsg = errmsg;
+	JsonPathExecContext* cxt = &_cxt;
+
 	jper = executeJsonPath(jp, vars, GetJsonPathVar, CountJsonPathVars,
 						   DatumGetJsonbP(jb),
-						   !error, &found, true, alc);
+						   !error, &found, true, &_cxt);
 
 	Assert(error || !jperIsError(jper));
 
@@ -2438,15 +2459,19 @@ JsonPathValue(Datum jb, JsonPath *jp, bool *empty, bool *error, List *vars,
 			return NULL;
 		}
 
-		if (column_name)
+		if (column_name) {
 			ereport(ERROR,
 					(errcode(ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM),
 					 errmsg("JSON path expression for column \"%s\" should return single scalar item",
 							column_name)));
-		else
+			return NULL;
+		}
+		else {
 			ereport(ERROR,
 					(errcode(ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM),
 					 errmsg("JSON path expression in JSON_VALUE should return single scalar item")));
+			return NULL;
+		}
 	}
 
 	res = JsonValueListHead(&found);
@@ -2460,15 +2485,19 @@ JsonPathValue(Datum jb, JsonPath *jp, bool *empty, bool *error, List *vars,
 			return NULL;
 		}
 
-		if (column_name)
+		if (column_name) {
 			ereport(ERROR,
 					(errcode(ERRCODE_SQL_JSON_SCALAR_REQUIRED),
 					 errmsg("JSON path expression for column \"%s\" should return single scalar item",
 							column_name)));
-		else
+			return NULL;
+		}
+		else {
 			ereport(ERROR,
 					(errcode(ERRCODE_SQL_JSON_SCALAR_REQUIRED),
 					 errmsg("JSON path expression in JSON_VALUE should return single scalar item")));
+			return NULL;
+		}
 	}
 
 	if (JsonbType(res) == jbvNull)

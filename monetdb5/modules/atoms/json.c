@@ -1653,12 +1653,16 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 		return MAL_SUCCEED;
 	}
 
-	struct Node* escontext = init_escontext();
+	char errmsg[1024] = {0};
+	struct Node* escontext = init_escontext(errmsg); // TODO: can be a implementation detail of lex and parse. Pass on allocator as parameter
 	if (!escontext)
 		throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	JsonPathParseResult* path = parsejsonpath(*expr, strlen(*expr), escontext);
-
+	if (errmsg[0]) {
+		return createException(MAL, SQLSTATE(HY013), "JsonPathQuery iternal error: %s", errmsg);
+	}
+	assert(path);
 
 	yyjson_alc* alc = yyjson_alc_dyn_new(); // TODO initialize this with gdk memory functions.
 	yyjson_read_err* read_error = NULL;
@@ -1668,14 +1672,16 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	bool error;
 	List* vars = NULL;
 	const char *column_name = NULL;
-	// TODO pass the result as yyjson document
-	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name, alc);
+	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name, alc, errmsg);
+	if (!res && errmsg[0])
+		return createException(MAL, SQLSTATE(HY013), "JsonPathQuery iternal error: %s", errmsg);
+
 	if (!res)
-		throw(MAL, "json.unfold", SQLSTATE(HY013) "JsonPathQuery error");
+		throw(MAL, "json.filter", SQLSTATE(HY013) "JsonPathQuery error");
 
 	size_t* len = NULL;
 	yyjson_write_err* write_error = NULL;
-	char* tmp_res = yyjson_val_write_opts(res, 0, alc, len, write_error); // TODO use different allocation or doc write
+	char* tmp_res = yyjson_val_write_opts(res, 0, alc, len, write_error); // TODO use different allocator for result
 
 	*ret = GDKstrdup(tmp_res);
 	yyjson_alc_dyn_free(alc);

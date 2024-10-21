@@ -22,16 +22,10 @@ typedef StringInfoData *StringInfo;
 typedef struct Node
 {
 	allocator *sa;
+	char* _errmsg;
 } Node;
 
 #define SOFT_ERROR_OCCURRED(escontext) (false)
-
-
-#define TODO_ERROR 0
-#define ereturn(context, dummy_value, ...)	{(void) context; return TODO_ERROR;}
-
-#define errcode(X)	/* TODO */
-#define errmsg(X)	/* TODO */
 
 #define palloc(X)	GDKzalloc(X)
 #define pfree(X)	GDKfree(X)
@@ -90,15 +84,39 @@ for (;cell;cell = cell->next)
 #define PG_UINT32_MAX ((uint32) UINT32_MAX)
 
 #include "mal_exception.h"
-#define ereport(TYPE, X) createException(MAL, "pg_jsonpath", "TODO_ERROR")
-#define ERROR "TODO"
-#define errmsg_internal(frmt, msg) "TODO"
-#define elog(TYPE, X, ...) (void ) "TODO";
 
-#define errsave(a,b) (void) result; (void) escontext; (void) message;
+
+#define errdetail(X) (_errdetail = X)
+#define ereturn(context, dummy_value, X)	do {\
+		char* _errmsg = context->_errmsg; \
+		(void) context; char* _errdetail = NULL; (void) _errdetail; char* _errcode; \
+		(void) _errcode; char* _errhint; (void) _errhint; \
+		(X);\
+		if (_errdetail) {\
+			char __errmsg[1024] = {0};\
+			snprintf(__errmsg, sizeof(__errmsg), "%s detail: %s", _errmsg, _errdetail); \
+			strcpy(_errmsg, __errmsg);\
+		}\
+		return dummy_value;} while(0)
+
+#define errcode(X)	(_errcode = #X)
+#define errhint(X)	(_errhint = X)
+#define errmsg(...)	snprintf(_errmsg, 1024, __VA_ARGS__)
+#define ereport(TYPE, X) do {char* _errmsg = cxt->_errmsg; char* _errcode; (void) _errcode; char* _errhint; (void) _errhint; (X);} while(0)
+#define elog(TYPE, ...) do {char* _errmsg = cxt->_errmsg; errmsg(__VA_ARGS__); } while(0);
+
+#define errsave(context, X) \
+		do {\
+			(void) result;\
+		 	char* _errcode; (void) _errcode;\
+			char* _errmsg = context->_errmsg;\
+			(X);\
+		} while(0)
 
 // c.h
 #define lengthof(array) (sizeof (array) / sizeof ((array)[0]))
+#define gettext(x) (x)
+#define _(x) gettext(x)
 
 #define pg_strncasecmp(s1, s2, l2) GDKstrncasecmp(s1, s2, strlen(s1), l2)
 
