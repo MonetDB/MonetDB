@@ -197,12 +197,12 @@ typedef struct JsonPathVariable
 
 
 /* SQL/JSON query functions */
-extern bool JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars);
+extern bool JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc);
 extern JsonbValue *JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper,
 						   bool *empty, bool *error, List *vars,
-						   const char *column_name);
+						   const char *column_name, yyjson_alc* alc);
 extern JsonbValue *JsonPathValue(Datum jb, JsonPath *jp, bool *empty,
 								 bool *error, List *vars,
-								 const char *column_name);
+								 const char *column_name, yyjson_alc* alc);
 
 #endif

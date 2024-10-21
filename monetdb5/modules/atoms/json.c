@@ -1659,20 +1659,26 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 
 	JsonPathParseResult* path = parsejsonpath(*expr, strlen(*expr), escontext);
 
-	yyjson_doc *doc = yyjson_read(*js, strlen(*js), 0);
+
+	yyjson_alc* alc = yyjson_alc_dyn_new(); // TODO initialize this with gdk memory functions.
+	yyjson_read_err* read_error = NULL;
+	yyjson_doc *doc = yyjson_read_opts(*js, strlen(*js), 0, alc, read_error);
 	yyjson_val *root = yyjson_doc_get_root(doc);
 	bool empty;
 	bool error;
 	List* vars = NULL;
 	const char *column_name = NULL;
 	// TODO pass the result as yyjson document
-	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name);
+	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name, alc);
 	if (!res)
 		throw(MAL, "json.unfold", SQLSTATE(HY013) "JsonPathQuery error");
 
-	char* tmp_res = yyjson_val_write(res, 0, NULL); // TODO use different allocation or doc write
+	size_t* len = NULL;
+	yyjson_write_err* write_error = NULL;
+	char* tmp_res = yyjson_val_write_opts(res, 0, alc, len, write_error); // TODO use different allocation or doc write
+
 	*ret = GDKstrdup(tmp_res);
-	free(tmp_res);
+	yyjson_alc_dyn_free(alc);
 	return MAL_SUCCEED;
 	// return JSONfilterInternal(ret, js, expr, 0);
 }
