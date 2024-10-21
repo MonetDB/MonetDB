@@ -5752,7 +5752,7 @@ data_type:
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
  |  HUGEINT		{ sql_find_subtype(&$$, "hugeint", 0, 0); }
 
- |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 0, 0); }
+ |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 18, 3); }
  |  sqlDECIMAL '(' nonzero ')'
 			{
 			  int d = $3;
@@ -7019,7 +7019,7 @@ odbc_data_type:
     | SQL_DATE
 	{ sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
-	{ sql_find_subtype(&$$, "decimal", 0, 0); }
+	{ sql_find_subtype(&$$, "decimal", 18, 3); }
     | SQL_DOUBLE
 	{ sql_find_subtype(&$$, "double", 0, 0); }
     | SQL_FLOAT
@@ -7068,7 +7068,7 @@ odbc_data_type:
     | SQL_LONGVARCHAR
 	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_NUMERIC
-	{ sql_find_subtype(&$$, "decimal", 0, 0); }
+	{ sql_find_subtype(&$$, "decimal", 18, 3); }
     | SQL_REAL
 	{ sql_find_subtype(&$$, "real", 0, 0); }
     | SQL_SMALLINT
