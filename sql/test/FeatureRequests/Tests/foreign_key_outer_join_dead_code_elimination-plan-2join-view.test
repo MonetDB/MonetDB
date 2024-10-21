@@ -1,14 +1,14 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T nosort
+query T python .plan.filter
    plan select count(*) from v2
 ----
 project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    plan select id       from v2 order by id
 ----
 project (
@@ -17,7 +17,7 @@ project (
 | ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  as "v2"."id" ]
 ) [ "v2"."id" NOT NULL UNIQUE HASHCOL  ] [ "v2"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
-query T nosort
+query T python .plan.filter
    plan select id , v2  from v2 order by id
 ----
 project (

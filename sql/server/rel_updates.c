@@ -1256,7 +1256,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			res = rel_crossproduct(sql->sa, res, tables, op_join);
 			set_single(res);
 		}
-		query_push_outer(query, res, sql_where);
 		if (opt_where) {
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
@@ -1269,8 +1268,8 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			r = res;
 		}
 		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
-		query_pop_outer(query);
 		if (opt_returning) {
+			query_processed(query);
 			r->returning = 1;
 			list *pexps = sa_list(sql->sa);
 			sql_rel* inner = r->l;
@@ -1346,10 +1345,8 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			}
 			rel_base_use_tid(sql, r);
 
-			query_push_outer(query, r, sql_where);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
-			query_pop_outer(query);
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
@@ -1359,6 +1356,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			r = rel_delete(sql->sa, r, NULL);
 		}
 		if (opt_returning) {
+			query_processed(query);
 			r->returning = 1;
 			list *pexps = sa_list(sql->sa);
 			sql_rel* inner = r->l;
