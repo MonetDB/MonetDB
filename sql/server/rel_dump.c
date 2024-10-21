@@ -1473,7 +1473,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (!sql_find_subtype(&tpe, tname, 0, 0)) {
 				if (!(t = mvc_bind_type(sql, tname))) /* try an external type */
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SQL type %s not found\n", tname);
-				sql_init_subtype(&tpe, t, 0, 0);
+				sql_init_subtype(&tpe, t, t->digits, 0);
 			}
 			if (!(exp = parse_atom(sql, r, pos, &tpe)))
 				return NULL;

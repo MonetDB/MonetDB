@@ -2632,11 +2632,17 @@ opt_end_label:
 table_function_column_list:
 	column data_type	{ $$ = L();
 				  append_string($$, $1);
+				  if (strcmp($2.type->base.name, "decimal") == 0 &&
+				      $2.digits == 0 && $2.scale == 0)
+					  sql_find_subtype(&$2, "decimal", 18, 3);
 				  append_type($$, &$2);
 				}
   |     table_function_column_list ',' column data_type
 				{
 				  append_string($$, $3);
+				  if (strcmp($4.type->base.name, "decimal") == 0 &&
+				      $4.digits == 0 && $4.scale == 0)
+					  sql_find_subtype(&$4, "decimal", 18, 3);
 				  append_type($$, &$4);
 				}
   ;
@@ -2645,7 +2651,12 @@ func_data_type:
     TABLE '(' table_function_column_list ')'
 		{ $$ = _symbol_create_list(SQL_TABLE, $3); }
  |  data_type
-		{ $$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1)); }
+		{
+			if (strcmp($1.type->base.name, "decimal") == 0 &&
+			    $1.digits == 0 && $1.scale == 0)
+				sql_find_subtype(&$1, "decimal", 18, 3);
+			$$ = _symbol_create_list(SQL_TYPE, append_type(L(),&$1));
+		}
  ;
 
 opt_paramlist:
@@ -2661,12 +2672,18 @@ paramlist:
     paramlist ',' ident data_type
 			{ dlist *p = L();
 			  append_string(p, $3);
+			  if (strcmp($4.type->base.name, "decimal") == 0 &&
+			      $4.digits == 0 && $4.scale == 0)
+				  sql_find_subtype(&$4, "decimal", 18, 3);
 			  append_type(p, &$4);
 			  $$ = append_list($1, p); }
  |  ident data_type
 			{ dlist *l = L();
 			  dlist *p = L();
 			  append_string(p, $1);
+			  if (strcmp($2.type->base.name, "decimal") == 0 &&
+			      $2.digits == 0 && $2.scale == 0)
+				  sql_find_subtype(&$2, "decimal", 18, 3);
 			  append_type(p, &$2);
 			  $$ = append_list(l, p); }
  ;
@@ -2869,11 +2886,21 @@ opt_typelist:
  ;
 
 typelist:
-    data_type			{ dlist *l = L();
-				  append_type(l, &$1 );
-				  $$= l; }
- |  data_type ',' typelist	{ append_type($3, &$1);
-				  $$ = $3; }
+    data_type			{
+	    dlist *l = L();
+	    if (strcmp($1.type->base.name, "decimal") == 0 &&
+		$1.digits == 0 && $1.scale == 0)
+		    sql_find_subtype(&$1, "decimal", 18, 3);
+	    append_type(l, &$1 );
+	    $$= l;
+    }
+ |  data_type ',' typelist	{
+	    if (strcmp($1.type->base.name, "decimal") == 0 &&
+		$1.digits == 0 && $1.scale == 0)
+		    sql_find_subtype(&$1, "decimal", 18, 1);
+	    append_type($3, &$1);
+	    $$ = $3;
+    }
  ;
 
 drop_action:
@@ -5752,7 +5779,7 @@ data_type:
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
  |  HUGEINT		{ sql_find_subtype(&$$, "hugeint", 0, 0); }
 
- |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 18, 3); }
+ |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'
 			{
 			  int d = $3;
@@ -7019,7 +7046,7 @@ odbc_data_type:
     | SQL_DATE
 	{ sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
-	{ sql_find_subtype(&$$, "decimal", 18, 3); }
+	{ sql_find_subtype(&$$, "decimal", 0, 0); }
     | SQL_DOUBLE
 	{ sql_find_subtype(&$$, "double", 0, 0); }
     | SQL_FLOAT
@@ -7068,7 +7095,7 @@ odbc_data_type:
     | SQL_LONGVARCHAR
 	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_NUMERIC
-	{ sql_find_subtype(&$$, "decimal", 18, 3); }
+	{ sql_find_subtype(&$$, "decimal", 0, 0); }
     | SQL_REAL
 	{ sql_find_subtype(&$$, "real", 0, 0); }
     | SQL_SMALLINT

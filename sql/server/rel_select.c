@@ -4073,10 +4073,12 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 		sql_subtype *et = exp_subtype(e);
 		if (et->type->eclass == EC_NUM) {
 			unsigned int min_precision = atom_num_digits(e->l);
+			if (!tpe->digits && !tpe->scale)
+				tpe->digits = min_precision;
 			if (min_precision > tpe->digits)
 				return sql_error(sql, 02, SQLSTATE(42000) "Precision (%d) should be at least (%d)", tpe->digits, min_precision);
-			tpe = sql_bind_subtype(sql->sa, "decimal", min_precision, et->scale);
-		} else if (EC_VARCHAR(et->type->eclass)) {
+			tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, et->scale);
+		} else if (EC_VARCHAR(et->type->eclass) && !tpe->digits && !tpe->scale) {
 			char *s = E_ATOM_STRING(e);
 			unsigned int min_precision = 0, min_scale = 0;
 			bool dot_seen = false;
@@ -4091,6 +4093,12 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 			tpe = sql_bind_subtype(sql->sa, "decimal", min_precision, min_scale);
 		}
+	} else if (tpe->type->eclass == EC_DEC && !tpe->digits && !tpe->scale) {
+		sql_subtype *et = exp_subtype(e);
+	   	if (et->type->eclass == EC_NUM)
+			tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, 0);
+		else /* fallback */
+			tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
 	}
 
 	if (e)
