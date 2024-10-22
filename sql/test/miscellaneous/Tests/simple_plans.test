@@ -16,7 +16,7 @@ select distinct col1 + col2 from myy order by col1 + col2
 2
 6
 
-query T nosort
+query T python .plan.filter
 plan select distinct col1 + col2 from myy order by col1 + col2
 ----
 project (
@@ -27,14 +27,14 @@ project (
 | ) [ "%1"."%1" NOT NULL ] [ "%1"."%1" NOT NULL ]
 ) [ "%1"."%1" NOT NULL UNIQUE ] [ "%1"."%1" ASC NOT NULL UNIQUE ]
 
-query T nosort
+query T python .plan.filter
 plan select col2 from myy order by col1 ASC, col1 DESC
 ----
 project (
 | table("sys"."myy") [ "myy"."col1" NOT NULL UNIQUE, "myy"."col2" NOT NULL ]
 ) [ "myy"."col2" NOT NULL ] [ "myy"."col1" ASC NOT NULL UNIQUE, "myy"."col1" NULLS LAST NOT NULL UNIQUE ]
 
-query T nosort
+query T python .plan.filter
 plan select col2 from myy order by col1 DESC, col1 DESC
 ----
 project (
@@ -44,7 +44,7 @@ project (
 statement ok
 create table myx (x uuid, y uuid)
 
-query T nosort
+query T python .plan.filter
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965'
 ----
 project (
@@ -53,7 +53,7 @@ project (
 | ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
-query T nosort
+query T python .plan.filter
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
 ----
 project (
@@ -62,7 +62,7 @@ project (
 | ) [ ("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL UNIQUE as "myx"."x", "myx"."y" NOT NULL UNIQUE ]
 
-query T nosort
+query T python .plan.filter
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
 ----
 project (
@@ -90,7 +90,7 @@ CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER)
 statement ok
 INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10)
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where col1 = 1 or col1 = 81
 ----
 project (
@@ -99,7 +99,7 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
 ----
 project (
@@ -108,7 +108,7 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81", int(7) "100") ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
 ----
 project (
@@ -117,7 +117,7 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81")) or (("tab0"."col2" NOT NULL) < (int(7) "0")) ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10)
 ----
 project (
@@ -126,7 +126,7 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2" NOT NULL) > (int(7) "10")) ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100)
 ----
 project (
@@ -135,7 +135,7 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2" NOT NULL) = (int(7) "100")) ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81
 ----
 project (
@@ -145,7 +145,7 @@ project (
 ) [ tinyint(1) "1" ]
 
 # don't rewrite col2 <> 10 into notin
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and col2 <> 10
 ----
 project (
@@ -154,7 +154,7 @@ project (
 | ) [ ("tab0"."col2" NOT NULL) != (int(7) "10"), ("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 100)
 ----
 project (
@@ -163,7 +163,7 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
 ----
 project (
@@ -172,7 +172,7 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81")) or (("tab0"."col2" NOT NULL) < (int(7) "0")) ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10)
 ----
 project (
@@ -181,7 +181,7 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2" NOT NULL) > (int(7) "10")) ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 47)
 ----
 project (
@@ -328,7 +328,7 @@ EXPLAIN SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.
 algebra.thetajoin
 1
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 ----
 project (
@@ -337,7 +337,7 @@ project (
 | ) [ (int(11) "1") <= ("another_t"."col1" NOT NULL UNIQUE) <= (int(11) "2") ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 ----
 project (
@@ -346,7 +346,7 @@ project (
 | ) [ (bigint(63) "1") < (bigint(63)["another_t"."col1" NOT NULL UNIQUE] NOT NULL) < (bigint(63) "2") ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
 project (
@@ -380,7 +380,7 @@ create view view2 as SELECT * FROM tabel2 as a
 statement ok
 create view view3 as SELECT * FROM tabel3 as a
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr
 ----
 project (
@@ -402,7 +402,7 @@ CREATE TABLE integers(i INTEGER, j INTEGER)
 statement ok
 INSERT INTO integers VALUES (1,4), (2,5), (3,6), (NULL,NULL)
 
-query T nosort
+query T python .plan.filter
 plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
 ----
 project (
@@ -424,7 +424,7 @@ select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.
 NULL
 NULL
 
-query T nosort
+query T python .plan.filter
 plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
 ----
 project (
@@ -446,7 +446,7 @@ select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null 
 NULL
 NULL
 
-query T nosort
+query T python .plan.filter
 plan select i, j from integers where i = j or (i is null and j is null)
 ----
 project (
@@ -462,7 +462,7 @@ NULL
 NULL
 
 # (x*c1)*c2 -> x * (c1*c2)
-query T nosort
+query T python .plan.filter
 plan select (34*another_t.col1)*3 from another_t
 ----
 project (
@@ -487,7 +487,7 @@ create table t3 (b string)
 statement ok rowcount 4
 insert into t3 values ('a'),('b'),('c'),('d')
 
-query T nosort
+query T python .plan.filter
 plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
 ----
 project (
@@ -532,7 +532,7 @@ sql.tid
 user.main
 1
 
-query T nosort
+query T python .plan.filter
 plan select x, y from (select a as b, a / 3 as c from t1 intersect all select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
 project (
@@ -554,7 +554,7 @@ project (
 | ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
 project (
@@ -587,7 +587,7 @@ statement ok
 set optimizer='default_pipe'
 
 # push select expressions under group by if possible
-query T nosort
+query T python .plan.filter
 plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
 ----
 project (
@@ -598,7 +598,7 @@ project (
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL ]
 ) [ tinyint(1) "1" ]
 
-query T nosort
+query T python .plan.filter
 plan select y from (select x, max(x) as y from (values(1),(2),(3)) x(x) group by x) x(x,y) where x > 2
 ----
 project (
@@ -610,7 +610,7 @@ project (
 ) [ "%5"."%5" NOT NULL as "x"."y" ]
 
 # here the select cannot be pushed down
-query T nosort
+query T python .plan.filter
 plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 2
 ----
 project (
@@ -630,7 +630,7 @@ SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(
 25
 30
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (
@@ -648,7 +648,7 @@ SELECT 10*sum(5 - x) as aa, sum(x + 12) + 15 as bb, count(*) as cc FROM (VALUES 
 90
 5
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (
@@ -677,7 +677,7 @@ SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 40
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 project (

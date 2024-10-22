@@ -27,7 +27,7 @@ VALUES
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l)
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1,
@@ -64,7 +64,7 @@ GROUP BY
 1
 
 # same as before
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1 AS c1_alias1,
@@ -111,7 +111,7 @@ END
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l) exactly like in the case of basetable
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     a1,
@@ -153,7 +153,7 @@ GROUP BY
 
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1_alias1,
@@ -211,7 +211,7 @@ GROUP BY
 2
 1
 
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1 AS c1_alias_1,
@@ -268,7 +268,7 @@ GROUP BY
 
 # in this example both outer project/groupby and the inner (subquery)
 # projet use aliases for the column c1.
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
@@ -328,7 +328,7 @@ GROUP BY
 # combinations of outer project/groupby and inner (subquery) projet
 # aliases for c1 column
 
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
@@ -385,7 +385,7 @@ GROUP BY
 2
 1
 
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     c1_in_alias_1,
@@ -444,7 +444,7 @@ GROUP BY
 
 ## GROUPBY <--input-- JOIN ############################################
 
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT
     foo.c2 AS col,

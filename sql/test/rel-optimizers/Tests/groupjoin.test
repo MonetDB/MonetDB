@@ -5,7 +5,7 @@ statement ok
 insert into integers values(1),(2),(3),(NULL)
 
 # split case into project under select
-query T nosort
+query T python .plan.filter
 plan select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1
 ----
 project (

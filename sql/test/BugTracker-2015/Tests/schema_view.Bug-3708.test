@@ -51,7 +51,7 @@ set schema s1
 statement ok
 create view s4 as select * from s3
 
-query T nosort
+query T python .plan.filter
 PLAN select * from s1.s4
 ----
 project (
@@ -61,7 +61,7 @@ project (
 statement ok
 set schema s2
 
-query T nosort
+query T python .plan.filter
 PLAN select * from s1.s4
 ----
 project (

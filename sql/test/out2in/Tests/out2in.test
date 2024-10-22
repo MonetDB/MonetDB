@@ -13,7 +13,7 @@ CREATE TABLE bar (i INT, j INT)
 statement ok
 INSERT INTO bar VALUES (30, 300), (20, 200), (50, 500), (40, 400)
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.i IS NOT NULL
 ----
 project (
@@ -23,7 +23,7 @@ project (
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
 ----
 project (
@@ -33,7 +33,7 @@ project (
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT foo.i, bar.i FROM foo RIGHT JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
 ----
 project (
@@ -45,7 +45,7 @@ project (
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
 ----
 project (
@@ -57,7 +57,7 @@ project (
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
 ----
 project (
@@ -67,7 +67,7 @@ project (
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i", "bar"."i" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i)) AND bar.j IS NOT NULL
 ----
 project (

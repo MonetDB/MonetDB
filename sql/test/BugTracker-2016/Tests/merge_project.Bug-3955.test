@@ -50,7 +50,7 @@ select * from r
 2
 0.900
 
-query T nosort
+query T python .plan.filter
 PLAN select * from r
 ----
 project (

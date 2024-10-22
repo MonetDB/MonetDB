@@ -38,7 +38,7 @@ select * from plantest0 union all
 select * from plantest1
 ) as v
 
-query T nosort
+query T python .plan.filter
 plan select
 id_r * 10000000 as id_range_base,
 count(id_r) as nrows
@@ -98,7 +98,7 @@ id_r asc
 150000000
 2
 
-query T nosort
+query T python .plan.filter
 plan select
 id_r * 10000000 as id_range_base,
 count(id_r) as nrows

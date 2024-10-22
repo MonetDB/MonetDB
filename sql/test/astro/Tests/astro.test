@@ -30,7 +30,7 @@ CREATE TABLE "cm_flux" (
 	"avg_dec_zone_deg" TINYINT       NOT NULL
 )
 
-query T nosort
+query T python .plan.filter
 plan UPDATE fluxz
    SET (filter
        ,f_datapoints

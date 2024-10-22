@@ -13,7 +13,7 @@ insert into a7403 values (10), (10)
 statement ok
 insert into b7403 values (20), (20)
 
-query T nosort
+query T python .plan.filter
 plan
 with
   a1 as (select row_number() over() as r, i from a7403),

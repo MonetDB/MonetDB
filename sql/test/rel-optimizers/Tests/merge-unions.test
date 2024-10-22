@@ -10,7 +10,7 @@ select * from f_uchain
 4
 5
 
-query T nosort
+query T python .plan.filter
 plan select * from f_uchain
 ----
 munion (
@@ -39,7 +39,7 @@ where n > 1 and n < 5
 4
 4
 
-query T nosort
+query T python .plan.filter
 plan select * from f_uchain
      where n > 1 and n < 5
 ----
@@ -76,7 +76,7 @@ select n, count(n) from f_uchain group by n
 5
 1
 
-query T nosort
+query T python .plan.filter
 plan select * from f_uchain
      where n > 1 and n < 5
 ----
@@ -111,7 +111,7 @@ select * from f_merge
 4
 5
 
-query T nosort
+query T python .plan.filter
 plan select * from f_merge
 ----
 munion (
@@ -140,7 +140,7 @@ where n > 1 and n < 5
 4
 4
 
-query T nosort
+query T python .plan.filter
 plan select * from f_merge
      where n > 1 and n < 5
 ----
@@ -175,7 +175,7 @@ select * from f_merge_rec
 4
 5
 
-query T nosort
+query T python .plan.filter
 plan select * from f_merge_rec
 ----
 munion (
@@ -204,7 +204,7 @@ where n > 1 and n < 5
 4
 4
 
-query T nosort
+query T python .plan.filter
 plan select * from f_merge_rec
      where n > 1 and n < 5
 ----
@@ -241,7 +241,7 @@ select n, count(n) from f_merge_rec group by n
 5
 1
 
-query T nosort
+query T python .plan.filter
 plan select n, count(n) from f_merge_rec group by n
 ----
 project (

@@ -16,14 +16,14 @@ insert into oblo values (2)
 statement ok
 insert into oblo values (1)
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo
 ----
 project (
 | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
 ) [ "oblo"."a" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo OFFSET 2
 ----
 project (
@@ -32,7 +32,7 @@ project (
 | ) [ bigint(63) NULL, bigint(63) "2" ]
 ) [ "oblo"."a" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo LIMIT 2
 ----
 project (
@@ -41,7 +41,7 @@ project (
 | ) [ bigint(63) "2" ]
 ) [ "oblo"."a" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo LIMIT 1 OFFSET 2
 ----
 project (
@@ -50,7 +50,7 @@ project (
 | ) [ bigint(63) "1", bigint(63) "2" ]
 ) [ "oblo"."a" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo LIMIT 2 OFFSET 1
 ----
 project (
@@ -59,14 +59,14 @@ project (
 | ) [ bigint(63) "2", bigint(63) "1" ]
 ) [ "oblo"."a" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo ORDER BY a
 ----
 project (
 | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
 ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo ORDER BY a OFFSET 2
 ----
 top N (
@@ -75,7 +75,7 @@ top N (
 | ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) NULL, bigint(63) "2" ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo ORDER BY a LIMIT 2
 ----
 top N (
@@ -84,7 +84,7 @@ top N (
 | ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) "2" ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
 top N (
@@ -93,7 +93,7 @@ top N (
 | ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
 ) [ bigint(63) "2", bigint(63) "1" ]
 
-query T nosort
+query T python .plan.filter
    PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
 top N (

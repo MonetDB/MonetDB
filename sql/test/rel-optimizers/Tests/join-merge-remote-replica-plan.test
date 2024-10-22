@@ -60,7 +60,7 @@ select * from foo_p1
 # result in the master node (hint: the remote plan is wrapped around a
 # 'table' returning relational operator)
 
-query T nosort
+query T python .plan.filter
 plan select * from foo_merge, members_rpl
 ----
 munion (

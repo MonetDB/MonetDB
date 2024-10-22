@@ -22,14 +22,14 @@ alter table bar_rpl add table bar_r2
 statement ok
 alter table bar_rpl add table bar_r3
 
-query T nosort
+query T python .plan.filter
 plan select * from foo_rpl
 ----
 project (
 | table("sys"."foo_local") [ "foo_local"."n" NOT NULL as "foo_rpl"."n", "foo_local"."m" NOT NULL as "foo_rpl"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl"."%TID%" ]
 ) [ "foo_rpl"."n" NOT NULL, "foo_rpl"."m" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select * from foo_rpl, bar_rpl
 ----
 project (
@@ -113,7 +113,7 @@ tom
 # expect the replicas to be resolved to the remote tables. The optimizer
 # could be in principle be adapted to resolve the replica crossproduct
 # to local tables
-query T nosort
+query T python .plan.filter
 plan select * from foo_rpl, bar_rpl, buz_rmt
 ----
 table (

@@ -7,7 +7,7 @@ INSERT INTO Test SELECT value % 10 as k, value as v FROM generate_series(1, 100)
 
 # simple eq filter on the partition key, must be pushed down,
 # while the flag filter cannot be safely pushed down
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -33,7 +33,7 @@ project (
 ) [ int(31) "10" as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
 # simple range filter on the partition key
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -59,7 +59,7 @@ project (
 ) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
 # simple not in filter on the partition key
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -85,7 +85,7 @@ project (
 ) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
 # another filter also not on the partition key, must not be pushed down
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -112,7 +112,7 @@ project (
 
 # swapping k with v just to test for hardcoded optimizations,
 # v is pushed down but not k
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY v ORDER BY v DESC) AS rank
@@ -139,7 +139,7 @@ project (
 
 # performing some additional computation on the partition key,
 # filter cannot be pushed down
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT k * 10 as k, v, flag, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -167,7 +167,7 @@ project (
 ) [ bigint(35) "10" as "t2"."k", "t2"."v" NOT NULL UNIQUE, boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
 # filter [partition column OR flag], cannot be safely pushed down
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -191,7 +191,7 @@ project (
 ) [ "t1"."k" NOT NULL as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", "t1"."flag" NOT NULL as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
 # filter on k and v and both are partition columns, both filters can be pushed down
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k, v ORDER BY v DESC) AS rank
@@ -227,7 +227,7 @@ CREATE TABLE Test (k varchar(100), v int)
 statement ok
 INSERT INTO Test SELECT value % 10 as k, value as v FROM generate_series(1, 100)
 
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank
@@ -253,7 +253,7 @@ project (
 ) [ varchar(100) "10" as "t2"."k", "t1"."v" NOT NULL UNIQUE as "t2"."v", boolean(1) "false" as "t2"."flag", int(31) "1" as "t2"."rank" ]
 
 # test with like-type filters
-query T nosort
+query T python .plan.filter
 plan SELECT *
 FROM (
     SELECT *, rank() OVER (PARTITION BY k ORDER BY v DESC) AS rank

@@ -53,7 +53,7 @@ select * from sorted
 4
 3
 
-query T nosort
+query T python .plan.filter
 PLAN select a,b from sorted group by a,b
 ----
 project (
@@ -62,7 +62,7 @@ project (
 | ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ] [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 PLAN select a,b from sorted group by b,a
 ----
 project (

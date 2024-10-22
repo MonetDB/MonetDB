@@ -7,7 +7,7 @@ CREATE TABLE dbg (a INT, b INT)
 statement ok
 INSERT INTO dbg (a,b) VALUES (10,10)
 
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT a as d, MIN(b), (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 ----
@@ -47,7 +47,7 @@ CREATE TABLE dbg (a INT, b INT)
 statement ok
 INSERT INTO dbg (a,b) VALUES (10,10)
 
-query T nosort
+query T python .plan.filter
 PLAN
 SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 ----
