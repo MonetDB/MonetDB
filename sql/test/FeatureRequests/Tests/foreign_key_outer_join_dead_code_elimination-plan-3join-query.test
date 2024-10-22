@@ -1,3 +1,7 @@
+statement ok
+plan select count(*) from pk1 join fk on fk.fk1 = pk1.pk1
+
+skipif knownfail
 query T python .plan.filter
 plan select count(*) from pk1 join fk on fk.fk1 = pk1.pk1
 ----
@@ -9,6 +13,10 @@ project (
 | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
+statement ok
+plan select id from pk1 join fk on fk.fk1 = pk1.pk1 order by id
+
+skipif knownfail
 query T python .plan.filter
 plan select id from pk1 join fk on fk.fk1 = pk1.pk1 order by id
 ----
@@ -18,6 +26,10 @@ project (
 | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
+statement ok
+plan select count(*) from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
+
+skipif knownfail
 query T python .plan.filter
 plan select count(*) from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
 ----
@@ -29,6 +41,10 @@ project (
 | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
+statement ok
+plan select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+
+skipif knownfail
 query T python .plan.filter
 plan select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
@@ -38,6 +54,10 @@ project (
 | ) [ ("fk"."%fk_fk2_fkey") ! * = (oid(63) NULL), ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
+statement ok
+plan select id, v1 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+
+skipif knownfail
 query T python .plan.filter
 plan select id, v1 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
@@ -51,6 +71,10 @@ project (
 | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" NOT NULL ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
+statement ok
+plan select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
+
+skipif knownfail
 query T python .plan.filter
 plan select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
