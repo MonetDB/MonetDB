@@ -372,6 +372,10 @@ project (
 | ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
 ----

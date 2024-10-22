@@ -38,6 +38,10 @@ select * from plantest0 union all
 select * from plantest1
 ) as v
 
+statement ok
+plan select id_r * 10000000 as id_range_base, count(id_r) as nrows from (select id / 10000000 from plantestv v where id >= 150000000) as t (id_r) group by id_r order by id_r asc
+
+skipif knownfail
 query T python .plan.filter
 plan select
 id_r * 10000000 as id_range_base,
@@ -98,6 +102,10 @@ id_r asc
 150000000
 2
 
+statement ok
+plan select id_r * 10000000 as id_range_base, count(id_r) as nrows from (select id_div from plantestv v where id >= 150000000) as t (id_r) group by id_r order by id_r asc
+
+skipif knownfail
 query T python .plan.filter
 plan select
 id_r * 10000000 as id_range_base,

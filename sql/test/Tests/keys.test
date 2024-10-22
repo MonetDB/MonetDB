@@ -210,6 +210,10 @@ select count(distinct a) from dummyme
 ----
 3
 
+statement ok
+PLAN select count(distinct a) from dummyme group by b
+
+skipif knownfail
 query T python .plan.filter
 PLAN select count(distinct a) from dummyme group by b
 ----

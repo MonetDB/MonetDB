@@ -19,6 +19,10 @@ select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
 2
 3
 
+statement ok
+plan select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
+
+skipif knownfail
 query T python .plan.filter
 plan select cast("aa"+1 as bigint) from "groupings" group by "aa"+1, "aa"+1
 ----

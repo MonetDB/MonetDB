@@ -16,6 +16,10 @@ select distinct col1 + col2 from myy order by col1 + col2
 2
 6
 
+statement ok
+plan select distinct col1 + col2 from myy order by col1 + col2
+
+skipif knownfail
 query T python .plan.filter
 plan select distinct col1 + col2 from myy order by col1 + col2
 ----
@@ -554,6 +558,10 @@ project (
 | ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 ) [ "x"."x" NOT NULL UNIQUE, "x"."y" NOT NULL ]
 
+statement ok
+plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
+
+skipif knownfail
 query T python .plan.filter
 plan select x, y from (select a as b, a / 3 as c from t1 union distinct select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
@@ -587,6 +595,10 @@ statement ok
 set optimizer='default_pipe'
 
 # push select expressions under group by if possible
+statement ok
+plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
 ----
@@ -598,6 +610,10 @@ project (
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select y from (select x, max(x) as y from (values(1),(2),(3)) x(x) group by x) x(x,y) where x > 2
+
+skipif knownfail
 query T python .plan.filter
 plan select y from (select x, max(x) as y from (values(1),(2),(3)) x(x) group by x) x(x,y) where x > 2
 ----

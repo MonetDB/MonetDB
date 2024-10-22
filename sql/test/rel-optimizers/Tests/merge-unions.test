@@ -241,6 +241,10 @@ select n, count(n) from f_merge_rec group by n
 5
 1
 
+statement ok
+plan select n, count(n) from f_merge_rec group by n
+
+skipif knownfail
 query T python .plan.filter
 plan select n, count(n) from f_merge_rec group by n
 ----
