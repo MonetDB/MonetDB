@@ -3747,10 +3747,10 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 				"update sys.args set type_digits = 63 where type = 'bigint' and type_digits <> 63;\n"
 				"update sys.args set type_digits = 127 where type = 'hugeint' and type_digits <> 127;\n"
 				"update sys.args set type = 'varchar' where type in ('clob', 'char');\n"
-				"drop aggregate median(decimal);\n"
-				"drop aggregate median_avg(decimal);\n"
-				"drop aggregate quantile(decimal, double);\n"
-				"drop aggregate quantile_avg(decimal, double);\n"
+				"drop aggregate median(decimal(18,3));\n"
+				"drop aggregate median_avg(decimal(18,3));\n"
+				"drop aggregate quantile(decimal(18,3), double);\n"
+				"drop aggregate quantile_avg(decimal(18,3), double);\n"
 				"create aggregate median(val DECIMAL(2)) returns DECIMAL(2)\n"
 				" external name \"aggr\".\"median\";\n"
 				"GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;\n"
@@ -4377,6 +4377,11 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 	if (!sql_bind_func(sql, s->base.name, "vacuum", &tp, &tp, F_PROC, true, true)) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
+		sql_table *t;
+		t = mvc_bind_table(sql, s, "ids");
+		t->system = 0;
+		t = mvc_bind_table(sql, s, "dependencies_vw");
+		t->system = 0;
 		const char query[] =
 			"create procedure sys.vacuum(sname string, tname string)\n"
 			"external name sql.vacuum;\n"
@@ -4384,10 +4389,49 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			"external name sql.vacuum;\n"
 			"create procedure sys.stop_vacuum(sname string, tname string)\n"
 			"external name sql.stop_vacuum;\n"
-			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum');\n";
-			printf("Running database upgrade commands:\n%s\n", query);
-			fflush(stdout);
-			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+			"create function sys.unclosed_result_sets()\n"
+			"returns table(\n"
+			"	\"query_id\" oid,\n"
+			"	\"res_id\" int\n"
+			")\n"
+			"external name sql.unclosed_result_sets;\n"
+			"grant execute on function sys.unclosed_result_sets() to public;\n"
+			"update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum', 'unclosed_result_sets');\n"
+			"drop view sys.dependencies_vw cascade;\n"
+			"drop view sys.ids cascade;\n"
+			"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS\n"
+			"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) AS system FROM sys.auths UNION ALL\n"
+			"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system FROM sys.schemas UNION ALL\n"
+			"SELECT t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system FROM sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id UNION ALL\n"
+			"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+			"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+			"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+			"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL\n"
+			"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+			"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL\n"
+			"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+			"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL\n"
+			"SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+			"SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL\n"
+			"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL\n"
+			"SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL\n"
+			"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid')) FROM sys.types\n"
+			" ORDER BY id;\n"
+			"GRANT SELECT ON sys.ids TO PUBLIC;\n"
+			"CREATE VIEW sys.dependencies_vw AS\n"
+			"SELECT d.id, i1.obj_type, i1.name,\n"
+			"       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+			"       d.depend_type, dt.dependency_type_name\n"
+			"  FROM sys.dependencies d\n"
+			"  JOIN sys.ids i1 ON d.id = i1.id\n"
+			"  JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+			"  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+			" ORDER BY id, depend_id;\n"
+			"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n"
+			"update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('ids', 'dependencies_vw');\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
 	}
 
 	return err;
@@ -4400,7 +4444,6 @@ SQLupgrades(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	if ((err = check_sys_tables(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
@@ -4411,54 +4454,44 @@ SQLupgrades(Client c, mvc *m)
 		m->session->status = 0; /* if the function was not found clean the error */
 		m->errstr[0] = '\0';
 		if ((err = sql_update_hugeint(c, m)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			goto handle_error;
 		}
 	}
 #endif
 
 	if ((err = sql_update_jan2022(c, m)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_sep2022(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_jun2023(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_geom(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_jun2023_sp3(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_sp1(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_dec2023_sp4(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
 	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
@@ -4470,6 +4503,7 @@ SQLupgrades(Client c, mvc *m)
 	return 0;
 
 handle_error:
+	GDKfatal("%s\n", err);
 	freeException(err);
 	return -1;
 }

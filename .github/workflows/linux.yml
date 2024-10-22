@@ -48,12 +48,7 @@ jobs:
           ref: ${{ github.ref }}
 
       - name: install pymonetdb cryptography
-        run: pip3 install --user --upgrade pymonetdb cryptography
-        if: runner.os != 'macOS'
-
-      - name: install pymonetdb cryptography
         run: pip3 install --user --break-system-packages --upgrade pymonetdb cryptography
-        if: runner.os == 'macOS'
 
       - name: make MonetDB on linux
         run: |

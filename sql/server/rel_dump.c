@@ -344,7 +344,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 		for (prop *p = e->p; p; p = p->p) {
 			/* Don't show min/max/unique est on atoms, or when running tests with forcemito */
-			if ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0 ||
+			if ((ATOMIC_GET(&GDKdebug) & NOSYNCMASK) == 0 ||
 				(p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES)) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
@@ -706,7 +706,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	}
 	if (decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0) {
+			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & NOSYNCMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -1903,10 +1903,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(void)readInt(r,pos);
 		skipWS(r, pos);
 		(*pos)++; /* ( */
-		(void)readInt(r,pos); /* skip nr refs */
+		int cnt = readInt(r,pos);
 		(*pos)++; /* ) */
 		if (!(rel = rel_read(sql, r, pos, refs)))
 			return NULL;
+		rel->ref.refcnt = cnt;
 		append(refs, rel);
 		skipWS(r,pos);
 	}
@@ -1917,7 +1918,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("REF");
 		skipWS(r, pos);
 		nr = readInt(r,pos); /* skip nr refs */
-		return rel_dup(list_fetch(refs, nr-1));
+		return list_fetch(refs, nr-1);
 	}
 
 	if (r[*pos] == 'i' && r[*pos+1] == 'n' && r[*pos+2] == 's') {
@@ -1940,6 +1941,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_insert(sql, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+		return rel;
 	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'e' && r[*pos+2] == 'l') {
@@ -1962,6 +1964,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_delete(sql->sa, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+
+		return rel;
 	}
 
 	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
@@ -2015,10 +2019,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!update_allowed(sql, t, t->base.name, "UPDATE", "update", 0) )
 			return NULL;
 
+		skipWS(r, pos);
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1))) /* columns to be updated */
 			return NULL;
 
-		for (node *n = rel->exps->h ; n ; n = n->next) {
+		for (node *n = exps->h ; n ; n = n->next) {
 			sql_exp *e = (sql_exp *) n->data;
 			const char *cname = exp_name(e);
 
@@ -2035,6 +2040,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_update(sql, lrel, rrel, NULL, nexps)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+
+		return rel;
 	}
 
 	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r')
@@ -2248,7 +2255,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
+		bool is_modify = (is_insert(nrel->op) || is_update(nrel->op) || is_delete(nrel->op));
+		if (!(exps = read_exps(sql, is_modify?nrel->l : nrel, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
 		set_processed(rel);
@@ -2361,6 +2369,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			rel->exps = new_exp_list(sql->sa); /* empty projection list for now */
 			set_processed(rel); /* don't search beyond the group by */
 			/* first group projected expressions, then group by columns, then left relation projections */
+			if (is_insert(nrel->op) || is_update(nrel->op) || is_delete(nrel->op))
+				nrel = nrel->l;
 			if (!(exps = read_exps(sql, rel, nrel, NULL, r, pos, '[', 1, 1)))
 				return NULL;
 			rel->exps = exps;

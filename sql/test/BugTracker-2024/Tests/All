@@ -89,3 +89,6 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7563-is-distinct-from
 7572-max-length-changes
 7570-timestamp-str
+7574-startswith-bug
+7580-date-diff
+7582-ddl-exists

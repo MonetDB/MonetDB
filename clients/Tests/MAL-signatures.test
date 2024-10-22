@@ -37969,6 +37969,11 @@ pattern sql.rank(X_0:any_1, X_1:bit, X_2:bit):int
 SQLrank;
 return the ranked groups
 sql
+read_dump_rel
+pattern sql.read_dump_rel(X_0:str):str
+SQLread_dump_rel;
+Reads sql_rel string into sql_rel object and then writes it to the return value
+sql
 register
 unsafe pattern sql.register(X_0:str, X_1:str, X_2:str, X_3:str):int
 RAstatement2;
@@ -38273,6 +38278,11 @@ transaction_rollback
 unsafe pattern sql.transaction_rollback(X_0:int, X_1:str):void
 SQLtransaction_rollback;
 A transaction statement (type can be commit,release,rollback or start)
+sql
+unclosed_result_sets
+pattern sql.unclosed_result_sets() (X_0:bat[:oid], X_1:bat[:int])
+sql_unclosed_result_sets;
+return query_id/res_id of unclosed result sets
 sql
 unionfunc
 pattern sql.unionfunc(X_0:str, X_1:str, X_2:any...):any...

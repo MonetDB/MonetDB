@@ -38,6 +38,9 @@ bool MT_thread_override_limits(void)
 		SetLastError(0);					\
 	} while (0)
 #endif
+#define GDKwarning(...)						\
+	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
+		      GDK, NULL, __VA_ARGS__)
 
 struct freebats {
 	bat freebats;
