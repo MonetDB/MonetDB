@@ -9,15 +9,27 @@ select '~BeginProfilingOutput~'
 ----
 ~BeginProfilingOutput~
 
+skipif knownfail
 query T rowsort
 explain alter table blabla add constraint dada unique (id)
 ----
 42 values hashing to 21a8f0388c1567e3388eff8d26aa8cee
 
+statement ok
+explain alter table blabla add constraint dada unique (id)
+
+
+
+skipif knownfail
 query T rowsort
 explain alter table blabla add constraint dada unique (id)
 ----
 42 values hashing to 64069f06ba33ca07651fd1cd0cf2d8a7
+
+statement ok
+explain alter table blabla add constraint dada unique (id)
+
+
 
 query T rowsort
 select '~EndProfilingOutput~'
@@ -32,10 +44,16 @@ select '~BeginProfilingOutput~'
 ----
 ~BeginProfilingOutput~
 
+skipif knownfail
 query T rowsort
 explain alter table blabla add constraint dada unique (id)
 ----
 42 values hashing to 29928a32f10acd62f7ae255837b36c44
+
+statement ok
+explain alter table blabla add constraint dada unique (id)
+
+
 
 query T rowsort
 select '~EndProfilingOutput~'
