@@ -2264,7 +2264,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				for (en = sdje->h; en; ) {
 					node *next = en->next;
 					sql_exp *e = en->data;
-					if ((direct && ((e->flag <= cmp_notequal && (h[e->tmp] & rel_mask) == h[e->tmp]) || (e->flag > cmp_notequal && rel_rebind_exp(v->sql, top, e))))  ||
+					if ((direct && ((e->flag <= cmp_notequal && (h[e->tmp] & rel_mask) == h[e->tmp] && h[e->tmp]) || (e->flag > cmp_notequal && rel_rebind_exp(v->sql, top, e))))  ||
 					    (!direct && rel_rebind_exp(v->sql, top, e))) {
 						rel_join_add_exp(v->sql->sa, top, e);
 						list_remove_data(sdje, NULL, en->data);
