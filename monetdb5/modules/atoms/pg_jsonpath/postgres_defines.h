@@ -47,8 +47,6 @@ typedef uintptr_t Datum;
 // postgres_ext.h
 typedef unsigned int Oid;
 
-struct Node;
-
 #if 0
 // numeric.c
 typedef int16 NumericDigit;

@@ -1644,6 +1644,18 @@ JSONfilterArrayDefault_hge(json *ret, const json *js, const hge *index, const ch
 
 #include "jsonpath.h"
 
+static
+void* JSONalloc(void* ctx, size_t size) {
+	allocator* sa = ctx;
+	return sa_alloc(sa, size);
+}
+
+static
+void* JSONrealloc(void* ctx, void *ptr, size_t old_size, size_t size){
+	allocator* sa = ctx;
+	return sa_realloc(sa, ptr, size, old_size);
+}
+
 static str
 JSONfilter(json *ret, const json *js, const char *const *expr)
 {
@@ -1654,17 +1666,22 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	}
 
 	char errmsg[1024] = {0};
-	struct Node* escontext = init_escontext(errmsg); // TODO: can be a implementation detail of lex and parse. Pass on allocator as parameter
-	if (!escontext)
+	allocator* sa = sa_create(NULL);
+	if (!sa)
 		throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	JsonPathParseResult* path = parsejsonpath(*expr, strlen(*expr), escontext);
+	JsonPathParseResult* path = parsejsonpath(*expr, strlen(*expr), sa, errmsg);
 	if (errmsg[0]) {
+		sa_destroy(sa);
 		return createException(MAL, SQLSTATE(HY013), "JsonPathQuery iternal error: %s", errmsg);
 	}
 	assert(path);
 
-	yyjson_alc* alc = yyjson_alc_dyn_new(); // TODO initialize this with gdk memory functions.
+	yyjson_alc _alc = {0};
+	yyjson_alc* alc = &_alc;
+	alc->malloc = JSONalloc;
+	alc->realloc = JSONrealloc;
+	alc->ctx = sa;
+
 	yyjson_read_err* read_error = NULL;
 	yyjson_doc *doc = yyjson_read_opts(*js, strlen(*js), 0, alc, read_error);
 	yyjson_val *root = yyjson_doc_get_root(doc);
@@ -1673,20 +1690,23 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	List* vars = NULL;
 	const char *column_name = NULL;
 	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name, alc, errmsg);
-	if (!res && errmsg[0])
+	if (!res && errmsg[0]) {
+		sa_destroy(sa);
 		return createException(MAL, SQLSTATE(HY013), "JsonPathQuery iternal error: %s", errmsg);
+	}
 
-	if (!res)
+	if (!res) {
+		sa_destroy(sa);
 		throw(MAL, "json.filter", SQLSTATE(HY013) "JsonPathQuery error");
+	}
 
 	size_t* len = NULL;
 	yyjson_write_err* write_error = NULL;
 	char* tmp_res = yyjson_val_write_opts(res, 0, alc, len, write_error); // TODO use different allocator for result
 
 	*ret = GDKstrdup(tmp_res);
-	yyjson_alc_dyn_free(alc);
+	sa_destroy(sa);
 	return MAL_SUCCEED;
-	// return JSONfilterInternal(ret, js, expr, 0);
 }
 
 // glue all values together with an optional separator

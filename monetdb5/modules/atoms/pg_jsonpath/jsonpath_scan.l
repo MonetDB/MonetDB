@@ -564,14 +564,17 @@ init_escontext(char* errmsg)
 
 /* Interface to jsonpath parser */
 JsonPathParseResult *
-parsejsonpath(const char *str, int len, struct Node *escontext)
+parsejsonpath(const char *str, int len, allocator* sa, char* errmsg)
 {
+	struct Node escontext;
+	escontext.sa = sa;
+	escontext._errmsg = errmsg;
 	JsonPathParseResult	*parseresult;
 
 	jsonpath_scanner_init(str, len);
 
-	if (jsonpath_yyparse((void *) &parseresult, escontext) != 0)
-		jsonpath_yyerror(NULL, escontext, "invalid input"); /* shouldn't happen */
+	if (jsonpath_yyparse((void *) &parseresult, &escontext) != 0)
+		jsonpath_yyerror(NULL, &escontext, "invalid input"); /* shouldn't happen */
 
 	jsonpath_scanner_finish();
 

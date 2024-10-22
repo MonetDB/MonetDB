@@ -177,7 +177,7 @@ extern const char *jspOperationName(JsonPathItemType type);
 extern struct Node * init_escontext(char* errmsg);
 
 extern JsonPathParseResult *parsejsonpath(const char *str, int len,
-										  struct Node *escontext);
+											allocator* sa, char* errmsg);
 /*
 extern bool jspConvertRegexFlags(uint32 xflags, int *result,
 								 struct Node *escontext);

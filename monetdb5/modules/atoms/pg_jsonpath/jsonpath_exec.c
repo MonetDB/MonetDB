@@ -88,6 +88,7 @@ typedef struct JsonPathExecContext
 	JsonBaseObjectInfo baseObject;	/* "base object" for .keyvalue()
 									 * evaluation */
 	yyjson_alc 		*alc;
+	allocator		*sa;
 	yyjson_mut_doc 	*mutable_doc;
 	int			lastGeneratedObjectId;	/* "id" counter for .keyvalue()
 										 * evaluation */
@@ -245,7 +246,7 @@ static JsonPathExecResult getArrayIndex(JsonPathExecContext *cxt,
 static JsonBaseObjectInfo setBaseObject(JsonPathExecContext *cxt,
 										JsonbValue *jbv, int32 id);
 // REPLACED static void JsonValueListClear(JsonValueList *jvl);
-static void JsonValueListAppend(JsonValueList *jvl, JsonbValue *jbv);
+static void JsonValueListAppend(JsonPathExecContext *cxt, JsonValueList *jvl, JsonbValue *jbv);
 static int	JsonValueListLength(const JsonValueList *jvl);
 static bool JsonValueListIsEmpty(JsonValueList *jvl);
 static JsonbValue *JsonValueListHead(JsonValueList *jvl);
@@ -1127,7 +1128,7 @@ executeNextItem(JsonPathExecContext *cxt,
 		return executeItem(cxt, next, v, found);
 
 	if (found)
-		JsonValueListAppend(found, v);
+		JsonValueListAppend(cxt, found, v);
 
 	return jperOk;
 }
@@ -1159,7 +1160,7 @@ executeItemOptUnwrapResult(JsonPathExecContext *cxt, JsonPathItem *jsp,
 			if (JsonbType(item) == jbvArray)
 				executeItemUnwrapTargetArray(cxt, NULL, item, found, false);
 			else
-				JsonValueListAppend(found, item);
+				JsonValueListAppend(cxt, found, item);
 		}
 
 		return jperOk;
@@ -1409,7 +1410,7 @@ executeAnyItem(JsonPathExecContext *cxt, JsonPathItem *jsp, JsonbValue *jbc,
 					break;
 			}
 			else if (found)
-				JsonValueListAppend(found, val);
+				JsonValueListAppend(cxt, found, val);
 			else
 				return jperOk;
 		}
@@ -2146,10 +2147,11 @@ setBaseObject(JsonPathExecContext *cxt, JsonbValue *jbv, int32 id)
 
 
 static void
-JsonValueListAppend(JsonValueList *jvl, JsonbValue *jbv)
+JsonValueListAppend(JsonPathExecContext *cxt, JsonValueList *jvl, JsonbValue *jbv)
 {
 	if (jvl->singleton)
 	{
+		#define escontext cxt /*trick to have the macro work*/
 		jvl->list = list_make2(jvl->singleton, jbv);
 		jvl->singleton = NULL;
 	}
@@ -2288,13 +2290,15 @@ JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc,
 {
 	JsonPathExecResult res;
 
-	JsonPathExecContext cxt = {0};
-	cxt.alc = alc;
-	cxt._errmsg = errmsg;
+	JsonPathExecContext _cxt = {0};
+	_cxt.alc = alc;
+	_cxt.sa = _cxt.alc->ctx;
+	_cxt._errmsg = errmsg;
+	JsonPathExecContext *cxt = &_cxt;
 
 	res = executeJsonPath(jp, vars,
 						  GetJsonPathVar, CountJsonPathVars,
-						  DatumGetJsonbP(jb), !error, NULL, true, &cxt);
+						  DatumGetJsonbP(jb), !error, NULL, true, cxt);
 	if (!jperIsError(res) || errmsg[0])
 		return false; // throw exception
 
@@ -2325,6 +2329,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 
 	JsonPathExecContext _cxt = {0};
 	_cxt.alc = alc;
+	_cxt.sa = _cxt.alc->ctx;
 	_cxt._errmsg = errmsg;
 	JsonPathExecContext* cxt = &_cxt;
 
@@ -2427,6 +2432,7 @@ JsonPathValue(Datum jb, JsonPath *jp, bool *empty, bool *error, List *vars,
 
 	JsonPathExecContext _cxt = {0};
 	_cxt.alc = alc;
+	_cxt.sa = _cxt.alc->ctx;
 	_cxt._errmsg = errmsg;
 	JsonPathExecContext* cxt = &_cxt;
 
