@@ -590,7 +590,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if (interrupted)
 		reinit();
 
-	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)) {
+	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & TESTINGMASK)) {
 		fprintf(level <= M_ERROR && !isexit ? stderr : stdout,
 			"#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",

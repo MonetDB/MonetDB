@@ -2452,7 +2452,7 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
+		const int idle = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 5000 : IDLE_TIME * 1000000;
 		/* if debug bit 1024 is set, attempt immediate log activation
 		 * and clear the bit */
 		if (store->debug&(128|1024) || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
@@ -4094,7 +4094,7 @@ sql_trans_commit(sql_trans *tr)
 		const bool log = !tr->parent && tr->logchanges > 0;
 
 		if (log) {
-			const lng min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
+			const lng min_changes = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 5 : 1000000;
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 		}
 

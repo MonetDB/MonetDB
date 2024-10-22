@@ -2678,13 +2678,13 @@ class ServerClass:
         self.outfile.flush()
         self.errfile.flush()
 
+        cmd = self.cmd
         if procdebug:
-            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(self.cmd))
+            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
         setpgrp = True
         stdin = open(os.devnull)
         stdout = self.outfile
         stderr = self.errfile
-        cmd = self.cmd
         if self.inmem:
             stdout = process.PIPE
         elif self.pollfile:
@@ -2694,7 +2694,7 @@ class ServerClass:
                 pass
             if self.dbg:
                 stdin = stdout = stderr = None
-                cmd = splitcommand(self.dbg) + self.cmd
+                cmd = splitcommand(self.dbg) + cmd
         else:
             stdout = process.PIPE
         if os.name == "nt":
@@ -3300,7 +3300,7 @@ if THISFILE == 'Mz.py':
     produce_html = False
     verbosity == 0
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
-TSTDBG = str(2+8)
+TSTDBG = "2"
 TSTTHREADS = "0"
 dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
@@ -3967,8 +3967,8 @@ def main(argv) :
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
-                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else f'-d{1 << 24}')
+        exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --debug=256 --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
+                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else '')  # turn off forcemito, but keep nosync
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
