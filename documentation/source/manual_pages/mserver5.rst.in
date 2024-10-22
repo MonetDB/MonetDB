@@ -167,13 +167,16 @@ MSERVER5 OPTIONS
 
    **268435456**
       (HEAPMASK) trace/debug HEAPextend; used only for development &
-      debugging **536870912** (FORCEMITOMASK) forcefully activate
-      mitosis even on small tables, i.e., split small tables in as many
-      (tiny) pieces as there are cores (threads) available; this allows
-      us to test mitosis functionality without requiring large data sets
-      (— at the expense of a potentially significant interpretation
-      overhead for unnecessarily large plans); used only for development
-      & testing; set automatically by Mtest.py
+      debugging
+
+   **536870912**
+      (FORCEMITOMASK) forcefully activate mitosis even on small tables,
+      i.e., split small tables in as many (tiny) pieces as there are
+      cores (threads) available; this allows us to test mitosis
+      functionality without requiring large data sets (— at the expense
+      of a potentially significant interpretation overhead for
+      unnecessarily large plans); used only for development & testing;
+      set automatically by Mtest.py
 
 **--algorithms**
    Equivalent to **--debug=**\ *(ALGOMASK)*.
