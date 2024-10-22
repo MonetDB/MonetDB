@@ -1862,7 +1862,7 @@ FROM myorders
 1
 2.000
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM myorders
 ----
 project (
@@ -1881,7 +1881,7 @@ SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FRO
 1.000
 2.000
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders
 ----
 project (
@@ -1900,7 +1900,7 @@ SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETW
 1.000
 2.000
 
-query T nosort
+query T python .plan.filter
 PLAN SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders
 ----
 project (

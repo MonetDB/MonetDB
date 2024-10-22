@@ -5,7 +5,7 @@ statement ok rowcount 3
 insert into testkeys values (1,1,1,1),(2,2,2,2),(3,3,3,3)
 
 # The following joins can be converted into semijoins
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
@@ -15,7 +15,7 @@ project (
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE HASHCOL ) ]
 ) [ "y"."y" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
@@ -25,7 +25,7 @@ project (
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."b" NOT NULL UNIQUE HASHCOL ) ]
 ) [ "y"."y" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a or (y.y is null and testkeys.a is null)
 ----
 project (
@@ -36,7 +36,7 @@ project (
 ) [ "y"."y" NOT NULL ]
 
 # The following joins cannot be converted into semijoins
-query T nosort
+query T python .plan.filter
 plan select y from (values (NULL),(1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b or (y.y is null and testkeys.b is null)
 ----
 project (
@@ -46,7 +46,7 @@ project (
 | ) [ ("y"."y") = ("testkeys"."b" NOT NULL UNIQUE HASHCOL ) ]
 ) [ "y"."y" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.c or (y.y is null and testkeys.c is null)
 ----
 project (
@@ -66,7 +66,7 @@ statement ok rowcount 3
 insert into othertable values (1,1,1,1),(2,2,2,2),(3,3,3,3)
 
 # here 'othertable.a = 2' can be pushed up
-query T nosort
+query T python .plan.filter
 plan select othertable.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.a = 1 and othertable.a = 1
 ----
 project (
@@ -81,7 +81,7 @@ project (
 ) [ int(2) "1" as "othertable"."a" ]
 
 # here 'othertable.a between 2 and 5' can be pushed up too
-query T nosort
+query T python .plan.filter
 plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b = 1 and othertable.a between 2 and 5
 ----
 project (
@@ -96,7 +96,7 @@ project (
 ) [ "testkeys"."a" NOT NULL UNIQUE HASHCOL  ]
 
 # here 'othertable.a > 1' cannot be pushed up because 'testkeys.b is null' may pass multiple values
-query T nosort
+query T python .plan.filter
 plan select testkeys.a from testkeys inner join othertable on testkeys.a = othertable.a where testkeys.b is null and othertable.a > 1
 ----
 project (
@@ -115,7 +115,7 @@ statement ok
 alter table testkeys drop constraint testkeys_b_unique
 
 # No more unique properties
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
@@ -125,7 +125,7 @@ project (
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE) ]
 ) [ "y"."y" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (
@@ -148,7 +148,7 @@ statement ok
 rollback
 
 # The unique properties should not return
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.a
 ----
 project (
@@ -158,7 +158,7 @@ project (
 | ) [ ("y"."y" NOT NULL) = ("testkeys"."a" NOT NULL UNIQUE) ]
 ) [ "y"."y" NOT NULL ]
 
-query T nosort
+query T python .plan.filter
 plan select y from (values (1),(2),(cast(3 as int))) y(y) inner join testkeys on y.y = testkeys.b
 ----
 project (

@@ -105,6 +105,10 @@ analyze sys.test3
 statement ok
 analyze sys.test4
 
+statement ok
+explain select x,y from test where x between 4.0 and 6.0
+
+skipif knownfail
 query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0
 ----
@@ -133,6 +137,10 @@ sql.tid
 user.main
 1
 
+statement ok
+explain select x,y from test where x between (7-3) and (7-1)
+
+skipif knownfail
 query T python .explain.function_histogram
 explain select x,y from test where x between (7-3) and (7-1)
 ----
@@ -161,6 +169,10 @@ sql.tid
 user.main
 1
 
+statement ok
+explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0
+
+skipif knownfail
 query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0
 ----

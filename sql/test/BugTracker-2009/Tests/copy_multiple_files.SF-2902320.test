@@ -1,7 +1,7 @@
 statement ok
 create table cm_tmp(i int)
 
-query T nosort
+query T python .plan.filter
 plan copy into cm_tmp from '/file1','/file2'
 ----
 insert(

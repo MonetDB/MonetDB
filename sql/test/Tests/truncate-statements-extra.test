@@ -26,7 +26,7 @@ SELECT abc FROM testing5
 ----
 1
 
-query T nosort
+query T python .plan.filter
 PLAN TRUNCATE testing4 RESTRICT
 ----
 truncate continue identity, restrict(
@@ -46,7 +46,7 @@ SELECT abc FROM testing5
 ----
 1
 
-query T nosort
+query T python .plan.filter
 PLAN TRUNCATE testing4 CASCADE
 ----
 truncate continue identity, cascade(
@@ -81,7 +81,7 @@ SELECT a, b FROM testing6
 2
 1
 
-query T nosort
+query T python .plan.filter
 PLAN TRUNCATE testing6
 ----
 truncate continue identity, restrict(
@@ -105,7 +105,7 @@ SELECT a, b FROM testing6
 4
 4
 
-query T nosort
+query T python .plan.filter
 PLAN TRUNCATE testing6 CONTINUE IDENTITY
 ----
 truncate continue identity, restrict(
@@ -129,7 +129,7 @@ SELECT a, b FROM testing6
 6
 6
 
-query T nosort
+query T python .plan.filter
 PLAN TRUNCATE testing6 RESTART IDENTITY
 ----
 truncate restart identity, restrict(

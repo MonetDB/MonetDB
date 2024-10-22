@@ -27,7 +27,7 @@ query ITTIITTTIII rowsort
 select * from sys.commented_function_signatures_6542
 ----
 
-query T nosort
+query T python .plan.filter
 plan select count (*) from sys.commented_function_signatures_6542
 ----
 project (
