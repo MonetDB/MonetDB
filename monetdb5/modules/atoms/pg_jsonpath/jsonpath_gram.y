@@ -434,15 +434,28 @@ makeItemKey(JsonPathString *s)
 static JsonPathParseItem *
 makeItemNumeric(JsonPathString *s)
 {
-	(void) s; // TODO
 	JsonPathParseItem *v;
-
 	v = makeItemType(jpiNumeric);
-	v->value.numeric =
-		DatumGetNumeric(DirectFunctionCall3(numeric_in,
-											CStringGetDatum(s->val),
-											ObjectIdGetDatum(InvalidOid),
-											Int32GetDatum(-1)));
+
+	const char* src = s->val;
+	size_t llen = sizeof(lng);
+	lng lval;
+	lng* plval = &lval;
+
+	size_t dlen = sizeof(dbl);
+	dbl dval;
+	dbl* pdval = &dval;
+
+	if (lngFromStr(src, &llen, &plval, false) > 0) {
+		Numeric num = {.type =YYJSON_SUBTYPE_SINT, .lnum = lval };
+		v->value.numeric = num;
+		return v;
+	}
+	else if (dblFromStr(src, &dlen, &pdval, false) > 0) {
+		Numeric num = {.type =YYJSON_SUBTYPE_REAL, .dnum = dval };
+		v->value.numeric = num;
+		return v;
+	}
 
 	return v;
 }

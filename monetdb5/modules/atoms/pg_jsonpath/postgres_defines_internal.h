@@ -6,17 +6,6 @@
 
 typedef node ListCell;
 
-// stringinfo.h
-typedef struct StringInfoData
-{
-	char	   *data;
-	int			len;
-	int			maxlen;
-	int			cursor;
-} StringInfoData;
-
-typedef StringInfoData *StringInfo;
-
 
 
 typedef struct Node
@@ -122,7 +111,6 @@ for (;cell;cell = cell->next)
 
 // pg_wchar.h
 #define MAX_UNICODE_EQUIVALENT_STRING	16
-#define MAX_MULTIBYTE_CHAR_LEN	4
 
 // pg_wchar.h
 typedef unsigned int pg_wchar;
@@ -239,60 +227,12 @@ pg_unicode_to_server_noerror(pg_wchar c, unsigned char *s)
 
 #define PG_USED_FOR_ASSERTS_ONLY
 
-// postgres error codes
-#define ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM "ERRCODE_MORE_THAN_ONE_SQL_JSON_ITEM"
-#define ERRCODE_SQL_JSON_SCALAR_REQUIRED "ERRCODE_SQL_JSON_SCALAR_REQUIRED"
-#define ERRCODE_NON_NUMERIC_SQL_JSON_ITEM "ERRCODE_NON_NUMERIC_SQL_JSON_ITEM"
 
-// jsonb.h
-/* convenience macros for accessing a JsonbContainer struct */
-#define JsonContainerSize(jc)		((jc)->header & JB_CMASK)
-#define JsonContainerIsScalar(jc)	(((jc)->header & JB_FSCALAR) != 0)
-#define JsonContainerIsObject(jc)	(((jc)->header & JB_FOBJECT) != 0)
-#define JsonContainerIsArray(jc)	(((jc)->header & JB_FARRAY) != 0)
-
-bool yyjson_is_null(yyjson_val *val);  // null
-bool yyjson_is_true(yyjson_val *val);  // true
-bool yyjson_is_false(yyjson_val *val); // false
-bool yyjson_is_bool(yyjson_val *val);  // true/false
-bool yyjson_is_uint(yyjson_val *val);  // uint64_t
-bool yyjson_is_sint(yyjson_val *val);  // int64_t
-bool yyjson_is_int(yyjson_val *val);   // uint64_t/int64_t
-bool yyjson_is_real(yyjson_val *val);  // double
-bool yyjson_is_num(yyjson_val *val);   // uint64_t/int64_t/double
-bool yyjson_is_str(yyjson_val *val);   // string
-bool yyjson_is_arr(yyjson_val *val);   // array
-bool yyjson_is_obj(yyjson_val *val);   // object
-bool yyjson_is_ctn(yyjson_val *val);   // array/object
-bool yyjson_is_raw(yyjson_val *val);   // raw string
 
 #define IsAJsonbScalar(jsonbval)	(yyjson_is_null(jsonbval) || yyjson_is_num(jsonbval) || yyjson_is_str(jsonbval) /* there is no datetime in yyjson */)
 
-// jsonb.h
-typedef uint32 JEntry;
-typedef struct JsonbContainer
-{
-	uint32		header;			/* number of elements or key/value pairs, and
-								 * flags */
-	JEntry		children[FLEXIBLE_ARRAY_MEMBER];
 
-	/* the data for each child node follows. */
-} JsonbContainer;
 
-/* flags for the header-field in JsonbContainer */
-#define JB_CMASK				0x0FFFFFFF	/* mask for count field */
-#define JB_FSCALAR				0x10000000	/* flag bits */
-#define JB_FOBJECT				0x20000000
-#define JB_FARRAY				0x40000000
-
-// c.h
-struct varlena
-{
-	char		vl_len_[4];		/* Do not touch this field directly! */
-	char		vl_dat[FLEXIBLE_ARRAY_MEMBER];	/* Data content is here */
-};
-
-#define VARHDRSZ		((int32) sizeof(int32))
 
 /*
  * These widely-used datatypes are just a varlena header and the data bytes.
@@ -301,44 +241,84 @@ struct varlena
  */
 typedef struct varlena text;
 
+
+static inline
+dbl Numeric_get_as_dbl(Numeric* num) {
+	if (num->type == YYJSON_SUBTYPE_REAL)
+		return num->dnum;
+	else {
+		return (dbl) num->lnum;
+	}
+}
+
+static inline
+lng Numeric_get_as_lng(Numeric* num) {
+	if (num->type == YYJSON_SUBTYPE_REAL) {
+		return (lng) num->dnum;
+	}
+	else {
+		return num->lnum;
+	}
+}
+
+#define body_binary(op) \
+	(void) have_error;\
+	Numeric res = {0};\
+	if (num1.type == YYJSON_SUBTYPE_REAL || num2.type == YYJSON_SUBTYPE_REAL) {\
+		res.type = YYJSON_SUBTYPE_REAL;\
+		res.dnum = Numeric_get_as_dbl(&num1) op Numeric_get_as_dbl(&num2);\
+		return res;\
+	}\
+	res.type = YYJSON_SUBTYPE_SINT; /*cast all other cases as lng for now*/\
+	res.lnum = Numeric_get_as_lng(&num1) op Numeric_get_as_lng(&num2);\
+	return res;
+
 static inline Numeric
 numeric_add_opt_error(Numeric num1, Numeric num2, bool *have_error)
 {
-	(void) have_error;
-	return num1 + num2;
+	body_binary(+)
 }
 
 static inline Numeric
 numeric_sub_opt_error(Numeric num1, Numeric num2, bool *have_error)
 {
-	(void) have_error;
-	return num1 - num2;
+	body_binary(-)
 }
 
 static inline Numeric
 numeric_mul_opt_error(Numeric num1, Numeric num2, bool *have_error)
 {
-	(void) have_error;
-	return num1 * num2;
+	body_binary(*)
 }
 
 static inline Numeric
 numeric_div_opt_error(Numeric num1, Numeric num2, bool *have_error)
 {
-	(void) have_error;
-	return num1 / num2;
+	body_binary(/)
 }
 
 static inline Numeric
 numeric_mod_opt_error(Numeric num1, Numeric num2, bool *have_error)
 {
 	(void) have_error;
-	return num1 % num2;
+	Numeric res = {0};
+	if (num1.type == YYJSON_SUBTYPE_REAL || num2.type == YYJSON_SUBTYPE_REAL) {
+		// TODO: handle have_error == NULL
+		*have_error = true;
+	}
+	res.type = YYJSON_SUBTYPE_SINT; /*cast all other cases as lng for now*/
+	res.dnum = Numeric_get_as_lng(&num1) % Numeric_get_as_lng(&num2);
+	return res;
 }
 
 static inline Numeric numeric_uminus(Numeric num)
 {
-	return - num;
+	if (num.type == YYJSON_SUBTYPE_REAL)
+		num.dnum = - num.dnum;
+	else
+		num.lnum = -num.lnum;
+
+	return num;
 }
 
 #define forboth(lc1, list1, lc2, list2) for (lc1 = list1->h, lc2 = list2->h; lc1 != NULL && lc2 != NULL; lc1 = lc1->next, lc2 = lc2->next )
@@ -348,13 +328,12 @@ typedef str String;
 static inline Numeric
 numeric_abs(Numeric num)
 {
-	return (num > 0) ? num : - num;
-}
+	if (num.type == YYJSON_SUBTYPE_REAL)
+		num.dnum = (num.dnum > 0) ? num.dnum : - num.dnum;
+	else if (num.type == YYJSON_SUBTYPE_SINT)
+		num.lnum = (num.lnum > 0) ? num.lnum : - num.lnum;
 
-static inline Datum
-Int64GetDatum(int64 X)
-{
-	return (Datum) X;
+	return num;
 }
 
 #endif

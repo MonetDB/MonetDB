@@ -42,44 +42,18 @@ enum jbvType
 };
 
 // postgres.h
-typedef uintptr_t Datum;
+typedef uintptr_t Datum; // TODO: remove this type
 
 // postgres_ext.h
-typedef unsigned int Oid;
+typedef unsigned int Oid; // TODO: remove this type
 
-#if 0
-// numeric.c
-typedef int16 NumericDigit;
-struct NumericShort
-{
-	uint16		n_header;		/* Sign + display scale + weight */
-	NumericDigit n_data[FLEXIBLE_ARRAY_MEMBER]; /* Digits */
-};
-
-struct NumericLong
-{
-	uint16		n_sign_dscale;	/* Sign + display scale */
-	int16		n_weight;		/* Weight of 1st digit	*/
-	NumericDigit n_data[FLEXIBLE_ARRAY_MEMBER]; /* Digits */
-};
-
-union NumericChoice
-{
-	uint16		n_header;		/* Header word */
-	struct NumericLong n_long;	/* Long form (4-byte header) */
-	struct NumericShort n_short;	/* Short form (2-byte header) */
-};
-
-struct NumericData
-{
-	int32		vl_len_;		/* varlena header (do not touch directly!) */
-	union NumericChoice choice; /* choice of format */
-};
-struct NumericData;
-typedef struct NumericData *Numeric;
-#endif
-
-typedef lng Numeric;
+typedef struct {
+	union {
+		lng lnum;
+		dbl dnum;
+	};
+	int type;
+} Numeric;
 
 typedef yyjson_val JsonbValue;
 

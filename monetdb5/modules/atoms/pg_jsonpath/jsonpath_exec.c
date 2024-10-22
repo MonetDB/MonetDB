@@ -396,7 +396,11 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						mut_val = yyjson_mut_bool(cxt->mutable_doc, jspGetBool(jsp));
 						break;
 					case jpiNumeric:
-						mut_val = yyjson_mut_int(cxt->mutable_doc, jspGetNumeric(jsp));
+						Numeric num = jspGetNumeric(jsp);
+						if (num.type == YYJSON_SUBTYPE_REAL)
+							mut_val = yyjson_mut_real(cxt->mutable_doc, num.dnum);
+						else
+							mut_val = yyjson_mut_int(cxt->mutable_doc, num.lnum);
 						break;
 					case jpiString:
 						mut_val = yyjson_mut_str(cxt->mutable_doc, jspGetString(jsp, NULL)); //TODO use _set_ for immutables
@@ -784,9 +788,16 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 														false);
 				if (JsonbType(jb) == jbvNumeric)
 				{
-					// TODO requires a Numeric type that can handle decimals
-					lng nval = yyjson_get_int(jb);
-					double val = (double) nval;
+					double val;
+
+					if (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_SINT) {
+						lng lval = yyjson_get_int(jb);
+						val = (double) lval;
+					}
+					else {
+						assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
+						val = yyjson_get_real(jb);
+					}
 					// TODO errors
 					if (isinf(val) || isnan(val))
 						RETURN_ERROR(ereport(ERROR,
@@ -878,26 +889,44 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 		case jpiBigint:
 			{
-				Datum		datum;
-
 				if (unwrap && JsonbType(jb) == jbvArray)
 					return executeItemUnwrapTargetArray(cxt, jsp, jb, found,
 														false);
 
+				lng		datum;
 				if (JsonbType(jb) == jbvNumeric)
 				{
-					int64		val;
-
-					val = yyjson_get_int(jb);
-					datum = Int64GetDatum(val);
+					if (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_SINT) {
+						datum = yyjson_get_int(jb);
+					}
+					else {
+						assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
+						datum = (lng) yyjson_get_real(jb);
+					}
 					res = jperOk;
 				}
 				else if (JsonbType(jb) == jbvString)
 				{
-					const char *tmp = yyjson_get_str(jb);
-					size_t len = sizeof(lng);
-					lng* pdatum = (lng*) &datum;
-					/*TODO error handling*/(void) lngFromStr(tmp, &len, &pdatum, true);
+					const char* src = yyjson_get_str(jb);
+					size_t llen = sizeof(lng);
+					lng lval;
+					lng* plval = &lval;
+
+					size_t dlen = sizeof(dbl);
+					dbl dval;
+					dbl* pdval = &dval;
+
+					if (lngFromStr(src, &llen, &plval, false) > 0) {
+						datum = lval;
+					}
+					else if (dblFromStr(src, &dlen, &pdval, false) > 0) {
+						datum = (lng) dval;
+					}
+					else {
+						snprintf(cxt->_errmsg, 1024, "string %s does not represent valid number", src);
+						return jperError;
+					}
+					res = jperOk;
 				}
 
 				if (res == jperNotFound)
@@ -905,7 +934,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
 										  errmsg("jsonpath item method .%s() can only be applied to a string or numeric value",
 												 jspOperationName(jsp->type)))));
-				yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, (lng) datum);
+				yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, datum);
 				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, cxt->alc);
 				jb = yyjson_doc_get_root(doc);
 				res = executeNextItem(cxt, jsp, NULL, jb, found, true);
@@ -928,7 +957,13 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 				}
 				else if (JsonbType(jb) == jbvNumeric)
 				{
-					bval = yyjson_get_int(jb)?1:0;
+					if (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_SINT) {
+						bval = yyjson_get_int(jb)?1:0;
+					}
+					else {
+						assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
+						bval = yyjson_get_real(jb)?1:0;
+					}
 
 					res = jperOk;
 				}
@@ -957,7 +992,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		case jpiDecimal:
 		case jpiNumber:
 			{
-				Numeric		num;
+				dbl			num;
 				char	   *numstr = NULL;
 
 				if (unwrap && JsonbType(jb) == jbvArray)
@@ -966,18 +1001,22 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 				if (JsonbType(jb) == jbvNumeric)
 				{
-					num = yyjson_get_int(jb);
-					// TODO check if num is nan or inf
-					size_t len = 0;
-					(void) lngToStr(&numstr, &len, &num, true);
+					if (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_SINT) {
+						num = (dbl) yyjson_get_int(jb);
+					}
+					else {
+						assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
+						num = yyjson_get_real(jb);
+					}
 					res = jperOk;
 				}
 				else if (JsonbType(jb) == jbvString)
 				{
 					numstr = (char*) yyjson_get_str(jb);
 					size_t len = sizeof(lng);
-					lng* pnum = &num;
-					(void) lngFromStr(numstr, &len, &pnum, true);
+					dbl* pnum = &num;
+					if (dblFromStr(numstr, &len, &pnum, true) < 0)
+						res = jperNotFound;
 					res = jperOk;
 				}
 
@@ -987,9 +1026,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										  errmsg("jsonpath item method .%s() can only be applied to a string or numeric value",
 												 jspOperationName(jsp->type)))));
 
-				// TODO get Numeric  type with decimal(precision, scale) function to work and import it here
-
-				yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, num);
+				yyjson_mut_val * mut_jbv = yyjson_mut_real(cxt->mutable_doc, num);
 				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, cxt->alc);
 				jb = yyjson_doc_get_root(doc);
 
@@ -999,7 +1036,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 		case jpiInteger:
 			{
-				Datum		datum;
+				lng	datum;
 
 				if (unwrap && JsonbType(jb) == jbvArray)
 					return executeItemUnwrapTargetArray(cxt, jsp, jb, found,
@@ -1007,16 +1044,21 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 				if (JsonbType(jb) == jbvNumeric)
 				{
-					// TODO check for overflows					
-					datum = (Datum) yyjson_get_int(jb);
+					if (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_SINT) {
+						datum = yyjson_get_int(jb);
+					}
+					else {
+						assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
+						datum = (lng) yyjson_get_real(jb);
+					}
 					res = jperOk;
 				}
 				else if (JsonbType(jb) == jbvString)
 				{
 					const char* tmp = yyjson_get_str(jb);
-					size_t len = sizeof(int);
-					int* pdatum = (int*) &datum;
-					(void) intFromStr(tmp, &len, (int**) &pdatum, true); // TODO check for errors
+					size_t len = sizeof(lng);
+					lng* pdatum = &datum;
+					(void) lngFromStr(tmp, &len, &pdatum, true);
 					res = jperOk;
 				}
 
@@ -1025,8 +1067,8 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 										 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
 										  errmsg("jsonpath item method .%s() can only be applied to a string or numeric value",
 												 jspOperationName(jsp->type)))));
-				// TODO must be Numeric
-				yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, (int) datum);
+
+				yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, datum);
 				yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, cxt->alc);
 				jb = yyjson_doc_get_root(doc);
 
@@ -1050,8 +1092,15 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						break;
 					case jbvNumeric:
 						size_t len = 0;
-						Numeric val = yyjson_get_int(jb);
-						(void) lngToStr(&tmp, &len, &val, true);
+						if (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_SINT) {
+							lng val = yyjson_get_int(jb);
+							(void) lngToStr(&tmp, &len, &val, true);
+						}
+						else {
+							assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
+							dbl val = yyjson_get_real(jb);
+							(void) dblToStr(&tmp, &len, &val, true);
+						}
 						cleanup_tmp = true;
 						break;
 					case jbvBool:
@@ -1519,6 +1568,42 @@ executePredicate(JsonPathExecContext *cxt, JsonPathItem *pred,
 	return jpbFalse;
 }
 
+static inline
+Numeric yyjson2Numeric(JsonbValue* val) {
+	Numeric num = {.type=yyjson_get_subtype(val)};
+
+	switch (num.type) {
+		case YYJSON_SUBTYPE_SINT:
+			num.lnum = yyjson_get_int(val);
+			break;
+		case YYJSON_SUBTYPE_REAL:
+			num.dnum = yyjson_get_real(val);
+			break;
+		default:
+			assert(0);
+	}
+	return num;
+}
+
+static inline // TODO: replace Numeric with yyjson where possible
+JsonbValue* Numeric2yyjson(JsonPathExecContext *cxt, Numeric num) {
+	yyjson_mut_val* mut_jbv;
+
+	switch (num.type) {
+		case YYJSON_SUBTYPE_SINT:
+			mut_jbv = yyjson_mut_int(cxt->mutable_doc, num.lnum);
+			break;
+		case YYJSON_SUBTYPE_REAL:
+			mut_jbv = yyjson_mut_real(cxt->mutable_doc, num.dnum);
+			break;
+		default:
+			assert(0);
+	}
+
+	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, cxt->alc);
+	return yyjson_doc_get_root(doc);
+}
+
 /*
  * Execute binary arithmetic expression on singleton numeric operands.
  * Array operands are automatically unwrapped in lax mode.
@@ -1568,12 +1653,13 @@ executeBinaryArithmExpr(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 	if (jspThrowErrors(cxt))
 	{
-		res = func(yyjson_get_int(lval), yyjson_get_int(rval), NULL);
+		res = func(yyjson2Numeric(lval), yyjson2Numeric(rval), NULL);
+		// TODO: throw error
 	}
 	else
 	{
 		bool		error = false;
-		res = func(yyjson_get_int(lval), yyjson_get_int(rval), &error);
+		res = func(yyjson2Numeric(lval), yyjson2Numeric(rval), &error);
 
 		if (error)
 			return jperError;
@@ -1582,9 +1668,7 @@ executeBinaryArithmExpr(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	if (!(elem = jsp->next) && !found)
 		return jperOk; // TODO: weird why do func if not using the result perhaps check when found is empty
 
-	yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, res);
-	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, cxt->alc);
-	lval = yyjson_doc_get_root(doc);
+	lval = Numeric2yyjson(cxt, res);
 	
 	return executeNextItem(cxt, jsp, elem, lval, found, false);
 }
@@ -1636,8 +1720,8 @@ executeUnaryArithmExpr(JsonPathExecContext *cxt, JsonPathItem *jsp,
 
 		if (func)
 		{
-			// TODO: yyjson_mem not clean to modify an immutable
-			yyjson_set_int(val, func(yyjson_get_int(val)));
+			Numeric res = func(yyjson2Numeric(val));
+			val = Numeric2yyjson(cxt, res);
 		}
 
 		jper2 = executeNextItem(cxt, jsp, elem, val, found, false);
@@ -1710,7 +1794,7 @@ executeNumericItemMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						 JsonValueList *found)
 {
 	JsonPathItem* next;
-	Datum		datum;
+	Numeric	datum;
 
 	if (unwrap && JsonbType(jb) == jbvArray)
 		return executeItemUnwrapTargetArray(cxt, jsp, jb, found, false);
@@ -1720,14 +1804,12 @@ executeNumericItemMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 							 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
 							  errmsg("jsonpath item method .%s() can only be applied to a numeric value",
 									 jspOperationName(jsp->type)))));
-	datum = (Datum) func(yyjson_get_num(jb));
+	datum = func(yyjson2Numeric(jb));
 
 	if (!(next = jsp->next) && !found)
 		return jperOk;
 
-	yyjson_mut_val * mut_jbv = yyjson_mut_int(cxt->mutable_doc, (lng) datum);
-	yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_jbv, cxt->alc);
-	jb = yyjson_doc_get_root(doc);
+	jb = Numeric2yyjson(cxt, datum);
 
 	return executeNextItem(cxt, jsp, next, jb, found, false);
 }
@@ -2033,7 +2115,7 @@ compareItems(JsonPathExecContext *cxt, int32 op, JsonbValue *jb1, JsonbValue *jb
 				yyjson_get_bool(jb1) ? 1 : -1;
 			break;
 		case jbvNumeric:
-			cmp = compareNumeric(yyjson_get_int(jb1), yyjson_get_int(jb2));
+			cmp = compareNumeric(yyjson2Numeric(jb1), yyjson2Numeric(jb2));
 			break;
 		case jbvString:
 			if (op == jpiEqual)
@@ -2096,7 +2178,14 @@ compareItems(JsonPathExecContext *cxt, int32 op, JsonbValue *jb1, JsonbValue *jb
 static int
 compareNumeric(Numeric a, Numeric b)
 {
-	return 	a - b;
+	if (a.type == YYJSON_SUBTYPE_REAL && b.type == YYJSON_SUBTYPE_REAL)
+		return a.dnum - b.dnum > 0? 1 : a.dnum - b.lnum < 0 ? -1 : 0;
+	if (a.type == YYJSON_SUBTYPE_REAL && b.type == YYJSON_SUBTYPE_SINT)
+		return a.dnum - b.lnum > 0? 1 : a.dnum - b.lnum < 0 ? -1 : 0;
+	if (a.type == YYJSON_SUBTYPE_SINT && b.type == YYJSON_SUBTYPE_REAL)
+		return a.dnum - b.lnum > 0? 1 : a.dnum - b.lnum < 0 ? -1 : 0;
+	// else (a.type == YYJSON_SUBTYPE_SINT && b.type == YYJSON_SUBTYPE_SINT)
+	return a.lnum - b.lnum;
 }
 
 /*
