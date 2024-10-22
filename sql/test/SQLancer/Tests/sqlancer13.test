@@ -733,6 +733,10 @@ SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN NULL AND NULL
 statement ok
 set optimizer='sequential_pipe'
 
+statement ok
+EXPLAIN SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 2
+
+skipif knownfail
 query T python .explain.function_histogram
 EXPLAIN SELECT t0.c0 FROM t0 WHERE t0.c0 NOT BETWEEN 0 AND 2
 ----

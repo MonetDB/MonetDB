@@ -377,6 +377,10 @@ SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING ((((SELECT FALSE WHERE FALSE) EXCEPT 
 1
 1
 
+statement ok
+PLAN SELECT (SELECT c0 FROM t0) FROM t0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT (SELECT c0 FROM t0) FROM t0
 ----

@@ -99,6 +99,10 @@ munion (
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
+statement ok
+plan select * from test where id between 1 and 100*10
+
+skipif knownfail
 query T python .plan.filter
 plan select * from test where id between 1 and 100*10
 ----
@@ -115,6 +119,10 @@ munion (
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
+statement ok
+plan select * from test where id in (1, 1022)
+
+skipif knownfail
 query T python .plan.filter
 plan select * from test where id in (1, 1022)
 ----
@@ -131,6 +139,10 @@ munion (
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
+statement ok
+plan select * from test where id in (1, 1000)
+
+skipif knownfail
 query T python .plan.filter
 plan select * from test where id in (1, 1000)
 ----

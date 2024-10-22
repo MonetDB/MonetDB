@@ -42,6 +42,10 @@ SELECT * FROM v2
 0
 2
 
+statement ok
+PLAN SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
 ----

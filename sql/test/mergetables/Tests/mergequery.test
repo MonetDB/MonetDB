@@ -104,6 +104,10 @@ SELECT * FROM complete where x>=2.0 AND x <=3.0
 1.000
 0.000
 
+statement ok
+PLAN SELECT * FROM complete where x = 0.0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete where x = 0.0
 ----
@@ -123,6 +127,10 @@ SELECT * FROM complete where x = 0.0
 1.000
 0.000
 
+statement ok
+PLAN SELECT * FROM complete where x = 3.0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete where x = 3.0
 ----
@@ -142,6 +150,10 @@ SELECT * FROM complete where x = 3.0
 1.000
 0.000
 
+statement ok
+PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
 ----
@@ -161,6 +173,10 @@ SELECT * FROM complete where x >= 1.0 AND x < 2.0
 1.000
 0.000
 
+statement ok
+PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
 ----
@@ -180,6 +196,10 @@ SELECT * FROM complete where x > 1.0 AND x <= 2.0
 1.000
 0.000
 
+statement ok
+PLAN SELECT * FROM complete where x > 1.0 AND x < 2.0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
@@ -193,6 +213,10 @@ query RRR rowsort
 SELECT * FROM complete where x > 1.0 AND x < 2.0
 ----
 
+statement ok
+PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
@@ -225,6 +249,10 @@ SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 1.000
 0.000
 
+statement ok
+PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 ----

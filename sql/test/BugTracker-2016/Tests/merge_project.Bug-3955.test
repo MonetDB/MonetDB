@@ -50,6 +50,10 @@ select * from r
 2
 0.900
 
+statement ok
+PLAN select * from r
+
+skipif knownfail
 query T python .plan.filter
 PLAN select * from r
 ----

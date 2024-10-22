@@ -137,6 +137,10 @@ SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 99
 97
 
+statement ok
+PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 ----

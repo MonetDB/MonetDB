@@ -28,6 +28,10 @@ create replica table bar_rpl_rmt_node3 (n int, m text)
 statement ok
 alter table bar_rpl_rmt_node3 add table bar_r3
 
+statement ok
+plan select * from foo_rpl_rmt
+
+skipif knownfail
 query T python .plan.filter
 plan select * from foo_rpl_rmt
 ----
@@ -37,6 +41,10 @@ table (
 | ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
 ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m" ]
 
+statement ok
+plan select * from foo_rpl_rmt, bar_rpl_rmt
+
+skipif knownfail
 query T python .plan.filter
 plan select * from foo_rpl_rmt, bar_rpl_rmt
 ----
@@ -49,6 +57,10 @@ table (
 | ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "bar_rpl_rmt"."n", "bar_rpl_rmt"."m" ] REMOTE mapi:monetdb://localhost:50002/node2
 ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "bar_rpl_rmt"."n", "bar_rpl_rmt"."m" ]
 
+statement ok
+plan select * from foo_rpl_rmt_node2, bar_rpl_rmt_node3
+
+skipif knownfail
 query T python .plan.filter
 plan select * from foo_rpl_rmt_node2, bar_rpl_rmt_node3
 ----
@@ -63,6 +75,10 @@ project (
 | ) [  ]
 ) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m" ]
 
+statement ok
+plan select * from foo_rpl_rmt, buz_rmt
+
+skipif knownfail
 query T python .plan.filter
 plan select * from foo_rpl_rmt, buz_rmt
 ----
@@ -75,6 +91,10 @@ table (
 | ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
 ) [ "foo_rpl_rmt"."n", "foo_rpl_rmt"."m", "buz_rmt"."l" ]
 
+statement ok
+plan select * from bar_rpl_rmt_node3, buz_rmt
+
+skipif knownfail
 query T python .plan.filter
 plan select * from bar_rpl_rmt_node3, buz_rmt
 ----

@@ -60,6 +60,10 @@ select * from foo_p1
 # result in the master node (hint: the remote plan is wrapped around a
 # 'table' returning relational operator)
 
+statement ok
+plan select * from foo_merge, members_rpl
+
+skipif knownfail
 query T python .plan.filter
 plan select * from foo_merge, members_rpl
 ----

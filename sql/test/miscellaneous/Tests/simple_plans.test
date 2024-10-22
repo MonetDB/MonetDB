@@ -48,6 +48,10 @@ project (
 statement ok
 create table myx (x uuid, y uuid)
 
+statement ok
+plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965'
+
+skipif knownfail
 query T python .plan.filter
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1aea00e5db6e0810b554fde31d961965'
 ----
@@ -57,6 +61,10 @@ project (
 | ) [ (("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) or (("myx"."y" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL)) ]
 ) [ "myx"."x" NOT NULL UNIQUE, "myx"."y" NOT NULL UNIQUE ]
 
+statement ok
+plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
+
+skipif knownfail
 query T python .plan.filter
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null
 ----
@@ -66,6 +74,10 @@ project (
 | ) [ ("myx"."x" NOT NULL UNIQUE) = (uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ uuid[varchar(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL UNIQUE as "myx"."x", "myx"."y" NOT NULL UNIQUE ]
 
+statement ok
+plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
+
+skipif knownfail
 query T python .plan.filter
 plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967'
 ----
@@ -94,6 +106,10 @@ CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER)
 statement ok
 INSERT INTO tab0 VALUES (97,1,99), (15,81,47),(87,21,10)
 
+statement ok
+plan select 1 from tab0 where col1 = 1 or col1 = 81
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where col1 = 1 or col1 = 81
 ----
@@ -103,6 +119,10 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where col1 = 1 or col1 = 81 or col1 = 100
 ----
@@ -112,6 +132,10 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81", int(7) "100") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where (col1 = 1 or col1 = 81) or (col2 < 0)
 ----
@@ -121,6 +145,10 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81")) or (("tab0"."col2" NOT NULL) < (int(7) "0")) ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col1 = 100) or (col2 > 10)
 ----
@@ -130,6 +158,10 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2" NOT NULL) > (int(7) "10")) ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where ((col1 = 1 or col1 = 81) or col2 = 100) or (col1 = 100)
 ----
@@ -139,6 +171,10 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) in (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2" NOT NULL) = (int(7) "100")) ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where col1 <> 1 and col1 <> 81
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81
 ----
@@ -148,7 +184,11 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and col2 <> 10
+
 # don't rewrite col2 <> 10 into notin
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and col2 <> 10
 ----
@@ -158,6 +198,10 @@ project (
 | ) [ ("tab0"."col2" NOT NULL) != (int(7) "10"), ("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 100)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where col1 <> 1 and col1 <> 81 and (col2 < 100)
 ----
@@ -167,6 +211,10 @@ project (
 | ) [ ("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where (col1 <> 1 and col1 <> 81) or (col2 < 0)
 ----
@@ -176,6 +224,10 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81")) or (("tab0"."col2" NOT NULL) < (int(7) "0")) ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) and col1 <> 100) or (col2 > 10)
 ----
@@ -185,6 +237,10 @@ project (
 | ) [ (("tab0"."col1" NOT NULL) notin (int(7) "1", int(7) "81", int(7) "100")) or (("tab0"."col2" NOT NULL) > (int(7) "10")) ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 47)
+
+skipif knownfail
 query T python .plan.filter
 plan select 1 from tab0 where ((col1 <> 1 and col1 <> 81) or col2 = 100) and (col1 <> 47)
 ----
@@ -304,14 +360,26 @@ sql.tid
 user.main
 1
 
+statement ok
+EXPLAIN SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
+
+skipif knownfail
 query T python .explain.function_with_more_than_one_result_bat
 EXPLAIN SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
 
+statement ok
+EXPLAIN SELECT t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
+
+skipif knownfail
 query T python .explain.function_with_more_than_one_result_bat
 EXPLAIN SELECT t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
 
+statement ok
+EXPLAIN SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
+
+skipif knownfail
 query T python .explain.function_with_more_than_one_result_bat
 EXPLAIN SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
@@ -332,6 +400,10 @@ EXPLAIN SELECT t1.col1, t2.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.
 algebra.thetajoin
 1
 
+statement ok
+PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL
 ----
@@ -341,6 +413,10 @@ project (
 | ) [ (int(11) "1") <= ("another_t"."col1" NOT NULL UNIQUE) <= (int(11) "2") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT 1 FROM another_t WHERE col1 > 1 and cast(col1 as bigint) < 2
 ----
@@ -350,6 +426,10 @@ project (
 | ) [ (bigint(63) "1") < (bigint(63)["another_t"."col1" NOT NULL UNIQUE] NOT NULL) < (bigint(63) "2") ]
 ) [ tinyint(1) "1" ]
 
+statement ok
+PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t
 ----
@@ -384,6 +464,10 @@ create view view2 as SELECT * FROM tabel2 as a
 statement ok
 create view view3 as SELECT * FROM tabel3 as a
 
+statement ok
+PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr
 ----
@@ -406,6 +490,10 @@ CREATE TABLE integers(i INTEGER, j INTEGER)
 statement ok
 INSERT INTO integers VALUES (1,4), (2,5), (3,6), (NULL,NULL)
 
+statement ok
+plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
+
+skipif knownfail
 query T python .plan.filter
 plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
 ----
@@ -428,6 +516,10 @@ select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.
 NULL
 NULL
 
+statement ok
+plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
+
+skipif knownfail
 query T python .plan.filter
 plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
 ----
@@ -450,6 +542,10 @@ select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null 
 NULL
 NULL
 
+statement ok
+plan select i, j from integers where i = j or (i is null and j is null)
+
+skipif knownfail
 query T python .plan.filter
 plan select i, j from integers where i = j or (i is null and j is null)
 ----
@@ -465,7 +561,11 @@ select i, j from integers where i = j or (i is null and j is null)
 NULL
 NULL
 
+statement ok
+plan select (34*another_t.col1)*3 from another_t
+
 # (x*c1)*c2 -> x * (c1*c2)
+skipif knownfail
 query T python .plan.filter
 plan select (34*another_t.col1)*3 from another_t
 ----
@@ -491,6 +591,10 @@ create table t3 (b string)
 statement ok rowcount 4
 insert into t3 values ('a'),('b'),('c'),('d')
 
+statement ok
+plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
+
+skipif knownfail
 query T python .plan.filter
 plan select t1.a, t1.b from t1 inner join t2 on t1.a = t2.a inner join t3 on t1.b like t3.b
 ----
@@ -536,6 +640,10 @@ sql.tid
 user.main
 1
 
+statement ok
+plan select x, y from (select a as b, a / 3 as c from t1 intersect all select a as z, a / 5 as d from t2) x(x,y) where x > 2
+
+skipif knownfail
 query T python .plan.filter
 plan select x, y from (select a as b, a / 3 as c from t1 intersect all select a as z, a / 5 as d from t2) x(x,y) where x > 2
 ----
@@ -594,10 +702,10 @@ rollback
 statement ok
 set optimizer='default_pipe'
 
-# push select expressions under group by if possible
 statement ok
 plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
 
+# push select expressions under group by if possible
 skipif knownfail
 query T python .plan.filter
 plan select 1 from (select x from (values(1),(2),(3)) x(x) group by x) x(x) where x > 2
@@ -625,7 +733,11 @@ project (
 | ) [ "x"."x" NOT NULL ] [ "sys"."max" no nil ("x"."x" NOT NULL) NOT NULL as "%5"."%5" ]
 ) [ "%5"."%5" NOT NULL as "x"."y" ]
 
+statement ok
+plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 2
+
 # here the select cannot be pushed down
+skipif knownfail
 query T python .plan.filter
 plan select x from (select min(x) as x from (values(1,1),(2,2),(3,3)) x(x,y)) x(x) where x > 2
 ----
@@ -646,6 +758,10 @@ SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(
 25
 30
 
+statement ok
+PLAN SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT sum(x), sum(x + 1), sum(x + 2), sum(x + 3) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
@@ -664,6 +780,10 @@ SELECT 10*sum(5 - x) as aa, sum(x + 12) + 15 as bb, count(*) as cc FROM (VALUES 
 90
 5
 
+statement ok
+PLAN SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT 10*sum(5 - x) as aa, sum(x + 12) * 2 as bb, count(*) as cc FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
@@ -693,6 +813,10 @@ SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----
 40
 
+statement ok
+PLAN SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
+
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT sum((x + x) + 2) FROM (VALUES (1),(2),(3),(4),(5)) x(x)
 ----

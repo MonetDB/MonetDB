@@ -11,6 +11,10 @@ select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 180
 1800
 
+statement ok
+plan select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
+
+skipif knownfail
 query T python .plan.filter non-eq-two-col-2-value
 plan select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -20,6 +24,10 @@ project (
 | ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+statement ok
+plan select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
+
+skipif knownfail
 query T python .plan.filter non-eq-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
 ----
@@ -30,6 +38,10 @@ project (
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 # order of m,k equality statements are swapped in the last AND expression
+statement ok
+plan select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
+
+skipif knownfail
 query T python .plan.filter non-eq-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
 ----
@@ -39,6 +51,10 @@ project (
 | ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+statement ok
+plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
+
+skipif knownfail
 query T python .plan.filter non-eq-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
 ----
@@ -58,6 +74,10 @@ select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and 
 60
 600
 
+statement ok
+plan select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
+
+skipif knownfail
 query T python .plan.filter two-col-1-value-two-col-2-value
 plan select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -67,6 +87,10 @@ project (
 | ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+statement ok
+plan select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
+
+skipif knownfail
 query T python .plan.filter two-col-1-value-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
 ----
@@ -76,6 +100,10 @@ project (
 | ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+statement ok
+plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
+
+skipif knownfail
 query T python .plan.filter two-col-1-value-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
 ----
@@ -98,7 +126,10 @@ select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and 
 60
 600
 
-skipif threads=1
+statement ok
+plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
+
+skipif knownfail
 query T python .plan.filter
 plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
@@ -132,7 +163,10 @@ select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 
 60
 600
 
-skipif threads=1
+statement ok
+plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
+
+skipif knownfail
 query T python .plan.filter single-col-3-val-2-col-2-val
 plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----

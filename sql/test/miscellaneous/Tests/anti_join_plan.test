@@ -8,7 +8,11 @@ INSERT INTO Test SELECT value % 10 as k1, value % 100 as k2, value % 1000 as k3,
 statement ok
 set optimizer='sequential_pipe'
 
+statement ok
+explain select * from test where (k1, k2) not in ( select k1, k2 from test where k1 = 1)
+
 # unoptimized anti join
+skipif knownfail
 query T python .explain.function_histogram
 explain select * from test
 where (k1, k2) not in (

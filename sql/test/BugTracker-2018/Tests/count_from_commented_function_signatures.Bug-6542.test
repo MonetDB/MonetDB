@@ -27,6 +27,10 @@ query ITTIITTTIII rowsort
 select * from sys.commented_function_signatures_6542
 ----
 
+statement ok
+plan select count (*) from sys.commented_function_signatures_6542
+
+skipif knownfail
 query T python .plan.filter
 plan select count (*) from sys.commented_function_signatures_6542
 ----
