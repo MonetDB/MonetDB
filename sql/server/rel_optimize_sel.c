@@ -2117,7 +2117,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		h[ci] = r1[ci] = r2[ci] = 0;
 		r3[ci] = 0;
 		/* h[ci] = exp_find_rels(cje, rels) */
-		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
 		   (cje->type == e_cmp && cje->f == NULL)) {
 			cje->tmp = ci;
 			r1[ci] = rels_find_one_rel(rels_a, nr_rels, cje->l);
@@ -2138,27 +2138,30 @@ order_joins(visitor *v, list *rels, list *exps)
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	if (list_length(rels) >= 2 && sdje->h) {
-		/* get the first expression */
-		cje = sdje->h->data;
+		for (node *n = sdje->h; n && !l && !r; n = n->next, ci++) {
+			cje = n->data;
 
-		/* find the involved relations */
+			/* find the involved relations */
 
-		/* complex expressions may touch multiple base tables
-		 * Should be pushed up to extra selection.
-		 * */
-		if (0 && popcount64(h[cje->tmp]) > 2)
-			assert(0);
-		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
-		   (cje->type == e_cmp && cje->f == NULL)) {
-			l = rels_a[r1[cje->tmp]];
-			r = rels_a[r2[cje->tmp]];
-			rel_mask |= h[cje->tmp];
+			/* complex expressions may touch multiple base tables
+			 * Should be pushed up to extra selection.
+			 * */
+			if (0 && popcount64(h[cje->tmp]) > 2)
+				assert(0);
+			if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+				(cje->type == e_cmp && cje->f == NULL)) {
+				l = rels_a[r1[cje->tmp]];
+				r = rels_a[r2[cje->tmp]];
+				if (l && r)
+					rel_mask |= h[cje->tmp];
+			}
 		}
 		cje->tmp = 0;
 
 		if (l && r && l != r)
 			list_remove_data(sdje, NULL, cje);
 	}
+
 	if (l && r && l != r) {
 		list_remove_data(rels, NULL, l);
 		list_remove_data(rels, NULL, r);
