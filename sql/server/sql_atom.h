@@ -78,5 +78,6 @@ extern const lng scales[MAX_SCALE];
 
 extern atom *atom_zero_value(allocator *sa, sql_subtype *tpe);
 extern atom *atom_max_value(allocator *sa, sql_subtype *tpe);
+extern void free_atom(allocator *sa, atom *a);
 
 #endif /* _SQL_ATOM_H_ */

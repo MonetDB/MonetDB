@@ -53,15 +53,20 @@ prop_copy( allocator *sa, prop *p )
 }
 
 prop *
-prop_remove( prop *plist, prop *p )
+prop_remove(allocator *sa, prop *plist, prop *p)
 {
 	prop *op = plist;
+	(void) sa;
 
-	if (plist == p)
-		return p->p;
+	if (plist == p) {
+		plist = p->p;
+		// sa_free(sa, p);
+		return plist;
+	}
 	for(; op; op = op->p) {
 		if (op->p == p) {
 			op->p = p->p;
+			// sa_free(sa, p);
 			break;
 		}
 	}
@@ -69,7 +74,7 @@ prop_remove( prop *plist, prop *p )
 }
 
 prop *
-find_prop( prop *p, rel_prop kind)
+find_prop(prop *p, rel_prop kind)
 {
 	while(p) {
 		if (p->kind == kind)
@@ -176,4 +181,15 @@ propvalue2string(allocator *sa, prop *p)
 		break;
 	}
 	return sa_strdup(sa, "");
+}
+
+
+void
+free_props( allocator *sa, prop *p )
+{
+	while(p) {
+		prop* tmp = p;
+		p = p->p;
+		sa_free(sa, tmp);
+	}
 }

@@ -5891,7 +5891,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 		}
 		if (!fnd) {
 			if (res)
-				rel_destroy(res);
+				rel_destroy(sql, res);
 			return NULL;
 		}
 	} else if (!query_has_outer(query) || !res) {/* only on top level query */
@@ -5902,7 +5902,7 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 	if (res)
 		rel = rel_select_exp(query, res, sn, ek);
 	if (!rel && res)
-		rel_destroy(res);
+		rel_destroy(sql, res);
 	return rel;
 }
 
@@ -6074,8 +6074,8 @@ rel_setquery(sql_query *query, symbol *q)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)
 			op = "INTERSECT";
-		rel_destroy(t1);
-		rel_destroy(t2);
+		rel_destroy(sql, t1);
+		rel_destroy(sql, t2);
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: column counts (%d and %d) do not match", op, t1nrcols, t2nrcols);
 	}
 	if ( q->token == SQL_UNION) {

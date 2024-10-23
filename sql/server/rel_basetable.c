@@ -398,7 +398,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 
 	r->exps = new_exp_list(sql->sa);
 	if(!r->exps) {
-		rel_destroy(r);
+		rel_destroy(sql, r);
 		return NULL;
 	}
 
@@ -413,7 +413,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 		sql_exp *e = exp_alias(sql, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		if (e == NULL) {
-			rel_destroy(r);
+			rel_destroy(sql, r);
 			return NULL;
 		}
 		e->nid = -(ba->basenr + i);
@@ -442,7 +442,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 
 		rel->exps = new_exp_list(sa);
 		if(!rel->exps) {
-			rel_destroy(rel);
+			rel_destroy(sql, rel);
 			return NULL;
 		}
 
@@ -462,7 +462,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			sql_exp *e = exp_alias(sql, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			if (e == NULL) {
-				rel_destroy(rel);
+				rel_destroy(sql, rel);
 				return NULL;
 			}
 			e->nid = -(ba->basenr + i);
@@ -481,7 +481,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) { /* Add TID column if no column is used */
 			sql_exp *e = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			if (e == NULL) {
-				rel_destroy(rel);
+				rel_destroy(sql, rel);
 				return NULL;
 			}
 			e->nid = -(ba->basenr + i);
@@ -515,7 +515,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			unique = list_length(i->columns) == 1 && is_column_unique(((sql_kc*)i->columns->h->data)->c);
 			e = exp_alias(sql, atname, iname, tname, iname, t, CARD_MULTI, has_nils, unique, 1);
 			if (e == NULL) {
-				rel_destroy(rel);
+				rel_destroy(sql, rel);
 				return NULL;
 			}
 			/* index names are prefixed, to make them independent */

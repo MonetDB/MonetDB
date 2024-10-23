@@ -686,7 +686,7 @@ set_setop_side(visitor *v, sql_rel *rel, sql_rel *side)
 	if (need_distinct(rel))
 		set_distinct(side);
 	side->p = prop_copy(v->sql->sa, rel->p);
-	rel_destroy(rel);
+	rel_destroy(v->sql, rel);
 	return side;
 }
 
@@ -840,9 +840,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 		}
 		if (can_be_pruned && empty_cross) {
-			rel_destroy(rel->l);
+			rel_destroy(v->sql, rel->l);
 			rel->l = NULL;
-			rel_destroy(rel->r);
+			rel_destroy(v->sql, rel->r);
 			rel->r = NULL;
 			for (node *n = rel->exps->h ; n ; n = n->next) {
 				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
@@ -909,7 +909,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				BUN rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
 
 				if (!rv) { /* keep last for now */
-					rel_destroy(r);
+					rel_destroy(v->sql, r);
 					continue;
 				}
 				nl = append(nl, r);

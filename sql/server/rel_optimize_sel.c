@@ -156,7 +156,7 @@ rel_remove_redundant_join_(visitor *v, sql_rel *rel)
 			}
 			if (exp_match_list(j->exps, rel->exps)) {
 				p->l = (left)?rel_dup(jr):rel_dup(jl);
-				rel_destroy(j);
+				rel_destroy(v->sql, j);
 				set_nodistinct(p);
 				v->changes++;
 				return rel;
@@ -1801,7 +1801,7 @@ rel_push_join_down_outer(visitor *v, sql_rel *rel)
 			rel->attr = NULL;
 			set_processed(nl);
 			rel_dup(r);
-			rel_destroy(rel);
+			rel_destroy(v->sql, rel);
 			rel = r;
 			v->changes++;
 		}
@@ -1848,7 +1848,7 @@ get_relations(visitor *v, sql_rel *rel, list *rels)
 		get_relations(v, r, rels);
 		rel->l = NULL;
 		rel->r = NULL;
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 	} else {
 		rel = rel_join_order_(v, rel);
 		append(rels, rel);
@@ -2587,7 +2587,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		if (list_empty(top->exps)) { /* empty select */
 			sql_rel *l = top->l;
 			top->l = NULL;
-			rel_destroy(top);
+			rel_destroy(v->sql, top);
 			top = l;
 		}
 	}
@@ -2607,7 +2607,7 @@ rel_neg_in_size(sql_rel *r)
 static void _rel_destroy(void *dummy, sql_rel *rel)
 {
 	(void)dummy;
-	rel_destroy(rel);
+	rel_destroy(NULL, rel);
 }
 
 static list *
@@ -2886,7 +2886,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 			r->exps = NULL;
 			rel->attr = r->attr;
 			r->attr = NULL;
-			rel_destroy(or);
+			rel_destroy(v->sql, or);
 			v->changes++;
 		}
 	}
@@ -2968,7 +2968,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 
 			rel->r = rel_dup(r->r);
 			rel->exps = exps;
-			rel_destroy(or);
+			rel_destroy(v->sql, or);
 			v->changes++;
 		}
 	}
@@ -3112,7 +3112,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		l->exps = njexps;
 		l->attr = njattr;
 		set_processed(l);
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 		rel = l;
 		if (cycle <= 0)
 			v->changes++;
@@ -3147,7 +3147,7 @@ rel_rewrite_antijoin(visitor *v, sql_rel *rel)
 		set_processed(nl);
 		rel->l = nl;
 		rel->r = rr;
-		rel_destroy(r);
+		rel_destroy(v->sql, r);
 		v->changes++;
 		return rel;
 	}
@@ -3424,12 +3424,12 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
 		r->l = rel_simplify_count_fk_join(sql, rl, gexps, gcols, changes);
 		if (rl != r->l)
-			rel_destroy(rl);
+			rel_destroy(sql, rl);
 	}
 	if (!fk_left && is_join(rr->op) && !rel_is_ref(rr)) {
 		r->r = rel_simplify_count_fk_join(sql, rr, gexps, gcols, changes);
 		if (rr != r->r)
-			rel_destroy(rr);
+			rel_destroy(sql, rr);
 	}
 
 	if (!check_projection_on_foreignside(r, gcols, fk_left))
@@ -3488,7 +3488,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		r = rel_simplify_project_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
-		rel_destroy(rel->l);
+		rel_destroy(v->sql, rel->l);
 		rel->l = r;
 	}
 
@@ -3507,7 +3507,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		r = rel_simplify_count_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
-		rel_destroy(rel->l);
+		rel_destroy(v->sql, rel->l);
 		rel->l = r;
 	}
 	return rel;
@@ -3638,7 +3638,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
 		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
 		rel->l = NULL;
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 		v->changes++;
 		return try_remove_empty_select(v, r);
 	}
@@ -3664,7 +3664,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 					is_join(rx->op)))
 						rx = rx->l;
 				/* probably we need to introduce a project */
-				rel_destroy(rel->l);
+				rel_destroy(v->sql, rel->l);
 				lx = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 				r->l = lx;
 				rx->l = rel_dup(lx);

@@ -91,7 +91,7 @@ rel_dup(sql_rel *r)
 }
 
 static void
-rel_destroy_(sql_rel *rel)
+rel_destroy_(mvc *sql, sql_rel *rel)
 {
 	if (!rel)
 		return;
@@ -100,7 +100,7 @@ rel_destroy_(sql_rel *rel)
 		break;
 	case op_table:
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
-			rel_destroy(rel->l);
+			rel_destroy(sql, rel->l);
 		break;
 	case op_join:
 	case op_left:
@@ -116,15 +116,15 @@ rel_destroy_(sql_rel *rel)
 	case op_delete:
 	case op_merge:
 		if (rel->l)
-			rel_destroy(rel->l);
+			rel_destroy(sql, rel->l);
 		if (rel->r)
-			rel_destroy(rel->r);
+			rel_destroy(sql, rel->r);
 		break;
 	case op_munion:
 		/* the rel->l might be in purpose NULL see rel_merge_table_rewrite_() */
 		if (rel->l)
 			for (node *n = ((list*)rel->l)->h; n; n = n->next)
-				rel_destroy(n->data);
+				rel_destroy(sql, n->data);
 		break;
 	case op_project:
 	case op_groupby:
@@ -133,30 +133,36 @@ rel_destroy_(sql_rel *rel)
 	case op_sample:
 	case op_truncate:
 		if (rel->l)
-			rel_destroy(rel->l);
+			rel_destroy(sql, rel->l);
 		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
-				rel_destroy(rel->l);
+				rel_destroy(sql, rel->l);
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l)
-				rel_destroy(rel->l);
+				rel_destroy(sql, rel->l);
 			if (rel->r)
-				rel_destroy(rel->r);
+				rel_destroy(sql, rel->r);
 		}
 		break;
 	}
 }
 
 void
-rel_destroy(sql_rel *rel)
+rel_destroy(mvc *sql, sql_rel *rel)
 {
 	if (!rel)
 		return;
 	if (sql_ref_dec(&rel->ref) > 0)
 		return;
-	rel_destroy_(rel);
+	rel_destroy_(sql, rel);
+	if (!list_empty(rel->exps) && sql && (!rel->l) && (!rel->r)) {
+		// perhaps separate allocator for exps
+		// for later
+		// free_exps_list(sql->sa, rel->exps);
+		rel->exps = NULL;
+	}
 }
 
 sql_rel*
@@ -526,7 +532,7 @@ rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
 {
 	assert(is_basetable(bt->op));
 
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	rel->l = bt->l;
 	rel->r = bt->r;
@@ -540,7 +546,7 @@ rel_inplace_basetable(sql_rel *rel, sql_rel *bt)
 sql_rel *
 rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
-	rel_destroy_(rel);
+	rel_destroy_(sql, rel);
 	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = r;
@@ -555,7 +561,7 @@ rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operator_type setop, l
 {
 	// TODO: for now we only deal with munion
 	assert(setop == op_munion);
-	rel_destroy_(rel);
+	rel_destroy_(sql, rel);
 	rel_inplace_reset_props(rel);
 	/* rl should be a list of relations */
 	rel->l = rl;
@@ -577,7 +583,7 @@ rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 		*l = *rel;
 		l->ref.refcnt = 1;
 	} else {
-		rel_destroy_(rel);
+		rel_destroy_(NULL, rel);
 	}
 	rel_inplace_reset_props(rel);
 	rel->l = l;
@@ -595,7 +601,7 @@ rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 sql_rel *
 rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 {
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	rel->l = l;
 	rel->r = NULL;
@@ -614,7 +620,7 @@ rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps)
 sql_rel *
 rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 {
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	rel->card = CARD_ATOM;
 	if (groupbyexps)
@@ -630,7 +636,7 @@ rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 sql_rel *
 rel_inplace_munion(sql_rel *rel, list *rels)
 {
-	rel_destroy_(rel);
+	rel_destroy_(NULL, rel);
 	rel_inplace_reset_props(rel);
 	// TODO: what is the semantics of cardinality? is that right?
 	rel->card = CARD_MULTI;
@@ -921,7 +927,7 @@ rel_is_constant(sql_rel **R, sql_exp *e)
 	    !rel->l && !rel->r && !rel_is_ref(rel) && e->type == e_column) {
 		sql_exp *ne = rel_find_exp(rel, e);
 		if (ne) {
-			rel_destroy(rel);
+			rel_destroy(NULL, rel);
 			*R = NULL;
 			return ne;
 		}
@@ -1117,7 +1123,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	list *aggrs = new_exp_list(sql->sa);
 	node *en;
 	if(!rel || !aggrs) {
-		rel_destroy(rel);
+		rel_destroy(sql, rel);
 		return NULL;
 	}
 
@@ -1710,7 +1716,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 		sql_exp *e = exp_or(sql->sa, lexps, rexps, 0);
 		list *nl = oexps?oexps:new_exp_list(sql->sa);
 
-		rel_destroy(r);
+		rel_destroy(sql, r);
 		append(nl, e);
 		if (is_outerjoin(l->op) && is_processed(l))
 			l = rel_select(sql->sa, l, NULL);
@@ -1724,7 +1730,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
 		list *nl = new_exp_list(sql->sa);
 
-		rel_destroy(r);
+		rel_destroy(sql, r);
 		append(nl, e);
 		l->exps = nl;
 
@@ -1734,7 +1740,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 			list_merge(l->exps, ll->exps, (fdup)NULL);
 			l->l = ll->l;
 			ll->l = NULL;
-			rel_destroy(ll);
+			rel_destroy(sql, ll);
 			ll = l->l;
 		}
 		return l;

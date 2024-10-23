@@ -636,7 +636,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
-	rel_destroy(rel);
+	rel_destroy(sql, rel);
 	return sel;
 }
 
@@ -689,7 +689,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
-	rel_destroy(rel);
+	rel_destroy(sql, rel);
 	return sel;
 }
 
@@ -886,7 +886,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
 		sel = rel_exception(query->sql->sa, sel, anti_rel, list_append(new_exp_list(query->sql->sa), exception));
 	}
-	rel_destroy(rel);
+	rel_destroy(sql, rel);
 	return sel;
 }
 

@@ -3900,3 +3900,67 @@ list_find_exp( list *exps, sql_exp *e)
 		return NULL;
 	return exps_bind_nid(exps, e->nid);
 }
+
+void
+free_exps_list(allocator *sa, list *exps)
+{
+	if (!list_empty(exps))
+		for (node *n=exps->h; n ; n=n->next) {
+			free_exp(sa, n->data);
+			n->data = NULL;
+		}
+}
+
+
+static void
+_free_exp_internal(allocator *sa, sql_exp *e)
+{
+	if (!e)
+		return;
+	if (e->p) {
+		// free_props(sa, e->p);
+		e->p = NULL;
+	}
+	// reset
+	*e = (sql_exp) {};
+	sa_free(sa, e);
+}
+
+static void
+_free_exp_atom(allocator *sa, sql_exp *e)
+{
+	if (!e || e->type != e_atom)
+		return;
+
+	if (e->l) {
+		// free_atom(sa, e->l);
+		e->l = NULL;
+	}
+	//if (e->r) {
+	//	((sql_var_name*) e->r)->sname = NULL;
+	//	((sql_var_name*) e->r)->name = NULL;
+	//	e->r = NULL;
+	//}
+	if (e->f) {
+		free_exps_list(sa, e->f);
+		e->f = NULL;
+	}
+	return _free_exp_internal(sa, e);
+}
+
+void
+free_exp(allocator *sa, sql_exp *e)
+{
+	if (!e)
+		return;
+	switch(e->type) {
+		case e_atom:
+			return _free_exp_atom(sa, e);
+		case e_column:
+		case e_cmp:
+		case e_func:
+		case e_aggr:
+		case e_convert:
+		case e_psm:
+	}
+}

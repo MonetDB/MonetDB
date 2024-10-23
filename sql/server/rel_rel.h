@@ -69,7 +69,7 @@ extern const char *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
 
 extern sql_rel *rel_dup(sql_rel *r);
-extern void rel_destroy(sql_rel *rel);
+extern void rel_destroy(mvc *sql, sql_rel *rel);
 extern sql_rel *rel_create(allocator *sa);
 extern sql_rel *rel_copy(mvc *sql, sql_rel *r, int deep);
 extern sql_rel *rel_select_copy(allocator *sa, sql_rel *l, list *exps);

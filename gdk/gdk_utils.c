@@ -2098,7 +2098,6 @@ typedef struct freed_t {
 static void
 sa_free_obj(allocator *pa, void *obj, size_t sz)
 {
-	assert(sz > 0);
 	size_t i;
 
 	char *obj_start = (char *) obj;
@@ -2169,6 +2168,7 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 				pa->freelist = curr->n;
 			}
 			pa->freelist_hits += 1;
+			pa->inuse += 1;
 			return curr;
 		} else {
 			prev = curr;
@@ -2240,7 +2240,6 @@ _sa_realloc_internal( allocator *sa, void *p, size_t sz, size_t oldsz )
 
 
 #undef sa_realloc
-#undef sa_alloc
 void *
 sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 {
@@ -2315,6 +2314,7 @@ _sa_alloc_internal( allocator *sa, size_t sz )
 	return r;
 }
 
+#undef sa_alloc
 void *
 sa_alloc( allocator *sa, size_t sz )
 {
@@ -2380,7 +2380,6 @@ void sa_destroy( allocator *sa )
 	if (sa->pa) {
 		sa_reset(sa);
 		sa_free_blk(sa->pa, sa->blks[0]);
-		sa_free_obj(sa->pa, sa, sizeof(allocator));
 		return;
 	}
 	// root allocator

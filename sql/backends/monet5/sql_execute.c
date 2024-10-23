@@ -699,7 +699,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			resetMalBlk(c->curprg->def);
 			SQLremoveQueryFromCache(c);
 		}
-		rel_destroy(rel);
+		rel_destroy(m, rel);
 	}
 	return RAcommit_statement(be, msg);
 }
@@ -932,7 +932,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!msg && monet5_create_relational_function(m, mod, nme, rel, NULL, ops, 0) < 0)
 		msg = createException(SQL, "RAstatement2", "%s", m->errstr);
-	rel_destroy(rel);
+	rel_destroy(m, rel);
 	return RAstatement2_return(be, m, nlevels, gvars, gentries, msg);
 }
 

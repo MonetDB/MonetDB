@@ -209,7 +209,7 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 				/* if we resolved the replica to a local table we have to
 				 * go and remove the remote property from the subtree */
 				sql_rel *r = ((rps*)v->data)->orig;
-				r->p = prop_remove(r->p, rp);
+				r->p = prop_remove(v->sql->sa, r->p, rp);
 				break;
 			}
 		}
@@ -232,7 +232,7 @@ eliminate_remote_or_replica_refs(visitor *v, sql_rel **rel)
 	if (rel_is_ref(*rel) && !((*rel)->flag&MERGE_LEFT)) {
  		if (has_remote_or_replica(*rel)) {
  			sql_rel *nrel = rel_copy(v->sql, *rel, 1);
- 			rel_destroy(*rel);
+ 			rel_destroy(v->sql, *rel);
  			*rel = nrel;
  			return true;
  		} else {
@@ -286,7 +286,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 				return rel;
 
 			sql_rel *r = replica_rewrite(v, t, rel->exps);
-			rel_destroy(rel);
+			rel_destroy(v->sql, rel);
 			rel = r;
 		}
 	}
@@ -390,7 +390,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_table:
 		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
 			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-				l->p = prop_remove(l->p, p);
+				l->p = prop_remove(v->sql->sa, l->p, p);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					p->p = rel->p;
 					rel->p = p;
@@ -425,8 +425,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 			/* if there are common uris pull the REMOTE prop with the common uris up */
 			if (!list_empty(uris)) {
-				l->p = prop_remove(l->p, pl);
-				r->p = prop_remove(r->p, pr);
+				l->p = prop_remove(v->sql->sa, l->p, pl);
+				r->p = prop_remove(v->sql->sa, r->p, pr);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					/* remove local tid ONLY if no subtree has local parts */
 					if (pl->id == 0 || pr->id == 0)
@@ -453,7 +453,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_truncate:
 		/* if the subtree has the REMOTE property just pull it up */
 		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-			l->p = prop_remove(l->p, p);
+			l->p = prop_remove(v->sql->sa, l->p, p);
 			if (!find_prop(rel->p, PROP_REMOTE)) {
 				p->p = rel->p;
 				rel->p = p;
@@ -463,7 +463,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-				l->p = prop_remove(l->p, p);
+				l->p = prop_remove(v->sql->sa, l->p, p);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					p->p = rel->p;
 					rel->p = p;
@@ -477,8 +477,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 				/* if there are common uris pull the REMOTE prop with the common uris up */
 				if (!list_empty(uris)) {
-					l->p = prop_remove(l->p, pl);
-					r->p = prop_remove(r->p, pr);
+					l->p = prop_remove(v->sql->sa, l->p, pl);
+					r->p = prop_remove(v->sql->sa, r->p, pr);
 					if (!find_prop(rel->p, PROP_REMOTE)) {
 						/* remove local tid ONLY if no subtree has local parts */
 						if (pl->id == 0 || pr->id == 0)

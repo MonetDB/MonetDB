@@ -195,7 +195,7 @@ destroy_sql_rel_view(void *gdata, void *data)
 {
 	(void)gdata;
 	sql_rel_view *srv = (sql_rel_view*) data;
-	rel_destroy(srv->rel_view);
+	rel_destroy(NULL, srv->rel_view);
 	_DELETE(srv->name);
 	_DELETE(srv);
 }
@@ -542,7 +542,7 @@ stack_update_rel_view(mvc *sql, const char *name, sql_rel *view)
 				sql_rel_view *var = (sql_rel_view*) n->data;
 				assert(var->name);
 				if (!strcmp(var->name, name)) {
-					rel_destroy(var->rel_view);
+					rel_destroy(sql, var->rel_view);
 					var->rel_view = view;
 					return;
 				}

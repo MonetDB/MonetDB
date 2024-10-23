@@ -220,9 +220,9 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 				exp_prop_alias(v->sql->sa, a, e);
 				list_append(nexps, a);
 			}
-			rel_destroy(rel->l);
+			rel_destroy(v->sql, rel->l);
 			if (is_innerjoin(rel->op)) {
-				rel_destroy(rel->r);
+				rel_destroy(v->sql, rel->r);
 				rel->r = NULL;
 				rel->op = op_select;
 			}

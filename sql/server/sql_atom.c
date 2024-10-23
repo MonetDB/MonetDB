@@ -1291,3 +1291,14 @@ atom_max_value(allocator *sa, sql_subtype *tpe)
 
 	return res;
 }
+
+void
+free_atom(allocator *sa, atom *a)
+{
+	if (!a) return;
+	if (a->tpe.type) {
+		// FIX free sql_type
+		a->tpe.type = NULL;
+	}
+	sa_free(sa, a);
+}

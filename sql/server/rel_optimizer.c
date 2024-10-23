@@ -559,8 +559,8 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 				rel->card = exps_card(nrel->exps);
 			}
 			/* make sure that we do NOT destroy the subrels */
-			nrel->l = nrel->r = NULL;
-			rel_destroy(nrel);
+			nrel->l = nrel->r = nrel->exps = NULL;
+			rel_destroy(v->sql, nrel);
 			v->changes++;
 		}
 	}

@@ -1218,7 +1218,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 				if (changed) {
 					rel->l = r->l;
 					r->l = NULL;
-					rel_destroy(r);
+					rel_destroy(v->sql, r);
 					v->changes++;
 					return rel;
 				}
@@ -1352,7 +1352,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 
 			/* zap names */
 			rel_no_rename_exps(u->exps);
-			rel_destroy(ou);
+			rel_destroy(v->sql, ou);
 
 			ur = rel_project(v->sql->sa, u, exps_alias(v->sql, r->exps));
 			ur->r = r->r;
@@ -1361,7 +1361,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			if (need_distinct(r))
 				set_distinct(ur);
 
-			rel_destroy(r);
+			rel_destroy(v->sql, r);
 			rel->l = ur;
 			v->changes++;
 			return rel;

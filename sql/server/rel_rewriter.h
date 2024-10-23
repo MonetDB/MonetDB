@@ -35,7 +35,7 @@ try_remove_empty_select(visitor *v, sql_rel *rel)
 	if (is_select(rel->op) && !(rel_is_ref(rel)) && list_empty(rel->exps)) {
 		sql_rel *l = rel->l;
 		rel->l = NULL;
-		rel_destroy(rel);
+		rel_destroy(v->sql, rel);
 		v->changes++;
 		rel = l;
 	}
