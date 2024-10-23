@@ -403,7 +403,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 							mut_val = yyjson_mut_int(cxt->mutable_doc, num.lnum);
 						break;
 					case jpiString:
-						mut_val = yyjson_mut_str(cxt->mutable_doc, jspGetString(jsp, NULL)); //TODO use _set_ for immutables
+						mut_val = yyjson_mut_str(cxt->mutable_doc, jspGetString(jsp, NULL));
 						break;
 					case jpiVariable:
 						{
@@ -798,7 +798,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						assert (yyjson_get_subtype(jb) == YYJSON_SUBTYPE_REAL);
 						val = yyjson_get_real(jb);
 					}
-					// TODO errors
 					if (isinf(val) || isnan(val))
 						RETURN_ERROR(ereport(ERROR,
 											 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
@@ -817,7 +816,12 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 					const char *tmp = yyjson_get_str(jb);
 					size_t len = sizeof(dbl);
 					dbl* pval = &val;
-					(void) dblFromStr(tmp, &len, &pval, true); /*TODO error handling*/
+
+					if (dblFromStr(tmp, &len, &pval, true) < 0)
+						RETURN_ERROR(ereport(ERROR,
+											(errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
+											errmsg("%s is not allowed for jsonpath item method .%s()",
+													tmp, jspOperationName(jsp->type)))));
 
 					if (isinf(val) || isnan(val))
 						RETURN_ERROR(ereport(ERROR,
@@ -923,8 +927,10 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						datum = (lng) dval;
 					}
 					else {
-						snprintf(cxt->_errmsg, 1024, "string %s does not represent valid number", src);
-						return jperError;
+						RETURN_ERROR(ereport(ERROR,
+											(errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
+											errmsg("%s is not allowed for jsonpath item method .%s()",
+													src, jspOperationName(jsp->type)))));
 					}
 					res = jperOk;
 				}
@@ -973,7 +979,11 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 					const char *tmp = yyjson_get_str(jb);
 					size_t len = sizeof(bit);
 					bit* pbval = (bit*) &bval;
-					/*TODO error handling*/(void) bitFromStr(tmp, &len, &pbval, true);
+					if (bitFromStr(tmp, &len, &pbval, true) < 0)
+						RETURN_ERROR(ereport(ERROR,
+											(errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
+											errmsg("%s is not allowed for jsonpath item method .%s()",
+													tmp, jspOperationName(jsp->type)))));
 				}
 
 				if (res == jperNotFound)
@@ -1017,7 +1027,8 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 					dbl* pnum = &num;
 					if (dblFromStr(numstr, &len, &pnum, true) < 0)
 						res = jperNotFound;
-					res = jperOk;
+					else
+						res = jperOk;
 				}
 
 				if (res == jperNotFound)
@@ -1058,7 +1069,12 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 					const char* tmp = yyjson_get_str(jb);
 					size_t len = sizeof(lng);
 					lng* pdatum = &datum;
-					(void) lngFromStr(tmp, &len, &pdatum, true);
+
+					if (lngFromStr(tmp, &len, &pdatum, true) < 0)
+						RETURN_ERROR(ereport(ERROR,
+											(errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
+											errmsg("%s is not allowed for jsonpath item method .%s()",
+													tmp, jspOperationName(jsp->type)))));
 					res = jperOk;
 				}
 
