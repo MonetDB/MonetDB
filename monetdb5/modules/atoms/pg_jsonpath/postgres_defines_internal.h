@@ -46,7 +46,7 @@ pg_strtoint32(const char *s)
 	return res;
 }
 
-#define check_stack_depth()		/* TODO */
+#define check_stack_depth(result) if (THRhighwater()) {snprintf(cxt->_errmsg, 1024, "stack overflow"); return (res = result);}
 #define CHECK_FOR_INTERRUPTS()	/* TODO */
 
 #define DatumGetNumeric(X) (X)

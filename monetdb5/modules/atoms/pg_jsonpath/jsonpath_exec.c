@@ -360,7 +360,7 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	JsonPathExecResult res = jperNotFound;
 	JsonBaseObjectInfo baseObject;
 
-	check_stack_depth();
+	check_stack_depth(jperError);
 	CHECK_FOR_INTERRUPTS();
 
 	switch (jsp->type)
@@ -1255,7 +1255,7 @@ executeBoolItem(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	JsonPathBool res2;
 
 	/* since this function recurses, it could be driven to stack overflow */
-	check_stack_depth();
+	check_stack_depth(jpbUnknown);
 
 	if (!canHaveNext && jspHasNext(jsp)) {
 		elog(ERROR, "boolean jsonpath item cannot have next item");
@@ -1409,7 +1409,7 @@ executeAnyItem(JsonPathExecContext *cxt, JsonPathItem *jsp, JsonbValue *jbc,
 {
 	JsonPathExecResult res = jperNotFound;
 
-	check_stack_depth();
+	check_stack_depth(jperError);
 
 	if (level > last)
 		return res;
@@ -1890,9 +1890,9 @@ executeKeyValueMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	yyjson_mut_val * idstr =  yyjson_mut_strcpy(cxt->mutable_doc, "id");
 
 	/* construct object id from its base object and offset inside that */
-	yyjson_mut_val * id =  yyjson_mut_uint(cxt->mutable_doc, 0 /*TODO either generate proper object id's or remove this from the feature*/);
+
 	yyjson_obj_iter obj_iter = yyjson_obj_iter_with(jbc);
-	
+	lng cnt = 0;
 
 	while ((key = yyjson_obj_iter_next(&obj_iter)))
 	{
@@ -1908,10 +1908,11 @@ executeKeyValueMethod(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		yyjson_mut_val* mut_obj = yyjson_mut_obj (cxt->mutable_doc);
 		yyjson_mut_val* mut_val = yyjson_val_mut_copy(cxt->mutable_doc, val);
 		yyjson_mut_val* mut_key = yyjson_val_mut_copy(cxt->mutable_doc, key);
+		yyjson_mut_val * mut_id =  yyjson_mut_int(cxt->mutable_doc, cnt++);
 
-		(void) yyjson_mut_obj_add(mut_obj, keystr, mut_key); // TODO: error handling
-		(void) yyjson_mut_obj_add(mut_obj, valstr, mut_val); // TODO: error handling
-		(void) yyjson_mut_obj_add(mut_obj, idstr, id); // TODO: error handling
+		(void) yyjson_mut_obj_add(mut_obj, keystr, mut_key); // TODO: yyjson_mem: handle memory allocation errors
+		(void) yyjson_mut_obj_add(mut_obj, valstr, mut_val);
+		(void) yyjson_mut_obj_add(mut_obj, idstr, mut_id);
 
 		yyjson_doc* doc = yyjson_mut_val_imut_copy(mut_obj, cxt->alc);
 		yyjson_val* obj = yyjson_doc_get_root(doc);
@@ -2470,15 +2471,9 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 		wrap = true;
 	else if (wrapper == JSW_CONDITIONAL)
 		wrap = count > 1;
-	else
-	{
-		elog(ERROR, "unrecognized json wrapper %d", (int) wrapper);
-		return NULL; // TODO I don't think it can happen
-		wrap = false;
-	}
 
 	if (wrap)
-		return wrapItemsInArray(alc, &found); // TODO track the yyjson_doc
+		return wrapItemsInArray(alc, &found);
 
 	/* No wrapping means only one item is expected. */
 	if (count > 1)
@@ -2507,7 +2502,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 	}
 
 	if (singleton)
-		return singleton; // TODO track the yyjson_doc
+		return singleton;
 
 	*empty = true;
 	return NULL;
