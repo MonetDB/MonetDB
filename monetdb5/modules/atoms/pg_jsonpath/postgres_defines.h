@@ -38,7 +38,7 @@ enum jbvType
 };
 
 // postgres_ext.h
-typedef unsigned int Oid; // TODO: remove this type
+typedef unsigned int Oid;
 
 typedef struct {
 	union {

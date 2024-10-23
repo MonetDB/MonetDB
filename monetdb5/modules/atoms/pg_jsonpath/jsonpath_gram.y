@@ -379,7 +379,7 @@ method:
 static JsonPathParseItem *
 makeItemType(JsonPathItemType type)
 {
-	JsonPathParseItem *v = palloc(sizeof(*v));
+	JsonPathParseItem *v = palloc(sizeof(*v)); // TODO: palloc should use the context allocator
 
 	CHECK_FOR_INTERRUPTS();
 

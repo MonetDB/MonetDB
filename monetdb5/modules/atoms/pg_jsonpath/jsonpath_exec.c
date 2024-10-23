@@ -837,7 +837,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		case jpiTimestamp:
 		case jpiTimestampTz:
 			assert (0);
-			// TODO: remove datetime functionality
 			return jperError;
 
 		case jpiKeyValue:
@@ -1583,7 +1582,7 @@ Numeric yyjson2Numeric(JsonbValue* val) {
 	return num;
 }
 
-static inline // TODO: replace Numeric with yyjson where possible
+static inline
 JsonbValue* Numeric2yyjson(JsonPathExecContext *cxt, Numeric num) {
 	yyjson_mut_val* mut_jbv;
 
@@ -2132,7 +2131,7 @@ compareItems(JsonPathExecContext *cxt, int32 op, JsonbValue *jb1, JsonbValue *jb
 		case jbvDatetime:
 			{
 				(void) useTz;
-				assert(0); // TODO not implemented
+				assert(0);
 				return jpbUnknown;
 			}
 			break;
