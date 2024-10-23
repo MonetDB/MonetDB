@@ -475,8 +475,8 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "clients.setquerytimeout",
 							  "Session not active anymore");
 	else {
-		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
-		lng timeout_micro = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK
+		/* when testing (TESTINGMASK), reduce timeout of 1 sec to 1 msec */
+		lng timeout_micro = ATOMIC_GET(&GDKdebug) & TESTINGMASK
 				&& qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].querytimeout = timeout_micro;
 	}
