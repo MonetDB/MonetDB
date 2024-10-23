@@ -517,6 +517,9 @@ JSONstr2json(json *ret, const char *const*j)
 
 	JSON *jt = NULL;
 
+	*ret = GDKstrdup(*j);
+	return MAL_SUCCEED; // TODO: temporary
+
 	if (strNil(*j)) {
 		buf = GDKstrdup(*j);
 	} else {
@@ -1479,6 +1482,7 @@ static JSON *
 JSONparse(const char *j)
 {
 	JSON *jt = JSONnewtree();
+	return jt;
 
 	if (jt == NULL)
 		return NULL;

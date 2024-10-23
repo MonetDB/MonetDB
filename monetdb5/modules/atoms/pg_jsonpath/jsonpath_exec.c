@@ -515,11 +515,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 			{
 				bool		hasNext = (elem = jsp->next);
 
-				if (JsonbType(jb) != jbvBinary) {
-					elog(ERROR, "invalid jsonb object type: %d", JsonbType(jb));
-					return jperError;
-				}
-
 				return executeAnyItem
 					(cxt, hasNext ? elem : NULL,
 					 jb, found, 1, 1, 1,
@@ -669,14 +664,13 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 						break;
 				}
 
-				if (JsonbType(jb) == jbvBinary)
-					res = executeAnyItem
-						(cxt, hasNext ? elem : NULL,
-						 jb, found,
-						 1,
-						 jsp->value .anybounds.first,
-						 jsp->value .anybounds.last,
-						 true, jspAutoUnwrap(cxt));
+				res = executeAnyItem
+					(cxt, hasNext ? elem : NULL,
+						jb, found,
+						1,
+						jsp->value .anybounds.first,
+						jsp->value .anybounds.last,
+						true, jspAutoUnwrap(cxt));
 				break;
 			}
 
@@ -1127,7 +1121,6 @@ executeItemOptUnwrapTarget(JsonPathExecContext *cxt, JsonPathItem *jsp,
 					case jbvNull:
 					case jbvArray:
 					case jbvObject:
-					case jbvBinary:
 						RETURN_ERROR(ereport(ERROR,
 											 (errcode(ERRCODE_NON_NUMERIC_SQL_JSON_ITEM),
 											  errmsg("jsonpath item method .%s() can only be applied to a boolean, string, numeric, or datetime value",
@@ -1220,8 +1213,6 @@ executeItemOptUnwrapResult(JsonPathExecContext *cxt, JsonPathItem *jsp,
 		JsonValueListInitIterator(&seq, &it);
 		while ((item = JsonValueListNext(&seq, &it)))
 		{
-			// TODO get rid of jbvBinary
-
 			if (JsonbType(item) == jbvArray)
 				executeItemUnwrapTargetArray(cxt, NULL, item, found, false);
 			else
@@ -2151,7 +2142,6 @@ compareItems(JsonPathExecContext *cxt, int32 op, JsonbValue *jb1, JsonbValue *jb
 			}
 			break;
 
-		case jbvBinary:
 		case jbvArray:
 		case jbvObject:
 			return jpbUnknown;	/* non-scalars are not comparable */
@@ -2330,7 +2320,7 @@ JsonValueListNext(const JsonValueList *jvl, JsonValueListIterator *it)
 }
 
 /*
- * Returns jbv* type of JsonbValue. Note, it never returns jbvBinary as is.
+ * Returns jbv* type of JsonbValue.
  */
 static int
 JsonbType(JsonbValue *jb)

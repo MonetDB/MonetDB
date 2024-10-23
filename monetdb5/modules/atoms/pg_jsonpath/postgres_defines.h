@@ -29,8 +29,6 @@ enum jbvType
 	/* Composite types */
 	jbvArray = 0x10,
 	jbvObject,
-	/* Binary (i.e. struct Jsonb) jbvArray/jbvObject */
-	jbvBinary,
 
 	/*
 	 * Virtual types.
