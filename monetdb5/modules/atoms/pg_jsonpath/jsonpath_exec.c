@@ -1661,19 +1661,22 @@ executeBinaryArithmExpr(JsonPathExecContext *cxt, JsonPathItem *jsp,
 	if (jspThrowErrors(cxt))
 	{
 		res = func(yyjson2Numeric(lval), yyjson2Numeric(rval), NULL);
-		// TODO: throw error
+		if (!res.type)
+			RETURN_ERROR(ereport(ERROR,
+								(errcode(ERRCODE_MONETDB_FUNCTION_CALL_WENT_WRONG),
+								errmsg("function call went wrong %s",
+										jspOperationName(jsp->type)))));
 	}
 	else
 	{
 		bool		error = false;
 		res = func(yyjson2Numeric(lval), yyjson2Numeric(rval), &error);
-
 		if (error)
 			return jperError;
 	}
 
 	if (!(elem = jsp->next) && !found)
-		return jperOk; // TODO: weird why do func if not using the result perhaps check when found is empty
+		return jperOk; // NOTE: this looks weird: why do func if not using the result. Perhaps to generate the error
 
 	lval = Numeric2yyjson(cxt, res);
 	

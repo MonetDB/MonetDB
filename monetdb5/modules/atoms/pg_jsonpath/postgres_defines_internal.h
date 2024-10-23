@@ -300,11 +300,11 @@ numeric_div_opt_error(Numeric num1, Numeric num2, bool *have_error)
 static inline Numeric
 numeric_mod_opt_error(Numeric num1, Numeric num2, bool *have_error)
 {
-	(void) have_error;
 	Numeric res = {0};
 	if (num1.type == YYJSON_SUBTYPE_REAL || num2.type == YYJSON_SUBTYPE_REAL) {
-		// TODO: handle have_error == NULL
-		*have_error = true;
+		if (have_error)
+			*have_error = true;
+		return res;
 	}
 	res.type = YYJSON_SUBTYPE_SINT; /*cast all other cases as lng for now*/
 	res.dnum = Numeric_get_as_lng(&num1) % Numeric_get_as_lng(&num2);
