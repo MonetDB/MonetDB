@@ -492,9 +492,7 @@ makeItemUnary(JsonPathItemType type, JsonPathParseItem *a)
 	if (type == jpiMinus && a->type == jpiNumeric && !a->next)
 	{
 		v = makeItemType(jpiNumeric);
-		v->value.numeric =
-			DatumGetNumeric(DirectFunctionCall1(numeric_uminus,
-												NumericGetDatum(a->value.numeric)));
+		v->value.numeric = numeric_uminus(a->value.numeric);
 		return v;
 	}
 

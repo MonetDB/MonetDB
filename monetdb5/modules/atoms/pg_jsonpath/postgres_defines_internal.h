@@ -49,15 +49,6 @@ pg_strtoint32(const char *s)
 #define check_stack_depth(result) if (THRhighwater()) {snprintf(cxt->_errmsg, 1024, "stack overflow"); return (res = result);}
 #define CHECK_FOR_INTERRUPTS()	/* TODO */
 
-#define DatumGetNumeric(X) (X)
-#define numeric_in atoi
-#define DirectFunctionCall3(func, A, B, C) 	func(A)
-#define CStringGetDatum(X)	(X)
-#define ObjectIdGetDatum(X)	(X)
-#define Int32GetDatum(X)	(X)
-#define DirectFunctionCall1(func, A)	(func A)
-#define NumericGetDatum(X) (X)
-
 
 #define for_each_from(cell, list, N) \
 cell = list->h; \

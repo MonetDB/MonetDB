@@ -14,8 +14,6 @@
 typedef uint32_t uint32;
 typedef int int32;
 typedef sht int16;
-typedef uint16_t uint16;
-typedef lng int64;
 
 
 // jsonb.h
@@ -39,9 +37,6 @@ enum jbvType
 	jbvDatetime = 0x20,
 };
 
-// postgres.h
-typedef uintptr_t Datum; // TODO: remove this type
-
 // postgres_ext.h
 typedef unsigned int Oid; // TODO: remove this type
 
@@ -64,8 +59,6 @@ typedef enum JsonWrapper
 	JSW_CONDITIONAL,
 	JSW_UNCONDITIONAL,
 } JsonWrapper;
-
-#define DatumGetJsonbP(jb) ((JsonbValue*) jb)
 
 typedef yyjson_val Jsonb;
 

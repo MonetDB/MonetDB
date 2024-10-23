@@ -148,16 +148,7 @@ typedef struct JsonValueListIterator
 
 /* Structures for JSON_TABLE execution  */
 
-/*
- * Struct holding the result of jsonpath evaluation, to be used as source row
- * for JsonTableGetValue() which in turn computes the values of individual
- * JSON_TABLE columns.
- */
-typedef struct JsonTablePlanRowSource
-{
-	Datum		value;
-	bool		isnull;
-} JsonTablePlanRowSource;
+
 
 /* strict/lax flags is decomposed into four [un]wrap/error flags */
 #define jspStrictAbsenceOfErrors(cxt)	(!(cxt)->laxMode)
@@ -234,7 +225,7 @@ static JsonbValue *GetJsonPathVar(void *cxt , yyjson_alc* alc, char *varName, in
 								  JsonbValue **baseObject, int *baseObjectId);
 static int	CountJsonPathVars(void *cxt);
 static yyjson_mut_val*
-JsonItemFromDatum(Datum val, Oid typid, int32 typmod, yyjson_mut_doc* mutable_doc);
+JsonItemFromDatum(void* val, Oid typid, int32 typmod, yyjson_mut_doc* mutable_doc);
 static int	JsonbArraySize(JsonbValue *jb);
 static JsonPathBool executeComparison(JsonPathItem *cmp, JsonbValue *lv,
 									  JsonbValue *rv, void *p);
@@ -2030,7 +2021,7 @@ CountJsonPathVars(void *cxt)
  * datum value of the specified type.
  */
 static yyjson_mut_val*
-JsonItemFromDatum(Datum val, Oid typid, int32 typmod, yyjson_mut_doc* mutable_doc)
+JsonItemFromDatum(void* val, Oid typid, int32 typmod, yyjson_mut_doc* mutable_doc)
 {
 	(void) val; (void) typid; (void) typmod; (void) mutable_doc;
 	assert(0);
@@ -2209,7 +2200,7 @@ getArrayIndex(JsonPathExecContext *cxt, JsonPathItem *jsp, JsonbValue *jb,
 	JsonbValue *jbv;
 	JsonValueList found = {0};
 	JsonPathExecResult res = executeItem(cxt, jsp, jb, &found);
-	Datum		numeric_index;
+	lng		numeric_index;
 	bool		have_error = false;
 
 	if (jperIsError(res))
@@ -2221,7 +2212,7 @@ getArrayIndex(JsonPathExecContext *cxt, JsonPathItem *jsp, JsonbValue *jb,
 							 (errcode(ERRCODE_INVALID_SQL_JSON_SUBSCRIPT),
 							  errmsg("jsonpath array subscript is not a single numeric value"))));
 
-	numeric_index = (Datum) yyjson_get_int(jbv);
+	numeric_index = yyjson_get_int(jbv);
 	*index = (int) numeric_index;
 
 	if (have_error)
@@ -2385,7 +2376,7 @@ wrapItemsInArray(yyjson_alc* alc, const JsonValueList *items)
  * *error to true.
  */
 bool
-JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc, char* errmsg)
+JsonPathExists(JsonbValue*	jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc, char* errmsg)
 {
 	JsonPathExecResult res;
 
@@ -2397,7 +2388,7 @@ JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc,
 
 	res = executeJsonPath(jp, vars,
 						  GetJsonPathVar, CountJsonPathVars,
-						  DatumGetJsonbP(jb), !error, NULL, true, cxt);
+						  jb, !error, NULL, true, cxt);
 	if (!jperIsError(res) || errmsg[0])
 		return false; // throw exception
 
@@ -2416,7 +2407,7 @@ JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc,
  * *error to true.  *empty is set to true if no match is found.
  */
 JsonbValue *
-JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
+JsonPathQuery(JsonbValue* jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 			  bool *error, List *vars,
 			  const char *column_name, yyjson_alc* alc, char* errmsg)
 {
@@ -2434,7 +2425,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
 
 	res = executeJsonPath(jp, vars,
 						  GetJsonPathVar, CountJsonPathVars,
-						  DatumGetJsonbP(jb), !error, &found, true, cxt);
+						  jb, !error, &found, true, cxt);
 	Assert(error || !jperIsError(res));
 	if (error && jperIsError(res))
 	{
@@ -2515,7 +2506,7 @@ JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper, bool *empty,
  * *error to true.  *empty is set to true if no match is found.
  */
 JsonbValue *
-JsonPathValue(Datum jb, JsonPath *jp, bool *empty, bool *error, List *vars,
+JsonPathValue(JsonbValue * jb, JsonPath *jp, bool *empty, bool *error, List *vars,
 			  const char *column_name, yyjson_alc* alc, char* errmsg)
 {
 	JsonbValue *res;
@@ -2530,7 +2521,7 @@ JsonPathValue(Datum jb, JsonPath *jp, bool *empty, bool *error, List *vars,
 	JsonPathExecContext* cxt = &_cxt;
 
 	jper = executeJsonPath(jp, vars, GetJsonPathVar, CountJsonPathVars,
-						   DatumGetJsonbP(jb),
+						   jb,
 						   !error, &found, true, &_cxt);
 
 	Assert(error || !jperIsError(jper));

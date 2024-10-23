@@ -1693,7 +1693,7 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	bool error;
 	List* vars = NULL;
 	const char *column_name = NULL;
-	yyjson_val *res = JsonPathQuery((Datum) root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name, alc, errmsg);
+	yyjson_val *res = JsonPathQuery(root, path, JSW_UNCONDITIONAL, &empty, &error, vars, column_name, alc, errmsg);
 	if (!res && errmsg[0]) {
 		sa_destroy(sa);
 		return createException(MAL, SQLSTATE(HY013), "JsonPathQuery iternal error: %s", errmsg);

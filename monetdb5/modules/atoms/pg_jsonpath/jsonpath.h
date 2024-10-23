@@ -191,17 +191,17 @@ typedef struct JsonPathVariable
 	int			namelen;		/* strlen(name) as cache for GetJsonPathVar() */
 	Oid			typid;
 	int32		typmod;
-	Datum		value;
+	void*		value;
 	bool		isnull;
 } JsonPathVariable;
 
 
 /* SQL/JSON query functions */
-extern bool JsonPathExists(Datum jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc, char* errmsg);
-extern JsonbValue *JsonPathQuery(Datum jb, JsonPath *jp, JsonWrapper wrapper,
+extern bool JsonPathExists(JsonbValue* jb, JsonPath *jp, bool *error, List *vars, yyjson_alc* alc, char* errmsg);
+extern JsonbValue *JsonPathQuery(JsonbValue* jb, JsonPath *jp, JsonWrapper wrapper,
 						   bool *empty, bool *error, List *vars,
 						   const char *column_name, yyjson_alc* alc, char* errmsg);
-extern JsonbValue *JsonPathValue(Datum jb, JsonPath *jp, bool *empty,
+extern JsonbValue *JsonPathValue(JsonbValue* jb, JsonPath *jp, bool *empty,
 								 bool *error, List *vars,
 								 const char *column_name, yyjson_alc* alc, char* errmsg);
 
