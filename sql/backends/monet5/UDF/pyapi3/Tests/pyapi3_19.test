@@ -121,7 +121,7 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL) LANGUAGE P
+CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL(18, 3)) LANGUAGE P
 {
     result = dict();
     result['i'] = numpy.arange(100000, 0, -1);
@@ -136,7 +136,7 @@ CREATE FUNCTION pyapi19_create_table() returns table (i integer, j integer, k do
 }
 
 statement ok
-CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL) LANGUAGE PYTHON_MAP
+CREATE FUNCTION pyapi19_load_table() returns table (i integer, j integer, k double, l float, m smallint, n bigint, o STRING, p DECIMAL(18, 3)) LANGUAGE PYTHON_MAP
 {
     res = _conn.execute('SELECT * FROM pyapi19_integers;')
     return res

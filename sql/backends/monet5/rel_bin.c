@@ -5231,7 +5231,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL, *returning = NULL;
 	int idx_ins = 0, len = 0;
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -5345,6 +5345,20 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!insert)
 		return NULL;
 
+	if (rel->returning) {
+		list* il = sa_list(sql->sa);
+		sql_rel* inner = rel->l;
+		assert(inner->op == op_basetable);
+		for (n = inner->exps->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+			sql_exp* ce	= n->data;
+			stmt* 	ins	= m->data;
+			stmt*	s	= stmt_rename(be, ce, ins);// label each insert statement with the corresponding col exp label
+			append(il, s);
+		}
+		returning = stmt_list(be, il);
+		sql->type = Q_TABLE;
+	}
+
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	/* update predicate list */
@@ -5361,7 +5375,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
 			stmt_add_dependency_change(be, t, ret);
-		return ret;
+		return returning?returning:ret;
 	}
 }
 
@@ -6391,6 +6405,18 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
 	}
 
+	stmt* returning = NULL;
+	if (rel->returning) {
+		sql_rel* b = rel->l;
+		int refcnt = b->ref.refcnt; // HACK: forces recalculation of base columns since they are assumed to be updated
+		b->ref.refcnt = 1;
+		returning = subrel_bin(be, b, refs);
+		b->ref.refcnt = refcnt;
+		returning->cand = tids;
+		returning = subrel_project(be, returning, refs, b);
+		sql->type = Q_TABLE;
+	}
+
 	if (cascade_updates(be, t, tids, updates)) {
 		if (sql->cascade_action)
 			sql->cascade_action = NULL;
@@ -6419,7 +6445,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql->cascade_action = NULL;
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	return cnt;
+	return returning?returning:cnt;
 }
 
 static int
@@ -6637,7 +6663,7 @@ static stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *stdelete = NULL, *tids = NULL;
+	stmt *stdelete = NULL, *tids = NULL, *returning = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
@@ -6654,6 +6680,14 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(rows->type == st_list);
 		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
 	}
+
+	if (rel->returning) {
+		returning = subrel_bin(be, rel->l, refs);
+		returning->cand = tids;
+		returning = subrel_project(be, returning, refs, rel->l);
+		sql->type = Q_TABLE;
+	}
+
 	stdelete = sql_delete(be, t, tids);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
@@ -6662,7 +6696,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	return stdelete;
+	return returning?returning:stdelete;
 }
 
 struct tablelist {
@@ -7500,17 +7534,17 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_insert:
 		s = rel2bin_insert(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_update:
 		s = rel2bin_update(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_delete:
 		s = rel2bin_delete(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_truncate:

@@ -5523,6 +5523,67 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = NULL;
+	str msg = NULL;
+	buffer *b = NULL;
+	stream *s = NULL;
+	char *res = NULL;
+	str *r = getArgReference_str(stk, pci, 0);
+	char *input = *getArgReference_str(stk, pci, 1);
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	list *refs = sa_list(m->sa);
+	if (refs == NULL)
+		goto bailout;
+
+	int pos = 0;
+	sql_rel* rel = rel_read(m, input, &pos, refs);
+	if (!rel)
+		throw(SQL, "SQLread_dump_rel", SQLSTATE(42000) "failed to read relational plan");
+
+	b = buffer_create(1024);
+	if(b == NULL)
+		goto bailout;
+	s = buffer_wastream(b, "exp_dump");
+	if(s == NULL)
+		goto bailout;
+
+	refs = sa_list(m->sa);
+	if (refs == NULL)
+		goto bailout;
+
+	rel_print_refs(m, s, rel, 0, refs, 0);
+	rel_print_(m, s, rel, 0, refs, 0);
+	res = buffer_get_buf(b);
+
+	if (res == NULL)
+		goto bailout;
+	if (!(*r = GDKstrdup(res)))
+		goto bailout;
+
+	free(res);
+	close_stream(s);
+	buffer_destroy(b);
+	return MAL_SUCCEED;
+
+bailout:
+	if (res)
+		free(res);
+	if (s)
+		mnstr_destroy(s);
+	if (b)
+		buffer_destroy(b);
+	throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+}
+
+
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -6455,6 +6516,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "vacuum", SQLstr_auto_vacuum, true, "auto vacuum string column of given table with interval(sec)", args(0,3, arg("sname",str),arg("tname",str),arg("interval", int))),
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
+ pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

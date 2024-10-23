@@ -700,7 +700,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 
 		if (c && isTable(c->t)) {
-			BUN rows = (BUN) store->storage_api.count_col(tr, c, QUICK);
+			BUN rows = (BUN) store->storage_api.count_col(tr, c, RDONLY);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
