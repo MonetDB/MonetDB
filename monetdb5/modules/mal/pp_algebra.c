@@ -2206,6 +2206,15 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
+		} else if (!private && ATOMvarsized(r->ttype) && BATcount(r) && r->tvheap->parentid != r->batCacheid &&
+				r->tvheap->parentid != b->tvheap->parentid) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+			if (unshare_varsized_heap(r) != GDK_SUCCEED) {
+				err = createException(MAL, "pp algebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
+			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
