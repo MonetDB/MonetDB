@@ -174,8 +174,6 @@ extern const char *jspOperationName(JsonPathItemType type);
  * Parsing support data structures.
  */
 
-extern struct Node * init_escontext(char* errmsg);
-
 extern JsonPathParseResult *parsejsonpath(const char *str, int len,
 											allocator* sa, char* errmsg);
 /*

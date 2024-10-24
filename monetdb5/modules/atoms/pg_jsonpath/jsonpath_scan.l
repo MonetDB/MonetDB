@@ -19,29 +19,27 @@
  * NB: include jsonpath_gram.h only AFTER including jsonpath_internal.h,
  * because jsonpath_internal.h contains the declaration for JsonPathString.
  */
-#include "jsonpath_internal.h"
-#include "jsonpath_gram.h"
+
+/* struct JsonPathString is shared between scan and gram */
 }
 
 %{
-static JsonPathString scanstring;
 
-/* Handles to the buffer that the lexer uses internally */
-static YY_BUFFER_STATE scanbufhandle;
-static char *scanbuf;
-static int	scanbuflen;
+#include "jsonpath_internal.h"
 
-static void addstring(bool init, char *s, int l);
-static void addchar(bool init, char c);
-static enum yytokentype checkKeyword(void);
-static bool parseUnicode(char *s, int l, struct Node *escontext);
-static bool parseHexChar(char *s, struct Node *escontext);
-
-#define palloc		GDKmalloc
-#define repalloc	GDKrealloc
-#define pfree		GDKfree
+static void addstring(yyscan_t yyscanner, bool init, char *s, int l);
+static void addchar(yyscan_t yyscanner, bool init, char c);
+static enum yytokentype checkKeyword(yyscan_t yyscanner);
+static bool parseUnicode(yyscan_t yyscanner, char *s, int l, struct Node *escontext);
+static bool parseHexChar(yyscan_t yyscanner, char *s, struct Node *escontext);
 
 /* LCOV_EXCL_START */
+#define YY_USER_INIT (void) result;
+
+typedef struct extra_data {
+	JsonPathString scanstring;
+} extra_data;
+
 
 %}
 
@@ -57,7 +55,8 @@ static bool parseHexChar(char *s, struct Node *escontext);
 %option noyyalloc
 %option noyyrealloc
 %option noyyfree
-
+%option reentrant
+%option extra-type="extra_data *"
 /*
  * We use exclusive states for quoted and non-quoted strings,
  * quoted variable names and C-style comments.
@@ -108,63 +107,63 @@ hex_fail	\\x{hexdigit}{0,1}
 %%
 
 <xnq>{other}+					{
-									addstring(false, yytext, yyleng);
+									addstring(yyscanner, false, yytext, yyleng);
 								}
 
 <xnq>{blank}+					{
-									yylval->str = scanstring;
+									yylval->str = yyextra->scanstring;
 									BEGIN INITIAL;
-									return checkKeyword();
+									return checkKeyword(yyscanner);
 								}
 
 <xnq>\/\*						{
-									yylval->str = scanstring;
+									yylval->str = yyextra->scanstring;
 									BEGIN xc;
 								}
 
 <xnq>({special}|\")				{
-									yylval->str = scanstring;
+									yylval->str = yyextra->scanstring;
 									yyless(0);
 									BEGIN INITIAL;
-									return checkKeyword();
+									return checkKeyword(yyscanner);
 								}
 
 <xnq><<EOF>>					{
-									yylval->str = scanstring;
+									yylval->str = yyextra->scanstring;
 									BEGIN INITIAL;
-									return checkKeyword();
+									return checkKeyword(yyscanner);
 								}
 
-<xnq,xq,xvq>\\b				{ addchar(false, '\b'); }
+<xnq,xq,xvq>\\b				{ addchar(yyscanner, false, '\b'); }
 
-<xnq,xq,xvq>\\f				{ addchar(false, '\f'); }
+<xnq,xq,xvq>\\f				{ addchar(yyscanner, false, '\f'); }
 
-<xnq,xq,xvq>\\n				{ addchar(false, '\n'); }
+<xnq,xq,xvq>\\n				{ addchar(yyscanner, false, '\n'); }
 
-<xnq,xq,xvq>\\r				{ addchar(false, '\r'); }
+<xnq,xq,xvq>\\r				{ addchar(yyscanner, false, '\r'); }
 
-<xnq,xq,xvq>\\t				{ addchar(false, '\t'); }
+<xnq,xq,xvq>\\t				{ addchar(yyscanner, false, '\t'); }
 
-<xnq,xq,xvq>\\v				{ addchar(false, '\v'); }
+<xnq,xq,xvq>\\v				{ addchar(yyscanner, false, '\v'); }
 
 <xnq,xq,xvq>{unicode}+		{
-								if (!parseUnicode(yytext, yyleng, escontext))
+								if (!parseUnicode(yyscanner, yytext, yyleng, escontext))
 									yyterminate();
 							}
 
 <xnq,xq,xvq>{hex_char}		{
-								if (!parseHexChar(yytext, escontext))
+								if (!parseHexChar(yyscanner, yytext, escontext))
 									yyterminate();
 							}
 
 <xnq,xq,xvq>{unicode}*{unicodefail} {
-								jsonpath_yyerror(NULL, escontext,
+								jsonpath_yyerror(yyscanner, NULL, escontext,
 												 "invalid Unicode escape sequence");
 								yyterminate();
 							}
 
 <xnq,xq,xvq>{hex_fail}		{
-								jsonpath_yyerror(NULL, escontext,
+								jsonpath_yyerror(yyscanner, NULL, escontext,
 												 "invalid hexadecimal character sequence");
 								yyterminate();
 							}
@@ -172,37 +171,37 @@ hex_fail	\\x{hexdigit}{0,1}
 <xnq,xq,xvq>{unicode}+\\	{
 								/* throw back the \\, and treat as unicode */
 								yyless(yyleng - 1);
-								if (!parseUnicode(yytext, yyleng, escontext))
+								if (!parseUnicode(yyscanner, yytext, yyleng, escontext))
 									yyterminate();
 							}
 
-<xnq,xq,xvq>\\.				{ addchar(false, yytext[1]); }
+<xnq,xq,xvq>\\.				{ addchar(yyscanner, false, yytext[1]); }
 
 <xnq,xq,xvq>\\				{
-							  jsonpath_yyerror(NULL, escontext,
+							  jsonpath_yyerror(yyscanner, NULL, escontext,
 											   "unexpected end after backslash");
 							  yyterminate();
 							}
 
 <xq,xvq><<EOF>>				{
-							  jsonpath_yyerror(NULL, escontext,
+							  jsonpath_yyerror(yyscanner, NULL, escontext,
 											   "unterminated quoted string");
 							  yyterminate();
 							}
 
 <xq>\"							{
-									yylval->str = scanstring;
+									yylval->str = yyextra->scanstring;
 									BEGIN INITIAL;
 									return STRING_P;
 								}
 
 <xvq>\"							{
-									yylval->str = scanstring;
+									yylval->str = yyextra->scanstring;
 									BEGIN INITIAL;
 									return VARIABLE_P;
 								}
 
-<xq,xvq>[^\\\"]+				{ addstring(false, yytext, yyleng); }
+<xq,xvq>[^\\\"]+				{ addstring(yyscanner, false, yytext, yyleng); }
 
 <xc>\*\/						{ BEGIN INITIAL; }
 
@@ -211,7 +210,7 @@ hex_fail	\\x{hexdigit}{0,1}
 <xc>\*							{ }
 
 <xc><<EOF>>						{
-									jsonpath_yyerror(
+									jsonpath_yyerror(yyscanner,
 										NULL, escontext,
 										"unexpected end of comment");
 									yyterminate();
@@ -239,14 +238,14 @@ hex_fail	\\x{hexdigit}{0,1}
 \>								{ return GREATER_P; }
 
 \${other}+						{
-									addstring(true, yytext + 1, yyleng - 1);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext + 1, yyleng - 1);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return VARIABLE_P;
 								}
 
 \$\"							{
-									addchar(true, '\0');
+									addchar(yyscanner, true, '\0');
 									BEGIN xvq;
 								}
 
@@ -255,89 +254,89 @@ hex_fail	\\x{hexdigit}{0,1}
 {blank}+						{ /* ignore */ }
 
 \/\*							{
-									addchar(true, '\0');
+									addchar(yyscanner, true, '\0');
 									BEGIN xc;
 								}
 
 {real}							{
-									addstring(true, yytext, yyleng);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext, yyleng);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return NUMERIC_P;
 								}
 
 {decimal}						{
-									addstring(true, yytext, yyleng);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext, yyleng);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return NUMERIC_P;
 								}
 
 {decinteger}					{
-									addstring(true, yytext, yyleng);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext, yyleng);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return INT_P;
 								}
 
 {hexinteger}					{
-									addstring(true, yytext, yyleng);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext, yyleng);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return INT_P;
 								}
 
 {octinteger}					{
-									addstring(true, yytext, yyleng);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext, yyleng);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return INT_P;
 								}
 
 {bininteger}					{
-									addstring(true, yytext, yyleng);
-									addchar(false, '\0');
-									yylval->str = scanstring;
+									addstring(yyscanner, true, yytext, yyleng);
+									addchar(yyscanner, false, '\0');
+									yylval->str = yyextra->scanstring;
 									return INT_P;
 								}
 
 {realfail}						{
-									jsonpath_yyerror(
+									jsonpath_yyerror(yyscanner,
 										NULL, escontext,
 										"invalid numeric literal");
 									yyterminate();
 								}
 {decinteger_junk}				{
-									jsonpath_yyerror(
+									jsonpath_yyerror(yyscanner,
 										NULL, escontext,
 										"trailing junk after numeric literal");
 									yyterminate();
 								}
 {decimal_junk}					{
-									jsonpath_yyerror(
+									jsonpath_yyerror(yyscanner,
 										NULL, escontext,
 										"trailing junk after numeric literal");
 									yyterminate();
 								}
 {real_junk}						{
-									jsonpath_yyerror(
+									jsonpath_yyerror(yyscanner,
 										NULL, escontext,
 										"trailing junk after numeric literal");
 									yyterminate();
 								}
 \"								{
-									addchar(true, '\0');
+									addchar(yyscanner, true, '\0');
 									BEGIN xq;
 								}
 
 \\								{
 									yyless(0);
-									addchar(true, '\0');
+									addchar(yyscanner, true, '\0');
 									BEGIN xnq;
 								}
 
 {other}+						{
-									addstring(true, yytext, yyleng);
+									addstring(yyscanner, true, yytext, yyleng);
 									BEGIN xnq;
 								}
 
@@ -348,14 +347,14 @@ hex_fail	\\x{hexdigit}{0,1}
 /* LCOV_EXCL_STOP */
 
 void
-jsonpath_yyerror(JsonPathParseResult **result, struct Node *escontext,
+jsonpath_yyerror(yyscan_t yyscanner, JsonPathParseResult **result, struct Node *escontext,
 				 const char *message)
 {
+	(void) result;
 	/* don't overwrite escontext if it's already been set */
 	if (SOFT_ERROR_OCCURRED(escontext))
 		return;
-
-	if (*yytext == YY_END_OF_BUFFER_CHAR)
+	if (*yyget_text(yyscanner) == YY_END_OF_BUFFER_CHAR)
 	{
 		errsave(escontext,
 				(errcode(ERRCODE_SYNTAX_ERROR),
@@ -368,7 +367,7 @@ jsonpath_yyerror(JsonPathParseResult **result, struct Node *escontext,
 				(errcode(ERRCODE_SYNTAX_ERROR),
 				 /* translator: first %s is typically "syntax error" */
 				 errmsg("%s at or near \"%s\" of jsonpath input",
-						_(message), yytext)));
+						_(message), yyget_text(yyscanner))));
 	}
 }
 
@@ -422,7 +421,7 @@ static const JsonPathKeyword keywords[] = {
 
 /* Check if current scanstring value is a keyword */
 static enum yytokentype
-checkKeyword(void)
+checkKeyword(yyscan_t yyscanner)
 {
 	int			res = IDENT_P;
 	int			diff;
@@ -430,18 +429,18 @@ checkKeyword(void)
 						   *StopHigh = keywords + lengthof(keywords),
 						   *StopMiddle;
 
-	if (scanstring.len > keywords[lengthof(keywords) - 1].len)
+	if (yyget_extra(yyscanner)->scanstring.len > keywords[lengthof(keywords) - 1].len)
 		return res;
 
 	while (StopLow < StopHigh)
 	{
 		StopMiddle = StopLow + ((StopHigh - StopLow) >> 1);
 
-		if (StopMiddle->len == scanstring.len)
-			diff = pg_strncasecmp(StopMiddle->keyword, scanstring.val,
-								  scanstring.len);
+		if (StopMiddle->len == yyget_extra(yyscanner)->scanstring.len)
+			diff = pg_strncasecmp(StopMiddle->keyword, yyget_extra(yyscanner)->scanstring.val,
+								  yyget_extra(yyscanner)->scanstring.len);
 		else
-			diff = StopMiddle->len - scanstring.len;
+			diff = StopMiddle->len - yyget_extra(yyscanner)->scanstring.len;
 
 		if (diff < 0)
 			StopLow = StopMiddle + 1;
@@ -450,8 +449,8 @@ checkKeyword(void)
 		else
 		{
 			if (StopMiddle->lowercase)
-				diff = strncmp(StopMiddle->keyword, scanstring.val,
-							   scanstring.len);
+				diff = strncmp(StopMiddle->keyword, yyget_extra(yyscanner)->scanstring.val,
+							   yyget_extra(yyscanner)->scanstring.len);
 
 			if (diff == 0)
 				res = StopMiddle->val;
@@ -463,107 +462,6 @@ checkKeyword(void)
 	return res;
 }
 
-/*
- * Called before any actual parsing is done
- */
-static void
-jsonpath_scanner_init(const char *str, int slen)
-{
-	if (slen <= 0)
-		slen = strlen(str);
-
-	/*
-	 * Might be left over after ereport()
-	 */
-	yy_init_globals();
-
-	/*
-	 * Make a scan buffer with special termination needed by flex.
-	 */
-
-	scanbuflen = slen;
-	scanbuf = palloc(slen + 2);
-	memcpy(scanbuf, str, slen);
-	scanbuf[slen] = scanbuf[slen + 1] = YY_END_OF_BUFFER_CHAR;
-	scanbufhandle = yy_scan_buffer(scanbuf, slen + 2);
-
-	BEGIN(INITIAL);
-}
-
-
-/*
- * Called after parsing is done to clean up after jsonpath_scanner_init()
- */
-static void
-jsonpath_scanner_finish(void)
-{
-	yy_delete_buffer(scanbufhandle);
-	pfree(scanbuf);
-}
-
-/*
- * Resize scanstring so that it can append string of given length.
- * Reinitialize if required.
- */
-static void
-resizeString(bool init, int appendLen)
-{
-	if (init)
-	{
-		scanstring.total = Max(32, appendLen);
-		scanstring.val = (char *) palloc(scanstring.total);
-		scanstring.len = 0;
-	}
-	else
-	{
-		if (scanstring.len + appendLen >= scanstring.total)
-		{
-			while (scanstring.len + appendLen >= scanstring.total)
-				scanstring.total *= 2;
-			scanstring.val = repalloc(scanstring.val, scanstring.total);
-		}
-	}
-}
-
-/* Add set of bytes at "s" of length "l" to scanstring */
-static void
-addstring(bool init, char *s, int l)
-{
-	resizeString(init, l + 1);
-	memcpy(scanstring.val + scanstring.len, s, l);
-	scanstring.len += l;
-}
-
-/* Add single byte "c" to scanstring */
-static void
-addchar(bool init, char c)
-{
-	resizeString(init, 1);
-	scanstring.val[scanstring.len] = c;
-	if (c != '\0')
-		scanstring.len++;
-}
-
-/* initial jsonpath parser context */
-struct Node *
-init_escontext(char* errmsg)
-{
-	struct Node * escontext = GDKmalloc(sizeof(struct Node));
-
-	if (!escontext)
-		return NULL;
-
-	escontext->sa = sa_create(NULL);
-
-	if (!escontext->sa) {
-		GDKfree(escontext);
-		return NULL;
-	}
-
-	escontext->_errmsg = errmsg;
-
-	return escontext;
-}
 
 /* Interface to jsonpath parser */
 JsonPathParseResult *
@@ -574,19 +472,72 @@ parsejsonpath(const char *str, int len, allocator* sa, char* errmsg)
 	escontext._errmsg = errmsg;
 	JsonPathParseResult	*parseresult;
 
-	jsonpath_scanner_init(str, len);
+	yyscan_t yyscanner = NULL;
+	extra_data ed = {0};
 
-	if (jsonpath_yyparse((void *) &parseresult, &escontext) != 0)
-		jsonpath_yyerror(NULL, &escontext, "invalid input"); /* shouldn't happen */
+	yylex_init_extra(&ed, &yyscanner);
 
-	jsonpath_scanner_finish();
+	if (len <= 0)
+		len = strlen(str);
+	yy_scan_bytes(str, len, yyscanner);
+
+	if (jsonpath_yyparse(yyscanner, (void *) &parseresult, &escontext) != 0)
+		jsonpath_yyerror(yyscanner, NULL, &escontext, "invalid input"); /* shouldn't happen */
+
+	GDKfree(ed.scanstring.val);
+
+	yylex_destroy(yyscanner);
 
 	return parseresult;
 }
 
+/*
+ * Resize yyget_extra(yyscanner)->scanstring so that it can append string of given length.
+ * Reinitialize if required.
+ */
+static void
+resizeString(yyscan_t yyscanner, bool init, int appendLen)
+{
+	if (init)
+	{
+		yyget_extra(yyscanner)->scanstring.total = Max(32, appendLen);
+		yyget_extra(yyscanner)->scanstring.val = (char *) GDKmalloc(yyget_extra(yyscanner)->scanstring.total);
+		yyget_extra(yyscanner)->scanstring.len = 0;
+	}
+	else
+	{
+		if (yyget_extra(yyscanner)->scanstring.len + appendLen >= yyget_extra(yyscanner)->scanstring.total)
+		{
+			while (yyget_extra(yyscanner)->scanstring.len + appendLen >= yyget_extra(yyscanner)->scanstring.total)
+				yyget_extra(yyscanner)->scanstring.total *= 2;
+			yyget_extra(yyscanner)->scanstring.val = GDKrealloc(yyget_extra(yyscanner)->scanstring.val, yyget_extra(yyscanner)->scanstring.total);
+		}
+	}
+}
+
+/* Add set of bytes at "s" of length "l" to yyget_extra(yyscanner)->scanstring */
+static void
+addstring(yyscan_t yyscanner, bool init, char *s, int l)
+{
+	resizeString(yyscanner, init, l + 1);
+	memcpy(yyget_extra(yyscanner)->scanstring.val + yyget_extra(yyscanner)->scanstring.len, s, l);
+	yyget_extra(yyscanner)->scanstring.len += l;
+}
+
+/* Add single byte "c" to yyget_extra(yyscanner)->scanstring */
+static void
+addchar(yyscan_t yyscanner, bool init, char c)
+{
+	resizeString(yyscanner, init, 1);
+	yyget_extra(yyscanner)->scanstring.val[yyget_extra(yyscanner)->scanstring.len] = c;
+	if (c != '\0')
+		yyget_extra(yyscanner)->scanstring.len++;
+}
+
+
 /* Turn hex character into integer */
 static bool
-hexval(char c, int *result, struct Node *escontext)
+hexval(yyscan_t yyscanner, char c, int *result, struct Node *escontext)
 {
 	if (c >= '0' && c <= '9')
 	{
@@ -603,13 +554,13 @@ hexval(char c, int *result, struct Node *escontext)
 		*result = c - 'A' + 0xA;
 		return true;
 	}
-	jsonpath_yyerror(NULL, escontext, "invalid hexadecimal digit");
+	jsonpath_yyerror(yyscanner, NULL, escontext, "invalid hexadecimal digit");
 	return false;
 }
 
 /* Add given unicode character to scanstring */
 static bool
-addUnicodeChar(int ch, struct Node *escontext)
+addUnicodeChar(yyscan_t yyscanner, int ch, struct Node *escontext)
 {
 	if (ch == 0)
 	{
@@ -632,14 +583,14 @@ addUnicodeChar(int ch, struct Node *escontext)
 			ereturn(escontext, false,
 					(errcode(ERRCODE_SYNTAX_ERROR),
 					 errmsg("could not convert Unicode to server encoding")));
-		addstring(false, cbuf, strlen(cbuf));
+		addstring(yyscanner, false, cbuf, strlen(cbuf));
 	}
 	return true;
 }
 
 /* Add unicode character, processing any surrogate pairs */
 static bool
-addUnicode(int ch, int *hi_surrogate, struct Node *escontext)
+addUnicode(yyscan_t yyscanner, int ch, int *hi_surrogate, struct Node *escontext)
 {
 	if (is_utf16_surrogate_first(ch))
 	{
@@ -672,7 +623,7 @@ addUnicode(int ch, int *hi_surrogate, struct Node *escontext)
 						   "surrogate.")));
 	}
 
-	return addUnicodeChar(ch, escontext);
+	return addUnicodeChar(yyscanner, ch, escontext);
 }
 
 /*
@@ -680,7 +631,7 @@ addUnicode(int ch, int *hi_surrogate, struct Node *escontext)
  * src/backend/utils/adt/json.c
  */
 static bool
-parseUnicode(char *s, int l, struct Node *escontext)
+parseUnicode(yyscan_t yyscanner, char *s, int l, struct Node *escontext)
 {
 	int			i = 2;
 	int			hi_surrogate = -1;
@@ -694,7 +645,7 @@ parseUnicode(char *s, int l, struct Node *escontext)
 		{
 			while (s[++i] != '}' && i < l)
 			{
-				if (!hexval(s[i], &si, escontext))
+				if (!hexval(yyscanner, s[i], &si, escontext))
 					return false;
 				ch = (ch << 4) | si;
 			}
@@ -704,13 +655,13 @@ parseUnicode(char *s, int l, struct Node *escontext)
 		{
 			for (j = 0; j < 4 && i < l; j++)
 			{
-				if (!hexval(s[i++], &si, escontext))
+				if (!hexval(yyscanner, s[i++], &si, escontext))
 					return false;
 				ch = (ch << 4) | si;
 			}
 		}
 
-		if (! addUnicode(ch, &hi_surrogate, escontext))
+		if (! addUnicode(yyscanner, ch, &hi_surrogate, escontext))
 			return false;
 	}
 
@@ -728,42 +679,41 @@ parseUnicode(char *s, int l, struct Node *escontext)
 
 /* Parse sequence of hex-encoded characters */
 static bool
-parseHexChar(char *s, struct Node *escontext)
+parseHexChar(yyscan_t yyscanner, char *s, struct Node *escontext)
 {
 	int s2, s3, ch;
-	if (!hexval(s[2], &s2, escontext))
+	if (!hexval(yyscanner, s[2], &s2, escontext))
 		return false;
-	if (!hexval(s[3], &s3, escontext))
+	if (!hexval(yyscanner, s[3], &s3, escontext))
 		return false;
 
 	ch = (s2 << 4) | s3;
 
-	return addUnicodeChar(ch, escontext);
+	return addUnicodeChar(yyscanner, ch, escontext);
 }
 
 /*
- * Interface functions to make flex use palloc() instead of malloc().
+ * Interface functions to make flex use GDKmalloc() instead of malloc().
  * It'd be better to make these static, but flex insists otherwise.
  */
 
 void *
-jsonpath_yyalloc(yy_size_t bytes)
+jsonpath_yyalloc(yy_size_t bytes, yyscan_t yyscanner)
 {
-	return palloc(bytes);
+	(void) yyscanner;
+	return GDKmalloc(bytes);
 }
 
 void *
-jsonpath_yyrealloc(void *ptr, yy_size_t bytes)
+jsonpath_yyrealloc(void *ptr, yy_size_t bytes, yyscan_t yyscanner)
 {
-	if (ptr)
-		return repalloc(ptr, bytes);
-	else
-		return palloc(bytes);
+	(void) yyscanner;
+	return GDKrealloc(ptr, bytes);;
 }
 
 void
-jsonpath_yyfree(void *ptr)
+jsonpath_yyfree(void *ptr, yyscan_t yyscanner)
 {
-	if (ptr)
-		pfree(ptr);
+	(void) yyscanner;
+	GDKfree(ptr);
 }

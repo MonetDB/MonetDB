@@ -15,6 +15,8 @@
  */
 
 
+typedef void* yyscan_t;
+
 #include "jsonpath_internal.h"
 
 static JsonPathParseItem *makeItemType(struct Node *escontext, JsonPathItemType type);
@@ -50,9 +52,10 @@ static bool makeItemLikeRegex(JsonPathParseItem *expr,
 %}
 
 /* BISON Declarations */
-%pure-parser
+%define api.pure full
 %expect 0
 %name-prefix="jsonpath_yy"
+%param {yyscan_t scanner}
 %parse-param {JsonPathParseResult **result}
 %parse-param {struct Node *escontext}
 %lex-param {JsonPathParseResult **result}
