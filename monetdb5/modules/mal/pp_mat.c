@@ -10,6 +10,8 @@
 
 /*
  * TODO: add some description about these new pipeline structures
+ *
+ * check mat into partitioned set.
  */
 #include "monetdb_config.h"
 #include "mal_exception.h"

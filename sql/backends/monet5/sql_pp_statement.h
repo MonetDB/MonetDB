@@ -14,6 +14,7 @@
 extern InstrPtr stmt_hash_new(backend *be, int tt, lng estimate, int parent);
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
+extern InstrPtr stmt_sop_new(backend *be, int nr_workers);
 
 extern stmt *stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 extern stmt *stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all);
@@ -28,11 +29,19 @@ extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
 extern stmt *stmt_nth_slice(backend *be, stmt *col, int slicer);
 extern stmt *stmt_no_slices(backend *be, stmt *col); /* call mal nr of slices */
 
+extern stmt *pipeline_start(backend *be, int nrparts, int input);
+extern stmt *pipeline_leave(backend *be, stmt *start);
+
 extern stmt *stmt_pp_start_nrparts(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern stmt *stmt_pp_start_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern stmt *stmt_pp_start_generator(backend *ba); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern int stmt_pp_jump(backend *ba, stmt *pp, int nrparts);    /* redo: label := part < nrparts; */
 extern int stmt_pp_end(backend *ba, stmt *pp);    /* exit: label ; */
 extern void pp_cleanup(backend *ba, int var);    /* register to be cleanup variables at end of pipeline block */
+
+extern stmt *stmt_merge(backend *be, stmt *lobc, stmt *robc, bool asc, bool nlast, stmt *zl, stmt *zb, stmt *za);
+extern stmt *stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline);
+
+extern stmt *stmt_pp_alias(backend *be, InstrPtr q, sql_exp *e, int colnr);
 
 #endif /* _SQL_PP_STATEMENT_H_ */

@@ -46,6 +46,7 @@ target_sources(malmodules
   pp_slicer.c
   pp_algebra.c
   pp_mat.c pp_mat.h
+  pp_sort.c
   pipeline.c pipeline.h
   heapn.c)
 

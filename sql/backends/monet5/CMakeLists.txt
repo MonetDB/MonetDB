@@ -147,6 +147,7 @@ target_sources(sql
   bin_partition.c bin_partition.h
   bin_partition_by_slice.c bin_partition_by_slice.h
   bin_partition_by_value.c bin_partition_by_value.h
+  rel_orderby.c rel_orderby.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c

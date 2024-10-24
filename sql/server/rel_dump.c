@@ -475,9 +475,9 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 
 	print_indent(sql, fout, depth, decorate);
 
-	if ((GDKdebug & NOSYNCMASK) == 0 && rel->spb)
+	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->spb)
 			mnstr_printf(fout, " start ");
-	if ((GDKdebug & NOSYNCMASK) == 0 && rel->parallel)
+	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->parallel)
 			mnstr_printf(fout, " || ");
 
 	if (is_single(rel))
@@ -700,7 +700,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	default:
 		assert(0);
 	}
-	if ((GDKdebug & NOSYNCMASK) == 0 && rel->partition)
+	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->partition)
 			mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 	if (decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {

@@ -415,11 +415,19 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false))
 			return 0;
 		if (rel->l)
-			res = rel_partition_(sql, rel->l, pb);
+			res = rel_partition_(sql, rel->l, pb?pb:rel->r?SPB:0);
 		if (res == SPB)
 			rel->spb = 1;
 		if (res == REL_PARTITION)
 			rel->partition = 1;
+		if (!pb && rel->r) {
+			rel->parallel = 1;
+			rel->spb = (res == REL_PARTITION);
+			res = EPB;
+		} else if (pb == SPB && !rel->r) {
+			rel->spb = 1; //(res == REL_PARTITION);
+			res = SPB;
+		}
 	} else if (is_semi(rel->op)) {
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb);

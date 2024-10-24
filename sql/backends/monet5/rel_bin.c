@@ -27,6 +27,7 @@
 #include "bin_partition.h"
 #include "bin_partition_by_slice.h"
 #include "bin_partition_by_value.h"
+#include "rel_orderby.h"
 #include "sql_pp_statement.h"
 #include "rel_file_loader.h"
 #include "sql_env.h"
@@ -2978,6 +2979,8 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl = NULL, *jr = NULL, *m = NULL, *ls = NULL, *res;
 	bool need_project = false, exist = true, mark = false;
 
+	int neededpp = (rel->spb || rel->partition || is_outerjoin(rel->op)) && get_and_disable_need_pipeline(be); /* start new parallel block after join */
+
 	if (rel->op == op_left) { /* left outer group join */
 		if (list_length(rel->attr) == 1) {
 			sql_exp *e = rel->attr->h->data;
@@ -2988,12 +2991,41 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
+#if 0
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
 	left = subrel_project(be, left, refs, rel->l);
 	right = subrel_project(be, right, refs, rel->r);
+	if (!left || !right)
+		return NULL;
+	left = row2cols(be, left);
+	right = row2cols(be, right);
+#endif
+	if (rel->partition == 1) {
+		if (rel->r) { /* first construct the right sub relation */
+			right = subrel_bin(be, rel->r, refs);
+			right = subrel_project(be, right, refs, rel->r);
+		}
+		if (rel->spb)
+			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
+		if (rel->l) { /* first construct the left sub relation */
+			left = subrel_bin(be, rel->l, refs);
+			left = subrel_project(be, left, refs, rel->l);
+		}
+	} else {
+		if (rel->l){ /* first construct the left sub relation */
+			left = subrel_bin(be, rel->l, refs);
+			left = subrel_project(be, left, refs, rel->l);
+		}
+		if (rel->spb && rel->partition == 2)
+			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
+		if (rel->r) { /* first construct the right sub relation */
+			right = subrel_bin(be, rel->r, refs);
+			right = subrel_project(be, right, refs, rel->r);
+		}
+	}
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
@@ -3198,6 +3230,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 	res = stmt_list(be, l);
+
+	if (neededpp && !rel->partition) {
+		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
+		set_pipeline(be, pp);
+		res = rel2bin_slicer(be, res, 1);
+	}
 	return res;
 }
 
@@ -3233,11 +3271,10 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
 
-        if (rel->attr && list_length(rel->attr) > 0)
-                return rel2bin_groupjoin(be, rel, refs);
+	if (rel->attr && list_length(rel->attr) > 0)
+		return rel2bin_groupjoin(be, rel, refs);
 
-	// TODO: GROUP BY and topN code at rel->partition, so, either the rel->spb below is an error or it means something else */
-	int neededpp = rel->spb && get_and_disable_need_pipeline(be);
+	int neededpp = (rel->spb || rel->partition || is_outerjoin(rel->op)) && get_and_disable_need_pipeline(be); /* start new parallel block after join */
 
 	if (rel->partition == 1) {
 		if (rel->r) { /* first construct the right sub relation */
@@ -3267,13 +3304,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
-	if (neededpp && !rel->partition) {
-		assert(0);
-		/* left or right ?? */
-		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, left));
-		set_pipeline(be, pp);
-		left = rel2bin_slicer(be, left, 1);
-	}
 	/*
 	 * split in 2 steps,
 	 *	first cheap join(s) (equality or idx)
@@ -3358,6 +3388,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);
+
 	if (en || (sexps && list_length(sexps))) {
 		stmt *sub, *sel = NULL;
 		list *nl;
@@ -3497,6 +3528,12 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 	res = stmt_list(be, l);
 	res->extra = l2; /* used for merge statements, this will be cleaned out on the pushcands branch :) */
+
+	if (neededpp && !rel->partition) {
+		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
+		set_pipeline(be, pp);
+		res = rel2bin_slicer(be, res, 1);
+	}
 	return res;
 }
 
@@ -3678,11 +3715,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
-	int semijoin_only = 0, l_is_base = 0;
+	int semijoin_only = 0, l_is_base = 0, pp = 0;
 
 	assert(rel->op != op_anti);
 
-	int neededpp = rel->spb && get_and_disable_need_pipeline(be);
+	int neededpp = (rel->spb || rel->partition) && get_and_disable_need_pipeline(be); /* start new parallel block after join */
+
 	if (rel->partition == 1 || rel->op == op_anti) {
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
@@ -3690,6 +3728,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		if (rel->spb)
 			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
+		pp = be->pipeline;
+		be->pipeline = 0;
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 	} else {
@@ -3697,34 +3737,21 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			left = subrel_bin(be, rel->l, refs);
 		if (rel->spb && rel->partition == 2)
 			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
+		pp = be->pipeline;
+		be->pipeline = 0;
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
 		}
 	}
+	if (pp)
+		be->pipeline = pp;
 
-#if 0
-	if (rel->l) { /* first construct the left sub relation */
-		sql_rel *l = rel->l;
-		l_is_base = is_basetable(l->op);
-		left = subrel_bin(be, l, refs);
-	}
-	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(be, rel->r, refs);
-#endif
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
-	// TODO: the correct condition here is probably: (neededpp && rel->partition && !rel->spb)
-	if (neededpp && !rel->partition) {
-		assert(0);
-		/* left or right ?? */
-		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, left));
-		set_pipeline(be, pp);
-		left = rel2bin_slicer(be, left, 1);
-	}
 	/*
 	 * split in 2 steps,
 	 *	first cheap join(s) (equality or idx)
@@ -3935,7 +3962,13 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, c->label, rnme, nme);
 		list_append(l, s);
 	}
-	return stmt_list(be, l);
+	stmt *res = stmt_list(be, l);
+	if (neededpp && !rel->partition) {
+		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
+		set_pipeline(be, pp);
+		res = rel2bin_slicer(be, res, 1);
+	}
+	return res;
 }
 
 static stmt *
@@ -4357,40 +4390,6 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	return rel_rename(be, rel, sub);
 }
 
-static int
-find_matching_exp(list *exps, sql_exp *e)
-{
-	int i = 0;
-	for (node *n = exps->h; n; n = n->next, i++) {
-		if (exp_match(n->data, e))
-			return i;
-	}
-	return -1;
-}
-
-static stmt *
-sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *ostmts)
-{
-	list *l = sa_list(be->mvc->sa);
-
-	for (node *n = s->op4.lval->h, *m = exps->h; n && m; n = n->next, m = m->next) {
-		int pos = 0;
-		stmt *sc = n->data;
-		sql_exp *pe = m->data;
-		const char *cname = column_name(be->mvc->sa, sc);
-		const char *tname = table_name(be->mvc->sa, sc);
-
-		if (oexps && (pos = find_matching_exp(oexps, pe)) >= 0 && list_fetch(ostmts, pos)) {
-			sc = list_fetch(ostmts, pos);
-		} else {
-			sc = stmt_project(be, order, sc);
-		}
-		sc = stmt_alias(be, sc, pe->alias.label, tname, cname);
-		list_append(l, sc);
-	}
-	return stmt_list(be, l);
-}
-
 static sql_exp*
 topn_limit(sql_rel *rel)
 {
@@ -4422,6 +4421,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	node *en, *n;
 	stmt *sub = NULL, *psub = NULL;
 	stmt *l = NULL;
+
+	if (rel->parallel && !topn && rel->r && SQLrunning) /* handle order by with pp */
+		return rel2bin_orderby(be, rel, refs);
 
 	if (topn) {
 		sql_exp *le = topn_limit(topn);
@@ -4702,7 +4704,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	bool _2phases = rel_groupby_2_phases(be->mvc, rel);
 	bool value_partition = SQLrunning && rel->parallel && !_2phases && rel_groupby_partition(be, rel);
 	bool df2 = (SQLrunning && rel->parallel && !value_partition && rel_groupby_can_pp(rel, _2phases));
-	int neededpp = rel->partition && get_and_disable_need_pipeline(be);
+	int neededpp = get_and_disable_need_pipeline(be);
 	int need_serialize = df2 && rel_groupby_serialize(rel); /* return if some of the aggregates require serialization (or fallback implementation) */
 	//int exclude_cnt = 0;
 
@@ -4788,7 +4790,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	/* Keep groupby columns, so that they can be looked up in the aggr list */
 	if (rel->r) {
 		list *exps = rel->r;
-
 		for (en = exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 			stmt *gbcol = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -5212,6 +5213,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	/* GROUP BY ends the current pipeline() block.  If needed, start a new
 	 * block to partition the result of this GROUP BY for the upper-level
 	 * operators, e.g. topN. */
+
 	if (neededpp) {
 		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
 		cursub = rel2bin_slicer(be, cursub, 1);
@@ -8410,7 +8412,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		if (s)
 			return s;
 		neededpp = get_and_disable_need_pipeline(be);
-	} else if (rel->spb && (!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op)))
+	} else if (rel->spb && !is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op))
 		neededpp = get_and_disable_need_pipeline(be);
 
 	switch (rel->op) {
@@ -8505,12 +8507,18 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	if (s && rel_is_ref(rel)) {
 		list_append(refs, rel);
 		list_append(refs, s);
-		if (neededpp) {
-			set_need_pipeline(be);
-			neededpp = 0;
-		}
 	} else if (rel->spb && neededpp) {
-		assert(!is_groupby(rel->op) && !is_join(rel->op));
+		if (be->pp) {
+			printf("# needed pipeline allready started below subrel\n");
+		} else {
+			assert(!is_groupby(rel->op) && !is_join(rel->op));
+			set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
+			s = rel2bin_slicer(be, s, 1);
+		}
+	} else if (be->need_pipeline && !be->pp) {
+		assert(!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op));
+		printf("# needs pipeline, started from subrel\n");
+		be->need_pipeline = false;
 		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
 		s = rel2bin_slicer(be, s, 1);
 	}
@@ -8548,25 +8556,8 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 		r = r->l;
 
 	list *shared = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
-		/* generate results */
-		BUN est = get_rel_count(rel);
-		lng estimate;
-
-		if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
-			estimate = 1024;
-		} else {
-			estimate = (lng) est;
-		}
-		shared = sa_list(be->mvc->sa); /* list of ints (variable numbers* */
-		for(node *n = r->exps->h; n; n = n->next ) {
-			sql_exp *e = n->data;
-			sql_subtype *t = exp_subtype(e);
-
-			InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate);
-			append(shared, q);
-		}
-	}
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
+		shared = rel2bin_project_prepare(be, rel);
 
 	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
 	pushInstruction(be->mb, q);
@@ -8577,7 +8568,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 	stmt *pp = get_pipeline(be);
 	int pipeline = be->pipeline;
 	be->pipeline = 0;
-	if (pp && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+	if (pp && shared && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
 		/* append results (later first claim position, then append)*/
 		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
 
