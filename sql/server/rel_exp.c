@@ -3962,5 +3962,7 @@ free_exp(allocator *sa, sql_exp *e)
 		case e_aggr:
 		case e_convert:
 		case e_psm:
+			// TODO
+			;
 	}
 }

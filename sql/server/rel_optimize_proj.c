@@ -537,14 +537,15 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				sql_exp *e_copy = exp_copy(v->sql, e);
 
 				/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_right(rel->op) || is_full(rel->op))) {
+					sql_exp *e_copy = exp_copy(v->sql, e);
 					list_append(exps, e_copy);
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
+					sql_exp *e_copy = exp_copy(v->sql, e);
 					list_append(exps, e_copy);
 				} else {
 					return rel;
@@ -561,15 +562,16 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 
 			for (n = r->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				sql_exp *e_copy = exp_copy(v->sql, e);
 
 				/* we cannot rewrite projection with atomic values from outer joins */
 				if (is_column(e->type) && exp_is_atom(e) && !(is_left(rel->op) || is_full(rel->op))) {
+					sql_exp *e_copy = exp_copy(v->sql, e);
 					list_append(exps, e_copy);
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
-					list_append(exps, e_copy);
+					// sql_exp *e_copy = exp_copy(v->sql, e);
+					list_append(exps, e);
 				} else {
 					return rel;
 				}
