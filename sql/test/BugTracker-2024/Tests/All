@@ -92,3 +92,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7574-startswith-bug
 7580-date-diff
 7582-ddl-exists
+7587-rejectmismatch
