@@ -26,7 +26,7 @@ set_need_pipeline(backend *be)
 }
 
 bool
-get_and_disable_need_pipeline(backend *be)
+get_need_pipeline(backend *be)
 {
 	bool r = be->need_pipeline;
 	be->need_pipeline = false;
