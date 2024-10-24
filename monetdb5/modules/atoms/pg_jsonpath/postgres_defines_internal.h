@@ -16,10 +16,6 @@ typedef struct Node
 
 #define SOFT_ERROR_OCCURRED(escontext) (false)
 
-#define palloc(X)	GDKzalloc(X)
-#define pfree(X)	GDKfree(X)
-#define repalloc(M,NSIZE) GDKrealloc(M, NSIZE)
-
 #define Max(A,B) MAX(A, B)
 #define Min(A,B) MIN(A, B)
 

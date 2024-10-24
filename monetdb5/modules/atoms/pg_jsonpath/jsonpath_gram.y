@@ -17,20 +17,20 @@
 
 #include "jsonpath_internal.h"
 
-static JsonPathParseItem *makeItemType(JsonPathItemType type);
-static JsonPathParseItem *makeItemString(JsonPathString *s);
-static JsonPathParseItem *makeItemVariable(JsonPathString *s);
-static JsonPathParseItem *makeItemKey(JsonPathString *s);
-static JsonPathParseItem *makeItemNumeric(JsonPathString *s);
-static JsonPathParseItem *makeItemBool(bool val);
-static JsonPathParseItem *makeItemBinary(JsonPathItemType type,
+static JsonPathParseItem *makeItemType(struct Node *escontext, JsonPathItemType type);
+static JsonPathParseItem *makeItemString(struct Node *escontext, JsonPathString *s);
+static JsonPathParseItem *makeItemVariable(struct Node *escontext, JsonPathString *s);
+static JsonPathParseItem *makeItemKey(struct Node *escontext, JsonPathString *s);
+static JsonPathParseItem *makeItemNumeric(struct Node *escontext, JsonPathString *s);
+static JsonPathParseItem *makeItemBool(struct Node *escontext, bool val);
+static JsonPathParseItem *makeItemBinary(struct Node *escontext, JsonPathItemType type,
 										 JsonPathParseItem *la,
 										 JsonPathParseItem *ra);
-static JsonPathParseItem *makeItemUnary(JsonPathItemType type,
+static JsonPathParseItem *makeItemUnary(struct Node *escontext, JsonPathItemType type,
 										JsonPathParseItem *a);
 static JsonPathParseItem *makeItemList(List *list);
-static JsonPathParseItem *makeIndexArray(List *list);
-static JsonPathParseItem *makeAny(int first, int last);
+static JsonPathParseItem *makeIndexArray(struct Node *escontext, List *list);
+static JsonPathParseItem *makeAny(struct Node *escontext, int first, int last);
 /*
 static bool makeItemLikeRegex(JsonPathParseItem *expr,
 							  JsonPathString *pattern,
@@ -44,8 +44,8 @@ static bool makeItemLikeRegex(JsonPathParseItem *expr,
  * so we can easily have it use palloc instead of malloc.  This prevents
  * memory leaks if we error out during parsing.
  */
-#define YYMALLOC malloc
-#define YYFREE   free
+#define YYMALLOC GDKmalloc
+#define YYFREE   GDKfree
 
 %}
 
@@ -113,7 +113,7 @@ static bool makeItemLikeRegex(JsonPathParseItem *expr,
 
 result:
 	mode expr_or_predicate			{
-										*result = palloc(sizeof(JsonPathParseResult));
+										*result = sa_alloc(escontext->sa, sizeof(JsonPathParseResult));
 										(*result)->expr = $2;
 										(*result)->lax = $1;
 										(void) yynerrs;
@@ -133,13 +133,13 @@ mode:
 	;
 
 scalar_value:
-	STRING_P						{ $$ = makeItemString(&$1); }
-	| NULL_P						{ $$ = makeItemString(NULL); }
-	| TRUE_P						{ $$ = makeItemBool(true); }
-	| FALSE_P						{ $$ = makeItemBool(false); }
-	| NUMERIC_P						{ $$ = makeItemNumeric(&$1); }
-	| INT_P							{ $$ = makeItemNumeric(&$1); }
-	| VARIABLE_P					{ $$ = makeItemVariable(&$1); }
+	STRING_P						{ $$ = makeItemString(escontext, &$1); }
+	| NULL_P						{ $$ = makeItemString(escontext, NULL); }
+	| TRUE_P						{ $$ = makeItemBool(escontext, true); }
+	| FALSE_P						{ $$ = makeItemBool(escontext, false); }
+	| NUMERIC_P						{ $$ = makeItemNumeric(escontext, &$1); }
+	| INT_P							{ $$ = makeItemNumeric(escontext, &$1); }
+	| VARIABLE_P					{ $$ = makeItemVariable(escontext, &$1); }
 	;
 
 comp_op:
@@ -153,19 +153,19 @@ comp_op:
 
 delimited_predicate:
 	'(' predicate ')'				{ $$ = $2; }
-	| EXISTS_P '(' expr ')'			{ $$ = makeItemUnary(jpiExists, $3); }
+	| EXISTS_P '(' expr ')'			{ $$ = makeItemUnary(escontext, jpiExists, $3); }
 	;
 
 predicate:
 	delimited_predicate				{ $$ = $1; }
-	| expr comp_op expr				{ $$ = makeItemBinary($2, $1, $3); }
-	| predicate AND_P predicate		{ $$ = makeItemBinary(jpiAnd, $1, $3); }
-	| predicate OR_P predicate		{ $$ = makeItemBinary(jpiOr, $1, $3); }
-	| NOT_P delimited_predicate		{ $$ = makeItemUnary(jpiNot, $2); }
+	| expr comp_op expr				{ $$ = makeItemBinary(escontext, $2, $1, $3); }
+	| predicate AND_P predicate		{ $$ = makeItemBinary(escontext, jpiAnd, $1, $3); }
+	| predicate OR_P predicate		{ $$ = makeItemBinary(escontext, jpiOr, $1, $3); }
+	| NOT_P delimited_predicate		{ $$ = makeItemUnary(escontext, jpiNot, $2); }
 	| '(' predicate ')' IS_P UNKNOWN_P
-									{ $$ = makeItemUnary(jpiIsUnknown, $2); }
+									{ $$ = makeItemUnary(escontext, jpiIsUnknown, $2); }
 	| expr STARTS_P WITH_P starts_with_initial
-									{ $$ = makeItemBinary(jpiStartsWith, $1, $4); }
+									{ $$ = makeItemBinary(escontext, jpiStartsWith, $1, $4); }
 /*
 	| expr LIKE_REGEX_P STRING_P
 	{
@@ -185,15 +185,15 @@ predicate:
 	;
 
 starts_with_initial:
-	STRING_P						{ $$ = makeItemString(&$1); }
-	| VARIABLE_P					{ $$ = makeItemVariable(&$1); }
+	STRING_P						{ $$ = makeItemString(escontext, &$1); }
+	| VARIABLE_P					{ $$ = makeItemVariable(escontext, &$1); }
 	;
 
 path_primary:
 	scalar_value					{ $$ = $1; }
-	| '$'							{ $$ = makeItemType(jpiRoot); }
-	| '@'							{ $$ = makeItemType(jpiCurrent); }
-	| LAST_P						{ $$ = makeItemType(jpiLast); }
+	| '$'							{ $$ = makeItemType(escontext, jpiRoot); }
+	| '@'							{ $$ = makeItemType(escontext, jpiCurrent); }
+	| LAST_P						{ $$ = makeItemType(escontext, jpiLast); }
 	;
 
 accessor_expr:
@@ -206,18 +206,18 @@ accessor_expr:
 expr:
 	accessor_expr					{ $$ = makeItemList($1); }
 	| '(' expr ')'					{ $$ = $2; }
-	| '+' expr %prec UMINUS			{ $$ = makeItemUnary(jpiPlus, $2); }
-	| '-' expr %prec UMINUS			{ $$ = makeItemUnary(jpiMinus, $2); }
-	| expr '+' expr					{ $$ = makeItemBinary(jpiAdd, $1, $3); }
-	| expr '-' expr					{ $$ = makeItemBinary(jpiSub, $1, $3); }
-	| expr '*' expr					{ $$ = makeItemBinary(jpiMul, $1, $3); }
-	| expr '/' expr					{ $$ = makeItemBinary(jpiDiv, $1, $3); }
-	| expr '%' expr					{ $$ = makeItemBinary(jpiMod, $1, $3); }
+	| '+' expr %prec UMINUS			{ $$ = makeItemUnary(escontext, jpiPlus, $2); }
+	| '-' expr %prec UMINUS			{ $$ = makeItemUnary(escontext, jpiMinus, $2); }
+	| expr '+' expr					{ $$ = makeItemBinary(escontext, jpiAdd, $1, $3); }
+	| expr '-' expr					{ $$ = makeItemBinary(escontext, jpiSub, $1, $3); }
+	| expr '*' expr					{ $$ = makeItemBinary(escontext, jpiMul, $1, $3); }
+	| expr '/' expr					{ $$ = makeItemBinary(escontext, jpiDiv, $1, $3); }
+	| expr '%' expr					{ $$ = makeItemBinary(escontext, jpiMod, $1, $3); }
 	;
 
 index_elem:
-	expr							{ $$ = makeItemBinary(jpiSubscript, $1, NULL); }
-	| expr TO_P expr				{ $$ = makeItemBinary(jpiSubscript, $1, $3); }
+	expr							{ $$ = makeItemBinary(escontext, jpiSubscript, $1, NULL); }
+	| expr TO_P expr				{ $$ = makeItemBinary(escontext, jpiSubscript, $1, $3); }
 	;
 
 index_list:
@@ -226,8 +226,8 @@ index_list:
 	;
 
 array_accessor:
-	'[' '*' ']'						{ $$ = makeItemType(jpiAnyArray); }
-	| '[' index_list ']'			{ $$ = makeIndexArray($2); }
+	'[' '*' ']'						{ $$ = makeItemType(escontext, jpiAnyArray); }
+	| '[' index_list ']'			{ $$ = makeIndexArray(escontext, $2); }
 	;
 
 any_level:
@@ -236,27 +236,27 @@ any_level:
 	;
 
 any_path:
-	ANY_P							{ $$ = makeAny(0, -1); }
-	| ANY_P '{' any_level '}'		{ $$ = makeAny($3, $3); }
+	ANY_P							{ $$ = makeAny(escontext, 0, -1); }
+	| ANY_P '{' any_level '}'		{ $$ = makeAny(escontext, $3, $3); }
 	| ANY_P '{' any_level TO_P any_level '}'
-									{ $$ = makeAny($3, $5); }
+									{ $$ = makeAny(escontext, $3, $5); }
 	;
 
 accessor_op:
 	'.' key							{ $$ = $2; }
-	| '.' '*'						{ $$ = makeItemType(jpiAnyKey); }
+	| '.' '*'						{ $$ = makeItemType(escontext, jpiAnyKey); }
 	| array_accessor				{ $$ = $1; }
 	| '.' any_path					{ $$ = $2; }
-	| '.' method '(' ')'			{ $$ = makeItemType($2); }
-	| '?' '(' predicate ')'			{ $$ = makeItemUnary(jpiFilter, $3); }
+	| '.' method '(' ')'			{ $$ = makeItemType(escontext, $2); }
+	| '?' '(' predicate ')'			{ $$ = makeItemUnary(escontext, jpiFilter, $3); }
 	| '.' DECIMAL_P '(' opt_csv_list ')'
 		{
 			if (list_length($4) == 0)
-				$$ = makeItemBinary(jpiDecimal, NULL, NULL);
+				$$ = makeItemBinary(escontext, jpiDecimal, NULL, NULL);
 			else if (list_length($4) == 1)
-				$$ = makeItemBinary(jpiDecimal, linitial($4), NULL);
+				$$ = makeItemBinary(escontext, jpiDecimal, linitial($4), NULL);
 			else if (list_length($4) == 2)
-				$$ = makeItemBinary(jpiDecimal, linitial($4), lsecond($4));
+				$$ = makeItemBinary(escontext, jpiDecimal, linitial($4), lsecond($4));
 			else
 				ereturn(escontext, false,
 						(errcode(ERRCODE_SYNTAX_ERROR),
@@ -264,24 +264,24 @@ accessor_op:
 						 errdetail(".decimal() can only have an optional precision[,scale].")));
 		}
 	| '.' DATETIME_P '(' opt_datetime_template ')'
-		{ $$ = makeItemUnary(jpiDatetime, $4); }
+		{ $$ = makeItemUnary(escontext, jpiDatetime, $4); }
 	| '.' TIME_P '(' opt_datetime_precision ')'
-		{ $$ = makeItemUnary(jpiTime, $4); }
+		{ $$ = makeItemUnary(escontext, jpiTime, $4); }
 	| '.' TIME_TZ_P '(' opt_datetime_precision ')'
-		{ $$ = makeItemUnary(jpiTimeTz, $4); }
+		{ $$ = makeItemUnary(escontext, jpiTimeTz, $4); }
 	| '.' TIMESTAMP_P '(' opt_datetime_precision ')'
-		{ $$ = makeItemUnary(jpiTimestamp, $4); }
+		{ $$ = makeItemUnary(escontext, jpiTimestamp, $4); }
 	| '.' TIMESTAMP_TZ_P '(' opt_datetime_precision ')'
-		{ $$ = makeItemUnary(jpiTimestampTz, $4); }
+		{ $$ = makeItemUnary(escontext, jpiTimestampTz, $4); }
 	;
 
 csv_elem:
 	INT_P
-		{ $$ = makeItemNumeric(&$1); }
+		{ $$ = makeItemNumeric(escontext, &$1); }
 	| '+' INT_P %prec UMINUS
-		{ $$ = makeItemUnary(jpiPlus, makeItemNumeric(&$2)); }
+		{ $$ = makeItemUnary(escontext, jpiPlus, makeItemNumeric(escontext, &$2)); }
 	| '-' INT_P %prec UMINUS
-		{ $$ = makeItemUnary(jpiMinus, makeItemNumeric(&$2)); }
+		{ $$ = makeItemUnary(escontext, jpiMinus, makeItemNumeric(escontext, &$2)); }
 	;
 
 csv_list:
@@ -295,7 +295,7 @@ opt_csv_list:
 	;
 
 datetime_precision:
-	INT_P							{ $$ = makeItemNumeric(&$1); }
+	INT_P							{ $$ = makeItemNumeric(escontext, &$1); }
 	;
 
 opt_datetime_precision:
@@ -304,7 +304,7 @@ opt_datetime_precision:
 	;
 
 datetime_template:
-	STRING_P						{ $$ = makeItemString(&$1); }
+	STRING_P						{ $$ = makeItemString(escontext, &$1); }
 	;
 
 opt_datetime_template:
@@ -313,7 +313,7 @@ opt_datetime_template:
 	;
 
 key:
-	key_name						{ $$ = makeItemKey(&$1); }
+	key_name						{ $$ = makeItemKey(escontext, &$1); }
 	;
 
 key_name:
@@ -377,9 +377,9 @@ method:
  */
 
 static JsonPathParseItem *
-makeItemType(JsonPathItemType type)
+makeItemType(struct Node *escontext, JsonPathItemType type)
 {
-	JsonPathParseItem *v = palloc(sizeof(*v)); // TODO: palloc should use the context allocator
+	JsonPathParseItem *v = sa_alloc(escontext->sa, sizeof(*v));
 
 	CHECK_FOR_INTERRUPTS();
 
@@ -390,17 +390,17 @@ makeItemType(JsonPathItemType type)
 }
 
 static JsonPathParseItem *
-makeItemString(JsonPathString *s)
+makeItemString(struct Node *escontext, JsonPathString *s)
 {
 	JsonPathParseItem *v;
 
 	if (s == NULL)
 	{
-		v = makeItemType(jpiNull);
+		v = makeItemType(escontext, jpiNull);
 	}
 	else
 	{
-		v = makeItemType(jpiString);
+		v = makeItemType(escontext, jpiString);
 		v->value.string.val = s->val;
 		v->value.string.len = s->len;
 	}
@@ -409,11 +409,11 @@ makeItemString(JsonPathString *s)
 }
 
 static JsonPathParseItem *
-makeItemVariable(JsonPathString *s)
+makeItemVariable(struct Node *escontext, JsonPathString *s)
 {
 	JsonPathParseItem *v;
 
-	v = makeItemType(jpiVariable);
+	v = makeItemType(escontext, jpiVariable);
 	v->value.string.val = s->val;
 	v->value.string.len = s->len;
 
@@ -421,21 +421,21 @@ makeItemVariable(JsonPathString *s)
 }
 
 static JsonPathParseItem *
-makeItemKey(JsonPathString *s)
+makeItemKey(struct Node *escontext, JsonPathString *s)
 {
 	JsonPathParseItem *v;
 
-	v = makeItemString(s);
+	v = makeItemString(escontext, s);
 	v->type = jpiKey;
 
 	return v;
 }
 
 static JsonPathParseItem *
-makeItemNumeric(JsonPathString *s)
+makeItemNumeric(struct Node *escontext, JsonPathString *s)
 {
 	JsonPathParseItem *v;
-	v = makeItemType(jpiNumeric);
+	v = makeItemType(escontext, jpiNumeric);
 
 	const char* src = s->val;
 	size_t llen = sizeof(lng);
@@ -461,9 +461,9 @@ makeItemNumeric(JsonPathString *s)
 }
 
 static JsonPathParseItem *
-makeItemBool(bool val)
+makeItemBool(struct Node *escontext, bool val)
 {
-	JsonPathParseItem *v = makeItemType(jpiBool);
+	JsonPathParseItem *v = makeItemType(escontext, jpiBool);
 
 	v->value.boolean = val;
 
@@ -471,9 +471,9 @@ makeItemBool(bool val)
 }
 
 static JsonPathParseItem *
-makeItemBinary(JsonPathItemType type, JsonPathParseItem *la, JsonPathParseItem *ra)
+makeItemBinary(struct Node *escontext, JsonPathItemType type, JsonPathParseItem *la, JsonPathParseItem *ra)
 {
-	JsonPathParseItem *v = makeItemType(type);
+	JsonPathParseItem *v = makeItemType(escontext, type);
 
 	v->value.args.left = la;
 	v->value.args.right = ra;
@@ -482,7 +482,7 @@ makeItemBinary(JsonPathItemType type, JsonPathParseItem *la, JsonPathParseItem *
 }
 
 static JsonPathParseItem *
-makeItemUnary(JsonPathItemType type, JsonPathParseItem *a)
+makeItemUnary(struct Node *escontext, JsonPathItemType type, JsonPathParseItem *a)
 {
 	JsonPathParseItem *v;
 
@@ -491,12 +491,12 @@ makeItemUnary(JsonPathItemType type, JsonPathParseItem *a)
 
 	if (type == jpiMinus && a->type == jpiNumeric && !a->next)
 	{
-		v = makeItemType(jpiNumeric);
+		v = makeItemType(escontext, jpiNumeric);
 		v->value.numeric = numeric_uminus(a->value.numeric);
 		return v;
 	}
 
-	v = makeItemType(type);
+	v = makeItemType(escontext, type);
 
 	v->value.arg = a;
 
@@ -531,16 +531,16 @@ makeItemList(List *list)
 }
 
 static JsonPathParseItem *
-makeIndexArray(List *list)
+makeIndexArray(struct Node *escontext, List *list)
 {
-	JsonPathParseItem *v = makeItemType(jpiIndexArray);
+	JsonPathParseItem *v = makeItemType(escontext, jpiIndexArray);
 	ListCell   *cell;
 	int			i = 0;
 
 	Assert(list != NIL);
 	v->value.array.nelems = list_length(list);
 
-	v->value.array.elems = palloc(sizeof(v->value.array.elems[0]) *
+	v->value.array.elems = sa_alloc(escontext->sa, sizeof(v->value.array.elems[0]) *
 								  v->value.array.nelems);
 
 	foreach(cell, list)
@@ -557,9 +557,9 @@ makeIndexArray(List *list)
 }
 
 static JsonPathParseItem *
-makeAny(int first, int last)
+makeAny(struct Node *escontext, int first, int last)
 {
-	JsonPathParseItem *v = makeItemType(jpiAny);
+	JsonPathParseItem *v = makeItemType(escontext, jpiAny);
 
 	v->value.anybounds.first = (first >= 0) ? (uint32) first : PG_UINT32_MAX;
 	v->value.anybounds.last = (last >= 0) ? (uint32) last : PG_UINT32_MAX;
@@ -626,7 +626,7 @@ makeItemLikeRegex(JsonPathParseItem *expr, JsonPathString *pattern,
 		int         wpattern_len;
 		int         re_result;
 
-		wpattern = (pg_wchar *) palloc((pattern->len + 1) * sizeof(pg_wchar));
+		wpattern = (pg_wchar *) sa_alloc(escontext->sa, (pattern->len + 1) * sizeof(pg_wchar));
 		wpattern_len = pg_mb2wchar_with_len(pattern->val,
 											wpattern,
 											pattern->len);

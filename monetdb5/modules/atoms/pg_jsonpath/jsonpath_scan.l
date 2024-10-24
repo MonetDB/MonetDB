@@ -37,6 +37,9 @@ static enum yytokentype checkKeyword(void);
 static bool parseUnicode(char *s, int l, struct Node *escontext);
 static bool parseHexChar(char *s, struct Node *escontext);
 
+#define palloc		GDKmalloc
+#define repalloc	GDKrealloc
+#define pfree		GDKfree
 
 /* LCOV_EXCL_START */
 
