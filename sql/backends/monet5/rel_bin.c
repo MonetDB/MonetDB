@@ -8666,6 +8666,9 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 		return NULL;
 	}
 
+	if (be->need_pipeline)
+		assert("be->need_pipeline not cleaned up");
+
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype; /* reset */
 
