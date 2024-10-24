@@ -390,6 +390,7 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define IOMASK		(1U<<4)
 #define BATMASK		(1U<<5)
 #define PARMASK		(1U<<7)
+#define TESTINGMASK	(1U<<8)
 #define TMMASK		(1U<<9)
 #define TEMMASK		(1U<<10)
 #define PERFMASK	(1U<<12)
@@ -1330,6 +1331,9 @@ gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
+gdk_return unshare_varsized_heap(BAT *b)
+	__attribute__((__warn_unused_result__));
+	//__attribute__((__visibility__("hidden")));
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);

@@ -543,13 +543,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			getArg(q, 0) = *v;
 			q->inout = 0;
 			pushInstruction(be->mb, q);
-			stmt *s = stmt_none(be);
-			s->op4.typeval = *exp_subtype(e);
-			s->nr = *v;
-			s->key = s->nrcols = 1;
-			s->q = q;
-			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-			s->q = q;
+			stmt *s = stmt_pp_alias(be, q, e, 0);
 			if (i == *cnt_aggr)
 				*cnt_aggr = s;
 			append(shared, s);

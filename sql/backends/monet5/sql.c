@@ -5532,6 +5532,8 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
 		sql_key *k = mvc_bind_key(m, s, kname);
+		uintptr_t sp = m->sp;
+		m->sp = (uintptr_t)&m; /* local var ie top of stack */
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
@@ -5542,8 +5544,10 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*r = GDKstrdup(exp2sql(m, exp));
 			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			m->sp = sp;
 			return MAL_SUCCEED;
 		}
+		m->sp = sp;
 	}
 	if (!(*r = GDKstrdup(str_nil)))
 		throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);

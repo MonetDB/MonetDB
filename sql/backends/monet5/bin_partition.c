@@ -90,6 +90,10 @@ pp_nr_slices(sql_rel *rel)
 	FORCEMITODEBUG
 	if (nr_slices < GDKnr_threads)
 		nr_slices = GDKnr_threads;
+	FORCEMITODEBUG
+	if (GDKnr_threads == 1)
+		nr_slices = 8;
+
 	if (nr_slices == 0)
 		return 1;
 	assert(nr_slices > 0);

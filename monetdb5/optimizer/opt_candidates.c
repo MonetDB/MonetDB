@@ -24,7 +24,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
 
-	if (!(ATOMIC_GET(&GDKdebug) & FORCEMITOMASK))
+	if (!(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 		goto wrapup;
 	(void) cntxt;
 	(void) stk;					/* to fool compilers */

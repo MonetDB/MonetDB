@@ -2350,7 +2350,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	lng max_file_age = GDKgetenv_int("wal_max_file_age", 600);
 	lng max_file_size = 0;
 
-	if (GDKdebug & FORCEMITOMASK) {
+	if (GDKdebug & TESTINGMASK) {
 		max_file_size = 2048; /* 2 KiB */
 	} else {
 		const char *max_file_size_str = GDKgetenv("wal_max_file_size");
@@ -2548,7 +2548,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 static logged_range *
 log_next_logfile(logger *lg, ulng ts)
 {
-	int m = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? 1000 : 100;
+	int m = (ATOMIC_GET(&GDKdebug) & TESTINGMASK) ? 1000 : 100;
 	if (!lg->pending || !lg->pending->next)
 		return NULL;
 	rotation_lock(lg);

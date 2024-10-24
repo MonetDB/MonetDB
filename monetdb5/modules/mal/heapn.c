@@ -1227,6 +1227,13 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
+		} else if (!private && ATOMvarsized(r->ttype) && BATcount(r) && r->tvheap->parentid != r->batCacheid &&
+				r->tvheap->parentid != b->tvheap->parentid) {
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&r->theaplock);
+			if (unshare_varsized_heap(r) != GDK_SUCCEED)
+				err = 1;
+			local_storage = true;
 		} else if (ATOMvarsized(r->ttype) && BATcount(r) == 0 && r->tvheap->parentid == r->batCacheid) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);

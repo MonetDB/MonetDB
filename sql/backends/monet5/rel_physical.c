@@ -221,8 +221,11 @@ rel_mark_partition(sql_rel *rel)
 		break;
     case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			// TODO: how are we going to mark (n->data)->partition?
-			res = rel_mark_partition(n->data);
+			int lres = rel_mark_partition(n->data);
+			if (lres) {
+				rel->partition = 1;
+				res = lres;
+			}
 		}
 	}
 	return res;
@@ -466,6 +469,14 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->spb = 1;
 		if (res == REL_PARTITION)
 			rel->partition = 1;
+		if (!pb && !list_empty(rel->r)) {
+			rel->parallel = 1;
+			rel->spb = (res == REL_PARTITION);
+			res = EPB;
+		} else if (pb == SPB && list_empty(rel->r)) {
+			rel->spb = 1; //(res == REL_PARTITION);
+			res = SPB;
+		}
 	} else if (is_semi(rel->op)) {
 		if (do_oahash_join(rel)) {
 			rel->oahash = 2;
@@ -481,10 +492,11 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		 * start a 'pb' itself. */
 		if (res == EPB || res == REL_PARTITION) {
 			rel->partition = 1;
-			if (pb && res == REL_PARTITION) //{ TODO: seems that we should give 'res' its proper value here, which is SPB.
+			if (pb && res == REL_PARTITION) { //TODO: seems that we should give 'res' its proper value here, which is SPB.
 				rel->spb = 1;
-				//res = SPB;
-			//}
+				res = SPB;
+				return res;
+			}
 		}
 		// TODO: the following block code should probably be removed.
 		//       Instead of force returning a 0, the code above should
@@ -523,6 +535,11 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r && rel->card <= CARD_AGGR)
 			res = rel_partition_(sql, rel->r, pb);
+		if (rel->returning) {
+			if (pb)
+				rel->spb = 1;
+			res = pb;
+		}
 	} else if (is_join(rel->op)) {
 		if (do_oahash_join(rel)) {
 			sql_rel *l = rel->l, *r = rel->r;

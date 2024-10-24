@@ -1079,7 +1079,7 @@ static void
 profilerHeartbeat(void *dummy)
 {
 	int t;
-	const int timeout = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10 : 25;
+	const int timeout = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 10 : 25;
 
 	(void) dummy;
 	for (;;) {

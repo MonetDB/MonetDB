@@ -102,12 +102,19 @@ chkFlow(MalBlkPtr mb)
 		return mb->errors;
 	sig = getInstrPtr(mb, 0);
 	lastInstruction = mb->stop - 1;
+	InstrPtr pp = NULL;
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		/* we have to keep track on the maximal arguments/block
 		   because it is needed by the interpreter */
 		switch (p->barrier) {
 		case BARRIERsymbol:
+			if (getModuleId(p) && getFunctionId(p)
+				&& strcmp(getModuleId(p), "language") == 0
+				&& strcmp(getFunctionId(p), "pipelines") == 0) {
+				pp = p;
+			}
+			/* fall through */
 		case CATCHsymbol:
 			if (btop == DEPTH)
 				throw(MAL, "chkFlow", "%s.%s Too many nested MAL blocks",
@@ -151,8 +158,11 @@ chkFlow(MalBlkPtr mb)
 				InstrPtr p1 = getInstrPtr(mb, k);
 				if (getDestVar(p1) == v) {
 					/* handle assignments with leave/redo option */
-					if (p1->barrier == LEAVEsymbol)
+					if (p1->barrier == LEAVEsymbol) {
 						p1->jump = i;
+						if (pp)
+							pc[btop] = k; /* pipeline redo should jump back after the leave */
+					}
 					if (p1->barrier == REDOsymbol)
 						p1->jump = pc[btop] + 1;
 				}
@@ -199,6 +209,7 @@ chkFlow(MalBlkPtr mb)
 			break;
 		case ENDsymbol:
 			endseen = 1;
+			pp = NULL;
 			break;
 		default:
 			if (isaSignature(p)) {
