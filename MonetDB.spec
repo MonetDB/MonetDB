@@ -95,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Aug2024/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2024-SP1/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -990,6 +990,57 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Thu Oct 24 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.5-20241024
+- Rebuilt.
+- GH#7281: UDFs defined at compile time in a user schema should not become
+  system functions
+- GH#7563: Unexpected result when using `IS DISTINCT FROM` in `VIEW`
+- GH#7567: creating remote table from subquery crashes the server
+- GH#7569: Column of temporary table changes when another is updated
+- GH#7570: BUG in the "str_to_timestamp" function
+- GH#7571: Crash when integer overflow in `ORDER BY`
+- GH#7572: column max length is not stored as specified and accepted at
+  creation time
+- GH#7575: Incorrect BAT properties after mmapped BAT "leaks" to disk with
+  restart.
+- GH#7576: unescaping UTF-16 code units goes wrong in json.text
+- GH#7577: Crash when using `CHECK` constraint
+- GH#7580: statistics optimizer handles date difference incorrectly
+- GH#7582: SIGSEGV when creating a SQL function with RETURN CASE WHEN
+  EXISTS (..)
+- GH#7583: Query slowdown after deleting rows from large table
+- GH#7584: SO_KEEPALIVE should be configured sensibly
+- GH#7585: rel2bin_join: Assertion `sql->session->status == -10' failed.
+- GH#7587: Line/row numbers get out of sync with COPY INTO .. BEST EFFORT
+
+* Mon Oct 21 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.51.5-20241024
+- sql: Improve casting to generic decimal type by choosing a better fit for
+  precision and scale instead of defaulting to 18 and 3, respectively.
+
+* Thu Oct 17 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.5-20241024
+- sql: When for whatever reason the upgrade code produces an error, we now
+  exit the server.  Before the server would limp on with what is basically
+  a broken database.
+
+* Mon Oct 14 2024 stefanos mavros <stemavros@gmail.com> - 11.51.5-20241024
+- monetdb5: The server prints out an informative message for the case of a graceful
+  termination.
+
+* Mon Oct  7 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.51.5-20241024
+- merovingian: Tweak socket parameters to simulate network activity on client connections.
+  This prevents firewalls from killing connections that seem idle but are
+  actually waiting for a long-running query. Can be controlled with a new
+  'keepalive' option to monetdbd.
+
+* Thu Sep 26 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.51.5-20241024
+- sql: Improved the violation message of CHECK constraints when violated. It
+  now includes the schema name of the constraint and the check clause.
+
+* Fri Aug 23 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.51.5-20241024
+- sql: Increase the buffer size used by hot snapshot from 64kiB to 1MiB,
+  and make it configurable through setting 'hot_snapshot_buffer_size'.
+  It must be a multiple of 512.
+
 * Mon Aug 19 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.3-20240819
 - Rebuilt.
 - GH#7562: Assertion failure when comparing `INTERVAL` value
