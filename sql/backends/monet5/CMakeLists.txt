@@ -37,7 +37,6 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_file_loader.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_optimizer.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rewriter.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_partition.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_prop.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_exp.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rel.h>
@@ -71,7 +70,6 @@ set(sql_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_parser.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_privileges.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_optimizer.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_partition.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_prop.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_exp.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_rel.h>
