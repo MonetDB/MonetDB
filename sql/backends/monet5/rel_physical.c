@@ -464,7 +464,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false))
 			return 0;
 		if (rel->l)
-			res = rel_partition_(sql, rel->l, pb);
+			res = rel_partition_(sql, rel->l, pb?pb:!list_empty(rel->r)?SPB:0);
 		if (res == SPB)
 			rel->spb = 1;
 		if (res == REL_PARTITION)
