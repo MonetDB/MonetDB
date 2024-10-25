@@ -376,8 +376,6 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
 	if (msg != MAL_SUCCEED) {
-		mnstr_printf(fout, "!could not serve client\n");
-		exit_streams(fin, fout);
 		freeException(msg);
 	}
 }

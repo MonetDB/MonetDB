@@ -227,6 +227,7 @@ effects of MAL optimizers
 .B 268435456
 (HEAPMASK) trace/debug HEAPextend;
 used only for development & debugging
+.TP
 .B 536870912
 (FORCEMITOMASK) forcefully activate mitosis even on
 small tables, i.e., split small tables
