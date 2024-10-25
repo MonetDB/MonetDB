@@ -862,7 +862,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			adt = fmt->frstr(fmt, fmt->adt, s);
 	}
 
-	lng row = BATcount(fmt->c) + 1;
+	lng row = task->cnt + idx + 1;
 	if (adt == NULL) {
 		if (task->rowerror) {
 			err = SQLload_error(task, idx, task->as->nr_attrs);
