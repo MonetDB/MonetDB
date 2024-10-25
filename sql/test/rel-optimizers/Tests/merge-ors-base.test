@@ -2,7 +2,7 @@ statement ok
 create table f (n int, m int)
 
 statement ok
-insert into f values (1, 20), 
+insert into f values (1, 20),
                      (2, 40),
 					 (2, 0 ),
 					 (3, 60),
@@ -12,7 +12,7 @@ statement ok
 create table b (n int, m int, k int)
 
 statement ok
-insert into b values (1, 20,   200), 
+insert into b values (1, 20,   200),
                      (2, 40,   400),
 					 (2, 0,      0),
 					 (3, 60,   600),

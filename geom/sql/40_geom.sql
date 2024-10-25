@@ -224,7 +224,7 @@ GRANT EXECUTE ON FUNCTION ST_NumGeometries(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_GeometryN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."GeometryN";
 GRANT EXECUTE ON FUNCTION ST_GeometryN(Geometry, integer) TO PUBLIC;
 
---Functions on Polyhedral Surfaces (a simple surface, consisting of a number of Polygon pathes or facets)
+--Functions on Polyhedral Surfaces (a simple surface, consisting of a number of Polygon paths or facets)
 --CREATE FUNCTION ST_Geometries(geom Geometry) RETURNS TABLE(geom Geometries) EXTERNAL NAME geom."Geometries";
 --CREATE FUNCTION NumSurfaces(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumSurfaces";
 --CREATE FUNCTION Surface(positionNum integer) RETURNS Geometry EXTERNAL NAME geom."SurfaceN";
@@ -268,7 +268,7 @@ GRANT EXECUTE ON FUNCTION ST_BdPolyFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdMPolyFromText";
 GRANT EXECUTE ON FUNCTION ST_BdMPolyFromText(string, integer) TO PUBLIC;
 
---Construct a Geoemtry from a WKB
+--Construct a Geometry from a WKB
 --CREATE FUNCTION ST_GeomFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromWKB";
 --CREATE FUNCTION ST_PointFromWKB(wkb_arr WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromWKB";
 --CREATE FUNCTION ST_LineFromWKB(wkb_arr WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."LineFromWKB";

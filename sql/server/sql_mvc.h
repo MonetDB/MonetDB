@@ -47,7 +47,7 @@
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_exists	4
-/* to be removed ie are in type (aka dimention) */
+/* to be removed ie are in type (aka dimension) */
 #define card_relation 	5
 #define card_loader 	6
 
@@ -112,8 +112,8 @@ typedef struct sql_frame {
 /* a single SQL optimizer run */
 typedef struct {
 	const char *name; /* the optimizer name itself */
-	int nchanges; /* how many changes it did */
-	lng time; /* how long it did take (all runs) */
+	int nchanges;     /* how many changes it did */
+	lng time;         /* how long it did take (all runs) */
 } sql_optimizer_run;
 
 typedef struct mvc {
@@ -124,45 +124,44 @@ typedef struct mvc {
 	struct scanner scanner;
 
 	list *params;
-	sqlid objid;	/* when replacing an existing view, it can't be seen */
-	sql_func *forward;	/* forward definitions for recursive functions */
-	list *global_vars; /* SQL declared variables on the global scope */
-	sql_frame **frames;	/* stack of frames with variables */
+	sqlid objid;                /* when replacing an existing view, it can't be seen */
+	sql_func *forward;	        /* forward definitions for recursive functions */
+	list *global_vars;          /* SQL declared variables on the global scope */
+	sql_frame **frames;	        /* stack of frames with variables */
 	int topframes;
 	int sizeframes;
 	int frame;
 	struct symbol *sym;
 
 	bool use_views:1,
-		   schema_path_has_sys:1, /* speed up object search */
-		   schema_path_has_tmp:1,
-		   no_int128:1;
+		schema_path_has_sys:1,  /* speed up object search */
+		schema_path_has_tmp:1,
+		no_int128:1;
 	struct qc *qc;
-	int clientid;		/* id of the owner */
+	int clientid;		        /* id of the owner */
 
 	/* session variables */
 	sqlid user_id;
 	sqlid role_id;
-	int timezone;		/* milliseconds west of UTC */
-	int reply_size;		/* reply size */
+	int timezone;		        /* milliseconds west of UTC */
+	unsigned int div_min_scale; /* minimum scale for division op*/
+	int reply_size;		        /* reply size */
 	int debug;
-	int sql_optimizer; /* SQL optimizer mask */
-	sql_optimizer_run *runs; /* Information about SQL optimizer runs */
-
-	char emode;		/* execution mode */
-	char emod;		/* execution modifier */
-
+	int sql_optimizer;          /* SQL optimizer mask */
+	sql_optimizer_run *runs;    /* Information about SQL optimizer runs */
+	char emode;		            /* execution mode */
+	char emod;		            /* execution modifier */
 	sql_session *session;
 	sql_store store;
 
 	/* per query context */
-	mapi_query_t type;	/* query type */
+	mapi_query_t type;	        /* query type */
 
 	/* during query needed flags */
-	unsigned int label;	/* numbers for relational projection labels */
-	int nid;	/* numbers for relational names */
-	list *cascade_action;  /* protection against recursive cascade actions */
-	list *schema_path; /* schema search path for object lookup */
+	unsigned int label;	        /* numbers for relational projection labels */
+	int nid;	                /* numbers for relational names */
+	list *cascade_action;       /* protection against recursive cascade actions */
+	list *schema_path;          /* schema search path for object lookup */
 	uintptr_t sp;
 } mvc;
 

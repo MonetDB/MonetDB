@@ -7,7 +7,7 @@ insert into test_update values ('a', 1)
 statement ok
 insert into test_update values ('b', 2)
 
-query TI rowsort
+query TI nosort
 select * from test_update order by id
 ----
 a
@@ -18,7 +18,7 @@ b
 statement ok
 update test_update set x=x+1 where x >= 2
 
-query TI rowsort
+query TI nosort
 select * from test_update order by id
 ----
 a

@@ -32,7 +32,7 @@ select count(val) from counttest
 ----
 5
 
-query I rowsort
+query I nosort
 select count(*) as count_x from counttest group by val order by count_x
 ----
 1
@@ -40,7 +40,7 @@ select count(*) as count_x from counttest group by val order by count_x
 2
 2
 
-query I rowsort
+query I nosort
 select count(val) as count_val from counttest group by val order by count_val
 ----
 0

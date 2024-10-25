@@ -108,8 +108,8 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 
 /*
  * Upon exit we should attempt to remove all allocated memory explicitly.
- * This seemingly superflous action is necessary to simplify analyis of
- * memory leakage problems later ons and to allow an embedded server to
+ * This seemingly superfluous action is necessary to simplify analysis of
+ * memory leakage problems later on and to allow an embedded server to
  * restart the server properly.
  *
  * It is the responsibility of the enclosing application to finish/cease all
@@ -165,5 +165,6 @@ void
 mal_exit(int status)
 {
 	mal_reset();
+	printf("# mserver5 exiting\n");
 	exit(status);				/* properly end GDK */
 }

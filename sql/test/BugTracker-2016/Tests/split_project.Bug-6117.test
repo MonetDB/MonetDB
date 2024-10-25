@@ -301,7 +301,7 @@ ALTER TABLE tagclass_inheritance ADD FOREIGN KEY(subclass_id) REFERENCES tagclas
 statement ok
 ALTER TABLE tagclass_inheritance ADD FOREIGN KEY(superclass_id) REFERENCES tagclasses(id)
 
-query ITTITT rowsort
+query ITTITT nosort
 WITH
     params AS (
         SELECT

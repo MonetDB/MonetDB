@@ -24,7 +24,7 @@ CREATE TABLE "voyages" (
 	"particulars"       varchar(530)
 )
 
-query TI rowsort
+query TI nosort
 SELECT hired, count(*)  FROM voyages WHERE   true  AND hired IS NOT NULL AND
 hired is not null GROUP BY hired ORDER BY hired
 ----

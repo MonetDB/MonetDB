@@ -81,13 +81,6 @@ HASHclear(Hash *h)
 }
 
 #define HASH_VERSION		6
-/* this is only for the change of hash function of the floating point
- * types, the UUID type and the MBR type; if HASH_VERSION is increased
- * again from 6, the code associated with HASH_VERSION_NOUUID and
- * HASH_VERSION_NOMBR must be deleted */
-#define HASH_VERSION_FLOAT	5
-#define HASH_VERSION_NOMBR	4
-#define HASH_VERSION_NOUUID	3
 #define HASH_HEADER_SIZE	7	/* nr of size_t fields in header */
 
 void
@@ -477,45 +470,7 @@ BATcheckhash(BAT *b)
 					struct stat st;
 
 					if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-					    (hdata[0] == (
-#ifdef PERSISTENTHASH
-						    ((size_t) 1 << 24) |
-#endif
-						    HASH_VERSION)
-#ifdef HASH_VERSION_NOUUID
-					     /* if not uuid, also allow previous version */
-					     || (hdata[0] == (
-#ifdef PERSISTENTHASH
-							 ((size_t) 1 << 24) |
-#endif
-							 HASH_VERSION_NOUUID) &&
-						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
-						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
-						 strcmp(ATOMname(b->ttype), "uuid") != 0 &&
-						 strcmp(ATOMname(b->ttype), "mbr") != 0)
-#endif
-#ifdef HASH_VERSION_NOMBR
-					     /* if not uuid, also allow previous version */
-					     || (hdata[0] == (
-#ifdef PERSISTENTHASH
-							 ((size_t) 1 << 24) |
-#endif
-							 HASH_VERSION_NOMBR) &&
-						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
-						 strcmp(ATOMname(b->ttype), "dbl") != 0 &&
-						 strcmp(ATOMname(b->ttype), "mbr") != 0)
-#endif
-#ifdef HASH_VERSION_FLOAT
-					     /* if not floating point, also allow previous version */
-					     || (hdata[0] == (
-#ifdef PERSISTENTHASH
-							 ((size_t) 1 << 24) |
-#endif
-							 HASH_VERSION_FLOAT) &&
-						 strcmp(ATOMname(b->ttype), "flt") != 0 &&
-						 strcmp(ATOMname(b->ttype), "dbl") != 0)
-#endif
-						    ) &&
+					    (hdata[0] == (((size_t) 1 << 24) | HASH_VERSION)) &&
 					    hdata[1] > 0 &&
 					    (
 #ifdef BUN2
@@ -607,6 +562,40 @@ BATcheckhash(BAT *b)
 	return h != NULL;
 }
 
+/* figure out size of the hash (sum of the sizes of the two hash files)
+ * without loading them */
+size_t
+HASHsize(BAT *b)
+{
+	size_t sz = 0;
+	MT_rwlock_rdlock(&b->thashlock);
+	if (b->thash == NULL) {
+		sz = 0;
+	} else if (b->thash != (Hash *) 1) {
+		sz = b->thash->heaplink.size + b->thash->heapbckt.size;
+	} else {
+		int farmid = BBPselectfarm(b->batRole, b->ttype, hashheap);
+		if (farmid >= 0) {
+			const char *nme = BBP_physical(b->batCacheid);
+			char *fname = GDKfilepath(farmid, BATDIR, nme, "thashb");
+			if (fname != NULL) {
+				struct stat st;
+				if (stat(fname, &st) == 0) {
+					sz = (size_t) st.st_size;
+					fname[strlen(fname) - 1] = 'l';
+					if (stat(fname, &st) == 0)
+						sz += (size_t) st.st_size;
+					else
+						sz = 0;
+				}
+				GDKfree(fname);
+			}
+		}
+	}
+	MT_rwlock_rdunlock(&b->thashlock);
+	return sz;
+}
+
 static void
 BAThashsave_intern(BAT *b, bool dosync)
 {
@@ -616,11 +605,6 @@ BAThashsave_intern(BAT *b, bool dosync)
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
 	if ((h = b->thash) != NULL) {
-#ifndef PERSISTENTHASH
-		/* no need to sync if not persistent */
-		dosync = false;
-#endif
-
 		/* only persist if parent BAT hasn't changed in the
 		 * mean time */
 		if (!b->theap->dirty &&

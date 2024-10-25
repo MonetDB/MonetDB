@@ -78,7 +78,7 @@ void
 readConfFileFull(confkeyval *list, FILE *cnf) {
 	char buf[1024];
 	char *key, *val;
-	char *separator = "=";
+	const char *separator = "=";
 	char *err;
 	confkeyval *t = list;
 	int cnt = 0;
@@ -218,7 +218,7 @@ setConfVal(confkeyval *ckv, const char *val) {
 		case INVALID: {
 			char buf[256];
 			snprintf(buf, sizeof(buf),
-					"key '%s' is unitialised (invalid value), internal error",
+					"key '%s' is uninitialised (invalid value), internal error",
 					ckv->key);
 			return(strdup(buf));
 		}
@@ -434,7 +434,7 @@ static const char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j
 
 /**
  * Fills the array pointed to by buf of size len with a random salt.
- * Padds the remaining bytes in buf with null-bytes.
+ * Pads the remaining bytes in buf with null-bytes.
  */
 void
 generateSalt(char *buf, unsigned int len)
@@ -583,7 +583,7 @@ free_snapshots(struct snapshot *snapshots, int nsnapshots)
 }
 
 /* Increment *nsnapsnots by 1 and call realloc() on *snapshots to make it
- * accomodate one more snapshot. Return a pointer to the newly allocated
+ * accommodate one more snapshot. Return a pointer to the newly allocated
  * snapshot, which has been initialized with 0's and NULL's.
  */
 struct snapshot *

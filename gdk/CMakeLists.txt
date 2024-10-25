@@ -64,6 +64,7 @@ target_sources(bat
   gdk_string.c
   gdk_qsort.c
   gdk_qsort_impl.h
+  gdk_rsort.c
   gdk_storage.c
   gdk_bat.c
   gdk_delta.c gdk_delta.h
@@ -77,7 +78,6 @@ target_sources(bat
   gdk_private.h
   gdk_system_private.h
   gdk_group.c
-  gdk_imprints.c gdk_imprints.h
   gdk_join.c
   gdk_project.c
   gdk_time.c gdk_time.h

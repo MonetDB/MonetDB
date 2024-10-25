@@ -143,26 +143,26 @@ unsigned int type_digits_to_char_digits(sql_subtype *t)
 			return bits2digits(t->digits) + 1; /* add '-' */
 		case EC_MONTH:
 		case EC_FLT:
-			return t->digits; /* TODO this needs more tunning ? */
+			return t->digits; /* TODO this needs more tuning ? */
 		case EC_DEC:
 		case EC_SEC:
 			return t->digits + 2; /* add '-' and '.' */
 		case EC_TIME:
 		case EC_TIME_TZ:
-			return 20; /* TODO this needs more tunning */
+			return 20; /* TODO this needs more tuning */
 		case EC_DATE:
-			return 20; /* TODO this needs more tunning */
+			return 20; /* TODO this needs more tuning */
 		case EC_TIMESTAMP:
 		case EC_TIMESTAMP_TZ:
-			return 40; /* TODO this needs more tunning */
+			return 40; /* TODO this needs more tuning */
 		default:
 			return 0; /* EC_GEOM and EC_EXTERNAL */
 	}
 }
 
 /* 0 cannot convert */
-/* 1 set operations have very limited coersion rules */
-/* 2 automatic coersion (could still require dynamic checks for overflow) */
+/* 1 set operations have very limited coercion rules */
+/* 2 automatic coercion (could still require dynamic checks for overflow) */
 /* 3 casts are allowed (requires dynamic checks) (so far not used) */
 static int convert_matrix[EC_MAX][EC_MAX] = {
 /* FROM,			  A, T, B, C, V, B, P, N, M, S, D, F, T,TZ, D,TS,TSZ,G, E */
@@ -244,6 +244,8 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 	if (t->digits && res->digits > t->digits)
 		res->digits = t->digits;
 	res->scale = scale;
+	if (!digits && !scale && t->eclass == EC_DEC)
+		res->scale = res->digits = 0;
 }
 
 sql_subtype *
@@ -252,6 +254,15 @@ sql_create_subtype(allocator *sa, sql_type *t, unsigned int digits, unsigned int
 	sql_subtype *res = SA_ZNEW(sa, sql_subtype);
 
 	sql_init_subtype(res, t, digits, scale);
+	return res;
+}
+
+static sql_subtype *
+create_subtype(allocator *sa, sql_type *t)
+{
+	sql_subtype *res = SA_ZNEW(sa, sql_subtype);
+
+	sql_init_subtype(res, t, t->digits, 0);
 	return res;
 }
 
@@ -408,7 +419,7 @@ type_cmp(sql_type *t1, sql_type *t2)
 	if (res)
 		return res;
 
-	/* external types with the same system type are treated equaly */
+	/* external types with the same system type are treated equally */
 	if (t1->eclass == EC_EXTERNAL)
 		return res;
 
@@ -746,7 +757,7 @@ sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 }
 
 
-static sqlid local_id = 1;
+static sqlid local_id;
 
 static sql_type *
 sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *impl)
@@ -799,10 +810,10 @@ sql_create_func_(allocator *sa, const char *name, const char *mod, const char *i
 
 	for (int i = 0; i < nargs; i++) {
 		sql_type *tpe = va_arg(valist, sql_type*);
-		list_append(ops, create_arg(sa, NULL, sql_create_subtype(sa, tpe, 0, 0), ARG_IN));
+		list_append(ops, create_arg(sa, NULL, create_subtype(sa, tpe), ARG_IN));
 	}
 	if (res)
-		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+		fres = create_arg(sa, NULL, create_subtype(sa, res), ARG_OUT);
 	base_init(sa, &t->base, local_id++, false, name);
 
 	t->imp = sa_strdup(sa, imp);
@@ -1712,7 +1723,7 @@ sqltypeinit( allocator *sa)
 void
 types_init(allocator *sa)
 {
-	local_id = 1;
+	local_id = 4;				/* 1 to 3 are user id's */
 	types = sa_list(sa);
 	localtypes = sa_list(sa);
 	funcs = sa_list(sa);

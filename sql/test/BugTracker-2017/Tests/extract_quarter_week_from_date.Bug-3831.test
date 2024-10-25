@@ -16,7 +16,7 @@ insert into my_dates values (date '2014-01-14', timestamp '2014-01-14 12:12:12.1
 statement ok
 insert into my_dates values (date '2015-12-14', timestamp '2015-12-14 12:12:12.12', timestamp with time zone '2015-12-14 12:12:12.12')
 
-query TTT rowsort
+query TTT nosort
 select * from my_dates order by dt
 ----
 2014-01-14
@@ -32,7 +32,7 @@ select * from my_dates order by dt
 2017-06-14 12:12:12.120000
 2017-06-14 12:12:12.120000+02:00
 
-query TI rowsort
+query TI nosort
 select dt, extract(year from dt) as dt_yr from my_dates order by dt
 ----
 2014-01-14
@@ -44,7 +44,7 @@ select dt, extract(year from dt) as dt_yr from my_dates order by dt
 2017-06-14
 2017
 
-query TI rowsort
+query TI nosort
 select ts, extract(year from ts) as ts_yr from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000
@@ -56,7 +56,7 @@ select ts, extract(year from ts) as ts_yr from my_dates order by dt
 2017-06-14 12:12:12.120000
 2017
 
-query TI rowsort
+query TI nosort
 select tstz, extract(year from tstz) as tstz_yr from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000+02:00
@@ -68,7 +68,7 @@ select tstz, extract(year from tstz) as tstz_yr from my_dates order by dt
 2017-06-14 12:12:12.120000+02:00
 2017
 
-query TI rowsort
+query TI nosort
 select dt, extract(quarter from dt) as dt_qrfrom from my_dates order by dt
 ----
 2014-01-14
@@ -80,7 +80,7 @@ select dt, extract(quarter from dt) as dt_qrfrom from my_dates order by dt
 2017-06-14
 2
 
-query TI rowsort
+query TI nosort
 select ts, extract(quarter from ts) as ts_qrfrom from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000
@@ -92,7 +92,7 @@ select ts, extract(quarter from ts) as ts_qrfrom from my_dates order by dt
 2017-06-14 12:12:12.120000
 2
 
-query TI rowsort
+query TI nosort
 select tstz, extract(quarter from tstz) as tstz_qr from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000+02:00
@@ -104,7 +104,7 @@ select tstz, extract(quarter from tstz) as tstz_qr from my_dates order by dt
 2017-06-14 12:12:12.120000+02:00
 2
 
-query TI rowsort
+query TI nosort
 select dt, extract(week from dt) as dt_wk from my_dates order by dt
 ----
 2014-01-14
@@ -116,7 +116,7 @@ select dt, extract(week from dt) as dt_wk from my_dates order by dt
 2017-06-14
 24
 
-query TI rowsort
+query TI nosort
 select ts, extract(week from ts) as ts_wk from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000
@@ -128,7 +128,7 @@ select ts, extract(week from ts) as ts_wk from my_dates order by dt
 2017-06-14 12:12:12.120000
 24
 
-query TI rowsort
+query TI nosort
 select tstz, extract(week from tstz) as tstz_wk from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000+02:00
@@ -140,7 +140,7 @@ select tstz, extract(week from tstz) as tstz_wk from my_dates order by dt
 2017-06-14 12:12:12.120000+02:00
 24
 
-query TI rowsort
+query TI nosort
 select dt, "year"(dt) as dt_yr from my_dates order by dt
 ----
 2014-01-14
@@ -152,7 +152,7 @@ select dt, "year"(dt) as dt_yr from my_dates order by dt
 2017-06-14
 2017
 
-query TI rowsort
+query TI nosort
 select ts, "year"(ts) as ts_yr from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000
@@ -164,7 +164,7 @@ select ts, "year"(ts) as ts_yr from my_dates order by dt
 2017-06-14 12:12:12.120000
 2017
 
-query TI rowsort
+query TI nosort
 select tstz, "year"(tstz) as tstz_yr from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000+02:00
@@ -176,7 +176,7 @@ select tstz, "year"(tstz) as tstz_yr from my_dates order by dt
 2017-06-14 12:12:12.120000+02:00
 2017
 
-query TI rowsort
+query TI nosort
 select dt, quarter(dt) as dt_qrfrom from my_dates order by dt
 ----
 2014-01-14
@@ -188,7 +188,7 @@ select dt, quarter(dt) as dt_qrfrom from my_dates order by dt
 2017-06-14
 2
 
-query TI rowsort
+query TI nosort
 select ts, quarter(ts) as ts_qrfrom from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000
@@ -200,7 +200,7 @@ select ts, quarter(ts) as ts_qrfrom from my_dates order by dt
 2017-06-14 12:12:12.120000
 2
 
-query TI rowsort
+query TI nosort
 select tstz, quarter(tstz) as tstz_qr from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000+02:00
@@ -212,7 +212,7 @@ select tstz, quarter(tstz) as tstz_qr from my_dates order by dt
 2017-06-14 12:12:12.120000+02:00
 2
 
-query TI rowsort
+query TI nosort
 select dt, week(dt) as dt_wk from my_dates order by dt
 ----
 2014-01-14
@@ -224,7 +224,7 @@ select dt, week(dt) as dt_wk from my_dates order by dt
 2017-06-14
 24
 
-query TI rowsort
+query TI nosort
 select ts, week(ts) as ts_wk from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000
@@ -236,7 +236,7 @@ select ts, week(ts) as ts_wk from my_dates order by dt
 2017-06-14 12:12:12.120000
 24
 
-query TI rowsort
+query TI nosort
 select tstz, week(tstz) as tstz_wk from my_dates order by dt
 ----
 2014-01-14 12:12:12.120000+02:00

@@ -322,7 +322,7 @@ control_setup(
 				if (p == NULL) {
 					/* the server doesn't support what we can */
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"unsupported hash algoritms: %s", algos);
+							"unsupported hash algorithms: %s", algos);
 					close_stream(control->fdout);
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));

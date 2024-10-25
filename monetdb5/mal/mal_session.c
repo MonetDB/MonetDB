@@ -79,7 +79,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
  *
  * In interactive mode,  the closing statement is never reached.  The
  * 'main' procedure is typically cleaned between successive external
- * messages except for its variables, which are considerd global.  This
+ * messages except for its variables, which are considered global.  This
  * storage container is re-used when during the previous call nothing
  * was added.  At the end of the session we have to garbage collect the
  * BATs introduced.
@@ -376,8 +376,6 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
 	if (msg != MAL_SUCCEED) {
-		mnstr_printf(fout, "!could not serve client\n");
-		exit_streams(fin, fout);
 		freeException(msg);
 	}
 }

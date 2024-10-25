@@ -191,7 +191,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	const char *clientcert = msettings_connect_clientcert(settings);
 	enum msetting_tls_verify verify_method = msettings_connect_tls_verify(settings);
 
-	// Clear any earlier errrors
+	// Clear any earlier errors
 	do {} while (ERR_get_error() != 0);
 
 	SSL_CTX *ctx = NULL;

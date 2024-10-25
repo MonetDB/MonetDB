@@ -243,6 +243,8 @@ int yydebug=1;
 	column_exp
 	column_option
 	column_options
+	check_parenthesis_open
+	check_search_condition
 	comment_on_statement
 	comparison_predicate
 	control_statement
@@ -429,6 +431,7 @@ int yydebug=1;
 	blobstring
 	calc_ident
 	calc_restricted_ident
+	check_parenthesis_close
 	clob
 	column
 	forest_element_name
@@ -512,6 +515,7 @@ int yydebug=1;
 	opt_schema_element_list
 	opt_seps
 	opt_decimal_seps
+	opt_returning_clause
 	opt_seq_params
 	opt_typelist
 	opt_with_encrypted_password
@@ -660,6 +664,8 @@ int yydebug=1;
 
 %right <sval> STRING USTRING XSTRING
 %right <sval> X_BODY
+
+%token name
 
 /* sql prefixes to avoid name clashes on various architectures */
 %token <sval>
@@ -1642,9 +1648,10 @@ opt_max_memory:
  |  MAX_MEMORY poslng   { $$ = $2; }
  |  MAX_MEMORY string   {
 		char *end = NULL;
+		errno = 0;
 		lng size = strtoll($2, &end, 10);
-		lng unit = size_unit(end);
-		if (unit < 0 || size < 0) {
+		lng unit;
+		if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0) {
 			$$ = -1;
 			yyerror(m, "Invalid size");
 			YYABORT;
@@ -2181,6 +2188,32 @@ opt_match:
  | MATCH opt_match_type		{ $$ = $2; }
  ;
 
+check_parenthesis_open:
+	'('
+	{
+		struct scanner *lc = &m->scanner;
+		lc->as = lc->rs->pos + lc->yycur;
+	}
+;
+
+check_parenthesis_close:
+	')'
+	{
+		struct scanner *lc = &m->scanner;
+		char* check_sql = sa_strndup(SA, lc->rs->buf+lc->as, lc->rs->pos + lc->yycur - lc->as - 1);
+		$$ = check_sql;
+	}
+;
+
+ check_search_condition:
+ check_parenthesis_open search_condition check_parenthesis_close
+ 	{
+		dlist *l = L();
+		append_symbol(l, $2);
+		append_string(l, $3);
+		$$ = _symbol_create_list(SQL_CHECK, l);
+	}
+
 column_constraint_type:
     NOT sqlNULL	{ $$ = _symbol_create( SQL_NOT_NULL, NULL); }
  |  sqlNULL	{ $$ = _symbol_create( SQL_NULL, NULL); }
@@ -2196,7 +2229,7 @@ column_constraint_type:
 			  append_int(l, $4 );
 			  append_int(l, $5 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- |  CHECK '(' search_condition ')' { $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK check_search_condition { $$ = $2; }
  ;
 
 table_constraint_type:
@@ -2217,8 +2250,7 @@ table_constraint_type:
 			  append_int(l, $7 );
 			  append_int(l, $8 );
 			  $$ = _symbol_create_list( SQL_FOREIGN_KEY, l); }
- |  CHECK '(' search_condition ')' 
-			{ $$ = _symbol_create_symbol(SQL_CHECK, $3); }
+ |  CHECK check_search_condition { $$ = $2; }
  ;
 
 ident_commalist:
@@ -3160,13 +3192,19 @@ opt_endianness:
 	| NATIVE ENDIAN	{ $$ = endian_native; }
 	;
 
+opt_returning_clause:
+    /* empty */				{ $$ = NULL; }
+	| RETURNING selection	{ $$ = $2; }
+	;
+
 delete_stmt:
-    sqlDELETE FROM qname opt_alias_name opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_where_clause opt_returning_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_string(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
@@ -3192,13 +3230,14 @@ truncate_stmt:
  ;
 
 update_stmt:
-    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause
+    UPDATE qname opt_alias_name SET assignment_commalist opt_from_clause opt_where_clause opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $2);
 	  append_string(l, $3);
 	  append_list(l, $5);
 	  append_symbol(l, $6);
 	  append_symbol(l, $7);
+	  append_list(l, $8);
 	  $$ = _symbol_create_list( SQL_UPDATE, l ); }
  ;
 
@@ -3254,17 +3293,19 @@ merge_stmt:
  ;
 
 insert_stmt:
-    INSERT INTO qname values_or_query_spec
+    INSERT INTO qname values_or_query_spec opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, NULL);
 	  append_symbol(l, $4);
+	  append_list(l, $5);
 	  $$ = _symbol_create_list( SQL_INSERT, l ); }
- |  INSERT INTO qname column_commalist_parens values_or_query_spec
+ |  INSERT INTO qname column_commalist_parens values_or_query_spec opt_returning_clause
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $5);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_INSERT, l ); }
  ;
 
@@ -5734,7 +5775,7 @@ data_type:
  |  BIGINT		{ sql_find_subtype(&$$, "bigint", 0, 0); }
  |  HUGEINT		{ sql_find_subtype(&$$, "hugeint", 0, 0); }
 
- |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 18, 3); }
+ |  sqlDECIMAL		{ sql_find_subtype(&$$, "decimal", 0, 0); }
  |  sqlDECIMAL '(' nonzero ')'
 			{
 			  int d = $3;
@@ -6068,7 +6109,6 @@ non_reserved_word:
 | NIL		{ $$ = sa_strdup(SA, "nil"); }
 | PASSING	{ $$ = sa_strdup(SA, "passing"); }
 | REF		{ $$ = sa_strdup(SA, "ref"); }
-| RETURNING	{ $$ = sa_strdup(SA, "returning"); }
 | STRIP		{ $$ = sa_strdup(SA, "strip"); }
 | URI		{ $$ = sa_strdup(SA, "uri"); }
 | WHITESPACE	{ $$ = sa_strdup(SA, "whitespace"); }
@@ -6120,7 +6160,12 @@ intval:
 		  // errno might be non-zero due to other people's code
 		  errno = 0;
 		  if (l <= 10) {
-			$$ = strtol(s,&end,10);
+			long v = strtol(s,&end,10);
+#if SIZEOF_LONG > SIZEOF_INT
+			if (v > INT_MAX)
+				errno = ERANGE;
+#endif
+			$$ = (int) v;
 		  } else {
 			$$ = 0;
 		  }
@@ -6996,7 +7041,7 @@ odbc_data_type:
     | SQL_DATE
 	{ sql_find_subtype(&$$, "date", 0, 0); }
     | SQL_DECIMAL
-	{ sql_find_subtype(&$$, "decimal", 18, 3); }
+	{ sql_find_subtype(&$$, "decimal", 0, 0); }
     | SQL_DOUBLE
 	{ sql_find_subtype(&$$, "double", 0, 0); }
     | SQL_FLOAT
@@ -7045,7 +7090,7 @@ odbc_data_type:
     | SQL_LONGVARCHAR
 	{ sql_find_subtype(&$$, "varchar", 0, 0); }
     | SQL_NUMERIC
-	{ sql_find_subtype(&$$, "decimal", 18, 3); }
+	{ sql_find_subtype(&$$, "decimal", 0, 0); }
     | SQL_REAL
 	{ sql_find_subtype(&$$, "real", 0, 0); }
     | SQL_SMALLINT

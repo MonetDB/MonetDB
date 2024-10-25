@@ -1870,7 +1870,7 @@ select * from store_sales limit 9
 statement ok
 rollback
 
-query T rowsort
+query T nosort
 -- query 1
 with customer_total_return as
 (select sr_customer_sk as ctr_customer_sk
@@ -1996,7 +1996,7 @@ AAAAAAAAACBNAAAA
 AAAAAAAAACBPAAAA
 AAAAAAAAACCHAAAA
 
-query IRRRRRRR rowsort
+query IRRRRRRR nosort
 -- query 2
 with wscs as
  (select sold_date_sk
@@ -2058,7 +2058,7 @@ with wscs as
 ----
 20104 values hashing to d389792e8b24a6c5158cc3543fc1a10d
 
-query IITR rowsort
+query IITR nosort
 -- query 3
 select  dt.d_year
        ,item.i_brand_id brand_id
@@ -2079,9 +2079,9 @@ select  dt.d_year
          ,brand_id
  limit 100
 ----
-356 values hashing to f622c5c5ffff908edcd28dd716f580df
+356 values hashing to 5ae1597125b92c88076a00ca5577433f
 
-query TTTT rowsort
+query TTTT nosort
 -- query 4
 with year_total as (
  select c_customer_id customer_id
@@ -2230,7 +2230,7 @@ Edith
 Molina
 Y
 
-query TTRRR rowsort
+query TTRRR nosort
 -- query 5
 with ssr as
  (select s_store_id,
@@ -2360,7 +2360,7 @@ with ssr as
 ----
 500 values hashing to 0ad51d1cc1629f2f07599b97b15c0515
 
-query TTRRR rowsort
+query TTRRR nosort
 -- query 5a
 with ssr as
  (select s_store_id,
@@ -2497,7 +2497,7 @@ limit 100
 ----
 500 values hashing to 0ad51d1cc1629f2f07599b97b15c0515
 
-query TI rowsort
+query TI nosort
 -- query 6
 select  a.ca_state state, count(*) cnt
  from customer_address a
@@ -2523,98 +2523,98 @@ select  a.ca_state state, count(*) cnt
  order by cnt, a.ca_state
  limit 100
 ----
+VT
+14
+ME
+16
+NJ
+18
+MD
+19
 AK
 21
-AL
-49
-AR
-73
-CA
-60
-CO
-48
-FL
-49
-GA
-153
-IA
-96
+NH
+21
+MA
+24
+NV
+26
+OR
+27
+ND
+28
+UT
+31
+SD
+35
 ID
 36
-IL
-106
+NM
+36
+WV
+45
+WA
+46
+SC
+47
+CO
+48
+AL
+49
+FL
+49
+LA
+49
+NY
+52
+WI
+53
+MT
+55
+PA
+56
+OK
+57
+CA
+60
+MS
+69
+NULL
+73
+AR
+73
+TN
+74
 IN
 76
 KS
 80
-KY
-103
-LA
-49
-MA
-24
-MD
-19
-ME
-16
-MI
-83
 MN
 81
+MI
+83
 MO
 83
-MS
-69
-MT
-55
-NC
-107
-ND
-28
 NE
 87
-NH
-21
-NJ
-18
-NM
-36
-NULL
-73
-NV
-26
-NY
-52
+IA
+96
 OH
 102
-OK
-57
-OR
-27
-PA
-56
-SC
-47
-SD
-35
-TN
-74
-TX
-228
-UT
-31
+KY
+103
+IL
+106
+NC
+107
 VA
 137
-VT
-14
-WA
-46
-WI
-53
-WV
-45
+GA
+153
+TX
+228
 
-query TRRRR rowsort
+query TRRRR nosort
 -- query 7
 select  i_item_id,
         avg(ss_quantity) agg1,
@@ -2637,7 +2637,7 @@ select  i_item_id,
 ----
 500 values hashing to 9ebdc3171871db1a30ad38b69eee00cc
 
-query TR rowsort
+query TR nosort
 -- query 8
 select  s_store_name
       ,sum(ss_net_profit)
@@ -2812,7 +2812,7 @@ where r_reason_sk = 1
 267.190
 341.990
 
-query TTTIIITIIIIIII rowsort
+query TTTIIITIIIIIII nosort
 -- query 10
 select
   cd_gender,
@@ -2942,7 +2942,7 @@ Good
 1
 1
 
-query TTTIIITIIIIIII rowsort
+query TTTIIITIIIIIII nosort
 -- query 10a
 select
   cd_gender,
@@ -3073,7 +3073,7 @@ Good
 1
 1
 
-query TTTT rowsort
+query TTTT nosort
 -- query 11
 with year_total as (
  select c_customer_id customer_id
@@ -3156,7 +3156,7 @@ limit 100
 ----
 352 values hashing to 5cd395d089a371fbd00b739eec53d4a8
 
-query TTTTRRR rowsort
+query TTTTRRR nosort
 -- query 12
 select  i_item_id
       ,i_item_desc
@@ -3190,7 +3190,7 @@ order by
         ,revenueratio
 limit 100
 ----
-700 values hashing to 7d238d4326fe5e153af125b9bf93ad1b
+700 values hashing to cc38887f721783ffdee1b5c309408027
 
 query RRRR rowsort
 -- query 13
@@ -3248,7 +3248,7 @@ select avg(ss_quantity)
 2365.940
 14195.660
 
-query TIIIRI rowsort
+query TIIIRI nosort
 -- query 14-1
 with  cross_items as
  (select i_item_sk ss_item_sk
@@ -3352,9 +3352,9 @@ with  cross_items as
  order by channel,i_brand_id,i_class_id,i_category_id
  limit 100
 ----
-600 values hashing to 921d62692c44049ed3bc8157bb3c9f4c
+600 values hashing to 52579efe8953b7c7dd760a3a5f5f5a7a
 
-query TIIIRITIIIRI rowsort
+query TIIIRITIIIRI nosort
 -- query 14-2
 with  cross_items as
  (select i_item_sk ss_item_sk
@@ -3465,7 +3465,7 @@ with  cross_items as
 ----
 1200 values hashing to 072f47583c4624abc35db5c910b3a590
 
-query TIIIRI rowsort
+query TIIIRI nosort
 -- query 14a-1
 with  cross_items as
  (select i_item_sk ss_item_sk
@@ -3585,9 +3585,9 @@ from (
 order by channel, i_brand_id, i_class_id, i_category_id
  limit 100
 ----
-600 values hashing to 921d62692c44049ed3bc8157bb3c9f4c
+600 values hashing to 52579efe8953b7c7dd760a3a5f5f5a7a
 
-query TIIIRITIIIRI rowsort
+query TIIIRITIIIRI nosort
 -- query 14a-2
  with  cross_items as
  (select i_item_sk ss_item_sk
@@ -3686,7 +3686,7 @@ query TIIIRITIIIRI rowsort
 ----
 1200 values hashing to 072f47583c4624abc35db5c910b3a590
 
-query TR rowsort
+query TR nosort
 -- query 15
 select  ca_zip
        ,sum(cs_sales_price)
@@ -3706,9 +3706,9 @@ select  ca_zip
  order by ca_zip
  limit 100
 ----
-200 values hashing to 84948a87a3387b914146971155fa42f7
+200 values hashing to 947c45a1161972fa2d6d9aefeaf39d49
 
-query IRR rowsort
+query IRR nosort
 -- query 16
 select
    count(distinct cs_order_number) as "order count"
@@ -3743,7 +3743,7 @@ limit 100
 1062963.890
 -214910.610
 
-query TTTIRRRIRRRIRRR rowsort
+query TTTIRRRIRRRIRRR nosort
 -- query 17
 select  i_item_id
        ,i_item_desc
@@ -3804,7 +3804,7 @@ NULL
 NULL
 NULL
 
-query TTTTRRRRRRR rowsort
+query TTTTRRRRRRR nosort
 -- query 18
 select  i_item_id,
         ca_country,
@@ -3838,9 +3838,9 @@ select  i_item_id,
 	i_item_id
  limit 100
 ----
-1100 values hashing to 0f8c410ff9a097468fafde146a80a3a8
+1100 values hashing to ac4152e80ebb79336fbaf17253014111
 
-query TTTTRRRRRRR rowsort
+query TTTTRRRRRRR nosort
 -- query 18a
 with results as
  (select i_item_id,
@@ -3896,9 +3896,9 @@ with results as
  order by ca_country, ca_state, ca_county, i_item_id
  limit 100
 ----
-1100 values hashing to 0f8c410ff9a097468fafde146a80a3a8
+1100 values hashing to ac4152e80ebb79336fbaf17253014111
 
-query ITITR rowsort
+query ITITR nosort
 -- query 19
 select  i_brand_id brand_id, i_brand brand, i_manufact_id, i_manufact,
  	sum(ss_ext_sales_price) ext_price
@@ -3923,9 +3923,9 @@ select  i_brand_id brand_id, i_brand brand, i_manufact_id, i_manufact,
          ,i_manufact
 limit 100
 ----
-500 values hashing to 8e3fed4d69766d0426b20c8199a60d4d
+500 values hashing to 7079f7f6c66ba635b092e2a2f474d3ba
 
-query TTTTRRR rowsort
+query TTTTRRR nosort
 -- query 20
 select  i_item_id
        ,i_item_desc
@@ -3955,9 +3955,9 @@ select  i_item_id
          ,revenueratio
 limit 100
 ----
-700 values hashing to 78f72ae6989511bbf964b2458f74c99d
+700 values hashing to 4ebe9ff747adc57b86a5ba3433d9aaed
 
-query TTII rowsort
+query TTII nosort
 -- query 21
 select  *
  from(select w_warehouse_name
@@ -3989,7 +3989,7 @@ select  *
 ----
 400 values hashing to 1491165be2d60c40006bedee3d5ae551
 
-query TTTTR rowsort
+query TTTTR nosort
 -- query 22
 select  i_product_name
              ,i_brand
@@ -4009,9 +4009,9 @@ select  i_product_name
 order by qoh, i_product_name, i_brand, i_class, i_category
 limit 100
 ----
-500 values hashing to e1068d9b6bd311e171034af47cfa9e0e
+500 values hashing to e7a50f3285e4c45f5d327c1ed71f0338
 
-query TTTTR rowsort
+query TTTTR nosort
 -- query 22a
 with results as
 (select  i_product_name
@@ -4051,7 +4051,7 @@ from results)
       order by qoh, i_product_name, i_brand, i_class, i_category
 limit 100
 ----
-500 values hashing to e1068d9b6bd311e171034af47cfa9e0e
+500 values hashing to e7a50f3285e4c45f5d327c1ed71f0338
 
 query R rowsort
 -- query 23-1
@@ -4107,7 +4107,7 @@ from
 ----
 17030.910
 
-query TTR rowsort
+query TTR nosort
 -- query 23-2
  with frequent_ss_items as
  (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
@@ -4165,6 +4165,9 @@ query TTR rowsort
      order by c_last_name,c_first_name,sales
   limit 100
 ----
+NULL
+Robert
+598.860
 Brown
 Monika
 6031.520
@@ -4174,11 +4177,8 @@ Gordon
 Green
 Jesse
 9672.960
-NULL
-Robert
-598.860
 
-query TTTR rowsort
+query TTTR nosort
 -- query 24-1
 with ssales as
 (select c_last_name
@@ -4245,7 +4245,7 @@ Sandra
 bar
 509.420
 
-query TTTR rowsort
+query TTTR nosort
 -- query 24-2
 with ssales as
 (select c_last_name
@@ -4316,7 +4316,7 @@ Jeannie
 bar
 446.310
 
-query TTTTRRR rowsort
+query TTTTRRR nosort
 -- query 25
 select
  i_item_id
@@ -4372,7 +4372,7 @@ ation
 91.410
 -1329.460
 
-query TRRRR rowsort
+query TRRRR nosort
 -- query 26
 select  i_item_id,
         avg(cs_quantity) agg1,
@@ -4395,7 +4395,7 @@ select  i_item_id,
 ----
 500 values hashing to c79c332a2b7e8f1ab8c4951c3463b313
 
-query TTIRRRR rowsort
+query TTIRRRR nosort
 -- query 27
 select  i_item_id,
         s_state, grouping(s_state) g_state,
@@ -4418,9 +4418,9 @@ select  i_item_id,
          ,s_state
  limit 100
 ----
-700 values hashing to 4768cbb63a3c1944e5a2bfbd752ba99a
+700 values hashing to 1dd7e54139ea526385fb65f2d9d3fa7e
 
-query TTIRRRR rowsort
+query TTIRRRR nosort
 -- query 27a
 with results as
  (select i_item_id,
@@ -4456,7 +4456,7 @@ with results as
   order by i_item_id, s_state
  limit 100
 ----
-700 values hashing to 4768cbb63a3c1944e5a2bfbd752ba99a
+700 values hashing to 1dd7e54139ea526385fb65f2d9d3fa7e
 
 query RIIRIIRIIRIIRIIRII rowsort
 -- query 28
@@ -4530,7 +4530,7 @@ limit 100
 29776
 5210
 
-query TTTTIII rowsort
+query TTTTIII nosort
 -- query 29
 select
      i_item_id
@@ -4585,7 +4585,7 @@ ought
 81
 22
 
-query TTTTTIIITTTIR rowsort
+query TTTTTIIITTTIR nosort
 -- query 30
 with customer_total_return as
  (select wr_returning_customer_sk as ctr_customer_sk
@@ -4616,9 +4616,9 @@ with customer_total_return as
                   ,c_last_review_date,ctr_total_return
 limit 100
 ----
-1300 values hashing to 46f76e63ac60a7b540f258c4ad0fbfdb
+1300 values hashing to 28e7c87e0d9219a5b33c816332174184
 
-query TIRRRR rowsort
+query TIRRRR nosort
 -- query 31
 -- added a bunch of "*1.0000"
 with ss as
@@ -4703,7 +4703,7 @@ limit 100
 ----
 28038.140
 
-query IR rowsort
+query IR nosort
 -- query 33
 with ss as (
  select
@@ -4778,9 +4778,9 @@ where i_category in ('Electronics'))
  order by total_sales
 limit 100
 ----
-200 values hashing to cb0042b696c91912080cb5edb1ca409d
+200 values hashing to 8f68d4704fa7569916502c33808a5df4
 
-query TTTTII rowsort
+query TTTTII nosort
 -- query 34
 select c_last_name
        ,c_first_name
@@ -4811,9 +4811,9 @@ select c_last_name
       and cnt between 15 and 20
     order by c_last_name,c_first_name,c_salutation,c_preferred_cust_flag desc, ss_ticket_number
 ----
-2706 values hashing to 9e935240f07fd89130c1d0103fe0e495
+2706 values hashing to c6193fa5c1176ce7a13e736a507a5739
 
-query TTTIIIIRIIIIRIIIIR rowsort
+query TTTIIIIRIIIIRIIIIR nosort
 -- query 35
 select
   ca_state,
@@ -4871,9 +4871,9 @@ select
           cd_dep_college_count
  limit 100
 ----
-1800 values hashing to 1d2ac51e16f61668fdfcded8eb917f10
+1800 values hashing to 86c162969882cb545e292aecd3488c56
 
-query TTTIIIIRIIIIRIIIIR rowsort
+query TTTIIIIRIIIIRIIIIR nosort
 -- query 35a
 select
   ca_state,
@@ -4934,9 +4934,9 @@ select
           cd_dep_college_count
  limit 100
 ----
-1800 values hashing to 1d2ac51e16f61668fdfcded8eb917f10
+1800 values hashing to 86c162969882cb545e292aecd3488c56
 
-query RTTII rowsort
+query RTTII nosort
 -- query 36
 with results as ( -- added this line
 select
@@ -4968,9 +4968,9 @@ select
   ,rank_within_parent
   limit 100
 ----
-500 values hashing to 8bf249172f3ee398ec688900d66afe7f
+500 values hashing to 3778dc9f64d3b2528de85cd81bf2c4b5
 
-query RTTII rowsort
+query RTTII nosort
 -- query 36a
 with results as
  (select
@@ -5012,9 +5012,9 @@ with results as
   ,rank_within_parent
   limit 100
 ----
-500 values hashing to 8bf249172f3ee398ec688900d66afe7f
+500 values hashing to 3778dc9f64d3b2528de85cd81bf2c4b5
 
-query TTR rowsort
+query TTR nosort
 -- query 37
 select  i_item_id
        ,i_item_desc
@@ -5060,7 +5060,7 @@ limit 100
 ----
 107
 
-query IIIRRIIIRR rowsort
+query IIIRRIIIRR nosort
 -- query 39-1
 with inv as
 (select w_warehouse_name,w_warehouse_sk,i_item_sk,d_moy
@@ -5087,9 +5087,9 @@ where inv1.i_item_sk = inv2.i_item_sk
 order by inv1.w_warehouse_sk,inv1.i_item_sk,inv1.d_moy,inv1.mean,inv1.cov
         ,inv2.d_moy,inv2.mean, inv2.cov
 ----
-2430 values hashing to b63eaf55608d0a940856fd6043648f5a
+2430 values hashing to 9421d621dcf33fea286dd2532a5e264e
 
-query IIIRRIIIRR rowsort
+query IIIRRIIIRR nosort
 -- query 39-2
 with inv as
 (select w_warehouse_name,w_warehouse_sk,i_item_sk,d_moy
@@ -5117,9 +5117,9 @@ where inv1.i_item_sk = inv2.i_item_sk
 order by inv1.w_warehouse_sk,inv1.i_item_sk,inv1.d_moy,inv1.mean,inv1.cov
         ,inv2.d_moy,inv2.mean, inv2.cov
 ----
-140 values hashing to 359ac1a75c2275999d96332cecbf03af
+140 values hashing to efbba515b2b1a7d121e19b86e0e11dfa
 
-query TTRR rowsort
+query TTRR nosort
 -- query 40
 select
    w_state
@@ -5149,7 +5149,7 @@ limit 100
 ----
 400 values hashing to fedfc1a4e548149beb25b4fe990c1dad
 
-query T rowsort
+query T nosort
 -- query 41
 select  distinct(i_product_name)
  from item i1
@@ -5206,7 +5206,7 @@ anticallyeingese
 callycallyeingese
 oughtationableought
 
-query IITR rowsort
+query IITR nosort
 -- query 42
 select  dt.d_year
  	,item.i_category_id
@@ -5229,6 +5229,18 @@ select  dt.d_year
 limit 100
 ----
 2000
+7
+Home
+458017.850
+2000
+3
+Children
+370261.290
+2000
+2
+Men
+368718.950
+2000
 1
 Women
 320132.430
@@ -5237,39 +5249,27 @@ Women
 Electronics
 281421.740
 2000
-2
-Men
-368718.950
-2000
-3
-Children
-370261.290
+5
+Music
+223420.700
 2000
 4
 Shoes
 221242.250
 2000
-5
-Music
-223420.700
+8
+Sports
+200806.450
 2000
 6
 Jewelry
 167920.910
 2000
-7
-Home
-458017.850
-2000
-8
-Sports
-200806.450
-2000
 9
 Books
 161721.110
 
-query TTRRRRRRR rowsort
+query TTRRRRRRR nosort
 -- query 43
 select  s_store_name, s_store_id,
         sum(case when (d_day_name='Sunday') then ss_sales_price else null end) sun_sales,
@@ -5343,7 +5343,7 @@ AAAAAAAABAAAAAAA
 481816.200
 491354.680
 
-query ITT rowsort
+query ITT nosort
 -- query 44
 select  asceding.rnk, i1.i_product_name best_performing, i2.i_product_name worst_performing
 from(select *
@@ -5381,9 +5381,6 @@ limit 100
 1
 oughtantiprin st
 callyeingbarcallyought
-10
-eingoughtn station
-barcallyableought
 2
 barcallyprioughtought
 bareseationcallyought
@@ -5408,8 +5405,11 @@ ationoughtantianti
 9
 esebarableeseought
 callyn stantieseought
+10
+eingoughtn station
+barcallyableought
 
-query TTR rowsort
+query TTR nosort
 -- query 45
 select  ca_zip, ca_city, sum(ws_sales_price)
  from web_sales, customer, customer_address, date_dim, item
@@ -5487,7 +5487,7 @@ Friendship
 Oak Grove
 52.420
 
-query TTTTIRR rowsort
+query TTTTIRR nosort
 -- query 46
 select  c_last_name
        ,c_first_name
@@ -5524,7 +5524,7 @@ select  c_last_name
 ----
 700 values hashing to c5a2e04f73f6da7a2d06c5baf192fc0a
 
-query TTTTIIRRRR rowsort
+query TTTTIIRRRR nosort
 -- query 47
 with v1 as(
  select i_category, i_brand,
@@ -5575,7 +5575,7 @@ with v1 as(
  order by sum_sales - avg_monthly_sales, s_store_name
  limit 100
 ----
-1000 values hashing to b3ee292c0580b29cc7d1392fdcaf1dab
+1000 values hashing to f218a81c595d810d629b3bab3fa28cad
 
 query I rowsort
 -- query 48
@@ -5645,7 +5645,7 @@ select sum (ss_quantity)
 ----
 26257
 
-query TIRII rowsort
+query TIRII nosort
 -- query 49
 select  channel, item, return_ratio, return_rank, currency_rank from
  (select
@@ -5774,9 +5774,9 @@ select  channel, item, return_ratio, return_rank, currency_rank from
  order by 1,4,5,2
  limit 100
 ----
-160 values hashing to ffc95f37fcdc9fb5d430279570ee59d1
+160 values hashing to ba433a3357e13ae57b8bf853f50c1630
 
-query TITTTTTTTTIIIII rowsort
+query TITTTTTTTTIIIII nosort
 -- query 50
 select
    s_store_name
@@ -5926,7 +5926,7 @@ TN
 58
 103
 
-query ITRRRR rowsort
+query ITRRRR nosort
 -- query 51
 WITH web_v1 as (
 select
@@ -5974,7 +5974,7 @@ limit 100
 600 values hashing to f1cce2608f5e93697e23da9b25217519
 
 skipif bits=32bit
-query ITRRRR rowsort
+query ITRRRR nosort
 -- query 51a
 WITH web_tv as (
 select
@@ -6039,7 +6039,7 @@ limit 100
 ----
 600 values hashing to f1cce2608f5e93697e23da9b25217519
 
-query IITR rowsort
+query IITR nosort
 -- query 52
 select  dt.d_year
  	,item.i_brand_id brand_id
@@ -6061,9 +6061,9 @@ select  dt.d_year
  	,brand_id
 limit 100
 ----
-400 values hashing to 098994548f767eef8fe45bf3d6624419
+400 values hashing to 9d5ee883cb20edc99898502d2efb6e77
 
-query IRR rowsort
+query IRR nosort
 -- query 53
 select  * from
 (select i_manufact_id,
@@ -6091,9 +6091,9 @@ order by avg_quarterly_sales,
 	 i_manufact_id
 limit 100
 ----
-300 values hashing to 6b49c8feb3cd39a17fa240e0af947229
+300 values hashing to e3ee46a66ecf800abe0f9b908a70e7f3
 
-query III rowsort
+query III nosort
 -- query 54
 with my_customers as (
  select distinct c_customer_sk
@@ -6153,7 +6153,7 @@ with my_customers as (
 1
 593000
 
-query ITR rowsort
+query ITR nosort
 -- query 55
 select  i_brand_id brand_id, i_brand brand,
  	sum(ss_ext_sales_price) ext_price
@@ -6167,9 +6167,9 @@ select  i_brand_id brand_id, i_brand brand,
  order by ext_price desc, i_brand_id
 limit 100
 ----
-300 values hashing to 803c7653b1f9aab1388c7e6ca4f77ee3
+300 values hashing to 82ddf6fded1722db44b9c6d54091d96d
 
-query TR rowsort
+query TR nosort
 -- query 56
 with ss as (
  select i_item_id,sum(ss_ext_sales_price) total_sales
@@ -6238,9 +6238,9 @@ where i_color in ('slate','blanched','burnished'))
           i_item_id
  limit 100
 ----
-200 values hashing to 33d911ad1033ffbead691fca0a9b1e36
+200 values hashing to 5b5bc88fa04ed90f54c4866449ec044e
 
-query TTTIIRRRR rowsort
+query TTTIIRRRR nosort
 -- query 57
 with v1 as(
  select i_category, i_brand,
@@ -6288,9 +6288,9 @@ with v1 as(
  order by sum_sales - avg_monthly_sales, cc_name
  limit 100
 ----
-900 values hashing to bfa8f675e90c6a18caafbf756d049071
+900 values hashing to 90fc599591063c773f1b36f9d3ad4c59
 
-query TRRRRRRR rowsort
+query TRRRRRRR nosort
 -- query 58
 with ss_items as
  (select i_item_id item_id
@@ -6380,7 +6380,7 @@ AAAAAAAAJMFCAAAA
 94.400
 3501.603
 
-query TTIRRRRRRR rowsort
+query TTIRRRRRRR nosort
 -- query 59
 with wss as
  (select d_week_seq,
@@ -6426,7 +6426,7 @@ limit 100
 ----
 1000 values hashing to 4080c9d0d4f507d24e287a98f44e134a
 
-query TR rowsort
+query TR nosort
 -- query 60
 with ss as (
  select
@@ -6506,7 +6506,7 @@ where i_category in ('Music'))
 ----
 200 values hashing to 61dc8bd82f5598a1c23cc53927e9fdf8
 
-query RRR rowsort
+query RRR nosort
 -- query 61
 select  promotions,total,cast(promotions as decimal(15,4))/cast(total as decimal(15,4))*100
 from
@@ -6554,7 +6554,7 @@ limit 100
 5493575.410
 52.680
 
-query TTTIIIII rowsort
+query TTTIIIII nosort
 -- query 62
 select
    substr(w_warehouse_name,1,20)
@@ -6589,9 +6589,9 @@ order by substr(w_warehouse_name,1,20)
        ,web_name
 limit 100
 ----
-800 values hashing to d53aa17cc3390fc3c347b0abacb9f34f
+800 values hashing to 068519370403b9e1eff2beef31819218
 
-query IRR rowsort
+query IRR nosort
 -- query 63
 select  *
 from (select i_manager_id
@@ -6620,9 +6620,9 @@ order by i_manager_id
         ,sum_sales
 limit 100
 ----
-300 values hashing to 523ee05fa3b78148eb8695e87feaec15
+300 values hashing to d55157b0b92d3a8da63885f15ddcad00
 
-query TTTTTTTTTTTIIRRRRRRII rowsort
+query TTTTTTTTTTTIIRRRRRRII nosort
 -- query 64
 with cs_ui as
  (select cs_item_sk
@@ -6743,9 +6743,9 @@ order by cs1.product_name
        ,cs1.s1
        ,cs2.s1
 ----
-210 values hashing to 4dbefbf4fc5804e86e40df759cfc4204
+210 values hashing to 8ef185ab9e0746b0a39c51ac00a90aef
 
-query TTRRRT rowsort
+query TTRRRT nosort
 -- query 65
 select
 	s_store_name,
@@ -6774,9 +6774,9 @@ select
  order by s_store_name, i_item_desc
 limit 100
 ----
-600 values hashing to 5e6c06af5f55860519200ef936e1e664
+600 values hashing to 3305685d6966adff51e88fffb50db0fa
 
-query TITTTTTIRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR rowsort
+query TITTTTTIRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR nosort
 -- query 66
 select
          w_warehouse_name
@@ -6996,9 +6996,9 @@ select
  order by w_warehouse_name
  limit 100
 ----
-220 values hashing to c0df039a907918fe903fa64e2c2cddbe
+220 values hashing to 66e750f9929ff8cdc09db703e9e20680
 
-query TTTTIIITRI rowsort
+query TTTTIIITRI nosort
 -- query 67
 select  *
 from (select i_category
@@ -7042,9 +7042,9 @@ order by i_category
         ,rk
 limit 100
 ----
-1000 values hashing to b7fefcddebfcdf29e74c37dd4e7d9e09
+1000 values hashing to 7bd642e6d43731b9b8184336cabc1f28
 
-query TTTTIIITRI rowsort
+query TTTTIIITRI nosort
 -- query 67a
 with results as
 (     select i_category ,i_class ,i_brand ,i_product_name ,d_year ,d_qoy ,d_moy ,s_store_id
@@ -7115,9 +7115,9 @@ order by i_category
         ,rk
 limit 100
 ----
-1000 values hashing to b7fefcddebfcdf29e74c37dd4e7d9e09
+1000 values hashing to 7bd642e6d43731b9b8184336cabc1f28
 
-query TTTTIRRR rowsort
+query TTTTIRRR nosort
 -- query 68
 select  c_last_name
        ,c_first_name
@@ -7159,9 +7159,9 @@ select  c_last_name
          ,ss_ticket_number
  limit 100
 ----
-800 values hashing to 02cbbc239efc5e192bb639839191b9ec
+800 values hashing to 70530c51648f16ef0f313422a5707dff
 
-query TTTIIITI rowsort
+query TTTIIITI nosort
 -- query 69
 select
   cd_gender,
@@ -7208,9 +7208,9 @@ select
           cd_credit_rating
  limit 100
 ----
-800 values hashing to 2b7af79ae3a5c43d885e6fb10c9e70e8
+800 values hashing to bce8c6a4ab0c4ef19c2612e1011490b7
 
-query RTTII rowsort
+query RTTII nosort
 -- query 70
 with results as ( -- added this line
 select
@@ -7266,7 +7266,7 @@ Williamson County
 0
 1
 
-query RTTII rowsort
+query RTTII nosort
 -- query 70a
 with results as
 ( select
@@ -7325,7 +7325,7 @@ Williamson County
 0
 1
 
-query ITIIR rowsort
+query ITIIR nosort
 -- query 71
 select i_brand_id brand_id, i_brand brand,t_hour,t_minute,
  	sum(ext_price) ext_price
@@ -7364,9 +7364,9 @@ select i_brand_id brand_id, i_brand brand,t_hour,t_minute,
  group by i_brand, i_brand_id,t_hour,t_minute
  order by ext_price desc, i_brand_id
 ----
-5090 values hashing to 853df0db476a512bf4aea45171f45711
+5090 values hashing to 890f51bf4d3ba21060d4edca0a62b657
 
-query TTIIII rowsort
+query TTIIII nosort
 -- query 72
 select  i_item_desc
       ,w_warehouse_name
@@ -7395,9 +7395,9 @@ group by i_item_desc,w_warehouse_name,d1.d_week_seq
 order by total_cnt desc, i_item_desc, w_warehouse_name, d_week_seq
 limit 100
 ----
-600 values hashing to e9cff8e7f69bc0453506ed71af197a80
+600 values hashing to c3bb9daad5066e17ed931de9b99a8be1
 
-query TTTTII rowsort
+query TTTTII nosort
 -- query 73
 select c_last_name
        ,c_first_name
@@ -7425,12 +7425,6 @@ select c_last_name
       and cnt between 1 and 5
     order by cnt desc, c_last_name asc
 ----
-Dion
-Alva
-Mrs.
-N
-113766
-4
 Greene
 Clarence
 NULL
@@ -7455,8 +7449,14 @@ Mrs.
 N
 174863
 5
+Dion
+Alva
+Mrs.
+N
+113766
+4
 
-query TTT rowsort
+query TTT nosort
 -- query 74
 with year_total as (
  select c_customer_id customer_id
@@ -7519,7 +7519,7 @@ limit 100
 ----
 276 values hashing to cc71542ff878b29290e7acb0859e0976
 
-query IIIIIIIIIR rowsort
+query IIIIIIIIIR nosort
 -- query 75
 WITH all_sales AS (
  SELECT d_year
@@ -7589,9 +7589,9 @@ WITH all_sales AS (
  ORDER BY sales_cnt_diff,sales_amt_diff
  limit 100
 ----
-1000 values hashing to 81bde80d202baba5a28a23a6f69fc5c3
+1000 values hashing to 655523f5ce65b0cb3f17eb1ef2757a8a
 
-query TTIITIR rowsort
+query TTIITIR nosort
 -- query 76
 select  channel, col_name, d_year, d_qoy, i_category, COUNT(*) sales_cnt, SUM(ext_sales_price) sales_amt FROM (
         SELECT 'store' as channel, 'ss_store_sk' col_name, d_year, d_qoy, i_category, ss_ext_sales_price ext_sales_price
@@ -7615,9 +7615,9 @@ GROUP BY channel, col_name, d_year, d_qoy, i_category
 ORDER BY channel, col_name, d_year, d_qoy, i_category
 limit 100
 ----
-700 values hashing to 1c8d6089d6580259545e2e321041e55e
+700 values hashing to 5a7a30818583ed02f13168d4687ec401
 
-query TIRRR rowsort
+query TIRRR nosort
 -- query 77
 with ss as
  (select s_store_sk,
@@ -7725,9 +7725,9 @@ with ss as
          ,id
  limit 100
 ----
-220 values hashing to 08064fd5504f51e449cbd4725a88137b
+220 values hashing to da4dd1543574a7a8602deda8de175a7f
 
-query TIRRR rowsort
+query TIRRR nosort
 -- query 77a
 with ss as
  (select s_store_sk,
@@ -7843,9 +7843,9 @@ with ss as
 order by channel, id
  limit 100
 ----
-220 values hashing to 08064fd5504f51e449cbd4725a88137b
+220 values hashing to da4dd1543574a7a8602deda8de175a7f
 
-query IIIRIRRIRR rowsort
+query IIIRIRRIRR nosort
 -- query 78
 with ws as
   (select d_year AS ws_sold_year, ws_item_sk,
@@ -7903,9 +7903,9 @@ order by
   ratio
 limit 100
 ----
-1000 values hashing to e536750420629fdeb609268f00b57cb4
+1000 values hashing to ac970e26d0e75f2cbcc81a9e6ce46cd3
 
-query TTTIRR rowsort
+query TTTIRR nosort
 -- query 79
 select
   c_last_name,c_first_name,substr(s_city,1,30),ss_ticket_number,amt,profit
@@ -7928,9 +7928,9 @@ select
  order by c_last_name,c_first_name,substr(s_city,1,30), profit
 limit 100
 ----
-600 values hashing to c7d11e29ca471c97fc059dbf9b64d44c
+600 values hashing to ffca5172e7813214bed6e3a4fcc2ed19
 
-query TTRRR rowsort
+query TTRRR nosort
 -- query 80
 with ssr as
  (select  s_store_id as store_id,
@@ -8028,7 +8028,7 @@ group by web_site_id)
 ----
 500 values hashing to ec51ef61f9f5a57ec1c722c114d8d88d
 
-query TTRRR rowsort
+query TTRRR nosort
 -- query 80a
 with ssr as
  (select  s_store_id as store_id,
@@ -8139,7 +8139,7 @@ results as
 ----
 500 values hashing to ec51ef61f9f5a57ec1c722c114d8d88d
 
-query TTTTTTTTTTTTTRTR rowsort
+query TTTTTTTTTTTTTRTR nosort
 -- query 81
 with customer_total_return as
  (select cr_returning_customer_sk as ctr_customer_sk
@@ -8172,7 +8172,7 @@ with customer_total_return as
 ----
 1600 values hashing to b13f5bef7e552d99217a5c69fd297984
 
-query TTR rowsort
+query TTR nosort
 -- query 82
 select  i_item_id
        ,i_item_desc
@@ -8196,7 +8196,7 @@ AAAAAAAALIHCAAAA
 Things select increased views. Tools imagine for example; ever likely developments live so scottish benefits. Soft, short-term services should give indeed good illu
 86.900
 
-query TIRIRIRR rowsort
+query TIRIRIRR nosort
 -- query 83
 with sr_items as
  (select i_item_id item_id,
@@ -8266,7 +8266,7 @@ with sr_items as
 ----
 168 values hashing to fad8a60156894d4930c82151ca2c8c2a
 
-query TT rowsort
+query TT nosort
 -- query 84
 select  c_customer_id as customer_id
        , coalesce(c_last_name,'') || ', ' || coalesce(c_first_name,'') as customername
@@ -8338,7 +8338,7 @@ Vargas, James
 AAAAAAAAOGJEBAAA
 Owens, Denice
 
-query TRRR rowsort
+query TRRR nosort
 -- query 85
 select  substr(r_reason_desc,1,20)
        ,avg(ws_quantity)
@@ -8447,7 +8447,7 @@ reason 28
 306.200
 37.060
 
-query RTTII rowsort
+query RTTII nosort
 -- query 86
 with results as ( -- added this line
 select
@@ -8475,9 +8475,9 @@ select
    rank_within_parent
  limit 100
 ----
-500 values hashing to bd455b6eba3bfe95edf8f99b3cf14374
+500 values hashing to b720224c5347970d241b9281c1548c99
 
-query RTTII rowsort
+query RTTII nosort
 -- query 86a
 with results as
 ( select sum(ws_net_paid) as total_sum, i_category, i_class, 0 as g_category, 0 as g_class
@@ -8511,7 +8511,7 @@ with results as
    rank_within_parent
  limit 100
 ----
-500 values hashing to bd455b6eba3bfe95edf8f99b3cf14374
+500 values hashing to b720224c5347970d241b9281c1548c99
 
 query I rowsort
 -- query 87
@@ -8639,7 +8639,7 @@ from
 4129
 4533
 
-query TTTTTIRR rowsort
+query TTTTTIRR nosort
 -- query 89
 select  *
 from(
@@ -8667,9 +8667,9 @@ where case when (avg_monthly_sales <> 0) then (abs(sum_sales - avg_monthly_sales
 order by sum_sales - avg_monthly_sales, s_store_name
 limit 100
 ----
-800 values hashing to af55b66b7dd5fd892bba8f9efe0d67c6
+800 values hashing to 4643e77dd122265ac3ce4d91621ee927
 
-query R rowsort
+query R nosort
 -- query 90
 select  cast(amc as decimal(15,4))/cast(pmc as decimal(15,4)) am_pm_ratio
  from ( select count(*) amc
@@ -8693,7 +8693,7 @@ select  cast(amc as decimal(15,4))/cast(pmc as decimal(15,4)) am_pm_ratio
 ----
 0.612
 
-query TTTR rowsort
+query TTTR nosort
 -- query 91
 select
         cc_call_center_id Call_Center,
@@ -8729,7 +8729,7 @@ Mid Atlantic
 Felipe Perkins
 109.740
 
-query R rowsort
+query R nosort
 -- query 92
 select
    sum(ws_ext_discount_amt)  as "Excess Discount Amount"
@@ -8761,7 +8761,7 @@ limit 100
 ----
 39529.710
 
-query IR rowsort
+query IR nosort
 -- query 93
 select  ss_customer_sk
             ,sum(act_sales) sumsales
@@ -8779,9 +8779,9 @@ select  ss_customer_sk
       order by sumsales, ss_customer_sk
 limit 100
 ----
-200 values hashing to ef27804e2d6b2a5e4c591ab1350b09e1
+200 values hashing to ff76ce679ab1a843e6a0bbc70aa61f1d
 
-query IRR rowsort
+query IRR nosort
 -- query 94
 select
    count(distinct ws_order_number) as "order count"
@@ -8814,7 +8814,7 @@ limit 100
 64554.350
 -3979.350
 
-query IRR rowsort
+query IRR nosort
 -- query 95
 with ws_wh as
 (select ws1.ws_order_number,ws1.ws_warehouse_sk wh1,ws2.ws_warehouse_sk wh2
@@ -8850,7 +8850,7 @@ limit 100
 120440.340
 42133.120
 
-query I rowsort
+query I nosort
 -- query 96
 select  count(*)
 from store_sales
@@ -8897,7 +8897,7 @@ limit 100
 286628
 174
 
-query TTTTRRR rowsort
+query TTTTRRR nosort
 -- query 98
 select i_item_id
       ,i_item_desc
@@ -8930,9 +8930,9 @@ order by
         ,i_item_desc
         ,revenueratio
 ----
-17612 values hashing to 31818bea696e49a89db612dcbade8615
+17612 values hashing to 445beb828b6258d603b1018244263b7a
 
-query TTTIIIII rowsort
+query TTTIIIII nosort
 -- query 99
 select
    substr(w_warehouse_name,1,20)
@@ -8967,7 +8967,7 @@ order by substr(w_warehouse_name,1,20)
         ,cc_name
 limit 100
 ----
-720 values hashing to afe9b4b5d81f933b6813843aaea9551c
+720 values hashing to 9c7ad3c44a43ac0ec024ea8abde4cbeb
 
 statement ok
 start transaction

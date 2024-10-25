@@ -29,7 +29,7 @@
  * i.e., an sql.append() statement that is eventually followed by some other
  * statement later on in the MAL program that uses the same v0 BAT as
  * argument as the sql.append() statement does,
- * Do you assume a single re-use of the variable v0?
+ * Do you assume a single reuse of the variable v0?
  * Do you assume a non-nested  MAL block ?
  *
  * and transform them into
@@ -182,7 +182,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					 * q1 = newStmt(mb, aggrRef,countRef);
 					 * setArgType(mb,q1,TYPE_lng) */
 					/* it will be added to the block and even my
-					 * re-use MAL instructions */
+					 * reuse MAL instructions */
 					q1 = newInstruction(mb,aggrRef,countRef);
 					if (q1) {
 						getArg(q1,0) = newTmpVariable(mb, TYPE_lng);

@@ -4,7 +4,7 @@ create table vac1(i int, s string)
 statement ok
 insert into vac1 values(1,'the'), (2,'quick'),(3,'brown'),(5,'runs'),(4,'fox'),(6,'over'),(7,'the'),(8,'lazy'),(9,'dog')
 
-query IT rowsort
+query IT nosort
 select * from vac1 order by i
 ----
 1

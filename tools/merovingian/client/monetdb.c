@@ -166,7 +166,7 @@ command_help(int argc, char *argv[])
 		printf("  have been declared as master with the \"monetdb master\"\n");
 		printf("  command.\n");
 	} else if (strcmp(argv[1], "help") == 0) {
-		printf("Yeah , help on help, how desparate can you be? ;)\n");
+		printf("Yeah, help on help, how desperate can you be? ;)\n");
 	} else if (strcmp(argv[1], "version") == 0) {
 		printf("Usage: monetdb version\n");
 		printf("  prints the version of this monetdb utility\n");
@@ -706,9 +706,9 @@ command_status(int argc, char *argv[])
 {
 	bool doall = true; /* we default to showing all */
 	int mode = 1;  /* 0=crash, 1=short, 2=long */
-	char *state = "rbscl"; /* contains states to show */
+	const char *state = "rbscl"; /* contains states to show */
 	int i;
-	char *p;
+	const char *p;
 	char *e;
 	sabdb *stats;
 	sabdb *orig;
@@ -2328,7 +2328,7 @@ command_snapshot_write(int argc, char *argv[])
 	}
 	msab_freeStatus(&stats);
 
-	char *merocmd = "snapshot stream";
+	const char merocmd[] = "snapshot stream";
 
 	msg = control_send_callback(
 			&out, mero_host, mero_port, dbname,

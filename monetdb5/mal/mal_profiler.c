@@ -479,12 +479,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
 						}
-						if (d->timprints
-							&& !logadd(&logbuf, ",\"imprints\":" LLFMT,
-									   (lng) IMPSimprintsize(d))) {
-							BBPunfix(d->batCacheid);
-							goto cleanup_and_exit;
-						}
 						/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) goto cleanup_and_exit; */
 						BBPunfix(d->batCacheid);
 					}
@@ -1053,9 +1047,7 @@ getDiskSpace(void)
 					size += tailsize(b, cnt);
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
-					/* also add the size of an imprint, ordered index or mosaic */
-					if (b->timprints)
-						size += IMPSimprintsize(b);
+					/* also add the size of an ordered index */
 					if (b->torderidx)
 						size += HEAPvmsize(b->torderidx);
 				} else {
@@ -1087,7 +1079,7 @@ static void
 profilerHeartbeat(void *dummy)
 {
 	int t;
-	const int timeout = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10 : 25;
+	const int timeout = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 10 : 25;
 
 	(void) dummy;
 	for (;;) {

@@ -13,7 +13,7 @@
 /*
  * This code was created by Peter Harvey (mostly during Christmas 98/99).
  * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
+ * distributions and uses of this code (that's about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
  *
  * This file has been modified for the MonetDB project.  See the file
@@ -54,7 +54,7 @@ typedef struct tODBCDRIVERDBC {
 	/* connection information */
 	msettings *settings;	/* All connection parameters */
 	char *dsn;		/* Data source name or NULL */
-	bool Connected;		/* whether we are connecte to a server */
+	bool Connected;		/* whether we are connected to a server */
 	bool has_comment;	/* whether the server has sys.comments */
 	bool allow_hugeint;	/* whether the application deals with HUGEINT */
 	bool raw_strings;	/* server uses raw strings */

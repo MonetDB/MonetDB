@@ -125,7 +125,7 @@
 		BATsetcount(b, cnt);											\
 	} while (0)
 
-// DATE epoch differs betwen MonetDB (00-01-01) and R (1970-01-01)
+// DATE epoch differs between MonetDB (00-01-01) and R (1970-01-01)
 // no c API for R date handling so use fixed offset
 // >>`-as.double(as.Date(0, origin="0-1-1"))`
 static const int days0To1970 = 719528;
@@ -358,7 +358,7 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 	return b;
 }
 
-const char* rapi_enableflag = "embedded_r";
+const char rapi_enableflag[] = "embedded_r";
 
 static bool RAPIEnabled(void) {
 	return (GDKgetenv_istrue(rapi_enableflag)

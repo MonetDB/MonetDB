@@ -754,16 +754,18 @@ SQLinit(Client c, const char *initpasswd)
 			const char *createdb_inline =
 				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
 				//"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
-				/* only system functions until now */
-				"update sys.functions set system = true;\n"
-				/* only system tables until now */
-				"update sys._tables set system = true;\n"
-				/* only system schemas until now */
-				"update sys.schemas set system = true;\n"
+				/* set "system" attribute for all system schemas; be
+				 * explicit about which ones they are (id 2000 is sys,
+				 * 2114 is tmp; these values are immutable) */
+				"update sys.schemas set system = true where id in (2000, 2114) or name in ('json', 'profiler', 'logging', 'information_schema');\n"
 				/* correct invalid FK schema ids, set them to schema id 2000
 				 * (the "sys" schema) */
-				"update sys.types set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n"
-				"update sys.functions set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n";
+				"update sys.types set schema_id = 2000 where schema_id = 0;\n"
+				"update sys.functions set schema_id = 2000 where schema_id = 0;\n"
+				/* set system attribute for all system tables and
+				 * functions (i.e. ones in system schemas) */
+				"update sys.functions set system = true where schema_id in (select id from sys.schemas s where s.system);\n"
+				"update sys._tables set system = true where schema_id in (select id from sys.schemas s where s.system);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
@@ -1065,7 +1067,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * The SQLreader is called from two places: the SQL parser and
  * the MAL debugger.
  * The former only occurs during the parsing phase and the
- * second only during exection.
+ * second only during execution.
  * This means we can safely change the language setting for
  * the duration of these calls.
  */
@@ -1262,7 +1264,7 @@ SQLchannelcmd(Client c, backend *be)
 			sqlcleanup(be, 0);
 		return msg;
 	}
-	static const char* columnar_protocol = "columnar_protocol ";
+	static const char columnar_protocol[] = "columnar_protocol ";
 	if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
 		v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
 
@@ -1478,7 +1480,7 @@ SQLparser_body(Client c, backend *be)
 				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
 			} else
-				opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
+				opt = ((m->emod & mod_exec) == 0); /* no need to optimize prepare - execute */
 
 			Tend = GDKusec();
 			if(profilerStatus > 0)

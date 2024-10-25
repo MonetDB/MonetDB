@@ -58,18 +58,18 @@ PLAN select a,b from sorted group by a,b
 ----
 project (
 | group by (
-| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ]
-| ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."a", "sorted"."b" ]
-) [ "sorted"."a", "sorted"."b" ]
+| | table("sys"."sorted") [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
+| ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ] [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
+) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 
 query T nosort
 PLAN select a,b from sorted group by b,a
 ----
 project (
 | group by (
-| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ]
-| ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."b", "sorted"."a" ]
-) [ "sorted"."a", "sorted"."b" ]
+| | table("sys"."sorted") [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
+| ) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ] [ "sorted"."b" NOT NULL, "sorted"."a" NOT NULL ]
+) [ "sorted"."a" NOT NULL, "sorted"."b" NOT NULL ]
 
 statement ok
 drop table unsorted

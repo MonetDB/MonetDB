@@ -115,7 +115,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		goto free;
 	}
 
-	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	//Create a new BAT column of wkb type, with length equal to the number of groups
 	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
@@ -277,7 +277,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
     // Cleanup
-    // Data ownership has been transfered from unionGroup elements to
+    // Data ownership has been transferred from unionGroup elements to
     // collection. Check libgeos GEOSGeom_createCollection_r(geoshandle, ) for more.
     bat_iterator_end(&bi);
     GEOSGeom_destroy_r(geoshandle, collection);
@@ -2078,7 +2078,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
 	char *newPath;
-	char *extraStr = ",";
+	const char extraStr[] = ",";
 	int extraLength = 1;
 
 	//get the exterior ring of the polygon
@@ -2133,7 +2133,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 	unsigned int lvl = 0;
 	size_t pathLength = strlen(path);
 	char *newPath = NULL;
-	char *extraStr = ",";
+	const char extraStr[] = ",";
 	int extraLength = 1;
 
 	geometriesNum = GEOSGetNumGeometries_r(geoshandle, geosGeometry);
@@ -2916,7 +2916,7 @@ wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag)
 
 	if ((geosGeometry = GEOSGeom_createPoint_r(geoshandle, seq)) == NULL) {
 		GEOSCoordSeq_destroy_r(geoshandle, seq);
-		throw(MAL, "geom.MakePoint", SQLSTATE(38000) "Geos opertion GEOSGeometry failed");
+		throw(MAL, "geom.MakePoint", SQLSTATE(38000) "Geos operation GEOSGeometry failed");
 	}
 
 	*out = geos2wkb(geosGeometry);
@@ -3546,7 +3546,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 		goto free;
 	}
 
-	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	//Create a new BAT column of wkb type, with length equal to the number of groups
 	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;

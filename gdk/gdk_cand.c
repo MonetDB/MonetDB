@@ -1293,7 +1293,7 @@ canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2
 }
 
 BAT *
-BATnegcands(BUN nr, BAT *odels)
+BATnegcands(oid tseq, BUN nr, BAT *odels)
 {
 	const char *nme;
 	Heap *dels;
@@ -1301,16 +1301,20 @@ BATnegcands(BUN nr, BAT *odels)
 	ccand_t *c;
 	BAT *bn;
 
-	bn = BATdense(0, 0, nr);
+	bn = BATdense(0, tseq, nr);
 	if (bn == NULL)
 		return NULL;
 	if (BATcount(odels) == 0)
-		return bn;
+		goto doreturn;
 
 	lo = SORTfndfirst(odels, &bn->tseqbase);
 	hi = SORTfndfirst(odels, &(oid) {bn->tseqbase + BATcount(bn)});
 	if (lo == hi)
 		return bn;
+	if (lo + nr == hi) {
+		BATsetcount(bn, 0);
+		goto doreturn;
+	}
 
 	nme = BBP_physical(bn->batCacheid);
 	if ((dels = GDKmalloc(sizeof(Heap))) == NULL){
@@ -1350,10 +1354,7 @@ BATnegcands(BUN nr, BAT *odels)
 	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
 	BATsetcount(bn, bn->batCount - (hi - lo));
-	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
-		  "dels=" ALGOBATFMT ")\n",
-		  ALGOBATPAR(bn),
-		  ALGOBATPAR(odels));
+  doreturn:
 	TRC_DEBUG(ALGO, "nr=" BUNFMT ", odels=" ALGOBATFMT
 		  " -> " ALGOBATFMT "\n",
 		  nr, ALGOBATPAR(odels),

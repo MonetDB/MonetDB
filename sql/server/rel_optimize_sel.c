@@ -343,7 +343,7 @@ exps_cse( mvc *sql, list *oexps, list *l, list *r )
 	if (list_length(l) == 0 || list_length(r) == 0)
 		return 0;
 
-	/* first recusive exps_cse */
+	/* first recursive exps_cse */
 	nexps = new_exp_list(sql->sa);
 	for (n = l->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -980,7 +980,7 @@ cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 	bool needed = false;
 	for(node *n = exps->h; !needed && n; n = n->next) {
 		for (node *m = n->next; !needed && m; m = m->next) {
-			if (exp_match_exp_semantics(n->data, m->data, false))
+			if (exp_match_exp_semantics(n->data, m->data, true))
 				needed = true;
 		}
 	}
@@ -2383,7 +2383,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		h[ci] = r1[ci] = r2[ci] = 0;
 		r3[ci] = 0;
 		/* h[ci] = exp_find_rels(cje, rels) */
-		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+		if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
 		   (cje->type == e_cmp && cje->f == NULL)) {
 			cje->tmp = ci;
 			r1[ci] = rels_find_one_rel(rels_a, nr_rels, cje->l);
@@ -2404,27 +2404,30 @@ order_joins(visitor *v, list *rels, list *exps)
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	if (list_length(rels) >= 2 && sdje->h) {
-		/* get the first expression */
-		cje = sdje->h->data;
+		for (node *n = sdje->h; n && !l && !r; n = n->next, ci++) {
+			cje = n->data;
 
-		/* find the involved relations */
+			/* find the involved relations */
 
-		/* complex expressions may touch multiple base tables
-		 * Should be pushed up to extra selection.
-		 * */
-		if (0 && popcount64(h[cje->tmp]) > 2)
-			assert(0);
-		if (cje->type != e_cmp || is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
-		   (cje->type == e_cmp && cje->f == NULL)) {
-			l = rels_a[r1[cje->tmp]];
-			r = rels_a[r2[cje->tmp]];
-			rel_mask |= h[cje->tmp];
+			/* complex expressions may touch multiple base tables
+			 * Should be pushed up to extra selection.
+			 * */
+			if (0 && popcount64(h[cje->tmp]) > 2)
+				assert(0);
+			if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
+				(cje->type == e_cmp && cje->f == NULL)) {
+				l = rels_a[r1[cje->tmp]];
+				r = rels_a[r2[cje->tmp]];
+				if (l && r)
+					rel_mask |= h[cje->tmp];
+			}
 		}
 		cje->tmp = 0;
 
 		if (l && r && l != r)
 			list_remove_data(sdje, NULL, cje);
 	}
+
 	if (l && r && l != r) {
 		list_remove_data(rels, NULL, l);
 		list_remove_data(rels, NULL, r);
@@ -2472,7 +2475,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				if (rel_mask & (((ulng)1)<<((r2[cje->tmp]-1)%64)))
 					r = rels_a[r2[cje->tmp]];
 			}
-			if (!direct) { /* check if atleast one side in n_rels */
+			if (!direct) { /* check if at least one side in n_rels */
 				if (l && !list_find(n_rels, l, NULL))
 					l = NULL;
 				if (r && !list_find(n_rels, r, NULL))
@@ -2530,7 +2533,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				for (en = sdje->h; en; ) {
 					node *next = en->next;
 					sql_exp *e = en->data;
-					if ((direct && ((e->flag <= cmp_notequal && (h[e->tmp] & rel_mask) == h[e->tmp]) || (e->flag > cmp_notequal && rel_rebind_exp(v->sql, top, e))))  ||
+					if ((direct && ((e->flag <= cmp_notequal && (h[e->tmp] & rel_mask) == h[e->tmp] && h[e->tmp]) || (e->flag > cmp_notequal && rel_rebind_exp(v->sql, top, e))))  ||
 					    (!direct && rel_rebind_exp(v->sql, top, e))) {
 						rel_join_add_exp(v->sql->sa, top, e);
 						list_remove_data(sdje, NULL, en->data);
@@ -2903,7 +2906,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
    		   {semi,anti}join (A, join(A,B) [A.c1 == B.c1]) [ A.c1 == B.c1 ]
 		   into {semi,anti}join (A,B) [ A.c1 == B.c1 ]
 
-		   for semijoin also A.c1 == B.k1 ] [ A.c1 == B.k2 ] could be rewriten
+		   for semijoin also A.c1 == B.k1 ] [ A.c1 == B.k2 ] could be rewritten
 		 */
 		if (l && r && rl &&
 		    is_basetable(l->op) && is_basetable(rl->op) &&

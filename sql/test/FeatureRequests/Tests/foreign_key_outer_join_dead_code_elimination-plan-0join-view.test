@@ -1,7 +1,7 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T nosort
+query T python .plan.filter
    plan select count(*) from v0
 ----
 project (
@@ -12,7 +12,7 @@ project (
 | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
-query T nosort
+query T python .plan.filter
    plan select id       from v0 order by id
 ----
 project (

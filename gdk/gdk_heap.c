@@ -65,7 +65,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 			return NULL;
 		fn = path;
 	}
-	/* round up to mulitple of GDK_mmap_pagesize */
+	/* round up to multiple of GDK_mmap_pagesize */
 	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
 	if (fd >= 0) {
 		close(fd);
@@ -95,7 +95,7 @@ HEAPgrow(Heap **hp, size_t size, bool mayshare)
 
 	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
 	if ((refs & HEAPREFS) == 1) {
-		return HEAPextend((*hp), size, mayshare);
+		return HEAPextend(*hp, size, mayshare);
 	}
 	new = GDKmalloc(sizeof(Heap));
 	if (new != NULL) {
@@ -148,7 +148,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	if (itemsize) {
 		/* check for overflow */
 		if (nitems > BUN_NONE / itemsize) {
-			GDKerror("allocating more than heap can accomodate\n");
+			GDKerror("allocating more than heap can accommodate\n");
 			return GDK_FAIL;
 		}
 		h->size = MAX(1, nitems) * itemsize;

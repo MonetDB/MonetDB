@@ -84,6 +84,12 @@ MSERVER5 OPTIONS
    file) which should be located in the lib/monetdb5 directory. This
    option can be repeated for different modules.
 
+**--without-geom**
+   Start the server without *geom* support, even if it is available.
+   Normally the server will refuse to start if *geom* is loaded, but the
+   database was created by a server without *geom* support. With this
+   option it is possible to start the server anyway.
+
 **--help**
    Print list of options.
 
@@ -161,13 +167,16 @@ MSERVER5 OPTIONS
 
    **268435456**
       (HEAPMASK) trace/debug HEAPextend; used only for development &
-      debugging **536870912** (FORCEMITOMASK) forcefully activate
-      mitosis even on small tables, i.e., split small tables in as many
-      (tiny) pieces as there are cores (threads) available; this allows
-      us to test mitosis functionality without requiring large data sets
-      (— at the expense of a potentially significant interpretation
-      overhead for unnecessarily large plans); used only for development
-      & testing; set automatically by Mtest.py
+      debugging
+
+   **536870912**
+      (FORCEMITOMASK) forcefully activate mitosis even on small tables,
+      i.e., split small tables in as many (tiny) pieces as there are
+      cores (threads) available; this allows us to test mitosis
+      functionality without requiring large data sets (— at the expense
+      of a potentially significant interpretation overhead for
+      unnecessarily large plans); used only for development & testing;
+      set automatically by Mtest.py
 
 **--algorithms**
    Equivalent to **--debug=**\ *(ALGOMASK)*.
@@ -259,7 +268,7 @@ distributed) plans. These parameters control behaviour on the MAL level.
 
 **mapi_listenaddr**
    The TCP/IP interface on which the server will listen for connections.
-   Possibilites are:
+   Possibilities are:
 
    **localhost**
       The server listens only on the IPv4 and IPv6 loopback interface.
@@ -341,7 +350,7 @@ has its own SQL-level specific settings.
       The sequential pipeline is identical to the default pipeline,
       except that optimizers mitosis & dataflow are omitted. It is use
       mainly to make some tests work deterministically, i.e., avoid
-      ambigious output, by avoiding parallelism.
+      ambiguous output, by avoiding parallelism.
       sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 
 **embedded_py**

@@ -182,7 +182,7 @@
  * 		fprintf(fp, "usage: %s <host>    <db> <port> <mode> <query>\n", prog);
  * 		fprintf(fp, "  e.g. %s localhost demo 50000  xml    '1+1'\n",   prog);
  * 	} else {
- * 		// CONNECT TO SERVER, default unsecure user/password, language="sql"
+ * 		// CONNECT TO SERVER, default insecure user/password, language="sql"
  * 		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "sql", db);
  * 		MapiHdl hdl;
  * 		if (mid == NULL) {
@@ -519,7 +519,7 @@
  * zero is returned upon encountering an error or when the database value
  * is NULL; this can be analyzed in using @code{mapi\_error()}.
  *
- * @item size_t mapi_fetch_fiels_len(MapiHdl hdl, int fnr)
+ * @item size_t mapi_fetch_field_len(MapiHdl hdl, int fnr)
  *
  * Return the length of the C-string representation excluding trailing NULL
  * byte of the value.  Zero is returned upon encountering an error, when the
@@ -1217,7 +1217,7 @@ mapi_log_header(Mapi mid, const char *funcname, long line, const char *mark1, co
 	if (firstcall == 0)
 		firstcall = now;
 	double seconds = (double)(now - firstcall) / 1e6;
-	mnstr_printf(mid->tracelog, "\342\226\266 [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line); /* U+25B6: right-pointing triangle */
+	mnstr_printf(mid->tracelog, "\n** [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line);
 }
 
 void
@@ -1551,7 +1551,7 @@ add_error(struct MapiResultSet *result, char *error)
 	    (isdigit((unsigned char) error[4]) ||
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
-			/* remeber SQLSTATE for first error */
+			/* remember SQLSTATE for first error */
 			strcpy_len(result->sqlstate, error,
 				   sizeof(result->sqlstate));
 		}
@@ -3751,7 +3751,7 @@ mapi_query_abort(MapiHdl hdl, int reason)
 MapiMsg
 mapi_cache_limit(Mapi mid, int limit)
 {
-	/* clean out superflous space TODO */
+	/* clean out superfluous space TODO */
 	msettings_error err = msetting_set_long(mid->settings, MP_REPLYSIZE, limit);
 	if (err)
 		return mapi_setError(mid, err, __func__, MERROR);

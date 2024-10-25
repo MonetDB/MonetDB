@@ -2187,7 +2187,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (!(le->f = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
-		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+		} else { /* if it's not a tuple, enforce coercion on the type for every element on the list */
 			sql_subtype super, *le_tpe = exp_subtype(le), *values_tpe = NULL;
 
 			for (node *m = vals->h; m; m = m->next) { /* first get values supertype */
@@ -3416,7 +3416,7 @@ exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
 			}
 		}
-	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is allready aggregated */
+	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is already aggregated */
 		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
 		sql_exp *a = NULL;
 
@@ -3814,7 +3814,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		}
 		return e;
 	}
-	char *type = "unknown", *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+	const char *type = "unknown";
+	char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 
 	if (!list_empty(exps)) {
 		sql_exp *e = exps->h->data;
@@ -4008,6 +4009,8 @@ rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 }
 
+#define E_ATOM_STRING(e) ((atom*)(e)->l)->data.val.sval
+
 static sql_exp *
 rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
@@ -4020,6 +4023,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (!e)
 		return NULL;
+
 	/* strings may need to be truncated */
 	if (EC_VARCHAR(tpe->type->eclass) && tpe->digits > 0) {
 		sql_subtype *et = exp_subtype(e);
@@ -4030,10 +4034,44 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
 	}
+
+	if (tpe->type->eclass == EC_DEC) {
+		sql_subtype *et = exp_subtype(e);
+		if (e->type == e_atom && !tpe->digits) {
+			if (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC) {
+				tpe->digits = atom_num_digits(e->l);
+				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, et->scale);
+			} else if (EC_VARCHAR(et->type->eclass)) {
+				char *s = E_ATOM_STRING(e);
+				unsigned int min_precision = 0, min_scale = 0;
+				bool dot_seen = false;
+				for (size_t i = 0; i < strlen(s); i++) {
+					if (isdigit(s[i])) {
+						min_precision++;
+						if (dot_seen)
+							min_scale++;
+					} else if (s[i] == '.') {
+						dot_seen = true;
+					}
+				}
+				tpe = sql_bind_subtype(sql->sa, "decimal", min_precision, min_scale);
+			} else { /* fallback */
+				tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
+			}
+		} else if (!tpe->digits && !tpe->scale) {
+			if (et->type->eclass == EC_NUM)
+				tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, 0);
+			else /* fallback */
+				tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
+		}
+	}
+
 	if (e)
 		e = exp_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+
 	if (e && e->type == e_convert)
 		exp_label(sql->sa, e, ++sql->label);
+
 	return e;
 }
 
@@ -4256,7 +4294,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 		symbol *grouping = o->data.sym;
 		list *next_set = NULL;
 
-		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the genererated sets */
+		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the generated sets */
 			list *other = rel_groupings(query, rel, grouping, selection, f, true, &next_set);
 			if (!other)
 				return NULL;
@@ -5684,7 +5722,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	for (dnode *n = sn->selection->h; n; n = n->next) {
 		/* Here we could get real column expressions
 		 * (including single atoms) but also table results.
-		 * Therefor we try both rel_column_exp
+		 * Therefore we try both rel_column_exp
 		 * and rel_table_exp.
 		 */
 		list *te = NULL;
@@ -6031,7 +6069,7 @@ rel_setquery(sql_query *query, symbol *q)
 	if (!corresponding && list_length(t1->exps) != list_length(t2->exps)) {
 		int t1nrcols = list_length(t1->exps);
 		int t2nrcols = list_length(t2->exps);
-		char *op = "UNION";
+		const char *op = "UNION";
 		if (q->token == SQL_EXCEPT)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)

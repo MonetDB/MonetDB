@@ -297,7 +297,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		SetDlgItemText(hwndDlg, IDC_EDIT_TIMEZONE, datap->timezone ? datap->timezone : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_LOGFILE, datap->logfile ? datap->logfile : "");
 		// Client Info
-		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTINFO, datap->clientinfo ? datap->clientinfo : "off");
+		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTINFO, datap->clientinfo ? datap->clientinfo : "on");
 		SetDlgItemText(hwndDlg, IDC_EDIT_APPLICNAME, datap->applicationname ? datap->applicationname : "");
 		SetDlgItemText(hwndDlg, IDC_EDIT_CLIENTREMARK, datap->clientremark ? datap->clientremark : "");
 		if (datap->request == ODBC_ADD_DSN && datap->dsn && *datap->dsn)
@@ -333,7 +333,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			}
 			GetDlgItemText(hwndDlg, IDC_EDIT_CLIENTINFO, buf, sizeof(buf));
 			if (strcmp("on", buf) != 0 && strcmp("off", buf) != 0) {
-				MessageBox(hwndDlg, "Client Info must be set to on or off.\nDefault is off.", NULL, MB_ICONERROR);
+				MessageBox(hwndDlg, "Client Info must be set to on or off.\nDefault is on.", NULL, MB_ICONERROR);
 				return TRUE;
 			}
 
@@ -435,7 +435,7 @@ DialogProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			EndDialog(hwndDlg, LOWORD(wParam));
 			return TRUE;
 		case IDC_BUTTON_HELP:
-			// invoke webbrowser with url to webpage decribing this setup dialog.
+			// invoke webbrowser with url to webpage describing this setup dialog.
 			ShellExecute(hwndDlg, NULL,
 					"https://www.monetdb.org/" DOCUMENTATION "/user-guide/client-interfaces/libraries-drivers/odbc-driver/windows-data-source-setup/",
 					NULL, NULL, SW_SHOWNORMAL);
@@ -585,7 +585,7 @@ ConfigDSN(HWND parent, WORD request, LPCSTR driver, LPCSTR attributes)
 	MergeFromProfileString(data.dsn, &data.autocommit, "AutoCommit", "on");
 	MergeFromProfileString(data.dsn, &data.timezone, "TimeZone", "");
 	MergeFromProfileString(data.dsn, &data.logfile, "LogFile", "");
-	MergeFromProfileString(data.dsn, &data.clientinfo, "ClientInfo", "off");
+	MergeFromProfileString(data.dsn, &data.clientinfo, "ClientInfo", "on");
 	MergeFromProfileString(data.dsn, &data.applicationname, "AppName", "");
 	MergeFromProfileString(data.dsn, &data.clientremark, "ClientRemark", "");
 

@@ -83,7 +83,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				varused[getArg(p, k)]--;
 	}
 
-	// Now we can simply copy the intructions and discard useless ones.
+	// Now we can simply copy the instructions and discard useless ones.
 	pushInstruction(mb, old[0]);
 	for (i = 1; i < limit; i++) {
 		if ((p = old[i]) != NULL) {

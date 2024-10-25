@@ -1,5 +1,5 @@
 query I rowsort
-select debug
+select debug & 127
 ----
 0
 
@@ -46,7 +46,7 @@ statement error
 select test_boolean
 
 query I rowsort
-select sys.debug
+select sys.debug & 127
 ----
 0
 

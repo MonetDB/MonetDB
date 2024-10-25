@@ -295,7 +295,7 @@ call dict_compress('sys', 'lineitem', 'l_receiptdate', true)
 statement ok
 call dict_compress('sys', 'lineitem', 'l_shipmode', true)
 
-query ITT rowsort
+query ITT nosort
 select * from region   order by r_regionkey limit 9
 ----
 0
@@ -314,7 +314,7 @@ ly final courts cajole furiously final excuse
 MIDDLE EAST
 uickly special accounts cajole carefully blithely close requests. carefully final asymptotes haggle furiousl
 
-query ITIT rowsort
+query ITIT nosort
 select * from nation   order by n_nationkey limit 9
 ----
 0
@@ -354,7 +354,7 @@ INDIA
 2
 ss excuses cajole slyly across the packages. deposits print aroun
 
-query ITTITRT rowsort
+query ITTITRT nosort
 select * from supplier order by s_suppkey   limit 9
 ----
 1
@@ -421,7 +421,7 @@ Supplier#000000009
 5302.370
 s. unusual, even requests along the furiously regular pac
 
-query ITTITRTT rowsort
+query ITTITRTT nosort
 select * from customer order by c_custkey   limit 9
 ----
 1
@@ -497,7 +497,7 @@ xKiAFTjUsCuxfeleNqefumTrjS
 FURNITURE
 r theodolites according to the requests wake thinly excuses: pending requests haggle furiousl
 
-query ITTTTITRT rowsort
+query ITTTTITRT nosort
 select * from part     order by p_partkey   limit 9
 ----
 1
@@ -582,7 +582,7 @@ WRAP CASE
 909.000
 ironic foxe
 
-query IIIRT rowsort
+query IIIRT nosort
 select * from partsupp order by ps_partkey, ps_suppkey   limit 9
 ----
 1
@@ -606,15 +606,15 @@ after the fluffily ironic deposits? blithely special dependencies integrate furi
 357.840
 al, regular dependencies serve carefully after the quickly final pinto beans. furiously even deposits sleep quickly final, silent pinto beans. fluffily reg
 2
-28
-4969
-915.270
-ptotes. quickly pending dependencies integrate furiously. fluffily ironic ideas impress blithely above the express accounts. furiously even epitaphs need to wak
-2
 3
 8895
 378.490
 nic accounts. final accounts sleep furiously about the ironic, bold packages. regular, regular accounts
+2
+28
+4969
+915.270
+ptotes. quickly pending dependencies integrate furiously. fluffily ironic ideas impress blithely above the express accounts. furiously even epitaphs need to wak
 2
 53
 8539
@@ -631,7 +631,7 @@ olites. deposits wake carefully. even, express requests cajole. carefully regula
 920.920
 ilent foxes affix furiously quickly unusual requests. even packages across the carefully even theodolites nag above the sp
 
-query IITRTTTIT rowsort
+query IITRTTTIT nosort
 select * from orders   order by o_orderkey  limit 9
 ----
 1
@@ -661,24 +661,6 @@ F
 Clerk#000000955
 0
 sly final accounts boost. carefully regular ideas cajole carefully. depos
-32
-1301
-O
-198665.570
-1995-07-16
-2-HIGH
-Clerk#000000616
-0
-ise blithely bold, regular requests. quickly unusual dep
-33
-670
-F
-146567.240
-1993-10-27
-3-MEDIUM
-Clerk#000000409
-0
-uriously. furiously final request
 4
 1369
 O
@@ -715,14 +697,32 @@ O
 Clerk#000000470
 0
 ly special requests 
+32
+1301
+O
+198665.570
+1995-07-16
+2-HIGH
+Clerk#000000616
+0
+ise blithely bold, regular requests. quickly unusual dep
+33
+670
+F
+146567.240
+1993-10-27
+3-MEDIUM
+Clerk#000000409
+0
+uriously. furiously final request
 
-query IIIIRRRRTTTTTTTT rowsort
+query IIIIRRRRTTTTTTTT nosort
 select * from lineitem order by l_orderkey, l_linenumber limit 9
 ----
-144 values hashing to 5b3482da1afab8d411eeb26ffee69dd0
+144 values hashing to 2cc36dd7630bceb0a5dd86a5410847ab
 
 #Q1
-query TTRRRRRRRI rowsort
+query TTRRRRRRRI nosort
 select
 	l_returnflag,
 	l_linestatus,
@@ -787,7 +787,7 @@ F
 14902
 
 #Q2
-query RTTITTTT rowsort
+query RTTITTTT nosort
 select
 	s_acctbal,
 	s_name,
@@ -833,30 +833,6 @@ order by
 	p_partkey
 limit 100
 ----
-1687.810
-Supplier#000000017
-ROMANIA
-1634
-Manufacturer#2
-c2d,ESHRSkK3WYnxpgw6aOqN0q
-29-601-884-9219
-eep against the furiously bold ideas. fluffily bold packa
-1883.370
-Supplier#000000086
-ROMANIA
-1015
-Manufacturer#4
-J1fgg5QaqnN
-29-903-665-7065
-cajole furiously special, final requests: furiously spec
-287.160
-Supplier#000000052
-ROMANIA
-323
-Manufacturer#4
-WCk XCHYzBA1dvJDSol4ZJQQcQN,
-29-974-934-4713
-dolites are slyly against the furiously regular packages. ironic, final deposits cajole quickly
 4186.950
 Supplier#000000077
 GERMANY
@@ -865,9 +841,33 @@ Manufacturer#4
 wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY
 17-281-345-4863
 the slyly final asymptotes. blithely pending theodoli
+1883.370
+Supplier#000000086
+ROMANIA
+1015
+Manufacturer#4
+J1fgg5QaqnN
+29-903-665-7065
+cajole furiously special, final requests: furiously spec
+1687.810
+Supplier#000000017
+ROMANIA
+1634
+Manufacturer#2
+c2d,ESHRSkK3WYnxpgw6aOqN0q
+29-601-884-9219
+eep against the furiously bold ideas. fluffily bold packa
+287.160
+Supplier#000000052
+ROMANIA
+323
+Manufacturer#4
+WCk XCHYzBA1dvJDSol4ZJQQcQN,
+29-974-934-4713
+dolites are slyly against the furiously regular packages. ironic, final deposits cajole quickly
 
 #Q3
-query IRTI rowsort
+query IRTI nosort
 select
 	l_orderkey,
 	sum(l_extendedprice * (1 - l_discount)) as revenue,
@@ -892,29 +892,33 @@ order by
 	o_orderdate
 limit 10
 ----
-10916
-241320.081
+47714
+267010.589
 1995-03-11
-0
-1637
-243512.798
-1995-02-08
-0
-21956
-254541.128
-1995-02-02
 0
 22276
 266351.556
 1995-01-29
 0
-30497
-208566.697
-1995-02-07
-0
 32965
 263768.341
 1995-02-25
+0
+21956
+254541.128
+1995-02-02
+0
+1637
+243512.798
+1995-02-08
+0
+10916
+241320.081
+1995-03-11
+0
+30497
+208566.697
+1995-02-07
 0
 450
 205447.423
@@ -924,17 +928,13 @@ limit 10
 204478.521
 1995-03-13
 0
-47714
-267010.589
-1995-03-11
-0
 9696
 201502.219
 1995-02-20
 0
 
 #Q4
-query TI rowsort
+query TI nosort
 select
 	o_orderpriority,
 	count(*) as order_count
@@ -969,7 +969,7 @@ order by
 128
 
 #Q5
-query TR rowsort
+query TR nosort
 select
 	n_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue
@@ -995,16 +995,16 @@ group by
 order by
 	revenue desc
 ----
-CHINA
-740210.757
-INDIA
-422874.684
-INDONESIA
-566379.528
-JAPAN
-660651.243
 VIETNAM
 1000926.700
+CHINA
+740210.757
+JAPAN
+660651.243
+INDONESIA
+566379.528
+INDIA
+422874.684
 
 #Q6
 query R rowsort
@@ -1021,7 +1021,7 @@ where
 1193053.225
 
 #Q7
-query TTIR rowsort
+query TTIR nosort
 select
 	supp_nation,
 	cust_nation,
@@ -1080,7 +1080,7 @@ FRANCE
 379095.885
 
 #Q8
-query IR rowsort
+query IR nosort
 select
 	o_year,
 	sum(case
@@ -1125,7 +1125,7 @@ order by
 0.000
 
 #Q9
-query TIR rowsort
+query TIR nosort
 select
 	nation,
 	o_year,
@@ -1159,10 +1159,10 @@ order by
 	nation,
 	o_year desc
 ----
-519 values hashing to c34d56e84d53578446c2ed39c52b207e
+519 values hashing to 9925a1d0a35fb4c466fda469df56cf30
 
 #Q10
-query ITRRTTTT rowsort
+query ITRRTTTT nosort
 select
 	c_custkey,
 	c_name,
@@ -1196,10 +1196,10 @@ order by
 	revenue desc
 limit 20
 ----
-160 values hashing to 60ee561ad7be1de29a74f2a426423e32
+160 values hashing to e1317664bdf9a09d233ced5f056638bc
 
 #Q11
-query IR rowsort
+query IR nosort
 select
 	ps_partkey,
 	sum(ps_supplycost * ps_availqty) as value
@@ -1232,7 +1232,7 @@ order by
 13271249.890
 
 #Q12
-query TII rowsort
+query TII nosort
 select
 	l_shipmode,
 	sum(case
@@ -1270,7 +1270,7 @@ SHIP
 96
 
 #Q13
-query II rowsort
+query II nosort
 select
 	c_count,
 	count(*) as custdist
@@ -1294,70 +1294,70 @@ order by
 ----
 0
 500
-1
-1
-10
-64
 11
 68
+10
+64
 12
 62
-13
-52
+9
+62
+8
+61
 14
 54
-15
-45
-16
-46
-17
-41
-18
-38
-19
-44
-2
-1
+13
+52
+7
+49
 20
 48
 21
 47
+16
+46
+15
+45
+19
+44
+17
+41
+18
+38
 22
 33
-23
-27
+6
+33
 24
 30
+23
+27
 25
 21
-26
-15
 27
 17
+26
+15
+5
+14
 28
 6
+4
+6
+32
+5
 29
 5
-3
-2
 30
+2
+3
 2
 31
 1
-32
-5
-4
-6
-5
-14
-6
-33
-7
-49
-8
-61
-9
-62
+2
+1
+1
+1
 
 #Q14
 query R rowsort
@@ -1391,7 +1391,7 @@ create view revenue0 (supplier_no, total_revenue) as
 		l_suppkey
 
 #Q15
-query ITTTR rowsort
+query ITTTR nosort
 select
 	s_suppkey,
 	s_name,
@@ -1422,7 +1422,7 @@ statement ok
 drop view revenue0
 
 #Q16
-query TTII rowsort
+query TTII nosort
 select
 	p_brand,
 	p_type,
@@ -1454,7 +1454,7 @@ order by
 	p_type,
 	p_size
 ----
-1184 values hashing to 019c7871f6a5ef57e4e5e84c596d7120
+1184 values hashing to 1e585ffe3f051923b3da374f4832653d
 
 #Q17
 query R rowsort
@@ -1479,7 +1479,7 @@ where
 NULL
 
 #Q18
-query TIITRR rowsort
+query TIITRR nosort
 select
 	c_name,
 	c_custkey,
@@ -1514,18 +1514,18 @@ order by
 	o_orderdate
 limit 100
 ----
-Customer#000000178
-178
-6882
-1997-04-09
-422359.650
-303.000
 Customer#000000667
 667
 29158
 1995-10-21
 439687.230
 305.000
+Customer#000000178
+178
+6882
+1997-04-09
+422359.650
+303.000
 
 #Q19
 query R rowsort
@@ -1568,7 +1568,7 @@ where
 22923.028
 
 #Q20
-query TT rowsort
+query TT nosort
 select
 	s_name,
 	s_address
@@ -1611,7 +1611,7 @@ Supplier#000000013
 HK71HQyWoqRWOX8GI FpgAifW,2PoH
 
 #Q21
-query TI rowsort
+query TI nosort
 select
 	s_name,
 	count(*) as numwait
@@ -1657,7 +1657,7 @@ Supplier#000000074
 9
 
 #Q22
-query TIR rowsort
+query TIR nosort
 select
 	cntrycode,
 	count(*) as numcust,
@@ -1718,14 +1718,14 @@ order by
 8
 66313.160
 
-query RI rowsort
+query RI nosort
 SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 order by o_totalprice limit 10
 ----
-126476.160
-2
 14623.670
 2
 16236.690
+2
+126476.160
 2
 169049.460
 2

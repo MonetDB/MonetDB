@@ -728,7 +728,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		return GDK_FAIL;
 	}
 
-	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitString */
 	RTREEdestroy(b);
@@ -1027,7 +1026,6 @@ BATdel(BAT *b, BAT *d)
 	assert(d->tkey);
 	if (BATcount(d) == 0)
 		return GDK_SUCCEED;
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
 	PROPdestroy(b);
@@ -1221,7 +1219,6 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	BATiter ni = bat_iterator(n);
 
 	OIDXdestroy(b);
-	IMPSdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
 	/* load hash so that we can maintain it */
@@ -2272,6 +2269,29 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 {
 	if (n <= 1)		/* trivially sorted */
 		return GDK_SUCCEED;
+	switch (tpe) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_date:
+	case TYPE_daytime:
+	case TYPE_timestamp:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, false);
+		break;
+	case TYPE_uuid:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, true);
+		break;
+	default:
+		break;
+	}
 	if (stable) {
 		if (reverse)
 			return GDKssort_rev(h, t, base, n, hs, ts, tpe);
@@ -2423,7 +2443,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (groups) {
 			if (BATtkey(b)) {
 				/* singleton groups */
-				gn = BATdense(0, 0, BATcount(b));
+				gn = BATdense(b->hseqbase, 0, BATcount(b));
 				if (gn == NULL)
 					goto error;
 			} else {
@@ -2431,7 +2451,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 				const oid *o = 0;
 				assert(BATcount(b) == 1 ||
 				       (b->tsorted && b->trevsorted));
-				gn = BATconstant(0, TYPE_oid, &o, BATcount(b), TRANSIENT);
+				gn = BATconstant(b->hseqbase, TYPE_oid, &o, BATcount(b), TRANSIENT);
 				if (gn == NULL)
 					goto error;
 			}

@@ -610,7 +610,7 @@ has_return( list *l )
 {
 	node *n = l->t;
 
-	/* last statment of sequential block */
+	/* last statement of sequential block */
 	if (n && exp_has_return(n->data))
 		return 1;
 	return 0;
@@ -853,6 +853,35 @@ rel_create_function(allocator *sa, const char *sname, sql_func *f, int replace)
 	return rel;
 }
 
+static bool
+has_generic_decimal(list *types)
+{
+	if (!list_empty(types)) {
+		for(node *n = types->h; n; n = n->next) {
+			sql_subtype *st = n->data;
+
+			if (st->type->eclass == EC_DEC && !st->digits && !st->scale)
+				return true;
+		}
+	}
+	return false;
+}
+
+static bool
+has_generic_decimal_result(list *types)
+{
+	if (!list_empty(types)) {
+		for(node *n = types->h; n; n = n->next) {
+			sql_arg *a = n->data;
+
+			if (a->type.type->eclass == EC_DEC && !a->type.digits && !a->type.scale)
+				return true;
+		}
+	}
+	return false;
+}
+
+
 static sql_rel *
 rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace)
 {
@@ -953,6 +982,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 	}
+	if (lang > FUNC_LANG_SQL && has_generic_decimal(type_list))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: the function '%s' uses a generic DECIMAL type, UDFs require precision and scale", F, fname);
 
 	list_destroy(type_list);
 
@@ -976,6 +1007,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (res && !(restype = result_type(sql, res)))
 		return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: failed to get restype", F);
 
+	if (lang > FUNC_LANG_SQL && has_generic_decimal_result(restype))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: the function '%s' returns a generic DECIMAL type, UDFs require precision and scale", F, fname);
 	if (body && LANG_EXT(lang)) {
 		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
 		switch (lang) {

@@ -231,7 +231,7 @@ setup_compression(stream *inner, pump_state *state, int level)
 	// When pumping data into the compressor, the output buffer must be
 	// sufficiently large to hold all output caused by the current input. We
 	// will restrict our writes to be at most WRITE_CHUCK large and allocate
-	// a buffer that can accomodate even the worst case amount of output
+	// a buffer that can accommodate even the worst case amount of output
 	// caused by input of that size.
 
 	// The required size depends on the preferences so we set those first.

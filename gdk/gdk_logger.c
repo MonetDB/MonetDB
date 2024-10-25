@@ -767,6 +767,18 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 					const void *t = BUNtail(vi, p);
 
 					if (q < cnt) {
+						if (b->tnosorted == q)
+							b->tnosorted = 0;
+						if (b->tnorevsorted == q)
+							b->tnorevsorted = 0;
+						if (b->tnokey[0] == q ||
+						    b->tnokey[1] == q) {
+							b->tnokey[0] = 0;
+							b->tnokey[1] = 0;
+						}
+						b->tkey = false;
+						b->tsorted = false;
+						b->tkey = false;
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
 							bat_iterator_end(&vi);
@@ -1156,6 +1168,8 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 		GDKfree(filename);
+	} else {
+		new_range->output_log = NULL;
 	}
 	ATOMIC_INIT(&new_range->refcount, 1);
 	ATOMIC_INIT(&new_range->last_ts, 0);
@@ -2336,7 +2350,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	lng max_file_age = GDKgetenv_int("wal_max_file_age", 600);
 	lng max_file_size = 0;
 
-	if (GDKdebug & FORCEMITOMASK) {
+	if (GDKdebug & TESTINGMASK) {
 		max_file_size = 2048; /* 2 KiB */
 	} else {
 		const char *max_file_size_str = GDKgetenv("wal_max_file_size");
@@ -2373,7 +2387,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.max_file_size = max_file_size >= 0 ? max_file_size : 2147483648,
 
 		.id = 0,
-		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
+		.saved_id = getBBPlogno(),	/* get saved log number from bbp */
 		.nr_flushers = ATOMIC_VAR_INIT(0),
 		.fn = GDKstrdup(fn),
 		.dir = GDKstrdup(filename),
@@ -2415,6 +2429,8 @@ do_flush_range_cleanup(logger *lg)
 	logged_range *frange = lg->flush_ranges;
 	logged_range *first = frange;
 
+	if (frange == NULL)
+		return NULL;
 	while (frange->next) {
 		if (ATOMIC_GET(&frange->refcount) > 1)
 			break;
@@ -2518,6 +2534,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 	};
 	lg->current = &dummy;
 	if (log_open_output(lg) != GDK_SUCCEED) {
+		lg->current = NULL;
 		log_destroy(lg);
 		return NULL;
 	}
@@ -2531,7 +2548,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 static logged_range *
 log_next_logfile(logger *lg, ulng ts)
 {
-	int m = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? 1000 : 100;
+	int m = (ATOMIC_GET(&GDKdebug) & TESTINGMASK) ? 1000 : 100;
 	if (!lg->pending || !lg->pending->next)
 		return NULL;
 	rotation_lock(lg);
@@ -3518,7 +3535,8 @@ log_printinfo(logger *lg)
 	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		char buf[32];
-		if (p->output_log == NULL ||
+		if ((lg->debug & 128 || lg->inmemory) ||
+		    p->output_log == NULL ||
 		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
 			buf[0] = 0;
 		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");

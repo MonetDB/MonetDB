@@ -24,7 +24,7 @@
  * The URL syntax is specified in RFC2396, Uniform Resource Identifiers
  * (URI): Generic Syntax. The URL syntax is dependent upon the scheme.
  * In general, a URL has the form <scheme>:<scheme-specific-part>.
- * Thus, accepting a valid URL is a simple proccess, unless the scheme
+ * Thus, accepting a valid URL is a simple process, unless the scheme
  * is known and schema-specific syntax is checked (e.g., http or ftp
  * scheme). For the URL module implemented here, we assume some common
  * fields of the <scheme-specific-part> that are shared among different

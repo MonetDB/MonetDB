@@ -9,24 +9,28 @@ insert into analytics values (interval '15' second, interval '3' month), (interv
                              (interval '5' second, interval '3' month), (NULL, interval '2' month), (interval '3' second, interval '2' month),
                              (interval '4' second, interval '1' month), (interval '6' second, interval '3' month), (interval '8' second, interval '2' month), (NULL, interval '4' month)
 
-query TTTT rowsort
+query TTTT nosort
 select avg(aa) over (partition by bb),
        avg(aa) over (partition by bb order by bb asc),
        avg(aa) over (partition by bb order by bb desc),
        avg(aa) over (order by bb desc) from analytics
 ----
-0:00:03
-0:00:03
-0:00:03
-0:00:05.750000
-0:00:03
-0:00:03
-0:00:03
-0:00:05.750000
-0:00:03
-0:00:03
-0:00:03
-0:00:05.750000
+NULL
+NULL
+NULL
+NULL
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
+0:00:08.667000
 0:00:05.500000
 0:00:05.500000
 0:00:05.500000
@@ -39,108 +43,104 @@ select avg(aa) over (partition by bb),
 0:00:05.500000
 0:00:05.500000
 0:00:07.400000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-0:00:08.667000
-NULL
-NULL
-NULL
-NULL
+0:00:03
+0:00:03
+0:00:03
+0:00:05.750000
+0:00:03
+0:00:03
+0:00:03
+0:00:05.750000
+0:00:03
+0:00:03
+0:00:03
+0:00:05.750000
 
-query TTTT rowsort
+query TTTT nosort
 select avg(bb) over (partition by bb),
        avg(bb) over (partition by bb order by bb asc),
        avg(bb) over (partition by bb order by bb desc),
        avg(bb) over (order by bb desc) from analytics
 ----
-1
-1
-1
-2
-1
-1
-1
-2
-1
-1
-1
-2
-2
-2
-2
-3
-2
-2
-2
-3
-2
-2
-2
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
 4
 4
 4
 4
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+2
+2
+2
+3
+2
+2
+2
+3
+2
+2
+2
+3
+1
+1
+1
+2
+1
+1
+1
+2
+1
+1
+1
+2
 
-query TTTT rowsort
+query TTTT nosort
 select avg(aa) over (partition by aa),
        avg(aa) over (partition by aa order by aa asc),
        avg(aa) over (partition by aa order by aa desc),
        avg(aa) over (order by aa desc) from analytics
 ----
-0:00:02
-0:00:02
-0:00:02
-0:00:05.750000
-0:00:03
-0:00:03
-0:00:03
-0:00:06.286000
-0:00:03
-0:00:03
-0:00:03
-0:00:06.286000
-0:00:04
-0:00:04
-0:00:04
-0:00:07.600000
-0:00:05
-0:00:05
-0:00:05
-0:00:08.500000
-0:00:06
-0:00:06
-0:00:06
-0:00:09.667000
+0:00:15
+0:00:15
+0:00:15
+0:00:15
 0:00:08
 0:00:08
 0:00:08
 0:00:11.500000
-0:00:15
-0:00:15
-0:00:15
-0:00:15
+0:00:06
+0:00:06
+0:00:06
+0:00:09.667000
+0:00:05
+0:00:05
+0:00:05
+0:00:08.500000
+0:00:04
+0:00:04
+0:00:04
+0:00:07.600000
+0:00:03
+0:00:03
+0:00:03
+0:00:06.286000
+0:00:03
+0:00:03
+0:00:03
+0:00:06.286000
+0:00:02
+0:00:02
+0:00:02
+0:00:05.750000
 NULL
 NULL
 NULL
@@ -150,32 +150,44 @@ NULL
 NULL
 0:00:05.750000
 
-query TTTT rowsort
+query TTTT nosort
 select avg(bb) over (partition by aa),
        avg(bb) over (partition by aa order by aa asc),
        avg(bb) over (partition by aa order by aa desc),
        avg(bb) over (order by aa desc) from analytics
 ----
+3
+3
+3
+3
+2
+2
+2
+3
+3
+3
+3
+3
+3
+3
+3
+3
 1
 1
 1
 2
+2
+2
+2
+2
+2
+2
+2
+2
 1
 1
 1
 2
-2
-2
-2
-2
-2
-2
-2
-2
-2
-2
-2
-3
 3
 3
 3
@@ -184,20 +196,8 @@ select avg(bb) over (partition by aa),
 3
 3
 2
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
-3
 
-query TTTT rowsort
+query TTTT nosort
 select avg(interval '1' second) over (partition by bb),
        avg(interval '1' second) over (partition by bb order by bb asc),
        avg(interval '1' month) over (partition by bb order by bb desc),
@@ -244,7 +244,7 @@ select avg(interval '1' second) over (partition by bb),
 1
 1
 
-query TTTT rowsort
+query TTTT nosort
 select avg(interval '-1' second) over (partition by bb),
        avg(interval '-1' second) over (partition by bb order by bb asc),
        avg(interval '-100' month) over (partition by bb order by bb desc),
@@ -385,19 +385,19 @@ NULL
 NULL
 NULL
 
-query TTTT rowsort
+query TTTT nosort
 select avg(aa) over (order by bb rows between 5 preceding and 0 following),
        avg(aa) over (order by bb rows between 5 preceding and 2 following),
        avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
        avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
 ----
+0:00:03
+0:00:03
+0:00:03
+0:00:03
 0:00:02.500000
 0:00:03
 0:00:02.500000
-0:00:03
-0:00:03
-0:00:03
-0:00:03
 0:00:03
 0:00:03
 0:00:03
@@ -432,7 +432,7 @@ NULL
 NULL
 NULL
 
-query TTT rowsort
+query TTT nosort
 select avg(aa) over (order by bb rows 2 preceding),
        avg(aa) over (partition by bb order by bb rows 2 preceding),
        avg(aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics
@@ -446,29 +446,29 @@ select avg(aa) over (order by bb rows 2 preceding),
 0:00:03
 0:00:03
 0:00:03
-0:00:03
-NULL
-0:00:05.500000
 0:00:03.500000
 0:00:03
 0:00:03.333000
 0:00:05.500000
 0:00:05.500000
 0:00:05
-0:00:05.500000
+0:00:03
 NULL
-0:00:10.500000
+0:00:05.500000
+0:00:09.333000
+0:00:10
+0:00:06.500000
 0:00:08.667000
 0:00:08.667000
 0:00:05.500000
 0:00:08.667000
 0:00:15
 0:00:08.667000
-0:00:09.333000
-0:00:10
-0:00:06.500000
+0:00:05.500000
+NULL
+0:00:10.500000
 
-query TTTT rowsort
+query TTTT nosort
 select avg(bb) over (order by bb groups between 5 preceding and 0 following),
        avg(bb) over (order by bb groups between 5 preceding and 2 following),
        avg(bb) over (partition by bb order by bb groups between 5 preceding and 0 following),
@@ -515,7 +515,7 @@ select avg(bb) over (order by bb groups between 5 preceding and 0 following),
 4
 4
 
-query TT rowsort
+query TT nosort
 select avg(bb) over (order by bb groups 2 preceding),
        avg(bb) over (partition by bb order by bb groups 2 preceding) from analytics
 ----

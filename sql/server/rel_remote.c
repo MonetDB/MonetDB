@@ -50,10 +50,10 @@ mapiuri_valid( const char *uri)
 	if (*p != '/')
 		return 0;
 	p++;
-	/* now find at most 2 '/'s, with some string inbetween */
+	/* now find at most 2 '/'s, with some string in between */
 	for(; *p; p++, l++) {
 		if (*p == '/') {
-			if (l == 0) /* no string inbetween */
+			if (l == 0) /* no string in between */
 				return 0;
 			if (i == 2) /* 3 parts (ie database/schema/table) */
 				return 0;

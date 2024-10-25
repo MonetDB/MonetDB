@@ -1419,11 +1419,19 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 {
 	if (exp_match(e1, e2))
 		return 1;
-	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
-		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || (semantics && is_semantics(e1) != is_semantics(e2)) ||
+
+	if (is_ascending(e1) != is_ascending(e2) ||
+		nulls_last(e1) != nulls_last(e2) ||
+		zero_if_empty(e1) != zero_if_empty(e2) ||
+		need_no_nil(e1) != need_no_nil(e2) ||
+		is_anti(e1) != is_anti(e2) ||
+		(semantics && is_semantics(e1) != is_semantics(e2)) ||
 		(semantics && is_any(e1) != is_any(e2)) ||
-		is_symmetric(e1) != is_symmetric(e2) || is_unique(e1) != is_unique(e2) || need_distinct(e1) != need_distinct(e2))
+		is_symmetric(e1) != is_symmetric(e2) ||
+		is_unique(e1) != is_unique(e2) ||
+		need_distinct(e1) != need_distinct(e2))
 		return 0;
+
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
@@ -3253,16 +3261,15 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
-		strcmp(sql_func_imp(f->func), "/") == 0) {
+	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX &&
+		(lt->scale || rt->scale) && strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
-		/* TODO make '3' setable by user (division_minimal_scale or so) */
-		scaleL = (lt->scale < 3) ? 3 : lt->scale;
-		scaleL += (scaleL < rt->scale)?(rt->scale - scaleL):0;
+		scaleL = (lt->scale < sql->div_min_scale) ? sql->div_min_scale : lt->scale;
+		scaleL += (scaleL < rt->scale) ? rt->scale - scaleL : 0;
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);
@@ -3625,7 +3632,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
-	/* TODO we could use the sql_query* struct to set paremeters used as freevars,
+	/* TODO we could use the sql_query* struct to set parameters used as freevars,
 	   but it requires to change a lot of interfaces */
 	/* if (is_freevar(exp))
 		rel = query_fetch_outer(query, is_freevar(exp)-1); */

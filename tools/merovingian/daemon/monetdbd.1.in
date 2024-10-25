@@ -11,7 +11,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MONETDBD 1 2024-08-12 MonetDB "MonetDB Applications"
+.TH MONETDBD 1 2024-08-19 MonetDB "MonetDB Applications"
 .SH NAME
 monetdbd \- the MonetDB Database Server daemon
 .SH SYNOPSIS
@@ -189,7 +189,7 @@ Changing this property takes effect immediately at runtime.
 .TP
 .B loglevel
 This property defines the level of what messages should be logged.
-It can be: error or warning or information or debug. Defaut is information.
+It can be: error or warning or information or debug. Default is information.
 When loglevel is error, only errors are logged.
 When loglevel is warning, errors and warnings are logged.
 When loglevel is information, errors and warnings and information
@@ -388,6 +388,20 @@ approach, but still hides away the mservers properly behind
 Hence, in practice it is only relevant for connections to remote
 databases to use redirects instead of proxies.
 Changing this property takes effect immediately at runtime.
+.TP
+.B keepalive
+Specifies the keepalive interval for incoming connections.
+If this is set to a positive number,
+.I monetdbd
+configures the system to send automatic periodic keepalive
+probes on all client connections. This can help keep firewalls
+from killing connections that seem idle but are in fact waiting
+for a long running query to finish.
+The default is 60 seconds.
+When 127 consecutive probes have failed, the connection is closed.
+With the default setting of 60 seconds this means the connection
+is closed when the client has been unreachable for more than two
+hours.
 .SH REMOTE DATABASES
 .B Deprecation notice:
 This feature is deprecated and may be removed in the future.

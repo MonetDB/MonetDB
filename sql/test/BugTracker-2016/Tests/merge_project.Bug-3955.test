@@ -56,20 +56,20 @@ PLAN select * from r
 project (
 | project (
 | | crossproduct (
-| | | table("sys"."v") [ "v"."a1" UNIQUE, "v"."a2" ],
+| | | table("sys"."v") [ "v"."a1" NOT NULL UNIQUE, "v"."a2" NOT NULL ],
 | | | project (
 | | | | crossproduct (
 | | | | | select (
-| | | | | | table("sys"."input_double") [ "input_double"."a1" UNIQUE, "input_double"."a2" UNIQUE ]
-| | | | | ) [ ("input_double"."a1" UNIQUE) = (varchar "latitude") ],
+| | | | | | table("sys"."input_double") [ "input_double"."a1" NOT NULL UNIQUE, "input_double"."a2" NOT NULL UNIQUE ]
+| | | | | ) [ ("input_double"."a1" NOT NULL UNIQUE) = (varchar "latitude") ],
 | | | | | select (
-| | | | | | table("sys"."input_double") [ "input_double"."a1" UNIQUE, "input_double"."a2" UNIQUE ]
-| | | | | ) [ ("input_double"."a1" UNIQUE) = (varchar "longitude") ]
+| | | | | | table("sys"."input_double") [ "input_double"."a1" NOT NULL UNIQUE, "input_double"."a2" NOT NULL UNIQUE ]
+| | | | | ) [ ("input_double"."a1" NOT NULL UNIQUE) = (varchar "longitude") ]
 | | | | ) [  ]
-| | | ) [ "sys"."st_point"("input_double"."a2", "input_double"."a2") as "a1" ]
+| | | ) [ "sys"."st_point"("input_double"."a2" NOT NULL, "input_double"."a2" NOT NULL) as "a1" ]
 | | ) [  ]
-| ) [ "v"."a1" as "a1", "sys"."st_distance"("v"."a2", "a1") as "prob" ]
-) [ "a1" as "r"."a1", "prob" as "r"."prob" ]
+| ) [ "v"."a1" NOT NULL as "a1", "sys"."st_distance"("v"."a2" NOT NULL, "a1") as "prob" ]
+) [ "a1" NOT NULL as "r"."a1", "prob" as "r"."prob" ]
 
 statement ok
 rollback

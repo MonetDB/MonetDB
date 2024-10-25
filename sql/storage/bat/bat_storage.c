@@ -56,7 +56,7 @@ static lng merge_delta( sql_delta *obat);
 #define SEG_VALID_4_DELETE(seg,tr) \
 	(!seg->deleted && VALID_4_READ(seg->ts, tr))
 
-/* Delete (in current trans or by some other finised transaction, or re-used segment which used to be deleted */
+/* Delete (in current trans or by some other finished transaction, or re-used segment which used to be deleted */
 #define SEG_IS_DELETED(seg,tr) \
 	((seg->deleted && (VALID_4_READ(seg->ts, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
 	 (!seg->deleted && !VALID_4_READ(seg->ts, tr)))
@@ -2110,7 +2110,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, bool isbat)
 }
 
 static int
-delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, BAT *i, char *storage_type, bool istemp)
+delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *offsets, BAT *i, char *storage_type)
 {
 	BAT *b, *oi = i;
 	int err = 0;
@@ -2153,13 +2153,7 @@ delta_append_bat(sql_trans *tr, sql_delta **batp, sqlid id, BUN offset, BAT *off
 			bat_destroy(oi);
 		return LOG_ERR;
 	}
-	if (istemp && !offsets && offset == 0 && BATcount(b) == 0 && bat->cs.ucnt == 0) {
-		bat_set_access(i, BAT_READ);
-		if (bat->cs.bid)
-			temp_destroy(bat->cs.bid);
-		i = transfer_to_systrans(i);
-		bat->cs.bid = temp_create(i);
-	} else if (!offsets && offset == b->hseqbase+BATcount(b)) {
+	if (!offsets && offset == b->hseqbase+BATcount(b)) {
 		if (BATappend(b, oi, NULL, true) != GDK_SUCCEED)
 			err = 1;
 	} else if (!offsets) {
@@ -2309,7 +2303,7 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat)
 }
 
 static int
-append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool isbat, int tt, char *storage_type, bool isnew)
+append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *offsets, void *incoming_data, BUN cnt, bool isbat, int tt, char *storage_type)
 {
 	int ok = LOG_OK;
 
@@ -2319,7 +2313,7 @@ append_col_execute(sql_trans *tr, sql_delta **delta, sqlid id, BUN offset, BAT *
 		BAT *bat = incoming_data;
 
 		if (BATcount(bat))
-			ok = delta_append_bat(tr, delta, id, offset, offsets, bat, storage_type, isnew);
+			ok = delta_append_bat(tr, delta, id, offset, offsets, bat, storage_type);
 	} else {
 		ok = delta_append_val(tr, delta, id, offset, offsets, incoming_data, cnt, storage_type, tt);
 	}
@@ -2344,7 +2338,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 	assert(delta->cs.st == ST_DEFAULT || delta->cs.st == ST_DICT || delta->cs.st == ST_FOR);
 
 	odelta = delta;
-	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, data, cnt, isbat, tpe, c->storage_type, isTempTable(c->t))) != LOG_OK)
+	if ((res = append_col_execute(tr, &delta, c->base.id, offset, offsets, data, cnt, isbat, tpe, c->storage_type)) != LOG_OK)
 		return res;
 	if (odelta != delta) {
 		delta->next = odelta;
@@ -2376,7 +2370,7 @@ append_idx(sql_trans *tr, sql_idx *i, BUN offset, BAT *offsets, void *data, BUN 
 
 	assert(delta->cs.st == ST_DEFAULT);
 
-	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, isbat, tpe, NULL, isTempTable(i->t));
+	res = append_col_execute(tr, &delta, i->base.id, offset, offsets, data, cnt, isbat, tpe, NULL);
 	return res;
 }
 
@@ -3685,20 +3679,6 @@ log_destroy_del(sql_trans *tr, sql_change *change)
 
 	assert(!isTempTable(t));
 	ok = log_destroy_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
-	if (ok == LOG_OK) {
-		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
-			sql_column *c = n->data;
-
-			ok = log_destroy_col_(tr, c);
-		}
-		if (t->idxs) {
-			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
-				sql_idx *i = n->data;
-
-				ok = log_destroy_idx_(tr, i);
-			}
-		}
-	}
 	return ok;
 }
 
@@ -4654,7 +4634,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		lock_table(tr->store, t->base.id);
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
-		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* re-use old deleted or rolledback append */
+		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
 			if ((seg->end - seg->start) >= cnt) {
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && !p->deleted) {
@@ -4746,7 +4726,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
-		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* re-use old deleted or rolledback append */
+		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* reuse old deleted or rolled back append */
 
 			if ((seg->end - seg->start) >= cnt) {
 
@@ -4807,7 +4787,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
  * Claim cnt slots to store the tuples. The claim_tab should claim storage on the level
  * of the global transaction and mark the newly added storage slots unused on the global
  * level but used on the local transaction level. Besides this the local transaction needs
- * to update (and mark unused) any slot inbetween the old end and new slots.
+ * to update (and mark unused) any slot in between the old end and new slots.
  * */
 static int
 claim_tab(sql_trans *tr, sql_table *t, size_t cnt, BUN *offset, BAT **offsets)

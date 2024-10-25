@@ -42,8 +42,8 @@ plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIM
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ ("splitted"."stamp" UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2000-02-01 00:00:00.000000") ]
+| | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ ("splitted"."stamp" NOT NULL UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2000-02-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -52,13 +52,13 @@ plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIM
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2010-01-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2010-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2010-01-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) in (timestamp(7) "2000-01-01 00:00:00.000000", timestamp(7) "2010-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%2"."%2" NOT NULL ]
 
@@ -68,13 +68,13 @@ plan select 1 from splitted where stamp IN (TIMESTAMP '2000-02-01 00:00:00', TIM
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) in (timestamp(7) "2000-02-01 00:00:00.000000", timestamp(7) "2010-02-01 00:00:00.000000", timestamp(7) "2020-02-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) in (timestamp(7) "2000-02-01 00:00:00.000000", timestamp(7) "2010-02-01 00:00:00.000000", timestamp(7) "2020-02-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) in (timestamp(7) "2000-02-01 00:00:00.000000", timestamp(7) "2010-02-01 00:00:00.000000", timestamp(7) "2020-02-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) in (timestamp(7) "2000-02-01 00:00:00.000000", timestamp(7) "2010-02-01 00:00:00.000000", timestamp(7) "2020-02-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -98,13 +98,13 @@ plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2020-01-01 00:00:
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2020-01-01 00:00:00.000000") ! <= ("splitted"."stamp" UNIQUE) ! <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2020-01-01 00:00:00.000000") ! <= ("splitted"."stamp" NOT NULL UNIQUE) ! <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2020-01-01 00:00:00.000000") ! <= ("splitted"."stamp" UNIQUE) ! <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2020-01-01 00:00:00.000000") ! <= ("splitted"."stamp" NOT NULL UNIQUE) ! <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -114,8 +114,8 @@ plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2010-01-01 00:00:00' 
 munion (
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-03-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-03-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -130,13 +130,13 @@ plan select 1 from splitted where stamp BETWEEN TIMESTAMP '2000-02-01 00:00:00' 
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2000-02-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-03-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2000-02-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-03-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2000-02-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-03-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2000-02-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-03-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -164,8 +164,8 @@ plan select 1 from splitted where stamp > TIMESTAMP '2010-03-01 00:00:00'
 munion (
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) > (timestamp(7) "2010-03-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) > (timestamp(7) "2010-03-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -179,8 +179,8 @@ plan select 1 from splitted where stamp <= TIMESTAMP '2009-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2009-01-01 00:00:00.000000") ]
+| | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2009-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -188,8 +188,8 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' AND s
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) < (timestamp(7) "2019-01-01 00:00:00.000000") ]
+| | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2019-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -198,13 +198,13 @@ plan select 1 from splitted where stamp <= TIMESTAMP '2020-10-01 00:00:00'
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-10-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -227,8 +227,8 @@ plan select 1 from splitted where stamp <= TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2000-01-01 00:00:00.000000") ]
+| | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2000-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -264,13 +264,13 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and s
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -279,8 +279,8 @@ plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and st
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ (timestamp(7) "2010-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ (timestamp(7) "2010-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -288,8 +288,8 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and s
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ (timestamp(7) "2010-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2020-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -298,13 +298,13 @@ plan select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and st
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2001-01-02 00:00:00.000000") < ("splitted"."stamp" UNIQUE) < (timestamp(7) "2015-01-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2001-01-02 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2015-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2001-01-02 00:00:00.000000") < ("splitted"."stamp" UNIQUE) < (timestamp(7) "2015-01-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2001-01-02 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) < (timestamp(7) "2015-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -323,13 +323,13 @@ plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and st
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2010-01-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2010-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2010-01-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2010-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -339,13 +339,13 @@ plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and st
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2020-01-01 00:00:00.000000") ]
+| | | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "2009-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2020-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
@@ -368,8 +368,8 @@ plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and s
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
+| | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ (timestamp(7) "2000-01-01 00:00:00.000000") <= ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -378,13 +378,13 @@ plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and st
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
+| | | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."fourth_decade") [ "fourth_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| | ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
+| | | table("sys"."fourth_decade") [ "fourth_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| | ) [ (timestamp(7) "1999-01-01 00:00:00.000000") < ("splitted"."stamp" NOT NULL UNIQUE) <= (timestamp(7) "2001-01-01 00:00:00.000000") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -393,8 +393,8 @@ plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."second_decade") [ "second_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ ("splitted"."stamp" UNIQUE) = (timestamp(7) "2010-01-01 00:00:00.000000") ]
+| | table("sys"."second_decade") [ "second_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ ("splitted"."stamp" NOT NULL UNIQUE) = (timestamp(7) "2010-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -402,8 +402,8 @@ plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'
 ----
 project (
 | select (
-| | table("sys"."first_decade") [ "first_decade"."stamp" UNIQUE as "splitted"."stamp" ]
-| ) [ ("splitted"."stamp" UNIQUE) = (timestamp(7) "2000-01-01 00:00:00.000000") ]
+| | table("sys"."first_decade") [ "first_decade"."stamp" NOT NULL UNIQUE as "splitted"."stamp" ]
+| ) [ ("splitted"."stamp" NOT NULL UNIQUE) = (timestamp(7) "2000-01-01 00:00:00.000000") ]
 ) [ tinyint(1) "1" ]
 
 statement ok
@@ -457,8 +457,8 @@ plan select 1 from splitted2 where stamp = 5
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "third_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) = (int(31) "5") ]
+| | table("sys"."third_decade2") [ "third_decade2"."stamp" NOT NULL UNIQUE as "splitted2"."stamp" ]
+| ) [ ("splitted2"."stamp" NOT NULL UNIQUE) = (int(31) "5") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -467,18 +467,18 @@ plan select 1 from splitted2 where val = 1
 munion (
 | project (
 | | select (
-| | | table("sys"."first_decade2") [ "first_decade2"."val" UNIQUE as "splitted2"."val" ]
-| | ) [ ("splitted2"."val" UNIQUE) = (int(31) "1") ]
+| | | table("sys"."first_decade2") [ "first_decade2"."val" NOT NULL UNIQUE as "splitted2"."val" ]
+| | ) [ ("splitted2"."val" NOT NULL UNIQUE) = (int(31) "1") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."second_decade2") [ "second_decade2"."val" UNIQUE as "splitted2"."val" ]
-| | ) [ ("splitted2"."val" UNIQUE) = (int(31) "1") ]
+| | | table("sys"."second_decade2") [ "second_decade2"."val" NOT NULL UNIQUE as "splitted2"."val" ]
+| | ) [ ("splitted2"."val" NOT NULL UNIQUE) = (int(31) "1") ]
 | ) [ tinyint(1) "1" ],
 | project (
 | | select (
-| | | table("sys"."third_decade2") [ "third_decade2"."val" UNIQUE as "splitted2"."val" ]
-| | ) [ ("splitted2"."val" UNIQUE) = (int(31) "1") ]
+| | | table("sys"."third_decade2") [ "third_decade2"."val" NOT NULL UNIQUE as "splitted2"."val" ]
+| | ) [ ("splitted2"."val" NOT NULL UNIQUE) = (int(31) "1") ]
 | ) [ tinyint(1) "1" ]
 ) [ "%1"."%1" NOT NULL ]
 
@@ -487,8 +487,8 @@ plan select 1 from splitted2 where stamp is null
 ----
 project (
 | select (
-| | table("sys"."second_decade2") [ "second_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) * = (int(31) NULL) ]
+| |  [ int(31) NULL as "splitted2"."stamp" ]
+| ) [ boolean(1) "false" ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -527,8 +527,8 @@ plan select 1 from splitted2 where stamp in (2,1)
 ----
 project (
 | select (
-| | table("sys"."first_decade2") [ "first_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) in (int(31) "2", int(31) "1") ]
+| | table("sys"."first_decade2") [ "first_decade2"."stamp" NOT NULL UNIQUE as "splitted2"."stamp" ]
+| ) [ ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "2", int(31) "1") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -536,8 +536,8 @@ plan select 1 from splitted2 where stamp in (4)
 ----
 project (
 | select (
-| | table("sys"."second_decade2") [ "second_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) = (int(31) "4") ]
+| | table("sys"."second_decade2") [ "second_decade2"."stamp" NOT NULL UNIQUE as "splitted2"."stamp" ]
+| ) [ ("splitted2"."stamp" NOT NULL UNIQUE) = (int(31) "4") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -545,8 +545,8 @@ plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7)
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "third_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) in (int(31) "5", int(31) "6"), ("splitted2"."stamp" UNIQUE) in (int(31) "6", int(31) "7") ]
+| | table("sys"."third_decade2") [ "third_decade2"."stamp" NOT NULL UNIQUE as "splitted2"."stamp" ]
+| ) [ ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "5", int(31) "6"), ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "6", int(31) "7") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort
@@ -554,8 +554,8 @@ plan select 1 from splitted2 where stamp in (5,6) and stamp > 100
 ----
 project (
 | select (
-| | table("sys"."third_decade2") [ "third_decade2"."stamp" UNIQUE as "splitted2"."stamp" ]
-| ) [ ("splitted2"."stamp" UNIQUE) > (int(31) "100"), ("splitted2"."stamp" UNIQUE) in (int(31) "5", int(31) "6") ]
+| | table("sys"."third_decade2") [ "third_decade2"."stamp" NOT NULL UNIQUE as "splitted2"."stamp" ]
+| ) [ ("splitted2"."stamp" NOT NULL UNIQUE) > (int(31) "100"), ("splitted2"."stamp" NOT NULL UNIQUE) in (int(31) "5", int(31) "6") ]
 ) [ tinyint(1) "1" ]
 
 query T nosort

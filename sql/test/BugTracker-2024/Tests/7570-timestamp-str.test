@@ -1,0 +1,21 @@
+statement ok
+set time zone interval '-03:00' hour to minute
+
+query T nosort
+select str_to_timestamp('20240828-0300', '%Y%m%d%z')
+----
+2024-08-28 00:00:00-03:00
+
+query T nosort
+select str_to_timestamp('20240828+0100', '%Y%m%d%z')
+----
+2024-08-27 20:00:00-03:00
+
+statement ok
+set time zone interval '+01:00' hour to minute
+
+query T nosort
+select str_to_timestamp('20240828-0300', '%Y%m%d%z')
+----
+2024-08-28 04:00:00+01:00
+

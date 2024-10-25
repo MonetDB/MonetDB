@@ -43,7 +43,7 @@ INSERT INTO my_table2 VALUES ('B', 2)
 statement ok
 INSERT INTO my_table2 VALUES ('C', 3)
 
-query II rowsort
+query II nosort
 SELECT id,
        (SELECT y.col2 FROM my_table2 y WHERE y.col1 = x.col1)
 FROM (
@@ -53,8 +53,6 @@ ORDER BY id
 ----
 1
 1
-10
-NULL
 2
 2
 3
@@ -70,6 +68,8 @@ NULL
 8
 NULL
 9
+NULL
+10
 NULL
 
 statement ok

@@ -52,6 +52,7 @@ single_in_memory = False
 restart = False
 produce_html = True
 ignore_conditions = False
+skip_timeout = False
 
 # extra mserver5 options
 mserver5_opts = []
@@ -1459,24 +1460,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             interrupted = True
         finally:
             if pSrvr is not None:
-                try:
-                    dbh = pymonetdb.connect(username='monetdb',
-                                            password='monetdb',
-                                            hostname=HOST,
-                                            port=int(pSrvr.port),
-                                            database=TSTDB,
-                                            autocommit=True)
-                except KeyboardInterrupt:
-                    interrupted = True
-                except:
-                    pass
-                else:
-                    crs = dbh.cursor()
-                    crs.execute("select count(*), max(id) from sys.bbp()")
-                    nbats, maxid = crs.fetchall()[0]
-                    crs.close()
-                    dbh.close()
-                    pSrvr.sendusr1()
+                pSrvr.sendusr1()
                 pSrvr.terminate()
                 pSrvr = None
                 if produce_html:
@@ -1669,7 +1653,7 @@ def coredumpctl(pid):
 
 def returnCode(proc, f = None):
     '''Interpret the return code of a process.
-    If second arg sepcified, write a message to it.'''
+    If second arg specified, write a message to it.'''
     if proc.killed:
         # don't write for timeout, killProc did that already
         return 'timeout'
@@ -1977,7 +1961,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         SERVER = "SQL"
     else:
         tests = (
-            # file extention  EXT        CALL      SERVER
+            # file extension  EXT        CALL      SERVER
             ('.test',         '.test',   'sqltest','SQL'),
             ('.maltest',      '.maltest','maltest','SQL'),
             ('.py',           '.py',     'python', ''),
@@ -2115,6 +2099,35 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
                         elem = SkipTest(env, TST, EXT, reason, length)
                 if reason is not None:
                     break
+            elif cond.startswith('PYTHON_VERSION>='):
+                req_vers = cond[16:].split('.')
+                if not negate:
+                    for i in range(3):
+                        if i >= len(req_vers):
+                            break
+                        if int(sys.version_info[i]) > int(req_vers[i]):
+                            break
+                        if int(sys.version_info[i]) < int(req_vers[i]):
+                            reason = "Python version too low"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                else:
+                    for i in range(3):
+                        if i >= len(req_vers):
+                            reason = "Python version too high"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                        if int(sys.version_info[i]) < int(req_vers[i]):
+                            break
+                        if int(sys.version_info[i]) > int(req_vers[i]):
+                            reason = "Python version too high"
+                            elem = SkipTest(env, TST, EXT, reason, length)
+                            break
+                    else:
+                        reason = "Python version too high"
+                        elem = SkipTest(env, TST, EXT, reason, length)
+                if reason is not None:
+                    break
             elif cond.startswith('R_VERSION>='):
                 rversion = os.path.join('@LIBR_INCLUDE_DIRS@', 'Rversion.h')
                 if os.path.exists(rversion):
@@ -2169,6 +2182,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
+        elem = SkipTest(env, TST, EXT, reason, length)
+    elif skip_timeout and os.path.isfile(os.path.join(TSTSRCDIR, TST+".timeout")):
+        reason = "test with timeout"
         elem = SkipTest(env, TST, EXT, reason, length)
     else:
         test = re.compile("^"+TST+r"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
@@ -2699,13 +2715,13 @@ class ServerClass:
         self.outfile.flush()
         self.errfile.flush()
 
+        cmd = self.cmd
         if procdebug:
-            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(self.cmd))
+            print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
         setpgrp = True
         stdin = open(os.devnull)
         stdout = self.outfile
         stderr = self.errfile
-        cmd = self.cmd
         if self.inmem:
             stdout = process.PIPE
         elif self.pollfile:
@@ -2715,7 +2731,7 @@ class ServerClass:
                 pass
             if self.dbg:
                 stdin = stdout = stderr = None
-                cmd = splitcommand(self.dbg) + self.cmd
+                cmd = splitcommand(self.dbg) + cmd
         else:
             stdout = process.PIPE
         if os.name == "nt":
@@ -2905,6 +2921,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                         Srvr.remove('--forcemito')
                     except ValueError:
                         pass
+                    Srvr.append(f'-d{1 << 24}') # NOSYNCMASK
                 if threads is not None:
                     for i in range(len(Srvr)):
                         if Srvr[i].startswith('gdk_nr_threads='):
@@ -3320,7 +3337,7 @@ if THISFILE == 'Mz.py':
     produce_html = False
     verbosity == 0
 THISPATH = os.path.realpath(os.path.dirname(sys.argv[0]))
-TSTDBG = str(2+8)
+TSTDBG = "2"
 TSTTHREADS = "0"
 dftTSTPREF = "mTests"
 TSTSUFF = "Tests"
@@ -3573,6 +3590,7 @@ def main(argv) :
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
     parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
+    parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
     global produce_html
@@ -3580,10 +3598,20 @@ def main(argv) :
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
     else:
         parser.add_argument('--produce-html', action='store_true', dest='produce_html', help='produce HTML files')
+    parser.add_argument('--loglevel', action='store', help='log level')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
     args = opts.tests
+
+    if opts.loglevel:
+        import logging
+        try:
+            level = getattr(logging, opts.loglevel.upper())
+        except:
+            print(f'unknown log level {opts.loglevel}', file=sys.stderr)
+            sys.exit(1)
+        logging.basicConfig(level=level)
 
     recursive = opts.recursive
     global testweb
@@ -3598,6 +3626,8 @@ def main(argv) :
     stop_crash = opts.stop_crash
     global ignore_conditions
     ignore_conditions = opts.ignore_conditions
+    global skip_timeout
+    skip_timeout = opts.skip_test_with_timeout
     produce_html = opts.produce_html
     addreqs = False
     testweb = opts.testweb
@@ -3974,8 +4004,8 @@ def main(argv) :
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
-                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else '')
+        exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --debug=256 --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
+                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else '')  # turn off forcemito, but keep nosync
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
         exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
@@ -3991,6 +4021,7 @@ def main(argv) :
         testdirs = []
         testlist = []
         dirlist = []
+        cli_test_count = 0
         if len(args) == 1 and not os.path.isdir(args[0]):
             head, tail = os.path.split(args[0])
             if os.path.isfile(args[0]):
@@ -3999,10 +4030,9 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    CONDITIONALS['KNOWNFAIL'] = True
                     for ext in ('.test', '.maltest', 'MAL.py', '.SQL.py',
                                 '.sql', '.py', '.R', '.rb', ''):
-                        # extentions .in and .src are never combined
+                        # extensions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
                             args.append(tail[:-len(ext + '.in')])
                             break
@@ -4015,7 +4045,6 @@ def main(argv) :
                     else:
                         ErrXit("%s: not a valid test name" % args[0])
             elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-                CONDITIONALS['KNOWNFAIL'] = True
                 args = [head, tail]
 
         if len(args) == 1:
@@ -4031,7 +4060,6 @@ def main(argv) :
             elif args[0] != "All":
                 #TODO:
                 # check, whether args[0] in All
-                CONDITIONALS['KNOWNFAIL'] = True
                 testlist.append(args[0])
         elif len(args) > 1:
             i = 0
@@ -4044,7 +4072,6 @@ def main(argv) :
                     # WARNING/ERROR
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
-                CONDITIONALS['KNOWNFAIL'] = True
                 while i < len(args):
                     if os.sep not in args[i]:
                         #TODO:
@@ -4054,6 +4081,7 @@ def main(argv) :
                     #else:
                         # ERROR/WARNING
                     i = i + 1
+                cli_test_count = len(testlist)
             else:
                 if i < len(args)  and  args[i] == "All":
                     i = i + 1
@@ -4089,6 +4117,8 @@ def main(argv) :
                 else:
                     testdirs.extend(test_dirs)
                     test_count += cnt
+            if cli_test_count:
+                test_count = cli_test_count
 
         if len(testdirs) > 1  and  testlist:
             testlist = []

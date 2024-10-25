@@ -623,7 +623,7 @@ JSONprelude(void)
 {
 	TYPE_json = ATOMindex("json");
 #ifdef GDKLIBRARY_JSON
-/* Run the gdk upgrade libary function with a callback that
+/* Run the gdk upgrade library function with a callback that
  * performs the actual upgrade.
  */
 	char *jsonupgrade;
@@ -1754,7 +1754,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const 
 					} else if ((u & 0xFC00) == 0xD800) {
 						/* high surrogate; must be followed by low surrogate */
 						*(*r)++ = 0xF0 | (((u & 0x03C0) + 0x0040) >> 8);
-						*(*r)++ = 0x80 | ((((u & 0x03C0) + 0x0040) >> 2) & 0x3F);
+						*(*r)++ = 0x80 | ((((u & 0x3FF) + 0x0040) >> 2) & 0x3F);
 						**r = 0x80 | ((u & 0x0003) << 4);	/* no increment */
 						(*l) -= 2;
 					} else if ((u & 0xFC00) == 0xDC00) {

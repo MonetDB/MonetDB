@@ -408,6 +408,7 @@ class SQLLogic:
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
+        crs.description = None
         try:
             if verbose:
                 print(f'Executing:\n{query}')
@@ -421,6 +422,10 @@ class SQLLogic:
             tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
+        if crs.description is None:
+            # it's not a query, it's a statement
+            self.query_error(query, 'query without results')
+            return ['statement', 'ok'], []
         try:
             data = crs.fetchall()
         except KeyboardInterrupt:
@@ -769,6 +774,7 @@ class SQLLogic:
             if line == '\n':
                 self.writeline()
                 continue
+            self.qline = self.line
             conn = None
             # look for connection string
             if line.startswith('@connection'):
@@ -905,9 +911,10 @@ class SQLLogic:
                     self.writeline(' '.join(result1))
                     for line in query:
                         self.writeline(line.rstrip(), replace=True)
-                    self.writeline('----')
-                    for line in result2:
-                        self.writeline(line)
+                    if result1[0] == 'query':
+                        self.writeline('----')
+                        for line in result2:
+                            self.writeline(line)
                 else:
                     self.writeline(qrline.rstrip())
                     for line in query:

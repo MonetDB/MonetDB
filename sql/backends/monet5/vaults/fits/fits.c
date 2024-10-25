@@ -765,7 +765,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (hdutype != ASCII_TBL && hdutype != BINARY_TBL)
 			continue;
 
-		/* SQL table name - the name of FITS extention */
+		/* SQL table name - the name of FITS extension */
 		fits_read_key(fptr, TSTRING, "EXTNAME", tname, NULL, &status);
 		if (status) {
 			snprintf(tname, sizeof(tname), "%s_%d", bname, i);

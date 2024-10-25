@@ -407,7 +407,7 @@ MALlookahead(Client cntxt, str kw, int length)
 		!isdigit((unsigned char) (CURRENT(cntxt)[length]))) {
 		return 1;
 	}
-	/* check for captialized versions */
+	/* check for capitalized versions */
 	for (i = 0; i < length; i++)
 		if (tolower(CURRENT(cntxt)[i]) != kw[i])
 			return 0;
@@ -901,7 +901,7 @@ typeElm(Client cntxt, int def)
   * The Parser
   * The client is responsible to collect the
   * input for parsing in a single string before calling the parser.
-  * Once the input is available parsing runs in a critial section for
+  * Once the input is available parsing runs in a critical section for
   * a single client thread.
   *
   * The parser uses the rigid structure of the language to speedup
@@ -921,7 +921,7 @@ typeElm(Client cntxt, int def)
   * The module and import commands have immediate effect.
   * The module statement switches the location for symbol table update
   * to a specific named area. The effect is that all definitions may become
-  * globally known (?) and symbol table should be temporarilly locked
+  * globally known (?) and symbol table should be temporarily locked
   * for updates by concurrent users.
   *
   * @multitable @columnfractions 0.15 0.8
@@ -2150,7 +2150,7 @@ parseAssign(Client cntxt, int cntrl)
 		i = l;
 		goto FCNcallparse2;
 	} else if ((l = idLength(cntxt)) && CURRENT(cntxt)[l] == '.') {
-		/* continue with parseing a function/operator call */
+		/* continue with parsing a function/operator call */
 		arg = putNameLen(CURRENT(cntxt), l);
 		if (arg == NULL) {
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);

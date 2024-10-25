@@ -698,7 +698,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 
 		if (c && isTable(c->t)) {
-			BUN rows = (BUN) store->storage_api.count_col(tr, c, QUICK);
+			BUN rows = (BUN) store->storage_api.count_col(tr, c, RDONLY);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -4005,7 +4005,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		//q = pushInt(mb, q, f->digits);
 		/* push the SRID of the inserted value */
 		//q = pushInt(mb, q, f->scale);
-		/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
+		/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside already */
 		/* push the SRID provided for this value */
 		/* GEOS library is able to store in the returned wkb the type an
  		 * number if coordinates but not the SRID so SRID should be provided
@@ -4936,7 +4936,7 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 	if (q == NULL)
 		return NULL;
 	q->retc = q->argc;
-	/* Lets make it a propper assignment */
+	/* Let's make it a proper assignment */
 	for (i = 0, n = l->h; n; n = n->next, i++) {
 		stmt *c = n->data;
 

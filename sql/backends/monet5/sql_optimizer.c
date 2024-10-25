@@ -51,7 +51,7 @@ SQLgetIdxSize(sql_trans *tr, sql_idx *i, int access)
  * access using sorted probing.
  *
  * A run where we only take the size of a table only once,
- * caused major degration on SF100 Q3 with SSD(>6x)
+ * caused major degradation on SF100 Q3 with SSD(>6x)
  */
 
 static lng

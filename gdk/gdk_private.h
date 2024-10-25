@@ -16,15 +16,6 @@
 #error this file should not be included outside its source directory
 #endif
 
-/* persist hash heaps for persistent BATs */
-#define PERSISTENTHASH 1
-
-/* persist order index heaps for persistent BATs */
-#define PERSISTENTIDX 1
-
-/* persist strimp heaps for persistent BATs */
-#define PERSISTENTSTRIMP 1
-
 /* only check whether we exceed gdk_vm_maxsize when allocating heaps */
 #define SIZE_CHECK_IN_HEAPS_ONLY 1
 
@@ -34,7 +25,6 @@ enum heaptype {
 	offheap,
 	varheap,
 	hashheap,
-	imprintsheap,
 	orderidxheap,
 	strimpheap,
 	dataheap
@@ -59,8 +49,6 @@ const char *ATOMunknown_name(int a)
 void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
 bool BATcheckhash(BAT *b)
-	__attribute__((__visibility__("hidden")));
-bool BATcheckimprints(BAT *b)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
@@ -163,6 +151,9 @@ gdk_return GDKremovedir(int farmid, const char *nme)
 gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+gdk_return GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool isuuid)
+	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
 gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -173,9 +164,6 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#define GDKwarning(...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, __VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
@@ -220,18 +208,6 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void IMPSdecref(Imprints *imprints, bool remove)
-	__attribute__((__visibility__("hidden")));
-void IMPSfree(BAT *b)
-	__attribute__((__visibility__("hidden")));
-int IMPSgetbin(int tpe, bte bits, const char *restrict bins, const void *restrict v)
-	__attribute__((__visibility__("hidden")));
-void IMPSincref(Imprints *imprints)
-	__attribute__((__visibility__("hidden")));
-#ifndef NDEBUG
-void IMPSprint(BAT *b)		/* never called: for debugging only */
-	__attribute__((__cold__));
-#endif
 double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
@@ -258,9 +234,6 @@ void PROPdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy_nolock(BAT *b)
 	__attribute__((__visibility__("hidden")));
-gdk_return rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, struct canditer *lci, struct canditer *rci, bool li, bool hi, bool anti, bool symmetric, BUN maxsize)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 void settailname(Heap *restrict tail, const char *restrict physnme, int tt, int width)
 	__attribute__((__visibility__("hidden")));
 void strCleanHash(Heap *hp, bool rebuild)
@@ -286,25 +259,6 @@ void VIEWdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-
-static inline bool
-imprintable(int tpe)
-{
-	switch (ATOMbasetype(tpe)) {
-	case TYPE_bte:
-	case TYPE_sht:
-	case TYPE_int:
-	case TYPE_lng:
-#ifdef HAVE_HGE
-	case TYPE_hge:
-#endif
-	case TYPE_flt:
-	case TYPE_dbl:
-		return true;
-	default:		/* type not supported */
-		return false;
-	}
-}
 
 /* calculate the integer 2 logarithm (i.e. position of highest set
  * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
@@ -389,7 +343,7 @@ ilog2(BUN x)
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
-	b->timprints ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->timprints ? "(I)" : ""
+	b->tstrimps ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->tstrimps ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
@@ -410,7 +364,7 @@ ilog2(BUN x)
 	b && b->tnonil ? "N" : "",					\
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\
-	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->timprints ? "(I)" : "" : ""
+	b ? b->tstrimps ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->tstrimps ? "(I)" : "" : ""
 
 #ifdef __SANITIZE_THREAD__
 #define BBP_BATMASK	31
@@ -422,17 +376,6 @@ struct PROPrec {
 	enum prop_t id;
 	ValRecord v;
 	struct PROPrec *next;	/* simple chain of properties */
-};
-
-struct Imprints {
-	bte bits;		/* how many bits in imprints */
-	Heap imprints;
-	void *bins;		/* pointer into imprints heap (bins borders)  */
-	BUN *stats;		/* pointer into imprints heap (stats per bin) */
-	void *imps;		/* pointer into imprints heap (bit vectors)   */
-	void *dict;		/* pointer into imprints heap (dictionary)    */
-	BUN impcnt;		/* counter for imprints                       */
-	BUN dictcnt;		/* counter for cache dictionary               */
 };
 
 typedef uint64_t strimp_masks_t;  /* TODO: make this a sparse matrix */

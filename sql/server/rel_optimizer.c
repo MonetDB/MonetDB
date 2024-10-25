@@ -88,7 +88,7 @@ rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_tab
 	/* base case */
 	if (tables->cnt == 1) // XXX: or/and h->next == NULL
 		return tables->h->data;
-	/* merge (via union) every *two* consequtive nodes of the list */
+	/* merge (via union) every *two* consecutive nodes of the list */
 	for (node *n = tables->h; n && n->next; n = n->next->next) {
 		/* first (left) node */
 		sql_rel *tl = rel_wrap_select_around_mt_child(v, n->data, info);
@@ -669,7 +669,7 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 									  .has_special_modify = rel && is_modify(rel->op) && rel->flag&UPD_COMP};
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
 
-	sql->runs = !(ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
+	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
 	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
 		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle, .has_special_modify = gp.has_special_modify};

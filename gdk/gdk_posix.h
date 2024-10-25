@@ -108,10 +108,10 @@
 #define MMAP_WILLNEED	POSIX_MADV_WILLNEED	/* will need these pages */
 #define MMAP_DONTNEED	POSIX_MADV_DONTNEED	/* don't need these pages */
 
-#define MMAP_READ		1024	/* region is readable (default if ommitted) */
+#define MMAP_READ		1024	/* region is readable (default if omitted) */
 #define MMAP_WRITE		2048	/* region may be written into */
 #define MMAP_COPY		4096	/* writable, but changes never reach file */
-#define MMAP_ASYNC		8192	/* asynchronous writes (default if ommitted) */
+#define MMAP_ASYNC		8192	/* asynchronous writes (default if omitted) */
 #define MMAP_SYNC		16384	/* writing is done synchronously */
 
 /* in order to be sure of madvise and msync modes, pass them to mmap()

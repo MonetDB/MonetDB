@@ -64,8 +64,8 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	/*
-	 * Count the variable re-use  used as arguments first.
-	 * A pass operation is not a real re-use
+	 * Count the variable reuse  used as arguments first.
+	 * A pass operation is not a real reuse
 	 */
 	for (i = 0; i < limit; i++) {
 		p = old[i];

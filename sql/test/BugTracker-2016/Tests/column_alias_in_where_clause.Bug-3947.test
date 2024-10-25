@@ -7,7 +7,7 @@ INSERT INTO t_alias (a, b, c) VALUES (1, 10, 'tien')
 statement ok
 INSERT INTO t_alias (a, b, c) VALUES (11, 2, 'elf')
 
-query IIT rowsort
+query IIT nosort
 SELECT * FROM t_alias ORDER BY 1
 ----
 1
@@ -17,7 +17,7 @@ tien
 2
 elf
 
-query IIT rowsort
+query IIT nosort
 SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY 1
 ----
 1
@@ -112,15 +112,15 @@ query TIT rowsort
 SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL and "CAT" = NULL
 ----
 
-query IIT rowsort
+query IIT nosort
 SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B"
 ----
-1
-10
-tien
 11
 2
 elf
+1
+10
+tien
 
 query IT rowsort
 SELECT CAST(a*b AS BIGINT) AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B"
@@ -130,7 +130,7 @@ tien
 22
 elf
 
-query IT rowsort
+query IT nosort
 SELECT CAST(a*b*b AS BIGINT) AS "A*B", c AS "C" FROM t_alias GROUP BY "C", "A*B" HAVING "A*B" IS NOT NULL ORDER BY -"A*B"
 ----
 100

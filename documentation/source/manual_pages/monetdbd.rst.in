@@ -116,7 +116,7 @@ using the **set** command. The following properties can be set:
 
 **loglevel**
    This property defines the level of what messages should be logged. It
-   can be: error or warning or information or debug. Defaut is
+   can be: error or warning or information or debug. Default is
    information. When loglevel is error, only errors are logged. When
    loglevel is warning, errors and warnings are logged. When loglevel is
    information, errors and warnings and information messages are logged.
@@ -250,6 +250,17 @@ using the **set** command. The following properties can be set:
    practice it is only relevant for connections to remote databases to
    use redirects instead of proxies. Changing this property takes effect
    immediately at runtime.
+
+**keepalive**
+   Specifies the keepalive interval for incoming connections. If this is
+   set to a positive number, *monetdbd* configures the system to send
+   automatic periodic keepalive probes on all client connections. This
+   can help keep firewalls from killing connections that seem idle but
+   are in fact waiting for a long running query to finish. The default
+   is 60 seconds. When 127 consecutive probes have failed, the
+   connection is closed. With the default setting of 60 seconds this
+   means the connection is closed when the client has been unreachable
+   for more than two hours.
 
 REMOTE DATABASES
 ================

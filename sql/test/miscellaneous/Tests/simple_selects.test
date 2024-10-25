@@ -661,7 +661,7 @@ select date_to_str(a,'%y/%m/%d') from (values (date '2012-02-11'), (date '2012-0
 12/02/12
 12/02/13
 
-query II rowsort
+query II nosort
 select x as z, 2 from (select 1) as x(x) order by z, z
 ----
 1
