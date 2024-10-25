@@ -1,20 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Mon Oct 21 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- Improve casting to generic decimal type by choosing a better fit for
-  precision and scale instead of defaulting to 18 and 3, respectively.
-
-* Thu Oct 17 2024 Sjoerd Mullender <sjoerd@acm.org>
-- When for whatever reason the upgrade code produces an error, we now
-  exit the server.  Before the server would limp on with what is basically
-  a broken database.
-
-* Thu Sep 26 2024 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
-- Improved the violation message of CHECK constraints when violated. It
-  now includes the schema name of the constraint and the check clause.
-
-* Fri Aug 23 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Increase the buffer size used by hot snapshot from 64kiB to 1MiB,
-  and make it configurable through setting 'hot_snapshot_buffer_size'.
-  It must be a multiple of 512.

@@ -407,7 +407,7 @@ MALlookahead(Client cntxt, str kw, int length)
 		!isdigit((unsigned char) (CURRENT(cntxt)[length]))) {
 		return 1;
 	}
-	/* check for captialized versions */
+	/* check for capitalized versions */
 	for (i = 0; i < length; i++)
 		if (tolower(CURRENT(cntxt)[i]) != kw[i])
 			return 0;
@@ -901,7 +901,7 @@ typeElm(Client cntxt, int def)
   * The Parser
   * The client is responsible to collect the
   * input for parsing in a single string before calling the parser.
-  * Once the input is available parsing runs in a critial section for
+  * Once the input is available parsing runs in a critical section for
   * a single client thread.
   *
   * The parser uses the rigid structure of the language to speedup
