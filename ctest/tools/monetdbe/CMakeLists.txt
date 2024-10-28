@@ -84,6 +84,13 @@ target_link_libraries(example_connections
     monetdbe)
 add_test(run_example_connections example_connections)
 
+add_executable(example_sessions example_sessions.c)
+target_link_libraries(example_sessions
+  PRIVATE
+    monetdb_config_header
+    monetdbe)
+add_test(run_example_sessions example_sessions)
+
 if(WITH_CMOCKA)
   add_executable(cmocka_test cmocka_test.c test_helper.c)
   target_include_directories(cmocka_test PRIVATE "${CMOCKA_INCLUDE_DIR}")
