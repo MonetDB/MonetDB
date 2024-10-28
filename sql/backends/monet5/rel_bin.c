@@ -8557,7 +8557,7 @@ rel2bin_materialize(backend *be, sql_rel *rel)
 
 	list *shared = NULL;
 	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
-		shared = rel2bin_project_prepare(be, rel);
+		shared = rel2bin_project_prepare(be, r);
 
 	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
 	pushInstruction(be->mb, q);
