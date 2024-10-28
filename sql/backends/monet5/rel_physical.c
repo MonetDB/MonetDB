@@ -483,7 +483,9 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		}
 
 		if (rel->l)
-			res = rel_partition_(sql, rel->l, pb);
+			res = rel_partition_(sql, rel->l, rel->oahash?SPB:pb);
+		if (rel->r)
+			res = rel_partition_(sql, rel->r, rel->oahash?SPB:0);
 		if (!res)
 			return 0;
 		/* We always use a 'pb' for rel->l of a semijoin. But, if this
