@@ -18,6 +18,7 @@
 #include "bin_partition_by_value.h"
 #include "opt_prelude.h"
 
+#if 0
 static lng
 get_max_bt_count(mvc *sql, sql_rel *rel, lng max)
 {
@@ -39,16 +40,30 @@ get_max_bt_count(mvc *sql, sql_rel *rel, lng max)
 	}
 	return cur_max;
 }
+#endif
 
 static lng
 _estimate(mvc *sql, sql_rel *rel)
 {
+	(void)sql;
 	// TODO better estimation
-	lng est = get_max_bt_count(sql, rel, 0);
+	//lng est = get_max_bt_count(sql, rel, 0);
+	lng est = get_rel_count(rel);
 
-	if (est == 0 || est >= GDK_int_max) {
-		est = 85000000;
+	if (est >= 85000000) {
+		printf("using large fallback\n");
+		fflush(stdout);
+		//est = 85000000;
+		est = 8500;
 	}
+	/*
+	if (est == 0) {
+		if (rel->op != op_basetable) {
+			printf("est == 0, %d\n", rel->op);
+			fflush(stdout);
+		}
+	}
+	*/
 	return est;
 }
 
