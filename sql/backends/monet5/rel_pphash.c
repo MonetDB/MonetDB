@@ -496,8 +496,6 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 {
-	(void)refs;
-
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
 
@@ -519,7 +517,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 
 	/*** (pseudo) HASH PHASE ***/
 	/* nothing to hash, we just want to have a materialised table for this side */
-	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh);
+	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh, refs);
 
 	/*** (pseudo) PROBE PHASE ***/
 	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs);

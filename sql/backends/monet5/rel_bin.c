@@ -2997,10 +2997,10 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 #if 0
 	if (rel->l) /* first construct the left sub relation */
 		//left = subrel_bin(be, rel->l, refs);
-		left = rel2bin_materialize(be, rel->l);
+		left = rel2bin_materialize(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		//right = subrel_bin(be, rel->r, refs);
-		right = rel2bin_materialize(be, rel->r);
+		right = rel2bin_materialize(be, rel->r, refs);
 	left = subrel_project(be, left, refs, rel->l);
 	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right)
@@ -4098,7 +4098,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		//rel_stmt = subrel_bin(be, n->data, refs);
 		//rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
 		//TODO: this materialize makes munion queries very slow
-		rel_stmt = rel2bin_materialize(be, n->data);
+		rel_stmt = rel2bin_materialize(be, n->data, refs);
 		if (!rel_stmt)
 			return NULL;
 		list_append(rstmts, rel_stmt);
@@ -4155,10 +4155,10 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	//TODO this is just a workaround for the "nested dataflow blocks" problem until all op_union is replaced by op_munion
 	if (rel->l) /* first construct the left sub relation */
 		//left = subrel_bin(be, rel->l, refs);
-		left = rel2bin_materialize(be, rel->l);
+		left = rel2bin_materialize(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		//right = subrel_bin(be, rel->r, refs);
-		right = rel2bin_materialize(be, rel->r);
+		right = rel2bin_materialize(be, rel->r, refs);
 	left = subrel_project(be, left, refs, rel->l);
 	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right)
@@ -8425,10 +8425,23 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		return s;
 	if (rel_is_ref(rel)) {
 		s = refs_find_rel(refs, rel);
-		/* needs a proper fix!! */
-		if (s)
-			return s;
 		neededpp = get_need_pipeline(be);
+		/* needs a proper fix!! */
+		if (s) {
+			if (neededpp) {
+				printf("# needs pipeline, started from subrel (referenced rel)\n");
+				be->need_pipeline = false;
+				set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
+				s = rel2bin_slicer(be, s, 1);
+			}
+			return s;
+		}
+		if (neededpp) {
+			s = rel2bin_materialize(be, rel, refs);
+			list_append(refs, rel);
+			list_append(refs, s);
+			return s;
+		}
 	} else if (rel->spb && !is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op))
 		neededpp = get_need_pipeline(be);
 
@@ -8525,8 +8538,9 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		list_append(refs, rel);
 		list_append(refs, s);
 		if (neededpp && !be->need_pipeline) {
-			set_need_pipeline(be);
-			neededpp = 0;
+			printf("# needs pipeline, started from subrel (referenced rel 2)\n");
+			set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
+			s = rel2bin_slicer(be, s, 1);
 		}
 	} else if (rel->spb && neededpp) {
 		if (be->pp) {
@@ -8567,22 +8581,23 @@ rel_bin(backend *be, sql_rel *rel)
 }
 
 stmt *
-rel2bin_materialize(backend *be, sql_rel *rel)
+rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *r = rel;
-	list *refs = sa_list(be->mvc->sa);
 	stmt *s = NULL;
 
 	if (is_topn(r->op))
 		r = r->l;
 
 	list *shared = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
-		shared = rel2bin_project_prepare(be, rel);
+	int prs = 0;
 
-	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
-	pushInstruction(be->mb, q);
-	int prs = getDestVar(q);
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+		shared = rel2bin_project_prepare(be, r);
+		InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+		pushInstruction(be->mb, q);
+		prs = getDestVar(q);
+	}
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
@@ -8656,7 +8671,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	be->pp = be->nrparts = 0;
 
-	s = rel2bin_materialize(be, rel);
+	s = rel2bin_materialize(be, rel, sa_list(sql->sa));
 
 	if (!s)
 		return NULL;

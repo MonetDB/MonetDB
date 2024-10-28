@@ -22,7 +22,7 @@ extern stmt *output_rel_bin(backend *be, sql_rel *rel, int top);
 
 extern int add_to_rowcount_accumulator(backend *be, int nr);
 extern stmt * column(backend *be, stmt *val);
-extern stmt * rel2bin_materialize(backend *be, sql_rel *rel);
+extern stmt * rel2bin_materialize(backend *be, sql_rel *rel, list *refs);
 
 
 /* private */
