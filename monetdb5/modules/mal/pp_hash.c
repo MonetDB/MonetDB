@@ -873,7 +873,7 @@ BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(b);
-	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (g == NULL) {
 		err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -1271,7 +1271,7 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, b
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(b);
-	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (g == NULL) {
 		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -1440,7 +1440,7 @@ OAHASHcmpt_freq_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
 	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(slt);
-	res = COLnew(slt->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	res = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 	if (!res) {
 			err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -2776,7 +2776,7 @@ OAHASHproject(bat *res, bat *key, bat *selected, const ptr *H)
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	rescnt = BATcount(s);
 	int tt = k->ttype;
-	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, rescnt, TRANSIENT);
+	e = COLnew(0, tt?tt:TYPE_oid, rescnt, TRANSIENT);
 	if (!e) {
 		err = createException(SQL, "oahash.project", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -3118,7 +3118,7 @@ BAT_OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_
 	}
 
 	int tt = k->ttype;
-	e = COLnew(k->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	e = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
 	if (!e) {
 		err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -3422,7 +3422,7 @@ OAHASHfetch_pld(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 	int tt = hp->type;
-	f = COLnew(hps->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	f = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
 	if (!f) {
 		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -3609,7 +3609,7 @@ BAT_OAHASHfetch_pld(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, lng
 	}
 
 	int tt = hp->type;
-	f = COLnew(hps->hseqbase, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
+	f = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
 	if (!f) {
 		err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
