@@ -11,7 +11,7 @@ CREATE TABLE "t1" (
 )
 
 statement ok
-COPY 1024 RECORDS INTO t0  FROM E'$QTSTSRCDIR/updating_non-loaded_columns.SF-2864313.data' USING  DELIMITERS  E'\t'
+COPY 1024 RECORDS INTO t0  FROM 'updating_non-loaded_columns.SF-2864313.data' ON CLIENT USING  DELIMITERS  E'\t'
 
 query I rowsort
 select count(*) from t0

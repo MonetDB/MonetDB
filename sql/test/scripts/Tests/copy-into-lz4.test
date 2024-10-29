@@ -5,7 +5,7 @@ statement ok
 CREATE TABLE testlz4 (a bigint, b real, c clob, d varchar(64))
 
 statement ok
-COPY INTO testlz4 FROM E'$QTSTSRCDIR/testlz4.lz4' USING DELIMITERS ',',E'\n','"' NULL AS ''
+COPY INTO testlz4 FROM 'testlz4.lz4' ON CLIENT USING DELIMITERS ',',E'\n','"' NULL AS ''
 
 query ITT rowsort
 SELECT a, c, d FROM testlz4 limit 1024

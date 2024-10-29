@@ -2955,7 +2955,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             elif CALL == "sqltest" or CALL == "maltest":
                 issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
-                with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                with sqllogictest.SQLLogic(out=ClntErr, srcdir=env['TSTSRCDIR']) as sql:
                     if CALL == 'sqltest':
                         lang = 'sql'
                     else:

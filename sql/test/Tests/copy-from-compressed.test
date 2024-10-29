@@ -9,22 +9,22 @@ create table compression_schemes (
 
 statement ok
 copy into compression_schemes
-from E'$QTSTSRCDIR/copy-from-compressed.csv.raw'
+from 'copy-from-compressed.csv.raw' on client
 using delimiters ',', E'\n'
 
 statement ok
 copy into compression_schemes
-from E'$QTSTSRCDIR/copy-from-compressed.csv.gz'
+from 'copy-from-compressed.csv.gz' on client
 using delimiters ',', E'\n'
 
 statement ok
 copy into compression_schemes
-from E'$QTSTSRCDIR/copy-from-compressed.csv.bz2'
+from 'copy-from-compressed.csv.bz2' on client
 using delimiters ',', E'\n'
 
 statement ok
 copy into compression_schemes
-from E'$QTSTSRCDIR/copy-from-compressed.csv.xz'
+from 'copy-from-compressed.csv.xz' on client
 using delimiters ',', E'\n'
 
 statement ok

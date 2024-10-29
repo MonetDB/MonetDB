@@ -79,9 +79,7 @@ skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def secure_resolve(self, filename: str) -> Optional[Path]:
-        return Path(filename).resolve()
-
-transfer_handler = UnsafeDirectoryHandler('.')
+        return (self.dir / filename).resolve()
 
 class SQLLogicSyntaxError(Exception):
     pass
@@ -126,7 +124,7 @@ def dq(s):
     return s.replace('"', '""')
 
 class SQLLogic:
-    def __init__(self, report=None, out=sys.stdout):
+    def __init__(self, srcdir='.', report=None, out=sys.stdout):
         self.dbh = None
         self.crs = None
         self.out = out
@@ -141,6 +139,7 @@ class SQLLogic:
         self.threshold = 100
         self.seenerr = False
         self.__last = ''
+        self.srcdir = srcdir
 
     def __enter__(self):
         return self
@@ -158,6 +157,7 @@ class SQLLogic:
         self.timeout = timeout
         self.alltests = alltests
         if language == 'sql':
+            transfer_handler = UnsafeDirectoryHandler(self.srcdir)
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
                                      hostname=hostname,

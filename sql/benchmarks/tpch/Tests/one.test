@@ -133,28 +133,28 @@ statement ok
 START TRANSACTION
 
 statement ok
-COPY 5 RECORDS INTO region from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/region.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 5 RECORDS INTO region from '../SF-0.01/region.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 25 RECORDS INTO nation from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/nation.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 25 RECORDS INTO nation from '../SF-0.01/nation.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 100 RECORDS INTO supplier from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/supplier.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 100 RECORDS INTO supplier from '../SF-0.01/supplier.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 1500 RECORDS INTO customer from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/customer.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 1500 RECORDS INTO customer from '../SF-0.01/customer.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 2000 RECORDS INTO part from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/part.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 2000 RECORDS INTO part from '../SF-0.01/part.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 8000 RECORDS INTO partsupp from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/partsupp.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 8000 RECORDS INTO partsupp from '../SF-0.01/partsupp.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 15000 RECORDS INTO orders from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/orders.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 15000 RECORDS INTO orders from '../SF-0.01/orders.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
-COPY 70000 RECORDS INTO lineitem from E'$QTSTSRCBASE/sql/benchmarks/tpch/SF-0.01/lineitem.tbl'  USING DELIMITERS '|', E'|\n'
+COPY 70000 RECORDS INTO lineitem from '../SF-0.01/lineitem.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
 
 statement ok
 COMMIT

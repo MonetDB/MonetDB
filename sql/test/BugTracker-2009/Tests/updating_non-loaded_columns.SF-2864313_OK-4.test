@@ -6,12 +6,12 @@ CREATE TABLE "t0" (
 statement ok
 CREATE TABLE "t1" (
         "d1" double,
-        "v1" varchar(255),
-        "v2" varchar(255)
+        "v1" varchar(255) default 'x',
+        "v2" varchar(255) default 'y'
 )
 
 statement ok
-COPY 1025 RECORDS INTO t0  FROM E'$QTSTSRCDIR/updating_non-loaded_columns.SF-2864313.data' USING  DELIMITERS  E'\t'
+COPY 1025 RECORDS INTO t0  FROM 'updating_non-loaded_columns.SF-2864313.data' ON CLIENT USING  DELIMITERS  E'\t'
 
 query I rowsort
 select count(*) from t0
@@ -30,8 +30,8 @@ query RTT rowsort
 select d1, v2, v1 from t1 limit 1
 ----
 0.000
-NULL
-NULL
+y
+x
 
 statement ok
 Update t1 Set v2 = 'AA'
@@ -41,7 +41,7 @@ select d1, v2, v1 from t1 limit 1
 ----
 0.000
 AA
-NULL
+x
 
 statement ok
 Update t1 Set d1 = -1.2
@@ -51,7 +51,7 @@ select d1, v2, v1 from t1 limit 1
 ----
 -1.200
 AA
-NULL
+x
 
 statement ok
 Update t1 Set v1 = 'BB'

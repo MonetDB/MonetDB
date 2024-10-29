@@ -5,7 +5,7 @@ statement ok
 create table test3351 (i integer)
 
 statement ok
-copy into test3351 from E'$QTSTSRCDIR/test3351.csv.bz2'
+copy into test3351 from 'test3351.csv.gz' on client
 
 query I rowsort
 select * from test3351
