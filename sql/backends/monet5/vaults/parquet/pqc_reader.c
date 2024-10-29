@@ -777,8 +777,26 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 		pos += pqc_get_int32(data+pos, &len);
 		if (len & 1) {
 			len>>=1;
-			assert(0);
+			len *= 8;
 			/* TODO handle single bits */
+			char val = data[pos++];
+			for (unsigned int k=0; k<len; ) {
+				char v = (val>>k)&1;
+				int nlen = 1;
+				for (k++; k<len; k++, nlen++) {
+					if (v != ((val>>k)&1))
+						break;
+				}
+				if (i == 0 && (val != 1 || len < num_values)) {
+					cr->definitionsize = 0;
+					cr->first_definition = v;
+					cr->definition = NEW_ARRAY(int, nr_bytes*8); /* should be enough */
+					if (!cr->definition)
+						return -1;
+				}
+				if (cr->definition)
+					cr->definition[j++] = nlen;
+			}
 		} else { /* rle */
 			len>>=1;
 			char val = data[pos++];
@@ -786,7 +804,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 			if (i == 0 && (val != 1 || len < num_values)) {
 				cr->definitionsize = 0;
 				cr->first_definition = val;
-				cr->definition = NEW_ARRAY(int, nr_bytes/2); /* should be enough */
+				cr->definition = NEW_ARRAY(int, nr_bytes*8); /* should be enough */
 				if (!cr->definition)
 					return -1;
 			}
