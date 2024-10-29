@@ -1219,8 +1219,25 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 		}
 	} else if (r->pse->precision == 64) {
 		int64_t *dst = output;
+		int64_t nil = lng_nil;
 
+		int curnotnil = cr->first_definition;
+		int curnulls = 0;
+		int curnull = 0;
 		for(int64_t i = 0; i<nrows; ) {
+			if (!curnulls && cr->definition) {
+				curnulls = cr->definition[curnull];
+				curnull++;
+				curnotnil = !curnotnil;
+				if (curnulls + i > nrows)
+					curnulls = nrows - i;
+				if (curnotnil) {
+					for(int j = 0; j < curnulls; j++)
+						dst[i] = nil;
+					i += curnulls;
+					continue;
+				}
+			}
 			u_int32_t len = 0;
 			pos += pqc_get_int32((char*)data+pos, &len);
 			if (len & 1) {
@@ -1230,7 +1247,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				int mask = (1<<nr_bits) -1;
 				if ((8/nr_bits)*nr_bits == 8) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
 						uchar v = data[pos];
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1242,7 +1259,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					}
 				} else if (nr_bits < 8) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
 						uchar v = data[pos];
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1259,7 +1276,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					}
 				} else if (nr_bits < 16) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
 						usht v = *(usht*)(data+pos);
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1280,7 +1297,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			} else { /* rle */
 				len>>=1;
 				uchar val = data[pos++];
-				for(int64_t j = 0; i < nrows && j < len; j++, i++) {
+				for(int64_t j = 0; i < nrows && j < len; j++, i++, curnulls--) {
 					dst[i] = ((int64_t*)cr->dict)[val];
 				}
 			}
