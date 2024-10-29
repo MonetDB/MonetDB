@@ -77,6 +77,19 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 			if (pse->precision <= 6 && sql_find_subtype(tpe, "timestamp", pse->precision, 0))
 				return tpe;
 			break;
+		case decimaltype:
+			if (pse->size == 32) {
+				if (sql_find_subtype(tpe, "decimal", 9, pse->scale)) {
+					tpe->digits = pse->precision;
+					return tpe;
+				}
+			} else if (pse->size == 64) {
+				if (sql_find_subtype(tpe, "decimal", 18, pse->scale)) {
+					tpe->digits = pse->precision;
+					return tpe;
+				}
+			}
+            break;
 		default:
 			return NULL;
 	}
@@ -120,6 +133,12 @@ pqc_find_localtype(const pqc_schema_element *pse)
 		case timestamptype:
 			if (pse->precision <= 6)
 				return TYPE_timestamp;
+			break;
+		case decimaltype:
+			if (pse->size == 32)
+				return TYPE_int;
+			if (pse->size == 64)
+				return TYPE_lng;
 			break;
 		default:
 			return TYPE_void;
