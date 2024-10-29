@@ -69,7 +69,7 @@ geos_version = '@GEOS_VERSION@'.split('.')
 
 # free bats, used bats, total bats
 fbre = re.compile(r' (?P<bats>\d+) free bats')
-ubre = re.compile(r'^(?P<bats>\d+) (persistent|transient) bats')
+ubre = re.compile(r' (?P<bats>\d+) in use')
 tbre = re.compile(r'^(?P<bats>\d+) bats total')
 
 # default is no color (these three functions may get redefined)
