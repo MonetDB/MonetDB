@@ -625,18 +625,18 @@ error:
 
 #define BATvgroup() \
 	do { \
-		assert(BATtdense(b) || \
-				/* A not-dense void BAT must contain only oid_nil.
-				 * Otherwise it's a candidate list, which should never have
-				 * reached this place. */ \
-				(!BATtdense(b) && b->tseqbase == oid_nil && cnt)); \
-		\
 		int slots = 0; \
 		gid slot = 0; \
-		oid bpi = b->tseqbase; \
 		oid *vals = h->vals; \
-		if (!BATtdense(b)) { \
+		\
+		struct canditer ci; \
+		canditer_init(&ci, NULL, b); \
+		cnt = ci.ncand; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
+			oid bpi = canditer_next(&ci); \
+			assert(bpi != oid_nil); \
 			gid k = (gid)_hash_oid(bpi)&h->mask; \
 			gid g = 0; \
 			\
@@ -652,50 +652,17 @@ error:
 						slots = private?1:PRE_CLAIM; \
 						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
 						if (((slot*100)/70) >= (gid)h->size) \
-							hash_rehash(h, p, err); \
+						hash_rehash(h, p, err); \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
 					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
-						continue; \
+					continue; \
 				} \
 				fnd = 1; \
 			} \
-			for(BUN i = 0; i<cnt; i++) { \
-				gp[i] = g-1; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				bool fnd = 0; \
-				gid k = (gid)_hash_oid(bpi)&h->mask; \
-				gid g = 0; \
-				\
-				while (!fnd) { \
-					g = ATOMIC_GET(h->gids+k); \
-					while (g && vals[g] != bpi) { \
-						k++; \
-						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
-					} \
-					if (!g) { \
-						if (slots == 0) { \
-							slots = private?1:PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-							if (((slot*100)/70) >= (gid)h->size) \
-								hash_rehash(h, p, err); \
-						} \
-						slots--; \
-						g = ++slot; \
-						vals[g] = bpi; \
-						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
-							continue; \
-					} \
-					fnd = 1; \
-				} \
-				gp[i] = g-1; \
-				bpi++; \
-			} \
+			gp[i] = g-1; \
 		} \
 	} while (0)
 
@@ -910,7 +877,10 @@ BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
 				BATgroup(lng);
 				break;
 			case TYPE_oid:
-				BATgroup(oid);
+				if (BATtdense(b))
+					BATvgroup();
+				else
+					BATgroup(oid);
 				break;
 			case TYPE_daytime:
 				BATgroup(daytime);
@@ -1013,81 +983,45 @@ error:
 
 #define vderive() \
 	do { \
-		assert(BATtdense(b) || \
-				/* A not-dense void BAT must contain only oid_nil.
-				 * Otherwise it's a candidate list, which should never have
-				 * reached this place. */ \
-				(!BATtdense(b) && b->tseqbase == oid_nil && cnt)); \
-		\
 		int slots = 0; \
 		gid slot = 0; \
-		oid bpi = b->tseqbase; \
 		oid *vals = h->vals; \
 		\
-		if (!BATtdense(b)) { \
-			gid hsh = _hash_oid(bpi); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				bool fnd = 0; \
-				gid k = (gid)combine(gi[i], hsh, prime)&h->mask; \
-				gid g = 0; \
-				\
-				while (!fnd) { \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, b); \
+		cnt = ci.ncand; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			bool fnd = 0; \
+			oid bpi = canditer_next(&ci); \
+			assert(bpi != oid_nil); \
+			gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
+			gid g = 0; \
+			\
+			while (!fnd) { \
+				g = ATOMIC_GET(h->gids+k); \
+				while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
+					k++; \
+					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
-					while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
-						k++; \
-						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
-					} \
-					if (!g) { \
-						if (slots == 0) { \
-							slots = private?1:PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-							if (((slot*100)/70) >= (gid)h->size) \
-								hash_rehash(h, p, err); \
-						} \
-						slots--; \
-						g = ++slot; \
-						vals[g] = bpi; \
-						pgids[g] = gi[i]; \
-						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
-						continue; \
-					} \
-					fnd = 1; \
 				} \
-				gp[i] = g-1; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				bool fnd = 0; \
-				gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
-				gid g = 0; \
-				\
-				while (!fnd) { \
-					g = ATOMIC_GET(h->gids+k); \
-					while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
-						k++; \
-						k &= h->mask; \
-						g = ATOMIC_GET(h->gids+k); \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) \
+						hash_rehash(h, p, err); \
 					} \
-					if (!g) { \
-						if (slots == 0) { \
-							slots = private?1:PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-							if (((slot*100)/70) >= (gid)h->size) \
-								hash_rehash(h, p, err); \
-						} \
-						slots--; \
-						g = ++slot; \
-						vals[g] = bpi; \
-						pgids[g] = gi[i]; \
-						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
-						continue; \
-					} \
-					fnd = 1; \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bpi; \
+					pgids[g] = gi[i]; \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					continue; \
 				} \
-				gp[i] = g-1; \
-				bpi++; \
+				fnd = 1; \
 			} \
+			gp[i] = g-1; \
 		} \
 	} while (0)
 
@@ -1311,7 +1245,10 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, b
 				derive(lng);
 				break;
 			case TYPE_oid:
-				derive(oid);
+				if (BATtdense(b))
+					vderive();
+				else
+					derive(oid);
 				break;
 			case TYPE_daytime:
 				derive(daytime);
@@ -1493,27 +1430,22 @@ error:
 
 #define vaddpld() \
 	do { \
-		assert(BATtdense(pld) || \
-				/* A not-dense void BAT must contain only oid_nil.
-				 * Otherwise it's a candidate list, which should never have
-				 * reached this place. */ \
-				(!BATtdense(pld) && pld->tseqbase == oid_nil && cnt)); \
-		\
-		oid pvals = pld->tseqbase; \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, pld); \
+		cnt = ci.ncand; \
 		oid *hpvals = hp->payload; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			hp_check_rehash(); \
-			/* TODO more memory efficient way to store TYPE_void payload.
-			 * This materialisation seems rather overkill.
-			 */ \
+			oid pvals = canditer_next(&ci); \
+			assert(pvals != oid_nil); \
 			hpvals[ppos[i]] = pvals; \
-			pvals += (pld->tseqbase != oid_nil); \
 		} \
 	} while (0)
 
 #define addpld(Type) \
 	do { \
+		assert(BATcount(pld) == BATcount(pos)); \
 		Type *pvals = Tloc(pld, 0); \
 		Type *hpvals = hp->payload; \
 		\
@@ -1525,6 +1457,7 @@ error:
 
 #define a_addpld() \
 	do { \
+		assert(BATcount(pld) == BATcount(pos)); \
 		BATiter bi = bat_iterator(pld); \
 		char **hpvals = hp->payload; \
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
@@ -1573,7 +1506,6 @@ OAHASHadd_pld(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 		err = createException(MAL, "oahash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	assert(BATcount(pld) == BATcount(pos));
 	hash_payload *hp = (hash_payload*)res->T.sink;
 	assert(hp && hp->s.type == OA_HASH_PAYLOAD_SINK);
 
@@ -1608,7 +1540,10 @@ OAHASHadd_pld(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
 				addpld(lng);
 				break;
 			case TYPE_oid:
-				addpld(oid);
+				if (BATtdense(pld))
+					vaddpld();
+				else
+					addpld(oid);
 				break;
 			case TYPE_daytime:
 				addpld(daytime);
@@ -1732,21 +1667,16 @@ OAHASHhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define BATvhash() \
 	do { \
-		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && cnt)); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		cnt = ci.ncand; \
 		\
-		oid ky = k->tseqbase; \
 		gid *hs = Tloc(h, 0); \
-		\
-		if (!BATtdense(k)) { \
-			gid hsh = (gid)_hash_oid(ky); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				hs[i] = hsh; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				hs[i] = (gid)_hash_oid(ky); \
-				ky++; \
-			} \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			oid ky = canditer_next(&ci); \
+			assert(ky != oid_nil); \
+			\
+			hs[i] = (gid)_hash_oid(ky); \
 		} \
 	} while (0)
 
@@ -1831,7 +1761,10 @@ BAT_OAHASHhash(bat *hsh, bat *key, const ptr *H)
 				BAThash(lng);
 				break;
 			case TYPE_oid:
-				BAThash(oid);
+				if (BATtdense(k))
+					BATvhash();
+				else
+					BAThash(oid);
 				break;
 			case TYPE_daytime:
 				BAThash(daytime);
@@ -1953,21 +1886,15 @@ OAHASHhash_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define BATvhash_cmbd() \
 	do { \
-		assert(BATtdense(k) || \
-				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		cnt = ci.ncand; \
 		\
-		oid ky = k->tseqbase; \
 		gid *hs = Tloc(h, 0); \
-		if (!BATtdense(k)) { \
-			gid hsh = _hash_oid(ky); \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				hs[i] = (gid)combine(ps[i], hsh, prime); \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-				hs[i] = (gid)combine(ps[i], _hash_oid(ky), prime); \
-				ky++; \
-			} \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			oid ky = canditer_next(&ci); \
+			assert(ky != oid_nil); \
+			hs[i] = (gid)combine(ps[i], _hash_oid(ky), prime); \
 		} \
 	} while (0)
 
@@ -2060,7 +1987,10 @@ BAT_OAHASHhash_cmbd(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const
 				BAThash_cmbd(lng);
 				break;
 			case TYPE_oid:
-				BAThash_cmbd(oid);
+				if (BATtdense(k))
+					BATvhash_cmbd();
+				else
+					BAThash_cmbd(oid);
 				break;
 			case TYPE_daytime:
 				BAThash_cmbd(daytime);
@@ -2224,44 +2154,30 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define BATvprobe() \
 	do { \
-		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && keycnt)); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		keycnt = ci.ncand; \
 		\
-		oid ky = k->tseqbase; \
 		gid *hs = Tloc(h, 0); \
 		oid *vals = ht->vals; \
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
 		\
-		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-				gid k = hs[i]&ht->mask; \
-				gid slot = ht->gids[k]; \
-				while (slot && vals[slot] != ky) { \
-					k++; \
-					k &= ht->mask; \
-					slot = ht->gids[k]; \
-				} \
-				if (slot) { \
-					mtd[mtdcnt] = i; \
-					slt[mtdcnt] = slot - 1; \
-					mtdcnt++; \
-				} \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			oid ky = canditer_next(&ci); \
+			assert(ky != oid_nil); \
+			\
+			gid k = hs[i]&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && vals[slot] != ky) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
 			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-				gid k = hs[i]&ht->mask; \
-				gid slot = ht->gids[k]; \
-				while (slot && vals[slot] != ky) { \
-					k++; \
-					k &= ht->mask; \
-					slot = ht->gids[k]; \
-				} \
-				if (slot) { \
-					mtd[mtdcnt] = i; \
-					slt[mtdcnt] = slot - 1; \
-					mtdcnt++; \
-				} \
-				ky++; \
+			if (slot) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = slot - 1; \
+				mtdcnt++; \
 			} \
 		} \
 	} while (0)
@@ -2511,44 +2427,30 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define BATvprobe_cmbd() \
 	do { \
-		assert(BATtdense(k) || (!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
 		\
-		oid ky = k->tseqbase; \
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
 		oid *vals = ht->vals; \
 		oid *mtd = Tloc(res_m, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		\
-		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-				gid hsh = hs[mt[i]]&ht->mask; \
-				gid slot = ht->gids[hsh]; \
-				while (slot && vals[slot] != ky) { \
-					hsh++; \
-					hsh &= ht->mask; \
-					slot = ht->gids[hsh]; \
-				} \
-				if (slot) { \
-					mtd[mtdcnt2] = i; \
-					slt[mtdcnt2] = slot - 1; \
-					mtdcnt2++; \
-				} \
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+			oid ky = canditer_idx(&ci, mt[i]); \
+			assert(ky != oid_nil); \
+			\
+			gid hsh = hs[mt[i]]&ht->mask; \
+			gid slot = ht->gids[hsh]; \
+			while (slot && vals[slot] != ky) { \
+				hsh++; \
+				hsh &= ht->mask; \
+				slot = ht->gids[hsh]; \
 			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-				gid hsh = hs[mt[i]]&ht->mask; \
-				gid slot = ht->gids[hsh]; \
-				while (slot && vals[slot] != (ky + mt[i])) { \
-					hsh++; \
-					hsh &= ht->mask; \
-					slot = ht->gids[hsh]; \
-				} \
-				if (slot) { \
-					mtd[mtdcnt2] = i; \
-					slt[mtdcnt2] = slot - 1; \
-					mtdcnt2++; \
-				} \
+			if (slot) { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = slot - 1; \
+				mtdcnt2++; \
 			} \
 		} \
 	} while (0)
@@ -2660,7 +2562,10 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 				BATprobe_cmbd(lng);
 				break;
 			case TYPE_oid:
-				BATprobe_cmbd(oid);
+				if (BATtdense(k))
+					BATvprobe_cmbd();
+				else
+					BATprobe_cmbd(oid);
 				break;
 			case TYPE_daytime:
 				BATprobe_cmbd(daytime);
@@ -2721,16 +2626,15 @@ error:
 
 #define vproject() \
 	do { \
-		assert(BATtdense(k) || \
-				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
 		\
 		oid *res = Tloc(e, 0); \
-		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX(idx, rescnt, qry_ctx) { \
-				res[idx] = k->tseqbase; \
-			} \
-		} else { \
-			memcpy(res, sel, rescnt * sizeof(oid)); \
+		TIMEOUT_LOOP_IDX_DECL(i, rescnt, qry_ctx) { \
+			oid val = canditer_idx(&ci, sel[i]); \
+			assert(val != oid_nil); \
+			\
+			res[idx++] = val; \
 		} \
 	} while (0)
 
@@ -2809,7 +2713,10 @@ OAHASHproject(bat *res, bat *key, bat *selected, const ptr *H)
 				project(lng);
 				break;
 			case TYPE_oid:
-				project(oid);
+				if (BATtdense(k))
+					vproject();
+				else
+					project(oid);
 				break;
 			case TYPE_daytime:
 				project(daytime);
@@ -2977,25 +2884,28 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define BATvexpand() \
 	do { \
-		assert(BATtdense(k) || \
-				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		keycnt = ci.ncand; \
 		\
 		oid *res = Tloc(e, 0); \
-		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
-				res[idx] = k->tseqbase; \
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+			oid val = canditer_idx(&ci, sel[i]); \
+			assert(val != oid_nil); \
+			\
+			gid freq = (gid)ht->frequency[sid[i]]; \
+			TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
+				res[idx++] = val; \
 			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
-				gid freq = (gid)ht->frequency[sid[i]]; \
-				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
-					res[idx++] = sel[i]; \
-				} \
-			} \
-			if (*outer) { \
-				for (BUN i = 0, j = 0; i < keycnt; i++) { \
-					if (j < selcnt && i == sel[j]) j++; \
-					else res[idx++] = i; \
+		} \
+		if (*outer) { \
+			for (BUN i = 0, j = 0; i < keycnt; i++) { \
+				if (j < selcnt && i == sel[j]) { \
+					j++; \
+				} else { \
+					oid val = canditer_idx(&ci, k->tseqbase+i); \
+					assert(val != oid_nil); \
+					res[idx++] = i; \
 				} \
 			} \
 		} \
@@ -3151,7 +3061,10 @@ BAT_OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_
 				BATexpand(lng);
 				break;
 			case TYPE_oid:
-				BATexpand(oid);
+				if (BATtdense(k))
+					BATvexpand();
+				else
+					BATexpand(oid);
 				break;
 			case TYPE_daytime:
 				BATexpand(daytime);
@@ -3207,20 +3120,16 @@ error:
 
 #define vexpand_cart() \
 	do { \
-		assert(BATtdense(k) || \
-				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		keycnt = ci.ncand; \
 		\
 		oid *res = Tloc(e, 0); \
-		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
-				res[idx] = k->tseqbase; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-				oid val = k->tseqbase + i; \
-				TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
-					res[idx++] = val; \
-				} \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			oid val = canditer_idx(&ci, k->tseqbase + i); \
+			assert(val != oid_nil); \
+			TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
+				res[idx++] = val; \
 			} \
 		} \
 	} while (0)
@@ -3303,7 +3212,10 @@ BAT_OAHASHexpand_cart(bat *expanded, bat *col, lng *norows, const ptr *H)
 			expand_cart(lng);
 			break;
 		case TYPE_oid:
-			expand_cart(oid);
+			if (BATtdense(k))
+				vexpand_cart();
+			else
+				expand_cart(oid);
 			break;
 		case TYPE_daytime:
 			expand_cart(daytime);
@@ -3475,25 +3387,7 @@ OAHASHfetch_pld(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
-					//afetch();
-		lng hsh = _hash_lng(slotid);
-		int prime = hash_prime_nr[ht->bits-5];
-		char **vals = hp->payload;
-		if (slotid != oid_nil) {
-			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) {
-				lng vpos = combine(idx, hsh, prime)&ht->mask;
-				if (BUNappend(f, vals[vpos], false) != GDK_SUCCEED) {
-					err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					break;
-				}
-			}
-		} else if (outer) {
-			if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) {
-				err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				break;
-			}
-			idx++;
-		}
+					afetch();
 				} else {
 					err = createException(MAL, "oahash.fetch_payload", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 				}
@@ -3678,6 +3572,7 @@ BAT_OAHASHfetch_pld(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, lng
 	BBPunfix(hps->batCacheid);
 	BBPunfix(hts->batCacheid);
 
+	f->tseqbase = 0;
 	BATsetcount(f, ttlcnt);
 	BATnegateprops(f);
 	*fetched = f->batCacheid;
@@ -3695,19 +3590,17 @@ error:
 
 #define vfetch_cart() \
 	do { \
-		assert(BATtdense(k) || \
-				(!BATtdense(k) && k->tseqbase == oid_nil && BATcount(k))); \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		keycnt = ci.ncand; \
 		\
 		oid *res = Tloc(f, 0); \
-		if (!BATtdense(k)) { \
-			TIMEOUT_LOOP_IDX(idx, ttlcnt, qry_ctx) { \
-				res[idx] = k->tseqbase; \
-			} \
-		} else { \
-			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
-				TIMEOUT_LOOP_IDX_DECL(j, keycnt, qry_ctx) { \
-					res[idx++] = k->tseqbase + j; \
-				} \
+		TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(j, keycnt, qry_ctx) { \
+				oid val = canditer_idx(&ci, k->tseqbase + j); \
+				assert(val != oid_nil); \
+				\
+				res[idx++] = val; \
 			} \
 		} \
 	} while (0)
@@ -3793,7 +3686,10 @@ BAT_OAHASHfetch_pld_cart(bat *fetched, bat *col, lng *norepeats, const ptr *H)
 				fetch_cart(lng);
 				break;
 			case TYPE_oid:
-				fetch_cart(oid);
+				if (BATtdense(k))
+					vfetch_cart();
+				else
+					fetch_cart(oid);
 				break;
 			case TYPE_daytime:
 				fetch_cart(daytime);
