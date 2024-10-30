@@ -3793,7 +3793,6 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 									rel_select_add_exp(v->sql->sa, pl, ne);
 									list_remove_node(exps, NULL, n);
 									v->changes++;
-									assert(0);
 								}
 							}
 						}
