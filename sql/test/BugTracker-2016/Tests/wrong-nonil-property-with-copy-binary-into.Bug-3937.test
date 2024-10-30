@@ -5,7 +5,7 @@ statement ok
 create table "noNULLtinyint" (x tinyint)
 
 statement ok
-copy binary into "noNULLtinyint" from (E'$QTSTSRCDIR/noNULLtinyintBAT.bin')
+copy binary into "noNULLtinyint" from ('noNULLtinyintBAT.bin') on client
 
 query I rowsort
 select * from "noNULLtinyint"
@@ -64,7 +64,7 @@ statement ok
 create table "NULLtinyint" (x tinyint)
 
 statement ok
-copy binary into "NULLtinyint" from (E'$QTSTSRCDIR/NULLtinyintBAT.bin')
+copy binary into "NULLtinyint" from ('NULLtinyintBAT.bin') on client
 
 query I nosort
 select * from "NULLtinyint"

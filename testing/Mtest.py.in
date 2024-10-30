@@ -69,7 +69,7 @@ geos_version = '@GEOS_VERSION@'.split('.')
 
 # free bats, used bats, total bats
 fbre = re.compile(r' (?P<bats>\d+) free bats')
-ubre = re.compile(r'^(?P<bats>\d+) (persistent|transient) bats')
+ubre = re.compile(r' (?P<bats>\d+) in use')
 tbre = re.compile(r'^(?P<bats>\d+) bats total')
 
 # default is no color (these three functions may get redefined)
@@ -1375,17 +1375,19 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                 if oneserver and (pSrvr is None or pSrvr.poll() is not None):
                     # restart server
                     inmem = single_in_memory
+                    opts = []
                     for o in options:
                         if o.startswith('embedded'):
                             inmem = False
-                            break
+                        if o != 'nodrop':
+                            opts.append(o)
                     if inmem:
-                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + mserver5_opts + options
+                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + mserver5_opts + opts
                         pollfile = None
                         cmd.append('--set')
                         cmd.append('gdk_dbtrace={}'.format(os.path.join(LogDBdir, 'mdbtrace.log')))
                     else:
-                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + options
+                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + opts
                         pollfile = os.path.join(LogDBdir, '.started')
                     if os.path.exists(keyfile):
                         cmd.extend(['--set', 'monet_vault_key={}'.format(keyfile)])
@@ -2903,6 +2905,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
     pSrvr = PSRVR
     issqllogictest = False
     logicerror = False
+    if 'nodrop' in options:
+        options = options[:]
+        options.remove('nodrop')
+        nodrop = True
+    else:
+        nodrop = False
     try:
         if SERVER in ["MAL", "SQL"]:
             SrvrOutFile = TST+".server.out"
@@ -2964,7 +2972,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             elif CALL == "python":
                 # do clean up between tests if no dependent tests
                 # borrow clean up function from sqllogictest
-                if not os.path.exists(TST+'.reqtests'):
+                if not nodrop and not os.path.exists(TST+'.reqtests'):
                     import MonetDBtesting.sqllogictest as sqllogictest
                     with sqllogictest.SQLLogic(out=ClntErr) as sql:
                         try:
@@ -2992,7 +3000,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             elif CALL == "sqltest" or CALL == "maltest":
                 issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
-                with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                with sqllogictest.SQLLogic(out=ClntErr, srcdir=env['TSTSRCDIR']) as sql:
                     if CALL == 'sqltest':
                         lang = 'sql'
                     else:
@@ -3011,7 +3019,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     except:
                         returncode = 'error'
                     else:
-                        if not os.path.exists(TST+'.reqtests'):
+                        if not nodrop and not os.path.exists(TST+'.reqtests'):
                             try:
                                 sql.drop()
                             except KeyboardInterrupt:

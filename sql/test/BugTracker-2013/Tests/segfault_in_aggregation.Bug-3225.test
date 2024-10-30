@@ -2,7 +2,7 @@ statement ok
 create table t3225 ("eId" BIGINT, "timeInsert" TIMESTAMP, "uId" BIGINT)
 
 statement ok
-copy into t3225 from E'$QTSTSRCDIR/segfault_in_aggregation.Bug-3225.data' USING DELIMITERS E'\t',E'\n'
+copy into t3225 from 'segfault_in_aggregation.Bug-3225.data' ON CLIENT USING DELIMITERS E'\t',E'\n'
 
 query II rowsort
 select "eId", count(*) from t3225 where "uId" = 312459 group by "eId"

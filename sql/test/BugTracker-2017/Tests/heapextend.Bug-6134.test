@@ -1492,7 +1492,7 @@ COPY 56 RECORDS INTO segment4 FROM STDIN DELIMITERS '|' , E'\n', '"'
 "74404"|"74404"
 
 statement ok
-COPY 49998 RECORDS INTO all_dates FROM E'$QTSTSRCDIR/all_dates.csv.gz' DELIMITERS '|' , E'\n', '"'
+COPY 49998 RECORDS INTO all_dates FROM 'all_dates.csv.gz' ON CLIENT DELIMITERS '|' , E'\n', '"'
 
 query TTTTTTTTT nosort
 SELECT loc.code

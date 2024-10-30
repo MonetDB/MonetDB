@@ -50,7 +50,7 @@ denial_reason_2,
 denial_reason_3,
 edit_status,
 sequence_number)
-FROM r'$TSTSRCDIR/l30000.gz' ON CLIENT
+FROM 'l30000.gz' ON CLIENT
 FWF(
 4,
 10,

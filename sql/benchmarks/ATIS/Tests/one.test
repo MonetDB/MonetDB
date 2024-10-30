@@ -86,88 +86,88 @@ statement ok
 create table transport (transport_code char(1) NOT NULL,transport_desc char(32) NOT NULL,PRIMARY KEY (transport_code))
 
 statement ok
-COPY 135 RECORDS INTO "sys"."aircraft" FROM E'$QTSTSRCDIR/aircraft.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 135 RECORDS INTO "sys"."aircraft" FROM 'aircraft.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 314 RECORDS INTO "sys"."airline" FROM E'$QTSTSRCDIR/airline.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 314 RECORDS INTO "sys"."airline" FROM 'airline.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 9 RECORDS INTO "sys"."airport" FROM E'$QTSTSRCDIR/airport.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 9 RECORDS INTO "sys"."airport" FROM 'airport.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 14 RECORDS INTO "sys"."airport_service" FROM E'$QTSTSRCDIR/airport_service.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 14 RECORDS INTO "sys"."airport_service" FROM 'airport_service.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 11 RECORDS INTO "sys"."city" FROM E'$QTSTSRCDIR/city.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 11 RECORDS INTO "sys"."city" FROM 'city.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 27 RECORDS INTO "sys"."class_of_service" FROM E'$QTSTSRCDIR/class_of_service.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 27 RECORDS INTO "sys"."class_of_service" FROM 'class_of_service.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 15 RECORDS INTO "sys"."code_description" FROM E'$QTSTSRCDIR/code_description.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 15 RECORDS INTO "sys"."code_description" FROM 'code_description.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 149 RECORDS INTO "sys"."compound_class" FROM E'$QTSTSRCDIR/compound_class.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 149 RECORDS INTO "sys"."compound_class" FROM 'compound_class.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 351 RECORDS INTO "sys"."connect_leg" FROM E'$QTSTSRCDIR/connect_leg.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 351 RECORDS INTO "sys"."connect_leg" FROM 'connect_leg.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 164 RECORDS INTO "sys"."fconnection" FROM E'$QTSTSRCDIR/fconnection.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 164 RECORDS INTO "sys"."fconnection" FROM 'fconnection.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 7 RECORDS INTO "sys"."day_name" FROM E'$QTSTSRCDIR/day_name.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 7 RECORDS INTO "sys"."day_name" FROM 'day_name.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 114 RECORDS INTO "sys"."dual_carrier" FROM E'$QTSTSRCDIR/dual_carrier.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 114 RECORDS INTO "sys"."dual_carrier" FROM 'dual_carrier.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 534 RECORDS INTO "sys"."fare" FROM E'$QTSTSRCDIR/fare.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 534 RECORDS INTO "sys"."fare" FROM 'fare.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 579 RECORDS INTO "sys"."flight" FROM E'$QTSTSRCDIR/flight.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 579 RECORDS INTO "sys"."flight" FROM 'flight.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 2895 RECORDS INTO "sys"."flight_class" FROM E'$QTSTSRCDIR/flight_class.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 2895 RECORDS INTO "sys"."flight_class" FROM 'flight_class.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 448 RECORDS INTO "sys"."flight_day" FROM E'$QTSTSRCDIR/flight_day.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 448 RECORDS INTO "sys"."flight_day" FROM 'flight_day.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 2998 RECORDS INTO "sys"."flight_fare" FROM E'$QTSTSRCDIR/flight_fare.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 2998 RECORDS INTO "sys"."flight_fare" FROM 'flight_fare.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 121 RECORDS INTO "sys"."food_service" FROM E'$QTSTSRCDIR/food_service.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 121 RECORDS INTO "sys"."food_service" FROM 'food_service.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 33 RECORDS INTO "sys"."ground_service" FROM E'$QTSTSRCDIR/ground_service.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 33 RECORDS INTO "sys"."ground_service" FROM 'ground_service.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 12 RECORDS INTO "sys"."time_interval" FROM E'$QTSTSRCDIR/time_interval.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 12 RECORDS INTO "sys"."time_interval" FROM 'time_interval.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 12 RECORDS INTO "sys"."month_name" FROM E'$QTSTSRCDIR/month_name.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 12 RECORDS INTO "sys"."month_name" FROM 'month_name.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 612 RECORDS INTO "sys"."restrict_carrier" FROM E'$QTSTSRCDIR/restrict_carrier.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 612 RECORDS INTO "sys"."restrict_carrier" FROM 'restrict_carrier.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 4 RECORDS INTO "sys"."restrict_class" FROM E'$QTSTSRCDIR/restrict_class.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 4 RECORDS INTO "sys"."restrict_class" FROM 'restrict_class.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 65 RECORDS INTO "sys"."restriction" FROM E'$QTSTSRCDIR/restriction.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 65 RECORDS INTO "sys"."restriction" FROM 'restriction.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 63 RECORDS INTO "sys"."state" FROM E'$QTSTSRCDIR/state.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 63 RECORDS INTO "sys"."state" FROM 'state.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 69 RECORDS INTO "sys"."stop1" FROM E'$QTSTSRCDIR/stop1.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 69 RECORDS INTO "sys"."stop1" FROM 'stop1.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 9 RECORDS INTO "sys"."time_zone" FROM E'$QTSTSRCDIR/time_zone.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 9 RECORDS INTO "sys"."time_zone" FROM 'time_zone.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
-COPY 4 RECORDS INTO "sys"."transport" FROM E'$QTSTSRCDIR/transport.dat' USING DELIMITERS E'\t',E'\n','"'
+COPY 4 RECORDS INTO "sys"."transport" FROM 'transport.dat' ON CLIENT USING DELIMITERS E'\t',E'\n','"'
 
 statement ok
 commit
