@@ -836,7 +836,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 		cr->definitionsize = j;
 
 	TRC_DEBUG(PARQUET, "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
-	printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
+	// printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
 	cr->cc->num_nulls = null;
 	/* return definition level as structure 0/1 + len */
 	return nr_bytes + sizeof(nr_bytes);
