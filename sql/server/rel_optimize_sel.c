@@ -3541,7 +3541,7 @@ get_diff_function_columns(sql_exp *diffExp, list *columns) {
  * window functions. Returns NULL if the window function does not partition by any column
  */
 static list *
-get_aggregation_key_columns(allocator *sa, sql_rel *r) {
+get_partition_by_key_columns(allocator *sa, sql_rel *r) {
 	for (node* n = r->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -3576,7 +3576,8 @@ get_aggregation_key_columns(allocator *sa, sql_rel *r) {
  * Checks if a filter column is also used as an aggregation key, so it can be later safely pushed down.
  */
 static int
-filter_column_in_aggregation_columns(sql_exp *column, list *aggColumns) {
+filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
+{
 	/* check if it is a column or an e_convert, and get the actual column if it is the latter */
 	if (column->type == e_convert) {
 		column = column->l;
@@ -3585,12 +3586,12 @@ filter_column_in_aggregation_columns(sql_exp *column, list *aggColumns) {
 	char *tableName = column->l;
 	char *columnName = column->r;
 
-	for (node *n = aggColumns->h; n; n = n->next) {
-		sql_exp *aggCol = n->data;
-		char *aggColTableName = aggCol->l;
-		char *aggColColumnName = aggCol->r;
+	for (node *n = keyColumns->h; n; n = n->next) {
+		sql_exp *keyCol = n->data;
+		char *keyColTableName = keyCol->l;
+		char *keyColColumnName = keyCol->r;
 
-		if (!strcmp(tableName, aggColTableName) && !strcmp(columnName, aggColColumnName)) {
+		if (!strcmp(tableName, keyColTableName) && !strcmp(columnName, keyColColumnName)) {
 			/* match */
 			return 1;
 		}
@@ -3599,7 +3600,6 @@ filter_column_in_aggregation_columns(sql_exp *column, list *aggColumns) {
 	/* no matches found */
 	return 0;
 }
-
 
 /*
  * Push select down, pushes the selects through (simple) projections. Also
@@ -3756,14 +3756,14 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				set_processed(pl);
 		}
 
-		/* push filters if they match the aggregation key on a window function */
+		/* push filters if they match the partition by key on a window function */
 		else if (pl && pl->op != op_ddl && exps_have_unsafe(r->exps, false, false)) {
 			set_processed(pl);
-			/* list of aggregation key columns */
-			list *aggColumns = get_aggregation_key_columns(v->sql->sa, r);
+			/* list of partition by key columns */
+			list *keyColumns = get_partition_by_key_columns(v->sql->sa, r);
 
-			/* aggregation keys found, check if any filter matches them */
-			if (aggColumns) {
+			/* partition by keys found, check if any filter matches them */
+			if (keyColumns) {
 				for (n = exps->h; n;) {
 					node *next = n->next;
 					sql_exp *e = n->data, *ne = NULL;
@@ -3781,9 +3781,9 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 								column = e->l;
 							}
 
-							/* check if the expression matches any aggregation key, meaning we can
+							/* check if the expression matches any partition by key, meaning we can
 							   try to safely push it down */
-							if (filter_column_in_aggregation_columns(column, aggColumns)) {
+							if (filter_column_in_partition_by_columns(column, keyColumns)) {
 								ne = exp_push_down_prj(v->sql, e, r, pl);
 
 								/* can we move it down */
@@ -3793,6 +3793,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 									rel_select_add_exp(v->sql->sa, pl, ne);
 									list_remove_node(exps, NULL, n);
 									v->changes++;
+									assert(0);
 								}
 							}
 						}
@@ -3801,7 +3802,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				}
 
 				/* cleanup list */
-				list_destroy(aggColumns);
+				list_destroy(keyColumns);
 			}
 		}
 	}
