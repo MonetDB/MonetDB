@@ -644,7 +644,9 @@ class SQLTestCase():
 
     @property
     def conn_ctx(self):
-        return self._conn_ctx or self.default_conn_ctx()
+        if self._conn_ctx is None:
+            self._conn_ctx = self.default_conn_ctx()
+        return self._conn_ctx
 
     def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
         '''Execute query with specified client. Default client is pymonetbd.'''
