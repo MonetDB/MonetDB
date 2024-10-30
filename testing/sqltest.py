@@ -586,10 +586,12 @@ class SQLTestCase():
         self.err_file = err_file
         self.test_results = []
         self._conn_ctx = None
+        self._conn_trash = []
         self.in_memory = False
         self.client = 'pymonetdb'
 
     def __enter__(self):
+        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -599,6 +601,9 @@ class SQLTestCase():
         if self._conn_ctx:
             self._conn_ctx.close()
         self._conn_ctx = None
+        for ctx in self._conn_trash:
+            ctx.close()
+        self._conn_trash = []
 
     def exit(self):
         self.close()
@@ -617,8 +622,9 @@ class SQLTestCase():
     def connect(self,
             username='monetdb', password='monetdb', port=MAPIPORT,
             hostname='localhost', database=TSTDB, language='sql'):
-        if self._conn_ctx:
-            self.close()
+        old = self._conn_ctx
+        if old:
+            self._conn_trash.append(old)
         if database == 'in-memory' \
            or database == ':memory:': # backward compatibility
             import monetdbe
@@ -634,18 +640,9 @@ class SQLTestCase():
                                  port=port,
                                  database=database or 'in-memory',
                                  language=language)
-        return self._conn_ctx
-
-    def default_conn_ctx(self):
-        if self.in_memory:
-            return  monetdbe.connect('in-memory', autocommit=True)
-        ctx = PyMonetDBConnectionContext()
-        return ctx
 
     @property
     def conn_ctx(self):
-        if self._conn_ctx is None:
-            self._conn_ctx = self.default_conn_ctx()
         return self._conn_ctx
 
     def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
