@@ -4138,8 +4138,15 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !bi.nonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
+			while (min < prev) {
+				if (bunfastapp_nocheck(bn, dnil) != GDK_SUCCEED)
+					goto bunins_failed;
+				min++;
+				nils++;
+			}
 			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED)
 				goto bunins_failed;
+			min++;
 		}
 		bat_iterator_end(&bi);
 		nils += ngrp - BATcount(bn);
