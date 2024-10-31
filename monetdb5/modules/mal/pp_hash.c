@@ -365,6 +365,7 @@ error:
 
 /* ***** HASH OPERATORS ***** */
 
+#if 0
 #define aprep_heap(SK, ERR, FName) \
 	do { \
 		pipeline_lock(p); \
@@ -385,6 +386,7 @@ error:
 			} \
 		} \
 	} while(0)
+#endif
 
 #define BATaprep_heap(BT, SB, SK, FName) \
 	do { \
@@ -426,6 +428,7 @@ error:
 
 #define PRE_CLAIM 256
 
+#if 0
 #define group(Type) \
 	do { \
 		Type ky = *(Type *)key; \
@@ -584,6 +587,7 @@ error:
 	BBPreclaim(u);
 	return ret;
 }
+#endif
 
 #define BATgroup(Type) \
 	do { \
@@ -1594,6 +1598,7 @@ error:
 	return err;
 }
 
+#if 0
 #define hash(Type) \
 	do { \
 		*hsh = _hash_##Type(*((Type *) key)); \
@@ -1664,6 +1669,7 @@ OAHASHhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return MAL_SUCCEED;
 }
+#endif
 
 #define BATvhash() \
 	do { \
@@ -1807,6 +1813,7 @@ error:
 	return err;
 }
 
+#if 0
 #define hash_cmbd(Type) \
 	do { \
 		*hsh = combine(*prnt, _hash_##Type(*(Type *)key), prime); \
@@ -1883,6 +1890,7 @@ OAHASHhash_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return ret;
 }
+#endif
 
 #define BATvhash_cmbd() \
 	do { \
@@ -2037,6 +2045,7 @@ error:
 	return err;
 }
 
+#if 0
 /* Shared by OAHASHprobe and OAHASHprobe_cmbd*/
 #define probe(Type) \
 	do { \
@@ -2151,6 +2160,7 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TIMEOUT_CHECK(qry_ctx, ret = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
 	return ret;
 }
+#endif
 
 #define BATvprobe() \
 	do { \
@@ -2342,6 +2352,7 @@ error:
 	return err;
 }
 
+#if 0
 static str
 OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2424,6 +2435,7 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return ret;
 }
+#endif
 
 #define BATvprobe_cmbd() \
 	do { \
@@ -2764,6 +2776,7 @@ error:
 	return err;
 }
 
+#if 0
 #define expand(Type) \
 	do { \
 		Type *res = Tloc(e, 0); \
@@ -2881,6 +2894,7 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return ret;
 }
+#endif
 
 #define BATvexpand() \
 	do { \
@@ -3260,6 +3274,7 @@ error:
 	return err;
 }
 
+#if 0
 #define fetch(Type) \
 	do { \
 		lng hsh = _hash_lng(slotid); \
@@ -3411,6 +3426,7 @@ error:
 	BBPreclaim(hts);
 	return err;
 }
+#endif
 
 #if 0
 #define BATvfetch() \
@@ -3735,7 +3751,7 @@ error:
 	return err;
 }
 
-
+#if 0
 static str
 OAHASHget_pos(bat *pos, bat *res, bat *ht_sink, const ptr *H)
 {
@@ -3779,6 +3795,7 @@ error:
 	BBPreclaim(h);
 	return err;
 }
+#endif
 
 #include "mel.h"
 static mel_func oa_hash_init_funcs[] = {
@@ -3789,7 +3806,7 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),arg("freq",bit),batargany("p",2))),
  pattern("oahash", "new_payload", OAHASHnew_pld, false, "", args(1,5, batargany("hp_sink",1),argany("tt",1),arg("nr_payloads",int),batargany("parent",2), batargany("dummy",3))),
 
- pattern("oahash", "build_table", OAHASHbuild_tbl, false, "Build a hash table for the key. Returns the slot ID and the sink containing the hash table", args(2,4, arg("slot_id",oid),batargany("ht_sink",1),argany("key",1),arg("pipeline",ptr))),
+// pattern("oahash", "build_table", OAHASHbuild_tbl, false, "Build a hash table for the key. Returns the slot ID and the sink containing the hash table", args(2,4, arg("slot_id",oid),batargany("ht_sink",1),argany("key",1),arg("pipeline",ptr))),
  command("oahash", "build_table", BAT_OAHASHbuild_tbl, false, "Build a hash table for the keys. Returns the slot IDs and the sink containing the hash table", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("pipeline",ptr))),
 
  command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Build a hash table for the keys in combination with the hash table of its parent column. Returns the slot IDs and the sink containing the hash table", args(2,6, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),batargany("parent_ht",2),arg("pipeline",ptr))),
@@ -3799,30 +3816,30 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "add_payload", OAHASHadd_pld, false, "Add 'payload' at 'position' in 'hp_sink'", args(1,4, batargany("hp_sink",1),batargany("payload",1),batarg("payload_pos",oid),arg("pipeline",ptr))),
 
- pattern("oahash", "hash", OAHASHhash, false, "Compute the hash for the key", args(1,3, arg("hsh",lng),argany("key",1),arg("pipeline",ptr))),
+// pattern("oahash", "hash", OAHASHhash, false, "Compute the hash for the key", args(1,3, arg("hsh",lng),argany("key",1),arg("pipeline",ptr))),
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
- pattern("oahash", "probe", OAHASHprobe, false, "Probe the (key, hash) in the hash table. Returns (0@0, ht-slotid), or (oid_nil, oid_nil) if no match", args(2,6, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
+// pattern("oahash", "probe", OAHASHprobe, false, "Probe the (key, hash) in the hash table. Returns (0@0, ht-slotid), or (oid_nil, oid_nil) if no match", args(2,6, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
- pattern("oahash", "combined_hash", OAHASHhash_cmbd, false, "If selected, compute the combined hash of key+parent_slotid; otherwise lng_nil", args(1,5, arg("hsh",lng),argany("key",1),arg("selected",oid),arg("parent_slotid",oid),arg("pipeline",ptr))),
+// pattern("oahash", "combined_hash", OAHASHhash_cmbd, false, "If selected, compute the combined hash of key+parent_slotid; otherwise lng_nil", args(1,5, arg("hsh",lng),argany("key",1),arg("selected",oid),arg("parent_slotid",oid),arg("pipeline",ptr))),
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- pattern("oahash", "combined_probe", OAHASHprobe_cmbd, false, "If selected, probe the (key, hash) in the hash table. Returns (0@0, RHS_slotid) if there was a match; otherwise (oid_nil, oid_nil)", args(2,7, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),arg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+// pattern("oahash", "combined_probe", OAHASHprobe_cmbd, false, "If selected, probe the (key, hash) in the hash table. Returns (0@0, RHS_slotid) if there was a match; otherwise (oid_nil, oid_nil)", args(2,7, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),arg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
  command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 
- pattern("oahash", "expand", OAHASHexpand, false, "If selected, expand the key according to its frequency in the hash table; otherwise, if 'outer' true, append the key", args(1,7, batargany("expanded",1),argany("key",1),arg("selected",oid),arg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),
+// pattern("oahash", "expand", OAHASHexpand, false, "If selected, expand the key according to its frequency in the hash table; otherwise, if 'outer' true, append the key", args(1,7, batargany("expanded",1),argany("key",1),arg("selected",oid),arg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),
  command("oahash", "expand", BAT_OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'outer' is true, append the not 'selected' keys", args(1,7, batargany("expanded",1),batargany("key",1),batarg("selected",oid),batarg("slotid",oid),batargany("freq_sink",2),arg("outer",bit),arg("pipeline",ptr))),
  command("oahash", "expand_cartesian", BAT_OAHASHexpand_cart, false, "Duplicate each value in 'col' 'norows'-number of times", args(1,4, batargany("expanded",1),batargany("col",1),arg("norows",lng),arg("pipeline",ptr))),
 
- pattern("oahash", "fetch_payload", OAHASHfetch_pld, false, "If selected (i.e. slotid != oid_nil), fetch the payload corresponding to the slotid and expand it according to its frequency in the hash table; otherwise, if 'outer' is true, append NULL", args(1,7, batargany("fetched",1),batargany("hp_sink",1),arg("slotid",oid),batargany("freq_sink",2),argany("probe_col",2),arg("outer",bit),arg("pipeline",ptr))),
+// pattern("oahash", "fetch_payload", OAHASHfetch_pld, false, "If selected (i.e. slotid != oid_nil), fetch the payload corresponding to the slotid and expand it according to its frequency in the hash table; otherwise, if 'outer' is true, append NULL", args(1,7, batargany("fetched",1),batargany("hp_sink",1),arg("slotid",oid),batargany("freq_sink",2),argany("probe_col",2),arg("outer",bit),arg("pipeline",ptr))),
  command("oahash", "fetch_payload", BAT_OAHASHfetch_pld, false, "Fetch the hash-payloads correspond to the slot IDs and expand them according to their frequencies in the hash table. If 'outer' is true, append NULLs for the unmatched keys", args(1,7, batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),arg("norows_prb",lng),arg("outer",bit),arg("pipeline",ptr))),
 
  command("oahash", "fetch_payload_cartesian", BAT_OAHASHfetch_pld_cart, false, "Duplicate all values in 'col' 'norepeats'-number of times.", args(1,4, batargany("fetched",1),batargany("col",1),arg("norepeats",lng),arg("pipeline",ptr))),
 
- command("oahash", "get_positions", OAHASHget_pos, false, "Get the positions of partial results in the collected result.", args(1,4, batarg("pos",oid),batargany("res",1),batargany("ht_sink",2),arg("pipeline",ptr))),
+// command("oahash", "get_positions", OAHASHget_pos, false, "Get the positions of partial results in the collected result.", args(1,4, batarg("pos",oid),batargany("res",1),batargany("ht_sink",2),arg("pipeline",ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
