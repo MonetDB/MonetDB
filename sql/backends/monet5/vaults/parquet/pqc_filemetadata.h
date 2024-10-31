@@ -35,6 +35,37 @@ typedef enum logicaltype {
   	floattype = 25 			// no compatible ConvertedType
 } logicaltype;
 
+typedef enum {
+    LOGICAL_TYPE_STRING = 1,      // Field ID for STRING
+    LOGICAL_TYPE_MAP = 2,         // Field ID for MAP
+    LOGICAL_TYPE_LIST = 3,        // Field ID for LIST
+    LOGICAL_TYPE_ENUM = 4,        // Field ID for ENUM
+    LOGICAL_TYPE_DECIMAL = 5,     // Field ID for DECIMAL
+    LOGICAL_TYPE_DATE = 6,        // Field ID for DATE
+    LOGICAL_TYPE_TIME = 7,        // Field ID for TIME
+    LOGICAL_TYPE_TIMESTAMP = 8,   // Field ID for TIMESTAMP
+    // Field ID 9 is reserved for INTERVAL
+    LOGICAL_TYPE_INTEGER = 10,    // Field ID for INTEGER
+    LOGICAL_TYPE_UNKNOWN = 11,    // Field ID for UNKNOWN
+    LOGICAL_TYPE_JSON = 12,       // Field ID for JSON
+    LOGICAL_TYPE_BSON = 13,       // Field ID for BSON
+    LOGICAL_TYPE_UUID = 14,       // Field ID for UUID
+    LOGICAL_TYPE_FLOAT16 = 15     // Field ID for FLOAT16
+} LogicalTypeFieldID;
+
+typedef enum {
+    SCHEMA_ELEMENT_TYPE = 1,            // Field ID for 'type'
+    SCHEMA_ELEMENT_TYPE_LENGTH = 2,     // Field ID for 'type_length'
+    SCHEMA_ELEMENT_REPETITION_TYPE = 3, // Field ID for 'repetition_type'
+    SCHEMA_ELEMENT_NAME = 4,            // Field ID for 'name'
+    SCHEMA_ELEMENT_NUM_CHILDREN = 5,    // Field ID for 'num_children'
+    SCHEMA_ELEMENT_CONVERTED_TYPE = 6,  // Field ID for 'converted_type'
+    SCHEMA_ELEMENT_SCALE = 7,           // Field ID for 'scale'
+    SCHEMA_ELEMENT_PRECISION = 8,       // Field ID for 'precision'
+    SCHEMA_ELEMENT_FIELD_ID = 9,        // Field ID for 'field_id'
+    SCHEMA_ELEMENT_LOGICAL_TYPE = 10    // Field ID for 'logicalType'
+} SchemaElementFieldID;
+
 typedef struct pqc_schema_element {
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
 	int scale;
@@ -49,7 +80,6 @@ typedef struct pqc_schema_element {
 	int nchildren;
 	/* optional logical type */
 } pqc_schema_element;
-
 
 typedef struct pqc_keyvalue {
 	char *key;

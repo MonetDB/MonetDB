@@ -1,4 +1,3 @@
-
 #include "monetdb_config.h"
 #include "pqc_thrift.h"
 #include "pqc_filemetadata.h"
@@ -426,8 +425,8 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
-			assert(type == 12); /* empty struct */
+		case LOGICAL_TYPE_STRING:
+			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 			pse->type = stringtype;
 			/*
@@ -437,30 +436,47 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->type = type;
 			*/
 			break;
-		case 2:
+		case LOGICAL_TYPE_MAP:
+			// TODO Is this correct?
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			TRC_DEBUG(PARQUET, "precision %u\n", precision);
 			pse->precision = precision;
 			break;
-		case 5: /* decimal */
+		case LOGICAL_TYPE_LIST:
+			// TODO handle ListType
+			assert(0);
+			break;
+		case LOGICAL_TYPE_ENUM:
+			// TODO handle EnumType
+			assert(0);
+			break;
+		case LOGICAL_TYPE_DECIMAL: /* decimal */
 			pos = pqc_decimal(pq, pse, pos);
 			break;
-		case 6: /* date */
+		case LOGICAL_TYPE_DATE: /* date */
 			assert(type == 12); /* empty struct */
 			pos = pqc_struct(pq, pos);
 			pse->type = datetype;
 			pse->precision = 32;
 			break;
-		case 8: /* timestamp */
+		case LOGICAL_TYPE_TIME:
+			// TODO handle TimeType
+			assert(0);
+			break;
+		case LOGICAL_TYPE_TIMESTAMP: /* timestamp */
 			pos = pqc_timestamp(pq, pse, pos);
 			break;
-		case 10: /* int */
+		case LOGICAL_TYPE_INTEGER: /* int */
 			pos = pqc_integer(pq, pse, pos);
 			break;
-		case 11: /* NULL */
+		case LOGICAL_TYPE_UNKNOWN: /* NULL */
 			pos = pqc_struct(pq, pos);
 			pse->type = stringtype; /* no idea !! */
 			break;
+		case LOGICAL_TYPE_JSON:
+		case LOGICAL_TYPE_BSON:
+		case LOGICAL_TYPE_UUID:
+		case LOGICAL_TYPE_FLOAT16:
 		default:
 			assert(0);
 		}
@@ -646,13 +662,13 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case SCHEMA_ELEMENT_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &oldtype);
 			if (pqc_oldtype2logicaltype(pse, oldtype) < 0)
 				TRC_ERROR(PARQUET, "type %u not handled\n", oldtype);
 			TRC_INFO(PARQUET, "old type %u to type %u\n", oldtype, pse->type);
 			break;
-		case 2:
+		case SCHEMA_ELEMENT_TYPE_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != stringtype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
@@ -661,7 +677,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->precision = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
 			break;
-		case 3:
+		case SCHEMA_ELEMENT_REPETITION_TYPE:
 			/* TODO make enum */
 			assert(type == 5);
 			pos += pqc_get_zint32(pq->buffer+pos, &repetition);
@@ -669,7 +685,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->repetition = repetition;
 			TRC_INFO(PARQUET, "repetition %s\n", repetition==0?"required":repetition==1?"optional":"repeated");
 			break;
-		case 4: {
+		case SCHEMA_ELEMENT_NAME: {
 			assert(type == 8);
 			int res = pqc_string(pq, pq->buffer+pos, &pse->name);
 			if (res < 0)
@@ -677,18 +693,18 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pos += res;
 			TRC_INFO(PARQUET, "name %s\n", pse->name);
 		} break;
-		case 5:
+		case SCHEMA_ELEMENT_NUM_CHILDREN:
 			pos += pqc_get_zint32(pq->buffer+pos, &nchildren);
 			pse->nchildren = nchildren;
 			TRC_INFO(PARQUET, "nchildren %u\n", nchildren);
 			break;
-		case 6:
+		case SCHEMA_ELEMENT_CONVERTED_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &convertedtype);
 			if (pqc_convertedtype2logicaltype(pse, convertedtype) < 0)
 				TRC_ERROR(PARQUET, "converted type %u not handled\n", convertedtype);
 			TRC_INFO(PARQUET, "convertedtype %u to type %d\n", convertedtype, pse->type);
 			break;
-		case 7:
+		case SCHEMA_ELEMENT_SCALE:
 			pos += pqc_get_zint32(pq->buffer+pos, &scale);
 			if (pse->type != decimaltype) {
 				TRC_ERROR(PARQUET, "scale %u used with wrong type %d\n", scale, pse->type);
@@ -697,7 +713,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->scale = scale;
 			TRC_INFO(PARQUET, "scale %u\n", scale);
 			break;
-		case 8:
+		case SCHEMA_ELEMENT_PRECISION:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != decimaltype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
@@ -706,10 +722,15 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->precision = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
 			break;
-		case 10:
+		case SCHEMA_ELEMENT_FIELD_ID:
+			// TODO?
+			assert(0);
+		case SCHEMA_ELEMENT_LOGICAL_TYPE:
 			assert(type == 12);
 			pos = pqc_logicaltype(pq, pse, pos);
 			break;
+		default:
+			assert(0);
 		}
 	}
 	return pos;
