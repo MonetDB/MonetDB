@@ -439,7 +439,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
-		bool pp_useful = (rel_getcount(sql, rel->l) > 1);
+		bool pp_useful = (get_rel_count(rel->l) > 1);
 		/* op_topn always has rel->l */
 		res = rel_partition_(sql, rel->l, pp_useful?SPB:pb);
 		if (pp_useful) {

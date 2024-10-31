@@ -8590,14 +8590,12 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 		r = r->l;
 
 	list *shared = NULL;
-	int prs = 0;
-
-	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
 		shared = rel2bin_project_prepare(be, r);
-		InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
-		pushInstruction(be->mb, q);
-		prs = getDestVar(q);
-	}
+
+	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+	pushInstruction(be->mb, q);
+	int prs = getDestVar(q);
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);

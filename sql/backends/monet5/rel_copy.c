@@ -16,8 +16,6 @@
 #include "bin_partition.h"
 #include "sql_scenario.h"
 
-void dump_code(int);
-
 int
 parallel_copy_level(void)
 {

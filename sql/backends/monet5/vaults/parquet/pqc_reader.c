@@ -773,12 +773,40 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	cr->first_definition = cr->curdef = cr->cursubdef = 0;
 
 	pos += sizeof(nr_bytes);
+	char prv = 0;
 	for(u_int32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
 		pos += pqc_get_int32(data+pos, &len);
 		if (len & 1) {
 			len>>=1;
-			assert(0);
-			/* TODO handle single bits */
+			for(unsigned int b = 0; b < len; b++) {
+				char val = data[pos++];
+				for (unsigned int k=0; k<8; ) {
+					char v = (val>>k)&1;
+					int nlen = 1;
+					for (k++; k<8; k++, nlen++) {
+						if (v != ((val>>k)&1))
+							break;
+					}
+					if (i == 0 && (val != 1 || len < num_values)) {
+						cr->definitionsize = 0;
+						cr->first_definition = v;
+						prv = !v;
+						cr->definition = NEW_ARRAY(int, nr_bytes*8); /* should be enough */
+						if (!cr->definition)
+							return -1;
+					}
+					if (cr->definition) {
+						if (v == prv) {
+							cr->definition[j-1] += nlen;
+						} else {
+							prv = v;
+							cr->definition[j++] = nlen;
+						}
+					}
+					i+=nlen;
+					null += (!v)*nlen;
+				}
+			}
 		} else { /* rle */
 			len>>=1;
 			char val = data[pos++];
@@ -786,12 +814,19 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 			if (i == 0 && (val != 1 || len < num_values)) {
 				cr->definitionsize = 0;
 				cr->first_definition = val;
-				cr->definition = NEW_ARRAY(int, nr_bytes/2); /* should be enough */
+				prv = !val;
+				cr->definition = NEW_ARRAY(int, nr_bytes*8); /* should be enough */
 				if (!cr->definition)
 					return -1;
 			}
-			if (cr->definition)
-				cr->definition[j++] = len;
+			if (cr->definition) {
+				if (val == prv) {
+					cr->definition[j-1] += len;
+				} else {
+					prv = val;
+					cr->definition[j++] = len;
+				}
+			}
 			assert(len);
 			i+=len;
 			null += (!val)*len;
@@ -801,6 +836,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 		cr->definitionsize = j;
 
 	TRC_DEBUG(PARQUET, "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
+	// printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
+	cr->cc->num_nulls = null;
 	/* return definition level as structure 0/1 + len */
 	return nr_bytes + sizeof(nr_bytes);
 }
@@ -808,6 +845,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 static int64_t
 pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, int *ssize, int *dict)
 {
+	/* TODO handle definition */
 	uchar *data = (uchar*)cr->data;
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
@@ -1181,8 +1219,25 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 		}
 	} else if (r->pse->precision == 64) {
 		int64_t *dst = output;
+		int64_t nil = lng_nil;
 
+		int curnotnil = cr->first_definition;
+		int curnulls = 0;
+		int curnull = 0;
 		for(int64_t i = 0; i<nrows; ) {
+			if (!curnulls && cr->definition) {
+				curnulls = cr->definition[curnull];
+				curnull++;
+				curnotnil = !curnotnil;
+				if (curnulls + i > nrows)
+					curnulls = nrows - i;
+				if (curnotnil) {
+					for(int j = 0; j < curnulls; j++)
+						dst[i] = nil;
+					i += curnulls;
+					continue;
+				}
+			}
 			u_int32_t len = 0;
 			pos += pqc_get_int32((char*)data+pos, &len);
 			if (len & 1) {
@@ -1192,7 +1247,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				int mask = (1<<nr_bits) -1;
 				if ((8/nr_bits)*nr_bits == 8) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
 						uchar v = data[pos];
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1204,7 +1259,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					}
 				} else if (nr_bits < 8) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
 						uchar v = data[pos];
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1221,7 +1276,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					}
 				} else if (nr_bits < 16) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
 						usht v = *(usht*)(data+pos);
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1242,7 +1297,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 			} else { /* rle */
 				len>>=1;
 				uchar val = data[pos++];
-				for(int64_t j = 0; i < nrows && j < len; j++, i++) {
+				for(int64_t j = 0; i < nrows && j < len; j++, i++, curnulls--) {
 					dst[i] = ((int64_t*)cr->dict)[val];
 				}
 			}
@@ -1275,19 +1330,19 @@ string_read_chunk_withnulls( pqc_creader_t *cr, char **rc, char *buf, int64_t nr
 			sdef = 0;
 		}
 		if (def) {
-                	int slen = *(int*)data;
+			int slen = *(int*)data;
 
 			data += sizeof(int);
-                	memcpy(buf, data, slen);
+			memcpy(buf, data, slen);
 			buf[slen] = 0;
 			for (int j=0; j<len; j++)
-                		rc[i++] = buf;
-                	buf += slen+1;
+				rc[i++] = buf;
+			buf += slen+1;
 			data += slen;
 		} else {
 			for (int j=0; j<len; j++)
-                		rc[i++] = nil;
-        	}
+				rc[i++] = nil;
+		}
 		if (!sdef) {
 			def = !def;
 			cur++;
@@ -1297,7 +1352,7 @@ string_read_chunk_withnulls( pqc_creader_t *cr, char **rc, char *buf, int64_t nr
 	cr->cursubdef = sdef;
 	cr->first_definition = def;
 	cr->pos = (data - cr->data);
-        return nrows;
+	return nrows;
 }
 
 static int
