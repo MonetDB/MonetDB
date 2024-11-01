@@ -1,0 +1,35 @@
+statement error SELECT: no such unary operator 'sys'.'not'(decimal)
+SELECT (0.23314537804241876 OR NOT 0.23314537804241876 OR 0.23314537804241876 IS NULL)
+
+query I nosort
+SELECT (0.23314537804241876 <> 0 OR NOT 0.23314537804241876 <> 0 OR 0.23314537804241876 IS NULL)
+----
+1
+
+statement ok
+CREATE TABLE t7591 (c0 String)
+
+statement ok
+INSERT INTO t7591 (c0) VALUES (''), ('')
+
+query T nosort
+SELECT * FROM t7591 WHERE t7591.c0 = ''
+----
+(empty)
+(empty)
+
+statement error types decimal(18,17) and boolean(1,0) are not equal
+SELECT * FROM t7591 WHERE (t7591.c0 = '') AND (0.23314537804241876) UNION ALL
+SELECT * FROM t7591 WHERE (t7591.c0 = '') AND (NOT (0.23314537804241876)) UNION ALL
+SELECT * FROM t7591 WHERE (t7591.c0 = '') AND ((0.23314537804241876) IS NULL)
+
+query T nosort
+SELECT * FROM t7591 WHERE (t7591.c0 = '') AND (0.23314537804241876 <> 0) UNION ALL
+SELECT * FROM t7591 WHERE (t7591.c0 = '') AND (NOT (0.23314537804241876 <> 0)) UNION ALL
+SELECT * FROM t7591 WHERE (t7591.c0 = '') AND ((0.23314537804241876) IS NULL)
+----
+(empty)
+(empty)
+
+statement ok
+drop table t7591
