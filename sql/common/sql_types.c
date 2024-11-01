@@ -1711,8 +1711,8 @@ sqltypeinit( allocator *sa)
 	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
 	f->varres = 1;
 
-	/* file_loader */
-	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
+	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR); /* file_loader */
+	f = sql_create_union(sa, "proto_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR); /* proto_loader */
 	f->varres = 1;
 
 	/* sys_update_schemas, sys_update_tables */

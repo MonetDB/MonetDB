@@ -3709,9 +3709,12 @@ table_ref:
 				  $$ = _symbol_create_list(SQL_NAME, l); }
  |  string opt_table_name	{ dlist *l = L();
 				  dlist *f = L();
-				  append_list(f, append_string(L(), "file_loader"));
-				  append_int(f, FALSE); /* ignore distinct */
 				  const char *s = $1;
+				  if (s && s[0] == DIR_SEP) /* Only normal abolute file names */
+				  	append_list(f, append_string(L(), "file_loader"));
+				  else 
+				  	append_list(f, append_string(L(), "proto_loader"));
+				  append_int(f, FALSE); /* ignore distinct */
 				  int len = UTF8_strlen(s);
 				  sql_subtype t;
 				  sql_find_subtype(&t, "char", len, 0);

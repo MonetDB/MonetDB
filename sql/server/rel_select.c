@@ -28,6 +28,7 @@
 #include "rel_unnest.h"
 #include "rel_sequence.h"
 #include "rel_file_loader.h"
+#include "rel_proto_loader.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -657,6 +658,69 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 	return NULL;
 }
 
+static char *
+proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname)
+{
+	sql_exp *uri = exps->h->data;
+	if (!exp_is_atom(uri))
+		return "URI missing";
+
+	atom *a = uri->l;
+	if (a->data.vtype != TYPE_str || !a->data.val.sval)
+		return "URI missing";
+
+	char *uristr = a->data.val.sval;
+	if (strcmp(uristr, "") == 0)
+		return "URI missing";
+
+	char *proto = uristr, *ep = strchr(uristr, ':');
+
+	if (ep) {
+		*ep = 0;
+		proto = mkLower(sa_strdup(sql->sa, proto));
+	}
+	if (!proto)
+		return "URI protocol missing";
+
+	proto_loader_t *pl = pl_find(proto);
+	if (!pl)
+		return sa_message(sql->ta, "URI extension '%s' missing", proto?proto:"");
+	str err = pl->add_types(sql, f, uristr, res_exps, tname);
+	if (err)
+		return err;
+	sql_subtype *st = sql_bind_localtype("str");
+	sql_exp *proto_exp = exp_atom(sql->sa, atom_string(sql->sa, st, proto));
+	if (!proto_exp)
+		return MAL_MALLOC_FAIL;
+	append(exps, proto_exp);
+	return NULL;
+}
+
+static sql_rel *
+rel_proto_loader(mvc *sql, list *exps, list *tl, char *tname)
+{
+	sql_subfunc *f = NULL;
+	bool found = false;
+
+	if ((f = bind_func_(sql, NULL, "proto_loader", tl, F_UNION, true, &found, false))) {
+		list *nexps = exps;
+		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
+			list *res_exps = sa_list(sql->sa);
+			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
+				char *err = proto_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
+				if (err)
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: proto_loader function failed '%s'", err);
+			}
+			sql_exp *e = exp_op(sql->sa, nexps, f);
+			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
+			if (rel)
+				rel = rel_project(sql->sa, rel, exps_alias(sql, res_exps));
+			return rel;
+		}
+	}
+	return NULL;
+}
+
 sql_exp *
 find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type)
 {
@@ -767,7 +831,11 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	else
 		tname = make_label(sql->sa, ++sql->label);
 
-	if (!sname && strcmp(fname, "file_loader") == 0) {
+	if (!sname && strcmp(fname, "proto_loader") == 0) {
+		rel = rel_proto_loader(sql, exps, tl, tname);
+		if (!rel)
+			return NULL;
+	} else if (!sname && strcmp(fname, "file_loader") == 0) {
 		rel = rel_file_loader(sql, exps, tl, tname);
 		if (!rel)
 			return NULL;
