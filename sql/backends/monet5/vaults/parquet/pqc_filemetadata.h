@@ -66,6 +66,19 @@ typedef enum {
     SCHEMA_ELEMENT_LOGICAL_TYPE = 10    // Field ID for 'logicalType'
 } SchemaElementFieldID;
 
+typedef enum {
+    FILE_METADATA_VERSION = 1,                 // Field ID for 'version'
+    FILE_METADATA_SCHEMA = 2,                  // Field ID for 'schema'
+    FILE_METADATA_NUM_ROWS = 3,                // Field ID for 'num_rows'
+    FILE_METADATA_ROW_GROUPS = 4,              // Field ID for 'row_groups'
+    FILE_METADATA_KEY_VALUE_METADATA = 5,      // Field ID for 'key_value_metadata'
+    FILE_METADATA_CREATED_BY = 6,              // Field ID for 'created_by'
+    FILE_METADATA_COLUMN_ORDERS = 7,           // Field ID for 'column_orders'
+    FILE_METADATA_ENCRYPTION_ALGORITHM = 8,    // Field ID for 'encryption_algorithm'
+    FILE_METADATA_FOOTER_SIGNING_KEY_METADATA = 9 // Field ID for 'footer_signing_key_metadata'
+} FileMetaDataFieldID;
+
+
 typedef struct pqc_schema_element {
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
 	int scale;

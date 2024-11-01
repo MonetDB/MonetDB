@@ -1156,12 +1156,12 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			break;
 
 		switch(fieldid) {
-		case 1:
-			assert(type == 5); /*I32*/
+		case FILE_METADATA_VERSION: /*I32*/
+			assert(type == 5);
 			pos += pqc_get_zint32(pq->buffer+pos, &version);
 			TRC_INFO(PARQUET, "version %u\n", version);
 			break;
-		case 2:
+		case FILE_METADATA_SCHEMA:
 			assert(type == 9); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "schema element list size %d type %d\n", size, type);
@@ -1178,8 +1178,8 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 				pos = res;
 			}
 			break;
-		case 3:
-			assert(type == 6 || type == 5 /* seems some files are broken!! */); /* I64 */
+		case FILE_METADATA_NUM_ROWS: /* I64 */
+			assert(type == 6 || type == 5 /* seems some files are broken!! */);
 			pos += pqc_get_zint64(pq->buffer+pos, &nrows);
 			TRC_INFO(PARQUET, "nrows %" PRIu64 "\n", nrows);
 			fmd->nrows = nrows;
@@ -1187,7 +1187,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			if (metadata_only)
 				return 0;
 			break;
-		case 4:
+		case FILE_METADATA_ROW_GROUPS:
 			assert(type == 9); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "row groups list size %d type %d\n", size, type);
@@ -1200,7 +1200,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			for(int i = 0; i < size; i++)
 				pos = pqc_rowgroup(pq, pq->fmd->rowgroups+i, pos);
 			break;
-		case 5:
+		case FILE_METADATA_KEY_VALUE_METADATA:
 			assert(type == 9); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "key value list size %d type %d\n", size, type);
@@ -1209,13 +1209,13 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			for(int i = 0; i < size; i++)
 				pos = pqc_read_keyvalue(pq, fmd->keyvalues+i, pos);
 			break;
-		case 6: {
+		case FILE_METADATA_CREATED_BY: {
 			assert(type == 8); /*string */
 			char *created_by;
 			pos += pqc_get_string(pq->buffer+pos, &created_by, &type);
 			TRC_INFO(PARQUET, "created_by %s\n", created_by);
 		} break;
-		case 7:
+		case FILE_METADATA_COLUMN_ORDERS:
 			assert(type == 9); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			assert(size < fmd->nelements);
@@ -1223,6 +1223,10 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			for(int i = 0; i < size; i++)
 				pos = pqc_columnorder(pq, pos);
 			break;
+		case FILE_METADATA_ENCRYPTION_ALGORITHM:
+		case FILE_METADATA_FOOTER_SIGNING_KEY_METADATA:
+		default:
+			return -1;
 		}
 	}
 	return 0;
