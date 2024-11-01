@@ -8,19 +8,19 @@
  * the end of a sequence of fields.
  */
 typedef enum {
-  CT_STOP           = 0x00,
-  CT_BOOLEAN_TRUE   = 0x01,
-  CT_BOOLEAN_FALSE  = 0x02,
-  CT_BYTE           = 0x03,
-  CT_I16            = 0x04,
-  CT_I32            = 0x05,
-  CT_I64            = 0x06,
-  CT_DOUBLE         = 0x07,
-  CT_BINARY         = 0x08,
-  CT_LIST           = 0x09,
-  CT_SET            = 0x0A,
-  CT_MAP            = 0x0B,
-  CT_STRUCT         = 0x0C
+  T_STOP           = 0x00,
+  T_BOOLEAN_TRUE   = 0x01,
+  T_BOOLEAN_FALSE  = 0x02,
+  T_BYTE           = 0x03,
+  T_I16            = 0x04,
+  T_I32            = 0x05,
+  T_I64            = 0x06,
+  T_DOUBLE         = 0x07,
+  T_BINARY         = 0x08,
+  T_LIST           = 0x09,
+  T_SET            = 0x0A,
+  T_MAP            = 0x0B,
+  T_STRUCT         = 0x0C
 } ThriftCompactType;
 
 #include <sys/types.h>
