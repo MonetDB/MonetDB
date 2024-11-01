@@ -443,13 +443,11 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->precision = precision;
 			break;
 		case LOGICAL_TYPE_LIST:
-			// TODO handle ListType
-			assert(0);
-			break;
+			printf("no support for type list\n");
+			return -1;
 		case LOGICAL_TYPE_ENUM:
-			// TODO handle EnumType
-			assert(0);
-			break;
+			printf("no support for type enum\n");
+			return -1;
 		case LOGICAL_TYPE_DECIMAL: /* decimal */
 			pos = pqc_decimal(pq, pse, pos);
 			break;
@@ -460,9 +458,8 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->precision = 32;
 			break;
 		case LOGICAL_TYPE_TIME:
-			// TODO handle TimeType
-			assert(0);
-			break;
+			printf("no support for type time\n");
+			return -1;
 		case LOGICAL_TYPE_TIMESTAMP: /* timestamp */
 			pos = pqc_timestamp(pq, pse, pos);
 			break;
@@ -478,7 +475,8 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 		case LOGICAL_TYPE_UUID:
 		case LOGICAL_TYPE_FLOAT16:
 		default:
-			assert(0);
+			printf("no support for type %d\n", fieldid);
+			return -1;
 		}
 	}
 	return pos;
@@ -728,6 +726,8 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 		case SCHEMA_ELEMENT_LOGICAL_TYPE:
 			assert(type == 12);
 			pos = pqc_logicaltype(pq, pse, pos);
+			if (pos < 0)
+				return pos;
 			break;
 		default:
 			assert(0);
