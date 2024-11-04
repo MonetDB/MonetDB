@@ -4,7 +4,7 @@
 
 /**
  * Thrift compact protocol
- * Take special note of the T_END type which is used specifically to mark
+ * Take special note of the T_STOP type which is used specifically to mark
  * the end of a sequence of fields.
  */
 typedef enum {

@@ -78,6 +78,103 @@ typedef enum {
     FILE_METADATA_FOOTER_SIGNING_KEY_METADATA = 9 // Field ID for 'footer_signing_key_metadata'
 } FileMetaDataFieldID;
 
+typedef enum {
+    STATISTICS_MAX = 1,               // optional binary max; DEPRECATED: Use max_value.
+    STATISTICS_MIN = 2,               // optional binary min; DEPRECATED: Use min_value.
+    STATISTICS_NULL_COUNT = 3,        // optional i64 null_count;
+    STATISTICS_DISTINCT_COUNT = 4,    // optional i64 distinct_count;
+    STATISTICS_MAX_VALUE = 5,         // optional binary max_value;
+    STATISTICS_MIN_VALUE = 6,         // optional binary min_value;
+    STATISTICS_IS_MAX_VALUE_EXACT = 7, // optional bool is_max_value_exact;
+    STATISTICS_IS_MIN_VALUE_EXACT = 8  // optional bool is_min_value_exact;
+} StatisticsFields;
+
+typedef enum {
+    PAGE_ENCODING_STATS_PAGE_TYPE = 1, // required PageType page_type;
+    PAGE_ENCODING_STATS_ENCODING = 2,  // required Encoding encoding;
+    PAGE_ENCODING_STATS_COUNT = 3      // required i32 count;
+} PageEncodingStatsFields;
+
+typedef enum {
+    COLUMN_META_DATA_TYPE = 1,                   // required Type type
+    COLUMN_META_DATA_ENCODINGS = 2,              // required list<Encoding> encodings
+    COLUMN_META_DATA_PATH_IN_SCHEMA = 3,         // required list<string> path_in_schema
+    COLUMN_META_DATA_CODEC = 4,                  // required CompressionCodec codec
+    COLUMN_META_DATA_NUM_VALUES = 5,             // required i64 num_values
+    COLUMN_META_DATA_TOTAL_UNCOMPRESSED_SIZE = 6,// required i64 total_uncompressed_size
+    COLUMN_META_DATA_TOTAL_COMPRESSED_SIZE = 7,  // required i64 total_compressed_size
+    COLUMN_META_DATA_KEY_VALUE_METADATA = 8,     // optional list<KeyValue> key_value_metadata
+    COLUMN_META_DATA_DATA_PAGE_OFFSET = 9,       // required i64 data_page_offset
+    COLUMN_META_DATA_INDEX_PAGE_OFFSET = 10,     // optional i64 index_page_offset
+    COLUMN_META_DATA_DICTIONARY_PAGE_OFFSET = 11,// optional i64 dictionary_page_offset
+    COLUMN_META_DATA_STATISTICS = 12,            // optional Statistics statistics
+    COLUMN_META_DATA_ENCODING_STATS = 13,        // optional list<PageEncodingStats> encoding_stats
+    COLUMN_META_DATA_BLOOM_FILTER_OFFSET = 14,   // optional i64 bloom_filter_offset
+    COLUMN_META_DATA_BLOOM_FILTER_LENGTH = 15,   // optional i32 bloom_filter_length
+    COLUMN_META_DATA_SIZE_STATISTICS = 16        // optional SizeStatistics size_statistics
+} ColumnMetaDataFields;
+
+typedef enum {
+    COLUMN_CHUNK_FILE_PATH = 1,                  // optional string file_path
+    COLUMN_CHUNK_FILE_OFFSET = 2,                // required i64 file_offset = 0
+    COLUMN_CHUNK_META_DATA = 3,                  // optional ColumnMetaData meta_data
+    COLUMN_CHUNK_OFFSET_INDEX_OFFSET = 4,        // optional i64 offset_index_offset
+    COLUMN_CHUNK_OFFSET_INDEX_LENGTH = 5,        // optional i32 offset_index_length
+    COLUMN_CHUNK_COLUMN_INDEX_OFFSET = 6,        // optional i64 column_index_offset
+    COLUMN_CHUNK_COLUMN_INDEX_LENGTH = 7,        // optional i32 column_index_length
+    COLUMN_CHUNK_CRYPTO_METADATA = 8,            // optional ColumnCryptoMetaData crypto_metadata
+    COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA = 9   // optional binary encrypted_column_metadata
+} ColumnChunkFields;
+
+typedef enum {
+    SORTING_COLUMN_COLUMN_IDX = 1,    // required i32 column_idx
+    SORTING_COLUMN_DESCENDING = 2,    // required bool descending
+    SORTING_COLUMN_NULLS_FIRST = 3    // required bool nulls_first
+} SortingColumnFields;
+
+typedef enum {
+    ROW_GROUP_COLUMNS = 1,                   // required list<ColumnChunk> columns
+    ROW_GROUP_TOTAL_BYTE_SIZE = 2,           // required i64 total_byte_size
+    ROW_GROUP_NUM_ROWS = 3,                  // required i64 num_rows
+    ROW_GROUP_SORTING_COLUMNS = 4,           // optional list<SortingColumn> sorting_columns
+    ROW_GROUP_FILE_OFFSET = 5,               // optional i64 file_offset
+    ROW_GROUP_TOTAL_COMPRESSED_SIZE = 6,     // optional i64 total_compressed_size
+    ROW_GROUP_ORDINAL = 7                    // optional i16 ordinal
+} RowGroupFields;
+
+typedef enum {
+    TIME_UNIT_MILLIS = 1,  // MilliSeconds
+    TIME_UNIT_MICROS = 2,  // MicroSeconds
+    TIME_UNIT_NANOS = 3    // NanoSeconds
+} TimeUnitFields;
+
+typedef enum {
+    TIME_TYPE_IS_ADJUSTED_TO_UTC = 1,  // required bool isAdjustedToUTC
+    TIME_TYPE_UNIT = 2                 // required TimeUnit unit
+} TimeTypeFields;
+
+typedef enum {
+    TIMESTAMP_TYPE_IS_ADJUSTED_TO_UTC = 1,  // required bool isAdjustedToUTC
+    TIMESTAMP_TYPE_UNIT = 2                 // required TimeUnit unit
+} TimestampTypeFields;
+
+typedef enum {
+    DECIMAL_TYPE_SCALE = 1,      // required i32 scale
+    DECIMAL_TYPE_PRECISION = 2   // required i32 precision
+} DecimalTypeFields;
+
+typedef enum {
+    INT_TYPE_BIT_WIDTH = 1,   // required i8 bitWidth
+    INT_TYPE_IS_SIGNED = 2    // required bool isSigned
+} IntTypeFields;
+
+typedef enum {
+    KEY_VALUE_KEY = 1,         // required string key
+    KEY_VALUE_VALUE = 2        // optional string value
+} KeyValueFields;
+
+
+
 
 typedef struct pqc_schema_element {
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
