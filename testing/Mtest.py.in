@@ -1801,6 +1801,15 @@ def GetBitsAndModsAndThreads(env) :
     if qOut:
         tbos = re.compile("^# Compiled for (?P<arch>[^-]+).*/(?P<bits>[63][42]bit)(?P<int128> with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
+        vm1 = re.compile("^# Found ([0-9.]+) ([kMGTPE])iB available main-memory of which we use ([0-9.]+) ([kMGTPE])iB")
+        vm2 = re.compile("^# Virtual memory usage limited to ([0-9.]+) ([kMGTPE])iB")
+        sizes = {'k': 1024,
+                 'M': 1024*1024,
+                 'G': 1024*1024*1024,
+                 'T': 1024*1024*1024*1024,
+                 'P': 1024*1024*1024*1024*1024,
+                 'E': 1024*1024*1024*1024*1024*1024}
+        vmsize = 0
         for l in qOut.split('\n'):
             obs = tbos.match(l)
             if obs is not None:
@@ -1819,6 +1828,16 @@ def GetBitsAndModsAndThreads(env) :
                     env['TST_SINGLE'] = "single"
                     os.environ['TST_SINGLE'] = env['TST_SINGLE']
                 env['TST_THREADS'] = t.group(1)
+            res = vm1.match(l)
+            if res is not None:
+                vmsize = float(res.group(3)) * sizes[res.group(4)]
+            res = vm2.match(l)
+            if res is not None:
+                vmsize = float(res.group(1)) * sizes[res.group(2)]
+        if vmsize > 0:
+            env['TST_VMSIZE'] = str(int(vmsize))
+        else:
+            ErrMsg("Checking for VM size failed!")
         if not env['TST_BITS']:
             ErrMsg("Checking for Bits failed!")
         if not env['TST_MODS']:
@@ -2054,6 +2073,16 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
             elif cond.startswith('THREADS>='):
                 if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
                     reason = "as number of threads is wrong"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('VMSIZE>='):
+                if (int(env['TST_VMSIZE']) >= int(cond[8:])) == negate:
+                    reason = "as virtual memory size is wrong"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+            elif cond.startswith('VMSIZE<='):
+                if (int(env['TST_VMSIZE']) <= int(cond[8:])) == negate:
+                    reason = "as virtual memory size is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('USER='):
