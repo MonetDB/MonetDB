@@ -61,6 +61,9 @@ geosre = re.compile(r'MULTIPOINT *\((?P<points>[^()]*)\)')
 ptsre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
 geoszre = re.compile(r'MULTIPOINT *Z *\((?P<points>[^()]*)\)')
 ptszre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
+# geos 3.13 introduced parentheses around EMPTY in MULTIPOLYGON (but not
+# in all cases)
+geosere = re.compile(r'MULTIPOLYGON \(EMPTY\)')
 
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
@@ -447,6 +450,9 @@ class SQLLogic:
                     if res is not None:
                         points = ptszre.sub(r'(\g<0>)', res.group('points'))
                         col = col[:res.start('points')] + points + col[res.end('points'):]
+                    res = geosere.search(col)
+                    if res is not None:
+                        col = col[:res.start(0)] + 'MULTIPOLYGON EMPTY' + col[res.end(0):]
                 nrow.append(col)
             ndata.append(nrow)
         data = ndata
