@@ -123,7 +123,7 @@ FROM another_T t1
 ----
 1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT AVG(col1) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1
@@ -134,18 +134,18 @@ SELECT
 FROM another_T t1
 GROUP BY col1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT SUM(SUM(col2)) OVER (PARTITION BY SUM(col2) ORDER BY MAX(col2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1
 GROUP BY col1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT DENSE_RANK() OVER (PARTITION BY col5 ORDER BY col1) FROM tbl_ProductSales)
 FROM another_T t1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT DENSE_RANK() OVER (PARTITION BY MIN(col5) ORDER BY MAX(col8)) FROM tbl_ProductSales)
 FROM another_T t1
@@ -157,7 +157,7 @@ SELECT
 FROM another_T t1
 GROUP BY col6
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT t2.col1 * SUM(SUM(t1.col2)) OVER (PARTITION BY SUM(t1.col2) ORDER BY MAX(t1.col1) ROWS UNBOUNDED PRECEDING) FROM another_T t2)
 FROM another_T t1
@@ -466,7 +466,7 @@ GROUP BY (SELECT SUM(i1.i + i2.i) FROM integers i2)
 3
 NULL
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	MIN(i1.i)
 FROM integers i1
@@ -477,12 +477,12 @@ SELECT
     (SELECT SUM(t1.col1) OVER (PARTITION BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT SUM(t1.col1) OVER (ORDER BY (VALUES(1)) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT SUM(t1.col1) OVER (ORDER BY (SELECT SUM(t1.col1 + t2.col1) FROM another_T t2) ROWS UNBOUNDED PRECEDING) FROM tbl_ProductSales)
 FROM another_T t1
@@ -555,7 +555,7 @@ SELECT
 	(SELECT 1 FROM integers i2 INNER JOIN integers i3 on MAX(i3.i) = MIN(i2.i))
 FROM integers i1
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT
     (SELECT SUM(SUM(i1.i) + i2.i) FROM integers i2 GROUP BY i2.i)
 FROM integers i1
@@ -690,12 +690,12 @@ FROM another_T
 111
 1111
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT col1 FROM tbl_ProductSales)))
 FROM another_T
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT t2.col1 FROM another_T t2)))
 FROM another_T
@@ -717,7 +717,7 @@ FROM another_T
 4
 4
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales)))
 FROM another_T t1
@@ -741,22 +741,22 @@ SELECT * FROM evilfunction(1)
 1
 1
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(col1))))
 FROM another_T
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(ColID) FROM tbl_ProductSales)))
 FROM another_T
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MAX(t1.col1) FROM tbl_ProductSales)))
 FROM another_T t1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT outt FROM evilfunction((SELECT MIN(t2.col1) FROM another_T t2)))
 FROM another_T
@@ -802,12 +802,12 @@ FROM integers i1
 1
 1
 
-statement error GDK reported error: hashjoin: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT i2.i FROM (VALUES (i1.i), (i1.i)) as i2(i))
 FROM integers i1
 
-statement error GDK reported error: hashjoin: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT i2.i FROM (VALUES (i1.i, i1.i), (i1.i, i1.i)) as i2(i,j))
 FROM integers i1
