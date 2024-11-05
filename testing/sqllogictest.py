@@ -287,28 +287,42 @@ class SQLLogic:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
                     if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
-                        if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
-                            result.append(err_code_received + '!' + expected_err_msg)
-                            return result
-                        result.append(err_code_received + '!' + err_msg_received)
-                        if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
-                            return result
+                        if expected_err_msg.startswith('/') and expected_err_msg.endswith('/'):
+                            res = re.match(expected_err_msg[1:-1], err_msg_received)
+                            if expected_err_code == err_code_received and res is not None:
+                                result.append(err_code_received + '!' + expected_err_msg)
+                                return result
+                            result.append(err_code_received + '!' + err_msg_received)
+                        else:
+                            if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                result.append(err_code_received + '!' + expected_err_msg)
+                                return result
+                            result.append(err_code_received + '!' + err_msg_received)
+                            if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
+                                return result
                     else:
                         if expected_err_code and err_code_received:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
                         elif expected_err_msg and err_msg_received:
-                            if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
-                                result.append(expected_err_msg)
-                                return result
-                            result.append(err_msg_received)
-                            if expected_err_msg.lower() == err_msg_received.lower():
-                                return result
+                            if expected_err_msg.startswith('/') and expected_err_msg.endswith('/'):
+                                res = re.match(expected_err_msg[1:-1], err_msg_received)
+                                if res is not None:
+                                    result.append(expected_err_msg)
+                                    return result
+                                result.append(err_msg_received)
+                            else:
+                                if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                    result.append(expected_err_msg)
+                                    return result
+                                result.append(err_msg_received)
+                                if expected_err_msg.lower() == err_msg_received.lower():
+                                    return result
                     msg = "statement was expected to fail with" \
-                            + (f" error code {expected_err_code}" if expected_err_code else '') \
-                            + (f", error message {repr(expected_err_msg)}" if expected_err_msg else '') \
-                            + f", received code {err_code_received}, message {repr(err_msg_received)}"
+                            + (f" error code {expected_err_code}," if expected_err_code else '') \
+                            + (f" error message {repr(expected_err_msg)}," if expected_err_msg else '') \
+                            + f" received code {err_code_received}, message {repr(err_msg_received)}"
                     self.query_error(err_stmt or statement, str(msg), str(e))
                 return result
         except ConnectionError as e:
