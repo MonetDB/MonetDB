@@ -1,4 +1,3 @@
-
 #include "monetdb_config.h"
 #include "pqc_thrift.h"
 #include "pqc_filemetadata.h"
@@ -316,21 +315,18 @@ pqc_timeunit( pqc_file *pq, pqc_schema_element *pse, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
-			printf("milli\n");
+		case TIME_UNIT_MILLIS:
 			pse->precision = 3;
-
 			break;
-		case 2:
-			printf("micro\n");
+		case TIME_UNIT_MICROS:
 			pse->precision = 6;
 			break;
-		case 3:
+		case TIME_UNIT_NANOS:
 			printf("nano\n");
 			pse->precision = 9;
 			break;
 		}
-		assert(type == 12); /* empty struct */
+		assert(type == T_STRUCT); /* empty struct */
 		pos = pqc_struct(pq, pos);
 	}
 	return pos;
@@ -347,12 +343,12 @@ pqc_timestamp( pqc_file *pq, pqc_schema_element *pse, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case TIMESTAMP_TYPE_IS_ADJUSTED_TO_UTC:
 			/* get bool from type */
 			pse->isAdjustedToUTC = type!=2;
 			break;
-		case 2:
-			assert(type == 12);
+		case TIMESTAMP_TYPE_UNIT:
+			assert(type == T_STRUCT);
 			pos = pqc_timeunit(pq, pse, pos);
 			break;
 		}
@@ -373,12 +369,12 @@ pqc_decimal( pqc_file *pq, pqc_schema_element *pse, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case DECIMAL_TYPE_SCALE:
 			pos += pqc_get_zint32(pq->buffer+pos, &scale);
 			TRC_DEBUG(PARQUET, "scale %u\n", scale);
 			pse->scale = scale;
 			break;
-		case 2:
+		case DECIMAL_TYPE_PRECISION:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			TRC_DEBUG(PARQUET, "precision %u\n", precision);
 			pse->precision = precision;
@@ -399,13 +395,13 @@ pqc_integer( pqc_file *pq, pqc_schema_element *pse, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case INT_TYPE_BIT_WIDTH:
 			type = pq->buffer[pos++];
 			TRC_DEBUG(PARQUET, "bitwidth %d\n", type);
 			pse->precision = type;
 			break;
-		case 2:
-			pse->isSigned = type!=2;
+		case INT_TYPE_IS_SIGNED:
+			pse->isSigned = type != T_BOOLEAN_FALSE;
 			TRC_DEBUG(PARQUET, "isSigned %d\n", type!=2);
 			break;
 		}
@@ -426,8 +422,8 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
-			assert(type == 12); /* empty struct */
+		case LOGICAL_TYPE_STRING:
+			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 			pse->type = stringtype;
 			/*
@@ -437,32 +433,47 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->type = type;
 			*/
 			break;
-		case 2:
+		case LOGICAL_TYPE_MAP:
+			// TODO Is this correct?
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			TRC_DEBUG(PARQUET, "precision %u\n", precision);
 			pse->precision = precision;
 			break;
-		case 5: /* decimal */
+		case LOGICAL_TYPE_LIST:
+			printf("no support for type list\n");
+			return -1;
+		case LOGICAL_TYPE_ENUM:
+			printf("no support for type enum\n");
+			return -1;
+		case LOGICAL_TYPE_DECIMAL: /* decimal */
 			pos = pqc_decimal(pq, pse, pos);
 			break;
-		case 6: /* date */
-			assert(type == 12); /* empty struct */
+		case LOGICAL_TYPE_DATE: /* date */
+			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 			pse->type = datetype;
 			pse->precision = 32;
 			break;
-		case 8: /* timestamp */
+		case LOGICAL_TYPE_TIME:
+			printf("no support for type time\n");
+			return -1;
+		case LOGICAL_TYPE_TIMESTAMP: /* timestamp */
 			pos = pqc_timestamp(pq, pse, pos);
 			break;
-		case 10: /* int */
+		case LOGICAL_TYPE_INTEGER: /* int */
 			pos = pqc_integer(pq, pse, pos);
 			break;
-		case 11: /* NULL */
+		case LOGICAL_TYPE_UNKNOWN: /* NULL */
 			pos = pqc_struct(pq, pos);
 			pse->type = stringtype; /* no idea !! */
 			break;
+		case LOGICAL_TYPE_JSON:
+		case LOGICAL_TYPE_BSON:
+		case LOGICAL_TYPE_UUID:
+		case LOGICAL_TYPE_FLOAT16:
 		default:
-			assert(0);
+			printf("no support for type %d\n", fieldid);
+			return -1;
 		}
 	}
 	return pos;
@@ -646,13 +657,13 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case SCHEMA_ELEMENT_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &oldtype);
 			if (pqc_oldtype2logicaltype(pse, oldtype) < 0)
 				TRC_ERROR(PARQUET, "type %u not handled\n", oldtype);
 			TRC_INFO(PARQUET, "old type %u to type %u\n", oldtype, pse->type);
 			break;
-		case 2:
+		case SCHEMA_ELEMENT_TYPE_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != stringtype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
@@ -661,34 +672,34 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->precision = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
 			break;
-		case 3:
+		case SCHEMA_ELEMENT_REPETITION_TYPE:
 			/* TODO make enum */
-			assert(type == 5);
+			assert(type == T_I32);
 			pos += pqc_get_zint32(pq->buffer+pos, &repetition);
 			assert(repetition <= 2);
 			pse->repetition = repetition;
 			TRC_INFO(PARQUET, "repetition %s\n", repetition==0?"required":repetition==1?"optional":"repeated");
 			break;
-		case 4: {
-			assert(type == 8);
+		case SCHEMA_ELEMENT_NAME: {
+			assert(type == T_BINARY);
 			int res = pqc_string(pq, pq->buffer+pos, &pse->name);
 			if (res < 0)
 				return -1;
 			pos += res;
 			TRC_INFO(PARQUET, "name %s\n", pse->name);
 		} break;
-		case 5:
+		case SCHEMA_ELEMENT_NUM_CHILDREN:
 			pos += pqc_get_zint32(pq->buffer+pos, &nchildren);
 			pse->nchildren = nchildren;
 			TRC_INFO(PARQUET, "nchildren %u\n", nchildren);
 			break;
-		case 6:
+		case SCHEMA_ELEMENT_CONVERTED_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &convertedtype);
 			if (pqc_convertedtype2logicaltype(pse, convertedtype) < 0)
 				TRC_ERROR(PARQUET, "converted type %u not handled\n", convertedtype);
 			TRC_INFO(PARQUET, "convertedtype %u to type %d\n", convertedtype, pse->type);
 			break;
-		case 7:
+		case SCHEMA_ELEMENT_SCALE:
 			pos += pqc_get_zint32(pq->buffer+pos, &scale);
 			if (pse->type != decimaltype) {
 				TRC_ERROR(PARQUET, "scale %u used with wrong type %d\n", scale, pse->type);
@@ -697,7 +708,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->scale = scale;
 			TRC_INFO(PARQUET, "scale %u\n", scale);
 			break;
-		case 8:
+		case SCHEMA_ELEMENT_PRECISION:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
 			if (pse->type != decimaltype) {
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
@@ -706,10 +717,17 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			pse->precision = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
 			break;
-		case 10:
-			assert(type == 12);
+		case SCHEMA_ELEMENT_FIELD_ID:
+			// TODO?
+			assert(0);
+		case SCHEMA_ELEMENT_LOGICAL_TYPE:
+			assert(type == T_STRUCT);
 			pos = pqc_logicaltype(pq, pse, pos);
+			if (pos < 0)
+				return pos;
 			break;
+		default:
+			assert(0);
 		}
 	}
 	return pos;
@@ -727,14 +745,14 @@ pqc_read_keyvalue( pqc_file *pq, pqc_keyvalue *kv, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1: {
+		case KEY_VALUE_KEY: {
 			int res = pqc_string(pq, pq->buffer+pos, &kv->key);
 			if (res < 0)
 				return -1;
 			pos += res;
 			TRC_INFO(PARQUET, "key %s\n", kv->key);
 		} break;
-		case 2: {
+		case KEY_VALUE_VALUE: {
 			int res = pqc_string(pq, pq->buffer+pos, &kv->value_string);
 			if (res < 0)
 				return -1;
@@ -761,58 +779,58 @@ pqc_statistics( pqc_file *pq, pqc_stat *stat, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1: {
-			if (type == 8) {
+		case STATISTICS_MAX: {
+			if (type == T_BINARY) {
 				int res = pqc_string(pq, pq->buffer+pos, &stat->max_string);
 				if (res < 0)
 					return -1;
 				pos += res;
 				TRC_INFO(PARQUET, "max_string '%s'\n", stat->max_string);
-			} else if (type == 5) {
+			} else if (type == T_I32) {
 				pos += pqc_get_zint32(pq->buffer+pos, &stat->max);
 				TRC_INFO(PARQUET, "max %u'\n", stat->max);
 			}
 		} break;
-		case 2: {
-			if (type == 8) {
+		case STATISTICS_MIN: {
+			if (type == T_BINARY) {
 				int res = pqc_string(pq, pq->buffer+pos, &stat->min_string);
 				if (res < 0)
 					return -1;
 				pos += res;
 				TRC_INFO(PARQUET, "min_string '%s'\n", stat->min_string);
-			} else if (type == 5) {
+			} else if (type == T_I32) {
 				pos += pqc_get_zint32(pq->buffer+pos, &stat->min);
 				TRC_INFO(PARQUET, "min %u'\n", stat->min);
 			}
 		} break;
-		case 3: {
+		case STATISTICS_NULL_COUNT: {
 			pos += pqc_get_zint64(pq->buffer+pos, &stat->null_count);
 			TRC_INFO(PARQUET, "null_count %" PRIu64 "\n", stat->null_count);
 		}	break;
-		case 4: {
+		case STATISTICS_DISTINCT_COUNT: {
 			pos += pqc_get_zint64(pq->buffer+pos, &stat->distinct_count);
 			TRC_INFO(PARQUET, "distinct_count %" PRIu64 "\n", stat->distinct_count);
 		}	break;
-		case 5: {
-			if (type == 8) {
+		case STATISTICS_MAX_VALUE: {
+			if (type == T_BINARY) {
 				int res = pqc_string(pq, pq->buffer+pos, &stat->max_value);
 				if (res < 0)
 					return -1;
 				pos += res;
 				TRC_INFO(PARQUET, "max_value '%s'\n", stat->max_value);
-			} else if (type == 12) {
+			} else if (type == T_STRUCT) {
 				pqc_keyvalue kv;
 				pos = pqc_read_keyvalue(pq, &kv, pos);
 			}
 		} break;
-		case 6: {
-			if (type == 8) {
+		case STATISTICS_MIN_VALUE: {
+			if (type == T_BINARY) {
 				int res = pqc_string(pq, pq->buffer+pos, &stat->min_value);
 				if (res < 0)
 					return -1;
 				pos += res;
 				TRC_INFO(PARQUET, "min_value '%s'\n", stat->min_value);
-			} else if (type == 12) {
+			} else if (type == T_STRUCT) {
 				pqc_keyvalue kv;
 				pos = pqc_read_keyvalue(pq, &kv, pos);
 			}
@@ -833,15 +851,15 @@ pqc_pageencodingsstats( pqc_file *pq, pqc_pageencodings *pe, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case PAGE_ENCODING_STATS_PAGE_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_type);
 			TRC_INFO(PARQUET, "page_type %d\n", pe->page_type);
 			break;
-		case 2:
+		case PAGE_ENCODING_STATS_ENCODING:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_encoding);
 			TRC_INFO(PARQUET, "page_encoding %d\n", pe->page_encoding);
 			break;
-		case 3:
+		case PAGE_ENCODING_STATS_COUNT:
 			pos += pqc_get_zint32(pq->buffer+pos, &pe->page_count);
 			TRC_INFO(PARQUET, "page_count %d\n", pe->page_count);
 			break;
@@ -861,14 +879,14 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case COLUMN_META_DATA_TYPE:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->type);
 			TRC_INFO(PARQUET, "column type %d\n", cc->type);
 			break;
-		case 2: {
+		case COLUMN_META_DATA_ENCODINGS: {
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "encodings list size %d type %d\n", size, type);
-			assert(type == 5);
+			assert(type == T_I32);
 			u_int32_t encoding;
 			for(int i = 0; i < size; i++) {
 				pos += pqc_get_zint32(pq->buffer+pos, &encoding);
@@ -876,11 +894,11 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 				TRC_INFO(PARQUET, "\tencoding[%d] %u\n", i, cc->encodings[i]);
 			}
 		} break;
-		case 3:
+		case COLUMN_META_DATA_PATH_IN_SCHEMA:
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "path_in_schema list size %d type %d\n", size, type);
 			for(int i = 0; i < size; i++) {
-				assert(type == 8);
+				assert(type == T_BINARY);
 				int res = pqc_string(pq, pq->buffer+pos, &cc->path_in_schema);
 				if (res < 0)
 					return -1;
@@ -888,24 +906,24 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 				TRC_INFO(PARQUET, "path_in_schema %s\n", cc->path_in_schema);
 			}
 			break;
-		case 4:
+		case COLUMN_META_DATA_CODEC:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->codec);
 			TRC_INFO(PARQUET, "compression codec %u\n", cc->codec);
 			break;
-		case 5:
+		case COLUMN_META_DATA_NUM_VALUES:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->nrows);
 			TRC_INFO(PARQUET, "num values %" PRIu64 "\n", cc->nrows);
 			break;
-		case 6:
+		case COLUMN_META_DATA_TOTAL_UNCOMPRESSED_SIZE:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->total_uncompressed_size);
 			TRC_INFO(PARQUET, "total_uncompressed_size %" PRIu64 "\n", cc->total_uncompressed_size);
 			break;
-		case 7:
+		case COLUMN_META_DATA_TOTAL_COMPRESSED_SIZE:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->total_compressed_size);
 			TRC_INFO(PARQUET, "total_compressed_size %" PRIu64 "\n", cc->total_compressed_size);
 			break;
-		case 8:
-			assert(type == 9); /* LIST */
+		case COLUMN_META_DATA_KEY_VALUE_METADATA:
+			assert(type == T_LIST); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "key value list size %d type %d\n", size, type);
 			cc->nkeyvalues = size;
@@ -913,22 +931,22 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 			for(int i = 0; i < size; i++)
 				pos = pqc_read_keyvalue(pq, cc->keyvalues+i, pos);
 			break;
-		case 9:
+		case COLUMN_META_DATA_DATA_PAGE_OFFSET:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->data_page_offset);
 			TRC_INFO(PARQUET, "data_page_offset %" PRIu64 "\n", cc->data_page_offset);
 			break;
-		case 10:
+		case COLUMN_META_DATA_INDEX_PAGE_OFFSET:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->index_page_offset);
 			TRC_INFO(PARQUET, "index_page_offset %" PRIu64 "\n", cc->index_page_offset);
 			break;
-		case 11:
+		case COLUMN_META_DATA_DICTIONARY_PAGE_OFFSET:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->dictionary_page_offset);
 			TRC_INFO(PARQUET, "dictionary_page_offset %" PRIu64 "\n", cc->dictionary_page_offset);
 			break;
-		case 12:
+		case COLUMN_META_DATA_STATISTICS:
 			pos = pqc_statistics(pq, &cc->stat, pos);
 			break;
-		case 13:
+		case COLUMN_META_DATA_ENCODING_STATS:
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "pageencodingstats list size %d type %d\n", size, type);
 			assert(size <= 3);
@@ -955,40 +973,43 @@ pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1: {
-			assert(type == 8);
+		case COLUMN_CHUNK_FILE_PATH: {
+			assert(type == T_BINARY);
 			int res = pqc_string(pq, pq->buffer+pos, &cc->file_path);
 			if (res < 0)
 				return -1;
 			TRC_INFO(PARQUET, "name %s\n", cc->file_path);
 			pos += res;
 		}	break;
-		case 2: {
+		case COLUMN_CHUNK_FILE_OFFSET: {
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->file_offset);
 			TRC_INFO(PARQUET, "file_offset %" PRIu64 "\n", cc->file_offset);
 		} break;
-		case 3:
-			assert(type == 12);
+		case COLUMN_CHUNK_META_DATA:
+			assert(type == T_STRUCT);
 			pos = pqc_column_metadata(pq, cc, pos);
 			break;
-		case 4:
+		case COLUMN_CHUNK_OFFSET_INDEX_OFFSET:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->offset_index_offset);
 			TRC_INFO(PARQUET, "offset_index_offset %" PRIu64 "\n", cc->offset_index_offset);
 			break;
-		case 5:
+		case COLUMN_CHUNK_OFFSET_INDEX_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->offset_index_length);
 			TRC_INFO(PARQUET, "offset_index_length %u\n", cc->offset_index_length);
 			break;
-		case 6:
+		case COLUMN_CHUNK_COLUMN_INDEX_OFFSET:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->column_index_offset);
 			TRC_INFO(PARQUET, "column_index_offset %" PRIu64 "\n", cc->column_index_offset);
 			break;
-		case 7:
+		case COLUMN_CHUNK_COLUMN_INDEX_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->column_index_length);
 			TRC_INFO(PARQUET, "column_index_length %u\n", cc->column_index_length);
 			break;
+		case COLUMN_CHUNK_CRYPTO_METADATA:
+		case COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA:
 		default:
-			assert(0);
+			TRC_ERROR(PARQUET, "No support for field id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return pos;
@@ -1006,20 +1027,20 @@ pqc_read_sortingcolumn( pqc_file *pq, pqc_sortingcolumn *sc, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
-			assert (type == 5);
+		case SORTING_COLUMN_COLUMN_IDX :
+			assert (type == T_I32);
 			pos += pqc_get_zint32(pq->buffer+pos, &sc->column_idx);
 			TRC_INFO(PARQUET, "column_idx %u\n", sc->column_idx);
 			break;
-		case 2:
-			if (type == 2)
+		case SORTING_COLUMN_DESCENDING:
+			if (type == T_BOOLEAN_TRUE)
 				sc->descending = true;
 			else
 				sc->descending = false;
 			TRC_INFO(PARQUET, "descending %d\n", sc->descending);
 			break;
-		case 3:
-			if (type == 2)
+		case SORTING_COLUMN_NULLS_FIRST:
+			if (type == T_BOOLEAN_TRUE)
 				sc->nulls_first = true;
 			else
 				sc->nulls_first = false;
@@ -1042,8 +1063,8 @@ pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, int pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
-			assert (type == 9 /* LIST */);
+		case ROW_GROUP_COLUMNS:
+			assert (type == T_LIST /* LIST */);
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "columnchunk list size %d type %d\n", size, type);
 			rg->ncolumnchunks = size;
@@ -1051,18 +1072,18 @@ pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, int pos)
 			for(int i = 0; i < size; i++)
 				pos = pqc_read_columnchunk(pq, rg->columnchunks+i, pos);
 			break;
-		case 2: {
-			assert (type == 6);
+		case ROW_GROUP_TOTAL_BYTE_SIZE: {
+			assert (type == T_I64);
 			pos += pqc_get_zint64(pq->buffer+pos, &rg->total_byte_size);
 			TRC_INFO(PARQUET, "total_byte_size %" PRIu64 "\n", rg->total_byte_size);
 		}	break;
-		case 3: {
-			assert (type == 6);
+		case ROW_GROUP_NUM_ROWS: {
+			assert (type == T_I64);
 			pos += pqc_get_zint64(pq->buffer+pos, &rg->num_rows);
 			TRC_INFO(PARQUET, "num_rows %" PRIu64 "\n", rg->num_rows);
 		}	break;
-		case 4: {
-			assert (type == 9 /* LIST */);
+		case ROW_GROUP_SORTING_COLUMNS: {
+			assert (type == T_LIST /* LIST */);
 			/* sorting columns */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "sortingcolumns list size %d type %d\n", size, type);
@@ -1071,17 +1092,17 @@ pqc_rowgroup( pqc_file *pq, pqc_row_group *rg, int pos)
 			for(int i = 0; i < size; i++)
 				pos = pqc_read_sortingcolumn(pq, rg->sortingcolumns+i, pos);
 		}	break;
-		case 5: {
-			assert (type == 6);
+		case ROW_GROUP_FILE_OFFSET: {
+			assert (type == T_I64);
 			pos += pqc_get_zint64(pq->buffer+pos, &rg->file_offset);
 			TRC_INFO(PARQUET, "file_offset %" PRIu64 "\n", rg->file_offset);
 		}	break;
-		case 6: {
-			assert (type == 6);
+		case ROW_GROUP_TOTAL_COMPRESSED_SIZE: {
+			assert (type == T_I64);
 			pos += pqc_get_zint64(pq->buffer+pos, &rg->total_compressed_size);
 			TRC_INFO(PARQUET, "total_compressed_size %" PRIu64 "\n", rg->total_compressed_size);
 		}	break;
-		case 7:
+		case ROW_GROUP_ORDINAL:
 			/* i16 (written as int32) */
 			pos += pqc_get_zint32(pq->buffer+pos, &rg->ordinal);
 			TRC_INFO(PARQUET, "ordinal %u\n", rg->ordinal);
@@ -1104,7 +1125,7 @@ pqc_columnorder( pqc_file *pq, int pos )
 			break;
 		switch (fieldid) {
 		case 1: {
-			assert(type == 12); /* empty struct */
+			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 		} break;
 		}
@@ -1135,13 +1156,13 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			break;
 
 		switch(fieldid) {
-		case 1:
-			assert(type == 5); /*I32*/
+		case FILE_METADATA_VERSION: /*I32*/
+			assert(type == T_I32);
 			pos += pqc_get_zint32(pq->buffer+pos, &version);
 			TRC_INFO(PARQUET, "version %u\n", version);
 			break;
-		case 2:
-			assert(type == 9); /* LIST */
+		case FILE_METADATA_SCHEMA:
+			assert(type == T_LIST); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "schema element list size %d type %d\n", size, type);
 			fmd->nelements = size;
@@ -1157,8 +1178,8 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 				pos = res;
 			}
 			break;
-		case 3:
-			assert(type == 6 || type == 5 /* seems some files are broken!! */); /* I64 */
+		case FILE_METADATA_NUM_ROWS: /* I64 */
+			assert(type == T_I64 || type == T_I32 /* seems some files are broken!! */);
 			pos += pqc_get_zint64(pq->buffer+pos, &nrows);
 			TRC_INFO(PARQUET, "nrows %" PRIu64 "\n", nrows);
 			fmd->nrows = nrows;
@@ -1166,8 +1187,8 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			if (metadata_only)
 				return 0;
 			break;
-		case 4:
-			assert(type == 9); /* LIST */
+		case FILE_METADATA_ROW_GROUPS:
+			assert(type == T_LIST); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "row groups list size %d type %d\n", size, type);
 			fmd->nrowgroups = size;
@@ -1179,8 +1200,8 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			for(int i = 0; i < size; i++)
 				pos = pqc_rowgroup(pq, pq->fmd->rowgroups+i, pos);
 			break;
-		case 5:
-			assert(type == 9); /* LIST */
+		case FILE_METADATA_KEY_VALUE_METADATA:
+			assert(type == T_LIST); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "key value list size %d type %d\n", size, type);
 			fmd->nkeyvalues = size;
@@ -1188,20 +1209,25 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			for(int i = 0; i < size; i++)
 				pos = pqc_read_keyvalue(pq, fmd->keyvalues+i, pos);
 			break;
-		case 6: {
-			assert(type == 8); /*string */
+		case FILE_METADATA_CREATED_BY: {
+			assert(type == T_BINARY); /*string */
 			char *created_by;
 			pos += pqc_get_string(pq->buffer+pos, &created_by, &type);
 			TRC_INFO(PARQUET, "created_by %s\n", created_by);
 		} break;
-		case 7:
-			assert(type == 9); /* LIST */
+		case FILE_METADATA_COLUMN_ORDERS:
+			assert(type == T_LIST); /* LIST */
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			assert(size < fmd->nelements);
 			TRC_INFO(PARQUET, "columnorder list size %d type %d\n", size, type);
 			for(int i = 0; i < size; i++)
 				pos = pqc_columnorder(pq, pos);
 			break;
+		case FILE_METADATA_ENCRYPTION_ALGORITHM:
+		case FILE_METADATA_FOOTER_SIGNING_KEY_METADATA:
+		default:
+			TRC_ERROR(PARQUET, "No support for field id %d type %d\n", fieldid, type);
+			return -1;
 		}
 	}
 	return 0;

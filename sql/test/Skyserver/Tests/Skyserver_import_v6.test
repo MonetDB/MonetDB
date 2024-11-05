@@ -1,0 +1,192 @@
+statement ok
+START TRANSACTION
+
+statement ok
+SET SCHEMA "skyserver"
+
+statement ok
+COPY 88 RECORDS INTO Ap7Mag FROM '../microsky_v6/Ap7Mag.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 111 RECORDS INTO Chunk FROM '../microsky_v6/Chunk.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 339 RECORDS INTO DataConstants FROM '../microsky_v6/DataConstants.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO DR3QuasarCatalog FROM '../microsky_v6/DR3QuasarCatalog.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO DR5QuasarCatalog FROM '../microsky_v6/DR5QuasarCatalog.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO ELRedShift FROM '../microsky_v6/ELRedShift.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 3 RECORDS INTO Field FROM '../microsky_v6/Field.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 148 RECORDS INTO FieldProfile FROM '../microsky_v6/FieldProfile.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO First FROM '../microsky_v6/First.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 21 RECORDS INTO Frame FROM '../microsky_v6/Frame.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 354 RECORDS INTO HalfSpace FROM '../microsky_v6/HalfSpace.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 40 RECORDS INTO HoleObj FROM '../microsky_v6/HoleObj.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 10 RECORDS INTO Mask FROM '../microsky_v6/Mask.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 20 RECORDS INTO Match FROM '../microsky_v6/Match.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 10 RECORDS INTO MatchHead FROM '../microsky_v6/MatchHead.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 673 RECORDS INTO Neighbors FROM '../microsky_v6/Neighbors.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 125 RECORDS INTO ObjMask FROM '../microsky_v6/ObjMask.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 128 RECORDS INTO PhotoObjAll FROM '../microsky_v6/PhotoObjAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 4336 RECORDS INTO PhotoProfile FROM '../microsky_v6/PhotoProfile.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 35 RECORDS INTO Photoz2 FROM '../microsky_v6/Photoz2.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 128 RECORDS INTO Photoz FROM '../microsky_v6/Photoz.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO PlateX FROM '../microsky_v6/PlateX.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 15 RECORDS INTO ProfileDefs FROM '../microsky_v6/ProfileDefs.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 30 RECORDS INTO ProperMotions FROM '../microsky_v6/ProperMotions.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO QsoBest FROM '../microsky_v6/QsoBest.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO QsoBunch FROM '../microsky_v6/QsoBunch.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO QsoCatalogAll FROM '../microsky_v6/QsoCatalogAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO QsoConcordanceAll FROM '../microsky_v6/QsoConcordanceAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO QsoSpec FROM '../microsky_v6/QsoSpec.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO QsoTarget FROM '../microsky_v6/QsoTarget.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 58 RECORDS INTO Region2Box FROM '../microsky_v6/Region2Box.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 360 RECORDS INTO RegionArcs FROM '../microsky_v6/RegionArcs.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 73 RECORDS INTO Region FROM '../microsky_v6/Region.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 78 RECORDS INTO RegionPatch FROM '../microsky_v6/RegionPatch.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 12 RECORDS INTO Rmatrix FROM '../microsky_v6/Rmatrix.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 3 RECORDS INTO RunQA FROM '../microsky_v6/RunQA.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 9 RECORDS INTO RunShift FROM '../microsky_v6/RunShift.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 47 RECORDS INTO SDSSConstants FROM '../microsky_v6/SDSSConstants.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 73 RECORDS INTO Sector2Tile FROM '../microsky_v6/Sector2Tile.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 23 RECORDS INTO Sector FROM '../microsky_v6/Sector.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 2 RECORDS INTO Segment FROM '../microsky_v6/Segment.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 50 RECORDS INTO SpecLineAll FROM '../microsky_v6/SpecLineAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 36 RECORDS INTO SpecLineIndex FROM '../microsky_v6/SpecLineIndex.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO SpecObjAll FROM '../microsky_v6/SpecObjAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO SpecPhotoAll FROM '../microsky_v6/SpecPhotoAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO SppLines FROM '../microsky_v6/SppLines.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO SppParams FROM '../microsky_v6/SppParams.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 48 RECORDS INTO StripeDefs FROM '../microsky_v6/StripeDefs.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO Target FROM '../microsky_v6/Target.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO TargetInfo FROM '../microsky_v6/TargetInfo.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO TargPhotoObjAll FROM '../microsky_v6/TargPhotoObjAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1002 RECORDS INTO TargRunQA FROM '../microsky_v6/TargRunQA.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO TileAll FROM '../microsky_v6/TileAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 640 RECORDS INTO TiledTargetAll FROM '../microsky_v6/TiledTargetAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO TilingGeometry FROM '../microsky_v6/TilingGeometry.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 24172 RECORDS INTO TilingInfo FROM '../microsky_v6/TilingInfo.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 1 RECORDS INTO TilingRun FROM '../microsky_v6/TilingRun.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 128 RECORDS INTO UberCal FROM '../microsky_v6/UberCal.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 8 RECORDS INTO USNO FROM '../microsky_v6/USNO.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 53 RECORDS INTO XCRedShift FROM '../microsky_v6/XCRedShift.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COPY 91 RECORDS INTO Zone FROM '../microsky_v6/Zone.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n','"' NULL as 'NULL'
+
+statement ok
+COMMIT
+

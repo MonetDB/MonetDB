@@ -151,6 +151,7 @@ pqc_get_field( char *in, int *fieldid, int *type)
 {
 	unsigned char byte = in[0];
 	int pos = 1;
+	// printf("Read byte: 0x%02X\n", byte);
 	if ((byte & 0x0f) == T_STOP) {
 		*type = 0;
 		*fieldid = 0;

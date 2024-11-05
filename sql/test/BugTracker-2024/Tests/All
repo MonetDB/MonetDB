@@ -93,3 +93,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7580-date-diff
 7582-ddl-exists
 7587-rejectmismatch
+7591-logical-expr

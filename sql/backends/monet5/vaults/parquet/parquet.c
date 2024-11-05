@@ -296,16 +296,16 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pipeline_unlock(p);
 	}
 	int wnr = p->wid;
+	const pqc_schema_element *pse = r->fmd->elements+colno+1;
+	int localtype = pqc_find_localtype(pse);
+
 	if (!r->c[colno]) {
 		pipeline_lock(p);
 		if (!r->c[colno])
-			r->c[colno] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows);
+			r->c[colno] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows, ATOMnilptr(localtype));
 		pipeline_unlock(p);
 	}
 	pqc_mark_chunk(r->c[colno], r->nrworkers, wnr, sz);
-
-	const pqc_schema_element *pse = r->fmd->elements+colno+1;
-	int localtype = pqc_find_localtype(pse);
 
 	BAT *rb = NULL;
 

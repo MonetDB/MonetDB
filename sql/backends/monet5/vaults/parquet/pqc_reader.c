@@ -107,6 +107,7 @@ typedef struct pqc_reader_t {
 	int level;
 	u_int64_t sz;
 	u_int64_t rownr;
+	const void *nil;
 
 	int nrworkers;
 	pqc_file *spq;
@@ -656,11 +657,13 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				return -1;
 		}
 	}
+	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (u_int64_t)pos)
+		pos = pqc_page_header( r, pr, pos);
 	return pos;
 }
 
 pqc_reader_t *
-pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc, pqc_schema_element *pse,*/ pqc_filemetadata *fmd, int colnr, int64_t nrows)
+pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc, pqc_schema_element *pse,*/ pqc_filemetadata *fmd, int colnr, int64_t nrows, const void *nil)
 {
 	pqc_reader_t *r = MNEW(pqc_reader_t);
 	pqc_creader_t *cr = NEW_ARRAY(pqc_creader_t, nrworkers);
@@ -678,6 +681,7 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 	r->rownr = 0;
 	r->nrworkers = nrworkers;
 	r->spq = pq;
+	r->nil = nil;
 	assert(colnr < fmd->rowgroups->ncolumnchunks);
 	for(int i = 0; i<nrworkers; i++) {
 		cr = r->creader+i;
@@ -763,8 +767,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	(void)output;
 	//int bits = 1;
 	char *data = cr->data;
-	u_int32_t nr_bytes = get_uint32((u_int8_t*)data+pos);
-    u_int32_t spos = pos, len;
+	u_int32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
 	u_int64_t null = 0, j = 0;
 
 	if (cr->definition)
@@ -773,6 +776,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	cr->first_definition = cr->curdef = cr->cursubdef = 0;
 
 	pos += sizeof(nr_bytes);
+	u_int32_t spos = pos;
 	char prv = 0;
 	for(u_int32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
 		pos += pqc_get_int32(data+pos, &len);
@@ -842,10 +846,12 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	return nr_bytes + sizeof(nr_bytes);
 }
 
+/*
+ *  TODO: multi page columnchunk, will have multiple dicts
+ */
 static int64_t
 pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, int *ssize, int *dict)
 {
-	/* TODO handle definition */
 	uchar *data = (uchar*)cr->data;
 	/* asume rle data page */
 	if (r->pse->precision == 0 && !output) {
@@ -865,12 +871,12 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 	int nr_bits = cr->nr_bits;
 
 	//printf("precision %d bits %d dict %d\n", r->pse->precision, nr_bits, (int)dict);
-	assert(nr_bits < 16);
+	//assert(nr_bits < 16);
 	if (r->pse->precision == 0 && !dict) {
 		int64_t i = 0;
 		char **dst = output;
 		bool mul8 = ((8/nr_bits)*nr_bits == 8);
-		uchar idx = cr->idx;
+		u_int32_t idx = cr->idx;
 		if (cr->remaining) {
 			u_int32_t j = 0;
 			for(; i < nrows && j < cr->remaining; j++, i++)
@@ -934,6 +940,25 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 						assert(idx < cr->dict_num_values);
 						dst[i] = ((char**)cr->dict)[idx];
 					}
+				} else if (nr_bits < 32) {
+					int m = len*8;
+					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+						uint v = *(uint*)(data+pos);
+						u_int32_t idx = (v >> sh)&mask;
+						sh += nr_bits;
+						if (sh >= 32) {
+							pos+=2;
+							sh -= 32;
+							uint v = *(uint*)(data+pos);
+							idx |= (v << (nr_bits-sh))&mask;
+							if (j==(m-1) && sh >= 8)
+								pos++;
+							else if (j==(m-1) && sh > 0)
+								pos+=2;
+						}
+						assert(idx < cr->dict_num_values);
+						dst[i] = ((char**)cr->dict)[idx];
+					}
 				}
 			} else if (nr_bits <= 8) { /* rle */
 				len>>=1;
@@ -956,6 +981,17 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					cr->remaining = len - j;
 					cr->idx = idx;
 				}
+			} else if (nr_bits <= 32) { /* rle */
+				len>>=1;
+				uint idx = *(uint*)(data+pos);
+				u_int32_t j = 0;
+				pos += 4;
+				for(; i < nrows && j < len; j++, i++)
+					dst[i] = ((char**)cr->dict)[idx];
+				if (j < len) {
+					cr->remaining = len - j;
+					cr->idx = idx;
+				}
 			}
 		}
 	} else if (r->pse->precision == 0 && dict) { /* offsets */
@@ -967,7 +1003,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 		usht *dst = output;
 		/* start offset (passed voutput ptr is not start of vheap) */
 		usht offset = *ssize;
-		uchar idx = cr->idx;
+		u_int32_t idx = cr->idx;
 		if (cr->remaining) {
 			u_int32_t j = 0;
 			for(; i < nrows && j < cr->remaining; j++, i++)
@@ -1006,11 +1042,10 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 							sh -= 8;
 							uchar v = data[pos];
 							idx |= (v << (nr_bits-sh))&mask;
-							if (j==(m-1) && sh > 0)
-								pos++;
 						}
 						assert(idx < cr->dict_num_values);
 						dst[i] = offset+offsets[idx];
+						pos++;
 					}
 				} else if (nr_bits < 16) {
 					int m = len*8;
@@ -1023,14 +1058,11 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 							sh -= 16;
 							usht v = *(usht*)(data+pos);
 							idx |= (v << (nr_bits-sh))&mask;
-							if (j==(m-1) && sh >= 8)
-								pos++;
-							else if (j==(m-1) && sh > 0)
-								pos+=2;
 						}
 						assert(idx < cr->dict_num_values);
 						dst[i] = offset+offsets[idx];
 					}
+					pos += (sh/8);
 				}
 			} else if (nr_bits <= 8) { /* rle */
 				len>>=1;
@@ -1217,27 +1249,10 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			}
 		}
-	} else if (r->pse->precision == 64) {
+	} else if (r->pse->precision == 64 || (r->pse->precision < 8 && r->pse->size == 64)) {
 		int64_t *dst = output;
-		int64_t nil = lng_nil;
 
-		int curnotnil = cr->first_definition;
-		int curnulls = 0;
-		int curnull = 0;
 		for(int64_t i = 0; i<nrows; ) {
-			if (!curnulls && cr->definition) {
-				curnulls = cr->definition[curnull];
-				curnull++;
-				curnotnil = !curnotnil;
-				if (curnulls + i > nrows)
-					curnulls = nrows - i;
-				if (curnotnil) {
-					for(int j = 0; j < curnulls; j++)
-						dst[i] = nil;
-					i += curnulls;
-					continue;
-				}
-			}
 			u_int32_t len = 0;
 			pos += pqc_get_int32((char*)data+pos, &len);
 			if (len & 1) {
@@ -1247,7 +1262,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				int mask = (1<<nr_bits) -1;
 				if ((8/nr_bits)*nr_bits == 8) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						uchar v = data[pos];
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1259,7 +1274,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 					}
 				} else if (nr_bits < 8) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						uchar v = data[pos];
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1268,15 +1283,14 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 							sh -= 8;
 							uchar v = data[pos];
 							idx |= (v << (nr_bits-sh))&mask;
-							if (j==(m-1) && sh > 0)
-								pos++;
 						}
 						assert(idx < cr->dict_num_values);
 						dst[i] = ((int64_t*)cr->dict)[idx];
 					}
+					pos++;
 				} else if (nr_bits < 16) {
 					int m = len*8;
-					for (int64_t j = 0; i < nrows && j < m; j++, i++, curnulls--) {
+					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
 						usht v = *(usht*)(data+pos);
 						u_int32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
@@ -1285,82 +1299,47 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 							sh -= 16;
 							usht v = *(usht*)(data+pos);
 							idx |= (v << (nr_bits-sh))&mask;
-							if (j==(m-1) && sh >= 8)
-								pos++;
-							else if (j==(m-1) && sh > 0)
-								pos+=2;
 						}
 						assert(idx < cr->dict_num_values);
 						dst[i] = ((int64_t*)cr->dict)[idx];
 					}
+					pos+=(sh/8);
+				} else if (nr_bits < 32) {
+					int m = len*8;
+					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
+						uint v = *(uint*)(data+pos);
+						u_int32_t idx = (v >> sh)&mask;
+						sh += nr_bits;
+						if (sh >= 32) {
+							pos+=4;
+							sh -= 32;
+							uint v = *(uint*)(data+pos);
+							idx |= (v << (nr_bits-sh))&mask;
+						}
+						assert(idx < cr->dict_num_values);
+						dst[i] = ((int64_t*)cr->dict)[idx];
+					}
+					pos+=(sh/8);
 				}
 			} else { /* rle */
+				assert(nr_bits<=8);
 				len>>=1;
 				uchar val = data[pos++];
-				for(int64_t j = 0; i < nrows && j < len; j++, i++, curnulls--) {
+				for(int64_t j = 0; i < nrows && j < len; j++, i++) {
 					dst[i] = ((int64_t*)cr->dict)[val];
 				}
 			}
 		}
 	} else {
-		printf("later\n");
+		printf("later %d\n", r->pse->precision);
 	}
 	cr->pos = pos;
-	return nrows;
-
-}
-
-static int
-string_read_chunk_withnulls( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int pos)
-{
-	char *nil = buf;
-	memcpy(nil,"NULL", 5);
-	buf += 5;
-	char *data = cr->data + pos;
-	int cur = cr->curdef;
-	int sdef = cr->cursubdef;
-	int def = cr->first_definition;
-	for(int64_t i = 0; i<nrows; ) {
-		int len = cr->definition[cur];
-		len -= sdef;
-		if (i + len > nrows) {
-			len = nrows-i;
-			sdef += len;
-		} else {
-			sdef = 0;
-		}
-		if (def) {
-			int slen = *(int*)data;
-
-			data += sizeof(int);
-			memcpy(buf, data, slen);
-			buf[slen] = 0;
-			for (int j=0; j<len; j++)
-				rc[i++] = buf;
-			buf += slen+1;
-			data += slen;
-		} else {
-			for (int j=0; j<len; j++)
-				rc[i++] = nil;
-		}
-		if (!sdef) {
-			def = !def;
-			cur++;
-		}
-	}
-	cr->curdef = cur;
-	cr->cursubdef = sdef;
-	cr->first_definition = def;
-	cr->pos = (data - cr->data);
 	return nrows;
 }
 
 static int
 string_read_chunk( pqc_creader_t *cr, char **rc, char *buf, int64_t nrows, int pos)
 {
-	if (cr->definition)
-		return string_read_chunk_withnulls( cr, rc, buf, nrows, pos);
-
 	if (nrows > cr->cc->num_values)
 		nrows = cr->cc->num_values;
 
@@ -1387,10 +1366,17 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssi
 	size_t hsz = 5; /* 5 for NULL */
 	char *data = cr->data;
 
+	if (cr->cc->stat.null_count == cr->cc->num_values) { /* all null */
+		assert(cr->cc->num_nulls == cr->cc->num_values);
+		*ssize = 5;
+		return 0;
+	}
+
 	data += pos;
 	int cur = cr->curdef, sdef = cr->cursubdef;
 	int def = cr->first_definition;
-	for(int64_t i = 0; i<nrows; ) {
+	int dend = cr->definitionsize;
+	for(int64_t i = 0; i<nrows && cur<dend; ) {
 		int len = cr->definition[cur];
 		len -= sdef;
 		if (i + len > nrows) {
@@ -1400,7 +1386,7 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssi
 			sdef = 0;
 		}
 		if (def) {
-			int slen = *(int*)data;
+			unsigned int slen = get_uint32((uchar*)data);
 			data += slen + sizeof(int);
 			hsz += slen+1;
 		}
@@ -1410,6 +1396,7 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int pos, int *ssi
 			cur++;
 		}
 	}
+	assert(cur<=dend);
 	*ssize = hsz;
 	return 0;
 }
@@ -1430,6 +1417,7 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 		nrows = cr->cc->num_values;
 
 	if (cr->cc->stat.null_count == cr->cc->num_values) { /* all null */
+		assert(cr->cc->num_nulls == cr->cc->num_values);
 		*ssize = 5;
 		return 0;
 	}
@@ -1452,10 +1440,11 @@ offset_string_read_chunk_sht( pqc_creader_t *cr, usht *output, char *voutput, in
 	char *buf = voutput;
 	char *data = cr->data + pos;
 
+	memcpy(buf, "NULL", 5);
 	if (cr->cc->stat.null_count == cr->cc->num_values) { /* all null */
-		memcpy(buf, "NULL", 5);
-        	for (int64_t i=0; i<nrows; i++)
-                	rc[i] = offset;
+		assert(cr->cc->num_nulls == cr->cc->num_values);
+       	for (int64_t i=0; i<nrows; i++)
+			rc[i] = offset;
 		return nrows;
 	}
 	for (int64_t i=0; i<nrows; i++) {
@@ -1475,10 +1464,6 @@ offset_string_read_chunk_sht( pqc_creader_t *cr, usht *output, char *voutput, in
 static int
 offset_string_read_chunk( pqc_creader_t *cr, void *output, void *voutput, int64_t nrows, int pos, int offset, int width)
 {
-	if (cr->definition)
-		assert(0);
-		//return offset_string_read_chunk_withnulls( cr, output, nrows, pos);
-
 	if (width == 1) {
 		assert(0);
 	} else if (width == 2) {
@@ -1664,6 +1649,121 @@ pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, u_int64_t nrows)
 	return 1;
 }
 
+static u_int64_t
+pqc_nrows( pqc_creader_t *cr, u_int64_t nrows)
+{
+	if (cr->cc->num_nulls == nrows)
+		return 0;
+
+	int cur = cr->curdef, sdef = cr->cursubdef;
+	int def = cr->first_definition;
+
+	if (cr->definition) {
+		/* first find last */
+		for (u_int64_t i = 0; i<nrows; ) {
+			int len = cr->definition[cur];
+			len -= sdef;
+			if (i + len > nrows) {
+				sdef = len;
+				len = nrows-i;
+				sdef -= len;
+			} else {
+				sdef = 0;
+			}
+			i += len;
+			if (!sdef) {
+				def = !def;
+				cur++;
+			}
+		}
+		cr->curdef = cur;
+		cr->cursubdef = sdef;
+		cr->first_definition = def;
+	}
+	return nrows;
+}
+
+static int
+pqc_project( char *output, char *data, u_int64_t nrows, int w)
+{
+	if (w == 1) {
+		int sh = 0, j = 0;
+		for(u_int64_t i = 0; i < nrows; i++) {
+			output[i] = (data[j]>>sh)&1;
+			sh++;
+			if (sh == 8) {
+				sh = 0;
+				j++;
+			}
+		}
+		return j;
+	} else {
+		assert(0);
+	}
+}
+
+static int
+pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int64_t nrows, u_int64_t nils, int w)
+{
+	int cur = cr->curdef, sdef = cr->cursubdef;
+	int def = cr->first_definition;
+	int pos = 0;
+
+	if (nils == nrows){ // all null
+		switch(w) {
+		case 1:
+			for(u_int64_t i = 0; i<nrows; i++)
+				output[i] = *(char*)r->nil;
+			break;
+		case 2:
+			for(u_int64_t i = 0; i<nrows; i++)
+				((sht*)output)[i] = *(sht*)r->nil;
+			break;
+		case 4:
+			for(u_int64_t i = 0; i<nrows; i++)
+				((int*)output)[i] = *(int*)r->nil;
+			break;
+		case 8:
+			for(u_int64_t i = 0; i<nrows; i++)
+				((lng*)output)[i] = *(lng*)r->nil;
+			break;
+#if HAVE_HGE
+		case 16:
+			for(u_int64_t i = 0; i<nrows; i++)
+				((hge*)output)[i] = *(hge*)r->nil;
+			break;
+#endif
+		default:
+			for(u_int64_t i = 0, j = 0; i<nrows; i++, j+=w)
+				memcpy(output+j, r->nil, w);
+			break;
+		}
+		return 0;
+	}
+	cur = cr->curdef;
+	sdef = cr->cursubdef;
+	def = cr->first_definition; /* set by pqc_nrows at the end of this block */
+	if (!sdef)
+		def = !def;
+	pos = nrows*w;
+	for(u_int64_t i = nrows; i > 0 && cur >= 0; cur--){
+		int len = cr->definition[cur];
+		len -= sdef;
+		sdef = 0;
+		if (i < (u_int64_t)len)
+			len = i;
+		i -= len;
+		if (def) {
+			pos -= w*len;
+			memcpy(output+w*i, data+pos, len*w);
+		} else {
+			memcpy(output+w*i, r->nil, len*w);
+		}
+		def = !def;
+	}
+	return pos;
+}
+
 #define YEAR_OFFSET -(-4712)
 #define DTDAY_WIDTH             5               /* 1..28/29/30/31, depending on month/year */
 #define DTDAY_SHIFT             0
@@ -1737,8 +1837,15 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				assert(0);
 				return pos;
 			}
+			u_int64_t orows = nrows;
+			if (r->pse->precision == 0 && !output)
+				orows = 0;
+			else
+				nrows = pqc_nrows(cr, nrows);
 			if (cr->dict) {
 				nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
+				if (cr->definition)
+					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->num_nulls, r->pse->size/8);
 			} else {
 				if (cr->cc->pageencodings[0].page_encoding) {
 					/* delta strings == delta_encoded (encoding==5) prefixes (lengths),
@@ -1747,44 +1854,25 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				} else if (r->pse->type != stringtype) {
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
-						memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
-						pos += (r->pse->size/8)*nrows;
-					} else {
-						int cur = cr->curdef, sdef = cr->cursubdef;
-						int def = cr->first_definition;
-						for(u_int64_t i = 0; i<nrows; ) {
-							int len = cr->definition[cur];
-							len -= sdef;
-							if (i + len > nrows) {
-								len = nrows-i;
-								sdef += len;
-							} else {
-								sdef = 0;
-							}
-							if (def) {
-								memcpy((char*)output+(r->pse->size/8)*i, ((char*)cr->data)+pos, len*(r->pse->size/8));
-								pos += (r->pse->size/8)*len;
-							} else {
-								memset((char*)output+(r->pse->size/8)*i, 0, len*(r->pse->size/8));
-							}
-							i+=len;
-							if (!sdef) {
-								def = !def;
-								cur++;
-							}
+						if ((r->pse->size/8)*8 != r->pse->size) {
+							pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
+						} else {
+							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
+							pos += (r->pse->size/8)*nrows;
 						}
-						cr->curdef = cur;
-						cr->cursubdef = sdef;
-						cr->first_definition = def;
+					} else {
+						pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->num_nulls, r->pse->size/8);
 					}
 					cr->pos = pos;
 				} else if (r->pse->type == stringtype) {
 					/* int32 len, string (no zero) encoding */
-					if (!ssize)
+					if (!ssize) {
 						string_read_chunk(cr, output, voutput, nrows, pos);
-					else if (!voutput)
+						if (cr->definition)
+								(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->num_nulls, r->pse->size/8);
+					} else if (!voutput) {
 						return string_size_chunk(cr, nrows, pos, ssize, dict);
-					else
+					} else
 						offset_string_read_chunk(cr, output, voutput, nrows, pos, *ssize, *dict);
 				}
 			}
@@ -1807,16 +1895,23 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					}
 				}
 			}
-			ATOMIC_ADD(&r->rownr, nrows);
-			cr->curnr += nrows;
-			return nrows;
+			ATOMIC_ADD(&r->rownr, orows);
+			cr->curnr += orows;
+			return orows;
 		}
 	} else {
 		/* next vector */
 		if (cr->data) {
 			int pos = cr->pos;
+			u_int64_t orows = nrows;
+			if (r->pse->precision == 0 && !output)
+				orows = 0;
+			else
+				nrows = pqc_nrows(cr, nrows);
 			if (cr->dict) {
 				nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
+				if (cr->definition)
+					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->num_nulls, r->pse->size/8);
 			} else {
 				if (cr->cc->pageencodings[0].page_encoding) {
 					/* delta strings == delta_encoded (encoding==5) prefixes (lengths),
@@ -1825,44 +1920,25 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				} else if (r->pse->type != stringtype) {
 					/* fixed types, plain encoding */
 					if (!cr->definition) {
-						memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
-						pos += (r->pse->size/8)*nrows;
-					} else {
-						int cur = cr->curdef, sdef = cr->cursubdef;
-						int def = cr->first_definition;
-						for(u_int64_t i = 0; i<nrows; ) {
-							int len = cr->definition[cur];
-							len -= sdef;
-							if (i + len > nrows) {
-								len = nrows-i;
-								sdef += len;
-							} else {
-								sdef = 0;
-							}
-							if (def) {
-								memcpy((char*)output+(r->pse->size/8)*i, ((char*)cr->data)+pos, len*(r->pse->size/8));
-								pos += (r->pse->size/8)*len;
-							} else {
-								memset((char*)output+(r->pse->size/8)*i, 0, len*(r->pse->size/8));
-							}
-							i+=len;
-							if (!sdef) {
-								def = !def;
-								cur++;
-							}
+						if ((r->pse->size/8)*8 != r->pse->size) {
+							pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
+						} else {
+							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
+							pos += (r->pse->size/8)*nrows;
 						}
-						cr->curdef = cur;
-						cr->cursubdef = sdef;
-						cr->first_definition = def;
+					} else {
+						pos += pqc_add_nil(r, cr, output, cr->data+pos, orows, cr->cc->num_nulls, r->pse->size/8);
 					}
 					cr->pos = pos;
 				} else if (r->pse->type == stringtype) {
 					/* int32 len, string (no zero) encoding */
-					if (!ssize)
+					if (!ssize) {
 						string_read_chunk(cr, output, voutput, nrows, pos);
-					else if (!voutput)
+						if (cr->definition)
+								(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->num_nulls, r->pse->size/8);
+					} else if (!voutput) {
 						return string_size_chunk(cr, nrows, pos, ssize, dict);
-					else
+					} else
 						offset_string_read_chunk(cr, output, voutput, nrows, pos, *ssize, *dict);
 				}
 			}
@@ -1885,9 +1961,9 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					}
 				}
 			}
-			ATOMIC_ADD(&r->rownr, nrows);
-			cr->curnr += nrows;
-			return nrows;
+			ATOMIC_ADD(&r->rownr, orows);
+			cr->curnr += orows;
+			return orows;
 		}
 	}
 	return 0;
