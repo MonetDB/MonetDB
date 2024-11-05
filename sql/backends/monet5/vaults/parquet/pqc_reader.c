@@ -657,6 +657,8 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 				return -1;
 		}
 	}
+	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (u_int64_t)pos)
+		pos = pqc_page_header( r, pr, pos);
 	return pos;
 }
 
