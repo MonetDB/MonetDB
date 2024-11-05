@@ -316,15 +316,13 @@ pqc_timeunit( pqc_file *pq, pqc_schema_element *pse, int pos)
 			break;
 		switch (fieldid) {
 		case TIME_UNIT_MILLIS:
-			// printf("milli\n");
 			pse->precision = 3;
 			break;
 		case TIME_UNIT_MICROS:
-			//printf("micro\n");
 			pse->precision = 6;
 			break;
 		case TIME_UNIT_NANOS:
-			//printf("nano\n");
+			printf("nano\n");
 			pse->precision = 9;
 			break;
 		}
