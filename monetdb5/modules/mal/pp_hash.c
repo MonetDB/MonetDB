@@ -2943,7 +2943,7 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (j < selcnt && i == sel[j]) { \
 					j++; \
 				} else { \
-					oid val = canditer_idx(&ci, k->tseqbase+i); \
+					oid val = canditer_idx(&ci, i); \
 					assert(val != oid_nil); \
 					res[idx++] = i; \
 				} \
@@ -3166,7 +3166,7 @@ error:
 		\
 		oid *res = Tloc(e, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			oid val = canditer_idx(&ci, k->tseqbase + i); \
+			oid val = canditer_idx(&ci, i); \
 			assert(val != oid_nil); \
 			TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
 				res[idx++] = val; \
@@ -3639,7 +3639,7 @@ error:
 		oid *res = Tloc(f, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
 			TIMEOUT_LOOP_IDX_DECL(j, keycnt, qry_ctx) { \
-				oid val = canditer_idx(&ci, k->tseqbase + j); \
+				oid val = canditer_idx(&ci, j); \
 				assert(val != oid_nil); \
 				\
 				res[idx++] = val; \
