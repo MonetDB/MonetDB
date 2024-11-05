@@ -51,7 +51,7 @@ _estimate(mvc *sql, sql_rel *rel)
 	lng est = get_rel_count(rel);
 
 	if (est >= 85000000) {
-		printf("using large fallback\n");
+		printf("#using large fallback\n");
 		fflush(stdout);
 		//est = 85000000;
 		est = 8500;
@@ -59,7 +59,7 @@ _estimate(mvc *sql, sql_rel *rel)
 	/*
 	if (est == 0) {
 		if (rel->op != op_basetable) {
-			printf("est == 0, %d\n", rel->op);
+			printf("#est == 0, %d\n", rel->op);
 			fflush(stdout);
 		}
 	}
