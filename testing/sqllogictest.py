@@ -288,7 +288,7 @@ class SQLLogic:
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
                     if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
                         if expected_err_msg.startswith('/') and expected_err_msg.endswith('/'):
-                            res = re.match(expected_err_msg[1:-1], err_msg_received)
+                            res = re.search(expected_err_msg[1:-1], err_msg_received)
                             if expected_err_code == err_code_received and res is not None:
                                 result.append(err_code_received + '!' + expected_err_msg)
                                 return result
@@ -307,7 +307,7 @@ class SQLLogic:
                                 return result
                         elif expected_err_msg and err_msg_received:
                             if expected_err_msg.startswith('/') and expected_err_msg.endswith('/'):
-                                res = re.match(expected_err_msg[1:-1], err_msg_received)
+                                res = re.search(expected_err_msg[1:-1], err_msg_received)
                                 if res is not None:
                                     result.append(expected_err_msg)
                                     return result
