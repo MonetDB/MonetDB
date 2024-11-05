@@ -86,7 +86,7 @@ select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% algebra.join%'
 ----
-1
+0
 
 statement ok
 drop procedure profiler.starttrace()
