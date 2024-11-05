@@ -1,0 +1,70 @@
+statement ok
+START TRANSACTION
+
+statement ok
+COPY 5 RECORDS INTO region from '../SF-0.01/region.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 25 RECORDS INTO nation from '../SF-0.01/nation.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 100 RECORDS INTO supplier from '../SF-0.01/supplier.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 1500 RECORDS INTO customer from '../SF-0.01/customer.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 2000 RECORDS INTO part from '../SF-0.01/part.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 8000 RECORDS INTO partsupp from '../SF-0.01/partsupp.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 15000 RECORDS INTO orders from '../SF-0.01/orders.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY 70000 RECORDS INTO lineitem from '../SF-0.01/lineitem.tbl' ON CLIENT USING DELIMITERS '|', E'|\n'
+
+statement ok
+COMMIT
+
+query I rowsort
+select count(*) from customer
+----
+1500
+
+query I rowsort
+select count(*) from nation
+----
+25
+
+query I rowsort
+select count(*) from orders
+----
+15000
+
+query I rowsort
+select count(*) from partsupp
+----
+8000
+
+query I rowsort
+select count(*) from part
+----
+2000
+
+query I rowsort
+select count(*) from region
+----
+5
+
+query I rowsort
+select count(*) from supplier
+----
+100
+
+query I rowsort
+select count(*) from lineitem
+----
+60175
+

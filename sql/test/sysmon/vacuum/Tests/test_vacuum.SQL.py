@@ -20,8 +20,3 @@ with SQLTestCase() as tc:
     #print(f'{heap_init}', file=sys.stderr)
     #print(f'{heap_small} < {heap_large}', file=sys.stderr)
     assert(heap_small < heap_large)
-
-
-
-
-
