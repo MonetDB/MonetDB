@@ -16,19 +16,19 @@ CREATE TABLE integers(i INTEGER)
 statement ok rowcount 4
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 DELETE FROM another_t WHERE (SELECT 1 UNION SELECT 2) > 1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 UPDATE another_T SET col1 = 1 WHERE (SELECT 1 UNION SELECT 2) > 1
 
 statement error 42000!MERGE: subqueries not supported inside MERGE conditions
 MERGE INTO another_t USING (SELECT col1 FROM another_t) sub ON (SELECT 1 UNION SELECT 2) > 1 WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 MERGE INTO another_t USING (SELECT (SELECT 1 UNION SELECT 2) FROM another_t) sub ON TRUE WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT
 
 query I rowsort
@@ -183,13 +183,13 @@ SELECT (SELECT t2.col2 FROM another_t t2 WHERE t1.col1 BETWEEN t2.col1 AND t2.co
 222
 2222
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t1.col1 AND t2.col2) FROM another_t t1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t2.col1 AND t1.col2) FROM another_t t1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 > (SELECT 2 FROM integers)
 
 query I rowsort
@@ -431,16 +431,16 @@ select (select i2.i in (select sum(i1.i + i2.i)) from integers i2) from integers
 statement error 42000!SELECT: cannot use non GROUP BY column 'i2.i' in query results without an aggregate function
 select (select i2.i in (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 select (select i2.i in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 select (select i2.i in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 select (select sum(i2.i) in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 select (select sum(i1.i + i2.i) in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i
 
 query I rowsort
@@ -499,10 +499,10 @@ select (select not exists (select sum(i1.i + i2.i)) from integers i2) from integ
 0
 0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 where (select 1 union all select 2) in (1)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select (select 1 union all select 2) in (1)
 
 statement ok
