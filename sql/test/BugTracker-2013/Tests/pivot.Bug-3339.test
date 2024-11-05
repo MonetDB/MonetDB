@@ -26,7 +26,7 @@ SELECT * FROM (SELECT * FROM tmp) AS A
 1
 2
 
-statement error
+statement error /more than one match/
 SELECT (SELECT * FROM groupElements(pivot.x))
 FROM (SELECT * FROM tmp) as pivot
 
