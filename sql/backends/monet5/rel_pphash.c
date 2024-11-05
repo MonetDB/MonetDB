@@ -271,27 +271,30 @@ oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, s
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
-oahash_probe(backend *be, list *exps_cmp_prb, stmt *stmts_ht, stmt *sub, stmt *pp)
+oahash_probe(backend *be, sql_rel *rel, list *exps_cmp_prb, stmt *stmts_ht, stmt *sub, stmt *pp)
 {
 	sql_exp *e = NULL;
 	InstrPtr q = NULL;
 	int matched = 0, rhs_slts = 0;
+	bit single = false;
+
 	/* stmts_ht is in the same order as the join columns */
 	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h; n && m; n = n->next, m = m->next) {
 		e = n->data;
 		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
 		key = column(be, key);
+		single = ((rel->single == 1) && (n->next == NULL));
 
 		int rht = ((stmt *)m->data)->nr;
 		if (!matched) {
 			q = stmt_oahash_hash(be, key, pp);
 			if (q == NULL) return NULL;
-			q = stmt_oahash_probe(be, key, getDestVar(q), rht, pp);
+			q = stmt_oahash_probe(be, key, getDestVar(q), rht, single, pp);
 		} else {
 			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, pp);
 			if (q == NULL) return NULL;
-			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rht, pp);
+			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rht, single, pp);
 		}
 		if (q == NULL) return NULL;
 		matched = getArg(q, 0);
@@ -487,7 +490,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	if (!sub) return NULL;
 
 	pp = get_pipeline(be);
-	stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_ht, sub, pp);
+	stmt *prb_res = oahash_probe(be, rel, exps_cmp_prb, stmts_ht, sub, pp);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
@@ -605,7 +608,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);
-		stmt *prb_res = oahash_probe(be, exps_cmp_prb, stmts_ht, sub, pp);
+		stmt *prb_res = oahash_probe(be, rel, exps_cmp_prb, stmts_ht, sub, pp);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/

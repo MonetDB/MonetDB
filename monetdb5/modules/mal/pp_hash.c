@@ -2188,6 +2188,10 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.probe", "more than one match"); \
+					goto error; \
+				} \
 			} \
 		} \
 	} while (0)
@@ -2211,6 +2215,10 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.probe", "more than one match"); \
+					goto error; \
+				} \
 			} \
 		} \
 	} while (0)
@@ -2236,13 +2244,17 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.probe", "more than one match"); \
+					goto error; \
+				} \
 			} \
 		} \
 		bat_iterator_end(&bi); \
 	} while (0)
 
 static str
-BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, const ptr *H)
+BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, bit *single, const ptr *H)
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
@@ -2268,6 +2280,7 @@ BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, 
 
 	if (keycnt) {
 		hash_table *ht = (hash_table*)t->T.sink;
+
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2463,6 +2476,10 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					goto error; \
+				} \
 			} \
 		} \
 	} while (0)
@@ -2488,6 +2505,10 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					goto error; \
+				} \
 			} \
 		} \
 	} while (0)
@@ -2514,13 +2535,17 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = slot - 1; \
 				mtdcnt2++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					goto error; \
+				} \
 			} \
 		} \
 		bat_iterator_end(&bi); \
 	} while (0)
 
 static str
-BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, const ptr *H)
+BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, bit *single, const ptr *H)
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
@@ -2547,6 +2572,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_h
 
 	if (mtdcnt) {
 		hash_table *ht = (hash_table*)t->T.sink;
+
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -3820,13 +3846,13 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
 // pattern("oahash", "probe", OAHASHprobe, false, "Probe the (key, hash) in the hash table. Returns (0@0, ht-slotid), or (oid_nil, oid_nil) if no match", args(2,6, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,6, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("pipeline",ptr))),
 
 // pattern("oahash", "combined_hash", OAHASHhash_cmbd, false, "If selected, compute the combined hash of key+parent_slotid; otherwise lng_nil", args(1,5, arg("hsh",lng),argany("key",1),arg("selected",oid),arg("parent_slotid",oid),arg("pipeline",ptr))),
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
 // pattern("oahash", "combined_probe", OAHASHprobe_cmbd, false, "If selected, probe the (key, hash) in the hash table. Returns (0@0, RHS_slotid) if there was a match; otherwise (oid_nil, oid_nil)", args(2,7, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),arg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("single",bit),arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 
