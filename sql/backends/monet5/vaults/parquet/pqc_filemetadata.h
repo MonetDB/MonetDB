@@ -214,6 +214,17 @@ typedef struct pqc_pageencodings {
 	u_int32_t page_count;
 } pqc_pageencodings;
 
+typedef struct pqc_page {
+	u_int32_t num_values;
+	u_int32_t num_nulls;
+	u_int32_t num_rows;
+	pqc_pageencodings pageencodings[3];
+	u_int32_t definition_levels_byte_length; /* v2 only, v1 had it in the rle block */
+	u_int32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
+	bool is_compressed;
+	pqc_stat stat;
+} pqc_page;
+
 typedef struct pqc_columnchunk {
 	char *file_path;
 	u_int64_t file_offset;
@@ -228,20 +239,16 @@ typedef struct pqc_columnchunk {
 	u_int32_t encodings[3];
 	u_int32_t codec;
 	u_int64_t nrows;
-	u_int32_t num_values;
-	u_int32_t num_nulls;
-	u_int32_t num_rows;
+	//u_int32_t num_values;
+	pqc_page cur_page;
 	u_int64_t total_uncompressed_size;
 	u_int64_t total_compressed_size;
 	u_int64_t data_page_offset;
 	u_int64_t index_page_offset;
 	u_int64_t dictionary_page_offset;
-	u_int32_t definition_levels_byte_length; /* v2 only, v1 had it in the rle block */
-	u_int32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
-	bool is_compressed;
 
 	pqc_stat stat;
-	pqc_pageencodings pageencodings[3];
+	pqc_pageencodings pageencodings[3]; // page encodings stats
 
 	int nkeyvalues;
 	pqc_keyvalue *keyvalues; /* optional key values */

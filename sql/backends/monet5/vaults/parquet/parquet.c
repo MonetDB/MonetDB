@@ -315,9 +315,8 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
-		/* prepare heap ?? */
-		dict = 2;
-		rb = COLnew2(0, localtype, sz, TRANSIENT, 2);
+		/* prepare heap */
+		rb = COLnew2(0, localtype, sz, TRANSIENT, dict);
 		if (!rb) {
 			BBPreclaim(b);
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -342,6 +341,8 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		h->storage = STORE_NOWN; /* ugh */
         rb->tascii = true; /* tobe fixed */
 		int offset = 0;
+		if (dict == 4)
+			offset = h->free;
 		if ((sz = pqc_read_chunk(r->c[colno], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(b);
 			BBPreclaim(rb);
