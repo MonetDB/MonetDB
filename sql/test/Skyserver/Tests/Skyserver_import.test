@@ -1,0 +1,243 @@
+statement ok
+START TRANSACTION
+
+statement ok
+SET SCHEMA "skyserver"
+
+statement ok
+COPY 25000 RECORDS INTO RC3 FROM '../microsky/RC3.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 30000 RECORDS INTO Stetson FROM '../microsky/Stetson.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"' NULL as ''
+
+statement ok
+COPY 1000 RECORDS INTO QsoCatalogAll FROM '../microsky/QsoCatalogAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 100 RECORDS INTO QsoConcordance FROM '../microsky/QsoConcordance.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 3000 RECORDS INTO Target FROM '../microsky/Target.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO TilingRun FROM '../microsky/TilingRun.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO TargetParam FROM '../microsky/TargetParam.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Rmatrix FROM '../microsky/Rmatrix.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 28000 RECORDS INTO Region FROM '../microsky/Region1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', '|', '"'
+
+statement ok
+COPY 1000 RECORDS INTO SiteDBs FROM '../microsky/SiteDBs.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO QueryResults FROM '../microsky/QueryResults.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO RecentQueries FROM '../microsky/RecentQueries.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO SiteConstants FROM '../microsky/SiteConstants.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Glossary FROM '../microsky/Glossary1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', '|'
+
+statement ok
+COPY 1000 RECORDS INTO Algorithm FROM '../microsky/Algorithm1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', '$', '"'
+
+statement ok
+COPY 1000 RECORDS INTO TableDesc FROM '../microsky/TableDesc1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', '|', '"'
+
+statement ok
+COPY 1000 RECORDS INTO DBObjects FROM '../microsky/DBObjects1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO History FROM '../microsky/History.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Dependency FROM '../microsky/Dependency.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO PubHistory FROM '../microsky/PubHistory.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO LoadHistory FROM '../microsky/LoadHistory.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO "Diagnostics" FROM '../microsky/Diagnostics.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO SiteDiagnostics FROM '../microsky/SiteDiagnostics.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Versions FROM '../microsky/Versions.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO PartitionMap FROM '../microsky/PartitionMap1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO DataConstants FROM '../microsky/DataConstants1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', '|', '"'
+
+statement ok
+COPY 1000 RECORDS INTO SDSSConstants FROM '../microsky/SDSSConstants1.dat.bz2' ON CLIENT USING DELIMITERS '|', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO StripeDefs FROM '../microsky/StripeDefs1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"' NULL as ''
+
+statement ok
+COPY 1000 RECORDS INTO RunShift FROM '../microsky/RunShift.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO ProfileDefs FROM '../microsky/ProfileDefs.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 20000 RECORDS INTO Mask FROM '../microsky/Mask.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 26000 RECORDS INTO "Match" FROM '../microsky/Match.dat.bz2' ON CLIENT  USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO SpecObjAll FROM '../microsky/SpecObjAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO HoleObj FROM '../microsky/HoleObj.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO SpecPhotoAll FROM '../microsky/SpecPhotoAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO QuasarCatalog FROM '../microsky/QuasarCatalog.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 39000 RECORDS INTO SpecLineAll FROM '../microsky/SpecLineAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 41000 RECORDS INTO XCRedshift FROM '../microsky/XCRedshift.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO ELRedShift FROM '../microsky/ELRedShift.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 3000 RECORDS INTO TargetInfo FROM '../microsky/TargetInfo.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 815000 RECORDS INTO TiledTargetAll FROM '../microsky/TiledTargetAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 2000 RECORDS INTO PlateX FROM '../microsky/PlateX.dat.bz2' ON CLIENT  USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 80000 RECORDS INTO Sector2Tile FROM '../microsky/Sector2Tile.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 760000 RECORDS INTO TilingInfo FROM '../microsky/TilingInfo.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 2000 RECORDS INTO TileAll FROM '../microsky/TileAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO TilingNote FROM '../microsky/TilingNote.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO TilingGeometry FROM '../microsky/TilingGeometry.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 40000 RECORDS INTO RegionConvex FROM '../microsky/RegionConvex.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 21000 RECORDS INTO Region2Box FROM '../microsky/Region2Box.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 130000 RECORDS INTO RegionArcs FROM '../microsky/RegionArcs.dat.bz2' ON CLIENT  USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 10000 RECORDS INTO Sector FROM '../microsky/Sector1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 130000 RECORDS INTO HalfSpace FROM '../microsky/HalfSpace.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Inventory FROM '../microsky/Inventory.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 3000 RECORDS INTO DBColumns FROM '../microsky/DBColumns1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"' NULL as ''
+
+statement ok
+COPY 1000 RECORDS INTO DBViewCols FROM '../microsky/DBViewCols.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO IndexMap FROM '../microsky/IndexMap1.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 10000 RECORDS INTO BestTarget2Sector FROM '../microsky/BestTarget2Sector.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 2000 RECORDS INTO Segment FROM '../microsky/Segment.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Field FROM '../microsky/Field.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 200300 RECORDS INTO PhotoObjAll FROM '../microsky/PhotoObjAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+select count(*) from PhotoObjAll
+
+statement ok
+COPY 200300 RECORDS INTO PhotoTag FROM '../microsky/PhotoTag.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 2000 RECORDS INTO Frame FROM '../microsky/Frame.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO RunQA FROM '../microsky/RunQA.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 13000 RECORDS INTO FieldProfile FROM '../microsky/FieldProfile.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 7000000 RECORDS INTO PhotoProfile FROM '../microsky/PhotoProfile.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 26000 RECORDS INTO USNOB FROM '../microsky/USNOB.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 22000 RECORDS INTO USNO FROM '../microsky/USNO.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 200300 RECORDS INTO PhotoAuxAll FROM '../microsky/PhotoAuxAll.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Photoz FROM '../microsky/Photoz.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO First FROM '../microsky/First.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Rosat FROM '../microsky/Rosat.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 200000 RECORDS INTO ObjMask FROM '../microsky/ObjMask.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 15000 RECORDS INTO MatchHead FROM '../microsky/MatchHead.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 3000 RECORDS INTO MaskedObject FROM '../microsky/MaskedObject.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1100000 RECORDS INTO Neighbors FROM '../microsky/Neighbors.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO FileGroupMap FROM '../microsky/FileGroupMap.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COPY 1000 RECORDS INTO Chunk FROM '../microsky/Chunk.dat.bz2' ON CLIENT USING DELIMITERS E'\t', E'\n', '"'
+
+statement ok
+COMMIT
+

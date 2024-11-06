@@ -1682,8 +1682,6 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
-		ValRecord *input1 = &(stk)->stk[(pci)->argv[1]];
-
 		switch (tpe) {
 			case TYPE_bte:
 			case TYPE_sht:
@@ -1694,7 +1692,7 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 #endif
 			case TYPE_flt:
 			case TYPE_dbl:
-				*res = VALisnil(input1) ? dbl_nil : 0;
+				*res = dbl_nil;
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));

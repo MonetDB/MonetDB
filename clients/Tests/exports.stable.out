@@ -1669,7 +1669,7 @@ int64_t pqc_read(pqc_file *pq, int64_t offset, char *buffer, int nrbytes);
 int64_t pqc_read_chunk(pqc_reader_t *r, int wnr, void *d, void *vd, u_int64_t nrows, int *ssize, int *dict);
 int pqc_read_filemetadata(pqc_file *pq);
 int pqc_read_schema(pqc_file *pq);
-pqc_reader_t *pqc_reader(pqc_reader_t *p, pqc_file *pq, int nr_workers, pqc_filemetadata *fmd, int colnr, int64_t nrows);
+pqc_reader_t *pqc_reader(pqc_reader_t *p, pqc_file *pq, int nr_workers, pqc_filemetadata *fmd, int colnr, int64_t nrows, const void *nil);
 void pqc_reader_destroy(pqc_reader_t *r);
 void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);
