@@ -266,7 +266,8 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 	return r;
 }
 
-#define FILE_READER_VECTORSIZE (16*1024*16)
+#define FILE_READER_VECTORSIZE (16*1024)
+//(16*1024*16)
 static str
 PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -315,6 +316,12 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
+		if (ssize < 256)
+			dict = 1;
+		else if (ssize < 64*1024)
+			dict = 2;
+		else
+			dict = 4;
 		/* prepare heap */
 		rb = COLnew2(0, localtype, sz, TRANSIENT, dict);
 		if (!rb) {
@@ -327,11 +334,11 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (HEAPalloc(h, size, 1) != GDK_SUCCEED) {
 				BBPreclaim(b);
 				throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-            }
+			}
 		}
 		assert(h->size >= size);
-        h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-        h->dirty = true;
+		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->dirty = true;
 #ifdef NDEBUG
         memset(h->base, 0, h->free);
 #else

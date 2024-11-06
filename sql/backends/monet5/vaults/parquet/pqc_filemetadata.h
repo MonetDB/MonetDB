@@ -223,6 +223,7 @@ typedef struct pqc_page {
 	u_int32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
 	bool is_compressed;
 	pqc_stat stat;
+	u_int32_t num_read;
 } pqc_page;
 
 typedef struct pqc_columnchunk {
