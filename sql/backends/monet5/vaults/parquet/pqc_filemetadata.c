@@ -440,10 +440,10 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->precision = precision;
 			break;
 		case LOGICAL_TYPE_LIST:
-			printf("no support for type list\n");
+			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_LIST");
 			return -1;
 		case LOGICAL_TYPE_ENUM:
-			printf("no support for type enum\n");
+			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_ENUM");
 			return -1;
 		case LOGICAL_TYPE_DECIMAL: /* decimal */
 			pos = pqc_decimal(pq, pse, pos);
@@ -455,7 +455,7 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->precision = 32;
 			break;
 		case LOGICAL_TYPE_TIME:
-			printf("no support for type time\n");
+			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_TIME");
 			return -1;
 		case LOGICAL_TYPE_TIMESTAMP: /* timestamp */
 			pos = pqc_timestamp(pq, pse, pos);
@@ -683,8 +683,10 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 		case SCHEMA_ELEMENT_NAME: {
 			assert(type == T_BINARY);
 			int res = pqc_string(pq, pq->buffer+pos, &pse->name);
-			if (res < 0)
+			if (res < 0) {
+				TRC_ERROR(PARQUET, "ERROR SCHEMA_ELEMENT_NAME");
 				return -1;
+			}
 			pos += res;
 			TRC_INFO(PARQUET, "name %s\n", pse->name);
 		} break;
@@ -718,13 +720,18 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos )
 			TRC_INFO(PARQUET, "precision %u\n", precision);
 			break;
 		case SCHEMA_ELEMENT_FIELD_ID:
-			// TODO?
-			assert(0);
+			assert(type == T_I32);
+			u_int32_t _field_id;
+			pos += pqc_get_zint32(pq->buffer+pos, &_field_id);
+			// TODO store _field_id in schema element?
+			break;
 		case SCHEMA_ELEMENT_LOGICAL_TYPE:
 			assert(type == T_STRUCT);
 			pos = pqc_logicaltype(pq, pse, pos);
-			if (pos < 0)
+			if (pos < 0){
+				TRC_ERROR(PARQUET, "ERROR SCHEMA_ELEMENT_LOGICAL_TYPE");
 				return pos;
+			}
 			break;
 		default:
 			assert(0);
