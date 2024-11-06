@@ -91,7 +91,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(bool allow_hge_upgrade)
+gdk_return BBPinit(bool allow_hge_upgrade, bool no_manager)
 	__attribute__((__visibility__("hidden")));
 bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))

@@ -1050,7 +1050,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	const char *allow = mo_find_option(set, setlen, "allow_hge_upgrade");
-	if (BBPinit(allow && strcmp(allow, "yes") == 0) != GDK_SUCCEED)
+	const char *procwalxit = mo_find_option(set, setlen, "process-wal-and-exit");
+	if (BBPinit(allow && strcmp(allow, "yes") == 0, procwalxit && strcmp(procwalxit, "yes") == 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 

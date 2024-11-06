@@ -2280,6 +2280,10 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
+		if (GDKgetenv_isyes("process-wal-and-exit")) {
+			printf("# mserver5 exiting\n");
+			exit(0);
+		}
 		if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
 		if (needsnew) {
@@ -2307,6 +2311,10 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		}
 	} else {
 		lg->id = lg->saved_id + 1;
+		if (GDKgetenv_isyes("process-wal-and-exit")) {
+			printf("# mserver5 exiting\n");
+			exit(0);
+		}
 	}
 #ifdef GDKLIBRARY_JSON
 	if (log_json_upgrade_finalize() == GDK_FAIL)
