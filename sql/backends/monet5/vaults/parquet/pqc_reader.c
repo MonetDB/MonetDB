@@ -676,6 +676,7 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 	r->creader = cr;
 	r->fmd = fmd;
 	r->pse = fmd->elements+colnr+1;
+	colnr = r->pse->ccnr;
 	r->sz = nrows;
 	r->colnr = colnr;
 	r->rowgroup = -1;
@@ -1318,7 +1319,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 						cr->is_rle = false;
 						cr->remaining = m - j;
 						cr->idx = sh;
-					} else {
+					} else if (sh) {
 						pos++;
 					}
 				} else if (nr_bits < 8) {
@@ -1339,7 +1340,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 						cr->is_rle = false;
 						cr->remaining = m - j;
 						cr->idx = sh;
-					} else {
+					} else if (sh) {
 						pos++;
 					}
 				} else if (nr_bits < 16) {

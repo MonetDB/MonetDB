@@ -178,6 +178,7 @@ typedef enum {
 
 typedef struct pqc_schema_element {
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
+	int ccnr;
 	int scale;
 	int precision;
 	int size;		/* type size, int-8/16/32 are stored in a 32 bit, etc */

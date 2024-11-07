@@ -90,6 +90,10 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				}
 			}
             break;
+		case listtype:
+			if (sql_find_subtype(tpe, "oid", 0, 0))
+				return tpe;
+            break;
 		default:
 			return NULL;
 	}
@@ -140,6 +144,8 @@ pqc_find_localtype(const pqc_schema_element *pse)
 			if (pse->size == 64)
 				return TYPE_lng;
 			break;
+		case listtype:
+			return TYPE_oid;
 		default:
 			return TYPE_void;
 	}
@@ -161,11 +167,13 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	int nr = 0;
 	const pqc_schema_element *pse = pqc_get_schema_elements(pq, &nr);
 	if (pse) {
+		if (0)
 		if (pse->nchildren != (nr-1)) {
 			pqc_close(pq);
 			throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular", filename);
 		}
 		f->tname = tname;
+		if (0)
 		for(int i = 1; i < nr; i++ ) {
 			const pqc_schema_element *e = pse+i;
 
@@ -178,14 +186,16 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		list *types = sa_list(sql->sa), *names = sa_list(sql->sa);
 		for(int i = 1; i < nr; i++) {
 			const pqc_schema_element *e = pse+i;
-			sql_subtype *t = pqc_find_subtype(sql, e);
+			sql_subtype *t = (e->type)?pqc_find_subtype(sql, e):NULL;
 
-			if (!t) {
+			if (e->type && !t) {
 				int tpe = e->type;
 				char *nme = e->name?sa_strdup(sql->ta, e->name):NULL;
 				pqc_close(pq);
-				throw(SQL, SQLSTATE(42000), "parquet" "Data type (%d) not supported for column %s", tpe, nme);
+				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%d) not supported for column %s", tpe, nme);
 			}
+			if (!t)
+				t = sql_bind_localtype("oid");
 			list_append(types, t);
 			char *name = NULL;
 			if (e->name) {
@@ -199,6 +209,8 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			sql_exp *ne = exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0);
 			set_basecol(ne);
 			ne->alias.label = -(sql->nid++);
+			if (!e->type || e->type == listtype)
+				set_intern(ne);
 			list_append(res_exps, ne);
 			//printf("name %s %d(%d,%d) %s\n", e->name, e->type, e->precision, e->scale, e->repetition==0?"NOT NULL":e->repetition==2?"NESTED":"");
 		}
@@ -300,19 +312,19 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const pqc_schema_element *pse = r->fmd->elements+colno+1;
 	int localtype = pqc_find_localtype(pse);
 
-	if (!r->c[colno]) {
+	if (!r->c[pse->ccnr]) {
 		pipeline_lock(p);
-		if (!r->c[colno])
-			r->c[colno] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows, ATOMnilptr(localtype));
+		if (!r->c[pse->ccnr])
+			r->c[pse->ccnr] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows, ATOMnilptr(localtype));
 		pipeline_unlock(p);
 	}
-	pqc_mark_chunk(r->c[colno], r->nrworkers, wnr, sz);
+	pqc_mark_chunk(r->c[pse->ccnr], r->nrworkers, wnr, sz);
 
 	BAT *rb = NULL;
 
 	if (pse->type == stringtype) { /* remove vector from interface */
 		int ssize = 0, dict = 0;
-		if (pqc_read_chunk(r->c[colno], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
+		if (pqc_read_chunk(r->c[pse->ccnr], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
 			BBPreclaim(b);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
@@ -350,7 +362,7 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int offset = 0;
 		if (dict == 4)
 			offset = h->free;
-		if ((sz = pqc_read_chunk(r->c[colno], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
+		if ((sz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(b);
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
@@ -362,7 +374,7 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if ((sz = pqc_read_chunk(r->c[colno], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
+		if ((sz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
 			BBPreclaim(b);
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");

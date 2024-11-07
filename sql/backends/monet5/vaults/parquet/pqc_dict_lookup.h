@@ -96,7 +96,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 			int mask = (1<<nr_bits) -1;
 			int64_t j = 0;
 			int m = len*8;
-			if (mul8) { /* todo handle 16 / 32 multiples */
+			if (mul8) {
 				for (; i < nrows && j < m; j++, i++) {
 					uchar v = data[pos];
 					u_int32_t idx = (v >> sh)&mask;
@@ -133,7 +133,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = sh;
-				} else {
+				} else if (sh) {
 					pos++;
 				}
 			} else if (nr_bits < 16) {
