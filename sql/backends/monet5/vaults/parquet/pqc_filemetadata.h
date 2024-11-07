@@ -207,6 +207,9 @@ typedef struct pqc_schema_element {
 	int repetition; /* required (NOT NULL), optional (NULL), repeated */
 	char *name;
 	int nchildren;
+	int curchild; /* only needed during meta data parsing */
+	struct pqc_schema_element **elements;
+	struct pqc_schema_element *parent;
 	/* optional logical type */
 } pqc_schema_element;
 

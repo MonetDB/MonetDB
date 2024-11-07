@@ -82,9 +82,12 @@ typedef struct pqc_creader_t {
 	char *data;
 	char *dict;
 	char *odict;
-	char first_definition; 	/* first definition (alternating 0/1) */
+	char first_definition; 	/* first definition (alternating 0/1)  TODO handle levels */
 	int *definition;	/* definition lengths */
 	int definitionsize;	/* size of definition lengths */
+	char first_repetition; 	/* first repetition (alternating 0/1)  TODO handle levels */
+	int *repetition;	/* repetition lengths */
+	int repetitionsize;	/* size of repetition lengths */
 	int curdef;
 	int cursubdef;
 	char *buffer;
@@ -696,6 +699,9 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 		cr->first_definition = cr->curdef = cr->cursubdef = 0;
 		cr->definition = 0;
 		cr->definitionsize = 0;
+		cr->first_repetition = 0;
+		cr->repetition = 0;
+		cr->repetitionsize = 0;
 		cr->data = 0;
 		cr->datasize = 0;
 		cr->data_allocated = false;
@@ -714,6 +720,8 @@ pqc_reader_destroy( pqc_reader_t *r )
 		pqc_close(cr->pq);
 		if (cr->definition)
 			_DELETE(cr->definition);
+		if (cr->repetition)
+			_DELETE(cr->repetition);
 		if (cr->odict)
 			_DELETE(cr->odict);
 		if (cr->dict && !(cr->dict >= cr->buffer && cr->dict < (cr->buffer+cr->bufsize))) {
@@ -742,8 +750,113 @@ pqc_read_dict( pqc_reader_t *r, pqc_creader_t *cr)
 }
 
 static int64_t
-pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_values, u_int32_t pos)
+pqc_repetition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_values, u_int32_t pos, int max)
 {
+	(void)max;
+	(void)r;
+	/* Run Length Encoding / Bit-Packing Hybrid (RLE = 3
+	   rle-bit-packed-hybrid: <length> <encoded-data>
+	   length := length of the <encoded-data> in bytes stored as 4 bytes little endian (unsigned int32)
+	   encoded-data := <run>*
+	   run := <bit-packed-run> | <rle-run>
+	   bit-packed-run := <bit-packed-header> <bit-packed-values>
+	   bit-packed-header := varint-encode(<bit-pack-scaled-run-len> << 1 | 1)
+	   // we always bit-pack a multiple of 8 values at a time, so we only store the number of values / 8
+	   bit-pack-scaled-run-len := (bit-packed-run-len) / 8
+	   bit-packed-run-len := *see 3 below*
+	   bit-packed-values := *see 1 below*
+	   rle-run := <rle-header> <repeated-value>
+	   rle-header := varint-encode( (rle-run-len) << 1)
+	   rle-run-len := *see 3 below*
+	   repeated-value := value that is repeated, using a fixed-width of round-up-to-next-byte(bit-width)
+	*/
+
+	(void)output;
+	//int bits = 1;
+	char *data = cr->data;
+	u_int32_t nr_bytes = get_uint32((u_int8_t*)data+pos), len;
+	u_int64_t null = 0, j = 0;
+
+	if (cr->repetition)
+		_DELETE(cr->repetition);
+	cr->repetition = NULL;
+	cr->first_repetition = 0;
+
+	pos += sizeof(nr_bytes);
+	u_int32_t spos = pos;
+	char prv = 0;
+	for(u_int32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
+		pos += pqc_get_int32(data+pos, &len);
+		if (len & 1) {
+			len>>=1;
+			for(unsigned int b = 0; b < len; b++) {
+				char val = data[pos++];
+				for (unsigned int k=0; k<8; ) {
+					char v = (val>>k)&1;
+					int nlen = 1;
+					for (k++; k<8; k++, nlen++) {
+						if (v != ((val>>k)&1))
+							break;
+					}
+					if (i == 0 && (val != 1 || len < num_values)) {
+						cr->repetitionsize = 0;
+						cr->first_repetition = v;
+						prv = !v;
+						cr->repetition = NEW_ARRAY(int, nr_bytes*8); /* should be enough */
+						if (!cr->repetition)
+							return -1;
+					}
+					if (cr->repetition) {
+						if (v == prv) {
+							cr->repetition[j-1] += nlen;
+						} else {
+							prv = v;
+							cr->repetition[j++] = nlen;
+						}
+					}
+					i+=nlen;
+					null += (!v)*nlen;
+				}
+			}
+		} else { /* rle */
+			len>>=1;
+			char val = data[pos++];
+			assert(val == 0 || val == 1);
+			if (i == 0 && (val != 1 || len < num_values)) {
+				cr->repetitionsize = 0;
+				cr->first_repetition = val;
+				prv = !val;
+				cr->repetition = NEW_ARRAY(int, nr_bytes*8); /* should be enough */
+				if (!cr->repetition)
+					return -1;
+			}
+			if (cr->repetition) {
+				if (val == prv) {
+					cr->repetition[j-1] += len;
+				} else {
+					prv = val;
+					cr->repetition[j++] = len;
+				}
+			}
+			assert(len);
+			i+=len;
+			null += (!val)*len;
+		}
+	}
+	if (cr->repetition)
+		cr->repetitionsize = j;
+
+	TRC_DEBUG(PARQUET, "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->repetition);
+	// printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->repetition);
+	cr->cc->cur_page.num_nulls = null;
+	/* return repetition level as structure 0/1 + len */
+	return pos; //nr_bytes + sizeof(nr_bytes);
+}
+
+static int64_t
+pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_values, u_int32_t pos, int max)
+{
+	(void)max;
 	(void)r;
 	/* Run Length Encoding / Bit-Packing Hybrid (RLE = 3
 	   rle-bit-packed-hybrid: <length> <encoded-data>
@@ -813,8 +926,9 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 		} else { /* rle */
 			len>>=1;
 			char val = data[pos++];
-			assert(val == 0 || val == 1);
-			if (i == 0 && (val != 1 || len < num_values)) {
+			assert(val >= 0 && val <= max);
+			if (i == 0 && (val != max || len < num_values)) {
+				assert(max == 1); /* need to implement levels */
 				cr->definitionsize = 0;
 				cr->first_definition = val;
 				prv = !val;
@@ -842,7 +956,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, u_int32_t num_
 	// printf( "nulls %" PRIu64 " rows %u (%p)\n", null, num_values, cr->definition);
 	cr->cc->cur_page.num_nulls = null;
 	/* return definition level as structure 0/1 + len */
-	return nr_bytes + sizeof(nr_bytes);
+	return pos; //nr_bytes + sizeof(nr_bytes);
 }
 
 #define T uchar
@@ -1822,6 +1936,28 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int
 	return pos;
 }
 
+static int
+pqc_max_repetition( pqc_schema_element *pse)
+{
+	int repetition = 0;
+	for(; pse; pse = pse->parent) {
+		if (pse->repetition == 2)
+			repetition++;
+	}
+	return repetition;
+}
+
+static int
+pqc_max_definition( pqc_schema_element *pse)
+{
+	int definition = 0;
+	for(; pse; pse = pse->parent) {
+		if (pse->repetition > 0)
+			definition++;
+	}
+	return definition;
+}
+
 #define YEAR_OFFSET -(-4712)
 #define DTDAY_WIDTH             5               /* 1..28/29/30/31, depending on month/year */
 #define DTDAY_SHIFT             0
@@ -1913,9 +2049,16 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 		if (cr->data) {
 			pos = 0;
 			cr->pos = pos;
-			if (r->pse->repetition == 1 /*OPTIONAL*/) {
+			int repetition = pqc_max_repetition(r->pse);
+			int definition = pqc_max_definition(r->pse);
+			if (repetition) {
 				/* bit vector for null's */
-				pos = pqc_definition(r, cr, output, cr->cc->cur_page.num_values, (u_int32_t)pos);
+				pos = pqc_repetition(r, cr, output, cr->cc->cur_page.num_values, (u_int32_t)pos, repetition);
+				cr->pos = pos;
+			}
+			if (definition) {
+				/* bit vector for null's */
+				pos = pqc_definition(r, cr, output, cr->cc->cur_page.num_values, (u_int32_t)pos, definition);
 				cr->pos = pos;
 			}
 			if (pos < 0) {

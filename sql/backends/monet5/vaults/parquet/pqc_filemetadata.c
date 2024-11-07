@@ -648,12 +648,16 @@ pqc_convertedtype2logicaltype( pqc_schema_element *pse, u_int32_t type)
 }
 
 static int
-pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr )
+pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_element *parent)
 {
 	int fieldid = 0, type = 0;
 	pqc_schema_element *pse = pq->fmd->elements+nr;
 	*pse = (pqc_schema_element){ };
 
+	if (parent) {
+		parent->elements[parent->curchild++] = pse;
+		pse->parent = parent;
+	}
 	pse->ccnr = *ccnr;
 	u_int32_t oldtype, scale, precision, repetition, nchildren, convertedtype;
 
@@ -699,6 +703,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr )
 		case SCHEMA_ELEMENT_NUM_CHILDREN:
 			pos += pqc_get_zint32(pq->buffer+pos, &nchildren);
 			pse->nchildren = nchildren;
+			pse->elements = SA_NEW_ARRAY(pq->pa, pqc_schema_element*, nchildren);
 			TRC_INFO(PARQUET, "nchildren %u\n", nchildren);
 			break;
 		case SCHEMA_ELEMENT_CONVERTED_TYPE:
@@ -1186,10 +1191,20 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 				TRC_ERROR(PARQUET, "PQC: alloc failed\n");
 				return -1;
 			}
+			pqc_schema_element *parent = NULL;
 			for(int i = 0, ccnr = 0; i < size; i++) {
-				int res = pqc_read_schema_element(pq, i, pos, &ccnr);
+				int res = pqc_read_schema_element(pq, i, pos, &ccnr, parent);
 				if (res < 0)
 					return res;
+				pqc_schema_element *pse = fmd->elements+i;
+
+				if (pse->nchildren > 0) {
+					parent = pse;
+				} else {
+					while (parent && parent->nchildren == parent->curchild) {
+						parent = parent->parent;
+					}
+				}
 				pos = res;
 			}
 			break;
