@@ -173,6 +173,24 @@ typedef enum {
     KEY_VALUE_VALUE = 2        // optional string value
 } KeyValueFields;
 
+typedef enum {
+    PAGE_HEADER_TYPE = 1,                  // PageType type
+    PAGE_HEADER_UNCOMPRESSED_PAGE_SIZE = 2, // i32 uncompressed_page_size
+    PAGE_HEADER_COMPRESSED_PAGE_SIZE = 3,   // i32 compressed_page_size
+    PAGE_HEADER_CRC = 4,                    // i32 crc (optional)
+    PAGE_HEADER_DATA_PAGE_HEADER = 5,       // DataPageHeader data_page_header (optional)
+    PAGE_HEADER_INDEX_PAGE_HEADER = 6,      // IndexPageHeader index_page_header (optional)
+    PAGE_HEADER_DICTIONARY_PAGE_HEADER = 7, // DictionaryPageHeader dictionary_page_header (optional)
+    PAGE_HEADER_DATA_PAGE_HEADER_V2 = 8     // DataPageHeaderV2 data_page_header_v2 (optional)
+} PageHeaderFields;
+
+typedef enum {
+    DATA_PAGE_HEADER_NUM_VALUES = 1,                 // i32 num_values
+    DATA_PAGE_HEADER_ENCODING = 2,                   // Encoding encoding
+    DATA_PAGE_HEADER_DEFINITION_LEVEL_ENCODING = 3,  // Encoding definition_level_encoding
+    DATA_PAGE_HEADER_REPETITION_LEVEL_ENCODING = 4,  // Encoding repetition_level_encoding
+    DATA_PAGE_HEADER_STATISTICS = 5                  // Statistics statistics (optional)
+} DataPageHeaderFields;
 
 
 

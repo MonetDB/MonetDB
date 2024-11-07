@@ -465,11 +465,19 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			pse->type = stringtype; /* no idea !! */
 			break;
 		case LOGICAL_TYPE_JSON:
+			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_JSON");
+			return -1;
 		case LOGICAL_TYPE_BSON:
+			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_BSON");
+			return -1;
 		case LOGICAL_TYPE_UUID:
+			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_UUID");
+			return -1;
 		case LOGICAL_TYPE_FLOAT16:
+			TRC_ERROR(PARQUET, "no support for LOGICAL_TYPE_FLOAT16");
+			return -1;
 		default:
-			printf("no support for type %d\n", fieldid);
+			TRC_ERROR(PARQUET, "no support or unknown LOGICAL_TYPE  %d\n", fieldid);
 			return -1;
 		}
 	}
@@ -682,7 +690,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr )
 			assert(type == T_BINARY);
 			int res = pqc_string(pq, pq->buffer+pos, &pse->name);
 			if (res < 0) {
-				TRC_ERROR(PARQUET, "ERROR SCHEMA_ELEMENT_NAME");
+				TRC_ERROR(PARQUET, "failure reading SCHEMA_ELEMENT_NAME");
 				return -1;
 			}
 			pos += res;
@@ -727,7 +735,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr )
 			assert(type == T_STRUCT);
 			pos = pqc_logicaltype(pq, pse, pos);
 			if (pos < 0){
-				TRC_ERROR(PARQUET, "ERROR SCHEMA_ELEMENT_LOGICAL_TYPE");
+				TRC_ERROR(PARQUET, "failure reading SCHEMA_ELEMENT_LOGICAL_TYPE");
 				return pos;
 			}
 			break;

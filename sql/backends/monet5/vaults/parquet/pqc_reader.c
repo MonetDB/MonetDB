@@ -128,94 +128,91 @@ pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int pos )
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1: {
-			if (type == 8) {
-				char *t;
-				int len;
-				int res = pqc_get_string(pr->buffer+pos, &t, &len);
-				//int res = pqc_string(pr, pr->buffer+pos, &stat->max_string);
-				if (res < 0)
-					return -1;
-				pos += res;
-				//TRC_INFO(PARQUET, "max_string '%s'\n", stat->max_string);
-				TRC_INFO(PARQUET, "max_string '%s'\n", t);
-			} else {
-				assert (0);
+		case STATISTICS_MAX: {
+			assert(type == T_BINARY);
+			char *t;
+			int len;
+			int res = pqc_get_string(pr->buffer+pos, &t, &len);
+			//int res = pqc_string(pr, pr->buffer+pos, &stat->max_string);
+			if (res < 0)
+				return -1;
+			pos += res;
+			//TRC_INFO(PARQUET, "max_string '%s'\n", stat->max_string);
+			TRC_INFO(PARQUET, "max_string '%s'\n", t);
 #if 0
 			} else if (type == 5) {
 				pos += pqc_get_zint32(pr->buffer+pos, &stat->max);
 				TRC_INFO(PARQUET, "max %d'\n", stat->max);
 #endif
-			}
-		} break;
-		case 2: {
-			if (type == 8) {
-				char *t;
-				int len;
-				int res = pqc_get_string(pr->buffer+pos, &t, &len);
-				//int res = pqc_string(pr, pr->buffer+pos, &stat->min_string);
-				if (res < 0)
-					return -1;
-				pos += res;
-				//TRC_INFO(PARQUET, "min_string '%s'\n", stat->min_string);
-				TRC_INFO(PARQUET, "min_string '%s'\n", t);
-			} else {
-				assert(0);
+			} break;
+		case STATISTICS_MIN: {
+			assert(type == T_BINARY);
+			char *t;
+			int len;
+			int res = pqc_get_string(pr->buffer+pos, &t, &len);
+			//int res = pqc_string(pr, pr->buffer+pos, &stat->min_string);
+			if (res < 0)
+				return -1;
+			pos += res;
+			//TRC_INFO(PARQUET, "min_string '%s'\n", stat->min_string);
+			TRC_INFO(PARQUET, "min_string '%s'\n", t);
 #if 0
 			} else if (type == 5) {
 				pos += pqc_get_zint32(pr->buffer+pos, &stat->min);
 				TRC_INFO(PARQUET, "min %d'\n", stat->min);
 #endif
-			}
-		} break;
-		case 3: {
+			} break;
+		case STATISTICS_NULL_COUNT: {
 			pos += pqc_get_int64(pr->buffer+pos, &stat->null_count);
 			TRC_INFO(PARQUET, "null_count %" PRId64 "\n", stat->null_count);
 		}	break;
-		case 4: {
+		case STATISTICS_DISTINCT_COUNT: {
 			pos += pqc_get_int64(pr->buffer+pos, &stat->distinct_count);
 			TRC_INFO(PARQUET, "distinct_count %" PRId64 "\n", stat->distinct_count);
 		}	break;
-		case 5: {
-			if (type == 8) {
-				char *t;
-				int len;
-				int res = pqc_get_string(pr->buffer+pos, &t, &len);
-				//int res = pqc_string(pr, pr->buffer+pos, &stat->max_value);
-				if (res < 0)
-					return -1;
-				pos += res;
-				//TRC_INFO(PARQUET, "max_value '%s'\n", stat->max_value);
-				TRC_INFO(PARQUET, "max_value '%s'\n", t);
-			} else {
-				assert(0);
+		case STATISTICS_MAX_VALUE: {
+			assert(type == T_BINARY);
+			char *t;
+			int len;
+			int res = pqc_get_string(pr->buffer+pos, &t, &len);
+			//int res = pqc_string(pr, pr->buffer+pos, &stat->max_value);
+			if (res < 0)
+				return -1;
+			pos += res;
+			//TRC_INFO(PARQUET, "max_value '%s'\n", stat->max_value);
+			TRC_INFO(PARQUET, "max_value '%s'\n", t);
 #if 0
 			} else if (type == 12) {
 				pqc_keyvalue kv;
 				pos = pqc_read_keyvalue(pr, &kv, pos);
 #endif
-			}
-		} break;
-		case 6: {
-			if (type == 8) {
-				char *t;
-				int len;
-				int res = pqc_get_string(pr->buffer+pos, &t, &len);
-				//int res = pqc_string(pr, pr->buffer+pos, &stat->min_value);
-				if (res < 0)
-					return -1;
-				pos += res;
-				//TRC_INFO(PARQUET, "min_value '%s'\n", stat->min_value);
-				TRC_INFO(PARQUET, "min_value '%s'\n", t);
-			} else {
-				assert(0);
+			} break;
+		case STATISTICS_MIN_VALUE: {
+			assert(type == T_BINARY);
+			char *t;
+			int len;
+			int res = pqc_get_string(pr->buffer+pos, &t, &len);
+			//int res = pqc_string(pr, pr->buffer+pos, &stat->min_value);
+			if (res < 0)
+				return -1;
+			pos += res;
+			//TRC_INFO(PARQUET, "min_value '%s'\n", stat->min_value);
+			TRC_INFO(PARQUET, "min_value '%s'\n", t);
 #if 0
 			} else if (type == 12) {
 				pqc_keyvalue kv;
 				pos = pqc_read_keyvalue(pr, &kv, pos);
 #endif
-			}
-		} break;
+			} break;
+		case STATISTICS_IS_MAX_VALUE_EXACT:
+			TRC_ERROR(PARQUET, "not handled field_id STATISTICS_IS_MAX_VALUE_EXACT");
+			return -1;
+		case STATISTICS_IS_MIN_VALUE_EXACT:
+			TRC_ERROR(PARQUET, "not handled field_id STATISTICS_IS_MIN_VALUE_EXACT");
+			return -1;
+		default:
+			TRC_ERROR(PARQUET, "UNKNOWN statistic field_id '%d'\n", fieldid);
+			return -1;
 		}
 	}
 	return pos;
@@ -300,27 +297,27 @@ pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_va
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case DATA_PAGE_HEADER_NUM_VALUES:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
 			pr->cc->cur_page.num_values = *num_values;
 			TRC_INFO(PARQUET, "num_values %d\n", *num_values);
 			break;
-		case 2:
+		case DATA_PAGE_HEADER_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &encoding);
 			pr->cc->cur_page.pageencodings[0].page_encoding = encoding;
 			TRC_INFO(PARQUET, "page_encoding %u\n", encoding);
 			break;
-		case 3:
+		case DATA_PAGE_HEADER_DEFINITION_LEVEL_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &definition_level_encoding);
 			pr->cc->cur_page.pageencodings[1].page_encoding = definition_level_encoding;
 			TRC_INFO(PARQUET, "definition_level_encoding %u\n", definition_level_encoding);
 			break;
-		case 4:
+		case DATA_PAGE_HEADER_REPETITION_LEVEL_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &repetition_level_encoding);
 			pr->cc->cur_page.pageencodings[2].page_encoding = repetition_level_encoding;
 			TRC_INFO(PARQUET, "repetition_level_encoding %u\n", repetition_level_encoding);
 			break;
-		case 5:
+		case DATA_PAGE_HEADER_STATISTICS:
 			assert(type == 12);
 			pos = pqc_statistics(r, pr, &pr->cc->cur_page.stat, pos);
 			break;
@@ -454,36 +451,36 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case PAGE_HEADER_TYPE:
 			pos += (res = pqc_get_zint32(pr->buffer+pos, &page_type));
 			TRC_INFO(PARQUET, "page type %u\n", page_type);
 			break;
-		case 2:
+		case PAGE_HEADER_UNCOMPRESSED_PAGE_SIZE:
 			pos += (res = pqc_get_zint32(pr->buffer+pos, &uncompressed_size));
 			TRC_INFO(PARQUET, "uncompressed_size %u\n", uncompressed_size);
 			break;
-		case 3:
+		case PAGE_HEADER_COMPRESSED_PAGE_SIZE:
 			pos += (res = pqc_get_zint32(pr->buffer+pos, &compressed_size));
 			TRC_INFO(PARQUET, "compressed_size %u\n", compressed_size);
 			break;
-		case 4:
+		case PAGE_HEADER_CRC:
 			pos += (res = pqc_get_zint32(pr->buffer+pos, &crc));
 			TRC_INFO(PARQUET, "crc %u\n", crc);
 			break;
-		case 5:
-			assert(type == 12);
+		case PAGE_HEADER_DATA_PAGE_HEADER:
+			assert(type == T_STRUCT);
 			pos = res = pqc_data_page(r, pr, pos, &num_values);
 			break;
-		case 6:
-			assert(type == 12);
+		case PAGE_HEADER_INDEX_PAGE_HEADER:
+			assert(type == T_STRUCT);
 			pos = res = pqc_index_page(r, pr, pos, &num_values);
 			break;
-		case 7:
-			assert(type == 12);
+		case PAGE_HEADER_DICTIONARY_PAGE_HEADER:
+			assert(type == T_STRUCT);
 			pos = res = pqc_dictionary_page(r, pr, pos, &num_values);
 			break;
-		case 8:
-			assert(type == 12);
+		case PAGE_HEADER_DATA_PAGE_HEADER_V2:
+			assert(type == T_STRUCT);
 			pos = res = pqc_data_pageV2(r, pr, pos, &num_values);
 			break;
 		}
