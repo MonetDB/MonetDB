@@ -30,6 +30,7 @@
 #include "bin_partition.h"
 
 #include <unistd.h>
+#include <glob.h>
 
 #include <pqc_reader.h>
 
@@ -90,6 +91,10 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				}
 			}
             break;
+		case listtype:
+			if (sql_find_subtype(tpe, "oid", 0, 0))
+				return tpe;
+            break;
 		default:
 			return NULL;
 	}
@@ -140,6 +145,8 @@ pqc_find_localtype(const pqc_schema_element *pse)
 			if (pse->size == 64)
 				return TYPE_lng;
 			break;
+		case listtype:
+			return TYPE_oid;
 		default:
 			return TYPE_void;
 	}
@@ -150,6 +157,15 @@ static str
 pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
 	pqc_file *pq = NULL;
+
+	if (filename && strchr(filename, '*')) {
+		glob_t pglob = {};
+		if (glob(filename, GLOB_ERR, NULL, &pglob) < 0)
+			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
+		if (pglob.gl_pathc)
+			filename = sa_strdup(sql->sa, pglob.gl_pathv[0]);
+		globfree(&pglob);
+	}
 	if (pqc_open(&pq, filename) < 0)
 		throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
 
@@ -161,11 +177,13 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	int nr = 0;
 	const pqc_schema_element *pse = pqc_get_schema_elements(pq, &nr);
 	if (pse) {
+		if (0)
 		if (pse->nchildren != (nr-1)) {
 			pqc_close(pq);
 			throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular", filename);
 		}
 		f->tname = tname;
+		if (0)
 		for(int i = 1; i < nr; i++ ) {
 			const pqc_schema_element *e = pse+i;
 
@@ -178,17 +196,22 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		list *types = sa_list(sql->sa), *names = sa_list(sql->sa);
 		for(int i = 1; i < nr; i++) {
 			const pqc_schema_element *e = pse+i;
-			sql_subtype *t = pqc_find_subtype(sql, e);
+			sql_subtype *t = (e->type)?pqc_find_subtype(sql, e):NULL;
 
-			if (!t) {
+			if (e->type && !t) {
 				int tpe = e->type;
 				char *nme = e->name?sa_strdup(sql->ta, e->name):NULL;
 				pqc_close(pq);
-				throw(SQL, SQLSTATE(42000), "parquet" "Data type (%d) not supported for column %s", tpe, nme);
+				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%d) not supported for column %s", tpe, nme);
 			}
+			if (!t)
+				t = sql_bind_localtype("oid");
 			list_append(types, t);
 			char *name = NULL;
 			if (e->name) {
+				if (i == 14)
+				name = mkLower(sa_strdup(sql->sa, "e1"));
+				else
 				name = mkLower(sa_strdup(sql->sa, e->name));
 			} else {
 				char buff[25];
@@ -199,6 +222,8 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			sql_exp *ne = exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0);
 			set_basecol(ne);
 			ne->alias.label = -(sql->nid++);
+			if (!e->type || e->type == listtype)
+				set_intern(ne);
 			list_append(res_exps, ne);
 			//printf("name %s %d(%d,%d) %s\n", e->name, e->type, e->precision, e->scale, e->repetition==0?"NOT NULL":e->repetition==2?"NESTED":"");
 		}
@@ -266,24 +291,72 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 	return r;
 }
 
-#define FILE_READER_VECTORSIZE (16*1024*16)
-static str
-PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+typedef struct pqc_mcreader {
+	Sink sink;
+	glob_t glob;
+	lng nrows;
+	int nrworkers;
+	ATOMIC_TYPE cnt;
+	char *done;
+	pqc_creader **c;	/* reader per worker */
+} pqc_mcreader;
+#define MPARQUET_SINK 44
+
+static void
+pqcmc_destroy(void *sink)
 {
-	(void)mb;
-	(void)cntxt;
-	bat *res = getArgReference_bat(stk, pci, 0);
-	bat pqb = *getArgReference_bat(stk, pci, pci->retc + 0);
-	int colno = *getArgReference_int(stk, pci, pci->retc + 1);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc + 2);
+	pqc_mcreader *r = (pqc_mcreader*)sink;
+
+	if (r->glob.gl_pathc)
+		globfree(&r->glob);
+	assert(r->sink.type == MPARQUET_SINK);
+	GDKfree(r->c);
+	GDKfree(r->done);
+	GDKfree(r);
+}
+
+static int
+pqcmc_done(void *sink, int wid)
+{
+	pqc_mcreader *r = (pqc_mcreader*)sink;
+	assert(r->sink.type == MPARQUET_SINK);
+	if (r->c && r->c[wid] && r->c[wid]->done[0]) {
+			pqcc_destroy(r->c[wid]);
+			r->c[wid] = NULL;
+	}
+	if (r->done[wid])
+		return 1;
+	return 0;
+}
+
+static pqc_mcreader *
+pqcmc_create(glob_t *glob, lng nrows)
+{
+	pqc_mcreader *r = (pqc_mcreader*)GDKzalloc(sizeof(pqc_mcreader));
+
+	if(!r) {
+		globfree(glob);
+		return NULL;
+	}
+	r->sink.destroy = &pqcmc_destroy;
+	r->sink.done = &pqcmc_done;
+	r->sink.type = MPARQUET_SINK;
+	r->nrworkers = 1;
+	r->glob = *glob;
+	r->nrows = nrows;
+	r->done = NULL;
+	r->c = NULL;
+	ATOMIC_INIT(&r->cnt, 0);
+	return r;
+}
+
+#define FILE_READER_VECTORSIZE (16*1024)
+//(16*1024*16)
+
+static str
+PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
+{
 	ssize_t sz = FILE_READER_VECTORSIZE;
-
-	BAT *b = BATdescriptor(pqb);
-	if (!b)
-		throw (SQL, "parquet.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	pqc_creader *r = (pqc_creader*)b->T.sink;
-	assert(r);
 
 	if (!r->c) {
 		pipeline_lock(p);
@@ -295,44 +368,45 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		pipeline_unlock(p);
 	}
-	int wnr = p->wid;
 	const pqc_schema_element *pse = r->fmd->elements+colno+1;
 	int localtype = pqc_find_localtype(pse);
 
-	if (!r->c[colno]) {
+	if (!r->c[pse->ccnr]) {
 		pipeline_lock(p);
-		if (!r->c[colno])
-			r->c[colno] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows, ATOMnilptr(localtype));
+		if (!r->c[pse->ccnr])
+			r->c[pse->ccnr] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows, ATOMnilptr(localtype));
 		pipeline_unlock(p);
 	}
-	pqc_mark_chunk(r->c[colno], r->nrworkers, wnr, sz);
+	pqc_mark_chunk(r->c[pse->ccnr], r->nrworkers, wnr, sz);
 
 	BAT *rb = NULL;
 
 	if (pse->type == stringtype) { /* remove vector from interface */
 		int ssize = 0, dict = 0;
-		if (pqc_read_chunk(r->c[colno], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
-			BBPreclaim(b);
+		if (pqc_read_chunk(r->c[pse->ccnr], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
-		/* prepare heap ?? */
-		dict = 2;
-		rb = COLnew2(0, localtype, sz, TRANSIENT, 2);
+		if (ssize < 256)
+			dict = 1;
+		else if (ssize < 64*1024)
+			dict = 2;
+		else
+			dict = 4;
+		/* prepare heap */
+		rb = COLnew2(0, localtype, sz, TRANSIENT, dict);
 		if (!rb) {
-			BBPreclaim(b);
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		Heap *h = rb->tvheap;
 		BUN size = GDK_STRHASHTABLE * sizeof(stridx_t) + ssize * GDK_VARALIGN;
 		if (h->storage == STORE_INVALID) {
 			if (HEAPalloc(h, size, 1) != GDK_SUCCEED) {
-				BBPreclaim(b);
 				throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-            }
+			}
 		}
 		assert(h->size >= size);
-        h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-        h->dirty = true;
+		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
+		h->dirty = true;
 #ifdef NDEBUG
         memset(h->base, 0, h->free);
 #else
@@ -342,8 +416,9 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		h->storage = STORE_NOWN; /* ugh */
         rb->tascii = true; /* tobe fixed */
 		int offset = 0;
-		if ((sz = pqc_read_chunk(r->c[colno], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
-			BBPreclaim(b);
+		if (dict == 4)
+			offset = h->free;
+		if ((sz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
@@ -351,11 +426,9 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else { /* fixed sized */
 		rb = COLnew(0, localtype, sz, TRANSIENT);
 		if (!rb) {
-			BBPreclaim(b);
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if ((sz = pqc_read_chunk(r->c[colno], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
-			BBPreclaim(b);
+		if ((sz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
@@ -366,11 +439,101 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (!sz && r->firstcol == colno)
 		r->done[wnr] = 1;
-
-	BBPreclaim(b);
-	*res = rb->batCacheid;
-	BBPkeepref(rb);
+	*R = rb;
 	return NULL;
+}
+
+static str
+PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
+{
+	assert(b->T.sink->type == MPARQUET_SINK);
+	pqc_mcreader *r = (pqc_mcreader*)b->T.sink;
+	assert(r);
+
+	int wnr = p->wid;
+	if (!r->c) {
+		pipeline_lock(p);
+		if (!r->c) {
+			r->nrworkers = p->p->nr_workers;
+			r->done = GDKzalloc( sizeof(char*) * r->nrworkers );
+			r->c = GDKzalloc( sizeof(pqc_creader*) * r->nrworkers);
+		}
+		pipeline_unlock(p);
+	}
+	if (!r->c[wnr]) {
+		pipeline_lock(p);
+		if (!r->c[wnr]) {
+			size_t x = ATOMIC_INC(&r->cnt);
+			if (x >= r->glob.gl_pathc) {
+				r->done[wnr] = 1;
+				pipeline_unlock(p);
+				return 0;
+			}
+			char *f = r->glob.gl_pathv[x];
+			pqc_file *pq = NULL;
+			lng nrows = r->nrows;
+
+			if (pqc_open(&pq, f) < 0) {
+				pipeline_unlock(p);
+				throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to open file '%s'", f);
+			}
+			/* read all filemetadata including chunks */
+			if (pqc_read_filemetadata(pq) < 0) {
+				pipeline_unlock(p);
+				pqc_close(pq);
+				throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to read metadata for file '%s'", f);
+			}
+			pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
+
+			if (nrows < 0)
+				nrows = fmd->nrows;
+			if (fmd->nrows > nrows)
+				fmd->nrows = nrows;
+			r->c[wnr] = pqcc_create(pq, fmd, nrows);
+			/* change into single reader */
+			r->c[wnr]->nrworkers = 1;
+			r->c[wnr]->done = GDKzalloc( sizeof(char*) );
+			r->c[wnr]->firstcol = colno;
+			r->c[wnr]->c = GDKzalloc( sizeof(pqc_reader_t*) * r->c[wnr]->ncols);
+		}
+		pipeline_unlock(p);
+	}
+	return PARQUETread_large(R, r->c[wnr], colno, p, 0);
+}
+
+static str
+PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	(void)cntxt;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat pqb = *getArgReference_bat(stk, pci, pci->retc + 0);
+	int colno = *getArgReference_int(stk, pci, pci->retc + 1);
+	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, pci->retc + 2);
+	char *msg = NULL;
+
+	BAT *b = BATdescriptor(pqb), *rb = NULL;
+	if (!b)
+		throw (SQL, "parquet.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (b->T.sink->type == PARQUET_SINK) {
+		assert(b->T.sink->type == PARQUET_SINK);
+		pqc_creader *r = (pqc_creader*)b->T.sink;
+		assert(r);
+
+		msg = PARQUETread_large(&rb, r, colno, p, p->wid);
+	} else {
+		msg = PARQUETread_multi(&rb, b, colno, p);
+	}
+	BBPreclaim(b);
+	if (!msg) {
+		if (!rb)
+			rb = COLnew(0, stk->stk[pci->argv[0]].vtype, 0, TRANSIENT);
+		if (rb) {
+			*res = rb->batCacheid;
+			BBPkeepref(rb);
+		}
+	}
+	return msg;
 }
 
 /* parquet.open
@@ -390,26 +553,38 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng nrows = *getArgReference_lng(stk, pci, pci->retc + 1);
 	pqc_file *pq = NULL;
 
-	if (pqc_open(&pq, f) < 0) {
-		throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to open file '%s'", f);
-	}
-	/* read all filemetadata including chunks */
-	if (pqc_read_filemetadata(pq) < 0) {
-		pqc_close(pq);
-		throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to read metadata for file '%s'", f);
-	}
-	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
-
 	BAT *b = COLnew(0, TYPE_oid, 1024, TRANSIENT);
 	if (!b)
 		throw(SQL, "parquet.open",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (nrows < 0)
-		nrows = fmd->nrows;
-	if (fmd->nrows > nrows)
-		fmd->nrows = nrows;
+	if (f && strchr(f, '*')) {
+		glob_t pglob = {};
+		if (glob(f, GLOB_ERR, NULL, &pglob) < 0) {
+			BBPreclaim(b);
+			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
+		}
+		b->T.sink = (Sink*)pqcmc_create(&pglob, nrows);
+	} else {
+		if (pqc_open(&pq, f) < 0) {
+			BBPreclaim(b);
+			throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to open file '%s'", f);
+		}
+		/* read all filemetadata including chunks */
+		if (pqc_read_filemetadata(pq) < 0) {
+			BBPreclaim(b);
+			pqc_close(pq);
+			throw(SQL, "parquet.open",  SQLSTATE(HY013) "Failed to read metadata for file '%s'", f);
+		}
+		pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
 
-	b->T.sink = (Sink*)pqcc_create(pq, fmd, nrows);
+		if (nrows < 0)
+			nrows = fmd->nrows;
+		if (fmd->nrows > nrows)
+			fmd->nrows = nrows;
+
+		b->T.sink = (Sink*)pqcc_create(pq, fmd, nrows);
+	}
+
 	if (!b->T.sink) {
 		BBPreclaim(b);
 		throw(SQL, "parquet.open",  SQLSTATE(HY013) MAL_MALLOC_FAIL);

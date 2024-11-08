@@ -173,11 +173,47 @@ typedef enum {
     KEY_VALUE_VALUE = 2        // optional string value
 } KeyValueFields;
 
+typedef enum {
+    PAGE_HEADER_TYPE = 1,                  // PageType type
+    PAGE_HEADER_UNCOMPRESSED_PAGE_SIZE = 2, // i32 uncompressed_page_size
+    PAGE_HEADER_COMPRESSED_PAGE_SIZE = 3,   // i32 compressed_page_size
+    PAGE_HEADER_CRC = 4,                    // i32 crc (optional)
+    PAGE_HEADER_DATA_PAGE_HEADER = 5,       // DataPageHeader data_page_header (optional)
+    PAGE_HEADER_INDEX_PAGE_HEADER = 6,      // IndexPageHeader index_page_header (optional)
+    PAGE_HEADER_DICTIONARY_PAGE_HEADER = 7, // DictionaryPageHeader dictionary_page_header (optional)
+    PAGE_HEADER_DATA_PAGE_HEADER_V2 = 8     // DataPageHeaderV2 data_page_header_v2 (optional)
+} PageHeaderFields;
+
+typedef enum {
+    DATA_PAGE_HEADER_NUM_VALUES = 1,                 // i32 num_values
+    DATA_PAGE_HEADER_ENCODING = 2,                   // Encoding encoding
+    DATA_PAGE_HEADER_DEFINITION_LEVEL_ENCODING = 3,  // Encoding definition_level_encoding
+    DATA_PAGE_HEADER_REPETITION_LEVEL_ENCODING = 4,  // Encoding repetition_level_encoding
+    DATA_PAGE_HEADER_STATISTICS = 5                  // Statistics statistics (optional)
+} DataPageHeaderFields;
+
+typedef enum {
+    DATA_PAGE_HEADER_V2_NUM_VALUES = 1,                       // i32 num_values
+    DATA_PAGE_HEADER_V2_NUM_NULLS = 2,                        // i32 num_nulls
+    DATA_PAGE_HEADER_V2_NUM_ROWS = 3,                         // i32 num_rows
+    DATA_PAGE_HEADER_V2_ENCODING = 4,                         // Encoding encoding
+    DATA_PAGE_HEADER_V2_DEFINITION_LEVELS_BYTE_LENGTH = 5,    // i32 definition_levels_byte_length
+    DATA_PAGE_HEADER_V2_REPETITION_LEVELS_BYTE_LENGTH = 6,    // i32 repetition_levels_byte_length
+    DATA_PAGE_HEADER_V2_IS_COMPRESSED = 7,                    // bool is_compressed (optional)
+    DATA_PAGE_HEADER_V2_STATISTICS = 8                        // Statistics statistics (optional)
+} DataPageHeaderV2Fields;
+
+typedef enum {
+    DICTIONARY_PAGE_HEADER_NUM_VALUES = 1,  // i32 num_values
+    DICTIONARY_PAGE_HEADER_ENCODING = 2,    // Encoding encoding
+    DICTIONARY_PAGE_HEADER_IS_SORTED = 3    // bool is_sorted (optional)
+} DictionaryPageHeaderFields;
 
 
 
 typedef struct pqc_schema_element {
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
+	int ccnr;
 	int scale;
 	int precision;
 	int size;		/* type size, int-8/16/32 are stored in a 32 bit, etc */
@@ -188,6 +224,9 @@ typedef struct pqc_schema_element {
 	int repetition; /* required (NOT NULL), optional (NULL), repeated */
 	char *name;
 	int nchildren;
+	int curchild; /* only needed during meta data parsing */
+	struct pqc_schema_element **elements;
+	struct pqc_schema_element *parent;
 	/* optional logical type */
 } pqc_schema_element;
 
@@ -214,6 +253,18 @@ typedef struct pqc_pageencodings {
 	u_int32_t page_count;
 } pqc_pageencodings;
 
+typedef struct pqc_page {
+	u_int32_t num_values;
+	u_int32_t num_nulls;
+	u_int32_t num_rows;
+	pqc_pageencodings pageencodings[3];
+	u_int32_t definition_levels_byte_length; /* v2 only, v1 had it in the rle block */
+	u_int32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
+	bool is_compressed;
+	pqc_stat stat;
+	u_int32_t num_read;
+} pqc_page;
+
 typedef struct pqc_columnchunk {
 	char *file_path;
 	u_int64_t file_offset;
@@ -228,20 +279,16 @@ typedef struct pqc_columnchunk {
 	u_int32_t encodings[3];
 	u_int32_t codec;
 	u_int64_t nrows;
-	u_int32_t num_values;
-	u_int32_t num_nulls;
-	u_int32_t num_rows;
+	//u_int32_t num_values;
+	pqc_page cur_page;
 	u_int64_t total_uncompressed_size;
 	u_int64_t total_compressed_size;
 	u_int64_t data_page_offset;
 	u_int64_t index_page_offset;
 	u_int64_t dictionary_page_offset;
-	u_int32_t definition_levels_byte_length; /* v2 only, v1 had it in the rle block */
-	u_int32_t repetition_levels_byte_length; /* v2 only, v1 had it in the rle block */
-	bool is_compressed;
 
 	pqc_stat stat;
-	pqc_pageencodings pageencodings[3];
+	pqc_pageencodings pageencodings[3]; // page encodings stats
 
 	int nkeyvalues;
 	pqc_keyvalue *keyvalues; /* optional key values */
