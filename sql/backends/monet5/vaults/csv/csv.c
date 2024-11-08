@@ -394,7 +394,7 @@ typedef struct csv_t {
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
+csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname, lng *est)
 {
 	stream *file = csv_open_file(filename);
 	char buf[8196+1];
@@ -407,6 +407,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect types
 	 * detect header
 	 */
+	assert(0); /* TODO add output estimation */
+	*est = 0;
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
 	mnstr_destroy(file);

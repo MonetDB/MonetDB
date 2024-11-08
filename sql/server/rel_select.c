@@ -27,6 +27,7 @@
 #include "rel_schema.h"
 #include "rel_unnest.h"
 #include "rel_sequence.h"
+#include "rel_rewriter.h"
 #include "rel_file_loader.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
@@ -579,7 +580,7 @@ nary_function_arg_types_2str(mvc *sql, list* types, int N)
 }
 
 static char *
-file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname)
+file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *res_exps, char *tname, lng *est)
 {
 	sql_exp *file = exps->h->data;
 	if (!exp_is_atom(file))
@@ -621,7 +622,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 		if (!fl) /* not expected */
 			return sa_message(sql->ta, "Filename extension '%s' missing", ext?ext:"");
 	}
-	str err = fl->add_types(sql, f, filename, res_exps, tname);
+	str err = fl->add_types(sql, f, filename, res_exps, tname, est);
 	if (err)
 		return err;
 	sql_subtype *st = sql_bind_localtype("str");
@@ -642,13 +643,16 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 		list *nexps = exps;
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
+			lng est = 0;
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
-				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
+				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname, &est);
 				if (err)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: file_loader function failed '%s'", err);
 			}
 			sql_exp *e = exp_op(sql->sa, nexps, f);
 			sql_rel *rel = rel_table_func(sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
+			if (rel && est)
+				set_count_prop(sql->sa, rel, est);
 			if (rel)
 				rel = rel_project(sql->sa, rel, exps_alias(sql, res_exps));
 			return rel;
