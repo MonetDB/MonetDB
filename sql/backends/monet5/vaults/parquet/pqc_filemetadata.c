@@ -1026,9 +1026,13 @@ pqc_read_columnchunk( pqc_file *pq, pqc_columnchunk *cc, int pos )
 			TRC_INFO(PARQUET, "column_index_length %u\n", cc->column_index_length);
 			break;
 		case COLUMN_CHUNK_CRYPTO_METADATA:
+			TRC_ERROR(PARQUET, "No support for field_id COLUMN_CHUNK_CRYPTO_METADATA");
+			return -1;
 		case COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA:
+			TRC_ERROR(PARQUET, "No support for field_id COLUMN_CHUNK_ENCRYPTED_COLUMN_METADATA");
+			return -1;
 		default:
-			TRC_ERROR(PARQUET, "No support for field id %d type %d\n", fieldid, type);
+			TRC_ERROR(PARQUET, "No support for field_id %d type %d\n", fieldid, type);
 			return -1;
 		}
 	}
@@ -1254,9 +1258,13 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 				pos = pqc_columnorder(pq, pos);
 			break;
 		case FILE_METADATA_ENCRYPTION_ALGORITHM:
+			TRC_ERROR(PARQUET, "No support for field_id FILE_METADATA_ENCRYPTION_ALGORITHM");
+			return -1;
 		case FILE_METADATA_FOOTER_SIGNING_KEY_METADATA:
+			TRC_ERROR(PARQUET, "No support for field_id FILE_METADATA_FOOTER_SIGNING_KEY_METADATA");
+			return -1;
 		default:
-			TRC_ERROR(PARQUET, "No support for field id %d type %d\n", fieldid, type);
+			TRC_ERROR(PARQUET, "No support for field_id %d type %d\n", fieldid, type);
 			return -1;
 		}
 	}
