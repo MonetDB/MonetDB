@@ -154,16 +154,20 @@ pqc_find_localtype(const pqc_schema_element *pse)
 }
 
 static str
-pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
+pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname, lng *est)
 {
 	pqc_file *pq = NULL;
 
+	if (est)
+		*est = 1;
 	if (filename && strchr(filename, '*')) {
 		glob_t pglob = {};
 		if (glob(filename, GLOB_ERR, NULL, &pglob) < 0)
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
 		if (pglob.gl_pathc)
 			filename = sa_strdup(sql->sa, pglob.gl_pathv[0]);
+		if (est)
+			*est = pglob.gl_pathc;
 		globfree(&pglob);
 	}
 	if (pqc_open(&pq, filename) < 0)
@@ -174,6 +178,9 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data", filename);
 	}
 
+	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
+	if (est && fmd)
+		*est *= fmd->nrows;
 	int nr = 0;
 	const pqc_schema_element *pse = pqc_get_schema_elements(pq, &nr);
 	if (pse) {
