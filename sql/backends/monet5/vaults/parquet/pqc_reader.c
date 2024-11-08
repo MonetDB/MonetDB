@@ -1866,6 +1866,7 @@ pqc_project( char *output, char *data, u_int64_t nrows, int w)
 	} else {
 		assert(0);
 	}
+	return 0;
 }
 
 static int

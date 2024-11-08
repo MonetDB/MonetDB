@@ -52,6 +52,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	int *ap = Tloc(zza, 0);
 	int pa = 0;
 	lng ilen = 0, rlen = 0, tsz = BATcount(lcol) + BATcount(rcol);
+	(void)tsz;
 	for(BUN i = 0; i<sz; i++) {
 		int len = gp[i], ob = bp[i], oa = ap[i];
 		bool oside = side;
