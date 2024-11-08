@@ -104,7 +104,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int pos, int *s
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = sh;
-				} else {
+				} else if (sh) {
 					pos++;
 				}
 			} else if (nr_bits < 8) {
