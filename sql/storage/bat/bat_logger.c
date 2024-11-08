@@ -741,7 +741,7 @@ bl_postversion(void *Store, logger *lg)
 			tabins_first = false;
 			if (tabins(lg, tabins_first, -1, 0,
 					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2165 is tmp.keys.check */
+					   /* 2166 is tmp.keys.check */
 					   2077, &(int) {2166},		/* sys._columns.id */
 					   2078, "check",			/* sys._columns.name */
 					   2079, "varchar",			/* sys._columns.type */
