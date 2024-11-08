@@ -2795,7 +2795,7 @@ log_sequence(logger *lg, int seq, lng *id)
 }
 
 gdk_return
-log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
+log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt)
 {
 	bte tpe = find_type(lg, type);
 	gdk_return ok = GDK_SUCCEED;
