@@ -2944,6 +2944,7 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					j++; \
 				} else { \
 					oid val = canditer_idx(&ci, i); \
+					(void)val;\
 					assert(val != oid_nil); \
 					res[idx++] = i; \
 				} \
