@@ -106,7 +106,7 @@ log_temp_descriptor(log_bid b)
 
 #if defined CATALOG_JAN2022 || defined CATALOG_SEP2022
 static gdk_return
-tabins(logger *lg, bool first, int tt, int nid, ...)
+tabins(logger *lg, ...)
 {
 	va_list va;
 	int cid;
@@ -114,48 +114,20 @@ tabins(logger *lg, bool first, int tt, int nid, ...)
 	gdk_return rc;
 	BAT *b;
 
-	va_start(va, nid);
+	va_start(va, lg);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
 		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
-			va_end(va);
-			return GDK_FAIL;
-		}
-		if (first) {
-			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (bn == NULL) {
-				va_end(va);
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			if (replace_bat(lg, cid, bn) != GDK_SUCCEED) {
-				va_end(va);
-				bat_destroy(b);
-				bat_destroy(bn);
-				return GDK_FAIL;
-			}
-			/* logical refs of b stay the same: it is moved from catalog_bid to del */
-			bat_destroy(b);
-			b = bn;
+			rc = GDK_FAIL;
+			break;
 		}
 		rc = BUNappend(b, cval, true);
 		bat_destroy(b);
-		if (rc != GDK_SUCCEED) {
-			va_end(va);
-			return rc;
-		}
+		if (rc != GDK_SUCCEED)
+			break;
 	}
 	va_end(va);
-
-	if (tt >= 0) {
-		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
-			return GDK_FAIL;
-		rc = log_bat_persists(lg, b, nid);
-		bat_destroy(b);
-		if (rc != GDK_SUCCEED)
-			return rc;
-	}
-	return GDK_SUCCEED;
+	return rc;
 }
 #endif
 
@@ -164,7 +136,6 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
-	bool tabins_first = true;
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
@@ -686,7 +657,7 @@ bl_postversion(void *Store, logger *lg)
 		bat_destroy(b1);
 		bat_destroy(colnr);
 		bat_destroy(colid);
-		rc = tabins(lg, true, -1, 0,
+		rc = tabins(lg,
 					prid, &(msk) {false}, /* sys.privileges */
 					privids[0], &dbid, /* sys.privileges.obj_id */
 					privids[1], &(int) {USER_MONETDB}, /* sys.privileges.auth_id */
@@ -722,7 +693,7 @@ bl_postversion(void *Store, logger *lg)
 			BBPretain(check->batCacheid);
 			bat_destroy(check);
 
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2165 is sys.keys.check */
 					   2077, &(int) {2165},		/* sys._columns.id */
@@ -738,8 +709,7 @@ bl_postversion(void *Store, logger *lg)
 					   2086, str_nil,			/* sys._columns.storage */
 					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
-			tabins_first = false;
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2166 is tmp.keys.check */
 					   2077, &(int) {2166},		/* sys._columns.id */
