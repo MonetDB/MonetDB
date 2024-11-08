@@ -236,6 +236,8 @@ pqc_index_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_v
 		TRC_DEBUG(PARQUET, "field id %d type %d\n", fieldid, type);
 		if (!type)
 			break;
+		// FIX these field ids seems not defined yet
+		// https://github.com/apache/parquet-format/blob/730ab5de028a1e5aa2eb7537ed753cf3b2083200/src/main/thrift/parquet.thrift#L610
 		switch (fieldid) {
 		case 1:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
@@ -268,15 +270,15 @@ pqc_dictionary_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case DICTIONARY_PAGE_HEADER_NUM_VALUES:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
 			TRC_INFO(PARQUET, "num_values %d\n", *num_values);
 			break;
-		case 2:
+		case DICTIONARY_PAGE_HEADER_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &encoding);
 			TRC_INFO(PARQUET, "encoding %u\n", encoding);
 			break;
-		case 3:
+		case DICTIONARY_PAGE_HEADER_IS_SORTED:
 			TRC_INFO(PARQUET, "isSorted %d\n", type!=2);
 			break;
 		}
@@ -321,7 +323,7 @@ pqc_data_page(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_va
 			TRC_INFO(PARQUET, "repetition_level_encoding %u\n", repetition_level_encoding);
 			break;
 		case DATA_PAGE_HEADER_STATISTICS:
-			assert(type == 12);
+			assert(type == T_STRUCT);
 			pos = pqc_statistics(r, pr, &pr->cc->cur_page.stat, pos);
 			break;
 		}
@@ -347,42 +349,42 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_
 		if (!type)
 			break;
 		switch (fieldid) {
-		case 1:
+		case DATA_PAGE_HEADER_V2_NUM_VALUES:
 			pos += pqc_get_zint32(pr->buffer+pos, num_values);
 			pr->cc->cur_page.num_values = *num_values;
 			TRC_INFO(PARQUET, "num_values %u\n", *num_values);
 			break;
-		case 2:
+		case DATA_PAGE_HEADER_V2_NUM_NULLS:
 			pos += pqc_get_zint32(pr->buffer+pos, &num_nulls);
 			pr->cc->cur_page.num_nulls = num_nulls;
 			TRC_INFO(PARQUET, "num_nulls %u\n", num_nulls);
 			break;
-		case 3:
+		case DATA_PAGE_HEADER_V2_NUM_ROWS:
 			pos += pqc_get_zint32(pr->buffer+pos, &num_rows);
 			pr->cc->cur_page.num_rows = num_rows;
 			TRC_INFO(PARQUET, "num_rows %u\n", num_rows);
 			break;
-		case 4:
+		case DATA_PAGE_HEADER_V2_ENCODING:
 			pos += pqc_get_zint32(pr->buffer+pos, &encoding);
 			pr->cc->cur_page.pageencodings[0].page_encoding = encoding;
 			TRC_INFO(PARQUET, "page_encoding %u\n", encoding);
 			break;
-		case 5:
+		case DATA_PAGE_HEADER_V2_DEFINITION_LEVELS_BYTE_LENGTH:
 			pos += pqc_get_zint32(pr->buffer+pos, &definition_levels_byte_length);
 			pr->cc->cur_page.definition_levels_byte_length = definition_levels_byte_length;
 			TRC_INFO(PARQUET, "definition_levels_byte_length %u\n", definition_levels_byte_length);
 			break;
-		case 6:
+		case DATA_PAGE_HEADER_V2_REPETITION_LEVELS_BYTE_LENGTH:
 			pos += pqc_get_zint32(pr->buffer+pos, &repetition_levels_byte_length);
 			pr->cc->cur_page.repetition_levels_byte_length = repetition_levels_byte_length;
 			TRC_INFO(PARQUET, "repetition_levels_byte_length %u\n", repetition_levels_byte_length);
 			break;
-		case 7:
+		case DATA_PAGE_HEADER_V2_IS_COMPRESSED:
 			pr->cc->cur_page.is_compressed = (type != 2);
 			TRC_INFO(PARQUET, "is_compressed %d\n", pr->cc->cur_page.is_compressed);
 			break;
-		case 8:
-			assert(type == 12);
+		case DATA_PAGE_HEADER_V2_STATISTICS:
+			assert(type == T_STRUCT);
 			assert(0);
 			pqc_stat stat;
 			pos = pqc_statistics(r, pr, &stat, pos);

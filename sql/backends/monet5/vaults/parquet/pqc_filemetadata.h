@@ -192,6 +192,23 @@ typedef enum {
     DATA_PAGE_HEADER_STATISTICS = 5                  // Statistics statistics (optional)
 } DataPageHeaderFields;
 
+typedef enum {
+    DATA_PAGE_HEADER_V2_NUM_VALUES = 1,                       // i32 num_values
+    DATA_PAGE_HEADER_V2_NUM_NULLS = 2,                        // i32 num_nulls
+    DATA_PAGE_HEADER_V2_NUM_ROWS = 3,                         // i32 num_rows
+    DATA_PAGE_HEADER_V2_ENCODING = 4,                         // Encoding encoding
+    DATA_PAGE_HEADER_V2_DEFINITION_LEVELS_BYTE_LENGTH = 5,    // i32 definition_levels_byte_length
+    DATA_PAGE_HEADER_V2_REPETITION_LEVELS_BYTE_LENGTH = 6,    // i32 repetition_levels_byte_length
+    DATA_PAGE_HEADER_V2_IS_COMPRESSED = 7,                    // bool is_compressed (optional)
+    DATA_PAGE_HEADER_V2_STATISTICS = 8                        // Statistics statistics (optional)
+} DataPageHeaderV2Fields;
+
+typedef enum {
+    DICTIONARY_PAGE_HEADER_NUM_VALUES = 1,  // i32 num_values
+    DICTIONARY_PAGE_HEADER_ENCODING = 2,    // Encoding encoding
+    DICTIONARY_PAGE_HEADER_IS_SORTED = 3    // bool is_sorted (optional)
+} DictionaryPageHeaderFields;
+
 
 
 typedef struct pqc_schema_element {
