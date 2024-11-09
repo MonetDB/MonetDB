@@ -370,13 +370,11 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				list *el = e->l;
 				sql_exp *a = el->h->data;
 				sql_subtype *t = exp_subtype(a);
-				BUN est = get_rel_count(rel->l);
-				lng estimate;
 
-				if (est == BUN_NONE || (ulng) est > (ulng) GDK_lng_max) {
+				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, a);
+				if (estimate<0) {
+					assert(0);
 					estimate = 85000000;
-				} else {
-					estimate = (lng) est;
 				}
 
 				InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, false, curhash);

@@ -126,6 +126,8 @@ typedef struct hash_table {
 	ATOMIC_TYPE last;
 	size_t size;
 	gid mask;
+	Heap **pinned;		/* sharing variable objects means keep reference to varheaps */
+	int pinned_nr;
 	mallocator **allocators;
 	int nr_allocators;
 } hash_table;
@@ -145,6 +147,8 @@ typedef struct hash_payload {
 	int bits;
 	size_t nr_payloads;
 	gid mask;
+	Heap **pinned;		/* sharing variable objects means keep reference to varheaps */
+	int pinned_nr;
 	mallocator **allocators;
 	int nr_allocators;
 } hash_payload;

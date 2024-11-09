@@ -78,6 +78,9 @@ _ht_init(hash_table *h, bool freq)
 	if (h->gids == NULL) {
 		h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
 		h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
+		if (ATOMvarsized(h->type)) {
+			h->pinned = (Heap**)GDKzalloc(sizeof(Heap*)*1024);
+		}
 		if (h->vals == NULL || h->gids == NULL)
 			goto error;
 		if (h->p) {
@@ -114,6 +117,11 @@ ht_destroy(hash_table *ht)
 		GDKfree((void*)ht->gids);
 	if (ht->pgids)
 		GDKfree(ht->pgids);
+	if (ht->pinned_nr && ht->pinned) {
+		for(int i=0; i < ht->pinned_nr; i++)
+			HEAPdecref(ht->pinned[i], false);
+		GDKfree(ht->pinned);
+	}
 	if (ht->frequency)
 		GDKfree((void*)ht->frequency);
 	if (ht->matched)
@@ -150,6 +158,8 @@ _ht_create( int type, size_t size, bool freq, hash_table *p)
 	h->last = 0;
 	h->rehash = 0;
 	h->p = p;
+	h->pinned = NULL;
+	h->pinned_nr = 0; /* no more than 1024 */
 	if (type == TYPE_str) {
 		h->cmp = (fcmp)str_cmp;
 		h->hsh = (fhsh)str_hsh;
@@ -256,6 +266,11 @@ hp_destroy(hash_payload *hp)
 {
 	if (hp->payload)
 		GDKfree(hp->payload);
+	if (hp->pinned_nr && hp->pinned) {
+		for(int i=0; i < hp->pinned_nr; i++)
+			HEAPdecref(hp->pinned[i], false);
+		GDKfree(hp->pinned);
+	}
 	if (hp->allocators) {
 		for(int i = 0; i < hp->nr_allocators; i++) {
 			if(hp->allocators[i])
@@ -286,7 +301,10 @@ _hp_create(int type, size_t nplds, hash_table *parent)
 
 	hp->width = ATOMsize(atype);
 	hp->rehash = 0;
+	hp->pinned = NULL;
+	hp->pinned_nr = 0; /* no more than 1024 */
 	if (atype == TYPE_str) {
+		hp->pinned = (Heap**)GDKzalloc(sizeof(Heap*)*1024);
 		hp->cmp = (fcmp)str_cmp;
 		hp->hsh = (fhsh)str_hsh;
 	} else {
@@ -420,6 +438,19 @@ error:
 			MT_lock_unset(&BT->theaplock); \
 			MT_lock_unset(&SB->theaplock); \
 			BATswap_heaps(SB, BT, p); \
+		} else if (SB->tvheap->parentid != BT->tvheap->parentid) { \
+			int i = 0; \
+			for(i = 0; i < SK->pinned_nr; i++) { \
+				if (SK->pinned[i] == BT->tvheap) \
+					break; \
+			} \
+			if (i == SK->pinned_nr) { \
+				HEAPincref(BT->tvheap); \
+				SK->pinned[SK->pinned_nr++] = BT->tvheap; \
+				assert(SK->pinned_nr < 1024); \
+			} \
+			MT_lock_unset(&BT->theaplock); \
+			MT_lock_unset(&SB->theaplock); \
 		} else { \
 			MT_lock_unset(&BT->theaplock); \
 			MT_lock_unset(&SB->theaplock); \
