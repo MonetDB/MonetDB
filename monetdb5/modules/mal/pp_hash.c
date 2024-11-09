@@ -56,6 +56,9 @@ _ht_init( hash_table *h )
 	if (h->gids == NULL) {
 		h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
 		h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
+		if (ATOMvarsized(h->type)) {
+			h->pinned = (Heap**)GDKzalloc(sizeof(Heap*)*1024);
+		}
 		if (h->vals == NULL || h->gids == NULL)
 			goto error;
 		if (h->p) {
@@ -82,6 +85,11 @@ ht_destroy(hash_table *ht)
 		GDKfree((void*)ht->gids);
 	if (ht->pgids)
 		GDKfree(ht->pgids);
+	if (ht->pinned_nr && ht->pinned) {
+		for(int i=0; i < ht->pinned_nr; i++)
+			HEAPdecref(ht->pinned[i], false);
+		GDKfree(ht->pinned);
+	}
 	if (ht->allocators) {
 		for(int i = 0; i<ht->nr_allocators; i++) {
 			if(ht->allocators[i])
@@ -114,6 +122,8 @@ _ht_create( int type, int size, hash_table *p)
 	h->last = 0;
 	h->rehash = 0;
 	h->p = p;
+	h->pinned = NULL;
+	h->pinned_nr = 0; /* no more than 1024 */
 	if (type == TYPE_str) {
 		h->cmp = (fcmp)str_cmp;
 		h->hsh = (fhsh)str_hsh;
