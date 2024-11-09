@@ -232,6 +232,10 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			if (!e->type || e->type == listtype)
 				set_intern(ne);
 			list_append(res_exps, ne);
+			if (e->precision && *est > (1L<<e->precision)) {
+				prop *p = ne->p = prop_create(sql->sa, PROP_NUNIQUES, ne->p);
+				p->value.dval = 1L << e->precision;
+			}
 			//printf("name %s %d(%d,%d) %s\n", e->name, e->type, e->precision, e->scale, e->repetition==0?"NOT NULL":e->repetition==2?"NESTED":"");
 		}
 		f->res = types;
@@ -408,6 +412,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		BUN size = GDK_STRHASHTABLE * sizeof(stridx_t) + ssize * GDK_VARALIGN;
 		if (h->storage == STORE_INVALID) {
 			if (HEAPalloc(h, size, 1) != GDK_SUCCEED) {
+				BBPreclaim(rb);
 				throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
@@ -420,7 +425,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
         /* fill should solve initialization problems within valgrind */
         memset(h->base, 0, h->size);
 #endif
-		h->storage = STORE_NOWN; /* ugh */
+		//h->storage = STORE_NOWN; /* ugh */
         rb->tascii = true; /* tobe fixed */
 		int offset = 0;
 		if (dict == 4)
