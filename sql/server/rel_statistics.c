@@ -180,7 +180,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			atom *fval;
 			prop *est;
 			if ((found = rel_find_exp(rel, e))) {
-				if (rel->op != op_table) { /* At the moment don't propagate statistics for table relations */
+				if (found /*rel->op != op_table*/) { /* At the moment don't propagate statistics for table relations */
 					if ((fval = find_prop_and_get(found->p, PROP_MAX)))
 						set_minmax_property(sql, e, PROP_MAX, fval);
 					if ((fval = find_prop_and_get(found->p, PROP_MIN)))
@@ -194,7 +194,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					if (is_groupby(rel->op) && list_empty(rel->r) && !find_prop(e->p, PROP_NUNIQUES)) { /* global aggregate case */
 						prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 						p->value.dval = 1;
-					} else if (((is_basetable(rel->op) || is_except(rel->op) || is_inter(rel->op) || is_simple_project(rel->op) ||
+					} else if (((is_base/*table*/(rel->op) || is_except(rel->op) || is_inter(rel->op) || is_simple_project(rel->op) ||
 								 (is_groupby(rel->op) && exps_find_exp(rel->r, e))) &&
 								(est = find_prop(found->p, PROP_NUNIQUES)) && !find_prop(e->p, PROP_NUNIQUES))) {
 						prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
@@ -1155,6 +1155,19 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						strncmp(f->func->base.name, "storage", 7) == 0 ||
 						strcmp(f->func->base.name, "sessions") == 0) ) {
 				set_count_prop(v->sql->sa, rel, 1000 /* TODO get size of queue */);
+			}
+			if (rel->p && !list_empty(rel->exps)) {
+				prop *p = find_prop(rel->p, PROP_COUNT);
+				if (p) {
+					BUN uniques = (BUN) p->value.lval;
+					for(node *n = rel->exps->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						if (!e->p) {
+							prop *p = e->p = prop_create(v->sql->sa, PROP_NUNIQUES, e->p);
+							p->value.dval = uniques;
+						}
+					}
+				}
 			}
 			/* else {
 				printf("%%func needs stats : %s\n", f->func->base.name);
