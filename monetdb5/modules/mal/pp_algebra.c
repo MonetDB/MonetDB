@@ -900,6 +900,39 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 	}
 
 /* todo handle all any types */
+#define aunique_(Type) \
+	if (tt == TYPE_##Type) { \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		mallocator *ma = h->allocators[p->wid]; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				Type bpi = BUNtvar(bi, i); \
+				gid k = (gid)h->hsh(bpi)&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (h->cmp(vals[k], bpi) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = ma_strdup(ma, bpi); \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+		bat_iterator_end(&bi); \
+	}
+
 #define aunique(Type) \
 	if (tt == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
@@ -940,6 +973,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
+	bool local_storage = false;
 
 	BAT *u = BATdescriptor(*uid);
 	BAT *b = BATdescriptor(*bid);
@@ -952,7 +986,30 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	assert(h && h->s.type == HASH_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+		local_storage = true;
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		pipeline_lock(p);
+		if (!h->allocators) {
+			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
+			if (!h->allocators) {
+				pipeline_unlock(p);
+				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			} else
+				h->nr_allocators = p->p->nr_workers;
+		}
+		pipeline_unlock(p);
+		assert(p->wid < p->p->nr_workers);
+		if (!h->allocators[p->wid]) {
+			h->allocators[p->wid] = ma_create();
+			if (!h->allocators[p->wid]) {
+				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
+		}
+	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
 		BATswap_heaps(u, b, p);
@@ -1006,7 +1063,11 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 #ifdef HAVE_HGE
 			cunique(uuid, hge)
 #endif
-			aunique(str)
+			if (local_storage) {
+				aunique_(str)
+			} else {
+				aunique(str)
+			}
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
@@ -1126,6 +1187,40 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	}
 
 /* todo handle all any types */
+#define gaunique_(Type) \
+	if (tt == TYPE_##Type) { \
+		BATiter bi = bat_iterator(b); \
+		Type *vals = h->vals; \
+		mallocator *ma = h->allocators[P->wid]; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			bool new = 0, fnd = 0; \
+			\
+			for(; !fnd; ) { \
+				Type bpi = BUNtvar(bi, i); \
+				gid k = (gid)combine(p[i], h->hsh(bpi), prime)&h->mask; \
+				gid g = ATOMIC_GET(h->gids+k); \
+				for(;g&1 && (pgids[k] != p[i] || h->cmp(vals[k], bpi) != 0);) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
+					vals[k] = ma_strdup(ma, bpi); \
+					pgids[k] = p[i]; \
+					new = 1; \
+					g = ATOMIC_INC(h->gids+k); \
+				} \
+				if ((g&1) == 0) \
+					continue; \
+				fnd = 1; \
+			} \
+			if (new) \
+			gp[r++] = b->hseqbase + i; \
+		} \
+		bat_iterator_end(&bi); \
+	}
+
 #define gaunique(Type) \
 	if (tt == TYPE_##Type) { \
 		BATiter bi = bat_iterator(b); \
@@ -1162,11 +1257,12 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 static str
 LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 {
-	Pipeline *p = (Pipeline*)*H;
+	Pipeline *P = (Pipeline*)*H;
 	assert(!is_bat_nil(*uid));
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
 	(void)sid;
+	bool local_storage = false;
 
 	BAT *u = BATdescriptor(*uid);
 	BAT *G = BATdescriptor(*Gid);
@@ -1180,10 +1276,33 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	assert(h && h->s.type == HASH_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
-		BATswap_heaps(u, b, p);
+		pipeline_lock(P);
+		if (!h->allocators) {
+			h->allocators = (mallocator**)GDKzalloc(P->p->nr_workers*sizeof(mallocator*));
+			if (!h->allocators) {
+				pipeline_unlock(P);
+				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			} else
+				h->nr_allocators = P->p->nr_workers;
+		}
+		pipeline_unlock(P);
+		assert(P->wid < P->p->nr_workers);
+		if (!h->allocators[P->wid]) {
+			h->allocators[P->wid] = ma_create();
+			if (!h->allocators[P->wid]) {
+				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto error;
+			}
+		}
+	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&u->theaplock);
+		BATswap_heaps(u, b, P);
 	} else if (ATOMvarsized(u->ttype) && u->tvheap->parentid != b->tvheap->parentid) {
 		int i = 0;
 		for(i = 0; i < h->pinned_nr; i++) {
@@ -1237,7 +1356,11 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 #ifdef HAVE_HGE
 			gcunique(uuid, hge)
 #endif
-			gaunique(str)
+			if (local_storage) {
+				gaunique_(str)
+			} else {
+				gaunique(str)
+			}
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
