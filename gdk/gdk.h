@@ -479,12 +479,12 @@ typedef union {
 #else
 	lng l[2];		/* force alignment, not otherwise used */
 #endif
-	uint8_t u[UUID_SIZE];
+	uint8_t u[UUID_SIZE] __attribute__((__nonstring__));
 } uuid;
 
 typedef struct {
 	size_t nitems;
-	char data[] __attribute__((__nonstring__));
+	uint8_t data[] __attribute__((__nonstring__));
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 

@@ -1532,11 +1532,8 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	s = *tostr;
 
 	for (i = 0; i < p->nitems; i++) {
-		int val = (p->data[i] >> 4) & 15;
-
-		*s++ = hexit[val];
-		val = p->data[i] & 15;
-		*s++ = hexit[val];
+		*s++ = hexit[(p->data[i] >> 4) & 15];
+		*s++ = hexit[p->data[i] & 15];
 	}
 	*s = '\0';
 	return (ssize_t) (s - *tostr);
@@ -1593,7 +1590,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	   // Read the values of the blob.
 	 */
 	for (i = 0; i < nitems; ++i) {
-		char res = 0;
+		int res = 0;
 
 		for (;;) {
 			if (*s >= '0' && *s <= '9') {
@@ -1627,7 +1624,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		}
 		s++;
 
-		result->data[i] = res;
+		result->data[i] = (uint8_t) res;
 	}
 	while (GDKisspace(*s))
 		s++;
