@@ -13,18 +13,18 @@
 
 extern InstrPtr stmt_oahash_new(backend *be, int tt, int estimate, bit freq, int parent);
 extern InstrPtr stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previous);
-extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, stmt *key, stmt *pp);
-extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, stmt *key, int prnt_slts, int prnt_ht, stmt *pp);
-extern InstrPtr stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos, stmt *pp);
+extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, const stmt *key, const stmt *pp);
+extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, const stmt *key, int prnt_slts, int prnt_ht, const stmt *pp);
+extern InstrPtr stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos, const stmt *pp);
 
-extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, stmt *pp);
-extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, stmt *pp);
-extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt *pp);
-extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht, bit single, stmt *pp);
+extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, const stmt *pp);
+extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, const stmt *pp);
+extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, const stmt *pp);
+extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht, bit single, bit semantics, const stmt *pp);
 
-extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, stmt *pp);
-extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit append_vals, stmt *pp);
-extern InstrPtr stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sink, stmt *norows_prb, bit outer, stmt *pp);
+extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);
+extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq_sink, bit append_vals, const stmt *pp);
+extern InstrPtr stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);

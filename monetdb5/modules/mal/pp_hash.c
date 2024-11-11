@@ -17,7 +17,7 @@
 #include "pp_hash.h"
 
 static int
-str_cmp(str s1, str s2)
+str_cmp(const char * s1, const char * s2)
 {
 	return strcmp(s1,s2);
 }
@@ -855,7 +855,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, bat *key, const ptr *H)
+BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, const bat *key, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
@@ -1218,7 +1218,7 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, bat *key, bat *parent_slotid, bat *parent_ht, const ptr *H)
+OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, const bat *key, const bat *parent_slotid, const bat *parent_ht, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool private = 0, local_storage = false;
@@ -1349,7 +1349,7 @@ error:
 }
 
 static str
-OAHASHcmpt_freq(bat *ht_sink, bat *slot_id, const ptr *H)
+OAHASHcmpt_freq(bat *ht_sink, const bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1394,7 +1394,7 @@ error:
 }
 
 static str
-OAHASHcmpt_freq_pos(bat *payload_pos, bat *ht_sink, bat *slot_id, const ptr *H)
+OAHASHcmpt_freq_pos(bat *payload_pos, bat *ht_sink, const bat *slot_id, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	str err = NULL;
@@ -1525,7 +1525,7 @@ error:
 	} while (0)
 
 static str
-OAHASHadd_pld(bat *hp_sink, bat *payload, bat *payload_pos, const ptr *H)
+OAHASHadd_pld(bat *hp_sink, const bat *payload, const bat *payload_pos, const ptr *H)
 {
 	Pipeline *p = (Pipeline*)*H;
 	bool local_storage = false;
@@ -1751,7 +1751,7 @@ OAHASHhash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-BAT_OAHASHhash(bat *hsh, bat *key, const ptr *H)
+BAT_OAHASHhash(bat *hsh, const bat *key, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL;
 	BUN cnt;
@@ -1970,7 +1970,7 @@ OAHASHhash_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-BAT_OAHASHhash_cmbd(bat *hsh, bat *key, bat *selected, bat *parent_slotid, const ptr *H)
+BAT_OAHASHhash_cmbd(bat *hsh, const bat *key, const bat *selected, const bat *parent_slotid, const ptr *H)
 {
 	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL;
 	BUN cnt;
@@ -2207,6 +2207,8 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			oid ky = canditer_next(&ci); \
 			assert(ky != oid_nil); \
+			if (!(*semantics) && ky == oid_nil) \
+				continue; \
 			\
 			gid k = hs[i]&ht->mask; \
 			gid slot = ht->gids[k]; \
@@ -2235,6 +2237,9 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			if (!(*semantics) && ky[i] == Type##_nil) \
+				continue; \
+			\
 			gid k = hs[i]&ht->mask; \
 			gid slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky[i]) { \
@@ -2262,10 +2267,14 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		const void *nil = ATOMnilptr(tt); \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			gid k = hs[i]&ht->mask; \
 			gid slot = ht->gids[k]; \
 			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
+			if (!(*semantics) && atomcmp(val, nil) == 0) \
+				continue; \
+			\
 			while (slot && atomcmp(vals[slot], val) != 0) { \
 				k++; \
 				k &= ht->mask; \
@@ -2285,7 +2294,7 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *RHS_ht, bit *single, const ptr *H)
+BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
@@ -2495,6 +2504,8 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			oid ky = canditer_idx(&ci, mt[i]); \
 			assert(ky != oid_nil); \
+			if (!(*semantics) && ky == oid_nil) \
+				continue; \
 			\
 			gid hsh = hs[mt[i]]&ht->mask; \
 			gid slot = ht->gids[hsh]; \
@@ -2527,6 +2538,9 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gid hsh = hs[mt[i]]&ht->mask; \
 			gid slot = ht->gids[hsh]; \
 			Type val = ky[mt[i]]; \
+			if (!(*semantics) && val == Type##_nil) \
+				continue; \
+			\
 			while (slot && vals[slot] != val) { \
 				hsh++; \
 				hsh &= ht->mask; \
@@ -2553,10 +2567,14 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		oid *mtd = Tloc(res_m, 0); \
 		oid *slt = Tloc(res_s, 0); \
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		const void *nil = ATOMnilptr(tt); \
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			gid hsh = hs[mt[i]]&ht->mask; \
 			gid slot = ht->gids[hsh]; \
 			char *val = (bi).vh->base+BUNtvaroff(bi,mt[i]); \
+			if (!(*semantics) && atomcmp(val, nil) == 0) \
+				continue; \
+			\
 			while (slot && atomcmp(vals[slot], val) != 0) { \
 				hsh++; \
 				hsh &= ht->mask; \
@@ -2576,7 +2594,7 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *LHS_key, bat *LHS_hash, bat *LHS_selected, bat *RHS_ht, bit *single, const ptr *H)
+BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
 {
 	BAT *res_m = NULL, *res_s = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
@@ -2731,7 +2749,7 @@ error:
 	} while (0)
 
 static str
-OAHASHproject(bat *res, bat *key, bat *selected, const ptr *H)
+OAHASHproject(bat *res, const bat *key, const bat *selected, const ptr *H)
 {
 	BAT *e = NULL, *k = NULL, *s = NULL;
 	BUN rescnt = 0;
@@ -3062,7 +3080,7 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 static str
-BAT_OAHASHexpand(bat *expanded, bat *key, bat *selected, bat *slotid, bat *freq_sink, bit *outer, const ptr *H)
+BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *slotid, const bat *freq_sink, const bit *outer, const ptr *H)
 {
 	BAT *e = NULL, *k = NULL, *s = NULL, *l = NULL, *h = NULL;
 	BUN keycnt, selcnt, ttlcnt = 0, xpdcnt = 0;
@@ -3234,7 +3252,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHexpand_cart(bat *expanded, bat *col, lng *norows, const ptr *H)
+BAT_OAHASHexpand_cart(bat *expanded, const bat *col, const lng *norows, const ptr *H)
 {
 	(void) H;
 
@@ -3542,7 +3560,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHfetch_pld(bat *fetched, bat *hp_sink, bat *slotid, bat *freq_sink, lng *norows_prb, bit *outer, const ptr *H)
+BAT_OAHASHfetch_pld(bat *fetched, const bat *hp_sink, const bat *slotid, const bat *freq_sink, const lng *norows_prb, const bit *outer, const ptr *H)
 {
 	BAT *f = NULL, *l = NULL, *hps = NULL, *hts = NULL;
 	BUN nllcnt, selcnt, ttlcnt = 0, fchcnt =  0;
@@ -3707,7 +3725,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHfetch_pld_cart(bat *fetched, bat *col, lng *norepeats, const ptr *H)
+BAT_OAHASHfetch_pld_cart(bat *fetched, const bat *col, const lng *norepeats, const ptr *H)
 {
 	(void) H;
 
@@ -3878,13 +3896,13 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
 // pattern("oahash", "probe", OAHASHprobe, false, "Probe the (key, hash) in the hash table. Returns (0@0, ht-slotid), or (oid_nil, oid_nil) if no match", args(2,6, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,7, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("pipeline",ptr))),
+ command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
 // pattern("oahash", "combined_hash", OAHASHhash_cmbd, false, "If selected, compute the combined hash of key+parent_slotid; otherwise lng_nil", args(1,5, arg("hsh",lng),argany("key",1),arg("selected",oid),arg("parent_slotid",oid),arg("pipeline",ptr))),
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
 // pattern("oahash", "combined_probe", OAHASHprobe_cmbd, false, "If selected, probe the (key, hash) in the hash table. Returns (0@0, RHS_slotid) if there was a match; otherwise (oid_nil, oid_nil)", args(2,7, arg("LHS_matched",oid),arg("RHS_slotid",oid),argany("LHS_key",1),arg("LHS_hash",lng),arg("LHS_selected",oid),batargany("RHS_ht",2),arg("pipeline",ptr))),
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("single",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,9, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 

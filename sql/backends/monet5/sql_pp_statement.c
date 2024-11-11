@@ -454,7 +454,7 @@ stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previ
 }
 
 InstrPtr
-stmt_oahash_build_ht(backend *be, int ht_sink, stmt *key, stmt *pp)
+stmt_oahash_build_ht(backend *be, int ht_sink, const stmt *key, const stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_table"), 4);
 	if (q == NULL) return NULL;
@@ -469,7 +469,7 @@ stmt_oahash_build_ht(backend *be, int ht_sink, stmt *key, stmt *pp)
 }
 
 InstrPtr
-stmt_oahash_build_combined_ht(backend *be, int ht_sink, stmt *key, int prnt_slts, int prnt_ht, stmt *pp)
+stmt_oahash_build_combined_ht(backend *be, int ht_sink, const stmt *key, int prnt_slts, int prnt_ht, const stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("build_combined_table"), 6);
 	if (q == NULL) return NULL;
@@ -486,7 +486,7 @@ stmt_oahash_build_combined_ht(backend *be, int ht_sink, stmt *key, int prnt_slts
 }
 
 InstrPtr
-stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos, stmt *pp)
+stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos, const stmt *pp)
 {
 	MalBlkPtr mb = be->mb;
 
@@ -505,7 +505,7 @@ stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos
 }
 
 InstrPtr
-stmt_oahash_hash(backend *be, stmt *key, stmt *pp)
+stmt_oahash_hash(backend *be, stmt *key, const stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("hash"), 3);
 	if (q == NULL)
@@ -519,7 +519,7 @@ stmt_oahash_hash(backend *be, stmt *key, stmt *pp)
 }
 
 InstrPtr
-stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, stmt *pp)
+stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, const stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("probe"), 6);
 	if (q == NULL)
@@ -530,13 +530,14 @@ stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, stmt 
 	q = pushArgument(be->mb, q, hsh);
 	q = pushArgument(be->mb, q, rhs_ht);
 	q = pushBit(be->mb, q, single);
+	q = pushBit(be->mb, q, semantics);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
 }
 
 InstrPtr
-stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt *pp)
+stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, const stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_hash"), 5);
 	if (q == NULL)
@@ -551,7 +552,7 @@ stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, stmt 
 }
 
 InstrPtr
-stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht, bit single, stmt *pp)
+stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht, bit single, bit semantics, const stmt *pp)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_probe"), 7);
 	if (q == NULL)
@@ -563,13 +564,14 @@ stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int rhs_ht,
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, rhs_ht);
 	q = pushBit(be->mb, q, single);
+	q = pushBit(be->mb, q, semantics);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
 	return q;
 }
 
 InstrPtr
-stmt_oahash_project(backend *be, stmt *col, int sel, stmt *pp)
+stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
 
@@ -585,7 +587,7 @@ stmt_oahash_project(backend *be, stmt *col, int sel, stmt *pp)
 }
 
 InstrPtr
-stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink, bit outer, stmt *pp)
+stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq_sink, bit outer, const stmt *pp)
 {
 	int tt = tail_type(col)->type->localtype;
 
@@ -604,7 +606,7 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, stmt *freq_sink,
 }
 
 InstrPtr
-stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, stmt *freq_sink, stmt *norows_prb, bit outer, stmt *pp)
+stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
