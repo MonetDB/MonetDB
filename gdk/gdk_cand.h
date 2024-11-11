@@ -197,17 +197,22 @@ canditer_next(struct canditer *ci)
 #define canditer_search_dense(ci, o, next) ((o) < (ci)->seq ? next ? 0 : BUN_NONE : (o) >= (ci)->seq + (ci)->ncand ? next ? (ci)->ncand : BUN_NONE : (o) - (ci)->seq)
 
 gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s);
-gdk_export oid canditer_peek(struct canditer *ci);
-gdk_export oid canditer_last(const struct canditer *ci);
+gdk_export oid canditer_peek(struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_last(const struct canditer *ci)
+	__attribute__((__pure__));
 gdk_export oid canditer_prev(struct canditer *ci);
-gdk_export oid canditer_peekprev(struct canditer *ci);
-gdk_export oid canditer_idx(const struct canditer *ci, BUN p);
+gdk_export oid canditer_peekprev(struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_idx(const struct canditer *ci, BUN p)
+	__attribute__((__pure__));
 #define canditer_idx_dense(ci, p) ((p >= (ci)->ncand)?oid_nil:((ci)->seq + p))
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
-gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next);
-static inline bool
-canditer_contains(struct canditer *ci, oid o)
+gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next)
+	__attribute__((__pure__));
+static inline bool __attribute__((__pure__))
+canditer_contains(const struct canditer *ci, oid o)
 {
 	if (ci->tpe == cand_mask) {
 		if (o < ci->mskoff)
@@ -223,7 +228,8 @@ canditer_contains(struct canditer *ci, oid o)
 	}
 	return canditer_search(ci, o, false) != BUN_NONE;
 }
-gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next);
+gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next)
+	__attribute__((__pure__));
 gdk_export BAT *canditer_slice(const struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_sliceval(const struct canditer *ci, oid lo, oid hi);
 gdk_export BAT *canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
