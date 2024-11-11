@@ -20,7 +20,7 @@
 #define sql_export extern __declspec(dllimport)
 #endif
 #else
-#define sql_export extern
+#define sql_export __attribute__((__externally_visible__)) extern
 #endif
 
 sql_export void sql_register(const char *name, const unsigned char *code);

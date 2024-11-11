@@ -51,7 +51,7 @@ extern "C" {
 #endif
 
 #ifndef moptions_export
-#define moptions_export extern
+#define moptions_export __attribute__((__externally_visible__)) extern
 #endif
 
 /* For communication from `getopt' to the caller.

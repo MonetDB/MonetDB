@@ -27,7 +27,7 @@
 #define libgeom_export extern __declspec(dllexport)
 #endif
 #else
-#define libgeom_export extern
+#define libgeom_export __attribute__((__externally_visible__)) extern
 #endif
 
 #define GEOS_USE_ONLY_R_API 1

@@ -26,7 +26,7 @@
 #define sql_export extern __declspec(dllimport)
 #endif
 #else
-#define sql_export extern
+#define sql_export __attribute__((__externally_visible__)) extern
 #endif
 
 #define MNEW( type ) (type*)GDKmalloc(sizeof(type) )

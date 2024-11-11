@@ -28,7 +28,7 @@ extern "C" {
 #define monetdbe_export extern __declspec(dllexport)
 #endif
 #else
-#define monetdbe_export extern
+#define monetdbe_export __attribute__((__externally_visible__)) extern
 #endif
 
 typedef int64_t monetdbe_cnt;

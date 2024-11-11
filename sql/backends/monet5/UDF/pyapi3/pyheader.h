@@ -67,7 +67,7 @@
 #define pyapi_export extern __declspec(dllexport)
 #endif
 #else
-#define pyapi_export extern
+#define pyapi_export __attribute__((__externally_visible__)) extern
 #endif
 
 PyDateTime_CAPI *get_DateTimeAPI(void);

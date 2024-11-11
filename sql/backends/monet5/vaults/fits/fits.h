@@ -22,7 +22,7 @@
 #define fits_export extern __declspec(dllexport)
 #endif
 #else
-#define fits_export extern
+#define fits_export __attribute__((__externally_visible__)) extern
 #endif
 
 fits_export str FITStest(int *res, str *fname);
@@ -32,4 +32,3 @@ fits_export str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 fits_export str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 fits_export str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
-

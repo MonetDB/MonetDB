@@ -20,7 +20,7 @@
 #define mcrypt_export extern __declspec(dllexport)
 #endif
 #else
-#define mcrypt_export extern
+#define mcrypt_export __attribute__((__externally_visible__)) extern
 #endif
 
 mcrypt_export const char *mcrypt_getHashAlgorithms(void)

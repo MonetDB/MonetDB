@@ -25,7 +25,7 @@
 #define generator_export extern __declspec(dllexport)
 #endif
 #else
-#define generator_export extern
+#define generator_export __attribute__((__externally_visible__)) extern
 #endif
 
 generator_export str VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

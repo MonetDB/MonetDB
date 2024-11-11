@@ -46,7 +46,7 @@
 #  define stream_export extern __declspec(dllexport)
 # endif
 #else
-# define stream_export extern
+# define stream_export __attribute__((__externally_visible__)) extern
 #endif
 
 /* Defines to help the compiler check printf-style format arguments.

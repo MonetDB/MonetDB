@@ -180,7 +180,8 @@ BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-static inline BUN __attribute__((__const__))
+__attribute__((__const__))
+static inline BUN
 HASHmask(BUN cnt)
 {
 	cnt = cnt * 8 / 7;

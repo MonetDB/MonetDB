@@ -33,7 +33,7 @@ extern "C" {
 #define mapi_export extern __declspec(dllexport)
 #endif
 #else
-#define mapi_export extern
+#define mapi_export __attribute__((__externally_visible__)) extern
 #endif
 
 /////////////////////////////////////////////////////////////////////

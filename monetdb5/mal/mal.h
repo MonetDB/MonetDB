@@ -27,7 +27,7 @@
 #define mal_export extern __declspec(dllexport)
 #endif
 #else
-#define mal_export extern
+#define mal_export __attribute__((__externally_visible__)) extern
 #endif
 
 #ifdef HAVE_SYS_TIMES_H

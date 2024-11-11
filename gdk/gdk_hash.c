@@ -39,7 +39,8 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-static inline uint8_t __attribute__((__const__))
+__attribute__((__const__))
+static inline uint8_t
 HASHwidth(BUN hashsize)
 {
 	(void) hashsize;
@@ -54,7 +55,8 @@ HASHwidth(BUN hashsize)
 	return BUN4;
 }
 
-static inline BUN __attribute__((__const__))
+__attribute__((__const__))
+static inline BUN
 hashmask(BUN m)
 {
 	m |= m >> 1;

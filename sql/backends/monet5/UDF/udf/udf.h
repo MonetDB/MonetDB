@@ -28,7 +28,7 @@
 #define udf_export extern __declspec(dllexport)
 #endif
 #else
-#define udf_export extern
+#define udf_export __attribute__((__externally_visible__)) extern
 #endif
 
 /* export MAL wrapper functions */

@@ -22,7 +22,7 @@
 #define netcdf_export extern __declspec(dllexport)
 #endif
 #else
-#define netcdf_export extern
+#define netcdf_export __attribute__((__externally_visible__)) extern
 #endif
 
 netcdf_export str NCDFtest(int *vars, str *fname);
@@ -30,4 +30,3 @@ netcdf_export str NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 netcdf_export str NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid);
 netcdf_export str NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
-
