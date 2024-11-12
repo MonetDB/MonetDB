@@ -342,7 +342,7 @@
 #define gdk_export extern __declspec(dllexport)
 #endif
 #else
-#define gdk_export __attribute__((__externally_visible__)) extern
+#define gdk_export extern
 #endif
 
 /* Only ever compare with GDK_SUCCEED, never with GDK_FAIL, and do not

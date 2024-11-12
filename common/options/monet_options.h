@@ -30,7 +30,7 @@ extern "C" {
 #endif
 
 #ifndef moptions_export
-#define moptions_export __attribute__((__externally_visible__)) extern
+#define moptions_export extern
 #endif
 
 /* mo_print_options will print the option set on stderr */

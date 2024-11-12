@@ -33,7 +33,7 @@
 #define geom_export extern __declspec(dllexport)
 #endif
 #else
-#define geom_export __attribute__((__externally_visible__)) extern
+#define geom_export extern
 #endif
 
 wkb * geos2wkb(const GEOSGeometry *geosGeometry);

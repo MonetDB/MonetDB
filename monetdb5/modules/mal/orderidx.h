@@ -26,7 +26,7 @@
 #define orderidx_export extern __declspec(dllexport)
 #endif
 #else
-#define orderidx_export __attribute__((__externally_visible__)) extern
+#define orderidx_export extern
 #endif
 
 orderidx_export str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b,

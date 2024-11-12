@@ -22,7 +22,7 @@
 #define netcdf_export extern __declspec(dllexport)
 #endif
 #else
-#define netcdf_export __attribute__((__externally_visible__)) extern
+#define netcdf_export extern
 #endif
 
 netcdf_export str NCDFtest(int *vars, str *fname);

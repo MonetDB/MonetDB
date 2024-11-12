@@ -80,7 +80,7 @@ void GDALWClose(GDALWConnection *);
 #define shp_export extern __declspec(dllexport)
 #endif
 #else
-#define shp_export __attribute__((__externally_visible__)) extern
+#define shp_export extern
 #endif
 
 str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions);

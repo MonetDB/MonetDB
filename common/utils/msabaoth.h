@@ -66,7 +66,7 @@ typedef struct Ssabuplog {
 #define msab_export extern __declspec(dllexport)
 #endif
 #else
-#define msab_export __attribute__((__externally_visible__)) extern
+#define msab_export extern
 #endif
 
 msab_export void msab_dbpathinit(const char *dbpath);

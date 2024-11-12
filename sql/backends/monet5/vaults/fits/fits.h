@@ -22,7 +22,7 @@
 #define fits_export extern __declspec(dllexport)
 #endif
 #else
-#define fits_export __attribute__((__externally_visible__)) extern
+#define fits_export extern
 #endif
 
 fits_export str FITStest(int *res, str *fname);
