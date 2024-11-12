@@ -99,7 +99,7 @@ def filter_lines_starting_with(predicates=[]):
     return _fn
 
 
-def filter_matching_blocks(a: [str] = [], b: [str] = []):
+def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
     # TODO add some ctx before any mismatch lines
     ptr = 0
     red_a = []
@@ -110,7 +110,7 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
         s.set_seq1(a[i].replace('\t', '').replace(' ', ''))
         s.set_seq2(b[i].replace('\t', '').replace(' ', ''))
         # should be high matching ratio
-        if s.quick_ratio() < 0.95:
+        if s.quick_ratio() < ratio:
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
@@ -120,14 +120,14 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
     red_b+=b[min_size:]
     return red_a, red_b
 
-def diff(stable_file, test_file):
+def diff(stable_file, test_file, ratio=0.95):
     diff = None
     filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test', 'stderr of test', 'MAPI'])
     with open(stable_file) as fstable:
         stable = list(filter(filter_fn, fstable.read().split('\n')))
         with open(test_file) as ftest:
             test = list(filter(filter_fn, ftest.read().split('\n')))
-            a, b = filter_matching_blocks(stable, test)
+            a, b = filter_matching_blocks(stable, test, ratio)
             diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
             if len(diff) > 0:
                 diff = '\n'.join(diff)
@@ -421,7 +421,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                 raise SystemExit(e)
         return self
 
-    def assertMatchStableOut(self, fout, ignore_headers=False):
+    def assertMatchStableOut(self, fout, ignore_headers=False, ratio=0.95):
         stable = []
         data = list(filter(filter_junk, self.output.split('\n')))
         with open(fout, 'r') as f:
@@ -429,7 +429,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         if ignore_headers:
             stable = list(filter(filter_headers, stable))
             data = list(filter(filter_headers, data))
-        a, b = filter_matching_blocks(stable, data)
+        a, b = filter_matching_blocks(stable, data, ratio)
         if a or b:
             diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
             if len(diff) > 0:
@@ -440,7 +440,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                 self.fail(msg)
         return self
 
-    def assertMatchStableError(self, ferr, ignore_err_messages=False):
+    def assertMatchStableError(self, ferr, ignore_err_messages=False, ratio=0.95):
         stable = []
         err = []
         filter_fn = filter_lines_starting_with(['--', '#', 'stderr of test', 'MAPI'])
@@ -448,7 +448,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             err = list(filter(filter_fn, self.test_run_error.split('\n')))
         with open(ferr, 'r') as f:
             stable = list(filter(filter_fn, f.read().split('\n')))
-        a, b = filter_matching_blocks(stable, err)
+        a, b = filter_matching_blocks(stable, err, ratio)
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
@@ -458,10 +458,10 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             self.fail(msg)
         return self
 
-    def assertDataResultMatch(self, expected):
+    def assertDataResultMatch(self, expected, ratio=0.95):
         data = list(filter(filter_junk, self.output.split('\n')))
         data = list(filter(filter_headers, data))
-        a, b = filter_matching_blocks(expected, data)
+        a, b = filter_matching_blocks(expected, data, ratio)
         diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
@@ -565,13 +565,13 @@ class SQLDump():
         self.data = data
         self.assertion_errors = [] # holds assertion errors
 
-    def assertMatchStableOut(self, fout):
+    def assertMatchStableOut(self, fout, ratio=0.95):
         stable = []
         data = self.data.split('\n') if self.data else []
         dump = list(filter(filter_junk, data))
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
-        a, b = filter_matching_blocks(stable, dump)
+        a, b = filter_matching_blocks(stable, dump, ratio)
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
