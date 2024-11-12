@@ -361,13 +361,16 @@ pqcmc_create(glob_t *glob, lng nrows)
 	return r;
 }
 
-#define FILE_READER_VECTORSIZE (16*1024)
-//(16*1024*16)
+#define FILE_READER_VECTORSIZE (16*1024*16)
+//(16*1024)
 
 static str
 PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 {
 	ssize_t sz = FILE_READER_VECTORSIZE;
+
+	if (r->nrows < sz)
+		sz = r->nrows;
 
 	if (!r->c) {
 		pipeline_lock(p);
@@ -409,7 +412,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		Heap *h = rb->tvheap;
-		BUN size = GDK_STRHASHTABLE * sizeof(stridx_t) + ssize * GDK_VARALIGN;
+		BUN size = GDK_STRHASHTABLE * sizeof(stridx_t) + ssize/* * GDK_VARALIGN*/;
 		if (h->storage == STORE_INVALID) {
 			if (HEAPalloc(h, size, 1) != GDK_SUCCEED) {
 				BBPreclaim(rb);
@@ -420,21 +423,52 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		h->dirty = true;
 #ifdef NDEBUG
-        memset(h->base, 0, h->free);
+		memset(h->base, 0, h->free);
 #else
-        /* fill should solve initialization problems within valgrind */
-        memset(h->base, 0, h->size);
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base, 0, h->size);
 #endif
-		//h->storage = STORE_NOWN; /* ugh */
-        rb->tascii = true; /* tobe fixed */
+		rb->tascii = true; /* tobe fixed */
 		int offset = 0;
 		if (dict == 4)
 			offset = h->free;
-		if ((sz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
+		ssize_t rsz = 0, tsz = 0;
+		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
 		h->free += ssize;
+		tsz += rsz;
+		while(tsz < sz) {
+			dict = 0;
+			if (rsz == 0)
+				break;
+			if (pqc_read_chunk(r->c[pse->ccnr], wnr, NULL, NULL, sz, &ssize, &dict) < 0) {
+				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
+			}
+			if (dict) {
+				assert(0); /* only one dict */
+			}
+			Heap *h = rb->tvheap;
+			BUN size = h->free + (ssize /** GDK_VARALIGN*/);
+			if (HEAPextend(h, size, 1) != GDK_SUCCEED) {
+				BBPreclaim(rb);
+				throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+			/* realloc (TODO handle extending the width) */
+			assert(h->size >= size);
+			dict = rb->twidth;
+			offset = h->free;
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)rb->tvheap->base)+rb->tvheap->free, sz, &offset, &dict)) < 0) {
+				BBPreclaim(rb);
+				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
+			}
+			if (rsz == 0)
+				break;
+			tsz += rsz;
+			h->free += ssize;
+		}
+		sz = tsz;
 	} else { /* fixed sized */
 		rb = COLnew(0, localtype, sz, TRANSIENT);
 		if (!rb) {

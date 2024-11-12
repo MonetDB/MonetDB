@@ -492,7 +492,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 	}
 	if (res < 0)
 		return pos;
-	assert(page_type == DATA_PAGE || page_type == INDEX_PAGE || page_type == DATA_PAGE_V2);
+	assert(page_type == DATA_PAGE || page_type == DICTIONARY_PAGE || page_type == DATA_PAGE_V2);
 	if (page_type == DATA_PAGE || page_type == DATA_PAGE_V2) {
 		if (pos >= 0 && pr->cc->codec && (page_type != DATA_PAGE_V2 || pr->cc->cur_page.is_compressed)) {
 			assert(pr->data == NULL);
@@ -1295,15 +1295,15 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 #undef offset_string_read_chunk
 
 static int
-offset_string_read_chunk( pqc_creader_t *cr, void *output, void *voutput, int64_t nrows,
+offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows,
 		                  int pos, int offset, int width)
 {
 	if (width == 1) {
-		return offset_string_read_chunk_uchr( cr, output, voutput, nrows, pos, offset);
+		return offset_string_read_chunk_uchr( r, cr, output, voutput, nrows, pos, offset);
 	} else if (width == 2) {
-		return offset_string_read_chunk_usht( cr, output, voutput, nrows, pos, offset);
+		return offset_string_read_chunk_usht( r, cr, output, voutput, nrows, pos, offset);
 	} else {
-		return offset_string_read_chunk_uint( cr, output, voutput, nrows, pos, offset);
+		return offset_string_read_chunk_uint( r, cr, output, voutput, nrows, pos, offset);
 	}
 	return -1;
 }
@@ -1764,7 +1764,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					} else if (!voutput) {
 						return string_size_chunk(cr, nrows, pos, ssize, dict);
 					} else
-						offset_string_read_chunk(cr, output, voutput, nrows, pos, *ssize, *dict);
+						offset_string_read_chunk(r, cr, output, voutput, nrows, pos, *ssize, *dict);
 				}
 			}
 			/* convert data */
@@ -1834,7 +1834,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					} else if (!voutput) {
 						return string_size_chunk(cr, nrows, pos, ssize, dict);
 					} else
-						offset_string_read_chunk(cr, output, voutput, nrows, pos, *ssize, *dict);
+						offset_string_read_chunk(r, cr, output, voutput, nrows, pos, *ssize, *dict);
 				}
 			}
 			/* convert data */
