@@ -685,8 +685,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid1 = getArgReference_bat(stk, pci, 1),						\
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL; \
-	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);						\
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
+	lng *extra = getArgReference_lng(stk, pci, pci->argc-2);			\
 	BATiter b1i;														\
 	DEC_SRC1(INTYPE1, 1);												\
 	const INTYPE2 src2 = *(INTYPE2*)getArgReference(stk, pci, 2);		\
@@ -1786,7 +1786,7 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,4, batarg("",date),batarg("s",str),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk, false, "", args(1,6, batarg("",date),batarg("s",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,5, batarg("",date),arg("s",str),batarg("format",str),batarg("s",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,5, batarg("",date),batarg("s",str),arg("format",str),batarg("s",oid),arg("tz_msec",lng))),
+ pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,5, batarg("",date),batarg("s",str),arg("format",str),arg("tz_msec",lng),batarg("s",oid))),
  command("mtime", "date_to_str", MTIMEdate_to_str, false, "create a string from the date, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",date),arg("format",str))),
  pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",date),batarg("format",str))),
  pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",date),batarg("format",str))),
