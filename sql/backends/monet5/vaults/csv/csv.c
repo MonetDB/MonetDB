@@ -407,8 +407,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect types
 	 * detect header
 	 */
-	assert(0); /* TODO add output estimation */
 	*est = 0;
+	size_t fs = getFileSize(file);
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
 	mnstr_destroy(file);
@@ -457,6 +457,8 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			throw(SQL, SQLSTATE(42000), "csv" "type unknown\n");
 		}
 	}
+	if (p)
+		*est = fs * (p-buf)/2;
 	GDKfree(types);
 	f->res = typelist;
 	f->coltypes = typelist;
