@@ -1642,6 +1642,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 
 	if (r->rownr + nrows > r->sz)
 		nrows = r->sz - r->rownr;
+	if (nrows == 0)
+		return 0;
 	if (cr->pos < 0 || cr->cc->cur_page.num_read == cr->cc->cur_page.num_values) {
 		cr->cc->cur_page.num_read = 0;
 		int pos = cr->bufpos;

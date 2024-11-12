@@ -474,10 +474,24 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		if (!rb) {
 			throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if ((sz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
+		ssize_t rsz = 0, tsz = 0;
+		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, NULL, sz, NULL, NULL)) < 0) {
 			BBPreclaim(rb);
 			throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
 		}
+		tsz += rsz;
+		while(tsz < sz) {
+			if (rsz == 0)
+				break;
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*rb->twidth), NULL, sz, NULL, NULL)) < 0) {
+				BBPreclaim(rb);
+				throw (SQL, "parquet.read", SQLSTATE(HY002) "Error reading parquet file");
+			}
+			if (rsz == 0)
+				break;
+			tsz += rsz;
+		}
+		sz = tsz;
 	}
 	if (sz) {
 		BATsetcount(rb, sz);
