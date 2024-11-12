@@ -6,8 +6,8 @@ offset_string_read_chunk( pqc_creader_t *cr, T *output, char *voutput, int64_t n
 	char *buf = voutput;
 	char *data = cr->data + pos;
 
-	//memcpy(buf, "NULL", 5);
-	memcpy(buf, r->nil, strlen(r->nil));
+	memcpy(buf, "NULL", 5);
+	//memcpy(buf, r->nil, strlen(r->nil));
 	if (cr->cc->cur_page.stat.null_count == cr->cc->cur_page.num_values) { /* all null */
 		assert(cr->cc->cur_page.num_nulls == cr->cc->cur_page.num_values);
        	for (int64_t i=0; i<nrows; i++)
