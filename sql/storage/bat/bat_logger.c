@@ -112,9 +112,9 @@ log_temp_descriptor(log_bid b)
 	return temp_descriptor(b);
 }
 
-#if defined CATALOG_JAN2022 || defined CATALOG_SEP2022
+#if defined CATALOG_JAN2022 || defined CATALOG_SEP2022 || defined CATALOG_AUG2024
 static gdk_return
-tabins(logger *lg, bool first, int tt, int nid, ...)
+tabins(logger *lg, ...)
 {
 	va_list va;
 	int cid;
@@ -122,48 +122,33 @@ tabins(logger *lg, bool first, int tt, int nid, ...)
 	gdk_return rc;
 	BAT *b;
 
-	va_start(va, nid);
+	va_start(va, lg);
+	BATiter cni = bat_iterator(lg->catalog_id);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
 		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
-			va_end(va);
-			return GDK_FAIL;
-		}
-		if (first) {
-			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (bn == NULL) {
-				va_end(va);
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			if (replace_bat(lg, cid, bn) != GDK_SUCCEED) {
-				va_end(va);
-				bat_destroy(b);
-				bat_destroy(bn);
-				return GDK_FAIL;
-			}
-			/* logical refs of b stay the same: it is moved from catalog_bid to del */
-			bat_destroy(b);
-			b = bn;
+			rc = GDK_FAIL;
+			break;
 		}
 		rc = BUNappend(b, cval, true);
-		bat_destroy(b);
-		if (rc != GDK_SUCCEED) {
-			va_end(va);
-			return rc;
+		if (rc == GDK_SUCCEED) {
+			BUN p;
+			MT_rwlock_rdlock(&cni.b->thashlock);
+			HASHloop_int(cni, cni.b->thash, p, &cid) {
+				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
+					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
-	}
-	va_end(va);
-
-	if (tt >= 0) {
-		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
-			return GDK_FAIL;
-		rc = log_bat_persists(lg, b, nid);
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
-			return rc;
+			break;
 	}
-	return GDK_SUCCEED;
+	bat_iterator_end(&cni);
+	va_end(va);
+	return rc;
 }
 #endif
 
@@ -172,7 +157,6 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
-	bool tabins_first = true;
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
@@ -694,7 +678,7 @@ bl_postversion(void *Store, logger *lg)
 		bat_destroy(b1);
 		bat_destroy(colnr);
 		bat_destroy(colid);
-		rc = tabins(lg, true, -1, 0,
+		rc = tabins(lg,
 					prid, &(msk) {false}, /* sys.privileges */
 					privids[0], &dbid, /* sys.privileges.obj_id */
 					privids[1], &(int) {USER_MONETDB}, /* sys.privileges.auth_id */
@@ -730,7 +714,7 @@ bl_postversion(void *Store, logger *lg)
 			BBPretain(check->batCacheid);
 			bat_destroy(check);
 
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2165 is sys.keys.check */
 					   2077, &(int) {2165},		/* sys._columns.id */
@@ -746,10 +730,9 @@ bl_postversion(void *Store, logger *lg)
 					   2086, str_nil,			/* sys._columns.storage */
 					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
-			tabins_first = false;
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2165 is tmp.keys.check */
+					   /* 2166 is tmp.keys.check */
 					   2077, &(int) {2166},		/* sys._columns.id */
 					   2078, "check",			/* sys._columns.name */
 					   2079, "varchar",			/* sys._columns.type */
@@ -797,7 +780,7 @@ bl_postversion(void *Store, logger *lg)
 			bat_destroy(ftype);
 			bat_destroy(fname);
 			if ((order_spec = BATsetaccess(order_spec, BAT_READ)) == NULL ||
-				/* 2165 is sys.keys.check */
+				/* 2167 is sys.functions.order_specification */
 				BUNappend(lg->catalog_id, &(int) {2167}, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &order_spec->batCacheid, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
@@ -809,7 +792,7 @@ bl_postversion(void *Store, logger *lg)
 			BBPretain(order_spec->batCacheid);
 			bat_destroy(order_spec);
 
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2167 is sys.functions.order_specification */
 					   2077, &(int) {2167},		/* sys._columns.id */
@@ -825,7 +808,6 @@ bl_postversion(void *Store, logger *lg)
 					   2086, str_nil,			/* sys._columns.storage */
 					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
-			tabins_first = false;
 	}
 #endif
 	return GDK_SUCCEED;

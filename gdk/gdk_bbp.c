@@ -1745,7 +1745,7 @@ BBPmanager(void *dummy)
 static MT_Id manager;
 
 gdk_return
-BBPinit(bool allow_hge_upgrade)
+BBPinit(bool allow_hge_upgrade, bool no_manager)
 {
 	FILE *fp = NULL;
 	struct stat st;
@@ -2013,7 +2013,7 @@ BBPinit(bool allow_hge_upgrade)
 		}
 	}
 
-	if (!GDKinmemory(0) && MT_create_thread(&manager, BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager") < 0) {
+	if (!GDKinmemory(0) && !no_manager && MT_create_thread(&manager, BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager") < 0) {
 		TRC_CRITICAL(GDK, "Could not start BBPmanager thread.");
 		return GDK_FAIL;
 	}

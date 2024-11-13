@@ -3719,7 +3719,10 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
 			goto bailout;
-		if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
+		// If the scenario is NULL we assume we're in monetdbe/e which
+		// is always SQL.
+		s = c->scenario ? getScenarioLanguage(c) : "sql";
+		if (BUNappend(language, s, false) != GDK_SUCCEED)
 			goto bailout;
 		s = c->peer ? c->peer : str_nil;
 		if (BUNappend(peer, s, false) != GDK_SUCCEED)
