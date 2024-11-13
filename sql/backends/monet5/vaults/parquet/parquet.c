@@ -725,6 +725,17 @@ PARQUETepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
+static str
+PARQUETschema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt; (void)mb;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
+	// TODO
+
+	return MAL_SUCCEED;
+}
+
 #include "sql_scenario.h"
 #include "mel.h"
 
@@ -733,6 +744,7 @@ static mel_func parquet_init_funcs[] = {
 	command("parquet", "epilogue", PARQUETepilogue, false, "", noargs),
     pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
     pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 4, batargany("", 1), batarg("p", oid), arg("colno", int), arg("pipeline", ptr))),
+	pattern("parquet", "schema", PARQUETschema, false, "Read parquet schema", args(1,2, batarg("", oid),arg("fname",str))),
 { .imp=NULL }
 };
 

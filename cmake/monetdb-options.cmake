@@ -168,3 +168,7 @@ option(CMAKE_SUMMARY
 option(CMAKE_UNITTESTS
   "Build and run the unittest for the build system"
   OFF)
+
+option(WITH_PARQUET
+  "Include parquet support (default=ON)"
+  ON)
