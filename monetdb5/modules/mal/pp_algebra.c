@@ -1278,7 +1278,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	assert(h && h->s.type == HASH_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);

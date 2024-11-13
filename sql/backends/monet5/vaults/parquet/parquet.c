@@ -731,6 +731,8 @@ PARQUETschema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
+	(void) fname;
+	(void) res;
 	// TODO
 
 	return MAL_SUCCEED;
