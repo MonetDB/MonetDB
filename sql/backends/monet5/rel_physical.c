@@ -483,7 +483,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			return 0;
 		res = pb;
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
-		if (rel->r && rel->card <= CARD_AGGR)
+		if (rel->r /*&& rel->card <= CARD_AGGR*/)
 			res = rel_partition_(sql, rel->r, pb);
 		if (rel->returning) {
 			if (pb)
