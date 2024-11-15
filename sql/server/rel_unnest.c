@@ -2808,6 +2808,10 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (gbe && obe) {
 			gbe = list_merge(sa_list(v->sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
 			i = 0;
+			for(node *n = gbe->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
+				set_partitioning(e);
+			}
 			for(node *n = obe->h ; n ; n = n->next, i++) {
 				sql_exp *e1 = n->data;
 				bool found = false;
@@ -2866,6 +2870,8 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *found = exps_find_exp(rell->exps, next);
 			sql_exp *ref = exp_ref(v->sql, found ? found : next);
 
+			if (is_partitioning(next))
+				set_partitioning(ref);
 			if (is_ascending(next))
 				set_ascending(ref);
 			if (nulls_last(next))

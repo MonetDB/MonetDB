@@ -1389,6 +1389,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			int fnd = 1;
 			for (node *n = obes->h; n && fnd; n = n->next) {
 				sql_exp *obe = n->data;
+				int part = is_partitioning(obe);
 				int asc = is_ascending(obe);
 				int nl = nulls_last(obe);
 				/* only simple rename expressions */
@@ -1401,6 +1402,8 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 					if (exp_is_atom(pe))
 						return rel;
 					pe = exp_ref(v->sql, pe);
+					if (part)
+						set_partitioning(pe);
 					if (asc)
 						set_ascending(pe);
 					if (nl)

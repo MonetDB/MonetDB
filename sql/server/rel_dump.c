@@ -332,6 +332,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
+	if (e->type != e_atom && e->type != e_cmp && is_partitioning(e))
+		mnstr_printf(fout, " PART");
 	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && nulls_last(e))
@@ -1721,6 +1723,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		return NULL;
 	}
 
+	/* [ PART ] */
+	if (strncmp(r+*pos, "PART",  strlen("PART")) == 0) {
+		(*pos)+= (int) strlen("PART");
+		skipWS(r, pos);
+		set_partitioning(exp);
+	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("ASC");
