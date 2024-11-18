@@ -6640,6 +6640,8 @@ static const int casefold[4544] = {
  * without error), the current buffer is in *buf, and the current size
  * in *buflen. */
 static gdk_return
+	__attribute__((__access__(read_write, 1)))
+	__attribute__((__access__(read_write, 2)))
 convertcase(char **restrict buf, size_t *restrict buflen,
 	    const uint8_t *restrict s, int direction)
 {

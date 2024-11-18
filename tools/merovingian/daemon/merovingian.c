@@ -226,6 +226,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 						mytime, type, dbname, pid, (int) (p - q), q);
 			}
 		}
+		fflush(stream);
 	} while (rest);
 	fflush(stream);
 }
@@ -461,6 +462,7 @@ main(int argc, char *argv[])
 #else
 		{"snapshotcompression", strdup(".tar"),     0,                 STR},
 #endif
+		{"keepalive",     strdup("60"),            60,                 INT},
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};

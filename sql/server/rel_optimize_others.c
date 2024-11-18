@@ -532,6 +532,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_update:
 	case op_delete:
 		if (proj && rel->r) {
+			rel_used(rel);
 			sql_rel *r = rel->r;
 
 			if (!list_empty(r->exps)) {

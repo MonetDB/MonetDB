@@ -312,7 +312,8 @@ typedef struct relation {
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
-	 single:1;
+	 single:1,
+	 returning:1; /*update|delete|insert relations return modified records*/
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

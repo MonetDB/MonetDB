@@ -165,5 +165,6 @@ void
 mal_exit(int status)
 {
 	mal_reset();
+	printf("# mserver5 exiting\n");
 	exit(status);				/* properly end GDK */
 }

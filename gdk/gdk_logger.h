@@ -55,7 +55,7 @@ gdk_export lng log_changes(logger *lg);
 gdk_export int log_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */
-gdk_export gdk_return log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt);
+gdk_export gdk_return log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt);
 gdk_export gdk_return log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, lng total_cnt); /* log slice from b */
 gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, log_id id);
 gdk_export gdk_return log_bat_transient(logger *lg, log_id id);

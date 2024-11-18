@@ -197,7 +197,7 @@ sys_fkeys = [
     ('querylog_history', 'id', 'id', 'querylog_catalog'),
     ('querylog_history', 'owner', 'name', 'users'),
     ('querylog_history', 'pipe', 'name', 'optimizers'),
-
+    ('remote_user_info', 'table_id', 'id', '_tables'),
     ('sessions', '"username"', 'name', 'users'),
     ('sessions', 'optimizer', 'name', 'optimizers'),
     ('statistics', 'column_id', 'id', '(SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns) as c'),

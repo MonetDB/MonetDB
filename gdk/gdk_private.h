@@ -91,7 +91,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(bool allow_hge_upgrade)
+gdk_return BBPinit(bool allow_hge_upgrade, bool no_manager)
 	__attribute__((__visibility__("hidden")));
 bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
@@ -164,9 +164,6 @@ gdk_return GDKtracer_init(const char *dbname, const char *dbtrace)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
-#define GDKwarning(...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, __VA_ARGS__)
 lng getBBPlogno(void)
 	__attribute__((__visibility__("hidden")));
 BUN HASHappend(BAT *b, BUN i, const void *v)
@@ -183,7 +180,8 @@ BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-static inline BUN __attribute__((__const__))
+__attribute__((__const__))
+static inline BUN
 HASHmask(BUN cnt)
 {
 	cnt = cnt * 8 / 7;
