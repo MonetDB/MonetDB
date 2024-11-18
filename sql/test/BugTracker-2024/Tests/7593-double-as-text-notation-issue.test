@@ -1,62 +1,62 @@
 -- certain doubles (ending with a 0 and (> 9999 or < -9990)) are converted to scientific notation by the server, which is undesired.
 -- this started with Aug2024, older servers didn't do this, so a regression issue.
 
-query T
+query T nosort
 select cast(cast(202909 as double) as varchar) as "expect 202909"
 ----
 202909
 
-query T
+query T nosort
 select cast(cast(202910 as double) as varchar) as "expect 202910"
 ----
 202910
 
-query T
+query T nosort
 select cast(cast(202911 as double) as varchar) as "expect 202911"
 ----
 202911
 
-query T
+query T nosort
 select cast(cast(20290 as double) as varchar) as "expect 20290"
 ----
 20290
 
-query T
+query T nosort
 select cast(cast(2020 as double) as varchar) as "expect 2020"
 ----
 2020
 
-query T
+query T nosort
 select cast(cast(20900 as double) as varchar) as "expect 20900"
 ----
 20900
 
-query T
+query T nosort
 select cast(cast(202900 as double) as varchar) as "expect 202900"
 ----
 202900
 
-query T
+query T nosort
 select cast(cast(202990 as double) as varchar) as "expect 202990"
 ----
 202990
 
-query T
+query T nosort
 select cast(cast(2029900 as double) as varchar) as "expect 2029900"
 ----
 2029900
 
-query T
+query T nosort
 select cast(cast(2029980 as double) as varchar) as "expect 2029980"
 ----
 2029980
 
-query T
+query T nosort
 select cast(cast(2029981 as double) as varchar) as "expect 2029981"
 ----
 2029981
 
-query T
+query T nosort
 select cast(cast(value as double) as varchar) from generate_series(9985, 10133) where value % 10 in (9,0,1)
 ----
 9989
@@ -106,7 +106,7 @@ select cast(cast(value as double) as varchar) from generate_series(9985, 10133) 
 10131
 
 -- idem for reals
-query T
+query T nosort
 select cast(cast(value as real) as varchar) from generate_series(9985, 10133) where value % 10 in (9,0,1)
 ----
 9989
@@ -156,7 +156,7 @@ select cast(cast(value as real) as varchar) from generate_series(9985, 10133) wh
 10131
 
 -- idem for negative doubles
-query T
+query T nosort
 select cast(cast(value as double) as varchar) from generate_series(-10131, -9985) where value % 10 in (-9,0,-1)
 ----
 -10131
