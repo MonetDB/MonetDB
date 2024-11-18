@@ -16,6 +16,11 @@ create schema json;
 create type json external name json;
 
 -- access the top level key by name, return its value
+create function sys.json_value(js json, pathexpr string)
+returns json external name json.json_value;
+GRANT EXECUTE ON FUNCTION sys.json_value(json, string) TO PUBLIC;
+
+-- access the top level key by name, return its value
 create function json.filter(js json, pathexpr string)
 returns json external name json.filter;
 GRANT EXECUTE ON FUNCTION json.filter(json, string) TO PUBLIC;

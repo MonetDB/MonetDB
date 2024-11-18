@@ -283,6 +283,7 @@ int yydebug=1;
 	interval_expression
 	join_spec
 	joined_table
+	json_funcs
 	like_exp
 	like_predicate
 	like_table
@@ -725,7 +726,7 @@ int yydebug=1;
 %left <operation> ALL ANY NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE OR SOME
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
-%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING TRIM POSITION SPLIT_PART
+%left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING JSON_VALUE SUBSTRING TRIM POSITION SPLIT_PART
 %left <operation> '*' '/' '%'
 %left UMINUS
 %left <operation> '~'
@@ -4454,6 +4455,7 @@ value_exp:
  |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
  |  param
+ |  json_funcs
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
@@ -4664,6 +4666,21 @@ opt_trim_characters:
    /* empty */	{ $$ = NULL; }
   | string {$$ = $1; }
   ;
+
+json_funcs:
+	JSON_VALUE '(' scalar_exp ',' scalar_exp ')'
+	{
+		 dlist *l = L();
+		dlist *ops = L();
+		append_list(l,
+		append_string(L(), sa_strdup(SA, "json_value")));
+		append_int(l, FALSE); /* ignore distinct */
+		append_symbol(ops, $3);
+		append_symbol(ops, $5);
+		append_list(l, ops);
+		$$ = _symbol_create_list( SQL_NOP, l );
+	}
+
 
 string_funcs:
     SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')'

@@ -1661,7 +1661,7 @@ void* JSONrealloc(void* ctx, void *ptr, size_t old_size, size_t size){
 }
 
 static str
-JSONfilter(json *ret, const json *js, const char *const *expr)
+JSONvalue(json *ret, const json *js, const char *const *expr)
 {
 	if (strNil(*js) || strNil(*expr)) {
 		if (!(*ret = GDKstrdup(str_nil)))
@@ -1711,6 +1711,17 @@ JSONfilter(json *ret, const json *js, const char *const *expr)
 	*ret = GDKstrdup(tmp_res);
 	sa_destroy(sa);
 	return MAL_SUCCEED;
+}
+
+static str
+JSONfilter(json *ret, const json *js, const char *const *expr)
+{
+	if (strNil(*js) || strNil(*expr)) {
+		if (!(*ret = GDKstrdup(str_nil)))
+			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
+	return JSONfilterInternal(ret, js, expr, 0);
 }
 
 // glue all values together with an optional separator
@@ -3260,6 +3271,7 @@ static mel_func json_init_funcs[] = {
  command("json", "number", JSONjson2number, false, "Convert simple JSON values to a double, return nil upon error.", args(1,2, arg("",dbl),arg("j",json))),
  command("json", "integer", JSONjson2integer, false, "Convert simple JSON values to an integer, return nil upon error.", args(1,2, arg("",lng),arg("j",json))),
  pattern("json", "dump", JSONdump, false, "", args(1,2, batarg("",str),arg("j",json))),
+ command("json", "json_value", JSONvalue, false, "TODO", args(1,3, arg("",json),arg("js",json),arg("pathexpr",str))),
  command("json", "filter", JSONfilter, false, "Filter all members of an object by a path expression, returning an array.\nNon-matching elements are skipped.", args(1,3, arg("",json),arg("name",json),arg("pathexpr",str))),
  command("json", "filter", JSONfilterArray_bte, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",bte))),
  command("json", "filter", JSONfilterArrayDefault_bte, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",bte),arg("other",str))),
