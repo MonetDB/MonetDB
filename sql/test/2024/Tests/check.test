@@ -83,3 +83,4 @@ update bar set i = 10
 
 statement ok
 update bar set i = 1
+
