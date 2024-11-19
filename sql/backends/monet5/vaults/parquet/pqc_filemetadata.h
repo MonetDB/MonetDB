@@ -13,7 +13,82 @@
 #define P_INFO 4
 #define P_DEBUG 5
 
+typedef enum FieldRepetitionType {
+	FRT_UNKNOWN = -1,
+	FRT_REQUIRED = 0,
+	FRT_OPTIONAL = 1,
+	FRT_REPEATED = 2
+} FieldRepetitionType;
+
+typedef enum PhysicalType {
+	PT_UNKNOWN = -1,
+	PT_BOOLEAN = 0,
+	PT_INT32 = 1,
+	PT_INT64 = 2,
+	PT_INT96 = 3,  // deprecated, only used by legacy implementations.
+	PT_FLOAT = 4,
+	PT_DOUBLE = 5,
+	PT_BYTE_ARRAY = 6,
+	PT_FIXED_LEN_BYTE_ARRAY = 7
+} PhysicalType;
+
+typedef enum convertedtype {
+	CT_UNKNOWN = -1,
+	CT_UTF8 = 0, 		// a BYTE_ARRAY actually contains UTF8 encoded chars
+	CT_MAP = 1, 		// a map is converted as an optional field containing a repeated key/value pair
+	CT_MAP_KEY_VALUE = 2, 	// a key/value pair is converted into a group of two fields
+	CT_LIST = 3, 		// a list is converted into an optional field containing a repeated field for its values
+	CT_ENUM = 4, 		// an enum is converted into a binary field
+
+	// A decimal value.
+	//
+	// This may be used to annotate binary or fixed primitive types. The
+	// underlying byte array stores the unscaled value encoded as two's
+	// complement using big-endian byte order (the most significant byte is the
+	// zeroth element). The value of the decimal is the value * 10^{-scale}.
+	//
+	// This must be accompanied by a (maximum) precision and a scale in the
+	// SchemaElement. The precision specifies the number of digits in the decimal
+	// and the scale stores the location of the decimal point. For example 1.23
+	// would have precision 3 (3 total digits) and scale 2 (the decimal point is
+	// 2 digits over).
+	CT_DECIMAL = 5,
+	CT_DATE = 6, 		// Stored as days since Unix epoch, encoded as the INT32 physical type.
+	CT_TIME_MILLIS = 7, 	// The total number of milliseconds since midnight. The value is stored as an INT32 physical type.
+	CT_TIME_MICROS = 8, 	// The total number of microseconds since midnight. The value is stored as an INT64 physical type.
+	CT_TIMESTAMP_MILLIS = 9, // Date and time recorded as milliseconds since the Unix epoch. Recorded as a physical type of INT64.
+	CT_TIMESTAMP_MICROS = 10, // Date and time recorded as microseconds since the Unix epoch. The value is stored as an INT64 physical type.
+
+	// unsigned int
+	CT_UINT_8 = 11,
+	CT_UINT_16 = 12,
+	CT_UINT_32 = 13,
+	CT_UINT_64 = 14,
+
+	// signed int
+	CT_INT_8 = 15,
+	CT_INT_16 = 16,
+	CT_INT_32 = 17,
+	CT_INT_64 = 18,
+
+	CT_JSON = 19, // A JSON document embedded within a single UTF8 column.
+	CT_BSON = 20, // A BSON document embedded within a single BINARY column.
+
+	// An interval of time
+	//
+	// This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
+	// This data is composed of three separate little endian unsigned
+	// integers.  Each stores a component of a duration of time.  The first
+	// integer identifies the number of months associated with the duration,
+	// the second identifies the number of days associated with the duration
+	// and the third identifies the number of milliseconds associated with
+	// the provided duration.  This duration of time is independent of any
+	// particular timezone or date.
+	CT_INTERVAL = 21
+} convertedtype;
+
 typedef enum logicaltype {
+	LT_UNKNOWN = -1,
 	stringtype = 1, 		// use ConvertedType UTF
 	maptype = 2, 			// use ConvertedType MAP
 	listtype = 3, 			// use ConvertedType LIST
@@ -32,6 +107,8 @@ typedef enum logicaltype {
   	jsontype = 12, 			// use ConvertedType JSON
   	bsontype = 13, 			// use ConvertedType BSON
   	uuidtype = 14, 			// no compatible ConvertedType
+	float16type = 15,
+	varianttype = 16,
   	floattype = 25 			// no compatible ConvertedType
 } logicaltype;
 
@@ -217,8 +294,11 @@ typedef enum PageType {
 } PageType;
 
 typedef struct pqc_schema_element {
+	PhysicalType physical_type;
+	u_int32_t type_length;
+	convertedtype converted_type;
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
-	int ccnr;
+	int ccnr;  // column chunk number?
 	int scale;
 	int precision;
 	int size;		/* type size, int-8/16/32 are stored in a 32 bit, etc */
@@ -226,7 +306,7 @@ typedef struct pqc_schema_element {
 	bool isSigned;
 	bool isAdjustedToUTC;
 
-	int repetition; /* required (NOT NULL), optional (NULL), repeated */
+	FieldRepetitionType repetition; /* required (NOT NULL), optional (NULL), repeated */
 	char *name;
 	int nchildren;
 	int curchild; /* only needed during meta data parsing */

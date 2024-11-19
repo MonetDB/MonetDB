@@ -11,6 +11,7 @@
  */
 
 #include "monetdb_config.h"
+#include "pqc_filemetadata.h"
 #include "rel_file_loader.h"
 #include "rel_exp.h"
 
@@ -725,17 +726,257 @@ PARQUETepilogue(void *ret)
 	return MAL_SUCCEED;
 }
 
+static char*
+str_physical_type(PhysicalType type)
+{
+	switch(type) {
+		case PT_BOOLEAN:
+			return "BOOLEAN";
+		case PT_INT32:
+			return "INT32";
+		case PT_INT64:
+			return "INT64";
+		case PT_INT96:
+			return "INT96";
+		case PT_FLOAT:
+			return "FLOAT";
+		case PT_DOUBLE:
+			return "DOUBLE";
+		case PT_BYTE_ARRAY:
+			return "BYTE_ARRAY";
+		case PT_FIXED_LEN_BYTE_ARRAY:
+			return "FIXED_LEN_BYTE_ARRAY";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_logical_type(logicaltype type)
+{
+	switch(type) {
+		case stringtype:
+			return "STRING";
+		case maptype:
+			return "MAP";
+		case listtype:
+			return "LIST";
+		case enumtype:
+			return "ENUM";
+		case decimaltype:
+			return "DECIMAL";
+		case datetype:
+			return "DATE";
+		case timetype:
+			return "TIME";
+		case timestamptype:
+			return "TIMESTAMP";
+		case intervaltype:
+			return "INTERVAL";
+		case inttype:
+			return "INTEGER";
+		case nulltype:
+			return "UNKNOWN";
+		case jsontype:
+			return "JSON";
+		case bsontype:
+			return "BSON";
+		case uuidtype:
+			return "UUID";
+		case float16type:
+			return "FLOAT16";
+		case varianttype:
+			return "VARIANT";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_converted_type(convertedtype type)
+{
+	switch(type) {
+		case CT_UTF8:
+			return "UTF8";
+		case CT_MAP:
+			return "MAP";
+		case CT_MAP_KEY_VALUE:
+			return "MAP_KEY_VALUE";
+		case CT_LIST:
+			return "LIST";
+		case CT_ENUM:
+			return "ENUM";
+		case CT_DECIMAL:
+			return "DECIMAL";
+		case CT_DATE:
+			return "DATE";
+		case CT_TIME_MILLIS:
+			return "TIME_MILLIS";
+		case CT_TIME_MICROS:
+			return "TIME_MICROS";
+		case CT_TIMESTAMP_MILLIS:
+			return "TIMESTAMP_MILLIS";
+		case CT_TIMESTAMP_MICROS:
+			return "TIMESTAMP_MICROS";
+		case CT_UINT_8:
+			return "UINT_8";
+		case CT_UINT_16:
+			return "UINT_16";
+		case CT_UINT_32:
+			return "UINT_32";
+		case CT_UINT_64:
+			return "UINT_64";
+		case CT_INT_8:
+			return "INT_8";
+		case CT_INT_16:
+			return "INT_16";
+		case CT_INT_32:
+			return "INT_32";
+		case CT_INT_64:
+			return "INT_64";
+		case CT_JSON:
+			return "JSON";
+		case CT_BSON:
+			return "BSON";
+		case CT_INTERVAL:
+			return "INTERVAL";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_repetition_type(FieldRepetitionType type)
+{
+	switch(type) {
+		case FRT_REQUIRED:
+			return "REQUIRED";
+		case FRT_OPTIONAL:
+			return "OPTIONAL";
+		case FRT_REPEATED:
+			return "REPEATED";
+		default:
+			return "";
+	}
+}
+
+
 static str
 PARQUETschema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt; (void)mb;
-	bat *res = getArgReference_bat(stk, pci, 0);
+	(void) cntxt; (void) mb;
+	char *msg = NULL;
 	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
-	(void) fname;
-	(void) res;
-	// TODO
+	pqc_file *pq = NULL;
 
+	if (pqc_open(&pq, fname) < 0) {
+		throw(SQL, "parquet.schema",  SQLSTATE(HY013) "Failed to open file '%s'", fname);
+	}
+	if (pqc_read_schema(pq) < 0) {
+		pqc_close(pq);
+		throw(SQL, "parquet.schema",  SQLSTATE(HY013) "Failed to read metadata for file '%s'", fname);
+	}
+
+	BAT *name = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *path = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *physical_type = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *length = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *repetition_type = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *num_children = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *converted_type = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *logical_type = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *precision = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *scale = COLnew(0, TYPE_int, 0, TRANSIENT);
+
+	if (name == NULL || path == NULL || physical_type == NULL
+		   	|| length == NULL || repetition_type == NULL
+		   	|| num_children == NULL || converted_type == NULL
+		   	|| logical_type == NULL || precision == NULL
+		   	|| scale == NULL) {
+		msg = createException(SQL, "parquet.schema", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
+	for (int i = 0; i < fmd->nelements; i++) {
+		pqc_schema_element e = fmd->elements[i];
+		int nchildren = e.nchildren;
+		// only leaf nodes have physical_type defined
+		char *phy_type = nchildren > 0 ? "" : str_physical_type(e.physical_type);
+		// only leaf nodes have converted_type defined
+		char *conv_type = nchildren > 0 ? "" : str_converted_type(e.converted_type);
+		// only leaf nodes have logical_type defined
+		char *logic_type = nchildren > 0 ? "" : str_logical_type(e.type);
+		char *rep_type = str_repetition_type(e.repetition);
+		uint32_t type_length = e.type_length;
+		char *cpath = NULL; // TODO
+
+		if (BUNappend(name, e.name, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(path, cpath, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(physical_type, phy_type, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(length, &type_length, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(repetition_type, rep_type, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(num_children, &nchildren, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(converted_type, conv_type, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(logical_type, logic_type, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(precision, &e.repetition, false) != GDK_SUCCEED)
+			goto bailout;
+		if (BUNappend(scale, &e.scale, false) != GDK_SUCCEED)
+			goto bailout;
+	}
+
+	bat *name_id = getArgReference_bat(stk, pci, 0);
+	*name_id = name->batCacheid;
+	BBPkeepref(name);
+	bat *path_id = getArgReference_bat(stk, pci, 1);
+	*path_id = path->batCacheid;
+	BBPkeepref(path);
+	bat *pt_id = getArgReference_bat(stk, pci, 2);
+	*pt_id = physical_type->batCacheid;
+	BBPkeepref(physical_type);
+	bat *length_id = getArgReference_bat(stk, pci, 3);
+	*length_id = length->batCacheid;
+	BBPkeepref(length);
+	bat *rt_id = getArgReference_bat(stk, pci, 4);
+	*rt_id = repetition_type->batCacheid;
+	BBPkeepref(repetition_type);
+	bat *nchildren_id = getArgReference_bat(stk, pci, 5);
+	*nchildren_id = num_children->batCacheid;
+	BBPkeepref(num_children);
+	bat *ct_id = getArgReference_bat(stk, pci, 6);
+	*ct_id = converted_type->batCacheid;
+	BBPkeepref(converted_type);
+	bat *lt_id = getArgReference_bat(stk, pci, 7);
+	*lt_id = logical_type->batCacheid;
+	BBPkeepref(logical_type);
+	bat *precision_id = getArgReference_bat(stk, pci, 8);
+	*precision_id = precision->batCacheid;
+	BBPkeepref(precision);
+	bat *scale_id = getArgReference_bat(stk, pci, 9);
+	*scale_id = scale->batCacheid;
+	BBPkeepref(scale);
 	return MAL_SUCCEED;
+bailout:
+	if(pq)
+		pqc_close(pq);
+	BBPreclaim(name);
+	BBPreclaim(path);
+	BBPreclaim(physical_type);
+	BBPreclaim(length);
+	BBPreclaim(repetition_type);
+	BBPreclaim(num_children);
+	BBPreclaim(converted_type);
+	BBPreclaim(logical_type);
+	BBPreclaim(precision);
+	BBPreclaim(scale);
+	return msg;
 }
 
 #include "sql_scenario.h"
@@ -746,7 +987,19 @@ static mel_func parquet_init_funcs[] = {
 	command("parquet", "epilogue", PARQUETepilogue, false, "", noargs),
     pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
     pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 4, batargany("", 1), batarg("p", oid), arg("colno", int), arg("pipeline", ptr))),
-	pattern("parquet", "schema", PARQUETschema, false, "Read parquet schema", args(1,2, batarg("", oid),arg("fname",str))),
+	pattern("parquet", "schema", PARQUETschema, false, "Read parquet schema",
+		   	args(10,11,
+			   	batarg("name", str),
+			   	batarg("path", str),
+			   	batarg("physical_type", str),
+			   	batarg("length", int),
+			   	batarg("repetition_type", str),
+			   	batarg("num_children", int),
+			   	batarg("converted_type", str),
+			   	batarg("logical_type", str),
+			   	batarg("precision", int),
+			   	batarg("scale", int),
+			   	arg("fname",str))),
 { .imp=NULL }
 };
 

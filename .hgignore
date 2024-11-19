@@ -49,6 +49,7 @@ cscope.*
 *.rej
 *.orig
 compile_commands.json
+.cache
 
 # package building on Mac OS X
 MacOSX/build
