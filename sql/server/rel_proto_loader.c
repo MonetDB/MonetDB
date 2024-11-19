@@ -16,27 +16,20 @@
 #define NR_PROTO_LOADERS 255
 static proto_loader_t proto_loaders[NR_PROTO_LOADERS] = { 0 };
 
-void
-pl_exit(void)
+proto_loader_t*
+pl_find(const char *name)
 {
+	if (!name)
+		return NULL;
 	for (int i = 0; i < NR_PROTO_LOADERS; i++) {
-		if (proto_loaders[i].name)
-			GDKfree(proto_loaders[i].name);
+		if (proto_loaders[i].name && strcmp(proto_loaders[i].name, name) == 0)
+			return proto_loaders+i;
 	}
-}
-
-void
-pl_unregister(char *name)
-{
-	proto_loader_t *fl = pl_find(name);
-	if (fl) {
-		GDKfree(fl->name);
-		fl->name = NULL;
-	}
+	return NULL;
 }
 
 int
-pl_register(char *name, pl_add_types_fptr add_types, pl_load_fptr load)
+pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr load)
 {
 	proto_loader_t *fl = pl_find(name);
 	if (fl) {
@@ -58,14 +51,21 @@ pl_register(char *name, pl_add_types_fptr add_types, pl_load_fptr load)
 	return -1;	/* could not register proto_loader */
 }
 
-proto_loader_t*
-pl_find(char *name)
+void
+pl_unregister(const char *name)
 {
-	if (!name)
-		return NULL;
-	for (int i = 0; i < NR_PROTO_LOADERS; i++) {
-		if (proto_loaders[i].name && strcmp(proto_loaders[i].name, name) == 0)
-			return proto_loaders+i;
+	proto_loader_t *fl = pl_find(name);
+	if (fl) {
+		GDKfree(fl->name);
+		fl->name = NULL;
 	}
-	return NULL;
+}
+
+void
+pl_exit(void)
+{
+	for (int i = 0; i < NR_PROTO_LOADERS; i++) {
+		if (proto_loaders[i].name)
+			GDKfree(proto_loaders[i].name);
+	}
 }
