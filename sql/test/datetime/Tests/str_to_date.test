@@ -1,0 +1,66 @@
+statement ok
+create table idt (n int, d varchar(10), p varchar(10));
+
+statement ok
+insert into idt values 
+    (1, '2019-01-11', '%Y-%m-%d'),
+    (2, '2020-01-11', '%Y-%d-%m'),
+    (3, '2021-01-11', '%F')
+
+query IT rowsort
+select n, str_to_date(d, '%Y-%m-%d') from idt
+----
+1
+2019-01-11
+2
+2020-01-11
+3
+2021-01-11
+
+# the CASE clause assures that we use a bat version of str_to_date which
+# accept oid as arguments for the case of CASE condition (see the MAL)
+query IT rowsort
+select n, 
+    case when n < 2 then 
+        str_to_date(d,'%Y-%m-%d')
+    else 
+        str_to_date(d,'%Y-%m-%d') 
+    end
+from idt
+----
+1
+2019-01-11
+2
+2020-01-11
+3
+2021-01-11
+
+
+query IT rowsort
+select n, str_to_date('1999-01-12', p) from idt
+----
+1
+1999-01-12
+2
+1999-12-01
+3
+1999-01-12
+
+# the CASE clause assures that we use a bat version of str_to_date which
+# accept oid as arguments for the case of CASE condition (see the MAL)
+query IT rowsort
+select n, 
+    case when n < 2 then 
+        str_to_date('1999-01-12', p)
+    else 
+        str_to_date('1999-01-12', p) 
+    end
+from idt
+----
+1
+1999-01-12
+2
+1999-12-01
+3
+1999-01-12
+
