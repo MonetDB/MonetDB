@@ -1,0 +1,65 @@
+statement ok
+create table isp (n int, s varchar(30), p varchar(30))
+
+statement ok
+insert into isp values 
+    (1, '2021-01-01 00:00:12', '%Y-%m-%d %H:%M:%S'),
+    (2, '2022-01-01 00:01:23', '%Y-%d-%m %H:%M:%S'),
+    (3, '2023-01-01 00:12:34', '%F %T')
+
+query IT rowsort
+select n, str_to_timestamp(s,'%Y-%m-%d %H:%M:%S') from isp
+----
+1
+2021-01-01 00:00:12+01:00
+2
+2022-01-01 00:01:23+01:00
+3
+2023-01-01 00:12:34+01:00
+
+# the CASE clause assures that we use a bat version of str_to_timestamp
+# which accept oid as arguments for the case of CASE condition (see MAL)
+query IT rowsort
+select n,
+    case when n < 2 then 
+        str_to_timestamp(s,'%Y-%m-%d %H:%M:%S')
+    else 
+        str_to_timestamp(s,'%Y-%m-%d %H:%M:%S')
+    end
+from isp
+----
+1
+2021-01-01 00:00:12+01:00
+2
+2022-01-01 00:01:23+01:00
+3
+2023-01-01 00:12:34+01:00
+
+query IT rowsort
+select n, str_to_timestamp('2023-01-11 00:12:34', p) from isp
+----
+1
+2023-01-11 00:12:34+01:00
+2
+2023-11-01 00:12:34+01:00
+3
+2023-01-11 00:12:34+01:00
+
+# the CASE clause assures that we use a bat version of str_to_timestamp
+# which accept oid as arguments for the case of CASE condition (see MAL)
+query IT rowsort
+select n,
+    case when n < 2 then 
+        str_to_timestamp('2023-01-11 00:12:34', p)
+    else 
+        str_to_timestamp('2023-01-11 00:12:34', p)
+    end
+from isp
+----
+1
+2023-01-11 00:12:34+01:00
+2
+2023-11-01 00:12:34+01:00
+3
+2023-01-11 00:12:34+01:00
+
