@@ -908,7 +908,7 @@ PARQUETschema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *logic_type = nchildren > 0 ? "" : str_logical_type(e.type);
 		char *rep_type = str_repetition_type(e.repetition);
 		uint32_t type_length = e.type_length;
-		char *cpath = NULL; // TODO
+		char *cpath = ""; // TODO
 
 		if (BUNappend(name, e.name, false) != GDK_SUCCEED)
 			goto bailout;
@@ -979,6 +979,91 @@ bailout:
 	return msg;
 }
 
+static str
+PARQUETfile_metadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt; (void) mb;
+	char *msg = NULL;
+	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
+	pqc_file *pq = NULL;
+
+	if (pqc_open(&pq, fname) < 0) {
+		throw(SQL, "parquet.file_metadata",  SQLSTATE(HY013) "Failed to open file '%s'", fname);
+	}
+	if (pqc_read_filemetadata(pq) < 0) {
+		pqc_close(pq);
+		throw(SQL, "parquet.file_metadata",  SQLSTATE(HY013) "Failed to read file metadata for file '%s'", fname);
+	}
+	BAT *created_by = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *format_version = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *num_columns = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *num_row_groups = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *num_rows = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *encryption_algorithm = COLnew(0, TYPE_str, 0, TRANSIENT);
+	BAT *footer_signing_key_metadata = COLnew(0, TYPE_str, 0, TRANSIENT);
+
+	if (created_by == NULL || format_version == NULL || num_columns == NULL
+		   	|| num_row_groups == NULL || num_rows == NULL
+		   	|| encryption_algorithm == NULL || footer_signing_key_metadata == NULL) {
+		msg = createException(SQL, "parquet.file_metadata", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
+	int ncolumns = fmd->nelements - 1; // ?
+	char *cby = (fmd->created_by && checkUTF8(fmd->created_by)) ? fmd->created_by : "";
+	char *algorithm = (fmd->encryption_algorithm && checkUTF8(fmd->encryption_algorithm)) ? fmd->encryption_algorithm : "";
+	char *fskm = (fmd->footer_signing_key_metadata && checkUTF8(fmd->footer_signing_key_metadata)) ? fmd->footer_signing_key_metadata : "";
+
+	if (BUNappend(created_by, cby, false) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(format_version, &fmd->version, false) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(num_columns, &ncolumns, false) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(num_row_groups, &fmd->nrowgroups, false) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(num_rows, &fmd->nrows, false) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(encryption_algorithm, algorithm, false) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(footer_signing_key_metadata, fskm, false) != GDK_SUCCEED)
+		goto bailout;
+
+	bat *created_by_id = getArgReference_bat(stk, pci, 0);
+	*created_by_id = created_by->batCacheid;
+	BBPkeepref(created_by);
+	bat *format_version_id = getArgReference_bat(stk, pci, 1);
+	*format_version_id = format_version->batCacheid;
+	BBPkeepref(format_version);
+	bat *num_columns_id = getArgReference_bat(stk, pci, 2);
+	*num_columns_id = num_columns->batCacheid;
+	BBPkeepref(num_columns);
+	bat *num_row_groups_id = getArgReference_bat(stk, pci, 3);
+	*num_row_groups_id = num_row_groups->batCacheid;
+	BBPkeepref(num_row_groups);
+	bat *num_rows_id = getArgReference_bat(stk, pci, 4);
+	*num_rows_id = num_rows->batCacheid;
+	BBPkeepref(num_rows);
+	bat *encryption_algorithm_id = getArgReference_bat(stk, pci, 5);
+	*encryption_algorithm_id = encryption_algorithm->batCacheid;
+	BBPkeepref(encryption_algorithm);
+	bat *footer_signing_key_metadata_id = getArgReference_bat(stk, pci, 6);
+	*footer_signing_key_metadata_id = footer_signing_key_metadata->batCacheid;
+	BBPkeepref(footer_signing_key_metadata);
+	return MAL_SUCCEED;
+bailout:
+	if(pq)
+		pqc_close(pq);
+	BBPreclaim(created_by);
+	BBPreclaim(format_version);
+	BBPreclaim(num_columns);
+	BBPreclaim(num_row_groups);
+	BBPreclaim(num_rows);
+	BBPreclaim(encryption_algorithm);
+	BBPreclaim(footer_signing_key_metadata);
+	return msg;
+}
+
 #include "sql_scenario.h"
 #include "mel.h"
 
@@ -999,6 +1084,16 @@ static mel_func parquet_init_funcs[] = {
 			   	batarg("logical_type", str),
 			   	batarg("precision", int),
 			   	batarg("scale", int),
+			   	arg("fname",str))),
+	pattern("parquet", "file_metadata", PARQUETfile_metadata, false, "Read parquet file metadata",
+		   	args(7,8,
+			   	batarg("created_by", str),
+			   	batarg("format_version", int),
+			   	batarg("num_columns", int),
+			   	batarg("num_row_groups", int),
+			   	batarg("num_rows", int),
+			   	batarg("encryption_algorithm", str),
+			   	batarg("footer_signing_key_metadata", str),
 			   	arg("fname",str))),
 { .imp=NULL }
 };

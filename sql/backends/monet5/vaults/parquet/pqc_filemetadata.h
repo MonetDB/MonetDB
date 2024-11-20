@@ -399,21 +399,22 @@ typedef struct pqc_row_group {
 } pqc_row_group;
 
 typedef struct pqc_filemetadata {
-	int64_t nrows;
-	int nelements;
-	pqc_schema_element *elements;
-
-	/* key values */
 	char *created_by;
+	u_int32_t version;
 
 	/* internal data */
+	int64_t nrows;
 	int nrowgroups;
 	pqc_row_group *rowgroups;
 
 	/* list column order */
+	int nelements;
+	pqc_schema_element *elements;
 
 	int nkeyvalues;
 	pqc_keyvalue *keyvalues; /* optional key values */
+	char *encryption_algorithm;
+	char *footer_signing_key_metadata;
 } pqc_filemetadata;
 
 typedef struct pqc_file pqc_file;

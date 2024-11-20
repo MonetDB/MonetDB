@@ -12,3 +12,15 @@ returns table(
     "scale" int
 )
 external name parquet.schema;
+
+create function sys.parquet_file_metadata(fname string)
+returns table(
+    "created_by" string,
+    "format_version" int,
+    "num_columns" int,
+    "num_row_groups" int,
+    "num_rows" int,
+    "encryption_algorithm" string,
+    "footer_signing_key_metadata" string
+)
+external name parquet.file_metadata;

@@ -384,11 +384,11 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 			pse->type = listtype;
-			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_LIST");
 			break;
 		case LOGICAL_TYPE_ENUM:
-			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_ENUM");
-			return -1;
+			pos = pqc_struct(pq, pos);
+			pse->type = enumtype;
+			break;
 		case LOGICAL_TYPE_DECIMAL: /* decimal */
 			pos = pqc_decimal(pq, pse, pos);
 			break;
@@ -1121,6 +1121,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 
 	pq->fmd = SA_NEW(pq->pa, pqc_filemetadata);
 	pqc_filemetadata *fmd = pq->fmd;
+	*fmd = (pqc_filemetadata) {0};
 	if (!pq->fmd) {
 		TRC_ERROR(PARQUET, "PQC: alloc failed\n");
 		return -1;
@@ -1137,6 +1138,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			assert(type == T_I32);
 			pos += pqc_get_zint32(pq->buffer+pos, &version);
 			TRC_INFO(PARQUET, "version %u\n", version);
+			fmd->version = version;
 			break;
 		case FILE_METADATA_SCHEMA:
 			assert(type == T_LIST); /* LIST */
@@ -1198,9 +1200,10 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			break;
 		case FILE_METADATA_CREATED_BY: {
 			assert(type == T_BINARY); /*string */
-			char *created_by;
+			char *created_by = NULL;
 			pos += pqc_get_string(pq->buffer+pos, &created_by, &type);
 			TRC_INFO(PARQUET, "created_by %s\n", created_by);
+			fmd->created_by = SA_STRDUP(pq->pa, created_by);
 		} break;
 		case FILE_METADATA_COLUMN_ORDERS:
 			assert(type == T_LIST); /* LIST */
