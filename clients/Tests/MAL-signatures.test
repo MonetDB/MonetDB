@@ -23570,22 +23570,22 @@ MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:date]
-MTIMEstr_to_date_bulk_p1;
-(empty)
-batmtime
-str_to_date
 pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng):bat[:date]
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:date]
-MTIMEstr_to_date_bulk_p2;
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:date]
+MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
 pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng):bat[:date]
+MTIMEstr_to_date_bulk_p2;
+(empty)
+batmtime
+str_to_date
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:date]
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
@@ -23600,22 +23600,22 @@ MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:daytime]
-MTIMEstr_to_time_bulk_p1;
-(empty)
-batmtime
-str_to_time
 pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng):bat[:daytime]
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:daytime]
-MTIMEstr_to_time_bulk_p2;
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:daytime]
+MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
 pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng):bat[:daytime]
+MTIMEstr_to_time_bulk_p2;
+(empty)
+batmtime
+str_to_time
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:daytime]
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
@@ -23630,22 +23630,22 @@ MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:timestamp]
-MTIMEstr_to_timestamp_bulk_p1;
-(empty)
-batmtime
-str_to_timestamp
 pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng):bat[:timestamp]
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:timestamp]
-MTIMEstr_to_timestamp_bulk_p2;
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:timestamp]
+MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
 pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng):bat[:timestamp]
+MTIMEstr_to_timestamp_bulk_p2;
+(empty)
+batmtime
+str_to_timestamp
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:timestamp]
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
@@ -24620,22 +24620,22 @@ MTIMEtimestamptz_to_str_bulk;
 (empty)
 batmtime
 timestamptz_to_str
-pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimestamptz_to_str_bulk_p1;
-(empty)
-batmtime
-timestamptz_to_str
 pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng):bat[:str]
 MTIMEtimestamptz_to_str_bulk_p1;
 (empty)
 batmtime
 timestamptz_to_str
-pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimestamptz_to_str_bulk_p2;
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:str]
+MTIMEtimestamptz_to_str_bulk_p1;
 (empty)
 batmtime
 timestamptz_to_str
 pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng):bat[:str]
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:str]
 MTIMEtimestamptz_to_str_bulk_p2;
 (empty)
 batmtime
@@ -24650,22 +24650,22 @@ MTIMEtimetz_to_str_bulk;
 (empty)
 batmtime
 timetz_to_str
-pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimetz_to_str_bulk_p1;
-(empty)
-batmtime
-timetz_to_str
 pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng):bat[:str]
 MTIMEtimetz_to_str_bulk_p1;
 (empty)
 batmtime
 timetz_to_str
-pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimetz_to_str_bulk_p2;
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:str]
+MTIMEtimetz_to_str_bulk_p1;
 (empty)
 batmtime
 timetz_to_str
 pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng):bat[:str]
+MTIMEtimetz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:str]
 MTIMEtimetz_to_str_bulk_p2;
 (empty)
 batmtime
