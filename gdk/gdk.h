@@ -1863,6 +1863,25 @@ bunfastapp(BAT *b, const void *v)
 	return rc;
 }
 
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+bunfastappOID(BAT *b, oid o)
+{
+	BUN p = b->batCount;
+	if (p >= BATcapacity(b)) {
+		if (p >= BUN_MAX) {
+			GDKerror("tfastins: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	((oid *) b->theap->base)[b->batCount++] = o;
+	b->theap->free += sizeof(oid);
+	return GDK_SUCCEED;
+}
+
 #define bunfastappTYPE(TYPE, b, v)					\
 	(BATcount(b) >= BATcapacity(b) &&				\
 	 ((BATcount(b) == BUN_MAX &&					\

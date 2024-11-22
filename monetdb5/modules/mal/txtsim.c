@@ -824,13 +824,13 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 			/* The match test succeeded */
 			lsi[n].matches++;
 			rsi[rstart].matches++;
-			if (bunfastappTYPE(oid, r1t, &(lsi[n].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r1t, lsi[n].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
-			if (bunfastappTYPE(oid, r2t, &(rsi[rstart].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r2t, rsi[rstart].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
@@ -1026,13 +1026,13 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* The match test succeeded */
 			ssl[n].matches++;
 			ssr[rstart].matches++;
-			if (bunfastappTYPE(oid, r1t, &(ssl[n].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r1t, ssl[n].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
-			if (bunfastappTYPE(oid, r2t, &(ssr[rstart].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r2t, ssr[rstart].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
