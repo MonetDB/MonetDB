@@ -46088,11 +46088,6 @@ subgroupdone
 command group.subgroupdone(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) (X_5:bat[:oid], X_6:bat[:oid])
 GRPsubgroup9;
 (empty)
-identifier
-identifier
-command identifier.identifier(X_0:str):identifier
-IDentifier;
-Cast a string to an identifier 
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit
