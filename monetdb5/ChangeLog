@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Fri Nov 22 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the MAL type "color" and supporting functions.  There has
+  never been an SQL interface to this type.
+

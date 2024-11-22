@@ -1046,7 +1046,7 @@ tr_commit(logger *lg, trans *tr)
 }
 
 static gdk_return
-log_read_types_file(logger *lg, FILE *fp, int version)
+log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
@@ -1054,8 +1054,14 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
-		if (version < 52303 && strcmp(atom_name, "BAT") == 0)
+		if (version < 52303 && strcmp(atom_name, "BAT") == 0) {
+			*needsnew = true;
 			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "color") == 0) {
+			*needsnew = true;
+			continue;
+		}
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1546,7 +1552,7 @@ check_version(logger *lg, FILE *fp, bool *needsnew)
 		fclose(fp);
 		return GDK_FAIL;
 	}
-	if (log_read_types_file(lg, fp, version) != GDK_SUCCEED) {
+	if (log_read_types_file(lg, fp, version, needsnew) != GDK_SUCCEED) {
 		fclose(fp);
 		return GDK_FAIL;
 	}
