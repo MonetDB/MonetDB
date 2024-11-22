@@ -3,12 +3,12 @@ create table itt (n int, t timetz, p text);
 
 statement ok
 insert into itt values
-    (1, timetz '00:00:12', '%l hour %M:%S %p'),
-    (2, timetz '00:01:23', '%l hour %S:%M %p'),
+    (1, timetz '00:00:12', '%I hour %M:%S %p'),
+    (2, timetz '00:01:23', '%I hour %S:%M %p'),
     (3, timetz '00:12:34', '%T %p')
 
 query IT rowsort
-select n, time_to_str(t, '%l hour %M:%S %p') from itt
+select n, time_to_str(t, '%I hour %M:%S %p') from itt
 ----
 1
 12 hour 00:12 AM
@@ -22,9 +22,9 @@ select n, time_to_str(t, '%l hour %M:%S %p') from itt
 query IT rowsort
 select n,
     case when n < 2 then 
-        time_to_str(t, '%l hour %M:%S %p')
+        time_to_str(t, '%I hour %M:%S %p')
     else 
-        time_to_str(t, '%l hour %M:%S %p')
+        time_to_str(t, '%I hour %M:%S %p')
     end
 from itt
 ----

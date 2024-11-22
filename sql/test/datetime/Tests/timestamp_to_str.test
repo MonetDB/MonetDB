@@ -3,12 +3,12 @@ create table ist (n int, s timestamptz, p text);
 
 statement ok
 insert into ist values
-    (1, timestamptz '2024-01-01 00:00:12', '%d %b %l:%M:%S %p, %Y'),
-    (2, timestamptz '2024-01-01 00:01:23', '%b %d %l:%S:%M %p, %Y'),
+    (1, timestamptz '2024-01-01 00:00:12', '%d %b %I:%M:%S %p, %Y'),
+    (2, timestamptz '2024-01-01 00:01:23', '%b %d %I:%S:%M %p, %Y'),
     (3, timestamptz '2024-01-01 00:12:34', '%d %b %T, %Y')
 
 query IT rowsort
-select n, timestamp_to_str(s, '%d %b %l:%M:%S %p, %Y') from ist
+select n, timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y') from ist
 ----
 1
 01 Jan 12:00:12 AM, 2024
@@ -23,9 +23,9 @@ select n, timestamp_to_str(s, '%d %b %l:%M:%S %p, %Y') from ist
 query IT rowsort
 select n, 
     case when n < 2 then 
-        timestamp_to_str(s, '%d %b %l:%M:%S %p, %Y')
+        timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y')
     else 
-        timestamp_to_str(s, '%d %b %l:%M:%S %p, %Y')
+        timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y')
     end
 from ist
 ----
