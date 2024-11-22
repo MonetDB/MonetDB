@@ -1077,7 +1077,7 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 }
 
 
-gdk_return
+static gdk_return
 log_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
