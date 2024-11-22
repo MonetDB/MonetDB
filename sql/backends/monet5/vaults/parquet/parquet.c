@@ -860,6 +860,63 @@ str_repetition_type(FieldRepetitionType type)
 	}
 }
 
+static char*
+str_compression_codec(CompressionCodec type)
+{
+	switch(type) {
+		case CC_UNCOMPRESSED:
+			return "UNCOMPRESSED";
+		case CC_SNAPPY:
+			return "SNAPPY";
+		case CC_GZIP:
+			return "GZIP";
+		case CC_LZO:
+			return "LZO";
+		case CC_BROTLI:
+			return "BROTLY";
+		case CC_LZ4:
+			return "LZ4";
+		case CC_ZSTD:
+			return "ZSTD";
+		case CC_LZ4_RAW:
+			return "LZ4_RAW";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_encoding(Encoding e)
+{
+	switch(e) {
+		case PLAIN:
+			return "PLAIN";
+		case PLAIN_DICTIONARY:
+			return "PLAIN_DICTIONARY";
+		case RLE:
+			return "RLE";
+		case BIT_PACKED:
+			return "BIT_PACKED";
+		case DELTA_BINARY_PACKED:
+			return "DELTA_BINARY_PACKED";
+		case DELTA_LENGTH_BYTE_ARRAY:
+			return "DELTA_LENGTH_BYTE_ARRAY";
+		case RLE_DICTIONARY:
+			return "RLE_DICTIONARY";
+		case BYTE_STREAM_SPLIT:
+			return "BYTE_STREAM_SPLIT";
+		default:
+			return "";
+	}
+}
+
+static const char*
+get_valid_utf8_or_empty(const char *s)
+{
+	if (s != NULL && checkUTF8(s))
+		return s;
+	return "";
+}
 
 static str
 PARQUETschema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1010,9 +1067,9 @@ PARQUETfile_metadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
 	int ncolumns = fmd->nelements - 1; // ?
-	char *cby = (fmd->created_by && checkUTF8(fmd->created_by)) ? fmd->created_by : "";
-	char *algorithm = (fmd->encryption_algorithm && checkUTF8(fmd->encryption_algorithm)) ? fmd->encryption_algorithm : "";
-	char *fskm = (fmd->footer_signing_key_metadata && checkUTF8(fmd->footer_signing_key_metadata)) ? fmd->footer_signing_key_metadata : "";
+	const char *cby = get_valid_utf8_or_empty(fmd->created_by);
+	const char *algorithm = get_valid_utf8_or_empty(fmd->encryption_algorithm);
+	const char *fskm = get_valid_utf8_or_empty(fmd->footer_signing_key_metadata);
 
 	if (BUNappend(created_by, cby, false) != GDK_SUCCEED)
 		goto bailout;
@@ -1080,28 +1137,28 @@ PARQUETmetadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "parquet.metadata",  SQLSTATE(HY013) "Failed to read file metadata for file '%s'", fname);
 	}
 
-	BAT *row_group_id = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *row_group_num_rows = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *row_group_num_columns = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *row_group_bytes = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *column_id = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *file_offset = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *num_values = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *row_group_id = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *row_group_num_rows = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *row_group_num_columns = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *row_group_bytes = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *column_id = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *file_offset = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *num_values = COLnew(0, TYPE_lng, 0, TRANSIENT);
 	BAT *path_in_schema = COLnew(0, TYPE_str, 0, TRANSIENT);
 	BAT *type = COLnew(0, TYPE_str, 0, TRANSIENT);
 	BAT *stats_min = COLnew(0, TYPE_str, 0, TRANSIENT);
 	BAT *stats_max = COLnew(0, TYPE_str, 0, TRANSIENT);
-	BAT *stats_null_count = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *stats_distinct_count = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *stats_null_count = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *stats_distinct_count = COLnew(0, TYPE_lng, 0, TRANSIENT);
 	BAT *stats_min_value = COLnew(0, TYPE_str, 0, TRANSIENT);
 	BAT *stats_max_value = COLnew(0, TYPE_str, 0, TRANSIENT);
 	BAT *compression = COLnew(0, TYPE_str, 0, TRANSIENT);
 	BAT *encodings = COLnew(0, TYPE_str, 0, TRANSIENT);
-	BAT *index_page_offset = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *dictionary_page_offset = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *data_page_offset = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *total_compressed_size = COLnew(0, TYPE_int, 0, TRANSIENT);
-	BAT *total_uncompressed_size = COLnew(0, TYPE_int, 0, TRANSIENT);
+	BAT *index_page_offset = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *dictionary_page_offset = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *data_page_offset = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *total_compressed_size = COLnew(0, TYPE_lng, 0, TRANSIENT);
+	BAT *total_uncompressed_size = COLnew(0, TYPE_lng, 0, TRANSIENT);
 
 	if (row_group_id == NULL || row_group_num_rows == NULL || row_group_num_columns == NULL
 		   	|| row_group_bytes == NULL || column_id == NULL
@@ -1117,9 +1174,73 @@ PARQUETmetadata(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "parquet.metadata", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	// pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
-	// TODO append
-
+	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
+	for (int i = 0; i < fmd->nrowgroups; i++) {
+		pqc_row_group row_group = fmd->rowgroups[i];
+		for (int j = 0; j < row_group.ncolumnchunks; j++) {
+			pqc_columnchunk column_chunk = row_group.columnchunks[j];
+			pqc_stat stats = column_chunk.stat;
+			if (BUNappend(row_group_id, &row_group.ordinal, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(row_group_num_rows, &row_group.num_rows, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(row_group_num_columns, &row_group.ncolumnchunks, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(row_group_bytes, &row_group.total_byte_size, false) != GDK_SUCCEED)
+				goto bailout;
+			//
+			if (BUNappend(column_id, &j, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(file_offset, &column_chunk.file_offset, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(num_values, &column_chunk.num_values, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(path_in_schema, get_valid_utf8_or_empty(column_chunk.path_in_schema), false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(type, str_physical_type(column_chunk.type), false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(stats_min, get_valid_utf8_or_empty(stats.min_string), false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(stats_max, get_valid_utf8_or_empty(stats.max_string), false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(stats_null_count, &stats.null_count, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(stats_distinct_count, &stats.distinct_count, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(stats_min_value, get_valid_utf8_or_empty(stats.min_value), false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(stats_max_value, get_valid_utf8_or_empty(stats.max_value), false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(compression, str_compression_codec(column_chunk.codec), false) != GDK_SUCCEED)
+				goto bailout;
+			// should be enough to hold all concatenated encodings strings
+			char encodings_str[200] = "";
+			if (column_chunk.num_encodings ) {
+				u_int32_t char_cnt = 0;
+				for (u_int32_t k = 0; k < column_chunk.num_encodings && char_cnt < 200; k++) {
+					char *next = str_encoding(column_chunk.encodings[k]);
+					char_cnt += strlen(next);
+					strcat(encodings_str, next);
+					if (k < column_chunk.num_encodings - 1) {
+						strcat(encodings_str, ", ");
+						char_cnt += 2;
+					}
+				}
+			}
+			if (BUNappend(encodings, encodings_str, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(index_page_offset, &column_chunk.index_page_offset, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(dictionary_page_offset, &column_chunk.dictionary_page_offset, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(data_page_offset, &column_chunk.data_page_offset, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(total_compressed_size, &column_chunk.total_compressed_size, false) != GDK_SUCCEED)
+				goto bailout;
+			if (BUNappend(total_uncompressed_size, &column_chunk.total_uncompressed_size, false) != GDK_SUCCEED)
+				goto bailout;
+		}
+	}
 
 	bat *row_group_id_id = getArgReference_bat(stk, pci, 0);
 	*row_group_id_id = row_group_id->batCacheid;
@@ -1231,48 +1352,48 @@ static mel_func parquet_init_funcs[] = {
 			   	batarg("name", str),
 			   	batarg("path", str),
 			   	batarg("physical_type", str),
-			   	batarg("length", int),
+			   	batarg("length", lng),
 			   	batarg("repetition_type", str),
-			   	batarg("num_children", int),
+			   	batarg("num_children", lng),
 			   	batarg("converted_type", str),
 			   	batarg("logical_type", str),
-			   	batarg("precision", int),
-			   	batarg("scale", int),
+			   	batarg("precision", lng),
+			   	batarg("scale", lng),
 			   	arg("fname",str))),
 	pattern("parquet", "file_metadata", PARQUETfile_metadata, false, "Read parquet file metadata",
 		   	args(7,8,
 			   	batarg("created_by", str),
-			   	batarg("format_version", int),
-			   	batarg("num_columns", int),
-			   	batarg("num_row_groups", int),
-			   	batarg("num_rows", int),
+			   	batarg("format_version", lng),
+			   	batarg("num_columns", lng),
+			   	batarg("num_row_groups", lng),
+			   	batarg("num_rows", lng),
 			   	batarg("encryption_algorithm", str),
 			   	batarg("footer_signing_key_metadata", str),
 			   	arg("fname",str))),
 	pattern("parquet", "metadata", PARQUETmetadata, false, "Read parquet metadata",
 		   	args(22,23,
-			   	batarg("row_group_id", int),
-			   	batarg("row_group_num_rows", int),
-			   	batarg("row_group_num_columns", int),
-			   	batarg("row_group_bytes", int),
-			   	batarg("column_id", int),
-			   	batarg("file_offset", int),
-			   	batarg("num_values", int),
+			   	batarg("row_group_id", lng),
+			   	batarg("row_group_num_rows", lng),
+			   	batarg("row_group_num_columns", lng),
+			   	batarg("row_group_bytes", lng),
+			   	batarg("column_id", lng),
+			   	batarg("file_offset", lng),
+			   	batarg("num_values", lng),
 			   	batarg("path_in_schema", str),
 			   	batarg("type", str),
 			   	batarg("stats_min", str),
 			   	batarg("stats_max", str),
-			   	batarg("stats_null_count", int),
-			   	batarg("stats_distinct_count", int),
+			   	batarg("stats_null_count", lng),
+			   	batarg("stats_distinct_count", lng),
 			   	batarg("stats_min_value", str),
 			   	batarg("stats_max_value", str),
 			   	batarg("compression", str),
 			   	batarg("encodings", str),
-			   	batarg("index_page_offset", int),
-			   	batarg("dictionary_page_offset", int),
-			   	batarg("date_page_offset", int),
-			   	batarg("total_compressed_size", int),
-			   	batarg("total_uncompressed_size", int),
+			   	batarg("index_page_offset", lng),
+			   	batarg("dictionary_page_offset", lng),
+			   	batarg("date_page_offset", lng),
+			   	batarg("total_compressed_size", lng),
+			   	batarg("total_uncompressed_size", lng),
 			   	arg("fname",str))),
 { .imp=NULL }
 };

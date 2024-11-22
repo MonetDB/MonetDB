@@ -27,27 +27,27 @@ external name parquet.file_metadata;
 
 create function sys.parquet_metadata(fname string)
 returns table(
-    row_group_id INT,
-    row_group_num_rows INT,
-    row_group_num_columns INT,
-    row_group_bytes	INT,
-    column_id INT,
-    file_offset INT,
-    num_values INT,
+    row_group_id BIGINT,
+    row_group_num_rows BIGINT,
+    row_group_num_columns BIGINT,
+    row_group_bytes	BIGINT,
+    column_id BIGINT,
+    file_offset BIGINT,
+    num_values BIGINT,
     path_in_schema VARCHAR,
     type VARCHAR,
     stats_min VARCHAR,
     stats_max VARCHAR,
-    stats_null_count INT,
-    stats_distinct_count INT,
+    stats_null_count BIGINT,
+    stats_distinct_count BIGINT,
     stats_min_value VARCHAR,
     stats_max_value	VARCHAR,
     compression	VARCHAR,
     encodings VARCHAR,
-    index_page_offset INT,
-    dictionary_page_offset INT,
-    data_page_offset INT,
-    total_compressed_size INT,
-    total_uncompressed_size	INT
+    index_page_offset BIGINT,
+    dictionary_page_offset BIGINT,
+    data_page_offset BIGINT,
+    total_compressed_size BIGINT,
+    total_uncompressed_size	BIGINT
 )
 external name parquet.metadata;

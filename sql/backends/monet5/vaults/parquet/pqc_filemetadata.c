@@ -861,23 +861,34 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 			TRC_INFO(PARQUET, "encodings list size %d type %d\n", size, type);
 			assert(type == T_I32);
 			u_int32_t encoding;
+			cc->encodings = sa_alloc(pq->pa, size * sizeof(u_int32_t));
 			for(int i = 0; i < size; i++) {
 				pos += pqc_get_zint32(pq->buffer+pos, &encoding);
 				cc->encodings[i] = encoding;
 				TRC_INFO(PARQUET, "\tencoding[%d] %u\n", i, cc->encodings[i]);
 			}
+			cc->num_encodings = size;
 		} break;
 		case COLUMN_META_DATA_PATH_IN_SCHEMA:
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "path_in_schema list size %d type %d\n", size, type);
+			char *path_in_schema_str = "";
 			for(int i = 0; i < size; i++) {
 				assert(type == T_BINARY);
-				int res = pqc_string(pq, pq->buffer+pos, &cc->path_in_schema);
+				char *cname = NULL;
+				int res = pqc_string(pq, pq->buffer+pos, &cname);
 				if (res < 0)
 					return -1;
+				if (cname) {
+					path_in_schema_str = sa_strconcat(pq->pa, path_in_schema_str, cname);
+					if (i < size - 1)
+						path_in_schema_str = sa_strconcat(pq->pa, path_in_schema_str, ", ");
+				}
 				pos += res;
-				TRC_INFO(PARQUET, "path_in_schema %s\n", cc->path_in_schema);
 			}
+			if (strlen(path_in_schema_str) > 0)
+				cc->path_in_schema = path_in_schema_str;
+			TRC_INFO(PARQUET, "path_in_schema %s\n", cc->path_in_schema);
 			break;
 		case COLUMN_META_DATA_CODEC:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->codec);
@@ -886,6 +897,7 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 		case COLUMN_META_DATA_NUM_VALUES:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->nrows);
 			TRC_INFO(PARQUET, "num values %" PRIu64 "\n", cc->nrows);
+			cc->num_values = cc->nrows;
 			break;
 		case COLUMN_META_DATA_TOTAL_UNCOMPRESSED_SIZE:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->total_uncompressed_size);

@@ -59,17 +59,6 @@ gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 typedef unsigned char uchar;
 typedef unsigned short usht;
 
-typedef enum compressioncodec {
-	CC_UNCOMPRESSED = 0,
-	CC_SNAPPY = 1,
-	CC_GZIP = 2,
-  	CC_LZO = 3,
-  	CC_BROTLI = 4,  // Added in 2.4
-  	CC_LZ4 = 5,     // DEPRECATED (Added in 2.4)
-  	CC_ZSTD = 6,    // Added in 2.4
-  	CC_LZ4_RAW = 7, // Added in 2.9
-} compressioncodec;
-
 typedef struct pqc_creader_t {
 	pqc_file *pq;
 	pqc_columnchunk *cc;
