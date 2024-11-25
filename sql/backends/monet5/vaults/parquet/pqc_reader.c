@@ -11,6 +11,7 @@
 #include <gdk.h>
 #include <gdk_time.h>
 #include <sql_mem.h>
+#include <stream_internal.h>
 
 #ifdef HAVE_SNAPPY
 #include <snappy-c.h>
@@ -1738,6 +1739,19 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					if (!cr->definition) {
 						if ((r->pse->size/8)*8 != r->pse->size) {
 							pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
+						} else if (r->pse->physical_type == PT_BYTE_ARRAY ||
+								   r->pse->physical_type == PT_FIXED_LEN_BYTE_ARRAY) {
+							char *dst = output;
+							/* FIX ARRAY little endian len followed by big endian data,  what where they smoking */
+							for (uint32_t i = 0; i < nrows; i++, dst += 2) {
+								int len = *(int*)(((char*)cr->data)+pos);
+								pos += 4;
+								*(sht*)dst = 0;
+								memcpy(dst, ((char*)cr->data)+pos, len);
+								if (len == 2)
+									*(sht*)dst = short_int_SWAP(*(sht*)dst);
+								pos += len;
+							}
 						} else {
 							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
 							pos += (r->pse->size/8)*nrows;
@@ -1808,6 +1822,19 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					if (!cr->definition) {
 						if ((r->pse->size/8)*8 != r->pse->size) {
 							pos += pqc_project(output, ((char*)cr->data)+pos, nrows, r->pse->size);
+						} else if (r->pse->physical_type == PT_BYTE_ARRAY ||
+								   r->pse->physical_type == PT_FIXED_LEN_BYTE_ARRAY) {
+							/* FIX ARRAY little endian len followed by big endian data,  what where they smoking */
+							char *dst = output;
+							for (uint32_t i = 0; i < nrows; i++, dst += 2) {
+								int len = *(int*)(((char*)cr->data)+pos);
+								pos += 4;
+								*(sht*)dst = 0;
+								memcpy(dst, ((char*)cr->data)+pos, len);
+								if (len == 2)
+									*(sht*)dst = short_int_SWAP(*(sht*)dst);
+								pos += len;
+							}
 						} else {
 							memcpy(output, ((char*)cr->data)+pos, nrows*(r->pse->size/8));
 							pos += (r->pse->size/8)*nrows;

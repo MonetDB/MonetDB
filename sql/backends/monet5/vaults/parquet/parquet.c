@@ -80,7 +80,12 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				return tpe;
 			break;
 		case decimaltype:
-			if (pse->size == 32) {
+			if (pse->size == 0) { /* byte array */
+				if (sql_find_subtype(tpe, "decimal", pse->precision, pse->scale)) {
+					tpe->digits = pse->precision;
+					return tpe;
+				}
+			} else if (pse->size == 32) {
 				if (sql_find_subtype(tpe, "decimal", 9, pse->scale)) {
 					tpe->digits = pse->precision;
 					return tpe;
@@ -141,10 +146,14 @@ pqc_find_localtype(const pqc_schema_element *pse)
 				return TYPE_timestamp;
 			break;
 		case decimaltype:
+			if (pse->size == 0) {
+				return TYPE_sht;
+			}
 			if (pse->size == 32)
 				return TYPE_int;
 			if (pse->size == 64)
 				return TYPE_lng;
+			assert(0);
 			break;
 		case listtype:
 			return TYPE_oid;
@@ -204,9 +213,9 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		list *types = sa_list(sql->sa), *names = sa_list(sql->sa);
 		for(int i = 1; i < nr; i++) {
 			const pqc_schema_element *e = pse+i;
-			sql_subtype *t = (e->type)?pqc_find_subtype(sql, e):NULL;
+			sql_subtype *t = (e->type!=LT_UNKNOWN)?pqc_find_subtype(sql, e):NULL;
 
-			if (e->type && !t) {
+			if (e->type != LT_UNKNOWN && !t) {
 				int tpe = e->type;
 				char *nme = e->name?sa_strdup(sql->ta, e->name):NULL;
 				pqc_close(pq);
@@ -230,7 +239,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			sql_exp *ne = exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0);
 			set_basecol(ne);
 			ne->alias.label = -(sql->nid++);
-			if (!e->type || e->type == listtype)
+			if (e->type == LT_UNKNOWN || e->type == listtype)
 				set_intern(ne);
 			list_append(res_exps, ne);
 			if (e->precision && *est > (1L<<e->precision)) {
@@ -261,9 +270,8 @@ typedef struct pqc_creader {
 #define PARQUET_SINK 43
 
 static void
-pqcc_destroy(void *sink)
+pqcc_destroy(pqc_creader *r)
 {
-	pqc_creader *r = (pqc_creader*)sink;
 	assert(r->sink.type == PARQUET_SINK);
 	/* for each r->readers */
 	for(int i = 0; i < r->ncols; i++)
@@ -277,11 +285,12 @@ pqcc_destroy(void *sink)
 }
 
 static int
-pqcc_done(void *sink, int wid)
+pqcc_done(pqc_creader *r, int wid, int nr_workers, bool redo)
 {
-	pqc_creader *r = (pqc_creader*)sink;
+	(void)redo;
+	(void)nr_workers;
 	assert(r->sink.type == PARQUET_SINK);
-	if (r->done[wid])
+	if (r->done && r->done[wid])
 		return 1;
 	return 0;
 }
@@ -291,8 +300,8 @@ pqcc_create(pqc_file *pq, pqc_filemetadata *fmd, lng nrows)
 {
 	pqc_creader *r = (pqc_creader*)GDKzalloc(sizeof(pqc_creader));
 
-	r->sink.destroy = &pqcc_destroy;
-	r->sink.done = &pqcc_done;
+	r->sink.destroy = (sink_destroy)&pqcc_destroy;
+	r->sink.done = (sink_done)&pqcc_done;
 	r->sink.type = PARQUET_SINK;
 	r->b = pq;
 	r->fmd = fmd;
@@ -315,10 +324,8 @@ typedef struct pqc_mcreader {
 #define MPARQUET_SINK 44
 
 static void
-pqcmc_destroy(void *sink)
+pqcmc_destroy(pqc_mcreader *r)
 {
-	pqc_mcreader *r = (pqc_mcreader*)sink;
-
 	if (r->glob.gl_pathc)
 		globfree(&r->glob);
 	assert(r->sink.type == MPARQUET_SINK);
@@ -328,15 +335,16 @@ pqcmc_destroy(void *sink)
 }
 
 static int
-pqcmc_done(void *sink, int wid)
+pqcmc_done(pqc_mcreader *r, int wid, int nr_workers, bool redo)
 {
-	pqc_mcreader *r = (pqc_mcreader*)sink;
+	(void)redo;
+	(void)nr_workers;
 	assert(r->sink.type == MPARQUET_SINK);
 	if (r->c && r->c[wid] && r->c[wid]->done[0]) {
 			pqcc_destroy(r->c[wid]);
 			r->c[wid] = NULL;
 	}
-	if (r->done[wid])
+	if (r->done && r->done[wid])
 		return 1;
 	return 0;
 }
@@ -350,8 +358,8 @@ pqcmc_create(glob_t *glob, lng nrows)
 		globfree(glob);
 		return NULL;
 	}
-	r->sink.destroy = &pqcmc_destroy;
-	r->sink.done = &pqcmc_done;
+	r->sink.destroy = (sink_destroy)&pqcmc_destroy;
+	r->sink.done = (sink_done)&pqcmc_done;
 	r->sink.type = MPARQUET_SINK;
 	r->nrworkers = 1;
 	r->glob = *glob;
@@ -674,13 +682,15 @@ pqc_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	pushInstruction(be->mb, q);
 	int pf = getDestVar(q);
 
-	/* start pipeline */
-	pp_cleanup(be, pf); /* cleanup at end of pipeline block */
-
-    assert(!be->pp);
-    // START LOOP
-    set_pipeline(be, stmt_pp_start_generator(be));
-	be->source = pf;
+	if (be->pp) {
+		stmt_concat_add_source(be);
+	} else {
+		/* start pipeline */
+		pp_cleanup(be, pf); /* cleanup at end of pipeline block */
+		// START LOOP
+		set_pipeline(be, stmt_pp_start_generator(be, pf, false));
+		be->need_pipeline = false;
+	}
 
 	/* for each col create file_loader stmt */
 	node *n, *m;

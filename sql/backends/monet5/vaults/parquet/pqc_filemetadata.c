@@ -436,7 +436,7 @@ pqc_oldtype2logicaltype( pqc_schema_element *pse, u_int32_t type)
 {
 	switch (type) {
 	case OLD_BOOLEAN:
-		// pse->type = enumtype; /* special case TRUE/FALSE */
+		pse->type = enumtype; /* special case TRUE/FALSE */
 		pse->binary = true;
 		pse->precision = 1;
 		pse->size = 1;
@@ -701,7 +701,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			assert(0);
 		}
 	}
-	if (pse->type && pse->type != listtype)
+	if (pse->type != LT_UNKNOWN && pse->type != listtype)
 		(*ccnr)++;
 	return pos;
 }
