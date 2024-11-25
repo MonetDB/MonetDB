@@ -35,6 +35,198 @@
 
 #include <pqc_reader.h>
 
+static char*
+str_physical_type(PhysicalType type)
+{
+	switch(type) {
+		case PT_BOOLEAN:
+			return "BOOLEAN";
+		case PT_INT32:
+			return "INT32";
+		case PT_INT64:
+			return "INT64";
+		case PT_INT96:
+			return "INT96";
+		case PT_FLOAT:
+			return "FLOAT";
+		case PT_DOUBLE:
+			return "DOUBLE";
+		case PT_BYTE_ARRAY:
+			return "BYTE_ARRAY";
+		case PT_FIXED_LEN_BYTE_ARRAY:
+			return "FIXED_LEN_BYTE_ARRAY";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_logical_type(logicaltype type)
+{
+	switch(type) {
+		case stringtype:
+			return "STRING";
+		case maptype:
+			return "MAP";
+		case listtype:
+			return "LIST";
+		case enumtype:
+			return "ENUM";
+		case decimaltype:
+			return "DECIMAL";
+		case datetype:
+			return "DATE";
+		case timetype:
+			return "TIME";
+		case timestamptype:
+			return "TIMESTAMP";
+		case intervaltype:
+			return "INTERVAL";
+		case inttype:
+			return "INTEGER";
+		case nulltype:
+			return "UNKNOWN";
+		case jsontype:
+			return "JSON";
+		case bsontype:
+			return "BSON";
+		case uuidtype:
+			return "UUID";
+		case float16type:
+			return "FLOAT16";
+		case varianttype:
+			return "VARIANT";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_converted_type(convertedtype type)
+{
+	switch(type) {
+		case CT_UTF8:
+			return "UTF8";
+		case CT_MAP:
+			return "MAP";
+		case CT_MAP_KEY_VALUE:
+			return "MAP_KEY_VALUE";
+		case CT_LIST:
+			return "LIST";
+		case CT_ENUM:
+			return "ENUM";
+		case CT_DECIMAL:
+			return "DECIMAL";
+		case CT_DATE:
+			return "DATE";
+		case CT_TIME_MILLIS:
+			return "TIME_MILLIS";
+		case CT_TIME_MICROS:
+			return "TIME_MICROS";
+		case CT_TIMESTAMP_MILLIS:
+			return "TIMESTAMP_MILLIS";
+		case CT_TIMESTAMP_MICROS:
+			return "TIMESTAMP_MICROS";
+		case CT_UINT_8:
+			return "UINT_8";
+		case CT_UINT_16:
+			return "UINT_16";
+		case CT_UINT_32:
+			return "UINT_32";
+		case CT_UINT_64:
+			return "UINT_64";
+		case CT_INT_8:
+			return "INT_8";
+		case CT_INT_16:
+			return "INT_16";
+		case CT_INT_32:
+			return "INT_32";
+		case CT_INT_64:
+			return "INT_64";
+		case CT_JSON:
+			return "JSON";
+		case CT_BSON:
+			return "BSON";
+		case CT_INTERVAL:
+			return "INTERVAL";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_repetition_type(FieldRepetitionType type)
+{
+	switch(type) {
+		case FRT_REQUIRED:
+			return "REQUIRED";
+		case FRT_OPTIONAL:
+			return "OPTIONAL";
+		case FRT_REPEATED:
+			return "REPEATED";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_compression_codec(CompressionCodec type)
+{
+	switch(type) {
+		case CC_UNCOMPRESSED:
+			return "UNCOMPRESSED";
+		case CC_SNAPPY:
+			return "SNAPPY";
+		case CC_GZIP:
+			return "GZIP";
+		case CC_LZO:
+			return "LZO";
+		case CC_BROTLI:
+			return "BROTLY";
+		case CC_LZ4:
+			return "LZ4";
+		case CC_ZSTD:
+			return "ZSTD";
+		case CC_LZ4_RAW:
+			return "LZ4_RAW";
+		default:
+			return "";
+	}
+}
+
+static char*
+str_encoding(Encoding e)
+{
+	switch(e) {
+		case PLAIN:
+			return "PLAIN";
+		case PLAIN_DICTIONARY:
+			return "PLAIN_DICTIONARY";
+		case RLE:
+			return "RLE";
+		case BIT_PACKED:
+			return "BIT_PACKED";
+		case DELTA_BINARY_PACKED:
+			return "DELTA_BINARY_PACKED";
+		case DELTA_LENGTH_BYTE_ARRAY:
+			return "DELTA_LENGTH_BYTE_ARRAY";
+		case RLE_DICTIONARY:
+			return "RLE_DICTIONARY";
+		case BYTE_STREAM_SPLIT:
+			return "BYTE_STREAM_SPLIT";
+		default:
+			return "";
+	}
+}
+
+static const char*
+get_valid_utf8_or_empty(const char *s)
+{
+	if (s != NULL && checkUTF8(s))
+		return s;
+	return "";
+}
+
 static sql_subtype *
 pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 {
@@ -219,7 +411,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				int tpe = e->type;
 				char *nme = e->name?sa_strdup(sql->ta, e->name):NULL;
 				pqc_close(pq);
-				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%d) not supported for column %s", tpe, nme);
+				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%s) not supported for column %s", str_logical_type(tpe), nme);
 			}
 			if (!t)
 				t = sql_bind_localtype("oid");
@@ -734,198 +926,6 @@ PARQUETepilogue(void *ret)
 	fl_unregister("parquet");
 	(void)ret;
 	return MAL_SUCCEED;
-}
-
-static char*
-str_physical_type(PhysicalType type)
-{
-	switch(type) {
-		case PT_BOOLEAN:
-			return "BOOLEAN";
-		case PT_INT32:
-			return "INT32";
-		case PT_INT64:
-			return "INT64";
-		case PT_INT96:
-			return "INT96";
-		case PT_FLOAT:
-			return "FLOAT";
-		case PT_DOUBLE:
-			return "DOUBLE";
-		case PT_BYTE_ARRAY:
-			return "BYTE_ARRAY";
-		case PT_FIXED_LEN_BYTE_ARRAY:
-			return "FIXED_LEN_BYTE_ARRAY";
-		default:
-			return "";
-	}
-}
-
-static char*
-str_logical_type(logicaltype type)
-{
-	switch(type) {
-		case stringtype:
-			return "STRING";
-		case maptype:
-			return "MAP";
-		case listtype:
-			return "LIST";
-		case enumtype:
-			return "ENUM";
-		case decimaltype:
-			return "DECIMAL";
-		case datetype:
-			return "DATE";
-		case timetype:
-			return "TIME";
-		case timestamptype:
-			return "TIMESTAMP";
-		case intervaltype:
-			return "INTERVAL";
-		case inttype:
-			return "INTEGER";
-		case nulltype:
-			return "UNKNOWN";
-		case jsontype:
-			return "JSON";
-		case bsontype:
-			return "BSON";
-		case uuidtype:
-			return "UUID";
-		case float16type:
-			return "FLOAT16";
-		case varianttype:
-			return "VARIANT";
-		default:
-			return "";
-	}
-}
-
-static char*
-str_converted_type(convertedtype type)
-{
-	switch(type) {
-		case CT_UTF8:
-			return "UTF8";
-		case CT_MAP:
-			return "MAP";
-		case CT_MAP_KEY_VALUE:
-			return "MAP_KEY_VALUE";
-		case CT_LIST:
-			return "LIST";
-		case CT_ENUM:
-			return "ENUM";
-		case CT_DECIMAL:
-			return "DECIMAL";
-		case CT_DATE:
-			return "DATE";
-		case CT_TIME_MILLIS:
-			return "TIME_MILLIS";
-		case CT_TIME_MICROS:
-			return "TIME_MICROS";
-		case CT_TIMESTAMP_MILLIS:
-			return "TIMESTAMP_MILLIS";
-		case CT_TIMESTAMP_MICROS:
-			return "TIMESTAMP_MICROS";
-		case CT_UINT_8:
-			return "UINT_8";
-		case CT_UINT_16:
-			return "UINT_16";
-		case CT_UINT_32:
-			return "UINT_32";
-		case CT_UINT_64:
-			return "UINT_64";
-		case CT_INT_8:
-			return "INT_8";
-		case CT_INT_16:
-			return "INT_16";
-		case CT_INT_32:
-			return "INT_32";
-		case CT_INT_64:
-			return "INT_64";
-		case CT_JSON:
-			return "JSON";
-		case CT_BSON:
-			return "BSON";
-		case CT_INTERVAL:
-			return "INTERVAL";
-		default:
-			return "";
-	}
-}
-
-static char*
-str_repetition_type(FieldRepetitionType type)
-{
-	switch(type) {
-		case FRT_REQUIRED:
-			return "REQUIRED";
-		case FRT_OPTIONAL:
-			return "OPTIONAL";
-		case FRT_REPEATED:
-			return "REPEATED";
-		default:
-			return "";
-	}
-}
-
-static char*
-str_compression_codec(CompressionCodec type)
-{
-	switch(type) {
-		case CC_UNCOMPRESSED:
-			return "UNCOMPRESSED";
-		case CC_SNAPPY:
-			return "SNAPPY";
-		case CC_GZIP:
-			return "GZIP";
-		case CC_LZO:
-			return "LZO";
-		case CC_BROTLI:
-			return "BROTLY";
-		case CC_LZ4:
-			return "LZ4";
-		case CC_ZSTD:
-			return "ZSTD";
-		case CC_LZ4_RAW:
-			return "LZ4_RAW";
-		default:
-			return "";
-	}
-}
-
-static char*
-str_encoding(Encoding e)
-{
-	switch(e) {
-		case PLAIN:
-			return "PLAIN";
-		case PLAIN_DICTIONARY:
-			return "PLAIN_DICTIONARY";
-		case RLE:
-			return "RLE";
-		case BIT_PACKED:
-			return "BIT_PACKED";
-		case DELTA_BINARY_PACKED:
-			return "DELTA_BINARY_PACKED";
-		case DELTA_LENGTH_BYTE_ARRAY:
-			return "DELTA_LENGTH_BYTE_ARRAY";
-		case RLE_DICTIONARY:
-			return "RLE_DICTIONARY";
-		case BYTE_STREAM_SPLIT:
-			return "BYTE_STREAM_SPLIT";
-		default:
-			return "";
-	}
-}
-
-static const char*
-get_valid_utf8_or_empty(const char *s)
-{
-	if (s != NULL && checkUTF8(s))
-		return s;
-	return "";
 }
 
 static str
