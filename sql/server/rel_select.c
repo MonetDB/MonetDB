@@ -6086,10 +6086,12 @@ rel_setquery(sql_query *query, symbol *q)
 		int outer = n->next->next->next->next->data.i_val;
 		/* For EXCEPT/INTERSECT the group by is always done within the implementation */
 		/* TODO add those later in an optimizer ! */
+		/*
 		if (t1 && distinct)
 			t1 = rel_distinct(t1);
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
+			*/
 		// TODO: this has to be fixed
 		/*res = rel_setquery_(query, t1, t2, corresponding, op_union, outer);*/
 		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion, outer);

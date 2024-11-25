@@ -2228,6 +2228,22 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 static stmt *
 rel2bin_basetable(backend *be, sql_rel *rel)
 {
+	int neededpp = get_need_pipeline(be);
+	if (neededpp || (rel->spb && rel->partition)) {
+		int nr_parts = pp_nr_slices(rel);
+		int source = pp_counter(be, nr_parts, -1);
+
+		if (be->pp) {
+			stmt_concat_add_source(be);
+		} else {
+			//pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
+			//set_pipeline(be, pp);
+			set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		}
+		be->nrparts = nr_parts;
+		(void)pp_counter_get(be, source);
+	}
+
 	mvc *sql = be->mvc;
 	sql_table *t = rel->l;
 	sql_column *fcol = NULL;
@@ -3009,7 +3025,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
+			set_need_pipeline(be);
 		if (rel->l) { /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 			left = subrel_project(be, left, refs, rel->l);
@@ -3020,7 +3036,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			left = subrel_project(be, left, refs, rel->l);
 		}
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
+			set_need_pipeline(be);
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -3232,8 +3248,9 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	res = stmt_list(be, l);
 
 	if (neededpp && !rel->partition) {
-		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
-		set_pipeline(be, pp);
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, res));
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		(void)pp_counter_get(be, source);
 		res = rel2bin_slicer(be, res, 1);
 	}
 	return res;
@@ -3282,7 +3299,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
+			set_need_pipeline(be);
 		if (rel->l) { /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 			left = subrel_project(be, left, refs, rel->l);
@@ -3293,7 +3310,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			left = subrel_project(be, left, refs, rel->l);
 		}
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
+			set_need_pipeline(be);
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
 			right = subrel_project(be, right, refs, rel->r);
@@ -3530,8 +3547,9 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	res->extra = l2; /* used for merge statements, this will be cleaned out on the pushcands branch :) */
 
 	if (neededpp && !rel->partition) {
-		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
-		set_pipeline(be, pp);
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, res));
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		(void)pp_counter_get(be, source);
 		res = rel2bin_slicer(be, res, 1);
 	}
 	return res;
@@ -3544,6 +3562,8 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *jexps = NULL, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL, *sub = NULL;
+
+	int neededpp = get_need_pipeline(be);
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -3705,7 +3725,14 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, c->label, rnme, nme);
 		list_append(l, s);
 	}
-	return stmt_list(be, l);
+	stmt *s = stmt_list(be, l);
+	if (neededpp && !rel->partition) {
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		(void)pp_counter_get(be, source);
+		s = rel2bin_slicer(be, s, 1);
+	}
+	return s;
 }
 
 static stmt *
@@ -3727,7 +3754,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			right = subrel_project(be, right, refs, rel->r);
 		}
 		if (rel->spb)
-			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->l)));
+			set_need_pipeline(be);
 		pp = be->pipeline;
 		be->pipeline = 0;
 		if (rel->l) /* first construct the left sub relation */
@@ -3736,7 +3763,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		if (rel->l) /* first construct the left sub relation */
 			left = subrel_bin(be, rel->l, refs);
 		if (rel->spb && rel->partition == 2)
-			set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel->r)));
+			set_need_pipeline(be);
 		pp = be->pipeline;
 		be->pipeline = 0;
 		if (rel->r) { /* first construct the right sub relation */
@@ -3964,6 +3991,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	}
 	stmt *res = stmt_list(be, l);
 	if (neededpp && !rel->partition) {
+		assert(0);
 		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
 		set_pipeline(be, pp);
 		res = rel2bin_slicer(be, res, 1);
@@ -4071,6 +4099,25 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 	return sub;
 }
 
+static void
+subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
+{
+	list *stmts = rel_stmt->op4.lval;
+	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
+		stmt *r = n->data;
+		InstrPtr v = m->data;
+		InstrPtr a = newAssignment(be->mb);
+
+		if (r->nrcols == 0)
+			n->data = r = const_column(be, r);
+		a->argv[0] = v->argv[0];
+		a = pushArgument(be->mb, a, r->nr);
+		pushInstruction(be->mb, a);
+		r->q = a;
+		r->nr = a->argv[0];
+	}
+}
+
 static stmt *
 rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 {
@@ -4080,17 +4127,63 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	stmt *rel_stmt = NULL, *sub;
 	int i, len = 0, nr_unions = list_length((list*)rel->l);
 
-	/* convert to stmt and store the munion operands in rstmts list */
-	rstmts = sa_list(sql->sa);
-	for (n = ((list*)rel->l)->h; n; n = n->next) {
-		rel_stmt = subrel_bin(be, n->data, refs);
-		rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
-		if (!rel_stmt)
-			return NULL;
-		list_append(rstmts, rel_stmt);
-		if (!len || len > list_length(rel_stmt->op4.lval))
-			len = list_length(rel_stmt->op4.lval);
+	int neededpp = get_need_pipeline(be) && rel->spb;
+
+	/* todo move into pipeline version of rel2bin_munion */
+	if (neededpp) { /* Simply concat the sources */
+		/* sink for the pipeline concat sink/source */
+		InstrPtr q = newStmt(be->mb, "pipeline", "concat"); /* multi - relation pipeline */
+		q = pushInt(be->mb, q, list_length(rel->l));
+		pushInstruction(be->mb, q);
+		int f = getDestVar(q);
+
+		set_pipeline(be, stmt_pp_start_generator(be, f, true));
+
+		list *vars = sa_list(sql->sa); /* create all results variables */
+
+		for (n = rel->exps->h; n; n = n->next) {
+			sql_subtype *st = exp_subtype(n->data);
+			InstrPtr q = stmt_bat_declare(be, st->type->localtype);
+			append(vars, q);
+		}
+
+		int i = 0, p = 0;
+		for (n = ((list*)rel->l)->h; n; n = n->next, i++) {
+			/* if (neededpp) add if barrier */
+			int b = stmt_concat_barrier(be, f, i, p);
+			rel_stmt = subrel_bin(be, n->data, refs);
+			rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+			subres_assign_resultvars(be, rel_stmt, vars);
+			if (!rel_stmt)
+				return NULL;
+			/* if (neededpp) add end barrier */
+			if (!len || len > list_length(rel_stmt->op4.lval))
+				len = list_length(rel_stmt->op4.lval);
+			if (be->concatcnt == i) {/* add dummy source */
+				int source = pp_counter(be, 1, -1);
+				stmt_concat_add_source(be);
+				(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+			}
+			(void)stmt_concat_barrier_end(be, b);
+			p = b;
+			assert (be->concatcnt == (i+1));
+		}
+		/* todo distinct and single */
+		return rel_rename(be, rel, rel_stmt);
+	} else {
+		/* convert to stmt and store the munion operands in rstmts list */
+		rstmts = sa_list(sql->sa);
+		for (n = ((list*)rel->l)->h; n; n = n->next) {
+			rel_stmt = subrel_bin(be, n->data, refs);
+			rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
+			if (!rel_stmt)
+				return NULL;
+			list_append(rstmts, rel_stmt);
+			if (!len || len > list_length(rel_stmt->op4.lval))
+				len = list_length(rel_stmt->op4.lval);
+		}
 	}
+
 
 	/* construct relation */
 	l = sa_list(sql->sa);
@@ -4464,6 +4557,12 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			return NULL;
 	}
 
+	if (rel->spb && rel->card <= CARD_ATOM && !rel->l && be->pp) { /* adding constants to a stream (union) */
+		int source = pp_counter(be, 1, -1);
+		stmt_concat_add_source(be);
+		(void)pp_counter_get(be, source); /* use source else statement gets garbage collected */
+	}
+
 	pl = sa_list(sql->sa);
 	if (pl == NULL)
 		return NULL;
@@ -4694,7 +4793,7 @@ static stmt *
 rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 {
 	if (list_empty(rel->exps)) /* empty */
-		return stmt_list(be, sa_list(be->mvc->sa));
+		return stmt_list(be, append(sa_list(be->mvc->sa), stmt_bool(be, 1)));
 
 	mvc *sql = be->mvc;
 	list *l, *aggrs, *gbexps = sa_list(sql->sa), *aggrresults = NULL, *serializedresults = NULL, *shared = NULL;
@@ -4744,8 +4843,18 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
 			set_need_pipeline(be);
 		} else {
-			pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
-			set_pipeline(be, pp);
+			int nr_parts = pp_nr_slices(rel->l);
+			int source = pp_counter(be, nr_parts, -1);
+
+			if (be->pp) {
+				stmt_concat_add_source(be);
+			} else {
+				//pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
+				//set_pipeline(be, pp);
+				set_pipeline(be, stmt_pp_start_generator(be, source, true));
+			}
+			be->nrparts = nr_parts;
+			(void)pp_counter_get(be, source);
 		}
 		assert(rel->spb || pp == NULL);
 	}
@@ -4759,7 +4868,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		(void)pp_counter_get(be, source);
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 
@@ -4800,7 +4911,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 			if (!gbcol->nrcols)
 				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
-			groupby = be->pipeline? stmt_group_partitioned(be, gbcol, grp, ext, cnt) : stmt_group(be, gbcol, grp, ext, cnt, !en->next);
+			groupby = df2/*be->pipeline*/? stmt_group_partitioned(be, gbcol, grp, ext, cnt) : stmt_group(be, gbcol, grp, ext, cnt, !en->next);
 
 			/* use global (shared (extend)) result */
 			if (groupby && m) {
@@ -5215,7 +5326,14 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	 * operators, e.g. topN. */
 
 	if (neededpp) {
-		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, cursub)));
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, cursub));
+
+		if (be->pp) {
+			stmt_concat_add_source(be);
+		} else {
+			set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		}
+		(void)pp_counter_get(be, source);
 		cursub = rel2bin_slicer(be, cursub, 1);
 	}
 	return cursub;
@@ -5403,6 +5521,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 
 	stmt *pp = get_pipeline(be);
 	if (!pp) {
+		assert(0);
 		(void)get_need_pipeline(be);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
@@ -5614,7 +5733,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 
 		if (df2 && rl->op == op_project && !list_empty(rl->r)) {
 			return rel2bin_ordered_topn(be, rl, refs, rel, all, oe?o:NULL, l, projectresults);
-		} else if (rl->op == op_project) {
+		} else if (rl->op == op_project && !rl->parallel) {
 			if (rel_is_ref(rl)) {
 				sub = refs_find_rel(refs, rl);
 				if (!sub)
@@ -5635,6 +5754,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		pp = get_pipeline(be);
 	if (df2 && !pp) {
 		(void)get_need_pipeline(be);
+		assert(0);
 		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
 		sub = rel2bin_slicer(be, sub, 1);
 	}
@@ -5678,7 +5798,9 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			sub = rel_pp_topn(be, projectresults, sub, pp, o, l);
 	}
 	if (neededpp && !get_pipeline(be)) {
-		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		(void)pp_counter_get(be, source);
 		sub = rel2bin_slicer(be, sub, 1);
 	}
 	return sub;
@@ -8394,6 +8516,82 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	return s;
 }
 
+static stmt *
+rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
+{
+	sql_rel *r = rel;
+	//list *refs = sa_list(be->mvc->sa);
+	stmt *s = NULL;
+
+	if (is_topn(r->op))
+		r = r->l;
+
+	list *shared = NULL;
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
+		shared = rel2bin_project_prepare(be, r);
+
+	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+	pushInstruction(be->mb, q);
+	int prs = getDestVar(q);
+
+	s = subrel_bin(be, rel, refs);
+	s = subrel_project(be, s, refs, rel);
+	stmt *pp = get_pipeline(be);
+	int pipeline = be->pipeline;
+	be->pipeline = 0;
+	if (pp && shared && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+		/* append results (later first claim position, then append)*/
+		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
+
+		sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+		stmt *i = sub->h->data;
+		stmt *nrrows = stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
+
+		/* count of bat */
+		InstrPtr q = newStmt(be->mb, "pipeline", "claim");
+		q = pushArgument(be->mb, q, prs);
+		q = pushArgument(be->mb, q, nrrows->nr);
+		pushInstruction(be->mb, q);
+		int claimed = getDestVar(q);
+
+		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
+			InstrPtr r = n->data;
+			stmt *i = m->data;
+			sql_exp *e = o->data;
+			sql_subtype *tpe = exp_subtype(e);
+
+			/* use claimed offset */
+			InstrPtr q = newStmt(be->mb, batRef, appendRef);
+			if (q == NULL)
+				return NULL;
+			q = pushArgument(be->mb, q, r->argv[0]);
+			q = pushArgument(be->mb, q, claimed);
+			q = pushArgument(be->mb, q, i->nr);
+			q = pushBit(be->mb, q, TRUE);
+			q = pushArgument(be->mb, q, prs);
+			//q->argv[0] = r->argv[0];
+			pushInstruction(be->mb, q);
+
+			stmt *s = stmt_none(be);
+			s->op4.typeval = *tpe;
+			s->nr = r->argv[0];
+			s->q = q;
+			s->nrcols = i->nrcols;
+			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
+			append(res, s);
+		}
+		s = stmt_list(be, res);
+	}
+	be->pipeline = pipeline;
+	/* end pp */
+	if (pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
+		stmt_pp_end(be, pp);
+	}
+	return s;
+}
+
+
 stmt *
 subrel_bin(backend *be, sql_rel *rel, list *refs)
 {
@@ -8408,11 +8606,31 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		return s;
 	if (rel_is_ref(rel)) {
 		s = refs_find_rel(refs, rel);
-		/* needs a proper fix!! */
-		if (s)
-			return s;
 		neededpp = get_need_pipeline(be);
-	} else if (rel->spb && !is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op))
+		/* needs a proper fix!! */
+		if (s) {
+			if (neededpp) {
+				printf("# needs pipeline, started from subrel (referenced rel)\n");
+				be->need_pipeline = false;
+				int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
+
+				if (be->pp) {
+					stmt_concat_add_source(be);
+				} else {
+					set_pipeline(be, stmt_pp_start_generator(be, source, true));
+				}
+				(void)pp_counter_get(be, source);
+				s = rel2bin_slicer(be, s, 1);
+			}
+			return s;
+		}
+		if (neededpp) {
+			s = rel2bin_materialize(be, rel, refs);
+			list_append(refs, rel);
+			list_append(refs, s);
+			return s;
+		}
+	} else if (rel->spb && !is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op) && !is_munion(rel->op))
 		neededpp = get_need_pipeline(be);
 
 	switch (rel->op) {
@@ -8505,6 +8723,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	}
 	if (s && rel_is_ref(rel)) {
+		s = subrel_project(be, s, refs, rel);
 		list_append(refs, rel);
 		list_append(refs, s);
 	} else if (rel->spb && neededpp) {
@@ -8512,14 +8731,30 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 			printf("# needed pipeline allready started below subrel\n");
 		} else {
 			assert(!is_groupby(rel->op) && !is_join(rel->op));
-			set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
+
+			int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
+
+			if (be->pp) {
+				stmt_concat_add_source(be);
+			} else {
+				set_pipeline(be, stmt_pp_start_generator(be, source, true));
+			}
+			(void)pp_counter_get(be, source);
 			s = rel2bin_slicer(be, s, 1);
 		}
 	} else if (be->need_pipeline && !be->pp) {
 		assert(!is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op));
 		printf("# needs pipeline, started from subrel\n");
 		be->need_pipeline = false;
-		set_pipeline(be, stmt_pp_start_dynamic(be, pp_dynamic_slices(be, s)));
+
+		int source = pp_counter(be, -1, pp_dynamic_slices(be, s));
+
+		if (be->pp) {
+			stmt_concat_add_source(be);
+		} else {
+			set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		}
+		(void)pp_counter_get(be, source);
 		s = rel2bin_slicer(be, s, 1);
 	}
 	return s;
@@ -8545,79 +8780,24 @@ rel_bin(backend *be, sql_rel *rel)
 	return s;
 }
 
-static stmt *
-rel2bin_materialize(backend *be, sql_rel *rel)
+static sql_rel *
+list_add_ref(visitor *v, sql_rel *rel)
 {
-	sql_rel *r = rel;
-	list *refs = sa_list(be->mvc->sa);
-	stmt *s = NULL;
+	list *refs = v->data;
+	if (rel_is_ref(rel) && !list_find(refs, rel, NULL))
+		list_append(refs, rel);
+	return rel;
+}
 
-	if (is_topn(r->op))
-		r = r->l;
+static list *
+rel_find_refs(mvc *sql, list *refs, sql_rel *rel)
+{
+	visitor v = { .sql = sql, .data = refs };
 
-	list *shared = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
-		shared = rel2bin_project_prepare(be, r);
-
-	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
-	pushInstruction(be->mb, q);
-	int prs = getDestVar(q);
-
-	s = subrel_bin(be, rel, refs);
-	s = subrel_project(be, s, refs, rel);
-	stmt *pp = get_pipeline(be);
-	int pipeline = be->pipeline;
-	be->pipeline = 0;
-	if (pp && shared && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
-		/* append results (later first claim position, then append)*/
-		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
-
-		sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-		stmt *i = sub->h->data;
-		stmt *nrrows = stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
-
-		/* count of bat */
-		InstrPtr q = newStmt(be->mb, "pipeline", "claim");
-		q = pushArgument(be->mb, q, prs);
-		q = pushArgument(be->mb, q, nrrows->nr);
-		pushInstruction(be->mb, q);
-		int claimed = getDestVar(q);
-
-		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
-			InstrPtr r = n->data;
-			stmt *i = m->data;
-			sql_exp *e = o->data;
-			sql_subtype *tpe = exp_subtype(e);
-
-			/* use claimed offset */
-			InstrPtr q = newStmt(be->mb, batRef, appendRef);
-			if (q == NULL)
-				return NULL;
-			q = pushArgument(be->mb, q, r->argv[0]);
-			q = pushArgument(be->mb, q, claimed);
-			q = pushArgument(be->mb, q, i->nr);
-			q = pushBit(be->mb, q, TRUE);
-			q = pushArgument(be->mb, q, prs);
-			//q->argv[0] = r->argv[0];
-			pushInstruction(be->mb, q);
-
-			stmt *s = stmt_none(be);
-			s->op4.typeval = *tpe;
-			s->nr = r->argv[0];
-			s->q = q;
-			s->nrcols = i->nrcols;
-			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
-			append(res, s);
-		}
-		s = stmt_list(be, res);
-	}
-	be->pipeline = pipeline;
-	/* end pp */
-	if (pp) {
-		(void)stmt_pp_jump(be, pp, be->nrparts);
-		stmt_pp_end(be, pp);
-	}
-	return s;
+	if (!rel)
+		return refs;
+	(void)rel_visitor_bottomup(&v, rel, &list_add_ref);
+	return refs;
 }
 
 stmt *
@@ -8633,7 +8813,19 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	be->pp = be->nrparts = 0;
 
-	s = rel2bin_materialize(be, rel);
+	list *refs = rel_find_refs(sql, sa_list(sql->sa), rel);
+	if (!list_empty(refs)) {
+		list *nrefs = sa_list(sql->sa);
+		//list_revert(refs);
+		for (node *n = refs->h; n; n = n->next) {
+			stmt *s = subrel_bin(be, n->data, nrefs);
+			list_append(nrefs, n->data);
+			list_append(nrefs, s);
+		}
+		refs = nrefs;
+	}
+	s = rel2bin_materialize(be, rel, refs);
+//	s = rel2bin_materialize(be, rel);
 
 	if (!s)
 		return NULL;

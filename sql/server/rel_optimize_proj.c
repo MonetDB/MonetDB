@@ -3037,7 +3037,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		rel = rel_simplify_groupby_columns(v, rel);
 	}
 	rel = rel_groupby_cse(v, rel);
-	rel = rel_push_aggr_down(v, rel);
+	if (0) rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
@@ -3462,6 +3462,12 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
 
+	if (rel->op == op_munion && need_distinct(rel)) {
+		set_nodistinct(rel);
+		rel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
+		set_distinct(rel);
+		v->changes++;
+	}
 	/* rewrite distinct project (table) [ constant ] -> project [ constant ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {

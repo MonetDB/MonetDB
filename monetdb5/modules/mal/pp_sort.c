@@ -14,6 +14,24 @@
 #include "mal_pipelines.h"
 #include "pipeline.h"
 
+static int
+var_atom_cmp(int type, void *l, void *r)
+{
+	void *nil = ATOMnil(type);
+	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);
+
+	bool lnil = cmp(l, nil) == 0;
+	bool rnil = cmp(r, nil) == 0;
+
+	if (lnil && rnil)
+		return 0;
+	if (lnil)
+		return 1;
+	if (rnil)
+		return -1;
+	return cmp(l, r);
+}
+
 static str
 PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl, BAT *zzb, BAT *zza, bit desc, bit nlast)
 {
@@ -21,7 +39,6 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	str err = MAL_SUCCEED;
 
 	/* sofar the ANY type case, later add optimized versions */
-	(void)nlast; /* TODO handle nils */
 	/* need new output bats */
 	BUN rp = 0, lp = 0, o = 0, p = lp, cur = rp, sz = BATcount(zzl), e = 0;
 	rzzl = COLnew(0, TYPE_int, 1024, TRANSIENT);
@@ -45,6 +62,11 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	BATiter ri = bat_iterator(rcol);
 	BATiter li = bat_iterator(lcol);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(rcol->ttype);
+
+	if (desc && nlast)
+		nlast = false;
+	if (nlast && ri.nonil && li.nonil)
+		nlast = false;
 
 	int side = 0;
 	int *gp = Tloc(zzl, 0);
@@ -79,7 +101,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			for(;p < e; ) {
 				void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 				void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-				int c = cmp(vp,vc);
+				int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc);
 				if (desc)
 					c = -c;
 				if (c <= 0) {
@@ -243,7 +265,6 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	str err = MAL_SUCCEED;
 
 	/* sofar the ANY type case, later add optimized versions */
-	(void)nlast; /* TODO handle nils */
 	/* need new output bats */
 	BUN rp = 0, lp = 0, re = BATcount(rcol), le = BATcount(lcol), o = 0, p = lp, e = le, cur = rp;
 	lng b = 0, a = 0;
@@ -269,11 +290,16 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	BATiter li = bat_iterator(lcol);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(rcol->ttype);
 
+	if (desc && nlast)
+		nlast = false;
+	if (nlast && ri.nonil && li.nonil)
+		nlast = false;
+
 	int side = 0;
 	for(; p<e; ) {
 		void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 		void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-		int c = cmp(vp,vc);
+		int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc);
 		if (desc)
 			c = -c;
 		if (c <= 0) {
@@ -615,8 +641,10 @@ sop_destroy( sop_t *q )
 }
 
 static int
-sop_done(sop_t *q, int wid)
+sop_done(sop_t *q, int wid, int nr_workers, bool redo)
 {
+	(void)redo;
+	(void)nr_workers;
 	int res = 0;
     assert(q->s.type == SOP_SINK);
 

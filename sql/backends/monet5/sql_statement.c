@@ -324,6 +324,21 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	return q;
 }
 
+InstrPtr
+stmt_bat_declare(backend *be, int tt)
+{
+	InstrPtr q = newAssignment(be->mb);
+
+	if (q == NULL)
+		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushNil(be->mb, q, newBatType(tt));
+	pushInstruction(be->mb, q);
+	return q;
+}
+
 static int *
 dump_table(allocator *sa, backend *be, sql_table *t)
 {
@@ -5227,6 +5242,7 @@ stmt_instruction(backend *be, InstrPtr p, stmt *op1 )
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 
+	s->label = op1->label;
 	s->tname = op1->tname;
 	s->cname = op1->cname;
 	s->nr = getArg(p, 0);
