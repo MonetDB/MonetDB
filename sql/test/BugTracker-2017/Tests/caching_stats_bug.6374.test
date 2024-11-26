@@ -59,10 +59,8 @@ alter table sub1 set read only
 statement ok
 analyze sys.sub1
 
-query I rowsort
+statement error
 select count(*) from mt where i >= 5 and i < 12
-----
-3
 
 query T python .plan.filter
 PLAN select count(*) from mt where i >= 5 and i < 12
@@ -70,18 +68,14 @@ PLAN select count(*) from mt where i >= 5 and i < 12
 project (
 | group by (
 | | munion (
-| | | group by (
-| | | | select (
-| | | | | table("sys"."sub1") [ "sub1"."i" NOT NULL UNIQUE as "mt"."i" ]
-| | | | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ]
-| | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ],
-| | | group by (
-| | | | select (
-| | | | | table("sys"."sub2") [ "sub2"."i" NOT NULL UNIQUE as "mt"."i" ]
-| | | | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ]
-| | | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
-| | ) [ "%1"."%1" NOT NULL ]
-| ) [  ] [ "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL UNIQUE as "%1"."%1" ]
+| | | select (
+| | | | table("sys"."sub1") [ "sub1"."i" NOT NULL UNIQUE as "mt"."i" ]
+| | | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ],
+| | | select (
+| | | | table("sys"."sub2") [ "sub2"."i" NOT NULL UNIQUE as "mt"."i" ]
+| | | ) [ (int(31) "5") <= ("mt"."i" NOT NULL UNIQUE) < (int(31) "12") ]
+| | ) [ "mt"."i" NOT NULL ]
+| ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
 
 statement ok
