@@ -74,9 +74,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 				find_basetables(sql, rel->l, tables);
 		break;
 	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
 	case op_union:
 	case op_inter:
 	case op_except:
@@ -89,6 +86,9 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		if (rel->r)
 			find_basetables(sql, rel->r, tables);
 		break;
+	case op_left:
+	case op_right:
+	case op_full:
 	case op_munion:
 		assert(rel->l);
 		append(tables, rel);
