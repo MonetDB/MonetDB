@@ -87,8 +87,8 @@ ht_destroy(hash_table *ht)
 		GDKfree(ht->pgids);
 	if (ht->pinned_nr && ht->pinned) {
 		for(int i=0; i < ht->pinned_nr; i++) {
-			HEAPdecref(ht->pinned[i].hp, false);
-			BBPunfix(ht->pinned[i].bt->batCacheid);
+			HEAPdecref(ht->pinned[i], false);
+			BBPunfix(ht->pinned[i]->parentid);
 		}
 		GDKfree(ht->pinned);
 	}

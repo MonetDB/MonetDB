@@ -120,10 +120,7 @@ typedef struct hash_table {
 	ATOMIC_TYPE last;
 	size_t size;
 	gid mask;
-	struct {
-		Heap *hp;
-		BAT *bt;
-	} *pinned;		/* sharing variable objects means keep reference to varheaps */
+	Heap **pinned;		/* sharing variable objects means keep reference to varheaps */
 	int pinned_nr;
 	mallocator **allocators;
 	int nr_allocators;
