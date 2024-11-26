@@ -1016,14 +1016,13 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 	} else if (ATOMvarsized(u->ttype) && u->tvheap->parentid != b->tvheap->parentid) {
 		int i = 0;
 		for(i = 0; i < h->pinned_nr; i++) {
-			if (h->pinned[i].hp == b->tvheap)
+			if (h->pinned[i] == b->tvheap)
 				break;
 		}
 		if (i == h->pinned_nr) {
 			HEAPincref(b->tvheap);
-			BBPfix(b->batCacheid);
-			h->pinned[h->pinned_nr].bt = b;
-			h->pinned[h->pinned_nr++].hp = b->tvheap;
+			BBPfix(b->tvheap->parentid);
+			h->pinned[h->pinned_nr++] = b->tvheap;
 			assert(h->pinned_nr < 1024);
 		}
 		MT_lock_unset(&b->theaplock);
@@ -1308,14 +1307,13 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	} else if (ATOMvarsized(u->ttype) && u->tvheap->parentid != b->tvheap->parentid) {
 		int i = 0;
 		for(i = 0; i < h->pinned_nr; i++) {
-			if (h->pinned[i].hp == b->tvheap)
+			if (h->pinned[i] == b->tvheap)
 				break;
 		}
 		if (i == h->pinned_nr) {
 			HEAPincref(b->tvheap);
-			BBPfix(b->batCacheid);
-			h->pinned[h->pinned_nr].bt = b;
-			h->pinned[h->pinned_nr++].hp = b->tvheap;
+			BBPfix(b->tvheap->parentid);
+			h->pinned[h->pinned_nr++] = b->tvheap;
 			assert(h->pinned_nr < 1024);
 		}
 		MT_lock_unset(&b->theaplock);
