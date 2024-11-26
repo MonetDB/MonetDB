@@ -848,6 +848,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			q = newStmt(mb, sqlRef, growRef);
 			if (q == NULL)
 				goto bailout;
+			q->argv[0] = l[0];
 			q = pushArgument(mb, q, l[0]);
 			q = pushArgument(mb, q, b->nr);
 			pushInstruction(mb, q);
@@ -1066,6 +1067,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 		q = newStmt(mb, batRef, deleteRef);
 		if (q == NULL)
 			goto bailout;
+		q->argv[0] = l[0];
 		q = pushArgument(mb, q, l[0]);
 		q = pushArgument(mb, q, tids->nr);
 	} else {

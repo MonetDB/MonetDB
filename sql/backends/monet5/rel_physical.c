@@ -91,8 +91,11 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		break;
 	case op_munion:
 		assert(rel->l);
+		append(tables, rel);
+		/*
 		for (node *n = ((list*)rel->l)->h; n; n = n->next)
 			find_basetables(sql, n->data, tables);
+			*/
 		break;
 	case op_semi:
 	case op_anti:

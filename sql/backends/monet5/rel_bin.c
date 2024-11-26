@@ -1713,7 +1713,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (as && as->nrcols <= 0 && left && (!is_const_func(a, attr) || grp))
 					as = stmt_const(be, bin_find_smallest_column(be, left), as);
-				if (en == attr->h && !en->next && exp_aggr_is_count(e))
+				if (en == attr->h && !en->next && exp_aggr_is_count(e) && 0)
 					as = exp_count_no_nil_arg(e, ext, at, as);
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
@@ -1774,7 +1774,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				as = grp;
 			} else if (left && !list_empty(left->op4.lval)) {
 				as = bin_find_smallest_column(be, left);
-				as = exp_count_no_nil_arg(e, ext, NULL, as);
+				//as = exp_count_no_nil_arg(e, ext, NULL, as);
 			} else {
 				/* create dummy single value in a column */
 				as = stmt_atom_lng(be, 0);
@@ -2236,8 +2236,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		if (be->pp) {
 			stmt_concat_add_source(be);
 		} else {
-			//pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
-			//set_pipeline(be, pp);
 			set_pipeline(be, stmt_pp_start_generator(be, source, true));
 		}
 		be->nrparts = nr_parts;
@@ -4099,23 +4097,31 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 	return sub;
 }
 
-static void
+static stmt*
 subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 {
 	list *stmts = rel_stmt->op4.lval;
+	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
 		stmt *r = n->data;
 		InstrPtr v = m->data;
 		InstrPtr a = newAssignment(be->mb);
+		stmt *ns = NULL;
+		const char *rnme = table_name(be->mvc->sa, r);
+		const char *nme = column_name(be->mvc->sa, r);
+		int label = r->label;
 
 		if (r->nrcols == 0)
-			n->data = r = const_column(be, r);
+			r = const_column(be, r);
+		ns = stmt_alias(be, r, label, rnme, nme);
 		a->argv[0] = v->argv[0];
-		a = pushArgument(be->mb, a, r->nr);
+		a = pushArgument(be->mb, a, ns->nr);
 		pushInstruction(be->mb, a);
-		r->q = a;
-		r->nr = a->argv[0];
+		ns->q = a;
+		ns->nr = a->argv[0];
+		append(nstmt, ns);
 	}
+	return stmt_list(be, nstmt);
 }
 
 static stmt *
@@ -4153,7 +4159,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 			int b = stmt_concat_barrier(be, f, i, p);
 			rel_stmt = subrel_bin(be, n->data, refs);
 			rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
-			subres_assign_resultvars(be, rel_stmt, vars);
+			rel_stmt = subres_assign_resultvars(be, rel_stmt, vars);
 			if (!rel_stmt)
 				return NULL;
 			/* if (neededpp) add end barrier */
@@ -4805,7 +4811,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	bool df2 = (SQLrunning && rel->parallel && !value_partition && rel_groupby_can_pp(rel, _2phases));
 	int neededpp = get_need_pipeline(be);
 	int need_serialize = df2 && rel_groupby_serialize(rel); /* return if some of the aggregates require serialization (or fallback implementation) */
-	//int exclude_cnt = 0;
 
 	if (value_partition)
 		return rel2bin_groupby_partition(be, rel, refs, neededpp);
@@ -4822,22 +4827,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	stmt *pp = NULL;
 
-#if 0
-	if (df2 && rel->r) { /* add count(*) */
-		bool found = false;
-		for(node *n = rel->exps->h; n && !found; n = n->next) {
-			if (exp_aggr_is_countstar(n->data))
-				found = true;
-		}
-		if (!found) {
-			sql_subfunc *a = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-			sql_exp *e = exp_aggr(be->mvc->sa, NULL, a, 0, 0, rel->card, 0);
-			exp_label(be->mvc->sa, e, ++be->mvc->label);
-			append(rel->exps, e);
-			exclude_cnt = 1;
-		}
-	}
-#endif
 	if (df2) {
 		shared = rel_groupby_prepare_pp(&aggrresults, &serializedresults, be, rel, _2phases, need_serialize);
 		if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
@@ -4849,8 +4838,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			if (be->pp) {
 				stmt_concat_add_source(be);
 			} else {
-				//pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
-				//set_pipeline(be, pp);
 				set_pipeline(be, stmt_pp_start_generator(be, source, true));
 			}
 			be->nrparts = nr_parts;
@@ -4971,7 +4958,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushBit(be->mb, q, TRUE);
 				q = pushArgument(be->mb, q, prs);
-				serialized_grpids = q->argv[1];//q->argv[0] = q->argv[1];
+				serialized_grpids = q->argv[1];
 				pushInstruction(be->mb, q);
 
 				sn = sn->next;
@@ -5076,7 +5063,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 						q = pushArgument(be->mb, q, i->nr);
 						q = pushBit(be->mb, q, TRUE);
 						q = pushArgument(be->mb, q, prs);
-						//q->argv[0] = q->argv[1];
 						pushInstruction(be->mb, q);
 
 						sn = sn->next;
@@ -5097,7 +5083,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					q = pushArgument(be->mb, q, i->nr);
 					q = pushBit(be->mb, q, TRUE);
 					q = pushArgument(be->mb, q, prs);
-					//q->argv[0] = q->argv[1];
 					pushInstruction(be->mb, q);
 
 					sn = sn->next;
@@ -5167,14 +5152,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		aggrstmt = stmt_rename(be, aggrexp, aggrstmt);
 		list_append(l, aggrstmt);
-//		if (pp && exp_aggr_is_countstar(aggrexp))
-//			cnt_aggr = aggrstmt;
 	}
-#if 0
-	if (pp && grp && !cnt_aggr) { /* todo need to add to prepare !! */
-		assert(0);
-	}
-#endif
 	stmt_set_nrcols(cursub);
 	if (pp) {
 		(void)stmt_pp_jump(be, pp, be->nrparts);
@@ -5193,11 +5171,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		sext = q->argv[0];
 		pushInstruction(be->mb, q);
 	}
-	//if (pp && grp) /* filter count > 0 */
-		//cursub = rel_groupby_count_gt_0(be, cursub, cnt_aggr, &sext);
-
-	//if (exclude_cnt) /* remove last added count(*) */
-		//list_remove_node(cursub->op4.lval, NULL, cursub->op4.lval->t);
 
 	/* post pipeline aggregation */
 	l = cursub->op4.lval;
@@ -8520,7 +8493,6 @@ static stmt *
 rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *r = rel;
-	//list *refs = sa_list(be->mvc->sa);
 	stmt *s = NULL;
 
 	if (is_topn(r->op))
@@ -8569,7 +8541,6 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 			q = pushArgument(be->mb, q, i->nr);
 			q = pushBit(be->mb, q, TRUE);
 			q = pushArgument(be->mb, q, prs);
-			//q->argv[0] = r->argv[0];
 			pushInstruction(be->mb, q);
 
 			stmt *s = stmt_none(be);
@@ -8816,7 +8787,6 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 	list *refs = rel_find_refs(sql, sa_list(sql->sa), rel);
 	if (!list_empty(refs)) {
 		list *nrefs = sa_list(sql->sa);
-		//list_revert(refs);
 		for (node *n = refs->h; n; n = n->next) {
 			stmt *s = subrel_bin(be, n->data, nrefs);
 			list_append(nrefs, n->data);
@@ -8825,7 +8795,6 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 		refs = nrefs;
 	}
 	s = rel2bin_materialize(be, rel, refs);
-//	s = rel2bin_materialize(be, rel);
 
 	if (!s)
 		return NULL;

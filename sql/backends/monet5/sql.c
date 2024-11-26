@@ -1777,7 +1777,7 @@ mvc_append_column(sql_trans *t, sql_column *c, BUN offset, BAT *pos, BAT *ins)
 str
 mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = getArgReference_int(stk, pci, 0);
+	bat *res = getArgReference_bat(stk, pci, 0);
 	bat Tid = *getArgReference_bat(stk, pci, 1);
 	ptr Ins = getArgReference(stk, pci, 2);
 	int tpe = getArgType(mb, pci, 2);
@@ -1805,12 +1805,13 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		v++;
 	}
 	for(;cnt>0; cnt--, v++) {
-		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
+		if (BUNappend(tid, &v, true) != GDK_SUCCEED) {
 			BBPunfix(Tid);
 			throw(SQL, "sql.grow", GDK_EXCEPTION);
 		}
 	}
-	BBPunfix(Tid);
+	*res = Tid;
+	BBPkeepref(tid);
 	return MAL_SUCCEED;
 }
 
@@ -5675,7 +5676,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "subdelta", DELTAsub, false, "Return a single bat of selected delta.", args(1,5, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid))),
  command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
- pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
+ pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, batarg("res",oid),batarg("tid",oid),argany("",1))),
  pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
