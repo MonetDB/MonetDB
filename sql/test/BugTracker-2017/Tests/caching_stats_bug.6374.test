@@ -59,8 +59,10 @@ alter table sub1 set read only
 statement ok
 analyze sys.sub1
 
-statement error
+query I rowsort
 select count(*) from mt where i >= 5 and i < 12
+----
+3
 
 query T python .plan.filter
 PLAN select count(*) from mt where i >= 5 and i < 12
