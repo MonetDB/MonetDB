@@ -3173,10 +3173,11 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 			sql_rel *c = oc;
 
 			/* account for any group-bys pushed down between stacked munions */
-			if (oc->op == op_groupby)
-				c = oc->l;
+			/* we cannot drop the distincts, somehow merge? */
+			//if (oc->op == op_groupby)
+			//	c = oc->l;
 
-			if (is_munion(c->op)) {
+			if (is_munion(c->op) && (need_distinct(rel) || !need_distinct(c))) {
 				c = rel_dup(c);
 				list_remove_node(l, NULL, n);
 				l = list_merge(l, c->l, (fdup)NULL);
