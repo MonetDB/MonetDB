@@ -66,120 +66,96 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 {
 	char *buf = 0;
 	int nameused = 0;
-	size_t len = 0, maxlen = BUFSIZ;
+	size_t max_len = 256;
 	ValRecord *val = 0;
-	char *cv = 0;//, *c;
+	char *cv = 0;
 	str tpe;
 	int showtype = 0, closequote = 0;
 	int varid = getArg(p, idx);
 
-	buf = GDKzalloc(maxlen);
+	buf = GDKzalloc(max_len);
 	if (buf == NULL) {
-		addMalException(mb, "renderTerm:Failed to allocate");
+		addMalException(mb, "renderTerm: Failed to allocate");
 		return NULL;
 	}
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb, varid)
 		&& !isVarTypedef(mb, varid)) {
-		char *nme = getVarNameIntoBuffer(mb, varid, buf);
-		len += strlen(nme);
+		getVarNameIntoBuffer(mb, varid, buf);
 		nameused = 1;
 	}
 	// show the value when required or being a constant
 	if (((flg & LIST_MAL_VALUE) && stk != 0) || isVarConstant(mb, varid)) {
-		if (nameused) {
-			strcat(buf + len, "=");
-			len++;
-		}
-
+		if (nameused)
+			strcat(buf, "=");
 		// locate value record
 		if (isVarConstant(mb, varid)) {
 			val = &getVarConstant(mb, varid);
 			showtype = getVarType(mb, varid) != TYPE_str
 					&& getVarType(mb, varid) != TYPE_bit;
-		} else if (stk)
+		} else if (stk) {
 			val = &stk->stk[varid];
-
+		}
 		if ((cv = VALformat(val)) == NULL) {
-			addMalException(mb, "renderTerm:Failed to allocate");
+			addMalException(mb, "renderTerm: Failed to allocate");
 			GDKfree(buf);
 			return NULL;
 		}
-		if (len + strlen(cv) >= maxlen) {
-			char *nbuf = GDKrealloc(buf, maxlen = len + strlen(cv) + BUFSIZ);
-
-			if (nbuf == 0) {
-				GDKfree(buf);
-				GDKfree(cv);
-				addMalException(mb, "renderTerm:Failed to allocate");
-				return NULL;
-			}
-			buf = nbuf;
-		}
-
 		if (!val->bat && strcmp(cv, "nil") == 0) {
-			strcat(buf + len, cv);
-			len += strlen(buf + len);
+			strcat(buf, cv);
 			GDKfree(cv);
-			showtype = showtype
-					|| (getBatType(getVarType(mb, varid)) >= TYPE_date
-						&& getBatType(getVarType(mb, varid)) != TYPE_str)
-					|| ((isVarTypedef(mb, varid)) && isVarConstant(mb, varid))
-					|| isaBatType(getVarType(mb, varid));
+			showtype = showtype ||
+				(getBatType(getVarType(mb, varid)) >= TYPE_date
+				 && getBatType(getVarType(mb, varid)) != TYPE_str) ||
+				((isVarTypedef(mb, varid)) && isVarConstant(mb, varid)) ||
+				isaBatType(getVarType(mb, varid));
 		} else {
 			if (!isaBatType(getVarType(mb, varid))
 				&& getBatType(getVarType(mb, varid)) >= TYPE_date
 				&& getBatType(getVarType(mb, varid)) != TYPE_str) {
 				closequote = 1;
-				strcat(buf + len, "\"");
-				len++;
+				strcat(buf, "\"");
 			}
-			/*
-			if (isaBatType(getVarType(mb, varid)) && !is_bat_nil(val->val.bval)) {
-				c = strchr(cv, '>');
-				strcat(buf + len, c + 1);
-				len += strlen(buf + len);
+			size_t cv_len = strlen(cv);
+			if (cv_len > 100) {
+				strcpy_len(buf, cv, 101); /* 1 for null termination */
+				char *incomplete;
+				if (cv[0] == '"') {
+					incomplete = "\" ..... ";
+				} else {
+					incomplete = " ..... "
+				}
+				strconcat_len(buf + 100, max_len - 100, "\" ..... ", NULL);
 			} else {
-			*/
-				strcat(buf + len, cv);
-				len += strlen(buf + len);
-			//}
-			GDKfree(cv);
-
-			if (closequote) {
-				strcat(buf + len, "\"");
-				len++;
+				strcat(buf, cv);
 			}
-			showtype = showtype || closequote > TYPE_str
-					||
-					((isVarTypedef(mb, varid)
-					  || (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE)))
-					 && isVarConstant(mb, varid))
-					|| (isaBatType(getVarType(mb, varid)) && idx < p->retc);
+			GDKfree(cv);
+			if (closequote) {
+				strcat(buf, "\"");
+			}
+			showtype = showtype || closequote > TYPE_str ||
+				((isVarTypedef(mb, varid) ||
+				  (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb, varid)) ||
+				(isaBatType(getVarType(mb, varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb, varid))
 				&& stk->stk[varid].val.bval) {
 				BAT *d = BBPquickdesc(stk->stk[varid].val.bval);
 				if (d)
-					len += snprintf(buf + len, maxlen - len, "[" BUNFMT "]",
-									BATcount(d));
+					snprintf(buf, max_len - strlen(buf), "[" BUNFMT "]", BATcount(d));
 			}
 		}
 	}
-
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
 	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb, varid)
 		|| showtype) {
-		strcat(buf + len, ":");
-		len++;
+		size_t buf_len = strlen(buf);
 		tpe = getTypeName(getVarType(mb, varid));
-		len += snprintf(buf + len, maxlen - len, "%s", tpe);
+		strconcat_len(buf + buf_len, max_len - buf_len, ":", tpe, NULL);
 		GDKfree(tpe);
 	}
 
-	if (len >= maxlen)
-		addMalException(mb, "renderTerm:Value representation too large");
 	return buf;
 }
 
