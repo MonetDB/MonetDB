@@ -1,5 +1,5 @@
 statement ok
-create table ist (n int, s timestamptz, p text);
+create table ist (n int, s timestamptz, p text)
 
 statement ok
 insert into ist values
@@ -21,10 +21,10 @@ select n, timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y') from ist
 # timestamptz_to_str which accept oid as arguments for the case of CASE
 # condition (see the MAL)
 query IT rowsort
-select n, 
-    case when n < 2 then 
+select n,
+    case when n < 2 then
         timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y')
-    else 
+    else
         timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y')
     end
 from ist
@@ -50,10 +50,10 @@ Jan 01 12:34:12 AM, 2024
 # timestamptz_to_str which accept oid as arguments for the case of CASE
 # condition (see the MAL)
 query IT rowsort
-select n, 
-    case when n < 2 then 
+select n,
+    case when n < 2 then
         timestamp_to_str(timestamptz '2024-01-01 00:12:34', p)
-    else 
+    else
         timestamp_to_str(timestamptz '2024-01-01 00:12:34', p)
     end
 from ist

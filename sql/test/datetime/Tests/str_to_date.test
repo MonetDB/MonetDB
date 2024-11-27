@@ -1,8 +1,8 @@
 statement ok
-create table idt (n int, d varchar(10), p varchar(10));
+create table idt (n int, d varchar(10), p varchar(10))
 
 statement ok
-insert into idt values 
+insert into idt values
     (1, '2019-01-11', '%Y-%m-%d'),
     (2, '2020-01-11', '%Y-%d-%m'),
     (3, '2021-01-11', '%F')
@@ -20,11 +20,11 @@ select n, str_to_date(d, '%Y-%m-%d') from idt
 # the CASE clause assures that we use a bat version of str_to_date which
 # accept oid as arguments for the case of CASE condition (see the MAL)
 query IT rowsort
-select n, 
-    case when n < 2 then 
+select n,
+    case when n < 2 then
         str_to_date(d,'%Y-%m-%d')
-    else 
-        str_to_date(d,'%Y-%m-%d') 
+    else
+        str_to_date(d,'%Y-%m-%d')
     end
 from idt
 ----
@@ -34,7 +34,6 @@ from idt
 2020-01-11
 3
 2021-01-11
-
 
 query IT rowsort
 select n, str_to_date('1999-01-12', p) from idt
@@ -49,11 +48,11 @@ select n, str_to_date('1999-01-12', p) from idt
 # the CASE clause assures that we use a bat version of str_to_date which
 # accept oid as arguments for the case of CASE condition (see the MAL)
 query IT rowsort
-select n, 
-    case when n < 2 then 
+select n,
+    case when n < 2 then
         str_to_date('1999-01-12', p)
-    else 
-        str_to_date('1999-01-12', p) 
+    else
+        str_to_date('1999-01-12', p)
     end
 from idt
 ----

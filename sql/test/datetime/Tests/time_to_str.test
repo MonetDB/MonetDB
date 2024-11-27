@@ -1,5 +1,5 @@
 statement ok
-create table itt (n int, t timetz, p text);
+create table itt (n int, t timetz, p text)
 
 statement ok
 insert into itt values
@@ -21,9 +21,9 @@ select n, time_to_str(t, '%I hour %M:%S %p') from itt
 # which accept oid as arguments for the case of CASE condition (see MAL)
 query IT rowsort
 select n,
-    case when n < 2 then 
+    case when n < 2 then
         time_to_str(t, '%I hour %M:%S %p')
-    else 
+    else
         time_to_str(t, '%I hour %M:%S %p')
     end
 from itt
@@ -48,10 +48,10 @@ select n, time_to_str(timetz '00:12:34', p) from itt
 # the CASE clause assures that we use a bat version of timetz_to_str
 # which accept oid as arguments for the case of CASE condition (see MAL)
 query IT rowsort
-select n, 
-    case when n < 2 then 
+select n,
+    case when n < 2 then
         time_to_str(timetz '00:12:34', p)
-    else 
+    else
         time_to_str(timetz '00:12:34', p)
     end
 from itt
