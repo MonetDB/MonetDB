@@ -2335,7 +2335,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		cnts = Tloc(cn, 0);
 	}
 	const oid *gids = g && !BATtdense(g) ? Tloc(g, 0) : NULL;
-	oid gid = ngrp == 1 && gids ? gids[0] - min : 0;
+	oid gid = ngrp == 1 && gids ? gids[0] - min : g ? g->tseqbase - min : 0;
 
 	BATiter bi = bat_iterator(b);
 
@@ -2346,7 +2346,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_bte_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = bte_nil;
@@ -2394,7 +2394,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_sht_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = sht_nil;
@@ -2442,7 +2442,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_int_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = int_nil;
@@ -2490,7 +2490,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_lng_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = lng_nil;
@@ -2539,7 +2539,7 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
-				gid = gids ? gids[o] - min : o;
+				gid = (gids ? gids[o] : g->tseqbase + o) - min;
 			if (is_hge_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = hge_nil;
