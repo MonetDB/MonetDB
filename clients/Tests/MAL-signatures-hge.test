@@ -30528,91 +30528,6 @@ eval
 pattern batcapi.eval(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any...
 CUDFevalStd;
 Execute a simple CUDF script value
-batcolor
-blue
-command batcolor.blue(X_0:bat[:color]):bat[:int]
-CLRbatBlue;
-Extracts blue component from a color atom
-batcolor
-cb
-command batcolor.cb(X_0:bat[:color]):bat[:int]
-CLRbatCb;
-Extracts Cb(blue color) component from a color atom
-batcolor
-color
-command batcolor.color(X_0:bat[:str]):bat[:color]
-CLRbatColor;
-Converts string to color
-batcolor
-cr
-command batcolor.cr(X_0:bat[:color]):bat[:int]
-CLRbatCr;
-Extracts Cr(red color) component from a color atom
-batcolor
-green
-command batcolor.green(X_0:bat[:color]):bat[:int]
-CLRbatGreen;
-Extracts green component from a color atom
-batcolor
-hsv
-command batcolor.hsv(X_0:bat[:flt], X_1:bat[:flt], X_2:bat[:flt]):bat[:color]
-CLRbatHsv;
-Converts an HSV triplets to a color atom
-batcolor
-hue
-command batcolor.hue(X_0:bat[:color]):bat[:flt]
-CLRbatHue;
-Extracts hue component from a color atom
-batcolor
-hue
-command batcolor.hue(X_0:bat[:color]):bat[:int]
-CLRbatHueInt;
-Extracts hue component from a color atom
-batcolor
-luminance
-command batcolor.luminance(X_0:bat[:color]):bat[:int]
-CLRbatLuminance;
-Extracts Y(luminance) component from a color atom
-batcolor
-red
-command batcolor.red(X_0:bat[:color]):bat[:int]
-CLRbatRed;
-Extracts red component from a color atom
-batcolor
-rgb
-command batcolor.rgb(X_0:bat[:int], X_1:bat[:int], X_2:bat[:int]):bat[:color]
-CLRbatRgb;
-Converts an RGB triplets to a color atom
-batcolor
-saturation
-command batcolor.saturation(X_0:bat[:color]):bat[:flt]
-CLRbatSaturation;
-Extracts saturation component from a color atom
-batcolor
-saturation
-command batcolor.saturation(X_0:bat[:color]):bat[:int]
-CLRbatSaturationInt;
-Extracts saturation component from a color atom
-batcolor
-str
-command batcolor.str(X_0:bat[:color]):bat[:str]
-CLRbatStr;
-Identity mapping for string bats
-batcolor
-value
-command batcolor.value(X_0:bat[:color]):bat[:flt]
-CLRbatValue;
-Extracts value component from a color atom
-batcolor
-value
-command batcolor.value(X_0:bat[:color]):bat[:int]
-CLRbatValueInt;
-Extracts value component from a color atom
-batcolor
-ycc
-command batcolor.ycc(X_0:bat[:flt], X_1:bat[:flt], X_2:bat[:flt]):bat[:color]
-CLRbatycc;
-Converts an YCC triplets to a color atom
 batgeom
 AsEWKT
 command batgeom.AsEWKT(X_0:bat[:wkb]):bat[:str]
@@ -32300,22 +32215,22 @@ MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:date]
-MTIMEstr_to_date_bulk_p1;
-(empty)
-batmtime
-str_to_date
 pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng):bat[:date]
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:date]
-MTIMEstr_to_date_bulk_p2;
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:date]
+MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
 pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng):bat[:date]
+MTIMEstr_to_date_bulk_p2;
+(empty)
+batmtime
+str_to_date
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:date]
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
@@ -32330,22 +32245,22 @@ MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:daytime]
-MTIMEstr_to_time_bulk_p1;
-(empty)
-batmtime
-str_to_time
 pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng):bat[:daytime]
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:daytime]
-MTIMEstr_to_time_bulk_p2;
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:daytime]
+MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
 pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng):bat[:daytime]
+MTIMEstr_to_time_bulk_p2;
+(empty)
+batmtime
+str_to_time
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:daytime]
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
@@ -32360,22 +32275,22 @@ MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:timestamp]
-MTIMEstr_to_timestamp_bulk_p1;
-(empty)
-batmtime
-str_to_timestamp
 pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng):bat[:timestamp]
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:timestamp]
-MTIMEstr_to_timestamp_bulk_p2;
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:timestamp]
+MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
 pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng):bat[:timestamp]
+MTIMEstr_to_timestamp_bulk_p2;
+(empty)
+batmtime
+str_to_timestamp
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:timestamp]
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
@@ -33350,22 +33265,22 @@ MTIMEtimestamptz_to_str_bulk;
 (empty)
 batmtime
 timestamptz_to_str
-pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimestamptz_to_str_bulk_p1;
-(empty)
-batmtime
-timestamptz_to_str
 pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng):bat[:str]
 MTIMEtimestamptz_to_str_bulk_p1;
 (empty)
 batmtime
 timestamptz_to_str
-pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimestamptz_to_str_bulk_p2;
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:str]
+MTIMEtimestamptz_to_str_bulk_p1;
 (empty)
 batmtime
 timestamptz_to_str
 pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng):bat[:str]
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:str]
 MTIMEtimestamptz_to_str_bulk_p2;
 (empty)
 batmtime
@@ -33380,22 +33295,22 @@ MTIMEtimetz_to_str_bulk;
 (empty)
 batmtime
 timetz_to_str
-pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimetz_to_str_bulk_p1;
-(empty)
-batmtime
-timetz_to_str
 pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng):bat[:str]
 MTIMEtimetz_to_str_bulk_p1;
 (empty)
 batmtime
 timetz_to_str
-pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimetz_to_str_bulk_p2;
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:str]
+MTIMEtimetz_to_str_bulk_p1;
 (empty)
 batmtime
 timetz_to_str
 pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng):bat[:str]
+MTIMEtimetz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:str]
 MTIMEtimetz_to_str_bulk_p2;
 (empty)
 batmtime
@@ -44653,91 +44568,6 @@ wakeup
 unsafe pattern clients.wakeup(X_0:int):void
 CLTwakeup;
 Wakeup a client process
-color
-blue
-command color.blue(X_0:color):int
-CLRblue;
-Extracts blue component from a color atom
-color
-cb
-command color.cb(X_0:color):int
-CLRcb;
-Extracts Cb(blue color) component from a color atom
-color
-color
-command color.color(X_0:str):color
-CLRcolor;
-Converts string to color
-color
-cr
-command color.cr(X_0:color):int
-CLRcr;
-Extracts Cr(red color) component from a color atom
-color
-green
-command color.green(X_0:color):int
-CLRgreen;
-Extracts green component from a color atom
-color
-hsv
-command color.hsv(X_0:flt, X_1:flt, X_2:flt):color
-CLRhsv;
-Converts an HSV triplets to a color atom
-color
-hue
-command color.hue(X_0:color):flt
-CLRhue;
-Extracts hue component from a color atom
-color
-hue
-command color.hue(X_0:color):int
-CLRhueInt;
-Extracts hue component from a color atom
-color
-luminance
-command color.luminance(X_0:color):int
-CLRluminance;
-Extracts Y(luminance) component from a color atom
-color
-red
-command color.red(X_0:color):int
-CLRred;
-Extracts red component from a color atom
-color
-rgb
-command color.rgb(X_0:int, X_1:int, X_2:int):color
-CLRrgb;
-Converts an RGB triplets to a color atom
-color
-saturation
-command color.saturation(X_0:color):flt
-CLRsaturation;
-Extracts saturation component from a color atom
-color
-saturation
-command color.saturation(X_0:color):int
-CLRsaturationInt;
-Extracts saturation component from a color atom
-color
-str
-command color.str(X_0:color):str
-CLRstr;
-Converts color to string 
-color
-value
-command color.value(X_0:color):flt
-CLRvalue;
-Extracts value component from a color atom
-color
-value
-command color.value(X_0:color):int
-CLRvalueInt;
-Extracts value component from a color atom
-color
-ycc
-command color.ycc(X_0:int, X_1:int, X_2:int):color
-CLRycc;
-Converts an YCC triplets to a color atom
 csv
 epilogue
 command csv.epilogue():void
@@ -45519,11 +45349,6 @@ command geom.InteriorRingN(X_0:wkb, X_1:int):wkb
 wkbInteriorRingN;
 Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.
 geom
-InteriorRings
-command geom.InteriorRings(X_0:wkb):wkba
-wkbInteriorRings;
-Returns an 'array' with all the interior rings of the polygon
-geom
 Intersection
 command geom.Intersection(X_0:wkb, X_1:wkb):wkb
 wkbIntersection;
@@ -46258,11 +46083,6 @@ subgroupdone
 command group.subgroupdone(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) (X_5:bat[:oid], X_6:bat[:oid])
 GRPsubgroup9;
 (empty)
-identifier
-identifier
-command identifier.identifier(X_0:str):identifier
-IDentifier;
-Cast a string to an identifier 
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit

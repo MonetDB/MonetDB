@@ -499,8 +499,10 @@ heapinit(BAT *b, const char *buf,
 		return -1;
 	}
 
-	if (strcmp(type, "wkba") == 0)
-		GDKwarning("type wkba (SQL name: GeometryA) is deprecated\n");
+	if (strcmp(type, "wkba") == 0) {
+		TRC_CRITICAL(GDK, "type wkba (SQL name: GeometryA) has been removed\n");
+		return -1;
+	}
 
 	if (properties & ~0x1F81) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
@@ -1745,7 +1747,7 @@ BBPmanager(void *dummy)
 static MT_Id manager;
 
 gdk_return
-BBPinit(bool allow_hge_upgrade)
+BBPinit(bool allow_hge_upgrade, bool no_manager)
 {
 	FILE *fp = NULL;
 	struct stat st;
@@ -2013,7 +2015,7 @@ BBPinit(bool allow_hge_upgrade)
 		}
 	}
 
-	if (!GDKinmemory(0) && MT_create_thread(&manager, BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager") < 0) {
+	if (!GDKinmemory(0) && !no_manager && MT_create_thread(&manager, BBPmanager, NULL, MT_THR_DETACHED, "BBPmanager") < 0) {
 		TRC_CRITICAL(GDK, "Could not start BBPmanager thread.");
 		return GDK_FAIL;
 	}

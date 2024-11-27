@@ -5641,7 +5641,7 @@ batgeom_YMaxFromMBR_mbr(bat *ret, bat *b)
 static mel_atom geom_init_atoms[] = {
  { .name="mbr", .basetype="lng", .size=sizeof(mbr), .tostr=mbrTOSTR, .fromstr=mbrFROMSTR, .hash=mbrHASH, .null=mbrNULL, .cmp=mbrCOMP, .read=mbrREAD, .write=mbrWRITE, },
  { .name="wkb", .tostr=wkbTOSTR, .fromstr=wkbFROMSTR, .hash=wkbHASH, .null=wkbNULL, .cmp=wkbCOMP, .read=wkbREAD, .write=wkbWRITE, .put=wkbPUT, .del=wkbDEL, .length=wkbLENGTH, .heap=wkbHEAP, },
- { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
+ { .cmp=NULL }
 };
 static mel_func geom_init_funcs[] = {
  //TODO Fill in descriptions
@@ -5709,7 +5709,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Polygon", wkbMakePolygon, false, "Returns a Polygon created from the provided LineStrings", args(1,4, arg("",wkb),arg("",wkb),batarg("",wkb),arg("",int))),
  command("geom", "ExteriorRing", wkbExteriorRing, false, "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "InteriorRingN", wkbInteriorRingN, false, "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.", args(1,3, arg("",wkb),arg("w",wkb),arg("n",int))),
- command("geom", "InteriorRings", wkbInteriorRings, false, "Returns an 'array' with all the interior rings of the polygon", args(1,2, arg("",wkba),arg("w",wkb))),
  command("geom", "IsClosed", wkbIsClosed, false, "Returns TRUE if the LINESTRING's start and end points are coincident.", args(1,2, arg("",bit),arg("w",wkb))),
  command("geom", "IsEmpty", wkbIsEmpty, false, "Returns true if this Geometry is an empty geometry.", args(1,2, arg("",bit),arg("w",wkb))),
  command("geom", "IsRing", wkbIsRing, false, "Returns TRUE if this LINESTRING is both closed and simple.", args(1,2, arg("",bit),arg("w",wkb))),

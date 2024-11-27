@@ -23,7 +23,6 @@ target_sources(kernel
   aggr.c aggr.h
   batmmath.c
   batstr.c
-  batcolor.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 target_sources(microbenchmark

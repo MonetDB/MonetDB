@@ -1,0 +1,67 @@
+statement ok
+create table ist (n int, s timestamptz, p text);
+
+statement ok
+insert into ist values
+    (1, timestamptz '2024-01-01 00:00:12', '%d %b %I:%M:%S %p, %Y'),
+    (2, timestamptz '2024-01-01 00:01:23', '%b %d %I:%S:%M %p, %Y'),
+    (3, timestamptz '2024-01-01 00:12:34', '%d %b %T, %Y')
+
+query IT rowsort
+select n, timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y') from ist
+----
+1
+01 Jan 12:00:12 AM, 2024
+2
+01 Jan 12:01:23 AM, 2024
+3
+01 Jan 12:12:34 AM, 2024
+
+# the CASE clause assures that we use a bat version of
+# timestamptz_to_str which accept oid as arguments for the case of CASE
+# condition (see the MAL)
+query IT rowsort
+select n, 
+    case when n < 2 then 
+        timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y')
+    else 
+        timestamp_to_str(s, '%d %b %I:%M:%S %p, %Y')
+    end
+from ist
+----
+1
+01 Jan 12:00:12 AM, 2024
+2
+01 Jan 12:01:23 AM, 2024
+3
+01 Jan 12:12:34 AM, 2024
+
+query IT rowsort
+select n, timestamp_to_str(timestamptz '2024-01-01 00:12:34', p) from ist
+----
+1
+01 Jan 12:12:34 AM, 2024
+2
+Jan 01 12:34:12 AM, 2024
+3
+01 Jan 00:12:34, 2024
+
+# the CASE clause assures that we use a bat version of
+# timestamptz_to_str which accept oid as arguments for the case of CASE
+# condition (see the MAL)
+query IT rowsort
+select n, 
+    case when n < 2 then 
+        timestamp_to_str(timestamptz '2024-01-01 00:12:34', p)
+    else 
+        timestamp_to_str(timestamptz '2024-01-01 00:12:34', p)
+    end
+from ist
+----
+1
+01 Jan 12:12:34 AM, 2024
+2
+Jan 01 12:34:12 AM, 2024
+3
+01 Jan 00:12:34, 2024
+

@@ -458,13 +458,6 @@ MT_lockf(const char *filename, int mode)
 	if ((wfilename = utf8towchar(filename)) == NULL)
 		return -2;
 	ov = (OVERLAPPED) {0};
-#if defined(DUMMYSTRUCTNAME) && (defined(NONAMELESSUNION) || !defined(_MSC_EXTENSIONS))	/* Windows SDK v7.0 */
-	ov.u.s.Offset = 4;
-	ov.u.s.OffsetHigh = 0;
-#else
-	ov.Offset = 4;
-	ov.OffsetHigh = 0;
-#endif
 
 	if (mode == F_ULOCK) {
 		EnterCriticalSection(&cs);
@@ -476,7 +469,7 @@ MT_lockf(const char *filename, int mode)
 				fd = fp->fildes;
 				fh = (HANDLE) _get_osfhandle(fd);
 				free(fp);
-				ret = UnlockFileEx(fh, 0, 1, 0, &ov);
+				ret = UnlockFileEx(fh, 0, 10, 0, &ov);
 				free(wfilename);
 				return ret ? 0 : -1;
 			}
@@ -490,7 +483,7 @@ MT_lockf(const char *filename, int mode)
 		free(wfilename);
 		if (fh == INVALID_HANDLE_VALUE)
 			return -2;
-		ret = UnlockFileEx(fh, 0, 1, 0, &ov);
+		ret = UnlockFileEx(fh, 0, 10, 0, &ov);
 		CloseHandle(fh);
 		return 0;
 	}
@@ -507,13 +500,13 @@ MT_lockf(const char *filename, int mode)
 	}
 
 	if (mode == F_TLOCK) {
-		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov);
+		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 10, 0, &ov);
 	} else if (mode == F_LOCK) {
-		ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov);
+		ret = LockFileEx(fh, LOCKFILE_EXCLUSIVE_LOCK, 0, 10, 0, &ov);
 	} else if (mode == F_TEST) {
-		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 1, 0, &ov);
+		ret = LockFileEx(fh, LOCKFILE_FAIL_IMMEDIATELY | LOCKFILE_EXCLUSIVE_LOCK, 0, 10, 0, &ov);
 		if (ret != 0) {
-			UnlockFileEx(fh, 0, 1, 0, &ov);
+			UnlockFileEx(fh, 0, 10, 0, &ov);
 			close(fd);
 			free(wfilename);
 			return 0;
@@ -772,11 +765,11 @@ MT_lockf(const char *filename, int mode)
 				free(fp->filename);
 				fd = fp->fd;
 				free(fp);
-				seek = lseek(fd, 4, SEEK_SET);
+				seek = lseek(fd, 0, SEEK_SET);
 				if (seek < 0)
 					seek = 0;	/* should never happen, just for coverity */
-				int ret = lockf(fd, mode, 1);
-				(void) lseek(fd, seek, SEEK_SET); /* move seek pointer back */
+				int ret = lockf(fd, mode, 0);
+				(void) lseek(fd, seek, 0); /* move seek pointer back */
 				/* do not close fd, it is closed by caller */
 				return ret;		/* 0 if unlock successful, -1 if not */
 			}
@@ -788,8 +781,8 @@ MT_lockf(const char *filename, int mode)
 	if (fd < 0)
 		return -2;
 
-	if ((seek = lseek(fd, 4, SEEK_SET)) >= 0 &&
-	    lockf(fd, mode, 1) == 0) {
+	if ((seek = lseek(fd, 0, SEEK_SET)) >= 0 &&
+	    lockf(fd, mode, 0) == 0) {
 		if (mode == F_ULOCK || mode == F_TEST) {
 			close(fd);
 			return 0;

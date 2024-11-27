@@ -93,6 +93,4 @@ struct logger {
 	MT_Cond excl_flush_cv;
 };
 
-gdk_return log_create_types_file(logger *lg, const char *filename);
-
 #endif /* _LOGGER_INTERNALS_H_ */
