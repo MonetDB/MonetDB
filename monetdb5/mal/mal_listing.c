@@ -119,12 +119,6 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			size_t cv_len = strlen(cv);
 			if (cv_len > 100) {
 				strcpy_len(buf, cv, 101); /* 1 for null termination */
-				char *incomplete;
-				if (cv[0] == '"') {
-					incomplete = "\" ..... ";
-				} else {
-					incomplete = " ..... "
-				}
 				strconcat_len(buf + 100, max_len - 100, "\" ..... ", NULL);
 			} else {
 				strcat(buf, cv);
