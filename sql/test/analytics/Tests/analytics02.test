@@ -42,21 +42,21 @@ select cast(sum(aa) over (rows between 5 preceding and 2 following) as bigint) f
 38
 
 query I nosort
-select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics
+select cast(sum(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) as bigint) from analytics
 ----
-3
+2
 5
 9
 NULL
 3
 11
-15
-20
+5
+11
 26
 NULL
 
 query I nosort
-select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics
+select cast(sum(aa) over (partition by bb order by bb, aa rows between 5 preceding and 2 following) as bigint) from analytics
 ----
 9
 9
@@ -70,49 +70,49 @@ select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding a
 NULL
 
 query I rowsort
-select cast(prod(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics
+select cast(prod(aa) over (order by aa rows between 5 preceding and 0 following) as bigint) from analytics
 ----
-1350
-15
-2880
+18
+2
+2160
 360
-45
-450
-450
-576
-720
-90
+43200
+6
+72
+8640
+NULL
+NULL
 
 query I rowsort
-select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics
+select cast(prod(aa) over (order by aa rows between 5 preceding and 2 following) as bigint) from analytics
 ----
-1350
+129600
 17280
-2880
-32400
-450
-450
-5400
-576
-5760
-90
+18
+2
+2160
+259200
+360
+43200
+6
+72
 
 query I nosort
-select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics
+select cast(prod(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) as bigint) from analytics
 ----
-3
+2
 6
 24
 NULL
 3
 24
-15
-75
+5
+30
 450
 NULL
 
 query I nosort
-select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics
+select cast(prod(aa) over (partition by bb order by bb, aa rows between 5 preceding and 2 following) as bigint) from analytics
 ----
 24
 24
@@ -154,21 +154,21 @@ select avg(aa) over (rows between 5 preceding and 2 following) from analytics
 6.667
 
 query R nosort
-select avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+select avg(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from analytics
 ----
-3.000
+2.000
 2.500
 3.000
 NULL
 3.000
 5.500
-15.000
-10.000
+5.000
+5.500
 8.667
 NULL
 
 query R nosort
-select avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+select avg(aa) over (partition by bb order by bb, aa rows between 5 preceding and 2 following) from analytics
 ----
 3.000
 3.000
@@ -210,21 +210,21 @@ select min(aa) over (rows between 5 preceding and 2 following) from analytics
 3
 
 query I nosort
-select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+select min(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from analytics
 ----
-3
+2
 2
 2
 NULL
 3
 3
-15
+5
 5
 5
 NULL
 
 query I nosort
-select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+select min(aa) over (partition by bb order by bb, aa rows between 5 preceding and 2 following) from analytics
 ----
 2
 2
@@ -266,16 +266,16 @@ select max(aa) over (rows between 5 preceding and 2 following) from analytics
 8
 
 query I nosort
-select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+select max(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from analytics
 ----
-3
+2
 3
 4
 NULL
 3
 8
-15
-15
+5
+6
 15
 NULL
 
@@ -322,7 +322,7 @@ select min(bb) over (rows between 5 preceding and 2 following) from analytics
 1
 
 query I nosort
-select min(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics
+select min(bb) over (partition by aa order by aa, bb rows between 5 preceding and 0 following) from analytics
 ----
 2
 2
@@ -336,7 +336,7 @@ select min(bb) over (partition by aa order by aa rows between 5 preceding and 0 
 3
 
 query I nosort
-select min(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics
+select min(bb) over (partition by aa order by aa, bb rows between 5 preceding and 2 following) from analytics
 ----
 2
 2
@@ -378,7 +378,7 @@ select max(bb) over (rows between 5 preceding and 2 following) from analytics
 4
 
 query I nosort
-select max(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics
+select max(bb) over (partition by aa order by aa, bb rows between 5 preceding and 0 following) from analytics
 ----
 2
 4
@@ -392,7 +392,7 @@ select max(bb) over (partition by aa order by aa rows between 5 preceding and 0 
 3
 
 query I nosort
-select max(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics
+select max(bb) over (partition by aa order by aa, bb rows between 5 preceding and 2 following) from analytics
 ----
 4
 4
@@ -490,7 +490,7 @@ select count(aa) over (rows between 5 preceding and 2 following) from analytics
 7
 
 query I nosort
-select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+select count(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from analytics
 ----
 1
 2
@@ -687,15 +687,15 @@ select min(aa) over (rows unbounded preceding) from analytics
 3
 
 query I nosort
-select min(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+select min(aa) over (partition by bb order by bb, aa rows unbounded preceding) from analytics
 ----
-3
+2
 2
 2
 NULL
 3
 3
-15
+5
 5
 5
 NULL
@@ -715,16 +715,16 @@ select max(aa) over (rows unbounded preceding) from analytics
 15
 
 query I nosort
-select max(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+select max(aa) over (partition by bb order by bb, aa rows unbounded preceding) from analytics
 ----
-3
+2
 3
 4
 NULL
 3
 8
-15
-15
+5
+6
 15
 NULL
 
@@ -743,16 +743,16 @@ select cast(sum(aa) over (rows unbounded preceding) as bigint) from analytics
 46
 
 query I nosort
-select cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics
+select cast(sum(aa) over (partition by bb order by bb, aa rows unbounded preceding) as bigint) from analytics
 ----
-3
+2
 5
 9
 NULL
 3
 11
-15
-20
+5
+11
 26
 NULL
 
@@ -771,16 +771,16 @@ select cast(prod(aa) over (rows unbounded preceding) as bigint) from analytics
 90
 
 query I nosort
-select cast(prod(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics
+select cast(prod(aa) over (partition by bb order by bb, aa rows unbounded preceding) as bigint) from analytics
 ----
-3
+2
 6
 24
 NULL
 3
 24
-15
-75
+5
+30
 450
 NULL
 
@@ -799,16 +799,16 @@ select avg(aa) over (rows unbounded preceding) from analytics
 9.000
 
 query R nosort
-select avg(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+select avg(aa) over (partition by bb order by bb, aa rows unbounded preceding) from analytics
 ----
-3.000
+2.000
 2.500
 3.000
 NULL
 3.000
 5.500
-15.000
-10.000
+5.000
+5.500
 8.667
 NULL
 
@@ -855,7 +855,7 @@ select count(aa) over (rows unbounded preceding) from analytics
 8
 
 query I nosort
-select count(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+select count(aa) over (partition by bb order by bb, aa rows unbounded preceding) from analytics
 ----
 1
 2
@@ -883,15 +883,15 @@ select min(aa) over (rows 2 preceding) from analytics
 6
 
 query I nosort
-select min(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+select min(aa) over (partition by bb order by bb, aa rows 2 preceding) from analytics
 ----
-3
+2
 2
 2
 NULL
 3
 3
-15
+5
 5
 5
 NULL
@@ -911,16 +911,16 @@ select max(aa) over (rows 2 preceding) from analytics
 8
 
 query I nosort
-select max(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+select max(aa) over (partition by bb order by bb, aa rows 2 preceding) from analytics
 ----
-3
+2
 3
 4
 NULL
 3
 8
-15
-15
+5
+6
 15
 NULL
 
@@ -939,16 +939,16 @@ select cast(sum(aa) over (rows 2 preceding) as bigint) from analytics
 8
 
 query I nosort
-select cast(sum(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics
+select cast(sum(aa) over (partition by bb order by bb, aa rows 2 preceding) as bigint) from analytics
 ----
-3
+2
 5
 9
 NULL
 3
 11
-15
-20
+5
+11
 26
 NULL
 
@@ -967,16 +967,16 @@ select cast(prod(aa) over (rows 2 preceding) as bigint) from analytics
 90
 
 query I nosort
-select cast(prod(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics
+select cast(prod(aa) over (partition by bb order by bb, aa rows 2 preceding) as bigint) from analytics
 ----
-3
+2
 6
 24
 NULL
 3
 24
-15
-75
+5
+30
 450
 NULL
 
@@ -995,16 +995,16 @@ select avg(aa) over (rows 2 preceding) from analytics
 9.000
 
 query R nosort
-select avg(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+select avg(aa) over (partition by bb order by bb, aa rows 2 preceding) from analytics
 ----
-3.000
+2.000
 2.500
 3.000
 NULL
 3.000
 5.500
-15.000
-10.000
+5.000
+5.500
 8.667
 NULL
 
@@ -1051,7 +1051,7 @@ select count(aa) over (rows 2 preceding) from analytics
 3
 
 query I nosort
-select count(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+select count(aa) over (partition by bb order by bb, aa rows 2 preceding) from analytics
 ----
 1
 2
@@ -1143,9 +1143,9 @@ check
 check
 
 query T nosort
-select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+select min(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from stressme
 ----
-one
+another
 another
 another
 NULL
@@ -1195,9 +1195,9 @@ stress
 stress
 
 query T nosort
-select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+select max(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from stressme
 ----
-one
+another
 one
 stress
 NULL
@@ -1208,7 +1208,7 @@ please
 NULL
 
 query T nosort
-select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme
+select max(aa) over (partition by bb order by bb, aa rows between 5 preceding and 2 following) from stressme
 ----
 stress
 stress
@@ -1333,16 +1333,16 @@ select sum(aa) over (rows between 2 preceding and 2 following) from debugme
 25.000
 
 query R nosort
-select sum(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
+select sum(aa) over (partition by bb order by bb, aa rows between 2 preceding and 0 following) from debugme
 ----
-3.000
+2.000
 5.000
 9.000
 NULL
 3.000
 11.000
-15.000
-20.000
+5.000
+11.000
 26.000
 NULL
 
@@ -1389,21 +1389,21 @@ select prod(aa) over (rows between 2 preceding and 2 following) from debugme
 90.000
 
 query R nosort
-select prod(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
+select prod(aa) over (partition by bb order by bb, aa rows between 2 preceding and 0 following) from debugme
 ----
-3.000
+2.000
 6.000
 24.000
 NULL
 3.000
 24.000
-15.000
-75.000
+5.000
+30.000
 450.000
 NULL
 
 query R nosort
-select prod(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
+select prod(aa) over (partition by bb order by bb, aa rows between 2 preceding and 2 following) from debugme
 ----
 24.000
 24.000
@@ -1445,21 +1445,21 @@ select avg(aa) over (rows between 2 preceding and 2 following) from debugme
 7.000
 
 query R nosort
-select avg(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
+select avg(aa) over (partition by bb order by bb, aa rows between 2 preceding and 0 following) from debugme
 ----
-3.000
+2.000
 2.500
 3.000
 NULL
 3.000
 5.500
-15.000
-10.000
+5.000
+5.500
 8.667
 NULL
 
 query R nosort
-select avg(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
+select avg(aa) over (partition by bb order by bb, aa rows between 2 preceding and 2 following) from debugme
 ----
 3.000
 3.000
