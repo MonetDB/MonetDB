@@ -2,7 +2,7 @@ statement ok
 create table itt (n int, t varchar(10), p varchar(10))
 
 statement ok
-insert into itt values 
+insert into itt values
     (1, '00:01:02', '%H:%M:%S'),
     (2, '00:10:02', '%H:%S:%M'),
     (3, '00:20:02', '%T')
@@ -20,11 +20,11 @@ select n, str_to_time(t,'%H:%M:%S') from itt
 # the CASE clause assures that we use a bat version of str_to_time which
 # accept oid as arguments for the case of CASE condition (see the MAL)
 query IT rowsort
-select n, 
-    case when n < 2 then 
+select n,
+    case when n < 2 then
         str_to_time(t,'%H:%M:%S')
-    else 
-        str_to_time(t,'%H:%M:%S') 
+    else
+        str_to_time(t,'%H:%M:%S')
     end
 from itt
 ----
