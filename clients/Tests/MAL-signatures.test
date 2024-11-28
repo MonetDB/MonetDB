@@ -33849,11 +33849,6 @@ command geom.InteriorRingN(X_0:wkb, X_1:int):wkb
 wkbInteriorRingN;
 Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.
 geom
-InteriorRings
-command geom.InteriorRings(X_0:wkb):wkba
-wkbInteriorRings;
-Returns an 'array' with all the interior rings of the polygon
-geom
 Intersection
 command geom.Intersection(X_0:wkb, X_1:wkb):wkb
 wkbIntersection;
