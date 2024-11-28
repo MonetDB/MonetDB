@@ -226,6 +226,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 						mytime, type, dbname, pid, (int) (p - q), q);
 			}
 		}
+		fflush(stream);
 	} while (rest);
 	fflush(stream);
 }

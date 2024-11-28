@@ -26,6 +26,7 @@
 #else
 /* older GCC does have attributes, but not __has_attribute and not all
  * attributes that we use are known */
+#define __has_attribute__access__ 0
 #define __has_attribute__alloc_size__ 1
 #define __has_attribute__cold__ 1
 #define __has_attribute__const__ 1
@@ -41,6 +42,9 @@
 #define __has_attribute__warn_unused_result__ 1
 #define __has_attribute(attr)	__has_attribute##attr
 #endif
+#endif
+#if !__has_attribute(__access__)
+#define __access__(...)
 #endif
 #if !__has_attribute(__alloc_size__)
 #define __alloc_size__(...)

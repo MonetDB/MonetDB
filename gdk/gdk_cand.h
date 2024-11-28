@@ -78,7 +78,8 @@ struct canditer {
 
 /* returns the position of the lowest order bit in x, i.e. the
  * smallest n such that (x & (1<<n)) != 0; must not be called with 0 */
-static inline int __attribute__((__const__))
+__attribute__((__const__))
+static inline int
 candmask_lobit(uint32_t x)
 {
 	assert(x != 0);
@@ -108,7 +109,8 @@ candmask_lobit(uint32_t x)
 }
 
 /* population count: count number of 1 bits in a value */
-static inline uint32_t __attribute__((__const__))
+__attribute__((__const__))
+static inline uint32_t
 candmask_pop(uint32_t x)
 {
 #ifdef __has_builtin
@@ -144,39 +146,10 @@ candmask_pop(uint32_t x)
 }
 
 #define canditer_next_dense(ci)		((ci)->seq + (ci)->next++)
-#define canditer_next_mater(ci)		((ci)->oids[(ci)->next++])
-static inline oid
-canditer_next_except(struct canditer *ci)
-{
-	oid o = ci->seq + ci->add + ci->next++;
-	while (ci->add < ci->nvals && o == ci->oids[ci->add]) {
-		ci->add++;
-		o++;
-	}
-	return o;
-}
-static inline oid
-canditer_next_mask(struct canditer *ci)
-{
-	/* since .next < .ncand, we know there must be another
-	 * candidate */
-	while ((ci->mask[ci->nextmsk] >> ci->nextbit) == 0) {
-		ci->nextmsk++;
-		ci->nextbit = 0;
-	}
-	ci->nextbit += candmask_lobit(ci->mask[ci->nextmsk] >> ci->nextbit);
-	oid o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
-	if (++ci->nextbit == 32) {
-		ci->nextbit = 0;
-		ci->nextmsk++;
-	}
-	ci->next++;
-	return o;
-}
-
 static inline oid
 canditer_next(struct canditer *ci)
 {
+	oid o;
 	if (ci->next == ci->ncand)
 		return oid_nil;
 	switch (ci->tpe) {
@@ -184,30 +157,64 @@ canditer_next(struct canditer *ci)
 		return canditer_next_dense(ci);
 	case cand_materialized:
 		assert(ci->next < ci->nvals);
-		return canditer_next_mater(ci);
+		return ci->oids[ci->next++];
 	case cand_except:
-		return canditer_next_except(ci);
+		o = ci->seq + ci->add + ci->next++;
+		while (ci->add < ci->nvals && o == ci->oids[ci->add]) {
+			ci->add++;
+			o++;
+		}
+		return o;
 	case cand_mask:
-		return canditer_next_mask(ci);
+		while ((ci->mask[ci->nextmsk] >> ci->nextbit) == 0) {
+			ci->nextmsk++;
+			ci->nextbit = 0;
+		}
+		ci->nextbit += candmask_lobit(ci->mask[ci->nextmsk] >> ci->nextbit);
+		o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
+		if (++ci->nextbit == 32) {
+			ci->nextbit = 0;
+			ci->nextmsk++;
+		}
+		ci->next++;
+		return o;
 	default:
 		MT_UNREACHABLE();
 	}
 }
 
-#define canditer_search_dense(ci, o, next) ((o) < (ci)->seq ? next ? 0 : BUN_NONE : (o) >= (ci)->seq + (ci)->ncand ? next ? (ci)->ncand : BUN_NONE : (o) - (ci)->seq)
-
-gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s);
-gdk_export oid canditer_peek(struct canditer *ci);
-gdk_export oid canditer_last(const struct canditer *ci);
+gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s)
+	__attribute__((__access__(write_only, 1)));
+gdk_export oid canditer_peek(const struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_last(const struct canditer *ci)
+	__attribute__((__pure__));
 gdk_export oid canditer_prev(struct canditer *ci);
-gdk_export oid canditer_peekprev(struct canditer *ci);
-gdk_export oid canditer_idx(const struct canditer *ci, BUN p);
+gdk_export oid canditer_peekprev(const struct canditer *ci)
+	__attribute__((__pure__));
+gdk_export oid canditer_idx(const struct canditer *ci, BUN p)
+	__attribute__((__pure__));
 #define canditer_idx_dense(ci, p) ((p >= (ci)->ncand)?oid_nil:((ci)->seq + p))
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
-gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next);
+
+__attribute__((__pure__))
+static inline BUN
+canditer_search_dense(const struct canditer *ci, oid o, bool next)
+{
+	if (o < ci->seq)
+		return next ? 0 : BUN_NONE;
+	else if (o >= ci->seq + ci->ncand)
+		return next ? ci->ncand : BUN_NONE;
+	else
+		return o - ci->seq;
+}
+gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next)
+	__attribute__((__pure__));
+
+__attribute__((__pure__))
 static inline bool
-canditer_contains(struct canditer *ci, oid o)
+canditer_contains(const struct canditer *ci, oid o)
 {
 	if (ci->tpe == cand_mask) {
 		if (o < ci->mskoff)
@@ -223,11 +230,14 @@ canditer_contains(struct canditer *ci, oid o)
 	}
 	return canditer_search(ci, o, false) != BUN_NONE;
 }
-gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next);
+gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next)
+	__attribute__((__pure__));
+
 gdk_export BAT *canditer_slice(const struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_sliceval(const struct canditer *ci, oid lo, oid hi);
 gdk_export BAT *canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2);
 gdk_export BAT *canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
+
 gdk_export BAT *BATnegcands(oid tseq, BUN nr, BAT *odels);
 gdk_export BAT *BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected);
 gdk_export BAT *BATunmask(BAT *b);

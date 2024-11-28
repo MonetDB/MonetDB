@@ -339,6 +339,7 @@ main(int argc, char **av)
 		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"loadmodule", required_argument, NULL, 0},
 		{"without-geom", no_argument, NULL, 0},
+		{"process-wal-and-exit", no_argument, NULL, 0},
 
 		{NULL, 0, NULL, 0}
 	};
@@ -513,6 +514,11 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
 				readpwdxit = true;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "process-wal-and-exit") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "process-wal-and-exit", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
@@ -876,7 +882,6 @@ main(int argc, char **av)
 	fflush(stdout);
 #endif
 
-	/* why busy wait ? */
 	while (!interrupted && !GDKexiting()) {
 		if (usr1_interrupted) {
 			usr1_interrupted = 0;

@@ -640,3 +640,20 @@ SELECT d.id, i1.obj_type, i1.name,
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('ids', 'dependencies_vw');
 
+Running database upgrade commands:
+drop view sys.geometry_columns;
+create view sys.geometry_columns as
+ select cast(null as varchar(1)) as f_table_catalog,
+ s.name as f_table_schema,
+ t.name as f_table_name,
+ c.name as f_geometry_column,
+ cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
+ c.type_scale as srid,
+ get_type(c.type_digits, 0) as geometry_type
+ from sys.columns c, sys.tables t, sys.schemas s
+ where c.table_id = t.id and t.schema_id = s.id
+ and c.type in (select sqlname from sys.types where systemname = 'wkb');
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';
+delete from sys.privileges where (obj_id) not in (select id from (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t);
+

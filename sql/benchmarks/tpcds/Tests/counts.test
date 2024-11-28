@@ -1,0 +1,131 @@
+statement ok
+start transaction
+
+query I rowsort
+select count(*) from dbgen_version
+----
+0
+
+query I rowsort
+select count(*) from customer_address
+----
+0
+
+query I rowsort
+select count(*) from customer_demographics
+----
+0
+
+query I rowsort
+select count(*) from date_dim
+----
+0
+
+query I rowsort
+select count(*) from warehouse
+----
+0
+
+query I rowsort
+select count(*) from ship_mode
+----
+0
+
+query I rowsort
+select count(*) from time_dim
+----
+0
+
+query I rowsort
+select count(*) from reason
+----
+0
+
+query I rowsort
+select count(*) from income_band
+----
+0
+
+query I rowsort
+select count(*) from item
+----
+0
+
+query I rowsort
+select count(*) from store
+----
+0
+
+query I rowsort
+select count(*) from call_center
+----
+0
+
+query I rowsort
+select count(*) from customer
+----
+0
+
+query I rowsort
+select count(*) from web_site
+----
+0
+
+query I rowsort
+select count(*) from store_returns
+----
+0
+
+query I rowsort
+select count(*) from household_demographics
+----
+0
+
+query I rowsort
+select count(*) from web_page
+----
+0
+
+query I rowsort
+select count(*) from promotion
+----
+0
+
+query I rowsort
+select count(*) from catalog_page
+----
+0
+
+query I rowsort
+select count(*) from inventory
+----
+0
+
+query I rowsort
+select count(*) from catalog_returns
+----
+0
+
+query I rowsort
+select count(*) from web_returns
+----
+0
+
+query I rowsort
+select count(*) from web_sales
+----
+0
+
+query I rowsort
+select count(*) from catalog_sales
+----
+0
+
+query I rowsort
+select count(*) from store_sales
+----
+0
+
+statement ok
+rollback
+

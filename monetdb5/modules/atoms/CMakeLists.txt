@@ -16,7 +16,6 @@ target_sources(atoms
   PRIVATE
   streams.c streams.h
   blob.c
-  color.c color.h
   str.c str.h
   strptime.c
   url.c
@@ -24,7 +23,6 @@ target_sources(atoms
   json.c
   mtime.c mtime.h
   inet.c
-  identifier.c
   xml.c xml.h
   batxml.c)
 

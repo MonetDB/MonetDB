@@ -30,4 +30,3 @@ netcdf_export str NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 netcdf_export str NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid);
 netcdf_export str NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 #endif
-

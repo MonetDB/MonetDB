@@ -23,7 +23,6 @@ target_sources(kernel
   aggr.c aggr.h
   batmmath.c
   batstr.c
-  batcolor.c
   pp_group.c
   pp_aggr.c
   PUBLIC

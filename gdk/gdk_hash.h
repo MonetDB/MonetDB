@@ -112,7 +112,8 @@ HASHputlink(Hash *h, BUN i, BUN v)
 	}
 }
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 HASHget(const Hash *h, BUN i)
 {
 	switch (h->width) {
@@ -134,7 +135,8 @@ HASHget(const Hash *h, BUN i)
 	}
 }
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 HASHgetlink(const Hash *h, BUN i)
 {
 	switch (h->width) {
@@ -214,7 +216,8 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_flt(H,V)	HASHbucket(H, ATOMhash(TYPE_flt, (V)))
 #define hash_dbl(H,V)	HASHbucket(H, ATOMhash(TYPE_dbl, (V)))
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 mix_uuid(const uuid *u)
 {
 	ulng u1, u2;

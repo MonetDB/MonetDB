@@ -26,7 +26,8 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-static inline bool __attribute__((__pure__))
+__attribute__((__pure__))
+static inline bool
 isProjectConst(const InstrRecord *p)
 {
 	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);

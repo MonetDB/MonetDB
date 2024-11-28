@@ -1,0 +1,18 @@
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."authors" (
+	"lastname"  VARCHAR(20)   NOT NULL,
+	"firstname" VARCHAR(20)   NOT NULL,
+	CONSTRAINT "authors_lastname_firstname_pkey" PRIMARY KEY ("lastname", "firstname")
+);
+CREATE TABLE "sys"."books_partial" (
+	"authlast"  VARCHAR(20),
+	"authfirst" VARCHAR(20)
+);
+CREATE TABLE "sys"."books_full" (
+	"authlast"  VARCHAR(20),
+	"authfirst" VARCHAR(20)
+);
+ALTER TABLE "sys"."books_full" ADD CONSTRAINT "books_full_authlast_authfirst_fkey" FOREIGN KEY ("authlast", "authfirst") REFERENCES "sys"."authors" ("lastname", "firstname") MATCH FULL;
+ALTER TABLE "sys"."books_partial" ADD CONSTRAINT "books_partial_authlast_authfirst_fkey" FOREIGN KEY ("authlast", "authfirst") REFERENCES "sys"."authors" ("lastname", "firstname") MATCH PARTIAL;
+COMMIT;

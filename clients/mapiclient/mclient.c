@@ -1177,10 +1177,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtod(s, NULL);
-				for (j = 4; j < 11; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtod(buf, NULL))
-						break;
+				if (v > (double) 999999999999999 ||
+					v < (double) -999999999999999 ||
+					(double) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtod(buf, NULL) != v) {
+					for (j = 4; j < 11; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtod(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else if (strcmp(tp, "real") == 0) {
@@ -1190,10 +1196,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtof(s, NULL);
-				for (j = 4; j < 6; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtof(buf, NULL))
-						break;
+				if (v > (float) 9999999 ||
+					v < (float) -9999999 ||
+					(float) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtof(buf, NULL) != v) {
+					for (j = 4; j < 6; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtof(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else

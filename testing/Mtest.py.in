@@ -28,6 +28,7 @@
 import os
 import sys
 import shutil
+import platform
 import re
 import secrets
 import time
@@ -313,8 +314,9 @@ def remove(file):
     except IsADirectoryError:
         shutil.rmtree(file, ignore_errors=True)
     except PermissionError:
-        # on Windows we get a weird error from os.remove on a directory
-        if os.name == "nt":
+        # on Windows and MacOS we get a weird error from os.remove on a
+        # directory
+        if platform.system() in ('Windows', 'Darwin'):
             shutil.rmtree(file, ignore_errors=True)
         else:
             Warn('could not remove {}'.format(file))

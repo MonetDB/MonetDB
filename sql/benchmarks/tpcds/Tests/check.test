@@ -1,0 +1,761 @@
+statement ok
+start transaction
+
+query I rowsort
+select count(*) from dbgen_version
+----
+1
+
+query I rowsort
+select count(*) from customer_address
+----
+50000
+
+query I rowsort
+select count(*) from customer_demographics
+----
+1920800
+
+query I rowsort
+select count(*) from date_dim
+----
+73049
+
+query I rowsort
+select count(*) from warehouse
+----
+5
+
+query I rowsort
+select count(*) from ship_mode
+----
+20
+
+query I rowsort
+select count(*) from time_dim
+----
+86400
+
+query I rowsort
+select count(*) from reason
+----
+35
+
+query I rowsort
+select count(*) from income_band
+----
+20
+
+query I rowsort
+select count(*) from item
+----
+18000
+
+query I rowsort
+select count(*) from store
+----
+12
+
+query I rowsort
+select count(*) from call_center
+----
+6
+
+query I rowsort
+select count(*) from customer
+----
+100000
+
+query I rowsort
+select count(*) from web_site
+----
+30
+
+query I rowsort
+select count(*) from store_returns
+----
+287514
+
+query I rowsort
+select count(*) from household_demographics
+----
+7200
+
+query I rowsort
+select count(*) from web_page
+----
+60
+
+query I rowsort
+select count(*) from promotion
+----
+300
+
+query I rowsort
+select count(*) from catalog_page
+----
+11718
+
+query I rowsort
+select count(*) from inventory
+----
+11745000
+
+query I rowsort
+select count(*) from catalog_returns
+----
+144067
+
+query I rowsort
+select count(*) from web_returns
+----
+71763
+
+query I rowsort
+select count(*) from web_sales
+----
+719384
+
+query I rowsort
+select count(*) from catalog_sales
+----
+1441548
+
+query I rowsort
+select count(*) from store_sales
+----
+2880404
+
+query TTTT rowsort
+select * from dbgen_version limit 9
+----
+2.10.0
+2018-10-22
+17:17:42
+-DIR qual 
+
+query ITTTTTTTTTTRT rowsort
+select * from customer_address limit 9
+----
+117 values hashing to 699e2323610e3d58d692a16a2e957aa1
+
+query ITTTITIII rowsort
+select * from customer_demographics limit 9
+----
+1
+M
+M
+Primary
+500
+Good
+0
+0
+0
+2
+F
+M
+Primary
+500
+Good
+0
+0
+0
+3
+M
+S
+Primary
+500
+Good
+0
+0
+0
+4
+F
+S
+Primary
+500
+Good
+0
+0
+0
+5
+M
+D
+Primary
+500
+Good
+0
+0
+0
+6
+F
+D
+Primary
+500
+Good
+0
+0
+0
+7
+M
+W
+Primary
+500
+Good
+0
+0
+0
+8
+F
+W
+Primary
+500
+Good
+0
+0
+0
+9
+M
+U
+Primary
+500
+Good
+0
+0
+0
+
+query ITTIIIIIIIIIIITTTTTIIIITTTTT rowsort
+select * from date_dim limit 9
+----
+252 values hashing to 9a77044233e9b983225afdb7df9d48c1
+
+query ITTITTTTTTTTTR rowsort
+select * from warehouse limit 9
+----
+1
+AAAAAAAABAAAAAAA
+Conventional childr
+977787
+651
+6th 
+Parkway
+Suite 470
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+2
+AAAAAAAACAAAAAAA
+Important issues liv
+138504
+600
+View First
+Avenue
+Suite P
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+3
+AAAAAAAADAAAAAAA
+Doors canno
+294242
+534
+Ash Laurel
+Dr.
+Suite 0
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+4
+AAAAAAAAEAAAAAAA
+Bad cards must make.
+621234
+368
+Wilson Elm
+Drive
+Suite 80
+Fairview
+Williamson County
+TN
+35709
+United States
+-5.000
+5
+AAAAAAAAFAAAAAAA
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+Fairview
+Williamson County
+TN
+35709
+United States
+NULL
+
+query ITTTTT rowsort
+select * from ship_mode limit 9
+----
+1
+AAAAAAAABAAAAAAA
+EXPRESS
+AIR
+UPS
+YvxVaJI10
+2
+AAAAAAAACAAAAAAA
+NEXT DAY
+AIR
+FEDEX
+ldhM8IvpzHgdbBgDfI
+3
+AAAAAAAADAAAAAAA
+OVERNIGHT
+AIR
+AIRBORNE
+6Hzzp4JkzjqD8MGXLCDa
+4
+AAAAAAAAEAAAAAAA
+TWO DAY
+AIR
+USPS
+UaAJjKDnL4gTOqbpj
+5
+AAAAAAAAFAAAAAAA
+LIBRARY
+AIR
+DHL
+HVDFCcQ
+6
+AAAAAAAAGAAAAAAA
+REGULAR
+SURFACE
+TBS
+Ek
+7
+AAAAAAAAHAAAAAAA
+EXPRESS
+SURFACE
+ZHOU
+hGoF18SLDDPBj
+8
+AAAAAAAAIAAAAAAA
+NEXT DAY
+SURFACE
+ZOUROS
+yVfotg7Tio3MVhBg6Bkn
+9
+AAAAAAAAJAAAAAAA
+OVERNIGHT
+SURFACE
+MSC
+Xjy3ZPuiDjzHlRx14Z3
+
+query ITIIIITTTT rowsort
+select * from time_dim limit 9
+----
+0
+AAAAAAAABAAAAAAA
+0
+0
+0
+0
+AM
+third
+night
+NULL
+1
+AAAAAAAACAAAAAAA
+1
+0
+0
+1
+AM
+third
+night
+NULL
+2
+AAAAAAAADAAAAAAA
+2
+0
+0
+2
+AM
+third
+night
+NULL
+3
+AAAAAAAAEAAAAAAA
+3
+0
+0
+3
+AM
+third
+night
+NULL
+4
+AAAAAAAAFAAAAAAA
+4
+0
+0
+4
+AM
+third
+night
+NULL
+5
+AAAAAAAAGAAAAAAA
+5
+0
+0
+5
+AM
+third
+night
+NULL
+6
+AAAAAAAAHAAAAAAA
+6
+0
+0
+6
+AM
+third
+night
+NULL
+7
+AAAAAAAAIAAAAAAA
+7
+0
+0
+7
+AM
+third
+night
+NULL
+8
+AAAAAAAAJAAAAAAA
+8
+0
+0
+8
+AM
+third
+night
+NULL
+
+query ITT rowsort
+select * from reason limit 9
+----
+1
+AAAAAAAABAAAAAAA
+Package was damaged
+2
+AAAAAAAACAAAAAAA
+Stopped working
+3
+AAAAAAAADAAAAAAA
+Did not get it on time
+4
+AAAAAAAAEAAAAAAA
+Not the product that was ordred
+5
+AAAAAAAAFAAAAAAA
+Parts missing
+6
+AAAAAAAAGAAAAAAA
+Does not work with a product that I have
+7
+AAAAAAAAHAAAAAAA
+Gift exchange
+8
+AAAAAAAAIAAAAAAA
+Did not like the color
+9
+AAAAAAAAJAAAAAAA
+Did not like the model
+
+query III rowsort
+select * from income_band limit 9
+----
+1
+0
+10000
+2
+10001
+20000
+3
+20001
+30000
+4
+30001
+40000
+5
+40001
+50000
+6
+50001
+60000
+7
+60001
+70000
+8
+70001
+80000
+9
+80001
+90000
+
+query ITTTTRRITITITITTTTTTIT rowsort
+select * from item limit 9
+----
+198 values hashing to 3792ef6170a1cf9074112439aba19cef
+
+query ITTTITIITTITTTITITTTTTTTTTTRR rowsort
+select * from store limit 9
+----
+261 values hashing to 77d3e633166079a386481c224243e831
+
+query ITTTIITTIITTITTTITITTTTTTTTTTRR rowsort
+select * from call_center limit 9
+----
+186 values hashing to 53fd228aa424055e0bbb13b699cd7c0f
+
+query ITIIIIITTTTIIITTTI rowsort
+select * from customer limit 9
+----
+162 values hashing to a891ab1aab4581851c4d5bdcd66e88c7
+
+query ITTTTIITTITTTITTTTTTTTTTRR rowsort
+select * from web_site limit 9
+----
+234 values hashing to 0d8462fd7ce57f8b66b6f9092b24cf28
+
+query IIIIIIIIIIIRRRRRRRRR rowsort
+select * from store_returns limit 9
+----
+180 values hashing to fe29770554c3542a69d3f0cb10b2615e
+
+query IITII rowsort
+select * from household_demographics limit 9
+----
+1
+2
+0-500
+0
+0
+2
+3
+0-500
+0
+0
+3
+4
+0-500
+0
+0
+4
+5
+0-500
+0
+0
+5
+6
+0-500
+0
+0
+6
+7
+0-500
+0
+0
+7
+8
+0-500
+0
+0
+8
+9
+0-500
+0
+0
+9
+10
+0-500
+0
+0
+
+query ITTTIITITTIIII rowsort
+select * from web_page limit 9
+----
+126 values hashing to 0520e4b68668e115811687af6813aa53
+
+query ITIIIRITTTTTTTTTTTT rowsort
+select * from promotion limit 9
+----
+171 values hashing to 614bba13244a6461b472279604124e05
+
+query ITIITIITT rowsort
+select * from catalog_page limit 9
+----
+1
+AAAAAAAABAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+1
+In general basic characters welcome. Clearly lively friends conv
+bi-annual
+2
+AAAAAAAACAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+2
+English areas will leave prisoners. Too public countries ought to become beneath the years. 
+bi-annual
+3
+AAAAAAAADAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+3
+Times could not address disabled indians. Effectively public ports c
+bi-annual
+4
+AAAAAAAAEAAAAAAA
+2450815
+NULL
+NULL
+1
+NULL
+NULL
+bi-annual
+5
+AAAAAAAAFAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+5
+Classic buildings ensure in a tests. Real years may not receive open systems. Now broad m
+bi-annual
+6
+AAAAAAAAGAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+6
+Exciting principles wish greatly only excellent women. Appropriate fortunes shall not
+bi-annual
+7
+AAAAAAAAHAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+7
+National services must not come at least into a girls
+bi-annual
+8
+AAAAAAAAIAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+8
+Areas see early for a pounds. New goods study too serious women. Unwittingly sorry incentives shall
+bi-annual
+9
+AAAAAAAAJAAAAAAA
+2450815
+2450996
+DEPARTMENT
+1
+9
+Intensive, economic changes resist bloody of course simple economies; 
+bi-annual
+
+query IIII rowsort
+select * from inventory limit 9
+----
+2450815
+1
+1
+211
+2450815
+10
+1
+834
+2450815
+13
+1
+591
+2450815
+14
+1
+579
+2450815
+16
+1
+622
+2450815
+2
+1
+235
+2450815
+4
+1
+859
+2450815
+7
+1
+704
+2450815
+8
+1
+891
+
+query IIIIIIIIIIIIIIIIIIRRRRRRRRR rowsort
+select * from catalog_returns limit 9
+----
+243 values hashing to b5470519d6d8483324b94e74c7e2c50a
+
+query IIIIIIIIIIIIIIIRRRRRRRRR rowsort
+select * from web_returns limit 9
+----
+216 values hashing to 0fb3e59b4c9d18ead9318af7a31ff6f8
+
+query IIIIIIIIIIIIIIIIIIIRRRRRRRRRRRRRRR rowsort
+select * from web_sales limit 9
+----
+306 values hashing to 947e7e52b78fe6f829f7672ce01d2b9d
+
+query IIIIIIIIIIIIIIIIIIIRRRRRRRRRRRRRRR rowsort
+select * from catalog_sales limit 9
+----
+306 values hashing to 9e4dce72a0d4b7aa37688bcbcdf675d9
+
+query IIIIIIIIIIIRRRRRRRRRRRR rowsort
+select * from store_sales limit 9
+----
+207 values hashing to a4f563459be7a003337ac1df4774041e
+
+statement ok
+rollback
+

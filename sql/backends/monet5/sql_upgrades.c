@@ -4368,6 +4368,44 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
+sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
+{
+	str err;
+	res_table *output = NULL;
+
+	if ((err = SQLstatementIntern(c, "select * from sys._tables where name = 'geometry_columns' and schema_id = 2000 and query like '%''wkba''%';\n", "update", true, false, &output)) == MAL_SUCCEED) {
+		BAT *b;
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) > 0) {
+			sql_table *t = mvc_bind_table(sql, s, "geometry_columns");
+			t->system = 0;
+			const char query[] = "drop view sys.geometry_columns;\n"
+				"create view sys.geometry_columns as\n"
+				" select cast(null as varchar(1)) as f_table_catalog,\n"
+				" s.name as f_table_schema,\n"
+				" t.name as f_table_name,\n"
+				" c.name as f_geometry_column,\n"
+				" cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
+				" c.type_scale as srid,\n"
+				" get_type(c.type_digits, 0) as geometry_type\n"
+				" from sys.columns c, sys.tables t, sys.schemas s\n"
+				" where c.table_id = t.id and t.schema_id = s.id\n"
+				" and c.type in (select sqlname from sys.types where systemname = 'wkb');\n"
+				"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+				"update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';\n"
+				/* also clean up sys.privileges after drop of
+				 * sys.st_interiorrings that was done in C in
+				 * bat_logger.c */
+				"delete from sys.privileges where (obj_id) not in (select id from (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t);\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		res_table_destroy(output);
+	}
+	return err;
+}
+
+static str
 sql_update_default(Client c, mvc *sql, sql_schema *s)
 {
 	char *err = MAL_SUCCEED;
@@ -4496,6 +4534,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_default(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

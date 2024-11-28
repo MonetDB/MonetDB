@@ -18,7 +18,6 @@
 extern mbr mbrNIL;
 
 static const wkb wkb_nil = { ~0, 0 };
-static const wkba wkba_nil = {.itemsNum = ~0};
 
 /* WKB atom type functions */
 ssize_t wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external);
@@ -83,20 +82,3 @@ geom_export str mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB);
 geom_export str wkbCoordinateFromWKB(dbl*, wkb**, int*);
 geom_export str wkbCoordinateFromMBR(dbl*, mbr**, int*);
 geom_export str ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY);
-
-/* WKBA atom type functions */
-ssize_t wkbaTOSTR(char **toStr, size_t *len, const void *FROMARRAY, bool external);
-ssize_t wkbaFROMSTR(const char *fromStr, size_t *len, void **TOARRAY, bool external);
-const void * wkbaNULL(void);
-BUN wkbaHASH(const void *WARRAY);
-int wkbaCOMP(const void *L, const void *R);
-void * wkbaREAD(void *A, size_t *dstlen, stream *s, size_t cnt);
-gdk_return wkbaWRITE(const void *A, stream *s, size_t cnt);
-var_t wkbaPUT(BAT *b, var_t *bun, const void *VAL);
-void wkbaDEL(Heap *h, var_t *index);
-size_t wkbaLENGTH(const void *P);
-gdk_return wkbaHEAP(Heap *heap, size_t capacity);
-/* Non-atom WKBA functions */
-var_t wkba_size(int items);
-str wkbInteriorRings(wkba **geomArray, wkb **geomWKB);
-
