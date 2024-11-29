@@ -1046,7 +1046,7 @@ tr_commit(logger *lg, trans *tr)
 }
 
 static gdk_return
-log_read_types_file(logger *lg, FILE *fp, int version)
+log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
@@ -1054,8 +1054,22 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
-		if (version < 52303 && strcmp(atom_name, "BAT") == 0)
+		if (version < 52303 && strcmp(atom_name, "BAT") == 0) {
+			*needsnew = true;
 			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "color") == 0) {
+			*needsnew = true;
+			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "identifier") == 0) {
+			*needsnew = true;
+			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "wkba") == 0) {
+			*needsnew = true;
+			continue;
+		}
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1077,7 +1091,7 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 }
 
 
-gdk_return
+static gdk_return
 log_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
@@ -1546,7 +1560,7 @@ check_version(logger *lg, FILE *fp, bool *needsnew)
 		fclose(fp);
 		return GDK_FAIL;
 	}
-	if (log_read_types_file(lg, fp, version) != GDK_SUCCEED) {
+	if (log_read_types_file(lg, fp, version, needsnew) != GDK_SUCCEED) {
 		fclose(fp);
 		return GDK_FAIL;
 	}
@@ -2277,19 +2291,22 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 
 	if (readlogs) {
 		ulng log_id = lg->saved_id + 1;
+		bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
 		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
-		if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
-			goto error;
-		if (needsnew) {
-			if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
-				TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
-				return GDK_FAIL;
-			}
-			if (log_create_types_file(lg, filename) != GDK_SUCCEED) {
-				TRC_CRITICAL(GDK, "couldn't write new log\n");
-				return GDK_FAIL;
+		if (!earlyexit) {
+			if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
+				goto error;
+			if (needsnew) {
+				if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
+					TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
+					return GDK_FAIL;
+				}
+				if (log_create_types_file(lg, filename) != GDK_SUCCEED) {
+					TRC_CRITICAL(GDK, "couldn't write new log\n");
+					return GDK_FAIL;
+				}
 			}
 		}
 		dbg = ATOMIC_GET(&GDKdebug);
@@ -2300,6 +2317,10 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		ATOMIC_SET(&GDKdebug, dbg);
 		for (; log_id <= lg->saved_id; log_id++)
 			(void) log_cleanup(lg, log_id);	/* ignore error of removing file */
+		if (earlyexit) {
+			printf("# mserver5 exiting\n");
+			exit(0);
+		}
 		if (needsnew &&
 		    GDKunlink(0, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "couldn't remove old log.bak file\n");
@@ -2307,6 +2328,10 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		}
 	} else {
 		lg->id = lg->saved_id + 1;
+		if (GDKgetenv_isyes("process-wal-and-exit")) {
+			printf("# mserver5 exiting\n");
+			exit(0);
+		}
 	}
 #ifdef GDKLIBRARY_JSON
 	if (log_json_upgrade_finalize() == GDK_FAIL)
@@ -2787,7 +2812,7 @@ log_sequence(logger *lg, int seq, lng *id)
 }
 
 gdk_return
-log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
+log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt)
 {
 	bte tpe = find_type(lg, type);
 	gdk_return ok = GDK_SUCCEED;

@@ -20,6 +20,7 @@
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
+#define CATALOG_AUG2024 52303	/* first in Aug2024 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -56,13 +57,20 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_AUG2024
+	if (oldversion == CATALOG_AUG2024) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #if defined CATALOG_JUL2021 || defined CATALOG_JAN2022
 /* replace a column in a system table with a new column
- * colid is the SQL id for the column, oldcolid is the BAT id of the
- * to-be-replaced BAT */
+ * colid is the SQL id for the column, newcol is the new BAT */
 static gdk_return
 replace_bat(logger *lg, int colid, BAT *newcol)
 {
@@ -106,7 +114,7 @@ log_temp_descriptor(log_bid b)
 
 #if defined CATALOG_JAN2022 || defined CATALOG_SEP2022
 static gdk_return
-tabins(logger *lg, bool first, int tt, int nid, ...)
+tabins(logger *lg, ...)
 {
 	va_list va;
 	int cid;
@@ -114,48 +122,33 @@ tabins(logger *lg, bool first, int tt, int nid, ...)
 	gdk_return rc;
 	BAT *b;
 
-	va_start(va, nid);
+	va_start(va, lg);
+	BATiter cni = bat_iterator(lg->catalog_id);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
 		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
-			va_end(va);
-			return GDK_FAIL;
-		}
-		if (first) {
-			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (bn == NULL) {
-				va_end(va);
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			if (replace_bat(lg, cid, bn) != GDK_SUCCEED) {
-				va_end(va);
-				bat_destroy(b);
-				bat_destroy(bn);
-				return GDK_FAIL;
-			}
-			/* logical refs of b stay the same: it is moved from catalog_bid to del */
-			bat_destroy(b);
-			b = bn;
+			rc = GDK_FAIL;
+			break;
 		}
 		rc = BUNappend(b, cval, true);
-		bat_destroy(b);
-		if (rc != GDK_SUCCEED) {
-			va_end(va);
-			return rc;
+		if (rc == GDK_SUCCEED) {
+			BUN p;
+			MT_rwlock_rdlock(&cni.b->thashlock);
+			HASHloop_int(cni, cni.b->thash, p, &cid) {
+				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
+					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
-	}
-	va_end(va);
-
-	if (tt >= 0) {
-		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
-			return GDK_FAIL;
-		rc = log_bat_persists(lg, b, nid);
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
-			return rc;
+			break;
 	}
-	return GDK_SUCCEED;
+	bat_iterator_end(&cni);
+	va_end(va);
+	return rc;
 }
 #endif
 
@@ -164,7 +157,6 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
-	bool tabins_first = true;
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
@@ -686,7 +678,7 @@ bl_postversion(void *Store, logger *lg)
 		bat_destroy(b1);
 		bat_destroy(colnr);
 		bat_destroy(colid);
-		rc = tabins(lg, true, -1, 0,
+		rc = tabins(lg,
 					prid, &(msk) {false}, /* sys.privileges */
 					privids[0], &dbid, /* sys.privileges.obj_id */
 					privids[1], &(int) {USER_MONETDB}, /* sys.privileges.auth_id */
@@ -722,7 +714,7 @@ bl_postversion(void *Store, logger *lg)
 			BBPretain(check->batCacheid);
 			bat_destroy(check);
 
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
 					   /* 2165 is sys.keys.check */
 					   2077, &(int) {2165},		/* sys._columns.id */
@@ -738,10 +730,9 @@ bl_postversion(void *Store, logger *lg)
 					   2086, str_nil,			/* sys._columns.storage */
 					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
-			tabins_first = false;
-			if (tabins(lg, tabins_first, -1, 0,
+			if (tabins(lg,
 					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2165 is tmp.keys.check */
+					   /* 2166 is tmp.keys.check */
 					   2077, &(int) {2166},		/* sys._columns.id */
 					   2078, "check",			/* sys._columns.name */
 					   2079, "varchar",			/* sys._columns.type */
@@ -755,6 +746,139 @@ bl_postversion(void *Store, logger *lg)
 					   2086, str_nil,			/* sys._columns.storage */
 					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
+	}
+#endif
+
+#ifdef CATALOG_AUG2024
+	if (store->catalog_version <= CATALOG_AUG2024) {
+		/* remove function sys.st_interiorrings and its arguments since
+		 * it references the now removed type GEOMETRYA */
+		BAT *del_funcs = log_temp_descriptor(log_find_bat(lg, 2016)); /* sys.functions */
+		if (del_funcs == NULL)
+			return GDK_FAIL;
+		BAT *dels = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
+		if (dels == NULL) {
+			bat_destroy(del_funcs);
+			return GDK_FAIL;
+		}
+		BAT *b = log_temp_descriptor(log_find_bat(lg, 2026)); /* sys.functions.schema_id */
+		if (b == NULL) {
+			bat_destroy(del_funcs);
+			bat_destroy(dels);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 */
+		BAT *cands = BATselect(b, dels, &(int) {2000}, NULL, true, true, false, false);
+		bat_destroy(b);
+		bat_destroy(dels);
+		b = log_temp_descriptor(log_find_bat(lg, 2018)); /* sys.functions.name */
+		if (cands == NULL || b == NULL) {
+			bat_destroy(del_funcs);
+			bat_destroy(cands);
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 and name = 'st_interiorrings' */
+		BAT *funcs = BATselect(b, cands, "st_interiorrings", NULL, true, true, false, false);
+		bat_destroy(cands);
+		bat_destroy(b);
+		if (funcs == NULL) {
+			bat_destroy(del_funcs);
+			return GDK_FAIL;
+		}
+		/* here, funcs contains the BUNs for the function
+		 * sys.st_interiorrings; if there are none, we're done */
+		if (BATcount(funcs) > 0) {
+			b = log_temp_descriptor(log_find_bat(lg, 2017)); /* sys.functions.id */
+			if (b == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(funcs);
+				return GDK_FAIL;
+			}
+			BAT *del_args = log_temp_descriptor(log_find_bat(lg, 2028)); /* sys.args */
+			if (del_args == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(funcs);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			dels = BATmaskedcands(0, BATcount(del_args), del_args, false);
+			if (dels == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(del_args);
+				bat_destroy(funcs);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			BAT *a = log_temp_descriptor(log_find_bat(lg, 2030)); /* sys.args.func_id */
+			if (a == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(del_args);
+				bat_destroy(funcs);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			BAT *r1, *r2;
+			gdk_return rc;
+			/* find arguments to function sys.st_interiorrings */
+			rc = BATjoin(&r1, &r2, b, a, funcs, dels, false, 10);
+			bat_destroy(dels);
+			bat_destroy(b);
+			bat_destroy(a);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(del_funcs);
+				bat_destroy(del_args);
+				bat_destroy(funcs);
+				return GDK_FAIL;
+			}
+			b = COLcopy(del_funcs, del_funcs->ttype, true, PERSISTENT);
+			a = COLcopy(del_args, del_args->ttype, true, PERSISTENT);
+			bat_destroy(del_funcs);
+			bat_destroy(del_args);
+			if (b == NULL || a == NULL) {
+				bat_destroy(funcs);
+				bat_destroy(r1);
+				bat_destroy(r2);
+				return GDK_FAIL;
+			}
+			/* now set the deleted bit for all functions and all
+			 * arguments that we've found (i.e. just the input and
+			 * output arg for sys.st_interiorrings and the function
+			 * itself) */
+			BUN p, q;
+			BATloop (r1, p, q) {
+				oid o = BUNtoid(r1, p);
+				if (BUNreplace(b, o, &(bool) {true}, false) != GDK_SUCCEED) {
+					bat_destroy(funcs);
+					bat_destroy(r1);
+					bat_destroy(r2);
+					bat_destroy(b);
+					bat_destroy(a);
+					return GDK_FAIL;
+				}
+				o = BUNtoid(r2, p);
+				if (BUNreplace(a, o, &(bool) {true}, false) != GDK_SUCCEED) {
+					bat_destroy(funcs);
+					bat_destroy(r1);
+					bat_destroy(r2);
+					bat_destroy(b);
+					bat_destroy(a);
+					return GDK_FAIL;
+				}
+			}
+			bat_destroy(r1);
+			bat_destroy(r2);
+			rc = replace_bat(lg, 2016, b);
+			if (rc == GDK_SUCCEED)
+				rc = replace_bat(lg, 2028, a);
+			bat_destroy(b);
+			bat_destroy(a);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(funcs);
+				return rc;
+			}
+		}
+		bat_destroy(funcs);
 	}
 #endif
 
