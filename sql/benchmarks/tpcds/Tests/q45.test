@@ -1,0 +1,78 @@
+query TTR nosort
+-- query 45
+select  ca_zip, ca_city, sum(ws_sales_price)
+ from web_sales, customer, customer_address, date_dim, item
+ where ws_bill_customer_sk = c_customer_sk
+ 	and c_current_addr_sk = ca_address_sk
+ 	and ws_item_sk = i_item_sk
+ 	and ( substr(ca_zip,1,5) in ('85669', '86197','88274','83405','86475', '85392', '85460', '80348', '81792')
+ 	      or
+ 	      i_item_id in (select i_item_id
+                             from item
+                             where i_item_sk in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29)
+                             )
+ 	    )
+ 	and ws_sold_date_sk = d_date_sk
+ 	and d_qoy = 2 and d_year = 2001
+ group by ca_zip, ca_city
+ order by ca_zip, ca_city
+ limit 100
+----
+10150
+Bunker Hill
+20.250
+16098
+Five Points
+18.050
+28048
+Salem
+9.810
+29584
+Oakdale
+41.210
+31289
+Lincoln
+1.260
+34975
+Kingston
+56.670
+36971
+Wilson
+202.630
+38354
+Sulphur Springs
+25.680
+44975
+Kingston
+12.620
+62808
+Hamilton
+85.390
+62812
+Shady Grove
+48.770
+66557
+Arlington
+2.680
+68252
+Maple Grove
+11.370
+69583
+Jackson
+54.420
+73003
+Hillcrest
+36.030
+78222
+Clinton
+85.870
+83683
+Plainview
+43.820
+84536
+Friendship
+64.440
+88370
+Oak Grove
+52.420
+

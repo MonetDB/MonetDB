@@ -229,7 +229,7 @@ PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end, char **return_
 				data[p] = Py_None;
 				Py_INCREF(Py_None);
 			} else {
-				data[p] = PyByteArray_FromStringAndSize(t->data, t->nitems);
+				data[p] = PyByteArray_FromStringAndSize((char *) t->data, t->nitems);
 			}
 		}
 		bat_iterator_end(&li);

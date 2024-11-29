@@ -475,8 +475,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #endif
 #else
 #define LIB_STARTUP_FUNC(f) \
-		static void f(void) __attribute__((__constructor__));	\
-		static void f(void)
+		__attribute__((__constructor__)) static void f(void)
 #endif
 
 #endif /* MT_SEEN_MONETDB_CONFIG_H */

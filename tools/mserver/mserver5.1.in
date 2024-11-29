@@ -283,6 +283,9 @@ This option is used by
 .IR monetdbd (1)
 when creating a new database with an administrator password and should
 not be used otherwise.
+.TP
+.B \-\-process\-wal\-and\-exit
+Stop the server immediately after processing the write-ahead log.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)

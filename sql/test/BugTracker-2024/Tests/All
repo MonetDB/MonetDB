@@ -93,3 +93,7 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 7580-date-diff
 7582-ddl-exists
 7587-rejectmismatch
+7591-logical-expr
+7593-double-as-text-notation-issue
+KNOWNFAIL?7598-foreign_key_match_options
+KNOWNFAIL?7598-foreign_key_match_options_dump
