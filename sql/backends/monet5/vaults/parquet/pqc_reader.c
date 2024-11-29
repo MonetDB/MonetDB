@@ -492,9 +492,9 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 	}
 	if (res < 0)
 		return pos;
-	assert(page_type == 0 || page_type == 2 || page_type == 3 /*data v2*/);
-	if (page_type == 0 || page_type == 3) {
-		if (pos >= 0 && pr->cc->codec && (page_type != 3 || pr->cc->cur_page.is_compressed)) {
+	assert(page_type == DATA_PAGE || page_type == INDEX_PAGE || page_type == DATA_PAGE_V2);
+	if (page_type == DATA_PAGE || page_type == DATA_PAGE_V2) {
+		if (pos >= 0 && pr->cc->codec && (page_type != DATA_PAGE_V2 || pr->cc->cur_page.is_compressed)) {
 			assert(pr->data == NULL);
 			pr->data = NEW_ARRAY(char, uncompressed_size);
 			if (!pr->data)
@@ -574,7 +574,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 		}
 		assert(pr->datasize);
 	}
-	if (page_type == 2) {
+	if (page_type == DICTIONARY_PAGE) {
 		if (pos >= 0 && pr->cc->codec) {
 			assert(pr->dict == NULL);
 			pr->dict = NEW_ARRAY(char, uncompressed_size);
@@ -626,7 +626,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "lz4 compression support is not available\n");
+				TRC_ERROR(PARQUET, "lz4 compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_BROTLI) {
@@ -637,14 +637,14 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 					return -10;
 				pos += compressed_size;
 #else
-				TRC_INFO(PARQUET, "brotli compression support is not available\n");
+				TRC_ERROR(PARQUET, "brotli compression support is not available\n");
 				return -1;
 #endif
 			} else if (pr->cc->codec == CC_LZO) {
-				TRC_INFO(PARQUET, "lzo compression support is not supported\n");
+				TRC_ERROR(PARQUET, "lzo compression support is not supported\n");
 				return -1;
 			} else if (pr->cc->codec == CC_LZ4) {
-				TRC_INFO(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
+				TRC_ERROR(PARQUET, "lz4 compression support is depricated use lz4_raw instead\n");
 				return -1;
 			}
 		} else {

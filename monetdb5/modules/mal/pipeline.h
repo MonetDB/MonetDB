@@ -9,8 +9,8 @@
 #ifndef _PIPELINE_H_
 #define _PIPELINE_H_
 
-#define pipeline_lock(p) MT_lock_set(&p->p->l)
-#define pipeline_unlock(p) MT_lock_unset(&p->p->l)
+#define pipeline_lock(pl) MT_lock_set(&pl->p->l)
+#define pipeline_unlock(pl) MT_lock_unset(&pl->p->l)
 
 #define pipeline_lock1(r) MT_lock_set(&r->batIdxLock)
 #define pipeline_unlock1(r) MT_lock_unset(&r->batIdxLock)

@@ -209,7 +209,12 @@ typedef enum {
     DICTIONARY_PAGE_HEADER_IS_SORTED = 3    // bool is_sorted (optional)
 } DictionaryPageHeaderFields;
 
-
+typedef enum PageType {
+  DATA_PAGE = 0,
+  INDEX_PAGE = 1,
+  DICTIONARY_PAGE = 2,
+  DATA_PAGE_V2 = 3,
+} PageType;
 
 typedef struct pqc_schema_element {
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
