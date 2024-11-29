@@ -597,6 +597,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
+		if (is_recursive(rel))
+			mnstr_printf(fout, "recursive ");
 		mnstr_printf(fout, "%s (", r);
 		assert(rel->l);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
@@ -1882,7 +1884,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel = NULL;
 	list *exps, *gexps, *rels = NULL;
-	int distinct = 0, dependent = 0, single = 0;
+	int distinct = 0, dependent = 0, single = 0, recursive = 0;
 	operator_type j = op_basetable;
 	bool groupjoin = false;
 
@@ -2052,6 +2054,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("dependent");
 		skipWS(r, pos);
 		dependent = 1;
+	}
+	if (r[*pos] == 'r' && r[*pos+1] == 'e' && r[*pos+2] == 'c') {
+		*pos += (int) strlen("recursive");
+		skipWS(r, pos);
+		recursive = 1;
 	}
 
 	switch(r[*pos]) {
@@ -2536,6 +2543,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		set_single(rel);
 	if (dependent)
 		set_dependent(rel);
+	if (recursive)
+		set_recursive(rel);
 
 	/* sometimes, properties are sent */
 	if (!(rel = read_rel_properties(sql, rel, r, pos)))

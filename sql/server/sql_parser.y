@@ -605,6 +605,7 @@ int yydebug=1;
 	opt_match_type
 	opt_on_commit
 	opt_outer
+	opt_recursive
 	opt_ref_action
 	opt_sign
 	opt_temp
@@ -755,7 +756,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token RETURN
 %token LEADING TRAILING BOTH
 
-%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT
+%token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT RECURSIVE
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED FETCH
@@ -3482,14 +3483,20 @@ sql: with_query
 	;
 
 with_query:
-	WITH with_list with_query_expression
+	WITH opt_recursive with_list with_query_expression
 	{
 		dlist *l = L();
-		append_list(l, $2);
-		append_symbol(l, $3);
+		append_list(l, $3);
+		append_symbol(l, $4);
+		append_int(l, $2);
 		$$ = _symbol_create_list( SQL_WITH, l );
 	}
   ;
+
+opt_recursive:
+   /* empty */  { $$ = false; }
+ | RECURSIVE 	{ $$ = true; }
+ ;
 
 with_list:
 	with_list ',' with_list_element	 { $$ = append_symbol($1, $3); }
@@ -7335,6 +7342,7 @@ char *token2string(tokens token)
 	SQL(PW_ENCRYPTED);
 	SQL(PW_UNENCRYPTED);
 	SQL(RANK);
+	SQL(RECURSIVE);
 	SQL(RENAME_COLUMN);
 	SQL(RENAME_SCHEMA);
 	SQL(RENAME_TABLE);

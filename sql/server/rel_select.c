@@ -28,6 +28,7 @@
 #include "rel_unnest.h"
 #include "rel_sequence.h"
 #include "rel_file_loader.h"
+#include "rel_optimizer_private.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -264,6 +265,7 @@ rel_with_query(sql_query *query, symbol *q )
 	mvc *sql = query->sql;
 	dnode *d = q->data.lval->h;
 	symbol *next = d->next->data.sym;
+	bool recursive = d->next->next->data.i_val;
 	sql_rel *rel;
 
 	if (!stack_push_frame(sql, NULL))
@@ -274,19 +276,73 @@ rel_with_query(sql_query *query, symbol *q )
 		dnode *dn = sym->data.lval->h->next;
 		char *rname = qname_schema_object(dn->data.lval);
 		sql_rel *nrel;
+		symbol *recursive_part = NULL;
+		sql_rel_view *recursive_union = NULL;
+		int recursive_distinct = 0;
 
 		if (frame_find_rel_view(sql, rname)) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname);
+		}
+		if (recursive) {
+			symbol *union_stmt = dn->next->next->data.sym;
+			if (union_stmt->token == SQL_UNION) { /* split in base and recursive part */
+				dnode *n = union_stmt->data.lval->h;
+				symbol *base = n->data.sym;
+				recursive_distinct = n->next->data.i_val;
+				dlist *corresponding = n->next->next->data.lval;
+				recursive_part = n->next->next->next->data.sym;
+				if (corresponding)
+					return sql_error(sql, 01, SQLSTATE(42000) "Recursive with corresponding is not supported");
+				dn->next->next->data.sym = base;
+			}
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if (!stack_push_rel_view(sql, rname, nrel)) {
+		if (!(recursive_union = stack_push_rel_view(sql, rname, nrel))) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (recursive && recursive_part) {
+			sql_rel *base_rel = nrel;
+			dn->next->next->data.sym = recursive_part;
+			set_processed(nrel);
+			nrel = rel_semantic(query, sym);
+			if (!nrel) {
+				stack_pop_frame(sql);
+				return NULL;
+			}
+			list *ls = rel_projections(sql, base_rel, NULL, 0, 1);
+			list *rs = rel_projections(sql, nrel, NULL, 0, 1);
+
+			if (!rel_is_ref(base_rel)) { /* not recursive */
+				nrel = rel_setop_n_ary_check_types(sql, base_rel, nrel, ls, rs, op_munion);
+			} else {
+				base_rel->used |= statistics_gathered;
+				prop *p = base_rel->p = prop_create(sql->sa, PROP_COUNT, base_rel->p);
+				p->value.lval = 1000000; /* random ? */
+
+				/* down cast the recursive side (on errors users should add casts on the base side) */
+				list *nrs = new_exp_list(sql->sa);
+				if(!nrs)
+					return NULL;
+
+				for (node *n = ls->h, *m = rs->h; n && m; n = n->next, m = m->next) {
+					sql_subtype *t = exp_subtype(n->data);
+					append(nrs, exp_check_type(sql, t, nrel, m->data, type_equal));
+				}
+				nrel = rel_project(sql->sa, nrel, nrs);
+				nrel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), base_rel), nrel), op_munion);
+				set_recursive(nrel);
+			}
+			if (recursive_distinct)
+				set_distinct(nrel);
+			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
+			set_processed(nrel);
+			recursive_union->rel_view = nrel;
 		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
@@ -1054,8 +1110,8 @@ check_is_lateral(symbol *tableref)
 			return tableref->data.lval->h->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
-		if (dlist_length(tableref->data.lval) == 4)
-			return tableref->data.lval->h->next->next->data.i_val;
+		if (dlist_length(tableref->data.lval) == 5)
+			return tableref->data.lval->h->next->next->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *) tableref;

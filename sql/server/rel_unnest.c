@@ -1628,6 +1628,8 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				set_single(ns);
 			if (need_distinct || need_distinct(s))
 				set_distinct(ns);
+			if (is_recursive(s))
+				set_recursive(ns);
 
 			if (is_join(rel->op) && !is_semi(rel->op)) {
 				list *sexps = sa_list(sql->sa), *dexps = rel_projections(sql, d, NULL, 1, 1);

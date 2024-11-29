@@ -115,9 +115,7 @@ sql_unop_(backend *be, const char *fname, stmt *rs)
 static stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
-	node *n;
-
-	for (n=refs->h; n; n = n->next->next) {
+	for (node *n = refs->h; n; n = n->next->next) {
 		sql_rel *ref = n->data;
 		stmt *s = n->next->data;
 
@@ -130,9 +128,7 @@ refs_find_rel(list *refs, sql_rel *rel)
 static void
 refs_update_stmt(list *refs, sql_rel *rel, stmt *s)
 {
-	node *n;
-
-	for (n=refs->h; n; n = n->next->next) {
+	for (node *n = refs->h; n; n = n->next->next) {
 		sql_rel *ref = n->data;
 
 		if (rel == ref) {
@@ -450,7 +446,7 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 		stmt *c = n->data;
 
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
-		if (c->type != st_alias) {
+		if (c->type != st_alias || c->flag) {
 			c = stmt_project(be, cand, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
 			//c = stmt_alias(be, cand, 0, c->tname, c->cname);
@@ -2654,7 +2650,6 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
 		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
-		//stmt *s = bin_find_column(be, sub, exp->l, exp->r);
 		stmt *s = bin_find_column_nid(be, sub, exp->nid);
 
 		if (!s) {
@@ -3932,9 +3927,6 @@ rel2bin_single(backend *be, stmt *s)
 static stmt *
 rel_rename(backend *be, sql_rel *rel, stmt *sub)
 {
-	mvc *sql = be->mvc;
-
-	(void) sql;
 	if (rel->exps) {
 		node *en, *n;
 		list *l = sa_list(be->mvc->sa);
@@ -3944,7 +3936,7 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 			stmt *s = n->data;
 
 			if (!s) {
-				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+				assert(be->mvc->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 				return NULL;
 			}
 			s = stmt_rename(be, exp, s);
@@ -3955,9 +3947,190 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 	return sub;
 }
 
+static stmt*
+subres_assign_newresultvars(backend *be, stmt *rel_stmt)
+{
+	list *stmts = rel_stmt->op4.lval;
+	list *nstmt = sa_list(be->mvc->sa);
+	for (node *n = stmts->h; n; n = n->next) {
+		stmt *r = n->data;
+		InstrPtr a = newAssignment(be->mb);
+		stmt *ns = NULL;
+		const char *rnme = table_name(be->mvc->sa, r);
+		const char *nme = column_name(be->mvc->sa, r);
+		int label = r->label;
+
+		if (r->nrcols == 0)
+			r = const_column(be, r);
+		ns = stmt_alias(be, r, label, rnme, nme);
+		ns->flag = cmp_project; /* mark as special */
+		a = pushArgument(be->mb, a, ns->nr);
+		pushInstruction(be->mb, a);
+		ns->q = a;
+		ns->nr = a->argv[0];
+		append(nstmt, ns);
+	}
+	return stmt_list(be, nstmt);
+}
+
+static stmt*
+subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
+{
+	list *stmts = rel_stmt->op4.lval;
+	list *nstmt = sa_list(be->mvc->sa);
+	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
+		stmt *r = n->data;
+		InstrPtr v = m->data;
+		InstrPtr a = newAssignment(be->mb);
+		stmt *ns = NULL;
+		const char *rnme = table_name(be->mvc->sa, r);
+		const char *nme = column_name(be->mvc->sa, r);
+		int label = r->label;
+
+		if (r->nrcols == 0)
+			r = const_column(be, r);
+		ns = stmt_alias(be, r, label, rnme, nme);
+		a->argv[0] = v->argv[0];
+		a = pushArgument(be->mb, a, ns->nr);
+		pushInstruction(be->mb, a);
+		ns->q = a;
+		ns->nr = a->argv[0];
+		append(nstmt, ns);
+	}
+	return stmt_list(be, nstmt);
+}
+
+static stmt *
+rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	stmt *rel_stmt = NULL, *sub;
+	int nr_unions = list_length((list*)rel->l);
+	if (nr_unions != 2)
+		return sql_error(sql, 10, SQLSTATE(27000) "UNION: recursive unions need a base and recusive part");
+
+	bool distinct = need_distinct(rel);
+	sql_rel *base = ((list*)rel->l)->h->data;
+	sql_rel *recursive = ((list*)rel->l)->h->next->data;
+
+	/* TODO handle distinct */
+	/* base part */
+	rel_stmt = subrel_bin(be, base, refs);
+	rel_stmt = subrel_project(be, rel_stmt, refs, base);
+	if (!rel_stmt)
+		return NULL;
+
+	if (recursive) {
+		list *result_table = sa_list(be->mvc->sa);
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *s = stmt_bat_new(be, exp_subtype(e), -1);
+			append(result_table, s);
+		}
+		rel_stmt = subres_assign_newresultvars(be, rel_stmt);
+		if (distinct)
+			rel_stmt = rel2bin_distinct(be, rel_stmt, NULL);
+		refs_update_stmt(refs, base, rel_stmt);
+
+		/* cnt = count(temptable) */
+		sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+		stmt *cnts = stmt_aggr(be, rel_stmt->op4.lval->h->data, NULL, NULL, cnt, 1, 0, 1);
+
+		/* while cnt > 0: */
+        InstrPtr r = newAssignment(be->mb);
+        if (r == NULL)
+			return NULL;
+		int barrier_var = r->argv[0];
+        r->argc = r->retc = 1;
+        r->barrier = BARRIERsymbol;
+        r = pushBit(be->mb, r, TRUE);
+		pushInstruction(be->mb, r);
+
+		r = newStmtArgs(be->mb, calcRef, "<=", 3);
+		if (r == NULL)
+			return NULL;
+        getArg(r, 0) = barrier_var;
+		r->barrier = LEAVEsymbol;
+		r = pushArgument(be->mb, r, cnts->nr);
+		r = pushLng(be->mb, r, 0);
+		pushInstruction(be->mb, r);
+
+		/* insert temptable into result_table and make link between result_table and table name */
+		for(node *n = result_table->h, *m = rel_stmt->op4.lval->h; n && m; n = n->next, m = m->next) {
+			stmt *a = m->data;
+			stmt *v = n->data;
+			stmt *r = stmt_append(be, v, a);
+			r->nr = r->q->argv[0] = v->nr;
+			n->data = stmt_alias(be, r, a->label, a->tname, a->cname);
+		}
+
+		/* recursive part */
+		stmt *rec = subrel_bin(be, recursive, refs);
+		if (!rec)
+			return NULL;
+		rec = subrel_project(be, rec, refs, recursive);
+		rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
+		if (distinct) {
+			rec = rel2bin_distinct(be, rec, NULL);
+			/* remove values allready in the result table */
+			//rec = rel2bin_except(rec, result_table);
+
+			stmt *s = releqjoin(be, rec->op4.lval, result_table, NULL, 0 /* use hash */, 0, 1 /*is_semantics*/);
+			stmt *lm = stmt_result(be, s, 0);
+
+			s = stmt_mirror(be, rec->op4.lval->h->data);
+			s = stmt_tdiff(be, s, lm, NULL);
+			rec->cand = s;
+			rec = subrel_project(be, rec, refs, recursive);
+		}
+		rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
+
+		/* cnt = count(temptable) */
+		stmt *s = stmt_aggr(be, rec->op4.lval->h->data, NULL, NULL, cnt, 1, 0, 1);
+		s->nr = s->q->argv[0] = cnts->nr;
+
+		/* jump back */
+		r = newStmtArgs(be->mb, calcRef, ">", 3);
+        if (r == NULL)
+			return NULL;
+        getArg(r, 0) = barrier_var;
+        r->argc = r->retc = 1;
+		r = pushArgument(be->mb, r, cnts->nr);
+		r = pushLng(be->mb, r, 0);
+        r->barrier = REDOsymbol;
+		pushInstruction(be->mb, r);
+
+        r = newAssignment(be->mb);
+        if (r == NULL)
+			return NULL;
+        getArg(r, 0) = barrier_var;
+        r->argc = r->retc = 1;
+        r->barrier = EXITsymbol;
+		pushInstruction(be->mb, r);
+
+		/* relabel */
+		for(node *n = result_table->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+			stmt *r = n->data;
+			sql_exp *e = m->data;
+			const char *cname = exp_name(e);
+			const char *tname = exp_relname(e);
+
+			n->data = stmt_alias(be, r, e->alias.label, tname, cname);
+		}
+		sub = stmt_list(be, result_table);
+	}
+
+	if (is_single(rel))
+		sub = rel2bin_single(be, sub);
+	return sub;
+}
+
 static stmt *
 rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 {
+	if (is_recursive(rel))
+		return rel2bin_recursive_munion(be, rel, refs);
+
 	mvc *sql = be->mvc;
 	list *l, *rstmts;
 	node *n, *m;
@@ -3980,7 +4153,6 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 
 	/* for every op4 lval node */
-	//len = list_length(((stmt*)rstmts->h->data)->op4.lval);
 	for (i = 0; i < len; i++) {
 		/* extract t and c name from the first stmt */
 		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);

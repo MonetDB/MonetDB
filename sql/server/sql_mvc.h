@@ -158,6 +158,7 @@ typedef struct mvc {
 	mapi_query_t type;	        /* query type */
 
 	/* during query needed flags */
+	bool recursive;				/* query has recursive parts */
 	unsigned int label;	        /* numbers for relational projection labels */
 	int nid;	                /* numbers for relational names */
 	list *cascade_action;       /* protection against recursive cascade actions */

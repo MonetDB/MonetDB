@@ -1910,7 +1910,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
 			return rel;
 
-		if (is_munion(u->op))
+		if (is_munion(u->op) && !is_recursive(u))
 			return rel_push_aggr_down_n_arry(v, rel);
 
 		ul = u->l;
@@ -3087,7 +3087,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
 
-		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel, false))
+		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || is_recursive(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel, false))
 			return rel;
 
 		sql_rel *r;
@@ -3165,7 +3165,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 	/* stacked munion flattening e.g.
 	 * munion( munion(a, b, c), munion(d, e)) => munion(a,b,c,d,e)
 	 */
-	if (rel && is_munion(rel->op)) {
+	if (rel && is_munion(rel->op) && !is_recursive(rel)) {
 		list *l = rel->l;
 		for(node *n = l->h; n; ) {
 			node *next = n->next;
