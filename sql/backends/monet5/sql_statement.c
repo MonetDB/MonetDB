@@ -324,6 +324,21 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	return q;
 }
 
+InstrPtr
+stmt_bat_declare(backend *be, int tt)
+{
+	InstrPtr q = newAssignment(be->mb);
+
+	if (q == NULL)
+		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushNil(be->mb, q, newBatType(tt));
+	pushInstruction(be->mb, q);
+	return q;
+}
+
 static int *
 dump_table(allocator *sa, backend *be, sql_table *t)
 {
@@ -833,6 +848,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			q = newStmt(mb, sqlRef, growRef);
 			if (q == NULL)
 				goto bailout;
+			q->argv[0] = l[0];
 			q = pushArgument(mb, q, l[0]);
 			q = pushArgument(mb, q, b->nr);
 			pushInstruction(mb, q);
@@ -1051,6 +1067,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 		q = newStmt(mb, batRef, deleteRef);
 		if (q == NULL)
 			goto bailout;
+		q->argv[0] = l[0];
 		q = pushArgument(mb, q, l[0]);
 		q = pushArgument(mb, q, tids->nr);
 	} else {
@@ -5227,6 +5244,7 @@ stmt_instruction(backend *be, InstrPtr p, stmt *op1 )
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 
+	s->label = op1->label;
 	s->tname = op1->tname;
 	s->cname = op1->cname;
 	s->nr = getArg(p, 0);

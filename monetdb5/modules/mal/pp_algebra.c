@@ -1021,6 +1021,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		}
 		if (i == h->pinned_nr) {
 			HEAPincref(b->tvheap);
+			BBPfix(b->tvheap->parentid);
 			h->pinned[h->pinned_nr++] = b->tvheap;
 			assert(h->pinned_nr < 1024);
 		}
@@ -1276,7 +1277,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+	if (ATOMvarsized(u->ttype) /*&& !VIEWvtparent(b)*/) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -1311,6 +1312,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		}
 		if (i == h->pinned_nr) {
 			HEAPincref(b->tvheap);
+			BBPfix(b->tvheap->parentid);
 			h->pinned[h->pinned_nr++] = b->tvheap;
 			assert(h->pinned_nr < 1024);
 		}
@@ -1701,7 +1703,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
+	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
+		u->twidth != b->twidth) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -2093,7 +2097,9 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
-	if (ATOMvarsized(u->ttype) && !VIEWvtparent(b)) {
+	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
+	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
+		(ATOMvarsized(u->ttype) && u->twidth != b->twidth)) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -2355,7 +2361,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			local_storage = true;
-		} else if (!private && ATOMvarsized(r->ttype) && BATcount(r) && r->tvheap->parentid != r->batCacheid &&
+		} else if (ATOMvarsized(r->ttype) && BATcount(r) && r->tvheap->parentid != r->batCacheid &&
 				r->tvheap->parentid != b->tvheap->parentid) {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -2368,6 +2374,8 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
 			BATswap_heaps(r, b, p);
+			r->twidth = b->twidth;
+			r->tshift = b->tshift;
 		} else {
 			MT_lock_unset(&b->theaplock);
 			MT_lock_unset(&r->theaplock);
@@ -3141,6 +3149,12 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pipeline_lock2(bn);
 		BATnegateprops(bn);
 		pipeline_unlock2(bn);
+		pipeline_lock2(rn);
+		BATnegateprops(rn);
+		pipeline_unlock2(rn);
+		pipeline_lock2(cn);
+		BATnegateprops(cn);
+		pipeline_unlock2(cn);
 	} else if (pci->retc == 3 && pci->argc == 9) {
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
@@ -4561,4 +4575,3 @@ static mel_func pp_algebra_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_pipeline_mal)
 { mal_module("pp_algebra", NULL, pp_algebra_init_funcs); }
-

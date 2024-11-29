@@ -459,7 +459,7 @@ select a, b, CASE
     THEN true
   ELSE false
 END as "a_equals_b" from b
-order by a NULLS LAST, b NULLS last
+order by a NULLS LAST, b NULLS last, "a_equals_b"
 ----
 0
 0
@@ -501,7 +501,7 @@ select a, b, CASE
     THEN false
   ELSE true
 END as "a_notequals_b" from b
-order by a NULLS LAST, b NULLS last
+order by a NULLS LAST, b NULLS last, "a_notequals_b"
 ----
 0
 0

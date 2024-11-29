@@ -527,6 +527,7 @@ get_rel_count(sql_rel *rel)
 				return BUN_NONE;
 			res += ires;
 		}
+		return res;
 	}
 	return found ? found->value.lval : BUN_NONE;
 }

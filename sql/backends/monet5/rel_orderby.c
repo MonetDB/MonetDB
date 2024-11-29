@@ -145,14 +145,16 @@ rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 	//list *shared = rel2bin_project_prepare(be, rel);
 	stmt *pp = NULL;
 
-	if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
+	//if (!rel->spb || pp_can_not_start(be->mvc, rel->l)) {
 		set_need_pipeline(be);
+		/*
 	} else {
 		pp = stmt_pp_start_nrparts(be, pp_nr_slices(rel->l));
 		set_pipeline(be, pp);
 	}
+	*/
 
-	assert(rel->spb || pp == NULL);
+	//assert(rel->spb || pp == NULL);
 	stmt *sub = NULL;
 	if (rel->l) { /* first construct the sub relation */
 		sub = subrel_bin(be, rel->l, refs);
@@ -194,6 +196,7 @@ rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 
 	if (!pp)
 		pp = get_pipeline(be);
+	assert(pp);
 	list *oexps = rel->r;
 	stmt *orderby_ids = NULL, *orderby_grp = NULL;
 	list *ostmts = sa_list(be->mvc->sa);
@@ -228,8 +231,7 @@ rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 	stmt_pp_end(be, pp);
 
 	/* loop over sop */
-	be->source = getArg(sop, 0);
-	set_pipeline(be, pp = stmt_pp_start_generator(be));
+	set_pipeline(be, pp = stmt_pp_start_generator(be, getArg(sop, 0), true));
 
 	/* sort merge */
 	// zigzag zz

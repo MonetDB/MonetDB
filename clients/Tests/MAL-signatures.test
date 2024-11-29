@@ -38150,7 +38150,7 @@ mvc_get_value;
 return the current value of the sequence (ie the next to be used value)
 sql
 grow
-pattern sql.grow(X_0:bat[:oid], X_1:any_1):int
+pattern sql.grow(X_0:bat[:oid], X_1:any_1):bat[:oid]
 mvc_grow_wrap;
 Resize the tid column of a declared table.
 sql

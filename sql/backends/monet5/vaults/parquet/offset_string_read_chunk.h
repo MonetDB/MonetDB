@@ -1,12 +1,15 @@
 
 static int
-offset_string_read_chunk( pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int pos, int offset)
+offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *voutput, int64_t nrows, int pos, int offset)
 {
 	T *rc = output;
 	char *buf = voutput;
 	char *data = cr->data + pos;
 
-	memcpy(buf, "NULL", 5);
+	if (cr->cc->cur_page.stat.null_count) {
+		memcpy(buf, r->nil, strlen(r->nil));
+		buf += strlen(r->nil);
+	}
 	if (cr->cc->cur_page.stat.null_count == cr->cc->cur_page.num_values) { /* all null */
 		assert(cr->cc->cur_page.num_nulls == cr->cc->cur_page.num_values);
        	for (int64_t i=0; i<nrows; i++)

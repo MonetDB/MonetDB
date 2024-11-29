@@ -31,59 +31,6 @@ typedef enum oldtype {
   OLD_FIXED_LEN_BYTE_ARRAY = 7
 } oldtype;
 
-typedef enum convertedtype {
-  CT_UTF8 = 0, 		// a BYTE_ARRAY actually contains UTF8 encoded chars
-  CT_MAP = 1, 		// a map is converted as an optional field containing a repeated key/value pair
-  CT_MAP_KEY_VALUE = 2, 	// a key/value pair is converted into a group of two fields
-  CT_LIST = 3, 		// a list is converted into an optional field containing a repeated field for its values
-  CT_ENUM = 4, 		// an enum is converted into a binary field
-
-  // A decimal value.
-  //
-  // This may be used to annotate binary or fixed primitive types. The
-  // underlying byte array stores the unscaled value encoded as two's
-  // complement using big-endian byte order (the most significant byte is the
-  // zeroth element). The value of the decimal is the value * 10^{-scale}.
-  //
-  // This must be accompanied by a (maximum) precision and a scale in the
-  // SchemaElement. The precision specifies the number of digits in the decimal
-  // and the scale stores the location of the decimal point. For example 1.23
-  // would have precision 3 (3 total digits) and scale 2 (the decimal point is
-  // 2 digits over).
-  CT_DECIMAL = 5,
-  CT_DATE = 6, 		// Stored as days since Unix epoch, encoded as the INT32 physical type.
-  CT_TIME_MILLIS = 7, 	// The total number of milliseconds since midnight. The value is stored as an INT32 physical type.
-  CT_TIME_MICROS = 8, 	// The total number of microseconds since midnight. The value is stored as an INT64 physical type.
-  CT_TIMESTAMP_MILLIS = 9, // Date and time recorded as milliseconds since the Unix epoch. Recorded as a physical type of INT64.
-  CT_TIMESTAMP_MICROS = 10, // Date and time recorded as microseconds since the Unix epoch. The value is stored as an INT64 physical type.
-
-  // unsigned int
-  CT_UINT_8 = 11,
-  CT_UINT_16 = 12,
-  CT_UINT_32 = 13,
-  CT_UINT_64 = 14,
-
-  // signed int
-  CT_INT_8 = 15,
-  CT_INT_16 = 16,
-  CT_INT_32 = 17,
-  CT_INT_64 = 18,
-
-  CT_JSON = 19, // A JSON document embedded within a single UTF8 column.
-  CT_BSON = 20, // A BSON document embedded within a single BINARY column.
-
-  // An interval of time
-  //
-  // This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
-  // This data is composed of three separate little endian unsigned
-  // integers.  Each stores a component of a duration of time.  The first
-  // integer identifies the number of months associated with the duration,
-  // the second identifies the number of days associated with the duration
-  // and the third identifies the number of milliseconds associated with
-  // the provided duration.  This duration of time is independent of any
-  // particular timezone or date.
-  CT_INTERVAL = 21
-} convertedtype;
 
 /*
  * pqc_file
@@ -402,7 +349,7 @@ pqc_integer( pqc_file *pq, pqc_schema_element *pse, int pos)
 			break;
 		case INT_TYPE_IS_SIGNED:
 			pse->isSigned = type != T_BOOLEAN_FALSE;
-			TRC_DEBUG(PARQUET, "isSigned %d\n", type!=2);
+			TRC_DEBUG(PARQUET, "isSigned %d\n", type != T_BOOLEAN_FALSE);
 			break;
 		}
 	}
@@ -437,11 +384,11 @@ pqc_logicaltype( pqc_file *pq, pqc_schema_element *pse, int pos)
 			assert(type == T_STRUCT); /* empty struct */
 			pos = pqc_struct(pq, pos);
 			pse->type = listtype;
-			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_LIST");
 			break;
 		case LOGICAL_TYPE_ENUM:
-			TRC_ERROR(PARQUET, "ERROR No support for LOGICAL_TYPE_ENUM");
-			return -1;
+			pos = pqc_struct(pq, pos);
+			pse->type = enumtype;
+			break;
 		case LOGICAL_TYPE_DECIMAL: /* decimal */
 			pos = pqc_decimal(pq, pse, pos);
 			break;
@@ -651,8 +598,12 @@ static int
 pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_element *parent)
 {
 	int fieldid = 0, type = 0;
-	pqc_schema_element *pse = pq->fmd->elements+nr;
-	*pse = (pqc_schema_element){ };
+	pqc_schema_element *pse = pq->fmd->elements + nr;
+	*pse = (pqc_schema_element) {
+		.physical_type = PT_UNKNOWN,
+		.converted_type = CT_UNKNOWN,
+		.type = LT_UNKNOWN,
+	};
 
 	if (parent) {
 		parent->elements[parent->curchild++] = pse;
@@ -672,6 +623,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			if (pqc_oldtype2logicaltype(pse, oldtype) < 0)
 				TRC_ERROR(PARQUET, "type %u not handled\n", oldtype);
 			TRC_INFO(PARQUET, "old type %u to type %u\n", oldtype, pse->type);
+			pse->physical_type = oldtype;
 			break;
 		case SCHEMA_ELEMENT_TYPE_LENGTH:
 			pos += pqc_get_zint32(pq->buffer+pos, &precision);
@@ -679,7 +631,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 				TRC_ERROR(PARQUET, "precision %u used with wrong type %d\n", precision, pse->type);
 				return -1;
 			}
-			pse->precision = precision;
+			pse->type_length = precision;
 			TRC_INFO(PARQUET, "precision %u\n", precision);
 			break;
 		case SCHEMA_ELEMENT_REPETITION_TYPE:
@@ -711,6 +663,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			if (pqc_convertedtype2logicaltype(pse, convertedtype) < 0)
 				TRC_ERROR(PARQUET, "converted type %u not handled\n", convertedtype);
 			TRC_INFO(PARQUET, "convertedtype %u to type %d\n", convertedtype, pse->type);
+			pse->converted_type = convertedtype;
 			break;
 		case SCHEMA_ELEMENT_SCALE:
 			pos += pqc_get_zint32(pq->buffer+pos, &scale);
@@ -748,7 +701,7 @@ pqc_read_schema_element( pqc_file *pq, int nr, int pos, int *ccnr, pqc_schema_el
 			assert(0);
 		}
 	}
-	if (pse->type && pse->type != listtype)
+	if (pse->type != LT_UNKNOWN && pse->type != listtype)
 		(*ccnr)++;
 	return pos;
 }
@@ -908,23 +861,34 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 			TRC_INFO(PARQUET, "encodings list size %d type %d\n", size, type);
 			assert(type == T_I32);
 			u_int32_t encoding;
+			cc->encodings = sa_alloc(pq->pa, size * sizeof(u_int32_t));
 			for(int i = 0; i < size; i++) {
 				pos += pqc_get_zint32(pq->buffer+pos, &encoding);
 				cc->encodings[i] = encoding;
 				TRC_INFO(PARQUET, "\tencoding[%d] %u\n", i, cc->encodings[i]);
 			}
+			cc->num_encodings = size;
 		} break;
 		case COLUMN_META_DATA_PATH_IN_SCHEMA:
 			pos += pqc_get_list(pq->buffer+pos, &size, &type);
 			TRC_INFO(PARQUET, "path_in_schema list size %d type %d\n", size, type);
+			char *path_in_schema_str = "";
 			for(int i = 0; i < size; i++) {
 				assert(type == T_BINARY);
-				int res = pqc_string(pq, pq->buffer+pos, &cc->path_in_schema);
+				char *cname = NULL;
+				int res = pqc_string(pq, pq->buffer+pos, &cname);
 				if (res < 0)
 					return -1;
+				if (cname) {
+					path_in_schema_str = sa_strconcat(pq->pa, path_in_schema_str, cname);
+					if (i < size - 1)
+						path_in_schema_str = sa_strconcat(pq->pa, path_in_schema_str, ", ");
+				}
 				pos += res;
-				TRC_INFO(PARQUET, "path_in_schema %s\n", cc->path_in_schema);
 			}
+			if (strlen(path_in_schema_str) > 0)
+				cc->path_in_schema = path_in_schema_str;
+			TRC_INFO(PARQUET, "path_in_schema %s\n", cc->path_in_schema);
 			break;
 		case COLUMN_META_DATA_CODEC:
 			pos += pqc_get_zint32(pq->buffer+pos, &cc->codec);
@@ -933,6 +897,7 @@ pqc_column_metadata( pqc_file *pq, pqc_columnchunk *cc, int pos )
 		case COLUMN_META_DATA_NUM_VALUES:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->nrows);
 			TRC_INFO(PARQUET, "num values %" PRIu64 "\n", cc->nrows);
+			cc->num_values = cc->nrows;
 			break;
 		case COLUMN_META_DATA_TOTAL_UNCOMPRESSED_SIZE:
 			pos += pqc_get_zint64(pq->buffer+pos, &cc->total_uncompressed_size);
@@ -1168,6 +1133,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 
 	pq->fmd = SA_NEW(pq->pa, pqc_filemetadata);
 	pqc_filemetadata *fmd = pq->fmd;
+	*fmd = (pqc_filemetadata) {0};
 	if (!pq->fmd) {
 		TRC_ERROR(PARQUET, "PQC: alloc failed\n");
 		return -1;
@@ -1184,6 +1150,7 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			assert(type == T_I32);
 			pos += pqc_get_zint32(pq->buffer+pos, &version);
 			TRC_INFO(PARQUET, "version %u\n", version);
+			fmd->version = version;
 			break;
 		case FILE_METADATA_SCHEMA:
 			assert(type == T_LIST); /* LIST */
@@ -1245,9 +1212,10 @@ pqc_read_file( pqc_file *pq, bool metadata_only)
 			break;
 		case FILE_METADATA_CREATED_BY: {
 			assert(type == T_BINARY); /*string */
-			char *created_by;
+			char *created_by = NULL;
 			pos += pqc_get_string(pq->buffer+pos, &created_by, &type);
 			TRC_INFO(PARQUET, "created_by %s\n", created_by);
+			fmd->created_by = SA_STRDUP(pq->pa, created_by);
 		} break;
 		case FILE_METADATA_COLUMN_ORDERS:
 			assert(type == T_LIST); /* LIST */
@@ -1277,7 +1245,7 @@ pqc_read_schema( pqc_file *pq )
 	return pqc_read_file(pq, true);
 }
 
-/* returns (after call to pqc_read_filemetadata) arraywith schema_elements and number of elements */
+/* returns (after call to pqc_read_filemetadata) array with schema_elements and number of elements */
 const pqc_schema_element *
 pqc_get_schema_elements( pqc_file *pq, int *nr)
 {

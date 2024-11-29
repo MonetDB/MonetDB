@@ -242,7 +242,7 @@ SELECT * FROM '$QTSTSRCDIR/data/bug1554.parquet' order by 1 limit 50;
 #{'str_field': hello, 'f64_field': NULL}
 #{'str_field': NULL, 'f64_field': 1.23}
 
-query I
+query T
 SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 ----
 1.00

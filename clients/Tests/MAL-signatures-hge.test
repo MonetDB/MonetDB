@@ -554,6 +554,11 @@ command aggr.null(X_0:bat[:any_1]):bit
 SQLnil;
 if b has a nil return true, else false
 aggr
+ord_quantile
+command aggr.ord_quantile(X_0:bat[:oid], X_1:bat[:any_1], X_2:bte):bat[:any_1]
+LALGquantile;
+Return the p-th's quantile per group, where p is between 0 and 100
+aggr
 prod
 command aggr.prod(X_0:bat[:bte], X_1:bat[:oid], X_2:bat[:any_1]):bat[:bte]
 AGGRprod3_bte;
@@ -3873,6 +3878,11 @@ append
 command bat.append(X_0:bat[:any_1], X_1:bat[:any_1]):bat[:any_1]
 BKCappend_wrap;
 append the content of u to i
+bat
+append
+unsafe pattern bat.append(X_0:bat[:any_1], X_1:lng, X_2:bat[:any_1], X_3:bit, X_4:bat[:bte]):int
+PPappend;
+Append bat at offset
 bat
 appendBulk
 pattern bat.appendBulk(X_0:bat[:any_1], X_1:bit, X_2:any_1...):bat[:any_1]
@@ -44930,7 +44940,7 @@ COPYfrom_stdin;
 read FROM STDIN
 copy
 get_blocksize
-unsafe command copy.get_blocksize():int
+command copy.get_blocksize():int
 COPYget_blocksize;
 get the COPY block size
 copy
@@ -45015,32 +45025,32 @@ COPYrows;
 For best effort we use a selection vector too produce the correctly formated rows
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:bte]
+pattern copy.scale(X_0:bat[:bte], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:bte]
 COPYscale_bte;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:hge]
+pattern copy.scale(X_0:bat[:hge], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:hge]
 COPYscale_hge;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:int]
+pattern copy.scale(X_0:bat[:int], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:int]
 COPYscale_int;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:lng]
+pattern copy.scale(X_0:bat[:lng], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:lng]
 COPYscale_lng;
 scale by a power of 10
 copy
 scale
-unsafe pattern copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:sht]
+pattern copy.scale(X_0:bat[:sht], X_1:int, X_2:bat[:oid], X_3:int, X_4:str):bat[:sht]
 COPYscale_sht;
 scale by a power of 10
 copy
 set_blocksize
-unsafe command copy.set_blocksize(X_0:int):int
+command copy.set_blocksize(X_0:int):int
 COPYset_blocksize;
 set the COPY block size
 copy
@@ -46577,6 +46587,11 @@ group
 subgroupdone
 command group.subgroupdone(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) (X_5:bat[:oid], X_6:bat[:oid])
 GRPsubgroup9;
+(empty)
+hash
+ext
+pattern hash.ext(X_0:bat[:any_1]):bat[:oid]
+UHASHext;
 (empty)
 hash
 new
@@ -48894,15 +48909,50 @@ unsafe pattern pipeline.channel(X_0:any_1) (X_1:any_1, X_2:int)
 PPchannel;
 create a new channel
 pipeline
+claim
+pattern pipeline.claim(X_0:bat[:bte], X_1:lng):lng
+PPclaim;
+Claim next set of rows
+pipeline
+concat
+pattern pipeline.concat(X_0:int):bat[:bte]
+PPconcat;
+This source iterates sequentialy through the input sources
+pipeline
+concat_add
+pattern pipeline.concat_add(X_0:bat[:bte], X_1:bat[:any_1]):bat[:bte]
+PPconcat_add;
+Add source to concat
+pipeline
+concat_block
+pattern pipeline.concat_block(X_0:bat[:bte], X_1:int, X_2:bit, X_3:ptr):bit
+PPconcat_block;
+Add source to concat
+pipeline
 counter
-unsafe pattern pipeline.counter(X_0:ptr):int
+unsafe pattern pipeline.counter(X_0:int):bat[:bte]
 PPcounter;
-return next atomic number [0..n>
+return counter source
+pipeline
+counter_get
+unsafe pattern pipeline.counter_get(X_0:bat[:bte], X_1:ptr):int
+PPcounter_get;
+return current number from the counter
+pipeline
+done
+unsafe pattern pipeline.done(X_0:bat[:any_1], X_1:bit, X_2:ptr):bit
+PPdone;
+return counter based on source, != 0 means done
 pipeline
 recv
 unsafe pattern pipeline.recv(X_0:ptr, X_1:any_1, X_2:int):any_1
 PPrecv;
 receive from channel
+pipeline
+resultset
+pattern pipeline.resultset():bat[:bte]
+PPresultset;
+return sink for synchronizing appends into resultset
 pipeline
 send
 unsafe pattern pipeline.send(X_0:ptr, X_1:any_1, X_2:int, X_3:any_1):bit
@@ -49268,6 +49318,46 @@ nth_slice
 pattern slicer.nth_slice(X_0:int) (X_1:bat[:any_1], X_2:bat[:any_1])
 SLICERnth_slice;
 Return the n-th slice, of SLICE_SIZE rrows, from the input BAT
+sop
+add
+pattern sop.add(X_0:bat[:oid], X_1:bat[:any]...):bat[:oid]
+SOPadd;
+add set of bats to the set of (ordered) parts
+sop
+fetch
+pattern sop.fetch(X_0:bat[:oid]):bat[:any]...
+SOPfetch;
+fetch a set of bats
+sop
+fetch
+pattern sop.fetch(X_0:bat[:oid], X_1:ptr):bat[:any]...
+SOPfetch;
+fetch a set of bats
+sop
+new
+pattern sop.new(X_0:int):bat[:oid]
+SOPnew;
+Create set of (ordered) parts
+sort
+merge
+pattern sort.merge(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:int], X_3:bat[:int], X_4:bat[:int], X_5:bit, X_6:bit) (X_7:bat[:int], X_8:bat[:int], X_9:bat[:int])
+PPmerge;
+(empty)
+sort
+merge
+pattern sort.merge(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bit, X_3:bit) (X_4:bat[:int], X_5:bat[:int], X_6:bat[:int])
+PPmerge;
+(empty)
+sort
+mproject
+pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1]):bat[:any_1]
+PPmproject;
+(empty)
+sort
+mproject
+pattern sort.mproject(X_0:bat[:int], X_1:bat[:any_1], X_2:bat[:any_1], X_3:ptr):bat[:any_1]
+PPmproject;
+(empty)
 sql
 affectedRows
 unsafe pattern sql.affectedRows(X_0:int, X_1:lng):int
@@ -49825,7 +49915,7 @@ mvc_get_value;
 return the current value of the sequence (ie the next to be used value)
 sql
 grow
-pattern sql.grow(X_0:bat[:oid], X_1:any_1):int
+pattern sql.grow(X_0:bat[:oid], X_1:any_1):bat[:oid]
 mvc_grow_wrap;
 Resize the tid column of a declared table.
 sql

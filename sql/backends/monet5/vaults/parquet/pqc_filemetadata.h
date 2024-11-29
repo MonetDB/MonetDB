@@ -13,7 +13,82 @@
 #define P_INFO 4
 #define P_DEBUG 5
 
+typedef enum FieldRepetitionType {
+	FRT_UNKNOWN = -1,
+	FRT_REQUIRED = 0,
+	FRT_OPTIONAL = 1,
+	FRT_REPEATED = 2
+} FieldRepetitionType;
+
+typedef enum PhysicalType {
+	PT_UNKNOWN = -1,
+	PT_BOOLEAN = 0,
+	PT_INT32 = 1,
+	PT_INT64 = 2,
+	PT_INT96 = 3,  // deprecated, only used by legacy implementations.
+	PT_FLOAT = 4,
+	PT_DOUBLE = 5,
+	PT_BYTE_ARRAY = 6,
+	PT_FIXED_LEN_BYTE_ARRAY = 7
+} PhysicalType;
+
+typedef enum convertedtype {
+	CT_UNKNOWN = -1,
+	CT_UTF8 = 0, 		// a BYTE_ARRAY actually contains UTF8 encoded chars
+	CT_MAP = 1, 		// a map is converted as an optional field containing a repeated key/value pair
+	CT_MAP_KEY_VALUE = 2, 	// a key/value pair is converted into a group of two fields
+	CT_LIST = 3, 		// a list is converted into an optional field containing a repeated field for its values
+	CT_ENUM = 4, 		// an enum is converted into a binary field
+
+	// A decimal value.
+	//
+	// This may be used to annotate binary or fixed primitive types. The
+	// underlying byte array stores the unscaled value encoded as two's
+	// complement using big-endian byte order (the most significant byte is the
+	// zeroth element). The value of the decimal is the value * 10^{-scale}.
+	//
+	// This must be accompanied by a (maximum) precision and a scale in the
+	// SchemaElement. The precision specifies the number of digits in the decimal
+	// and the scale stores the location of the decimal point. For example 1.23
+	// would have precision 3 (3 total digits) and scale 2 (the decimal point is
+	// 2 digits over).
+	CT_DECIMAL = 5,
+	CT_DATE = 6, 		// Stored as days since Unix epoch, encoded as the INT32 physical type.
+	CT_TIME_MILLIS = 7, 	// The total number of milliseconds since midnight. The value is stored as an INT32 physical type.
+	CT_TIME_MICROS = 8, 	// The total number of microseconds since midnight. The value is stored as an INT64 physical type.
+	CT_TIMESTAMP_MILLIS = 9, // Date and time recorded as milliseconds since the Unix epoch. Recorded as a physical type of INT64.
+	CT_TIMESTAMP_MICROS = 10, // Date and time recorded as microseconds since the Unix epoch. The value is stored as an INT64 physical type.
+
+	// unsigned int
+	CT_UINT_8 = 11,
+	CT_UINT_16 = 12,
+	CT_UINT_32 = 13,
+	CT_UINT_64 = 14,
+
+	// signed int
+	CT_INT_8 = 15,
+	CT_INT_16 = 16,
+	CT_INT_32 = 17,
+	CT_INT_64 = 18,
+
+	CT_JSON = 19, // A JSON document embedded within a single UTF8 column.
+	CT_BSON = 20, // A BSON document embedded within a single BINARY column.
+
+	// An interval of time
+	//
+	// This type annotates data stored as a FIXED_LEN_BYTE_ARRAY of length 12
+	// This data is composed of three separate little endian unsigned
+	// integers.  Each stores a component of a duration of time.  The first
+	// integer identifies the number of months associated with the duration,
+	// the second identifies the number of days associated with the duration
+	// and the third identifies the number of milliseconds associated with
+	// the provided duration.  This duration of time is independent of any
+	// particular timezone or date.
+	CT_INTERVAL = 21
+} convertedtype;
+
 typedef enum logicaltype {
+	LT_UNKNOWN = -1,
 	stringtype = 1, 		// use ConvertedType UTF
 	maptype = 2, 			// use ConvertedType MAP
 	listtype = 3, 			// use ConvertedType LIST
@@ -32,6 +107,8 @@ typedef enum logicaltype {
   	jsontype = 12, 			// use ConvertedType JSON
   	bsontype = 13, 			// use ConvertedType BSON
   	uuidtype = 14, 			// no compatible ConvertedType
+	float16type = 15,
+	varianttype = 16,
   	floattype = 25 			// no compatible ConvertedType
 } logicaltype;
 
@@ -216,9 +293,90 @@ typedef enum PageType {
   DATA_PAGE_V2 = 3,
 } PageType;
 
+typedef enum CompressionCodec {
+  CC_UNCOMPRESSED = 0,
+  CC_SNAPPY = 1,
+  CC_GZIP = 2,
+  CC_LZO = 3,
+  CC_BROTLI = 4,  // Added in 2.4
+  CC_LZ4 = 5,     // DEPRECATED (Added in 2.4)
+  CC_ZSTD = 6,    // Added in 2.4
+  CC_LZ4_RAW = 7, // Added in 2.9
+} CompressionCodec;
+
+typedef enum Encoding {
+  /** Default encoding.
+   * BOOLEAN - 1 bit per value. 0 is false; 1 is true.
+   * INT32 - 4 bytes per value.  Stored as little-endian.
+   * INT64 - 8 bytes per value.  Stored as little-endian.
+   * FLOAT - 4 bytes per value.  IEEE. Stored as little-endian.
+   * DOUBLE - 8 bytes per value.  IEEE. Stored as little-endian.
+   * BYTE_ARRAY - 4 byte length stored as little endian, followed by bytes.
+   * FIXED_LEN_BYTE_ARRAY - Just the bytes.
+   */
+  PLAIN = 0,
+
+  /** Group VarInt encoding for INT32/INT64.
+   * This encoding is deprecated. It was never used
+   */
+  //  GROUP_VAR_INT = 1;
+
+  /**
+   * Deprecated: Dictionary encoding. The values in the dictionary are encoded in the
+   * plain type.
+   * in a data page use RLE_DICTIONARY instead.
+   * in a Dictionary page use PLAIN instead
+   */
+  PLAIN_DICTIONARY = 2,
+
+  /** Group packed run length encoding. Usable for definition/repetition levels
+   * encoding and Booleans (on one bit: 0 is false; 1 is true.)
+   */
+  RLE = 3,
+
+  /** Bit packed encoding.  This can only be used if the data has a known max
+   * width.  Usable for definition/repetition levels encoding.
+   */
+  BIT_PACKED = 4,
+
+  /** Delta encoding for integers. This can be used for int columns and works best
+   * on sorted data
+   */
+  DELTA_BINARY_PACKED = 5,
+
+  /** Encoding for byte arrays to separate the length values and the data. The lengths
+   * are encoded using DELTA_BINARY_PACKED
+   */
+  DELTA_LENGTH_BYTE_ARRAY = 6,
+
+  /** Incremental-encoded byte array. Prefix lengths are encoded using DELTA_BINARY_PACKED.
+   * Suffixes are stored as delta length byte arrays.
+   */
+  DELTA_BYTE_ARRAY = 7,
+
+  /** Dictionary encoding: the ids are encoded using the RLE encoding
+   */
+  RLE_DICTIONARY = 8,
+
+  /** Encoding for fixed-width data (FLOAT, DOUBLE, INT32, INT64, FIXED_LEN_BYTE_ARRAY).
+      K byte-streams are created where K is the size in bytes of the data type.
+      The individual bytes of a value are scattered to the corresponding stream and
+      the streams are concatenated.
+      This itself does not reduce the size of the data but can lead to better compression
+      afterwards.
+
+      Added in 2.8 for FLOAT and DOUBLE.
+      Support for INT32, INT64 and FIXED_LEN_BYTE_ARRAY added in 2.11.
+   */
+  BYTE_STREAM_SPLIT = 9
+} Encoding;
+
 typedef struct pqc_schema_element {
+	PhysicalType physical_type;
+	u_int32_t type_length;
+	convertedtype converted_type;
 	logicaltype type;	/* generalized types, ie type (logicaltype nr), precision, scale combinations */
-	int ccnr;
+	int ccnr;  // column chunk number?
 	int scale;
 	int precision;
 	int size;		/* type size, int-8/16/32 are stored in a 32 bit, etc */
@@ -226,7 +384,7 @@ typedef struct pqc_schema_element {
 	bool isSigned;
 	bool isAdjustedToUTC;
 
-	int repetition; /* required (NOT NULL), optional (NULL), repeated */
+	FieldRepetitionType repetition; /* required (NOT NULL), optional (NULL), repeated */
 	char *name;
 	int nchildren;
 	int curchild; /* only needed during meta data parsing */
@@ -281,10 +439,11 @@ typedef struct pqc_columnchunk {
 
 	u_int32_t type;
 	char *path_in_schema;
-	u_int32_t encodings[3];
-	u_int32_t codec;
+	u_int32_t num_encodings;
+	Encoding *encodings;
+	CompressionCodec codec;
 	u_int64_t nrows;
-	//u_int32_t num_values;
+	u_int64_t num_values;
 	pqc_page cur_page;
 	u_int64_t total_uncompressed_size;
 	u_int64_t total_compressed_size;
@@ -319,21 +478,22 @@ typedef struct pqc_row_group {
 } pqc_row_group;
 
 typedef struct pqc_filemetadata {
-	int64_t nrows;
-	int nelements;
-	pqc_schema_element *elements;
-
-	/* key values */
 	char *created_by;
+	u_int32_t version;
 
 	/* internal data */
+	int64_t nrows;
 	int nrowgroups;
 	pqc_row_group *rowgroups;
 
 	/* list column order */
+	int nelements;
+	pqc_schema_element *elements;
 
 	int nkeyvalues;
 	pqc_keyvalue *keyvalues; /* optional key values */
+	char *encryption_algorithm;
+	char *footer_signing_key_metadata;
 } pqc_filemetadata;
 
 typedef struct pqc_file pqc_file;

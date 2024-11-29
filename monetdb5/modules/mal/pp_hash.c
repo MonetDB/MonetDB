@@ -79,7 +79,7 @@ _ht_init(hash_table *h, bool freq)
 		h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
 		h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
 		if (ATOMvarsized(h->type)) {
-			h->pinned = (Heap**)GDKzalloc(sizeof(Heap*)*1024);
+			h->pinned = GDKzalloc(sizeof(*h->pinned)*1024);
 		}
 		if (h->vals == NULL || h->gids == NULL)
 			goto error;
@@ -118,8 +118,10 @@ ht_destroy(hash_table *ht)
 	if (ht->pgids)
 		GDKfree(ht->pgids);
 	if (ht->pinned_nr && ht->pinned) {
-		for(int i=0; i < ht->pinned_nr; i++)
+		for(int i=0; i < ht->pinned_nr; i++) {
 			HEAPdecref(ht->pinned[i], false);
+			BBPunfix(ht->pinned[i]->parentid);
+		}
 		GDKfree(ht->pinned);
 	}
 	if (ht->frequency)

@@ -1,8 +1,8 @@
-query T nosort
+query T rowsort
 SELECT 'x' x UNION SELECT 10 x
 ----
-x
 10
+x
 
 query I nosort
 SELECT NTILE ( 1.000000 ) OVER ( ORDER BY x LIKE x ) FROM ( SELECT 'x' x UNION SELECT 10 x ) v

@@ -163,9 +163,8 @@ bufferstream_jumpN(bufferstream *bs, unsigned char *sep, int len, int cb)
 }
 
 static void
-reader_destroy(void *sink)
+reader_destroy(reader *r)
 {
-	reader *r = (reader*)sink;
 	assert(r->sink.type == COPY_SINK);
 	if (r->s)
 		mnstr_close(r->s);
@@ -176,11 +175,21 @@ reader_destroy(void *sink)
 	GDKfree(r);
 }
 
+static int
+reader_done(reader *r, int wid, int nr_workers, bool redo)
+{
+	(void)wid;
+	(void)nr_workers;
+	(void)redo;
+	return r->done;
+}
+
 static reader *
 reader_new(stream *s, BUN offset, BUN maxcount, BUN sz, str col_sep_str, str line_sep_str, str quote_str, str null_repr, bool escape_enabled, bool best_effort)
 {
 	reader *r = (reader*)GDKzalloc(sizeof(reader));
-	r->sink.destroy = &reader_destroy;
+	r->sink.destroy = (sink_destroy)&reader_destroy;
+	r->sink.done = (sink_done)&reader_done;
 	r->sink.type = COPY_SINK;
 	r->s = s;
 	r->offset = offset;

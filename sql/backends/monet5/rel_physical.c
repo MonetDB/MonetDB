@@ -78,9 +78,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 				find_basetables(sql, rel->l, tables);
 		break;
 	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
 	case op_union:
 	case op_inter:
 	case op_except:
@@ -93,10 +90,16 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		if (rel->r)
 			find_basetables(sql, rel->r, tables);
 		break;
+	case op_left:
+	case op_right:
+	case op_full:
 	case op_munion:
 		assert(rel->l);
+		append(tables, rel);
+		/*
 		for (node *n = ((list*)rel->l)->h; n; n = n->next)
 			find_basetables(sql, n->data, tables);
+			*/
 		break;
 	case op_semi:
 	case op_anti:
@@ -131,6 +134,8 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
  * SPB: Start Parallel Block
  * EPB: End Parallel Block
  * NPB: currently not used
+ * A nested parallel blocks is lifted by an extra reference, making sure the inner
+ * block is executed before the outer block.
  */
 #define REL_PARTITION 1
 #define SPB 2
@@ -138,7 +143,7 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 #define NPB 4
 
 static int
-rel_mark_partition(sql_rel *rel)
+rel_mark_partition(mvc *sql, sql_rel *rel)
 {
 	int res = 0;
 
@@ -162,7 +167,7 @@ rel_mark_partition(sql_rel *rel)
 	case op_delete:
 	case op_merge:
 		if (rel->l) {
-			res = rel_mark_partition(rel->l);
+			res = rel_mark_partition(sql, rel->l);
 			if (res == REL_PARTITION)
 				rel->spb = 1;
 			if (res) {
@@ -171,7 +176,7 @@ rel_mark_partition(sql_rel *rel)
 			}
 		}
 		if (!res && rel->r) {
-			res = rel_mark_partition(rel->r);
+			res = rel_mark_partition(sql, rel->r);
 			if (res == REL_PARTITION)
 				rel->spb = 1;
 			if (res) {
@@ -190,10 +195,12 @@ rel_mark_partition(sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
-		if ((is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false))
+		if ((is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
+
 			return 0;
+		}
 		if (rel->l)
-			res = rel_mark_partition(rel->l);
+			res = rel_mark_partition(sql, rel->l);
 		if (res == REL_PARTITION || res == EPB) {
 			rel->partition = 1;
 			if (is_semi(rel->op) && res == REL_PARTITION)
@@ -203,17 +210,17 @@ rel_mark_partition(sql_rel *rel)
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq/* || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			if (rel->l) {
-				res = rel_mark_partition(rel->l);
+				res = rel_mark_partition(sql, rel->l);
 				if (res)
 					rel->partition = res;
 			}
 		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
 			if (rel->l) {
-				res = rel_mark_partition(rel->l);
+				res = rel_mark_partition(sql, rel->l);
 				if (res)
 					rel->partition = res;
 			} else if (!res && rel->r) {
-				res = rel_mark_partition(rel->r);
+				res = rel_mark_partition(sql, rel->r);
 				if (res)
 					rel->partition = 2;
 			}
@@ -221,7 +228,7 @@ rel_mark_partition(sql_rel *rel)
 		break;
     case op_munion:
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
-			int lres = rel_mark_partition(n->data);
+			int lres = rel_mark_partition(sql, n->data);
 			if (lres) {
 				rel->partition = 1;
 				res = lres;
@@ -261,10 +268,9 @@ _rel_partition(mvc *sql, sql_rel *rel)
 	/* Now that we've marked the (largest) table for partition, we go over
 	 * this 'rel' (sub)tree to process all relational operators based on this
 	 * knowledge. */
-	return rel_mark_partition(rel);
+	return rel_mark_partition(sql, rel);
 }
 
-#if 0
 static int
 has_groupby(sql_rel *rel)
 {
@@ -318,7 +324,6 @@ has_groupby(sql_rel *rel)
 	}
 	return 0;
 }
-#endif
 
 static bool
 rel_groupby_partition_safe(sql_rel *rel)
@@ -405,13 +410,16 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
+	if (find_prop(rel->p, PROP_REMOTE))
+		return 0;
 	if (rel_is_ref(rel))
 		pb = 0;
 
 	if (is_basetable(rel->op)) {
 		if (pb) {
+			rel->spb = 1;
 			rel->partition = 1;
-			res = REL_PARTITION;
+			res = SPB;
 		}
 	} else if (is_groupby(rel->op)) {
 		bool safe = rel_groupby_partition_safe(rel) && !rel_is_ref(rel);
@@ -421,38 +429,36 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (safe) {
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
-				/* partition via bind (still) needed in the subtree,
-				 * let's start one at this `rel`. */
-				rel->spb = 1;
+				/* partition via bind (still) needed in the subtree, let's start one at this `rel`. */
+				rel->spb = 1; // spb + parallel means, the pb for the blocking operator is started here
 			if (pb) {
-				/* If the supertree is also in a `pb`, a new `pb` should be
-				 * started after this GROUP BY ends (to partition its results)
-				 */
-				rel->partition = 1;
-				if (res) // TODO: maybe we should remove this condition, since we don't care about the subtree, instead, we always want to inform upper tree that we're starting a PB here.
-					res = SPB;
-			} else
+				rel_dup(rel); // inc-ref nested parallel block
+				res = 0;
+			} else {
 				/* GROUP BY is a blocking operation, so it always ends a `pb`
 				 * if it has started one.
 				 */
 				res = EPB;
+			}
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
-		bool pp_useful = (get_rel_count(rel->l) > 1);
+		bool pp_useful = (get_rel_count(rel->l) > 1) && !(list_length(rel->exps) > 1) /* no offset */;
 		/* op_topn always has rel->l */
 		res = rel_partition_(sql, rel->l, pp_useful?SPB:pb);
-		if (pp_useful) {
+		if (pp_useful) { /* topn is blocking */
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
 				/* partition via bind (still) needed in the subtree,
 				 * let's start on at this `rel`. */
-				rel->spb = 1;
-			if (pb) {
-				rel->partition = 1;
-				if (res)
-					res = SPB;
-			} else
+				rel->spb = 1; // spb + parallel means, the pb for the blocking operator is started here
+			if (pb) { /* nested */
+				rel_dup(rel);
+				res = 0;
+				rel->partition = 1; // ??
+				//if (res)
+					//res = SPB;
+			} //else
 				res = EPB;
 		}
 		/* else: !pp_useful: either there was no 'pb' at all, or a 'pb'
@@ -461,31 +467,47 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		 * the upper tree to end it, and this topN might be computed
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
-		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false))
+		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
+			rel_dup(rel); // inc-ref unsafe exps (ie order dependent)
+			rel->spb = 1; // ? after ?
 			return 0;
+		}
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, pb?pb:!list_empty(rel->r)?SPB:0);
-		if (res == SPB)
-			rel->spb = 1;
-		if (res == REL_PARTITION)
-			rel->partition = 1;
-		if (!pb && !list_empty(rel->r)) {
+		/* handle streaming projections and blocking order by */
+		if (list_empty(rel->r)) {
+			if (pb) {
+				rel->spb = (res == REL_PARTITION);
+				if (rel->spb)
+					res = SPB;
+			} else {
+				if (res == REL_PARTITION)
+					rel->partition = 1;
+			}
+		} else {
 			rel->parallel = 1;
 			rel->spb = (res == REL_PARTITION);
-			res = EPB;
-		} else if (pb == SPB && list_empty(rel->r)) {
-			rel->spb = 1; //(res == REL_PARTITION);
-			res = SPB;
+			if (pb) { /* nested */
+				rel_dup(rel);
+				res = 0;
+				rel->partition = 1; // ??
+			} else {
+				res = EPB;
+			}
 		}
 	} else if (is_semi(rel->op)) {
 		if (do_oahash_join(rel)) {
 			rel->oahash = 2;
 		}
 
+		/* NB old code to handle oahash case
 		if (rel->l)
 			res = rel_partition_(sql, rel->l, rel->oahash?SPB:pb);
 		if (rel->r)
 			res = rel_partition_(sql, rel->r, rel->oahash?SPB:0);
+		*/
+		if (rel->l && rel->op != op_anti)
+			res = rel_partition_(sql, rel->l, pb);
 		if (!res)
 			return 0;
 		/* We always use a 'pb' for rel->l of a semijoin. But, if this
@@ -494,7 +516,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		 * start a 'pb' itself. */
 		if (res == EPB || res == REL_PARTITION) {
 			rel->partition = 1;
-			if (pb && res == REL_PARTITION) { //TODO: seems that we should give 'res' its proper value here, which is SPB.
+			if (pb && res == REL_PARTITION) {
 				rel->spb = 1;
 				res = SPB;
 				return res;
@@ -504,23 +526,27 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		//       Instead of force returning a 0, the code above should
 		//       assign 'res' the proper value
 		sql_rel *r = rel->r;
-		if (!is_basetable(r->op))
+		if (!is_basetable(r->op)) {
 			return 0;
+		}
 	} else if (rel->op == op_munion) {
 		list *rels = rel->l;
-		int lres = 0, nres = 0;
 		for(node *n = rels->h; n; n = n->next) {
-			lres = rel_partition_(sql, n->data, 0);
-			if (lres == EPB)
+			int lres = rel_partition_(sql, n->data, pb);
+			if (lres == EPB) {
 				rel->partition = 1;
-			nres = nres || !lres;
+				if (pb)
+					rel_dup(n->data); // nested
+			}
 		}
 		if (pb)
 			rel->spb = 1;
-		if (nres)
-			return 0;
 		res = pb;
 	} else if (is_set(rel->op) || is_merge(rel->op)) {
+		if (pb) { /* somewhat simplified */
+			rel->spb = 1;
+			return SPB;
+		}
 		if (rel->l)
 			lres = rel_partition_(sql, rel->l, 0);
 		if (rel->r)
@@ -535,7 +561,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			return 0;
 		res = pb;
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
-		if (rel->r && rel->card <= CARD_AGGR)
+		if (rel->r /*&& rel->card <= CARD_AGGR*/)
 			res = rel_partition_(sql, rel->r, pb);
 		if (rel->returning) {
 			if (pb)
@@ -568,6 +594,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb && rel->op == op_full)
 			return 0;
 
+#if 0 // NB this is old code
 		/* For now we only try to partition in case of a equi-join.
 		 * The other joins are too complex to handle. */
 		if (pb) /* and rel->op == op_join */
@@ -576,6 +603,43 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			return rel_partition_(sql, rel->l, pb);
 		if (is_right(rel->op)) /* and pb == 0 */
 			return rel_partition_(sql, rel->r, pb);
+#endif
+		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
+		if (0 && (l || r)) {
+			int lres = rel_partition_(sql, rel->l, 0);
+			int rres = rel_partition_(sql, rel->r, 0);
+			if (!lres || !rres)
+				return 0;
+			if (l && lres == EPB && !r && rres == REL_PARTITION)
+				res = SPB;
+			if (pb) {
+				rel->partition = l?1:r?2:0;
+				rel->spb = 1;
+			}
+		} else {
+			if (is_left(rel->op)) /* and pb == 0 */
+				return rel_partition_(sql, rel->l, pb);
+			/* For now we only try to partition in case of a equi-join.
+			 * The other joins are too complex to handle. */
+			if (pb) { /* and rel->op == op_join */
+				if (!rel->partition)
+					res = _rel_partition(sql, rel);
+				if (res) {
+					int lres = rel_partition_(sql, rel->l, (rel->partition==1 && rel->spb)?pb:0);
+					if (lres == EPB && pb)
+						rel_dup(rel->l);
+					int rres = rel_partition_(sql, rel->r, (rel->partition==2 && rel->spb)?pb:0);
+					if (rres == EPB && pb)
+						rel_dup(rel->r);
+					if (pb)
+						res = 0;
+				}
+				if (!res) {
+					rel->spb = 1;
+					res = SPB;
+				}
+			}
+		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
@@ -589,6 +653,15 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (rel->op == op_table) {
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
 			res = rel_partition_(sql, rel->l, pb);
+		sql_exp *op = rel->r;
+        if (rel->flag != TRIGGER_WRAPPER && op) {
+            sql_subfunc *f = op->f;
+            if (f->func->lang == FUNC_LANG_INT && (strcmp(f->func->base.name, "file_loader") == 0)) {
+				if (pb)
+					rel->spb = 1;
+				return pb;
+            }
+		}
 		return 0;
 	} else {
 		assert(0);
@@ -884,6 +957,8 @@ static sql_rel *
 rel_add_orderby(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op)) {
+		if (list_empty(rel->exps)) /* empty */
+			return rel_project_exp(v->sql, exp_atom_bool(v->sql->sa, 1));
 		if (rel->exps && !rel->r) { /* find quantiles */
 			sql_exp *obe = NULL, *oberef = NULL;
 			for(node *n = rel->exps->h; n; n = n->next) {

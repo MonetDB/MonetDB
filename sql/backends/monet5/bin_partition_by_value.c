@@ -254,8 +254,12 @@ partition_groupby(backend *be, sql_rel *rel, list *mats, stmt *sub, bool neededp
 	list *results = partition_groupby_results(be, rel);
 	if (!results)
 		return NULL;
-	stmt *pp = stmt_pp_start_nrparts(be, 256);//be->nrparts);
+	//stmt *pp = stmt_pp_start_nrparts(be, 256);//be->nrparts);
+	int source = pp_counter(be, 256, -1);
+	stmt *pp = stmt_pp_start_generator(be, source, true);
 	set_pipeline(be, pp);
+	(void)pp_counter_get(be, source);
+
 	int ppnr = be->pipeline;
 	be->pipeline = 0;
 

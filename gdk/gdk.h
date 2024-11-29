@@ -709,7 +709,7 @@ gdk_export bool VALisnil(const ValRecord *v);
 typedef struct PROPrec PROPrec;
 
 typedef void (*sink_destroy)(void *sink);
-typedef int (*sink_done)(void *sink, int wid);
+typedef int (*sink_done)(void *sink, int wid, int nr_workers, bool redo);
 typedef struct Sink {
 	sink_destroy destroy;
 	sink_done done;

@@ -196,7 +196,7 @@ SLICERno_slices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid = getArgReference_bat(stk, pci, 1);
 	BAT *b = BATdescriptor(*bid);
 	if (!b)
-		return createException(SQL, "slicer.no_slices",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return createException(SQL, "algebra.no_slices",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	BUN cnt = BATcount(b);
 
 	if (cnt < SLICE_SIZE)

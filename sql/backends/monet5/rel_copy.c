@@ -123,6 +123,8 @@ emit_pipelined_loop(
 		offset = 0;
 	}
 	pushInstruction(mb, q);
+	if (be->pp)
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 
 	q = newStmt(mb, "copy", "new");
 	q = pushArgument(mb, q, var_stream);
@@ -141,11 +143,14 @@ emit_pipelined_loop(
 	pushInstruction(mb, q);
 	int our_block = getDestVar(q);
 
-	pp_cleanup(be, our_block); /* cleanup at end of pipeline block */
-
-	assert(!be->pp);
-	// START LOOP
-	set_pipeline(be, stmt_pp_start_generator(be));
+	if (be->pp) {
+		stmt_concat_add_source(be);
+	} else {
+		pp_cleanup(be, our_block); /* cleanup at end of pipeline block */
+		// START LOOP
+		set_pipeline(be, stmt_pp_start_generator(be, our_block, false));
+		be->need_pipeline = false;
+	}
 	return our_block;
 }
 
