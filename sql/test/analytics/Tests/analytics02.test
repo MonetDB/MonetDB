@@ -1247,7 +1247,7 @@ select count(aa) over (rows between 5 preceding and 2 following) from stressme
 7
 
 query I nosort
-select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+select count(aa) over (partition by bb order by bb, aa rows between 5 preceding and 0 following) from stressme
 ----
 1
 2

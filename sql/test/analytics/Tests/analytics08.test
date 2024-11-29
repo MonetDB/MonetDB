@@ -8,42 +8,42 @@ statement ok
 start transaction
 
 query I nosort
-select first_value(aa) over (w order by bb) from analytics window w as (partition by bb)
+select first_value(aa) over (w order by bb, aa) from analytics window w as (partition by bb)
 ----
-3
-3
-3
+2
+2
+2
 NULL
 NULL
 NULL
-15
-15
-15
+5
+5
+5
 NULL
 
 query II nosort
-select first_value(aa) over (w1 order by bb),
-       last_value(aa) over (w2 order by bb) from analytics window w1 as (w2), w2 as (), w3 as (w1)
+select first_value(aa) over (w1 order by bb, aa),
+       last_value(aa) over (w2 order by bb, aa) from analytics window w1 as (w2), w2 as (), w3 as (w1)
 ----
+2
+2
+2
 3
+2
 4
+2
+NULL
+2
 3
-4
-3
-4
-3
+2
 8
-3
-8
-3
-8
-3
+2
+5
+2
 6
-3
-6
-3
-6
-3
+2
+15
+2
 NULL
 
 query III nosort
