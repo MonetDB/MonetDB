@@ -3902,7 +3902,7 @@ rel2bin_distinct(backend *be, stmt *s, stmt **distinct)
 static stmt *
 rel2bin_single(backend *be, stmt *s)
 {
-	if (s->key && s->nrcols == 0)
+	if (!s || (s->key && s->nrcols == 0))
 		return s;
 
 	mvc *sql = be->mvc;
@@ -4055,7 +4055,7 @@ static stmt *
 rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 {
 	mvc *sql = be->mvc;
-	stmt *rel_stmt = NULL, *sub;
+	stmt *rel_stmt = NULL, *sub = NULL;
 	int nr_unions = list_length((list*)rel->l);
 	if (nr_unions != 2)
 		return sql_error(sql, 10, SQLSTATE(27000) "UNION: recursive unions need a base and recusive part");
