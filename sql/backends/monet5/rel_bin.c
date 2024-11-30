@@ -4032,9 +4032,7 @@ stmt_limit_value(backend *be, sql_rel *topn)
 		sql_exp *le = topn_limit(topn);
 		sql_exp *oe = topn_offset(topn);
 
-		if (!le) { /* Don't push only offset */
-			topn = NULL;
-		} else {
+		if (le) {
 			l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 			if(!l)
 				return NULL;
@@ -4584,6 +4582,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		return stmt_none(be);
 
 	l = stmt_limit_value(be, topn);
+	if (!l)
+		topn = NULL;
 
 	if (rel->l) { /* first construct the sub relation */
 		sql_rel *l = rel->l;
