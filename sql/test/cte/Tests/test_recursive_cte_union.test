@@ -76,7 +76,6 @@ with recursive t as (select 1 as x union select x+(SELECT 1) from t where x < 3)
 3
 
 # hash join
-skipif knownfail
 query I
 with recursive t as (select 1 as x union all select * from (select x from t where x < 5) tbl(i) join (select 1) tbl2(i) using (i)) select * from t limit 3;
 ----
@@ -84,7 +83,6 @@ with recursive t as (select 1 as x union all select * from (select x from t wher
 1
 1
 
-skipif knownfail
 query I
 with recursive t as (select 1 as x union all select * from (select 1) tbl2(i) join (select x from t where x < 5) tbl(i) using (i)) select * from t limit 3;
 ----
@@ -92,17 +90,15 @@ with recursive t as (select 1 as x union all select * from (select 1) tbl2(i) jo
 1
 1
 
-skipif knownfail
 query I
-with recursive t as (select 1 as x union all select * from (select x from t where x < 5) tbl(i) join (select first(i) from (values (1)) tbl3(i) limit 1) tbl2(i) using (i)) select * from t limit 3;
+with recursive t as (select 1 as x union all select * from (select x from t where x < 5) tbl(i) join (select any_value(i) from (values (1)) tbl3(i) limit 1) tbl2(i) using (i)) select * from t limit 3;
 ----
 1
 1
 1
 
-skipif knownfail
 query I
-with recursive t as (select 1 as x union all select * from (select first(i) from (values (1)) tbl3(i) limit 1) tbl2(i) join (select x from t where x < 5) tbl(i) using (i)) select * from t limit 3;
+with recursive t as (select 1 as x union all select * from (select any_value(i) from (values (1)) tbl3(i) limit 1) tbl2(i) join (select x from t where x < 5) tbl(i) using (i)) select * from t limit 3;
 ----
 1
 1
