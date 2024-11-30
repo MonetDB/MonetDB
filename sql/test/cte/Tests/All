@@ -11,7 +11,7 @@ test_cte_in_cte
 test_cte_overflow
 test_cte
 test_issue_5673
-#test_nested_recursive_cte
+test_nested_recursive_cte
 test_outer_joins_recursive_cte
 test_recursive_cte_tutorial
 test_recursive_cte_union_all

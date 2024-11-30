@@ -3206,6 +3206,8 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
+		if (is_recursive(l) || is_recursive(r))
+			return rel;
 		/* we would like to optimize in place reference rels which point
 		 * to replica tables and let the replica optimizer handle those
 		 * later. otherwise we miss the push join down optimization due
