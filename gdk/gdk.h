@@ -2473,13 +2473,13 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 
 #include "gdk_calc.h"
 
-gdk_export gdk_return GDKtoupper(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKtoupper(char **restrict buf, size_t *restrict buflen, const char *restrict s)
 	__attribute__((__access__(read_write, 1)))
 	__attribute__((__access__(read_write, 2)));
-gdk_export gdk_return GDKtolower(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKtolower(char **restrict buf, size_t *restrict buflen, const char *restrict s)
 	__attribute__((__access__(read_write, 1)))
 	__attribute__((__access__(read_write, 2)));
-gdk_export gdk_return GDKcasefold(char **restrict buf, size_t *restrict buflen, const char *restrict s);
+gdk_export gdk_return GDKcasefold(char **restrict buf, size_t *restrict buflen, const char *restrict s)
 	__attribute__((__access__(read_write, 1)))
 	__attribute__((__access__(read_write, 2)));
 gdk_export int GDKstrncasecmp(const char *str1, const char *str2, size_t l1, size_t l2);
