@@ -6064,22 +6064,22 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %4,	type,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
 % varchar,	varchar,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
 % 0,	0,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
-% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% %4,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% %4,	type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% %4,	language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% %4,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
+% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% %4,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% %4,	type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% %4,	language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%4,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% %4,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
 % .%4,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
 % %4,	func_id,	id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
 % varchar,	int,	int,	int,	varchar,	varchar,	int,	int,	tinyint,	int # type
@@ -6568,50 +6568,50 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %1,	function_type_keyword,	function_type_id,	function_type_name,	function_type_keyword # name
 % varchar,	varchar,	smallint,	varchar,	varchar # type
 % 0,	0,	1,	0,	0 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	name,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	func,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	mod,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	side_effect,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	varres,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	vararg,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
-% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
-% %1,	system,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics # name
-% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean # type
-% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	name,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	func,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	mod,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	varchar,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	0,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	language,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	type,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	side_effect,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	varres,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	vararg,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	schema_id,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	int,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	1,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
+% .%1,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions,	.functions # table_name
+% %1,	system,	id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id,	system,	semantics,	order_specification # name
+% varchar,	boolean,	int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int,	boolean,	boolean,	tinyint # type
+% 0,	5,	1,	0,	0,	0,	1,	1,	5,	5,	5,	1,	5,	5,	1 # length
 % .%1,	.idxs,	.idxs,	.idxs,	.idxs,	.idxs # table_name
 % %1,	id,	id,	table_id,	type,	name # name
 % varchar,	int,	int,	int,	int,	varchar # type

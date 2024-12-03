@@ -78,18 +78,19 @@ sql_fix_system_tables(Client c, mvc *sql)
 			continue;
 
 		pos += snprintf(buf + pos, bufsize - pos,
-				"insert into sys.functions values"
-				" (%d, '%s', '%s', '%s',"
-				" %d, %d, %s, %s, %s, %d, %s, %s);\n",
-				func->base.id, func->base.name,
-				sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
-				(int) func->type,
-				boolnames[func->side_effect],
-				boolnames[func->varres],
-				boolnames[func->vararg],
-				func->s ? func->s->base.id : s->base.id,
-				boolnames[func->system],
-				boolnames[func->semantics]);
+						"insert into sys.functions values"
+						" (%d, '%s', '%s', '%s',"
+						" %d, %d, %s, %s, %s, %d, %s, %s, %d);\n",
+						func->base.id, func->base.name,
+						sql_func_imp(func), sql_func_mod(func), (int) FUNC_LANG_INT,
+						(int) func->type,
+						boolnames[func->side_effect],
+						boolnames[func->varres],
+						boolnames[func->vararg],
+						func->s ? func->s->base.id : s->base.id,
+						boolnames[func->system],
+						boolnames[func->semantics],
+						func->order_required ? 2 : func->opt_order ? 1 : 0);
 		if (func->res) {
 			for (m = func->res->h; m; m = m->next, number++) {
 				arg = m->data;
