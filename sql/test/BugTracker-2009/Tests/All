@@ -116,10 +116,3 @@ NOT_WIN32&HAVE_HGE?copy_multiple_files.SF-2902320
 not_invalidtable_crash.SF-2927174
 drop-sequence-crash.SF-2854195
 arithmetic-small-values-null.SF-2921310
-#
-# The following test currently crashes and this fact (or its remains) might
-# harm sub-sequent tests; hence, this test should be last in this directory.
-
-# conversion to logic tests (11/2020): These tests use explain so we just skip them for now
-# explain_gives_crash.SF-2741829
-# explain_gives_crash.SF-2741829_cleanup

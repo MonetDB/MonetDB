@@ -1,4 +1,4 @@
-query TTTTII nosort
+query TTTTII rowsort
 -- query 73
 select c_last_name
        ,c_first_name
@@ -26,6 +26,12 @@ select c_last_name
       and cnt between 1 and 5
     order by cnt desc, c_last_name asc
 ----
+Dion
+Alva
+Mrs.
+N
+113766
+4
 Greene
 Clarence
 NULL
@@ -50,10 +56,4 @@ Mrs.
 N
 174863
 5
-Dion
-Alva
-Mrs.
-N
-113766
-4
 

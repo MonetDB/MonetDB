@@ -1,4 +1,4 @@
-query TTTTTIIITTTIR nosort
+query TTTTTIIITTTIR rowsort
 -- query 30
 with customer_total_return as
  (select wr_returning_customer_sk as ctr_customer_sk
@@ -29,5 +29,5 @@ with customer_total_return as
                   ,c_last_review_date,ctr_total_return
 limit 100
 ----
-1300 values hashing to 28e7c87e0d9219a5b33c816332174184
+1300 values hashing to 46f76e63ac60a7b540f258c4ad0fbfdb
 
