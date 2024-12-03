@@ -4503,7 +4503,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			} else {	/* topn based on 2 columns */
 				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			}
