@@ -2125,28 +2125,30 @@ static void
 sa_free_blk(allocator *pa, void *blk)
 {
 	// free blks are maintained on the root allocator
-	if (pa->pa)
-		return sa_free_blk(pa->pa, blk);
-	assert(!pa->pa); // must be root allocator
-	size_t i;
-
-	for(i = 0; i < pa->nr; i++) {
-		if (pa->blks[i] == blk)
-			break;
-	}
-	assert (i < pa->nr);
-
-	size_t sz = GDKmallocated(blk);
-	if (sz > (SA_BLOCK_SIZE)) {
-		GDKfree(blk);
-		for (; i < pa->nr-1; i++)
-			pa->blks[i] = pa->blks[i+1];
-		pa->nr--;
+	if (pa->pa) {
+		sa_free_blk(pa->pa, blk);
 	} else {
-		freed_t *f = blk;
-		f->n = pa->freelist_blks;
-		f->sz = sz;
-		pa->freelist_blks = f;
+		// assert(!pa->pa); // must be root allocator
+		size_t i;
+
+		for(i = 0; i < pa->nr; i++) {
+			if (pa->blks[i] == blk)
+				break;
+		}
+		assert (i < pa->nr);
+
+		size_t sz = GDKmallocated(blk);
+		if (sz > (SA_BLOCK_SIZE)) {
+			GDKfree(blk);
+			for (; i < pa->nr-1; i++)
+				pa->blks[i] = pa->blks[i+1];
+			pa->nr--;
+		} else {
+			freed_t *f = blk;
+			f->n = pa->freelist_blks;
+			f->sz = sz;
+			pa->freelist_blks = f;
+		}
 	}
 }
 
