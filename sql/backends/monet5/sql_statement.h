@@ -239,12 +239,11 @@ extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
 /*
- * distinct: compute topn on unique groups
  * dir:      direction of the ordering, ie 1 Ascending, 0 descending
- * last:     intermediate step or last step
+ * nr_obe:   total number of order by expression
  * order:    is order important or not (firstn vs slice)
  */
-extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order);
+extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int dir, int nullslast, int nr_obe, int order);
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);

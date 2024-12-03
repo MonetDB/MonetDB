@@ -3022,7 +3022,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
 		if (list_empty(jexps)) {
-			stmt *limit = stmt_limit(be, r, NULL, NULL, stmt_atom_lng(be, 0), stmt_atom_lng(be, 1), 0, 0, 0, 0, 0);
+			stmt *limit = stmt_limit(be, r, NULL, NULL, stmt_atom_lng(be, 0), stmt_atom_lng(be, 1), 0, 0, 0, 0);
 			r = stmt_project(be, limit, r);
 		}
 		join = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, 0, cmp_all, 0, 0, false, rel->op == op_left?false:true);
@@ -4461,13 +4461,12 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	if (topn && rel->r) {
 		list *oexps = rel->r, *npl = sa_list(sql->sa);
 		/* distinct, topn returns at least N (unique groups) */
-		int distinct = need_distinct(rel);
 		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
-		int last = list_length(oexps);
+		int nr_obe = list_length(oexps);
 
 		/* check for partition columns */
 		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
-		for (n=oexps->h; n; n = n->next, last--) {
+		for (n=oexps->h; n; n = n->next, nr_obe--) {
 			sql_exp *gbe = n->data;
 			bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
 
@@ -4504,19 +4503,13 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			} else {	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			}
 			if (!limit)
 				return NULL;
 			lpiv = limit;
-			if (!last) {
-				lpiv = stmt_result(be, limit, 0);
-				lgid = stmt_result(be, limit, 1);
-				if (lpiv == NULL || lgid == NULL)
-					return NULL;
-			}
 		}
 
 		limit = lpiv;
@@ -4843,7 +4836,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 
 
 		sc = column(be, sc);
-		limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0,0);
+		limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0);
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
