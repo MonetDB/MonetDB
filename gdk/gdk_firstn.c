@@ -1408,6 +1408,8 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		oid grp = g ? BUNtoid(g, o - g->hseqbase) : 0;
 		BUN goff = grp * n;
 		int comp = -1;
+		/* compare new value with root of heap to see if we must
+		 * keep or replace */
 		if (!is_oid_nil(oids[goff])) {
 			for (int i = 0; i < nbats; i++) {
 				comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
@@ -1435,33 +1437,37 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		if (comp >= 0)
 			continue;
 		oids[goff] = o;
+		/* we replaced the root of the heap, but now we need to
+		 * restore the heap property */
 		BUN pos = 0;
 		BUN childpos = 1;
 		while (childpos < n) {
 			/* find most extreme child */
-			if (childpos + 1 < n && !is_oid_nil(oids[goff + childpos])) {
-				if (is_oid_nil(oids[goff + childpos + 1]))
-					childpos++;
-				else {
-					for (int i = 0; i < nbats; i++) {
-						if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq),
-									   BUNtail(batinfo[i].bi2, oids[goff + childpos + 1] - batinfo[i].hseq))) == 0)
-							continue;
-						if (!batinfo[i].bi1.nonil) {
-							if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
-								if (!batinfo[i].nilslast)
-									childpos++;
-								break;
+			if (childpos + 1 < n) {
+				if (!is_oid_nil(oids[goff + childpos])) {
+					if (is_oid_nil(oids[goff + childpos + 1]))
+						childpos++;
+					else {
+						for (int i = 0; i < nbats; i++) {
+							if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq),
+										   BUNtail(batinfo[i].bi2, oids[goff + childpos + 1] - batinfo[i].hseq))) == 0)
+								continue;
+							if (!batinfo[i].bi1.nonil) {
+								if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
+									if (!batinfo[i].nilslast)
+										childpos++;
+									break;
+								}
+								if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos + 1] - batinfo[i].hseq), batinfo[i].nil) == 0) {
+									if (batinfo[i].nilslast)
+										childpos++;
+									break;
+								}
 							}
-							if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos + 1] - batinfo[i].hseq), batinfo[i].nil) == 0) {
-								if (batinfo[i].nilslast)
-									childpos++;
-								break;
-							}
+							if (batinfo[i].asc ? comp < 0 : comp > 0)
+								childpos++;
+							break;
 						}
-						if (batinfo[i].asc ? comp < 0 : comp > 0)
-							childpos++;
-						break;
 					}
 				}
 			}
@@ -1471,22 +1477,13 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 					if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq),
 								   BUNtail(batinfo[i].bi2, oids[goff + childpos] - batinfo[i].hseq))) == 0)
 						continue;
-					if (!batinfo[i].bi1.nonil) {
-						if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
-							if (batinfo[i].nilslast) {
-								comp = 0;
-								break;
-							}
-						}
-						if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
-							if (!batinfo[i].nilslast) {
-								comp = 0;
-								break;
-							}
-						}
-					}
-					if (batinfo[i].asc ? comp > 0 : comp < 0) {
+					if (batinfo[i].asc ? comp > 0 : comp < 0)
 						comp = 0;
+					if (!batinfo[i].bi1.nonil) {
+						if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq), batinfo[i].nil) == 0)
+							comp = !batinfo[i].nilslast;
+						else if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0)
+							comp = batinfo[i].nilslast;
 					}
 					break;
 				}
