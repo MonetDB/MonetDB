@@ -4463,10 +4463,36 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		/* distinct, topn returns at least N (unique groups) */
 		int distinct = need_distinct(rel);
 		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
+		int last = list_length(oexps);
 
-		for (n=oexps->h; n; n = n->next) {
+		/* check for partition columns */
+		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
+		for (n=oexps->h; n; n = n->next, last--) {
+			sql_exp *gbe = n->data;
+			bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
+
+			if (!is_partitioning(gbe))
+				break;
+			/* create group by */
+			stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!gbcol) {
+				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+				return NULL;
+			}
+			if (!gbcol->nrcols)
+				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
+			stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, last);
+			grp = stmt_result(be, groupby, 0);
+			ext = stmt_result(be, groupby, 1);
+			cnt = stmt_result(be, groupby, 2);
+			gbcol = stmt_alias(be, gbcol, gbe->alias.label, exp_find_rel_name(gbe), exp_name(gbe));
+		}
+
+		if (grp)
+			lgid = grp;
+		for (; n; n = n->next) {
 			sql_exp *orderbycole = n->data;
-			int last = (n->next == NULL);
 
 			stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 
@@ -4474,7 +4500,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 
 			/* handle constants */
-			if (orderbycolstmt->nrcols == 0 && !last) /* no need to sort on constant */
+			if (orderbycolstmt->nrcols == 0 && n->next) /* no need to sort on constant */
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
@@ -4494,6 +4520,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 
 		limit = lpiv;
+		if (limit)
+			limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
 		stmt *s;
 		for (n=pl->h ; n; n = n->next) {
 			stmt *os = n->data;
@@ -4813,8 +4841,9 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!l || !o)
 			return NULL;
 
+
 		sc = column(be, sc);
-		limit = stmt_limit(be, sc /*stmt_alias(be, sc, 0, tname, cname)*/, NULL, NULL, o, l, 0,0,0,0,0);
+		limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0,0);
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;

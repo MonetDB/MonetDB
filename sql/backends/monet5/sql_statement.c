@@ -1207,13 +1207,14 @@ stmt_result(backend *be, stmt *s, int nr)
 stmt *
 stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
 {
+	int new = 1;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	int l, p, g, c;
 
 	if (col == NULL || offset == NULL || limit == NULL || col->nr < 0 || offset->nr < 0 || limit->nr < 0)
 		goto bailout;
-	if (piv && (piv->nr < 0 || gid->nr < 0))
+	if (piv && (piv->nr < 0 || (gid && gid->nr < 0)))
 		goto bailout;
 
 	c = (col) ? col->nr : 0;
@@ -1241,38 +1242,74 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		c = k;
 	}
 	if (order) {
-		int topn = 0;
+		if (new && piv) {
+			q = piv->q;
+			q = pushArgument(mb, q, c);
+			q = pushBit(mb, q, dir);
+			q = pushBit(mb, q, nullslast);
+			return piv;
+		} else if (new) {
+			int topn = 0;
 
-		q = newStmt(mb, calcRef, plusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, limit->nr);
-		topn = getDestVar(q);
-		pushInstruction(mb, q);
+			q = newStmt(mb, calcRef, plusRef);
+			if (q == NULL)
+				goto bailout;
+			q = pushArgument(mb, q, offset->nr);
+			q = pushArgument(mb, q, limit->nr);
+			topn = getDestVar(q);
+			pushInstruction(mb, q);
 
-		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
-		if (q == NULL)
-			goto bailout;
-		if (!last) /* we need the groups for the next firstn */
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, c);
-		if (p)
-			q = pushArgument(mb, q, p);
-		else
-			q = pushNilBat(mb, q);
-		if (g)
-			q = pushArgument(mb, q, g);
-		else
-			q = pushNilBat(mb, q);
-		q = pushArgument(mb, q, topn);
-		q = pushBit(mb, q, dir);
-		q = pushBit(mb, q, nullslast);
-		q = pushBit(mb, q, distinct != 0);
+			q = newStmtArgs(mb, algebraRef, "groupedfirstn", (last*3)+6);
+			if (q == NULL)
+				goto bailout;
+			q = pushArgument(mb, q, topn);
+			q = pushNilBat(mb, q);	/* candidates */
+			if (g)					/* grouped case */
+				q = pushArgument(mb, q, g);
+			else
+				q = pushNilBat(mb, q);
 
-		l = getArg(q, 0);
-		l = getDestVar(q);
-		pushInstruction(mb, q);
+			q = pushArgument(mb, q, c);
+			q = pushBit(mb, q, dir);
+			q = pushBit(mb, q, nullslast);
+
+			l = getArg(q, 0);
+			l = getDestVar(q);
+			pushInstruction(mb, q);
+		} else {
+			int topn = 0;
+
+			q = newStmt(mb, calcRef, plusRef);
+			if (q == NULL)
+				goto bailout;
+			q = pushArgument(mb, q, offset->nr);
+			q = pushArgument(mb, q, limit->nr);
+			topn = getDestVar(q);
+			pushInstruction(mb, q);
+
+			q = newStmtArgs(mb, algebraRef, firstnRef, 9);
+			if (q == NULL)
+				goto bailout;
+			if (!last) /* we need the groups for the next firstn */
+				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+			q = pushArgument(mb, q, c);
+			if (p)
+				q = pushArgument(mb, q, p);
+			else
+				q = pushNilBat(mb, q);
+			if (g)
+				q = pushArgument(mb, q, g);
+			else
+				q = pushNilBat(mb, q);
+			q = pushArgument(mb, q, topn);
+			q = pushBit(mb, q, dir);
+			q = pushBit(mb, q, nullslast);
+			q = pushBit(mb, q, distinct != 0);
+
+			l = getArg(q, 0);
+			l = getDestVar(q);
+			pushInstruction(mb, q);
+		}
 	} else {
 		int len;
 

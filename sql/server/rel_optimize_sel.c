@@ -3572,6 +3572,7 @@ get_partition_by_key_columns(allocator *sa, sql_rel *r) {
 	return NULL;
 }
 
+/*
 static bool
 rank_exp_has_partition_key(sql_exp *e)
 {
@@ -3588,6 +3589,7 @@ rank_exp_has_partition_key(sql_exp *e)
 	}
 	return false;
 }
+*/
 
 /*
  * Checks if a filter column is also used as an aggregation key, so it can be later safely pushed down.
@@ -3832,14 +3834,14 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 							sql_subfunc *rankf = ranke->f;
 							if (rankf->func->type == F_ANALYTIC) { /* rank functions cannot have a frame */
 								// For now only for rank/row_number without partition by
-							   	if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r &&
-										!rank_exp_has_partition_key(ranke)) {
+							   	if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r /* &&
+										!rank_exp_has_partition_key(ranke)*/) {
 									r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									v->changes++;
 									break;
 								}
-							   	if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op) &&
-										!rank_exp_has_partition_key(ranke)) {
+							   	if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op) /*&&
+										!rank_exp_has_partition_key(ranke)*/) {
 									r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									v->changes++;
 									break;
