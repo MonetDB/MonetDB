@@ -1370,6 +1370,8 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	if (n == 0 || BATcount(bats[0]) == 0) {
 		return BATdense(0, 0, 0);
 	}
+	if (n > BATcount(bats[0]))
+		n = BATcount(bats[0]);
 
 	if ((err = BATgroupaggrinit(bats[0], g, NULL /* e */, s, &min, &max, &ngrp, &ci)) != NULL) {
 		GDKerror("%s\n", err);
@@ -1421,15 +1423,23 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 						      BUNtail(batinfo[i].bi2, oids[goff] - batinfo[i].hseq));
 				if (comp == 0)
 					continue;
-				if (!batinfo[i].bi1.nonil &&
-				    batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
-						   batinfo[i].nil) == 0) {
-					if (batinfo[i].nilslast)
-						comp = 1;
-					else
-						comp = -1;
-				} else if (!batinfo[i].asc)
+				if (!batinfo[i].asc)
 					comp = -comp;
+				if (!batinfo[i].bi1.nonil) {
+					if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
+							   batinfo[i].nil) == 0) {
+						if (batinfo[i].nilslast)
+							comp = 1;
+						else
+							comp = -1;
+					} else if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff] - batinfo[i].hseq),
+								  batinfo[i].nil) == 0) {
+						if (batinfo[i].nilslast)
+							comp = -1;
+						else
+							comp = 1;
+					}
+				}
 				break;
 			}
 		}
