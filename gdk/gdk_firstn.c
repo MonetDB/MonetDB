@@ -1385,6 +1385,11 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 		GDKfree(batinfo);
 		return NULL;
 	}
+	/* result is unlikely to be sorted, and there may be nils if
+	 * there are groups that are too small */
+	bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	bn->tnil = false;
+	bn->tnonil = false;
 
 	for (int i = 0; i < nbats; i++) {
 		batinfo[i] = (struct batinfo) {
