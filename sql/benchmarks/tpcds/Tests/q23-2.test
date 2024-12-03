@@ -1,4 +1,4 @@
-query TTR nosort
+query TTR rowsort
 -- query 23-2
  with frequent_ss_items as
  (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
@@ -56,9 +56,6 @@ query TTR nosort
      order by c_last_name,c_first_name,sales
   limit 100
 ----
-NULL
-Robert
-598.860
 Brown
 Monika
 6031.520
@@ -68,4 +65,7 @@ Gordon
 Green
 Jesse
 9672.960
+NULL
+Robert
+598.860
 

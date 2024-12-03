@@ -1,4 +1,4 @@
-query TTTTIRRR nosort
+query TTTTIRRR rowsort
 -- query 68
 select  c_last_name
        ,c_first_name
@@ -40,5 +40,5 @@ select  c_last_name
          ,ss_ticket_number
  limit 100
 ----
-800 values hashing to 70530c51648f16ef0f313422a5707dff
+800 values hashing to 02cbbc239efc5e192bb639839191b9ec
 

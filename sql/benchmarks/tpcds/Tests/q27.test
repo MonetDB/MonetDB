@@ -1,4 +1,4 @@
-query TTIRRRR nosort
+query TTIRRRR rowsort
 -- query 27
 select  i_item_id,
         s_state, grouping(s_state) g_state,
@@ -21,5 +21,5 @@ select  i_item_id,
          ,s_state
  limit 100
 ----
-700 values hashing to 1dd7e54139ea526385fb65f2d9d3fa7e
+700 values hashing to 4768cbb63a3c1944e5a2bfbd752ba99a
 

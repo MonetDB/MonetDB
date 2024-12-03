@@ -1,4 +1,4 @@
-query TITTTTTIRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR nosort
+query TITTTTTIRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR rowsort
 -- query 66
 select
          w_warehouse_name
@@ -218,5 +218,5 @@ select
  order by w_warehouse_name
  limit 100
 ----
-220 values hashing to 66e750f9929ff8cdc09db703e9e20680
+220 values hashing to c0df039a907918fe903fa64e2c2cddbe
 
