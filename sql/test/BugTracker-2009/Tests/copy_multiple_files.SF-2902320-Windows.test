@@ -18,7 +18,7 @@ insert(
 | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "\\file2", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
-| ) [ int(31) NULL ]
+| ) [ "cm_tmp"."i" ]
 )
 
 query T nosort
@@ -35,7 +35,7 @@ insert(
 | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "Z:/file2", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
-| ) [ int(31) NULL ]
+| ) [ "cm_tmp"."i" ]
 )
 
 statement ok
