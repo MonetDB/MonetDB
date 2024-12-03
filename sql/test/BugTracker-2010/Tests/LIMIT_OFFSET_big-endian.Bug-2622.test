@@ -259,13 +259,15 @@ user.main
 query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2
 ----
-algebra.firstn
+algebra.groupedfirstn
 1
 algebra.projection
-3
+4
 algebra.sort
 1
 algebra.subslice
+1
+algebra.thetaselect
 1
 bat.pack
 5
@@ -285,13 +287,15 @@ user.main
 query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
-algebra.firstn
+algebra.groupedfirstn
 1
 algebra.projection
-3
+4
 algebra.sort
 1
 algebra.subslice
+1
+algebra.thetaselect
 1
 bat.pack
 5
@@ -311,13 +315,15 @@ user.main
 query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
-algebra.firstn
+algebra.groupedfirstn
 1
 algebra.projection
-3
+4
 algebra.sort
 1
 algebra.subslice
+1
+algebra.thetaselect
 1
 bat.pack
 5
