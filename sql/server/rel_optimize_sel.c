@@ -3834,15 +3834,18 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 							sql_subfunc *rankf = ranke->f;
 							if (rankf->func->type == F_ANALYTIC) { /* rank functions cannot have a frame */
 								// For now only for rank/row_number without partition by
+								sql_rel *tn = NULL;
 							   	if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r /* &&
 										!rank_exp_has_partition_key(ranke)*/) {
-									r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
+									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
+									tn->grouped = 1;
 									v->changes++;
 									break;
 								}
 							   	if (strcmp(rankf->func->base.name, "row_number") == 0 && list_empty(r->r) && !is_topn(pl->op) /*&&
 										!rank_exp_has_partition_key(ranke)*/) {
-									r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
+									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
+									tn->grouped = 1;
 									v->changes++;
 									break;
 								}

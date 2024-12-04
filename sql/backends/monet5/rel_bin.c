@@ -4470,7 +4470,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			sql_exp *gbe = n->data;
 			bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
 
-			if (!is_partitioning(gbe))
+			if (!topn->grouped || !is_partitioning(gbe))
 				break;
 			/* create group by */
 			stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -4779,6 +4779,17 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	return cursub;
 }
 
+static bool
+has_partitioning( list *exps )
+{
+	for(node *n = exps->h; n; n = n->next){
+		sql_exp *gbe = n->data;
+		if (is_partitioning(gbe))
+			return true;
+	}
+	return false;
+}
+
 static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
@@ -4797,6 +4808,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = rel2bin_project(be, rl, refs, rel);
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
+			if (rl->grouped && rl->r && has_partitioning(rl->r))
+				return sub;
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}
