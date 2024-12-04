@@ -50,11 +50,11 @@ create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 
-create aggregate median(val HUGEINT) returns HUGEINT
+create aggregate median(val HUGEINT) returns HUGEINT ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
 
-create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
+create aggregate median(val DECIMAL(38)) returns DECIMAL(38) ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
 
@@ -82,7 +82,7 @@ create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;
 
-create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE ORDERED
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
 create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
