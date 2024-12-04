@@ -1,0 +1,17 @@
+statement ok
+create table t as
+select rand() as a1, value % 100 as a2, 1e0 / (abs(rand()) + 1) as prob
+from sys.generate_series(0,10000)
+
+query I nosort
+SELECT count(*)
+FROM (
+ SELECT a1, a2, prob
+  FROM (
+   SELECT a1, a2, row_number() OVER(PARTITION BY a2 ORDER BY prob DESC) AS a3, prob
+   FROM t
+  ) AS t__x0
+ WHERE a3 <= 3
+) as t__x1;
+----
+300
