@@ -1944,7 +1944,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 			bn->tnonil = true;
 			bn->tseqbase = rcnt == 0 ?
 				0 : rcnt == 1 ?
-				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.hseq : oid_nil;
+				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.seq : oid_nil;
 
 			if (with_strimps_anti) {
 				BAT *rev;
