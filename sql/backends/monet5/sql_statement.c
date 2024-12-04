@@ -1257,7 +1257,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			topn = getDestVar(q);
 			pushInstruction(mb, q);
 
-			q = newStmtArgs(mb, algebraRef, "groupedfirstn", (nr_obe*3)+6);
+			q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
 			if (q == NULL)
 				goto bailout;
 			q = pushArgument(mb, q, topn);

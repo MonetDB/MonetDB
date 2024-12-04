@@ -1035,6 +1035,7 @@ const char *grant_rolesRef;
 const char *groupRef;
 const char *groupbyRef;
 const char *groupdoneRef;
+const char *groupedfirstnRef;
 const char *growRef;
 int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 const char *hgeRef;

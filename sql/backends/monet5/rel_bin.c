@@ -4808,7 +4808,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = rel2bin_project(be, rl, refs, rel);
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
-			if (rl->grouped && rl->r && has_partitioning(rl->r))
+			if (rel->grouped && rl->r && has_partitioning(rl->r))
 				return sub;
 		} else {
 			sub = subrel_bin(be, rl, refs);

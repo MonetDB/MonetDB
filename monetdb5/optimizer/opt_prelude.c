@@ -128,6 +128,7 @@ const char *grantRef;
 const char *grant_rolesRef;
 const char *groupbyRef;
 const char *groupdoneRef;
+const char *groupedfirstnRef;
 const char *groupRef;
 const char *growRef;
 const char *hgeRef;
@@ -390,6 +391,7 @@ optimizerInit(void)
 	grant_rolesRef = putName("grant_roles");
 	groupbyRef = putName("groupby");
 	groupdoneRef = putName("groupdone");
+	groupedfirstnRef = putName("groupedfirstn");
 	groupRef = putName("group");
 	growRef = putName("grow");
 	hgeRef = putName("hge");

@@ -125,6 +125,7 @@ mal_export const char *grantRef;
 mal_export const char *grant_rolesRef;
 mal_export const char *groupbyRef;
 mal_export const char *groupdoneRef;
+mal_export const char *groupedfirstnRef;
 mal_export const char *groupRef;
 mal_export const char *growRef;
 mal_export const char *hgeRef;
