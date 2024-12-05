@@ -37,15 +37,17 @@ csv_open_file(char* filename)
 static const char *
 next_delim(const char *s, const char *e, char delim, char quote)
 {
-	bool inquote = false;
-	for(;  s < e; s++) {
-		if (*s == quote)
-			inquote = !inquote;
-		else if (!inquote && *s == delim)
+	if (s && e) {
+		bool inquote = false;
+		for(;  s < e; s++) {
+			if (*s == quote)
+				inquote = !inquote;
+			else if (!inquote && *s == delim)
+				return s;
+		}
+		if (s <= e)
 			return s;
 	}
-	if (s <= e)
-		return s;
 	return NULL;
 }
 
@@ -242,6 +244,7 @@ detect_time(const char *s, const char *e)
 static bool
 detect_date(const char *s, const char *e)
 {
+	/* TODO detect negative years */
 	if ((e-s) != 10)
 		return false;
 	/* YYYY-MM-DD */
@@ -256,6 +259,7 @@ detect_date(const char *s, const char *e)
 static bool
 detect_timestamp(const char *s, const char *e)
 {
+	/* TODO detect negative years */
 	if ((e-s) != 16)
 		return false;
 	/* DATE TIME */
@@ -276,24 +280,26 @@ detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fi
 		int scale = 0;
 
 		types[i].type = CSV_STRING;
-		if (n) {
+		types[i].scale = 0;
+		if (n && s) {
 			if (detect_null(s,n))
 				types[i].type = CSV_NULL;
 			else if (detect_bool(s,n))
 				types[i].type = CSV_BOOLEAN;
 			else if (detect_bigint(s, n))
 				types[i].type = CSV_BIGINT;
-			else if (detect_decimal(s, n, &scale))
+			else if (detect_decimal(s, n, &scale)) {
 				types[i].type = CSV_DECIMAL;
+				types[i].scale = scale;
+			}
 			else if (detect_time(s, n))
 				types[i].type = CSV_TIME;
 			else if (detect_date(s, n))
 				types[i].type = CSV_DATE;
 			else if (detect_timestamp(s, n))
 				types[i].type = CSV_TIMESTAMP;
-			types[i].scale = scale;
+			s = n+1;
 		}
-		s = n+1;
 	}
 	return types;
 }
@@ -310,7 +316,7 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 
 		if (!e)
 			break;
-		csv_type *ntypes = detect_types_row( cur, e, delim, quote, nr_fields);
+		csv_type *ntypes = detect_types_row(cur, e, delim, quote, nr_fields);
 		if (!ntypes)
 			return NULL;
 		cur = e+1;
@@ -397,9 +403,7 @@ static str
 csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
 	stream *file = csv_open_file(filename);
-	char buf[8196+1];
-
-	if(file == NULL)
+	if (file == NULL)
 		return RUNTIME_FILE_NOT_FOUND;
 
 	/*
@@ -407,6 +411,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect types
 	 * detect header
 	 */
+	char buf[8196+1];
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
 	mnstr_destroy(file);
@@ -424,7 +429,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 
 	f->tname = tname;
 
-	const char *p = buf, *ep = strchr(p, '\n');;
+	const char *p = buf, *ep = strchr(p, '\n');
 	list *typelist = sa_list(sql->sa);
 	list *nameslist = sa_list(sql->sa);
 	for(int col = 0; col < nr_fields; col++) {
