@@ -12,13 +12,20 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	2
-1	3
-2	2
-2	3
-3	3
-4	4
+1
+1
+1
+2
+1
+3
+2
+2
+2
+3
+3
+3
+4
+4
 
 # Correlation in the recursive query
 query II
@@ -34,15 +41,24 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	2
-1	3
-2	1
-2	3
-3	1
-3	4
-4	1
-4	5
+1
+1
+1
+2
+1
+3
+2
+1
+2
+3
+3
+1
+3
+4
+4
+1
+4
+5
 
 # Correlation in the initialization and recursive query
 query II
@@ -58,16 +74,25 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	2
-1	3
-2	2
-2	4
-3	3
-4	4
+1
+1
+1
+2
+1
+3
+2
+2
+2
+4
+3
+3
+4
+4
 
 # Correlation with multiple recursive anchors
-query II
+# too many rows
+skipif knownfail                                                                                                                                                           
+query II 
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -80,12 +105,18 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	3
-2	2
-2	6
-3	3
-4	4
+1
+1
+1
+3
+2
+2
+2
+6
+3
+3
+4
+4
 
 # Test correlation in SELECT clause
 query III rowsort
@@ -98,13 +129,22 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
 ) SELECT sum(z) FROM t) AS z
 FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
 ----
-1	1	5
-1	2	3
-2	1	3
-2	2	4
-
+1
+1
+5
+1
+2
+3
+2
+1
+3
+2
+2
+4
 
 # Complex nested recursive query
+# sum(z) wrong output
+skipif knownfail                                                                                                                                                           
 query III rowsort
 SELECT x, y, (WITH RECURSIVE t(z) AS (
   SELECT x + y
@@ -128,8 +168,10 @@ FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by 
 2	2	9
 
 statement ok
-CREATE TABLE a AS SELECT * FROM range(100) t1(i);
+CREATE TABLE a AS SELECT * FROM generate_series(1,100+1) t1(i);
 
+# expression fails to bind
+skipif knownfail                                                                                                                                                           
 query I
 SELECT t2.*
 FROM (VALUES (1000000)) t(_corr), LATERAL (
@@ -150,6 +192,8 @@ ORDER BY 1 NULLS LAST;
 1000000
 NULL
 
+# limit in subquery
+skipif knownfail                                                                                                                                                           
 query I
 SELECT t2.*
 FROM (VALUES (10)) t(_corr), LATERAL (
@@ -170,6 +214,8 @@ ORDER BY 1 NULLS LAST;
 8
 16
 
+# fails to end (causing overflow)
+skipif knownfail                                                                                                                                                           
 query III
 SELECT t2.*
 FROM (VALUES (1)) t(_corr), LATERAL (
@@ -213,13 +259,20 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	2
-1	3
-2	2
-2	3
-3	3
-4	4
+1
+1
+1
+2
+1
+3
+2
+2
+2
+3
+3
+3
+4
+4
 
 # Correlation in the recursive query
 query II
@@ -235,15 +288,24 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	2
-1	3
-2	1
-2	3
-3	1
-3	4
-4	1
-4	5
+1
+1
+1
+2
+1
+3
+2
+1
+2
+3
+3
+1
+3
+4
+4
+1
+4
+5
 
 # Correlation in the initialization and recursive query
 query II
@@ -259,13 +321,20 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	2
-1	3
-2	2
-2	4
-3	3
-4	4
+1
+1
+1
+2
+1
+3
+2
+2
+2
+4
+3
+3
+4
+4
 
 # Correlation with multiple recursive anchors
 query II
@@ -281,12 +350,18 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
 SELECT * FROM t) AS t
 ORDER BY x, y;
 ----
-1	1
-1	3
-2	2
-2	6
-3	3
-4	4
+1
+1
+1
+3
+2
+2
+2
+6
+3
+3
+4
+4
 
 # Test correlation in SELECT clause
 query III rowsort
@@ -299,10 +374,18 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
 ) SELECT sum(z) FROM t) AS z
 FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
 ----
-1	1	5
-1	2	3
-2	1	3
-2	2	4
+1
+1
+5
+1
+2
+3
+2
+1
+3
+2
+2
+4
 
 # Complex nested recursive query
 query III rowsort
@@ -322,7 +405,15 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
 ) SELECT sum(z) FROM t) AS z
 FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
 ----
-1	1	14
-1	2	12
-2	1	12
-2	2	9
+1
+1
+14
+1
+2
+12
+2
+1
+12
+2
+2
+9

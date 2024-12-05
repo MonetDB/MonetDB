@@ -1752,6 +1752,9 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 	list *rgbe = NULL, *gbe = NULL, *exps = NULL;
 	node *n, *m;
 
+	if (is_recursive(u))
+		return rel;
+
 	// TODO why?
 	if (u->op == op_project && !need_distinct(u))
 		u = u->l;
@@ -1910,7 +1913,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
 			return rel;
 
-		if (is_munion(u->op) && !is_recursive(u))
+		if (is_munion(u->op))
 			return rel_push_aggr_down_n_arry(v, rel);
 
 		ul = u->l;

@@ -259,6 +259,45 @@ rel_subquery_optname(sql_query *query, symbol *ast, list *refs)
 	return rel_table_optname(sql, sq, sn->name, refs);
 }
 
+static void
+rel_rename(mvc *sql, sql_rel *nrel, char *rname, sql_rel *brel)
+{
+	assert(is_project(nrel->op));
+	if (brel) {
+		if (is_project(nrel->op) && nrel->exps) {
+			for (node *ne = nrel->exps->h, *be = brel->exps->h; ne && be; ne = ne->next, be = be->next) {
+				sql_exp *e = ne->data;
+				sql_exp *b = be->data;
+				char *name = NULL;
+
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql, e, rname, name);
+					set_basecol(e);
+					e->alias.label = b->alias.label;
+				}
+			}
+		}
+		list_hash_clear(nrel->exps);
+	} else if (is_project(nrel->op) && nrel->exps) {
+		node *ne = nrel->exps->h;
+
+		for (; ne; ne = ne->next) {
+			sql_exp *e = ne->data;
+			char *name = NULL;
+
+			if (!is_intern(e)) {
+				if (!exp_name(e))
+					name = make_label(sql->sa, ++sql->label);
+				noninternexp_setname(sql, e, rname, name);
+				set_basecol(e);
+			}
+		}
+		list_hash_clear(nrel->exps);
+	}
+}
+
 sql_rel *
 rel_with_query(sql_query *query, symbol *q )
 {
@@ -275,7 +314,7 @@ rel_with_query(sql_query *query, symbol *q )
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h->next;
 		char *rname = qname_schema_object(dn->data.lval);
-		sql_rel *nrel;
+		sql_rel *nrel, *base_rel = NULL;
 		symbol *recursive_part = NULL;
 		sql_rel_view *recursive_union = NULL;
 		int recursive_distinct = 0;
@@ -307,7 +346,8 @@ rel_with_query(sql_query *query, symbol *q )
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (recursive && recursive_part) {
-			sql_rel *base_rel = nrel;
+			base_rel = nrel;
+			rel_rename(sql, base_rel, rname, base_rel);
 			dn->next->next->data.sym = recursive_part;
 			set_processed(nrel);
 			nrel = rel_semantic(query, sym);
@@ -352,23 +392,7 @@ rel_with_query(sql_query *query, symbol *q )
 				return NULL;
 			}
 		}
-		assert(is_project(nrel->op));
-		if (is_project(nrel->op) && nrel->exps) {
-			node *ne = nrel->exps->h;
-
-			for (; ne; ne = ne->next) {
-				sql_exp *e = ne->data;
-				char *name = NULL;
-
-				if (!is_intern(e)) {
-					if (!exp_name(e))
-						name = make_label(sql->sa, ++sql->label);
-					noninternexp_setname(sql, e, rname, name);
-					set_basecol(e);
-				}
-			}
-			list_hash_clear(nrel->exps);
-		}
+		rel_rename(sql, nrel, rname, base_rel);
 	}
 	rel = rel_semantic(query, next);
 	stack_pop_frame(sql);

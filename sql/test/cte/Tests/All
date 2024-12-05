@@ -6,7 +6,7 @@ recursive_cte_complex_pipelines
 #recursive_cte_correlated_subquery
 recursive_cte_error
 recursive_hang_2745
-#test_correlated_recursive_cte
+test_correlated_recursive_cte
 test_cte_in_cte
 test_cte_overflow
 test_cte

@@ -826,6 +826,19 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 {
 	sql_rel *r = rel->r;
 
+	if (rel_is_ref(r) && is_recursive(r)) {
+
+		if (is_join(rel->op) && is_dependent(rel)) {
+			sql_rel *l = r->l;
+			r->l = rel;
+			rel->r = l;
+			/* add missing expressions */
+			list *exps = rel_projections(sql, rel->l, NULL, 1, 1);
+			r->exps = list_distinct(list_merge(exps, r->exps, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+			return r;
+		}
+		assert(0);
+	}
 	assert(is_simple_project(r->op));
 	if (rel_is_ref(r)) {
 		sql_rel *nr = rel_project(sql->sa, r->l ? rel_dup(r->l) : NULL, exps_copy(sql, r->exps));
@@ -1579,12 +1592,18 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 		sql_rel *d = rel->l, *s = rel->r;
 		int need_distinct = is_semi(rel->op) && need_distinct(d);
 		int len = 0, need_length_reduction = 0;
+		int rec = is_recursive(s);
 
 		/* left of rel should be a set */
 		list *rlist = sa_list(sql->sa);
 		if (d && is_distinct_set(sql, d, ad) && s && is_munion(s->op)) {
 			list *iu = s->l;
-			for(node *n = iu->h; n; n = n->next) {
+			if (rec) {
+				sql_rel *r = iu->h->data;
+				set_recursive(r);
+				append(rlist, rel_dup(r));
+			}
+			for(node *n = rec?iu->h->next:iu->h; n; n = n->next) {
 				sql_rel *sl = n->data;
 				sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
 				for (node *n = sl->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
@@ -1611,7 +1630,7 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				}
 			}
 
-			for(node *n = rlist->h; n; n = n->next) {
+			for(node *n = rec?rlist->h->next:rlist->h; n; n = n->next) {
 				/* D djoin (sl setop sr) -> (D djoin sl) setop (D djoin sr) */
 				sql_rel *sl = n->data;
 				sl = rel_crossproduct(sql->sa, rel_dup(d), sl, rel->op);
@@ -1641,7 +1660,16 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				ns->exps = list_merge(sexps, ns->exps, (fdup)NULL);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
-			for(node *n = rlist->h; n; n = n->next) {
+			if (rec) {
+				sql_rel *sl = rlist->h->data;
+				list *exps = exps_copy(sql, ad);
+				for(node *n = exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					set_freevar(e, 0);
+				}
+				sl->exps = list_merge(exps, sl->exps, (fdup)NULL);
+			}
+			for(node *n = rec?rlist->h->next:rlist->h; n; n = n->next) {
 				sql_rel *sl = n->data;
 				n->data = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
 			}
