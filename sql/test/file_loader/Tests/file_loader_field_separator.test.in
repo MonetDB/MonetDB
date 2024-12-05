@@ -132,3 +132,57 @@ Lightyear
 0
 2022
 
+# tests to load incomplete cars (4 columns, 5 rows) data files with missing field separators or empty lines
+
+query ITTI nosort
+select * from file_loader(r'$TSTSRCDIR/cars_missing_separators.csv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+2020
+Volvo
+NULL
+NULL
+
+query ITTI nosort
+select * from file_loader(r'$TSTSRCDIR/cars_empty_line.csv') as cars(id, brand, model, "year")
+----
+2000
+Ford
+Focus
+1994
+2001
+Honda
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+2004
+Tesla
+S3XY
+2019
+2014
+Lightyear
+0
+2022
+NULL
+NULL
+NULL
+NULL
+
