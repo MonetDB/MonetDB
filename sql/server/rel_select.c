@@ -673,25 +673,31 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 	if (strcmp(uristr, "") == 0)
 		return "URI missing";
 
-	char *proto = uristr, *ep = strchr(uristr, ':');
-
+	char *proto = uristr;
+	char *ep = strchr(uristr, ':');
 	if (ep) {
 		*ep = 0;
 		proto = mkLower(sa_strdup(sql->sa, proto));
-	}
-	if (!proto)
-		return "URI protocol missing";
+	} else
+		return "Missing ':' separator to determine the URI scheme";
 
+	if (!proto)
+		return "URI scheme missing";
+
+	// check uri scheme on supported protocols (e.g. must be: 'file' or 'odbc' or 'monetdb')
 	proto_loader_t *pl = pl_find(proto);
 	if (!pl)
-		return sa_message(sql->ta, "URI extension '%s' missing", proto?proto:"");
+		return sa_message(sql->ta, "URI protocol '%s' not supported", proto?proto:"");
+
 	str err = pl->add_types(sql, f, uristr, res_exps, tname);
 	if (err)
 		return err;
+
 	sql_subtype *st = sql_bind_localtype("str");
 	sql_exp *proto_exp = exp_atom(sql->sa, atom_string(sql->sa, st, proto));
 	if (!proto_exp)
 		return MAL_MALLOC_FAIL;
+
 	append(exps, proto_exp);
 	return NULL;
 }
@@ -704,6 +710,7 @@ rel_proto_loader(mvc *sql, list *exps, list *tl, char *tname)
 
 	if ((f = bind_func_(sql, NULL, "proto_loader", tl, F_UNION, true, &found, false))) {
 		list *nexps = exps;
+		// TODO: test uri scheme on supported protocols (e.g. must be: 'file' or 'odbc' or 'monetdb')
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
