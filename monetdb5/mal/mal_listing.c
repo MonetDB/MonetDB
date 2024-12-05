@@ -61,33 +61,28 @@ copystring(char **dstp, const char *src, size_t *lenp)
 	return *src == 0;
 }
 
-static str
-renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
+static void
+renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf, size_t max_len)
 {
-	char *buf = 0;
+	char *bufend = buf;
 	int nameused = 0;
-	size_t max_len = 256;
 	ValRecord *val = 0;
 	char *cv = 0;
 	str tpe;
 	int showtype = 0, closequote = 0;
 	int varid = getArg(p, idx);
 
-	buf = GDKzalloc(max_len);
-	if (buf == NULL) {
-		addMalException(mb, "renderTerm: Failed to allocate");
-		return NULL;
-	}
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb, varid)
 		&& !isVarTypedef(mb, varid)) {
-		getVarNameIntoBuffer(mb, varid, buf);
+		(void) getVarNameIntoBuffer(mb, varid, bufend);
+		bufend += strlen(bufend);
 		nameused = 1;
 	}
 	// show the value when required or being a constant
 	if (((flg & LIST_MAL_VALUE) && stk != 0) || isVarConstant(mb, varid)) {
 		if (nameused)
-			strcat(buf, "=");
+			bufend = stpcpy(bufend, "=");
 		// locate value record
 		if (isVarConstant(mb, varid)) {
 			val = &getVarConstant(mb, varid);
@@ -96,14 +91,11 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		} else if (stk) {
 			val = &stk->stk[varid];
 		}
-		if ((cv = VALformat(val)) == NULL) {
-			addMalException(mb, "renderTerm: Failed to allocate");
-			GDKfree(buf);
-			return NULL;
-		}
-		if (!val->bat && strcmp(cv, "nil") == 0) {
-			strcat(buf, cv);
-			GDKfree(cv);
+		cv = VALformat(val);
+		if (cv == NULL) {
+			bufend = stpcpy(bufend, "<alloc failed...>");
+		} else if (!val->bat && strcmp(cv, "nil") == 0) {
+			bufend = stpcpy(bufend, cv);
 			showtype = showtype ||
 				(getBatType(getVarType(mb, varid)) >= TYPE_date
 				 && getBatType(getVarType(mb, varid)) != TYPE_str) ||
@@ -114,18 +106,22 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				&& getBatType(getVarType(mb, varid)) >= TYPE_date
 				&& getBatType(getVarType(mb, varid)) != TYPE_str) {
 				closequote = 1;
-				strcat(buf, "\"");
+				bufend = stpcpy(bufend, "\"");
 			}
 			size_t cv_len = strlen(cv);
 			if (cv_len > 100) {
-				strcpy_len(buf, cv, 101); /* 1 for null termination */
-				strconcat_len(buf + 100, max_len - 100, "\" ..... ", NULL);
+				cv_len = 100;
+				if (cv_len > (size_t) ((buf + max_len) - bufend))
+					cv_len = (buf + max_len) - bufend - 1;
+				strcpy_len(bufend, cv, cv_len + 1); /* 1 for null termination */
+				bufend += cv_len;
+				cv_len = strconcat_len(bufend, (buf + max_len) - bufend, "\" ..... ", NULL);
+				bufend += cv_len;
 			} else {
-				strcat(buf, cv);
+				bufend = stpcpy(bufend, cv);
 			}
-			GDKfree(cv);
 			if (closequote) {
-				strcat(buf, "\"");
+				bufend = stpcpy(bufend, "\"");
 			}
 			showtype = showtype || closequote > TYPE_str ||
 				((isVarTypedef(mb, varid) ||
@@ -136,21 +132,21 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				&& stk->stk[varid].val.bval) {
 				BAT *d = BBPquickdesc(stk->stk[varid].val.bval);
 				if (d)
-					snprintf(buf, max_len - strlen(buf), "[" BUNFMT "]", BATcount(d));
+					bufend += snprintf(bufend, (buf + max_len) - bufend, "[" BUNFMT "]", BATcount(d));
 			}
 		}
+		GDKfree(cv);
 	}
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
 	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb, varid)
 		|| showtype) {
-		size_t buf_len = strlen(buf);
 		tpe = getTypeName(getVarType(mb, varid));
-		strconcat_len(buf + buf_len, max_len - buf_len, ":", tpe, NULL);
-		GDKfree(tpe);
+		if (tpe) {
+			strconcat_len(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
+			GDKfree(tpe);
+		}
 	}
-
-	return buf;
 }
 
 /*
@@ -268,7 +264,8 @@ str
 fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 {
 	int i, j;
-	str arg, tpe;
+	char arg[256];
+	str tpe;
 
 	len -= t - base;
 	if (!flg && !copystring(&t, "#", &len))
@@ -285,13 +282,11 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 		return base;
 
 	for (i = p->retc; i < p->argc; i++) {
-		arg = renderTerm(mb, 0, p, i,
-						 (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
-		if (arg && !copystring(&t, arg, &len)) {
-			GDKfree(arg);
+		renderTerm(mb, 0, p, i,
+				   (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS),
+				   arg, sizeof(arg));
+		if (!copystring(&t, arg, &len))
 			return base;
-		}
-		GDKfree(arg);
 		if (i < p->argc - 1 && !copystring(&t, ", ", &len))
 			return base;
 	}
@@ -315,13 +310,11 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 		if (!copystring(&t, ") (", &len))
 			return base;
 		for (i = 0; i < p->retc; i++) {
-			arg = renderTerm(mb, 0, p, i,
-							 (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS));
-			if (arg && !copystring(&t, arg, &len)) {
-				GDKfree(arg);
+			renderTerm(mb, 0, p, i,
+					   (LIST_MAL_NAME | LIST_MAL_TYPE | LIST_MAL_PROPS),
+					   arg, sizeof(arg));
+			if (!copystring(&t, arg, &len))
 				return base;
-			}
-			GDKfree(arg);
 			if (i < p->retc - 1 && !copystring(&t, ", ", &len))
 				return base;
 		}
@@ -381,18 +374,17 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 
 	if (pci->argc == 3) {
 		if (getFunctionId(pci)) {
-			char *arg1 = renderTerm(mb, stk, pci, 1, flg);
-			char *arg2 = renderTerm(mb, stk, pci, 2, flg);
-			if (arg1 && arg2) {
-				const char *f = getFunctionId(pci);
-				if (strcmp(f, "total") == 0)
-					snprintf(aux, 128, "%d optimizers %ld usecs", atoi(arg1), atol(arg2));
-				else
-					snprintf(aux, 128, "%-36s %d actions %ld usecs", f, atoi(arg1), atol(arg2));
-				(void) copystring(&t, aux, &len);
-			}
-			GDKfree(arg1);
-			GDKfree(arg2);
+			char arg[256];
+			renderTerm(mb, stk, pci, 1, flg, arg, sizeof(arg));
+			int a1 = atoi(arg);
+			renderTerm(mb, stk, pci, 2, flg, arg, sizeof(arg));
+			long a2 = atol(arg);
+			const char *f = getFunctionId(pci);
+			if (strcmp(f, "total") == 0)
+				snprintf(aux, 128, "%d optimizers %ld usecs", a1, a2);
+			else
+				snprintf(aux, 128, "%-36s %d actions %ld usecs", f, a1, a2);
+			(void) copystring(&t, aux, &len);
 		}
 	} else if (pci->argc == 1) {
 		if (getFunctionId(pci)) {
@@ -457,7 +449,6 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	int i, j;
 	str base, t;
 	size_t len = 512 + (p->argc * 128);	/* max realistic line length estimate */
-	str arg;
 
 	t = base = GDKmalloc(len);
 	if (base == NULL)
@@ -482,8 +473,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 			if (!copystring(&t, "    ", &len))
 				return base;
 		}
-		arg = operatorName(p->barrier);
-		if (!copystring(&t, arg, &len) || !copystring(&t, " ", &len))
+		if (!copystring(&t, operatorName(p->barrier), &len) || !copystring(&t, " ", &len))
 			return base;
 	} else if (functionStart(p) && flg != LIST_MAL_CALL) {
 		return fcnDefinition(mb, p, t, flg, base, len + (t - base));
@@ -514,14 +504,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 			return base;
 
 		for (i = 0; i < p->retc; i++) {
-			arg = renderTerm(mb, stk, p, i, flg);
-			if (arg) {
-				if (!copystring(&t, arg, &len)) {
-					GDKfree(arg);
-					return base;
-				}
-				GDKfree(arg);
-			}
+			char arg[256];
+			renderTerm(mb, stk, p, i, flg, arg, sizeof(arg));
+			if (!copystring(&t, arg, &len))
+				return base;
 			if (i < p->retc - 1 && !copystring(&t, ", ", &len))
 				return base;
 		}
@@ -573,15 +559,10 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 			return base;
 	}
 	for (i = p->retc; i < p->argc; i++) {
-		arg = renderTerm(mb, stk, p, i, flg);
-		if (arg) {
-			if (!copystring(&t, arg, &len)) {
-				GDKfree(arg);
+		char arg[256];
+		renderTerm(mb, stk, p, i, flg, arg, sizeof(arg));
+		if (!copystring(&t, arg, &len))
 				return base;
-			}
-			GDKfree(arg);
-		}
-
 		if (i < p->argc - 1 && !copystring(&t, ", ", &len))
 			return base;
 	}
