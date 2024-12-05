@@ -1357,7 +1357,7 @@ NULL
 
 query RR nosort
 select covar_samp(bb, aa) over (rows 2 preceding),
-       covar_samp(10, bb) over (partition by bb order by bb rows 2 preceding) from analytics
+       covar_samp(10, bb) over (partition by bb order by bb, aa rows 2 preceding) from analytics
 ----
 NULL
 NULL
@@ -1371,9 +1371,9 @@ NULL
 0.000
 0.000
 0.000
-3.167
+-0.167
 NULL
-0.667
+-0.833
 0.000
 0.000
 0.000

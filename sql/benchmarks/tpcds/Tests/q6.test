@@ -1,0 +1,117 @@
+query TI rowsort
+-- query 6
+select  a.ca_state state, count(*) cnt
+ from customer_address a
+     ,customer c
+     ,store_sales s
+     ,date_dim d
+     ,item i
+ where       a.ca_address_sk = c.c_current_addr_sk
+ 	and c.c_customer_sk = s.ss_customer_sk
+ 	and s.ss_sold_date_sk = d.d_date_sk
+ 	and s.ss_item_sk = i.i_item_sk
+ 	and d.d_month_seq =
+ 	     (select distinct (d_month_seq)
+ 	      from date_dim
+               where d_year = 2001
+ 	        and d_moy = 1 )
+ 	and i.i_current_price > 1.2 *
+             (select avg(j.i_current_price)
+ 	     from item j
+ 	     where j.i_category = i.i_category)
+ group by a.ca_state
+ having count(*) >= 10
+ order by cnt, a.ca_state
+ limit 100
+----
+AK
+21
+AL
+49
+AR
+73
+CA
+60
+CO
+48
+FL
+49
+GA
+153
+IA
+96
+ID
+36
+IL
+106
+IN
+76
+KS
+80
+KY
+103
+LA
+49
+MA
+24
+MD
+19
+ME
+16
+MI
+83
+MN
+81
+MO
+83
+MS
+69
+MT
+55
+NC
+107
+ND
+28
+NE
+87
+NH
+21
+NJ
+18
+NM
+36
+NULL
+73
+NV
+26
+NY
+52
+OH
+102
+OK
+57
+OR
+27
+PA
+56
+SC
+47
+SD
+35
+TN
+74
+TX
+228
+UT
+31
+VA
+137
+VT
+14
+WA
+46
+WI
+53
+WV
+45
+

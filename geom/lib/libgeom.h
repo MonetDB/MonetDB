@@ -122,11 +122,6 @@ typedef struct wkb {
 	char data[];
 } wkb;
 
-typedef struct wkba {
-	int itemsNum; //the number of wkbs
-	wkb* data[]; //the wkbs
-} wkba;
-
 typedef struct {
 	unsigned char type;
 	mbr bbox;

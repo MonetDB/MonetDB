@@ -187,8 +187,7 @@
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi->base;	\
 		heapify(OP##fix, SWAP1);				\
-		while (cnt > 0) {					\
-			cnt--;						\
+		TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {			\
 			i = canditer_next(&ci);				\
 			if (OP(vals[i - hseq],				\
 			       vals[oids[0] - hseq])) {			\
@@ -214,7 +213,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 	BAT *bn;
 	oid *restrict oids;
 	oid hseq = bi->b->hseqbase;
-	BUN i, cnt;
+	BUN i;
 	struct canditer ci;
 	int tpe = bi->type;
 	int (*cmp)(const void *, const void *);
@@ -225,9 +224,8 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 
 	MT_thread_setalgorithm(__func__);
 	canditer_init(&ci, bi->b, s);
-	cnt = ci.ncand;
 
-	if (n >= cnt) {
+	if (n >= ci.ncand) {
 		/* trivial: return all candidates */
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		if (bn && lastp)
@@ -258,7 +256,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 		}
 		/* return the last part of the candidate list or of
 		 * the BAT itself */
-		bn = canditer_slice(&ci, cnt - n, cnt);
+		bn = canditer_slice(&ci, ci.ncand - n, ci.ncand);
 		if (bn && lastp)
 			*lastp = BUNtoid(bn, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
@@ -281,18 +279,18 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 		if (nilslast == asc && !bi->nonil) {
 			pos = SORTfndlast(bi->b, ATOMnilptr(tpe));
 			pos = canditer_search(&ci, hseq + pos, true);
-			/* 0 <= pos <= cnt
-			 * 0 < n < cnt
+			/* 0 <= pos <= ci.ncand
+			 * 0 < n < ci.ncand
 			 */
 			if (bi->sorted) {
 				/* [0..pos) -- nil
-				 * [pos..cnt) -- non-nil <<<
+				 * [pos..ci.ncand) -- non-nil <<<
 				 */
 				if (asc) { /* i.e. nilslast */
 					/* prefer non-nil and
 					 * smallest */
-					if (cnt - pos < n) {
-						bn = canditer_slice(&ci, cnt - n, cnt);
+					if (ci.ncand - pos < n) {
+						bn = canditer_slice(&ci, ci.ncand - n, ci.ncand);
 						pos = 0;
 					} else {
 						bn = canditer_slice(&ci, pos, pos + n);
@@ -301,7 +299,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				} else { /* i.e. !asc, !nilslast */
 					/* prefer nil and largest */
 					if (pos < n) {
-						bn = canditer_slice2(&ci, 0, pos, cnt - (n - pos), cnt);
+						bn = canditer_slice2(&ci, 0, pos, ci.ncand - (n - pos), ci.ncand);
 						/* pos = pos; */
 					} else {
 						bn = canditer_slice(&ci, 0, n);
@@ -310,7 +308,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				}
 			} else { /* i.e. trevsorted */
 				/* [0..pos) -- non-nil >>>
-				 * [pos..cnt) -- nil
+				 * [pos..ci.ncand) -- nil
 				 */
 				if (asc) { /* i.e. nilslast */
 					/* prefer non-nil and
@@ -324,9 +322,9 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 					}
 				} else { /* i.e. !asc, !nilslast */
 					/* prefer nil and largest */
-					if (cnt - pos < n) {
-						bn = canditer_slice2(&ci, 0, n - (cnt - pos), pos, cnt);
-						pos = n - (cnt - pos) - 1;
+					if (ci.ncand - pos < n) {
+						bn = canditer_slice2(&ci, 0, n - (ci.ncand - pos), pos, ci.ncand);
+						pos = n - (ci.ncand - pos) - 1;
 					} else {
 						bn = canditer_slice(&ci, pos, pos + n);
 						pos = 0;
@@ -345,7 +343,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 			} else {
 				/* return copy of last part of
 				 * candidate list */
-				bn = canditer_slice(&ci, cnt - n, cnt);
+				bn = canditer_slice(&ci, ci.ncand - n, ci.ncand);
 				pos = 0;
 			}
 		}
@@ -382,14 +380,15 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 		for (i = 0; i < n; i++)
 			oids[i] = canditer_next(&ci);
 	} else {
-		item = canditer_idx(&ci, cnt - n);
-		ci.next = cnt - n;
-		ci.add = item - ci.seq - (cnt - n);
+		item = canditer_idx(&ci, ci.ncand - n);
+		ci.next = ci.ncand - n;
+		ci.add = item - ci.seq - (ci.ncand - n);
 		for (i = n; i > 0; i--)
 			oids[i - 1] = canditer_next(&ci);
 		canditer_reset(&ci);
 	}
-	cnt -= n;
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	if (asc) {
 		if (nilslast && !bi->nonil) {
@@ -419,8 +418,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				break;
 			default:
 				heapify(nLTany, SWAP1);
-				while (cnt > 0) {
-					cnt--;
+				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
 					if (cmp(BUNtail(*bi, i - hseq), nil) != 0
 					    && (cmp(BUNtail(*bi, oids[0] - hseq), nil) == 0
@@ -459,8 +457,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				break;
 			default:
 				heapify(LTany, SWAP1);
-				while (cnt > 0) {
-					cnt--;
+				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
 					if (cmp(BUNtail(*bi, i - hseq),
 						BUNtail(*bi, oids[0] - hseq)) < 0) {
@@ -499,8 +496,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				break;
 			default:
 				heapify(GTany, SWAP1);
-				while (cnt > 0) {
-					cnt--;
+				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
 					if (cmp(BUNtail(*bi, i - hseq),
 						BUNtail(*bi, oids[0] - hseq)) > 0) {
@@ -537,8 +533,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 				break;
 			default:
 				heapify(nGTany, SWAP1);
-				while (cnt > 0) {
-					cnt--;
+				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
 					if (cmp(BUNtail(*bi, oids[0] - hseq), nil) != 0
 					    && (cmp(BUNtail(*bi, i - hseq), nil) == 0
@@ -552,6 +547,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 			}
 		}
 	}
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	if (lastp)
 		*lastp = oids[0]; /* store id of largest value */
 	/* output must be sorted since it's a candidate list */
@@ -569,6 +565,10 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 		  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), n,
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
+
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 #define LTfixgrp(p1, p2)			\
@@ -687,8 +687,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 	do {								\
 		const TYPE *restrict vals = (const TYPE *) bi->base;	\
 		heapify(OP##fixgrp, SWAP2);				\
-		while (cnt > 0) {					\
-			cnt--;						\
+		TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {			\
 			i = canditer_next(&ci);				\
 			if (gv[j] < goids[0] ||				\
 			    (gv[j] == goids[0] &&			\
@@ -720,7 +719,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	oid *restrict oids, *restrict goids;
 	oid hseq = bi->b->hseqbase;
 	const oid *restrict gv;
-	BUN i, j, cnt;
+	BUN i, j;
 	struct canditer ci;
 	int tpe = bi->type;
 	int (*cmp)(const void *, const void *);
@@ -731,10 +730,9 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 
 	MT_thread_setalgorithm(__func__);
 	canditer_init(&ci, bi->b, s);
-	cnt = ci.ncand;
 
-	if (n > cnt)
-		n = cnt;
+	if (n > ci.ncand)
+		n = ci.ncand;
 
 	if (n == 0) {
 		/* candidate list might refer only to values outside
@@ -790,14 +788,14 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 		oids[i] = canditer_next(&ci);
 		goids[i] = gv[j++];
 	}
-	cnt -= n;
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	if (BATtvoid(bi->b)) {
 		/* nilslast doesn't make a difference (all nil, or no nil) */
 		if (asc) {
 			heapify(LTvoidgrp, SWAP2);
-			while (cnt > 0) {
-				cnt--;
+			TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0]
 				    /* || (gv[j] == goids[0]
@@ -810,8 +808,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 			}
 		} else {
 			heapify(GTvoidgrp, SWAP2);
-			while (cnt > 0) {
-				cnt--;
+			TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0]
 				    || (gv[j] == goids[0]
@@ -851,8 +848,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 				break;
 			default:
 				heapify(nLTanygrp, SWAP2);
-				while (cnt > 0) {
-					cnt--;
+				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0]
 					    || (gv[j] == goids[0]
@@ -895,8 +891,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 				break;
 			default:
 				heapify(LTanygrp, SWAP2);
-				while (cnt > 0) {
-					cnt--;
+				TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 					i = canditer_next(&ci);
 					if (gv[j] < goids[0] ||
 					    (gv[j] == goids[0] &&
@@ -938,8 +933,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 			break;
 		default:
 			heapify(GTanygrp, SWAP2);
-			while (cnt > 0) {
-				cnt--;
+			TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0] ||
 				    (gv[j] == goids[0] &&
@@ -980,8 +974,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 			break;
 		default:
 			heapify(nGTanygrp, SWAP2);
-			while (cnt > 0) {
-				cnt--;
+			TIMEOUT_LOOP(ci.ncand - n, qry_ctx) {
 				i = canditer_next(&ci);
 				if (gv[j] < goids[0]
 				    || (gv[j] == goids[0]
@@ -998,6 +991,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 			break;
 		}
 	}
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	if (lastp)
 		*lastp = oids[0];
 	if (lastgp)
@@ -1017,6 +1011,11 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 		  ALGOBATPAR(bi->b), ALGOOPTBATPAR(s), ALGOBATPAR(g), n,
 		  ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
+
+  bailout:
+	GDKfree(goids);
+	BBPreclaim(bn);
+	return NULL;
 }
 
 static gdk_return
@@ -1328,4 +1327,202 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, bool asc, bool 
 	}
 	bat_iterator_end(&bi);
 	return rc;
+}
+
+/* Calculate the first N values for each group given in G of the bats in
+ * BATS (of which there are NBATS), but only considering the candidates
+ * in S.
+ *
+ * Conceptually, the bats in BATS are sorted per group, taking the
+ * candidate list S and the values in ASC and NILSLAST into account.
+ * For each group, the first N rows are then returned.
+ *
+ * For each bat, the sort order that is to be used is specified in the
+ * array ASC.  The first N values means the smallest N values if asc is
+ * set, the largest if not set.  If NILSLAST for a bat is set, nils are
+ * only returned if there are not enough non-nil values; if nilslast is
+ * not set, nils are returned preferentially.
+ *
+ * The return value is a bat with N consecutive values for each group in
+ * G.  Values are nil if there are not enough values in the group, else
+ * they are row ids of the first rows.
+ */
+BAT *
+BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
+{
+	const char *err;
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	struct batinfo {
+		BATiter bi1;
+		BATiter bi2;
+		oid hseq;
+		bool asc;
+		bool nilslast;
+		const void *nil;
+		int (*cmp)(const void *, const void *);
+	} *batinfo;
+
+	assert(nbats > 0);
+
+	if (n == 0 || BATcount(bats[0]) == 0) {
+		return BATdense(0, 0, 0);
+	}
+	if (n > BATcount(bats[0]))
+		n = BATcount(bats[0]);
+
+	if ((err = BATgroupaggrinit(bats[0], g, NULL /* e */, s, &min, &max, &ngrp, &ci)) != NULL) {
+		GDKerror("%s\n", err);
+		return NULL;
+	}
+
+	batinfo = GDKmalloc(nbats * sizeof(struct batinfo));
+	if (batinfo == NULL)
+		return NULL;
+
+	BAT *bn = BATconstant(0, TYPE_oid, &oid_nil, ngrp * n, TRANSIENT);
+	if (bn == NULL) {
+		GDKfree(batinfo);
+		return NULL;
+	}
+	/* result is unlikely to be sorted, and there may be nils if
+	 * there are groups that are too small */
+	bn->tsorted = bn->trevsorted = bn->batCount <= 1;
+	bn->tnil = false;
+	bn->tnonil = false;
+
+	for (int i = 0; i < nbats; i++) {
+		batinfo[i] = (struct batinfo) {
+			.bi1 = bat_iterator(bats[i]),
+			.bi2 = bat_iterator(bats[i]),
+			.asc = asc ? asc[i] : false,
+			.nilslast = nilslast ? nilslast[i] : true,
+			.cmp = ATOMcompare(bats[i]->ttype),
+			.hseq = bats[i]->hseqbase,
+			.nil = ATOMnilptr(bats[i]->ttype),
+		};
+	}
+
+	/* For each group we maintain a "heap" of N values inside the
+	 * return bat BN.  The heap for group GRP is located in BN at
+	 * BUN [grp*N..(grp+1)*N).  The first value in this heap is the
+	 * "largest" (assuming all ASC bits are set) value so far. */
+	oid *oids = Tloc(bn, 0);
+	TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+		oid o = canditer_next(&ci);
+		oid grp = g ? BUNtoid(g, o - g->hseqbase) : 0;
+		BUN goff = grp * n;
+		int comp = -1;
+		/* compare new value with root of heap to see if we must
+		 * keep or replace */
+		if (!is_oid_nil(oids[goff])) {
+			for (int i = 0; i < nbats; i++) {
+				comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
+						      BUNtail(batinfo[i].bi2, oids[goff] - batinfo[i].hseq));
+				if (comp == 0)
+					continue;
+				if (!batinfo[i].asc)
+					comp = -comp;
+				if (!batinfo[i].bi1.nonil) {
+					if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, o - batinfo[i].hseq),
+							   batinfo[i].nil) == 0) {
+						if (batinfo[i].nilslast)
+							comp = 1;
+						else
+							comp = -1;
+					} else if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff] - batinfo[i].hseq),
+								  batinfo[i].nil) == 0) {
+						if (batinfo[i].nilslast)
+							comp = -1;
+						else
+							comp = 1;
+					}
+				}
+				break;
+			}
+		}
+		/* at this point, if comp==0, the incoming value is
+		 * equal to what we currently have as the last of the
+		 * first-n and so we skip it; if comp<0, the incoming
+		 * value is better than the worst so far, so it replaces
+		 * that one, and if comp>0, the incoming value is
+		 * definitely not in the first-n */
+		if (comp >= 0)
+			continue;
+		oids[goff] = o;
+		/* we replaced the root of the heap, but now we need to
+		 * restore the heap property */
+		BUN pos = 0;
+		BUN childpos = 1;
+		while (childpos < n) {
+			/* find most extreme child */
+			if (childpos + 1 < n) {
+				if (!is_oid_nil(oids[goff + childpos])) {
+					if (is_oid_nil(oids[goff + childpos + 1]))
+						childpos++;
+					else {
+						for (int i = 0; i < nbats; i++) {
+							if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq),
+										   BUNtail(batinfo[i].bi2, oids[goff + childpos + 1] - batinfo[i].hseq))) == 0)
+								continue;
+							if (!batinfo[i].bi1.nonil) {
+								if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0) {
+									if (!batinfo[i].nilslast)
+										childpos++;
+									break;
+								}
+								if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos + 1] - batinfo[i].hseq), batinfo[i].nil) == 0) {
+									if (batinfo[i].nilslast)
+										childpos++;
+									break;
+								}
+							}
+							if (batinfo[i].asc ? comp < 0 : comp > 0)
+								childpos++;
+							break;
+						}
+					}
+				}
+			}
+			/* compare parent with most extreme child */
+			if (!is_oid_nil(oids[goff + childpos])) {
+				for (int i = 0; i < nbats; i++) {
+					if ((comp = batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq),
+								   BUNtail(batinfo[i].bi2, oids[goff + childpos] - batinfo[i].hseq))) == 0)
+						continue;
+					if (batinfo[i].asc ? comp > 0 : comp < 0)
+						comp = 0;
+					if (!batinfo[i].bi1.nonil) {
+						if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + pos] - batinfo[i].hseq), batinfo[i].nil) == 0)
+							comp = !batinfo[i].nilslast;
+						else if (batinfo[i].cmp(BUNtail(batinfo[i].bi1, oids[goff + childpos] - batinfo[i].hseq), batinfo[i].nil) == 0)
+							comp = batinfo[i].nilslast;
+					}
+					break;
+				}
+				if (comp == 0) {
+					/* already correctly ordered */
+					break;
+				}
+			}
+			oid o = oids[goff + pos];
+			oids[goff + pos] = oids[goff + childpos];
+			oids[goff + childpos] = o;
+			pos = childpos;
+			childpos = (pos << 1) + 1;
+		}
+	}
+	for (int i = 0; i < nbats; i++) {
+		bat_iterator_end(&batinfo[i].bi1);
+		bat_iterator_end(&batinfo[i].bi2);
+	}
+	GDKfree(batinfo);
+	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+	return bn;
+
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }

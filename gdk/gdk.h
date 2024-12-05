@@ -1863,6 +1863,25 @@ bunfastapp(BAT *b, const void *v)
 	return rc;
 }
 
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+bunfastappOID(BAT *b, oid o)
+{
+	BUN p = b->batCount;
+	if (p >= BATcapacity(b)) {
+		if (p >= BUN_MAX) {
+			GDKerror("tfastins: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	((oid *) b->theap->base)[b->batCount++] = o;
+	b->theap->free += sizeof(oid);
+	return GDK_SUCCEED;
+}
+
 #define bunfastappTYPE(TYPE, b, v)					\
 	(BATcount(b) >= BATcapacity(b) &&				\
 	 ((BATcount(b) == BUN_MAX &&					\
@@ -2320,6 +2339,8 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
+	__attribute__((__warn_unused_result__));
+gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
 	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"

@@ -682,7 +682,7 @@ int yydebug=1;
 	LEX_ERROR
 
 /* the tokens used in geom */
-%token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA
+%token <sval> GEOMETRY GEOMETRYSUBTYPE
 
 %token	USER CURRENT_USER SESSION_USER LOCAL BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION CURRENT_SCHEMA CURRENT_TIMEZONE
@@ -5891,13 +5891,6 @@ data_type:
 			YYABORT;
 		} else if (!sql_find_subtype(&$$, "geometry", geoSubType, srid )) {
 			sqlformaterror(m, SQLSTATE(22000) "Type (%s) unknown", $1);
-			$$.type = NULL;
-			YYABORT;
-		}
-	}
-| GEOMETRYA {
-		if (!sql_find_subtype(&$$, "geometrya", 0, 0 )) {
-			sqlformaterror(m, "%s", SQLSTATE(22000) "Type (geometrya) unknown");
 			$$.type = NULL;
 			YYABORT;
 		}
