@@ -1637,8 +1637,8 @@ str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_auto_commit
 str number2name(str s, int len, int i);
 bool option_disable_fork;
 sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
-int pl_register(char *name, pl_add_types_fptr add_types, pl_load_fptr pl_load);
-void pl_unregister(char *name);
+int pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr pl_load);
+void pl_unregister(const char *name);
 void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);
 cq *qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
