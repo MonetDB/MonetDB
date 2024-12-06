@@ -3095,6 +3095,10 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 
 		sql_rel *r;
 
+		assert(!is_union(u->op));
+		if (is_recursive(u))
+			return rel;
+
 		/* don't push project down union of single values */
 		for (node *n = ((list*)u->l)->h; n; n = n->next) {
 			r = n->data;
@@ -3248,7 +3252,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		if (is_munion(l->op) && is_munion(r->op) && list_length(l->l) != list_length(r->l))
 			return rel;
 
-		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
+		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) && !is_recursive(l) &&
 		   !is_munion(r->op)){
 			/* join(munion(a,b,c), d) -> munion(join(a,d), join(b,d), join(c,d)) */
 			list *js = sa_list(v->sql->sa);
@@ -3272,8 +3276,8 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel_inplace_setop_n_ary(v->sql, rel, js, op_munion,
 					                       rel_projections(v->sql, rel, NULL, 1, 1));
-		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
-			       is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) && !is_recursive(l) &&
+			       is_munion(r->op) && !need_distinct(r) && !is_single(r) && !is_recursive(r) &&
 			       je) {
 			/* join(munion(a,b,c), munion(d,e,f)) -> munion(join(a,d), join(b,e), join(c,f)) */
 			list *cps = sa_list(v->sql->sa);
@@ -3311,7 +3315,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			return rel_inplace_setop_n_ary(v->sql, rel, cps, op_munion,
 										   rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_munion(l->op) &&
-			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			        is_munion(r->op) && !need_distinct(r) && !is_single(r) && !is_recursive(r) &&
 			       !is_semi(rel->op)) {
 			/* join(a, munion(b,c,d)) -> munion(join(a,b), join(a,c), join(a,d)) */
 			list *js = sa_list(v->sql->sa);
@@ -3336,7 +3340,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			return rel_inplace_setop_n_ary(v->sql, rel, js, op_munion,
 					                       rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_munion(l->op) &&
-			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			        is_munion(r->op) && !need_distinct(r) && !is_single(r) && !is_recursive(r) &&
 			        is_semi(rel->op) && je) {
 			/* {semi}join ( A1, munion (B, A2a, C, A2b)) [A1.partkey = A2.partkey] ->
 			 * {semi}join ( A1, munion (A2a, A2b))

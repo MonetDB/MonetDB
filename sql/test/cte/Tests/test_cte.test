@@ -94,42 +94,43 @@ select * from vb
 43
 
 # cte in set operation node
-skipif knownfail
+#SELECT 1 UNION ALL (WITH cte AS (SELECT 42) SELECT * FROM cte);
 query I
-SELECT 1 UNION ALL (WITH cte AS (SELECT 42) SELECT * FROM cte);
+SELECT 1 UNION ALL (select * from (WITH cte AS (SELECT 42) SELECT * FROM cte) as a)
 ----
 1
 42
 
 # cte in recursive cte
-skipif knownfail
 query I
 WITH RECURSIVE cte(d) AS (
 		SELECT 1
 	UNION ALL
+		(select * from
 		(WITH c(d) AS (SELECT * FROM cte)
 			SELECT d + 1
 			FROM c
 			WHERE FALSE
-		)
+		) as a)
 )
 SELECT max(d) FROM cte;
 ----
 1
 
 ## test CTE with nested aliases in where clause
-#query II
-#with cte (a) as (
-#   select 1
-#)
-#select
-#   a as alias1,
-#   alias1 as alias2
-#from cte
-#where alias2 > 0;
-#----
-#1
-#1
+# incorrect query was corrected
+query II
+with cte (a) as (
+   select 1
+)
+select
+   a as alias1,
+   a as alias2
+from cte
+where a > 0;
+----
+1
+1
 
 # recursive CTE and a non-recursive CTE with except
 query I
