@@ -1,8 +1,8 @@
-MAPI  = monetdb@localhost:37045
+MAPI  = monetdb@localhost:50000
 QUERY = prepare select * from env() as env where ? = ?;
 ERROR = !Cannot have a parameter (?) on both sides of an expression
 CODE  = 42000
-MAPI  = monetdb@localhost:37045
+MAPI  = monetdb@localhost:50000
 QUERY = prepare select ? from env() as env;
 ERROR = !Could not determine type for argument number 1
 CODE  = 42000

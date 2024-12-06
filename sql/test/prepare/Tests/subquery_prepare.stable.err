@@ -1,4 +1,4 @@
-MAPI  = monetdb@localhost:37045
+MAPI  = monetdb@localhost:50000
 QUERY = PREPARE SELECT
         	(SELECT ? FROM evilfunction((SELECT 1))) 
         FROM another_T;
