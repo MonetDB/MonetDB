@@ -1205,7 +1205,7 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int dir, int nullslast, int nr_obe, int order)
+stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int nr_obe, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1240,7 +1240,7 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		c = k;
 	}
 	if (order) {
-		if (piv) {
+		if (piv && piv->q) {
 			q = piv->q;
 			q = pushArgument(mb, q, c);
 			q = pushBit(mb, q, dir);
@@ -1257,23 +1257,49 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			topn = getDestVar(q);
 			pushInstruction(mb, q);
 
-			q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
-			if (q == NULL)
-				goto bailout;
-			q = pushArgument(mb, q, topn);
-			q = pushNilBat(mb, q);	/* candidates */
-			if (g)					/* grouped case */
-				q = pushArgument(mb, q, g);
-			else
-				q = pushNilBat(mb, q);
+			if (!gid || (piv && !piv->q)) { /* use algebra.firstn (possibly concurrently) */
+				int p = (piv) ? piv->nr : 0;
+				q = newStmtArgs(mb, algebraRef, firstnRef, 9);
+				if (q == NULL)
+					goto bailout;
+				if (nr_obe > 1) /* we need the groups for the next firstn */
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				if (p)
+					q = pushArgument(mb, q, p);
+				else
+					q = pushNilBat(mb, q);
+				if (g)
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+				q = pushArgument(mb, q, topn);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+				q = pushBit(mb, q, distinct != 0);
 
-			q = pushArgument(mb, q, c);
-			q = pushBit(mb, q, dir);
-			q = pushBit(mb, q, nullslast);
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			} else {
+				q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
+				if (q == NULL)
+					goto bailout;
+				q = pushArgument(mb, q, topn);
+				q = pushNilBat(mb, q);	/* candidates */
+				if (g)					/* grouped case */
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
 
-			l = getArg(q, 0);
-			l = getDestVar(q);
-			pushInstruction(mb, q);
+				q = pushArgument(mb, q, c);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			}
 		}
 	} else {
 		int len;
