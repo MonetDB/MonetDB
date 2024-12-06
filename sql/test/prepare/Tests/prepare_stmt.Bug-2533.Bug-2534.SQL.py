@@ -6,7 +6,4 @@ with SQLTestCase() as tc:
     with open('prepare_stmt.Bug-2533.Bug-2534.sql') as f:
         tc.execute(query=None, client='mclient', stdin=f)\
             .assertSucceeded()\
-            .assertMatchStableOut(fout='prepare_stmt.Bug-2533.Bug-2534.stable.out')\
-
-
-
+            .assertMatchStableOut(fout='prepare_stmt.Bug-2533.Bug-2534.stable.out')
