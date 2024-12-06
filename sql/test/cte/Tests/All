@@ -3,7 +3,6 @@ game_of_life
 incorrect_recursive_cte
 insert_cte_bug_3417
 recursive_cte_complex_pipelines
-#recursive_cte_correlated_subquery
 recursive_cte_error
 recursive_hang_2745
 test_correlated_recursive_cte
