@@ -15,7 +15,7 @@
 #include "pipeline.h"
 
 static int
-var_atom_cmp(int type, void *l, void *r)
+var_atom_cmp(int type, void *l, void *r, bool desc)
 {
 	void *nil = ATOMnil(type);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);
@@ -26,9 +26,9 @@ var_atom_cmp(int type, void *l, void *r)
 	if (lnil && rnil)
 		return 0;
 	if (lnil)
-		return 1;
+		return desc?-1:1;
 	if (rnil)
-		return -1;
+		return desc?1:-1;
 	return cmp(l, r);
 }
 
@@ -65,6 +65,8 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 
 	if (desc && nlast)
 		nlast = false;
+	if (desc && !nlast)
+		nlast = true;
 	if (nlast && ri.nonil && li.nonil)
 		nlast = false;
 
@@ -101,7 +103,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			for(;p < e; ) {
 				void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 				void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-				int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc);
+				int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, desc);
 				if (desc)
 					c = -c;
 				if (c <= 0) {
@@ -292,6 +294,8 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 
 	if (desc && nlast)
 		nlast = false;
+	if (desc && !nlast)
+		nlast = true;
 	if (nlast && ri.nonil && li.nonil)
 		nlast = false;
 
@@ -299,7 +303,7 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	for(; p<e; ) {
 		void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 		void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-		int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc);
+		int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, desc);
 		if (desc)
 			c = -c;
 		if (c <= 0) {
