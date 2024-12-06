@@ -1752,12 +1752,12 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 	list *rgbe = NULL, *gbe = NULL, *exps = NULL;
 	node *n, *m;
 
-	if (is_recursive(u))
-		return rel;
-
 	// TODO why?
 	if (u->op == op_project && !need_distinct(u))
 		u = u->l;
+
+	if (is_recursive(u))
+		return rel;
 
 	/* make sure we don't create group by on group by's */
 	for (node *n = ((list*)u->l)->h; n; n = n->next) {

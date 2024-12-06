@@ -827,17 +827,10 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 	sql_rel *r = rel->r;
 
 	if (rel_is_ref(r) && is_recursive(r)) {
-
-		if (is_join(rel->op) && is_dependent(rel)) {
-			sql_rel *l = r->l;
-			r->l = rel;
-			rel->r = l;
-			/* add missing expressions */
-			list *exps = rel_projections(sql, rel->l, NULL, 1, 1);
-			r->exps = list_distinct(list_merge(exps, r->exps, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
-			return r;
-		}
-		assert(0);
+		reset_dependent(rel);
+		if (is_join(rel->op) && list_length(rel->exps))
+			return rel;
+		return r;
 	}
 	assert(is_simple_project(r->op));
 	if (rel_is_ref(r)) {
@@ -1584,6 +1577,8 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 	return rel;
 }
 
+static sql_rel * rel_unnest_dependent(mvc *sql, sql_rel *rel);
+
 static sql_rel *
 push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 {
@@ -1593,6 +1588,9 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 		int need_distinct = is_semi(rel->op) && need_distinct(d);
 		int len = 0, need_length_reduction = 0;
 		int rec = is_recursive(s);
+
+		/* Incase of recursive push up the project of the base side (inplace) */
+		/* push normaly into right side, but stop when we hit this base again */
 
 		/* left of rel should be a set */
 		list *rlist = sa_list(sql->sa);
@@ -1639,6 +1637,20 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				set_processed(sl);
 				n->data = sl;
 			}
+			if (rec) {
+				sql_rel *sl = rlist->h->data;
+				list *exps = exps_copy(sql, ad);
+				for(node *n = exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					set_freevar(e, 0);
+				}
+				sl->exps = list_merge(exps, sl->exps, (fdup)NULL);
+				sql_rel *nl = rel_crossproduct(sql->sa, rel_dup(d), sl->l, rel->op);
+				nl->exps = exps_copy(sql, rel->exps);
+				set_dependent(nl);
+				set_processed(nl);
+				sl->l = nl;
+			}
 
 			sql_rel *ns = rel_setop_n_ary(sql->sa, rlist, s->op);
 			ns->exps = exps_copy(sql, s->exps);
@@ -1660,15 +1672,6 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				ns->exps = list_merge(sexps, ns->exps, (fdup)NULL);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
-			if (rec) {
-				sql_rel *sl = rlist->h->data;
-				list *exps = exps_copy(sql, ad);
-				for(node *n = exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
-					set_freevar(e, 0);
-				}
-				sl->exps = list_merge(exps, sl->exps, (fdup)NULL);
-			}
 			for(node *n = rec?rlist->h->next:rlist->h; n; n = n->next) {
 				sql_rel *sl = n->data;
 				n->data = rel_project(sql->sa, sl, rel_projections(sql, sl, NULL, 1, 1));
@@ -1696,8 +1699,6 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 	}
 	return rel;
 }
-
-static sql_rel * rel_unnest_dependent(mvc *sql, sql_rel *rel);
 
 static sql_rel *
 push_up_table(mvc *sql, sql_rel *rel)
@@ -1829,10 +1830,13 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 				sql_rel *l = r->l;
 
 				if (!rel_is_ref(r) && l && !rel_is_ref(l) && l->op == op_join && list_empty(l->exps)) {
+					int fv = exps_have_freevar(sql, r->exps);
 					l->exps = r->exps;
 					r->l = NULL;
 					rel_destroy(r);
 					rel->r = l;
+					if (fv)
+						rel->op = op_left;
 					return rel_unnest_dependent(sql, rel);
 				}
 			}
