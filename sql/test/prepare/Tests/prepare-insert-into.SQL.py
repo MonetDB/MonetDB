@@ -5,5 +5,4 @@ with SQLTestCase() as tc:
     with open('prepare-insert-into.sql') as f:
         tc.execute(query=None, client='mclient', stdin=f)\
             .assertSucceeded()\
-            .assertMatchStableOut(fout='prepare-insert-into.stable.out')\
-
+            .assertMatchStableOut(fout='prepare-insert-into.stable.out')
