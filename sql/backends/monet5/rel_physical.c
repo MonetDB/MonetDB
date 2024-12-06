@@ -263,6 +263,7 @@ _rel_partition(mvc *sql, sql_rel *rel)
 	return rel_mark_partition(sql, rel);
 }
 
+#if 0
 static int
 has_groupby(sql_rel *rel)
 {
@@ -316,6 +317,7 @@ has_groupby(sql_rel *rel)
 	}
 	return 0;
 }
+#endif
 
 static bool
 rel_groupby_partition_safe(sql_rel *rel)
@@ -515,40 +517,26 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_join(rel->op)) {
 		if (pb && is_outerjoin(rel->op))
 			return 0;
-		bool l = has_groupby(rel->l), r = has_groupby(rel->r);
-		if (0 && (l || r)) {
-			int lres = rel_partition_(sql, rel->l, 0);
-			int rres = rel_partition_(sql, rel->r, 0);
-			if (!lres || !rres)
-				return 0;
-			if (l && lres == EPB && !r && rres == REL_PARTITION)
-				res = SPB;
-			if (pb) {
-				rel->partition = l?1:r?2:0;
-				rel->spb = 1;
+		if (is_left(rel->op)) /* and pb == 0 */
+			return rel_partition_(sql, rel->l, pb);
+		/* For now we only try to partition in case of a equi-join.
+		 * The other joins are too complex to handle. */
+		if (pb) { /* and rel->op == op_join */
+			if (!rel->partition)
+				res = _rel_partition(sql, rel);
+			if (res) {
+				int lres = rel_partition_(sql, rel->l, (rel->partition==1 && rel->spb)?pb:0);
+				if (lres == EPB && pb)
+					rel_dup(rel->l);
+				int rres = rel_partition_(sql, rel->r, (rel->partition==2 && rel->spb)?pb:0);
+				if (rres == EPB && pb)
+					rel_dup(rel->r);
+				if (pb)
+					res = 0;
 			}
-		} else {
-			if (is_left(rel->op)) /* and pb == 0 */
-				return rel_partition_(sql, rel->l, pb);
-			/* For now we only try to partition in case of a equi-join.
-			 * The other joins are too complex to handle. */
-			if (pb) { /* and rel->op == op_join */
-				if (!rel->partition)
-					res = _rel_partition(sql, rel);
-				if (res) {
-					int lres = rel_partition_(sql, rel->l, (rel->partition==1 && rel->spb)?pb:0);
-					if (lres == EPB && pb)
-						rel_dup(rel->l);
-					int rres = rel_partition_(sql, rel->r, (rel->partition==2 && rel->spb)?pb:0);
-					if (rres == EPB && pb)
-						rel_dup(rel->r);
-					if (pb)
-						res = 0;
-				}
-				if (!res) {
-					rel->spb = 1;
-					res = SPB;
-				}
+			if (!res) {
+				rel->spb = 1;
+				res = SPB;
 			}
 		}
 	} else if (is_ddl(rel->op)) {
