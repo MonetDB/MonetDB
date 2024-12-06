@@ -98,3 +98,4 @@ HAVE_CUDF?7525-cudf-aggr-var-input
 KNOWNFAIL?7598-foreign_key_match_options
 KNOWNFAIL?7598-foreign_key_match_options_dump
 7602-copy-into-multiple-files
+7603-copy-into-3files-crash
