@@ -3,3 +3,4 @@ CREATE TABLE foo(i INT, t TEXT, j INT)
 
 statement error
 COPY INTO foo FROM '7587-rejectmismatch.csv.gz', '7587-rejectmismatch.csv.gz', '7587-rejectmismatch.csv.gz' ON CLIENT
+

@@ -14,7 +14,7 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%4",	"%4"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
 #PREPARE SELECT
 #	(SELECT 1 FROM evilfunction((SELECT ?, ?))) 
 #FROM another_T;
@@ -26,5 +26,5 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	2,	1,	0,	2,	2 # length
 [ "tinyint",	1,	0,	"",	"%5",	"%5"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]

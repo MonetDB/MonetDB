@@ -137,15 +137,17 @@
 [ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
-#CREATE TABLE tab1(col0 INTEGER, col1 STRING);
-#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
-#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+#prepare select ? is null from tab0; --error
+#prepare select ? is null from tab0; --error
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 7,	1,	1,	0,	2,	2 # length
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
+#CREATE TABLE tab1(col0 INTEGER, col1 STRING);
+#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type

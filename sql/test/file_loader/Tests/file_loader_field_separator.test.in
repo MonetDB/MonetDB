@@ -137,5 +137,6 @@ Lightyear
 statement error 42000!Failed to import table 'cars', line 5: column 3 name_2: Column value missing
 select * from file_loader(r'$TSTSRCDIR/cars_missing_separators.csv') as cars(id, brand, model, "year")
 
-statement error 
+statement error
 select * from file_loader(r'$TSTSRCDIR/cars_empty_line.csv') as cars(id, brand, model, "year")
+

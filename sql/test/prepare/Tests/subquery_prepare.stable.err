@@ -1,4 +1,4 @@
-MAPI  = (monetdb) /var/tmp/mtest-938108/.s.monetdb.30716
+MAPI  = monetdb@localhost:37045
 QUERY = PREPARE SELECT
         	(SELECT ? FROM evilfunction((SELECT 1))) 
         FROM another_T;

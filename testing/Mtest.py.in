@@ -3595,6 +3595,8 @@ def main(argv) :
     procdebug = opts.procdebug
     global approve
     approve = opts.approve
+    if approve:
+        os.environ['MTEST_APPROVE'] = 'TRUE'
     global stop_crash
     stop_crash = opts.stop_crash
     global ignore_conditions
