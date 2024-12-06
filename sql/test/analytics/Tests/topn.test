@@ -12,6 +12,7 @@ FROM (
    FROM t
   ) AS t__x0
  WHERE a3 <= 3
-) as t__x1;
+) as t__x1
 ----
 300
+
