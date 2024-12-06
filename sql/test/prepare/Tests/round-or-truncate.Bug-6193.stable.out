@@ -20,7 +20,7 @@
 % .%2 # table_name
 % %2 # name
 % decimal # type
-% 11 # length
+% 10 # length
 [ 1.7777777	]
 #select cast(1.7777777 as integer);
 % .%2 # table_name
