@@ -2285,7 +2285,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	vars = (int *) ma_alloc(cntxt->ta, sizeof(int) * mb->vtop);
 	//maxvars = mb->vtop;
-	group_input = (char *) ma_alloc(cntxt->ta, sizeof(char) * mb->vtop);
+	group_input = (char *) ma_zalloc(cntxt->ta, sizeof(char) * mb->vtop);
 	if (vars == NULL || group_input == NULL) {
 		ma_close(cntxt->ta);
 		throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
