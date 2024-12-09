@@ -1702,14 +1702,12 @@ push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_ex
 static sql_rel *
 rel_select_push_filter_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, list *l, list *r, int ff)
 {
-	sql_exp *ll, *rr;
+	sql_exp *ll;
 	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 		if ((ll = exps_find_one_multi_exp(l)))
 			return push_select_exp(sql, rel, e, ll, ff);
-	} else if ((ll = exps_find_one_multi_exp(l)) && (rr = exps_find_one_multi_exp(r))) { /* join */
-		return push_join_exp(sql, rel, e, ll, rr, NULL, ff);
 	}
 	if (is_outerjoin(rel->op))
 		return rel_select(sql->sa, rel, e);

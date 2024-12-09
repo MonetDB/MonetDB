@@ -1,4 +1,4 @@
-query TTTTTTTTTTTIIRRRRRRII nosort
+query TTTTTTTTTTTIIRRRRRRII rowsort
 -- query 64
 with cs_ui as
  (select cs_item_sk
@@ -119,5 +119,5 @@ order by cs1.product_name
        ,cs1.s1
        ,cs2.s1
 ----
-210 values hashing to 8ef185ab9e0746b0a39c51ac00a90aef
+210 values hashing to 4dbefbf4fc5804e86e40df759cfc4204
 

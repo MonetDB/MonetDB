@@ -1,10 +1,3 @@
-stdout of test 'prepare-complex` in directory 'sql/test/prepare` itself:
-
-
-# 17:21:57 >  
-# 17:21:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-585892" "--port=33941"
-# 17:21:57 >  
-
 #START TRANSACTION;
 #CREATE TABLE "t0" ("c0" DATE,"c2" INTEGER);
 #CREATE TABLE "t1" ("c1" TIMESTAMP,"c2" INTEGER);
@@ -24,8 +17,3 @@ stdout of test 'prepare-complex` in directory 'sql/test/prepare` itself:
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
-
-# 17:21:57 >  
-# 17:21:57 >  "Done."
-# 17:21:57 >  
-

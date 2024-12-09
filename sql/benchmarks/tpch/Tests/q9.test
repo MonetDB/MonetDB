@@ -1,5 +1,5 @@
 #Q9
-query TIR nosort
+query TIR rowsort
 select
 	nation,
 	o_year,
@@ -33,5 +33,5 @@ order by
 	nation,
 	o_year desc
 ----
-519 values hashing to 9925a1d0a35fb4c466fda469df56cf30
+519 values hashing to c34d56e84d53578446c2ed39c52b207e
 

@@ -1,4 +1,4 @@
-query TIRII nosort
+query TIRII rowsort
 -- query 49
 select  channel, item, return_ratio, return_rank, currency_rank from
  (select
@@ -127,5 +127,5 @@ select  channel, item, return_ratio, return_rank, currency_rank from
  order by 1,4,5,2
  limit 100
 ----
-160 values hashing to ba433a3357e13ae57b8bf853f50c1630
+160 values hashing to ffc95f37fcdc9fb5d430279570ee59d1
 

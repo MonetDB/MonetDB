@@ -2470,6 +2470,8 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
+gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
+	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"
 
