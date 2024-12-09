@@ -99,8 +99,6 @@ atom_int( allocator *sa, sql_subtype *tpe,
 		int bits = number_bits(val);
 		if (a->tpe.type->eclass == EC_NUM)
 			a->tpe.digits = bits;
-		else if (a->tpe.type->eclass == EC_DEC)
-			a->tpe.digits = bits2digits(bits) + 1;;
 		a->data.len = 0;
 		return a;
 	}
