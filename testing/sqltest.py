@@ -110,7 +110,7 @@ def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
         s.set_seqs(a[i].replace('\t', '').replace(' ', ''),
                    b[i].replace('\t', '').replace(' ', ''))
         # should be high matching ratio
-        if s.quick_ratio() < ratio:
+        if s.quick_ratio() < 1.0:
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
