@@ -1727,7 +1727,8 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	/* favor or expressions over union */
 	if (l->op == r->op && is_select(l->op) &&
 	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
-		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
+		// need a copy of r->exps, r will be destroyed
+		sql_exp *e = exp_or(sql->sa, l->exps, exps_copy(sql, r->exps), 0);
 		list *nl = new_exp_list(sql->sa);
 
 		rel_destroy(sql, r);
@@ -1737,7 +1738,10 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 		/* merge and expressions */
 		ll = l->l;
 		while (ll && is_select(ll->op) && !rel_is_ref(ll)) {
-			list_merge(l->exps, ll->exps, (fdup)NULL);
+			// need a copy of ll->exps, ll will be destroyed
+			// FIX version of list_merge with allocator
+			// now we loop twice over ll->exps
+			list_merge(l->exps, exps_copy(sql, ll->exps), (fdup)NULL);
 			l->l = ll->l;
 			ll->l = NULL;
 			rel_destroy(sql, ll);

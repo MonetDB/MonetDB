@@ -5678,12 +5678,12 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			}
 			exp_setname(sql, le, rname, name);
 			set_not_unique(le);
-			append(outexps, le);
+			append(outexps, exp_copy(sql, le));
 		} else {
 			if (l_nil)
 				set_has_nil(le);
 			set_not_unique(le);
-			append(outexps, le);
+			append(outexps, exp_copy(sql, le));
 		}
 	}
 	if (!found)
@@ -5693,7 +5693,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 		if (r_nil)
 			set_has_nil(re);
 		set_not_unique(re);
-		append(outexps, re);
+		append(outexps, exp_copy(sql, re));
 	}
 	rel = rel_project(sql->sa, rel, outexps);
 	return rel;
@@ -6188,7 +6188,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 					return NULL;
 			}
 			exp_setname(sql, ls, rnme, nm);
-			append(outexps, ls);
+			append(outexps, exp_copy(sql, ls));
 			if (!rel)
 				return NULL;
 		}
@@ -6208,7 +6208,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 				if (l_nil)
 					set_has_nil(ls);
 				set_not_unique(ls);
-				append(outexps, ls);
+				append(outexps, exp_copy(sql, ls));
 			}
 		}
 		exps = rel_projections(sql, t2, NULL, 1, 1);
@@ -6227,7 +6227,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 				if (r_nil)
 					set_has_nil(rs);
 				set_not_unique(rs);
-				append(outexps, rs);
+				append(outexps, exp_copy(sql, rs));
 			}
 		}
 		rel = rel_project(sql->sa, rel, outexps);

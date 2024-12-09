@@ -3926,27 +3926,6 @@ _free_exp_internal(allocator *sa, sql_exp *e)
 	sa_free(sa, e);
 }
 
-static void
-_free_exp_atom(allocator *sa, sql_exp *e)
-{
-	if (!e || e->type != e_atom)
-		return;
-
-	if (e->l) {
-		// free_atom(sa, e->l);
-		e->l = NULL;
-	}
-	//if (e->r) {
-	//	((sql_var_name*) e->r)->sname = NULL;
-	//	((sql_var_name*) e->r)->name = NULL;
-	//	e->r = NULL;
-	//}
-	if (e->f) {
-		free_exps_list(sa, e->f);
-		e->f = NULL;
-	}
-	return _free_exp_internal(sa, e);
-}
 
 void
 free_exp(allocator *sa, sql_exp *e)
@@ -3955,14 +3934,50 @@ free_exp(allocator *sa, sql_exp *e)
 		return;
 	switch(e->type) {
 		case e_atom:
-			return _free_exp_atom(sa, e);
-		case e_column:
+			if (e->f) {
+				free_exps_list(sa, e->f);
+				e->f = NULL;
+			}
+			break;
 		case e_cmp:
+			if (e->l)
+				free_exp(sa, e->l);
+			if (e->r)
+				free_exp(sa, e->r);
+			if (e->f)
+				free_exp(sa, e->f);
+			break;
 		case e_func:
 		case e_aggr:
+			if (e->l)
+				free_exps_list(sa, e->l);
+			break;
 		case e_convert:
+			if (e->l)
+				free_exp(sa, e->l);
+			break;
 		case e_psm:
-			// TODO
-			;
+			if ((e->flag & PSM_SET) && e->l)
+				free_exp(sa, e->l);
+			if ((e->flag & PSM_RETURN) && e->l)
+				free_exp(sa, e->l);
+			if (e->flag & PSM_WHILE) {
+				if (e->l)
+					free_exp(sa, e->l);
+				if (e->r)
+					free_exps_list(sa, e->r);
+			}
+			if (e->flag & PSM_IF) {
+				if (e->l)
+					free_exp(sa, e->l);
+				if (e->r)
+					free_exps_list(sa, e->r);
+				if (e->f)
+					free_exps_list(sa, e->f);
+			}
+			break;
+		case e_column:
+			break;
 	}
+	_free_exp_internal(sa, e);
 }

@@ -51,7 +51,7 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 	return nexps;
 }
 
-/* move projects down with the goal op removing them completely (ie push renames/reduced lists into basetable)
+/* move projects down with the goal of removing them completely (ie push renames/reduced lists into basetable)
  * for some cases we can directly remove if renames rename into same alias
  * */
 static sql_rel *
@@ -382,7 +382,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	switch(e->type) {
 	case e_column:
 		assert(e->nid);
-		ne = exp_copy(sql, exps_bind_nid(f->exps, e->nid));
+		ne = exps_bind_nid(f->exps, e->nid);
 		if (!ne)
 			return e;
 		sql_exp *oe = e;
@@ -393,7 +393,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 			if (exp_is_atom(ne))
-				return ne;
+				return exp_copy(sql, ne);
 			return oe;
 		}
 		ne = exp_ref(sql, e);
@@ -468,7 +468,8 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			if (needed) {
 				rel->exps = sa_list(v->sql->sa);
 				node *n = exps->h;
-				list_append(rel->exps, n->data);
+				sql_exp *e_copy = exp_copy(v->sql, n->data);
+				list_append(rel->exps, e_copy);
 				for(n = n->next; n; n = n->next) {
 					sql_exp *e = n->data;
 					if (e->type == e_column && !is_selfref(e)) {
@@ -570,8 +571,8 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
-					// sql_exp *e_copy = exp_copy(v->sql, e);
-					list_append(exps, e);
+					sql_exp *e_copy = exp_copy(v->sql, e);
+					list_append(exps, e_copy);
 				} else {
 					return rel;
 				}
