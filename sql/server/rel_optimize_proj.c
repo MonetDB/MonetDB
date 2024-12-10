@@ -3022,6 +3022,15 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+
+static inline sql_rel *
+rel_const_aggr_elimination(visitor *v, sql_rel *rel)
+{
+	(void)v;
+
+	return rel;
+}
+
 static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
@@ -3043,6 +3052,8 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
+	rel = rel_const_aggr_elimination(v, rel);
+
 	/* only when value_based_opt is on, ie not for dependency resolution */
 	if (v->value_based_opt) {
 		rel = rel_simplify_count(v, rel);
