@@ -59,8 +59,8 @@ UNION|EXCEPT|INTERSECT
 
 MUNION
 	(card ATOM, AGGR or MULTI (same card as lower relation))
-    -> exps     is list of projection expressions
-    -> l        is list of union relations
+	-> exps     is list of projection expressions
+	-> l        is list of union relations
 	-> flag		(0) no flags
 
 PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
