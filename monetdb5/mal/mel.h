@@ -74,7 +74,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 	const char *mod;
 	const char *fcn;
 	const char *cname;
-	char *comment;
+	const char *comment;
 	uint32_t command:1, unsafe:1, vargs:1, vrets:1, poly:3, retc:5, argc:5;
 	union {
 		MALfcn imp;

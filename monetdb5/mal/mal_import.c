@@ -348,7 +348,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		return msg;
 	}
 
-	msg = MSinitClientPrg(c, "user", "main");	/* create new context */
+	msg = MSinitClientPrg(c, userRef, "main");	/* create new context */
 	if (msg == MAL_SUCCEED)
 		msg = MALparser(c);
 	/*

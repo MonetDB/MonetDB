@@ -223,7 +223,7 @@ globalModule(const char *nme)
 	Module cur;
 
 	// Global modules are not named 'user'
-	assert(strcmp(nme, "user"));
+	assert(strcmp(nme, userRef));
 	nme = putName(nme);
 	if (nme == NULL)
 		return NULL;
@@ -246,7 +246,7 @@ userModule(void)
 	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = putName("user");
+	cur->name = userRef;
 	if (cur->name == NULL) {
 		GDKfree(cur);
 		return NULL;
@@ -307,7 +307,7 @@ freeModule(Module m)
 		}
 	}
 	freeSubScope(m);
-	if (strcmp(m->name, "user")) {
+	if (strcmp(m->name, userRef)) {
 		clrModuleIndex(m);
 	}
 	if (m->help)

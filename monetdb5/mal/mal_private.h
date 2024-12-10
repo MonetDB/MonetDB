@@ -69,9 +69,6 @@ void mal_linker_reset(void)
 void mal_module_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-void mal_namespace_reset(void)
-	__attribute__((__visibility__("hidden")));
-
 void mal_resource_reset(void)
 	__attribute__((__visibility__("hidden")));
 

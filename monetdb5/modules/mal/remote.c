@@ -431,8 +431,6 @@ RMTfindconn(connection *ret, const char *conn)
 static inline str
 RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 {
-	InstrPtr f;
-	const char *mod;
 	char *var;
 	str rt;
 	char name[IDLENGTH] = { 0 };
@@ -443,10 +441,6 @@ RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 			  ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
 	var = getArgNameIntoBuffer(mb, p, arg, name);
-	f = getInstrPtr(mb, 0);		/* top level function */
-	mod = getModuleId(f);
-	if (mod == NULL)
-		mod = "user";
 	rt = getTypeIdentifier(getArgType(mb, p, arg));
 	if (rt == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);

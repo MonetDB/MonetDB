@@ -53,7 +53,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		return msg;
 	}
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
@@ -333,7 +333,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 		}
 	}
 
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, "main")) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
 		cleanUpScheduleClient(c, &command, &msg);
 		return;

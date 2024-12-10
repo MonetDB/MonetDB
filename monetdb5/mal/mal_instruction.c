@@ -76,7 +76,7 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	} else if (s->allocated && s->func) {
-		GDKfree(s->func->comment);
+		GDKfree((char*)s->func->comment);
 		GDKfree((char*)s->func->cname);
 		GDKfree(s->func->args);
 		GDKfree(s->func);
