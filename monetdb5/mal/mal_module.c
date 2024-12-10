@@ -227,11 +227,12 @@ globalModule(const char *nme)
 	nme = putName(nme);
 	if (nme == NULL)
 		return NULL;
-	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
+	cur = (Module) GDKmalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = nme;
-	cur->link = NULL;
+	*cur = (ModuleRecord) {
+		.name = nme,
+	};
 	addModuleToIndex(cur);
 	return cur;
 }

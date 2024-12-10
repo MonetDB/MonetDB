@@ -47,16 +47,17 @@ newSymbol(const char *nme, int kind)
 	assert(kind == COMMANDsymbol || kind == PATTERNsymbol || kind == FUNCTIONsymbol);
 	if (nme == NULL)
 		return NULL;
-	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+	cur = (Symbol) GDKmalloc(sizeof(SymRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = putName(nme);
+	*cur = (SymRecord) {
+		.name = putName(nme),
+		.kind = kind,
+	};
 	if (cur->name == NULL) {
 		GDKfree(cur);
 		return NULL;
 	}
-	cur->kind = kind;
-	cur->peer = NULL;
 	if (kind == FUNCTIONsymbol) {
 		cur->def = newMalBlk(STMT_INCREMENT);
 		if (cur->def == NULL) {

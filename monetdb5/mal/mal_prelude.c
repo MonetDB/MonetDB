@@ -68,13 +68,7 @@ mal_module2(const char *name, mel_atom *atoms, mel_func *funcs,
 void
 mal_module(const char *name, mel_atom *atoms, mel_func *funcs)
 {
-	assert(mel_modules < MAX_MAL_MODULES);
-	mel_module[mel_modules].name = name;
-	mel_module[mel_modules].atoms = atoms;
-	mel_module[mel_modules].funcs = funcs;
-	mel_module[mel_modules].inits = NULL;
-	mel_module[mel_modules].code = NULL;
-	mel_modules++;
+	mal_module2(name, atoms, funcs, NULL, NULL);
 }
 
 static char *
@@ -82,10 +76,7 @@ initModule(Client c, const char *name, const char *initpasswd)
 {
 	char *msg = MAL_SUCCEED;
 
-	if (!getName(name))
-		return msg;
-	if ((name = putName(name)) == NULL)
-		throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	assert(getName(name) == name);
 	Module m = getModule(name);
 	if (m) {					/* run prelude */
 		const char *prelude = putName("prelude");
@@ -204,14 +195,11 @@ makeMalType(mel_arg *a)
 void
 setPoly(mel_func *f, malType tpe)
 {
-	int any = isAnyExpression(tpe) || tpe == TYPE_any || getOptBat(tpe);
-    unsigned int index = 0;
-	if (!any)
-		return;
-	if (getTypeIndex(tpe) > 0)
-		index = getTypeIndex(tpe);
-	if (any && (index + 1) > f->poly)
-		f->poly = index + 1;
+	if (isAnyExpression(tpe) || tpe == TYPE_any || getOptBat(tpe)) {
+		unsigned int index = getTypeIndex(tpe);
+		if (index + 1 > f->poly)
+			f->poly = index + 1;
+	}
 }
 
 static str
@@ -222,17 +210,16 @@ addFunctions(mel_func *fcn)
 	Symbol s;
 
 	for (; fcn && fcn->mod; fcn++) {
-		const char *mod = fcn->mod = putName(fcn->mod);
-		fcn->fcn = putName(fcn->fcn);
+		const char *mod = putName(fcn->mod);
 		if (mod == NULL)
 			throw(LOADER, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		c = getModule(mod);
 		if (c == NULL && (c = globalModule(mod)) == NULL)
-			throw(LOADER, __func__, "Module %s can not be created", fcn->mod);
+			throw(LOADER, __func__, "Module %s can not be created", mod);
 
 		s = newSymbol(fcn->fcn, (fcn->command) ? COMMANDsymbol : PATTERNsymbol);
 		if (s == NULL)
-			throw(LOADER, __func__, "Can not create symbol for %s.%s missing", fcn->mod,
+			throw(LOADER, __func__, "Can not create symbol for %s.%s missing", mod,
 				  fcn->fcn);
 		s->def = NULL;
 		s->func = fcn;
@@ -250,10 +237,10 @@ addFunctions(mel_func *fcn)
 				setPoly(fcn, TYPE_any);
 			}
 			if (a->opt && fcn->command)
-				throw(LOADER, __func__, "Can not have command symbol with dynamic types, ie bat vs scalar in %s.%s", fcn->mod, fcn->fcn);
+				throw(LOADER, __func__, "Can not have command symbol with dynamic types, ie bat vs scalar in %s.%s", mod, fcn->fcn);
 		/*
 			if (a->nr >= 2)
-				printf("%s.%s\n", fcn->mod, fcn->fcn);
+				printf("%s.%s\n", mod, fcn->fcn);
 				*/
 		}
 		/* add the arguments */
@@ -268,10 +255,10 @@ addFunctions(mel_func *fcn)
 				setPoly(fcn, TYPE_any);
 			}
 			if (a->opt && fcn->command)
-				throw(LOADER, __func__, "Can not have command symbol with dynamic types, ie bat vs scalar in %s.%s", fcn->mod, fcn->fcn);
+				throw(LOADER, __func__, "Can not have command symbol with dynamic types, ie bat vs scalar in %s.%s", mod, fcn->fcn);
 		/*
 			if (a->nr >= 2)
-				printf("%s.%s\n", fcn->mod, fcn->fcn);
+				printf("%s.%s\n", mod, fcn->fcn);
 				*/
 		}
 		insertSymbol(c, s);
@@ -402,6 +389,8 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 	/* Add the signatures, where we now have access to all atoms */
 	for (i = mel_modules_loaded; i < mel_modules; i++) {
 		const char *name = putName(mel_module[i].name);
+		if (name == NULL)
+			throw(LOADER, __func__, MAL_MALLOC_FAIL);
 		if (!malLibraryEnabled(name))
 			continue;
 		if (mel_module[i].funcs) {
@@ -412,11 +401,11 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 				return msg;
 
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(name, "sql") == 0) {
+			if (name == sqlRef) {
 				*sql = i;
 				continue;
 			}
-			if (strcmp(name, "mapi") == 0) {
+			if (name == mapiRef) {
 				*mapi = i;
 				continue;
 			}
@@ -428,7 +417,7 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 		}
 		if (mel_module[i].inits) {
 			/* mapi should be last, and sql last before mapi */
-			if (strcmp(name, "sql") == 0 || strcmp(name, "mapi") == 0)
+			if (name == sqlRef || name == mapiRef)
 				continue;
 			msg = mel_module[i].inits();
 			if (msg)
@@ -461,7 +450,7 @@ malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server,
 		if (mel_module[sql].inits)
 			msg = mel_module[sql].inits();
 		else
-			msg = initModule(c, "sql", initpasswd);
+			msg = initModule(c, sqlRef, initpasswd);
 		if (msg)
 			return msg;
 	}
@@ -469,7 +458,7 @@ malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server,
 		if (mel_module[mapi].inits)
 			msg = mel_module[mapi].inits();
 		else
-			msg = initModule(c, "mapi", NULL);
+			msg = initModule(c, mapiRef, NULL);
 		if (msg)
 			return msg;
 	}
