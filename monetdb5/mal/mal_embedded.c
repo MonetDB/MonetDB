@@ -190,6 +190,7 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
 	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
+	mal_namespace_reset();
 	GDKreset(0);				// terminate all other threads
 	embeddedinitialized = false;
 }

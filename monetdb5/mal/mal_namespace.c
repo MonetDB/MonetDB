@@ -614,6 +614,27 @@ initNamespace(void)
 /* ! please keep this list sorted for easier maintenance ! */
 }
 
+void
+mal_namespace_reset(void)
+{
+	struct namespace *ns;
+
+	/* assume we are at the end of the server session */
+	MT_lock_set(&mal_namespaceLock);
+	memset(hash, 0, sizeof(hash));
+	while (namespace) {
+		ns = namespace->next;
+		if (namespace != &namespace1)
+			GDKfree(namespace);
+		namespace = ns;
+	}
+	namespace1 = (struct namespace) {
+		.count = 0,
+	};
+	namespace = &namespace1;
+	MT_lock_unset(&mal_namespaceLock);
+}
+
 static const char *
 findName(const char *nme, size_t len, bool allocate)
 {
