@@ -712,20 +712,23 @@ SELECT 1 FROM (SELECT 'a') vx(vc0) HAVING MIN('b') LIKE vx.vc0
 statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
 SELECT MIN(2) IS NULL FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+query I
 SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING MIN(2) IS NULL
+----
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
 SELECT 1 IN (MIN(2)) FROM (SELECT 3) vx(vc0) HAVING vx.vc0 > 1
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+query I
 SELECT vx.vc0 FROM (SELECT 3) vx(vc0) HAVING 1 IN (MIN(2))
+----
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
 SELECT MIN(2) > 2 FROM (SELECT TRUE) vx(vc0) HAVING vx.vc0
 
-statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
+query I
 SELECT vx.vc0 FROM (SELECT TRUE) vx(vc0) HAVING MIN(2) > 2
+----
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'vx.vc0' in query results without an aggregate function
 SELECT MIN(2) > 2, vx.vc0 FROM (SELECT 3) vx(vc0)

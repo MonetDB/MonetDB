@@ -367,8 +367,10 @@ SELECT i % 2 AS j, CAST(SUM(i) AS BIGINT) FROM integers i1 GROUP BY j HAVING SUM
 1
 4
 
-statement error
+query I nosort
 SELECT CAST((SELECT i+SUM(i1.i) FROM integers WHERE i=1 LIMIT 1) AS BIGINT) FROM integers i1
+----
+7
 
 query I nosort
 SELECT CAST((SELECT SUM(i)+SUM(i1.i) FROM integers) AS BIGINT) FROM integers i1 ORDER BY 1
