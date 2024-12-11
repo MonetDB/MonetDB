@@ -1248,12 +1248,11 @@ bl_snapshot(sqlstore *store, stream *plan)
 {
 	logger *bat_logger = store->logger;
 	gdk_return ret;
-	char *db_dir = NULL;
+	char db_dir[MAXPATH];
 	size_t db_dir_len;
 
 	// Farm 0 is always the persistent farm.
-	db_dir = GDKfilepath(0, NULL, "", NULL);
-	if (db_dir == NULL)
+	if (GDKfilepath(db_dir, sizeof(db_dir), 0, NULL, "", NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 	db_dir_len = strlen(db_dir);
 	if (db_dir[db_dir_len - 1] == DIR_SEP)
@@ -1281,7 +1280,6 @@ bl_snapshot(sqlstore *store, stream *plan)
 
 	ret = GDK_SUCCEED;
 end:
-	GDKfree(db_dir);
 	return ret;
 }
 

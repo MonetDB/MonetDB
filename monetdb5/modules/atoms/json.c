@@ -626,13 +626,11 @@ JSONprelude(void)
 /* Run the gdk upgrade library function with a callback that
  * performs the actual upgrade.
  */
-	char *jsonupgrade;
+	char jsonupgrade[MAXPATH];
 	struct stat st;
-	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+	if (GDKfilepath(jsonupgrade, sizeof(jsonupgrade), 0, BATDIR, "jsonupgradeneeded", NULL) != GDK_SUCCEED)
 		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
-	}
 	int r = stat(jsonupgrade, &st);
-	GDKfree(jsonupgrade);
 	if (r == 0) {
 		/* The file exists so we need to run the upgrade code */
 		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {

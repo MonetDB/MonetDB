@@ -282,7 +282,7 @@ _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...) _
 jmp_buf GDKfataljump;
 bit GDKfataljumpenable;
 str GDKfatalmsg;
-char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid, const char *dir, const char *nme, const char *ext) __attribute__((__access__(write_only, 1)));
 void GDKfree(void *blk);
 char *GDKgetbuf(void);
 unsigned GDKgetdebug(void);

@@ -230,7 +230,7 @@ struct mtthread {
 	struct freebats freebats;
 };
 static struct mtthread mainthread = {
-	.threadname = "main thread",
+	.threadname = "main-thread",
 	.exited = ATOMIC_VAR_INIT(0),
 	.refs = 1,
 	.tid = 1,
