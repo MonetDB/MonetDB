@@ -1,4 +1,4 @@
-query TTIITIR nosort
+query TTIITIR rowsort
 -- query 76
 select  channel, col_name, d_year, d_qoy, i_category, COUNT(*) sales_cnt, SUM(ext_sales_price) sales_amt FROM (
         SELECT 'store' as channel, 'ss_store_sk' col_name, d_year, d_qoy, i_category, ss_ext_sales_price ext_sales_price
@@ -22,5 +22,5 @@ GROUP BY channel, col_name, d_year, d_qoy, i_category
 ORDER BY channel, col_name, d_year, d_qoy, i_category
 limit 100
 ----
-700 values hashing to 5a7a30818583ed02f13168d4687ec401
+700 values hashing to 1c8d6089d6580259545e2e321041e55e
 

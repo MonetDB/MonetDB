@@ -1,5 +1,5 @@
 #Q5
-query TR nosort
+query TR rowsort
 select
 	n_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue
@@ -25,14 +25,14 @@ group by
 order by
 	revenue desc
 ----
-VIETNAM
-1000926.700
 CHINA
 740210.757
-JAPAN
-660651.243
-INDONESIA
-566379.528
 INDIA
 422874.684
+INDONESIA
+566379.528
+JAPAN
+660651.243
+VIETNAM
+1000926.700
 

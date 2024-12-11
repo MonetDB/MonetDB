@@ -530,7 +530,7 @@ SELECT
 FROM foo
 GROUP BY d19_ok, d38_ok
 ;
-""", [f"true,true{NRECS}"])
+""", [f"true,true,{NRECS}"])
 
 URLS = ("""
 -- currently every string is accepted as a url
@@ -712,12 +712,12 @@ CREATE TABLE foo(
     i INT
 );
 
-COPY BINARY INTO foo(i)
-FROM @ints@ @ON@;
+COPY BINARY INTO foo(i) FROM @ints@ @ON@;
 
 SELECT
     COUNT(DISTINCT s) AS distinct_s,
     SUM(d) AS sum_d,
     SUM(n) AS sum_n
 FROM foo;
-""", [f"{NRECS},{42*NRECS},{8 * NRECS + NRECS * (NRECS + 1) // 2 }"])
+""", [f"{NRECS},{42*NRECS},{(10 + NRECS+9) * NRECS // 2}"]
+)

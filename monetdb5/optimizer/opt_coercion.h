@@ -12,7 +12,6 @@
 
 #ifndef _OPT_COERCION_
 #define _OPT_COERCION_
-#include "opt_prelude.h"
 #include "mal_interpreter.h"
 #include "opt_support.h"
 

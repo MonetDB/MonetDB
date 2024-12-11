@@ -1,4 +1,4 @@
-query ITITR nosort
+query ITITR rowsort
 -- query 19
 select  i_brand_id brand_id, i_brand brand, i_manufact_id, i_manufact,
  	sum(ss_ext_sales_price) ext_price
@@ -23,5 +23,5 @@ select  i_brand_id brand_id, i_brand brand, i_manufact_id, i_manufact,
          ,i_manufact
 limit 100
 ----
-500 values hashing to 7079f7f6c66ba635b092e2a2f474d3ba
+500 values hashing to 8e3fed4d69766d0426b20c8199a60d4d
 

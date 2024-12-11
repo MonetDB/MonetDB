@@ -1887,8 +1887,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				GDKfree(qry);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			strcpy(s, qry);
-			strcat(s, fld);
+			stpcpy(stpcpy(s, qry), fld);
 			GDKfree(qry);
 			qry = s;
 		}

@@ -73,7 +73,7 @@
  * This allows the optimizer implementation to find them and react on them.
  */
 #include "monetdb_config.h"
-#include "opt_prelude.h"
+#include "opt_support.h"
 #include "mal_interpreter.h"
 
 /* focus initially on persistent tables. */

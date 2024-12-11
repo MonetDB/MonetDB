@@ -1,4 +1,4 @@
-query IIIRRIIIRR nosort
+query IIIRRIIIRR rowsort
 -- query 39-2
 with inv as
 (select w_warehouse_name,w_warehouse_sk,i_item_sk,d_moy
@@ -26,5 +26,5 @@ where inv1.i_item_sk = inv2.i_item_sk
 order by inv1.w_warehouse_sk,inv1.i_item_sk,inv1.d_moy,inv1.mean,inv1.cov
         ,inv2.d_moy,inv2.mean, inv2.cov
 ----
-140 values hashing to efbba515b2b1a7d121e19b86e0e11dfa
+140 values hashing to 359ac1a75c2275999d96332cecbf03af
 

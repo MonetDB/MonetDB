@@ -12,7 +12,6 @@
 
 #ifndef _OPT_REORDER_
 #define _OPT_REORDER_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

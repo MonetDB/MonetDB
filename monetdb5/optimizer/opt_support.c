@@ -13,7 +13,6 @@
  /* (c) M. Kersten
   */
 #include "monetdb_config.h"
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_listing.h"
@@ -578,14 +577,14 @@ isSubJoin(InstrPtr p)
 inline int
 isMultiplex(InstrPtr p)
 {
-	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef)
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef)
 			&& getFunctionId(p) == multiplexRef);
 }
 
 inline int
 isUnion(InstrPtr p)
 {
-	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef)
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef)
 			&& getFunctionId(p) == multiplexRef) ||
 		   (getModuleId(p) == sqlRef && getFunctionId(p) == unionfuncRef);
 }

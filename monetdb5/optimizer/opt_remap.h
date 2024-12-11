@@ -13,7 +13,6 @@
 #ifndef _OPT_REMAP_
 #define _OPT_REMAP_
 
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
