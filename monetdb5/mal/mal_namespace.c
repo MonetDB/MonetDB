@@ -221,6 +221,7 @@ const char likeselectRef[] = "likeselect";
 const char lngRef[] = "lng";
 const char lockRef[] = "lock";
 const char lookupRef[] = "lookup";
+const char mainRef[] = "main";
 const char malRef[] = "mal";
 const char manifoldRef[] = "manifold";
 const char mapiRef[] = "mapi";
@@ -485,6 +486,7 @@ initNamespace(void)
 	fixName(lngRef);
 	fixName(lockRef);
 	fixName(lookupRef);
+	fixName(mainRef);
 	fixName(malRef);
 	fixName(manifoldRef);
 	fixName(mapiRef);

@@ -1932,7 +1932,7 @@ parseEnd(Client cntxt)
 		} else {
 			str msg;
 			if ((msg = MSinitClientPrg(cntxt, cntxt->curmodule->name,
-									   "main")) != MAL_SUCCEED) {
+									   mainRef)) != MAL_SUCCEED) {
 				if (errors) {
 					str new = GDKmalloc(strlen(errors) + strlen(msg) + 3);
 					if (new) {
@@ -2211,11 +2211,6 @@ parseAssign(Client cntxt, int cntrl)
 		}
 		advance(cntxt, i);
 		curInstr->modname = calcRef;
-		if (curInstr->modname == NULL) {
-			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			freeInstruction(curInstr);
-			return;
-		}
 		if ((l = idLength(cntxt))
 			&& !(l == 3 && strncmp(CURRENT(cntxt), "nil", 3) == 0)) {
 			GETvariable(freeInstruction(curInstr));

@@ -1076,11 +1076,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default: {
-				char name[IDLENGTH] = { 0 };
+				char name[IDLENGTH];
 				ret = createException(MAL, "mal.interpreter",
-									  "%s: Unknown barrier type", getVarNameIntoBuffer(mb,
-																			 getDestVar
-																			 (pci), name));
+									  "%s: Unknown barrier type",
+									  getVarNameIntoBuffer(mb,
+														   getDestVar
+														   (pci), name));
 					 }
 			}
 			stkpc++;

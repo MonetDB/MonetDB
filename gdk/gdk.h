@@ -1487,7 +1487,7 @@ gdk_export gdk_return BATsave(BAT *b)
 #define MAXPATH	1024		/* maximum supported file path */
 
 gdk_export gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid, const char *dir, const char *nme, const char *ext)
-	__attribute__((__access__(write_only, 1)));
+	__attribute__((__access__(write_only, 1, 2)));
 gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
