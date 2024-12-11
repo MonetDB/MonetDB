@@ -315,8 +315,10 @@ extern int mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger *
 
 extern sql_rel *sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
 
-extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
+extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
+extern int sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 

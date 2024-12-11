@@ -537,7 +537,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 		return NULL;
 
 	if (val_or_q->token == SQL_VALUES) {
-		dlist *rowlist = val_or_q->data.lval->h->data.lval;
+		dlist *rowlist = val_or_q->data.lval;
 		list *exps = new_exp_list(sql->sa);
 
 		if (!rowlist->h) {
@@ -633,7 +633,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 
 	if (val_or_q->token == SQL_VALUES) {
 		list *exps = new_exp_list(sql->sa);
-		dlist *rowlist = val_or_q->data.lval->h->data.lval;
+		dlist *rowlist = val_or_q->data.lval;
 
 		if (!rowlist->h) {
 			res = rel_project(sql->sa, NULL, NULL);

@@ -1109,8 +1109,10 @@ sqltypeinit( allocator *sa)
 	sql_create_aggr(sa, "max", "aggr", "max", FALSE, FALSE, ANY, 1, ANY);
 	sql_create_func(sa, "sql_min", "calc", "min", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "sql_max", "calc", "max", FALSE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
-	sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
-	sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	f = sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	f->vararg = 1;
+	f = sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	f->vararg = 1;
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
 	/* nullif, coalesce, casewhen and case don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, TRUE, SCALE_FIX, 0, ANY, 2, ANY, ANY);

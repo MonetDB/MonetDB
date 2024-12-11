@@ -29,6 +29,7 @@ typedef enum symtype {
 typedef union symbdata {
 	int i_val;
 	lng l_val;
+	lng lpair[2];
 	char *sval;
 	struct dlist *lval;
 	struct symbol *sym;

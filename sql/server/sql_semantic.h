@@ -44,6 +44,7 @@ extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char
 extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private, bool exact);
 
 extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private);
+extern sql_func *sql_find_one_func_by_name(mvc *sql, const char *snaem, const char *name, sql_ftype type);
 
 extern char *qname_schema(dlist *qname);
 extern char *qname_schema_object(dlist *qname);

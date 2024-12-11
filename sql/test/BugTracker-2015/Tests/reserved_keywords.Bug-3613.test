@@ -45,7 +45,7 @@ select distinct cycle from sys.sql_keywords
 5
 
 query I rowsort
-select distinct distinct from sys.sql_keywords
+select distinct "distinct" from sys.sql_keywords
 ----
 6
 

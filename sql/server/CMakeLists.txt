@@ -13,7 +13,8 @@
 BISON_TARGET(sqlparser
   sql_parser.y
   ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.c
-  COMPILE_FLAGS "-d -p sql -Wno-conflicts-sr -Wno-conflicts-rr"
+  #COMPILE_FLAGS "-t -rstates,itemsets,lookaheads -ffixit,caret -d -p sql -Wno-conflicts-sr -Wno-conflicts-rr -o sql_parser.output"
+  COMPILE_FLAGS "-p sql -Werror"
   DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.h)
 
 add_library(sqlserver STATIC)
