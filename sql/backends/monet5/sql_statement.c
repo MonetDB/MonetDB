@@ -21,7 +21,6 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 /*
  * Some utility routines to generate code

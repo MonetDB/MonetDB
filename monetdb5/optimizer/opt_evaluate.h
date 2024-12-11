@@ -14,7 +14,6 @@
 #define _OPT_CX_
 #include "mal_stack.h"
 #include "mal_interpreter.h"	/* for showErrors() */
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

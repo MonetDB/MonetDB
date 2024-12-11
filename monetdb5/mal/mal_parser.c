@@ -111,7 +111,7 @@ parseError(Client cntxt, str msg)
 	marker = createException(SYNTAX, "parseError", "%s%s", buf, msg);
 
 	old = mb->errors;
-	new = GDKzalloc((old ? strlen(old) : 0) + strlen(line) + strlen(marker) +
+	new = GDKmalloc((old ? strlen(old) : 0) + strlen(line) + strlen(marker) +
 					64);
 	if (new == NULL) {
 		freeException(line);
@@ -119,14 +119,14 @@ parseError(Client cntxt, str msg)
 		skipToEnd(cntxt);
 		return;					// just stick to old error message
 	}
+	mb->errors = new;
 	if (old) {
-		strcpy(new, old);
+		new = stpcpy(new, old);
 		GDKfree(old);
 	}
-	strcat(new, line);
-	strcat(new, marker);
+	new = stpcpy(new, line);
+	new = stpcpy(new, marker);
 
-	mb->errors = new;
 	freeException(line);
 	freeException(marker);
 	skipToEnd(cntxt);
@@ -1136,7 +1136,7 @@ parseAtom(Client cntxt)
 			freeException(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
 	}
-	if (strcmp(modnme, "user"))
+	if (modnme != userRef)
 		cntxt->curmodule = fixModule(modnme);
 	else
 		cntxt->curmodule = cntxt->usermodule;
@@ -1173,7 +1173,7 @@ parseModule(Client cntxt)
 		if (globalModule(modnme) == NULL)
 			parseError(cntxt, "<module> could not be created");
 	}
-	if (strcmp(modnme, "user"))
+	if (modnme != userRef)
 		cntxt->curmodule = fixModule(modnme);
 	else
 		cntxt->curmodule = cntxt->usermodule;
@@ -1375,7 +1375,7 @@ fcnCommandPatternHeader(Client cntxt, int kind)
 	if (currChar(cntxt) == '.') {
 		nextChar(cntxt);		/* skip '.' */
 		modnme = fnme;
-		if (strcmp(modnme, "user") && getModule(modnme) == NULL) {
+		if (modnme != userRef && getModule(modnme) == NULL) {
 			if (globalModule(modnme) == NULL) {
 				parseError(cntxt, "<module> name not defined\n");
 				return NULL;
@@ -1543,7 +1543,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		return NULL;
 	}
 	const char *modnme = curFunc->mod;
-	if (modnme && (getModule(modnme) == FALSE && strcmp(modnme, "user"))) {
+	if (modnme && (getModule(modnme) == FALSE && modnme != userRef)) {
 		// introduce the module
 		if (globalModule(modnme) == NULL) {
 			mf_destroy(curFunc);
@@ -1606,18 +1606,19 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		curFunc->mod = modnme;
 		curFunc->imp = address;
 	}
-	if (strcmp(modnme, "user") == 0 || getModule(modnme)) {
-		if (strcmp(modnme, "user") == 0)
-			insertSymbol(cntxt->usermodule, curPrg);
-		else
-			insertSymbol(getModule(modnme), curPrg);
+	if (modnme == userRef) {
+		insertSymbol(cntxt->usermodule, curPrg);
+	} else if (getModule(modnme)) {
+		insertSymbol(getModule(modnme), curPrg);
 	} else {
 		freeSymbol(curPrg);
 		parseError(cntxt, "<module> not found\n");
 		return NULL;
 	}
 
-	helpInfo(cntxt, &curFunc->comment);
+	char *comment = NULL;
+	helpInfo(cntxt, &comment);
+	curFunc->comment = comment;
 	return curPrg;
 }
 
@@ -1651,7 +1652,7 @@ fcnHeader(Client cntxt, int kind)
 	if (currChar(cntxt) == '.') {
 		nextChar(cntxt);		/* skip '.' */
 		modnme = fnme;
-		if (strcmp(modnme, "user") && getModule(modnme) == NULL) {
+		if (modnme != userRef && getModule(modnme) == NULL) {
 			if (globalModule(modnme) == NULL) {
 				parseError(cntxt, "<module> name not defined\n");
 				return 0;
@@ -1888,7 +1889,7 @@ parseEnd(Client cntxt)
 			parseError(cntxt, "non matching end label\n");
 		pushEndInstruction(cntxt->curprg->def);
 		cntxt->blkmode = 0;
-		if (strcmp(getModuleId(sig), "user") == 0)
+		if (getModuleId(sig) == userRef)
 			insertSymbol(cntxt->usermodule, cntxt->curprg);
 		else
 			insertSymbol(getModule(getModuleId(sig)), cntxt->curprg);
@@ -1911,11 +1912,11 @@ parseEnd(Client cntxt)
 			str new = GDKmalloc(strlen(errors) +
 								strlen(cntxt->curprg->def->errors) + 16);
 			if (new) {
-				strcpy(new, errors);
-				if (new[strlen(new) - 1] != '\n')
-					strcat(new, "\n");
-				strcat(new, "!");
-				strcat(new, cntxt->curprg->def->errors);
+				char *p = stpcpy(new, errors);
+				if (p[-1] != '\n')
+					*p++ = '\n';
+				*p++ = '!';
+				strcpy(p, cntxt->curprg->def->errors);
 
 				freeException(errors);
 				freeException(cntxt->curprg->def->errors);
@@ -1935,10 +1936,10 @@ parseEnd(Client cntxt)
 				if (errors) {
 					str new = GDKmalloc(strlen(errors) + strlen(msg) + 3);
 					if (new) {
-						strcpy(new, msg);
-						if (new[strlen(new) - 1] != '\n')
-							strcat(new, "\n");
-						strcat(new, errors);
+						char *p = stpcpy(new, msg);
+						if (p[-1] != '\n')
+							*p++ = '\n';
+						strcpy(p, errors);
 						freeException(errors);
 						cntxt->curprg->def->errors = new;
 					} else {
@@ -2209,7 +2210,7 @@ parseAssign(Client cntxt, int cntrl)
 			return;
 		}
 		advance(cntxt, i);
-		curInstr->modname = putName("calc");
+		curInstr->modname = calcRef;
 		if (curInstr->modname == NULL) {
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			freeInstruction(curInstr);

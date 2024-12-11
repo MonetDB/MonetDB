@@ -626,13 +626,11 @@ JSONprelude(void)
 /* Run the gdk upgrade library function with a callback that
  * performs the actual upgrade.
  */
-	char *jsonupgrade;
+	char jsonupgrade[MAXPATH];
 	struct stat st;
-	if ((jsonupgrade = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
+	if (GDKfilepath(jsonupgrade, sizeof(jsonupgrade), 0, BATDIR, "jsonupgradeneeded", NULL) != GDK_SUCCEED)
 		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
-	}
 	int r = stat(jsonupgrade, &st);
-	GDKfree(jsonupgrade);
 	if (r == 0) {
 		/* The file exists so we need to run the upgrade code */
 		if (BBPjson_upgrade(upgradeJSONStorage) != GDK_SUCCEED) {
@@ -805,9 +803,9 @@ JSONgetValue(const JSON *jt, int idx)
 
 	if (jt->elm[idx].valuelen == 0)
 		return GDKstrdup(str_nil);
-	s = GDKzalloc(jt->elm[idx].valuelen + 1);
+	s = GDKmalloc(jt->elm[idx].valuelen + 1);
 	if (s)
-		strncpy(s, jt->elm[idx].value, jt->elm[idx].valuelen);
+		strcpy_len(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
 	return s;
 }
 
@@ -826,7 +824,7 @@ JSONglue(str res, str r, char sep)
 	if (res == 0)
 		return r;
 	l = strlen(res);
-	n = GDKzalloc(l + len + 3);
+	n = GDKmalloc(l + len + 3);
 	if (n == NULL) {
 		GDKfree(res);
 		GDKfree(r);
@@ -976,7 +974,7 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 		goto bailout;
 
 	bool accumulate = terms[tidx].token == ANY_STEP || (terms[tidx].name && terms[tidx].name[0] == '*');
-	result = s = JSONmatch(jt, 0, terms, tidx, accumulate);
+	s = JSONmatch(jt, 0, terms, tidx, accumulate);
 	if (s == (char *) -1) {
 		msg = createException(MAL, "JSONfilterInternal",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -988,6 +986,7 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 							  "Expression too complex to parse");
 		goto bailout;
 	}
+	result = s;
 	bool return_array = false;
 	// process all other PATH expression
 	for (tidx++; tidx < MAXTERMS && terms[tidx].token; tidx++)
@@ -1029,24 +1028,27 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 		}
 	}
 	if (return_array || accumulate) {
-		s = GDKzalloc(l + 3);
-		if (s == NULL) {
-			GDKfree(result);
-			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-		snprintf(s, l + 3, "[%s]", (result ? result : ""));
+		s = GDKmalloc(l + 3);
+		if (s)
+			snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	}
 	else if (result == NULL || *result == 0) {
 		s = GDKstrdup("[]");
 	}
 	else {
-		s = GDKzalloc(l + 1);
-		snprintf(s, l + 1, "%s", (result ? result : ""));
+		s = GDKmalloc(l + 1);
+		if (s)
+			snprintf(s, l + 1, "%s", (result ? result : ""));
 	}
-	GDKfree(result);
+	if (s == NULL) {
+		msg = createException(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	*ret = s;
 
   bailout:
+	GDKfree(result);
+	*ret = s;
 	for (l = 0; l < MAXTERMS; l++)
 		if (terms[l].name)
 			GDKfree(terms[l].name);
@@ -2125,12 +2127,12 @@ JSONkeyArray(json *ret, const json *js)
 	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 			if (jt->elm[i].valuelen) {
-				r = GDKzalloc(jt->elm[i].valuelen + 3);
+				r = GDKmalloc(jt->elm[i].valuelen + 3);
 				if (r == NULL) {
 					JSONfree(jt);
 					goto memfail;
 				}
-				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
+				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
 				r = GDKstrdup("\"\"");
 				if (r == NULL) {

@@ -1692,9 +1692,9 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 	v = *buf;
 	if (strt > 0)
 		v = UTF8_strncpy(v, s, strt);
-	strcpy(v, s2);
+	v = stpcpy(v, s2);
 	if (strt + l < l1)
-		strcat(v, UTF8_strtail(s, strt + l));
+		strcpy(v, UTF8_strtail(s, strt + l));
 	return MAL_SUCCEED;
 }
 
@@ -1944,7 +1944,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 			bn->tnonil = true;
 			bn->tseqbase = rcnt == 0 ?
 				0 : rcnt == 1 ?
-				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.hseq : oid_nil;
+				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.seq : oid_nil;
 
 			if (with_strimps_anti) {
 				BAT *rev;

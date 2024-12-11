@@ -2327,7 +2327,7 @@ static gdk_return
 backup_new(Heap *hp, bool lock)
 {
 	int batret, bakret, ret = -1;
-	char *batpath, *bakpath;
+	char batpath[MAXPATH], bakpath[MAXPATH];
 	struct stat st;
 
 	char *bak_filename = NULL;
@@ -2336,9 +2336,8 @@ backup_new(Heap *hp, bool lock)
 	else
 		bak_filename = hp->filename;
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, bak_filename, "new");
-	if (batpath != NULL && bakpath != NULL) {
+	if (GDKfilepath(batpath, sizeof(batpath), hp->farmid, BATDIR, hp->filename, "new") == GDK_SUCCEED &&
+	    GDKfilepath(bakpath, sizeof(bakpath), hp->farmid, BAKDIR, bak_filename, "new") == GDK_SUCCEED) {
 		/* file actions here interact with the global commits */
 		if (lock)
 			BBPtmlock();
@@ -2364,8 +2363,6 @@ backup_new(Heap *hp, bool lock)
 		if (lock)
 			BBPtmunlock();
 	}
-	GDKfree(batpath);
-	GDKfree(bakpath);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 

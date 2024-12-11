@@ -1484,8 +1484,10 @@ gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
+#define MAXPATH	1024		/* maximum supported file path */
 
-gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid, const char *dir, const char *nme, const char *ext)
+	__attribute__((__access__(write_only, 1)));
 gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);

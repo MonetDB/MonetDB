@@ -715,7 +715,7 @@ openProfilerStream(Client cntxt, int m)
 #endif
 	MT_lock_set(&mal_profileLock);
 	if (myname == 0) {
-		myname = putName("profiler");
+		myname = profilerRef;
 		logjsonInternal(monet_characteristics, true);
 	}
 	if (maleventstream) {
@@ -779,7 +779,7 @@ startProfiler(Client cntxt)
 			  "Profiler already running, stream not available");
 	}
 	if (myname == 0) {
-		myname = putName("profiler");
+		myname = profilerRef;
 	}
 	profilerStatus = 1;
 	logjsonInternal(monet_characteristics, true);

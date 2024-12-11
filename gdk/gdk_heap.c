@@ -55,13 +55,13 @@ static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {
 	void *base = NULL;
-	char *path = NULL;
+	char path[MAXPATH];
 	int fd;
 
 	if (farmid != NOFARM) {
 		/* call GDKfilepath once here instead of twice inside
 		 * the calls to GDKfdlocate and GDKload */
-		if ((path = GDKfilepath(farmid, BATDIR, fn, NULL)) == NULL)
+		if (GDKfilepath(path, sizeof(path), farmid, BATDIR, fn, NULL) != GDK_SUCCEED)
 			return NULL;
 		fn = path;
 	}
@@ -71,7 +71,6 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		close(fd);
 		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
 	}
-	GDKfree(path);
 	return base;
 }
 
@@ -187,8 +186,8 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	}
 
 	if (h->base == NULL && !GDKinmemory(h->farmid)) {
-		char *nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-		if (nme == NULL)
+		char nme[MAXPATH];
+		if (GDKfilepath(nme, sizeof(nme), h->farmid, BATDIR, h->filename, NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->storage = STORE_MMAP;
 		h->size = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
@@ -198,7 +197,6 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			sz += size;
 			if (qc->maxmem > 0 && sz > qc->maxmem) {
 				ATOMIC_SUB(&qc->datasize, size);
-				GDKfree(nme);
 				GDKerror("Query using too much memory.\n");
 				return GDK_FAIL;
 			}
@@ -212,12 +210,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 			 * it may or may not exist, depending on what
 			 * failed */
 			(void) MT_remove(nme);
-			GDKfree(nme);
 			h->hasfile = false; /* just removed it */
 			GDKerror("Insufficient space for HEAP of %zu bytes.", h->size);
 			return GDK_FAIL;
 		}
-		GDKfree(nme);
 		TRC_DEBUG(HEAP, "%s %zu %p (mmap)\n", h->filename, size, h->base);
 	}
 	h->newstorage = h->storage;
@@ -274,12 +270,12 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 
 	if (h->storage != STORE_MEM) {
 		char *p;
-		char *path;
+		char path[MAXPATH];
 
 		assert(h->hasfile);
 		TRC_DEBUG(HEAP, "Extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
 		/* extend memory mapped file */
-		if ((path = GDKfilepath(h->farmid, BATDIR, nme, ext)) == NULL) {
+		if (GDKfilepath(path, sizeof(path), h->farmid, BATDIR, nme, ext) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
@@ -294,7 +290,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			if (qc->maxmem > 0 && sz > qc->maxmem) {
 				GDKerror("Query using too much memory.\n");
 				ATOMIC_SUB(&qc->datasize, xsize);
-				GDKfree(path);
 				return GDK_FAIL;
 			}
 		}
@@ -303,7 +298,6 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
 				MMAP_READ | MMAP_WRITE,
 			      h->base, h->size, &size);
-		GDKfree(path);
 		if (p) {
 			h->size = size;
 			h->base = p;
@@ -425,10 +419,10 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		}
 	  failed:
 		if (h->hasfile && !bak.hasfile) {
-			char *path = GDKfilepath(h->farmid, BATDIR, nme, ext);
-			if (path) {
+			char path[MAXPATH];
+
+			if (GDKfilepath(path, sizeof(path), h->farmid, BATDIR, nme, ext) == GDK_SUCCEED) {
 				MT_remove(path);
-				GDKfree(path);
 			} else {
 				/* couldn't remove, so now we have a file */
 				bak.hasfile = true;
@@ -655,36 +649,30 @@ HEAPfree(Heap *h, bool rmheap)
 	}
 	h->base = NULL;
 	if (rmheap && !GDKinmemory(h->farmid)) {
+		char path[MAXPATH];
+
 		if (h->hasfile) {
-			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-			if (path) {
+			if (GDKfilepath(path, sizeof(path), h->farmid, BATDIR, h->filename, NULL) == GDK_SUCCEED) {
 				int ret = MT_remove(path);
 				if (ret == -1) {
 					/* unexpectedly not present */
 					perror(path);
 				}
 				assert(ret == 0);
-				GDKfree(path);
 				h->hasfile = false;
 			}
-			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
-			if (path) {
+			if (GDKfilepath(path, sizeof(path), h->farmid, BATDIR, h->filename, "new") == GDK_SUCCEED) {
 				/* in practice, should never be present */
 				int ret = MT_remove(path);
 				if (ret == -1 && errno != ENOENT)
 					perror(path);
 				assert(ret == -1 && errno == ENOENT);
-				GDKfree(path);
 			}
 #ifndef NDEBUG
-		} else {
-			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-			if (path) {
-				/* should not be present */
-				struct stat st;
-				assert(stat(path, &st) == -1 && errno == ENOENT);
-				GDKfree(path);
-			}
+		} else if (GDKfilepath(path, sizeof(path), h->farmid, BATDIR, h->filename, NULL) == GDK_SUCCEED) {
+			/* should not be present */
+			struct stat st;
+			assert(stat(path, &st) == -1 && errno == ENOENT);
 #endif
 		}
 	}
@@ -730,7 +718,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 {
 	size_t minsize;
 	int ret = 0;
-	char *srcpath, *dstpath;
+	char srcpath[MAXPATH], dstpath[MAXPATH];
 	lng t0;
 	const char suffix[] = ".new";
 
@@ -778,24 +766,15 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	 * file that is open in MAP_PRIVATE (FILE_MAP_COPY) solution:
 	 * we write to a file named .ext.new.  This file, if present,
 	 * takes precedence. */
-	dstpath = GDKfilepath(h->farmid, BATDIR, nme, ext);
-	if (dstpath == NULL)
+	if (GDKfilepath(dstpath, sizeof(dstpath), h->farmid, BATDIR, nme, ext) != GDK_SUCCEED)
 		return GDK_FAIL;
-	minsize = strlen(dstpath) + strlen(suffix) + 1;
-	srcpath = GDKmalloc(minsize);
-	if (srcpath == NULL) {
-		GDKfree(dstpath);
-		return GDK_FAIL;
-	}
-	strconcat_len(srcpath, minsize, dstpath, suffix, NULL);
+	strconcat_len(srcpath, sizeof(srcpath), dstpath, suffix, NULL);
 
 	t0 = GDKusec();
 	ret = MT_rename(srcpath, dstpath);
 	TRC_DEBUG(HEAP, "rename %s %s = %d %s ("LLFMT"usec)\n",
 		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
 		  GDKusec() - t0);
-	GDKfree(srcpath);
-	GDKfree(dstpath);
 
 #ifdef SIZE_CHECK_IN_HEAPS_ONLY
 	if (GDKvm_cursize() + h->size >= GDK_vm_maxsize &&

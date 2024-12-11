@@ -16,7 +16,5 @@
 #error this file should not be included outside its source directory
 #endif
 
-void optimizerInit(void);
-
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);

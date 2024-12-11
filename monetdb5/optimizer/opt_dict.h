@@ -12,7 +12,6 @@
 
 #ifndef _OPT_DICT_
 #define _OPT_DICT_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"

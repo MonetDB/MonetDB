@@ -38,7 +38,7 @@
 #include "sql_mvc.h"
 #include "sql_qc.h"
 #include "mal_namespace.h"
-#include "opt_prelude.h"
+#include "opt_support.h"
 #include "querylog.h"
 #include "mal_builder.h"
 

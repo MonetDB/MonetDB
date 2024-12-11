@@ -27,7 +27,6 @@
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);

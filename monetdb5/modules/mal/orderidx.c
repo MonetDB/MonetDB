@@ -19,7 +19,6 @@
 #include "gdk.h"
 #include "mal_exception.h"
 #include "mal_function.h"
-#include "opt_prelude.h"
 
 #define MIN_PIECE	((BUN) 1000)	/* TODO use realistic size in production */
 
@@ -102,7 +101,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand() % 1000);
-	snew = newFunction(putName("user"), putName(name), FUNCTIONsymbol);
+	snew = newFunction(userRef, putName(name), FUNCTIONsymbol);
 	if (snew == NULL) {
 		throw(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -124,7 +123,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		goto bailout;			// large enough
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
-	pack = newInstruction(0, putName("bat"), putName("orderidx"));
+	pack = newInstruction(0, batRef, putName("orderidx"));
 	if (pack == NULL || (pack->argv[0] = newTmpVariable(smb, TYPE_void)) < 0) {
 		freeInstruction(pack);
 		msg = createException(MAL, "bat.orderidx",
@@ -147,7 +146,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	q = newStmt(smb, putName("language"), putName("dataflow"));
+	q = newStmt(smb, languageRef, dataflowRef);
 	if (q == NULL) {
 		freeInstruction(pack);
 		msg = createException(MAL, "bat.orderidx",
@@ -163,7 +162,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	o = 0;
 	for (i = 0; smb->errors == NULL && i < pieces; i++) {
 		/* add slice instruction */
-		q = newInstruction(smb, algebraRef, putName("slice"));
+		q = newInstruction(smb, algebraRef, sliceRef);
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
 			freeInstruction(q);
 			freeInstruction(pack);
