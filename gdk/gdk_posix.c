@@ -563,7 +563,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						return NULL;
 					}
 
-					strcat(strcpy(p, path), ".tmp");
+					stpcpy(stpcpy(p, path), ".tmp");
 					fd = open(p, O_RDWR | O_CREAT | O_CLOEXEC,
 						  MONETDB_MODE);
 					if (fd < 0) {

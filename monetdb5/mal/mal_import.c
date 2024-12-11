@@ -305,7 +305,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 
 	mal_unquote(qry);
-	b = (buffer *) GDKzalloc(sizeof(buffer));
+	b = (buffer *) GDKmalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
 		throw(MAL, "mal.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);

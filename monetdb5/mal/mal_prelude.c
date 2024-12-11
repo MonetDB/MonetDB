@@ -307,23 +307,26 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	f = (mel_func*)GDKmalloc(sizeof(mel_func));
 	mel_arg *args = (mel_arg*)GDKmalloc(sizeof(mel_arg)*argc);
 	if (!f || !args) {
-		if(!f) GDKfree(f);
+		GDKfree(f);
+		GDKfree(args);
 		freeSymbol(s);
 		return MEL_ERR;
 	}
-	f->mod = mod;
-	f->fcn = fcn;
-	f->command = command;
-	f->unsafe = unsafe;
-	f->vargs = 0;
-	f->vrets = 0;
-	f->poly = 0;
-	f->retc = retc;
-	f->argc = argc;
-	f->args = args;
-	f->imp = imp;
-	f->comment = comment?GDKstrdup(comment):NULL;
-	f->cname = fname?GDKstrdup(fname):NULL;
+	*f = (mel_func) {
+		.mod = mod,
+		.fcn = fcn,
+		.command = command,
+		.unsafe = unsafe,
+		.vargs = 0,
+		.vrets = 0,
+		.poly = 0,
+		.retc = retc,
+		.argc = argc,
+		.args = args,
+		.imp = imp,
+		.comment = comment ? GDKstrdup(comment) : NULL,
+		.cname = fname ? GDKstrdup(fname) : NULL,
+	};
 	s->def = NULL;
 	s->func = f;
 
@@ -339,8 +342,11 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 			f->vrets = true;
 			setPoly(f, TYPE_any);
 		}
-		if (a.opt && f->command)
+		if (a.opt && f->command) {
+			va_end(va);
+			freeSymbol(s);		/* also frees f and args */
 			return MEL_ERR;
+		}
 		/*
 		if (a.nr >= 2)
 			printf("%s.%s\n", f->mod, f->fcn);
@@ -358,8 +364,11 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 			f->vargs = true;
 			setPoly(f, TYPE_any);
 		}
-		if (a.opt && f->command)
+		if (a.opt && f->command) {
+			va_end(va);
+			freeSymbol(s);		/* also frees f and args */
 			return MEL_ERR;
+		}
 		/*
 		if (a.nr >= 2)
 			printf("%s.%s\n", f->mod, f->fcn);

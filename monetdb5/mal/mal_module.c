@@ -244,15 +244,13 @@ userModule(void)
 {
 	Module cur;
 
-	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
+	cur = (Module) GDKmalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = userRef;
-	if (cur->name == NULL) {
-		GDKfree(cur);
-		return NULL;
-	}
-	cur->link = NULL;
+	*cur = (ModuleRecord) {
+		.name = userRef,
+		.link = NULL,
+	};
 	return cur;
 }
 

@@ -111,7 +111,7 @@ parseError(Client cntxt, str msg)
 	marker = createException(SYNTAX, "parseError", "%s%s", buf, msg);
 
 	old = mb->errors;
-	new = GDKzalloc((old ? strlen(old) : 0) + strlen(line) + strlen(marker) +
+	new = GDKmalloc((old ? strlen(old) : 0) + strlen(line) + strlen(marker) +
 					64);
 	if (new == NULL) {
 		freeException(line);
@@ -119,14 +119,14 @@ parseError(Client cntxt, str msg)
 		skipToEnd(cntxt);
 		return;					// just stick to old error message
 	}
+	mb->errors = new;
 	if (old) {
-		strcpy(new, old);
+		new = stpcpy(new, old);
 		GDKfree(old);
 	}
-	strcat(new, line);
-	strcat(new, marker);
+	new = stpcpy(new, line);
+	new = stpcpy(new, marker);
 
-	mb->errors = new;
 	freeException(line);
 	freeException(marker);
 	skipToEnd(cntxt);
@@ -1912,11 +1912,11 @@ parseEnd(Client cntxt)
 			str new = GDKmalloc(strlen(errors) +
 								strlen(cntxt->curprg->def->errors) + 16);
 			if (new) {
-				strcpy(new, errors);
-				if (new[strlen(new) - 1] != '\n')
-					strcat(new, "\n");
-				strcat(new, "!");
-				strcat(new, cntxt->curprg->def->errors);
+				char *p = stpcpy(new, errors);
+				if (p[-1] != '\n')
+					*p++ = '\n';
+				*p++ = '!';
+				strcpy(p, cntxt->curprg->def->errors);
 
 				freeException(errors);
 				freeException(cntxt->curprg->def->errors);
@@ -1936,10 +1936,10 @@ parseEnd(Client cntxt)
 				if (errors) {
 					str new = GDKmalloc(strlen(errors) + strlen(msg) + 3);
 					if (new) {
-						strcpy(new, msg);
-						if (new[strlen(new) - 1] != '\n')
-							strcat(new, "\n");
-						strcat(new, errors);
+						char *p = stpcpy(new, msg);
+						if (p[-1] != '\n')
+							*p++ = '\n';
+						strcpy(p, errors);
 						freeException(errors);
 						cntxt->curprg->def->errors = new;
 					} else {

@@ -2493,7 +2493,6 @@ BBPallocbat(int tt)
 	MT_Id pid = MT_getpid();
 	bool lock = locked_by == 0 || locked_by != pid;
 	bat i;
-	int len = 0;
 	struct freebats *t = MT_thread_getfreebats();
 
 	if (t->freebats == 0) {
@@ -2555,11 +2554,13 @@ BBPallocbat(int tt)
 	BBP_pid(i) = pid;
 	MT_lock_unset(&GDKswapLock(i));
 
-	if (*BBP_bak(i) == 0)
+	if (*BBP_bak(i) == 0) {
+		int len;
 		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
-	if (len == -1 || len >= FILENAME_MAX) {
-		GDKerror("impossible error\n");
-		return 0;
+		if (len == -1 || (size_t) len >= sizeof(BBP_bak(i))) {
+			GDKerror("impossible error\n");
+			return 0;
+		}
 	}
 	BBP_logical(i) = BBP_bak(i);
 
