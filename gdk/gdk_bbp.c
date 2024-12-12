@@ -4457,7 +4457,7 @@ static struct {
  * Adds new callback to the callback list.
  */
 gdk_return
-gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
+gdk_add_callback(const char *name, gdk_callback_func *f, int argc, void *argv[], int
 		interval)
 {
 
@@ -4512,7 +4512,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
  * Removes a callback from the callback list with a given name as an argument.
  */
 gdk_return
-gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
+gdk_remove_callback(const char *cb_name, gdk_callback_func *argsfree)
 {
 	gdk_callback *prev = NULL;
 	gdk_return res = GDK_FAIL;
