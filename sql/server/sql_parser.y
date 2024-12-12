@@ -6171,6 +6171,7 @@ ident:
 
 non_reserved_keyword:
   AUTHORIZATION	{ $$ = sa_strdup(SA, "authorization"); }/* sloppy: officially reserved */
+| ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }	/* sloppy: officially reserve */
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
 | CYCLE		{ $$ = sa_strdup(SA, "cycle"); }	/* sloppy: officially reserved */
 | sqlDATE	{ $$ = sa_strdup(SA, "date"); }		/* sloppy: officially reserved */
@@ -6325,7 +6326,6 @@ function_name_keyword:
 
 reserved_keyword:
   ALL		{ $$ = sa_strdup(SA, "all"); }
-| ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AND		{ $$ = sa_strdup(SA, "and"); }
 | ANY		{ $$ = sa_strdup(SA, "ANY"); }
 //| ARRAY		{ $$ = sa_strdup(SA, "ARRAY"); }
