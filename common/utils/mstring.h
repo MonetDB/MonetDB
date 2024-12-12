@@ -73,6 +73,7 @@ GCC_Pragma("GCC diagnostic pop")
 /* copy the NULL terminated list of src strings with a maximum of n
  * bytes to dst; return the combined length of the src strings */
 __attribute__((__access__(write_only, 1, 2)))
+__attribute__((__sentinel__))
 static inline size_t
 strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 {
