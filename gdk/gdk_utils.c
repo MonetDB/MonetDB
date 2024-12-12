@@ -339,7 +339,8 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
  * Single-lined comments can now be logged safely, together with
  * process, thread and user ID, and the current time.
  */
-static void __attribute__((__format__(__printf__, 2, 3)))
+__attribute__((__format__(__printf__, 2, 3)))
+static void
 GDKlog(FILE *lockFile, const char *format, ...)
 {
 	va_list ap;
@@ -2152,7 +2153,8 @@ sa_create(allocator *pa)
 	return sa;
 }
 
-allocator *sa_reset(allocator *sa)
+allocator *
+sa_reset(allocator *sa)
 {
 	size_t i ;
 
@@ -2235,7 +2237,8 @@ sa_alloc(allocator *sa, size_t sz)
 }
 
 #undef sa_zalloc
-void *sa_zalloc(allocator *sa, size_t sz)
+void *
+sa_zalloc(allocator *sa, size_t sz)
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -2244,7 +2247,8 @@ void *sa_zalloc(allocator *sa, size_t sz)
 	return r;
 }
 
-void sa_destroy(allocator *sa)
+void
+sa_destroy(allocator *sa)
 {
 	if (sa->pa) {
 		sa_reset(sa);
@@ -2261,7 +2265,8 @@ void sa_destroy(allocator *sa)
 }
 
 #undef sa_strndup
-char *sa_strndup(allocator *sa, const char *s, size_t l)
+char *
+sa_strndup(allocator *sa, const char *s, size_t l)
 {
 	char *r = sa_alloc(sa, l+1);
 
@@ -2273,12 +2278,14 @@ char *sa_strndup(allocator *sa, const char *s, size_t l)
 }
 
 #undef sa_strdup
-char *sa_strdup(allocator *sa, const char *s)
+char *
+sa_strdup(allocator *sa, const char *s)
 {
 	return sa_strndup(sa, s, strlen(s));
 }
 
-char *sa_strconcat(allocator *sa, const char *s1, const char *s2)
+char *
+sa_strconcat(allocator *sa, const char *s1, const char *s2)
 {
 	size_t l1 = strlen(s1);
 	size_t l2 = strlen(s2);
@@ -2292,7 +2299,8 @@ char *sa_strconcat(allocator *sa, const char *s1, const char *s2)
 	return r;
 }
 
-size_t sa_size(allocator *sa)
+size_t
+sa_size(allocator *sa)
 {
 	return sa->usedmem;
 }
