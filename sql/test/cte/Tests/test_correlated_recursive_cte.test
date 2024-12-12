@@ -196,7 +196,7 @@ ORDER BY 1 NULLS LAST;
 NULL
 
 # limit in subquery
-skipif knownfail                                                                                                                                                           
+#skipif knownfail                                                                                                                                                           
 query I
 SELECT t2.*
 FROM (VALUES (10)) t(_corr), LATERAL (
