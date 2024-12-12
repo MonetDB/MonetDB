@@ -148,6 +148,7 @@ mal_export const char likeuselectRef[];
 mal_export const char lngRef[];
 mal_export const char lockRef[];
 mal_export const char lookupRef[];
+mal_export const char mainRef[];
 mal_export const char malRef[];
 mal_export const char manifoldRef[];
 mal_export const char mapiRef[];

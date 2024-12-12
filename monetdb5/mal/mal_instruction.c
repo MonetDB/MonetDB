@@ -587,12 +587,11 @@ char *
 getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 {
 	char *s = mb->var[idx].name;
-	if (getVarKind(mb, idx) == 0)
-		setVarKind(mb, idx, REFMARKER);
 	if (s == NULL) {
-		(void) snprintf(buf, IDLENGTH, "%c_%d", getVarKind(mb, idx), idx);
+		char kind = getVarKind(mb, idx);
+		(void) snprintf(buf, IDLENGTH, "%c_%d", kind ? kind : REFMARKER, idx);
 	} else {
-		(void) snprintf(buf, IDLENGTH, "%s", s);
+		strcpy_len(buf, s, IDLENGTH);
 	}
 	return buf;
 }

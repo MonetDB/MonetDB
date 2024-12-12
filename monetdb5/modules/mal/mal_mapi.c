@@ -2099,7 +2099,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl = 0;
 	char buf[BUFSIZ];
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 
 	(void) cntxt;
 	key = getArgReference_int(stk, pci, pci->retc);

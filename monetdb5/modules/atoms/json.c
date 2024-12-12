@@ -1048,7 +1048,6 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 
   bailout:
 	GDKfree(result);
-	*ret = s;
 	for (l = 0; l < MAXTERMS; l++)
 		if (terms[l].name)
 			GDKfree(terms[l].name);
