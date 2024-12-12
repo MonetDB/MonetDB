@@ -24,7 +24,7 @@
 #endif
 
 #if defined(__has_attribute)
-#if ! __has_attribute(access)
+#if ! __has_attribute(__access__)
 #define __access__(...)
 #endif
 #else
