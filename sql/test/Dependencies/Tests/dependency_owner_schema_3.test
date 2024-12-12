@@ -1285,6 +1285,12 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.objects as tri,
 query TTT nosort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name
 ----
+date_to_str
+dayname
+DEP_FUNC
+date_to_str
+monthname
+DEP_FUNC
 decypher
 get_remote_table_expressions
 DEP_FUNC
