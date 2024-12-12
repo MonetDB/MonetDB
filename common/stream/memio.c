@@ -20,9 +20,11 @@ buffer_init(buffer *restrict b, char *restrict buf, size_t size)
 {
 	if (b == NULL || buf == NULL)
 		return;
-	b->pos = 0;
-	b->buf = buf;
-	b->len = size;
+	*b = (buffer) {
+		.pos = 0,
+		.buf = buf,
+		.len = size,
+	};
 }
 
 buffer *

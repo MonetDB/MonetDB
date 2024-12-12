@@ -110,7 +110,7 @@ def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
         s.set_seqs(a[i].replace('\t', '').replace(' ', ''),
                    b[i].replace('\t', '').replace(' ', ''))
         # should be high matching ratio
-        if s.quick_ratio() < ratio:
+        if s.quick_ratio() < 1.0:
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
@@ -461,7 +461,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             self.fail(msg)
         if os.getenv('MTEST_APPROVE'):
             with open(ferr+'.newtest', 'w') as f:
-                f.write(self.test_run_error or '')
+                # normalize error message: use fixed host and port
+                import re
+                f.write(re.sub('^MAPI  = (.*)@.*:.*$', r'MAPI  = \1@localhost:50000', self.test_run_error or '', flags=re.M))
         return self
 
     def assertDataResultMatch(self, expected, ratio=0.95):

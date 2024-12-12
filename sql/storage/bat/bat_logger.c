@@ -113,6 +113,7 @@ log_temp_descriptor(log_bid b)
 }
 
 #if defined CATALOG_JAN2022 || defined CATALOG_SEP2022 || defined CATALOG_AUG2024
+/* cannot use attribute((sentinel)) since sentinel is not a pointer */
 static gdk_return
 tabins(logger *lg, ...)
 {
@@ -702,12 +703,12 @@ bl_postversion(void *Store, logger *lg)
 		if (check == NULL)
 			return GDK_FAIL;
 		if ((check = BATsetaccess(check, BAT_READ)) == NULL ||
-			/* 2165 is sys.keys.check */
-			BUNappend(lg->catalog_id, &(int) {2165}, true) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_bid, &check->batCacheid, true) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_cnt, &(lng){BATcount(check)}, false) != GDK_SUCCEED
-			) {
+				/* 2165 is sys.keys.check */
+				BUNappend(lg->catalog_id, &(int) {2165}, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &check->batCacheid, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_cnt, &(lng){BATcount(check)}, false) != GDK_SUCCEED
+		) {
 			bat_destroy(check);
 			return GDK_FAIL;
 		}
@@ -1030,7 +1031,8 @@ bl_sequence(sqlstore *store, int seq, lng id)
 /* Write a plan entry to copy part of the given file.
  * That part of the file must remain unchanged until the plan is executed.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
 {
 	if (mnstr_printf(plan, "c %" PRIu64 " %s\n", extent, name) < 0) {
@@ -1044,7 +1046,8 @@ snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
  * The contents are included in the plan so the source file is allowed to
  * change in the mean time.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
 	gdk_return ret = GDK_FAIL;
@@ -1108,7 +1111,8 @@ end:
 }
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
 	char log_file[FILENAME_MAX];
@@ -1141,7 +1145,8 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename, const char *suffix, uint64_t extent)
 {
 	char path1[FILENAME_MAX];
@@ -1191,7 +1196,8 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_bats(stream *plan, const char *db_dir)
 {
 	char bbpdir[FILENAME_MAX];
@@ -1278,7 +1284,8 @@ end:
 	return ret;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_vaultkey(stream *plan, const char *db_dir)
 {
 	char path[FILENAME_MAX];
@@ -1307,12 +1314,11 @@ bl_snapshot(sqlstore *store, stream *plan)
 {
 	logger *bat_logger = store->logger;
 	gdk_return ret;
-	char *db_dir = NULL;
+	char db_dir[MAXPATH];
 	size_t db_dir_len;
 
 	// Farm 0 is always the persistent farm.
-	db_dir = GDKfilepath(0, NULL, "", NULL);
-	if (db_dir == NULL)
+	if (GDKfilepath(db_dir, sizeof(db_dir), 0, NULL, "", NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 	db_dir_len = strlen(db_dir);
 	if (db_dir[db_dir_len - 1] == DIR_SEP)
@@ -1340,7 +1346,6 @@ bl_snapshot(sqlstore *store, stream *plan)
 
 	ret = GDK_SUCCEED;
 end:
-	GDKfree(db_dir);
 	return ret;
 }
 

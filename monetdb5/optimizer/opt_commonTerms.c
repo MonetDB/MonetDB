@@ -33,7 +33,8 @@ isProjectConst(const InstrRecord *p)
 	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
 }
 
-static int __attribute__((__pure__))
+__attribute__((__pure__))
+static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
 	int i;

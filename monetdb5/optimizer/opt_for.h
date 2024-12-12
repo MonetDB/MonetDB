@@ -12,7 +12,6 @@
 
 #ifndef _OPT_FOR_
 #define _OPT_FOR_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"

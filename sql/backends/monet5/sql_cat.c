@@ -25,7 +25,6 @@
 #include "sql_partition.h"
 #include "sql_statistics.h"
 #include "mal_namespace.h"
-#include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
 

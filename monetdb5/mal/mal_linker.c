@@ -432,7 +432,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		   extra checks */
 		strncpy(fullname, mod_path, i);
 		fullname[i] = DIR_SEP;
-		strcpy(fullname + i + 1, basename);
+		char *nameend = stpcpy(fullname + i + 1, basename);
 		/* see if this is a directory, if so, recurse */
 		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
 			struct dirent *e;
@@ -468,7 +468,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 			}
 			(void) closedir(rdir);
 		} else {
-			strcat(fullname + i + 1, ext);
+			strcpy(nameend, ext);
 			if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
 				char *tmp;
 				close(fd);

@@ -12,7 +12,6 @@
 
 #ifndef _OPT_MITOSIS_
 #define _OPT_MITOSIS_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 #define MAXSLICES 1024			/* to be refined */

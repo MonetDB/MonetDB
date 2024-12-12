@@ -305,7 +305,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	}
 
 	mal_unquote(qry);
-	b = (buffer *) GDKzalloc(sizeof(buffer));
+	b = (buffer *) GDKmalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
 		throw(MAL, "mal.eval", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -348,7 +348,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		return msg;
 	}
 
-	msg = MSinitClientPrg(c, "user", "main");	/* create new context */
+	msg = MSinitClientPrg(c, userRef, mainRef);	/* create new context */
 	if (msg == MAL_SUCCEED)
 		msg = MALparser(c);
 	/*

@@ -1076,11 +1076,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default: {
-				char name[IDLENGTH] = { 0 };
+				char name[IDLENGTH];
 				ret = createException(MAL, "mal.interpreter",
-									  "%s: Unknown barrier type", getVarNameIntoBuffer(mb,
-																			 getDestVar
-																			 (pci), name));
+									  "%s: Unknown barrier type",
+									  getVarNameIntoBuffer(mb,
+														   getDestVar
+														   (pci), name));
 					 }
 			}
 			stkpc++;
@@ -1252,13 +1253,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			str new, n;
 			n = createException(MAL, nme, "exception not caught");
 			if (n) {
-				new = GDKzalloc(strlen(ret) + strlen(n) + 16);
+				new = GDKmalloc(strlen(ret) + strlen(n) + 16);
 				if (new) {
-					strcpy(new, ret);
-					if (new[strlen(new) - 1] != '\n')
-						strcat(new, "\n");
-					strcat(new, "!");
-					strcat(new, n);
+					char *p = stpcpy(new, ret);
+					if (p[-1] != '\n')
+						*p++ = '\n';
+					*p++ = '!';
+					p = stpcpy(p, n);
 					freeException(n);
 					freeException(ret);
 					ret = new;

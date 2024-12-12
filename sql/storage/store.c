@@ -2543,7 +2543,8 @@ store_readonly(sqlstore *store)
 
 // Helper function for tar_write_header.
 // Our stream.h makes sure __attribute__ exists.
-static void __attribute__((__format__(__printf__, 3, 4)))
+__attribute__((__format__(__printf__, 3, 4)))
+static void
 tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 {
 	va_list ap;
@@ -2563,7 +2564,8 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 #define TAR_BLOCK_SIZE (512)
 
 // Write a tar header to the given stream.
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
@@ -2630,7 +2632,8 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
  * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
  * of TAR_BLOCK_SIZE.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
 	const size_t tail = size % TAR_BLOCK_SIZE;
@@ -2657,7 +2660,8 @@ tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
 {
 	gdk_return res;
@@ -2669,7 +2673,8 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	return tar_write(tarfile, path, data, size);
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, int64_t size, char *buf, size_t bufsize)
 {
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
@@ -2703,7 +2708,8 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
 	if (plan == NULL)
@@ -2805,7 +2811,8 @@ end:
  *
  * This function is not entirely safe as compared to for example mkstemp.
  */
-static str __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static str
 pick_tmp_name(str filename)
 {
 	str name = GDKmalloc(strlen(filename) + 10);

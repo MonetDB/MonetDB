@@ -21,8 +21,8 @@
 int
 main(void)
 {
-	char sql[1000];
 	char csv_path[PATH_MAX];
+	char sql[sizeof(csv_path) + 60];
 	char* err = NULL;
 	monetdbe_database mdbe;
 	monetdbe_result* result = NULL;
@@ -44,22 +44,21 @@ main(void)
 	}
 	strcat(csv_path, "/test.csv");
 
-	strcpy(sql, "COPY SELECT * FROM test INTO '");
-	strcat(sql, csv_path);
-	strcat(sql, "' USING DELIMITERS ','");
+	snprintf(sql, sizeof(sql),
+			 "COPY SELECT * FROM test INTO '%s' USING DELIMITERS ','",
+			 csv_path);
 
 	if ((err = monetdbe_query(mdbe, sql, NULL, NULL)) != NULL)
 		error(err)
-	
+
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test_copy (x integer, y string, ts timestamp, dt date, t time, b blob)", NULL, NULL)) != NULL) {
 		delete_file(csv_path)
 		error(err)
 	}
 
-	memset(sql, 0, 1000);
-	strcpy(sql, "COPY INTO test_copy FROM '");
-	strcat(sql, csv_path);
-	strcat(sql, "' DELIMITERS ','");
+	snprintf(sql, sizeof(sql),
+			 "COPY INTO test_copy FROM '%s' DELIMITERS ','",
+			 csv_path);
 
 	if ((err = monetdbe_query(mdbe, sql, NULL, NULL)) != NULL) {
 		delete_file(csv_path)
