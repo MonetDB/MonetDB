@@ -24,11 +24,11 @@ statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'()
 SELECT s1.f1()
 
 @connection(id=tc)
-statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(tinyint)
+statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'(tinyint)
 SELECT s1.f1(1)
 
 @connection(id=tc)
-statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(int)
+statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'(int)
 SELECT s1.f1(cast(1 as int))
 
 @connection(id=tc)
@@ -52,11 +52,11 @@ SELECT s1.f1()
 10
 
 @connection(id=tc)
-statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(tinyint)
+statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'(tinyint)
 SELECT s1.f1(1)
 
 @connection(id=tc)
-statement error 42000!SELECT: insufficient privileges for unary operator 's1'.'f1'(int)
+statement error 42000!SELECT: insufficient privileges for operator 's1'.'f1'(int)
 SELECT s1.f1(cast(1 as int))
 
 statement ok

@@ -497,7 +497,7 @@ SELECT CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1
 ----
 6
 
-statement error 42000!SELECT: no such unary operator 'first'(int)
+statement error 42000!SELECT: no such operator 'first'(int)
 SELECT FIRST(i), CAST((SELECT SUM(i1.i)) AS BIGINT) FROM integers i1
 
 query II nosort

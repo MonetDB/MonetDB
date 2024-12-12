@@ -1122,7 +1122,7 @@ ROLLBACK
 statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
 select scale_up(12.1, 10)
 
-statement error 42000!SELECT: no such unary operator 'sql_exists'(tinyint)
+statement error 42000!SELECT: no such operator 'sql_exists'(tinyint)
 select sql_exists(1)
 
 statement error 42000!CREATE FUNCTION: name 'scale_down' cannot be used
