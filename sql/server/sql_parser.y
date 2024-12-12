@@ -222,12 +222,10 @@ int yydebug=1;
 	like_predicate
 	like_table
 	literal
-	//map_funcs
 	merge_insert
 	merge_match_clause
 	merge_stmt
 	merge_update_or_delete
-	//multi_arg_func
 	null
 	object_name
 	operation
@@ -637,7 +635,6 @@ int yydebug=1;
 %token <sval> XMLPARSE STRIP WHITESPACE XMLPI XMLQUERY PASSING XMLTEXT
 %token <sval> NIL REF ABSENT EMPTY DOCUMENT ELEMENT CONTENT XMLNAMESPACES NAMESPACE
 %token <sval> XMLVALIDATE RETURNING LOCATION ID ACCORDING XMLSCHEMA URI XMLAGG
-//%token <sval> FIELD FILTER
 %token <sval> FILTER
 %token <sval> CORRESPONDING
 
@@ -775,10 +772,10 @@ SQLCODE SQLERROR UNDER WHENEVER
 %nonassoc <sval> NOT_BETWEEN BETWEEN NOT_IN sqlIN NOT_EXISTS EXISTS NOT_LIKE LIKE NOT_ILIKE ILIKE
 %nonassoc ESCAPE
 
-%nonassoc UNBOUNDED //NESTED
+%nonassoc UNBOUNDED
 %nonassoc IDENT PARTITION RANGE ROWS GROUPS PRECEDING FOLLOWING CUBE ROLLUP
-                        SET OBJECT VALUE WITH WITHOUT PATH //keys
-%left '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING //SUBSTRING TRIM POSITION SPLIT_PART
+                        SET OBJECT VALUE WITH WITHOUT PATH 
+%left '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING
 %left '*' '/' '%'
 %left AT
 %right UMINUS
@@ -879,7 +876,6 @@ sqlstmt:
 			  m->emod |= mod_trace;
 			  m->scanner.as = m->scanner.yycur;
 			}
-   //sql SCOLON		{ $$ = $3; YYACCEPT; }
    sql SCOLON		{
 			  if (m->sym) {
 				append_symbol(m->sym->data.lval, $3);
@@ -2536,7 +2532,7 @@ control_statement:
 
 call_statement:
 	CALL func_ref			{$$ = _symbol_create_symbol(SQL_CALL, $2);}
-    // odbc procedure call escape
+    /* odbc procedure call escape */
     | '{' CALL func_ref '}' {$$ = _symbol_create_symbol(SQL_CALL, $3);}
     ;
 
@@ -2995,7 +2991,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-//  1    2      3    4     5               6    7                8               9               10       11               12         13              14              15
+/*  1    2      3    4     5               6    7                8               9               10       11               12         13              14              15 */
     COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
@@ -3011,7 +3007,7 @@ copyfrom_stmt:
 	  append_int(l, $12);
 	  append_list(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-//  1    2      3    4     5               6    7      8               9        10               11         12              13
+/*  1    2      3    4     5               6    7      8               9        10               11         12              13*/
   | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort
 	{ dlist *l = L();
 	  append_list(l, $4);
@@ -3027,13 +3023,13 @@ copyfrom_stmt:
 	  append_int(l, $11);
 	  append_list(l, $10);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-//  1    2         3    4     5    6
+/*  1    2         3    4     5    6 */
   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-//   1    2              3      4    5     6               7    8                9
+/*   1      2              3      4    5     6               7    8                9 */
    | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location
 	{ dlist *l = L();
 	  append_list(l, $5);
@@ -3045,7 +3041,7 @@ copyfrom_stmt:
   ;
 
 copyto_stmt:
-//  1    2                    3    4      5               6        7
+/*  1    2               3    4      5               6        7 */
     COPY SelectStmt INTO_LA string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
@@ -3054,7 +3050,7 @@ copyto_stmt:
 	  append_string(l, $7);
 	  append_int(l, $5);
 	  $$ = _symbol_create_list( SQL_COPYINTO, l ); }
-//  1    2                    3    4      5        6
+/*  1    2                    3    4      5        6 */
   | COPY SelectStmt INTO_LA STDOUT opt_seps opt_null_string
 	{ dlist *l = L();
 	  append_symbol(l, $2);
@@ -3063,7 +3059,7 @@ copyto_stmt:
 	  append_string(l, $6);
 	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_COPYINTO, l ); }
-//  1    2                    3    4              5      6                7
+/*  1    2              3    4              5      6                7 */
   | COPY SelectStmt INTO_LA opt_endianness BINARY string_commalist opt_on_location
 	{ dlist *l = L();
 	  append_symbol(l, $2);
@@ -3330,7 +3326,6 @@ insert_rest:
 	{
           dlist *p = L();
 	  dlist *l = L();
-	  //append_list(l, L());
 	  append_list(p, NULL); /* no column spec */
 	  append_symbol(p, _symbol_create_list(SQL_VALUES, l));
 	  $$ = p;
@@ -3339,7 +3334,6 @@ insert_rest:
 	{
           dlist *p = L();
           dlist *l = L();
-	  //append_list(l, L());
 	  append_list(p, NULL); /* no column spec */
 	  append_symbol(p, _symbol_create_list(SQL_VALUES, l));
 	  $$ = p;
@@ -3508,7 +3502,7 @@ with_clause:
 	{
 		dlist *l = L();
 		append_list(l, $3);
-		append_symbol(l, NULL); // filled in later
+		append_symbol(l, NULL); /* filled in later */
 		append_int(l, $2);
 		$$ = _symbol_create_list( SQL_WITH, l );
 	}
@@ -3880,9 +3874,8 @@ table_ref:
 				  if ($$->token == SQL_SELECT) {
 					SelectNode *sn = (SelectNode*)$1;
 					sn->name = $2;
-				  } else if ($$->token == SQL_VALUES || $$->token == SQL_NOP || $$->token == SQL_OP) {
+				  } else if ($$->token == SQL_VALUES || $$->token == SQL_NOP) {
 					symbol *s = $$;
-					assert(s->token == SQL_VALUES || s->token == SQL_NOP);
 			        	dlist *l = L();
 				  	append_symbol(l, s);
 				  	append_int(l, 0);
@@ -3900,9 +3893,8 @@ table_ref:
 					SelectNode *sn = (SelectNode*)$2;
 					sn->name = $3;
 					sn->lateral = 1;
-				  } else if ($$->token == SQL_VALUES || $$->token == SQL_NOP || $$->token == SQL_OP) {
+				  } else if ($$->token == SQL_VALUES || $$->token == SQL_NOP) {
 					symbol *s = $$;
-					assert(s->token == SQL_VALUES || s->token == SQL_NOP);
 			        	dlist *l = L();
 				  	append_symbol(l, s);
 				  	append_int(l, 1);
@@ -4196,7 +4188,7 @@ like_exp:
 	  }
 	}
 
- // odbc like escape
+ /* odbc like escape */
  |  scalar_exp '{' ESCAPE string '}'
     {
 	const char* esc = $4;
@@ -4725,23 +4717,8 @@ value_exp:
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
- //|  map_funcs
- //|  multi_arg_func
  |  select_with_parens  %prec UMINUS { $$ = $1; }
  ;
-
-/*
-map_funcs:
-    FIELD '(' expr_list ')'
-			{ dlist *l = L();
-			  append_list(l,
-				append_string(L(), sa_strdup(SA, "field")));
-			  append_int(l, FALSE); /* ignore distinct */
-/*
-			  append_list(l, $3);
-			  $$ = _symbol_create_list( SQL_NOP, l ); }
-  ;
-*/
 
 param:
    '?'
@@ -4848,7 +4825,8 @@ func_ref:
 	{ dlist *l = L();
 	  append_list(l, $1);
 	  append_int(l, FALSE); /* ignore distinct */
-	  $$ = _symbol_create_list( SQL_OP, l ); }
+	  append_list(l, NULL);
+	  $$ = _symbol_create_list( SQL_NOP, l ); }
 |   qfunc '(' expr_list ')'
 	{ dlist *l = L();
 	  append_list(l, $1);
@@ -4882,28 +4860,33 @@ datetime_funcs:
  |  CURRENT_DATE opt_brackets
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "current_date")));
-			 append_int(l, FALSE); /* ignore distinct */
-			  $$ = _symbol_create_list( SQL_OP, l ); }
+			  append_int(l, FALSE); /* ignore distinct */
+		  	  append_list(l, NULL);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  CURRENT_TIME opt_brackets
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "current_time")));
 			  append_int(l, FALSE); /* ignore distinct */
-			  $$ = _symbol_create_list( SQL_OP, l ); }
+		  	  append_list(l, NULL);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  CURRENT_TIMESTAMP opt_brackets
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "current_timestamp")));
 			  append_int(l, FALSE); /* ignore distinct */
-			  $$ = _symbol_create_list( SQL_OP, l ); }
+		  	  append_list(l, NULL);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  LOCALTIME opt_brackets
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "localtime")));
 			  append_int(l, FALSE); /* ignore distinct */
-			  $$ = _symbol_create_list( SQL_OP, l ); }
+		  	  append_list(l, NULL);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  LOCALTIMESTAMP opt_brackets
 			{ dlist *l = L();
 			  append_list(l, append_string(L(), sa_strdup(SA, "localtimestamp")));
 			  append_int(l, FALSE); /* ignore distinct */
-			  $$ = _symbol_create_list( SQL_OP, l ); }
+		  	  append_list(l, NULL);
+			  $$ = _symbol_create_list( SQL_NOP, l ); }
  ;
 
 opt_brackets:
@@ -5069,7 +5052,7 @@ aggr_or_window_ref:
 		  append_list(l, $1);
 		  append_int(l, FALSE); /* ignore distinct */
 		  append_list(l, NULL);
-		  $$ = _symbol_create_list( SQL_OP, l ); }
+		  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  qfunc '(' expr_list ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
@@ -5543,7 +5526,7 @@ literal:
 			DEC_TPE value = decimal_from_str(s, &digits, &scale, &has_errors);
 
 			if (!has_errors && digits <= MAX_DEC_DIGITS) {
-				// The float-like value seems to fit in decimal storage
+				/* The float-like value seems to fit in decimal storage */
 				sql_find_subtype(&t, "decimal", digits, scale );
 				$$ = _newAtomNode( atom_dec(SA, &t, value));
 			}
@@ -6222,7 +6205,6 @@ non_reserved_keyword:
 | EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 | FIRST		{ $$ = sa_strdup(SA, "first"); }
-//| FIELD		{ $$ = sa_strdup(SA, "field"); }
 | GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 | IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 | INCREMENT	{ $$ = sa_strdup(SA, "increment"); }
@@ -6284,34 +6266,26 @@ non_reserved_keyword:
 /* column identifiers */
 column_name_keyword:
   BETWEEN 	{ $$ = sa_strdup(SA, "between"); }
-//| BIGINT
 | CHARACTER 	{ $$ = sa_strdup(SA, "character"); }
 | COALESCE 	{ $$ = sa_strdup(SA, "coalesce"); }
-//| sqlDECIMAL
 | EXISTS 	{ $$ = sa_strdup(SA, "exists"); }
 | EXTRACT 	{ $$ = sa_strdup(SA, "extract"); }
-//| sqlFLOAT
 | GROUPING 	{ $$ = sa_strdup(SA, "grouping"); }
-//| sqlINT
-//| sqlINTEGER
 | INTERVAL 	{ $$ = sa_strdup(SA, "interval"); }
 | NULLIF 	{ $$ = sa_strdup(SA, "nullif"); }
 | POSITION 	{ $$ = sa_strdup(SA, "position"); }
 | PRECISION	{ $$ = sa_strdup(SA, "precision"); }	/* sloppy: officially reserved */
 | sqlREAL
 | ROW		{ $$ = sa_strdup(SA, "row"); }		/* sloppy: officially reserved */
-//| SMALLINT
 | SUBSTRING	{ $$ = sa_strdup(SA, "substring"); }
 | TIME		{ $$ = sa_strdup(SA, "time"); }	
 | TIMESTAMP	{ $$ = sa_strdup(SA, "timestamp"); }
 | TRIM		{ $$ = sa_strdup(SA, "trim"); }
 | VALUES	{ $$ = sa_strdup(SA, "values"); }
-//| VARCHAR
 | XMLATTRIBUTES	{ $$ = sa_strdup(SA, "xmlatributes"); }
 | XMLCONCAT	{ $$ = sa_strdup(SA, "xmlconcat"); }
 | XMLELEMENT	{ $$ = sa_strdup(SA, "xmlelement"); }
 | XMLFOREST	{ $$ = sa_strdup(SA, "xmlforest"); }
-//| XMLNAMESPACES
 | XMLPARSE	{ $$ = sa_strdup(SA, "xmlparse"); }
 | XMLPI		{ $$ = sa_strdup(SA, "xmlpi"); }
 /* odbc */
@@ -6328,7 +6302,6 @@ reserved_keyword:
   ALL		{ $$ = sa_strdup(SA, "all"); }
 | AND		{ $$ = sa_strdup(SA, "and"); }
 | ANY		{ $$ = sa_strdup(SA, "ANY"); }
-//| ARRAY		{ $$ = sa_strdup(SA, "ARRAY"); }
 | AS		{ $$ = sa_strdup(SA, "as"); }
 | ASC		{ $$ = sa_strdup(SA, "asc"); }
 | ASYMMETRIC	{ $$ = sa_strdup(SA, "asymmetric"); }
@@ -6352,10 +6325,6 @@ reduced_keywords:
 | INTERVAL	{ $$ = sa_strdup(SA, "interval"); }
 | PRECISION	{ $$ = sa_strdup(SA, "precision"); }
 | ROW		{ $$ = sa_strdup(SA, "row"); }
-//| CURRENT_ROLE	{ $$ = sa_strdup(SA, "current_role"); }
-//| CURRENT_SCHEMA	{ $$ = sa_strdup(SA, "current_schema"); }
-//| CURRENT_TIMEZONE	{ $$ = sa_strdup(SA, "current_timezone"); }
-//| CURRENT_USER	{ $$ = sa_strdup(SA, "current_user"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
 /* SQL/XML non reserved words */
 | ABSENT	{ $$ = sa_strdup(SA, "absent"); }
@@ -6400,7 +6369,7 @@ lngval:
 		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-		  // errno might be non-zero due to other people's code
+		  /* errno might be non-zero due to other people's code */
 		  errno = 0;
 		  if (l <= 19) {
 			$$ = strtoll(s,&end,10);
@@ -6421,7 +6390,7 @@ intval:
 		{
 		  char *end = NULL, *s = $1;
 		  int l = _strlen(s);
-		  // errno might be non-zero due to other people's code
+		  /* errno might be non-zero due to other people's code */
 		  errno = 0;
 		  if (l <= 10) {
 			long v = strtol(s,&end,10);
@@ -7202,7 +7171,7 @@ odbc_datetime_func:
 		append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff_sec")));
 		break;
 	    default:
-		// diff in ms
+		/* diff in ms */
 		append_list( l, append_string(L(), sa_strdup(SA, "timestampdiff")));
 	  }
 	  append_int(l, FALSE); /* ignore distinct */
@@ -7424,7 +7393,7 @@ int find_subgeometry_type(mvc *m, char* geoSubType) {
 char *token2string(tokens token)
 {
 	switch (token) {
-	// Please keep this list sorted for easy of maintenance
+	/* Please keep this list sorted for easy of maintenance */
 #define SQL(TYPE) case SQL_##TYPE : return #TYPE
 	SQL(AGGR);
 	SQL(ALTER_SEQ);
@@ -7530,7 +7499,6 @@ char *token2string(tokens token)
 	SQL(NOT_NULL);
 	SQL(NULL);
 	SQL(NULLIF);
-	SQL(OP);
 	SQL(OR);
 	SQL(ORDERBY);
 	SQL(PARAMETER);
@@ -7592,7 +7560,7 @@ char *token2string(tokens token)
 	TR(ROLLBACK);
 	TR(SAVEPOINT);
 	TR(START);
-	// Please keep this list sorted for easy of maintenance
+	/* Please keep this list sorted for easy of maintenance */
 	}
 	return "unknown";	/* just needed for broken compilers ! */
 }
@@ -7633,7 +7601,6 @@ sqlformaterror(mvc * sql, const char *format, ...)
 		/* default: Syntax error or access rule violation */
 		sqlstate = SQLSTATE(42000);
 	}
-	//assert(sql->scanner.errstr == NULL);
 	if (sql->errstr[0] == '\0') {
 		if (sqlstate)
 			len += snprintf(sql->errstr+len, ERRSIZE-1-len, "%s", sqlstate);

@@ -1178,12 +1178,15 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	/* inner symbol2string uses the temporary allocator */
 	switch (se->token) {
 	case SQL_NOP: {
-		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
+		dnode *lst = se->data.lval->h, *ops = NULL, *aux;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
 				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0, extra = sname ? strlen(sname) + 3 : 0;
+
+		if (lst->next->next->data.lval)
+			ops = lst->next->next->data.lval->h;
 
 		for (aux = ops; aux; aux = aux->next)
 			nargs++;
@@ -1229,21 +1232,6 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			if (sname)
 				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ","), r), ")");
-		}
-		return res;
-	}
-	case SQL_OP: {
-		dnode *lst = se->data.lval->h;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
-		char *res;
-		size_t extra = sname ? strlen(sname) + 3 : 0;
-
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + 5))) {
-			char *concat = res;
-			if (sname)
-				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
-			stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"()");
 		}
 		return res;
 	}

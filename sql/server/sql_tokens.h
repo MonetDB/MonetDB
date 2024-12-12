@@ -119,7 +119,6 @@ typedef enum tokens {
 	SQL_NOT_NULL,
 	SQL_NULL,
 	SQL_NULLIF,
-	SQL_OP,
 	SQL_OR,
 	SQL_ORDERBY,
 	SQL_PARAMETER,

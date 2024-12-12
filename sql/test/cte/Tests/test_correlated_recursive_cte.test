@@ -195,8 +195,6 @@ ORDER BY 1 NULLS LAST;
 1000000
 NULL
 
-# limit in subquery
-#skipif knownfail                                                                                                                                                           
 query I
 SELECT t2.*
 FROM (VALUES (10)) t(_corr), LATERAL (

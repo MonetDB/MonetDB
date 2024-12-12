@@ -787,7 +787,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 			if (l->next->type == type_symbol)
 				n = l->next;
 			else
-				n = l->next->data.lval->h;
+				n = l->next->data.lval?l->next->data.lval->h:NULL;
 
 			for (dnode *m = n; m; m = m->next) {
 				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
@@ -893,23 +893,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		list_append(refs, tname);
 	}
 	return rel;
-}
-
-static sql_exp *
-rel_op_(mvc *sql, char *sname, char *fname, exp_kind ek)
-{
-	bool found = false;
-	sql_subfunc *f = NULL;
-	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
-		   ((ek.card == card_relation)?F_UNION:F_FUNC));
-
-	if ((f = bind_func_(sql, sname, fname, NULL, type, false, &found, true))) {
-		if (check_card(ek.card, f))
-			return exp_op(sql->sa, NULL, f);
-		found = false;
-	}
-	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s operator %s%s%s'%s'()",
-					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
 }
 
 static sql_exp*
@@ -3149,22 +3132,6 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 static sql_exp * _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *arguments, int f);
 static sql_exp *rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f);
 
-static sql_exp *
-rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
-{
-	mvc *sql = query->sql;
-	dnode *l = se->data.lval->h;
-	char *fname = qname_schema_object(l->data.lval);
-	char *sname = qname_schema(l->data.lval);
-
-	if (find_func(sql, sname, fname, 1, F_AGGR, false, NULL, NULL))
-		return _rel_aggr(query, rel, 0, sname, fname, NULL, f);
-
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
-	return rel_op_(sql, sname, fname, ek);
-}
-
 sql_exp *
 rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card)
 {
@@ -4928,9 +4895,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested", toUpperCopy(uaname, aname));
 	}
-	if (window_function->token == SQL_OP) {
-		window_function->token = SQL_NOP;
-	}
 	if (window_function->token == SQL_BINOP) {
 		window_function->token = SQL_NOP;
 		dn->next->next->type = type_list;
@@ -5260,8 +5224,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 
 	switch (se->token) {
-	case SQL_OP:
-		return rel_op(query, rel, se, f, ek);
 	case SQL_BINOP:
 		return rel_binop(query, rel, se, f, ek);
 	case SQL_NOP:
@@ -6460,7 +6422,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 			if (l->next->type == type_symbol)
 				n = l->next;
 			else
-				n = l->next->data.lval->h;
+				n = l->next->data.lval?l->next->data.lval->h:NULL;
 
 			for (dnode *m = n; m; m = m->next) {
 				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
