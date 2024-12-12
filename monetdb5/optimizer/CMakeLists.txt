@@ -37,7 +37,6 @@ target_sources(optimizer
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
   opt_pipes.c
-  opt_prelude.c opt_prelude.h
   opt_reduce.c opt_reduce.h
   opt_remap.c opt_remap.h
   opt_remoteQueries.c opt_remoteQueries.h

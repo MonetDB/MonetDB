@@ -765,7 +765,7 @@ sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigne
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
 	base_init(sa, &t->base, local_id++, false, sqlname);
-	t->impl = sa_strdup(sa, impl);
+	t->impl = (char *) impl;
 	t->digits = digits;
 	t->scale = scale;
 	t->localtype = ATOMindex(t->impl);
@@ -816,8 +816,8 @@ sql_create_func_(allocator *sa, const char *name, const char *mod, const char *i
 		fres = create_arg(sa, NULL, create_subtype(sa, res), ARG_OUT);
 	base_init(sa, &t->base, local_id++, false, name);
 
-	t->imp = sa_strdup(sa, imp);
-	t->mod = sa_strdup(sa, mod);
+	t->imp = (char *) imp;
+	t->mod = (char *) mod;
 	t->ops = ops;
 	t->type = type;
 	if (fres) {

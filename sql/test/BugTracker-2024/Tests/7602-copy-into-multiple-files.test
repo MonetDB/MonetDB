@@ -1,0 +1,6 @@
+statement ok
+create table x (i int)
+
+statement error
+copy into x from 'a', 'b' on client
+

@@ -169,7 +169,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 		return base;
 	if (!copystring(&t, operatorName(s->kind), &len) ||
 		!copystring(&t, " ", &len) ||
-		!copystring(&t, f->mod ? f->mod : "user", &len) ||
+		!copystring(&t, f->mod ? f->mod : userRef, &len) ||
 		!copystring(&t, ".", &len) ||
 		!copystring(&t, f->fcn, &len) || !copystring(&t, "(", &len))
 		return base;
@@ -276,7 +276,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 		return base;
 	if (!copystring(&t, operatorName(p->token), &len) ||
 		!copystring(&t, " ", &len) ||
-		!copystring(&t, getModuleId(p) ? getModuleId(p) : "user", &len) ||
+		!copystring(&t, getModuleId(p) ? getModuleId(p) : userRef, &len) ||
 		!copystring(&t, ".", &len) ||
 		!copystring(&t, getFunctionId(p), &len) || !copystring(&t, "(", &len))
 		return base;

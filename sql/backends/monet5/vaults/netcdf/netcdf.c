@@ -929,13 +929,14 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < vndims; i++){
 		col = mvc_bind_column(m, arr_table, dname[i]);
 		if (col == NULL){
+			msg = createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
 			for (i = 0; i < vndims; i++)
 				GDKfree(dname[i]);
 			GDKfree(dname);
 			GDKfree(dim_bids);
 			bat_destroy(pos);
 			nc_close(ncid);
-			throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
+			return msg;
 		}
 
 		dimbat = BATdescriptor(dim_bids[i]);

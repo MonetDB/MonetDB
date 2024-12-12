@@ -797,10 +797,11 @@ mapi_handshake(Mapi mid)
 		if (motdlen > 0) {
 			mid->motd = malloc(motdlen + 1);
 			*mid->motd = 0;
+			char *p = mid->motd;
 			for (i = 0; i < result->cache.writer; i++)
 				if (result->cache.line[i].rows && result->cache.line[i].rows[0] == '#') {
-					strcat(mid->motd, result->cache.line[i].rows);
-					strcat(mid->motd, "\n");
+					p = stpcpy(p, result->cache.line[i].rows);
+					p = stpcpy(p, "\n");
 				}
 		}
 

@@ -12,7 +12,6 @@
 
 #ifndef _OPT_POSTFIX_
 #define _OPT_POSTFIX_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_exception.h"
 

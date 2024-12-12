@@ -452,12 +452,12 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				list_append(res_exps, ne);
 			} else {
 				GDKfree(types);
-				throw(SQL, SQLSTATE(42000), "csv" "type %s not found\n", st);
+				return sa_message(sql->sa, "csv" "type %s not found\n", st);
 			}
 		} else {
 			/* shouldn't be possible, we fallback to strings */
 			GDKfree(types);
-			throw(SQL, SQLSTATE(42000), "csv" "type unknown\n");
+			return sa_message(sql->sa, "csv" "type unknown\n");
 		}
 	}
 	GDKfree(types);
@@ -472,7 +472,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	r->extra_tsep = extra_tsep;
 	r->has_header = has_header;
 	f->sname = (char*)r; /* pass schema++ */
-	return MAL_SUCCEED;
+	return NULL;
 }
 
 static void *
@@ -484,7 +484,6 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	sql_table *t = NULL;
 
 	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, f->tname /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
-		//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
 		/* alloc error */
 		return NULL;
 
@@ -495,7 +494,6 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 		sql_column *c = NULL;
 
 		if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
-			//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
 			return NULL;
 		}
 	}

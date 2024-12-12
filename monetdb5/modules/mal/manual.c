@@ -70,7 +70,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (t->kind == FUNCTIONsymbol && t->def->stmt[0]->fcnname[0] == '#')
 						continue;
 					char buf[1024];
-					char *comment = NULL;
+					const char *comment = NULL;
 					if (t->kind == FUNCTIONsymbol) {
 						comment = t->def->help;
 						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
