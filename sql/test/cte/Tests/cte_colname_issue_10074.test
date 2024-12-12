@@ -2,7 +2,8 @@ statement ok
 create table t as with q(id,s) as (values(1,42)), a(s) as (select 42)
 select id from q join a on q.s=a.s
 
-query I
+query I nosort
 select id from t
 ----
 1
+

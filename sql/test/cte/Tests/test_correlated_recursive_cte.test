@@ -1,5 +1,5 @@
 # Correlation in the initialization query
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -10,7 +10,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -28,7 +28,7 @@ ORDER BY x, y;
 4
 
 # Correlation in the recursive query
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -39,7 +39,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -61,7 +61,7 @@ ORDER BY x, y;
 5
 
 # Correlation in the initialization and recursive query
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -72,7 +72,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -90,7 +90,7 @@ ORDER BY x, y;
 4
 
 # Correlation with multiple recursive anchors
-query II 
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -101,7 +101,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE t1.y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -125,7 +125,7 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
   FROM   t
   WHERE z < 3
 ) SELECT sum(z) FROM t) AS z
-FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
+FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all
 ----
 1
 1
@@ -156,7 +156,7 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
           SELECT * FROM g) AS t(z)
   WHERE z < 5
 ) SELECT sum(z) FROM t) AS z
-FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
+FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all
 ----
 1
 1
@@ -172,9 +172,9 @@ FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by 
 9
 
 statement ok
-CREATE TABLE a AS SELECT * FROM generate_series(1,100+1) t1(i);
+CREATE TABLE a AS SELECT * FROM generate_series(1,100+1) t1(i)
 
-query I
+query I nosort
 SELECT t2.*
 FROM (VALUES (1000000)) t(_corr), LATERAL (
 WITH RECURSIVE t AS
@@ -187,7 +187,7 @@ UNION
 	WHERE x < _corr
 )
 SELECT * FROM t) t2
-ORDER BY 1 NULLS LAST;
+ORDER BY 1 NULLS LAST
 ----
 1
 100
@@ -196,7 +196,7 @@ ORDER BY 1 NULLS LAST;
 NULL
 
 # limit in subquery
-skipif knownfail                                                                                                                                                           
+skipif knownfail
 query I
 SELECT t2.*
 FROM (VALUES (10)) t(_corr), LATERAL (
@@ -209,7 +209,7 @@ UNION
 	WHERE x < _corr
 )
 SELECT * FROM t) t2
-ORDER BY 1 NULLS LAST;
+ORDER BY 1 NULLS LAST
 ----
 1
 2
@@ -217,7 +217,7 @@ ORDER BY 1 NULLS LAST;
 8
 16
 
-query III
+query III nosort
 SELECT t2.*
 FROM (VALUES (1)) t(_corr), LATERAL (
 WITH RECURSIVE collatz(x, t, steps) AS
@@ -230,7 +230,7 @@ WITH RECURSIVE collatz(x, t, steps) AS
    WHERE  t <> _corr)
 )
 SELECT * FROM collatz WHERE t = _corr
-) t2 order by x;
+) t2 order by x
 ----
 1
 1
@@ -266,7 +266,7 @@ SELECT * FROM collatz WHERE t = _corr
 # UNION semantics
 
 # Correlation in the initialization query
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -277,7 +277,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -295,7 +295,7 @@ ORDER BY x, y;
 4
 
 # Correlation in the recursive query
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -306,7 +306,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -328,7 +328,7 @@ ORDER BY x, y;
 5
 
 # Correlation in the initialization and recursive query
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -339,7 +339,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -357,7 +357,7 @@ ORDER BY x, y;
 4
 
 # Correlation with multiple recursive anchors
-query II
+query II nosort
 SELECT x, y
 FROM   generate_series(1,4+1) AS _(x), LATERAL
 (WITH RECURSIVE t(y) AS (
@@ -368,7 +368,7 @@ FROM   generate_series(1,4+1) AS _(x), LATERAL
   WHERE t1.y < 3
 )
 SELECT * FROM t) AS t
-ORDER BY x, y;
+ORDER BY x, y
 ----
 1
 1
@@ -392,7 +392,7 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
   FROM   t
   WHERE z < 3
 ) SELECT sum(z) FROM t) AS z
-FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
+FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all
 ----
 1
 1
@@ -423,7 +423,7 @@ SELECT x, y, (WITH RECURSIVE t(z) AS (
           SELECT * FROM g) AS t(z)
   WHERE z < 5
 ) SELECT sum(z) FROM t) AS z
-FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all;
+FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by all
 ----
 1
 1
@@ -437,3 +437,4 @@ FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by 
 2
 2
 9
+

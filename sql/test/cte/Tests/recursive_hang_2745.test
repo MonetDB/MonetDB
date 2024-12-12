@@ -1,4 +1,4 @@
-query III
+query III nosort
 with RECURSIVE parents_tab (id , value , parent )
 as (values (1, 1, 2), (2, 2, 4), (3, 1, 4), (4, 2, -1), (5, 1, 2), (6, 2, 7), (7, 1, -1)
 ),
@@ -10,7 +10,7 @@ parents as (
     union all
     select id, value+2, parent from parents_tab2
 )
-select * from parents order by id, value, parent;
+select * from parents order by id, value, parent
 ----
 1
 1
@@ -55,7 +55,7 @@ select * from parents order by id, value, parent;
 3
 -1
 
-query III
+query III nosort
 with RECURSIVE parents_tab (id , value , parent )
 as (values (1, 1, 2), (2, 2, 4), (3, 1, 4), (4, 2, -1), (5, 1, 2), (6, 2, 7), (7, 1, -1)
 ),
@@ -64,7 +64,7 @@ as (values (1, 1, 2), (2, 2, 4), (3, 1, 4), (4, 2, -1), (5, 1, 2), (6, 2, 7), (7
 )
 select * from parents_tab
 union all
-select id, value+2, parent from parents_tab2 ORDER BY id, value, parent;
+select id, value+2, parent from parents_tab2 ORDER BY id, value, parent
 ----
 1
 1
@@ -109,7 +109,7 @@ select id, value+2, parent from parents_tab2 ORDER BY id, value, parent;
 3
 -1
 
-query III
+query III nosort
 with parents_tab (id , value , parent )
 as (values (1, 1, 2), (2, 2, 4), (3, 1, 4), (4, 2, -1), (5, 1, 2), (6, 2, 7), (7, 1, -1)
 ),
@@ -121,7 +121,7 @@ parents as (
     union all
     select id, value+2, parent from parents_tab2
 )
-select * from parents ORDER BY id, value, parent;
+select * from parents ORDER BY id, value, parent
 ----
 1
 1
@@ -176,10 +176,10 @@ as (values (1, 1, 2), (2, 2, 4), (3, 1, 4), (4, 2, -1), (5, 1, 2), (6, 2, 7), (7
 )
 select * from parents_tab
 union all
-select id, value+2, parent from parents_tab2;
+select id, value+2, parent from parents_tab2
 
 query III rowsort
-select * from vparents;
+select * from vparents
 ----
 1
 1
@@ -223,3 +223,4 @@ select * from vparents;
 7
 3
 -1
+

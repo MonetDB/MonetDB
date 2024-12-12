@@ -6,7 +6,7 @@ CREATE TABLE emp (empno INTEGER PRIMARY KEY,
 				  hiredate DATE,
 				  sal DOUBLE,
 				  comm DOUBLE,
-				  deptno INTEGER);
+				  deptno INTEGER)
 
 statement ok
 INSERT INTO emp VALUES
@@ -21,9 +21,9 @@ INSERT INTO emp VALUES
 (7654, 'MARTIN', 'SALESMAN', 7698, DATE '1981-09-28', 1250.00, 1400.00, 30),
 (7844, 'TURNER', 'SALESMAN', 7698, DATE '1981-09-08', 1500.00, 0.00, 30),
 (7900, 'JAMES', 'CLERK', 7698, DATE '1981-12-03', 950.00, NULL, 30),
-(7934, 'MILLER', 'CLERK', 7782, DATE '1982-01-23', 1300.00, NULL, 10);
+(7934, 'MILLER', 'CLERK', 7782, DATE '1982-01-23', 1300.00, NULL, 10)
 
-query IT
+query IT nosort
 WITH RECURSIVE ctename AS (
       SELECT empno, ename
       FROM emp
@@ -33,7 +33,7 @@ WITH RECURSIVE ctename AS (
       FROM emp
          JOIN ctename ON emp.mgr = ctename.empno
 )
-SELECT * FROM ctename;
+SELECT * FROM ctename
 ----
 7566
 JONES
@@ -42,7 +42,7 @@ FORD
 7369
 SMITH
 
-query ITI
+query ITI nosort
 WITH RECURSIVE ctename AS (
       SELECT empno, ename,
              0 AS level
@@ -54,7 +54,7 @@ WITH RECURSIVE ctename AS (
       FROM emp
          JOIN ctename ON emp.mgr = ctename.empno
 )
-SELECT * FROM ctename;
+SELECT * FROM ctename
 ----
 7566
 JONES
@@ -66,7 +66,7 @@ FORD
 SMITH
 2
 
-query ITT
+query ITT nosort
 WITH RECURSIVE ctename AS (
       SELECT empno, ename,
              ename AS path
@@ -78,7 +78,7 @@ WITH RECURSIVE ctename AS (
       FROM emp
          JOIN ctename ON emp.mgr = ctename.empno
 )
-SELECT * FROM ctename;
+SELECT * FROM ctename
 ----
 7566
 JONES
@@ -104,10 +104,10 @@ CREATE VIEW ctenames AS (
          JOIN ctename ON emp.mgr = ctename.empno
   )
   SELECT * FROM ctename
-);
+)
 
-query ITT
-SELECT * FROM ctenames;
+query ITT nosort
+SELECT * FROM ctenames
 ----
 7566
 JONES

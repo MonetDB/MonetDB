@@ -1,5 +1,5 @@
 # recursive CTE with various cross products
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT CAST(1 as BIGINT) AS x
@@ -8,7 +8,7 @@ UNION
 	FROM t t1, t t2, t t3
 	WHERE t1.x < 100
 )
-SELECT * FROM t ORDER BY 1;
+SELECT * FROM t ORDER BY 1
 ----
 1
 3
@@ -18,7 +18,7 @@ SELECT * FROM t ORDER BY 1;
 243
 
 # what if we have different types?
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT cast(1 as HUGEINT) AS x
@@ -27,7 +27,7 @@ UNION
 	FROM t t1, t t2, t t3
 	WHERE t1.x < 100
 )
-SELECT * FROM t ORDER BY 1;
+SELECT * FROM t ORDER BY 1
 ----
 1
 3
@@ -40,7 +40,7 @@ statement ok
 CREATE TABLE a AS SELECT * FROM generate_series(1,100+1) t1(i)
 
 # recursive CTE with aggregates
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT cast(1 as BIGINT) AS x
@@ -49,7 +49,7 @@ UNION
 	FROM t, a
 	WHERE x < 1000000
 )
-SELECT * FROM t ORDER BY 1 NULLS LAST;
+SELECT * FROM t ORDER BY 1 NULLS LAST
 ----
 1
 100
@@ -58,7 +58,7 @@ SELECT * FROM t ORDER BY 1 NULLS LAST;
 NULL
 
 # the same but with a hash join
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT cast(1 as BIGINT) AS x
@@ -67,12 +67,12 @@ UNION
 	FROM t, a
 	WHERE x < 1000000 AND t.x=a.i
 )
-SELECT * FROM t ORDER BY 1 NULLS LAST;
+SELECT * FROM t ORDER BY 1 NULLS LAST
 ----
 1
 
 # nested aggregates
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT CAST(1 as BIGINT) AS x
@@ -82,7 +82,7 @@ UNION
 		(SELECT SUM(x) FROM t) t1(x), a
 	WHERE x < 1000
 )
-SELECT * FROM t ORDER BY 1 NULLS LAST;
+SELECT * FROM t ORDER BY 1 NULLS LAST
 ----
 1
 100
@@ -90,7 +90,7 @@ SELECT * FROM t ORDER BY 1 NULLS LAST;
 NULL
 
 # non-correlated subqueries
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT CAST(1 as BIGINT) AS x
@@ -99,7 +99,7 @@ UNION
 	FROM t
 	WHERE x < 5
 )
-SELECT * FROM t ORDER BY 1 NULLS LAST;
+SELECT * FROM t ORDER BY 1 NULLS LAST
 ----
 1
 2
@@ -108,7 +108,7 @@ SELECT * FROM t ORDER BY 1 NULLS LAST;
 5
 
 # correlated subqueries
-query I
+query I nosort
 WITH RECURSIVE t AS
 (
 	SELECT 1 AS x
@@ -117,10 +117,11 @@ UNION
 	FROM t
 	WHERE x < 10
 )
-SELECT * FROM t ORDER BY 1 NULLS LAST;
+SELECT * FROM t ORDER BY 1 NULLS LAST
 ----
 1
 2
 4
 8
 16
+
