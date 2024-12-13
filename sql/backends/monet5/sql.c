@@ -45,7 +45,6 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
-#include "gdk_cand.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
