@@ -878,7 +878,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 						} else {
 							if (!nexps)
 								nexps = sa_list(sql->sa);
-							append(nexps, e);
+							append(nexps, exp_copy(sql, e));
 						}
 					}
 				}
@@ -927,7 +927,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				}
 				if (!list_empty(r->exps)) {
 					for (m=r->exps->h; m; m = m->next) {
-						sql_exp *e = m->data;
+						sql_exp *e = exp_copy(sql, m->data);
 
 						if (exp_has_freevar(sql, e))
 							rel_bind_var(sql, l, e);
@@ -4254,7 +4254,7 @@ flatten_values(visitor *v, sql_rel *rel)
 			nrel = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
 			set_processed(nrel);
 			for(node *n = rel->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
+				sql_exp *e = exp_copy(v->sql, n->data);
 				list *vals = exp_get_values(e);
 
 				if (vals) {

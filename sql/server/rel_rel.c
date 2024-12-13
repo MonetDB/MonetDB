@@ -160,7 +160,7 @@ rel_destroy(mvc *sql, sql_rel *rel)
 	if (!list_empty(rel->exps) && sql && (!rel->l) && (!rel->r)) {
 		// perhaps separate allocator for exps
 		// for later
-		// free_exps_list(sql->sa, rel->exps);
+		//free_exps_list(sql->sa, rel->exps);
 		rel->exps = NULL;
 	}
 }
@@ -290,7 +290,7 @@ rel_select_copy(allocator *sa, sql_rel *l, list *exps)
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_select;
-	rel->exps = exps?list_dup(exps, (fdup)NULL):NULL;
+	rel->exps = exps? list_dup(exps, (fdup)NULL) : NULL;
 	rel->card = CARD_ATOM; /* no relation */
 	if (l) {
 		rel->card = l->card;
@@ -1714,7 +1714,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	assert(!lexps || l == r);
 	if (l == r && lexps) { /* merge both lists */
 		sql_exp *e = exp_or(sql->sa, lexps, rexps, 0);
-		list *nl = oexps?oexps:new_exp_list(sql->sa);
+		list *nl = oexps? oexps : new_exp_list(sql->sa);
 
 		rel_destroy(sql, r);
 		append(nl, e);
@@ -1727,8 +1727,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	/* favor or expressions over union */
 	if (l->op == r->op && is_select(l->op) &&
 	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
-		// need a copy of r->exps, r will be destroyed
-		sql_exp *e = exp_or(sql->sa, l->exps, exps_copy(sql, r->exps), 0);
+		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
 		list *nl = new_exp_list(sql->sa);
 
 		rel_destroy(sql, r);

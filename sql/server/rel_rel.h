@@ -165,4 +165,14 @@ extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern int exp_freevar_offset(mvc *sql, sql_exp *e);
 
+#define SQL_REL_DESTROY(sql, rel_ptr)			\
+	do {									\
+		rel_destroy(sql, rel_ptr);			\
+		if (rel_ptr->ref.refcnt == 0		\
+			   	&& rel_ptr->l == NULL		\
+			   	&& rel_ptr->r == NULL		\
+			   	&& rel_ptr->exps == NULL)	\
+			rel_ptr = NULL;					\
+	} while (0)
+
 #endif /* _REL_REL_H_ */

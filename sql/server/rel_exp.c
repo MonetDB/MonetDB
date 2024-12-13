@@ -3940,12 +3940,22 @@ free_exp(allocator *sa, sql_exp *e)
 			}
 			break;
 		case e_cmp:
-			if (e->l)
-				free_exp(sa, e->l);
-			if (e->r)
-				free_exp(sa, e->r);
-			if (e->f)
-				free_exp(sa, e->f);
+			if (e->flag < cmp_filter) {
+				// l and r are exp
+				if (e->l)
+					free_exp(sa, e->l);
+				if (e->r)
+					free_exp(sa, e->r);
+				if (e->f)
+					free_exp(sa, e->f);
+			}
+			if (e->flag == cmp_or || e->flag == cmp_filter) {
+				// l and r are list
+				if (e->l)
+					free_exps_list(sa, e->l);
+				if (e->r)
+					free_exps_list(sa, e->r);
+			}
 			break;
 		case e_func:
 		case e_aggr:

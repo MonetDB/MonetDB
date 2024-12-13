@@ -3208,7 +3208,7 @@ rel_semijoin_use_fk(visitor *v, sql_rel *rel)
 /*
  * Push {semi}joins down, pushes the joins through group by expressions.
  * When the join is on the group by columns, we can push the joins left
- * under the group by. This should only be done, iff the new semijoin would
+ * under the group by. This should only be done, if the new semijoin would
  * reduce the input table to the groupby. So there should be a reduction
  * (selection) on the table A and this should be propagated to the groupby via
  * for example a primary key.
@@ -3636,7 +3636,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	/* merge 2 selects */
 	r = rel->l;
 	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
-		(void)list_merge(r->exps, rel->exps, (fdup)NULL);
+		(void)list_merge(r->exps, exps_copy(v->sql, rel->exps), (fdup)NULL);
 		rel->l = NULL;
 		rel_destroy(v->sql, rel);
 		v->changes++;

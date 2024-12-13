@@ -1746,7 +1746,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
-			list_append(nexps, e);
+			list_append(nexps, exp_copy(sql, e));
 		}
 		l = nexps;
 		nexps = sa_list(sql->sa);
@@ -1757,7 +1757,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			e = exp_check_type(sql, &a->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
-			list_append(nexps, e);
+			list_append(nexps, exp_copy(sql, e));
 		}
 		r = nexps;
 	}
@@ -5399,8 +5399,9 @@ group_merge_exps(mvc *sql, list *gexps, list *exps)
 		}
 		hash_add(ht, key, e);
 		if (!duplicates) {
-			list_append(gexps, e);
-			n->data = exp_ref(sql, e);
+			sql_exp *e_copy = exp_copy(sql, e);
+			list_append(gexps, e_copy);
+			n->data = exp_ref(sql, e_copy);
 		}
 	}
 	return gexps;
@@ -5776,7 +5777,8 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * obtained so far with the table expression, ie
 		 * t1.* or a subquery.
 		 */
-		pexps = list_merge(pexps, te, (fdup)NULL);
+		// ss:FIX implement fdup with sa
+		pexps = list_merge(pexps, exps_copy(sql, te), (fdup)NULL);
 	}
 	if (rel && is_groupby(rel->op) && rel->flag) {
 		list *gbe = rel->r;
