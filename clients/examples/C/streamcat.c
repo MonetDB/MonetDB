@@ -624,11 +624,10 @@ int cmd_bstream(char *argv[])
 		}
 	}
 
-	mnstr_destroy(bs);
 	if (additional) {
 		mnstr_printf(s, "%s", additional);
 	}
-	mnstr_close(s);
+	close_stream(bs);			/* this also closes and destroys s */
 
 	return 0;
 }
