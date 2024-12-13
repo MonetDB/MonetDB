@@ -1,8 +1,8 @@
 statement ok
-create table series as select * from generate_series(-1,1+1) x(n);
+create table series as select * from generate_series(-1,1+1) x(n)
 
 # conway
-query III
+query III nosort
 with recursive generation1(x,y) as (   --the initial board setup
   select 2, 3
   union all
@@ -37,7 +37,7 @@ select * from game where n=4 order by n, x, y; --select generation 4
 3
 4
 
-query III
+query III nosort
 with recursive generation1(x,y) as (   --the initial board setup
   select 2, 3
   union
@@ -71,3 +71,4 @@ select * from game where n=4 order by n, x, y; --select generation 4
 4
 3
 4
+

@@ -1,4 +1,4 @@
-query I
+query I nosort
 WITH RECURSIVE t(x) AS
 (
   SELECT 1
@@ -19,7 +19,7 @@ u(x) AS
 SELECT *
 FROM   u
 ORDER BY x
-LIMIT 5;
+LIMIT 5
 ----
 1
 2
@@ -27,7 +27,7 @@ LIMIT 5;
 3
 4
 
-query III
+query III nosort
 WITH RECURSIVE collatz(x, t, steps) AS
 (
   SELECT x, x, 0
@@ -38,7 +38,7 @@ WITH RECURSIVE collatz(x, t, steps) AS
    WHERE  t <> 1)
 )
 SELECT * FROM collatz WHERE t = 1
-ORDER BY x;
+ORDER BY x
 ----
 1
 1
@@ -70,3 +70,4 @@ ORDER BY x;
 10
 1
 6
+

@@ -1,14 +1,14 @@
 statement ok
-create table orders(ordered_at int);
+create table orders(ordered_at int)
 
 statement ok
-create table stg_orders(ordered_at int);
+create table stg_orders(ordered_at int)
 
 statement ok
-insert into orders values (1);
+insert into orders values (1)
 
 statement ok
-insert into stg_orders values (1);
+insert into stg_orders values (1)
 
 statement error
 with
@@ -24,7 +24,7 @@ select * from some_more_logic;
 ----
 Binder Error: Circular reference to CTE "orders", There are two possible solutions.
 
-query I
+query I nosort
 with
 orders as (
     select * from sys.stg_orders
@@ -34,6 +34,7 @@ some_more_logic as (
     select *
     from orders
 )
-select * from some_more_logic;
+select * from some_more_logic
 ----
 1
+

@@ -1,12 +1,11 @@
 statement ok
-CREATE TABLE tag(id int, name string, subclassof int);
+CREATE TABLE tag(id int, name string, subclassof int)
 
 statement ok
 INSERT INTO tag VALUES
   (7, 'Music',  9),
   (8, 'Movies', 9),
   (9, 'Art',    NULL)
-;
 
 statement error
 WITH RECURSIVE tag_hierarchy(id, source, path, target) AS (
@@ -22,3 +21,4 @@ SELECT source, path, target
 FROM tag_hierarchy
 ;
 ----
+

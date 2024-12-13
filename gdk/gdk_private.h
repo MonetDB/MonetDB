@@ -135,9 +135,13 @@ gdk_return GDKextendf(int fd, size_t size, const char *fn)
 int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
 FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
-	__attribute__((__visibility__("hidden")));
+	__attribute__((__visibility__("hidden")))
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(fclose, 1)));
 FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
-	__attribute__((__visibility__("hidden")));
+	__attribute__((__visibility__("hidden")))
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(fclose, 1)));
 char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
@@ -264,6 +268,7 @@ BAT *virtualize(BAT *bn)
 /* calculate the integer 2 logarithm (i.e. position of highest set
  * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
  * 0x8 to 0xF give 4, etc.) */
+__attribute__((__const__))
 static inline unsigned
 ilog2(BUN x)
 {

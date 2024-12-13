@@ -1,5 +1,5 @@
 # simple recursive CTE
-query I
+query I nosort
 with recursive t as (select 1 as x union all select x+1 from t where x < 3) select * from t
 ----
 1
@@ -7,7 +7,7 @@ with recursive t as (select 1 as x union all select x+1 from t where x < 3) sele
 3
 
 # simple recursive CTE with an alias
-query I
+query I nosort
 with recursive t as (select 1 as x union all select x+1 from t as m where m.x < 3) select * from t
 ----
 1
@@ -15,7 +15,7 @@ with recursive t as (select 1 as x union all select x+1 from t as m where m.x < 
 3
 
 # recursive CTE with multiple references and aliases
-query I
+query I nosort
 with recursive t as (select 1 as x union all select m.x+f.x from t as m, t as f where m.x < 3) select * from t
 ----
 1
@@ -23,8 +23,8 @@ with recursive t as (select 1 as x union all select m.x+f.x from t as m, t as f 
 4
 
 # strings and multiple columns
-query IT
-with recursive t as (select 1 as x, cast('hello' as varchar) as y union all select x+1, y || '-' || 'hello' from t where x < 3) select * from t;
+query IT nosort
+with recursive t as (select 1 as x, cast('hello' as varchar) as y union all select x+1, y || '-' || 'hello' from t where x < 3) select * from t
 ----
 1
 hello
@@ -34,14 +34,14 @@ hello-hello
 hello-hello-hello
 
 # referencing same CTE multiple times
-query I
-with recursive t as (select 1 as x union all select x+1 from t where x < 3) select min(a1.x) from t a1, t a2;
+query I nosort
+with recursive t as (select 1 as x union all select x+1 from t where x < 3) select min(a1.x) from t a1, t a2
 ----
 1
 
 # nested uncorrelated subquery
-query I
-with recursive t as (select 1 as x union all select x+(SELECT 1) from t where x < 3) select * from t;
+query I nosort
+with recursive t as (select 1 as x union all select x+(SELECT 1) from t where x < 3) select * from t
 ----
 1
 2
@@ -49,18 +49,18 @@ with recursive t as (select 1 as x union all select x+(SELECT 1) from t where x 
 
 # use with recursive in table creation
 statement ok
-create table integers as with recursive t as (select 1 as x union all select x+1 from t where x < 3) select * from t;
+create table integers as with recursive t as (select 1 as x union all select x+1 from t where x < 3) select * from t
 
 # more complex uncorrelated subquery
-query I
-with recursive t as (select (select min(x) from integers) as x union all select x+1 from t where x < 3) select * from t;
+query I nosort
+with recursive t as (select (select min(x) from integers) as x union all select x+1 from t where x < 3) select * from t
 ----
 1
 2
 3
 
 # aggregate function
-query I
+query I nosort
 with recursive t as (select 1 as x union all select sum(x+1) AS x from t where x < 3 group by x) select * from t
 ----
 1
@@ -85,7 +85,7 @@ with recursive t as (select 1 as x union all select sum(x+1) AS x from t where x
 # NULL
 
 # recursive CTE with table-producing function
-query I
+query I nosort
 WITH RECURSIVE t AS (
 	SELECT 1 AS i
 	UNION ALL
@@ -93,7 +93,7 @@ WITH RECURSIVE t AS (
 	FROM t, generate_series(0, 11, 1) series(j)
 	WHERE j=i+1
 )
-SELECT * FROM t;
+SELECT * FROM t
 ----
 1
 2

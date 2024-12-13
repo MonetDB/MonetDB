@@ -24,7 +24,7 @@
 #endif
 
 #if defined(__has_attribute)
-#if ! __has_attribute(access)
+#if ! __has_attribute(__access__)
 #define __access__(...)
 #endif
 #else
@@ -33,7 +33,8 @@
 
 /* copy at most (n-1) bytes from src to dst and add a terminating NULL
  * byte; return length of src (i.e. can be more than what is copied) */
-static inline size_t __attribute__((__access__(write_only, 1, 3)))
+__attribute__((__access__(write_only, 1, 3)))
+static inline size_t
 strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 {
 	if (dst != NULL && n != 0) {
@@ -71,7 +72,9 @@ GCC_Pragma("GCC diagnostic pop")
 
 /* copy the NULL terminated list of src strings with a maximum of n
  * bytes to dst; return the combined length of the src strings */
-static inline size_t __attribute__((__access__(write_only, 1, 2)))
+__attribute__((__access__(write_only, 1, 2)))
+__attribute__((__sentinel__))
+static inline size_t
 strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 {
 	va_list ap;

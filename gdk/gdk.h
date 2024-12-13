@@ -2532,7 +2532,7 @@ TIMEOUT_TEST(QryCtx *qc)
 	} while (0)
 
 typedef struct gdk_callback {
-	char *name;
+	const char *name;
 	int argc;
 	int interval;  // units sec
 	lng last_called; // timestamp GDKusec
@@ -2543,9 +2543,9 @@ typedef struct gdk_callback {
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
-gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
-		*argv[], int interval);
-gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
+gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
+				       int argc, void *argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
 
 #define SQLSTATE(sqlstate)	#sqlstate "!"
@@ -2560,7 +2560,7 @@ typedef struct exception_buffer {
 	jmp_buf state;
 #endif
 	int code;
-	char *msg;
+	const char *msg;
 	int enabled;
 } exception_buffer;
 
@@ -2573,7 +2573,7 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #else
 #define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
 #endif
-gdk_export _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
+gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
 typedef struct allocator {
 	struct allocator *pa;
