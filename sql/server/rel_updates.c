@@ -24,6 +24,7 @@
 #include "rel_psm.h"
 #include "sql_symbol.h"
 #include "rel_prop.h"
+#include "sql_storage.h"
 
 static sql_exp *
 insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char* action)

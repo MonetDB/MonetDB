@@ -19,6 +19,7 @@
 #include "rel_propagate.h"
 #include "rel_statistics.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 
 static sql_rel *
 rel_properties(visitor *v, sql_rel *rel)

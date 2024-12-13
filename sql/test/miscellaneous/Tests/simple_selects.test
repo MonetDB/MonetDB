@@ -973,7 +973,7 @@ project (
 | group by (
 | | project (
 | | |  [  [ tinyint(3) "1", tinyint(3) "2", tinyint(3) "3", tinyint(3) "4", tinyint(3) "5" ] as "x"."x" ]
-| | ) [ "x"."x" NOT NULL, "sys"."sql_add"("x"."x" NOT NULL, tinyint(4) "10") NOT NULL as "%7"."%7", "sys"."sql_mul"("%7"."%7" NOT NULL, tinyint(2) "2") NOT NULL as "%10"."%10", "sys"."sql_sub"("%10"."%10" NOT NULL, tinyint(5) "29") NOT NULL as "x1" ]
+| | ) [ "x"."x" NOT NULL, "sys"."sql_add"(tinyint(4) "10", "x"."x" NOT NULL) NOT NULL as "%7"."%7", "sys"."sql_mul"("%7"."%7" NOT NULL, tinyint(2) "2") NOT NULL as "%10"."%10", "sys"."sql_sub"("%10"."%10" NOT NULL, tinyint(5) "29") NOT NULL as "x1" ]
 | ) [ "x"."x" NOT NULL ] [ "x"."x" NOT NULL, "x1" NOT NULL ]
 ) [ "x"."x" NOT NULL UNIQUE as "x", "x1" NOT NULL ]
 
@@ -1119,7 +1119,7 @@ statement ok
 ROLLBACK
 
 # some private functions related errors
-statement error 42000!SELECT: no such binary operator 'scale_up'(decimal,tinyint)
+statement error 42000!SELECT: no such operator 'scale_up'(decimal(3,1), tinyint)
 select scale_up(12.1, 10)
 
 statement error 42000!SELECT: no such operator 'sql_exists'(tinyint)

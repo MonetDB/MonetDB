@@ -20,6 +20,7 @@
 #include "rel_exp.h"
 #include "rel_updates.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 
 #define psm_zero_or_one(exp) \
 	do { \

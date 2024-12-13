@@ -413,7 +413,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, SQLSTATE(42000), true);
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false); //SQLSTATE(42000), true);
 	return res;
 }
 
@@ -909,74 +909,6 @@ sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype 
 	return res;
 }
 
-static sql_func *
-sql_find_one_func_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype type)
-{
-	(void)sql;
-	if (ff) {
-		if (ff->ht) {
-			int key = hash_key(fname);
-			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
-				sql_func *f = he->value;
-
-				if (f->type != type)
-					continue;
-				if (strcmp(f->base.name, fname) == 0)
-					return f;
-			}
-		} else {
-			node *n;
-			sql_base_loop( ff, n) {
-				sql_func *f = n->data;
-
-				if (f->type != type)
-					continue;
-				if (strcmp(f->base.name, fname) == 0)
-					return f;
-			}
-		}
-	}
-	return NULL;
-}
-
-static sql_func *
-os_find_one_func_by_name_internal(mvc *sql, struct objectset *ff, const char *fname, sql_ftype type)
-{
-	if (ff) {
-		struct os_iter oi;
-		os_iterator(&oi, ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
-			sql_func *f = (sql_func*)b;
-
-			if (f->type != type)
-				continue;
-			if (strcmp(f->base.name, fname) == 0)
-				return f;
-		}
-	}
-	return NULL;
-}
-
-#define sql_find_one_func_by_name_extra \
-	do { \
-		if ((res = sql_find_one_func_by_name_internal(sql, funcs, name, type))) \
-			return res; \
-	} while (0)
-
-sql_func *
-sql_find_one_func_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type)
-{
-	char *F = NULL, *objstr = NULL;
-	const char error[] = "CATALOG";
-	sql_func *res = NULL;
-
-	FUNC_TYPE_STR(type, F, objstr);
-	(void) F; /* not used */
-
-	search_object_on_path(res = os_find_one_func_by_name_internal(sql, next->funcs, name, type), functions_without_schema, sql_find_one_func_by_name_extra, "", false);
-	return res;
-}
-
 char *
 qname_schema(dlist *qname)
 {
@@ -1214,24 +1146,6 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				i++;
 			}
 			concat = stpcpy(concat, ")");
-		}
-		return res;
-	}
-	case SQL_BINOP: {
-		dnode *lst = se->data.lval->h;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
-		char *l = NULL, *r = NULL, *res;
-		size_t extra = sname ? strlen(sname) + 3 : 0;
-
-		if (!(l = _symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = _symbol2string(sql, lst->next->next->next->data.sym, expression, err)))
-			return NULL;
-
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + strlen(l) + strlen(r) + 6))) {
-			char *concat = res;
-			if (sname)
-				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ","), r), ")");
 		}
 		return res;
 	}

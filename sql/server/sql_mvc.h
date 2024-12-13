@@ -22,7 +22,6 @@
 #include "sql_backend.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "sql_storage.h"
 #include "sql_keyword.h"
 #include "mapi_querytype.h"
 #include "sql_atom.h"

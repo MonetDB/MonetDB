@@ -2548,6 +2548,9 @@ gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int arg
 gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
 
 
+#define SQLSTATE(sqlstate)	#sqlstate "!"
+#define MAL_MALLOC_FAIL	"Could not allocate space"
+
 #include <setjmp.h>
 
 typedef struct exception_buffer {

@@ -723,7 +723,7 @@ create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as sm
 statement ok
 create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), '䝀i8jPo' where not (false))
 
-statement error 42000!SELECT: non-integer constant in GROUP BY
+statement error 42000!SELECT: cannot use non GROUP BY column 'v0.vc0' in query results without an aggregate function
 select all v0.vc2, greatest(min(all least(-266013300, 864326131)), -1183805674), greatest(-544857133, + (v0.vc2)) from v0, v1
 inner join (values (+ (88)), (greatest(0.8732546822607857, greatest(1933292715, -525885982))), (case when (-1466474216) in
 (-1504372996, 417052418, 94) then least(28288, 1447812316) when cast('' as boolean) then "second"(time '14:18:59') else
