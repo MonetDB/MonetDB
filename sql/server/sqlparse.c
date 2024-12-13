@@ -234,12 +234,48 @@ symbol_escape_ident(allocator *sa, const char *s)
 }
 
 static char *
+sa_concat(allocator *sa, char *prefix, char *a, char *infix, char *b, char *postfix)
+{
+	int len = (prefix?strlen(prefix):0) + (a?strlen(a):0) + (infix?strlen(infix):0) + (b?strlen(b):0) + (postfix?strlen(postfix):0);
+	char *res = NULL;
+
+	if (!prefix)
+		prefix = "";
+	if (!a)
+		a = "";
+	if (!postfix)
+		postfix = "";
+	if (!infix)
+		infix = "";
+	if ((res = SA_NEW_ARRAY(sa, char, len + 1)))
+		stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, prefix), a), infix), b), postfix);
+	return res;
+}
+
+static char *
 sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 {
 	if (!se)
 		return "EMPTY SYMBOL";
 	/* inner sp_symbol2string uses the temporary allocator */
 	switch (se->token) {
+	case SQL_SELECT: {
+		SelectNode *s = (SelectNode*)se;
+		char *res = s->distinct?"SELECT DISTINCT (\n":"SELECT (\n";
+		if (s->from)
+			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->from, expression, err), "\n");
+		if (s->where)
+			res = sa_concat(sql->ta, " ", res, "WHERE ", sp_symbol2string(sql, s->where, expression, err), "\n");
+		if (s->groupby)
+			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->groupby, expression, err), "\n");
+		if (s->having)
+			res = sa_concat(sql->ta, " ", res, "HAVING ", sp_symbol2string(sql, s->having, expression, err), "\n");
+		if (s->orderby)
+			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->orderby, expression, err), "\n");
+		if (s->selection)
+			res = sa_concat(sql->ta, " ", res, "SELECTION ", dlist2string(sql, s->selection, ", ", expression, err), "\n");
+		return res;
+	}
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = NULL, *aux;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
@@ -383,6 +419,24 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				return res;
 			} else
 				return tok_str;
+			return res;
+		} else if (se->type == type_int) {
+			char *tok_str = token2string(se->token), *res = NULL;
+			char buf[10];
+			snprintf(buf, sizeof(buf), "%d", se->data.i_val);
+
+			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(buf) + 2))) {
+				stpcpy(stpcpy(stpcpy(res, tok_str), " "), buf);
+			}
+			return res;
+		} else if (se->type == type_lng) {
+			char *tok_str = token2string(se->token), *res = NULL;
+			char buf[10];
+			snprintf(buf, sizeof(buf), LLFMT, se->data.l_val);
+
+			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(buf) + 2))) {
+				stpcpy(stpcpy(stpcpy(res, tok_str), " "), buf);
+			}
 			return res;
 		} else {
 			const char msg[] = "SQL feature not yet available for expressions and default values: ";
