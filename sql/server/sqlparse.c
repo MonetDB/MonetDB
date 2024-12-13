@@ -172,10 +172,16 @@ dnode2string(mvc *sql, dnode *n, int expression, char **err)
 		char buf[10];
 		snprintf(buf, sizeof(buf), "%d", n->data.i_val);
 		s = sa_strdup(sql->ta, buf);
+	} else if (n->type == type_lng) {
+		char buf[16];
+		snprintf(buf, sizeof(buf), LLFMT, n->data.l_val);
+		s = sa_strdup(sql->ta, buf);
 	} else if (n->type == type_symbol) {
 		s = sp_symbol2string(sql, n->data.sym, expression, err);
 	} else if (n->type == type_list) {
 		s = dlist2string(sql, n->data.lval, ", ", expression, err);
+	} else if (n->type == type_type) {
+		s = sql_subtype_string(sql->ta, &n->data.typeval);
 	}
 	return s;
 }
@@ -184,17 +190,18 @@ static char *
 dlist2string(mvc *sql, dlist *l, char *sep, int expression, char **err)
 {
 	if (!l)
-		return " EMPTY_LIST ";
+		return " EMPTY_LIST";
 	char *b = NULL;
 	dnode *n;
 
+	int seplen = strlen(sep);
 	for (n=l->h; n; n = n->next) {
 		char *s = dnode2string(sql, n, expression, err);
 
 		if (!s)
 			return NULL;
 		if (b) {
-			char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(s) + 2);
+			char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(s) + seplen + 1);
 			if (o)
 				stpcpy(stpcpy(stpcpy(o, b), sep), s);
 			b = o;
@@ -230,7 +237,7 @@ static char *
 sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 {
 	if (!se)
-		return "EMPTY SYMBOL ";
+		return "EMPTY SYMBOL";
 	/* inner sp_symbol2string uses the temporary allocator */
 	switch (se->token) {
 	case SQL_NOP: {
@@ -290,8 +297,11 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		char *res;
 
 		if (!sname)
-			sname = sql->session->schema->base.name;
-		sname = symbol_escape_ident(sql->ta, sname);
+			sname = "";
+		else
+			sname = symbol_escape_ident(sql->ta, sname);
+		if (!seq)
+			seq = "";
 
 		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname), "\".\""), seq), "\"");
@@ -321,10 +331,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
-			char *e = dlist2string(sql, l, ".", expression, err);
-			if (e)
-				*err = e;
-			return NULL;
+			return dlist2string(sql, l, ".", expression, err);
 		}
 	}
 	case SQL_CAST: {
@@ -358,6 +365,24 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				args = "";
 			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 5)))
 				stpcpy(stpcpy(stpcpy(stpcpy(res, tok_str), "( "), args), ") ");
+			return res;
+		} else if (se->type == type_symbol) {
+			char *tok_str = token2string(se->token);
+			char *sym = sp_symbol2string(sql, se->data.sym,  expression, err);
+			char *res;
+
+			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(sym) + 5)))
+				stpcpy(stpcpy(stpcpy(stpcpy(res, tok_str), " "), sym), " ");
+			return res;
+		} else if (se->type == type_string) {
+			char *tok_str = token2string(se->token);
+			char *res = NULL;
+
+			if (se->data.sval && ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(se->data.sval) + 2)))) {
+				stpcpy(stpcpy(stpcpy(res, tok_str), " "), se->data.sval);
+				return res;
+			} else
+				return tok_str;
 			return res;
 		} else {
 			const char msg[] = "SQL feature not yet available for expressions and default values: ";
