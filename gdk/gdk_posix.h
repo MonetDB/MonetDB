@@ -30,8 +30,6 @@
 #endif
 #endif
 
-#include "gdk_system.h" /* gdk_export */
-
 #ifdef NATIVE_WIN32
 #include <io.h>
 #include <direct.h>
