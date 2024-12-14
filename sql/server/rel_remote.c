@@ -13,7 +13,8 @@
 #include "monetdb_config.h"
 #include "rel_remote.h"
 
-#define mapi_prefix "mapi:monetdb://"
+#define mapi_prefix "mapi:"
+#define monetdb_prefix "monetdb"
 
 int
 mapiuri_valid( const char *uri)
@@ -21,10 +22,17 @@ mapiuri_valid( const char *uri)
 	int i = 0, l = 0;
 	const char *p = uri;
 
-	if (strncmp(p, mapi_prefix, strlen(mapi_prefix)))
+	if (strncmp(p, mapi_prefix, strlen(mapi_prefix)) == 0)
+		p += strlen(mapi_prefix);
+	if (strncmp(p, monetdb_prefix, strlen(monetdb_prefix)))
 		return 0;
+	p += strlen(monetdb_prefix);
+	if (p[0] == 's')
+		p++;
+	if (p[0] != ':' || p[1] != '/' || p[2] != '/')
+		return 0;
+	p += 3;
 	/* optional host (todo limit to valid hostnames ??) */
-	p += strlen(mapi_prefix);
 	if (*p == '[') { //check for IPv6 addresses
 		for (; *p; p++) {
 			if (*p == ']')

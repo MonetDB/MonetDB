@@ -333,6 +333,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	char *lname = NULL, *rel_str, *buf = NULL, *mal_session_uuid, *err = NULL, *pwhash = NULL;
 	str username = NULL, password = NULL, msg = NULL;
 	sql_rel *r = rel;
+	bool temp = 0;
 
 	lname = sa_strdup(m->ta, name);
 	if (lname == NULL) {
@@ -360,6 +361,19 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	curInstr = getInstrPtr(curBlk, 0);
 
 	sql_table *rt = sql_trans_find_table(m->session->tr, table_id);
+	if (!rt) {
+		if (is_project(rel->op)) {
+			sql_rel *b = rel->l;
+			if (is_basetable(b->op)) {
+				rt = b->l;
+				temp = true;
+			}
+		}
+	}
+	if (!rt) {
+		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
 	const char *uri = mapiuri_uri(rt->query, m->sa);
 	assert(strcmp(tu->uri, uri) == 0);
 	if (!rt) {
@@ -412,32 +426,45 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	}
 
 	/* get username / password */
-	msg = remote_get(m, table_id, &username, &password);
-	if (msg) {
-		sql_error(m, 10, "%s", msg);
-		freeException(msg);
-		msg = NULL;
-		goto cleanup;
+	if (!temp) {
+		msg = remote_get(m, table_id, &username, &password);
+		if (msg) {
+			sql_error(m, 10, "%s", msg);
+			freeException(msg);
+			msg = NULL;
+			goto cleanup;
+		}
+	} else {
+		username = "monetdb";
+		password = "monetdb";
 	}
 	/* q := remote.connect("uri", "username", "password", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
 	if (p == NULL) {
-		GDKfree(username);
-		GDKfree(password);
+		if (!temp) {
+			GDKfree(username);
+			GDKfree(password);
+		}
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	p = pushStr(curBlk, p, uri);
 	p = pushStr(curBlk, p, username);
-	GDKfree(username);
+	if (!temp)
+		GDKfree(username);
 	pwlen = strlen(password);
     pwhash = (char*)GDKmalloc(pwlen + 2);
 	if (pwhash == NULL) {
-		GDKfree(password);
+		if (!temp)
+			GDKfree(password);
 		goto cleanup;
 	}
-	strconcat_len(pwhash, pwlen + 2, "\1", password, NULL);
-	GDKfree(password);
+	if (!temp) {
+		strconcat_len(pwhash, pwlen + 2, "\1", password, NULL);
+		GDKfree(password);
+	} else {
+		strconcat_len(pwhash, pwlen + 2, "", password, NULL);
+	}
 	p = pushStr(curBlk, p, pwhash);
 	GDKfree(pwhash);
 	p = pushStr(curBlk, p, "msql");

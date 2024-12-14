@@ -678,8 +678,10 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 	if (ep) {
 		*ep = 0;
 		proto = mkLower(sa_strdup(sql->sa, proto));
-	} else
+		*ep = ':';
+	} else {
 		return "Missing ':' separator to determine the URI scheme";
+	}
 
 	if (!proto)
 		return "URI scheme missing";

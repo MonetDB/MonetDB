@@ -47378,6 +47378,16 @@ tanh
 command mmath.tanh(X_0:flt):flt
 MATHunary_TANHflt;
 (empty)
+monetdb
+epilogue
+command monetdb.epilogue():void
+MONETDBepilogue;
+(empty)
+monetdb
+prelude
+pattern monetdb.prelude():void
+MONETDBprelude;
+(empty)
 mtime
 addmonths
 command mtime.addmonths(X_0:date, X_1:int):date
