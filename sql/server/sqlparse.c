@@ -483,7 +483,10 @@ main(int argc, char *argv[])
 				printf("ERROR: %s\n", err);
 			else
 				printf("SYM: %s\n", res);
-	 	}
+	 	} else {
+			if (m->session->status)
+				printf("ERROR: %s\n", m->errstr);
+		}
 		scanner_query_processed(&m->scanner);
 		m->sym = NULL;
 	}
