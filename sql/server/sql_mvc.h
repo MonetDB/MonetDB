@@ -179,6 +179,7 @@ extern int mvc_error_retry(mvc *c); // error code on errors else 0, errors AMBIG
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
 extern void mvc_cancel_session(mvc *m);
+sql_export void mvc_query_processed(mvc *m);
 
 /* since Savepoints and transactions are related the
  * commit function includes the savepoint creation.

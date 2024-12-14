@@ -194,7 +194,7 @@ dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, 
 	char *b = lb;
 	dnode *n;
 
-	int seplen = strlen(sep);
+	size_t seplen = strlen(sep);
 	bool skipsep = lb;
 	for (n=l->h; n; n = n->next) {
 		char *s = dnode2string(sql, n, expression, err);
@@ -248,7 +248,7 @@ symbol_escape_ident(allocator *sa, const char *s)
 static char *
 sa_concat(allocator *sa, char *prefix, char *a, char *infix, char *b, char *postfix)
 {
-	int len = (prefix?strlen(prefix):0) + (a?strlen(a):0) + (infix?strlen(infix):0) + (b?strlen(b):0) + (postfix?strlen(postfix):0);
+	size_t len = (prefix?strlen(prefix):0) + (a?strlen(a):0) + (infix?strlen(infix):0) + (b?strlen(b):0) + (postfix?strlen(postfix):0);
 	char *res = NULL;
 
 	if (!prefix)
@@ -396,7 +396,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 					  dlist *set = se->data.lval;
 					  char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err);
 					  char *exp = dnode2string(sql, set->h->next, expression, err);
-					  int len = strlen(ident) + strlen(exp);
+					  size_t len = strlen(ident) + strlen(exp);
 					  char *res;
 					  if ((res = SA_NEW_ARRAY(sql->ta, char, len + 6)))
 							stpcpy(stpcpy(stpcpy(stpcpy(res, "SET "), ident), " "), exp);

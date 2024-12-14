@@ -479,6 +479,12 @@ mvc_cancel_session(mvc *m)
 	(void)sql_trans_end(m->session, SQL_ERR);
 }
 
+void
+mvc_query_processed(mvc *m)
+{
+	scanner_query_processed(&(m->scanner));
+}
+
 int
 mvc_trans(mvc *m)
 {
