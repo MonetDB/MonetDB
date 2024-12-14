@@ -36,6 +36,7 @@ target_link_libraries(monetdb_loader
     monetdb5
     bat
     stream
+    mapi
   )
 
 set_target_properties(monetdb_loader
