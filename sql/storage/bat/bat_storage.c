@@ -14,8 +14,6 @@
 #include "bat_storage.h"
 #include "bat_utils.h"
 #include "sql_string.h"
-#include "gdk_atoms.h"
-#include "gdk_atoms.h"
 #include "matomic.h"
 
 #define FATAL_MERGE_FAILURE "Out Of Memory during critical merge operation: %s"

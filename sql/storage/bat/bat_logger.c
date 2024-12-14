@@ -113,6 +113,7 @@ log_temp_descriptor(log_bid b)
 }
 
 #if defined CATALOG_JAN2022 || defined CATALOG_SEP2022
+/* cannot use attribute((sentinel)) since sentinel is not a pointer */
 static gdk_return
 tabins(logger *lg, ...)
 {
