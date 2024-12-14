@@ -157,7 +157,7 @@ qname_schema_object(dlist *qname)
 
 
 static char * sp_symbol2string(mvc *sql, symbol *se, int expression, char **err);
-static char * dlist2string(mvc *sql, dlist *l, char *sep, int expression, char **err);
+static char * dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err);
 
 static char *
 dnode2string(mvc *sql, dnode *n, int expression, char **err)
@@ -179,7 +179,7 @@ dnode2string(mvc *sql, dnode *n, int expression, char **err)
 	} else if (n->type == type_symbol) {
 		s = sp_symbol2string(sql, n->data.sym, expression, err);
 	} else if (n->type == type_list) {
-		s = dlist2string(sql, n->data.lval, ", ", expression, err);
+		s = dlist2string(sql, n->data.lval, ", ", "( ", " )", expression, err);
 	} else if (n->type == type_type) {
 		s = sql_subtype_string(sql->ta, &n->data.typeval);
 	}
@@ -187,14 +187,15 @@ dnode2string(mvc *sql, dnode *n, int expression, char **err)
 }
 
 static char *
-dlist2string(mvc *sql, dlist *l, char *sep, int expression, char **err)
+dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err)
 {
 	if (!l)
 		return " EMPTY_LIST";
-	char *b = NULL;
+	char *b = lb;
 	dnode *n;
 
 	int seplen = strlen(sep);
+	bool skipsep = lb;
 	for (n=l->h; n; n = n->next) {
 		char *s = dnode2string(sql, n, expression, err);
 
@@ -202,14 +203,25 @@ dlist2string(mvc *sql, dlist *l, char *sep, int expression, char **err)
 			return NULL;
 		if (b) {
 			char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(s) + seplen + 1);
-			if (o)
-				stpcpy(stpcpy(stpcpy(o, b), sep), s);
+			if (o) {
+				if (skipsep)
+					stpcpy(stpcpy(o, b), s);
+				else
+					stpcpy(stpcpy(stpcpy(o, b), sep), s);
+				skipsep = false;
+			}
 			b = o;
 			if (b == NULL)
 				return NULL;
 		} else {
 			b = s;
 		}
+	}
+	if (rb) {
+		char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(rb) + 1);
+		if (o)
+			stpcpy(stpcpy(o, b), rb);
+		b = o;
 	}
 	return b;
 }
@@ -273,7 +285,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		if (s->orderby)
 			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->orderby, expression, err), "\n");
 		if (s->selection)
-			res = sa_concat(sql->ta, " ", res, "SELECTION ", dlist2string(sql, s->selection, ", ", expression, err), "\n");
+			res = sa_concat(sql->ta, " ", res, "SELECTION ", dlist2string(sql, s->selection, ", ", "( ", " )", expression, err), "\n");
 		return res;
 	}
 	case SQL_NOP: {
@@ -367,7 +379,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
-			return dlist2string(sql, l, ".", expression, err);
+			return dlist2string(sql, l, ".", NULL, NULL, expression, err);
 		}
 	}
 	case SQL_CAST: {
@@ -382,7 +394,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	}
 	case SQL_SET: { /* dlist(ident-list, expression) */
 					  dlist *set = se->data.lval;
-					  char *ident = dlist2string(sql, set->h->data.lval, ".", expression, err);
+					  char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err);
 					  char *exp = dnode2string(sql, set->h->next, expression, err);
 					  int len = strlen(ident) + strlen(exp);
 					  char *res;
@@ -394,13 +406,13 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		/* generic */
 		if (se->type == type_list) {
 			char *tok_str = token2string(se->token);
-			char *args = dlist2string(sql, se->data.lval, ", ", expression, err);
+			char *args = dlist2string(sql, se->data.lval, ", ", "( ", " )", expression, err);
 			char *res;
 
 			if (!args)
 				args = "";
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 5)))
-				stpcpy(stpcpy(stpcpy(stpcpy(res, tok_str), "( "), args), ") ");
+			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
+				stpcpy(stpcpy(res, tok_str), args);
 			return res;
 		} else if (se->type == type_symbol) {
 			char *tok_str = token2string(se->token);
