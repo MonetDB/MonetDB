@@ -15,7 +15,7 @@
 
 #include "sql_relation.h"
 
-extern int mapiuri_valid( const char *uri);
+sql_export int mapiuri_valid( const char *uri);
 extern const char *mapiuri_uri(const char *uri, allocator *sa);
 extern const char *mapiuri_database(const char *uri, allocator *sa);
 extern const char *mapiuri_schema(const char *uri, allocator *sa, const char *fallback);

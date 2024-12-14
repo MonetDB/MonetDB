@@ -253,7 +253,7 @@ extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sq
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* rows);
-extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+sql_export stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
