@@ -1353,7 +1353,7 @@ alter_statement:
 	  append_list(l, p);
 	  append_string(l, $7);
 	  append_lng(l, $8[0]);
-	  append_int(l, $8[1]);
+	  append_int(l, (int)$8[1]);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER column_id RENAME TO column_id
 	{ dlist *l = L();
@@ -1621,7 +1621,7 @@ role_def:
 	  append_list(l, $9);
 	  append_int(l, $4);
 	  append_lng(l, $10[0]);
-	  append_int(l, $10[1]);
+	  append_int(l, (int)$10[1]);
 	  append_string(l, $11);
 	  append_string(l, $12);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
