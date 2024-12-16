@@ -54,19 +54,19 @@ query ITTIIITIIT rowsort
 SELECT * FROM tmp._columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.function_types)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE language NOT IN (SELECT language_id FROM sys.function_languages)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE system AND schema_id NOT IN (SELECT id FROM sys.schemas WHERE system)
 ----
 

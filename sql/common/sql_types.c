@@ -884,6 +884,19 @@ sql_create_aggr(allocator *sa, const char *name, const char *mod, const char *im
 }
 
 static sql_func *
+sql_create_aggr_optorder(allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, sql_type *fres, int nargs, ...)
+{
+	sql_func *res;
+	va_list valist;
+
+	va_start(valist, nargs);
+	res = sql_create_func_(sa, name, mod, imp, F_AGGR, semantics, private, SCALE_NONE, 0, fres, nargs, valist);
+	va_end(valist);
+	res->opt_order = true;
+	return res;
+}
+
+static sql_func *
 sql_create_filter(allocator *sa, const char *name, const char *mod, const char *imp, bit semantics, bit private, int fix_scale,
 				unsigned int res_scale, int nargs, ...)
 {
@@ -1198,8 +1211,8 @@ sqltypeinit( allocator *sa)
 	sql_create_aggr(sa, "count", "aggr", "count", TRUE, FALSE, LNG, 1, ANY);
 	sql_create_func(sa, "cnt", "sql", "count", TRUE, TRUE, SCALE_FIX, 0, LNG, 2, STR, STR);
 
-	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, STR, 1, STR);
-	sql_create_aggr(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, STR, 2, STR, STR);
+	sql_create_aggr_optorder(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, STR, 1, STR);
+	sql_create_aggr_optorder(sa, "listagg", "aggr", "str_group_concat", TRUE, FALSE, STR, 2, STR, STR);
 
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", TRUE, BIT, 1, ANY);

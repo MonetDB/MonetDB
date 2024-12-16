@@ -163,6 +163,8 @@ for aggr
 	-> flag DISTINCT and NO_NIL could be set
 for window functions
 	-> r contains a list with two values: the first is a list with the partition by expressions, and the second a list with order by expressions
+for aggregate functions
+	-> r contains a list with two values: the first is a list with the order by expressions, and the second is a list with filter expressions
 
 e_column
 	-> rname alias for the relation (i.e., alias of ->l, used by higher expressions)

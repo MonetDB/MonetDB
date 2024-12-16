@@ -741,6 +741,8 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_any(ne);
 	if (is_symmetric(oe))
 		set_symmetric(ne);
+	if (is_partitioning(oe))
+		set_partitioning(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))
