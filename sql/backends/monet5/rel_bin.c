@@ -188,7 +188,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 				const char *nme = column_name(be->mvc->sa, s);
 
 				if (rnme && strcmp(rnme, rname) == 0 &&
-					    strcmp(nme, name) == 0) {
+						strcmp(nme, name) == 0) {
 					res = s;
 					break;
 				}
@@ -215,7 +215,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 			const char *nme = column_name(be->mvc->sa, n->data);
 
 			if (rnme && strcmp(rnme, rname) == 0 &&
-				    strcmp(nme, name) == 0) {
+					strcmp(nme, name) == 0) {
 				res = n->data;
 				break;
 			}
@@ -543,7 +543,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC, true, true)
 			:sql_bind_func(sql, "sys", "<>", tail_type(c), tail_type(c), F_FUNC, true, true);
 		sql_subfunc *a = (in)?sql_bind_func(sql, "sys", "or", bt, bt, F_FUNC, true, true)
-				     :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC, true, true);
+					 :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC, true, true);
 
 		for (n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -948,19 +948,19 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 		InstrPtr q = newAssignment(be->mb);
 
 		if (!q || !t || !s) {
-            sql_error(be->mvc, 10, SQLSTATE(42000) MAL_MALLOC_FAIL);
+			sql_error(be->mvc, 10, SQLSTATE(42000) MAL_MALLOC_FAIL);
 			return NULL;
 		}
-        int type = t->type->localtype, varid = 0;
+		int type = t->type->localtype, varid = 0;
 
-        snprintf(arg, IDLENGTH, "A%d", argc);
-        if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
-            sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+		snprintf(arg, IDLENGTH, "A%d", argc);
+		if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
+			sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 			return NULL;
-        }
+		}
 		if (q)
 			getDestVar(q) = varid;
-        q = pushArgument(be->mb, q, s->nr);
+		q = pushArgument(be->mb, q, s->nr);
 		pushInstruction(be->mb, q);
 	}
 	return NULL;
@@ -1416,7 +1416,7 @@ is_const_func(sql_subfunc *f, list *attr)
 	if (list_length(attr) != 2)
 		return false;
 	if (strcmp(f->func->base.name, "quantile") == 0 ||
-	    strcmp(f->func->base.name, "quantile_avg") == 0)
+		strcmp(f->func->base.name, "quantile_avg") == 0)
 		return true;
 	return false;
 }
@@ -2843,7 +2843,7 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 				if ((ll && !rl &&
 				   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
 				   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcr1+nrcr2) <= 1) ||
-				    (rl && !ll &&
+					(rl && !ll &&
 				   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
 				   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcl1+nrcl2) <= 1)) {
 					can_join = 1;
@@ -4095,13 +4095,13 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 
 		/* while cnt > 0 (and total < limit): */
-        InstrPtr r = newAssignment(be->mb);
-        if (r == NULL)
+		InstrPtr r = newAssignment(be->mb);
+		if (r == NULL)
 			return NULL;
 		int barrier_var = r->argv[0];
-        r->argc = r->retc = 1;
-        r->barrier = BARRIERsymbol;
-        r = pushBit(be->mb, r, TRUE);
+		r->argc = r->retc = 1;
+		r->barrier = BARRIERsymbol;
+		r = pushBit(be->mb, r, TRUE);
 		pushInstruction(be->mb, r);
 
 		if (l)
@@ -4110,7 +4110,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			r = newStmtArgs(be->mb, calcRef, "<=", 3);
 		if (r == NULL)
 			return NULL;
-        getArg(r, 0) = barrier_var;
+		getArg(r, 0) = barrier_var;
 		r->barrier = LEAVEsymbol;
 		r = pushArgument(be->mb, r, cnts->nr);
 		r = pushLng(be->mb, r, 0);
@@ -4176,21 +4176,21 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 
 		/* jump back */
 		r = newStmtArgs(be->mb, calcRef, ">", 3);
-        if (r == NULL)
+		if (r == NULL)
 			return NULL;
-        getArg(r, 0) = barrier_var;
-        r->argc = r->retc = 1;
+		getArg(r, 0) = barrier_var;
+		r->argc = r->retc = 1;
 		r = pushArgument(be->mb, r, cnts->nr);
 		r = pushLng(be->mb, r, 0);
-        r->barrier = REDOsymbol;
+		r->barrier = REDOsymbol;
 		pushInstruction(be->mb, r);
 
-        r = newAssignment(be->mb);
-        if (r == NULL)
+		r = newAssignment(be->mb);
+		if (r == NULL)
 			return NULL;
-        getArg(r, 0) = barrier_var;
-        r->argc = r->retc = 1;
-        r->barrier = EXITsymbol;
+		getArg(r, 0) = barrier_var;
+		r->argc = r->retc = 1;
+		r->barrier = EXITsymbol;
 		pushInstruction(be->mb, r);
 
 		/* relabel */
@@ -5264,7 +5264,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 
-    stmt *nonil_rows = NULL;
+	stmt *nonil_rows = NULL;
 	for (node *m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
@@ -5281,9 +5281,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-    // we want to make sure that the data column(s) has the same number
-    // of (nonil) rows as the index column. if that is **not** the case
-    // then we are obviously dealing with an invalid foreign key
+	// we want to make sure that the data column(s) has the same number
+	// of (nonil) rows as the index column. if that is **not** the case
+	// then we are obviously dealing with an invalid foreign key
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
