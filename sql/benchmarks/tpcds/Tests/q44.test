@@ -1,4 +1,4 @@
-query ITT nosort
+query ITT rowsort
 -- query 44
 select  asceding.rnk, i1.i_product_name best_performing, i2.i_product_name worst_performing
 from(select *
@@ -36,6 +36,9 @@ limit 100
 1
 oughtantiprin st
 callyeingbarcallyought
+10
+eingoughtn station
+barcallyableought
 2
 barcallyprioughtought
 bareseationcallyought
@@ -60,7 +63,4 @@ ationoughtantianti
 9
 esebarableeseought
 callyn stantieseought
-10
-eingoughtn station
-barcallyableought
 

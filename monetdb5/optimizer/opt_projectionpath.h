@@ -12,7 +12,6 @@
 
 #ifndef _OPT_PROJECTIONPATH_
 #define _OPT_PROJECTIONPATH_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 

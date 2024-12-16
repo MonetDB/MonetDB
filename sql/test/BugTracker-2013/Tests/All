@@ -21,9 +21,7 @@ corrupt-after-restart.Bug-3282
 db_users.Bug-3287
 create_table_with_func.Bug-3286
 add_boolean.Bug-3289
-psm_functions_and_accessrights.Bug-3300-1
-USER=psm&PASSWD=psm?psm_functions_and_accessrights.Bug-3300-2
-psm_functions_and_accessrights.Bug-3300-3
+psm_functions_and_accessrights.Bug-3300
 decimal-cast.Bug-3310
 hashed_exp.Bug-3313
 mitosis-floor.Bug-3330

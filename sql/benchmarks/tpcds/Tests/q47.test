@@ -1,4 +1,4 @@
-query TTTTIIRRRR nosort
+query TTTTIIRRRR rowsort
 -- query 47
 with v1 as(
  select i_category, i_brand,
@@ -49,5 +49,5 @@ with v1 as(
  order by sum_sales - avg_monthly_sales, s_store_name
  limit 100
 ----
-1000 values hashing to f218a81c595d810d629b3bab3fa28cad
+1000 values hashing to b3ee292c0580b29cc7d1392fdcaf1dab
 

@@ -1561,10 +1561,8 @@ add_error(struct MapiResultSet *result, char *error)
 	REALLOC(result->errorstr, size + strlen(error) + 2);
 	if (result->errorstr == NULL)
 		result->errorstr = mapi_nomem;
-	else {
-		strcpy(result->errorstr + size, error);
-		strcat(result->errorstr + size, "\n");
-	}
+	else
+		stpcpy(stpcpy(result->errorstr + size, error), "\n");
 }
 
 const char *

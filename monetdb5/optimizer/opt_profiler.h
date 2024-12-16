@@ -12,7 +12,6 @@
 
 #ifndef _OPT_PROFILER_
 #define _OPT_PROFILER_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_exception.h"
 

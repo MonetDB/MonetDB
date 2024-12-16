@@ -1,4 +1,4 @@
-query ITR nosort
+query ITR rowsort
 -- query 55
 select  i_brand_id brand_id, i_brand brand,
  	sum(ss_ext_sales_price) ext_price
@@ -12,5 +12,5 @@ select  i_brand_id brand_id, i_brand brand,
  order by ext_price desc, i_brand_id
 limit 100
 ----
-300 values hashing to 82ddf6fded1722db44b9c6d54091d96d
+300 values hashing to 803c7653b1f9aab1388c7e6ca4f77ee3
 

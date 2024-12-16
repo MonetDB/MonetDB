@@ -1,10 +1,19 @@
+#START TRANSACTION;
+#CREATE FUNCTION mymax(a int, b int) returns int begin if a > b then return a; else return b; end if; end; 
+#CREATE MERGE TABLE x(a int);
+#CREATE TABLE child1(a int);
+#INSERT INTO child1 VALUES (0),(2),(3);
 [ 3	]
+#ALTER TABLE x ADD TABLE child1;
+#PREPARE SELECT mymax(a, ?) from x;
+#PREPARE SELECT mymax(a, ?) from x;
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 3,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"%1",	"%1"	]
-[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	31,	0,	"",	"%1",	"%1"	]
+[ "int",	31,	0,	NULL,	NULL,	NULL	]
+#exec  0(1);
 % sys.%1 # table_name
 % %1 # name
 % int # type
@@ -12,3 +21,4 @@
 [ 1	]
 [ 2	]
 [ 3	]
+#ROLLBACK;

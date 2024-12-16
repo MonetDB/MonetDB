@@ -12,7 +12,6 @@
 
 #ifndef _MAL_EMPTYBIND_
 #define _MAL_EMPTYBIND_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

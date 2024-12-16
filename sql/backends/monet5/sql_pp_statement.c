@@ -15,7 +15,6 @@
 #include "rel_exp.h"
 
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 /* Generate incremental or partitioned aggr statements */
 stmt *

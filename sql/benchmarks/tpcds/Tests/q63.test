@@ -1,4 +1,4 @@
-query IRR nosort
+query IRR rowsort
 -- query 63
 select  *
 from (select i_manager_id
@@ -27,5 +27,5 @@ order by i_manager_id
         ,sum_sales
 limit 100
 ----
-300 values hashing to d55157b0b92d3a8da63885f15ddcad00
+300 values hashing to 523ee05fa3b78148eb8695e87feaec15
 

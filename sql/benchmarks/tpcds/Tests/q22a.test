@@ -1,4 +1,4 @@
-query TTTTR nosort
+query TTTTR rowsort
 -- query 22a
 with results as
 (select  i_product_name
@@ -38,5 +38,5 @@ from results)
       order by qoh, i_product_name, i_brand, i_class, i_category
 limit 100
 ----
-500 values hashing to e7a50f3285e4c45f5d327c1ed71f0338
+500 values hashing to e1068d9b6bd311e171034af47cfa9e0e
 

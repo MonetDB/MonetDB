@@ -59,3 +59,10 @@ grant execute on filter function contains(string, string) to public;
 create filter function sys.contains(x string, y string, icase boolean)
 external name str.contains;
 grant execute on filter function contains(string, string, boolean) to public;
+
+create aggregate sys.group_concat(str string) returns string with order
+	external name "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
+create aggregate sys.group_concat(str string, sep string) returns string with order
+	external name "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;

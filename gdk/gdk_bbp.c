@@ -894,7 +894,7 @@ BBPcheckbats(unsigned bbpversion)
 	for (bat bid = 1, size = (bat) ATOMIC_GET(&BBPsize); bid < size; bid++) {
 		struct stat statb;
 		BAT *b;
-		char *path;
+		char path[MAXPATH];
 
 		b = BBP_desc(bid);
 		if (b->batCacheid == 0 || b->ttype == TYPE_void) {
@@ -902,20 +902,17 @@ BBPcheckbats(unsigned bbpversion)
 			continue;
 		}
 		if (b->theap->free > 0) {
-			path = GDKfilepath(0, BATDIR, b->theap->filename, NULL);
-			if (path == NULL)
+			if (GDKfilepath(path, sizeof(path), 0, BATDIR, b->theap->filename, NULL) != GDK_SUCCEED)
 				return GDK_FAIL;
 			/* first check string offset heap with width,
 			 * then without */
 			if (MT_stat(path, &statb) < 0) {
 				GDKsyserror("cannot stat file %s (expected size %zu)\n",
 					    path, b->theap->free);
-				GDKfree(path);
 				return GDK_FAIL;
 			}
 			if ((size_t) statb.st_size < b->theap->free) {
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->theap->free, (size_t) statb.st_size);
-				GDKfree(path);
 				return GDK_FAIL;
 			}
 			size_t hfree = b->theap->free;
@@ -930,21 +927,17 @@ BBPcheckbats(unsigned bbpversion)
 					(void) close(fd);
 				}
 			}
-			GDKfree(path);
 		}
 		if (b->tvheap != NULL && b->tvheap->free > 0) {
-			path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "theap");
-			if (path == NULL)
+			if (GDKfilepath(path, sizeof(path), 0, BATDIR, BBP_physical(b->batCacheid), "theap") != GDK_SUCCEED)
 				return GDK_FAIL;
 			if (MT_stat(path, &statb) < 0) {
 				GDKsyserror("cannot stat file %s\n",
 					    path);
-				GDKfree(path);
 				return GDK_FAIL;
 			}
 			if ((size_t) statb.st_size < b->tvheap->free) {
 				GDKerror("file %s too small (expected %zu, actual %zu)\n", path, b->tvheap->free, (size_t) statb.st_size);
-				GDKfree(path);
 				return GDK_FAIL;
 			}
 			size_t hfree = b->tvheap->free;
@@ -959,7 +952,6 @@ BBPcheckbats(unsigned bbpversion)
 					(void) close(fd);
 				}
 			}
-			GDKfree(path);
 		}
 	}
 	return GDK_SUCCEED;
@@ -1110,7 +1102,7 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			}
 			BBPfarms[i].roles = rolemask;
 			if ((rolemask & 1) == 0 && dirname != NULL) {
-				char *bbpdir;
+				char bbpdir[MAXPATH];
 				int j;
 
 				for (j = 0; j < i; j++)
@@ -1122,28 +1114,22 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 				 * don't find a BBP.dir there that
 				 * might belong to an existing
 				 * database */
-				bbpdir = GDKfilepath(i, BATDIR, "BBP", "dir");
-				if (bbpdir == NULL) {
+				if (GDKfilepath(bbpdir, sizeof(bbpdir), i, BATDIR, "BBP", "dir") != GDK_SUCCEED) {
 					return GDK_FAIL;
 				}
 				if (MT_stat(bbpdir, &st) != -1 || errno != ENOENT) {
-					GDKfree(bbpdir);
 					if (logerror)
 						GDKerror("%s is a database\n", dirname);
 					return GDK_FAIL;
 				}
-				GDKfree(bbpdir);
-				bbpdir = GDKfilepath(i, BAKDIR, "BBP", "dir");
-				if (bbpdir == NULL) {
+				if (GDKfilepath(bbpdir, sizeof(bbpdir), i, BAKDIR, "BBP", "dir") != GDK_SUCCEED) {
 					return GDK_FAIL;
 				}
 				if (MT_stat(bbpdir, &st) != -1 || errno != ENOENT) {
-					GDKfree(bbpdir);
 					if (logerror)
 						GDKerror("%s is a database\n", dirname);
 					return GDK_FAIL;
 				}
-				GDKfree(bbpdir);
 			}
 			return GDK_SUCCEED;
 		}
@@ -1188,8 +1174,9 @@ static gdk_return
 fixhashashbat(BAT *b)
 {
 	const char *nme = BBP_physical(b->batCacheid);
-	char *srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
-	if (srcdir == NULL) {
+	char srcdir[MAXPATH];
+
+	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
@@ -1229,14 +1216,12 @@ fixhashashbat(BAT *b)
 			 BAKDIR, bnme, "tail", true) == GDK_SUCCEED)
 		t = "tail";
 	else {
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
 		return GDK_FAIL;
 	}
 	GDKclrerr();
 	if (GDKmove(b->theap->farmid, srcdir, bnme, "theap",
 		    BAKDIR, bnme, "theap", true) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.theap\n", nme);
 		return GDK_FAIL;
 	}
@@ -1246,7 +1231,6 @@ fixhashashbat(BAT *b)
 	h1.dirty = false;
 	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
 	if (HEAPload(&h1, filename, t, false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "loading old tail heap "
 			     "for BAT %d failed\n", b->batCacheid);
 		return GDK_FAIL;
@@ -1256,7 +1240,6 @@ fixhashashbat(BAT *b)
 	vh1.dirty = false;
 	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
 	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "loading old string heap "
 			     "for BAT %d failed\n", b->batCacheid);
@@ -1269,7 +1252,6 @@ fixhashashbat(BAT *b)
 	if (h2 == NULL || vh2 == NULL) {
 		GDKfree(h2);
 		GDKfree(vh2);
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		HEAPfree(&vh1, false);
 		TRC_CRITICAL(GDK, "allocating new heaps "
@@ -1281,7 +1263,6 @@ fixhashashbat(BAT *b)
 	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
 		GDKfree(h2);
 		GDKfree(vh2);
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		HEAPfree(&vh1, false);
 		TRC_CRITICAL(GDK, "allocating new tail heap "
@@ -1295,7 +1276,6 @@ fixhashashbat(BAT *b)
 	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
 	strHeap(vh2, b->batCapacity);
 	if (vh2->base == NULL) {
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		HEAPfree(&vh1, false);
 		HEAPfree(h2, false);
@@ -1337,7 +1317,6 @@ fixhashashbat(BAT *b)
 			HEAPdecref(h2, false);
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = ovh;
-			GDKfree(srcdir);
 			TRC_CRITICAL(GDK, "storing string value "
 				     "for BAT %d failed\n", b->batCacheid);
 			return GDK_FAIL;
@@ -1373,14 +1352,12 @@ fixhashashbat(BAT *b)
 		HEAPdecref(h2, false);
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = ovh;
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "saving heap failed\n");
 		return GDK_FAIL;
 	}
 	if (HEAPsave(b->tvheap, nme, "theap", true, b->tvheap->free, &b->theaplock) != GDK_SUCCEED) {
 		HEAPfree(b->tvheap, false);
 		b->tvheap = ovh;
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "saving string heap failed\n");
 		return GDK_FAIL;
 	}
@@ -1389,7 +1366,6 @@ fixhashashbat(BAT *b)
 	HEAPfree(h2, false);
 	HEAPdecref(ovh, false);
 	HEAPfree(b->tvheap, false);
-	GDKfree(srcdir);
 	return GDK_SUCCEED;
 }
 
@@ -1415,9 +1391,9 @@ static gdk_return
 jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 {
 	const char *nme = BBP_physical(b->batCacheid);
-	char *srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
+	char srcdir[MAXPATH];
 
-	if (srcdir == NULL) {
+	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
@@ -1445,13 +1421,11 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	/* backup the current heaps */
 	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail",
 		    BAKDIR, bnme, "tail", false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
 		return GDK_FAIL;
 	}
 	if (GDKmove(b->theap->farmid, srcdir, bnme, "theap",
 		    BAKDIR, bnme, "theap", true) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "cannot make backup of %s.theap\n", nme);
 		return GDK_FAIL;
 	}
@@ -1462,7 +1436,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	h1.dirty = false;
 	strconcat_len(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
 	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "loading old tail heap "
 			     "for BAT %d failed\n", b->batCacheid);
 		return GDK_FAIL;
@@ -1473,7 +1446,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	vh1.dirty = false;
 	strconcat_len(vh1.filename, sizeof(vh1.filename), filename, ".theap", NULL);
 	if (HEAPload(&vh1, filename, "theap", false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		TRC_CRITICAL(GDK, "loading old string heap "
 			     "for BAT %d failed\n", b->batCacheid);
@@ -1486,7 +1458,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	if (h2 == NULL || vh2 == NULL) {
 		GDKfree(h2);
 		GDKfree(vh2);
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		HEAPfree(&vh1, false);
 		TRC_CRITICAL(GDK, "allocating new heaps "
@@ -1498,7 +1469,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
 		GDKfree(h2);
 		GDKfree(vh2);
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		HEAPfree(&vh1, false);
 		TRC_CRITICAL(GDK, "allocating new tail heap "
@@ -1513,7 +1483,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	strconcat_len(vh2->filename, sizeof(vh2->filename), nme, ".theap", NULL);
 	strHeap(vh2, b->batCapacity);
 	if (vh2->base == NULL) {
-		GDKfree(srcdir);
 		HEAPfree(&h1, false);
 		HEAPfree(&vh1, false);
 		HEAPfree(h2, false);
@@ -1535,7 +1504,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 		const char *s = vh1.base + o;
 		char *ns;
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {
-			GDKfree(srcdir);
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
 			HEAPdecref(h2, false);
@@ -1548,7 +1516,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 		var_t no = strPut(b, &o, ns);
 		GDKfree(ns);
 		if (no == 0) {
-			GDKfree(srcdir);
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
 			HEAPdecref(h2, false);
@@ -1570,7 +1537,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 		HEAPdecref(h2, false);
 		HEAPdecref(b->tvheap, false);
 		b->tvheap = ovh;
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "saving heap failed\n");
 		return GDK_FAIL;
 	}
@@ -1579,7 +1545,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 		     &b->theaplock) != GDK_SUCCEED) {
 		HEAPfree(b->tvheap, false);
 		b->tvheap = ovh;
-		GDKfree(srcdir);
 		TRC_CRITICAL(GDK, "saving string failed\n");
 		return GDK_FAIL;
 	}
@@ -1589,7 +1554,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	HEAPfree(h2, false);
 	HEAPdecref(ovh, false);
 	HEAPfree(b->tvheap, false);
-	GDKfree(srcdir);
 
 	return GDK_SUCCEED;
 }
@@ -1774,19 +1738,18 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 	static_assert((uint64_t) N_BBPINIT * BBPINIT < (UINT64_C(1) << (3 * (sizeof(BBP[0][0].bak) - 5))), "\"bak\" array in BBPrec is too small");
 
 	if (!GDKinmemory(0)) {
-		str bbpdirstr, backupbbpdirstr;
+		char bbpdirstr[MAXPATH], backupbbpdirstr[MAXPATH];
 
 		BBPtmlock();
 
-		if ((bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir")) == NULL) {
+		if (GDKfilepath(bbpdirstr, sizeof(bbpdirstr), 0, BATDIR, "BBP", "dir") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
 		}
 
-		if ((backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir")) == NULL) {
-			GDKfree(bbpdirstr);
+		if (GDKfilepath(backupbbpdirstr, sizeof(backupbbpdirstr), 0, BAKDIR, "BBP", "dir") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
@@ -1794,8 +1757,6 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 		}
 
 		if (GDKremovedir(0, TEMPDIR) != GDK_SUCCEED) {
-			GDKfree(bbpdirstr);
-			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", TEMPDIR);
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
@@ -1803,8 +1764,6 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 		}
 
 		if (GDKremovedir(0, DELDIR) != GDK_SUCCEED) {
-			GDKfree(bbpdirstr);
-			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot remove directory %s\n", DELDIR);
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
@@ -1813,8 +1772,6 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 
 		/* first move everything from SUBDIR to BAKDIR (its parent) */
 		if (BBPrecover_subdir() != GDK_SUCCEED) {
-			GDKfree(bbpdirstr);
-			GDKfree(backupbbpdirstr);
 			TRC_CRITICAL(GDK, "cannot properly recover_subdir process %s.", SUBDIR);
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
@@ -1825,14 +1782,10 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 		if (MT_stat(backupbbpdirstr, &st) == 0) {
 			/* backup exists; *must* use it */
 			if (recover_dir(0, MT_stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
-				GDKfree(bbpdirstr);
-				GDKfree(backupbbpdirstr);
 				BBPtmunlock();
 				goto bailout;
 			}
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
-				GDKfree(bbpdirstr);
-				GDKfree(backupbbpdirstr);
 				TRC_CRITICAL(GDK, "cannot open recovered BBP.dir.");
 				BBPtmunlock();
 				ATOMIC_SET(&GDKdebug, dbg);
@@ -1846,8 +1799,6 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 				 * create a new one */
 				TRC_DEBUG(IO_, "initializing BBP.\n");
 				if (BBPdir_init() != GDK_SUCCEED) {
-					GDKfree(bbpdirstr);
-					GDKfree(backupbbpdirstr);
 					BBPtmunlock();
 					goto bailout;
 				}
@@ -1856,15 +1807,11 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 
 			if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 				GDKsyserror("cannot open BBP.dir");
-				GDKfree(bbpdirstr);
-				GDKfree(backupbbpdirstr);
 				BBPtmunlock();
 				goto bailout;
 			}
 		}
 		assert(fp != NULL);
-		GDKfree(bbpdirstr);
-		GDKfree(backupbbpdirstr);
 		BBPtmunlock();
 	}
 
@@ -1958,33 +1905,28 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 #endif
 
 #ifdef GDKLIBRARY_JSON
-	if (bbpversion <= GDKLIBRARY_JSON) {
-		char *jsonupgradestr;
-		if (GDKinmemory(0)) {
-			jsonupgradestr = NULL;
-		} else {
-			if ((jsonupgradestr = GDKfilepath(0, BATDIR, "jsonupgradeneeded", NULL)) == NULL) {
-				TRC_CRITICAL(GDK, "GDKfilepath failed\n");
-				ATOMIC_SET(&GDKdebug, dbg);
-				return GDK_FAIL;
-			}
+	if (bbpversion <= GDKLIBRARY_JSON && !GDKinmemory(0)) {
+		char jsonupgradestr[MAXPATH];
 
-			/* create signal file that we need to upgrade
-			 * stored json strings. This will be performed
-			 * by an upgrade function in the GDK that will
-			 * be called at the end of the json module
-			 * initialization with a callback that actually
-			 * knows how to perform the upgrade. */
-			int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
-			GDKfree(jsonupgradestr);
-			if (fd < 0) {
-				TRC_CRITICAL(GDK, "cannot create signal file jsonupgradeneeded");
-				ATOMIC_SET(&GDKdebug, dbg);
-				return GDK_FAIL;
-			}
-
-			close(fd);
+		if (GDKfilepath(jsonupgradestr, sizeof(jsonupgradestr), 0, BATDIR, "jsonupgradeneeded", NULL) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKfilepath failed\n");
+			ATOMIC_SET(&GDKdebug, dbg);
+			return GDK_FAIL;
 		}
+
+		/* create signal file that we need to upgrade stored
+		 * json strings. This will be performed by an upgrade
+		 * function in the GDK that will be called at the end of
+		 * the json module initialization with a callback that
+		 * actually knows how to perform the upgrade. */
+		int fd = MT_open(jsonupgradestr, O_WRONLY | O_CREAT);
+		if (fd < 0) {
+			TRC_CRITICAL(GDK, "cannot create signal file jsonupgradeneeded");
+			ATOMIC_SET(&GDKdebug, dbg);
+			return GDK_FAIL;
+		}
+
+		close(fd);
 	}
 #endif
 
@@ -2007,12 +1949,12 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 				break;
 		}
 		if (j == i) {
-			char *d = GDKfilepath(i, NULL, BATDIR, NULL);
-			if (d == NULL) {
+			char d[MAXPATH];
+
+			if (GDKfilepath(d, sizeof(d), i, NULL, BATDIR, NULL) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 			BBPdiskscan(d, strlen(d) - strlen(BATDIR));
-			GDKfree(d);
 		}
 	}
 
@@ -2037,7 +1979,6 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
  */
 
 static int backup_files = 0, backup_dir = 0, backup_subdir = 0;
-static char *lockfile = NULL;
 
 void
 BBPexit(void)
@@ -2095,10 +2036,6 @@ BBPexit(void)
 	backup_files = 0;
 	backup_dir = 0;
 	backup_subdir = 0;
-	if (lockfile) {
-		GDKfree(lockfile);
-		lockfile = NULL;
-	}
 }
 
 /*
@@ -2557,7 +2494,6 @@ BBPallocbat(int tt)
 	MT_Id pid = MT_getpid();
 	bool lock = locked_by == 0 || locked_by != pid;
 	bat i;
-	int len = 0;
 	struct freebats *t = MT_thread_getfreebats();
 
 	if (t->freebats == 0) {
@@ -2619,11 +2555,13 @@ BBPallocbat(int tt)
 	BBP_pid(i) = pid;
 	MT_lock_unset(&GDKswapLock(i));
 
-	if (*BBP_bak(i) == 0)
+	if (*BBP_bak(i) == 0) {
+		int len;
 		len = snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
-	if (len == -1 || len >= FILENAME_MAX) {
-		GDKerror("impossible error\n");
-		return 0;
+		if (len == -1 || (size_t) len >= sizeof(BBP_bak(i))) {
+			GDKerror("impossible error\n");
+			return 0;
+		}
 	}
 	BBP_logical(i) = BBP_bak(i);
 
@@ -3457,11 +3395,10 @@ file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, 
 	if (GDKmove(farmid, srcdir, name, ext, dstdir, name, ext, false) == GDK_SUCCEED) {
 		return GDK_SUCCEED;
 	} else {
-		char *path;
+		char path[MAXPATH];
 		struct stat st;
 
-		path = GDKfilepath(farmid, srcdir, name, ext);
-		if (path == NULL)
+		if (GDKfilepath(path, sizeof(path), farmid, srcdir, name, ext) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (MT_stat(path, &st)) {
 			/* source file does not exist; the best
@@ -3470,10 +3407,8 @@ file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, 
 			 * sure that this time it does get saved.
 			 */
 			GDKsyserror("file_move: cannot stat %s\n", path);
-			GDKfree(path);
 			return GDK_FAIL;	/* fishy, but not fatal */
 		}
-		GDKfree(path);
 	}
 	return GDK_FAIL;
 }
@@ -3482,15 +3417,13 @@ file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, 
 static bool
 file_exists(int farmid, const char *dir, const char *name, const char *ext)
 {
-	char *path;
+	char path[MAXPATH];
 	struct stat st;
 	int ret = -1;
 
-	path = GDKfilepath(farmid, dir, name, ext);
-	if (path) {
+	if (GDKfilepath(path, sizeof(path), farmid, dir, name, ext) == GDK_SUCCEED) {
 		ret = MT_stat(path, &st);
 		TRC_DEBUG(IO_, "stat(%s) = %d\n", path, ret);
-		GDKfree(path);
 	}
 	return (ret == 0);
 }
@@ -3517,17 +3450,15 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 
 		FILE *fp;
 		long_str kill_ext;
-		char *path;
+		char path[MAXPATH];
 
 		strconcat_len(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
-		path = GDKfilepath(hp->farmid, dstdir, nme, kill_ext);
-		if (path == NULL)
+		if (GDKfilepath(path, sizeof(path), hp->farmid, dstdir, nme, kill_ext) != GDK_SUCCEED)
 			return GDK_FAIL;
 		fp = MT_fopen(path, "w");
 		if (fp == NULL)
 			GDKsyserror("heap_move: cannot open file %s\n", path);
 		TRC_DEBUG(IO_, "open %s = %d\n", path, fp ? 0 : -1);
-		GDKfree(path);
 
 		if (fp != NULL) {
 			fclose(fp);
@@ -3573,34 +3504,32 @@ BBPprepare(bool subcommit)
 		ret = BBPrecover(0);
 		if (ret != GDK_SUCCEED)
 			return ret;
-		str bakdirpath = GDKfilepath(0, NULL, BAKDIR, NULL);
-		if (bakdirpath == NULL) {
+		char bakdirpath[MAXPATH];
+
+		if (GDKfilepath(bakdirpath, sizeof(bakdirpath), 0, NULL, BAKDIR, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 
 		if (MT_mkdir(bakdirpath) < 0 && errno != EEXIST) {
 			GDKsyserror("cannot create directory %s\n", bakdirpath);
-			GDKfree(bakdirpath);
 			return GDK_FAIL;
 		}
 		/* if BAKDIR already exists, don't signal error */
 		TRC_DEBUG(IO_, "mkdir %s = %d\n", bakdirpath, (int) ret);
-		GDKfree(bakdirpath);
 	}
 	if (start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
-		str subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-		if (subdirpath == NULL) {
+		char subdirpath[MAXPATH];
+
+		if (GDKfilepath(subdirpath, sizeof(subdirpath), 0, NULL, SUBDIR, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 
 		if (MT_mkdir(subdirpath) < 0) {
 			GDKsyserror("cannot create directory %s\n", subdirpath);
-			GDKfree(subdirpath);
 			return GDK_FAIL;
 		}
 		TRC_DEBUG(IO_, "mkdir %s\n", subdirpath);
-		GDKfree(subdirpath);
 	}
 	if (backup_dir != set) {
 		/* a valid backup dir *must* at least contain BBP.dir */
@@ -3638,9 +3567,9 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		 * these we write X.new.kill files in the backup
 		 * directory (see heap_move). */
 		gdk_return mvret = GDK_SUCCEED;
+		char srcdir[1025];
 
-		char *srcdir = GDKfilepath(NOFARM, BATDIR, h->filename, NULL);
-		if (srcdir == NULL)
+		if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, h->filename, NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		char *nme = strrchr(srcdir, DIR_SEP);
 		assert(nme != NULL);
@@ -3701,7 +3630,6 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 				ret = GDK_FAIL;
 			}
 		}
-		GDKfree(srcdir);
 	}
 	return ret;
 }
@@ -3739,26 +3667,22 @@ static inline void
 BBPcheckHeap(Heap *h)
 {
 	struct stat statb;
-	char *path;
+	char path[MAXPATH];
 
 	char *s = strrchr(h->filename, DIR_SEP);
 	if (s)
 		s++;
 	else
 		s = h->filename;
-	path = GDKfilepath(0, BAKDIR, s, NULL);
-	if (path == NULL)
+	if (GDKfilepath(path, sizeof(path), 0, BAKDIR, s, NULL) != GDK_SUCCEED)
 		return;
 	if (MT_stat(path, &statb) < 0) {
-		GDKfree(path);
-		path = GDKfilepath(0, BATDIR, h->filename, NULL);
-		if (path == NULL)
+		if (GDKfilepath(path, sizeof(path), 0, BATDIR, h->filename, NULL) != GDK_SUCCEED)
 			return;
 		if (MT_stat(path, &statb) < 0) {
 			GDKsyserror("cannot stat file %s (expected size %zu)\n",
 				    path, h->free);
 			assert(0);
-			GDKfree(path);
 			return;
 		}
 	}
@@ -3766,10 +3690,8 @@ BBPcheckHeap(Heap *h)
 	assert((size_t) statb.st_size >= h->free);
 	if ((size_t) statb.st_size < h->free) {
 		GDKerror("file %s too small (expected %zu, actual %zu)\n", path, h->free, (size_t) statb.st_size);
-		GDKfree(path);
 		return;
 	}
-	GDKfree(path);
 }
 
 static void
@@ -3864,18 +3786,15 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 {
 	gdk_return ret = GDK_SUCCEED;
 	lng t0 = 0, t1 = 0;
-	str bakdir, deldir;
+	char bakdir[MAXPATH], deldir[MAXPATH];
 	const bool lock = locked_by == 0 || locked_by != MT_getpid();
 	char buf[3000];
 	int n = subcommit ? 0 : -1;
 	FILE *obbpf, *nbbpf;
 
-	if ((bakdir = GDKfilepath(0, NULL, subcommit ? SUBDIR : BAKDIR, NULL)) == NULL)
+	if (GDKfilepath(bakdir, sizeof(bakdir), 0, NULL, subcommit ? SUBDIR : BAKDIR, NULL) != GDK_SUCCEED ||
+	    GDKfilepath(deldir, sizeof(deldir), 0, NULL, DELDIR, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((deldir = GDKfilepath(0, NULL, DELDIR, NULL)) == NULL) {
-		GDKfree(bakdir);
-		return GDK_FAIL;
-	}
 
 	TRC_DEBUG_IF(PERF) t0 = t1 = GDKusec();
 
@@ -4082,8 +4001,6 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 		BBP_status_off(i, BBPSYNCING);
 	}
 
-	GDKfree(bakdir);
-	GDKfree(deldir);
 	return ret;
 }
 
@@ -4097,7 +4014,7 @@ static gdk_return
 force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 {
 	const char *p;
-	char *dstpath, *killfile;
+	char dstpath[MAXPATH], path2[MAXPATH];
 	gdk_return ret = GDK_SUCCEED;
 
 	if ((p = strrchr(name, '.')) != NULL && strcmp(p, ".kill") == 0) {
@@ -4107,7 +4024,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		strncpy(srcpath, name, len);
 		srcpath[len] = '\0';
-		if ((dstpath = GDKfilepath(farmid, dstdir, srcpath, NULL)) == NULL) {
+		if (GDKfilepath(dstpath, sizeof(dstpath), farmid, dstdir, srcpath, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 
@@ -4117,36 +4034,29 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 			/* if it exists and cannot be removed, all
 			 * this is going to fail */
 			GDKsyserror("force_move: remove(%s)\n", dstpath);
-			GDKfree(dstpath);
 			return GDK_FAIL;
 		}
-		GDKfree(dstpath);
 
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
-		if ((killfile = GDKfilepath(farmid, srcdir, name, NULL)) == NULL) {
+		if (GDKfilepath(path2, sizeof(path2), farmid, srcdir, name, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
-		if (MT_remove(killfile) != 0) {
+		if (MT_remove(path2) != 0) {
 			ret = GDK_FAIL;
-			GDKsyserror("force_move: remove(%s)\n", killfile);
+			GDKsyserror("force_move: remove(%s)\n", path2);
 		}
-		GDKfree(killfile);
 		return ret;
 	}
 	/* try to rename it */
 	ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL, false);
 
 	if (ret != GDK_SUCCEED) {
-		char *srcpath;
-
 		GDKclrerr();
 		/* two legal possible causes: file exists or dir
 		 * doesn't exist */
-		if ((dstpath = GDKfilepath(farmid, dstdir, name, NULL)) == NULL)
-			return GDK_FAIL;
-		if ((srcpath = GDKfilepath(farmid, srcdir, name, NULL)) == NULL) {
-			GDKfree(dstpath);
+		if (GDKfilepath(dstpath, sizeof(dstpath), farmid, dstdir, name, NULL) != GDK_SUCCEED ||
+		    GDKfilepath(path2, sizeof(path2), farmid, srcdir, name, NULL) != GDK_SUCCEED) {
 			return GDK_FAIL;
 		}
 		if (MT_remove(dstpath) != 0)	/* clear destination */
@@ -4155,9 +4065,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		(void) GDKcreatedir(dstdir); /* if fails, move will fail */
 		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL, true);
-		TRC_DEBUG(IO_, "link %s %s = %d\n", srcpath, dstpath, (int) ret);
-		GDKfree(dstpath);
-		GDKfree(srcpath);
+		TRC_DEBUG(IO_, "link %s %s = %d\n", path2, dstpath, (int) ret);
 	}
 	return ret;
 }
@@ -4165,8 +4073,8 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 gdk_return
 BBPrecover(int farmid)
 {
-	str bakdirpath;
-	str leftdirpath;
+	char bakdirpath[MAXPATH];
+	char leftdirpath[MAXPATH];
 	DIR *dirp;
 	struct dirent *dent;
 	long_str path, dstpath;
@@ -4176,19 +4084,14 @@ BBPrecover(int farmid)
 	bool dirseen = false;
 	str dstdir;
 
-	bakdirpath = GDKfilepath(farmid, NULL, BAKDIR, NULL);
-	leftdirpath = GDKfilepath(farmid, NULL, LEFTDIR, NULL);
-	if (bakdirpath == NULL || leftdirpath == NULL) {
-		GDKfree(bakdirpath);
-		GDKfree(leftdirpath);
+	if (GDKfilepath(bakdirpath, sizeof(bakdirpath), farmid, NULL, BAKDIR, NULL) != GDK_SUCCEED ||
+	    GDKfilepath(leftdirpath, sizeof(leftdirpath), farmid, NULL, LEFTDIR, NULL) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
 	dirp = opendir(bakdirpath);
 	if (dirp == NULL) {
 		if (errno != ENOENT)
 			GDKsyserror("cannot open directory %s\n", bakdirpath);
-		GDKfree(bakdirpath);
-		GDKfree(leftdirpath);
 		return GDK_SUCCEED;	/* nothing to do */
 	}
 	memcpy(dstpath, BATDIR, j);
@@ -4200,27 +4103,22 @@ BBPrecover(int farmid)
 	if (MT_mkdir(leftdirpath) < 0 && errno != EEXIST) {
 		GDKsyserror("cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
-		GDKfree(bakdirpath);
-		GDKfree(leftdirpath);
 		return GDK_FAIL;
 	}
 
 	/* move back all files */
+	char fn[MAXPATH];
 	while ((dent = readdir(dirp)) != NULL) {
 		const char *q = strchr(dent->d_name, '.');
 
 		if (q == dent->d_name) {
-			char *fn;
-
 			if (strcmp(dent->d_name, ".") == 0 ||
 			    strcmp(dent->d_name, "..") == 0)
 				continue;
-			fn = GDKfilepath(farmid, BAKDIR, dent->d_name, NULL);
-			if (fn) {
+			if (GDKfilepath(fn, sizeof(fn), farmid, BAKDIR, dent->d_name, NULL) == GDK_SUCCEED) {
 				int uret = MT_remove(fn);
 				TRC_DEBUG(IO_, "remove %s = %d\n",
 					  fn, uret);
-				GDKfree(fn);
 			}
 			continue;
 		} else if (strcmp(dent->d_name, "BBP.dir") == 0) {
@@ -4260,14 +4158,11 @@ BBPrecover(int farmid)
 	closedir(dirp);
 	if (dirseen && ret == GDK_SUCCEED) {	/* we have a saved BBP.dir; it should be moved back!! */
 		struct stat st;
-		char *fn;
 
-		fn = GDKfilepath(farmid, BATDIR, "BBP", "dir");
-		if (fn == NULL) {
+		if (GDKfilepath(fn, sizeof(fn), farmid, BATDIR, "BBP", "dir") != GDK_SUCCEED) {
 			ret = GDK_FAIL;
 		} else {
 			ret = recover_dir(farmid, MT_stat(fn, &st) == 0);
-			GDKfree(fn);
 		}
 	}
 
@@ -4282,8 +4177,6 @@ BBPrecover(int farmid)
 		GDKerror("recovery failed.\n");
 
 	TRC_DEBUG(IO_, "end\n");
-	GDKfree(bakdirpath);
-	GDKfree(leftdirpath);
 	return ret;
 }
 
@@ -4295,18 +4188,16 @@ BBPrecover(int farmid)
 gdk_return
 BBPrecover_subdir(void)
 {
-	str subdirpath;
+	char subdirpath[MAXPATH];
 	DIR *dirp;
 	struct dirent *dent;
 	gdk_return ret = GDK_SUCCEED;
 
-	subdirpath = GDKfilepath(0, NULL, SUBDIR, NULL);
-	if (subdirpath == NULL)
+	if (GDKfilepath(subdirpath, sizeof(subdirpath), 0, NULL, SUBDIR, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 	dirp = opendir(subdirpath);
 	if (dirp == NULL && errno != ENOENT)
 		GDKsyserror("cannot open directory %s\n", subdirpath);
-	GDKfree(subdirpath);
 	if (dirp == NULL) {
 		return GDK_SUCCEED;	/* nothing to do */
 	}
@@ -4567,7 +4458,7 @@ static struct {
  * Adds new callback to the callback list.
  */
 gdk_return
-gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
+gdk_add_callback(const char *name, gdk_callback_func *f, int argc, void *argv[], int
 		interval)
 {
 
@@ -4622,7 +4513,7 @@ gdk_add_callback(char *name, gdk_callback_func *f, int argc, void *argv[], int
  * Removes a callback from the callback list with a given name as an argument.
  */
 gdk_return
-gdk_remove_callback(char *cb_name, gdk_callback_func *argsfree)
+gdk_remove_callback(const char *cb_name, gdk_callback_func *argsfree)
 {
 	gdk_callback *prev = NULL;
 	gdk_return res = GDK_FAIL;
@@ -4688,7 +4579,8 @@ BBPcallbacks(void)
  * This is at the end of the file on purpose: we don't want people to
  * accidentally use GDKtmLock directly. */
 static MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
-static int lockfd;
+static int lockfd = -1;
+static char lockfile[MAXPATH];
 
 static void
 BBPtmlockFinish(void)
@@ -4696,9 +4588,8 @@ BBPtmlockFinish(void)
 	if (!GDKinmemory(0) &&
 	    /* also use an external lock file to synchronize with
 	     * external programs */
-	    (lockfile != NULL ||
-	     (lockfile = GDKfilepath(0, NULL, ".tm_lock", NULL)) != NULL)) {
-		    lockfd = MT_lockf(lockfile, F_LOCK);
+	    GDKfilepath(lockfile, sizeof(lockfile), 0, NULL, ".tm_lock", NULL) == GDK_SUCCEED) {
+		lockfd = MT_lockf(lockfile, F_LOCK);
 	}
 }
 
@@ -4721,7 +4612,7 @@ BBPtrytmlock(int ms)
 void
 BBPtmunlock(void)
 {
-	if (lockfile && lockfd >= 0) {
+	if (lockfd >= 0) {
 		assert(!GDKinmemory(0));
 		MT_lockf(lockfile, F_ULOCK);
 		close(lockfd);

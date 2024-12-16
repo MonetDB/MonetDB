@@ -507,8 +507,11 @@ typedef struct sql_func {
 	vararg:1,	/* variable input arguments */
 	system:1,	/* system function */
 	instantiated:1,	/* if the function is instantiated */
-	private:1;	/* certain functions cannot be bound from user queries */
-	int fix_scale;
+	private:1,	/* certain functions cannot be bound from user queries */
+	order_required:1,	/* some aggregate functions require an order */
+	opt_order:1;	/* some aggregate functions could have the inputs sorted */
+
+	short fix_scale;
 			/*
 	   		   SCALE_NONE => nothing
 	   		   SCALE_FIX => input scale fixing,

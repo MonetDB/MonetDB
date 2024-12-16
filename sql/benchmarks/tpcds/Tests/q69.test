@@ -1,4 +1,4 @@
-query TTTIIITI nosort
+query TTTIIITI rowsort
 -- query 69
 select
   cd_gender,
@@ -45,5 +45,5 @@ select
           cd_credit_rating
  limit 100
 ----
-800 values hashing to bce8c6a4ab0c4ef19c2612e1011490b7
+800 values hashing to 2b7af79ae3a5c43d885e6fb10c9e70e8
 

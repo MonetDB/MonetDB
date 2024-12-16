@@ -12,7 +12,6 @@
 
 #ifndef _OPT_DATAFLOW_
 #define _OPT_DATAFLOW_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

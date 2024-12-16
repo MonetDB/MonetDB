@@ -78,11 +78,11 @@ CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	s = GDKzalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
+	l1 = strlen(*s1) + strlen(*s2) + 1;
+	s = GDKmalloc(l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strcpy(s, *s1);
-	strcpy(s + l1, *s2);
+	strconcat_len(s, l1, *s1, *s2, NULL);
 	*ret = s;
 	return MAL_SUCCEED;
 }

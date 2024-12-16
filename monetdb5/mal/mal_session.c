@@ -53,7 +53,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		return msg;
 	}
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
@@ -124,7 +124,7 @@ MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
 	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if (cntxt->curprg == 0)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((idx = findVariable(cntxt->curprg->def, "main")) >= 0)
+	if ((idx = findVariable(cntxt->curprg->def, mainRef)) >= 0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule, cntxt->curprg);
 
@@ -333,7 +333,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 		}
 	}
 
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
 		cleanUpScheduleClient(c, &command, &msg);
 		return;

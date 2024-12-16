@@ -1,4 +1,4 @@
-query TTTTII nosort
+query TTTTII rowsort
 -- query 34
 select c_last_name
        ,c_first_name
@@ -29,5 +29,5 @@ select c_last_name
       and cnt between 15 and 20
     order by c_last_name,c_first_name,c_salutation,c_preferred_cust_flag desc, ss_ticket_number
 ----
-2706 values hashing to c6193fa5c1176ce7a13e736a507a5739
+2706 values hashing to 9e935240f07fd89130c1d0103fe0e495
 

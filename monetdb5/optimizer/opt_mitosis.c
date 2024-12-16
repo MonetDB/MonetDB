@@ -67,13 +67,15 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		nr_aggrs += (p->argc > 2 && getModuleId(p) == aggrRef);
 		nr_maps += (isMapOp(p));
 
-		if (p->argc > 2 && getModuleId(p) == aggrRef
+		if ((getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == groupedfirstnRef) ||
+		    (p->argc > 2 && getModuleId(p) == aggrRef
 			&& getFunctionId(p) != subcountRef && getFunctionId(p) != subminRef
 			&& getFunctionId(p) != submaxRef && getFunctionId(p) != subavgRef
 			&& getFunctionId(p) != subsumRef && getFunctionId(p) != subprodRef
 			&& getFunctionId(p) != countRef && getFunctionId(p) != minRef
 			&& getFunctionId(p) != maxRef && getFunctionId(p) != avgRef
-			&& getFunctionId(p) != sumRef && getFunctionId(p) != prodRef) {
+			&& getFunctionId(p) != sumRef && getFunctionId(p) != prodRef)) {
 			pieces = 0;
 			goto bailout;
 		}

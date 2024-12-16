@@ -1,4 +1,4 @@
-query IIIRIRRIRR nosort
+query IIIRIRRIRR rowsort
 -- query 78
 with ws as
   (select d_year AS ws_sold_year, ws_item_sk,
@@ -56,5 +56,5 @@ order by
   ratio
 limit 100
 ----
-1000 values hashing to ac970e26d0e75f2cbcc81a9e6ce46cd3
+1000 values hashing to e536750420629fdeb609268f00b57cb4
 

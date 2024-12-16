@@ -1,4 +1,4 @@
-query IR nosort
+query IR rowsort
 -- query 93
 select  ss_customer_sk
             ,sum(act_sales) sumsales
@@ -16,5 +16,5 @@ select  ss_customer_sk
       order by sumsales, ss_customer_sk
 limit 100
 ----
-200 values hashing to ff76ce679ab1a843e6a0bbc70aa61f1d
+200 values hashing to ef27804e2d6b2a5e4c591ab1350b09e1
 

@@ -94,12 +94,13 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 {
 	InstrPtr p, q, *old, *series;
 	int i, k, limit, slimit, actions = 0;
+	/* intRef, lngRef and dblRef are globally defined */
 	const char *bteRef = getName("bte");
 	const char *shtRef = getName("sht");
-	const char *intRef = getName("int");
-	const char *lngRef = getName("lng");
+	//const char *intRef = getName("int");
+	//const char *lngRef = getName("lng");
 	const char *fltRef = getName("flt");
-	const char *dblRef = getName("dbl");
+	//const char *dblRef = getName("dbl");
 	str msg = MAL_SUCCEED;
 	int needed = 0;
 

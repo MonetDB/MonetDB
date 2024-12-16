@@ -1777,6 +1777,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				rel = nrel;
 			else {
 				rel = rel_setop(sql->sa, rel, nrel, op_union);
+				rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
 				set_processed(rel);
 			}
 			if (!rel)

@@ -992,6 +992,80 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *ret;
+	bat sid, gid;
+	BAT *s = NULL, *g = NULL;
+	BAT *bn = NULL;
+	lng n;
+
+	(void) cntxt;
+	(void) mb;
+
+	n = *getArgReference_lng(stk, pci, 1);
+	if (n < 0)
+		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
+	ret = getArgReference_bat(stk, pci, 0);
+	sid = *getArgReference_bat(stk, pci, 2);
+	gid = *getArgReference_bat(stk, pci, 3);
+	int nbats = pci->argc - 4;
+	if (nbats % 3 != 0)
+		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
+	nbats /= 3;
+	BAT **bats = GDKmalloc(nbats * sizeof(BAT *));
+	bool *ascs = GDKmalloc(nbats * sizeof(bool));
+	bool *nlss = GDKmalloc(nbats * sizeof(bool));
+	if (bats == NULL || ascs == NULL || nlss == NULL) {
+		GDKfree(bats);
+		GDKfree(ascs);
+		GDKfree(nlss);
+		throw(MAL, "algebra.groupedfirstn", MAL_MALLOC_FAIL);
+	}
+	if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
+		GDKfree(bats);
+		GDKfree(ascs);
+		GDKfree(nlss);
+		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	if (!is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL) {
+		BBPreclaim(s);
+		GDKfree(bats);
+		GDKfree(ascs);
+		GDKfree(nlss);
+		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	for (int i = 0; i < nbats; i++) {
+		bats[i] = BATdescriptor(*getArgReference_bat(stk, pci, i * 3 + 4));
+		if (bats[i] == NULL) {
+			while (i > 0)
+				BBPreclaim(bats[--i]);
+			BBPreclaim(g);
+			BBPreclaim(s);
+			GDKfree(bats);
+			GDKfree(ascs);
+			GDKfree(nlss);
+			throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		ascs[i] = *getArgReference_bit(stk, pci, i * 3 + 5);
+		nlss[i] = *getArgReference_bit(stk, pci, i * 3 + 6);
+	}
+	bn = BATgroupedfirstn((BUN) n, s, g, nbats, bats, ascs, nlss);
+	BBPreclaim(s);
+	BBPreclaim(g);
+	for (int i = 0; i < nbats; i++)
+		BBPreclaim(bats[i]);
+	GDKfree(bats);
+	GDKfree(ascs);
+	GDKfree(nlss);
+	if (bn == NULL)
+		throw(MAL, "algebra.groupedfirstn", GDK_EXCEPTION);
+	*ret = bn->batCacheid;
+	BBPkeepref(bn);
+	return MAL_SUCCEED;
+}
+
+static str
 ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 {
 	BAT *b, *bn;
@@ -1802,6 +1876,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,5, batarg("",oid),arg("n",lng),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
  command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "slice", ALGslice_oid, false, "Return the slice based on head oid x till y (exclusive).", args(1,4, batargany("",1),batargany("b",1),arg("x",oid),arg("y",oid))),
  command("algebra", "slice", ALGslice_int, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",int),arg("y",int))),

@@ -43,35 +43,37 @@
 #endif
 #endif
 
-/* GDKfilepath returns a newly allocated string containing the path
- * name of a database farm.
- * The arguments are the farmID or -1, the name of a subdirectory
- * within the farm (i.e., something like BATDIR or BAKDIR -- see
- * gdk.h) or NULL, the name of a BAT (i.e. the name that is stored in
- * BBP.dir -- something like 07/714), and finally the file extension.
+/* GDKfilepath writes the path name of a database file into path and
+ * returns a pointer to it.  The arguments are the buffer into which the
+ * path is written, the size of that buffer, the farmID or -1, the name
+ * of a subdirectory within the farm (i.e., something like BATDIR or
+ * BAKDIR -- see gdk.h) or NULL, the name of a BAT (i.e. the name that
+ * is stored in BBP.dir -- something like 07/714), and finally the file
+ * extension.
  *
  * If farmid is >= 0, GDKfilepath returns the complete path to the
- * specified farm concatenated with the other arguments with
- * appropriate separators.  If farmid is -1, it returns the
- * concatenation of its other arguments (in this case, the result
- * cannot be used to access a file directly -- the farm needs to be
- * prepended in some other place). */
-char *
-GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
+ * specified farm concatenated with the other arguments with appropriate
+ * separators.  If farmid is NOFARM (i.e. -1) , it returns the
+ * concatenation of its other arguments (in this case, the result cannot
+ * be used to access a file directly -- the farm needs to be prepended
+ * in some other place). */
+gdk_return
+GDKfilepath(char *path, size_t pathlen, int farmid, const char *dir, const char *name, const char *ext)
 {
 	const char *sep;
-	size_t pathlen;
-	char *path;
 
-	if (GDKinmemory(farmid))
-		return GDKstrdup(":memory:");
+	if (GDKinmemory(farmid)) {
+		if (strcpy_len(path, ":memory:", pathlen) >= pathlen)
+			return GDK_FAIL;
+		return GDK_SUCCEED;
+	}
 
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
 	if (!GDKembedded() && MT_path_absolute(name)) {
 		GDKerror("name should not be absolute\n");
-		return NULL;
+		return GDK_FAIL;
 	}
 	if (dir && *dir == DIR_SEP)
 		dir++;
@@ -80,23 +82,22 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	} else {
 		sep = DIR_SEP_STR;
 	}
-	pathlen = (farmid == NOFARM ? 0 : strlen(BBPfarms[farmid].dirname) + 1) +
-		(dir ? strlen(dir) : 0) + strlen(sep) + strlen(name) +
-		(ext ? strlen(ext) + 1 : 0) + 1;
-	path = GDKmalloc(pathlen);
-	if (path == NULL)
-		return NULL;
+	size_t len;
 	if (farmid == NOFARM) {
-		strconcat_len(path, pathlen,
-			      dir ? dir : "", sep, name,
-			      ext ? "." : NULL, ext, NULL);
+		len = strconcat_len(path, pathlen,
+				    dir ? dir : "", sep, name,
+				    ext ? "." : NULL, ext, NULL);
 	} else {
-		strconcat_len(path, pathlen,
-			      BBPfarms[farmid].dirname, DIR_SEP_STR,
-			      dir ? dir : "", sep, name,
-			      ext ? "." : NULL, ext, NULL);
+		len = strconcat_len(path, pathlen,
+				    BBPfarms[farmid].dirname, DIR_SEP_STR,
+				    dir ? dir : "", sep, name,
+				    ext ? "." : NULL, ext, NULL);
 	}
-	return path;
+	if (len >= pathlen) {
+		GDKerror("path name too long\n");
+		return GDK_FAIL;
+	}
+	return GDK_SUCCEED;
 }
 
 /* make sure the parent directory of DIR exists (the argument itself
@@ -148,20 +149,19 @@ GDKcreatedir(const char *dir)
 gdk_return
 GDKremovedir(int farmid, const char *dirname)
 {
-	str dirnamestr;
+	char dirnamestr[MAXPATH];
 	DIR *dirp;
-	char *path;
+	char path[MAXPATH];
 	struct dirent *dent;
 	int ret;
 
 	assert(!GDKinmemory(farmid));
-	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
+	if (GDKfilepath(dirnamestr, sizeof(dirnamestr), farmid, NULL, dirname, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	TRC_DEBUG(IO_, "GDKremovedir(%s)\n", dirnamestr);
 
 	if ((dirp = opendir(dirnamestr)) == NULL) {
-		GDKfree(dirnamestr);
 		return GDK_SUCCEED;
 	}
 	while ((dent = readdir(dirp)) != NULL) {
@@ -171,8 +171,7 @@ GDKremovedir(int farmid, const char *dirname)
 			/* skip . and .. */
 			continue;
 		}
-		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
-		if (path == NULL) {
+		if (GDKfilepath(path, sizeof(path), farmid, dirname, dent->d_name, NULL) != GDK_SUCCEED) {
 			/* most likely the rmdir will now fail causing
 			 * an error return */
 			break;
@@ -181,14 +180,12 @@ GDKremovedir(int farmid, const char *dirname)
 		if (ret == -1)
 			GDKsyserror("remove(%s) failed\n", path);
 		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
-		GDKfree(path);
 	}
 	closedir(dirp);
 	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
 		GDKsyserror("rmdir(%s) failed\n", dirnamestr);
 	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
-	GDKfree(dirnamestr);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -204,7 +201,7 @@ GDKremovedir(int farmid, const char *dirname)
 int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
-	char *path = NULL;
+	char path[MAXPATH];
 	int fd, flags = O_CLOEXEC;
 
 	assert(!GDKinmemory(farmid));
@@ -216,8 +213,7 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 
 	assert(farmid != NOFARM || extension == NULL);
 	if (farmid != NOFARM) {
-		path = GDKfilepath(farmid, BATDIR, nme, extension);
-		if (path == NULL) {
+		if (GDKfilepath(path, sizeof(path), farmid, BATDIR, nme, extension) != GDK_SUCCEED) {
 			errno = ENOMEM;
 			return -1;
 		}
@@ -253,7 +249,6 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 	}
 	int err = errno;	/* save */
 	/* don't generate error if we can't open a file for reading */
-	GDKfree(path);
 	errno = err;		/* restore */
 	return fd;
 }
@@ -280,17 +275,14 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 FILE *
 GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
 {
-	char *path;
+	char path[MAXPATH];
 
 	/* if name is null, try to get one from dir (in case it was a path) */
-	path = GDKfilepath(farmid, dir, name, extension);
-
-	if (path != NULL) {
+	if (GDKfilepath(path, sizeof(path), farmid, dir, name, extension) == GDK_SUCCEED) {
 		FILE *f;
 		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
 		f = MT_fopen(path, mode);
 		int err = errno;
-		GDKfree(path);
 		errno = err;
 		return f;
 	}
@@ -302,18 +294,15 @@ gdk_return
 GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 {
 	if (nme && *nme) {
-		char *path;
+		char path[MAXPATH];
 
-		path = GDKfilepath(farmid, dir, nme, ext);
-		if (path == NULL)
+		if (GDKfilepath(path, sizeof(path), farmid, dir, nme, ext) != GDK_SUCCEED)
 			return GDK_FAIL;
 		/* if file already doesn't exist, we don't care */
 		if (MT_remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("remove(%s)\n", path);
-			GDKfree(path);
 			return GDK_FAIL;
 		}
-		GDKfree(path);
 		return GDK_SUCCEED;
 	}
 	GDKerror("no name specified");
@@ -326,8 +315,8 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 gdk_return
 GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
 {
-	char *path1;
-	char *path2;
+	char path1[MAXPATH];
+	char path2[MAXPATH];
 	int ret;
 	lng t0 = GDKusec();
 
@@ -335,9 +324,8 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		GDKerror("no file specified\n");
 		return GDK_FAIL;
 	}
-	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
-	path2 = GDKfilepath(farmid, dir2, nme2, ext2);
-	if (path1 && path2) {
+	if (GDKfilepath(path1, sizeof(path1), farmid, dir1, nme1, ext1) == GDK_SUCCEED &&
+	    GDKfilepath(path2, sizeof(path2), farmid, dir2, nme2, ext2) == GDK_SUCCEED) {
 		ret = MT_rename(path1, path2);
 		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
@@ -346,8 +334,6 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	} else {
 		ret = -1;
 	}
-	GDKfree(path1);
-	GDKfree(path2);
 	return ret < 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -585,7 +571,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			GDKsyserror("cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
 		}
 	} else {
-		char *path = NULL;
+		char path[MAXPATH];
 
 		/* round up to multiple of GDK_mmap_pagesize with a
 		 * minimum of one */
@@ -593,7 +579,8 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 		if (size == 0)
 			size = GDK_mmap_pagesize;
 		if (farmid != NOFARM) {
-			path = GDKfilepath(farmid, BATDIR, nme, ext);
+			if (GDKfilepath(path, sizeof(path), farmid, BATDIR, nme, ext) != GDK_SUCCEED)
+				return NULL;
 			nme = path;
 		}
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
@@ -610,7 +597,6 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			}
 			TRC_DEBUG(IO_, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
 		}
-		GDKfree(path);
 	}
 	return ret;
 }

@@ -4,10 +4,9 @@ CREATE TABLE t1(c0 INTEGER, c1 VARCHAR)
 statement ok
 CREATE VIEW v0(c0) AS SELECT 'a' FROM t1
 
-skipif knownfail
-statement error
+query ITT nosort
 SELECT * FROM t1, v0 WHERE STARTSWITH(t1.c0, v0.c0, t1.c1)
--- sql/backends/monet5/rel_bin.c:4582: rel2bin_select: Assertion `sql->session->status == -10' failed.
+----
 
 statement ok
 DROP VIEW v0

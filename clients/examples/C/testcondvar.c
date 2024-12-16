@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "gdk_system.h"
 
 #define NN (3)
 

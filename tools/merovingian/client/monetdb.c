@@ -494,10 +494,10 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				/* fall through */
 			case SABdbRunning:
 				t = localtime(&uplog.laststart);
-				strftime(buf + off, sizeof(buf) - off,
-						"up since %Y-%m-%d %H:%M:%S, ", t);
+				off += strftime(buf + off, sizeof(buf) - off,
+								"up since %Y-%m-%d %H:%M:%S, ", t);
 				secondsToString(up, time(NULL) - uplog.laststart, 999);
-				strcat(buf, up);
+				strcpy(buf + off, up);
 			break;
 			case SABdbCrashed:
 				t = localtime(&uplog.lastcrash);

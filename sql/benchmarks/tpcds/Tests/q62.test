@@ -1,4 +1,4 @@
-query TTTIIIII nosort
+query TTTIIIII rowsort
 -- query 62
 select
    substr(w_warehouse_name,1,20)
@@ -33,5 +33,5 @@ order by substr(w_warehouse_name,1,20)
        ,web_name
 limit 100
 ----
-800 values hashing to 068519370403b9e1eff2beef31819218
+800 values hashing to d53aa17cc3390fc3c347b0abacb9f34f
 

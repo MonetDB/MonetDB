@@ -1,4 +1,4 @@
-query TTTIRR nosort
+query TTTIRR rowsort
 -- query 79
 select
   c_last_name,c_first_name,substr(s_city,1,30),ss_ticket_number,amt,profit
@@ -21,5 +21,5 @@ select
  order by c_last_name,c_first_name,substr(s_city,1,30), profit
 limit 100
 ----
-600 values hashing to ffca5172e7813214bed6e3a4fcc2ed19
+600 values hashing to c7d11e29ca471c97fc059dbf9b64d44c
 

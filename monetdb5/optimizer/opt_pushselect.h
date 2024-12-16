@@ -13,7 +13,6 @@
 #ifndef OPT_PUSHSELECT_H
 #define OPT_PUSHSELECT_H
 #include "opt_support.h"
-#include "opt_prelude.h"
 
 extern str OPTpushselectImplementation(Client cntxt, MalBlkPtr mb,
 									   MalStkPtr stk, InstrPtr pci);

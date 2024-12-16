@@ -48,7 +48,6 @@
 #include "msabaoth.h"
 #include "gdk_time.h"
 #include "optimizer.h"
-#include "opt_prelude.h"
 #include "opt_pipes.h"
 #include "opt_mitosis.h"
 #include <unistd.h>

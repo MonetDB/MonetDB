@@ -33,8 +33,6 @@
 
 #define GT(a, b)	((bit) ((a) > (b)))
 
-#include "gdk_cand.h"
-
 #ifdef __has_builtin
 #if __has_builtin(__builtin_add_overflow)
 #define OP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\

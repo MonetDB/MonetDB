@@ -1,4 +1,4 @@
-query TTTTRRRRRRR nosort
+query TTTTRRRRRRR rowsort
 -- query 18a
 with results as
  (select i_item_id,
@@ -54,5 +54,5 @@ with results as
  order by ca_country, ca_state, ca_county, i_item_id
  limit 100
 ----
-1100 values hashing to ac4152e80ebb79336fbaf17253014111
+1100 values hashing to 0f8c410ff9a097468fafde146a80a3a8
 

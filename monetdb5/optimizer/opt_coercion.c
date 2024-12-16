@@ -98,7 +98,6 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int i, k, t;
 	InstrPtr p;
 	int actions = 0;
-	const char *calcRef = putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
 	str msg = MAL_SUCCEED;
 

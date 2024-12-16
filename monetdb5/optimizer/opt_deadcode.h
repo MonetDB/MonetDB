@@ -12,7 +12,6 @@
 
 #ifndef _OPT_DEADCODE_
 #define _OPT_DEADCODE_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"

@@ -43,7 +43,6 @@
 #include "opt_fastpath.h"
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
-#include "opt_prelude.h"
 
 #define optcall(TEST, OPT)												\
 	do {																\

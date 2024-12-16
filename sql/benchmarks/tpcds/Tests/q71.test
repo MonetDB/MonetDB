@@ -1,4 +1,4 @@
-query ITIIR nosort
+query ITIIR rowsort
 -- query 71
 select i_brand_id brand_id, i_brand brand,t_hour,t_minute,
  	sum(ext_price) ext_price
@@ -37,5 +37,5 @@ select i_brand_id brand_id, i_brand brand,t_hour,t_minute,
  group by i_brand, i_brand_id,t_hour,t_minute
  order by ext_price desc, i_brand_id
 ----
-5090 values hashing to 890f51bf4d3ba21060d4edca0a62b657
+5090 values hashing to 853df0db476a512bf4aea45171f45711
 

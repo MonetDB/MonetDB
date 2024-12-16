@@ -176,7 +176,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int remoteSite;
 	bool collectFirst;
 	int *location;
-	DBalias *dbalias;
+	DBalias dbalias[128];
 	int dbtop;
 	char buf[BUFSIZ], *s, *db, name[IDLENGTH];
 	ValRecord cst;
@@ -196,15 +196,10 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	location = (int *) GDKzalloc(mb->vsize * sizeof(int));
 	if (location == NULL)
 		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	dbalias = (DBalias *) GDKzalloc(128 * sizeof(DBalias));
-	if (dbalias == NULL) {
-		GDKfree(location);
-		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	memset(dbalias, 0, sizeof(dbalias));
 	dbtop = 0;
 
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(dbalias);
 		GDKfree(location);
 		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -396,7 +391,6 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 	GDKfree(old);
 	GDKfree(location);
-	GDKfree(dbalias);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions) {

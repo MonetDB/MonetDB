@@ -18,7 +18,6 @@
 #include "mal.h"
 #include "mal_stack.h"
 #include "mal_linker.h"
-#include "gdk_utils.h"
 #include "gdk.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"

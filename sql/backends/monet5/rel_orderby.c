@@ -13,7 +13,6 @@
 #include "rel_exp.h"
 #include "rel_rewriter.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "sql_pp_statement.h"
 #include "bin_partition.h"
 

@@ -335,12 +335,13 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	// mr-job structure preparation
-	mut.fvar = mut.lvar = 0;
-	mut.cntxt = cntxt;
-	mut.mb = mb;
-	mut.stk = stk;
-	mut.args = mat;
-	mut.pci = pci;
+	mut = (MULTItask) {
+		.cntxt = cntxt,
+		.mb = mb,
+		.stk = stk,
+		.args = mat,
+		.pci = pci,
+	};
 
 	// prepare iterators
 	for (i = pci->retc + 2; i < pci->argc; i++) {

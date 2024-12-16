@@ -526,7 +526,7 @@ NULL
 
 query RR nosort
 select stddev_samp(aa) over (rows 2 preceding),
-       stddev_samp(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+       stddev_samp(aa) over (partition by bb order by bb, aa rows 2 preceding) from analytics
 ----
 NULL
 NULL
@@ -534,19 +534,19 @@ NULL
 0.707
 1.000
 1.000
-1.414
+0.707
 NULL
 0.707
 NULL
 3.536
 3.536
-6.028
+2.517
 NULL
-5.132
-7.071
-5.508
-5.508
+1.528
 0.707
+5.508
+5.508
+6.364
 NULL
 
 query RRRR nosort

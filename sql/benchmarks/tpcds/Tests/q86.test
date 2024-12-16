@@ -1,4 +1,4 @@
-query RTTII nosort
+query RTTII rowsort
 -- query 86
 with results as ( -- added this line
 select
@@ -26,5 +26,5 @@ select
    rank_within_parent
  limit 100
 ----
-500 values hashing to b720224c5347970d241b9281c1548c99
+500 values hashing to bd455b6eba3bfe95edf8f99b3cf14374
 

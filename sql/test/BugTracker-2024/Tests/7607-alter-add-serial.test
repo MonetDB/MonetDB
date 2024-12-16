@@ -1,0 +1,20 @@
+statement ok
+create  schema s7607
+
+statement ok
+set schema s7607
+
+statement ok
+create table t(a int)
+
+statement ok
+alter table t add column b int
+
+statement ok
+alter table t add column c int auto_increment
+
+statement ok
+alter table t add column d serial;
+
+statement ok
+create table tb(a int, b int auto_increment)

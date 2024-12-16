@@ -579,8 +579,9 @@ HASHsize(BAT *b)
 		int farmid = BBPselectfarm(b->batRole, b->ttype, hashheap);
 		if (farmid >= 0) {
 			const char *nme = BBP_physical(b->batCacheid);
-			char *fname = GDKfilepath(farmid, BATDIR, nme, "thashb");
-			if (fname != NULL) {
+			char fname[MAXPATH];
+
+			if (GDKfilepath(fname, sizeof(fname), farmid, BATDIR, nme, "thashb") == GDK_SUCCEED) {
 				struct stat st;
 				if (stat(fname, &st) == 0) {
 					sz = (size_t) st.st_size;
@@ -590,7 +591,6 @@ HASHsize(BAT *b)
 					else
 						sz = 0;
 				}
-				GDKfree(fname);
 			}
 		}
 	}

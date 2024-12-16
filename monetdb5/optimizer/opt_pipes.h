@@ -12,7 +12,6 @@
 
 #ifndef _OPT_PIPES_
 #define _OPT_PIPES_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 mal_export str getPipeCatalog(bat *nme, bat *def, bat *stat);

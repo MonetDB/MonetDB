@@ -18,7 +18,6 @@
 #include "monetdb_config.h"
 #include "mal_instruction.h"
 #include "mal_profiler.h"
-#include "opt_prelude.h"
 #include "opt_profiler.h"
 
 str

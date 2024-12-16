@@ -12,7 +12,6 @@
 
 #ifndef _OPT_COMMONTERMS_
 #define _OPT_COMMONTERMS_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb,

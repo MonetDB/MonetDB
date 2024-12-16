@@ -1,4 +1,4 @@
-query TTTTIIITRI nosort
+query TTTTIIITRI rowsort
 -- query 67a
 with results as
 (     select i_category ,i_class ,i_brand ,i_product_name ,d_year ,d_qoy ,d_moy ,s_store_id
@@ -69,5 +69,5 @@ order by i_category
         ,rk
 limit 100
 ----
-1000 values hashing to 7bd642e6d43731b9b8184336cabc1f28
+1000 values hashing to b7fefcddebfcdf29e74c37dd4e7d9e09
 

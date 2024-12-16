@@ -1505,8 +1505,10 @@ gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
+#define MAXPATH	1024		/* maximum supported file path */
 
-gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid, const char *dir, const char *nme, const char *ext)
+	__attribute__((__access__(write_only, 1, 2)));
 gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
@@ -2364,6 +2366,8 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
+gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
+	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"
 
@@ -2552,7 +2556,7 @@ TIMEOUT_TEST(QryCtx *qc)
 	} while (0)
 
 typedef struct gdk_callback {
-	char *name;
+	const char *name;
 	int argc;
 	int interval;  // units sec
 	lng last_called; // timestamp GDKusec
@@ -2563,9 +2567,9 @@ typedef struct gdk_callback {
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
-gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
-		*argv[], int interval);
-gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
+gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
+				       int argc, void *argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
 
 #include <setjmp.h>
@@ -2577,7 +2581,7 @@ typedef struct exception_buffer {
 	jmp_buf state;
 #endif
 	int code;
-	char *msg;
+	const char *msg;
 	int enabled;
 } exception_buffer;
 
@@ -2590,7 +2594,7 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #else
 #define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
 #endif
-gdk_export _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
+gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
 typedef struct allocator {
 	struct allocator *pa;

@@ -22,7 +22,7 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.23.03 of catalog */
+/* version 05.23.04 of catalog */
 #define CATALOG_VERSION 52304	/* first after Aug2024 */
 
 ulng
@@ -76,7 +76,7 @@ store_oldest_pending(sqlstore *store)
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2166)
+	if (id >= 2000 && id <= 2167)
 		return true;
 	return false;
 }
@@ -994,6 +994,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
 	t->system = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
 	t->semantics = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "semantics"), rid);
+	bte order_spec = (bte) store->table_api.column_find_bte(tr, find_sql_column(funcs, "order_specification"), rid);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -1020,6 +1021,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 			t->imp =_STRDUP("eval");
 		}
 	}
+	if (order_spec == 2)
+		t->order_required = true;
+	if (order_spec == 1)
+		t->opt_order = true;
 
 	TRC_DEBUG(SQL_STORE, "Load function: %s\n", t->base.name);
 
@@ -1582,10 +1587,11 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 		bit se = f->side_effect, vares = f->varres, varg = f->vararg, system = f->system, sem = f->semantics;
+		bte order = f->order_required?2:f->opt_order?1:0;
 
 		if (f->private) /* don't serialize private functions because they cannot be seen by users */
 			continue;
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem, &order)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -1985,6 +1991,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "schema_id", 2026, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "system", 2027, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "order_specification", 2167, "tinyint", 7) == NULL ||
 
 		(arguments = t = bootstrap_create_table(tr, s, "args", 2028)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2029, "int", 31) == NULL ||
@@ -2536,7 +2543,8 @@ store_readonly(sqlstore *store)
 
 // Helper function for tar_write_header.
 // Our stream.h makes sure __attribute__ exists.
-static void __attribute__((__format__(__printf__, 3, 4)))
+__attribute__((__format__(__printf__, 3, 4)))
+static void
 tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 {
 	va_list ap;
@@ -2556,7 +2564,8 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 #define TAR_BLOCK_SIZE (512)
 
 // Write a tar header to the given stream.
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
@@ -2623,7 +2632,8 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
  * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
  * of TAR_BLOCK_SIZE.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
 	const size_t tail = size % TAR_BLOCK_SIZE;
@@ -2650,7 +2660,8 @@ tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
 {
 	gdk_return res;
@@ -2662,7 +2673,8 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	return tar_write(tarfile, path, data, size);
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, int64_t size, char *buf, size_t bufsize)
 {
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
@@ -2696,7 +2708,8 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
 	if (plan == NULL)
@@ -2798,7 +2811,8 @@ end:
  *
  * This function is not entirely safe as compared to for example mkstemp.
  */
-static str __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static str
 pick_tmp_name(str filename)
 {
 	str name = GDKmalloc(strlen(filename) + 10);
@@ -3377,6 +3391,8 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
 	f->private = of->private;
+	f->order_required = of->order_required;
+	f->opt_order = of->opt_order;
 	f->query = (of->query)?_STRDUP(of->query):NULL;
 	f->s = s;
 	f->sa = NULL;
@@ -5082,7 +5098,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 sql_func *
 create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
-				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -5103,12 +5119,14 @@ create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, li
 	t->fix_scale = SCALE_EQ;
 	t->s = NULL;
 	t->system = system;
+	t->order_required = order_required;
+	t->opt_order = opt_order;
 	return t;
 }
 
 int
 sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *ffres, sql_ftype type, sql_flang lang,
-					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -5117,6 +5135,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 	bit semantics = TRUE;
+	bte order_spec = order_required?2:opt_order?1:0;
 
 	sql_func *t = ZNEW(sql_func);
 	base_init(NULL, &t->base, next_oid(tr->store), true, func);
@@ -5133,6 +5152,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->ops = list_create((fdestroy) &arg_destroy);
 	t->fix_scale = SCALE_EQ;
 	t->system = system;
+	t->order_required = order_required;
+	t->opt_order = opt_order;
 	for (n=args->h; n; n = n->next)
 		list_append(t->ops, arg_dup(tr, s, n->data));
 	if (ffres) {
@@ -5146,7 +5167,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
 	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &side_effect,
-			&varres, &vararg, &s->base.id, &system, &semantics)))
+			&varres, &vararg, &s->base.id, &system, &semantics, &order_spec)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;

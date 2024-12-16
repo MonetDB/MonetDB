@@ -12,7 +12,6 @@
 
 #ifndef _OPT_REMOTE_
 #define _OPT_REMOTE_
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb,

@@ -1706,14 +1706,12 @@ push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_ex
 static sql_rel *
 rel_select_push_filter_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, list *l, list *r, int ff)
 {
-	sql_exp *ll, *rr;
+	sql_exp *ll;
 	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 		if ((ll = exps_find_one_multi_exp(l)))
 			return push_select_exp(sql, rel, e, ll, ff);
-	} else if ((ll = exps_find_one_multi_exp(l)) && (rr = exps_find_one_multi_exp(r))) { /* join */
-		return push_join_exp(sql, rel, e, ll, rr, NULL, ff);
 	}
 	if (is_outerjoin(rel->op))
 		return rel_select(sql->sa, rel, e);
@@ -3446,6 +3444,8 @@ exps_valid(sql_query *query, list *exps, int groupby)
 	return NULL;
 }
 
+static list * rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct, int f);
+
 static sql_exp *
 _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *args, int f)
 {
@@ -3495,7 +3495,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool arguments_correlated = true, all_const = true;
 
 		all_freevar = all_aggr?1:0;
-		for (i = 0; args && args->data.sym; args = args->next, i++) {
+		for (i = 0; args && args->data.sym && args->data.sym->token != SQL_ORDERBY; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
@@ -3718,6 +3718,19 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	if ((!exps || exps_card(exps) > CARD_ATOM) && (!res || !groupby))
 		return NULL;
 
+	list *obe = NULL;
+	bool handled_order = true;
+	if (args && args->data.sym && args->data.sym->token != SQL_ORDERBY)
+			return NULL;
+	if (args && args->data.sym) { /* handle order by */
+		int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
+		sql_rel *gl = base?groupby:groupby->l;//, *ogl = gl; /* handle case of subqueries without correlation */
+		obe = rel_order_by(query, &gl, args->data.sym, 0, f);
+		if (!obe)
+			return NULL;
+		handled_order = false;
+	}
+
 	if (all_freevar) {
 		query_update_outer(query, res, all_freevar-1);
 	} else if (rel) {
@@ -3729,6 +3742,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	}
 
 	if (!has_args) {	/* count(*) case */
+		obe = NULL; /* no errors, although the order by is useless */
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
@@ -3787,8 +3801,22 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 #endif
 							);
 		a = sql_bind_func_result(sql, sname, aname, F_AGGR, true, tpe, 1, exp_subtype(exps->h->data));
-	} else
+	} else {
 		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
+		if (!a && obe && list_length(obe) == 1) { /* try to find aggregation function with requires order by column */
+			list *nexps = append(sa_list(sql->sa), obe->h->data);
+			nexps = list_merge(nexps, exps, (fdup) NULL);
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false);
+			if (a && a->func->order_required) {
+				/* reset error */
+				handled_order = true;
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				exps = nexps;
+				obe = NULL;
+			}
+		}
+	}
 
 	if (a) {
 		found = true;
@@ -3802,6 +3830,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
+		if (!obe && a->func->order_required && !handled_order) {
+			/* TODO preper error on missing order by */
+			return NULL;
+		}
+		if (obe && !a->func->order_required && !a->func->opt_order)
+			obe = NULL;
+		if (obe) /* add order by expressions */
+			e->r = append(sa_list(sql->sa), obe);
 		if (!groupby)
 			return e;
 		if (all_freevar)
@@ -4088,6 +4124,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_subtype t;
 	sql_subfunc *f;
 
+	if (!sname)
+		sname = "sys";
 	if (!stack_find_rel_view(sql, seqname)) {
 		if (!(seq = find_sequence_on_scope(sql, sname, seqname, "NEXT VALUE FOR")))
 			return NULL;
@@ -4097,8 +4135,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_find_subtype(&t, "varchar", 0, 0);
 	f = sql_bind_func(sql, "sys", "next_value_for", &t, &t, F_FUNC, true, true);
 	assert(f);
-	/* sequence found in the stack. use session's schema? */
-	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : "sys", &t), exp_atom_str(sql->sa, seqname, &t), f);
+	/* sequence found in the stack, ie just created. use given schema? */
+	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : sname, &t), exp_atom_str(sql->sa, seqname, &t), f);
 }
 
 /* some users like to use aliases already in the groupby */

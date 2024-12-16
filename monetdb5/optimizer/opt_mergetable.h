@@ -12,7 +12,6 @@
 
 #ifndef _MAL_MERGETABLE_
 #define _MAL_MERGETABLE_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_builder.h"

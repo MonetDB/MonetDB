@@ -328,7 +328,8 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					old[i] = NULL;
 					done = true;
 					break;
-				} else if (getModuleId(p) == groupRef
+				} else if (p->retc == 3 && /* for now keep pipeline group intact TODO */
+						   getModuleId(p) == groupRef
 						   && (getFunctionId(p) == subgroupRef
 							   || getFunctionId(p) == subgroupdoneRef
 							   || getFunctionId(p) == groupRef

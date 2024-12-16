@@ -108,7 +108,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(&f, m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_MAL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE, FALSE);
+	mvc_create_func(&f, m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_MAL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE, FALSE, FALSE, FALSE);
 	if (f)
 		f->instantiated = TRUE;
 
@@ -120,7 +120,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(&f, m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE, FALSE);
+	mvc_create_func(&f, m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE, FALSE, FALSE, FALSE);
 	if (f)
 		f->instantiated = TRUE;
 	return 0;

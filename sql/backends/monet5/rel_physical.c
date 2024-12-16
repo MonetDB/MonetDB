@@ -17,6 +17,10 @@
 #include "rel_exp.h"
 #include "rel_rel.h"
 
+#define IS_ORDER_BASED_AGGR(fname, argc) (\
+				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
+				(argc == 1 && (strcmp((fname), "median") == 0 || strcmp((fname), "median_avg") == 0)))
+
 /* Returns the row count of a base table or any count info we can get fom the
  * PROP_COUNT of this 'rel' (i.e.  get_rel_count()). */
 static lng
@@ -849,9 +853,6 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define IS_ORDER_BASED_AGGR(name) (strcmp((name), "quantile") == 0 || strcmp((name), "quantile_avg") == 0 || \
-                                   strcmp((name), "median") == 0 || strcmp((name), "median_avg") == 0)
-
 static sql_rel *
 rel_add_orderby(visitor *v, sql_rel *rel)
 {
@@ -868,7 +869,7 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 					list *aa = e->l;
 
 					/* for now we only handle one sort order */
-					if (IS_ORDER_BASED_AGGR(af->func->base.name) && aa && list_length(aa) == 2) {
+					if (aa && IS_ORDER_BASED_AGGR(af->func->base.name, list_length(aa))) {
 						sql_exp *nobe = aa->h->data;
 						if (nobe && !obe) {
 							sql_rel *l = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));

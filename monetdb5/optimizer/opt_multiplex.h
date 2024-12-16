@@ -14,7 +14,6 @@
 #define _OPT_MULTIPLEX_H_
 #include "mal.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "opt_support.h"
 
 extern str OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,

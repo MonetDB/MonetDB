@@ -1154,14 +1154,14 @@ log_open_output(logger *lg)
 	}
 	if (!LOG_DISABLED(lg)) {
 		char id[32];
-		char *filename;
+		char filename[MAXPATH];
 
 		if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
 			TRC_CRITICAL(GDK, "filename is too large\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
 		}
-		if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+		if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "allocation failure\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
@@ -1178,10 +1178,8 @@ log_open_output(logger *lg)
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 			close_stream(new_range->output_log);
 			GDKfree(new_range);
-			GDKfree(filename);
 			return GDK_FAIL;
 		}
-		GDKfree(filename);
 	} else {
 		new_range->output_log = NULL;
 	}
@@ -1969,19 +1967,12 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 static gdk_return
 log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 {
-	str filenamestr = NULL;
-
-	if ((filenamestr = GDKfilepath(0, lg->dir, LOGFILE, NULL)) == NULL)
-		return GDK_FAIL;
-	size_t len = strcpy_len(filename, filenamestr, FILENAME_MAX);
-	GDKfree(filenamestr);
-	if (len >= FILENAME_MAX) {
+	if (GDKfilepath(filename, FILENAME_MAX, 0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED) {
 		GDKerror("Logger filename path is too large\n");
 		return GDK_FAIL;
 	}
 	if (bak) {
-		len = strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL);
-		if (len >= FILENAME_MAX) {
+		if (strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL) >= FILENAME_MAX) {
 			GDKerror("Logger filename path is too large\n");
 			return GDK_FAIL;
 		}
@@ -2692,31 +2683,28 @@ log_flush(logger *lg, ulng ts)
 	size_t allocated = 0;
 	while (cid < lid && res == LOG_OK) {
 		if (!lg->input_log) {
-			char *filename;
+			char filename[MAXPATH];
 			char id[32];
 			if (snprintf(id, sizeof(id), LLFMT, cid + 1) >= (int) sizeof(id)) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
-			if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+			if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
 				GDKfree(updated);
 				return GDK_FAIL;
 			}
 			if (strlen(filename) >= FILENAME_MAX) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "Logger filename path is too large\n");
-				GDKfree(filename);
 				return GDK_FAIL;
 			}
 
 			bool filemissing = false;
 			if (log_open_input(lg, filename, &filemissing) != GDK_SUCCEED) {
 				GDKfree(updated);
-				GDKfree(filename);
 				return GDK_FAIL;
 			}
-			GDKfree(filename);
 		}
 		/* we read the full file because skipping is impossible with current log format */
 		log_lock(lg);

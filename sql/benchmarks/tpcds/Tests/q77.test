@@ -1,4 +1,4 @@
-query TIRRR nosort
+query TIRRR rowsort
 -- query 77
 with ss as
  (select s_store_sk,
@@ -106,5 +106,5 @@ with ss as
          ,id
  limit 100
 ----
-220 values hashing to da4dd1543574a7a8602deda8de175a7f
+220 values hashing to 08064fd5504f51e449cbd4725a88137b
 

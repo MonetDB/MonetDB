@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_cand.h"
 
 /* String Atom Implementation
  *

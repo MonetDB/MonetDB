@@ -12,7 +12,6 @@
 
 #ifndef _OPT_INLINE_
 #define _OPT_INLINE_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 

@@ -87,7 +87,7 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 #error "we need a 64 bit atomic type"
 #endif
 
-#else
+#else  /* not C++ */
 
 #include <stdatomic.h>
 

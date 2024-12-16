@@ -35,7 +35,6 @@
 #include "sql_gencode.h"
 #include "sql_scenario.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 static stmt * rel_bin(backend *be, sql_rel *rel);
 
@@ -1695,6 +1694,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_aggr: {
 		list *attr = e->l;
+		list *r = e->r;
 		stmt *as = NULL;
 		sql_subfunc *a = e->f;
 		/* `grp` might be changed before we construct the final
@@ -1702,6 +1702,12 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		int pipeline = grp?be->pipeline:0, ogrp = grp?grp->nr:0;
 
 		assert(sel == NULL);
+			/* cases
+			 * 0) count(*)
+			 * 1) general aggregation
+			 * 2) aggregation with required order (quantile etc)
+			 * 3) aggregation with optional order by, group_concat, xml_agg
+			 * */
 		if (attr && attr->h) {
 			node *en;
 			list *l = sa_list(sql->sa);
@@ -1765,6 +1771,37 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (be->pipeline && grp)
 					grp = stmt_project(be, u, grp);
 				append(l, stmt_project(be, u, a));
+			}
+			if (r) { /* check new ordered aggregation */
+				list *obe = r->h->data;
+				if (obe && obe->h) {
+					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
+					/* order by */
+					if (grp) {
+						orderby = stmt_order(be, grp, true, true);
+
+						orderby_vals = stmt_result(be, orderby, 0);
+						orderby_ids = stmt_result(be, orderby, 1);
+						orderby_grp = stmt_result(be, orderby, 2);
+					}
+					for (node *n = obe->h; n; n = n->next) {
+						sql_exp *oe = n->data;
+						stmt *os = exp_bin(be, oe, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
+						if (orderby)
+							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
+						else
+							orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
+						orderby_vals = stmt_result(be, orderby, 0);
+						orderby_ids = stmt_result(be, orderby, 1);
+						orderby_grp = stmt_result(be, orderby, 2);
+					}
+					/* depending on type of aggr project input or ordered column */
+					stmt *h = l->h->data;
+					l->h->data = h = stmt_project(be, orderby_ids, h);
+					if (grp)
+						grp = stmt_project(be, orderby_ids, grp);
+					(void)orderby_vals;
+				}
 			}
 			as = stmt_list(be, l);
 		} else {
@@ -4613,10 +4650,36 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		/* distinct, topn returns at least N (unique groups) */
 		int distinct = need_distinct(rel);
 		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
+		int nr_obe = list_length(oexps);
 
-		for (n=oexps->h; n; n = n->next) {
+		/* check for partition columns */
+		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
+		for (n=oexps->h; n; n = n->next, nr_obe--) {
+			sql_exp *gbe = n->data;
+			bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
+
+			if (!topn->grouped || !is_partitioning(gbe))
+				break;
+			/* create group by */
+			stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!gbcol) {
+				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+				return NULL;
+			}
+			if (!gbcol->nrcols)
+				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
+			stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, last);
+			grp = stmt_result(be, groupby, 0);
+			ext = stmt_result(be, groupby, 1);
+			cnt = stmt_result(be, groupby, 2);
+			gbcol = stmt_alias(be, gbcol, gbe->alias.label, exp_find_rel_name(gbe), exp_name(gbe));
+		}
+
+		if (grp)
+			lgid = grp;
+		for (; n; n = n->next, nr_obe--) {
 			sql_exp *orderbycole = n->data;
-			int last = (n->next == NULL);
 
 			stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 
@@ -4624,18 +4687,18 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 
 			/* handle constants */
-			if (orderbycolstmt->nrcols == 0 && !last) /* no need to sort on constant */
+			if (orderbycolstmt->nrcols == 0 && n->next) /* no need to sort on constant */
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			} else {	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			}
 			if (!limit)
 				return NULL;
 			lpiv = limit;
-			if (!last) {
+			if (!grp && nr_obe > 1) {
 				lpiv = stmt_result(be, limit, 0);
 				lgid = stmt_result(be, limit, 1);
 				if (lpiv == NULL || lgid == NULL)
@@ -4644,6 +4707,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 
 		limit = lpiv;
+		if (limit && grp)
+			limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
 		stmt *s;
 		for (n=pl->h ; n; n = n->next) {
 			stmt *os = n->data;
@@ -5313,6 +5378,17 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 }
 
 static bool
+has_partitioning( list *exps )
+{
+	for(node *n = exps->h; n; n = n->next){
+		sql_exp *gbe = n->data;
+		if (is_partitioning(gbe))
+			return true;
+	}
+	return false;
+}
+
+static bool
 rel_topn_2_phases(sql_rel *rel)
 {
 	(void)rel;
@@ -5713,6 +5789,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = rel2bin_project(be, rl, refs, rel);
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
+			if (rel->grouped && rl->r && has_partitioning(rl->r))
+				return sub;
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}
@@ -8666,17 +8744,17 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_insert:
 		s = rel2bin_insert(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_update:
 		s = rel2bin_update(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_delete:
 		s = rel2bin_delete(be, rel, refs);
-		if (sql->type == Q_TABLE)
+		if (!(rel->returning) && sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
 	case op_truncate:

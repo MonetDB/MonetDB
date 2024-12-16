@@ -490,7 +490,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static void
 printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 {
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
 	mnstr_printf(f, "#[%2d] %5s", index, getVarNameIntoBuffer(mb, index, name));

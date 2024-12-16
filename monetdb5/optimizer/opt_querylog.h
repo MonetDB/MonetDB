@@ -13,7 +13,6 @@
 #ifndef _OPT_QUERYLOG_
 #define _OPT_QUERYLOG_
 
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
