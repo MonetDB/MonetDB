@@ -18,6 +18,7 @@ SELECT * FROM t ORDER BY 1
 243
 
 # what if we have different types?
+onlyif has-hugeint
 query I nosort
 WITH RECURSIVE t AS
 (
