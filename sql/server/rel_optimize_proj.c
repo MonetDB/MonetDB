@@ -3022,11 +3022,88 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-
 static inline sql_rel *
 rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 {
-	(void)v;
+	sql_rel *g=rel->l;
+
+	if (rel->op == op_project && g)
+	{
+		if(g->op == op_groupby)
+		{
+			printf("Found Groupby!\n");
+
+			list *exps=g->exps;
+			node *n,*m;
+
+			for(n = exps->h; n; n = n->next)
+			{
+				sql_exp *e = n->data;
+
+				if(e->type == e_aggr)
+				{
+					list *se=e->l;
+					struct sql_exp_name *en = &e->alias;
+
+					// Check aggr type! exp_aggr_is_count(e)
+
+					for(m = se->h; m; m = m->next)
+					{
+						// 1: Copy pointer to e_atom (not atom*); (already have it)
+						sql_exp *w = m->data;
+
+						if(w->type == e_atom && w->card == CARD_ATOM)
+						{
+							printf("Atom Found Within!\n");
+
+							// 2: Insert step 1 e_atom ptr into (list*)rel->exps;
+							list_append(rel->exps,w);
+
+							// 3: Remove e_col from (list*)rel->exps that contains ptr to e_aggr; list_remove_data((list*)rel->exps,NULL,FOUNDNODE) add_exp_too_project
+							list *ag = rel->exps;
+							node *b;
+							
+							for(b = ag->h; b; b = b->next)
+							{
+								sql_exp *a = b->data;
+								struct sql_exp_name *an = &a->alias;
+
+								printf("Found Column?: %u\n",a->type);
+								printf("Label: %u\n",en->label);
+
+								if(a->type == e_column && en->label == an->label && strcmp(en->name, an->name) == 0 && strcmp(en->rname, an->rname) == 0)
+								{
+									printf("Hit!\n");
+
+									// REF TO e_aggr IS a->alias = (label = 1, name = "%1", rname = "%1")
+
+									list_remove_node(ag,NULL,b);
+								}
+							}
+							
+							// OR Something with ?
+							//add_exp_too_project();
+
+							// 4: Set to e_aggr->l to NULL then destroy e_aggr node;
+							e->l=NULL;
+							list_remove_node(exps,NULL,n);
+
+							v->changes++; // Causes Assert Till Changed;
+						}
+					}
+					
+					//printf("Type: %u\n",((list*)e->l));
+				}
+			}
+		}
+	}
+
+	// What more?
+
+	// Are they really aggregates? Or function check;
+	// Look at sql_subfunc and sql_func types and atom types.
+
+	// 
 
 	return rel;
 }
@@ -3036,6 +3113,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
 	rel = rel_project_cse(v, rel);
 	rel = rel_project_select_exp(v, rel);
+	rel = rel_const_aggr_elimination(v, rel);
 
 	if (!rel || !is_groupby(rel->op))
 		return rel;
@@ -3052,7 +3130,6 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
-	rel = rel_const_aggr_elimination(v, rel);
 
 	/* only when value_based_opt is on, ie not for dependency resolution */
 	if (v->value_based_opt) {
