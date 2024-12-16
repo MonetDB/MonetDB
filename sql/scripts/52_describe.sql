@@ -243,27 +243,20 @@ CREATE VIEW sys.describe_triggers AS
 		WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
 
 CREATE VIEW sys.fully_qualified_functions AS
-	WITH fqn(id, tpe, sig, num) AS
-	(
-		SELECT
-			f.id,
-			ft.function_type_keyword,
-			CASE WHEN a.type IS NULL THEN
-				sys.fqn(s.name, f.name) || '()'
-			ELSE
-				sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
-			END,
-			a.number
-		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
-		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
-	)
 	SELECT
-		fqn1.id id,
-		fqn1.tpe tpe,
-		fqn1.sig nme
-	FROM
-		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
-		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
+		f.id id,
+		ft.function_type_keyword tpe,
+		sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',' order by a.number)  || ')' nme
+	FROM sys.schemas s, sys.function_types ft, sys.functions f JOIN sys.args a ON f.id = a.func_id
+	WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+	group by f.id, ft.function_type_keyword, f.name, s.name
+	UNION
+	SELECT f.id id,
+		ft.function_type_keyword tpe,
+		sys.fqn(s.name, f.name) || '()' nme
+	FROM sys.schemas s, sys.function_types ft, sys.functions f
+	WHERE s.id= f.schema_id AND f.type = ft.function_type_id and f.id not in ( select func_id from sys.args )
+	group by f.id, ft.function_type_keyword, f.name, s.name;
 
 CREATE VIEW sys.describe_comments AS
 	SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
@@ -439,41 +432,24 @@ CREATE VIEW sys.describe_sequences AS
 	ORDER BY s.name, seq.name;
 
 CREATE VIEW sys.describe_functions AS
-	WITH func_args_all(func_id, number, max_number, func_arg) AS
+	WITH func_args(func_id, func_arg) AS
 	(
 		SELECT
 			func_id,
-			number,
-			max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
-			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
+			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ' order by number)
 		FROM sys.args
 		WHERE inout = 1
-	),
-	func_args(func_id, func_arg) AS
-	(
-		SELECT func_id, func_arg
-		FROM func_args_all
-		WHERE number = max_number
-	),
-	func_rets_all(func_id, number, max_number, func_ret, func_ret_type) AS
-	(
-		SELECT
-			func_id,
-			number,
-			max(number) OVER (PARTITION BY func_id ORDER BY number DESC),
-			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number),
-			group_concat(sys.describe_type(type, type_digits, type_scale),', ') OVER (PARTITION BY func_id ORDER BY number)
-		FROM sys.args
-		WHERE inout = 0
+		group by func_id
 	),
 	func_rets(func_id, func_ret, func_ret_type) AS
 	(
 		SELECT
 			func_id,
-			func_ret,
-			func_ret_type
-		FROM func_rets_all
-		WHERE number = max_number
+			group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ' order by number),
+			group_concat(sys.describe_type(type, type_digits, type_scale),', ' order by number)
+		FROM sys.args
+		WHERE inout = 0
+		group by func_id
 	)
 	SELECT
 		f.id o,

@@ -197,6 +197,7 @@ const char grantRef[] = "grant";
 const char grant_rolesRef[] = "grant_roles";
 const char groupbyRef[] = "groupby";
 const char groupdoneRef[] = "groupdone";
+const char groupedfirstnRef[] = "groupedfirstn";
 const char groupRef[] = "group";
 const char growRef[] = "grow";
 const char hgeRef[] = "hge";
@@ -462,6 +463,7 @@ initNamespace(void)
 	fixName(grant_rolesRef);
 	fixName(groupbyRef);
 	fixName(groupdoneRef);
+	fixName(groupedfirstnRef);
 	fixName(groupRef);
 	fixName(growRef);
 	fixName(hgeRef);
