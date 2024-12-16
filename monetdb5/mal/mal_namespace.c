@@ -463,6 +463,7 @@ initNamespace(void)
 	fixName(grant_rolesRef);
 	fixName(groupbyRef);
 	fixName(groupdoneRef);
+	fixName(groupedfirstnRef);
 	fixName(groupRef);
 	fixName(growRef);
 	fixName(hgeRef);
