@@ -3979,7 +3979,7 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
 		stmt *r = n->data;
-		InstrPtr v = m->data;
+		stmt *v = m->data;
 		InstrPtr a = newAssignment(be->mb);
 		stmt *ns = NULL;
 		const char *rnme = table_name(be->mvc->sa, r);
@@ -3989,7 +3989,7 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 		if (r->nrcols == 0)
 			r = const_column(be, r);
 		ns = stmt_alias(be, r, label, rnme, nme);
-		a->argv[0] = v->argv[0];
+		a->argv[0] = v->nr;
 		a = pushArgument(be->mb, a, ns->nr);
 		pushInstruction(be->mb, a);
 		ns->q = a;
@@ -4160,8 +4160,6 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		if (distinct) {
 			rec = rel2bin_distinct(be, rec, NULL);
 			/* remove values allready in the result table */
-			//rec = rel2bin_except(rec, result_table);
-
 			stmt *s = releqjoin(be, rec->op4.lval, result_table, NULL, 0 /* use hash */, 0, 1 /*is_semantics*/);
 			stmt *lm = stmt_result(be, s, 0);
 
@@ -4169,8 +4167,8 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			s = stmt_tdiff(be, s, lm, NULL);
 			rec->cand = s;
 			rec = subrel_project(be, rec, refs, recursive);
+			rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
 		}
-		rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
 
 		/* cnt = count(temptable) */
 		stmt *s = stmt_aggr(be, rec->op4.lval->h->data, NULL, NULL, cnt, 1, 0, 1);
