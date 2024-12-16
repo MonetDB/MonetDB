@@ -10,7 +10,7 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-if(LIBR_FOUND)
+if(LIBR_FOUND AND NOT MONETDB_STATIC)
   add_library(rapi MODULE)
 
   target_sources(rapi
