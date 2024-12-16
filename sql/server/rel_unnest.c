@@ -2571,38 +2571,48 @@ aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 			continue;
 		}
 		list *args = a->l;
+		list *r = a->r;
+		node *rn = r?r->h:NULL;
 
-		if (!list_empty(args)) {
-			for (node *an = args->h; an; an = an->next) {
-				sql_exp *e1 = an->data, *found = NULL, *eo = e1;
-				/* we keep converts as they reuse names of inner columns */
-				int convert = is_convert(e1->type);
+		while(args) {
+			if (!list_empty(args)) {
+				for (node *an = args->h; an; an = an->next) {
+					sql_exp *e1 = an->data, *found = NULL, *eo = e1;
+					/* we keep converts as they reuse names of inner columns */
+					int convert = is_convert(e1->type);
 
-				if (convert)
-					e1 = e1->l;
-				for (node *nn = exps->h; nn && !found; nn = nn->next) {
-					sql_exp *e2 = nn->data;
+					if (convert)
+						e1 = e1->l;
+					for (node *nn = exps->h; nn && !found; nn = nn->next) {
+						sql_exp *e2 = nn->data;
 
-					if (!exp_equal(e1, e2))
-						found = e2;
-				}
-				if (!found) {
+						if (!exp_equal(e1, e2))
+							found = e2;
+					}
+					if (!found) {
+						if (!e1->alias.label)
+							e1 = exp_label(sql->sa, e1, ++sql->label);
+						append(exps, e1);
+					} else {
+						e1 = found;
+					}
 					if (!e1->alias.label)
 						e1 = exp_label(sql->sa, e1, ++sql->label);
-					append(exps, e1);
-				} else {
-					e1 = found;
+					e1 = exp_ref(sql, e1);
+					/* replace by reference */
+					if (convert) {
+						eo->l = e1;
+					} else {
+						an->data = e1;
+						clear_hash = true;
+					}
 				}
-				if (!e1->alias.label)
-					e1 = exp_label(sql->sa, e1, ++sql->label);
-				e1 = exp_ref(sql, e1);
-				/* replace by reference */
-				if (convert) {
-					eo->l = e1;
-				} else {
-					an->data = e1;
-					clear_hash = true;
-				}
+			}
+			if (rn) {
+				args = rn->data;
+				rn = rn->next;
+			} else {
+				args = NULL;
 			}
 		}
 	}
@@ -2798,6 +2808,10 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (gbe && obe) {
 			gbe = list_merge(sa_list(v->sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
 			i = 0;
+			for(node *n = gbe->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
+				set_partitioning(e);
+			}
 			for(node *n = obe->h ; n ; n = n->next, i++) {
 				sql_exp *e1 = n->data;
 				bool found = false;
@@ -2856,6 +2870,8 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_exp *found = exps_find_exp(rell->exps, next);
 			sql_exp *ref = exp_ref(v->sql, found ? found : next);
 
+			if (is_partitioning(next))
+				set_partitioning(ref);
 			if (is_ascending(next))
 				set_ascending(ref);
 			if (nulls_last(next))
