@@ -221,6 +221,7 @@ const char likeselectRef[] = "likeselect";
 const char lngRef[] = "lng";
 const char lockRef[] = "lock";
 const char lookupRef[] = "lookup";
+const char mainRef[] = "main";
 const char malRef[] = "mal";
 const char manifoldRef[] = "manifold";
 const char mapiRef[] = "mapi";
@@ -485,6 +486,7 @@ initNamespace(void)
 	fixName(lngRef);
 	fixName(lockRef);
 	fixName(lookupRef);
+	fixName(mainRef);
 	fixName(malRef);
 	fixName(manifoldRef);
 	fixName(mapiRef);
@@ -612,6 +614,27 @@ initNamespace(void)
 	fixName(window_boundRef);
 	fixName(zero_or_oneRef);
 /* ! please keep this list sorted for easier maintenance ! */
+}
+
+void
+mal_namespace_reset(void)
+{
+	struct namespace *ns;
+
+	/* assume we are at the end of the server session */
+	MT_lock_set(&mal_namespaceLock);
+	memset(hash, 0, sizeof(hash));
+	while (namespace) {
+		ns = namespace->next;
+		if (namespace != &namespace1)
+			GDKfree(namespace);
+		namespace = ns;
+	}
+	namespace1 = (struct namespace) {
+		.count = 0,
+	};
+	namespace = &namespace1;
+	MT_lock_unset(&mal_namespaceLock);
 }
 
 static const char *

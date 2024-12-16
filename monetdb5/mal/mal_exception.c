@@ -77,7 +77,8 @@ concatErrors(char *err1, const char *err2)
  * showException such that they share the same code, because reuse
  * is good.
  */
-static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
+__attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
+static str
 createExceptionInternal(enum malexception type, const char *fcn,
 						const char *format, va_list ap)
 {
@@ -192,7 +193,8 @@ freeException(str msg)
  * showScriptException such that they share the same code, because reuse
  * is good.
  */
-static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
+__attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
+static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 						   char *prev, const char *format, va_list ap)
 {

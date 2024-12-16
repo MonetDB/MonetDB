@@ -409,7 +409,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->scanner.rs = c->fdin;
 	scanner_query_processed(&(m->scanner));
 
-	if ((mdbe->msg = MSinitClientPrg(c, userRef, "main")) != MAL_SUCCEED)
+	if ((mdbe->msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED)
 		goto cleanup;
 	if (prepare_id)
 		m->emode = m_prepare;

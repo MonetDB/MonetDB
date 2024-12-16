@@ -4082,6 +4082,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_subtype t;
 	sql_subfunc *f;
 
+	if (!sname)
+		sname = "sys";
 	if (!stack_find_rel_view(sql, seqname)) {
 		if (!(seq = find_sequence_on_scope(sql, sname, seqname, "NEXT VALUE FOR")))
 			return NULL;
@@ -4091,8 +4093,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_find_subtype(&t, "varchar", 0, 0);
 	f = sql_bind_func(sql, "sys", "next_value_for", &t, &t, F_FUNC, true, true);
 	assert(f);
-	/* sequence found in the stack. use session's schema? */
-	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : "sys", &t), exp_atom_str(sql->sa, seqname, &t), f);
+	/* sequence found in the stack, ie just created. use given schema? */
+	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : sname, &t), exp_atom_str(sql->sa, seqname, &t), f);
 }
 
 /* some users like to use aliases already in the groupby */

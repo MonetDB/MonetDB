@@ -431,21 +431,20 @@ RMTfindconn(connection *ret, const char *conn)
 static inline str
 RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 {
-	char *var;
 	str rt;
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 	static ATOMIC_TYPE idtag = ATOMIC_VAR_INIT(0);
 
 	if (p->retc == 0)
 		throw(MAL, "remote.getId",
 			  ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
-	var = getArgNameIntoBuffer(mb, p, arg, name);
+	getArgNameIntoBuffer(mb, p, arg, name);
 	rt = getTypeIdentifier(getArgType(mb, p, arg));
 	if (rt == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), var,
+	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), name,
 			 rt);
 
 	GDKfree(rt);

@@ -20,7 +20,8 @@
 #include "monetdb_config.h"
 #include "libgeom.h"
 
-static void __attribute__((__format__(__printf__, 1, 2)))
+__attribute__((__format__(__printf__, 1, 2)))
+static void
 geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	va_list va;
