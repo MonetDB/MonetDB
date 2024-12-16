@@ -95,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Aug2024-SP1/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2024-SP2/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -990,6 +990,26 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Dec 16 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.7-20241216
+- Rebuilt.
+- GH#7112: Need keyboard shortcut to interrupt query execution rather than
+  session
+- GH#7205: Unpredictable performance when performing joins over nested
+  queries
+- GH#7574: Assertion failure at `rel2bin_select` when using `STARTSWITH`
+- GH#7588: incorrect output with single row inputs for var_samp(c) over()
+- GH#7589: "SELECT * FROM sessions" crashes monetdb/e
+- GH#7593: A value is being returned with unnecessary scientific notation
+- GH#7595: SQLTestCase leaks pymonetdb connections
+- GH#7597: Upgrade + quick restart causes database inconsistency
+- GH#7599: str_to_date fails when combined with SQL CASE clause
+- GH#7602: COPY INTO from multiple files causes an assertion error.
+- GH#7603: COPY INTO from three or more files crashes the server.
+- GH#7604: file_loader() causes server crash when csv file contains too
+  few field separators or contains empty lines
+- GH#7607: Adding a column of serial type fails with "Access denied for
+  <user> to schema 'sys'"
+
 * Thu Oct 24 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.5-20241024
 - Rebuilt.
 - GH#7281: UDFs defined at compile time in a user schema should not become
