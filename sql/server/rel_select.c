@@ -28,6 +28,7 @@
 #include "rel_unnest.h"
 #include "rel_sequence.h"
 #include "rel_file_loader.h"
+#include "rel_optimizer_private.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -258,12 +259,52 @@ rel_subquery_optname(sql_query *query, symbol *ast, list *refs)
 	return rel_table_optname(sql, sq, sn->name, refs);
 }
 
+static void
+rel_rename(mvc *sql, sql_rel *nrel, char *rname, sql_rel *brel)
+{
+	assert(is_project(nrel->op));
+	if (brel) {
+		if (is_project(nrel->op) && nrel->exps) {
+			for (node *ne = nrel->exps->h, *be = brel->exps->h; ne && be; ne = ne->next, be = be->next) {
+				sql_exp *e = ne->data;
+				sql_exp *b = be->data;
+				char *name = NULL;
+
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql, e, rname, name);
+					set_basecol(e);
+					e->alias.label = b->alias.label;
+				}
+			}
+		}
+		list_hash_clear(nrel->exps);
+	} else if (is_project(nrel->op) && nrel->exps) {
+		node *ne = nrel->exps->h;
+
+		for (; ne; ne = ne->next) {
+			sql_exp *e = ne->data;
+			char *name = NULL;
+
+			if (!is_intern(e)) {
+				if (!exp_name(e))
+					name = make_label(sql->sa, ++sql->label);
+				noninternexp_setname(sql, e, rname, name);
+				set_basecol(e);
+			}
+		}
+		list_hash_clear(nrel->exps);
+	}
+}
+
 sql_rel *
 rel_with_query(sql_query *query, symbol *q )
 {
 	mvc *sql = query->sql;
 	dnode *d = q->data.lval->h;
 	symbol *next = d->next->data.sym;
+	bool recursive = d->next->next->data.i_val;
 	sql_rel *rel;
 
 	if (!stack_push_frame(sql, NULL))
@@ -273,20 +314,75 @@ rel_with_query(sql_query *query, symbol *q )
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h->next;
 		char *rname = qname_schema_object(dn->data.lval);
-		sql_rel *nrel;
+		sql_rel *nrel, *base_rel = NULL;
+		symbol *recursive_part = NULL;
+		sql_rel_view *recursive_union = NULL;
+		int recursive_distinct = 0;
 
 		if (frame_find_rel_view(sql, rname)) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname);
+		}
+		if (recursive) {
+			symbol *union_stmt = dn->next->next->data.sym;
+			if (union_stmt->token == SQL_UNION) { /* split in base and recursive part */
+				dnode *n = union_stmt->data.lval->h;
+				symbol *base = n->data.sym;
+				recursive_distinct = n->next->data.i_val;
+				dlist *corresponding = n->next->next->data.lval;
+				recursive_part = n->next->next->next->data.sym;
+				if (corresponding)
+					return sql_error(sql, 01, SQLSTATE(42000) "Recursive with corresponding is not supported");
+				dn->next->next->data.sym = base;
+			}
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if (!stack_push_rel_view(sql, rname, nrel)) {
+		if (!(recursive_union = stack_push_rel_view(sql, rname, nrel))) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (recursive && recursive_part) {
+			base_rel = nrel;
+			rel_rename(sql, base_rel, rname, base_rel);
+			dn->next->next->data.sym = recursive_part;
+			set_processed(nrel);
+			nrel = rel_semantic(query, sym);
+			if (!nrel) {
+				stack_pop_frame(sql);
+				return NULL;
+			}
+			list *ls = rel_projections(sql, base_rel, NULL, 0, 1);
+			list *rs = rel_projections(sql, nrel, NULL, 0, 1);
+
+			if (!rel_is_ref(base_rel)) { /* not recursive */
+				nrel = rel_setop_n_ary_check_types(sql, base_rel, nrel, ls, rs, op_munion);
+			} else {
+				base_rel->used |= statistics_gathered;
+				prop *p = base_rel->p = prop_create(sql->sa, PROP_COUNT, base_rel->p);
+				p->value.lval = 1000000; /* random ? */
+
+				/* down cast the recursive side (on errors users should add casts on the base side) */
+				list *nrs = new_exp_list(sql->sa);
+				if(!nrs)
+					return NULL;
+
+				for (node *n = ls->h, *m = rs->h; n && m; n = n->next, m = m->next) {
+					sql_subtype *t = exp_subtype(n->data);
+					append(nrs, exp_check_type(sql, t, nrel, m->data, type_equal));
+				}
+				nrel = rel_project(sql->sa, nrel, nrs);
+				nrel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), base_rel), nrel), op_munion);
+				set_recursive(nrel);
+			}
+			if (recursive_distinct)
+				set_distinct(nrel);
+			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
+			set_processed(nrel);
+			recursive_union->rel_view = rel_dup(nrel); /* extra incref for independent flow */
 		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
@@ -296,23 +392,7 @@ rel_with_query(sql_query *query, symbol *q )
 				return NULL;
 			}
 		}
-		assert(is_project(nrel->op));
-		if (is_project(nrel->op) && nrel->exps) {
-			node *ne = nrel->exps->h;
-
-			for (; ne; ne = ne->next) {
-				sql_exp *e = ne->data;
-				char *name = NULL;
-
-				if (!is_intern(e)) {
-					if (!exp_name(e))
-						name = make_label(sql->sa, ++sql->label);
-					noninternexp_setname(sql, e, rname, name);
-					set_basecol(e);
-				}
-			}
-			list_hash_clear(nrel->exps);
-		}
+		rel_rename(sql, nrel, rname, base_rel);
 	}
 	rel = rel_semantic(query, next);
 	stack_pop_frame(sql);
@@ -1054,8 +1134,8 @@ check_is_lateral(symbol *tableref)
 			return tableref->data.lval->h->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
-		if (dlist_length(tableref->data.lval) == 4)
-			return tableref->data.lval->h->next->next->data.i_val;
+		if (dlist_length(tableref->data.lval) == 5)
+			return tableref->data.lval->h->next->next->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *) tableref;

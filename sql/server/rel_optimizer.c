@@ -28,6 +28,7 @@ rel_properties(visitor *v, sql_rel *rel)
 	/* Don't flag any changes here! */
 	gp->cnt[(int)rel->op]++;
 	gp->needs_distinct |= need_distinct(rel);
+	gp->recursive |= is_recursive(rel);
 	if (gp->instantiate && is_basetable(rel->op)) {
 		mvc *sql = v->sql;
 		sql_table *t = (sql_table *) rel->l;
@@ -677,6 +678,7 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
+		sql->recursive = gp.recursive;
 		rel = run_optimizer_set(&v, sql->runs, rel, &gp, pre_sql_optimizers);
 	}
 #ifndef NDEBUG

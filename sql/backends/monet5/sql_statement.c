@@ -307,6 +307,30 @@ create_bat(MalBlkPtr mb, int tt)
 	return getDestVar(q);
 }
 
+stmt *
+stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
+{
+	InstrPtr q = newStmt(be->mb, batRef, newRef);
+	int tt = tpe->type->localtype;
+
+	if (q == NULL)
+		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	if (estimate > 0)
+		q = pushInt(be->mb, q, (int)estimate);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
+}
+
 static int *
 dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
 {
@@ -4584,10 +4608,13 @@ tail_type(stmt *st)
 			if (!st->reduce)
 				return sql_bind_localtype("bit");
 			return sql_bind_localtype("oid");
+		case st_alias:
+			if (!st->op1)
+				return &st->op4.typeval;
+			/* fall through */
 		case st_append:
 		case st_append_bulk:
 		case st_replace:
-		case st_alias:
 		case st_gen_group:
 		case st_order:
 			st = st->op1;
@@ -4816,6 +4843,8 @@ schema_name(allocator *sa, stmt *st)
 			return schema_name(sa, st->op1);
 		return NULL;
 	case st_alias:
+		if (!st->op1)
+			return NULL;
 		return schema_name(sa, st->op1);
 	case st_bat:
 		return st->op4.cval->t->s->base.name;
