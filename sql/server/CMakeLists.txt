@@ -123,10 +123,12 @@ target_compile_definitions(sqlserver
   PRIVATE
   LIBSQL)
 
-set_target_properties(sqlserver
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
+if(NOT MONETDB_STATIC)
+  set_target_properties(sqlserver
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER "${sqlserver_public_headers}")
+endif()
 
 add_executable(sqlparse)
 
@@ -173,6 +175,21 @@ set_target_properties(sqlparse
   PROPERTIES
   VERSION ${MONETDB_VERSION})
 
+if(MONETDB_STATIC)
+install(TARGETS
+  sqlserver
+  sqlparse
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT server
+  LIBRARY
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+else()
 install(TARGETS
   sqlparse
   RUNTIME
@@ -185,3 +202,4 @@ install(TARGETS
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
