@@ -3027,83 +3027,41 @@ rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 {
 	sql_rel *g=rel->l;
 
-	if (rel->op == op_project && g)
+	if (rel->op == op_project && g) // 0
 	{
-		if(g->op == op_groupby)
+		list *exps=g->exps;
+
+		if(g->op == op_groupby && !list_empty(exps))
 		{
-			printf("Found Groupby!\n");
-
-			list *exps=g->exps;
-			node *n,*m;
-
-			for(n = exps->h; n; n = n->next)
+			for(node *n = exps->h; n; n = n->next)
 			{
 				sql_exp *e = n->data;
 
-				if(e->type == e_aggr)
+				// Check aggr type! exp_aggr_is_count(e)
+				// only average for now!
+				if(e->type == e_aggr && 
+					!((sql_subfunc *)e->f)->func->s && 
+			        strcmp(((sql_subfunc *)e->f)->func->base.name, "avg") == 0)
 				{
 					list *se=e->l;
-					struct sql_exp_name *en = &e->alias;
 
-					// Check aggr type! exp_aggr_is_count(e)
-
-					for(m = se->h; m; m = m->next)
+					for(node *m = se->h; m; m = m->next)
 					{
-						// 1: Copy pointer to e_atom (not atom*); (already have it)
 						sql_exp *w = m->data;
 
 						if(w->type == e_atom && w->card == CARD_ATOM)
 						{
-							printf("Atom Found Within!\n");
+							exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
 
-							// 2: Insert step 1 e_atom ptr into (list*)rel->exps;
-							list_append(rel->exps,w);
+							n->data=w;
 
-							// 3: Remove e_col from (list*)rel->exps that contains ptr to e_aggr; list_remove_data((list*)rel->exps,NULL,FOUNDNODE) add_exp_too_project
-							list *ag = rel->exps;
-							node *b;
-							
-							for(b = ag->h; b; b = b->next)
-							{
-								sql_exp *a = b->data;
-								struct sql_exp_name *an = &a->alias;
-
-								printf("Found Column?: %u\n",a->type);
-								printf("Label: %u\n",en->label);
-
-								if(a->type == e_column && en->label == an->label && strcmp(en->name, an->name) == 0 && strcmp(en->rname, an->rname) == 0)
-								{
-									printf("Hit!\n");
-
-									// REF TO e_aggr IS a->alias = (label = 1, name = "%1", rname = "%1")
-
-									list_remove_node(ag,NULL,b);
-								}
-							}
-							
-							// OR Something with ?
-							//add_exp_too_project();
-
-							// 4: Set to e_aggr->l to NULL then destroy e_aggr node;
-							e->l=NULL;
-							list_remove_node(exps,NULL,n);
-
-							v->changes++; // Causes Assert Till Changed;
+							v->changes++;
 						}
 					}
-					
-					//printf("Type: %u\n",((list*)e->l));
 				}
 			}
 		}
 	}
-
-	// What more?
-
-	// Are they really aggregates? Or function check;
-	// Look at sql_subfunc and sql_func types and atom types.
-
-	// 
 
 	return rel;
 }
