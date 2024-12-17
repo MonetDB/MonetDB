@@ -122,6 +122,10 @@ getSQLoptimizer(mvc *m)
 {
 	char *opt = get_string_global_var(m, "optimizer");
 	char *pipe = "default_pipe";
+	char *rec_pipe = "recursive_pipe";
+
+	if (m->recursive)
+		return rec_pipe;
 
 	if (opt)
 		pipe = opt;

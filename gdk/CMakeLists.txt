@@ -36,7 +36,11 @@ set(gdk_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_time.h>)
 
-add_library(bat SHARED)
+if(MONETDB_STATIC)
+  add_library(bat STATIC)
+else()
+  add_library(bat SHARED)
+endif()
 
 target_sources(bat
   PRIVATE
@@ -158,11 +162,13 @@ install(TARGETS
   COMPONENT monetdbdev
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT gdkTargets
-  FILE gdkTargets.cmake
-  NAMESPACE MonetDB::
-  DESTINATION ${EXPORT_TARGET_PATH}
-  COMPONENT monetdbdev)
+if(NOT MONETDB_STATIC)
+  install(EXPORT gdkTargets
+    FILE gdkTargets.cmake
+    NAMESPACE MonetDB::
+    DESTINATION ${EXPORT_TARGET_PATH}
+    COMPONENT monetdbdev)
+endif()
 
 if(WIN32)
   install(FILES

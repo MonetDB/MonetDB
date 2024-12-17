@@ -285,6 +285,8 @@ typedef enum operator_type {
 #define is_single(rel) 		((rel)->single)
 #define set_single(rel) 	(rel)->single = 1
 #define reset_single(rel) 	(rel)->single = 0
+#define set_recursive(rel) 	(rel)->recursive = 1
+#define is_recursive(rel) 	((rel)->recursive)
 
 #define is_freevar(e) 		((e)->freevar)
 #define set_freevar(e,level) 	(e)->freevar = level+1
@@ -317,7 +319,7 @@ typedef struct relation {
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
 	 returning:1, /*update|delete|insert relations return modified records*/
-
+	 recursive:1,	/* recursive unions */
 	 parallel:1,	/* suitable for parallel pipeline? */
 	 partition:2,	/* partition input relation?
 					 * 0 (no), 1 (left relation), 2 (right relation) */

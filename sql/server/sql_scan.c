@@ -490,6 +490,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("NAMESPACE", NAMESPACE);
 	failed += keywords_insert("XMLVALIDATE", XMLVALIDATE);
 	failed += keywords_insert("RETURNING", RETURNING);
+	failed += keywords_insert("RECURSIVE", RECURSIVE);
 	failed += keywords_insert("LOCATION", LOCATION);
 	failed += keywords_insert("ID", ID);
 	failed += keywords_insert("ACCORDING", ACCORDING);

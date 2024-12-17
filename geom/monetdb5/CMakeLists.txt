@@ -10,7 +10,7 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-if(GEOS_FOUND)
+if(GEOS_FOUND AND NOT MONETDB_STATIC)
   add_library(geomodule MODULE)
 
   set(include_sql_files

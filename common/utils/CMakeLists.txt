@@ -34,17 +34,19 @@ target_link_libraries(mutils
 target_compile_definitions(mutils PRIVATE
   LIBMUTILS)
 
-set_target_properties(mutils
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER mutils.h)
+if(NOT MONETDB_STATIC)
+  set_target_properties(mutils
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER mutils.h)
+endif()
 
 add_custom_target(version
   ${CMAKE_COMMAND} -D SRC=${CMAKE_CURRENT_SOURCE_DIR}/monetdb_hgversion.h.in
-                   -D DST=${CMAKE_CURRENT_BINARY_DIR}/monetdb_hgversion.h
-                   -D DIR=${CMAKE_SOURCE_DIR}
-                   -P ${CMAKE_CURRENT_SOURCE_DIR}/GenerateVersionHeader.cmake
-  )
+  -D DST=${CMAKE_CURRENT_BINARY_DIR}/monetdb_hgversion.h
+  -D DIR=${CMAKE_SOURCE_DIR}
+  -P ${CMAKE_CURRENT_SOURCE_DIR}/GenerateVersionHeader.cmake
+)
 add_dependencies(mutils version)
 
 add_library(mcrypt STATIC)
@@ -73,10 +75,12 @@ target_compile_definitions(mcrypt
   PRIVATE
   LIBMCRYPT)
 
-set_target_properties(mcrypt
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER mcrypt.h)
+if(NOT MONETDB_STATIC)
+  set_target_properties(mcrypt
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER mcrypt.h)
+endif()
 
 set(msabaoth_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/msabaoth.h
@@ -105,10 +109,12 @@ target_compile_definitions(msabaoth
   PRIVATE
   LIBMSABAOTH)
 
-set_target_properties(msabaoth
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER "${msabaoth_public_headers}")
+if(NOT MONETDB_STATIC)
+  set_target_properties(msabaoth
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER "${msabaoth_public_headers}")
+endif()
 
 add_library(matomic INTERFACE)
 
@@ -141,10 +147,12 @@ target_link_libraries(mprompt
   PRIVATE
   monetdb_config_header)
 
-set_target_properties(mprompt
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER mprompt.h)
+if(NOT MONETDB_STATIC)
+  set_target_properties(mprompt
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER mprompt.h)
+endif()
 
 add_library(mutf8 STATIC)
 
@@ -211,3 +219,18 @@ install(FILES
   ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT
   monetdbdev)
+
+if(MONETDB_STATIC)
+  install(TARGETS
+    mutils
+    mcrypt
+    msabaoth
+    mprompt
+    COMPONENT monetdbdev
+    RUNTIME
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()

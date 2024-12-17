@@ -33,8 +33,8 @@ rel2bin_project_prepare(backend *be, sql_rel *rel)
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
 
-			InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate);
-			append(shared, q);
+			stmt *s = stmt_bat_new(be, t, estimate);
+			append(shared, s);
 		}
 	}
 	return shared;

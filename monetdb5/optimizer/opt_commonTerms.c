@@ -120,7 +120,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
 			old[i] = NULL;
-			continue;
+			break;
 		}
 
 		/* when we enter a barrier block, we should ditch all previous instructions from consideration */

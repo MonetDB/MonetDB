@@ -35,10 +35,12 @@ target_link_libraries(moptions
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
-set_target_properties(moptions
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER "${moptions_public_headers}")
+if(NOT MONETDB_STATIC)
+  set_target_properties(moptions
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER "${moptions_public_headers}")
+endif()
 
 install(FILES
   monet_options.h
@@ -46,3 +48,18 @@ install(FILES
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT
   monetdbdev)
+
+if(MONETDB_STATIC)
+  install(TARGETS
+    moptions
+    COMPONENT monetdbdev
+    RUNTIME
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    LIBRARY
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
