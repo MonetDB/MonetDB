@@ -306,10 +306,11 @@ stmt_none(backend *be)
 	return stmt_create(be->mvc->sa, st_none);
 }
 
-InstrPtr
-stmt_bat_declare(backend *be, int tt)
+stmt *
+stmt_bat_declare(backend *be, sql_subtype *tpe)
 {
 	InstrPtr q = newAssignment(be->mb);
+	int tt = tpe->type->localtype;
 
 	if (q == NULL)
 		return NULL;
@@ -318,7 +319,13 @@ stmt_bat_declare(backend *be, int tt)
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushNil(be->mb, q, newBatType(tt));
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
 }
 
 stmt *
@@ -864,10 +871,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = newStmt(mb, batRef, appendRef);
 		if (q == NULL)
 			goto bailout;
+		getArg(q,0) = l[c->colnr+1];
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, b->nr);
 		q = pushBit(mb, q, TRUE);
-		getArg(q,0) = l[c->colnr+1];
 	} else if (!fake) {	/* fake append */
 		if (offset == NULL || offset->nr < 0)
 			goto bailout;
@@ -977,6 +984,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		q = newStmt(mb, batRef, replaceRef);
 		if (q == NULL)
 			goto bailout;
+		q->argv[0] = l[c->colnr+1];
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, tids->nr);
 		q = pushArgument(mb, q, upd->nr);
@@ -3721,6 +3729,7 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 			q = newStmt(mb, batRef, deleteRef);
 			if (q == NULL)
 				goto bailout;
+			q->argv[0] = l[i];
 			q = pushArgument(mb, q, l[i]);
 			pushInstruction(mb, q);
 		}

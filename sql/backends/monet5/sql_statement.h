@@ -151,7 +151,7 @@ extern int stmt_key(stmt *s);
 
 extern InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
-extern InstrPtr stmt_bat_declare(backend *be, int tt);
+extern stmt *stmt_bat_declare(backend *be, sql_subtype *tpe);
 
 extern stmt *stmt_none(backend *be);
 

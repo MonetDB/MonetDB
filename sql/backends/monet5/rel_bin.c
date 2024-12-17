@@ -4161,9 +4161,8 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
 		stmt *r = n->data;
-		InstrPtr v = m->data;
+		stmt *v = m->data;
 		InstrPtr a = newAssignment(be->mb);
-		//stmt *v = m->data;
 		stmt *ns = NULL;
 		const char *rnme = table_name(be->mvc->sa, r);
 		const char *nme = column_name(be->mvc->sa, r);
@@ -4172,8 +4171,7 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 		if (r->nrcols == 0)
 			r = const_column(be, r);
 		ns = stmt_alias(be, r, label, rnme, nme);
-		a->argv[0] = v->argv[0];
-		//a->argv[0] = v->nr;
+		a->argv[0] = v->nr;
 		a = pushArgument(be->mb, a, ns->nr);
 		pushInstruction(be->mb, a);
 		ns->q = a;
@@ -4422,8 +4420,8 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_subtype *st = exp_subtype(n->data);
-			InstrPtr q = stmt_bat_declare(be, st->type->localtype);
-			append(vars, q);
+			stmt *s = stmt_bat_declare(be, st);
+			append(vars, s);
 		}
 
 		int i = 0, p = 0;

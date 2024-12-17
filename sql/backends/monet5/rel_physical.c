@@ -481,6 +481,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		}
 	} else if (rel->op == op_munion) {
 		list *rels = rel->l;
+		if (is_recursive(rel))
+			return 0;
 		for(node *n = rels->h; n; n = n->next) {
 			int lres = rel_partition_(sql, n->data, pb);
 			if (lres == EPB) {
