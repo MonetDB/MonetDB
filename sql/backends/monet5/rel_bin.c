@@ -188,7 +188,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 				const char *nme = column_name(be->mvc->sa, s);
 
 				if (rnme && strcmp(rnme, rname) == 0 &&
-					    strcmp(nme, name) == 0) {
+						strcmp(nme, name) == 0) {
 					res = s;
 					break;
 				}
@@ -215,7 +215,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 			const char *nme = column_name(be->mvc->sa, n->data);
 
 			if (rnme && strcmp(rnme, rname) == 0 &&
-				    strcmp(nme, name) == 0) {
+					strcmp(nme, name) == 0) {
 				res = n->data;
 				break;
 			}
@@ -543,7 +543,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC, true, true)
 			:sql_bind_func(sql, "sys", "<>", tail_type(c), tail_type(c), F_FUNC, true, true);
 		sql_subfunc *a = (in)?sql_bind_func(sql, "sys", "or", bt, bt, F_FUNC, true, true)
-				     :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC, true, true);
+					 :sql_bind_func(sql, "sys", "and", bt, bt, F_FUNC, true, true);
 
 		for (n = nl->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -948,19 +948,19 @@ exp2bin_named_placeholders(backend *be, sql_exp *fe)
 		InstrPtr q = newAssignment(be->mb);
 
 		if (!q || !t || !s) {
-            sql_error(be->mvc, 10, SQLSTATE(42000) MAL_MALLOC_FAIL);
+			sql_error(be->mvc, 10, SQLSTATE(42000) MAL_MALLOC_FAIL);
 			return NULL;
 		}
-        int type = t->type->localtype, varid = 0;
+		int type = t->type->localtype, varid = 0;
 
-        snprintf(arg, IDLENGTH, "A%d", argc);
-        if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
-            sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+		snprintf(arg, IDLENGTH, "A%d", argc);
+		if ((varid = newVariable(be->mb, arg, strlen(arg), type)) < 0) {
+			sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
 			return NULL;
-        }
+		}
 		if (q)
 			getDestVar(q) = varid;
-        q = pushArgument(be->mb, q, s->nr);
+		q = pushArgument(be->mb, q, s->nr);
 		pushInstruction(be->mb, q);
 	}
 	return NULL;
@@ -1416,7 +1416,7 @@ is_const_func(sql_subfunc *f, list *attr)
 	if (list_length(attr) != 2)
 		return false;
 	if (strcmp(f->func->base.name, "quantile") == 0 ||
-	    strcmp(f->func->base.name, "quantile_avg") == 0)
+		strcmp(f->func->base.name, "quantile_avg") == 0)
 		return true;
 	return false;
 }
@@ -1682,10 +1682,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_aggr: {
 		list *attr = e->l;
+		list *r = e->r;
 		stmt *as = NULL;
 		sql_subfunc *a = e->f;
 
 		assert(sel == NULL);
+			/* cases
+			 * 0) count(*)
+			 * 1) general aggregation
+			 * 2) aggregation with required order (quantile etc)
+			 * 3) aggregation with optional order by, group_concat, xml_agg
+			 * */
 		if (attr && attr->h) {
 			node *en;
 			list *l = sa_list(sql->sa);
@@ -1737,6 +1744,37 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (l == NULL)
 					return NULL;
 				append(l, stmt_project(be, u, a));
+			}
+			if (r) {
+				list *obe = r->h->data;
+				if (obe && obe->h) {
+					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
+					/* order by */
+					if (grp) {
+						orderby = stmt_order(be, grp, true, true);
+
+						orderby_vals = stmt_result(be, orderby, 0);
+						orderby_ids = stmt_result(be, orderby, 1);
+						orderby_grp = stmt_result(be, orderby, 2);
+					}
+					for (node *n = obe->h; n; n = n->next) {
+						sql_exp *oe = n->data;
+						stmt *os = exp_bin(be, oe, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
+						if (orderby)
+							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
+						else
+							orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
+						orderby_vals = stmt_result(be, orderby, 0);
+						orderby_ids = stmt_result(be, orderby, 1);
+						orderby_grp = stmt_result(be, orderby, 2);
+					}
+					/* depending on type of aggr project input or ordered column */
+					stmt *h = l->h->data;
+					l->h->data = h = stmt_project(be, orderby_ids, h);
+					if (grp)
+						grp = stmt_project(be, orderby_ids, grp);
+					(void)orderby_vals;
+				}
 			}
 			as = stmt_list(be, l);
 		} else {
@@ -2843,7 +2881,7 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 				if ((ll && !rl &&
 				   ((rr && !lr) || (nrcr1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
 				   ((rf && !lf) || (nrcr2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcr1+nrcr2) <= 1) ||
-				    (rl && !ll &&
+					(rl && !ll &&
 				   ((lr && !rr) || (nrcl1 = r->card == CARD_ATOM && exp_is_atom(r))) &&
 				   ((lf && !rf) || (nrcl2 = f->card == CARD_ATOM && exp_is_atom(f))) && (nrcl1+nrcl2) <= 1)) {
 					can_join = 1;
@@ -3979,7 +4017,7 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
 		stmt *r = n->data;
-		InstrPtr v = m->data;
+		stmt *v = m->data;
 		InstrPtr a = newAssignment(be->mb);
 		stmt *ns = NULL;
 		const char *rnme = table_name(be->mvc->sa, r);
@@ -3989,7 +4027,7 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 		if (r->nrcols == 0)
 			r = const_column(be, r);
 		ns = stmt_alias(be, r, label, rnme, nme);
-		a->argv[0] = v->argv[0];
+		a->argv[0] = v->nr;
 		a = pushArgument(be->mb, a, ns->nr);
 		pushInstruction(be->mb, a);
 		ns->q = a;
@@ -4095,13 +4133,13 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 
 		/* while cnt > 0 (and total < limit): */
-        InstrPtr r = newAssignment(be->mb);
-        if (r == NULL)
+		InstrPtr r = newAssignment(be->mb);
+		if (r == NULL)
 			return NULL;
 		int barrier_var = r->argv[0];
-        r->argc = r->retc = 1;
-        r->barrier = BARRIERsymbol;
-        r = pushBit(be->mb, r, TRUE);
+		r->argc = r->retc = 1;
+		r->barrier = BARRIERsymbol;
+		r = pushBit(be->mb, r, TRUE);
 		pushInstruction(be->mb, r);
 
 		if (l)
@@ -4110,7 +4148,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			r = newStmtArgs(be->mb, calcRef, "<=", 3);
 		if (r == NULL)
 			return NULL;
-        getArg(r, 0) = barrier_var;
+		getArg(r, 0) = barrier_var;
 		r->barrier = LEAVEsymbol;
 		r = pushArgument(be->mb, r, cnts->nr);
 		r = pushLng(be->mb, r, 0);
@@ -4160,8 +4198,6 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		if (distinct) {
 			rec = rel2bin_distinct(be, rec, NULL);
 			/* remove values allready in the result table */
-			//rec = rel2bin_except(rec, result_table);
-
 			stmt *s = releqjoin(be, rec->op4.lval, result_table, NULL, 0 /* use hash */, 0, 1 /*is_semantics*/);
 			stmt *lm = stmt_result(be, s, 0);
 
@@ -4169,8 +4205,8 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			s = stmt_tdiff(be, s, lm, NULL);
 			rec->cand = s;
 			rec = subrel_project(be, rec, refs, recursive);
+			rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
 		}
-		rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
 
 		/* cnt = count(temptable) */
 		stmt *s = stmt_aggr(be, rec->op4.lval->h->data, NULL, NULL, cnt, 1, 0, 1);
@@ -4178,21 +4214,21 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 
 		/* jump back */
 		r = newStmtArgs(be->mb, calcRef, ">", 3);
-        if (r == NULL)
+		if (r == NULL)
 			return NULL;
-        getArg(r, 0) = barrier_var;
-        r->argc = r->retc = 1;
+		getArg(r, 0) = barrier_var;
+		r->argc = r->retc = 1;
 		r = pushArgument(be->mb, r, cnts->nr);
 		r = pushLng(be->mb, r, 0);
-        r->barrier = REDOsymbol;
+		r->barrier = REDOsymbol;
 		pushInstruction(be->mb, r);
 
-        r = newAssignment(be->mb);
-        if (r == NULL)
+		r = newAssignment(be->mb);
+		if (r == NULL)
 			return NULL;
-        getArg(r, 0) = barrier_var;
-        r->argc = r->retc = 1;
-        r->barrier = EXITsymbol;
+		getArg(r, 0) = barrier_var;
+		r->argc = r->retc = 1;
+		r->barrier = EXITsymbol;
 		pushInstruction(be->mb, r);
 
 		/* relabel */
@@ -4644,10 +4680,36 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		/* distinct, topn returns at least N (unique groups) */
 		int distinct = need_distinct(rel);
 		stmt *limit = NULL, *lpiv = NULL, *lgid = NULL;
+		int nr_obe = list_length(oexps);
 
-		for (n=oexps->h; n; n = n->next) {
+		/* check for partition columns */
+		stmt *grp = NULL, *ext = NULL, *cnt = NULL;
+		for (n=oexps->h; n; n = n->next, nr_obe--) {
+			sql_exp *gbe = n->data;
+			bool last = (!n->next || !is_partitioning((sql_exp*)n->next->data));
+
+			if (!topn->grouped || !is_partitioning(gbe))
+				break;
+			/* create group by */
+			stmt *gbcol = exp_bin(be, gbe, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!gbcol) {
+				assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
+				return NULL;
+			}
+			if (!gbcol->nrcols)
+				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
+			stmt *groupby = stmt_group(be, gbcol, grp, ext, cnt, last);
+			grp = stmt_result(be, groupby, 0);
+			ext = stmt_result(be, groupby, 1);
+			cnt = stmt_result(be, groupby, 2);
+			gbcol = stmt_alias(be, gbcol, gbe->alias.label, exp_find_rel_name(gbe), exp_name(gbe));
+		}
+
+		if (grp)
+			lgid = grp;
+		for (; n; n = n->next, nr_obe--) {
 			sql_exp *orderbycole = n->data;
-			int last = (n->next == NULL);
 
 			stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 
@@ -4655,18 +4717,18 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				return NULL;
 
 			/* handle constants */
-			if (orderbycolstmt->nrcols == 0 && !last) /* no need to sort on constant */
+			if (orderbycolstmt->nrcols == 0 && n->next) /* no need to sort on constant */
 				continue;
 			orderbycolstmt = column(be, orderbycolstmt);
 			if (!limit) {	/* topn based on a single column */
-				limit = stmt_limit(be, orderbycolstmt, NULL, NULL, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			} else {	/* topn based on 2 columns */
-				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), last, 1);
+				limit = stmt_limit(be, orderbycolstmt, lpiv, lgid, stmt_atom_lng(be, 0), l, distinct, is_ascending(orderbycole), nulls_last(orderbycole), nr_obe, 1);
 			}
 			if (!limit)
 				return NULL;
 			lpiv = limit;
-			if (!last) {
+			if (!grp && nr_obe > 1) {
 				lpiv = stmt_result(be, limit, 0);
 				lgid = stmt_result(be, limit, 1);
 				if (lpiv == NULL || lgid == NULL)
@@ -4675,6 +4737,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 
 		limit = lpiv;
+		if (limit && grp)
+			limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
 		stmt *s;
 		for (n=pl->h ; n; n = n->next) {
 			stmt *os = n->data;
@@ -4939,6 +5003,17 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	return cursub;
 }
 
+static bool
+has_partitioning( list *exps )
+{
+	for(node *n = exps->h; n; n = n->next){
+		sql_exp *gbe = n->data;
+		if (is_partitioning(gbe))
+			return true;
+	}
+	return false;
+}
+
 static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
@@ -4964,6 +5039,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = rel2bin_project(be, rl, refs, rel);
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
+			if (rel->grouped && rl->r && has_partitioning(rl->r))
+				return sub;
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}
@@ -4999,8 +5076,9 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		if (!l || !o)
 			return NULL;
 
+
 		sc = column(be, sc);
-		limit = stmt_limit(be, sc /*stmt_alias(be, sc, 0, tname, cname)*/, NULL, NULL, o, l, 0,0,0,0,0);
+		limit = stmt_limit(be, sc, NULL, NULL, o, l, 0,0,0,0,0);
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
@@ -5266,7 +5344,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, true, bt, 2, lng, lng);
 
-    stmt *nonil_rows = NULL;
+	stmt *nonil_rows = NULL;
 	for (node *m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
@@ -5283,9 +5361,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-    // we want to make sure that the data column(s) has the same number
-    // of (nonil) rows as the index column. if that is **not** the case
-    // then we are obviously dealing with an invalid foreign key
+	// we want to make sure that the data column(s) has the same number
+	// of (nonil) rows as the index column. if that is **not** the case
+	// then we are obviously dealing with an invalid foreign key
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),

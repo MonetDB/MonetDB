@@ -884,7 +884,7 @@ has_generic_decimal_result(list *types)
 
 
 static sql_rel *
-rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace)
+rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace, int order_spec)
 {
 	mvc *sql = query->sql;
 	const char *fname = qname_schema_object(qname);
@@ -899,6 +899,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	int create = (!instantiate && !deps);
 	bit vararg = FALSE, union_err = 0;
 	char *F = NULL, *fn = NULL, is_func, *q = QUERY(sql->scanner);
+	bit order_required = (order_spec == 2);
+	bit opt_order = (order_spec == 1);
 
 	if (res && res->token == SQL_TABLE) {
 		if (type == F_FUNC)
@@ -1054,7 +1056,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->params = NULL;
 		if (create) {
 			bit side_effect = (list_empty(restype) || (!vararg && list_empty(l))); /* TODO make this more precise? */
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect, order_required, opt_order)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1074,7 +1076,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (create) { /* needed for recursive functions */
 			bit side_effect = list_empty(restype) == 1; /* TODO make this more precise? */
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, side_effect)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, side_effect, order_required, opt_order)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1117,7 +1119,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->params = NULL;
 		if (create) {
 			q = query_cleaned(sql->ta, q);
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE, FALSE)) {
+			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE, FALSE, order_required, opt_order)) {
 				case -1:
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
@@ -1126,6 +1128,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				default:
 					break;
 			}
+
 			/* instantiate MAL functions while being created. This also sets the side-effects flag */
 			bool se = f->side_effect;
 			if (!backend_resolve_function(&clientid, f, fnme, &se))
@@ -1591,8 +1594,9 @@ rel_psm(sql_query *query, symbol *s)
 		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
 		sql_flang lang = (sql_flang) l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
+		int order_spec = l->h->next->next->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_func(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
+		ret = rel_create_func(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl, order_spec);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:

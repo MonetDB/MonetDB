@@ -1078,16 +1078,16 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 
 int
 mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
-				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	int lres = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create function: %s\n", name);
 	if (sa) {
-		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect, order_required, opt_order);
 		(*f)->s = s;
 	} else
-		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect, order_required, opt_order);
 	return lres;
 }
 

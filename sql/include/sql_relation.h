@@ -55,6 +55,7 @@ typedef struct expression {
 	 intern:1,
 	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
+	 partitioning:1,	/* partitioning */
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
@@ -233,6 +234,8 @@ typedef enum operator_type {
 #define set_has_no_nil(e) 	(e)->has_no_nil = 1
 #define set_has_nil(e) 		(e)->has_no_nil = 0
 
+#define is_partitioning(e) 	((e)->partitioning)
+#define set_partitioning(e) ((e)->partitioning = 1)
 #define is_ascending(e) 	((e)->ascending)
 #define set_ascending(e) 	((e)->ascending = 1)
 #define set_descending(e) 	((e)->ascending = 0)

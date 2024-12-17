@@ -360,7 +360,7 @@ extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlna
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
 extern int sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang,
-								 const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
+								 const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -458,7 +458,7 @@ extern sql_idx *create_sql_idx(struct sqlstore *store, allocator *sa, sql_table 
 extern sql_idx *create_sql_ic(struct sqlstore *store, allocator *sa, sql_idx *i, sql_column *c);
 extern sql_idx *create_sql_idx_done(sql_trans *tr, sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
-								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
+								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(allocator *sa, sql_table *t);

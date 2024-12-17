@@ -277,7 +277,15 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	case e_func: {
 		if (e->l)
 			nr += exps_mark_used(subrel, e->l, local_proj);
-		assert(!e->r);
+		if (e->r) {
+			list *r = e->r;
+			list *obes = r->h->data;
+			nr += exps_mark_used(subrel, obes, local_proj);
+			if (r->h->next) {
+				list *exps = r->h->next->data;
+				nr += exps_mark_used(subrel, exps, local_proj);
+			}
+		}
 		break;
 	}
 	case e_cmp:
@@ -1381,6 +1389,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			int fnd = 1;
 			for (node *n = obes->h; n && fnd; n = n->next) {
 				sql_exp *obe = n->data;
+				int part = is_partitioning(obe);
 				int asc = is_ascending(obe);
 				int nl = nulls_last(obe);
 				/* only simple rename expressions */
@@ -1393,6 +1402,8 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 					if (exp_is_atom(pe))
 						return rel;
 					pe = exp_ref(v->sql, pe);
+					if (part)
+						set_partitioning(pe);
 					if (asc)
 						set_ascending(pe);
 					if (nl)

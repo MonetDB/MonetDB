@@ -432,7 +432,7 @@ CREATE VIEW INFORMATION_SCHEMA.PARAMETERS AS SELECT
   f."type" AS function_type,
   f."system" AS is_system
  FROM sys."args" a
- INNER JOIN (SELECT fun.*, (select count(*) from sys.args a0 where a0.inout = 0 and a0.func_id = fun.id) as count_out_cols FROM sys."functions" fun WHERE fun."type" in (1, 2, 5, 7)) f ON f."id" = a."func_id"
+ INNER JOIN (SELECT fun.id, fun.schema_id, fun.name, fun.type, fun.system, (select count(*) from sys.args a0 where a0.inout = 0 and a0.func_id = fun.id) as count_out_cols FROM sys."functions" fun WHERE fun."type" in (1, 2, 5, 7)) f ON f."id" = a."func_id"
  INNER JOIN sys."schemas" s ON s."id" = f."schema_id"
  ORDER BY s."name", f."name", f."id", a."inout" DESC, a."number";
 

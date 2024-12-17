@@ -236,6 +236,7 @@ int yydebug=1;
 	opt_group_by_clause
 	opt_having_clause
 	opt_order_by_clause
+	opt_within_group
 	order_by_clause
 	opt_over
 	opt_partition_by
@@ -507,6 +508,7 @@ int yydebug=1;
 	drop_action
 	extract_datetime_field
 	func_def_type
+	func_def_opt_order_spec
 	func_def_type_no_proc
 	global_privilege
 	grantor
@@ -659,7 +661,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token RETURN
 %token LEADING TRAILING BOTH
 
-%token <sval> ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHOUT RECURSIVE
+%token <sval> ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH WITHIN WITHOUT RECURSIVE
 %token <sval> sqlDATE TIME TIMESTAMP INTERVAL
 %token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED FETCH
@@ -2327,20 +2329,28 @@ func_def_opt_returns:
 |				{ $$ = NULL; }
 ;
 
+func_def_opt_order_spec:
+	WITH ORDER		{ $$ = 1; }
+|	ORDERED			{ $$ = 2; }
+|				{ $$ = 0; }
+;
+
 func_def:
     create_or_replace func_def_type_no_proc qfunc
 	'(' opt_paramlist ')'
     func_def_opt_returns
+    func_def_opt_order_spec
     EXTERNAL sqlNAME external_function_name
 			{ dlist *f = L();
 				append_list(f, $3);
 				append_list(f, $5);
 				append_symbol(f, $7);
-				append_list(f, $10);
+				append_list(f, $11);
 				append_list(f, NULL);
 				append_int(f, $2);
 				append_int(f, FUNC_LANG_MAL);
 				append_int(f, $1);
+				append_int(f, $8);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create_or_replace PROCEDURE qfunc
 	'(' opt_paramlist ')'
@@ -2368,6 +2378,7 @@ func_def:
 				append_int(f, $2);
 				append_int(f, FUNC_LANG_SQL);
 				append_int(f, $1);
+				append_int(f, 0);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create_or_replace PROCEDURE qfunc
 	'(' opt_paramlist ')'
@@ -5027,6 +5038,11 @@ atom:
     literal
  ;
 
+opt_within_group:
+	WITHIN sqlGROUP '(' order_by_clause ')' /* TODO add where part */ 	{ $$ = $4; }
+ | 	/* empty */								{ $$ = NULL; }
+ ;
+
 aggr_or_window_ref:
     qfunc '(' '*' ')'
 		{ dlist *l = L();
@@ -5046,13 +5062,25 @@ aggr_or_window_ref:
 		  append_int(l, FALSE); /* ignore distinct */
 		  append_list(l, NULL);
 		  $$ = _symbol_create_list( SQL_NOP, l ); }
- |  qfunc '(' expr_list ')'
+ |  qfunc '(' expr_list opt_order_by_clause ')' opt_within_group
 		{ dlist *l = L();
 		  append_list(l, $1);
 		  append_int(l, FALSE); /* ignore distinct */
-		  append_list(l, $3);
-		  $$ = _symbol_create_list( SQL_NOP, l );
-		}
+		  if ($4 && $6) {
+			yyerror(m, "Cannot have both order by clause and within group clause");
+			YYABORT;
+		  }
+                  if ($3) {
+                  	for(dnode *dn = $3->h; dn; dn = dn->next)
+                        	append_symbol(l, dn->data.sym);
+                  } else {
+                        append_symbol(l, NULL);
+                  }
+		  if ($4)
+		  	append_symbol(l, $4);
+		  else
+		  	append_symbol(l, $6);
+		  $$ = _symbol_create_list( SQL_AGGR, l ); }
  |  qfunc '(' DISTINCT expr_list ')'
 		{ dlist *l = L();
 		  append_list(l, $1);

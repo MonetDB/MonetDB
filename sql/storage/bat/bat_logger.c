@@ -112,7 +112,7 @@ log_temp_descriptor(log_bid b)
 	return temp_descriptor(b);
 }
 
-#if defined CATALOG_JAN2022 || defined CATALOG_SEP2022
+#if defined CATALOG_JAN2022 || defined CATALOG_SEP2022 || defined CATALOG_AUG2024
 /* cannot use attribute((sentinel)) since sentinel is not a pointer */
 static gdk_return
 tabins(logger *lg, ...)
@@ -694,59 +694,59 @@ bl_postversion(void *Store, logger *lg)
 
 #ifdef CATALOG_SEP2022
 	if (store->catalog_version <= CATALOG_SEP2022) {
-			/* new STRING column sys.keys.check */
-			BAT *b = log_temp_descriptor(log_find_bat(lg, 2088)); /* sys.keys.id */
-			if (b == NULL)
-				return GDK_FAIL;
-			BAT *check = BATconstant(b->hseqbase, TYPE_str, ATOMnilptr(TYPE_str), BATcount(b), PERSISTENT);
-			bat_destroy(b);
-			if (check == NULL)
-				return GDK_FAIL;
-			if ((check = BATsetaccess(check, BAT_READ)) == NULL ||
+		/* new STRING column sys.keys.check */
+		BAT *b = log_temp_descriptor(log_find_bat(lg, 2088)); /* sys.keys.id */
+		if (b == NULL)
+			return GDK_FAIL;
+		BAT *check = BATconstant(b->hseqbase, TYPE_str, ATOMnilptr(TYPE_str), BATcount(b), PERSISTENT);
+		bat_destroy(b);
+		if (check == NULL)
+			return GDK_FAIL;
+		if ((check = BATsetaccess(check, BAT_READ)) == NULL ||
 				/* 2165 is sys.keys.check */
 				BUNappend(lg->catalog_id, &(int) {2165}, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &check->batCacheid, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_cnt, &(lng){BATcount(check)}, false) != GDK_SUCCEED
-				) {
-				bat_destroy(check);
-				return GDK_FAIL;
-			}
-			BBPretain(check->batCacheid);
+		) {
 			bat_destroy(check);
+			return GDK_FAIL;
+		}
+		BBPretain(check->batCacheid);
+		bat_destroy(check);
 
-			if (tabins(lg,
-					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2165 is sys.keys.check */
-					   2077, &(int) {2165},		/* sys._columns.id */
-					   2078, "check",			/* sys._columns.name */
-					   2079, "varchar",			/* sys._columns.type */
-					   2080, &(int) {2048},		/* sys._columns.type_digits */
-					   2081, &(int) {0},		/* sys._columns.type_scale */
-					   /* 2087 is sys.keys */
-					   2082, &(int) {2087},		/* sys._columns.table_id */
-					   2083, str_nil,			/* sys._columns.default */
-					   2084, &(bit) {TRUE},		/* sys._columns.null */
-					   2085, &(int) {6},		/* sys._columns.number */
-					   2086, str_nil,			/* sys._columns.storage */
-					   0) != GDK_SUCCEED)
-				return GDK_FAIL;
-			if (tabins(lg,
-					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2166 is tmp.keys.check */
-					   2077, &(int) {2166},		/* sys._columns.id */
-					   2078, "check",			/* sys._columns.name */
-					   2079, "varchar",			/* sys._columns.type */
-					   2080, &(int) {2048},		/* sys._columns.type_digits */
-					   2081, &(int) {0},		/* sys._columns.type_scale */
-					   /* 2135 is tmp.keys */
-					   2082, &(int) {2135},		/* sys._columns.table_id */
-					   2083, str_nil,			/* sys._columns.default */
-					   2084, &(bit) {TRUE},		/* sys._columns.null */
-					   2085, &(int) {6},		/* sys._columns.number */
-					   2086, str_nil,			/* sys._columns.storage */
-					   0) != GDK_SUCCEED)
-				return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2165 is sys.keys.check */
+				   2077, &(int) {2165},		/* sys._columns.id */
+				   2078, "check",			/* sys._columns.name */
+				   2079, "varchar",			/* sys._columns.type */
+				   2080, &(int) {2048},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2087 is sys.keys */
+				   2082, &(int) {2087},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {6},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2166 is tmp.keys.check */
+				   2077, &(int) {2166},		/* sys._columns.id */
+				   2078, "check",			/* sys._columns.name */
+				   2079, "varchar",			/* sys._columns.type */
+				   2080, &(int) {2048},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2135 is tmp.keys */
+				   2082, &(int) {2135},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {6},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 
@@ -880,6 +880,65 @@ bl_postversion(void *Store, logger *lg)
 			}
 		}
 		bat_destroy(funcs);
+	}
+	if (store->catalog_version <= CATALOG_AUG2024) {
+		/* new TINYINT column sys.functions.order_specification */
+		BAT *ftype = log_temp_descriptor(log_find_bat(lg, 2022)); /* sys.functions.type (int) */
+		BAT *fname = log_temp_descriptor(log_find_bat(lg, 2018)); /* sys.functions.name (str) */
+		if (ftype == NULL || fname == NULL)
+			return GDK_FAIL;
+		bte zero = 0;
+		BAT *order_spec = BATconstant(ftype->hseqbase, TYPE_bte, &zero, BATcount(ftype), PERSISTENT);
+		/* update functions set order_specification=1 where type == aggr and name in ('group_concat', 'listagg', 'xmlagg')
+		 * update functions set order_specification=2 where type == aggr and name = 'quantile' */
+		if (order_spec == NULL) {
+			bat_destroy(ftype);
+			bat_destroy(fname);
+			return GDK_FAIL;
+		}
+		bte *os = (bte*)Tloc(order_spec, 0);
+		int *ft = (int*)Tloc(ftype, 0);
+		BATiter fni = bat_iterator_nolock(fname);
+		for(BUN b = 0; b < BATcount(ftype); b++) {
+			if (ft[b] == F_AGGR) {
+				const char *f = BUNtvar(fni, b);
+				if (strcmp(f, "group_concat") == 0 || strcmp(f, "listagg") == 0 || strcmp(f, "xmlagg") == 0)
+					os[b] = 1;
+				else if (strcmp(f, "quantile") == 0 || strcmp(f, "quantile_avg") == 0)
+					os[b] = 2;
+			}
+		}
+		bat_destroy(ftype);
+		bat_destroy(fname);
+		if ((order_spec = BATsetaccess(order_spec, BAT_READ)) == NULL ||
+			/* 2167 is sys.functions.order_specification */
+			BUNappend(lg->catalog_id, &(int) {2167}, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_bid, &order_spec->batCacheid, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_cnt, &(lng){BATcount(order_spec)}, false) != GDK_SUCCEED
+			) {
+			bat_destroy(order_spec);
+			return GDK_FAIL;
+		}
+		BBPretain(order_spec->batCacheid);
+		bat_destroy(order_spec);
+
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2167 is sys.functions.order_specification */
+				   2077, &(int) {2167},		/* sys._columns.id */
+				   2078, "order_specification",			/* sys._columns.name */
+				   2079, "tinyint",			/* sys._columns.type */
+				   2080, &(int) {7},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2016 is sys.functions */
+				   2082, &(int) {2016},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {12},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 
