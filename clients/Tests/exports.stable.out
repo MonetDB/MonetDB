@@ -1628,6 +1628,7 @@ str lng_num2dec_flt(flt *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_int(int *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_lng(lng *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_sht(sht *res, const lng *v, const int *d2, const int *s2);
+int mapiuri_valid(const char *uri);
 sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
 str mvc_commit(mvc *c, int chain, const char *name, bool enabling_auto_commit);
@@ -1641,10 +1642,14 @@ bool option_disable_fork;
 sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 int pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr pl_load);
 void pl_unregister(const char *name);
+prop *prop_create(allocator *sa, rel_prop kind, prop *pre);
 void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);
 cq *qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
+void rel_base_use_all(mvc *sql, sql_rel *rel);
+sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 sql_rel *rel_project(allocator *sa, sql_rel *l, list *e);
+list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern);
 void res_tables_destroy(res_table *results);
 list *sa_list(allocator *sa);
 char *sa_message(allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
@@ -1674,6 +1679,7 @@ void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsign
 void sql_register(const char *name, const unsigned char *code);
 int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
+stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 
 # stream
 stream *block_stream(stream *s);
