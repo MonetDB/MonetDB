@@ -2364,6 +2364,7 @@ func_def:
 				append_int(f, F_PROC);
 				append_int(f, FUNC_LANG_MAL);
 				append_int(f, $1);
+				append_int(f, 0);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
  |  create_or_replace func_def_type_no_proc qfunc
 	'(' opt_paramlist ')'
@@ -2392,6 +2393,7 @@ func_def:
 				append_int(f, F_PROC);
 				append_int(f, FUNC_LANG_SQL);
 				append_int(f, $1);
+				append_int(f, 0);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   | create_or_replace func_def_type_no_proc qfunc
 	'(' opt_paramlist ')'
@@ -2431,6 +2433,7 @@ func_def:
 			append_int(f, $2);
 			append_int(f, lang);
 			append_int(f, $1);
+			append_int(f, 0);
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
 		}
 ;
@@ -5070,17 +5073,12 @@ aggr_or_window_ref:
 			yyerror(m, "Cannot have both order by clause and within group clause");
 			YYABORT;
 		  }
-                  if ($3) {
-                  	for(dnode *dn = $3->h; dn; dn = dn->next)
-                        	append_symbol(l, dn->data.sym);
-                  } else {
-                        append_symbol(l, NULL);
-                  }
+		  append_list(l, $3);
 		  if ($4)
 		  	append_symbol(l, $4);
 		  else
 		  	append_symbol(l, $6);
-		  $$ = _symbol_create_list( SQL_AGGR, l ); }
+		  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  qfunc '(' DISTINCT expr_list ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
