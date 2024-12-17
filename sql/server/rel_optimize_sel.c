@@ -3885,13 +3885,13 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_distinct(rel);
 		v->changes++;
 	}
-	if (is_select(rel->op) && r && is_munion(r->op) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+	if (is_select(rel->op) && r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r;
 		list *rels = u->l, *nrels = sa_list(v->sql->sa);
 		for(node *n = rels->h; n; n = n->next) {
 			sql_rel *ul = n->data;
 			ul = rel_dup(ul);
-			if (!is_project(ul->op))
+			if (!is_project(ul->op) || rel_is_ref(ul))
 				ul = rel_project(v->sql->sa, ul,
 					rel_projections(v->sql, ul, NULL, 1, 1));
 			rel_rename_exps(v->sql, u->exps, ul->exps);
@@ -3906,6 +3906,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		rel = rel_inplace_setop_n_ary(v->sql, rel, nrels, u->op, rel_projections(v->sql, rel, NULL, 1, 1));
 		if (need_distinct(u))
 			set_distinct(rel);
+		if (is_recursive(u))
+			set_recursive(rel);
 		v->changes++;
 	}
 

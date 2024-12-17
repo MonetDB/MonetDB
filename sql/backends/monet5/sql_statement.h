@@ -149,6 +149,8 @@ typedef struct stmt {
 
 extern int stmt_key(stmt *s);
 
+extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
+
 extern stmt *stmt_none(backend *be);
 
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);

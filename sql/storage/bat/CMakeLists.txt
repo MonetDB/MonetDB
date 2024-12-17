@@ -42,9 +42,18 @@ target_link_libraries(batstore
   sqlinclude
   sqlstorage)
 
-set_target_properties(batstore
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON)
+if(NOT MONETDB_STATIC)
+  set_target_properties(batstore
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON)
+endif()
+
+if(MONETDB_STATIC)
+  install(TARGETS
+    batstore
+    ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 target_compile_definitions(batstore
   PRIVATE
