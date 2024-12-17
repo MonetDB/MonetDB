@@ -31,8 +31,8 @@
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 6,	2,	1,	0,	2,	2 # length
-[ "int",	32,	0,	"",	"rr",	"id"	]
-[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "int",	2,	0,	"",	"rr",	"id"	]
+[ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #exec  5 (1);
 % sys.rr # table_name
 % id # name
@@ -47,13 +47,13 @@
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
 % 8,	4,	1,	0,	4,	13 # length
 [ "varchar",	1024,	0,	"",	"tbls",	"name"	]
-[ "int",	32,	0,	"",	"tbls",	"schema_id"	]
+[ "int",	31,	0,	"",	"tbls",	"schema_id"	]
 [ "varchar",	2048,	0,	"",	"tbls",	"query"	]
-[ "smallint",	16,	0,	"",	"tbls",	"type"	]
+[ "smallint",	15,	0,	"",	"tbls",	"type"	]
 [ "boolean",	1,	0,	"",	"tbls",	"system"	]
-[ "smallint",	16,	0,	"",	"tbls",	"commit_action"	]
+[ "smallint",	15,	0,	"",	"tbls",	"commit_action"	]
 [ "boolean",	1,	0,	"",	"tbls",	"readonly"	]
-[ "smallint",	16,	0,	"",	"tbls",	"temporary"	]
+[ "smallint",	15,	0,	"",	"tbls",	"temporary"	]
 #exec  7 ();
 % sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name
