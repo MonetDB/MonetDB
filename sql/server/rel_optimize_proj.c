@@ -3037,6 +3037,8 @@ rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 			{
 				sql_exp *e = n->data;
 
+				// SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b;
+
 				// Check aggr type! exp_aggr_is_count(e)
 				// only average for now!
 				if(e->type == e_aggr && 
