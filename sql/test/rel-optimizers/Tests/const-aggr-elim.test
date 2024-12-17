@@ -5,6 +5,14 @@ statement ok
 INSERT INTO baz (a, b) VALUES (42, 1), (31, 6), (32, 6), (36, 7), (57, 3)
 
 query I rowsort 
+SELECT avg(b) FROM baz GROUP BY b
+----
+1
+3
+6
+7
+
+query I rowsort 
 SELECT avg(3) FROM baz GROUP BY b
 ----
 3
@@ -18,8 +26,45 @@ PLAN SELECT avg(3) FROM baz GROUP BY b
 project (
 | group by (
 | | table("sys"."baz") [ "baz"."b" NOT NULL ]
-| ) [ "baz"."b" NOT NULL ] [ "sys"."avg" no nil (tinyint(2) "3") NOT NULL as "%1"."%1" ]
-) [ "%1"."%1" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+) [ tinyint(2) "3" as "%1"."%1" ]
+
+query I rowsort 
+SELECT 1 + avg(3) FROM baz GROUP BY b
+----
+4
+4
+4
+4
+
+query T nosort
+PLAN SELECT 1 + avg(3) FROM baz GROUP BY b
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+) [ "sys"."sql_add"(tinyint(2) "3", double(53) "1") NOT NULL ]
+
+query I rowsort 
+SELECT avg(NULL) FROM baz GROUP BY b
+----
+NULL
+NULL
+NULL
+NULL
+
+query II rowsort
+SELECT avg(3), avg(b) FROM baz GROUP BY b
+----
+3
+1
+3
+3
+3
+6
+3
+7
 
 query I rowsort
 SELECT count(3) FROM baz GROUP BY b
