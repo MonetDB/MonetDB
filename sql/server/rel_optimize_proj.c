@@ -3031,16 +3031,13 @@ rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 	{
 		list *exps=g->exps;
 
-		if(g->op == op_groupby && !list_empty(exps))
+		if(g->op == op_groupby && !list_empty(exps) && !list_empty(g->r))
 		{
 			for(node *n = exps->h; n; n = n->next)
 			{
 				sql_exp *e = n->data;
 
-				// SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b;
-
 				// Check aggr type! exp_aggr_is_count(e)
-				// only average for now!
 				if(e->type == e_aggr && 
 					!((sql_subfunc *)e->f)->func->s && 
 			        strcmp(((sql_subfunc *)e->f)->func->base.name, "avg") == 0)
@@ -3056,6 +3053,11 @@ rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 							exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
 
 							n->data=w;
+
+							// Alternative;
+							//list_append_before(g->exps,n,w);
+							//m->data=NULL;
+							//list_remove_node(g->exps,NULL,n);
 
 							v->changes++;
 						}
