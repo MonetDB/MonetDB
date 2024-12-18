@@ -1776,8 +1776,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			if (!rel)
 				rel = nrel;
 			else {
-				rel = rel_setop(sql->sa, rel, nrel, op_union);
-				rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
+				rel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), rel), nrel), op_munion);
+				rel_setop_n_ary_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
 				set_processed(rel);
 			}
 			if (!rel)

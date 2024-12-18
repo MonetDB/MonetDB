@@ -406,7 +406,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		bool pp_useful = (get_rel_count(rel->l) > 1) && !(list_length(rel->exps) > 1) /* no offset */;
 		/* op_topn always has rel->l */
 		res = rel_partition_(sql, rel->l, pp_useful?SPB:pb);
-		if (pp_useful) { /* topn is blocking */
+		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
 				/* partition via bind (still) needed in the subtree,

@@ -3472,7 +3472,7 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
 
-	if (rel->op == op_munion && need_distinct(rel)) {
+	if (rel->op == op_munion && need_distinct(rel) && !is_recursive(rel)) {
 		set_nodistinct(rel);
 		rel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 		set_distinct(rel);
