@@ -3309,37 +3309,29 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, l->next->next->data.lval->h, fs);
 	}
 
-	int nr_args = 0, err = 0;
+	int nr_args = 0;
 	int split = (l->type == type_int && l->data.i_val == -1);
 	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	exp_kind iek = {type_value, card_column, FALSE};
-	char buf[ERRSIZE];
 
 	if (split)
 		names = sa_list(sql->sa);
 	for (; ops; ops = ops->next, nr_args++) {
-		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
-			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
-			if (!e) {
-				err = sql->session->status;
-				strcpy(buf, sql->errstr);
-				continue;
-			}
-			if (split) {
-				ops = ops->next;
-				append(names, ops->data.sval);
-			}
-			append(exps, e);
-			append(tl, exp_subtype(e));
+		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
+		if (!e)
+			return NULL;
+		if (split) {
+			ops = ops->next;
+			append(names, ops->data.sval);
 		}
+		append(exps, e);
+		append(tl, exp_subtype(e));
 	}
 	if (l->type == type_int) {
 		/* exec nr (ops)*/
 		int nr = l->data.i_val;
 		cq *q = NULL;
 
-		if (err)
-			return NULL;
 		if (nr == -1 || (q = qc_find(sql->qc, nr))) {
 			list *nexps = new_exp_list(sql->sa);
 			sql_func *f = q?q->f:inplace_func(sql);
@@ -3363,18 +3355,13 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 						e = exp_check_type(sql, ntp, NULL, e, type_equal);
 					else
 						a->type = *exp_subtype(e);
-					if (!e) {
-						err = sql->session->status;
-						strcpy(buf, sql->errstr);
-						break;
-					}
+					if (!e)
+						return NULL;
 					append(nexps, e);
 					append(tl, exp_subtype(e));
 				}
 			}
 
-			if (err)
-				return NULL;
 			if (q)
 				sql->type = q->type;
 			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
@@ -3383,7 +3370,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		}
 	}
 
-	if (!err && nr_args == 2 && is_commutative(sname, fname)) {
+	if (nr_args == 2 && is_commutative(sname, fname)) {
 		sql_subtype *t1 = tl->h->data;
 		sql_subtype *t2 = tl->t->data;
 
@@ -3395,7 +3382,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	}
 
-	if (!err && !sname && strcmp(fname, "field") == 0) { /* map into join */
+	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
 		if (list_length(exps) < 2)
 			return sql_error(sql, 02, SQLSTATE(42000) "Field function called with not enough arguments");
 		sql_exp *le = exps->h->data;
@@ -3416,11 +3403,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			re = exp_rel(sql, r);
 			return re;
 		}
-	}
-	if (err) {
-		sql->session->status = err;
-		strcpy(sql->errstr, buf);
-		return NULL;
 	}
 	return _rel_nop(sql, sname, fname, tl, rel ? *rel : NULL, exps, ek);
 }
