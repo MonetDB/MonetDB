@@ -130,6 +130,7 @@ if(NOT MONETDB_STATIC)
   PUBLIC_HEADER "${sqlserver_public_headers}")
 endif()
 
+if(WITH_SQLPARSE)
 add_executable(sqlparse)
 
 target_sources(sqlparse
@@ -174,24 +175,16 @@ target_link_libraries(sqlparse
 set_target_properties(sqlparse
   PROPERTIES
   VERSION ${MONETDB_VERSION})
+install(TARGETS
+  sqlparse
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT server)
+endif()
 
 if(MONETDB_STATIC)
 install(TARGETS
   sqlserver
-  sqlparse
-  RUNTIME
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-  COMPONENT server
-  LIBRARY
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  ARCHIVE
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
-  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-else()
-install(TARGETS
-  sqlparse
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT server
