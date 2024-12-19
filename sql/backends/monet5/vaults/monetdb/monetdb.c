@@ -55,19 +55,18 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 		return sa_message(sql->sa, "monetdb_loader" "uri invalid '%s'\n", uri);
 
 	tname = strrchr(uric, '/');
-
 	if (tname) {
 		tname[0] = 0;
 		sname = strrchr(uric, '/');
 	}
 	if (!sname)
 		return sa_message(sql->sa, "monetdb_loader" "schema and/or table missing in '%s'\n", uri);
+
 	sname[0] = 0; /* stripped the schema/table name */
 	sname++;
 	tname++;
 	char buf[256];
-
-	const char *query = "select c.name, c.type, c.type_digits, c.type_scale from sys.schemas s, sys._tables t, sys._columns c  where s.name = '%s' and s.id = t.schema_id and t.name = '%s' and t.id = c.table_id order by number;";
+	const char *query = "select c.name, c.type, c.type_digits, c.type_scale from sys.schemas s, sys._tables t, sys._columns c where s.name = '%s' and s.id = t.schema_id and t.name = '%s' and t.id = c.table_id order by c.number;";
 	if (snprintf(buf, 256, query, sname, tname) < 0)
 		return RUNTIME_LOAD_ERROR;
 
@@ -153,15 +152,15 @@ monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
 		return NULL;
 	t->query = uri; /* set uri */
 	node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
-    for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
-        const char *name = nn->data;
-        sql_subtype *tp = tn->data;
-        sql_column *c = NULL;
+	for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
+		const char *name = nn->data;
+		sql_subtype *tp = tn->data;
+		sql_column *c = NULL;
 
-        if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
-            return NULL;
-        }
-    }
+		if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
+			return NULL;
+		}
+	}
 
 	sql_rel *rel = NULL;
 	rel = rel_basetable(sql, t, f->tname);
