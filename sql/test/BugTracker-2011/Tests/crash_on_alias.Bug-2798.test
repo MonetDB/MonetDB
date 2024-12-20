@@ -20,7 +20,7 @@ project (
 | | |  [ boolean(1) "true" as "%2"."%2" ]
 | | ) [ tinyint(2) "2" as "%3"."%3" ]
 | ) [  ]
-) [ "d" NOT NULL, "%1"."%1" NOT NULL, "sys"."sql_mul"("sys"."sql_div"("%1"."%1" NOT NULL, "%3"."%3"), tinyint(2) "2") as "f" ]
+) [ "d" NOT NULL, "%1"."%1" NOT NULL, "sys"."sql_mul"(tinyint(2) "2", "sys"."sql_div"("%1"."%1" NOT NULL, "%3"."%3")) as "f" ]
 
 statement ok
 set optimizer = 'sequential_pipe'
@@ -60,7 +60,7 @@ project (
 | | |  [ boolean(1) "true" as "%2"."%2" ]
 | | ) [ tinyint(2) "2" as "%3"."%3" ]
 | ) [  ]
-) [ "d" NOT NULL, "%1"."%1" NOT NULL as "e", "sys"."sql_mul"("sys"."sql_div"("%1"."%1" NOT NULL, "%3"."%3"), tinyint(2) "2") as "f" ]
+) [ "d" NOT NULL, "%1"."%1" NOT NULL as "e", "sys"."sql_mul"(tinyint(2) "2", "sys"."sql_div"("%1"."%1" NOT NULL, "%3"."%3")) as "f" ]
 
 statement ok
 set optimizer = 'sequential_pipe'

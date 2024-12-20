@@ -15,6 +15,7 @@
 #include "rel_statistics.h"
 #include "rel_basetable.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)

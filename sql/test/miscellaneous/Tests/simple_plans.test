@@ -467,7 +467,7 @@ plan select (34*another_t.col1)*3 from another_t
 ----
 project (
 | table("sys"."another_t") [ "another_t"."col1" NOT NULL UNIQUE ]
-) [ "sys"."sql_mul"("another_t"."col1" NOT NULL UNIQUE, "sys"."sql_mul"(tinyint(6) "34", tinyint(2) "3") NOT NULL) NOT NULL ]
+) [ "sys"."sql_mul"("sys"."sql_mul"(tinyint(6) "34", "another_t"."col1" NOT NULL UNIQUE) NOT NULL, tinyint(2) "3") NOT NULL ]
 
 statement ok
 create table t1 (a int, b string)

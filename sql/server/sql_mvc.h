@@ -22,7 +22,6 @@
 #include "sql_backend.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "sql_storage.h"
 #include "sql_keyword.h"
 #include "mapi_querytype.h"
 #include "sql_atom.h"
@@ -180,6 +179,7 @@ extern int mvc_error_retry(mvc *c); // error code on errors else 0, errors AMBIG
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
 extern void mvc_cancel_session(mvc *m);
+sql_export void mvc_query_processed(mvc *m);
 
 /* since Savepoints and transactions are related the
  * commit function includes the savepoint creation.
@@ -315,8 +315,10 @@ extern int mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger *
 
 extern sql_rel *sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
 
-extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
+extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
+extern int sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 

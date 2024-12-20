@@ -28,6 +28,64 @@
 #include <ctype.h>
 #include "sql_keyword.h"
 
+static char *
+uescape_xform(char *restrict s, const char *restrict esc)
+{
+	size_t i, j;
+
+	for (i = j = 0; s[i]; i++) {
+		if (s[i] == *esc) {
+			if (s[i + 1] == *esc) {
+				s[j++] = *esc;
+				i++;
+			} else {
+				int c = 0;
+				int n;
+				if (s[i + 1] == '+') {
+					n = 6;
+					i++;
+				} else {
+					n = 4;
+				}
+				do {
+					i++;
+					c <<= 4;
+					if ('0' <= s[i] && s[i] <= '9')
+						c |= s[i] - '0';
+					else if ('a' <= s[i] && s[i] <= 'f')
+						c |= s[i] - 'a' + 10;
+					else if ('A' <= s[i] && s[i] <= 'F')
+						c |= s[i] - 'A' + 10;
+					else
+						return NULL;
+				} while (--n > 0);
+				if (c == 0 || c > 0x10FFFF || (c & 0xFFF800) == 0xD800)
+					return NULL;
+				if (c < 0x80) {
+					s[j++] = c;
+				} else {
+					if (c < 0x800) {
+						s[j++] = 0xC0 | (c >> 6);
+					} else {
+						if (c < 0x10000) {
+							s[j++] = 0xE0 | (c >> 12);
+						} else {
+							s[j++] = 0xF0 | (c >> 18);
+							s[j++] = 0x80 | ((c >> 12) & 0x3F);
+						}
+						s[j++] = 0x80 | ((c >> 6) & 0x3F);
+					}
+					s[j++] = 0x80 | (c & 0x3F);
+				}
+			}
+		} else {
+			s[j++] = s[i];
+		}
+	}
+	s[j] = 0;
+	return s;
+}
+
 /**
  * Removes all comments before the query. In query comments are kept.
  */
@@ -403,7 +461,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("LOADER", sqlLOADER);
 	failed += keywords_insert("REPLACE", REPLACE);
 
-	failed += keywords_insert("FIELD", FIELD);
+	//failed += keywords_insert("FIELD", FIELD);
 	failed += keywords_insert("FILTER", FILTER);
 	failed += keywords_insert("AGGREGATE", AGGREGATE);
 	failed += keywords_insert("RETURNS", RETURNS);
@@ -1543,7 +1601,8 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 			assert(yylval->sval[1] == '&');
 			assert(yylval->sval[2] == '\'' || yylval->sval[2] == '"');
 			strcpy(str, yylval->sval + 3);
-			token = yylval->sval[2] == '\'' ? USTRING : UIDENT;
+			token = yylval->sval[2] == '\'' ? -STRING : -IDENT; /* Passing unicode string/ident as - numbers, handled
+																   later in scanner */
 			quote = yylval->sval[2];
 			lc->next_string_is_raw = true;
 			break;
@@ -1607,14 +1666,92 @@ scanner(YYSTYPE * yylval, void *parm, bool log)
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
 	size_t pos;
+	int last = lc->yyval;
 
 	/* store position for when view's query ends */
 	pos = lc->rs->pos + lc->yycur;
 
 	token = sql_get_next_token(yylval, parm);
+	/* TODO make hash out of the possible complex tokens and add with current tokens hash */
 
-	if (token == NOT) {
-		int next = scanner(yylval, parm, false);
+	if (token == -IDENT || token == -STRING) {
+		char *sval = yylval->sval;
+		int next = sql_get_next_token(yylval, parm);
+
+		if (token == -STRING && next == STRING) {
+			sval = sa_strconcat(c->sa, sval, yylval->sval);
+			while((next = sql_get_next_token(yylval, parm)) == STRING)
+				sval = sa_strconcat(c->sa, sval, yylval->sval);
+		}
+
+		char *uescape = "\\";
+		if (next == UESCAPE) {
+			int nxt = sql_get_next_token(yylval, parm);
+			if (nxt == STRING) {
+				next = 0;
+				uescape = yylval->sval;
+                if (strlen(uescape) != 1 || strchr("\"'0123456789abcdefABCDEF+ \t\n\r\f", *uescape) != NULL) {
+                    sqlformaterror(c, SQLSTATE(22019) "%s", "UESCAPE must be one character");
+					return LEX_ERROR;
+                }
+			} else {
+                sqlformaterror(c, SQLSTATE(22019) "%s", "UESCAPE character missing");
+				return LEX_ERROR;
+			}
+		}
+		yylval->sval = uescape_xform(sval, uescape);
+		if (yylval->sval == NULL && token == -STRING) {
+			sqlformaterror(c, SQLSTATE(22019) "%s", "Bad Unicode string");
+			return LEX_ERROR;
+		}
+
+		if (next)
+			lc->yynext = next;
+		return (token == -IDENT)?IDENT:STRING;
+	} else if (token == WITH) { /* check for TIME WITH ... */
+		int next = sql_get_next_token(yylval, parm);
+		if (next == TIME)
+			token = WITH_LA;
+		lc->yynext = next;
+	} else if (token == INTO) { /* check for INTO followed by STRING / (BIG/LITTLE/NATIVE) for copy into file vs copy select into var */
+		int next = sql_get_next_token(yylval, parm);
+		if (next == STRING || next == BIG || next == LITTLE || next == NATIVE ||
+			next == BINARY || next == STDOUT)
+			token = INTO_LA;
+		lc->yynext = next;
+	} else if (last == ODBC_FUNC_ESCAPE_PREFIX && token == TIMESTAMPADD) {
+		token = ODBC_TIMESTAMPADD;
+	} else if (last == ODBC_FUNC_ESCAPE_PREFIX && token == TIMESTAMPDIFF) {
+		token = ODBC_TIMESTAMPDIFF;
+	} else if (last == INTERVAL && (token == '-' || token == '+')) { /* backward compatibility: INTERVAL +- 'string' -> interval '+-string'*/
+		int next = sql_get_next_token(yylval, parm);
+		if (next == STRING) {
+			if (token != '+') {
+				char *sval = yylval->sval;
+				if (sval[0] == '+')
+					sval[0] = '-';
+				else if (sval[0] == '-')
+						yylval->sval++;
+				else
+					yylval->sval = sa_strconcat(c->sa, token=='-'?"-":"+", sval);
+			}
+			token = next;
+			next = 0;
+		}
+		lc->yynext = next;
+	} else if (token == OUTER) { /* check for OUTER UNION */
+		int next = sql_get_next_token(yylval, parm);
+		if (next == UNION)
+			token = OUTER_UNION;
+		else
+			lc->yynext = next;
+	} else if (token == TO) { /* check for end_field (of interval spec) TO (MONTH etc) */
+		int next = sql_get_next_token(yylval, parm);
+		if (next == YEAR || next == MONTH || next == DAY || next == HOUR || next == MINUTE || next == SECOND)
+			token = TO_LA;
+		lc->yynext = next;
+	} else if (token == NOT) {
+		int next = sql_get_next_token(yylval, parm);
 
 		if (next == NOT) {
 			return scanner(yylval, parm, false);
