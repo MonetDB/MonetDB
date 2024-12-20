@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Fri Dec 20 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Added support for recursive CTE's.
 - The SQL parser was cleaned up.  This resulted in some keywords being
   used more strictly.  If any of these keywords are to be used as column
   names, they have to be quoted using double quotes: AS, TABLE, COLUMN,
