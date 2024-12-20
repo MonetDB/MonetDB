@@ -82,4 +82,14 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
 else:
     sys.stdout.writelines(srvout)
 
+if xit:
+    if clterr:
+        sys.stderr.write('Client standard error:\n')
+        sys.stderr.write(clterr)
+        sys.stderr.write('\n')
+    if srverr:
+        sys.stderr.write('Server standard error:\n')
+        sys.stderr.write(srverr)
+        sys.stderr.write('\n')
+
 sys.exit(xit)
