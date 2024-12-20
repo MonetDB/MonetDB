@@ -61,7 +61,7 @@ SELECT COUNT(*) FROM extra
 12
 
 query TTTI rowsort
-select table, column, type, count from sys.storage() where table = 'extra'
+select "table", "column", type, count from sys.storage() where "table" = 'extra'
 ----
 extra
 extra

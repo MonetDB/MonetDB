@@ -26,6 +26,7 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
+#include "sql_storage.h"
 
 #include "mal_authorize.h"
 #include "mal_exception.h"

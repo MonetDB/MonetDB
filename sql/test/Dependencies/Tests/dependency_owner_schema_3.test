@@ -886,7 +886,7 @@ DEP_FUNC
 query TTT nosort
 SELECT distinct c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1788 values hashing to a7640c35ae84fb0995f708b8b88e01d0
+1782 values hashing to 88adfb6235ea1b5387ae4b7625859b0c
 
 query TTT nosort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
@@ -1285,6 +1285,12 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.objects as tri,
 query TTT nosort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name
 ----
+date_to_str
+dayname
+DEP_FUNC
+date_to_str
+monthname
+DEP_FUNC
 decypher
 get_remote_table_expressions
 DEP_FUNC

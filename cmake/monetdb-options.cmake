@@ -31,6 +31,10 @@ cmake_dependent_option(CINTEGRATION
   "NOT WIN32"
   OFF)
 
+option(WITH_SQLPARSE
+  "Compile and install the sqlparse utility (default=ON)"
+  ON)
+
 option(WITH_RTREE
   "Enable support for rtrees (librtree; default=ON)"
   ON)

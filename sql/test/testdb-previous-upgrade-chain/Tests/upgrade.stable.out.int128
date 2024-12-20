@@ -858,6 +858,13 @@ GRANT SELECT ON TABLE INFORMATION_SCHEMA.PARAMETERS TO PUBLIC WITH GRANT OPTION;
 update sys._tables set system = true where not system and schema_id = (select id from sys.schemas where name = 'information_schema') and name = 'parameters';
 
 Running database upgrade commands:
+create function dayname(d date) returns varchar(10) return date_to_str(d, '%A');
+create function monthname(d date) returns varchar(10) return date_to_str(d, '%B');
+grant execute on function dayname(date) to public;
+grant execute on function monthname(date) to public;
+update sys.functions set system = true where system <> true and name in ('dayname', 'monthname') and schema_id = 2000 and type = (select function_type_id from sys.function_types where function_type_name = 'Scalar function');
+
+Running database upgrade commands:
 drop view sys.geometry_columns;
 create view sys.geometry_columns as
  select cast(null as varchar(1)) as f_table_catalog,

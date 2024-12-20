@@ -40,7 +40,7 @@ project (
 | join (
 | | select (
 | | | table("sys"."foo") [ "foo"."i" NOT NULL ]
-| | ) [ (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(9) "400"), ("sys"."sql_add"("foo"."i" NOT NULL, "foo"."i" NOT NULL) NOT NULL) = ("foo"."i" NOT NULL)) ],
+| | ) [ (("sys"."sql_mul"(tinyint(2) "2", "foo"."i" NOT NULL) NOT NULL) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(9) "400"), ("sys"."sql_add"("foo"."i" NOT NULL, "foo"."i" NOT NULL) NOT NULL) = ("foo"."i" NOT NULL)) ],
 | | table("sys"."bar") [ "bar"."i" NOT NULL ]
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]
@@ -52,7 +52,7 @@ project (
 | left outer join (
 | | select (
 | | | table("sys"."foo") [ "foo"."i" NOT NULL ]
-| | ) [ (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(9) "400"), ("sys"."sql_add"("foo"."i" NOT NULL, "foo"."i" NOT NULL) NOT NULL) = ("foo"."i" NOT NULL)) ],
+| | ) [ (("sys"."sql_mul"(tinyint(2) "2", "foo"."i" NOT NULL) NOT NULL) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(9) "400"), ("sys"."sql_add"("foo"."i" NOT NULL, "foo"."i" NOT NULL) NOT NULL) = ("foo"."i" NOT NULL)) ],
 | | table("sys"."bar") [ "bar"."i" NOT NULL ]
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" ]
@@ -74,7 +74,7 @@ project (
 | join (
 | | select (
 | | | table("sys"."foo") [ "foo"."i" NOT NULL ]
-| | ) [ (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(9) "400"), ("sys"."sql_add"("foo"."i" NOT NULL, "foo"."i" NOT NULL) NOT NULL) = ("foo"."i" NOT NULL)) ],
+| | ) [ (("sys"."sql_mul"(tinyint(2) "2", "foo"."i" NOT NULL) NOT NULL) > (int(8) "20")) or (("sys"."sql_mul"("foo"."i" NOT NULL, tinyint(2) "2") NOT NULL) > (int(9) "400"), ("sys"."sql_add"("foo"."i" NOT NULL, "foo"."i" NOT NULL) NOT NULL) = ("foo"."i" NOT NULL)) ],
 | | table("sys"."bar") [ "bar"."i" NOT NULL, "bar"."j" NOT NULL ]
 | ) [ ("foo"."i" NOT NULL) = ("bar"."i" NOT NULL) ]
 ) [ "foo"."i" NOT NULL, "bar"."i" NOT NULL ]

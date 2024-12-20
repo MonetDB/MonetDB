@@ -19,6 +19,7 @@
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 void
 rel_set_exps(sql_rel *rel, list *exps)

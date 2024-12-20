@@ -16,6 +16,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 typedef struct memoitem {
 	const char *name;

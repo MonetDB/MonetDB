@@ -14,7 +14,6 @@
 #define _REL_SEQUENCE_H_
 
 #include "sql_symbol.h"
-#include "store_sequence.h"
 #include "sql_query.h"
 
 extern sql_rel *rel_sequences(sql_query *query, symbol *s);

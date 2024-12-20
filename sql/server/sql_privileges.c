@@ -24,6 +24,7 @@
 
 #include "monetdb_config.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 #include "sql_semantic.h"
 #include "sql_parser.h"
 #include "mal_exception.h"

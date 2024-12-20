@@ -27,7 +27,7 @@ extern int find_subgeometry_type(mvc *m, char*);
 extern char *token2string(tokens token);
 extern int sqlparse(mvc *m);
 
-#include "mal_errors.h"		/* for SQLSTATE() */
+//#include "mal_errors.h"		/* for SQLSTATE() */
 
 #endif /*_SQL_PARSER_H_*/
 

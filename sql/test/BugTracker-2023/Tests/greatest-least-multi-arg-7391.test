@@ -21,22 +21,18 @@ SELECT least(3, 4, 1, 2, '0', '5')
 query T nosort
 SELECT greatest(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
-5.54321
+5.5432
 
 query T nosort
 SELECT least(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
--6.54321
+-6.5432
 
-query T nosort
+statement error 22018!conversion of string 'A' to type bte failed.
 SELECT greatest(3, 4, '0', '5', 'A', 'z')
-----
-z
 
-query T nosort
+statement error 22018!conversion of string 'A' to type bte failed.
 SELECT least(3, 4, 1, 2, '0', '5', 'A', 'z')
-----
-0
 
 query T nosort
 SELECT greatest('!', 3, 4, '0', '5', 'A', 'z')

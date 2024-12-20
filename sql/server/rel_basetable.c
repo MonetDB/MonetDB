@@ -19,6 +19,7 @@
 #include "rel_statistics.h"
 #include "rel_rewriter.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
 #define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1U<<((nr)%32))

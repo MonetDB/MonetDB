@@ -14,6 +14,7 @@
 #define STORE_DEPEND_H
 
 #include "sql_types.h"
+#include "sql_storage.h"
 #include "sql_backend.h"
 #include "store_sequence.h"
 

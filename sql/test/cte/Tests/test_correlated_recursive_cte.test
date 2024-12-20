@@ -195,8 +195,6 @@ ORDER BY 1 NULLS LAST
 1000000
 NULL
 
-# limit in subquery
-skipif knownfail
 query I
 SELECT t2.*
 FROM (VALUES (10)) t(_corr), LATERAL (
@@ -437,4 +435,3 @@ FROM   generate_series(1,2+1) AS _(x), generate_series(1,2+1) AS __(y) order by 
 2
 2
 9
-

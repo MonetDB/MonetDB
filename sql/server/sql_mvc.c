@@ -18,6 +18,7 @@
 #include "sql_mvc.h"
 #include "sql_qc.h"
 #include "sql_types.h"
+#include "sql_storage.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_partition.h"
@@ -476,6 +477,12 @@ void
 mvc_cancel_session(mvc *m)
 {
 	(void)sql_trans_end(m->session, SQL_ERR);
+}
+
+void
+mvc_query_processed(mvc *m)
+{
+	scanner_query_processed(&(m->scanner));
 }
 
 int

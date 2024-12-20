@@ -25,7 +25,7 @@ select distinct action from sys.sql_keywords
 1
 
 query I rowsort
-select distinct as from sys.sql_keywords
+select distinct "as" as as from sys.sql_keywords
 ----
 2
 
@@ -35,7 +35,7 @@ select distinct authorization from sys.sql_keywords
 3
 
 query I rowsort
-select distinct column from sys.sql_keywords
+select distinct "column" column from sys.sql_keywords
 ----
 4
 
@@ -45,7 +45,7 @@ select distinct cycle from sys.sql_keywords
 5
 
 query I rowsort
-select distinct distinct from sys.sql_keywords
+select distinct "distinct" from sys.sql_keywords
 ----
 6
 
@@ -85,7 +85,7 @@ select distinct statement from sys.sql_keywords
 13
 
 query I rowsort
-select distinct table from sys.sql_keywords
+select distinct "table" table from sys.sql_keywords
 ----
 14
 
