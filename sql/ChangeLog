@@ -3,9 +3,9 @@
 
 * Fri Dec 20 2024 Niels Nes <niels@cwi.nl>
 - Added support for aggregates which order within the group such
-  as quantile and which potentialy order within the group such as
+  as quantile and which potentially order within the group such as
   group_concat. The ordering for such operators in now handled once in
-  the relational plan. For this the create function statemens can now
+  the relational plan. For this the create function statements can now
   have an optional order specification, using the keywords 'ORDERED'
   and 'WITH ORDER'.
 
