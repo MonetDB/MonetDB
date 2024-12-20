@@ -16,6 +16,7 @@
 #include "rel_rewriter.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
+#include "sql_storage.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
 				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
