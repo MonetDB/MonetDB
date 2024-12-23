@@ -202,7 +202,7 @@ extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, 
 extern sql_exp *exps_bind_column2(list *exps, sql_alias *rname, const char *cname, int *multiple);
 extern sql_exp * list_find_exp( list *exps, sql_exp *e);
 
-extern sql_alias *a_create(allocator *sa, const char *name);
+sql_export sql_alias *a_create(allocator *sa, const char *name);
 extern sql_alias *schema_alias(allocator *sa, sql_schema *s);
 extern sql_alias *table_alias(allocator *sa, sql_table *t, sql_alias *p);
 #define a_no_name(a) ((a)->name == NULL)
