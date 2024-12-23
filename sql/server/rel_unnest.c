@@ -889,17 +889,25 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					}
 				}
 				if (cexps) {
-					sql_rel *p = l->l = rel_project( sql->sa, l->l,
-						rel_projections(sql, l->l, NULL, 1, 1));
-					p->exps = list_distinct(list_merge(p->exps, cexps, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
-					if (list_empty(nexps)) {
-						rel->r = l; /* remove empty project */
-					} else {
-						for (n = cexps->h; n; n = n->next) { /* add pushed down renamed expressions */
-							sql_exp *e = n->data;
-							append(nexps, exp_ref(sql, e));
+					list *exps = rel_projections(sql, l->l, NULL, 1, 1);
+					bool dup = false;
+					for (node *n = cexps->h; n && !dup; n = n->next)
+						/* do we have an expression which will result in same alias but different origin */
+						if (list_find(exps, n->data, (fcmp)&is_conflict))
+							dup = true;
+
+					if (!dup) {
+						exps = list_distinct(list_merge(exps, cexps, (fdup)NULL), (fcmp)exp_equal, (fdup)NULL);
+						l->l = rel_project( sql->sa, l->l, exps);
+						if (list_empty(nexps)) {
+							rel->r = l; /* remove empty project */
+						} else {
+							for (n = cexps->h; n; n = n->next) { /* add pushed down renamed expressions */
+								sql_exp *e = n->data;
+								append(nexps, exp_ref(sql, e));
+							}
+							r->exps = nexps;
 						}
-						r->exps = nexps;
 					}
 				}
 			}
@@ -1600,6 +1608,8 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 				sql_rel *r = iu->h->data;
 				set_recursive(r);
 				append(rlist, rel_dup(r));
+				if (is_project(r->op))
+					len = list_length(r->exps);
 			}
 			for(node *n = rec?iu->h->next:iu->h; n; n = n->next) {
 				sql_rel *sl = n->data;

@@ -144,6 +144,7 @@ extern bool rel_find_nid(sql_rel *rel, int nid);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
+extern int is_conflict( sql_exp *e1, sql_exp *e2);
 extern int exp_refers( sql_exp *p, sql_exp *c);
 extern sql_exp *exps_refers( sql_exp *p, list *exps);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
