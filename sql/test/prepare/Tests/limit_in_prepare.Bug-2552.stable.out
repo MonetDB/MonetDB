@@ -30,11 +30,11 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 6,	2,	1,	0,	2,	2 # length
-[ "int",	2,	0,	"",	"rr",	"id"	]
+% 6,	2,	1,	3,	2,	2 # length
+[ "int",	2,	0,	"sys",	"rr",	"id"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #exec  0 (1);
-% .rr # table_name
+% sys.rr # table_name
 % id # name
 % int # type
 % 1 # length
@@ -45,15 +45,15 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 8,	4,	1,	0,	4,	13 # length
-[ "varchar",	1024,	0,	"",	"tbls",	"name"	]
-[ "int",	31,	0,	"",	"tbls",	"schema_id"	]
-[ "varchar",	2048,	0,	"",	"tbls",	"query"	]
-[ "smallint",	15,	0,	"",	"tbls",	"type"	]
-[ "boolean",	1,	0,	"",	"tbls",	"system"	]
-[ "smallint",	15,	0,	"",	"tbls",	"commit_action"	]
-[ "boolean",	1,	0,	"",	"tbls",	"readonly"	]
-[ "smallint",	15,	0,	"",	"tbls",	"temporary"	]
+% 8,	4,	1,	3,	4,	13 # length
+[ "varchar",	1024,	0,	"sys",	"tbls",	"name"	]
+[ "int",	31,	0,	"sys",	"tbls",	"schema_id"	]
+[ "varchar",	2048,	0,	"sys",	"tbls",	"query"	]
+[ "smallint",	15,	0,	"sys",	"tbls",	"type"	]
+[ "boolean",	1,	0,	"sys",	"tbls",	"system"	]
+[ "smallint",	15,	0,	"sys",	"tbls",	"commit_action"	]
+[ "boolean",	1,	0,	"sys",	"tbls",	"readonly"	]
+[ "smallint",	15,	0,	"sys",	"tbls",	"temporary"	]
 #exec  1 ();
 % sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	readonly,	temporary # name

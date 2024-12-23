@@ -19,7 +19,7 @@
 #include "sql_storage.h"
 
 static sql_column *
-bt_find_column( sql_rel *rel, char *tname, char *name)
+bt_find_column( sql_rel *rel, sql_alias *tname, char *name)
 {
 	if (!rel || list_empty(rel->exps) || !rel->l)
 		return NULL;

@@ -43,14 +43,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	19,	6 # length
-[ "varchar",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
+% 7,	1,	1,	4,	19,	6 # length
+[ "varchar",	0,	0,	"test",	"share_daily_history",	"id"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"volume"	]
 [ "varchar",	3,	0,	"",	"source",	"id"	]
 [ "int",	1,	0,	"",	"source",	"timeid"	]
 [ "int",	1,	0,	NULL,	NULL,	NULL	]
@@ -63,14 +63,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	19,	6 # length
-[ "varchar",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
+% 7,	1,	1,	4,	19,	6 # length
+[ "varchar",	0,	0,	"test",	"share_daily_history",	"id"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"volume"	]
 [ "varchar",	3,	0,	"",	"source",	"id"	]
 #prepare select * from test.share_daily_history
 #inner join (values(?), ('BHP')) as source(id)
@@ -81,14 +81,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	19,	6 # length
-[ "varchar",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
+% 7,	1,	1,	4,	19,	6 # length
+[ "varchar",	0,	0,	"test",	"share_daily_history",	"id"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"volume"	]
 [ "varchar",	3,	0,	"",	"source",	"id"	]
 [ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 #exec  5('a');
@@ -106,14 +106,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	19,	6 # length
-[ "varchar",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
+% 7,	1,	1,	4,	19,	6 # length
+[ "varchar",	0,	0,	"test",	"share_daily_history",	"id"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"volume"	]
 [ "varchar",	3,	0,	"",	"source",	"id"	]
 [ "varchar",	3,	0,	NULL,	NULL,	NULL	]
 #exec  6('a');
@@ -131,14 +131,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	19,	6 # length
-[ "varchar",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
+% 7,	1,	1,	4,	19,	6 # length
+[ "varchar",	0,	0,	"test",	"share_daily_history",	"id"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"volume"	]
 [ "varchar",	0,	0,	"",	"source",	"id"	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 #exec  7('a');
@@ -155,14 +155,14 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	1,	1,	0,	19,	6 # length
-[ "varchar",	0,	0,	"",	"share_daily_history",	"id"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"timeid"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c1"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c2"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c3"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"c4"	]
-[ "int",	1,	0,	"",	"share_daily_history",	"volume"	]
+% 7,	1,	1,	4,	19,	6 # length
+[ "varchar",	0,	0,	"test",	"share_daily_history",	"id"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"timeid"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c1"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c2"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c3"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"c4"	]
+[ "int",	1,	0,	"test",	"share_daily_history",	"volume"	]
 [ "varchar",	0,	0,	"",	"source",	"id"	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]
 [ "varchar",	0,	0,	NULL,	NULL,	NULL	]

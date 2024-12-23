@@ -41,10 +41,11 @@ sql_export sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *f
 extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type, bool private, bool exact);
 extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type, bool private);
 extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char *fname, sql_ftype type, bool private, sql_subtype *res, int nargs, ...);
-extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private, bool exact);
+extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type, bool private, bool exact, bool error);
 
 extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private);
 
+extern sql_alias *qname2alias(allocator *sa, dlist *qname);
 extern char *qname_schema(dlist *qname);
 extern char *qname_schema_object(dlist *qname);
 extern char *qname_catalog(dlist *qname);

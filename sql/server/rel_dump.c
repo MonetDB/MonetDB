@@ -126,22 +126,22 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {
-			const char *rname = exp_relname(e);
+			sql_alias *rname = exp_relname(e);
 			int level = GET_PSM_LEVEL(e->flag);
 			if (rname)
-				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname));
+				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname->name));
 			mnstr_printf(fout, "\"%s\" = ",  dump_escape_ident(sql->ta, exp_name(e)));
 			exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
 			mnstr_printf(fout, " FRAME %d ", level);
 			alias = 0;
 		} else if (e->flag & PSM_VAR) {
 			// todo output table def (from e->f)
-			const char *rname = exp_relname(e);
+			sql_alias *rname = exp_relname(e);
 			char *type_str = e->f ? NULL : dump_sql_subtype(sql->ta, exp_subtype(e));
 			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "declare ");
 			if (rname)
-				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname));
+				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname->name));
 			mnstr_printf(fout, "\"%s\" %s FRAME %d ", dump_escape_ident(sql->ta, exp_name(e)), type_str ? type_str : "", level);
 			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
@@ -259,11 +259,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, "!!!FREE!!! ");
 		if (mvc_debug_on(sql, 4) && e->nid)
 			mnstr_printf(fout, "<%d", e->nid);
-		if (e->l)
-			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, (char*)e->l));
+		if (e->l) {
+			sql_alias *a = e->l;
+			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, a->name));
+		}
 		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, (char*)e->r));
 		if (exp_relname(e) && exp_name(e) && e->l && e->r &&
-			strcmp(exp_relname(e), e->l) == 0 &&
+			a_match_obj(exp_relname(e), e->l) &&
 			strcmp(exp_name(e), e->r) == 0)
 			alias = 0;
 		if(!exp_relname(e) && exp_name(e) && !e->l && strcmp(exp_name(e), e->r)==0)
@@ -356,7 +358,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (exp_name(e) && alias) {
 		mnstr_printf(fout, " as ");
 		if (exp_relname(e))
-			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, exp_relname(e)));
+			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, exp_relname(e)->name));
 		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, exp_name(e)));
 	}
 
@@ -1226,21 +1228,22 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		*e = 0;
 
 		tname = sa_strdup(sql->sa, tname);
+		sql_alias *ta = a_create(sql->sa, tname);
 		cname = sa_strdup(sql->sa, cname);
 		*e = old;
 		skipWS(r, pos);
 		if (r[*pos] != '(') { /* if there's a function/aggregate call next don't attempt to bind columns */
 			if (top_exps) {
-				exp = exps_bind_column2(top_exps, tname, cname, NULL);
+				exp = exps_bind_column2(top_exps, ta, cname, NULL);
 				if (exp)
 					exp = exp_ref(sql, exp);
 			}
 			if (!exp && lrel) {
-				exp = rel_bind_column2(sql, lrel, tname, cname, 0);
+				exp = rel_bind_column2(sql, lrel, ta, cname, 0);
 				if (!exp && rrel)
-					exp = rel_bind_column2(sql, rrel, tname, cname, 0);
+					exp = rel_bind_column2(sql, rrel, ta, cname, 0);
 			} else if (!exp) {
-				exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, 0, cname[0] == '%');
+				exp = exp_column(sql->sa, ta, cname, NULL, CARD_ATOM, 1, 0, cname[0] == '%');
 				exp->alias.label = -(sql->nid++);
 			}
 		}
@@ -1422,7 +1425,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 					if (sname && !mvc_bind_schema(sql, sname))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", sname);
-					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT, true, false)))
+					if (!(f = sql_bind_func_(sql, sname, fname, tl, F_FILT, true, false, false)))
 						return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Filter: missing function '%s'.'%s'\n", sname, fname);
 					if (!execute_priv(sql, f->func))
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
@@ -1538,7 +1541,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
-				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true, false);
+				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true, false, true);
 			} else {
 				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR, true, true); /* count(*) */
 			}
@@ -1595,25 +1598,25 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				for( node *n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
 
-				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC, true, false);
+				f = sql_bind_func_(sql, tname, cname, ops, F_FUNC, true, false, false);
 				if (!f) {
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false, false);
 				}
 				if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					list_remove_node(ops, NULL, ops->t);
 					list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false, false);
 				}
 				if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
 					sql->session->status = 0; /* if the function was not found clean the error */
 					sql->errstr[0] = '\0';
 					for (int i = 0 ; i < 3 ; i++)
 						list_remove_node(ops, NULL, ops->t);
-					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false);
+					f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC, true, false, false);
 				}
 				if (f)
 					exps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 0, true);
@@ -1781,7 +1784,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			convertIdent(cname);
 			(*pos)++;
 			skipWS(r, pos);
-			exp_setname(sql, exp, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname));
+			exp_setname(sql, exp, a_create(sql->sa, sa_strdup(sql->sa, tname)), sa_strdup(sql->sa, cname));
 		}
 		rlabel = try_update_label_count(sql, tname);
 		nlabel = try_update_label_count(sql, cname);
@@ -2180,7 +2183,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					if (r[*pos] == ',')
 						(*pos)++;
 
-					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0, 0);
+					next = exp_column(sql->sa, a_create(sql->sa, nrname), ncname, &a->type, CARD_MULTI, 1, 0, 0);
 					next->alias.label = -(sql->nid++);
 					rlabel = try_update_label_count(sql, nrname);
 					nlabel = try_update_label_count(sql, ncname);
@@ -2217,7 +2220,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
 				if (isReplicaTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
-				rel = rel_basetable(sql, t, tname);
+				rel = rel_basetable(sql, t, a_create(sql->sa, tname));
 				if (!table_privs(sql, t, PRIV_SELECT))  {
 					rel_base_disallow(rel);
 					if (rel_base_has_column_privileges(sql, rel) == 0)

@@ -2298,11 +2298,11 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = (int) rt->scale; /* shift with scale */
-					sql_subtype *it = sql_bind_localtype(lt->type->impl);
+					sql_subtype *it = sql_bind_localtype(lt->type->d.impl);
 					sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", lt, it, F_FUNC, true, true);
 
 					if (!c) {
-						TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->impl);
+						TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->d.impl);
 						return NULL;
 					}
 #ifdef HAVE_HGE
@@ -2331,21 +2331,21 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 #endif
 
 					if (lt->type->eclass == EC_SEC) {
-						sql_subtype *it = sql_bind_localtype(lt->type->impl);
+						sql_subtype *it = sql_bind_localtype(lt->type->d.impl);
 						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_up", lt, it, F_FUNC, true, true);
 
 						if (!c) {
-							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->impl);
+							TRC_CRITICAL(SQL_PARSER, "scale_up missing (%s)\n", lt->type->d.impl);
 							return NULL;
 						}
 						atom *a = atom_int(v->sql->sa, it, val);
 						ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 					} else { /* EC_MONTH */
-						sql_subtype *it = sql_bind_localtype(rt->type->impl);
+						sql_subtype *it = sql_bind_localtype(rt->type->d.impl);
 						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", rt, it, F_FUNC, true, true);
 
 						if (!c) {
-							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->impl);
+							TRC_CRITICAL(SQL_PARSER, "scale_down missing (%s)\n", lt->type->d.impl);
 							return NULL;
 						}
 						atom *a = atom_int(v->sql->sa, it, val);
@@ -3923,7 +3923,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					append(targs, sql_bind_localtype("bit"));
 					append(targs, exp_subtype(e));
 					append(targs, exp_subtype(e));
-					ifthen = sql_bind_func_(v->sql, "sys", "ifthenelse", targs, F_FUNC, true, true);
+					ifthen = sql_bind_func_(v->sql, "sys", "ifthenelse", targs, F_FUNC, true, true, true);
 					args = sa_list(v->sql->sa);
 					append(args, ne);
 					append(args, exp_atom(v->sql->sa, atom_zero_value(v->sql->sa, exp_subtype(e))));

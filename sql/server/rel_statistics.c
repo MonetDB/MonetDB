@@ -769,7 +769,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		}
 		/* Set table row count. TODO? look for remote tables. Don't look at storage for declared tables, because it won't be cleaned */
 		if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 10));
+			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_del(v->sql->session->tr, t, CNT_ACTIVE));
 		break;
 	}
 	case op_union:

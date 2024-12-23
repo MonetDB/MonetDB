@@ -104,6 +104,7 @@ dnode_create_string(allocator *sa, const char *data)
 	}
 	return n;
 }
+
 static dnode *
 dnode_create_list(allocator *sa, dlist *data)
 {
@@ -164,6 +165,18 @@ dnode_create_type(allocator *sa, sql_subtype *data)
 	return n;
 }
 
+dnode *
+node_string(allocator *sa, const char *s)
+{
+	return dnode_create_string(sa, s);
+}
+
+dnode *
+node_symbol(allocator *sa, symbol *s)
+{
+	return dnode_create_symbol(sa, s);
+}
+
 dlist *
 dlist_create(allocator *sa)
 {
@@ -191,6 +204,23 @@ dlist_append_default(dlist *l, dnode *n)
 		l->h = n;
 	}
 	l->t = n;
+	l->cnt++;
+	return l;
+}
+
+dlist *
+append_node(dlist *l, dnode *n)
+{
+	return dlist_append_default(l, n);
+}
+
+dlist *
+prepend_node(dlist *l, dnode *n)
+{
+	n->next = l->h;
+	l->h = n;
+	if (!l->cnt)
+		l->t = n;
 	l->cnt++;
 	return l;
 }

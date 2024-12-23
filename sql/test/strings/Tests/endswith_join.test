@@ -12,7 +12,7 @@ statement ok
 INSERT INTO bar VALUES ('left'),('right'),('up')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, false]
+SELECT * FROM foo,bar WHERE foo.f endswith[false] bar.b
 ----
 lexleft
 left
@@ -22,7 +22,7 @@ timup
 up
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, true]
+SELECT * FROM foo,bar WHERE foo.f endswith[true] bar.b
 ----
 JANERIGHT
 right
@@ -51,7 +51,7 @@ statement ok
 INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('kαλή'),(NULL),('olá'),('Das grüne'),('WITH LYRICS'),('adeus'),('früh'),('sør')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, false]
+SELECT * FROM foo,bar WHERE foo.f endswith[false] bar.b
 ----
 Monokel Das grüne
 Das grüne
@@ -71,7 +71,7 @@ Frühling
 Δεν
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] endswith [bar.b, true]
+SELECT * FROM foo,bar WHERE foo.f endswith[true] bar.b
 ----
 Monokel Das grüne
 Das grüne

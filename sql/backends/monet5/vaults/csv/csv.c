@@ -447,7 +447,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				extra_tsep = true;
 			} else if (t) {
 				list_append(typelist, t);
-				sql_exp *ne = exp_column(sql->sa, tname, name, t, CARD_MULTI, 1, 0, 0);
+				sql_exp *ne = exp_column(sql->sa, a_create(sql->sa, tname), name, t, CARD_MULTI, 1, 0, 0);
 				set_basecol(ne);
 				ne->alias.label = -(sql->nid++);
 				list_append(res_exps, ne);

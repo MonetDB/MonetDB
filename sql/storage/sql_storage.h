@@ -142,6 +142,10 @@ typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
  */
+#define CNT_RDONLY 4
+#define CNT_ACTIVE 10
+#define CNT_SEGS 20
+
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t, int access);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
@@ -356,7 +360,7 @@ extern sql_trans *sql_trans_destroy(sql_trans *tr);
 //extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 
-extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
+extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl, list *fields);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
 extern int sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang,

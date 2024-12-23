@@ -630,8 +630,6 @@ count_deletes( segment *s, sql_trans *tr)
 	return cnt;
 }
 
-#define CNT_ACTIVE 10
-
 static size_t
 count_col(sql_trans *tr, sql_column *c, int access)
 {
@@ -2815,8 +2813,17 @@ count_del(sql_trans *tr, sql_table *t, int access)
 		return d->cs.ucnt;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	if (access == 10) /* special case for counting the number of segments */
+	if (access == CNT_ACTIVE) {
+		size_t cnt = segs_end(d->segs, tr, t);
+		lock_table(tr->store, t->base.id);
+		cnt -= count_deletes_in_range(d->segs->h, tr, 0, cnt);
+		unlock_table(tr->store, t->base.id);
+		return cnt;
+	}
+	if (access == CNT_SEGS) /* special case for counting the number of segments */
 		return count_segs(d->segs->h);
+	if (CNT_RDONLY)
+		return segs_end(d->segs, tr, t);
 	return count_deletes(d->segs->h, tr);
 }
 
@@ -2899,7 +2906,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 	*nonil = false;
 	*unique = false;
 	*unique_est = 0.0;
-	if (!c || !isTable(c->t) || !c->t->s)
+	if (!c || !isTable(c->t) || !c->t->s || c->type.type->composite)
 		return ok;
 
 	if ((d = ATOMIC_PTR_GET(&c->data))) {
@@ -3511,7 +3518,8 @@ log_create_del(sql_trans *tr, sql_change *change)
 		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 			sql_column *c = n->data;
 
-			ok = log_create_col_(tr, c);
+			if (c->data)
+				ok = log_create_col_(tr, c);
 		}
 		if (t->idxs) {
 			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
@@ -3553,7 +3561,8 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			sql_column *c = n->data;
 			sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
-			ok = commit_create_delta(tr, c->t, &c->base, delta, commit_ts, oldest);
+			if (delta)
+				ok = commit_create_delta(tr, c->t, &c->base, delta, commit_ts, oldest);
 		}
 		if (t->idxs) {
 			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {

@@ -58,7 +58,7 @@ project_unsafe(sql_rel *rel, bool allow_identity)
 
    we should clean up (remove) this function.
  */
-const char *
+sql_alias *
 rel_name( sql_rel *r )
 {
 	if (is_basetable(r->op))
@@ -70,7 +70,6 @@ rel_name( sql_rel *r )
 		if (exp_relname(e))
 			return exp_relname(e);
 		if (e->type == e_column) {
-			assert(0);
 			return e->l;
 		}
 	}
@@ -378,7 +377,7 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 }
 
 sql_exp *
-rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f)
+rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, int f)
 {
 	int ambiguous = 0, multi = 0;
 
@@ -396,8 +395,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!list_empty(rel->exps)) {
 			e = exps_bind_column2(rel->exps, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
-								 tname, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname->name, cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
 				sql_rel *l = rel->l;
 				if (l)
@@ -406,7 +404,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 					e = exps_refers(e, rel->r);
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
-										 tname ? tname : "", tname ? "." : "", cname);
+										 tname ? tname->name : "", tname ? "." : "", cname);
 					if (e)
 						return e;
 				}
@@ -415,8 +413,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!e && (is_sql_sel(f) || is_sql_having(f) || !f) && is_groupby(rel->op) && rel->r) {
 			e = exps_bind_column2(rel->r, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
-								 tname, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname->name, cname);
 			if (e) {
 				e = exp_ref(sql, e);
 				e->card = rel->card;
@@ -445,8 +442,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (!e && !list_empty(rel->attr)) {
 			e = exps_bind_column2(rel->attr, tname, cname, &multi);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous",
-								 tname, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname->name, cname);
 		}
 		if (e)
 			set_not_unique(e);
@@ -457,45 +453,6 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		   is_sample(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
-	}
-	return NULL;
-}
-
-sql_exp *
-rel_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname, int f)
-{
-	if (!sname)
-		return rel_bind_column2(sql, rel, tname, cname, f);
-	if (is_basetable(rel->op) && !rel->exps) {
-		return rel_base_bind_column3(sql, rel, sname, tname, cname);
-	} else if (is_set(rel->op)) {
-		return NULL;
-	} else if (is_project(rel->op) && rel->l) {
-		if (!is_processed(rel))
-			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
-		else
-			return rel_bind_column2(sql, rel->l, tname, cname, f);
-	} else if (is_join(rel->op)) {
-		sql_exp *e = rel_bind_column3(sql, rel->l, sname, tname, cname, f);
-
-		if (e && (is_right(rel->op) || is_full(rel->op)))
-			set_has_nil(e);
-		if (!e) {
-			e = rel_bind_column3(sql, rel->r, sname, tname, cname, f);
-			if (e && (is_left(rel->op) || is_full(rel->op)))
-				set_has_nil(e);
-		}
-		if (!e)
-			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s.%s' ambiguous", sname, tname, cname);
-		if (e)
-			set_not_unique(e);
-		return e;
-	} else if (is_semi(rel->op) ||
-		   is_select(rel->op) ||
-		   is_topn(rel->op) ||
-		   is_sample(rel->op)) {
-		if (rel->l)
-			return rel_bind_column3(sql, rel->l, sname, tname, cname, f);
 	}
 	return NULL;
 }
@@ -972,6 +929,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	char cname[16], *cnme = NULL;
 
 	tnme = sa_strdup(sql->sa, number2name(tname, sizeof(tname), nr));
+	sql_alias *ta = a_create(sql->sa, tnme);
 	if (!is_simple_project(r->op))
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 	if (!list_empty(r->exps)) {
@@ -984,7 +942,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 					nr = ++sql->label;
 					cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 				}
-				exp_setname(sql, e, tnme, cnme );
+				exp_setname(sql, e, ta, cnme );
 			}
 		}
 	}
@@ -995,7 +953,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 				nr = ++sql->label;
 				cnme = sa_strdup(sql->sa, number2name(cname, sizeof(cname), nr));
 			}
-			exp_setname(sql, ne->data, tnme, cnme );
+			exp_setname(sql, ne->data, ta, cnme );
 		}
 	}
 	return r;
@@ -1135,9 +1093,10 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 			if (!ne) {
 				list_append(gexps, e);
 			} else {
-				const char *ername = exp_relname(e), *nername = exp_relname(ne), *ename = exp_name(e), *nename = exp_name(ne);
+				sql_alias *ername = exp_relname(e), *nername = exp_relname(ne);
+				const char *ename = exp_name(e), *nename = exp_name(ne);
 				if ((ername && !nername) || (!ername && nername) ||
-					(ername && nername && strcmp(ername,nername) != 0) || strcmp(ename,nename) != 0)
+					(ername && nername && !a_match(ername,nername)) || strcmp(ename,nename) != 0)
 					list_append(gexps, e);
 			}
 		}
@@ -1149,7 +1108,7 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		for (en = groupbyexps->h; en; en = en->next) {
 			sql_exp *e = en->data, *ne;
 
-			if (exp_is_atom(e) && !e->alias.name) { /* numeric lookup done later */
+			if (exp_is_atom(e) && a_no_name(&e->alias)) { /* numeric lookup done later */
 				rel->flag = 1;
 				continue;
 			}
@@ -1288,7 +1247,7 @@ exps_reset_props(list *exps, bool setnil)
  * refer to the tname relation, anywhere in the relational tree
  */
 list *
-_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */ )
+_rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int intern, int basecol /* basecol only */ )
 {
 	list *lexps, *rexps = NULL, *exps = NULL, *rels;
 
@@ -1435,7 +1394,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 }
 
 list *
-rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern)
+rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int intern)
 {
 	assert(tname == NULL);
 	return _rel_projections(sql, rel, tname, settname, intern, 0);
@@ -1888,7 +1847,7 @@ rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp)
 }
 
 static sql_exp *
-rel_find_column_(mvc *sql, list *exps, const char *tname, const char *cname)
+rel_find_column_(mvc *sql, list *exps, sql_alias *tname, const char *cname)
 {
 	int ambiguous = 0, multi = 0;
 	sql_exp *e = exps_bind_column2(exps, tname, cname, &multi);
@@ -1901,7 +1860,7 @@ rel_find_column_(mvc *sql, list *exps, const char *tname, const char *cname)
 }
 
 sql_exp *
-rel_find_column(mvc *sql, sql_rel *rel, const char *tname, const char *cname )
+rel_find_column(mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname )
 {
 	sql_exp *e = NULL;
 

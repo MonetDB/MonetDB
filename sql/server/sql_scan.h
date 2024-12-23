@@ -32,6 +32,7 @@ struct scanner {
 	size_t as;		/* start of query part of view's etc */
 	char yybak;		/* sometimes it's needed to write an EOS marker */
 	int started;	/* found at least one token */
+	int brackets;	/* nr of '[' without closing ']' */
 	prot mode;		/* which mode (line (1,N), blocked) */
 	char *schema;	/* Keep schema name of create statement, needed AUTO_INCREMENT, SERIAL */
 	char *errstr;	/* error message from the bowels of the scanner */

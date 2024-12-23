@@ -523,6 +523,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("TIES", TIES);
 	failed += keywords_insert("GROUPS", GROUPS);
 	failed += keywords_insert("WINDOW", WINDOW);
+	failed += keywords_insert("QUALIFY", QUALIFY);
 
 	/* special SQL/XML keywords */
 	failed += keywords_insert("XMLCOMMENT", XMLCOMMENT);
@@ -691,6 +692,7 @@ scanner_query_processed(struct scanner *s)
 	s->started = 0;
 	s->as = 0;
 	s->schema = NULL;
+	s->brackets = 0;
 }
 
 static int
@@ -1271,7 +1273,6 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, cur);
 	case '^': /* binary xor */
 	case '*':
-	case '?':
 	case ':':
 	case '%':
 	case '+':
@@ -1283,6 +1284,9 @@ int scanner_symbol(mvc * c, int cur)
 	case ']':
 		lc->started = 1;
 		return scanner_token(lc, cur);
+	case '?':
+		lc->started = 1;
+		return scanner_token(lc, PARAM);
 	case '&':
 		lc->started = 1;
 		cur = scanner_getc(lc);
@@ -1558,9 +1562,11 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 
 	if (token == KW_TYPE)
 		token = aTYPE;
+	if (token == KW_OPERATORS)
+		token = OPERATORS;
 
 	if (token == IDENT || token == COMPARISON ||
-	    token == RANK || token == aTYPE || token == MARGFUNC) {
+	    token == RANK || token == aTYPE || token == MARGFUNC || token == OPERATORS) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 		lc->next_string_is_raw = false;
 	} else if (token == STRING) {
@@ -1672,8 +1678,12 @@ scanner(YYSTYPE * yylval, void *parm, bool log)
 	pos = lc->rs->pos + lc->yycur;
 
 	token = sql_get_next_token(yylval, parm);
-	/* TODO make hash out of the possible complex tokens and add with current tokens hash */
+	if (token == '[')
+		lc->brackets++;
+	if (token == ']')
+		lc->brackets--;
 
+	/* TODO make hash out of the possible complex tokens and add with current tokens hash */
 	if (token == -IDENT || token == -STRING) {
 		char *sval = yylval->sval;
 		int next = sql_get_next_token(yylval, parm);
@@ -1768,6 +1778,12 @@ scanner(YYSTYPE * yylval, void *parm, bool log)
 		} else {
 			lc->yynext = next;
 		}
+	} else if (token == ':' && !lc->brackets) {
+		int next = sql_get_next_token(yylval, parm);
+		if (next == IDENT)
+			token = PARAM;
+		else
+			lc->yynext = next;
 	} else if (token == SCOLON) {
 		/* ignore semi-colon(s) following a semi-colon */
 		if (lc->yylast == SCOLON) {

@@ -110,35 +110,35 @@ query TIT rowsort
 SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL OR "table_type_name" = ''
 ----
 
-query IITTIIITIIT rowsort
+query IITTIIITIITI rowsort
 SELECT "id", * FROM "sys"."_columns" WHERE "id" IS NULL
 ----
 
-query TITTIIITIIT rowsort
+query TITTIIITIITI rowsort
 SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL OR "name" = ''
 ----
 
-query TITTIIITIIT rowsort
+query TITTIIITIITI rowsort
 SELECT "type", * FROM "sys"."_columns" WHERE "type" IS NULL OR "type" = ''
 ----
 
-query IITTIIITIIT rowsort
+query IITTIIITIITI rowsort
 SELECT "type_digits", * FROM "sys"."_columns" WHERE "type_digits" IS NULL
 ----
 
-query IITTIIITIIT rowsort
+query IITTIIITIITI rowsort
 SELECT "type_scale", * FROM "sys"."_columns" WHERE "type_scale" IS NULL
 ----
 
-query IITTIIITIIT rowsort
+query IITTIIITIITI rowsort
 SELECT "table_id", * FROM "sys"."_columns" WHERE "table_id" IS NULL
 ----
 
-query IITTIIITIIT rowsort
+query IITTIIITIITI rowsort
 SELECT "null", * FROM "sys"."_columns" WHERE "null" IS NULL
 ----
 
-query IITTIIITIIT rowsort
+query IITTIIITIITI rowsort
 SELECT "number", * FROM "sys"."_columns" WHERE "number" IS NULL
 ----
 

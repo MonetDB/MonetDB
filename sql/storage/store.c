@@ -16,6 +16,7 @@
 #include "store_dependency.h"
 #include "store_sequence.h"
 #include "mutils.h"
+#include "sql_keyword.h"
 
 #include "bat/bat_utils.h"
 #include "bat/bat_storage.h"
@@ -76,7 +77,7 @@ store_oldest_pending(sqlstore *store)
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2167)
+	if (id >= 2000 && id <= 2169)
 		return true;
 	return false;
 }
@@ -102,7 +103,10 @@ type_destroy(sqlstore *store, sql_type *t)
 	assert(t->base.refcnt > 0);
 	if (ATOMIC_DEC(&t->base.refcnt) > 0)
 		return;
-	_DELETE(t->impl);
+	if (!t->composite)
+		_DELETE(t->d.impl);
+	else
+		list_destroy(t->d.fields);
 	_DELETE(t->base.name);
 	_DELETE(t);
 }
@@ -592,6 +596,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	st = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "storage"));
 	if (!strNil(st))
 		c->storage_type =_STRDUP(st);
+	c->column_type = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "column_type"));
 	ATOMIC_PTR_INIT(&c->data, NULL);
 	c->t = t;
 	if (isTable(c->t))
@@ -887,35 +892,8 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	return t;
 }
 
-static sql_type *
-load_type(sql_trans *tr, sql_schema *s, oid rid)
-{
-	sqlstore *store = tr->store;
-	sql_type *t = ZNEW(sql_type);
-	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *types = find_sql_table(tr, syss, "types");
-	sqlid tid;
-	const char *v;
-	ptr cbat;
-
-	tid = store->table_api.column_find_sqlid(tr, find_sql_column(types, "id"), rid);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "sqlname"), rid, &cbat);
-	base_init(NULL, &t->base, tid, 0, v);
-	store->table_api.column_find_string_end(cbat);
-	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "systemname"), rid, &cbat);
-	t->impl =_STRDUP(v);
-	store->table_api.column_find_string_end(cbat);
-	t->digits = store->table_api.column_find_int(tr, find_sql_column(types, "digits"), rid);
-	t->scale = store->table_api.column_find_int(tr, find_sql_column(types, "scale"), rid);
-	t->radix = store->table_api.column_find_int(tr, find_sql_column(types, "radix"), rid);
-	t->eclass = (sql_class)store->table_api.column_find_int(tr, find_sql_column(types, "eclass"), rid);
-	t->localtype = ATOMindex(t->impl);
-	t->s = s;
-	return t;
-}
-
 static sql_arg *
-load_arg(sql_trans *tr, sql_func *f, oid rid)
+load_arg(sql_trans *tr, sql_schema *s, oid rid)
 {
 	sqlstore *store = tr->store;
 	sql_arg *a = ZNEW(sql_arg);
@@ -936,7 +914,7 @@ load_arg(sql_trans *tr, sql_func *f, oid rid)
 	if (tpe && strcmp(tpe, "clob") == 0)
 		tpe = "varchar";
 	if (!sql_find_subtype(&a->type, tpe, digits, scale)) {
-		sql_type *lt = sql_trans_bind_type(tr, f->s, tpe);
+		sql_type *lt = sql_trans_bind_type(tr, s, tpe);
 		if (lt == NULL) {
 			TRC_ERROR(SQL_STORE, "SQL type '%s' is missing\n", tpe);
 			store->table_api.column_find_string_end(cbat);
@@ -946,6 +924,52 @@ load_arg(sql_trans *tr, sql_func *f, oid rid)
 	}
 	store->table_api.column_find_string_end(cbat);
 	return a;
+}
+
+static sql_type *
+load_type(sql_trans *tr, sql_schema *s, sqlid tid, subrids *rs)
+{
+	sqlstore *store = tr->store;
+	sql_type *t = ZNEW(sql_type);
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *types = find_sql_table(tr, syss, "types");
+	oid rid;
+	const char *v;
+	ptr cbat;
+
+	rid = store->table_api.column_find_row(tr, find_sql_column(types, "id"), &tid, NULL);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "sqlname"), rid, &cbat);
+	base_init(NULL, &t->base, tid, 0, v);
+	store->table_api.column_find_string_end(cbat);
+	v = store->table_api.column_find_string_start(tr, find_sql_column(types, "systemname"), rid, &cbat);
+	if (!strNil(v)) {
+		assert(!rs);
+		t->d.impl =_STRDUP(v);
+		t->localtype = ATOMindex(t->d.impl);
+	} else {
+		assert(rs);
+		t->composite = true;
+		t->localtype = TYPE_oid;
+
+		/* load fields */
+		t->d.fields = list_create((fdestroy) &arg_destroy);
+		if (rs) {
+			for (rid = store->table_api.subrids_next(rs); !is_oid_nil(rid); rid = store->table_api.subrids_next(rs)) {
+				sql_arg *a = load_arg(tr, t->s, rid);
+
+				if (a == NULL)
+					return NULL;
+				list_append(t->d.fields, a);
+			}
+		}
+	}
+	store->table_api.column_find_string_end(cbat);
+	t->digits = store->table_api.column_find_int(tr, find_sql_column(types, "digits"), rid);
+	t->scale = store->table_api.column_find_int(tr, find_sql_column(types, "scale"), rid);
+	t->radix = store->table_api.column_find_int(tr, find_sql_column(types, "radix"), rid);
+	t->eclass = (sql_class)store->table_api.column_find_int(tr, find_sql_column(types, "eclass"), rid);
+	t->s = s;
+	return t;
 }
 
 static sql_func *
@@ -1031,7 +1055,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->ops = list_create((fdestroy) &arg_destroy);
 	if (rs) {
 		for (rid = store->table_api.subrids_next(rs); !is_oid_nil(rid); rid = store->table_api.subrids_next(rs)) {
-			sql_arg *a = load_arg(tr, t, rid);
+			sql_arg *a = load_arg(tr, t->s, rid);
 
 			if (a == NULL)
 				return NULL;
@@ -1044,6 +1068,9 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 			}
 		}
 	}
+	if (t->type == F_FILT && (list_length(t->ops) == 2 || list_length(t->ops) == 3))
+		if (!find_keyword(t->base.name))
+			(void) keywords_insert(t->base.name, KW_OPERATORS);
 	return t;
 }
 
@@ -1158,17 +1185,63 @@ load_schema(sql_trans *tr, res_table *rt_schemas, res_table *rt_tables, res_tabl
 	type_schema = find_sql_column(types, "schema_id");
 	type_id = find_sql_column(types, "id");
 	rs = store->table_api.rids_select(tr, type_schema, &s->base.id, &s->base.id, type_id, &tmpid, NULL, NULL);
-	if (!rs) {
+	if (rs == NULL) {
 		schema_destroy(store, s);
 		return NULL;
 	}
-	for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-		sql_type *t = load_type(tr, s, rid);
-		if (os_add(s->types, tr, t->base.name, &t->base)) {
-			schema_destroy(store, s);
+	if (!store->table_api.rids_empty(rs)) {
+		sql_table *args = find_sql_table(tr, syss, "args");
+		sql_column *arg_type_id = find_sql_column(args, "func_id");
+		sql_column *arg_number = find_sql_column(args, "number");
+		subrids *nrs = store->table_api.subrids_create(tr, rs, type_id, arg_type_id, arg_number);
+		if (!nrs) {
 			store->table_api.rids_destroy(rs);
+			schema_destroy(store, s);
 			return NULL;
 		}
+
+		sqlid tid;
+		sql_type *t;
+
+		/* Handle all simple types (no args aka fields)  */
+		rs = store->table_api.rids_diff(tr, rs, type_id, nrs, arg_type_id);
+		if (!rs) {
+			store->table_api.subrids_destroy(nrs);
+			schema_destroy(store, s);
+			return NULL;
+		}
+		for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
+			tid = store->table_api.column_find_sqlid(tr, type_id, rid);
+			t = load_type(tr, s, tid, NULL);
+			if (t == NULL) {
+				store->table_api.subrids_destroy(nrs);
+				store->table_api.rids_destroy(rs);
+				schema_destroy(store, s);
+				return NULL;
+			}
+			if (os_add(s->types, tr, t->base.name, &t->base)) {
+				store->table_api.subrids_destroy(nrs);
+				store->table_api.rids_destroy(rs);
+				schema_destroy(store, s);
+				return NULL;
+			}
+		}
+
+		/* Handle all composite types (no args aka fields)  */
+		for (tid = store->table_api.subrids_nextid(nrs); tid >= 0; tid = store->table_api.subrids_nextid(nrs)) {
+			t = load_type(tr, s, tid, nrs);
+			if (t == NULL) {
+				store->table_api.subrids_destroy(nrs);
+				store->table_api.rids_destroy(rs);
+				schema_destroy(store, s);
+				return NULL;
+			}
+			if (os_add(s->types, tr, t->base.name, &t->base)) {
+				schema_destroy(store, s);
+				return NULL;
+			}
+		}
+		store->table_api.subrids_destroy(nrs);
 	}
 	store->table_api.rids_destroy(rs);
 
@@ -1530,7 +1603,7 @@ insert_schemas(sql_trans *tr)
 				sql_column *c = o->data;
 
 				if ((res = store->table_api.table_insert(tr, syscolumn, &c->base.id, &c->base.name, &c->type.type->base.name, &c->type.digits, &c->type.scale,
-										&t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil)))
+										&t->base.id, (c->def) ? &c->def : &strnil, &c->null, &c->colnr, (c->storage_type)? &c->storage_type : &strnil, &c->column_type)))
 					return res;
 			}
 		}
@@ -1548,7 +1621,8 @@ insert_types(sql_trans *tr, sql_table *systype)
 		int radix = t->radix, eclass = (int) t->eclass;
 		sqlid next_schema = t->s ? t->s->base.id : 0;
 
-		if ((res = store->table_api.table_insert(tr, systype, &t->base.id, &t->impl, &t->base.name, &t->digits, &t->scale, &radix, &eclass, &next_schema)))
+		char *strnil = (char*)ATOMnilptr(TYPE_str);
+		if ((res = store->table_api.table_insert(tr, systype, &t->base.id, t->d.impl ? &t->d.impl : &strnil, &t->base.name, &t->digits, &t->scale, &radix, &eclass, &next_schema)))
 			return res;
 	}
 	return res;
@@ -1966,7 +2040,7 @@ store_load(sqlstore *store, allocator *pa)
 
 		(types = t = bootstrap_create_table(tr, s, "types", 2007)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2008, "int", 31) == NULL ||
-		bootstrap_create_column(tr, t, "systemname", 2009, "varchar", 256) == NULL ||
+		bootstrap_create_column(tr, t, "systemname", 2009, "varchar", 256) == NULL || /* no systemname -> composite */
 		bootstrap_create_column(tr, t, "sqlname", 2010, "varchar", 1024) == NULL ||
 		bootstrap_create_column(tr, t, "digits", 2011, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "scale", 2012, "int", 31) == NULL ||
@@ -2060,6 +2134,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "null", 2084, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2085, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "storage", 2086, "varchar", 2048) == NULL ||
+		bootstrap_create_column(tr, t, "column_type", 2168, "tinyint", 7) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "keys", 2087)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2088, "int", 31) == NULL ||
@@ -2122,6 +2197,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "null", 2132, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "number", 2133, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "storage", 2134, "varchar", 2048) == NULL ||
+		bootstrap_create_column(tr, t, "column_type", 2169, "tinyint", 7) == NULL ||
 
 		(t = bootstrap_create_table(tr, s, "keys", 2135)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2136, "int", 31) == NULL ||
@@ -3696,9 +3772,77 @@ type_digits(sql_subtype *type)
 	return digits;
 }
 
+static sql_column *
+create_sql_column_with_id(allocator *sa, sqlid id, sql_table *t, const char *name, sql_subtype *tpe, bte column_type)
+{
+	sql_column *col = SA_ZNEW(sa, sql_column);
+
+	base_init(sa, &col->base, id, true, name);
+	col->type = *tpe;
+	col->def = NULL;
+	col->null = 1;
+	col->colnr = table_next_column_nr(t);
+	col->t = t;
+	col->unique = 0;
+	col->storage_type = NULL;
+	col->column_type = column_type;
+
+	if (ol_add(t->columns, &col->base))
+		return NULL;
+	ATOMIC_PTR_INIT(&col->data, NULL);
+	return col;
+}
+
+static int
+sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe, bte column_type)
+{
+	sqlstore *store = tr->store;
+	sql_column *col;
+	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
+	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
+	int res = LOG_OK;
+
+	if (!tpe)
+		return -1; /* TODO not sure what to do here */
+
+	if (tpe->type->composite) {
+		printf("composite type %s\n", tpe->type->base.name);
+	}
+	col = create_sql_column_with_id(NULL, next_oid(tr->store), t, name, tpe, column_type);
+
+	if (isTable(col->t))
+		if ((res = store->storage_api.create_col(tr, col))) {
+			ATOMIC_PTR_DESTROY(&col->data);
+			return res;
+		}
+	if (!isDeclaredTable(t)) {
+		char *strnil = (char*)ATOMnilptr(TYPE_str);
+		int digits = type_digits(&col->type);
+		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
+										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil, &col->column_type))) {
+			ATOMIC_PTR_DESTROY(&col->data);
+			return res;
+		}
+	}
+
+	if (tpe->type->s) {/* column depends on type */
+		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY))) {
+			ATOMIC_PTR_DESTROY(&col->data);
+			return res;
+		}
+		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl))) {
+			ATOMIC_PTR_DESTROY(&col->data);
+			return res;
+		}
+	}
+	*rcol = col;
+	return res;
+}
+
 int
 sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **cres)
 {
+	bool needs_data = true;
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
@@ -3731,21 +3875,51 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
 		return res;
 
-	ATOMIC_PTR_INIT(&col->data, NULL);
-	if (isDeclaredTable(c->t))
-		if (isTable(t))
-			if ((res = store->storage_api.create_col(tr, col))) {
-				ATOMIC_PTR_DESTROY(&col->data);
-				return res;
+	if (c->type.type->composite) {
+		char *name = "%nr";
+		if (c->type.scale == 0) { /* simple nested type, but no array */
+			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
+				sql_arg *f = n->data;
+				sql_column *ic = NULL;
+				/* how to store names (list) ? */
+				if (sql_trans_create_column_intern( &ic, tr, t, f->name, &f->type, column_intern) < 0)
+					return -2;
 			}
+			needs_data = false;
+		} else { //if (c->type.scale != 0) { /* nested type with array */
+			sql_table *it = NULL;
 
+			if (sql_trans_create_table( &it, tr, t->s, name, NULL, tt_table /* later internal type */, false,
+					   t->persistence, t->commit_action, t->sz, t->properties) < 0)
+				return -1;
+			/* TODO add id/number cols */
+			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
+				sql_arg *f = n->data;
+				sql_column *ic = NULL;
+				if (sql_trans_create_column( &ic, tr, it, f->name, &f->type) < 0)
+					return -2;
+			}
+			col->type.digits = it->base.id;
+		}
+	}
+
+	if (needs_data) {
+		ATOMIC_PTR_INIT(&col->data, NULL);
+		if (isDeclaredTable(c->t))
+			if (isTable(t))
+				if ((res = store->storage_api.create_col(tr, col))) {
+					ATOMIC_PTR_DESTROY(&col->data);
+					return res;
+				}
+
+	}
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
-					&digits, &col->type.scale, &t->base.id,
-					(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
-					(col->storage_type) ? &col->storage_type : &strnil))) {
+						&digits, &col->type.scale, &t->base.id,
+						(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
+						(col->storage_type) ? &col->storage_type : &strnil, &col->column_type))) {
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
@@ -4900,9 +5074,25 @@ sys_drop_type(sql_trans *tr, sql_type *type, int drop_action)
 
 	if (is_oid_nil(rid))
 		return -1;
+	if (type->composite) {
+		sql_table *sys_tab_fields = find_sql_table(tr, syss, "args");
+		sql_column *sys_fields_col = find_sql_column(sys_tab_fields, "func_id");
+		rids *fields = store->table_api.rids_select(tr, sys_fields_col, &type->base.id, &type->base.id, NULL);
+
+		if (fields == NULL)
+			return LOG_ERR;
+		for (oid r = store->table_api.rids_next(fields); !is_oid_nil(r); r = store->table_api.rids_next(fields)) {
+			if ((res = store->table_api.table_delete(tr, sys_tab_fields, r))) {
+				store->table_api.rids_destroy(fields);
+				return res;
+			}
+		}
+		store->table_api.rids_destroy(fields);
+	}
 
 	if ((res = store->table_api.table_delete(tr, sys_tab_type, rid)))
 		return res;
+
 	if (!isNew(type) && (res = sql_trans_add_dependency_change(tr, type->base.id, ddl)))
 		return res;
 	if ((res = sql_trans_drop_dependencies(tr, type->base.id)))
@@ -5033,21 +5223,29 @@ sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 }
 
 int
-sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl)
+sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl, list *fields)
 {
+	(void)fields;
 	sqlstore *store = tr->store;
 	sql_type *t;
 	sql_table *systype;
-	int localtype = ATOMindex(impl);
+	int localtype = impl?ATOMindex(impl) : TYPE_oid, number = 0;
 	sql_class eclass = EC_EXTERNAL;
 	int eclass_cast = (int) eclass, res = LOG_OK;
 
 	if (localtype < 0)
 		return -4;
 	t = ZNEW(sql_type);
-	systype = find_sql_table(tr, find_sql_schema(tr, "sys"), "types");
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	systype = find_sql_table(tr, syss, "types");
 	base_init(NULL, &t->base, next_oid(tr->store), true, sqlname);
-	t->impl =_STRDUP(impl);
+	t->d.impl = impl ? _STRDUP(impl) : NULL;
+	if (fields) {
+		t->composite = true;
+		t->d.fields = list_create((fdestroy) &arg_destroy);
+		for (node *n=fields->h; n; n = n->next)
+			list_append(t->d.fields, arg_dup(tr, s, n->data));
+	}
 	t->digits = digits;
 	t->scale = scale;
 	t->radix = radix;
@@ -5057,8 +5255,18 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 
 	if ((res = os_add(s->types, tr, t->base.name, &t->base)))
 		return res;
-	if ((res = store->table_api.table_insert(tr, systype, &t->base.id, &t->impl, &t->base.name, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id)))
+	char *strnil = (char*)ATOMnilptr(TYPE_str);
+	if ((res = store->table_api.table_insert(tr, systype, &t->base.id, t->composite ? &strnil : &t->d.impl, &t->base.name, &t->digits, &t->scale, &radix, &eclass_cast, &s->base.id)))
 		return res;
+	if (t->composite) {
+		sql_table *sysarg = find_sql_table(tr, syss, "args");
+		for (node *n = t->d.fields->h; n; n = n->next, number++) {
+			sql_arg *a = n->data;
+			sqlid id = next_oid(tr->store);
+			if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number)))
+				return res;
+		}
+	}
 	return res;
 }
 
@@ -5182,6 +5390,9 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 			return res;
 	}
 	*fres = t;
+	if (t->type == F_FILT && (list_length(t->ops) == 2 || list_length(t->ops) == 3))
+		if (!find_keyword(t->base.name))
+			(void) keywords_insert(t->base.name, KW_OPERATORS);
 	return res;
 }
 
@@ -6083,30 +6294,10 @@ create_sql_idx_done(sql_trans *tr, sql_idx *i)
 	return i;
 }
 
-static sql_column *
-create_sql_column_with_id(allocator *sa, sqlid id, sql_table *t, const char *name, sql_subtype *tpe)
-{
-	sql_column *col = SA_ZNEW(sa, sql_column);
-
-	base_init(sa, &col->base, id, true, name);
-	col->type = *tpe;
-	col->def = NULL;
-	col->null = 1;
-	col->colnr = table_next_column_nr(t);
-	col->t = t;
-	col->unique = 0;
-	col->storage_type = NULL;
-
-	if (ol_add(t->columns, &col->base))
-		return NULL;
-	ATOMIC_PTR_INIT(&col->data, NULL);
-	return col;
-}
-
 sql_column *
 create_sql_column(sqlstore *store, allocator *sa, sql_table *t, const char *name, sql_subtype *tpe)
 {
-	return create_sql_column_with_id(sa, next_oid(store), t, name, tpe);
+	return create_sql_column_with_id(sa, next_oid(store), t, name, tpe, column_plain);
 }
 
 int
@@ -6187,44 +6378,7 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 int
 sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe)
 {
-	sqlstore *store = tr->store;
-	sql_column *col;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
-	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
-	int res = LOG_OK;
-
-	if (!tpe)
-		return -1; /* TODO not sure what to do here */
-
-	col = create_sql_column_with_id(NULL, next_oid(tr->store), t, name, tpe);
-
-	if (isTable(col->t))
-		if ((res = store->storage_api.create_col(tr, col))) {
-			ATOMIC_PTR_DESTROY(&col->data);
-			return res;
-		}
-	if (!isDeclaredTable(t)) {
-		char *strnil = (char*)ATOMnilptr(TYPE_str);
-		int digits = type_digits(&col->type);
-		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
-										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))) {
-			ATOMIC_PTR_DESTROY(&col->data);
-			return res;
-		}
-	}
-
-	if (tpe->type->s) {/* column depends on type */
-		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY))) {
-			ATOMIC_PTR_DESTROY(&col->data);
-			return res;
-		}
-		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl))) {
-			ATOMIC_PTR_DESTROY(&col->data);
-			return res;
-		}
-	}
-	*rcol = col;
-	return res;
+	return sql_trans_create_column_intern(rcol, tr, t, name, tpe, column_plain);
 }
 
 void

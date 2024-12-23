@@ -880,6 +880,64 @@ bl_postversion(void *Store, logger *lg)
 			}
 		}
 		bat_destroy(funcs);
+
+		/* new TINYINT column sys._columns.column_type */
+		b = log_temp_descriptor(log_find_bat(lg, 2077)); /* sys._columns.id */
+		if (b == NULL)
+			return GDK_FAIL;
+		bte ct = 0;
+		BAT *coltype = BATconstant(b->hseqbase, TYPE_bte, &ct, BATcount(b), PERSISTENT);
+		bat_destroy(b);
+		if (coltype == NULL)
+			return GDK_FAIL;
+		/* First add 2 rows for sys._columns.column_type and tmp._columns.column_type */
+		if (BUNappend(coltype, &ct, true) != GDK_SUCCEED ||
+		    BUNappend(coltype, &ct, true) != GDK_SUCCEED ||
+		   ((coltype = BATsetaccess(coltype, BAT_READ)) == NULL ||
+				/* 2165 is sys._columns.column_type */
+				BUNappend(lg->catalog_id, &(int) {2168}, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &coltype->batCacheid, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_cnt, &(lng){BATcount(coltype)}, false) != GDK_SUCCEED
+		   )) {
+			bat_destroy(coltype);
+			return GDK_FAIL;
+		}
+		BBPretain(coltype->batCacheid);
+		bat_destroy(coltype);
+
+		if (tabins(lg,
+					2076, &(msk) {false},	/* sys._columns */
+					/* 2168 is sys._columns.column_type */
+					2077, &(int) {2168},		/* sys._columns.id */
+					2078, "column_type",			/* sys._columns.name */
+					2079, "tinyint",			/* sys._columns.type */
+					2080, &(int) {7},		/* sys._columns.type_digits */
+					2081, &(int) {0},		/* sys._columns.type_scale */
+					/* 2076 is sys._columns */
+					2082, &(int) {2076},		/* sys._columns.table_id */
+					2083, str_nil,			/* sys._columns.default */
+					2084, &(bit) {TRUE},		/* sys._columns.null */
+					2085, &(int) {6},		/* sys._columns.number */
+					2086, str_nil,			/* sys._columns.storage */
+					0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+					2076, &(msk) {false},	/* sys._columns */
+					/* 2169 is tmp._columns.column_type */
+					2077, &(int) {2169},		/* sys._columns.id */
+					2078, "column_type",			/* sys._columns.name */
+					2079, "tinyint",			/* sys._columns.type */
+					2080, &(int) {7},		/* sys._columns.type_digits */
+					2081, &(int) {0},		/* sys._columns.type_scale */
+					/* 2124 is tmp._columns */
+					2082, &(int) {2124},		/* sys._columns.table_id */
+					2083, str_nil,			/* sys._columns.default */
+					2084, &(bit) {TRUE},		/* sys._columns.null */
+					2085, &(int) {6},		/* sys._columns.number */
+					2086, str_nil,			/* sys._columns.storage */
+					0) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 	if (store->catalog_version <= CATALOG_AUG2024) {
 		/* new TINYINT column sys.functions.order_specification */

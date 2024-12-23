@@ -1339,8 +1339,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		const char *name = BUNtvar(btype_iter, i);
 		t->base.name = SA_STRDUP(sa, name);
 		const char *impl = BUNtvar(bimpl_iter, i);
-		t->impl	= SA_STRDUP(sa, impl);
-		t->localtype = ATOMindex(t->impl);
+		t->d.impl	= impl?SA_STRDUP(sa, impl):NULL;
+		t->localtype = impl?ATOMindex(t->d.impl):0;
 
 		sql_subtype *st = SA_ZNEW(sa, sql_subtype);
 		sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
@@ -1371,7 +1371,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 			// output argument
 
 			const char *column = BUNtvar(bcolumn_iter, i);
-			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false, false);
+			sql_exp * c = exp_column(sa, a_create(sa, table), column, st, CARD_MULTI, true, false, false);
 			append(rets, c);
 		}
 	}

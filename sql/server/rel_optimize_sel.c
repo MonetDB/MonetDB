@@ -12,7 +12,6 @@
 
 #include "monetdb_config.h"
 #include "rel_optimizer_private.h"
-#include "rel_planner.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
@@ -2355,10 +2354,6 @@ order_joins(visitor *v, list *rels, list *exps)
 		sql_exp *e = djn->data;
 		list_remove_data(exps, NULL, e);
 	}
-	if (list_length(rels) > 2 && mvc_debug_on(v->sql, 256)) {
-		top =  rel_planner(v->sql, rels, sdje, exps);
-		return top;
-	}
 
 	int nr_exps = list_length(sdje), nr_rels = list_length(rels), ci = 1;
 	if (nr_rels > 64) {
@@ -3236,7 +3231,8 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 			for(n = gbes->h; n; n = n->next) {
 				sql_exp *gbe = n->data;
 				int fnd = 0;
-				const char *rname = NULL, *name = NULL;
+				sql_alias *rname = NULL;
+				const char *name = NULL;
 
 				/* project in between, ie find alias */
 				/* first find expression in expression list */
@@ -3263,7 +3259,7 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 
 						if (r == 0 || r->type != e_column)
 							continue;
-						if (r->l && rname && strcmp(r->l, rname) == 0 && strcmp(r->r, name)==0) {
+						if (r->l && rname && a_match(r->l, rname) && strcmp(r->r, name)==0) {
 							fnd = 1;
 						} else if (!r->l && !rname  && strcmp(r->r, name)==0) {
 							fnd = 1;
@@ -4035,7 +4031,7 @@ rel_use_index(visitor *v, sql_rel *rel)
 				return rel;
 			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, nre)) || (!left && rel_find_exp(rel->r, nre))))
 				nre = e->r;
-			single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
+			single_table = (!re || (exp_relname(nre) && exp_relname(re) && a_match(exp_relname(nre), exp_relname(re))));
 			re = nre;
 		}
 		if (single_table) { /* add PROP_HASHCOL to all column exps */

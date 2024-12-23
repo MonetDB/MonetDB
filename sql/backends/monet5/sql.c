@@ -1533,7 +1533,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (nrows) {
 		if (tname) {
 			deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
-			segments = (lng) store->storage_api.count_del(m->session->tr, t, 10);
+			segments = (lng) store->storage_api.count_del(m->session->tr, t, CNT_SEGS);
 			if (cname) {
 				if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, segments, deletes)) != NULL)
 					goto cleanup;
@@ -1551,7 +1551,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				t = (sql_table *)b;
 				if (isTable(t)) {
 					deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
-					segments = (lng) store->storage_api.count_del(m->session->tr, t, 10);
+					segments = (lng) store->storage_api.count_del(m->session->tr, t, CNT_SEGS);
 
 					for (node *nn = ol_first_node(t->columns); nn ; nn = nn->next) {
 						c = (sql_column*) nn->data;
@@ -4856,7 +4856,14 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 			for (node *n = r->exps->h; n; n = n->next, arg_number++) {
 				sql_exp *e = n->data;
 				sql_subtype *t = exp_subtype(e);
-				const char *name = exp_name(e), *rname = exp_relname(e), *rschema = ATOMnilptr(TYPE_str);
+				const char *name = exp_name(e), *rname = NULL, *rschema = ATOMnilptr(TYPE_str);
+				sql_alias *ra = exp_relname(e);
+
+				if (ra) {
+					rname = ra->name;
+					if (ra->parent)
+						rschema = ra->parent->name;
+				}
 
 				if (!name && e->type == e_column && e->r)
 					name = e->r;
@@ -5508,7 +5515,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_key *k = mvc_bind_key(m, s, kname);
 		if (k && k->check) {
 			int pos = 0;
-			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
+			sql_rel *rel = rel_basetable(m, k->t, a_create(m->sa, k->t->base.name));
 			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
 			if (exp->comment)
 				*r = GDKstrdup(exp->comment);
@@ -6331,6 +6338,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "drop_constraint", SQLdrop_constraint, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "alter_table", SQLalter_table, false, "Catalog operation alter_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("action",int))),
  pattern("sqlcatalog", "create_type", SQLcreate_type, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
+ pattern("sqlcatalog", "create_type", SQLcreate_type, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("fields",ptr))),
  pattern("sqlcatalog", "drop_type", SQLdrop_type, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
  pattern("sqlcatalog", "grant_roles", SQLgrant_roles, false, "Catalog operation grant_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),
  pattern("sqlcatalog", "revoke_roles", SQLrevoke_roles, false, "Catalog operation revoke_roles", args(0,4, arg("sname",str),arg("auth",str),arg("grantor",int),arg("admin",int))),

@@ -12,7 +12,7 @@ statement ok
 INSERT INTO bar VALUES ('left'),('right'),('up')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false]
+SELECT * FROM foo,bar WHERE foo.f startswith[false] bar.b
 ----
 leftlex
 left
@@ -22,7 +22,7 @@ uptim
 up
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true]
+SELECT * FROM foo,bar WHERE foo.f startswith[true] bar.b
 ----
 LEFTJOE
 left
@@ -51,7 +51,7 @@ statement ok
 INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('καλή'),(NULL),('oLÁ'),('Das grüne'),('Punch-Out!!'),('Adeus'),('früh')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, false]
+SELECT * FROM foo,bar WHERE foo.f startswith[false] bar.b
 ----
 Adeus, boa tarde
 Adeus
@@ -69,7 +69,7 @@ Punch-Out!!
 Καλή
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] startswith [bar.b, true]
+SELECT * FROM foo,bar WHERE foo.f startswith[true] bar.b
 ----
 Adeus, boa tarde
 Adeus
@@ -315,7 +315,7 @@ Joseph
 Carolyn
 
 query TT rowsort
-SELECT * FROM fal,f WHERE [fal.x] startswith [f.y]
+SELECT * FROM fal,f WHERE fal.x startswith f.y
 ----
 Andrew Alvarado
 Andrew
@@ -417,7 +417,7 @@ William Franco
 William
 
 query TT rowsort
-SELECT * FROM fal,f WHERE [fal.x] endswith [f.y]
+SELECT * FROM fal,f WHERE fal.x endswith f.y
 ----
 Christopher Russell
 Russell

@@ -132,7 +132,7 @@ typedef struct stmt {
 	int nr;			/* variable assignment */
 
 	int label;
-	const char *tname;
+	sql_alias *tname;
 	const char *cname;
 	InstrPtr q;
 	list *extra;	/* used for merge statements, this will be cleaned out on the pushcands branch :) */
@@ -153,15 +153,15 @@ extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
 
 extern stmt *stmt_none(backend *be);
 
-extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
+extern stmt *stmt_var(backend *be, sql_alias *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
 extern stmt *stmt_varnr(backend *be, int nr, sql_subtype *t);
 
 extern stmt *stmt_table(backend *be, stmt *cols, int temp);
 extern stmt *stmt_rs_column(backend *be, stmt *result_set, int i, sql_subtype *tpe);
 
-extern stmt *stmt_bat(backend *be, sql_column *c, int access, int partition);
-extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
+extern stmt *stmt_bat(backend *be, sql_column *c, sql_alias *tname, int access, int partition);
+extern stmt *stmt_idxbat(backend *be, sql_idx *i, sql_alias *tname, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
 extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
@@ -260,7 +260,7 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
-extern stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
+extern stmt *stmt_alias(backend *be, stmt *op1, int label, sql_alias *tname, const char *name);
 extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
 
 extern int stmt_output(backend *be, stmt *l);
@@ -270,14 +270,13 @@ extern int stmt_affected_rows(backend *be, int lastnr);
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);
 extern stmt *stmt_control_end(backend *be, stmt *cond);
 extern stmt *stmt_return(backend *be, stmt *val, int nr_of_declared_tables);
-extern stmt *stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int level);
+extern stmt *stmt_assign(backend *be, sql_alias *sname, const char *varname, stmt *val, int level);
 
 extern sql_subtype *tail_type(stmt *st);
 extern int stmt_has_null(stmt *s);
 
 extern const char *column_name(allocator *sa, stmt *st);
-extern const char *table_name(allocator *sa, stmt *st);
-extern const char *schema_name(allocator *sa, stmt *st);
+extern sql_alias *table_name(allocator *sa, stmt *st);
 
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);

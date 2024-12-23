@@ -25,7 +25,7 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 {
 	sql_exp* res = NULL;
 
-	*anti_rel = rel_basetable(sql, pt, pt->base.name);
+	*anti_rel = rel_basetable(sql, pt, a_create(sql->sa, pt->base.name));
 
 	if (isPartitionedByColumnTable(mt)) {
 		int colr = mt->part.pcol->colnr;
@@ -58,12 +58,13 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 		rel->r = rel_project(sql->sa, rel->r, l);
 		set_processed((sql_rel*)rel->r);
 		inserts = ((sql_rel*)(rel->r))->l;
+		sql_alias *ta = table_alias(sql->sa, t, NULL);
 		for (node *n = ol_first_node(t->columns), *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
 			help = exp_ref(sql, before);
-			exp_setalias(help, before->alias.label, t->base.name, col->base.name);
+			exp_setalias(help, before->alias.label, ta, col->base.name);
 			list_append(l, help);
 		}
 		return rel_dup(rel->r);
@@ -84,12 +85,13 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		inserts = (*anti_rel)->l;
 		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
+		sql_alias *ta = table_alias(sql->sa, t, NULL);
 		for (node *n = ol_first_node(t->columns), *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
 			help = exp_ref(sql, before);
-			exp_setalias(help, before->alias.label, t->base.name, col->base.name);
+			exp_setalias(help, before->alias.label, ta, col->base.name);
 			list_append(l, help);
 		}
 	}
@@ -492,8 +494,8 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 		} break;
 		case e_column: {
-			if (!strcmp(e->l, oldt->base.name))
-				e->l = sa_strdup(sql->sa, newt->base.name);
+			if (a_cmp_obj_name(e->l, oldt->base.name))
+				e->l = a_create(sql->sa, newt->base.name);
 		} break;
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -515,8 +517,8 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 			}
 		} break;
 	}
-	if (exp_relname(e) && !strcmp(exp_relname(e), oldt->base.name))
-		e->alias.rname = newt->base.name;
+	if (exp_relname(e) && a_cmp_obj_name(exp_relname(e), oldt->base.name))
+		e->alias.parent = a_create(sql->sa, newt->base.name);
 	return e;
 }
 
@@ -624,10 +626,11 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			dup = rel_copy(sql, rel->r, 1);
 			dup = rel_change_base_table(sql, dup, t, sub);
 		}
+		sql_alias *sa = a_create(sql->sa, sub->base.name);
 		if (is_delete(rel->op))
-			s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sub->base.name), dup);
+			s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sa), dup);
 		else
-			s1 = rel_truncate_duplicate(sql, rel_basetable(sql, sub, sub->base.name), rel);
+			s1 = rel_truncate_duplicate(sql, rel_basetable(sql, sub, sa), rel);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
@@ -651,7 +654,8 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
-		sql_rel *bt = rel_basetable(sql, sub, sub->base.name);
+		sql_alias *sa = a_create(sql->sa, sub->base.name);
+		sql_rel *bt = rel_basetable(sql, sub, sa);
 
 		if (!update_allowed(sql, sub, sub->base.name, "UPDATE", "update", 0))
 			return NULL;
@@ -721,6 +725,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
+		sql_alias *sa = a_create(sql->sa, sub->base.name);
 		sql_rel *s1 = NULL, *dup = NULL;
 		sql_exp *le = NULL;
 
@@ -823,7 +828,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			assert(0);
 		}
 
-		new_table = rel_basetable(sql, sub, sub->base.name);
+		new_table = rel_basetable(sql, sub, sa);
 		rel_base_use_all(query->sql, new_table);
 		new_table = rewrite_basetable(query->sql, new_table);
 		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
@@ -907,7 +912,7 @@ update_move_across_partitions(sql_rel *rel, sql_table *t)
 {
 	for (node *n = ((sql_rel*)rel->r)->exps->h; n; n = n->next) {
 		sql_exp* exp = (sql_exp*) n->data;
-		if (exp->type == e_column && exp->l && exp->r && !strcmp((char*)exp->l, t->base.name)) {
+		if (exp->type == e_column && exp->l && exp->r && a_cmp_obj_name(exp->l, t->base.name)) {
 			char* colname = (char*)exp->r;
 
 			if (isPartitionedByColumnTable(t)) {

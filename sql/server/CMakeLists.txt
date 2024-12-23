@@ -58,7 +58,6 @@ target_sources(sqlserver
   rel_optimize_proj.c
   rel_optimize_sel.c
   rel_partition.c
-  rel_planner.c rel_planner.h
   rel_distribute.c
   rel_remote.c rel_remote.h
   rel_propagate.c rel_propagate.h

@@ -98,11 +98,11 @@ extern list * exp_types(allocator *sa, list *exps);
 extern int have_nil(list *exps);
 extern int have_semantics(list *exps);
 
-sql_export sql_exp * exp_column(allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
+sql_export sql_exp *exp_column(allocator *sa, sql_alias *parent, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 extern sql_exp * exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe);
 extern sql_exp * exp_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_ref_save(mvc *sql, sql_exp *e); /* if needed mark the input expression as a referenced expression, return reference to e */
-extern sql_exp * exp_alias(mvc *sql, const char *arname, const char *acname, const char *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
+extern sql_exp * exp_alias(mvc *sql, sql_alias *arname, const char *acname, sql_alias *org_rname, const char *org_cname, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 extern sql_exp * exp_alias_ref(mvc *sql, sql_exp *e);
 extern sql_exp * exp_set(allocator *sa, const char *sname, const char *name, sql_exp *val, int level);
 extern sql_exp * exp_var(allocator *sa, const char *sname, const char *name, sql_subtype *type, int level);
@@ -113,12 +113,12 @@ extern sql_exp * exp_exception(allocator *sa, sql_exp *cond, const char *error_m
 extern sql_exp * exp_if(allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts);
 extern sql_exp * exp_rel(mvc *sql, sql_rel * r);
 
-extern void exp_setname(mvc *sql, sql_exp *e, const char *rname, const char *name );
+extern void exp_setname(mvc *sql, sql_exp *e, sql_alias *p, const char *name );
 extern void exp_setrelname(allocator *sa, sql_exp *e, int nr );
-extern void exp_setalias(sql_exp *e, int label, const char *rname, const char *name);
+extern void exp_setalias(sql_exp *e, int label, sql_alias *p, const char *name);
 extern void exp_prop_alias(allocator *sa, sql_exp *e, sql_exp *oe);
 
-extern void noninternexp_setname(mvc *sql, sql_exp *e, const char *rname, const char *name );
+extern void noninternexp_setname(mvc *sql, sql_exp *e, sql_alias *p, const char *name );
 extern char* make_label(allocator *sa, int nr);
 extern sql_exp* exp_label(allocator *sa, sql_exp *e, int nr);
 extern list* exps_label(mvc *sql, list *exps);
@@ -131,12 +131,12 @@ extern void exp_swap( sql_exp *e );
 
 extern sql_subtype * exp_subtype( sql_exp *e );
 extern const char * exp_name( sql_exp *e );
-extern const char * exp_relname( sql_exp *e );
+extern sql_alias* exp_relname( sql_exp *e );
 extern const char * exp_func_name( sql_exp *e );
 extern unsigned int exp_card(sql_exp *e);
 extern unsigned int exp_get_label(sql_exp *e);
 
-extern const char *exp_find_rel_name(sql_exp *e);
+extern sql_alias *exp_find_rel_name(sql_exp *e);
 
 extern sql_exp *rel_find_exp(sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, bool subexp, sql_rel **res, bool *under_join);
@@ -199,9 +199,20 @@ extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 extern sql_exp *exps_bind_nid(list *exps, int nid); /* get first expression to which this nid points */
 extern sql_exp *exps_uses_nid(list *exps, int nid); /* get first expression which references back to nid */
 extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname /* set if expressions should be without a tname */);
-extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple);
-extern sql_exp *exps_bind_alias(list *exps, const char *rname, const char *cname);
+extern sql_exp *exps_bind_column2(list *exps, sql_alias *rname, const char *cname, int *multiple);
 extern sql_exp * list_find_exp( list *exps, sql_exp *e);
+
+extern sql_alias *a_create(allocator *sa, const char *name);
+extern sql_alias *schema_alias(allocator *sa, sql_schema *s);
+extern sql_alias *table_alias(allocator *sa, sql_table *t, sql_alias *p);
+#define a_no_name(a) ((a)->name == NULL)
+#define a_obj_name(a) ((a)->name)
+#define a_parent(a) ((a)->parent)
+extern bool a_cmp_obj_name(sql_alias *n, const char *name);
+extern bool a_cmp_obj_names(sql_alias *n, sql_alias *n2);
+extern bool a_match_obj(sql_alias *l, sql_alias *r);
+extern bool a_match(sql_alias *l, sql_alias *r);
+extern bool a_cmp(sql_alias *l, sql_alias *r);
 
 extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);

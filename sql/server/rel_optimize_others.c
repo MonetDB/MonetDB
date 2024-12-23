@@ -41,7 +41,7 @@ rel_rename_exps( mvc *sql, list *src_exps, list *dest_exps)
 	for (n = src_exps->h, m = dest_exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *s = n->data;
 		sql_exp *d = m->data;
-		const char *rname = exp_relname(s);
+		sql_alias *rname = exp_relname(s);
 
 		exp_setalias(d, s->alias.label, rname, exp_name(s));
 	}
@@ -322,7 +322,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	if (ne && e != ne) {
-		if (local_proj == -2 || ne->type != e_column || (has_label(ne) || (ne->alias.rname && ne->alias.rname[0] == '%')) || (subrel->l && !is_munion(subrel->op) && !rel_find_exp(subrel->l, e)))
+		if (local_proj == -2 || ne->type != e_column || (has_label(ne) || (ne->alias.parent && ne->alias.parent->name && ne->alias.parent->name[0] == '%')) || (subrel->l && !is_munion(subrel->op) && !rel_find_exp(subrel->l, e)))
 			ne->used = 1;
 		return ne->used;
 	}

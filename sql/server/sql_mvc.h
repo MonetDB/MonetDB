@@ -205,7 +205,7 @@ extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, const char *kname);
 extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 
-extern int mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
+extern int mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl, list *fields);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
 extern int mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,

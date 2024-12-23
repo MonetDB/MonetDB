@@ -27,7 +27,7 @@
 
 typedef struct rel_base_t {
 	sql_table *mt;
-	char *name;
+	sql_alias *name;
 	int disallowed;	/* ie check per column */
 	int basenr;
 	uint32_t used[];
@@ -40,21 +40,22 @@ rel_base_disallow(sql_rel *r)
 	ba->disallowed = 1;
 }
 
-char *
+sql_alias *
 rel_base_name(sql_rel *r)
 {
-	sql_table *t = r->l;
 	rel_base_t *ba = r->r;
 	if (ba->name)
 		return ba->name;
-	return t->base.name;
+	return NULL;
 }
 
-char *
-rel_base_rename(sql_rel *r, char *name)
+sql_alias *
+rel_base_rename(sql_rel *r, sql_alias *name)
 {
 	rel_base_t *ba = r->r;
-	ba->name = name;
+	assert(ba->name);
+	ba->name->name = name->name;
+	ba->name->parent = name->parent;
 	return name;
 }
 
@@ -149,7 +150,7 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 }
 
 sql_rel *
-rel_basetable(mvc *sql, sql_table *t, const char *atname)
+rel_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 {
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
@@ -163,10 +164,12 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	ba->basenr = sql->nid;
 	sql->nid += end;
 	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 10));
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_del(sql->session->tr, t, CNT_ACTIVE));
 	assert(atname);
-	if (strcmp(atname, t->base.name) != 0)
-		ba->name = sa_strdup(sa, atname);
+	if (!a_cmp_obj_name(atname, t->base.name))
+		ba->name = atname;
+	else
+		ba->name = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
 	for(int i = nrcols; i<end; i++)
 		rel_base_set_used(ba, i);
 	rel->l = t;
@@ -191,7 +194,7 @@ rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
 
 	memcpy(nba, ba, bsize);
 	if (ba->name)
-		nba->name = sa_strdup(sa, ba->name);
+		nba->name = a_create(sa, sa_strdup(sa, ba->name->name));
 
 	out->l = t;
 	out->r = nba;
@@ -208,7 +211,7 @@ rel_base_bind_column_( sql_rel *rel, const char *cname)
 }
 
 static sql_exp *
-bind_col_exp(mvc *sql, rel_base_t *ba, char *name, sql_column *c)
+bind_col_exp(mvc *sql, rel_base_t *ba, sql_alias *name, sql_column *c)
 {
 	prop *p = NULL;
 	sql_exp *e = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
@@ -230,7 +233,7 @@ bind_col_exp(mvc *sql, rel_base_t *ba, char *name, sql_column *c)
 }
 
 static sql_exp *
-bind_col(mvc *sql, sql_rel *rel, char *name, sql_column *c )
+bind_col(mvc *sql, sql_rel *rel, sql_alias *name, sql_column *c )
 {
 	if (!c || rel_base_use(sql, rel, c->colnr)) {
 		/* error */
@@ -244,7 +247,7 @@ rel_base_bind_colnr( mvc *sql, sql_rel *rel, int nr)
 {
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
-	return bind_col(sql, rel, ba->name?ba->name:t->base.name, ol_fetch(t->columns, nr));
+	return bind_col(sql, rel, ba->name, ol_fetch(t->columns, nr));
 }
 
 sql_exp *
@@ -269,7 +272,7 @@ rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname)
 	node *n = t ? ol_find_name(t->columns, cname) : NULL;
 	if (!n)
 		return NULL;
-	return bind_col(sql, rel, ba->name?ba->name:t->base.name, n->data);
+	return bind_col(sql, rel, ba->name, n->data);
 }
 
 sql_rel *
@@ -279,7 +282,7 @@ rel_base_bind_column2_( sql_rel *rel, const char *tname, const char *cname)
 	rel_base_t *ba = rel->r;
 
 	assert(ba);
-	if ((ba->name && strcmp(ba->name, tname) != 0) || (!ba->name && strcmp(t->base.name, tname) != 0))
+	if (ba->name && !a_cmp_obj_name(ba->name, tname))
 		return NULL;
 	node *n = ol_find_name(t->columns, cname);
 	if (!n)
@@ -288,28 +291,28 @@ rel_base_bind_column2_( sql_rel *rel, const char *tname, const char *cname)
 }
 
 sql_exp *
-rel_base_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname)
+rel_base_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname)
 {
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
 
 	assert(ba);
-	if ((ba->name && strcmp(ba->name, tname) != 0) || (!ba->name && strcmp(t->base.name, tname) != 0))
+	if (ba->name && !a_match_obj(ba->name, tname))
 		return NULL;
 	node *n = ol_find_name(t->columns, cname);
 	if (!n)
 		return NULL;
 	sql_column *c = n->data;
-	return bind_col(sql, rel, ba->name?ba->name:t->base.name, c);
+	return bind_col(sql, rel, ba->name, c);
 }
 
 sql_exp *
-rel_base_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname)
+rel_base_bind_column3( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname)
 {
-	sql_table *t = rel->l;
-	if (!t->s || strcmp(t->s->base.name, sname) != 0)
+	sql_alias *name = rel_base_name(rel);
+	if (!a_match(name, tname))
 		return NULL;
-	return rel_base_bind_column2(sql, rel, tname, cname);
+	return rel_base_bind_column(sql, rel, cname, 0);
 }
 
 list *
@@ -318,7 +321,7 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 	int i = 0;
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
-	char *name = ba->name?ba->name:t->base.name;
+	sql_alias *name = ba->name;
 	list *exps = new_exp_list(sql->sa);
 	prop *p;
 
@@ -380,10 +383,10 @@ rel_base_project_all( mvc *sql, sql_rel *rel, char *tname)
 {
 	sql_table *t = rel->l;
 	rel_base_t *ba = rel->r;
-	char *name = ba->name?ba->name:t->base.name;
+	sql_alias *name = ba->name;
 	list *exps = new_exp_list(sql->sa);
 
-	if (!exps || strcmp(name, tname) != 0)
+	if (!exps || !a_cmp_obj_name(name, tname))
 		return NULL;
 
 	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next)
@@ -406,12 +409,12 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 	int i = 0;
 	prop *p = NULL;
 	node *cn;
-	const char *tname = t->base.name;
-	const char *atname = ba->name?ba->name:tname;
+	sql_alias *ta = table_alias(sql->sa, t, NULL);
+	sql_alias *atname = ba->name;
 
 	for (cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
 		sql_column *c = cn->data;
-		sql_exp *e = exp_alias(sql, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+		sql_exp *e = exp_alias(sql, atname, c->base.name, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		if (e == NULL) {
 			rel_destroy(r);
@@ -451,16 +454,17 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 		prop *p = NULL;
 		node *cn;
 		const char *tname = t->base.name;
-		const char *atname = ba->name?ba->name:tname;
+		sql_alias *atname = ba->name;
 
 		if (isRemote(t))
 			tname = mapiuri_table(t->query, sql->sa, tname);
+		sql_alias *ta = a_create(sql->sa, tname);
 		for (cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
 			if (!rel_base_is_used(ba, i))
 				continue;
 
 			sql_column *c = cn->data;
-			sql_exp *e = exp_alias(sql, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *e = exp_alias(sql, atname, c->base.name, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			if (e == NULL) {
 				rel_destroy(rel);
@@ -480,7 +484,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			append(rel->exps, e);
 		}
 		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) { /* Add TID column if no column is used */
-			sql_exp *e = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			sql_exp *e = exp_alias(sql, atname, TID, ta, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			if (e == NULL) {
 				rel_destroy(rel);
 				return NULL;
@@ -514,7 +518,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 					has_nils = 1;
 			}
 			unique = list_length(i->columns) == 1 && is_column_unique(((sql_kc*)i->columns->h->data)->c);
-			e = exp_alias(sql, atname, iname, tname, iname, t, CARD_MULTI, has_nils, unique, 1);
+			e = exp_alias(sql, atname, iname, ta, iname, t, CARD_MULTI, has_nils, unique, 1);
 			if (e == NULL) {
 				rel_destroy(rel);
 				return NULL;
@@ -545,20 +549,21 @@ basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 		rel_base_t *ba = rel->r;
 		const char *tname = t->base.name;
-		const char *atname = ba->name?ba->name:tname;
+		sql_alias *atname = ba->name;
 
 		if (isRemote(t))
 			tname = mapiuri_table(t->query, sql->sa, tname);
+		sql_alias *ta = a_create(sql->sa, tname);
 		if (!rel->exps) { /* no exps yet, just set TID */
 			rel_base_use_tid(sql, rel);
-			res = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			res = exp_alias(sql, atname, TID, ta, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			res->nid = -(ba->basenr + ol_length(t->columns));
 			res->alias.label = res->nid;
 		} else if (!rel_base_is_used(ba, ol_length(t->columns)) ||  /* exps set, but no TID, add it */
 				   !(res = exps_bind_column2(rel->exps, atname, TID, NULL))) { /* exps set with TID, but maybe rel_dce removed it */
 			node *n = NULL;
 			rel_base_use_tid(sql, rel);
-			res = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			res = exp_alias(sql, atname, TID, ta, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 			res->nid = -(ba->basenr + ol_length(t->columns));
 			res->alias.label = res->nid;
 
@@ -580,7 +585,7 @@ basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
 }
 
 sql_rel *
-rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
+rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, sql_alias *mtalias)
 {
 	sql_exp *ne = NULL;
 	sql_table *mt = rel_base_table(mt_rel), *t = rel_base_table(p);
@@ -592,13 +597,14 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 	const char *pname = t->base.name;
 	if (isRemote(t))
 		pname = mapiuri_table(t->query, sql->sa, pname);
+	sql_alias *pa = a_create(sql->sa, pname);
 	for (node *n = mt_rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		node *cn = NULL, *ci = NULL;
 		const char *nname = e->r;
 
 		if (nname[0] == '%' && strcmp(nname, TID) == 0) {
-			list_append(p->exps, ne=exp_alias(sql, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
+			list_append(p->exps, ne=exp_alias(sql, mtalias, TID, pa, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
 			ne->nid = e->nid;
 			ne->alias.label = e->alias.label;
 			rel_base_use_tid(sql, p);
@@ -606,7 +612,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_column *c = cn->data, *rc = ol_fetch(t->columns, c->colnr);
 
 			/* with name find column in merge table, with colnr find column in member */
-			ne = exp_alias(sql, mtalias, exp_name(e), pname, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
+			ne = exp_alias(sql, mtalias, exp_name(e), pa, rc->base.name, &rc->type, CARD_MULTI, rc->null, is_column_unique(rc), 0);
 			if (rc->t->pkey && ((sql_kc*)rc->t->pkey->k.columns->h->data)->c == rc) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHCOL, ne->p);
 				p->value.pval = rc->t->pkey;
@@ -637,7 +643,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
 			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
 
-			ne = exp_alias(sql, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), is_unique(e), 1);
+			ne = exp_alias(sql, mtalias, iname1, pa, iname2, t, CARD_MULTI, has_nil(e), is_unique(e), 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(ri->type)) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_HASHIDX, ne->p);
@@ -668,14 +674,14 @@ rel_base_dump_exps( stream *fout, sql_rel *rel)
 			sql_column *c = cn->data;
 			mnstr_printf(fout, "%s\"%s\".\"%s\"", comma?", ":"", t->base.name, c->base.name);
 			if (ba->name)
-				mnstr_printf(fout, " as \"%s\".\"%s\"", ba->name, c->base.name);
+				mnstr_printf(fout, " as \"%s\".\"%s\"", ba->name->name, c->base.name);
 			comma = 1;
 		}
 	}
 	if (rel_base_is_used(ba, i)) {
 		mnstr_printf(fout, "%s\"%s\".\"%%TID%%\"", comma?", ":"", t->base.name);
 		if (ba->name)
-			mnstr_printf(fout, " as \"%s\".\"%%TID%%\"", ba->name);
+			mnstr_printf(fout, " as \"%s\".\"%%TID%%\"", ba->name->name);
 		comma = 1;
 	}
 	i++;
@@ -684,7 +690,7 @@ rel_base_dump_exps( stream *fout, sql_rel *rel)
 			sql_idx *i = in->data;
 			mnstr_printf(fout, "%s\"%s\".\"%s\"", comma?", ":"", t->base.name, i->base.name);
 			if (ba->name)
-				mnstr_printf(fout, " as \"%s\".\"%s\"", ba->name, i->base.name);
+				mnstr_printf(fout, " as \"%s\".\"%s\"", ba->name->name, i->base.name);
 			comma = 1;
 		}
 	}

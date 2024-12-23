@@ -6,16 +6,16 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	1,	1,	0,	4,	4 # length
-[ "int",	7,	0,	"",	"tab0",	"col0"	]
+% 3,	1,	1,	3,	4,	4 # length
+[ "int",	7,	0,	"sys",	"tab0",	"col0"	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
 #prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	1,	1,	0,	4,	4 # length
-[ "int",	7,	0,	"",	"tab0",	"col0"	]
+% 3,	1,	1,	3,	4,	4 # length
+[ "int",	7,	0,	"sys",	"tab0",	"col0"	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
@@ -23,16 +23,16 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	1,	1,	0,	4,	4 # length
-[ "int",	7,	0,	"",	"tab0",	"col0"	]
+% 3,	1,	1,	3,	4,	4 # length
+[ "int",	7,	0,	"sys",	"tab0",	"col0"	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
 #prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	1,	1,	0,	4,	4 # length
-[ "int",	7,	0,	"",	"tab0",	"col0"	]
+% 3,	1,	1,	3,	4,	4 # length
+[ "int",	7,	0,	"sys",	"tab0",	"col0"	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 from tab0 where (col0) in (?);
@@ -40,16 +40,16 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	1,	1,	0,	4,	4 # length
-[ "int",	7,	0,	"",	"tab0",	"col0"	]
+% 3,	1,	1,	3,	4,	4 # length
+[ "int",	7,	0,	"sys",	"tab0",	"col0"	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 from tab0 where (col0) in (?,?);
 #prepare select col0 from tab0 where (col0) in (?,?);
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 3,	1,	1,	0,	4,	4 # length
-[ "int",	7,	0,	"",	"tab0",	"col0"	]
+% 3,	1,	1,	3,	4,	4 # length
+[ "int",	7,	0,	"sys",	"tab0",	"col0"	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 [ "int",	7,	0,	NULL,	NULL,	NULL	]
 #prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;

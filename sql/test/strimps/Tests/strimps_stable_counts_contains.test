@@ -215,7 +215,7 @@ Joseph
 Carolyn
 
 query TT rowsort
-SELECT * FROM fal,f WHERE [fal.x] contains [f.y]
+SELECT * FROM fal,f WHERE fal.x contains f.y
 ----
 Andrew Alvarado
 Andrew
@@ -329,7 +329,7 @@ William Franco
 William
 
 query I nosort
-SELECT COUNT(*) =  55 FROM fal,f WHERE [fal.x] contains [f.y]
+SELECT COUNT(*) =  55 FROM fal,f WHERE fal.x contains f.y
 ----
 1
 
@@ -340,7 +340,7 @@ statement ok
 CREATE IMPRINTS INDEX fal_index ON fal(x)
 
 query TT rowsort
-SELECT * FROM fal,f WHERE [fal.x] contains [f.y]
+SELECT * FROM fal,f WHERE fal.x contains f.y
 ----
 Andrew Alvarado
 Andrew
@@ -454,7 +454,7 @@ William Franco
 William
 
 query I nosort
-SELECT COUNT(*) =  55 FROM fal,f WHERE [fal.x] contains [f.y]
+SELECT COUNT(*) =  55 FROM fal,f WHERE fal.x contains f.y
 ----
 1
 

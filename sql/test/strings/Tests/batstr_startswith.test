@@ -52,12 +52,12 @@ statement ok
 INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
 
 query T nosort
-SELECT * FROM foo WHERE [foo.x] startswith ['john', true]
+SELECT * FROM foo WHERE foo.x startswith[true] 'john'
 ----
 john doe
 
 query T nosort
-SELECT * FROM foo WHERE [foo.x] startswith ['doe', true]
+SELECT * FROM foo WHERE foo.x startswith[true] 'doe'
 ----
 
 statement ok

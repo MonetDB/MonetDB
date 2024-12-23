@@ -264,7 +264,7 @@ find_member_pos(list *l, sql_table *t)
 
 /* currently we only find simple column expressions */
 sql_column *
-name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
+name_find_column( sql_rel *rel, sql_alias *rname, const char *name, int pnr, sql_rel **bt )
 {
 	sql_exp *alias = NULL;
 	sql_column *c = NULL;
@@ -286,7 +286,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 				rname = e->l;
 			name = e->r;
 		}
-		if (rname && strcmp(t->base.name, rname) != 0)
+		if (rname && !a_cmp_obj_name(rname, t->base.name))
 			return NULL;
 		sql_table *mt = rel_base_get_mergetable(rel);
 		if (ol_length(t->columns)) {

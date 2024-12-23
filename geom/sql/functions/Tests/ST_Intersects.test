@@ -6,9 +6,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_POINT(10,10)]
+    ST_POINT(10,10)
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 POLYGON ((10 10, 20 10, 10 20, 10 10))
 POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
@@ -18,9 +18,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_POINT(15,10)]
+    ST_POINT(15,10)
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 POLYGON ((10 10, 20 10, 10 20, 10 10))
 POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
@@ -30,9 +30,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_POINT(15,15)]
+    ST_POINT(15,15)
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
 POLYGON ((10 10, 20 10, 10 20, 10 10))
@@ -44,9 +44,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_POINT(17.5,17.5)]
+    ST_POINT(17.5,17.5)
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
 POLYGON ((10 10, 20 10, 20 20, 10 20, 10 10))
@@ -57,9 +57,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_POINT(5,15)]
+    ST_POINT(5,15)
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 
 ## Line - Polygon
@@ -68,9 +68,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_GEOMFROMTEXT('LINESTRING (0 0, 15 15)')]
+    ST_GEOMFROMTEXT('LINESTRING (0 0, 15 15)')
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
 POLYGON ((10 10, 20 10, 10 20, 10 10))
@@ -82,9 +82,9 @@ SELECT
     geom
 FROM geometries
 WHERE
-    [ST_GEOMFROMTEXT('LINESTRING(5 5, 10 15)')]
+    ST_GEOMFROMTEXT('LINESTRING(5 5, 10 15)')
     ST_INTERSECTS
-    [geom]
+    geom
 ----
 POLYGON ((0 20, 10 20, 20 20, 20 10, 0 20))
 POLYGON ((10 10, 20 10, 10 20, 10 10))

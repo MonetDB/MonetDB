@@ -12,7 +12,7 @@ statement ok
 INSERT INTO bar VALUES ('left'),('right'),('up')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] contains [bar.b, false]
+SELECT * FROM foo,bar WHERE foo.f contains[false] bar.b
 ----
 leftlex
 left
@@ -22,7 +22,7 @@ uptim
 up
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] contains [bar.b, true]
+SELECT * FROM foo,bar WHERE foo.f contains[true] bar.b
 ----
 LEFTJOE
 left
@@ -51,7 +51,7 @@ statement ok
 INSERT INTO bar VALUES ('Δεν'),('Frühling'),(NULL),('Καλή'),('kαλή'),(NULL),('Olá'),('Das grüne'),('Punch-Out!!'),('Adeus'),('früh')
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] contains [bar.b]
+SELECT * FROM foo,bar WHERE foo.f contains bar.b
 ----
 Adeus, boa tarde
 Adeus
@@ -71,7 +71,7 @@ Punch-Out!!
 Καλή
 
 query TT rowsort
-SELECT * FROM foo,bar WHERE [foo.f] contains [bar.b, true]
+SELECT * FROM foo,bar WHERE foo.f contains[true] bar.b
 ----
 Adeus, boa tarde
 Adeus

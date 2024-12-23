@@ -355,7 +355,7 @@ dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
 }
 
 stmt *
-stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level)
+stmt_var(backend *be, sql_alias *sname, const char *varname, sql_subtype *t, int declare, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -369,7 +369,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		if (q == NULL)
 			goto bailout;
 		q = pushArgument(mb, q, be->mvc_var);
-		q = pushStr(mb, q, sname); /* all global variables have a schema */
+		q = pushStr(mb, q, sname->name); /* all global variables have a schema */
 		q = pushStr(mb, q, varname);
 		setVarType(mb, getArg(q, 0), tt);
 	} else if (!declare) {
@@ -618,7 +618,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
-		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, RDONLY);
+		BUN rows = (BUN) store->storage_api.count_del(tr, t, CNT_RDONLY);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
@@ -631,6 +631,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		goto bailout;
 	}
 
+	s->tname = table_alias(be->mvc->sa, t, NULL);
 	s->partition = partition;
 	s->op4.tval = t;
 	s->nrcols = 1;
@@ -660,7 +661,7 @@ find_real_column(backend *be, sql_column *c)
 }
 
 stmt *
-stmt_bat(backend *be, sql_column *c, int access, int partition)
+stmt_bat(backend *be, sql_column *c, sql_alias *tname, int access, int partition)
 {
 	int tt = c->type.type->localtype;
 	MalBlkPtr mb = be->mb;
@@ -685,7 +686,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		s->nrcols = 1;
 		s->flag = access;
 		s->nr = l[c->colnr+1];
-		s->tname = c->t?c->t->base.name:NULL;
+		s->tname = tname;
 		s->cname = c->base.name;
 		return s;
 	}
@@ -721,7 +722,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 
 		if (c && isTable(c->t)) {
-			BUN rows = (BUN) store->storage_api.count_col(tr, c, RDONLY);
+			BUN rows = (BUN) store->storage_api.count_del(tr, c->t, CNT_RDONLY);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -741,7 +742,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	s->flag = access;
 	s->nr = getDestVar(q);
 	s->q = q;
-	s->tname = c->t->base.name;
+	s->tname = tname;
 	s->cname = c->base.name;
 	pushInstruction(mb, q);
 	return s;
@@ -753,7 +754,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 }
 
 stmt *
-stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
+stmt_idxbat(backend *be, sql_idx *i, sql_alias *tname, int access, int partition)
 {
 	int tt = hash_index(i->type)?TYPE_lng:TYPE_oid;
 	MalBlkPtr mb = be->mb;
@@ -802,7 +803,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	s->flag = access;
 	s->nr = getDestVar(q);
 	s->q = q;
-	s->tname = i->t->base.name;
+	s->tname = tname;
 	s->cname = i->base.name;
 	pushInstruction(mb, q);
 	return s;
@@ -1535,12 +1536,13 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 stmt *
 stmt_atom(backend *be, atom *a)
 {
+	/* TODO handle tuples of values for composite types */
 	MalBlkPtr mb = be->mb;
 
 	if (a == NULL)
 		goto bailout;
 
-	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->impl) : newAssignment(mb);
+	InstrPtr q = EC_TEMP_FRAC(atom_type(a)->type->eclass) ? newStmt(mb, calcRef, atom_type(a)->type->d.impl) : newAssignment(mb);
 
 	if (q == NULL)
 		goto bailout;
@@ -2971,11 +2973,11 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		const char *tname = table_name(sql->sa, c);
-		const char *sname = schema_name(sql->sa, c);
+		sql_alias *tname = table_name(sql->sa, c);
+
 		const char *_empty = "";
-		const char *tn = (tname) ? tname : _empty;
-		const char *sn = (sname) ? sname : _empty;
+		const char *tn = (tname) ? tname->name : _empty;
+		const char *sn = (tname && tname->parent) ? tname->parent->name : _empty;
 		const char *cn = column_name(sql->sa, c);
 		const char *ntn = sql_escape_ident(sql->ta, tn);
 		const char *nsn = sql_escape_ident(sql->ta, sn);
@@ -3290,11 +3292,11 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		const char *tname = table_name(sql->sa, c);
-		const char *sname = schema_name(sql->sa, c);
+		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
-		const char *tn = (tname) ? tname : _empty;
-		const char *sn = (sname) ? sname : _empty;
+		const char *tn = (tname) ? tname->name : _empty;
+		//const char *sn = (sname) ? sname : _empty;
+		const char *sn = (tname && tname->parent) ? tname->parent->name : _empty;
 		const char *cn = column_name(sql->sa, c);
 		const char *ntn = sql_escape_ident(sql->ta, tn);
 		const char *nsn = sql_escape_ident(sql->ta, sn);
@@ -3333,11 +3335,10 @@ stmt_output(backend *be, stmt *lst)
 	if (cnt == 1 && first->nrcols <= 0 ){
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		const char *tname = table_name(be->mvc->sa, c);
-		const char *sname = schema_name(be->mvc->sa, c);
+		sql_alias *tname = table_name(be->mvc->sa, c);
 		const char *_empty = "";
-		const char *tn = (tname) ? tname : _empty;
-		const char *sn = (sname) ? sname : _empty;
+		const char *tn = (tname) ? tname->name : _empty;
+		const char *sn = (tname && tname->parent) ? tname->parent->name : _empty;
 		const char *cn = column_name(be->mvc->sa, c);
 		const char *ntn = sql_escape_ident(be->mvc->ta, tn);
 		const char *nsn = sql_escape_ident(be->mvc->ta, sn);
@@ -3820,7 +3821,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *convert = t->type->impl, *mod = mtimeRef;
+	const char *convert = t->type->d.impl, *mod = mtimeRef;
 	bool add_tz = false, pushed = (v->cand && v->cand == sel), cand = 0;
 
 	if (before) {
@@ -3939,7 +3940,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	const char *convert = t->type->impl, *mod = calcRef;
+	const char *convert = t->type->d.impl, *mod = calcRef;
 	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
 	bool add_tz = false;
 	/* convert types and make sure they are rounded up correctly */
@@ -4548,7 +4549,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 }
 
 static stmt *
-stmt_alias_(backend *be, stmt *op1, int label, const char *tname, const char *alias)
+stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *alias)
 {
 	assert(label);
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
@@ -4569,7 +4570,7 @@ stmt_alias_(backend *be, stmt *op1, int label, const char *tname, const char *al
 }
 
 stmt *
-stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *alias)
+stmt_alias(backend *be, stmt *op1, int label, sql_alias *tname, const char *alias)
 {
 	/*
 	if (((!op1->tname && !tname) ||
@@ -4803,64 +4804,11 @@ _column_name(allocator *sa, stmt *st)
 	return NULL;
 }
 
-const char *
+sql_alias *
 table_name(allocator *sa, stmt *st)
 {
 	(void)sa;
 	return st->tname;
-}
-
-const char *
-schema_name(allocator *sa, stmt *st)
-{
-	switch (st->type) {
-	case st_const:
-	case st_semijoin:
-	case st_join:
-	case st_join2:
-	case st_joinN:
-		return schema_name(sa, st->op2);
-	case st_mirror:
-	case st_group:
-	case st_result:
-	case st_append:
-	case st_append_bulk:
-	case st_replace:
-	case st_gen_group:
-	case st_uselect:
-	case st_uselect2:
-	case st_limit:
-	case st_limit2:
-	case st_sample:
-	case st_tunion:
-	case st_tdiff:
-	case st_tinter:
-	case st_convert:
-	case st_Nop:
-	case st_aggr:
-		/* there are no schema aliases, ie look into the base column */
-		if (st->op1)
-			return schema_name(sa, st->op1);
-		return NULL;
-	case st_alias:
-		if (!st->op1)
-			return NULL;
-		return schema_name(sa, st->op1);
-	case st_bat:
-		return st->op4.cval->t->s->base.name;
-	case st_atom:
-		return NULL;
-	case st_var:
-	case st_temp:
-	case st_single:
-		return NULL;
-	case st_list:
-		if (list_length(st->op4.lval))
-			return schema_name(sa, st->op4.lval->h->data);
-		return NULL;
-	default:
-		return NULL;
-	}
 }
 
 stmt *
@@ -5047,7 +4995,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 }
 
 stmt *
-stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int level)
+stmt_assign(backend *be, sql_alias *sname, const char *varname, stmt *val, int level)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -5082,7 +5030,7 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 		if (q == NULL)
 			goto bailout;
 		q = pushArgument(mb, q, be->mvc_var);
-		q = pushStr(mb, q, sname);
+		q = pushStr(mb, q, sname->name);
 		q = pushStr(mb, q, varname);
 		getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
 		pushInstruction(mb, q);
@@ -5206,7 +5154,7 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 {
 	int label = exp_get_label(exp);
 	const char *name = exp_name(exp);
-	const char *rname = exp_relname(exp);
+	sql_alias *rname = exp_relname(exp);
 	stmt *o = s;
 
 	if (!name && exp_is_atom(exp))

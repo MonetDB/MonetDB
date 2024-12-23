@@ -29,11 +29,12 @@ typedef enum expression_type {
 #define CARD_AGGR 2
 #define CARD_MULTI 3
 
-typedef struct sql_exp_name {
+typedef struct sql_alias {
 	int label;
+	struct sql_alias *parent;
 	const char *name;
-	const char *rname;
-} sql_exp_name;
+	//const char *rname;
+} sql_alias;
 
 typedef struct sql_var_name {
 	const char *name;
@@ -42,7 +43,7 @@ typedef struct sql_var_name {
 
 typedef struct expression {
 	expression_type type;	/* atom, cmp, func/aggr */
-	sql_exp_name alias;
+	sql_alias alias;
 	void *l;
 	void *r;
 	void *f;	/* func's and aggr's, also e_cmp may have have 2 arguments */

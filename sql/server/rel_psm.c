@@ -443,7 +443,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		if (isDeclaredTable(t)) {
 			rel = rel_table(sql, ddl_create_table, "sys", t, SQL_DECLARED_TABLE);
 		} else {
-			rel = rel_basetable(sql, t, t->base.name);
+			rel = rel_basetable(sql, t, table_alias(sql->sa, t, NULL));
 			rel = rel_base_add_columns(sql, rel);
 		}
 	} else { /* other cases */
@@ -510,14 +510,14 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		sql_rel *bt = rel_ddl_basetable_get(rel);
 		sql_table *t = rel_ddl_table_get(rel);
 		node *n, *m;
-		const char *tname = t->base.name;
+		sql_alias *ta = table_alias(sql->sa, t, NULL);
 
 		if (ol_length(t->columns) != list_length(restypelist))
 			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
 		for (n = ol_first_node(t->columns), m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
-			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *e = exp_column(sql->sa, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 			e->nid = rel_base_nid(bt, c);
 			e->alias.label = e->nid;
 
@@ -654,7 +654,7 @@ psm_analyze(sql_query *query, dlist *qname, dlist *columns)
 		if (columns)
 			list_append(tl, exp_subtype(tname_exp));
 	}
-	if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false)))
+	if (!(f = sql_bind_func_(sql, "sys", "analyze", tl, F_PROC, true, false, true)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
 	if (!execute_priv(sql, f->func))
 		return sql_error(sql, 02, SQLSTATE(42000) "No privilege to call analyze procedure");
@@ -940,7 +940,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	type_list = create_type_list(sql, params, 1);
 
-	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true, true)) != NULL && create) {
+	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true, true, false)) != NULL && create) {
 		if (sf->func->private) { /* cannot create a function using a private name or replace a existing one */
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -975,7 +975,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
 		sql_subfunc *found = NULL;
-		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true, true))) {
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true, true, false))) {
 			list_destroy(type_list);
 			if (found->func->private) /* cannot create a function using a private name or replace a existing one */
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -1181,11 +1181,11 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 		sql_subfunc *sub_func;
 
 		type_list = create_type_list(sql, typelist, 0);
-		sub_func = sql_bind_func_(sql, sname, name, type_list, type, false, true);
+		sub_func = sql_bind_func_(sql, sname, name, type_list, type, false, true, true);
 		if (!sub_func && type == F_FUNC) {
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
-			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION, false, true);
+			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION, false, true, true);
 			type = sub_func?F_UNION:F_FUNC;
 		}
 		if ( sub_func && sub_func->func->type == type)
@@ -1330,7 +1330,7 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 static sql_rel_view*
 _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
-	sql_rel *r = rel_basetable(sql, t, tname );
+	sql_rel *r = rel_basetable(sql, t, a_create(sql->sa, tname ));
 	rel_base_use_all(sql, r);
 	r = rewrite_basetable(sql, r);
 	return stack_push_rel_view(sql, tname, r);

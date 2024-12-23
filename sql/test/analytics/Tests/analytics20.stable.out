@@ -37,7 +37,7 @@
 [ "varchar",	64,	0,	"",	"%1",	"%1"	]
 [ "bigint",	63,	0,	NULL,	NULL,	NULL	]
 #exec  1(2);
-% sys.%1 # table_name
+% .%1 # table_name
 % %1 # name
 % varchar # type
 % 6 # length
@@ -59,7 +59,7 @@
 [ "varchar",	64,	0,	"",	"%2",	"%2"	]
 [ "int",	3,	0,	NULL,	NULL,	NULL	]
 #exec  2(2);
-% sys.%2 # table_name
+% .%2 # table_name
 % %2 # name
 % varchar # type
 % 6 # length

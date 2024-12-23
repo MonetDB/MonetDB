@@ -24,7 +24,7 @@
 extern sql_table *rel_ddl_table_get(sql_rel *r);
 extern sql_rel *rel_ddl_basetable_get(sql_rel *r);
 
-extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
+extern sql_rel *rel_basetable(mvc *sql, sql_table *t, sql_alias *tname);
 extern void rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out);
 
 extern void rel_base_disallow(sql_rel *r);		/* set flag to check per column access */
@@ -34,16 +34,16 @@ extern bool rel_base_has_nid(sql_rel *t, int nid);
 extern int rel_base_use(mvc *ql, sql_rel *rt, int nr);	/* return error on (read) access violation */
 extern void rel_base_use_tid(mvc *sql, sql_rel *rt);
 extern void rel_base_use_all(mvc *sql, sql_rel *rel);
-extern char *rel_base_name(sql_rel *r);
-extern char *rel_base_rename(sql_rel *r, char *name);
+extern sql_alias *rel_base_name(sql_rel *r);
+extern sql_alias *rel_base_rename(sql_rel *r, sql_alias *name);
 
 extern sql_exp * rel_base_bind_colnr( mvc *sql, sql_rel *rel, int nr);
 extern sql_exp * rel_base_find_label( mvc *sql, sql_rel *rel, int label);
 extern sql_rel *rel_base_bind_column_( sql_rel *rel, const char *cname);
 extern sql_exp *rel_base_bind_column( mvc *sql, sql_rel *rel, const char *cname, int no_tname);
 extern sql_rel *rel_base_bind_column2_( sql_rel *rel, const char *tname, const char *cname);
-extern sql_exp *rel_base_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname);
-extern sql_exp *rel_base_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname);
+extern sql_exp *rel_base_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname);
+extern sql_exp *rel_base_bind_column3( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname);
 extern sql_column *rel_base_find_column( sql_rel *rel, int nid);
 
 extern list *rel_base_projection( mvc *sql, sql_rel *rel, int intern);
@@ -51,7 +51,7 @@ extern list *rel_base_project_all( mvc *sql, sql_rel *rel, char *tname); /* sele
 extern sql_rel *rel_base_add_columns( mvc *sql, sql_rel *r);
 extern sql_rel *rewrite_basetable(mvc *sql, sql_rel *rel);
 extern sql_exp *basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel);
-extern sql_rel *rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias);
+extern sql_rel *rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, sql_alias *mtalias);
 
 extern void rel_base_dump_exps( stream *fout, sql_rel *rel);
 extern int rel_base_has_column_privileges( mvc *sql, sql_rel *rel);

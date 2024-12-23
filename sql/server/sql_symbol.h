@@ -51,6 +51,9 @@ typedef struct dlist {
 extern dlist *dlist_create(allocator *sa);
 extern int dlist_length(dlist *l);
 
+extern dlist *append_node(dlist *l, dnode *d);
+extern dlist *prepend_node(dlist *l, dnode *d);
+
 extern dlist *dlist_append_string(allocator *sa, dlist *l, const char *data);
 extern dlist *dlist_append_list(allocator *sa, dlist *l, dlist *data);
 extern dlist *dlist_append_int(allocator *sa, dlist *l, int data);
@@ -94,6 +97,9 @@ extern symbol *symbol_create_list(allocator *sa, tokens token, dlist *data);
 extern symbol *symbol_create_int(allocator *sa, tokens token, int data);
 extern symbol *symbol_create_lng(allocator *sa, tokens token, lng data);
 extern symbol *symbol_create_symbol(allocator *sa, tokens token, symbol *data);
+
+extern dnode *node_string(allocator *sa, const char *s);
+extern dnode *node_symbol(allocator *sa, symbol *s);
 
 extern symbol *newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window);
 

@@ -88,7 +88,7 @@ get_basetable(sql_rel *t)
 }
 
 static sql_rel *
-rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
+rel_insert_hash_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
@@ -149,13 +149,13 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 }
 
 static sql_rel *
-rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
+rel_insert_join_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *inserts)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
-	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name), *brt = rt;
+	sql_rel *rt = rel_basetable(sql, rk->t, a_create(sql->sa, rk->t->base.name)), *brt = rt;
 	int selfref = (rk->t->base.id == i->t->base.id);
 	int need_nulls = 0;
 	if (selfref)
@@ -253,7 +253,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 }
 
 static sql_rel *
-rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
+rel_insert_idxs(mvc *sql, sql_table *t, sql_alias* alias, sql_rel *inserts)
 {
 	if (!ol_length(t->idxs))
 		return inserts;
@@ -294,7 +294,7 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 static sql_rel *
 rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
-	sql_rel *rel = rel_basetable(query->sql, t, name);
+	sql_rel *rel = rel_basetable(query->sql, t, a_create(query->sql->sa, name));
 	rel_base_use_all(query->sql, rel);
 	rel = rewrite_basetable(query->sql, rel);
 	return rel_insert(query->sql, rel, inserts);
@@ -347,11 +347,12 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				all_values &= is_values(e);
 			}
 		} else {
+			sql_alias *ta = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
 			for (m = collist->h; m; m = m->next) {
 				sql_column *c = m->data;
 				sql_exp *e;
 
-				e = exps_bind_column2(r->exps, c->t->base.name, c->base.name, NULL);
+				e = exps_bind_column2(r->exps, ta, c->base.name, NULL);
 				if (e) {
 					if (inserts[c->colnr])
 						return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' specified more than once", action, c->base.name);
@@ -740,7 +741,7 @@ is_idx_updated(sql_idx * i, list *exps)
 }
 
 static sql_rel *
-rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
+rel_update_hash_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *updates)
 {
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	node *m;
@@ -825,7 +826,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
             referenced column in R2.
 */
 static sql_rel *
-rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
+rel_update_join_idx(mvc *sql, sql_alias* alias, sql_idx *i, sql_rel *updates)
 {
 	int nr = ++sql->label;
 	char name[16], *nme = number2name(name, sizeof(name), nr);
@@ -835,7 +836,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
-	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme)), *brt = rt;
+	sql_rel *rt = rel_basetable(sql, rk->t, a_create(sql->sa, sa_strdup(sql->sa, nme))), *brt = rt;
 
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
@@ -937,7 +938,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
  * a ddl_list of update relations.
  */
 static sql_rel *
-rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
+rel_update_idxs(mvc *sql, sql_alias *alias, sql_table *t, sql_rel *relup)
 {
 	sql_rel *p = relup->r;
 
@@ -984,7 +985,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	sql_rel *r = rel_create(sql->sa);
 	sql_table *tab = get_table(t);
 	sql_rel *bt = get_basetable(uprel);
-	const char *alias = rel_name(t);
+	sql_alias*alias = rel_name(t);
 	node *m;
 
 	if (!r)
@@ -1035,7 +1036,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(t->columns)), *ne;
 	list *exps, *mts = partition_find_mergetables(sql, t);
 	dnode *n;
-	const char *rname = NULL;
+	sql_alias *rname = NULL;
 
 	if (!list_empty(mts)) {
 		for (node *nn = mts->h; nn; ) { /* extract mergetable from the parts */
@@ -1129,6 +1130,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: Invalid right side of the SET clause", action);
 			if (dlist_length(cols) != list_length(rel_val->exps))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: The number of specified columns between the SET clause and the right side don't match (%d != %d)", action, dlist_length(cols), list_length(rel_val->exps));
+			sql_alias *ta = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
 			for (n = rel_val->exps->h, m = cols->h; n && m; n = n->next, m = m->next) {
 				char *cname = m->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
@@ -1162,10 +1164,10 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
-				list_append(exps, ne=exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
+				list_append(exps, ne=exp_column(sql->sa, ta, cname, &c->type, CARD_MULTI, 0, 0, 0));
 				ne->alias.label = rel_base_nid(bt, c);
 				ne->nid = ne->alias.label;
-				exp_setname(sql, v, c->t->base.name, c->base.name);
+				exp_setname(sql, v, ta, c->base.name);
 				updates[c->colnr] = v;
 				rel_base_use(sql, bt, c->colnr);
 			}
@@ -1197,10 +1199,11 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
-			list_append(exps, ne=exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, 0));
+			sql_alias *ta = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
+			list_append(exps, ne=exp_column(sql->sa, ta, cname, &c->type, CARD_MULTI, 0, 0, 0));
 			ne->alias.label = rel_base_nid(bt, c);
 			ne->nid = ne->alias.label;
-			exp_setname(sql, v, c->t->base.name, c->base.name);
+			exp_setname(sql, v, ta, c->base.name);
 			updates[c->colnr] = v;
 			rel_base_use(sql, bt, c->colnr);
 		}
@@ -1222,11 +1225,12 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
+	sql_alias *ta = qname2alias(sql->sa, qname);
 	sql_table *t = NULL;
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "UPDATE", false);
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
-		sql_rel *r = NULL, *res = rel_basetable(sql, t, alias ? alias : tname), *bt = rel_dup(res);
+		sql_rel *r = NULL, *res = rel_basetable(sql, t, alias ? a_create(sql->sa, alias) : ta), *bt = rel_dup(res);
 
 		/* We have always to reduce the column visibility because of the SET clause */
 		if (!table_privs(sql, t, PRIV_SELECT)) {
@@ -1329,11 +1333,12 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
+	sql_alias *ta = qname2alias(sql->sa, qname);
 	sql_table *t = NULL;
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DELETE FROM", false);
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
-		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname), *bt = r;
+		sql_rel *r = rel_basetable(sql, t, alias ? a_create(sql->sa, alias) : ta), *bt = r;
 
 		if (opt_where) {
 			sql_exp *e;
@@ -1352,7 +1357,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
-			r = rel_delete(sql->sa, /*rel_basetable(sql, t, alias ? alias : tname)*/rel_dup(bt), r);
+			r = rel_delete(sql->sa, rel_dup(bt), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
 		}
@@ -1384,11 +1389,12 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
+	sql_alias *ta = qname2alias(sql->sa, qname);
 	sql_table *t = NULL;
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "TRUNCATE", false);
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
-		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
+		return rel_truncate(sql->sa, rel_basetable(sql, t, ta), restart_sequences, drop_action);
 	return NULL;
 }
 
@@ -1413,10 +1419,10 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
+	sql_alias *ta = qname2alias(sql->sa, qname);
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL;
 	int processed = 0;
-	const char *bt_name;
 
 	assert(tref && search_cond && merge_list);
 
@@ -1425,7 +1431,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not supported for merge tables");
 
-	bt = rel_basetable(sql, t, alias ? alias : tname);
+	bt = rel_basetable(sql, t, alias ? a_create(sql->sa, alias) : ta);
 	if (!table_privs(sql, t, PRIV_SELECT)) {
 		rel_base_disallow(bt);
 		if (rel_base_has_column_privileges(sql, bt) == 0)
@@ -1436,9 +1442,9 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (!bt || !joined)
 		return NULL;
 
-	bt_name = rel_name(bt);
-	if (rel_name(joined) && strcmp(bt_name, rel_name(joined)) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", bt_name);
+	sql_alias *bt_name = rel_name(bt);
+	if (rel_name(joined) && a_cmp_obj_names(bt_name, rel_name(joined)))
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", a_obj_name(bt_name));
 
 	for (dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
@@ -1472,7 +1478,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				}
 
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, join_rel, NULL, 1, 1));
-				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
+				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
@@ -1489,7 +1495,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				ne->nid = rel_base_nid(bt, NULL);
 				ne->alias.label = ne->nid;
 				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), ne));
-				upd_del = rel_delete(sql->sa, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, extra_project);
+				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
 			} else {
 				assert(0);
 			}
@@ -1619,10 +1625,11 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	import = exp_op(sql->sa, args, f);
 
 	exps = new_exp_list(sql->sa);
+	sql_alias *ta = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		if (c->base.name[0] != '%') {
-			sql_exp *e = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *e = exp_column(sql->sa, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			e->alias.label = -(sql->nid++);
 			append(exps, e);
@@ -1910,9 +1917,10 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	import = exp_op(sql->sa, args, f);
 
 	exps = new_exp_list(sql->sa);
+	sql_alias *ta = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
 	for (n = collist->h; n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *e = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+		sql_exp *e = exp_column(sql->sa, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 		e->alias.label = -(sql->nid++);
 		append(exps, e);
 	}

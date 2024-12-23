@@ -54,10 +54,11 @@ sql_fix_system_tables(Client c, mvc *sql)
 		if (t->base.id >= FUNC_OIDS)
 			continue;
 
+		assert(t->d.impl); /* base types cannot be composite */
 		pos += snprintf(buf + pos, bufsize - pos,
 				"insert into sys.types values"
 				" (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
-				t->base.id, t->impl, t->base.name, t->digits,
+				t->base.id, t->d.impl, t->base.name, t->digits,
 				t->scale, t->radix, (int) t->eclass,
 				t->s ? t->s->base.id : s->base.id);
 	}
@@ -2313,7 +2314,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 			list_append(l, &tp);
 			list_append(l, &tp);
 			list_append(l, &tp);
-			if (!sql_bind_func_(sql, s->base.name, "regexp_replace", l, F_FUNC, true, true)) {
+			if (!sql_bind_func_(sql, s->base.name, "regexp_replace", l, F_FUNC, true, true, false)) {
 				pos = snprintf(buf, bufsize,
 							   "create function sys.regexp_replace(ori string, pat string, rep string, flg string)\n"
 							   "returns string external name pcre.replace;\n"
@@ -3138,7 +3139,7 @@ sql_update_dec2023(Client c, mvc *sql, sql_schema *s)
 			list_append(l, &t1);
 			list_append(l, &t2);
 			list_append(l, &t2);
-			if (!sql_bind_func_(sql, s->base.name, "sql_datatype", l, F_FUNC, true, true)) {
+			if (!sql_bind_func_(sql, s->base.name, "sql_datatype", l, F_FUNC, true, true, false)) {
 				const char cmds[] =
 				"CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)\n"
 				"  RETURNS varchar(1024)\n"

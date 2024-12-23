@@ -16,7 +16,8 @@
 /* we need to define these here as the parser header file is generated to late.
  * The numbers get remapped in the scanner.
  */
-#define KW_TYPE  4001
+#define KW_TYPE		 4001
+#define KW_OPERATORS 4002
 
 typedef struct keyword {
 	char *keyword;

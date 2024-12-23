@@ -50,11 +50,11 @@ statement ok
 INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
 
 query T nosort
-SELECT * FROM foo WHERE [foo.x] endswith ['john', true]
+SELECT * FROM foo WHERE foo.x endswith[true] 'john'
 ----
 
 query T nosort
-SELECT * FROM foo WHERE [foo.x] endswith ['doe', true]
+SELECT * FROM foo WHERE foo.x endswith[true] 'doe'
 ----
 john doe
 jane doe

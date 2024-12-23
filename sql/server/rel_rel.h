@@ -65,7 +65,7 @@
 
 extern void rel_set_exps(sql_rel *rel, list *exps);
 extern int project_unsafe(sql_rel *rel, bool allow_identity);
-extern const char *rel_name( sql_rel *r );
+extern sql_alias *rel_name( sql_rel *r );
 extern sql_rel *rel_distinct(sql_rel *l);
 
 extern sql_rel *rel_dup(sql_rel *r);
@@ -75,8 +75,7 @@ extern sql_rel *rel_copy(mvc *sql, sql_rel *r, int deep);
 extern sql_rel *rel_select_copy(allocator *sa, sql_rel *l, list *exps);
 
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname);
-extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, int f );
-extern sql_exp *rel_bind_column3( mvc *sql, sql_rel *rel, const char *sname, const char *tname, const char *cname, int f );
+extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, int f );
 extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
 
 extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
@@ -119,8 +118,8 @@ extern sql_rel *rel_exception(allocator *sa, sql_rel *l, sql_rel *r, list *exps)
 extern sql_rel *rel_relational_func(allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_table_func(allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
-extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
-extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
+extern list *_rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname , int intern, int basecol);
+extern list *rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname , int intern);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f);
 extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f);
@@ -128,7 +127,7 @@ extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oex
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);
-extern sql_exp *rel_find_column(mvc *sql, sql_rel *rel, const char *tname, const char *cname );
+extern sql_exp *rel_find_column(mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname );
 
 extern int rel_in_rel(sql_rel *super, sql_rel *sub);
 extern sql_rel *rel_parent(sql_rel *rel);

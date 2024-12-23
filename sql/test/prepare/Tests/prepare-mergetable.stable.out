@@ -14,7 +14,7 @@
 [ "int",	31,	0,	"",	"%1",	"%1"	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
 #exec  0(1);
-% sys.%1 # table_name
+% .%1 # table_name
 % %1 # name
 % int # type
 % 1 # length

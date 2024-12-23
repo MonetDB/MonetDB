@@ -110,12 +110,12 @@ statement ok
 INSERT INTO foo VALUES ('john doe'),('jane doe'),('robert doe')
 
 query T rowsort
-SELECT * FROM foo WHERE [foo.x] contains ['john', true]
+SELECT * FROM foo WHERE foo.x contains[true] 'john'
 ----
 john doe
 
 query T rowsort
-SELECT * FROM foo WHERE [foo.x] contains ['doe', true]
+SELECT * FROM foo WHERE foo.x contains[true] 'doe'
 ----
 jane doe
 john doe

@@ -4,9 +4,9 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	8,	4 # length
-[ "int",	31,	0,	"",	"skycrash",	"id"	]
-[ "boolean",	1,	0,	"",	"skycrash",	"boom"	]
+% 7,	2,	1,	3,	8,	4 # length
+[ "int",	31,	0,	"sys",	"skycrash",	"id"	]
+[ "boolean",	1,	0,	"sys",	"skycrash",	"boom"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 #drop table skycrash;

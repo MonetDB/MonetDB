@@ -10,8 +10,8 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 12,	2,	1,	0,	2,	2 # length
-[ "boolean",	1,	0,	"",	"t0",	"c0"	]
+% 12,	2,	1,	3,	2,	2 # length
+[ "boolean",	1,	0,	"sys",	"t0",	"c0"	]
 [ "sec_interval",	13,	0,	"",	"%1",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 [ "sec_interval",	13,	0,	NULL,	NULL,	NULL	]
@@ -27,9 +27,9 @@
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	2,	2 # length
+% 7,	2,	1,	3,	2,	2 # length
 [ "decimal",	2,	1,	"",	"%6",	"%6"	]
-[ "int",	31,	0,	"",	"t1",	"c2"	]
+[ "int",	31,	0,	"sys",	"t1",	"c2"	]
 [ "decimal",	2,	1,	NULL,	NULL,	NULL	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]
 [ "int",	31,	0,	NULL,	NULL,	NULL	]

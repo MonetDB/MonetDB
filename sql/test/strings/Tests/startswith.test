@@ -44,7 +44,7 @@ SELECT startswith('Müller Thomas', 'müller', false)
 0
 
 query I nosort
-SELECT ['Camón Romasan'] startswith ['camu', true]
+SELECT 'Camón Romasan' startswith[true] 'camu'
 ----
 0
 

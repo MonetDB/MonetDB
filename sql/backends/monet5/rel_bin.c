@@ -144,16 +144,16 @@ print_stmtlist(allocator *sa, stmt *l)
 	node *n;
 	if (l) {
 		for (n = l->op4.lval->h; n; n = n->next) {
-			const char *rnme = table_name(sa, n->data);
+			sql_alias *rnme = table_name(sa, n->data);
 			const char *nme = column_name(sa, n->data);
 
-			TRC_INFO(SQL_EXECUTION, "%s.%s\n", rnme ? rnme : "(null!)", nme ? nme : "(null!)");
+			TRC_INFO(SQL_EXECUTION, "%s.%s\n", rnme ? rnme->name : "(null!)", nme ? nme : "(null!)");
 		}
 	}
 }
 
 static stmt *
-list_find_column(backend *be, list *l, const char *rname, const char *name)
+list_find_column(backend *be, list *l, sql_alias *rname, const char *name)
 {
 	stmt *res = NULL;
 	node *n;
@@ -184,10 +184,10 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 		if (rname) {
 			for (; e; e = e->chain) {
 				stmt *s = e->value;
-				const char *rnme = table_name(be->mvc->sa, s);
+				sql_alias *rnme = table_name(be->mvc->sa, s);
 				const char *nme = column_name(be->mvc->sa, s);
 
-				if (rnme && strcmp(rnme, rname) == 0 &&
+				if (rnme && a_match(rnme, rname) &&
 						strcmp(nme, name) == 0) {
 					res = s;
 					break;
@@ -196,7 +196,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 		} else {
 			for (; e; e = e->chain) {
 				stmt *s = e->value;
-				const char *rnme = table_name(be->mvc->sa, s);
+				sql_alias *rnme = table_name(be->mvc->sa, s);
 				const char *nme = column_name(be->mvc->sa, s);
 
 				if (!rnme && nme && strcmp(nme, name) == 0) {
@@ -211,10 +211,10 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 	}
 	if (rname) {
 		for (n = l->h; n; n = n->next) {
-			const char *rnme = table_name(be->mvc->sa, n->data);
+			sql_alias *rnme = table_name(be->mvc->sa, n->data);
 			const char *nme = column_name(be->mvc->sa, n->data);
 
-			if (rnme && strcmp(rnme, rname) == 0 &&
+			if (rnme && a_match(rnme, rname) &&
 					strcmp(nme, name) == 0) {
 				res = n->data;
 				break;
@@ -222,7 +222,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 		}
 	} else {
 		for (n = l->h; n; n = n->next) {
-			const char *rnme = table_name(be->mvc->sa, n->data);
+			sql_alias *rnme = table_name(be->mvc->sa, n->data);
 			const char *nme = column_name(be->mvc->sa, n->data);
 
 			if (!rnme && nme && strcmp(nme, name) == 0) {
@@ -237,7 +237,7 @@ list_find_column(backend *be, list *l, const char *rname, const char *name)
 }
 
 static stmt *
-bin_find_column(backend *be, stmt *sub, const char *rname, const char *name)
+bin_find_column(backend *be, stmt *sub, sql_alias *rname, const char *name)
 {
 	return list_find_column(be, sub->op4.lval, rname, name);
 }
@@ -374,7 +374,7 @@ row2cols(backend *be, stmt *sub)
 			stmt *sc = n->data;
 			assert(sc->type == st_alias);
 			const char *cname = column_name(be->mvc->sa, sc);
-			const char *tname = table_name(be->mvc->sa, sc);
+			sql_alias *tname = table_name(be->mvc->sa, sc);
 			int label = sc->label;
 
 			sc = column(be, sc);
@@ -1569,7 +1569,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->r) {		/* parameters and declared variables */
 			sql_var_name *vname = (sql_var_name*) e->r;
 			assert(vname->name);
-			s = stmt_var(be, vname->sname ? sa_strdup(sql->sa, vname->sname) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
+			s = stmt_var(be, vname->sname ? a_create(sql->sa, sa_strdup(sql->sa, vname->sname)) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
 			s = value_list(be, e->f, left, sel);
 		} else {			/* arguments */
@@ -2014,16 +2014,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 static stmt *
 stmt_col(backend *be, sql_column *c, stmt *del, int part)
 {
-	stmt *sc = stmt_bat(be, c, RDONLY, part);
+	stmt *sc = stmt_bat(be, c, del?del->tname:NULL, RDONLY, part);
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
 	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
-		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
+		stmt *u = stmt_bat(be, c, del?del->tname:NULL, RD_UPD_ID, part);
 		assert(u);
 		sc = stmt_project_delta(be, sc, u);
 		if (c->storage_type && c->storage_type[0] == 'D') {
-			stmt *v = stmt_bat(be, c, RD_EXT, part);
+			stmt *v = stmt_bat(be, c, del?del->tname:NULL, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
 		} else if (c->storage_type && c->storage_type[0] == 'F') {
 			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/, be->mvc->timezone)));
@@ -2039,12 +2039,12 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 static stmt *
 stmt_idx(backend *be, sql_idx *i, stmt *del, int part)
 {
-	stmt *sc = stmt_idxbat(be, i, RDONLY, part);
+	stmt *sc = stmt_idxbat(be, i, del?del->tname:NULL, RDONLY, part);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
 	   (!isNew(i) || !isNew(i->t) /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->s) /*&& !i->t->commit_action*/) {
-		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
+		stmt *u = stmt_idxbat(be, i, del?del->tname:NULL, RD_UPD_ID, part);
 		sc = stmt_project_delta(be, sc, u);
 		if (del)
 			sc = stmt_project(be, del, sc);
@@ -2073,6 +2073,7 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 static stmt *
 check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 {
+	/* TODO add checking of composite types */
 	mvc *sql = be->mvc;
 	int c, err = 0;
 	sql_subtype *fromtype = tail_type(s);
@@ -2095,15 +2096,16 @@ check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 		}
 	}
 	if (err) {
+		assert(!fromtype->type->composite && !t->type->composite);
 		stmt *res = sql_error(sql, 10, SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
 			fromtype->type->base.name,
 			fromtype->digits,
 			fromtype->scale,
-			fromtype->type->impl,
+			fromtype->type->d.impl,
 			t->type->base.name,
 			t->digits,
 			t->scale,
-			t->type->impl
+			t->type->d.impl
 		);
 		return res;
 	}
@@ -2131,7 +2133,7 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 		list_append(tl, tail_type(a4));
 	}
 
-	if ((f = sql_bind_func_(sql, "sys", fname, tl, F_FUNC, true, true)))
+	if ((f = sql_bind_func_(sql, "sys", fname, tl, F_FUNC, true, true, false)))
 		return stmt_Nop(be, stmt_list(be, sl), NULL, f, NULL);
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 }
@@ -2166,10 +2168,9 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 			if (name[0] == '%') {
 				if (strcmp(name, TID)==0) {
 					/* tid function  sql.tid(t) */
-					const char *rnme = t->base.name;
 
 					stmt *sc = dels?dels:stmt_tid(be, t, 0);
-					sc = stmt_alias(be, sc, e->alias.label, rnme, TID);
+					sc = stmt_alias(be, sc, e->alias.label, sc->tname, TID);
 					list_append(l, sc);
 				} else {
 					node *m = ol_find_name(t->idxs, name+1);
@@ -2177,10 +2178,9 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 						assert(0);
 					sql_idx *i = m->data;
 					stmt *sc = stmt_idx(be, i, dels, dels->partition);
-					const char *rnme = t->base.name;
 
 					/* index names are prefixed, to make them independent */
-					sc = stmt_alias(be, sc, e->alias.label, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+					sc = stmt_alias(be, sc, e->alias.label, sc->tname, sa_strconcat(sql->sa, "%", i->base.name));
 					list_append(l, sc);
 				}
 			} else {
@@ -2205,20 +2205,18 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 		/* TID column */
 		if (ol_first_node(t->columns)) {
 			/* tid function  sql.tid(t) */
-			const char *rnme = t->base.name;
 
 			stmt *sc = dels?dels:stmt_tid(be, t, 0);
-			sc = stmt_alias(be, sc, e->alias.label, rnme, TID);
+			sc = stmt_alias(be, sc, e->alias.label, sc->tname, TID);
 			list_append(l, sc);
 		}
 		if (t->idxs) {
 			for (n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *i = n->data;
 				stmt *sc = stmt_idx(be, i, dels, dels->partition);
-				const char *rnme = t->base.name;
 
 				/* index names are prefixed, to make them independent */
-				sc = stmt_alias(be, sc, e->alias.label, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+				sc = stmt_alias(be, sc, e->alias.label, sc->tname, sa_strconcat(sql->sa, "%", i->base.name));
 				list_append(l, sc);
 			}
 		}
@@ -2264,14 +2262,13 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	}
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
-		const char *rname = exp_relname(exp)?exp_relname(exp):exp->l;
+		sql_alias *rname = exp_relname(exp)?exp_relname(exp):exp->l;
 		const char *oname = exp->r;
 		stmt *s = NULL;
 
 		assert(!is_func(exp->type));
 		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
-			//const char *rnme = t->base.name;
 
 			if (col)
 				s = stmt_mirror(be, col);
@@ -2279,7 +2276,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				s = dels?dels:stmt_tid(be, t, 0);
 				dels = NULL;
 			}
-			//s = stmt_alias(be, s, exp->alias.label, rnme, TID);
 		} else if (oname[0] == '%') {
 			sql_idx *i = find_sql_idx(t, oname+1);
 
@@ -2287,17 +2283,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
-		//s->tname = rname;
-		//s->cname = exp_name(exp);
-		//s->flag = exp->alias.label;
 		list_append(l, s);
 	}
 	stmt *res = stmt_list(be, l);
@@ -2374,7 +2365,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 				stpcpy(stpcpy(stpcpy(stpcpy(buf, levelstr), "\""), nme), "\""); /* escape variable name */
 			}
 			if (!list_find(args, buf, (fcmp)&alias_cmp)) {
-				stmt *s = stmt_var(be, vname->sname, vname->name, &e->tpe, 0, e->flag);
+				stmt *s = stmt_var(be, vname->sname?a_create(be->mvc->sa, vname->sname):NULL, vname->name, &e->tpe, 0, e->flag);
 
 				if (!e->alias.label)
 					exp_label(be->mvc->sa, e, ++be->mvc->label);
@@ -2484,21 +2475,23 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 
 		assert(list_length(rel->exps) == ((ti->type == 2)?2:1) * ol_length(ti->t->columns));
+		sql_alias *oname = a_create(be->mvc->sa, ti->on);
+		sql_alias *nname = a_create(be->mvc->sa, ti->nn);
 		for (n = ol_first_node(ti->t->columns), en = rel->exps->h; n && en; n = n->next, en = en->next) {
 			sql_column *c = n->data;
 			sql_exp *e = en->data;
 
 			if (ti->type == 2) { /* updates */
 				stmt *s = stmt_col(be, c, ti->tids, ti->tids->partition);
-				append(l, stmt_alias(be, s, e->alias.label, ti->on, c->base.name));
+				append(l, stmt_alias(be, s, e->alias.label, oname, c->base.name));
 				en = en->next;
 				e = en->data;
 			}
 			if (ti->updates && ti->updates[c->colnr]) {
-				append(l, stmt_alias(be, ti->updates[c->colnr], e->alias.label, ti->nn, c->base.name));
+				append(l, stmt_alias(be, ti->updates[c->colnr], e->alias.label, nname, c->base.name));
 			} else {
 				stmt *s = stmt_col(be, c, ti->tids, ti->tids->partition);
-				append(l, stmt_alias(be, s, e->alias.label, ti->nn, c->base.name));
+				append(l, stmt_alias(be, s, e->alias.label, nname, c->base.name));
 				assert(ti->type != 1);
 			}
 		}
@@ -2558,7 +2551,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				for (i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++) {
 					sql_exp *exp = en->data;
 					sql_subtype *st = n->data;
-					const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
+					sql_alias *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
 					stmt *s = stmt_rs_column(be, psub, i, st);
 
 					s = stmt_alias(be, s, exp->alias.label, rnme, exp_name(exp));
@@ -2642,7 +2635,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					sql_arg *a = n->data;
 					sql_exp *exp = m->data;
 					stmt *s = stmt_rs_column(be, psub, i, &a->type);
-					const char *rnme = exp_relname(exp)?exp_relname(exp):exp_find_rel_name(op);
+					sql_alias *rnme = exp_relname(exp)?exp_relname(exp):exp_find_rel_name(op);
 
 					s = stmt_alias(be, s, exp->alias.label, rnme, a->name);
 					list_append(l, s);
@@ -2670,7 +2663,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			sql_exp *c = n->data;
 			stmt *s = stmt_rs_column(be, sub, i, exp_subtype(c));
 			const char *nme = exp_name(c);
-			const char *rnme = exp_relname(c);
+			sql_alias *rnme = exp_relname(c);
 
 			s = stmt_alias(be, s, c->alias.label, rnme, nme);
 			list_append(l, s);
@@ -2686,7 +2679,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
-		const char *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
+		sql_alias *rnme = exp_relname(exp)?exp_relname(exp):exp->l;
 		stmt *s = bin_find_column_nid(be, sub, exp->nid);
 
 		if (!s) {
@@ -3080,7 +3073,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
 
@@ -3090,7 +3083,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
 
@@ -3147,7 +3140,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 		assert(c->type == st_alias);
-		const char *rnme = table_name(sql->sa, c);
+		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, jl, column(be, c));
 
@@ -3158,7 +3151,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
 
@@ -3170,7 +3163,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	}
 	if (rel->attr) {
 		sql_exp *e = rel->attr->h->data;
-		const char *rnme = exp_relname(e);
+		sql_alias *rnme = exp_relname(e);
 		const char *nme = exp_name(e);
 
 		if (mark) {
@@ -3198,7 +3191,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 			stmt *cnt = stmt_result(be, groupby, 2);
 			for(node *n = rel->attr->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				const char *rnme = exp_relname(e);
+				sql_alias *rnme = exp_relname(e);
 				const char *nme = exp_name(e);
 				stmt *s = exp_bin(be, e, left, NULL, grp, ext, cnt, NULL, 0, 0, 0);
 				s = stmt_alias(be, s, e->alias.label, rnme, nme);
@@ -3350,7 +3343,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
 
@@ -3360,7 +3353,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
 
@@ -3425,7 +3418,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		const char *rnme = table_name(sql->sa, c);
+		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, jl, column(be, c));
 
@@ -3442,7 +3435,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 	for (n = right->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		const char *rnme = table_name(sql->sa, c);
+		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, jr, column(be, c));
 
@@ -3459,7 +3452,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 	if (rel->attr) {
 		sql_exp *e = rel->attr->h->data;
-		const char *rnme = exp_relname(e);
+		sql_alias *rnme = exp_relname(e);
 		const char *nme = exp_name(e);
 		stmt *last = l->t->data;
 		sql_subtype *tp = tail_type(last);
@@ -3571,7 +3564,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
 
@@ -3581,7 +3574,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
 
@@ -3642,7 +3635,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 		assert(c->type == st_alias);
-		const char *rnme = table_name(sql->sa, c);
+		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, join, column(be, c));
 
@@ -3809,7 +3802,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
 
@@ -3819,7 +3812,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
 
@@ -3873,7 +3866,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	/* project all the left columns */
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data, *s;
-		const char *rnme = table_name(sql->sa, c);
+		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 
 		if (semijoin_only && l_is_base && nme[0] == '%' && strcmp(nme, TID) == 0)
@@ -3948,7 +3941,7 @@ rel2bin_single(backend *be, stmt *s)
 	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *t = n->data;
 		assert(t->type == st_alias);
-		const char *rnme = table_name(sql->sa, t);
+		sql_alias *rnme = table_name(sql->sa, t);
 		const char *nme = column_name(sql->sa, t);
 		int label = t->label;
 		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", tail_type(t), NULL, F_AGGR, true, true);
@@ -3993,7 +3986,7 @@ subres_assign_newresultvars(backend *be, stmt *rel_stmt)
 		stmt *r = n->data;
 		InstrPtr a = newAssignment(be->mb);
 		stmt *ns = NULL;
-		const char *rnme = table_name(be->mvc->sa, r);
+		sql_alias *rnme = table_name(be->mvc->sa, r);
 		const char *nme = column_name(be->mvc->sa, r);
 		int label = r->label;
 
@@ -4020,7 +4013,7 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 		stmt *v = m->data;
 		InstrPtr a = newAssignment(be->mb);
 		stmt *ns = NULL;
-		const char *rnme = table_name(be->mvc->sa, r);
+		sql_alias *rnme = table_name(be->mvc->sa, r);
 		const char *nme = column_name(be->mvc->sa, r);
 		int label = r->label;
 
@@ -4236,7 +4229,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			stmt *r = n->data;
 			sql_exp *e = m->data;
 			const char *cname = exp_name(e);
-			const char *tname = exp_relname(e);
+			sql_alias *tname = exp_relname(e);
 
 			n->data = stmt_alias(be, r, e->alias.label, tname, cname);
 		}
@@ -4281,7 +4274,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		stmt *s = list_fetch(((stmt*)rstmts->h->data)->op4.lval, i);
 		if (s == NULL)
 			return NULL;
-		const char *rnme = table_name(sql->sa, s);
+		sql_alias *rnme = table_name(sql->sa, s);
 		const char *nme = column_name(sql->sa, s);
 		int label = s->label;
 		/* create a const column also from the first stmt */
@@ -4334,7 +4327,7 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		stmt *c1 = n->data;
 		assert(c1->type == st_alias);
 		stmt *c2 = m->data;
-		const char *rnme = table_name(sql->sa, c1);
+		sql_alias *rnme = table_name(sql->sa, c1);
 		const char *nme = column_name(sql->sa, c1);
 		stmt *s;
 
@@ -4455,7 +4448,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
 		assert(c1->type == st_alias);
-		const char *rnme = NULL;
+		sql_alias *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
 
@@ -4555,7 +4548,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
 		assert(c1->type == st_alias);
-		const char *rnme = NULL;
+		sql_alias *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
 
@@ -4591,7 +4584,7 @@ sql_reorder(backend *be, stmt *order, list *exps, stmt *s, list *oexps, list *os
 		stmt *sc = n->data;
 		sql_exp *pe = m->data;
 		const char *cname = column_name(be->mvc->sa, sc);
-		const char *tname = table_name(be->mvc->sa, sc);
+		sql_alias *tname = table_name(be->mvc->sa, sc);
 
 		if (oexps && (pos = find_matching_exp(oexps, pe)) >= 0 && list_fetch(ostmts, pos)) {
 			sc = list_fetch(ostmts, pos);
@@ -4914,7 +4907,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			stmt *s = n->data;
 			assert(s->type == st_alias);
 			const char *cname = column_name(sql->sa, s);
-			const char *tname = table_name(sql->sa, s);
+			sql_alias *tname = table_name(sql->sa, s);
 			int label = s->label;
 
 			s = column(be, s);
@@ -5084,7 +5077,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			stmt *sc = n->data;
 			assert(sc->type == st_alias);
 			const char *cname = column_name(sql->sa, sc);
-			const char *tname = table_name(sql->sa, sc);
+			sql_alias *tname = table_name(sql->sa, sc);
 			int label = sc->label;
 
 			sc = column(be, sc);
@@ -5116,7 +5109,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 	if (n) {
 		stmt *sc = n->data;
 		//const char *cname = column_name(sql->sa, sc);
-		//const char *tname = table_name(sql->sa, sc);
+		//sql_alias *tname = table_name(sql->sa, sc);
 
 		 if (!(sample_size = exp_bin(be, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0)))
 			return NULL;
@@ -5134,7 +5127,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 			stmt *sc = n->data;
 			assert(sc->type == st_alias);
 			const char *cname = column_name(sql->sa, sc);
-			const char *tname = table_name(sql->sa, sc);
+			sql_alias *tname = table_name(sql->sa, sc);
 			int label = sc->label;
 
 			sc = column(be, sc);
@@ -5418,10 +5411,11 @@ sql_stack_add_inserted(mvc *sql, const char *name, sql_table *t, stmt **updates)
 	ti->updates = updates;
 	ti->type = 1;
 	ti->nn = name;
+	sql_alias *aname = a_create(sql->sa, name);
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+		sql_exp *ne = exp_column(sql->sa, aname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 		ne->alias.label = -(sql->nid++);
 
 		append(exps, ne);
@@ -5472,7 +5466,8 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
-	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
+	sql_alias *rname = table_alias(be->mvc->sa, key->t, NULL);
+	sql_rel *rel = rel_basetable(sql, key->t, rname);
 	sql_exp *exp = exp_read(sql, rel, NULL, NULL, sa_strdup(sql->sa, key->check), &pos, 0);
 	rel->exps = rel_base_projection(sql, rel, 0);
 
@@ -5482,8 +5477,8 @@ sql_insert_check(backend *be, sql_key *key, list *inserts)
 		sql_kc *kc = n->data;
 		stmt *in = list_fetch(inserts, kc->c->colnr);
 
-		sql_exp *e = rel_base_bind_column2(sql, rel, kc->c->t->base.name, kc->c->base.name);
-		in = stmt_alias(be, in, e->alias.label, kc->c->t->base.name, kc->c->base.name);
+		sql_exp *e = rel_base_bind_column2(sql, rel, rname, kc->c->base.name);
+		in = stmt_alias(be, in, e->alias.label, rname, kc->c->base.name);
 		append(ins, in);
 	}
 	stmt *sub = stmt_list(be, ins);
@@ -6426,20 +6421,22 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 	ti->type = 2;
 	ti->on = on;
 	ti->nn = nn;
+	sql_alias *oname = a_create(sql->sa, ti->on);
+	sql_alias *nname = a_create(sql->sa, ti->nn);
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
 		if (updates[c->colnr]) {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *oe = exp_column(sql->sa, oname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *ne = exp_column(sql->sa, nname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 			oe->alias.label = -(sql->nid++);
 			ne->alias.label = -(sql->nid++);
 
 			append(exps, oe);
 			append(exps, ne);
 		} else {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *oe = exp_column(sql->sa, oname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *ne = exp_column(sql->sa, nname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 			oe->alias.label = -(sql->nid++);
 			ne->alias.label = -(sql->nid++);
 
@@ -6499,7 +6496,7 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
-	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
+	sql_rel *rel = rel_basetable(sql, key->t, a_create(be->mvc->sa, key->t->base.name));
 	sql_exp *exp = exp_read(sql, rel, NULL, NULL, sa_strdup(sql->sa, key->check), &pos, 0);
 	rel->exps = rel_base_projection(sql, rel, 0);
 
@@ -6514,8 +6511,8 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 		} else {
 			upd = stmt_col(be, kc->c, u_tids, u_tids->partition);
 		}
-		sql_exp *e = rel_base_bind_column2(sql, rel, kc->c->t->base.name, kc->c->base.name);
-		upd = stmt_alias(be, upd, e->alias.label, kc->c->t->base.name, kc->c->base.name);
+		sql_exp *e = rel_base_bind_column2(sql, rel, a_create(be->mvc->sa, kc->c->t->base.name), kc->c->base.name);
+		upd = stmt_alias(be, upd, e->alias.label, a_create(be->mvc->sa, kc->c->t->base.name), kc->c->base.name);
 		append(ups, upd);
 	}
 
@@ -6771,9 +6768,10 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, stmt
 	ti->updates = deleted_cols;
 	ti->type = type;
 	ti->nn = name;
+	sql_alias *aname = a_create(sql->sa, name);
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+		sql_exp *ne = exp_column(sql->sa, aname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 		ne->alias.label = -(sql->nid++);
 
 		append(exps, ne);
@@ -7269,7 +7267,7 @@ merge_stmt_join_projections(backend *be, stmt *left, stmt *right, stmt *jl, stmt
 		for (node *n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl ? jl : diff, column(be, c));
 
@@ -7280,7 +7278,7 @@ merge_stmt_join_projections(backend *be, stmt *left, stmt *right, stmt *jl, stmt
 		for (node *n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
 			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
+			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr ? jr : diff, column(be, c));
 
@@ -7296,7 +7294,7 @@ validate_merge_delete_update(backend *be, bool delete, stmt *bt_stmt, sql_rel *b
 	mvc *sql = be->mvc;
 	str msg;
 	sql_table *t = bt->l;
-	char *alias = (char *) rel_name(bt);
+	sql_alias *alias = rel_name(bt);
 	stmt *cnt1 = stmt_aggr(be, jl, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
 	stmt *cnt2 = stmt_aggr(be, ld, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
 	sql_subfunc *add = sql_bind_func(sql, "sys", "sql_add", tail_type(cnt1), tail_type(cnt2), F_FUNC, true, true);
@@ -7305,12 +7303,12 @@ validate_merge_delete_update(backend *be, bool delete, stmt *bt_stmt, sql_rel *b
 	sql_subfunc *bf = sql_bind_func(sql, "sys", ">", tail_type(s1), tail_type(cnt3), F_FUNC, true, true);
 	stmt *s2 = stmt_binop(be, s1, cnt3, NULL, bf);
 
-	if (alias && strcmp(alias, t->base.name) == 0) /* detect if alias is present */
+	if (alias && a_cmp_obj_name(alias, t->base.name)) /* detect if alias is present */
 		alias = NULL;
 	msg = sa_message(sql->sa, SQLSTATE(40002) "MERGE %s: Multiple rows in the input relation match the same row in the target %s '%s%s%s'",
 					 delete ? "DELETE" : "UPDATE",
 					 alias ? "relation" : "table",
-					 alias ? alias : t->s ? t->s->base.name : "", alias ? "" : ".", alias ? "" : t->base.name);
+					 alias ? alias->name : t->s ? t->s->base.name : "", alias ? "" : ".", alias ? "" : t->base.name);
 	(void)stmt_exception(be, s2, msg, 00001);
 }
 

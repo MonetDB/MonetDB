@@ -729,10 +729,10 @@ statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query resu
 SELECT max(y.y) LIKE x.x FROM (SELECT '1') x(x), (SELECT '1') y(y)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
-SELECT [y.y] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+SELECT "like"(y.y, max(x.x), '', false) FROM (SELECT '1') x(x), (SELECT '1') y(y)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
-SELECT [max(y.y)] "like" [x.x, '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+SELECT "like"(max(y.y), x.x, '', false) FROM (SELECT '1') x(x), (SELECT '1') y(y)
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'y.y' in query results without an aggregate function
 SELECT y.y IN (max(x.x)) FROM (SELECT 1) x(x), (SELECT 1) y(y)
@@ -780,12 +780,12 @@ statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query resu
 SELECT MAX(x), idontexist(x.x) FROM (SELECT 1) x(x)
 
 query I nosort
-SELECT ['1'] "like" [max(x.x), '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+SELECT "like"('1', max(x.x), '', false) FROM (SELECT '1') x(x), (SELECT '1') y(y)
 ----
 1
 
 query I nosort
-SELECT [max(y.y)] "like" ['1', '', false] FROM (SELECT '1') x(x), (SELECT '1') y(y)
+SELECT "like"(max(y.y), '1', '', false) FROM (SELECT '1') x(x), (SELECT '1') y(y)
 ----
 1
 

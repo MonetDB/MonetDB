@@ -392,7 +392,7 @@ sql_bind_localtype(const char *name)
 	while (n) {
 		sql_subtype *t = n->data;
 
-		if (strcmp(t->type->impl, name) == 0) {
+		if (!t->type->composite && strcmp(t->type->d.impl, name) == 0) {
 			return t;
 		}
 		n = n->next;
@@ -765,10 +765,11 @@ sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigne
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
 	base_init(sa, &t->base, local_id++, false, sqlname);
-	t->impl = (char *) impl;
+	assert(impl);
+	t->d.impl = (char *) impl;
 	t->digits = digits;
 	t->scale = scale;
-	t->localtype = ATOMindex(t->impl);
+	t->localtype = ATOMindex(t->d.impl);
 	t->radix = radix;
 	t->eclass = eclass;
 	t->s = NULL;
@@ -1360,7 +1361,7 @@ sqltypeinit( allocator *sa)
 
 	/* functions for interval types */
 	for (t = dates; *t != TME; t++) {
-		sql_subtype *lt = sql_bind_localtype((*t)->impl);
+		sql_subtype *lt = sql_bind_localtype((*t)->d.impl);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
@@ -1403,7 +1404,7 @@ sqltypeinit( allocator *sa)
 		if (*t == OID)
 			continue;
 
-		lt = sql_bind_localtype((*t)->impl);
+		lt = sql_bind_localtype((*t)->d.impl);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);

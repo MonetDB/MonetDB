@@ -50000,6 +50000,11 @@ SQLcreate_trigger;
 Catalog operation create_trigger
 sqlcatalog
 create_type
+pattern sqlcatalog.create_type(X_0:str, X_1:str, X_2:ptr):void
+SQLcreate_type;
+Catalog operation create_type
+sqlcatalog
+create_type
 pattern sqlcatalog.create_type(X_0:str, X_1:str, X_2:str):void
 SQLcreate_type;
 Catalog operation create_type

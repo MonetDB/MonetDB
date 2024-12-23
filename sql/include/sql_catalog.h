@@ -381,19 +381,26 @@ typedef enum sql_class {
 typedef struct sql_type {
 	sql_base base;
 
-	char *impl; /* backend correspondent type */
+	union {
+		char *impl; /* backend correspondent type */
+		struct list *fields;	/* list of fields (args) */
+	} d;
 	unsigned int digits;
 	unsigned int scale;	/* indicates how scale is used in functions */
-	int localtype;		/* localtype, need for coersions */
-	unsigned char radix;
+	char localtype;		/* localtype, need for coersions */
+	unsigned char
+		radix:6,
+		composite:1;
 	sql_class eclass; 	/* types are grouped into equivalence classes */
 	sql_schema *s;
 } sql_type;
 
+/*
 typedef struct sql_alias {
 	char *name;
 	char *alias;
 } sql_alias;
+*/
 
 #define ARG_IN 1
 #define ARG_OUT 0
@@ -625,8 +632,12 @@ typedef struct sql_sequence {
 	sql_schema *s;
 } sql_sequence;
 
+#define column_intern 16
+#define column_plain 0
+
 typedef struct sql_column {
 	sql_base base;
+	char column_type;	/* 0 base column, 16 internal */
 	sql_subtype type;
 	int colnr;
 	bit null;

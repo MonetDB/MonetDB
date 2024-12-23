@@ -43,7 +43,7 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
 	append(exps, exp_atom_ptr(sql->sa, t));
-	rel->l = rel_basetable(sql, t, t->base.name);
+	rel->l = rel_basetable(sql, t, a_create(sql->sa, t->base.name));
 	rel->r = NULL;
 	rel->op = op_ddl;
 	rel->flag = cat_type;
@@ -67,7 +67,7 @@ rel_create_remote(mvc *sql, int cat_type, const char *sname, sql_table *t, int p
 	append(exps, exp_atom_ptr(sql->sa, t));
 	append(exps, exp_atom_str(sql->sa, username, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, passwd, sql_bind_localtype("str") ));
-	rel->l = rel_basetable(sql, t, t->base.name);
+	rel->l = rel_basetable(sql, t, a_create(sql->sa, t->base.name));
 	rel->r = NULL;
 	rel->op = op_ddl;
 	rel->flag = cat_type;
@@ -114,7 +114,7 @@ rel_alter_table(allocator *sa, int cattype, char *sname, char *tname, char *snam
 }
 
 static sql_rel *
-view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
+view_rename_columns(mvc *sql, sql_alias *viewname, sql_rel *sq, dlist *column_spec)
 {
 	dnode *n = column_spec->h;
 	node *m = sq->exps->h, *p = m;
@@ -125,7 +125,7 @@ view_rename_columns(mvc *sql, const char *name, sql_rel *sq, dlist *column_spec)
 		sql_exp *e = m->data;
 		sql_exp *n = e;
 
-		exp_setname(sql, n, name, cname);
+		exp_setname(sql, n, viewname, cname);
 		set_basecol(n);
 	}
 	/* skip any intern columns */
@@ -412,7 +412,7 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
-	sql_rel *rel = rel_basetable(sql, t, t->base.name);
+	sql_rel *rel = rel_basetable(sql, t, a_create(sql->sa, t->base.name));
 	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery, ek);
 
 	if (!e || !rel || !is_basetable(rel->op))
@@ -490,7 +490,7 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			node* n = NULL;
 			for (n = btrel->exps->h; n; n = n->next) {
 				sql_exp* e = n->data;
-				const char *nm = e->alias.name;
+				const char *nm = a_obj_name(&e->alias);
 				sql_column *c = mvc_bind_column(sql, t, nm);
 				if (!c) {
 					(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT CHECK: no such column '%s' for table '%s'",
@@ -996,7 +996,7 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 				if (!n)
 					break;
 				sql_exp* e = n->data;
-				nm = e->alias.name;
+				nm = a_obj_name(&e->alias);
 				n = n->next;
 			} else {
 				if (!nms)
@@ -1632,6 +1632,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	mvc *sql = query->sql;
 	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
+	sql_alias *ta = qname2alias(sql->sa, qname);
 	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate || !persistent);
@@ -1721,7 +1722,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, temp, replace);
 		}
 		if (!persistent && column_spec)
-			sq = view_rename_columns(sql, name, sq, column_spec);
+			sq = view_rename_columns(sql, ta, sq, column_spec);
 		if (sq && is_simple_project(sq->op) && sq->l && sq->exps && sq->card == CARD_AGGR) {
 			exps_setcard(sq->exps, CARD_MULTI);
 			sq->card = CARD_MULTI;
@@ -1788,7 +1789,28 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 }
 
 static sql_rel *
-rel_create_type(mvc *sql, dlist *qname, char *impl)
+rel_type(allocator *sa, int cat_type, const char *sname, const char *name, list *fields)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sa, name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_ptr(sa, fields));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_create_type(mvc *sql, dlist *qname, dnode *impl_or_field_list)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
@@ -1800,7 +1822,20 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	return rel_schema3(sql->sa, ddl_create_type, s->base.name, name, impl);
+	if (impl_or_field_list->type == type_string) {
+		return rel_schema3(sql->sa, ddl_create_type, s->base.name, name, impl_or_field_list->data.sval);
+	} else {
+		dlist *dl = impl_or_field_list->data.lval;
+		assert(dl);
+		list *fields = sa_list(sql->sa);
+		for (dnode *dn = dl->h; dn; dn = dn->next->next) {
+			sql_subtype *st = &dn->next->data.typeval;
+			sql_arg *a = sql_create_arg(sql->sa, dn->data.sval, st, ARG_OUT);
+			list_append(fields, a);
+		}
+		return rel_type(sql->sa, ddl_create_type, s->base.name, name, fields);
+	}
+	return NULL;
 }
 
 static char *
@@ -2114,6 +2149,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 	list *cols = new_exp_list(sql->sa);
 	sql_exp *ne;
+
+	sql_alias *ta = table_alias(sql->sa, nt, schema_alias(sql->sa, t->s));
 	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
@@ -2130,12 +2167,12 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			rel_destroy(r);
 			return NULL;
 		}
-		list_append(cols, ne=exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
+		list_append(cols, ne=exp_column(sql->sa, ta, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
 		ne->alias.label = rel_base_nid(bt, c);
 		ne->nid = ne->alias.label;
 
 		assert(!updates[c->colnr]);
-		exp_setname(sql, e, c->t->base.name, c->base.name);
+		exp_setname(sql, e, ta, c->base.name);
 		updates[c->colnr] = e;
 	}
 	res = rel_update(sql, res, r, updates, list_length(cols)?cols:NULL);
@@ -2461,8 +2498,9 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	/* new columns need update with default values */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
 
+	sql_alias *ta = table_alias(sql->sa, nt, schema_alias(sql->sa, t->s));
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, ta, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 	sql_rel *bt = rel_ddl_basetable_get(res);
 	e->alias.label = rel_base_nid(bt, NULL);
 	e->nid = e->alias.label;
@@ -3209,7 +3247,7 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_CREATE_TYPE: {
 		dlist *l = s->data.lval;
 
-		ret = rel_create_type(sql, l->h->data.lval, l->h->next->data.sval);
+		ret = rel_create_type(sql, l->h->data.lval, l->h->next);
 	} 	break;
 	case SQL_DROP_TYPE: {
 		dlist *l = s->data.lval;

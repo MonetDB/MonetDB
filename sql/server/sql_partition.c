@@ -227,7 +227,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 		} break;
 		case e_column: {
-			if (!strcmp(e->l, t->base.name)) {
+			if (a_cmp_obj_name(e->l, t->base.name)) {
 				sql_column *col = find_sql_column(t, e->r);
 				if (col) {
 					int *cnr = SA_NEW(cols->sa, int);
@@ -271,7 +271,7 @@ bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 	if (sql->emode == m_prepare)
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Partition expressions not compilable with prepared statements");
 
-	r = rel_basetable(sql, mt, mt->base.name);
+	r = rel_basetable(sql, mt, table_alias(sql->sa, mt, NULL));
 	query = mt->part.pexp->exp;
 	if (!(exp = rel_parse_val(sql, mt->s, query, NULL, sql->emode, r))) {
 		if (*sql->errstr) {

@@ -36,7 +36,7 @@ rel_unique_exps(mvc *sql, sql_rel *rel)
 		sql_exp *e = n->data;
 		if (e->type == e_column) {
 			const char *name = exp_name(e);
-			const char *rname = exp_relname(e);
+			sql_alias *rname = exp_relname(e);
 
 			/* If there are two identical expression names, there will be ambiguity */
 			if (name && rname && exps_bind_column2(l, rname, name, NULL))
@@ -108,7 +108,7 @@ static sql_rel *
 do_replica_rewrite(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_prop)
 {
 	node *n, *m;
-	sql_rel *r = rel_basetable(sql, p, t->base.name);
+	sql_rel *r = rel_basetable(sql, p, a_create(sql->sa, t->base.name));
 
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;

@@ -30,27 +30,27 @@ query ITITIIII rowsort
 SELECT * FROM tmp._tables WHERE type NOT IN (SELECT table_type_id FROM sys.table_types)
 ----
 
-query ITTIIITIIT rowsort
+query ITTIIITIITI rowsort
 SELECT * FROM sys.columns WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
-query ITTIIITIIT rowsort
+query ITTIIITIITI rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
-query ITTIIITIIT rowsort
+query ITTIIITIITI rowsort
 SELECT * FROM tmp._columns WHERE table_id NOT IN (SELECT id FROM tmp._tables)
 ----
 
-query ITTIIITIIT rowsort
+query ITTIIITIITI rowsort
 SELECT * FROM sys.columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTIIITIIT rowsort
+query ITTIIITIITI rowsort
 SELECT * FROM sys._columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTIIITIIT rowsort
+query ITTIIITIITI rowsort
 SELECT * FROM tmp._columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 

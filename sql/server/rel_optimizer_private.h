@@ -120,6 +120,6 @@ extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e) __attribute
 extern atom *reduce_scale(mvc *sql, atom *a) __attribute__((__visibility__("hidden")));
 extern int exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusive, bool max_exclusive) __attribute__((__visibility__("hidden")));
 extern int is_numeric_upcast(sql_exp *e) __attribute__((__visibility__("hidden")));
-extern sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *name) __attribute__((__visibility__("hidden")));
+extern sql_exp *list_exps_uses_exp(list *exps, sql_alias *rname, const char *name) __attribute__((__visibility__("hidden")));
 extern sql_exp *exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibility__("hidden")));
 extern int exp_keyvalue(sql_exp *e) __attribute__((__visibility__("hidden")));

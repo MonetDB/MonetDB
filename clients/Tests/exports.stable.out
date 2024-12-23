@@ -1559,7 +1559,7 @@ sql_exp *exp_atom_lng(allocator *sa, lng l);
 sql_exp *exp_atom_ptr(allocator *sa, void *s);
 sql_exp *exp_atom_str(allocator *sa, const char *s, sql_subtype *st);
 stmt *exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
-sql_exp *exp_column(allocator *sa, const char *rname, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
+sql_exp *exp_column(allocator *sa, sql_alias *parent, const char *name, sql_subtype *t, unsigned int card, int has_nils, int unique, int intern);
 sql_exp *exp_op(allocator *sa, list *l, sql_subfunc *f);
 sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *tname, const char *error, bool isView);
 int fl_register(char *name, fl_add_types_fptr add_types, fl_load_fptr fl_load);

@@ -656,7 +656,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].decsep = decsep[0],
 			fmt[i].decskip = decskip != NULL ? decskip[0] : '\0',
 			fmt[i].type = sql_subtype_string(m->ta, &col->type);
-			fmt[i].adt = ATOMindex(col->type.type->impl);
+			/* TODO handle output of composite types ! */
+			fmt[i].adt = ATOMindex(col->type.type->d.impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
@@ -820,6 +821,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 
 		for (n = r->exps->h; n; n = n->next) {
 			const char *name = NULL, *rname = NULL, *schema = NULL;
+			sql_alias *ra = NULL;
 			sql_exp *e = n->data;
 			int slen;
 
@@ -835,9 +837,9 @@ create_prepare_result(backend *b, cq *q, int nrows)
 				len3++;
 				max3 *= 10;
 			}
-			rname = exp_relname(e);
-			if (!rname && e->type == e_column && e->l)
-				rname = e->l;
+			ra = exp_relname(e);
+			if (!ra && e->type == e_column && e->l)
+				ra = e->l;
 			slen = name ? (int) strlen(name) : 0;
 			if (slen > len5)
 				len5 = slen;
@@ -847,10 +849,15 @@ create_prepare_result(backend *b, cq *q, int nrows)
 			slen = name ? (int) strlen(name) : 0;
 			if (slen > len6)
 				len6 = slen;
-			slen = (int) strlen(t->type->impl);
+			slen = (int) strlen(t->type->d.impl);
 			if (slen > len7)
 				len7 = slen;
 
+			if (ra) {
+				rname = ra->name;
+				if (ra->parent)
+					schema = ra->parent->name;
+			}
 			if (!schema)
 				schema = "";
 
@@ -861,7 +868,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 				name = "";
 
 			if (	BUNappend(btype,	t->type->base.name	, false) != GDK_SUCCEED ||
-					BUNappend(bimpl,	t->type->impl		, false) != GDK_SUCCEED ||
+					BUNappend(bimpl,	t->type->d.impl		, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
 					BUNappend(bschema,	schema				, false) != GDK_SUCCEED ||
@@ -881,7 +888,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 			t = &a->type;
 
 			if (	BUNappend(btype,	t->type->base.name	, false) != GDK_SUCCEED ||
-					BUNappend(bimpl,	t->type->impl		, false) != GDK_SUCCEED ||
+					BUNappend(bimpl,	t->type->d.impl		, false) != GDK_SUCCEED ||
 					BUNappend(bdigits,	&t->digits			, false) != GDK_SUCCEED ||
 					BUNappend(bscale,	&t->scale			, false) != GDK_SUCCEED ||
 					BUNappend(bschema,	str_nil				, false) != GDK_SUCCEED ||

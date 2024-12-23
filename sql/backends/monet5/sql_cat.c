@@ -1040,7 +1040,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			}
 		}
 
-		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false, true)) != NULL) {
+		if ((sf = sql_bind_func_(sql, s->base.name, fname, tl, f->type, false, true, false)) != NULL) {
 			sql_func *sff = sf->func;
 
 			if (!sff->s || sff->system)
@@ -1676,7 +1676,12 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
 	char *name = *getArgReference_str(stk, pci, 2);
-	char *impl = *getArgReference_str(stk, pci, 3);
+	char *impl = NULL;
+	list *fields = NULL;
+	if (getArgType(mb, pci, 3) == TYPE_str)
+		impl = *getArgReference_str(stk, pci, 3);
+	else
+		fields = *(list**)getArgReference(stk, pci, 3);
 	sql_schema *s = NULL;
 
 	initcontext();
@@ -1687,14 +1692,14 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (schema_bind_type(sql, s, name))
 		throw(SQL,"sql.create_type", SQLSTATE(42S02) "CREATE TYPE: type '%s' already exists", name);
-	switch (mvc_create_type(sql, s, name, 0, 0, 0, impl)) {
+	switch (mvc_create_type(sql, s, name, 0, 0, 0, impl, fields)) {
 		case -1:
 			throw(SQL,"sql.create_type", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:
 		case -3:
 			throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: transaction conflict detected");
 		case -4:
-			throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: unknown external type '%s'", impl);
+			throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: unknown external type '%s'", impl?impl:"composite");
 		default:
 			break;
 	}

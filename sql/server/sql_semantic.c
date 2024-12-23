@@ -24,6 +24,7 @@
 #include <ctype.h>
 
 #include "rel_semantic.h"
+#include "rel_exp.h"
 
 /*
  * For debugging purposes we need to be able to convert sql-tokens to
@@ -255,7 +256,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 	int nr = 0;
 
 	(void)nr;
-	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true);
+	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), false);
 	return res;
 }
 
@@ -413,7 +414,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false); //SQLSTATE(42000), true);
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false);
 	return res;
 }
 
@@ -426,7 +427,7 @@ sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, 
 		list_append(l, tp1);
 	if (tp2)
 		list_append(l, tp2);
-	return sql_bind_func_(sql, sname, fname, l, type, private, exact);
+	return sql_bind_func_(sql, sname, fname, l, type, private, exact, true);
 }
 
 sql_subfunc *
@@ -440,7 +441,7 @@ sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1,
 		list_append(l, tp2);
 	if (tp3)
 		list_append(l, tp3);
-	return sql_bind_func_(sql, sname, fname, l, type, private, false);
+	return sql_bind_func_(sql, sname, fname, l, type, private, false, true);
 }
 
 static int /* bind the function version with more identical type matches */
@@ -700,7 +701,7 @@ os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql
 	} while (0)
 
 sql_subfunc *
-sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private, bool exact)
+sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private, bool exact, bool rerr)
 {
 	char *F = NULL, *objstr = NULL;
 	const char error[] = "CATALOG";
@@ -709,7 +710,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), true);
+	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), rerr);
 	return res;
 }
 
@@ -907,6 +908,18 @@ sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype 
 
 	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, "", false);
 	return res;
+}
+
+sql_alias *
+qname2alias(allocator *sa, dlist *qname)
+{
+	sql_alias *a = NULL;
+	for(dnode *dn = qname->h; dn; dn = dn->next) {
+		sql_alias *p = a_create(sa, dn->data.sval);
+		p->parent = a;
+		a = p;
+	}
+	return a;
 }
 
 char *

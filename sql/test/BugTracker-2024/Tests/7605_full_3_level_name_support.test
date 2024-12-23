@@ -10,8 +10,6 @@ insert into test.mytable values('my', '1')
 statement ok
 insert into test.mytable values('my', '2')
 
--- 42000!SELECT: cannot use non GROUP BY column 'mytable.name' in query results without an aggregate function
-skipif knownfail
 query TI nosort
 select   test.mytable.name, count(*)
 from     test.mytable

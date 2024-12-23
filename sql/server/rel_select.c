@@ -94,9 +94,9 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 				for (en = rel->exps->h; en && !rename; en = en->next) {
 					sql_exp *e = en->data;;
 
-					if ((is_basecol(e) && exp_relname(e) && strcmp(exp_relname(e), tname) == 0) ||
-					    (is_basecol(e) && !exp_relname(e) && e->l && strcmp(e->l, tname) == 0)) {
-						if (exp_name(e) && exps_bind_column2(exps, tname, exp_name(e), NULL))
+					if ((is_basecol(e) && exp_relname(e) && a_cmp_obj_name(exp_relname(e), tname)) ||
+					    (is_basecol(e) && !exp_relname(e) && e->l && a_cmp_obj_name(e->l, tname))) {
+						if (exp_name(e) && exps_bind_column2(exps, exp_relname(e)?exp_relname(e):e->l, exp_name(e), NULL))
 							rename = 1;
 						else
 							append(exps, e);
@@ -107,12 +107,12 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 			exps = new_exp_list(sql->sa);
 			for (en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
-				if (is_basecol(e) && exp_relname(e) && strcmp(exp_relname(e), tname) == 0) {
+				if (is_basecol(e) && exp_relname(e) && a_cmp_obj_name(exp_relname(e), tname)) {
 					if (rename)
 						append(exps, exp_alias_ref(sql, e));
 					else {
 						sql_exp *ne = exp_ref(sql, e);
-						exp_setname(sql, ne, tname, exp_name(e));
+						//exp_setname(sql, ne, exp_relname(e), exp_name(e));
 						append(exps, ne);
 					}
 				}
@@ -121,7 +121,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 						append(exps, exp_alias_ref(sql, e));
 					else {
 						sql_exp *ne = exp_ref(sql, e);
-						exp_setname(sql, ne, tname, exp_name(e));
+						//exp_setname(sql, ne, exp_relname(e), exp_name(e));
 						append(exps, ne);
 					}
 				}
@@ -183,6 +183,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 	if (optname && optname->token == SQL_NAME) {
 		dlist *columnrefs = NULL;
 		char *tname = optname->data.lval->h->data.sval;
+		sql_alias *ta = a_create(sql->sa, tname);
 		list *l = sa_list(sql->sa);
 
 		columnrefs = optname->data.lval->h->next->data.lval;
@@ -200,9 +201,9 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 			for (; d && ne; d = d->next, ne = ne->next) {
 				sql_exp *e = ne->data;
 
-				if (exps_bind_column2(l, tname, d->data.sval, NULL))
+				if (exps_bind_column2(l, ta, d->data.sval, NULL))
 					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: Duplicate column name '%s.%s'", tname, d->data.sval);
-				exp_setname(sql, e, tname, d->data.sval );
+				exp_setname(sql, e, ta, d->data.sval );
 				if (!is_intern(e))
 					set_basecol(e);
 				append(l, e);
@@ -218,16 +219,16 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 				if (!is_intern(e)) {
 					if (!exp_name(e))
 						name = make_label(sql->sa, ++sql->label);
-					noninternexp_setname(sql, e, tname, name);
+					noninternexp_setname(sql, e, ta, name);
 					set_basecol(e);
 				}
 			}
 		}
 		if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
-			if (list_find(refs, tname, (fcmp) &strcmp))
+			if (list_find(refs, ta, (fcmp) &a_cmp))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
 			assert(tname);
-			list_append(refs, tname);
+			list_append(refs, ta);
 		}
 	} else {
 		if (!is_project(sq->op) || is_topn(sq->op) || is_sample(sq->op) || ((is_simple_project(sq->op) || is_groupby(sq->op)) && sq->r)) {
@@ -260,7 +261,7 @@ rel_subquery_optname(sql_query *query, symbol *ast, list *refs)
 }
 
 static void
-rel_rename(mvc *sql, sql_rel *nrel, char *rname, sql_rel *brel)
+rel_rename(mvc *sql, sql_rel *nrel, sql_alias *rname, sql_rel *brel)
 {
 	assert(is_project(nrel->op));
 	if (brel) {
@@ -313,15 +314,15 @@ rel_with_query(sql_query *query, symbol *q )
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h->next;
-		char *rname = qname_schema_object(dn->data.lval);
+		sql_alias *rname = qname2alias(sql->sa, dn->data.lval);
 		sql_rel *nrel, *base_rel = NULL;
 		symbol *recursive_part = NULL;
 		sql_rel_view *recursive_union = NULL;
 		int recursive_distinct = 0;
 
-		if (frame_find_rel_view(sql, rname)) {
+		if (frame_find_rel_view(sql, rname->name)) {
 			stack_pop_frame(sql);
-			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname);
+			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname->name);
 		}
 		if (recursive) {
 			symbol *union_stmt = dn->next->next->data.sym;
@@ -341,7 +342,7 @@ rel_with_query(sql_query *query, symbol *q )
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if (!(recursive_union = stack_push_rel_view(sql, rname, nrel))) {
+		if (!(recursive_union = stack_push_rel_view(sql, rname->name, nrel))) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -437,7 +438,7 @@ bind_func_(mvc *sql, char *sname, char *fname, list *ops, sql_ftype type, bool p
 	    list_cmp(sql->forward->ops, ops, (fcmp)&arg_subtype_cmp) == 0 &&
 	    execute_priv(sql, sql->forward) && type == sql->forward->type)
 		return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
-	sf = sql_bind_func_(sql, sname, fname, ops, type, private, exact);
+	sf = sql_bind_func_(sql, sname, fname, ops, type, private, exact, true);
 	if (found)
 		*found |= sf != NULL;
 	if (sf && execute_priv(sql, sf->func))
@@ -466,7 +467,7 @@ bind_func(mvc *sql, char *sname, char *fname, sql_subtype *t1, sql_subtype *t2, 
 			return sql_dup_subfunc(sql->sa, sql->forward, NULL, NULL);
 		}
 	}
-	sf = sql_bind_func_(sql, sname, fname, tl, type, private, exact);
+	sf = sql_bind_func_(sql, sname, fname, tl, type, private, exact, true);
 	if (found)
 		*found |= sf != NULL;
 	if (sf && execute_priv(sql, sf->func))
@@ -770,7 +771,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	sql_subfunc *sf = NULL;
 	symbol *sym = ast->data.lval->h->data.sym, *subquery = NULL;
 	dnode *l = sym->data.lval->h, *n;
-	char *tname = NULL;
 	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
 
@@ -833,7 +833,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				sql_exp *ne = exp_ref(sql, e);
 				/* allow for table functions with table input */
 				ne->card = CARD_ATOM;
-				exp_setname(sql, ne, tname, exp_name(e));
+				exp_setname(sql, ne, NULL, exp_name(e));
 				append(exps, ne);
 				append(tl, exp_subtype(e));
 			}
@@ -844,10 +844,12 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	}
 
 	rel = NULL;
+	char *tname = NULL;
 	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
 		tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
 	else
 		tname = make_label(sql->sa, ++sql->label);
+	sql_alias *ta = a_create(sql->sa, tname);
 
 	if (!sname && strcmp(fname, "file_loader") == 0) {
 		rel = rel_file_loader(sql, exps, tl, tname);
@@ -877,7 +879,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		exps = new_exp_list(sql->sa);
 		for (m = sf->func->res->h; m; m = m->next) {
 			sql_arg *a = m->data;
-			sql_exp *e = exp_column(sql->sa, tname, a->name, &a->type, CARD_MULTI, 1, 0, 0);
+			sql_exp *e = exp_column(sql->sa, ta, a->name, &a->type, CARD_MULTI, 1, 0, 0);
 			e->alias.label = -(sql->nid++);
 
 			set_basecol(e);
@@ -888,9 +890,9 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym && ast->data.lval->t->data.sym->data.lval->h->next->data.lval) {
 		rel = rel_table_optname(sql, rel, ast->data.lval->t->data.sym, refs);
 	} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
-		if (list_find(refs, tname, (fcmp) &strcmp))
+		if (list_find(refs, ta, (fcmp) &a_cmp))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
-		list_append(refs, tname);
+		list_append(refs, ta);
 	}
 	return rel;
 }
@@ -1163,7 +1165,7 @@ sql_rel *
 table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 {
 	mvc *sql = query->sql;
-	char *tname = NULL;
+	sql_alias *tname = NULL;
 	sql_table *t = NULL;
 	sql_rel *res = NULL;
 
@@ -1173,34 +1175,34 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 		char *sname = qname_schema(name);
 		int allowed = 1;
 
-		tname = qname_schema_object(name);
+		tname = qname2alias(sql->sa, name);
 
 		if (dlist_length(name) > 2)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: only a schema and table name expected");
 
 		if (!sname)
-			temp_table = stack_find_rel_view(sql, tname);
+			temp_table = stack_find_rel_view(sql, tname->name);
 		if (!temp_table)
-			t = find_table_or_view_on_scope(sql, NULL, sname, tname, "SELECT", false);
+			t = find_table_or_view_on_scope(sql, NULL, sname, tname->name, "SELECT", false);
 		if (!t && !temp_table)
 			return NULL;
 		if (!temp_table && !table_privs(sql, t, PRIV_SELECT))
 			allowed = 0;
 
 		if (tableref->data.lval->t->type == type_symbol && tableref->data.lval->t->data.sym) /* AS */
-			tname = tableref->data.lval->t->data.sym->data.lval->h->data.sval;
+			tname = a_create(sql->sa, tableref->data.lval->t->data.sym->data.lval->h->data.sval);
 		if (temp_table && !t) {
 			node *n;
 			int needed = !is_simple_project(temp_table->op);
 
 			if (is_basetable(temp_table->op) && !temp_table->exps) {
-				if (strcmp(rel_base_name(temp_table), tname) != 0)
+				if (!a_match(rel_base_name(temp_table), tname))
 					rel_base_rename(temp_table, tname);
 			} else {
 				for (n = temp_table->exps->h; n && !needed; n = n->next) {
 					sql_exp *e = n->data;
 
-					if (!exp_relname(e) || strcmp(exp_relname(e), tname) != 0)
+					if (!exp_relname(e) || !a_match(exp_relname(e), tname))
 						needed = 1;
 				}
 
@@ -1221,7 +1223,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 				temp_table = rel_table_optname(sql, temp_table, tableref->data.lval->t->data.sym, refs);
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s'", get_string_global_var(sql, "current_user"), tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s'", get_string_global_var(sql, "current_user"), tname->name);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -1234,7 +1236,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			} else {
 				/* when recreating a view, the view itself can't be found */
 				if (sql->objid && sql->objid == t->base.id)
-					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: attempting to recursively bind view '%s'.'%s'", t->s->base.name, tname);
+					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: attempting to recursively bind view '%s'.'%s'", t->s->base.name, tname->name);
 				rel = rel_parse(sql, t->s, t->query, m_instantiate);
 				if (rel && sql->emode == m_deps)
 					rel = rel_unnest(sql, rel);
@@ -1261,23 +1263,23 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 				list_hash_clear(rel->exps);
 			}
 			if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname->name);
 			return rel;
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, tname);
+							TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->s->base.name, tname->name);
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
 			rel_base_disallow(res);
 			if (rel_base_has_column_privileges(sql, res) == 0)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to %s '%s.%s'", get_string_global_var(sql, "current_user"), isView(t) ? "view" : "table", t->s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to %s '%s.%s'", get_string_global_var(sql, "current_user"), isView(t) ? "view" : "table", t->s->base.name, tname->name);
 		}
 		if (tableref->data.lval->t->type == type_symbol && tableref->data.lval->t->data.sym && tableref->data.lval->t->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->t->data.sym, refs);
 		} else if (refs) { /* if this relation is under a FROM clause, check for duplicate names */
-			if (list_find(refs, tname, (fcmp) &strcmp))
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname);
+			if (list_find(refs, tname, (fcmp) &a_cmp))
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", tname->name);
 			assert(tname);
 			list_append(refs, tname);
 		}
@@ -1410,14 +1412,14 @@ bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const ch
 			/* for now only check simple case where primary key and group by expression is a single column*/
 			sql_exp* gbe = ((list*) inner->r)->h->data;
 			sql_column* pkc = ((sql_kc *)pki->columns->h->data)->c;
-			if (gbe->type == e_column && strcmp(gbe->alias.name, pkc->base.name) == 0) {
+			if (gbe->type == e_column && a_cmp_obj_name(&gbe->alias, pkc->base.name)) {
 				node *n;
 				for (n = ukil->h; n; n = n->next){
 					sql_idx* uki = n->data;
 					if (uki->columns->cnt == 1) {
 						/* for now only check simple case where unique key is a single column*/
 						sql_column* ukc = ((sql_kc *)uki->columns->h->data)->c;
-						if (strcmp(exp->alias.name, ukc->base.name) == 0) {
+						if (a_cmp_obj_name(&exp->alias, ukc->base.name)) {
 							allow = true;
 							break;
 						}
@@ -1494,7 +1496,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (used_lower_after_processed || query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = used_lower_after_processed?exp:query_outer_last_used(query, i);
 					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu)->name, exp_name(lu));
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 				}
 			}
@@ -1508,10 +1510,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				/*
-				if (exp->alias.label == exp->nid)
-					exp->alias.label = -(sql->nid++);
-					*/
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -1552,33 +1550,37 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		const char *sname = NULL;
 		const char *tname = l->h->data.sval;
 		const char *cname = l->h->next->data.sval;
+		sql_alias *ta = a_create(sql->sa, tname);
 		if (dlist_length(l) == 3) {
 			sname = l->h->data.sval;
 			tname = l->h->next->data.sval;
 			cname = l->h->next->next->data.sval;
+			sql_alias *na = a_create(sql->sa, tname);
+			na->parent = ta;
+			ta = na;
 		}
 		if (!cname)
 			return NULL;
 
 		if (!exp && rel && inner)
-			if (!(exp = rel_bind_column3(sql, inner, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (!(exp = rel_bind_column2(sql, inner, ta, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		if (!exp && inner && is_sql_aggr(f) && (is_groupby(inner->op) || is_select(inner->op))) {
 			/* if inner is selection, ie having clause, get the left relation to reach group by */
 			sql_rel *gp = inner;
 			while (gp && is_select(gp->op))
 				gp = gp->l;
-			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column3(sql, gp->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+			if (gp && !is_basetable(gp->op) && gp->l && !(exp = rel_bind_column2(sql, gp->l, ta, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 		}
 		if (!exp && query && query_has_outer(query)) {
 			int i;
 
 			for (i=query_has_outer(query)-1; i>= 0 && !exp && (outer = query_fetch_outer(query,i)); i--) {
-				if (!(exp = rel_bind_column3(sql, outer, sname, tname, cname, f | sql_outer)) && sql->session->status == -ERR_AMBIGUOUS)
+				if (!(exp = rel_bind_column2(sql, outer, ta, cname, f | sql_outer)) && sql->session->status == -ERR_AMBIGUOUS)
 					return NULL;
 				if (!exp && is_groupby(outer->op)) {
-					if (!(exp = rel_bind_column3(sql, outer->l, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+					if (!(exp = rel_bind_column2(sql, outer->l, ta, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 						return NULL;
 					else
 						used_lower_after_processed = is_processed(outer);
@@ -1596,7 +1598,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				if (used_lower_after_processed || query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = used_lower_after_processed?exp:query_outer_last_used(query, i);
 					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu)->name, exp_name(lu));
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 				}
 			}
@@ -1610,10 +1612,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				/*
-				if (exp->alias.label == exp->nid)
-					exp->alias.label = -(sql->nid++);
-					*/
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -1632,7 +1630,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					*rel = rel_crossproduct(sql->sa, *rel, rel_dup(v), op_join);
 				else
 					*rel = rel_dup(v);
-				if (!(exp = rel_bind_column3(sql, *rel, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
+				if (!(exp = rel_bind_column2(sql, *rel, ta, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
 					return NULL;
 			}
 		}
@@ -1648,7 +1646,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) {
-			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column3(sql, inner->l, sname, tname, cname, f))) {
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column2(sql, inner->l, ta, cname, f))) {
 				if (group_by_pk_project_uk_cond(sql, inner, exp, sname, tname)) {
 					/* SQL23 feature: very special case where primary key is used in GROUP BY expression and
 					 * unique key is in the project list or ORDER BY clause */
@@ -1675,7 +1673,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		if (query->last_exp && query->last_rel == *rel && !is_sql_aggr(query->last_state) && is_sql_aggr(f)) {
 			if (!is_groupby(query->last_rel->op) || list_empty(query->last_rel->r) || !exps_find_exp(query->last_rel->r, query->last_exp)) {
 				if (exp_relname(query->last_exp) && exp_name(query->last_exp) && !has_label(query->last_exp))
-					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp), exp_name(query->last_exp));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp)->name, exp_name(query->last_exp));
 				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 			}
 		}
@@ -2045,12 +2043,12 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		return NULL;
 	if (ls->card > rs->card && rs->card == CARD_AGGR && is_sql_having(f)) {
 		if (exp_name(ls) && exp_relname(ls) && !has_label(ls))
-			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls), exp_name(ls));
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(ls)->name, exp_name(ls));
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
 	if (rs->card > ls->card && ls->card == CARD_AGGR && is_sql_having(f)) {
 		if (exp_name(rs) && exp_relname(rs) && !has_label(rs))
-			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs), exp_name(rs));
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(rs)->name, exp_name(rs));
 		return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
 	return rel_compare_exp(query, rel, ls, rs, compare_op, k.reduce, quantifier, need_not, f, is_semantics);
@@ -3425,7 +3423,7 @@ exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		/* problem freevar have cardinality CARD_ATOM */
 		if (sq->card <= CARD_AGGR && exp_card(e) != CARD_AGGR && is_alias(e->type)) {
-			if (!exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) {
+			if (!exps_bind_column2(sq->exps, e->l, e->r, NULL)) {
 				v->changes = 1;
 				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
 			}
@@ -3435,7 +3433,7 @@ exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *a = NULL;
 
 		if (sq->card <= CARD_AGGR && is_alias(e->type)) {
-			if ((a = exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) && is_aggr(a->type)) { /* aggregate */
+			if ((a = exps_bind_column2(sq->exps, e->l, e->r, NULL)) && is_aggr(a->type)) { /* aggregate */
 				v->changes = 1;
 				ai->err = SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested";
 			}
@@ -3589,7 +3587,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 							set_processed(outer);
 						if (err) {
 							if (exp_name(e) && exp_relname(e) && !has_label(e))
-								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e), exp_name(e));
+								return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(e)->name, exp_name(e));
 							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 						}
 					} else if (!used_rel && is_sql_where(of)) {
@@ -3625,9 +3623,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				sql_exp *p = query_outer_last_used(query, all_freevar-1);
 				if (p && !is_aggr(p->type) && !is_groupby_col(groupby, p)) {
 					if (p->type == e_column)
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", (char*)p->l, (char*)p->r);
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", ((sql_alias*)p->l)->name, (char*)p->r);
 					if (exp_name(p) && exp_relname(p) && !has_label(p))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(p), exp_name(p));
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(p)->name, exp_name(p));
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
 			}
@@ -3658,9 +3656,9 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 				if (card > CARD_AGGR) { /* used an expression before on the non grouped relation */
 					sql_exp *lu = query_outer_last_used(query, all_freevar-1);
 					if (lu->type == e_column)
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", (char*)lu->l, (char*)lu->r);
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", ((sql_alias*)lu->l)->name, (char*)lu->r);
 					if (exp_name(lu) && exp_relname(lu) && !has_label(lu))
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu), exp_name(lu));
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column \"%s.%s\" from outer query", exp_relname(lu)->name, exp_name(lu));
 					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query");
 				}
 				if (is_outer(groupby))
@@ -3711,7 +3709,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	if (!subquery && groupby && groupby->op != op_groupby) {		/* implicit groupby */
 		if (!all_freevar && query->last_exp && !is_sql_aggr(query->last_state)) {
 			if (exp_relname(query->last_exp) && exp_name(query->last_exp) && !has_label(query->last_exp))
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp), exp_name(query->last_exp));
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", exp_relname(query->last_exp)->name, exp_name(query->last_exp));
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 		}
 		res = groupby = rel_groupby(sql, groupby, NULL);
@@ -3814,11 +3812,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 							);
 		a = sql_bind_func_result(sql, sname, aname, F_AGGR, true, tpe, 1, exp_subtype(exps->h->data));
 	} else {
-		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
+		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false, true);
 		if (!a && obe && list_length(obe) == 1) { /* try to find aggregation function with requires order by column */
 			list *nexps = append(sa_list(sql->sa), obe->h->data);
 			nexps = list_merge(nexps, exps, (fdup) NULL);
-			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false);
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false, true);
 			if (a && a->func->order_required) {
 				/* reset error */
 				handled_order = true;
@@ -4699,8 +4697,8 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_exp *
 	append(targs1, exp_subtype(start));
 	append(targs2, exp_subtype(fend));
 
-	dc1 = sql_bind_func_(sql, "sys", "window_bound", targs1, F_ANALYTIC, true, false);
-	dc2 = sql_bind_func_(sql, "sys", "window_bound", targs2, F_ANALYTIC, true, false);
+	dc1 = sql_bind_func_(sql, "sys", "window_bound", targs1, F_ANALYTIC, true, false, true);
+	dc2 = sql_bind_func_(sql, "sys", "window_bound", targs2, F_ANALYTIC, true, false, true);
 	if (!dc1 || !dc2)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'window_bound' not found");
 	append(rargs1, exp_atom_int(sql->sa, frame_type));
@@ -5416,8 +5414,9 @@ rel_remove_internal_exp(sql_rel *rel)
 static inline int
 exp_key(sql_exp *e)
 {
-	if (e->alias.name)
+	if (e->alias.name) {
 		return hash_key(e->alias.name);
+	}
 	return 0;
 }
 
@@ -5709,16 +5708,17 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *le = n->data;
 		int multi = 0;
-		const char *rname = exp_relname(le), *name = exp_name(le);
+		sql_alias *rname = exp_relname(le);
+	    const char *name = exp_name(le);
 		sql_exp *re = exps_bind_column(r_exps, name, NULL, &multi, 0);
 
 		if (re) {
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in right table", rname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in right table", rname->name);
 			multi = 0;
 			le = exps_bind_column(exps, name, NULL, &multi, 0);
 			if (multi)
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in left table", rname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "NATURAL JOIN: common column name '%s' appears more than once in left table", rname->name);
 
 			found = 1;
 			if (!(rel = rel_compare_exp(query, rel, le, re, "=", TRUE, 0, 0, 0, 0)))
@@ -5747,7 +5747,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 		}
 	}
 	if (!found)
-		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"");
+		return sql_error(sql, 02, SQLSTATE(42000) "JOIN: no columns of tables '%s' and '%s' match", rel_name(t1)?rel_name(t1)->name:"", rel_name(t2)?rel_name(t2)->name:"");
 	for (node *n = r_exps->h; n; n = n->next) {
 		sql_exp *re = n->data;
 		if (r_nil)
@@ -5808,7 +5808,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				} else {
 					for(node *n = gbe->h; n && !found; n = n->next) {
 						sql_exp *e = n->data;
-						if (is_atom(e->type) && !e->alias.name) {
+						if (is_atom(e->type) && a_no_name(&e->alias)) {
 							atom *a = e->l;
 							int nr = (int)atom_get_int(a);
 							if (nr == (list_length(pexps) + 1)) {
@@ -5845,7 +5845,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		if (!list_empty(gbe)) {
 			for (node *n=gbe->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				if (rel->flag == 1 && is_atom(e->type) && !e->alias.name) {
+				if (rel->flag == 1 && is_atom(e->type) && a_no_name(&e->alias)) {
 					atom *a = e->l;
 					int nr = (int)atom_get_int(a);
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUP BY position %d is not in select list", nr);
@@ -5986,7 +5986,7 @@ rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols
 			if (!(rs = rel_bind_column(sql, r, nm, sql_where | sql_join, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 			if ((!outer && (!ls || !rs)) || (outer && !ls && !rs))
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: tables '%s' and '%s' do not have a matching column '%s'", opname, rel_name(l)?rel_name(l):"", rel_name(r)?rel_name(r):"", nm);
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: tables '%s' and '%s' do not have a matching column '%s'", opname, rel_name(l)?rel_name(l)->name:"", rel_name(r)?rel_name(r)->name:"", nm);
 			if (outer && !ls)
 				ls = exp_null(sql->sa, exp_subtype(rs));
 			if (outer && !rs)
@@ -6003,15 +6003,16 @@ rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols
 		for (node *n = exps->h; n; n = n->next) {
 			sql_exp *le = n->data;
 			int multi = 0;
-			const char *rname = exp_relname(le), *name = exp_name(le);
+			sql_alias *rname = exp_relname(le);
+			const char *name = exp_name(le);
 			sql_exp *re = exps_bind_column(r_exps, name, NULL, &multi, 0);
 			if (re) {
 				if (multi)
-					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "%s: common column name '%s' appears more than once in right table", opname, rname);
+					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "%s: common column name '%s' appears more than once in right table", opname, rname->name);
 				multi = 0;
 				le = exps_bind_column(exps, name, NULL, &multi, 0);
 				if (multi)
-					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "%s: common column name '%s' appears more than once in left table", opname, rname);
+					return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "%s: common column name '%s' appears more than once in left table", opname, rname->name);
 
 				found = 1;
 				append(lexps, le);
@@ -6024,7 +6025,7 @@ rel_setquery_corresponding(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols
 			}
 		}
 		if (!found)
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: no columns of tables '%s' and '%s' match", opname, rel_name(l)?rel_name(l):"", rel_name(r)?rel_name(r):"");
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: no columns of tables '%s' and '%s' match", opname, rel_name(l)?rel_name(l)->name:"", rel_name(r)?rel_name(r)->name:"");
 		if (outer) {
 			for (node *n = r_exps->h; n; n = n->next) {
 				sql_exp *re = n->data, *le;
@@ -6202,8 +6203,8 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		return NULL;
 
 	query_processed(query);
-	if (strcmp(rel_name(t1), rel_name(t2)) == 0) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1));
+	if (a_match(rel_name(t1), rel_name(t2))) {
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1)->name);
 	}
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)
@@ -6226,6 +6227,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		node *m;
 
 		rnme = sa_strdup(sql->sa, number2name(rname, sizeof(rname), ++sql->label));
+		sql_alias *ra = a_create(sql->sa, rnme);
 		for (; n; n = n->next) {
 			char *nm = n->data.sval;
 			sql_exp *cond, *ls, *rs;
@@ -6235,7 +6237,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 			if (!(rs = rel_bind_column(sql, t2, nm, sql_where | sql_join, 0)) && sql->session->status == -ERR_AMBIGUOUS)
 				return NULL;
 			if (!ls || !rs)
-				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1):"", rel_name(t2)?rel_name(t2):"", nm);
+				return sql_error(sql, 02, SQLSTATE(42000) "JOIN: tables '%s' and '%s' do not have a matching column '%s'", rel_name(t1)?rel_name(t1)->name:"", rel_name(t2)?rel_name(t2)->name:"", nm);
 			if (!(rel = rel_compare_exp(query, rel, ls, rs, "=", TRUE, 0, 0, 0, 0)))
 				return NULL;
 			if (op != op_join) {
@@ -6247,7 +6249,7 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 				if (!(ls = rel_nop_(sql, rel, cond, rs, ls, NULL, "sys", "ifthenelse", card_value)))
 					return NULL;
 			}
-			exp_setname(sql, ls, rnme, nm);
+			exp_setname(sql, ls, ra, nm);
 			append(outexps, ls);
 			if (!rel)
 				return NULL;

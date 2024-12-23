@@ -136,7 +136,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 
 	sql_rel *nrel = NULL;
 	sql_table *mt = (sql_table*) mt_rel->l;
-	const char *mtalias = exp_relname(mt_rel->exps->h->data);
+	sql_alias *mtalias = exp_relname(mt_rel->exps->h->data);
 	list *tables = sa_list(v->sql->sa);
 
 	for (node *nt = mt->members->h; nt; nt = nt->next) {
@@ -407,7 +407,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			}
 		}
 		if (!skip)
-			append(tables, rel_rename_part(v->sql, rel_basetable(v->sql, pt, pt->base.name), mt_rel, mtalias));
+			append(tables, rel_rename_part(v->sql, rel_basetable(v->sql, pt, a_create(v->sql->sa, pt->base.name)), mt_rel, mtalias));
 	}
 	if (list_empty(tables)) { /* No table passed the predicates, generate dummy relation */
 		list *converted = sa_list(v->sql->sa);
