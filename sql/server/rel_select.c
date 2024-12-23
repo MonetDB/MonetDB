@@ -382,7 +382,7 @@ rel_with_query(sql_query *query, symbol *q )
 				set_distinct(nrel);
 			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
 			set_processed(nrel);
-			recursive_union->rel_view = rel_dup(nrel); /* extra incref for independent flow */
+			recursive_union->rel_view = nrel;
 		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {

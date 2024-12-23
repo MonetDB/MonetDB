@@ -1220,6 +1220,15 @@ exp_equal( sql_exp *e1, sql_exp *e2)
 }
 
 int
+is_conflict( sql_exp *e1, sql_exp *e2)
+{
+	if (e1->alias.label && e1->alias.label == e2->alias.label &&
+		e1->nid && e1->nid != e2->nid)
+		return 0;
+	return -1;
+}
+
+int
 exp_match( sql_exp *e1, sql_exp *e2)
 {
 	if (exp_cmp(e1, e2) == 0)
