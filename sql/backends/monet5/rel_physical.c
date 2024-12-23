@@ -91,22 +91,12 @@ exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
-static sql_rel *
-rel_add_ref4_rec_union(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	if (is_recursive(rel))
-		rel = rel_dup(rel);
-	return rel;
-}
-
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
-	rel = rel_visitor_topdown(&v, rel, &rel_add_ref4_rec_union);
 	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
 
 #ifdef HAVE_HGE
