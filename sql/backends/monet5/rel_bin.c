@@ -9062,15 +9062,17 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 
 	be->pp = be->nrparts = 0;
 
-	list *refs = rel_find_refs(sql, sa_list(sql->sa), rel);
-	if (!list_empty(refs)) {
-		list *nrefs = sa_list(sql->sa);
-		for (node *n = refs->h; n; n = n->next) {
-			stmt *s = subrel_bin(be, n->data, nrefs);
-			list_append(nrefs, n->data);
-			list_append(nrefs, s);
+	list *refs = sa_list(sql->sa);
+	if (!sql->recursive) {
+		refs = rel_find_refs(sql, refs, rel);
+		if (!list_empty(refs)) {
+			list *nrefs = sa_list(sql->sa);
+			for (node *n = refs->h; n; n = n->next) {
+				stmt *s = subrel_bin(be, n->data, nrefs);
+				assert(refs_find_rel(nrefs, n->data) == s);
+			}
+			refs = nrefs;
 		}
-		refs = nrefs;
 	}
 	s = rel2bin_materialize(be, rel, refs);
 
