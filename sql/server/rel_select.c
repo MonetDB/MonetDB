@@ -383,7 +383,7 @@ rel_with_query(sql_query *query, symbol *q )
 				set_distinct(nrel);
 			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
 			set_processed(nrel);
-			recursive_union->rel_view = rel_dup(nrel); /* extra incref for independent flow */
+			recursive_union->rel_view = nrel;
 		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
@@ -3128,7 +3128,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	/* never reached, as all switch cases have a `return` */
 }
 
-static sql_exp * _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *arguments, int f);
+static sql_exp * _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *arguments, symbol *orderby, int f);
 static sql_exp *rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f);
 
 sql_exp *
@@ -3303,8 +3303,11 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			nargs++;
 
 		/* first try aggregate */
-		if (find_func(sql, sname, fname, nargs, F_AGGR, false, NULL, NULL))
-			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, l->next->next->data.lval->h, fs);
+		if (find_func(sql, sname, fname, nargs, F_AGGR, false, NULL, NULL)) {
+			dnode *dn = l->next->next;
+			symbol *orderby = dn->next?dn->next->data.sym:NULL;
+			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval->h, orderby, fs);
+		}
 	}
 
 	int nr_args = 0;
@@ -3457,7 +3460,7 @@ exps_valid(sql_query *query, list *exps, int groupby)
 static list * rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct, int f);
 
 static sql_exp *
-_rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *args, int f)
+_rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *args, symbol *orderby, int f)
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -3505,7 +3508,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool arguments_correlated = true, all_const = true;
 
 		all_freevar = all_aggr?1:0;
-		for (i = 0; args && args->data.sym && args->data.sym->token != SQL_ORDERBY; args = args->next, i++) {
+		for (i = 0; args && args->data.sym; args = args->next, i++) {
 			int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 			sql_rel *gl = base?groupby:groupby->l, *ogl = gl; /* handle case of subqueries without correlation */
 			sql_exp *e = rel_value_exp(query, &gl, args->data.sym, (f | sql_aggr)& ~sql_farg, ek);
@@ -3730,12 +3733,12 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 
 	list *obe = NULL;
 	bool handled_order = true;
-	if (args && args->data.sym && args->data.sym->token != SQL_ORDERBY)
+	if (args)
 			return NULL;
-	if (args && args->data.sym) { /* handle order by */
+	if (orderby) { /* handle order by */
 		int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
 		sql_rel *gl = base?groupby:groupby->l;//, *ogl = gl; /* handle case of subqueries without correlation */
-		obe = rel_order_by(query, &gl, args->data.sym, 0, f);
+		obe = rel_order_by(query, &gl, orderby, 0, f);
 		if (!obe)
 			return NULL;
 		handled_order = false;
@@ -3880,11 +3883,12 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
 	dnode *d = l->h->next->next;
+	symbol *orderby = d->next?d->next->data.sym:NULL;
 	int distinct = l->h->next->data.i_val;
 	char *aname = qname_schema_object(l->h->data.lval);
 	char *sname = qname_schema(l->h->data.lval);
 
-	return _rel_aggr(query, rel, distinct, sname, aname, d, f);
+	return _rel_aggr(query, rel, distinct, sname, aname, d->data.lval?d->data.lval->h:NULL, orderby, f);
 }
 
 static sql_exp *

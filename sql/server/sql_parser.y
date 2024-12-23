@@ -4775,10 +4775,7 @@ value_exp:
 	{ dlist *l = L();
 		append_list(l, append_string(L(), "grouping"));
 		append_int(l, FALSE); /* ignore distinct */
-		for (dnode *dn = $3->h ; dn ; dn = dn->next) {
-			symbol *sym = dn->data.sym; /* do like a aggrN */
-			append_symbol(l, _symbol_create_list(SQL_COLUMN, sym->data.lval));
-		}
+		append_list(l, $3);
 		$$ = _symbol_create_list(SQL_AGGR, l); }
  |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
@@ -5099,13 +5096,13 @@ aggr_or_window_ref:
 		{ dlist *l = L();
 		  append_list(l, $1);
 		  append_int(l, FALSE); /* ignore distinct */
-		  append_symbol(l, NULL);
+		  append_list(l, NULL);
 		  $$ = _symbol_create_list(SQL_AGGR, l ); }
  |  qfunc '(' column_id '.' '*' ')'
 		{ dlist *l = L();
 		  append_list(l, $1);
 		  append_int(l, FALSE); /* ignore distinct */
-		  append_symbol(l, NULL);
+		  append_list(l, NULL);
 		  $$ = _symbol_create_list(SQL_AGGR, l ); }
  |  qfunc '(' ')'
 		{ dlist *l = L();
@@ -7070,20 +7067,12 @@ XML_aggregate:
 	{
 	  dlist *aggr = L();
 
-	  if ($4) {
-		if ($3 != NULL && $3->token == SQL_SELECT) {
-			SelectNode *s = (SelectNode*)$3;
-			s->orderby = $4;
-		} else {
-			yyerror(m, "ORDER BY: missing select operator");
-			YYABORT;
-		}
-	  }
 	  append_list(aggr, append_string(append_string(L(), "sys"), "xmlagg"));
 	  append_int(aggr, FALSE); /* ignore distinct */
-	  append_symbol(aggr, $3);
+	  append_list(aggr, append_symbol(L(), $3));
+	  append_symbol(aggr, $4);
 	  /* int returning not used */
-	  $$ = _symbol_create_list( SQL_AGGR, aggr);
+	  $$ = _symbol_create_list( SQL_NOP, aggr);
 	}
  ;
 
