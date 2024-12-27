@@ -3676,6 +3676,47 @@ exp_numeric_supertype(mvc *sql, sql_exp *e )
 	return e;
 }
 
+static sql_exp *
+exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
+{
+	node *n, *m;
+	list *vals = NULL;
+	assert(t->type->composite);
+	if (!exp_is_rel(exp) && !is_values(exp))
+		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+
+	if (exp_is_rel(exp)) {
+		sql_rel *valr = exp_rel_get_rel(sql->sa, exp);
+		if (!valr || !is_project(valr->op) || !valr->exps)
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		vals = valr->exps;
+	} else { /* values */
+		list *tuple = exp_get_values(exp);
+		if (list_length(tuple) != 1)
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		sql_exp *e = tuple->h->data;
+		if (!is_values(e))
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		vals = exp_get_values(e);
+	}
+	for(n = t->type->d.fields->h, m = vals->h; n && m; n = n->next, m = m->next) {
+		sql_arg *f = n->data;
+		sql_exp *e = m->data;
+		m->data = e = exp_check_type(sql, &f->type, rel, e, tpe);
+	}
+	if (n || m) {
+		if (m)
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert values into composite type '%s', too many values given", t->type->base.name);
+		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert values into composite type '%s', missing values", t->type->base.name);
+	}
+	if (!exp_is_rel(exp)) {
+		list *tuple = exp_get_values(exp);
+		sql_exp *e = tuple->h->data;
+		e->tpe = *t;
+	}
+	return exp;
+}
+
 sql_exp *
 exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
@@ -3683,6 +3724,8 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 
+	if (t->type->composite)
+		return exp_check_composite_type(sql, t, rel, exp, tpe);
 	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
 		return exp;
 

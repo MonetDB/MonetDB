@@ -854,7 +854,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			*mvc_var_update = tmpvar;
 		q = pushSchema(mb, q, c->t);
 		q = pushStr(mb, q, c->t->base.name);
-		q = pushStr(mb, q, c->base.name);
+		if (c->column_type != column_plain)
+			q = pushInt(mb, q, c->base.id);
+		else
+			q = pushStr(mb, q, c->base.name);
 		q = pushArgument(mb, q, offset->nr);
 		/* also the offsets */
 		assert(offset->q->retc == 2);

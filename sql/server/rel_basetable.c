@@ -297,8 +297,23 @@ rel_base_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cna
 	rel_base_t *ba = rel->r;
 
 	assert(ba);
-	if (ba->name && !a_match_obj(ba->name, tname))
+	if (ba->name && !a_match_obj(ba->name, tname)) { /* TODO handle more levels */
+		node *n = ol_find_name(t->columns, tname->name);
+		if (n) {
+			sql_column *c = n->data;
+			if (c->type.type->composite) {
+				n = n->next;
+				for(node *m = c->type.type->d.fields->h; m; m = m->next, n = n->next) {
+					sql_arg *a = m->data;
+					if (strcmp(a->name, cname) == 0) {
+						c = n->data;
+						return bind_col(sql, rel, ba->name, c);
+					}
+				}
+			}
+		}
 		return NULL;
+	}
 	node *n = ol_find_name(t->columns, cname);
 	if (!n)
 		return NULL;

@@ -96,6 +96,11 @@ typedef enum sql_dependency {
 #define QUICK  4
 #define RD_EXT 5
 
+#define MS_VALUE 0
+#define MS_SETOF 1
+#define MS_ARRAY 2
+#define MS_VECTOR 3
+
 /* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
 #define UNBOUNDED_FOLLOWING_BOUND 1
@@ -409,6 +414,7 @@ typedef struct sql_subtype {
 	sql_type *type;
 	unsigned int digits;
 	unsigned int scale;
+	unsigned char multiset;
 } sql_subtype;
 
 /* sql_func need type transform rules types are equal if underlying
@@ -805,6 +811,7 @@ extern sql_idx *schema_find_idx(sql_trans *tr, sql_schema *s, const char *name);
 extern sql_idx *schema_find_idx_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
+extern sql_column *find_sql_column_id(sql_table *t, sqlid col_id);
 
 extern sql_table *find_sys_table(sql_trans *tr, const char *tname);
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);

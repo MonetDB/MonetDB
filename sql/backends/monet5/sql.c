@@ -1256,8 +1256,14 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *sname	= *getArgReference_str(stk, pci, 2 + upd);
 	const char *tname	= *getArgReference_str(stk, pci, 3 + upd);
-	const char *cname	= *getArgReference_str(stk, pci, 4 + upd);
+	const char *cname	= NULL;
+	sqlid colid = 0;
 	const int	access	= *getArgReference_int(stk, pci, 5 + upd);
+
+	if (getArgType(mb, pci, 4 + upd) == TYPE_int)
+		colid = *getArgReference_int(stk, pci, 4 + upd);
+	else
+		cname = *getArgReference_str(stk, pci, 4 + upd);
 
 	const bool partitioned_access = pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int;
 
@@ -1273,7 +1279,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t && !isTable(t))
 		throw(SQL, "sql.bind", SQLSTATE(42000) "%s '%s' is not persistent",
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
-	sql_column *c = mvc_bind_column(m, t, cname);
+	sql_column *c = (colid)?find_sql_column_id(t, colid):mvc_bind_column(m, t, cname);
 
 	if (partitioned_access) {
 		/* partitioned access */
@@ -1807,7 +1813,8 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
-	const char *cname = *getArgReference_str(stk, pci, 4);
+	const char *cname = NULL;
+	sqlid col_id = 0;
 	BUN offset = (BUN)*getArgReference_oid(stk, pci, 5);
 	bat Pos = *getArgReference_bat(stk, pci, 6);
 	ptr ins = getArgReference(stk, pci, 7);
@@ -1819,6 +1826,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_idx *i;
 	BAT *b = NULL, *pos = NULL;
 	BUN cnt = 1;
+
+	if (getArgType(mb, pci, 4) == TYPE_int)
+		col_id = *getArgReference_int(stk, pci, 4);
+	else
+		cname = *getArgReference_str(stk, pci, 4);
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -1868,9 +1880,11 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b)
 		cnt = BATcount(b);
 	sqlstore *store = m->session->tr->store;
-	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
+	if (col_id && (c = find_sql_column_id(t, col_id)) != NULL) {
 		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, isbat, tpe);
-	} else if (cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
+	} else if (!col_id && cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
+		log_res = store->storage_api.append_col(m->session->tr, c, offset, pos, ins, cnt, isbat, tpe);
+	} else if (!col_id && cname[0] == '%' && (i = mvc_bind_idx(m, s, cname + 1)) != NULL) {
 		log_res = store->storage_api.append_idx(m->session->tr, i, offset, pos, ins, cnt, isbat, tpe);
 	} else {
 		bat_destroy(pos);
@@ -5636,6 +5650,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "emptybindidx", mvc_bind_idxbat_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind_idxbat", mvc_bind_idxbat_wrap, false, "Bind the 'schema.table.index' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("index",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int))),
@@ -5644,6 +5659,16 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",str),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,6, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,7, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT partition with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(1,8, batargany("",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "emptybind", mvc_bind_wrap, false, "", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+ pattern("sql", "bind", mvc_bind_wrap, false, "Bind the 'schema.table.column' BAT with access kind:\n0 - base table\n1 - inserts\n2 - updates", args(2,9, batarg("uid",oid),batargany("uval",1),arg("mvc",int),arg("schema",str),arg("table",str),arg("column",int),arg("access",int),arg("part_nr",int),arg("nr_parts",int))),
+
  command("sql", "delta", DELTAbat, false, "Return column bat with delta's applied.", args(1,4, batargany("",1),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "projectdelta", DELTAproject, false, "Return column bat with delta's applied.", args(1,5, batargany("",1),batarg("select",oid),batargany("col",1),batarg("uid",oid),batargany("uval",1))),
  command("sql", "subdelta", DELTAsub, false, "Return a single bat of selected delta.", args(1,5, batarg("",oid),batarg("col",oid),batarg("cand",oid),batarg("uid",oid),batarg("uval",oid))),
@@ -5654,6 +5679,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.col_id (possibly optimized to replace the insert bat of tname.col_id. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("col_id",int),arg("offset",oid),batarg("pos",oid),argany("ins",0))),
  pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,4, arg("",lng),arg("sname",str),arg("tname",str),arg("restart_sequences",int))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),

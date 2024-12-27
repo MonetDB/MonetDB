@@ -43,6 +43,10 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		}
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
+		if (c->type.type->composite) {
+			ek.card = card_row;
+			ek.type = list_length(c->type.type->d.fields); /* TODO how to handle recursive onces */
+		}
 		sql_exp *e = rel_value_exp2(query, r, s, sql_sel | sql_values, ek);
 
 		if (!e)
@@ -300,6 +304,23 @@ rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 	return rel_insert(query->sql, rel, inserts);
 }
 
+static node *
+skip_nested_columns(mvc *sql, sql_column *ct, node *n)
+{
+	/* skip fields */
+	for(node *fn = ct->type.type->d.fields->h; fn; fn = fn->next) {
+		sql_arg *f = fn->data;
+		sql_column *fc = n->data;
+		if (fc->type.type->composite) {
+			n = skip_nested_columns(sql, fc, n->next);
+		} else {
+			n = n->next;
+		}
+		(void)f;
+	}
+	return n;
+}
+
 static list *
 check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char *tname)
 {
@@ -320,6 +341,25 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char
 		}
 	} else {
 		collist = t->columns->l;
+		/* skip inner columns */
+		list *reslist = NULL;
+		for (node *n = collist->h; n; ) {
+			sql_column *c = n->data;
+			if (c->type.type->composite) {
+				if (!reslist) {
+					reslist = sa_list(sql->sa);
+					for(node *m = collist->h; m != n; m = m->next)
+						list_append(reslist, m->data);
+				}
+				n = skip_nested_columns(sql, c, n->next);
+			} else {
+				n = n->next;
+			}
+			if (reslist)
+				list_append(reslist, c);
+		}
+		if (reslist)
+			return reslist;
 	}
 	return collist;
 }
@@ -367,7 +407,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 		sql_column *c = m->data;
 		sql_exp *exps = NULL;
 
-		if (!inserts[c->colnr]) {
+		if (c->column_type == column_plain && !inserts[c->colnr]) {
 			for (size_t j = 0; j < rowcount; j++) {
 				sql_exp *e = NULL;
 
@@ -424,7 +464,8 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 		/* now rewrite project exps in proper table order */
 		exps = new_exp_list(sql->sa);
 		for (i = 0; i<len; i++)
-			list_append(exps, inserts[i]);
+			if (inserts[i])
+				list_append(exps, inserts[i]);
 	}
 	return exps;
 }

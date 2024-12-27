@@ -246,6 +246,7 @@ sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned in
 	res->scale = scale;
 	if (!digits && !scale && t->eclass == EC_DEC)
 		res->scale = res->digits = 0;
+	res->multiset = MS_VALUE;
 }
 
 sql_subtype *
@@ -481,13 +482,18 @@ char *
 sql_subtype_string(allocator *sa, sql_subtype *t)
 {
 	char buf[BUFSIZ];
+	int i = 0;
 
+	if (t->multiset == MS_SETOF)
+		i = snprintf(buf, BUFSIZ, "SETOF ");
 	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
+		i += snprintf(buf+i, BUFSIZ-i, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
 	else if (t->digits && t->type->radix != 2)
-		snprintf(buf, BUFSIZ, "%s(%u)", t->type->base.name, t->digits);
+		i += snprintf(buf+i, BUFSIZ-i, "%s(%u)", t->type->base.name, t->digits);
 	else
-		snprintf(buf, BUFSIZ, "%s", t->type->base.name);
+		i += snprintf(buf+i, BUFSIZ-i, "%s", t->type->base.name);
+	if (t->multiset == MS_ARRAY)
+		i += snprintf(buf+i, BUFSIZ-i, "[]");
 	return sa_strdup(sa, buf);
 }
 

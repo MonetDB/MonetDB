@@ -346,6 +346,7 @@ int yydebug=1;
 	XML_validate
 
 %type <type>
+	simple_data_type
 	data_type
 	datetime_type
 	interval_type
@@ -405,6 +406,7 @@ int yydebug=1;
 
 %type <l>
 	indirection
+	opt_array_bounds
 	as_subquery_clause
 	assignment_commalist
 	authid_list
@@ -628,6 +630,7 @@ int yydebug=1;
 %token <sval> ASYMMETRIC SYMMETRIC ORDER ORDERED BY IMPRINTS
 %token <sval> ESCAPE UESCAPE HAVING sqlGROUP ROLLUP CUBE sqlNULL
 %token <sval> GROUPING SETS FROM FOR MATCH
+%token <sval> SETOF ARRAY
 
 %token <sval> EXTRACT
 
@@ -5941,6 +5944,22 @@ posint:
 	;
 
 data_type:
+    simple_data_type opt_array_bounds			{ $$ = $1; if ($2) $$.multiset = MS_ARRAY; }
+ |  SETOF simple_data_type opt_array_bounds		{ $$ = $2; $$.multiset = MS_SETOF; }
+ |  simple_data_type ARRAY '[' posint ']'		{ $$ = $1; $$.multiset = MS_ARRAY; }
+ |  SETOF simple_data_type ARRAY '[' posint ']'		{ $$ = $2; $$.multiset = MS_SETOF; }
+ |  simple_data_type ARRAY				{ $$ = $1; $$.multiset = MS_ARRAY; }
+ |  SETOF simple_data_type ARRAY			{ $$ = $2; $$.multiset = MS_SETOF; }
+ ;
+
+/* for now no multi dimential array's */
+opt_array_bounds:
+    /*opt_array_bounds*/ '[' ']' 		{  $$ = append_int(L(), -1); }
+ |  /*opt_array_bounds*/ '[' posint ']' 	{  $$ = append_int(L(), $2); }
+ |  /*EMPTY*/ 					{  $$ = NULL; }
+ ;
+
+simple_data_type:
     CHARACTER
 			{ sql_find_subtype(&$$, "char", 1, 0); }
  |  varchar		{ sql_find_subtype(&$$, "varchar", 0, 0); }

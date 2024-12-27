@@ -653,6 +653,9 @@ scanner_init_keywords(void)
 
 	failed += keywords_insert("LEAST", MARGFUNC);
 	failed += keywords_insert("GREATEST", MARGFUNC);
+
+	failed += keywords_insert("SETOF", MARGFUNC);
+	failed += keywords_insert("ARRAY", MARGFUNC);
 	return failed;
 }
 

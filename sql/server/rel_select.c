@@ -1057,17 +1057,13 @@ tuples_check_types(mvc *sql, list *tuple_values, sql_exp *tuples)
 	return tuple_values;
 }
 
-static sql_rel *
-rel_values(sql_query *query, symbol *tableref, list *refs)
+static list *
+values_list(sql_query *query, symbol *tableref)
 {
 	mvc *sql = query->sql;
-	sql_rel *r = NULL;
 	symbol *values = tableref;
-	symbol *optname = NULL;
-	if (tableref->token == SQL_TABLE) {
+	if (tableref->token == SQL_TABLE)
 		values = tableref->data.lval->h->data.sym;
-		optname = tableref->data.lval->t->type == type_symbol ? tableref->data.lval->t->data.sym : NULL;
-	}
 	dlist *rowlist = values->data.lval;
 	node *m;
 	list *exps = sa_list(sql->sa);
@@ -1092,9 +1088,13 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 			for (n = values->h, m = exps->h; n && m; n = n->next, m = m->next) {
 				sql_exp *vals = m->data;
 				list *vals_list = vals->f;
-				sql_exp *e = rel_value_exp(query, NULL, n->data.sym, sql_sel | sql_values, ek);
+				sql_rel *r = NULL;
+				sql_exp *e = rel_value_exp(query, &r, n->data.sym, sql_sel | sql_values, ek);
 				if (!e)
 					return NULL;
+				if (r) {
+					printf("found relation\n");
+				}
 				list_append(vals_list, e);
 			}
 		}
@@ -1110,11 +1110,30 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 		e->card = card;
 		m->data = e;
 	}
+	return exps;
+}
 
-	r = rel_project(sql->sa, NULL, exps);
+static sql_exp *
+sql_exp_values(sql_query *query, symbol *values)
+{
+	list *exps = values_list(query, values);
+	return exp_values(query->sql->sa, exps);
+}
+
+static sql_rel *
+rel_values(sql_query *query, symbol *tableref, list *refs)
+{
+	list *exps = values_list(query, tableref);
+	if (!exps)
+		return NULL;
+	sql_rel *r = rel_project(query->sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
-	r->card = card;
-	return rel_table_optname(sql, r, optname, refs);
+	r->card = exps_card(exps);
+
+	symbol *optname = NULL;
+	if (tableref->token == SQL_TABLE)
+		optname = tableref->data.lval->t->type == type_symbol ? tableref->data.lval->t->data.sym : NULL;
+	return rel_table_optname(query->sql, r, optname, refs);
 }
 
 static int
@@ -5248,7 +5267,13 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		if (se->token == SQL_WITH) {
 			r = rel_with_query(query, se);
 		} else if (se->token == SQL_VALUES) {
-			r = rel_values(query, se, NULL);
+			if (ek.card <= card_row && !(rel && *rel)) {
+				sql_exp *e = sql_exp_values(query, se);
+				if (exp_is_atom(e)) /* single tuple */
+					return exp_values(sql->sa, append(sa_list(sql->sa), e));
+				r = rel_project(query->sql->sa, NULL, e->f);
+			} else
+				r = rel_values(query, se, NULL);
 		} else {
 			assert(se->token == SQL_SELECT);
 			exp_kind nek = ek;

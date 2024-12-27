@@ -894,7 +894,7 @@ bl_postversion(void *Store, logger *lg)
 		if (BUNappend(coltype, &ct, true) != GDK_SUCCEED ||
 		    BUNappend(coltype, &ct, true) != GDK_SUCCEED ||
 		   ((coltype = BATsetaccess(coltype, BAT_READ)) == NULL ||
-				/* 2165 is sys._columns.column_type */
+				/* 2168 is sys._columns.column_type */
 				BUNappend(lg->catalog_id, &(int) {2168}, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &coltype->batCacheid, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
@@ -905,6 +905,56 @@ bl_postversion(void *Store, logger *lg)
 		}
 		BBPretain(coltype->batCacheid);
 		bat_destroy(coltype);
+
+		/* new TINYINT column sys._columns.multiset */
+		b = log_temp_descriptor(log_find_bat(lg, 2077)); /* sys._columns.id */
+		if (b == NULL)
+			return GDK_FAIL;
+		ct = MS_VALUE;
+		BAT *multiset = BATconstant(b->hseqbase, TYPE_bte, &ct, BATcount(b), PERSISTENT);
+		bat_destroy(b);
+		if (multiset == NULL)
+			return GDK_FAIL;
+		/* First add 2 rows for sys._columns.column_type and tmp._columns.column_type */
+		if (BUNappend(multiset, &ct, true) != GDK_SUCCEED ||
+		    BUNappend(multiset, &ct, true) != GDK_SUCCEED ||
+		   ((multiset = BATsetaccess(multiset, BAT_READ)) == NULL ||
+				/* 2170 is sys._columns.multiset */
+				BUNappend(lg->catalog_id, &(int) {2170}, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &multiset->batCacheid, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_cnt, &(lng){BATcount(multiset)}, false) != GDK_SUCCEED
+		   )) {
+			bat_destroy(multiset);
+			return GDK_FAIL;
+		}
+		BBPretain(multiset->batCacheid);
+		bat_destroy(multiset);
+
+		/* new TINYINT column sys._columns.multiset */
+		b = log_temp_descriptor(log_find_bat(lg, 2029)); /* sys.args.id */
+		if (b == NULL)
+			return GDK_FAIL;
+		ct = MS_VALUE;
+		multiset = BATconstant(b->hseqbase, TYPE_bte, &ct, BATcount(b), PERSISTENT);
+		bat_destroy(b);
+		if (multiset == NULL)
+			return GDK_FAIL;
+		/* First add 2 rows for sys._columns.column_type and tmp._columns.column_type */
+		if (BUNappend(multiset, &ct, true) != GDK_SUCCEED ||
+		    BUNappend(multiset, &ct, true) != GDK_SUCCEED ||
+		   ((multiset = BATsetaccess(multiset, BAT_READ)) == NULL ||
+				/* 2172 is sys.args.multiset */
+				BUNappend(lg->catalog_id, &(int) {2172}, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &multiset->batCacheid, true) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_cnt, &(lng){BATcount(multiset)}, false) != GDK_SUCCEED
+		   )) {
+			bat_destroy(multiset);
+			return GDK_FAIL;
+		}
+		BBPretain(multiset->batCacheid);
+		bat_destroy(multiset);
 
 		if (tabins(lg,
 					2076, &(msk) {false},	/* sys._columns */
@@ -932,6 +982,54 @@ bl_postversion(void *Store, logger *lg)
 					2081, &(int) {0},		/* sys._columns.type_scale */
 					/* 2124 is tmp._columns */
 					2082, &(int) {2124},		/* sys._columns.table_id */
+					2083, str_nil,			/* sys._columns.default */
+					2084, &(bit) {TRUE},		/* sys._columns.null */
+					2085, &(int) {6},		/* sys._columns.number */
+					2086, str_nil,			/* sys._columns.storage */
+					0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+					2076, &(msk) {false},	/* sys._columns */
+					/* 2170 is sys._columns.multiset */
+					2077, &(int) {2170},		/* sys._columns.id */
+					2078, "multiset",			/* sys._columns.name */
+					2079, "tinyint",			/* sys._columns.type */
+					2080, &(int) {7},		/* sys._columns.type_digits */
+					2081, &(int) {0},		/* sys._columns.type_scale */
+					/* 2076 is sys._columns */
+					2082, &(int) {2076},		/* sys._columns.table_id */
+					2083, str_nil,			/* sys._columns.default */
+					2084, &(bit) {TRUE},		/* sys._columns.null */
+					2085, &(int) {6},		/* sys._columns.number */
+					2086, str_nil,			/* sys._columns.storage */
+					0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+					2076, &(msk) {false},	/* sys._columns */
+					/* 2171 is tmp._columns.multiset */
+					2077, &(int) {2171},		/* sys._columns.id */
+					2078, "multiset",			/* sys._columns.name */
+					2079, "tinyint",			/* sys._columns.type */
+					2080, &(int) {7},		/* sys._columns.type_digits */
+					2081, &(int) {0},		/* sys._columns.type_scale */
+					/* 2124 is tmp._columns */
+					2082, &(int) {2124},		/* sys._columns.table_id */
+					2083, str_nil,			/* sys._columns.default */
+					2084, &(bit) {TRUE},		/* sys._columns.null */
+					2085, &(int) {6},		/* sys._columns.number */
+					2086, str_nil,			/* sys._columns.storage */
+					0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+					2076, &(msk) {false},	/* sys._columns */
+					/* 2172 is sy.args.multiset */
+					2077, &(int) {2172},		/* sys._columns.id */
+					2078, "multiset",			/* sys._columns.name */
+					2079, "tinyint",			/* sys._columns.type */
+					2080, &(int) {7},		/* sys._columns.type_digits */
+					2081, &(int) {0},		/* sys._columns.type_scale */
+					/* 2048 is sy.args */
+					2082, &(int) {2048},		/* sys._columns.table_id */
 					2083, str_nil,			/* sys._columns.default */
 					2084, &(bit) {TRUE},		/* sys._columns.null */
 					2085, &(int) {6},		/* sys._columns.number */

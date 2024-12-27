@@ -242,6 +242,15 @@ find_sql_column(sql_table *t, const char *cname)
 	return NULL;
 }
 
+sql_column *
+find_sql_column_id(sql_table *t, sqlid col_id)
+{
+	node *n = ol_find_id(t->columns, col_id);
+	if (n)
+		return n->data;
+	return NULL;
+}
+
 sql_table *
 find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 {

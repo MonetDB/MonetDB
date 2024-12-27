@@ -626,6 +626,28 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	return s;
 }
 
+static stmt * value_list(backend *be, list *vals, stmt *left, stmt *sel);
+static stmt *
+composite_value_list(backend *be, sql_exp *tuple, stmt *left, stmt *sel)
+{
+	assert(is_values(tuple));
+	list *fields = exp_get_values(tuple);
+	list *f = sa_list(be->mvc->sa);
+	for (node *n = fields->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i;
+
+		if(is_values(e))
+			i = value_list(be, exp_get_values(e), left, sel);
+		else
+			i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+		if (!i)
+			return NULL;
+		list_append(f, i);
+	}
+	return stmt_list(be, f);
+}
+
 static stmt *
 value_list(backend *be, list *vals, stmt *left, stmt *sel)
 {
@@ -634,6 +656,9 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
+	if (type->type->composite)
+		return composite_value_list(be, vals->h->data, left, sel);
+
 	/* create bat append values */
 	l = sa_list(be->mvc->sa);
 	for (node *n = vals->h; n; n = n->next) {
@@ -5530,6 +5555,29 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
+static node *
+insert_composite(stmt **updates, sql_column *c, node *n, stmt *input_tuple)
+{
+	node *m, *f;
+	while(input_tuple->type == st_alias)
+		input_tuple = input_tuple->op1;
+	if (input_tuple->type != st_list)
+		return NULL;
+	for(m = input_tuple->op4.lval->h, n = n->next, f = c->type.type->d.fields->h; n && m && f; m = m->next, f = f->next) {
+		sql_column *c = n->data;
+
+		if (c->type.type->composite) {
+			n = insert_composite(updates, c, n, m->data);
+		} else {
+			updates[c->colnr] = m->data;
+			n = n->next;
+		}
+	}
+	if (f || m) /* did we find all fields and use all values */
+		return NULL;
+	return n;
+}
+
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
@@ -5578,10 +5626,15 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 
 	updates = table_update_stmts(sql, t, &len);
-	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; m = m->next) {
 		sql_column *c = n->data;
 
-		updates[c->colnr] = m->data;
+		if (c->type.type->composite) {
+			n = insert_composite(updates, c, n, m->data);
+		} else {
+			updates[c->colnr] = m->data;
+			n = n->next;
+		}
 	}
 
 /* before */
@@ -5637,13 +5690,16 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 	int mvc_var = be->mvc_var;
-	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+	for (n = ol_first_node(t->columns)/*, m = inserts->op4.lval->h*/; n /*&& m*/; n = n->next/*, m = m->next*/) {
 
-		stmt *ins = m->data;
+		//stmt *ins = m->data;
 		sql_column *c = n->data;
+		stmt *ins = updates[c->colnr];
 
-		insert = stmt_append_col(be, c, pos, ins, &mvc_var, rel->flag);
-		append(l,insert);
+		if (ins) {
+			insert = stmt_append_col(be, c, pos, ins, &mvc_var, rel->flag);
+			append(l,insert);
+		}
 	}
 	be->mvc_var = mvc_var;
 	if (!insert)

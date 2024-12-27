@@ -209,6 +209,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, vname->name));
 			} else if (e->f) {	/* values list */
 				list *l = e->f;
+				if (e->tpe.type && e->tpe.type->composite) {
+					char *t = dump_sql_subtype(sql->ta, &e->tpe);
+					mnstr_printf(fout, "%s ", t);
+				}
 				exps_print(sql, fout, l, depth, refs, 0, 0, decorate, 0);
 			} else { /* numbered arguments */
 				mnstr_printf(fout, "A%u", e->flag);
