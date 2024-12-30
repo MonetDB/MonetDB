@@ -3239,7 +3239,10 @@ exp_copy(mvc *sql, sql_exp * e)
 		} else if (e->flag & PSM_REL) {
 			if (!e->alias.label)
 				exp_label(sql->sa, e, ++sql->label);
-			return exp_ref(sql, e);
+			ne = exp_rel(sql, rel_dup(e->l));
+			//if (!e->alias.label)
+			//	exp_label(sql->sa, e, ++sql->label);
+			//return exp_ref(sql, e);
 		} else if (e->flag & PSM_EXCEPTION) {
 			ne = exp_exception(sql->sa, exp_copy(sql, e->l), (const char *) e->r);
 		}

@@ -2080,10 +2080,11 @@ eb_error( exception_buffer *eb, char *msg, int val )
 #define SA_NUM_BLOCKS 64
 #define SA_BLOCK_SIZE (64*1024)
 #define SA_HEADER_SIZE 2*(sizeof(size_t))
+#define CANARY_VALUE ((size_t)0xDEADBEEFDEADBEEF)
 
 typedef struct freed_t {
-	struct freed_t *n;
 	size_t sz;
+	struct freed_t *n;
 } freed_t;
 
 //static void
@@ -2113,9 +2114,9 @@ sa_free_obj(allocator *pa, void *obj, size_t sz)
 	}
 	assert (i < pa->nr);
 	// put on the freelist
-	freed_t *f = obj;
-	f->n = pa->freelist;
+	freed_t *f = memset(obj, 0, sz);
 	f->sz = sz;
+	f->n = pa->freelist;
 	pa->freelist = f;
 	if (pa->inuse > 0)
 		pa->inuse -= 1;
@@ -2145,8 +2146,8 @@ sa_free_blk(allocator *pa, void *blk)
 			pa->nr--;
 		} else {
 			freed_t *f = blk;
-			f->n = pa->freelist_blks;
 			f->sz = sz;
+			f->n = pa->freelist_blks;
 			pa->freelist_blks = f;
 		}
 	}
@@ -2326,6 +2327,8 @@ sa_alloc( allocator *sa, size_t sz )
 	if (r) {
 		// store size in header
 		*((size_t *) r) = nsize;
+		// store canary value to help us detect double free
+		*((size_t *) r + 1) = CANARY_VALUE;
 		return r + SA_HEADER_SIZE;
 	}
 	return NULL;
@@ -2462,6 +2465,8 @@ sa_free(allocator *sa, void *obj)
 	// retrieve size from header
 	char* ptr = (char *) obj - SA_HEADER_SIZE;
 	size_t sz = *((size_t *) ptr);
+	// double free check point
+	assert(*((size_t *) ptr + 1) == CANARY_VALUE);
 	if (sz < SA_BLOCK_SIZE) {
 		sa_free_obj(sa, ptr, sz);
 	} else {

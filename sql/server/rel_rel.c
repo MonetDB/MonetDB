@@ -160,7 +160,7 @@ rel_destroy(mvc *sql, sql_rel *rel)
 	if (!list_empty(rel->exps) && sql && (!rel->l) && (!rel->r)) {
 		// perhaps separate allocator for exps
 		// for later
-		//free_exps_list(sql->sa, rel->exps);
+		free_exps_list(sql->sa, rel->exps);
 		rel->exps = NULL;
 	}
 }
@@ -1359,7 +1359,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 				if (basecol && !is_basecol(e))
 					continue;
 				if (intern || !is_intern(e)) {
-					if (!e->alias.label)
+					if (!e->alias.label || (exp_is_rel(e) && e->alias.name == NULL))
 						en->data = e = exp_label(sql->sa, e, ++sql->label);
 					sql_exp *ne = exp_ref(sql, e);
 					if (settname && tname)

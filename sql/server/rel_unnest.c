@@ -1588,7 +1588,8 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 			list *iu = s->l;
 			for(node *n = iu->h; n; n = n->next) {
 				sql_rel *sl = n->data;
-				sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
+				list *exps = rel_projections(sql, sl, NULL, 1, 1);
+				sl = rel_project(sql->sa, rel_dup(sl), exps);
 				for (node *n = sl->exps->h, *m = s->exps->h; n && m; n = n->next, m = m->next)
 					exp_prop_alias(sql->sa, n->data, m->data);
 				list_hash_clear(sl->exps);
@@ -2950,7 +2951,8 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		/* move rank down add ref */
 		if (!exp_name(e))
 			e = exp_label(v->sql->sa, e, ++v->sql->label);
-		append(rell->exps, e);
+		sql_exp *e_copy = exp_copy(v->sql, e);
+		append(rell->exps, e_copy);
 		e = exp_ref(v->sql, e);
 		v->changes++;
 	} else {
@@ -3041,9 +3043,9 @@ exp_in_project(mvc *sql, sql_exp **l, list *vals, int anyequal)
 		if (rel_convert_types(sql, NULL, NULL, l, &r, 1, type_equal_no_any) < 0)
 			return NULL;
 		if (anyequal)
-			ne = rel_binop_(sql, NULL, *l, r, "sys", "=", card_value, true);
+			ne = rel_binop_(sql, NULL, exp_copy(sql, *l), r, "sys", "=", card_value, true);
 		else
-			ne = rel_binop_(sql, NULL, *l, r, "sys", "<>", card_value, true);
+			ne = rel_binop_(sql, NULL, exp_copy(sql, *l), r, "sys", "<>", card_value, true);
 		if (!e) {
 			e = ne;
 		} else if (anyequal) {
@@ -3415,7 +3417,9 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rnull) { /* complex compare operator */
 					sql_exp *lnull = rel_unop_(v->sql, rel, le, "sys", "isnull", card_value);
 					set_has_no_nil(lnull);
-					le = exp_compare_func(v->sql, le, re, op, 0);
+					sql_exp * le_copy = exp_copy(v->sql, le);
+					sql_exp * re_copy = exp_copy(v->sql, re);
+					le = exp_compare_func(v->sql, le_copy, re_copy, op, 0);
 					sql_subfunc *f = sql_bind_func3(v->sql, "sys", (quantifier==1)?"any":"all", exp_subtype(le), exp_subtype(lnull), exp_subtype(rnull), F_FUNC, true);
 					le = exp_op3(v->sql->sa, le, lnull, rnull, f);
 					if (is_select(rel->op) && depth == 0) {
@@ -4254,7 +4258,7 @@ flatten_values(visitor *v, sql_rel *rel)
 			nrel = rel_project(v->sql->sa, NULL, sa_list(v->sql->sa));
 			set_processed(nrel);
 			for(node *n = rel->exps->h; n; n = n->next) {
-				sql_exp *e = exp_copy(v->sql, n->data);
+				sql_exp *e = n->data;
 				list *vals = exp_get_values(e);
 
 				if (vals) {
@@ -4262,10 +4266,11 @@ flatten_values(visitor *v, sql_rel *rel)
 						append(exps, exp_ref(v->sql, e));
 					sql_exp *val = list_fetch(vals, i);
 					exp_setalias(val, e->alias.label, exp_relname(e), exp_name(e));
-					append(nrel->exps, val);
-					rel_set_exps(nrel, nrel->exps);
+					sql_exp *e_copy = exp_copy(v->sql, val);
+					append(nrel->exps, e_copy);
 				}
 			}
+			rel_set_exps(nrel, nrel->exps);
 			urs = append(urs, nrel);
 		}
 
