@@ -244,6 +244,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		else
 			mnstr_printf(fout, "()");
+		if (e->r) { /* order by exps */
+			list *r = e->r;
+			list *obes = r->h->data;
+			exps_print(sql, fout, obes, depth, refs, 0, 1, decorate, 0);
+			if (r->h->next) {
+				list *exps = r->h->next->data;
+				exps_print(sql, fout, exps, depth, refs, 0, 1, decorate, 0);
+			}
+		}
 	} break;
 	case e_column: {
 		if (is_freevar(e))
@@ -323,6 +332,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
+	if (e->type != e_atom && e->type != e_cmp && is_partitioning(e))
+		mnstr_printf(fout, " PART");
 	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && nulls_last(e))
@@ -597,6 +608,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
+		if (is_recursive(rel))
+			mnstr_printf(fout, "recursive ");
 		mnstr_printf(fout, "%s (", r);
 		assert(rel->l);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
@@ -1712,6 +1725,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		return NULL;
 	}
 
+	/* [ PART ] */
+	if (strncmp(r+*pos, "PART",  strlen("PART")) == 0) {
+		(*pos)+= (int) strlen("PART");
+		skipWS(r, pos);
+		set_partitioning(exp);
+	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("ASC");
@@ -1882,7 +1901,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel = NULL;
 	list *exps, *gexps, *rels = NULL;
-	int distinct = 0, dependent = 0, single = 0;
+	int distinct = 0, dependent = 0, single = 0, recursive = 0;
 	operator_type j = op_basetable;
 	bool groupjoin = false;
 
@@ -2052,6 +2071,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("dependent");
 		skipWS(r, pos);
 		dependent = 1;
+	}
+	if (r[*pos] == 'r' && r[*pos+1] == 'e' && r[*pos+2] == 'c') {
+		*pos += (int) strlen("recursive");
+		skipWS(r, pos);
+		recursive = 1;
 	}
 
 	switch(r[*pos]) {
@@ -2536,6 +2560,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		set_single(rel);
 	if (dependent)
 		set_dependent(rel);
+	if (recursive)
+		set_recursive(rel);
 
 	/* sometimes, properties are sent */
 	if (!(rel = read_rel_properties(sql, rel, r, pos)))

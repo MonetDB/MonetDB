@@ -10,7 +10,11 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-add_library(opt_sql_append MODULE)
+if(MONETDB_STATIC)
+  add_library(opt_sql_append STATIC)
+else()
+  add_library(opt_sql_append MODULE)
+endif()
 
 target_sources(opt_sql_append
   PRIVATE

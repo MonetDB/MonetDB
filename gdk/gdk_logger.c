@@ -1154,14 +1154,14 @@ log_open_output(logger *lg)
 	}
 	if (!LOG_DISABLED(lg)) {
 		char id[32];
-		char *filename;
+		char filename[MAXPATH];
 
 		if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
 			TRC_CRITICAL(GDK, "filename is too large\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
 		}
-		if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+		if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "allocation failure\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
@@ -1178,10 +1178,8 @@ log_open_output(logger *lg)
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 			close_stream(new_range->output_log);
 			GDKfree(new_range);
-			GDKfree(filename);
 			return GDK_FAIL;
 		}
-		GDKfree(filename);
 	} else {
 		new_range->output_log = NULL;
 	}
@@ -1969,19 +1967,12 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 static gdk_return
 log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 {
-	str filenamestr = NULL;
-
-	if ((filenamestr = GDKfilepath(0, lg->dir, LOGFILE, NULL)) == NULL)
-		return GDK_FAIL;
-	size_t len = strcpy_len(filename, filenamestr, FILENAME_MAX);
-	GDKfree(filenamestr);
-	if (len >= FILENAME_MAX) {
+	if (GDKfilepath(filename, FILENAME_MAX, 0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED) {
 		GDKerror("Logger filename path is too large\n");
 		return GDK_FAIL;
 	}
 	if (bak) {
-		len = strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL);
-		if (len >= FILENAME_MAX) {
+		if (strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL) >= FILENAME_MAX) {
 			GDKerror("Logger filename path is too large\n");
 			return GDK_FAIL;
 		}
@@ -2020,6 +2011,51 @@ log_json_upgrade_finalize(void)
 	return GDK_SUCCEED;
 }
 #endif
+
+/* clean up old junk left over from old upgrades: bats that are
+ * persistent but not in the SQL catalog and that have no name, and bats
+ * that do have a name that starts with "stat_opt_" (from the statistics
+ * optimizer that was removed in 2017) are removed here
+ *
+ * this function ignores any errors */
+static void
+clean_bbp(logger *lg)
+{
+	BAT *b = COLnew(0, TYPE_int, 256, TRANSIENT);
+	if (b == NULL)
+		return;
+	if (BUNappend(b, &(int){0}, false) != GDK_SUCCEED) {
+		BBPreclaim(b);
+		return;
+	}
+	/* mark persistent bats that have no name or have a name
+	 * starting with "stat_opt_" */
+	for (bat bid = 1, bsz = getBBPsize(); bid < bsz; bid++)
+		if (BBP_status(bid) & BBPEXISTING &&
+		    (BBP_logical(bid) == NULL ||
+		     strncmp(BBP_logical(bid), "tmp_", 4) == 0 ||
+		     strncmp(BBP_logical(bid), "stat_opt_", 9) == 0))
+			BBP_status_on(bid, 1U << 31);
+	/* remove mark from bats that are in the SQL catalog */
+	for (BUN i = 0, n = BATcount(lg->catalog_bid); i < n; i++)
+		BBP_status_off(((int *) lg->catalog_bid->theap->base)[i], 1U << 31);
+	/* what's left over are junk bats */
+	for (bat bid = 1, bsz = getBBPsize(); bid < bsz; bid++)
+		if (BBP_status(bid) & (1U << 31)) {
+			BBP_status_off(bid, 1U << 31);
+			if (BATmode(BBP_desc(bid), true) != GDK_SUCCEED ||
+			    BUNappend(b, &bid, false) != GDK_SUCCEED) {
+				BBPreclaim(b);
+				return;
+			}
+			printf("# removing bat %d (tmp_%o)\n", bid, bid);
+		}
+	/* if there were any junk bats, commit their removal */
+	if (b->batCount > 1 &&
+	    TMsubcommit_list(Tloc(b, 0), NULL, (int) b->batCount, -1) != GDK_SUCCEED)
+		printf("clean_bbp transaction failed\n");
+	BBPreclaim(b);
+}
 
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,
@@ -2337,6 +2373,8 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	if (log_json_upgrade_finalize() == GDK_FAIL)
 		goto error;
 #endif
+	if (GDKgetenv_isyes("clean-BBP"))
+		clean_bbp(lg);
 	return GDK_SUCCEED;
   error:
 	if (fp)
@@ -2692,31 +2730,28 @@ log_flush(logger *lg, ulng ts)
 	size_t allocated = 0;
 	while (cid < lid && res == LOG_OK) {
 		if (!lg->input_log) {
-			char *filename;
+			char filename[MAXPATH];
 			char id[32];
 			if (snprintf(id, sizeof(id), LLFMT, cid + 1) >= (int) sizeof(id)) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
-			if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+			if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
 				GDKfree(updated);
 				return GDK_FAIL;
 			}
 			if (strlen(filename) >= FILENAME_MAX) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "Logger filename path is too large\n");
-				GDKfree(filename);
 				return GDK_FAIL;
 			}
 
 			bool filemissing = false;
 			if (log_open_input(lg, filename, &filemissing) != GDK_SUCCEED) {
 				GDKfree(updated);
-				GDKfree(filename);
 				return GDK_FAIL;
 			}
-			GDKfree(filename);
 		}
 		/* we read the full file because skipping is impossible with current log format */
 		log_lock(lg);

@@ -19,6 +19,7 @@
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 void
 rel_set_exps(sql_rel *rel, list *exps)
@@ -309,6 +310,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
+	if (is_insert(rel->op))
+		rel = rel->r;
 	if ((is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = NULL;
 

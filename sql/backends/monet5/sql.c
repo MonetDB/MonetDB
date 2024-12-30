@@ -45,7 +45,6 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
-#include "gdk_cand.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
@@ -193,8 +192,7 @@ sqlcleanup(backend *be, int err)
 	be->mvc->label = 0;
 	be->mvc->nid = 1;
 	be->no_mitosis = 0;
-	be->client->query = NULL;
-	scanner_query_processed(&(be->mvc->scanner));
+	mvc_query_processed(be->mvc);
 	return err;
 }
 

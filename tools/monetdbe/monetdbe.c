@@ -20,7 +20,6 @@
 #include "mal_backend.h"
 #include "mal_builder.h"
 #include "mal_linker.h"
-#include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_gencode.h"
@@ -408,9 +407,9 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		m->sa = sa_reset(m->sa);
 	m->scanner.mode = LINE_N;
 	m->scanner.rs = c->fdin;
-	scanner_query_processed(&(m->scanner));
+	mvc_query_processed(m);
 
-	if ((mdbe->msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED)
+	if ((mdbe->msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED)
 		goto cleanup;
 	if (prepare_id)
 		m->emode = m_prepare;

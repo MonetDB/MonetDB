@@ -17,7 +17,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -123,6 +122,10 @@ getSQLoptimizer(mvc *m)
 {
 	char *opt = get_string_global_var(m, "optimizer");
 	char *pipe = "default_pipe";
+	char *rec_pipe = "recursive_pipe";
+
+	if (m->recursive)
+		return rec_pipe;
 
 	if (opt)
 		pipe = opt;

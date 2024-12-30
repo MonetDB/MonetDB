@@ -26,7 +26,15 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-static int __attribute__((__pure__))
+__attribute__((__pure__))
+static inline bool
+isProjectConst(const InstrRecord *p)
+{
+	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
+}
+
+__attribute__((__pure__))
+static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
 	int i;
@@ -39,7 +47,8 @@ hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 }
 
 str
-OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci)
 {
 	int i, j, k, barrier = 0, bailout = 0;
 	InstrPtr p, q;
@@ -111,7 +120,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
 			old[i] = NULL;
-			continue;
+			break;
 		}
 
 		/* when we enter a barrier block, we should ditch all previous instructions from consideration */
@@ -183,9 +192,8 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 					&& !hasCommonResults(p, q)
 					&& !isUnsafeFunction(q)
 					&& !isUpdateInstruction(q)
-					/* disable project(x,val), as its used for the result of case statements */
-					&& !(getModuleId(q) == algebraRef && getFunctionId(q) == projectRef)
-					&& isLinearFlow(q)) {
+					&& !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
+					isLinearFlow(q)) {
 					if (safetyBarrier(p, q)) {
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;

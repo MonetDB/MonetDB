@@ -20,7 +20,7 @@
 gdk_return
 GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool isuuid)
 {
-	size_t (*counts)[NBUCKETS] = GDKmalloc(hs * sizeof(counts[0]));
+	size_t (*counts)[NBUCKETS] = GDKzalloc(hs * sizeof(counts[0]));
 	size_t pos[NBUCKETS];
 	uint8_t *h1 = h;
 	uint8_t *h2;
@@ -57,7 +57,6 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		ts = 0;
 	}
 
-	memset(counts, 0, hs * sizeof(counts[0]));
 #ifndef WORDS_BIGENDIAN
 	if (isuuid /* UUID, treat like big-endian */) {
 #endif

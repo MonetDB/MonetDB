@@ -23,8 +23,17 @@
 #define GCC_Pragma(pragma)
 #endif
 
+#if defined(__has_attribute)
+#if ! __has_attribute(__access__)
+#define __access__(...)
+#endif
+#else
+#define __access__(...)
+#endif
+
 /* copy at most (n-1) bytes from src to dst and add a terminating NULL
  * byte; return length of src (i.e. can be more than what is copied) */
+__attribute__((__access__(write_only, 1, 3)))
 static inline size_t
 strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 {
@@ -33,36 +42,15 @@ strcpy_len(char *restrict dst, const char *restrict src, size_t n)
 			if ((dst[i] = src[i]) == 0)
 				return i;
 		}
-		/* for correctness, the decrement isn't needed (just assigning 0
-		 * to dst[n-1] would be sufficient), but to work around a too
-		 * strict GNU C compiler, we do need it */
-		dst[--n] = 0;
-/* in some versions of GCC (at least gcc (Ubuntu 7.5.0-3ubuntu1~18.04)
- * 7.5.0), the error just can't be turned off when using
- * --enable-strict, so we just use the (more) expensive way of getting the
- * right answer (rescan the whole string) */
-#if !defined(__GNUC__) || __GNUC__ > 7 || (__GNUC__ == 7 && __GNUC_MINOR__ > 5)
-/* This code is correct, but GCC gives a warning in certain
- * conditions, so we disable the warning temporarily.
- * The warning happens e.g. in
- *   strcpy_len(buf, "fixed string", sizeof(buf))
- * where buf is larger than the string. In that case we never get here
- * since return is executed in the loop above, but the compiler
- * complains anyway about reading out-of-bounds.
- * For GCC we use _Pragma to disable the warning (and hence error).
- * Since other compilers may warn (and hence error out) on
- * unrecognized pragmas, we use some preprocessor trickery. */
-GCC_Pragma("GCC diagnostic push")
-GCC_Pragma("GCC diagnostic ignored \"-Warray-bounds\"")
-		return n + strlen(src + n);
-GCC_Pragma("GCC diagnostic pop")
-#endif
+		dst[n - 1] = 0;
 	}
 	return strlen(src);
 }
 
 /* copy the NULL terminated list of src strings with a maximum of n
  * bytes to dst; return the combined length of the src strings */
+__attribute__((__access__(write_only, 1, 2)))
+__attribute__((__sentinel__))
 static inline size_t
 strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 {

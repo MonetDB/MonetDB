@@ -17,6 +17,7 @@
 #include "rel_prop.h"
 #include "rel_dump.h"
 #include "rel_select.h"
+#include "sql_storage.h"
 
 static lng
 rel_getcount(mvc *sql, sql_rel *rel)

@@ -494,7 +494,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		r = sql_symbol2relation(sql, m->sym);
 
 		assert(m->emode != m_prepare);
-		scanner_query_processed(&(m->scanner));
+		mvc_query_processed(m);
 		if ((err = mvc_status(m)) ) {
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);

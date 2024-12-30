@@ -69,7 +69,7 @@ query IT rowsort
 SELECT column_id, expression FROM table_partitions
 ----
 
-statement error 42000!SELECT: no such unary operator 'iamdummy'(int)
+statement error 42000!SELECT: no such operator 'iamdummy'(int)
 CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (iamdummy(a))
 
 statement ok

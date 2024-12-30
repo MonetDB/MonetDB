@@ -117,7 +117,7 @@ tmp_schema(mvc *sql)
 #define DO_NOTHING(x) ;
 
 /* as we don't have OOP in C, I prefer a single macro with the search path algorithm to passing function pointers */
-#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE) \
+#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error) \
 	do { \
 		sql_schema *next = NULL; \
  \
@@ -154,7 +154,7 @@ tmp_schema(mvc *sql)
 				CALL; \
 			} \
 		} \
-		if (!res) \
+		if (!res && show_error) \
 			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
 	} while (0)
 
@@ -174,7 +174,7 @@ find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const ch
 	const char *objstr = isView ? "view" : "table";
 	sql_table *res = NULL;
 
-	search_object_on_path(res = mvc_bind_table(sql, next, name), DO_NOTHING, table_extra, SQLSTATE(42S02));
+	search_object_on_path(res = mvc_bind_table(sql, next, name), DO_NOTHING, table_extra, SQLSTATE(42S02), true);
 	return res;
 }
 
@@ -184,7 +184,7 @@ find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char
 	const char objstr[] = "sequence";
 	sql_sequence *res = NULL;
 
-	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ;, SQLSTATE(42000));
+	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ;, SQLSTATE(42000), true);
 	return res;
 }
 
@@ -194,7 +194,7 @@ find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *err
 	const char objstr[] = "index";
 	sql_idx *res = NULL;
 
-	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S12));
+	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S12), true);
 	return res;
 }
 
@@ -204,7 +204,7 @@ find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *er
 	const char objstr[] = "type";
 	sql_type *res = NULL;
 
-	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S01));
+	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S01), true);
 	return res;
 }
 
@@ -214,7 +214,7 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 	const char objstr[] = "trigger";
 	sql_trigger *res = NULL;
 
-	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ;, SQLSTATE(3F000));
+	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ;, SQLSTATE(3F000), true);
 	return res;
 }
 
@@ -255,7 +255,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 	int nr = 0;
 
 	(void)nr;
-	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000));
+	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true);
 	return res;
 }
 
@@ -413,7 +413,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, SQLSTATE(42000));
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false); //SQLSTATE(42000), true);
 	return res;
 }
 
@@ -709,7 +709,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000));
+	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), true);
 	return res;
 }
 
@@ -823,7 +823,7 @@ sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype ty
 	}
 	va_end(valist);
 
-	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000));
+	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000), true);
 	if (res) /* make sure we have the correct result type */
 		res->res->h->data = r_res;
 	return res;
@@ -905,7 +905,7 @@ sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, SQLSTATE(42000));
+	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, "", false);
 	return res;
 }
 
@@ -1110,12 +1110,15 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	/* inner symbol2string uses the temporary allocator */
 	switch (se->token) {
 	case SQL_NOP: {
-		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
+		dnode *lst = se->data.lval->h, *ops = NULL, *aux;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
 				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0, extra = sname ? strlen(sname) + 3 : 0;
+
+		if (lst->next->next->data.lval)
+			ops = lst->next->next->data.lval->h;
 
 		for (aux = ops; aux; aux = aux->next)
 			nargs++;
@@ -1143,57 +1146,6 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				i++;
 			}
 			concat = stpcpy(concat, ")");
-		}
-		return res;
-	}
-	case SQL_BINOP: {
-		dnode *lst = se->data.lval->h;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
-		char *l = NULL, *r = NULL, *res;
-		size_t extra = sname ? strlen(sname) + 3 : 0;
-
-		if (!(l = _symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = _symbol2string(sql, lst->next->next->next->data.sym, expression, err)))
-			return NULL;
-
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + strlen(l) + strlen(r) + 6))) {
-			char *concat = res;
-			if (sname)
-				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ","), r), ")");
-		}
-		return res;
-	}
-	case SQL_OP: {
-		dnode *lst = se->data.lval->h;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
-		char *res;
-		size_t extra = sname ? strlen(sname) + 3 : 0;
-
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + 5))) {
-			char *concat = res;
-			if (sname)
-				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
-			stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"()");
-		}
-		return res;
-	}
-	case SQL_UNOP: {
-		dnode *lst = se->data.lval->h;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
-		char *l = _symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
-		size_t extra = sname ? strlen(sname) + 3 : 0;
-
-		if (!l)
-			return NULL;
-
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + strlen(l) + 5))) {
-			char *concat = res;
-			if (sname)
-				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ")");
 		}
 		return res;
 	}

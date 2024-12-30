@@ -44,8 +44,6 @@
 #ifndef MAL_ERRORS
 #define MAL_ERRORS
 
-#define SQLSTATE(sqlstate)	#sqlstate "!"
-
 #define MANUAL_HELP "See documentation for details"
 
 #define PROGRAM_GENERAL "Program contains errors."
@@ -66,7 +64,6 @@
 #define INTERNAL_OBJ_CREATE "Can not create object"
 #define INTERNAL_AUTHORIZATION "authorization BATs not empty"
 
-#define MAL_MALLOC_FAIL	"Could not allocate space"
 #define MAL_STACK_FAIL	"Running out of stack space."
 #define MAL_CALLDEPTH_FAIL	"Recursive call limit reached."
 

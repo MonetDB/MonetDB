@@ -385,7 +385,7 @@ where true
 query TII rowsort
 select
    cast(coalesce(ref_8.name,
-     cast(nullif(ref_7.column,
+     cast(nullif(ref_7."column",
        cast(null as clob)) as clob)) as clob) as c0,
    ref_10.id as c1,
    cast(coalesce(ref_6.action,

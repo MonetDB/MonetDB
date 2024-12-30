@@ -21,7 +21,6 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 /*
  * Some utility routines to generate code
@@ -43,7 +42,6 @@ convertMultiplexFcn(const char *op)
 	return op;
 }
 
-/*
 static InstrPtr
 multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int rtype)
 {
@@ -60,7 +58,6 @@ multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int 
 	pushInstruction(mb, q);
 	return q;
 }
-*/
 
 static InstrPtr
 dump_1(MalBlkPtr mb, const char *mod, const char *name, stmt *o1)
@@ -308,6 +305,30 @@ create_bat(MalBlkPtr mb, int tt)
 	q = pushType(mb, q, tt);
 	pushInstruction(mb, q);
 	return getDestVar(q);
+}
+
+stmt *
+stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
+{
+	InstrPtr q = newStmt(be->mb, batRef, newRef);
+	int tt = tpe->type->localtype;
+
+	if (q == NULL)
+		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	if (estimate > 0)
+		q = pushInt(be->mb, q, (int)estimate);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
 }
 
 static int *
@@ -1207,19 +1228,18 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
+stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int nr_obe, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int l, p, g, c;
+	int l, g, c;
 
 	if (col == NULL || offset == NULL || limit == NULL || col->nr < 0 || offset->nr < 0 || limit->nr < 0)
 		goto bailout;
-	if (piv && (piv->nr < 0 || gid->nr < 0))
+	if (piv && (piv->nr < 0 || (gid && gid->nr < 0)))
 		goto bailout;
 
 	c = (col) ? col->nr : 0;
-	p = (piv) ? piv->nr : 0;
 	g = (gid) ? gid->nr : 0;
 
 	/* first insert single value into a bat */
@@ -1243,38 +1263,67 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		c = k;
 	}
 	if (order) {
-		int topn = 0;
+		if (piv && piv->q) {
+			q = piv->q;
+			q = pushArgument(mb, q, c);
+			q = pushBit(mb, q, dir);
+			q = pushBit(mb, q, nullslast);
+			return piv;
+		} else {
+			int topn = 0;
 
-		q = newStmt(mb, calcRef, plusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, limit->nr);
-		topn = getDestVar(q);
-		pushInstruction(mb, q);
+			q = newStmt(mb, calcRef, plusRef);
+			if (q == NULL)
+				goto bailout;
+			q = pushArgument(mb, q, offset->nr);
+			q = pushArgument(mb, q, limit->nr);
+			topn = getDestVar(q);
+			pushInstruction(mb, q);
 
-		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
-		if (q == NULL)
-			goto bailout;
-		if (!last) /* we need the groups for the next firstn */
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, c);
-		if (p)
-			q = pushArgument(mb, q, p);
-		else
-			q = pushNilBat(mb, q);
-		if (g)
-			q = pushArgument(mb, q, g);
-		else
-			q = pushNilBat(mb, q);
-		q = pushArgument(mb, q, topn);
-		q = pushBit(mb, q, dir);
-		q = pushBit(mb, q, nullslast);
-		q = pushBit(mb, q, distinct != 0);
+			if (!gid || (piv && !piv->q)) { /* use algebra.firstn (possibly concurrently) */
+				int p = (piv) ? piv->nr : 0;
+				q = newStmtArgs(mb, algebraRef, firstnRef, 9);
+				if (q == NULL)
+					goto bailout;
+				if (nr_obe > 1) /* we need the groups for the next firstn */
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				if (p)
+					q = pushArgument(mb, q, p);
+				else
+					q = pushNilBat(mb, q);
+				if (g)
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+				q = pushArgument(mb, q, topn);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+				q = pushBit(mb, q, distinct != 0);
 
-		l = getArg(q, 0);
-		l = getDestVar(q);
-		pushInstruction(mb, q);
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			} else {
+				q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
+				if (q == NULL)
+					goto bailout;
+				q = pushArgument(mb, q, topn);
+				q = pushNilBat(mb, q);	/* candidates */
+				if (g)					/* grouped case */
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+
+				q = pushArgument(mb, q, c);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			}
+		}
 	} else {
 		int len;
 
@@ -1671,7 +1720,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	}
 	if (op2->nrcols >= 1) {
 		bit need_not = FALSE;
-		//const char *mod = calcRef;
+		const char *mod = calcRef;
 		const char *op = "=";
 		int k;
 
@@ -1698,12 +1747,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			TRC_ERROR(SQL_EXECUTION, "Unknown operator\n");
 		}
 
-		if ((q = newStmtArgs(mb, batcalcRef, convertMultiplexFcn(op), 6)) == NULL)
-		//if ((q = multiplex2(mb, mod, convertMultiplexFcn(op), l, r, TYPE_bit)) == NULL)
+		if ((q = multiplex2(mb, mod, convertMultiplexFcn(op), l, r, TYPE_bit)) == NULL)
 			goto bailout;
-		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
-		q = pushArgument(mb, q, l);
-		q = pushArgument(mb, q, r);
 		if (sub && (op1->cand || op2->cand)) {
 			if (op1->cand && !op2->cand) {
 				if (op1->nrcols > 0)
@@ -1719,7 +1764,6 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		if (is_semantics)
 			q = pushBit(mb, q, TRUE);
 		k = getDestVar(q);
-		pushInstruction(mb, q);
 
 		q = newStmtArgs(mb, algebraRef, selectRef, 9);
 		if (q == NULL)
@@ -4079,78 +4123,6 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 #define LANG_INT_OR_MAL(l)  ((l)==FUNC_LANG_INT || (l)==FUNC_LANG_MAL)
 
 stmt *
-stmt_binop_semantics(backend *be, stmt *l, stmt *r, stmt *sel, sql_subfunc *f)
-{
-	MalBlkPtr mb = be->mb;
-	InstrPtr q = NULL;
-	const char *fimp = backend_function_imp(be, f->func);
-	stmt *o = NULL;
-
-	if (l == NULL || r == NULL)
-		goto bailout;
-
-	o = l;
-	if (o->nrcols == 0)
-		o = r;
-
-	fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
-
-	sql_subtype *res = f->res->h->data;
-
-	q = newStmtArgs(mb, o->nrcols ? batcalcRef : calcRef, fimp, 6);
-	if (q == NULL)
-		goto bailout;
-	if (o->nrcols)
-		setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
-	else
-		setVarType(mb, getArg(q, 0), res->type->localtype);
-
-	q = pushArgument(mb, q, l->nr);
-	q = pushArgument(mb, q, r->nr);
-	/* push candidate lists if that's the case */
-	if (l->nrcols > 0) {
-		if ((l->cand && l->cand == sel) || !sel)
-			q = pushNilBat(mb, q);
-		else
-			q = pushArgument(mb, q, sel->nr);
-	}
-	if (r->nrcols > 0) {
-		if ((r->cand && r->cand == sel) || !sel)
-			q = pushNilBat(mb, q);
-		else
-			q = pushArgument(mb, q, sel->nr);
-	}
-	q = pushBit(mb, q, 1); /* semantic */
-
-	pushInstruction(mb, q);
-
-	stmt *s = stmt_create(be->mvc->sa, st_Nop);
-	if(!s)
-		goto bailout;
-	s->op1 = l;
-	s->op2 = r;
-	if (o) {
-		s->nrcols = o->nrcols;
-		s->key = o->key;
-		s->aggr = o->aggr;
-	} else {
-		s->nrcols = 0;
-		s->key = 1;
-	}
-	s->op4.funcval = f;
-	s->nr = getDestVar(q);
-	s->q = q;
-	if (sel && s->nrcols)
-		s->cand = sel;
-	return s;
-
-  bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
-	return NULL;
-}
-
-stmt *
 stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 {
 	MalBlkPtr mb = be->mb;
@@ -4211,7 +4183,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	if (q == NULL) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			goto bailout;
-		mod = getName(sql_func_mod(f->func));
+		mod = sql_func_mod(f->func);
 		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
@@ -4221,42 +4193,15 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		}
 
 		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
-			bool no_multiplex = 0;
 			sql_subtype *res = f->res->h->data;
 
-			if (f->func->type != F_UNION && !rows && ((mod == calcRef && (
-						fimp[0] == '+' ||
-						fimp[0] == '-' ||
-						fimp[0] == '*' ||
-						fimp[0] == '/' ||
-						fimp[0] == '=' ||
-						fimp[0] == '>' ||
-						fimp[0] == '<' ||
-						strcmp(fimp, "not") == 0 ||
-						strcmp(fimp, "and") == 0 ||
-						strcmp(fimp, "or") == 0 ||
-						strcmp(fimp, "min") == 0 ||
-						strcmp(fimp, "max") == 0 ||
-						strcmp(fimp, "abs") == 0 ||
-						strcmp(fimp, "identity") == 0 ||
-						strcmp(fimp, "ifthenelse") == 0 ||
-						strcmp(fimp, "isnil") == 0 ||
-						strcmp(fimp, "isnotnil") == 0)
-							) || (mod == mkeyRef))) {
-				no_multiplex = 1;
-				if (strcmp(fimp, "identity") != 0 && strcmp(fimp, "ifthenelse") != 0)
-					push_cands = 1;
-				q = newStmtArgs(mb, mod == mkeyRef ? batmkeyRef : batcalcRef, fimp, default_nargs);
-			} else
-				q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
+			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
 			if (q == NULL)
 				goto bailout;
 			if (rows)
 				q = pushArgument(mb, q, card->nr);
-			if (!no_multiplex) {
-				q = pushStr(mb, q, mod);
-				q = pushStr(mb, q, fimp);
-			}
+			q = pushStr(mb, q, mod);
+			q = pushStr(mb, q, fimp);
 			setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
 		} else {
 			q = newStmtArgs(mb, mod, fimp, default_nargs);
@@ -4305,7 +4250,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 				stmt *op = n->data;
 
 				if (op->nrcols > 0) {
-					if ((op->cand && op->cand == sel) || !sel) {
+					if (op->cand && op->cand == sel) {
 						q = pushNilBat(mb, q);
 					} else {
 						q = pushArgument(mb, q, sel->nr);
@@ -4663,10 +4608,13 @@ tail_type(stmt *st)
 			if (!st->reduce)
 				return sql_bind_localtype("bit");
 			return sql_bind_localtype("oid");
+		case st_alias:
+			if (!st->op1)
+				return &st->op4.typeval;
+			/* fall through */
 		case st_append:
 		case st_append_bulk:
 		case st_replace:
-		case st_alias:
 		case st_gen_group:
 		case st_order:
 			st = st->op1;
@@ -4895,6 +4843,8 @@ schema_name(allocator *sa, stmt *st)
 			return schema_name(sa, st->op1);
 		return NULL;
 	case st_alias:
+		if (!st->op1)
+			return NULL;
 		return schema_name(sa, st->op1);
 	case st_bat:
 		return st->op4.cval->t->s->base.name;

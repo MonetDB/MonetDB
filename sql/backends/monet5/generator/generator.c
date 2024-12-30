@@ -16,7 +16,6 @@
  */
 
 #include "monetdb_config.h"
-#include "opt_prelude.h"
 #include "generator.h"
 #include "gdk_time.h"
 

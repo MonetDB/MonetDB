@@ -55,6 +55,7 @@ typedef struct expression {
 	 intern:1,
 	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
+	 partitioning:1,	/* partitioning */
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
@@ -233,6 +234,8 @@ typedef enum operator_type {
 #define set_has_no_nil(e) 	(e)->has_no_nil = 1
 #define set_has_nil(e) 		(e)->has_no_nil = 0
 
+#define is_partitioning(e) 	((e)->partitioning)
+#define set_partitioning(e) ((e)->partitioning = 1)
 #define is_ascending(e) 	((e)->ascending)
 #define set_ascending(e) 	((e)->ascending = 1)
 #define set_descending(e) 	((e)->ascending = 0)
@@ -282,6 +285,8 @@ typedef enum operator_type {
 #define is_single(rel) 		((rel)->single)
 #define set_single(rel) 	(rel)->single = 1
 #define reset_single(rel) 	(rel)->single = 0
+#define set_recursive(rel) 	(rel)->recursive = 1
+#define is_recursive(rel) 	((rel)->recursive)
 
 #define is_freevar(e) 		((e)->freevar)
 #define set_freevar(e,level) 	(e)->freevar = level+1
@@ -313,7 +318,8 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 returning:1; /*update|delete|insert relations return modified records*/
+	 returning:1, /*update|delete|insert relations return modified records*/
+	 recursive:1;	/* recursive unions */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly

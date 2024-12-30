@@ -15,6 +15,7 @@
 #include "rel_statistics.h"
 #include "rel_basetable.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
@@ -176,6 +177,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_munion:
 		case op_project:
 		case op_groupby: {
+			if (is_recursive(rel))
+				return NULL;
 			sql_exp *found;
 			atom *fval;
 			prop *est;
@@ -351,6 +354,8 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 static void
 rel_munion_get_statistics(mvc *sql, sql_rel *rel, list *rels, sql_exp *e, int i)
 {
+	if (is_recursive(rel))
+		return ;
 	assert(is_munion(rel->op));
 
 	sql_rel *l = rels->h->data;
@@ -868,6 +873,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		BUN cnt = 0;
 		bool needs_pruning = false;
 
+		if (is_recursive(rel))
+			break;
 		for (node *n = l->h; n; n = n->next) {
 			sql_rel *r = n->data, *pl = r;
 

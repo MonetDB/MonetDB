@@ -572,135 +572,6 @@ typedef struct Strimps Strimps;
 typedef struct RTree RTree;
 #endif
 
-
-#include <setjmp.h>
-
-typedef struct exception_buffer {
-#ifdef HAVE_SIGLONGJMP
-	sigjmp_buf state;
-#else
-	jmp_buf state;
-#endif
-	int code;
-	char *msg;
-	int enabled;
-} exception_buffer;
-
-gdk_export exception_buffer *eb_init(exception_buffer *eb);
-
-/* != 0 on when we return to the savepoint */
-#ifdef HAVE_SIGLONGJMP
-#define eb_savepoint(eb) ((eb)->enabled = 1, sigsetjmp((eb)->state, 0))
-#else
-#define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
-#endif
-gdk_export _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
-
-typedef struct allocator {
-	struct allocator *pa;
-	size_t size;	/* size of the allocator in terms of blocks */
-	size_t nr;	/* number of blocks allocated */
-	char **blks;
-	size_t used; 	/* memory used in last block */
-	size_t usedmem;	/* used memory */
-	size_t objects; /* number of objects */
-	size_t inuse;   /* number of objects in use*/
-	size_t freelist_hits; /* number of object reuse*/
-	void *freelist;	/* list of freed objects */
-	void *freelist_blks;	/* list of freed blks */
-
-	size_t tmp_used; /* keeps total of tmp allocated bytes */
-	bool tmp_active; /* currently only one level of temp usage */
-	exception_buffer eb;
-} allocator;
-
-gdk_export allocator *sa_create( allocator *pa );
-gdk_export allocator *sa_reset( allocator *sa );
-gdk_export void *sa_alloc( allocator *sa,  size_t sz );
-gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
-gdk_export void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
-gdk_export void sa_destroy( allocator *sa );
-gdk_export char *sa_strndup( allocator *sa, const char *s, size_t l);
-gdk_export char *sa_strdup( allocator *sa, const char *s);
-gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
-gdk_export size_t sa_size( allocator *sa );
-gdk_export void sa_open( allocator *sa );  /* open new frame of tempory allocations */
-gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to old state */
-gdk_export void sa_free( allocator *sa, void *);
-
-#define ma_create(pa)		sa_create(pa)
-#define ma_destroy(ma)		sa_destroy(ma)
-#define ma_alloc(ma, sz)	(void*)sa_alloc(ma, sz)
-#define ma_zalloc(ma, sz)	(void*)sa_zalloc(ma, sz)
-#define ma_open(ma)		sa_open(ma)
-#define ma_close(ma)		sa_close(ma)
-#define ma_free(ma, obj)	sa_free(ma, obj)
-
-#define MA_NEW( sa, type )				((type*)sa_alloc( sa, sizeof(type)))
-#define MA_ZNEW( sa, type )				((type*)sa_zalloc( sa, sizeof(type)))
-#define MA_NEW_ARRAY( sa, type, size )			(type*)sa_alloc( sa, ((size)*sizeof(type)))
-#define MA_ZNEW_ARRAY( sa, type, size )			(type*)sa_zalloc( sa, ((size)*sizeof(type)))
-#define MA_RENEW_ARRAY( sa, type, ptr, sz, osz )	(type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
-#define MA_STRDUP( sa, s)				sa_strdup(sa, s)
-#define MA_STRNDUP( sa, s, l)				sa_strndup(sa, s, l)
-
-
-#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
-#define sa_alloc(sa, sz)					\
-	({							\
-		allocator *_sa = (sa);			\
-		size_t _sz = (sz);				\
-		void *_res = sa_alloc(_sa, _sz);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_alloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);	\
-		_res;						\
-	})
-#define sa_zalloc(sa, sz)					\
-	({							\
-		allocator *_sa = (sa);			\
-		size_t _sz = (sz);				\
-		void *_res = sa_zalloc(_sa, _sz);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_zalloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);	\
-		_res;						\
-	})
-#define sa_realloc(sa, ptr, sz, osz)					\
-	({								\
-		allocator *_sa = (sa);				\
-		void *_ptr = (ptr);					\
-		size_t _sz = (sz);					\
-		size_t _osz = (osz);					\
-		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
-				_sa, _ptr, _sz, _osz, _res);		\
-		_res;							\
-	})
-#define sa_strdup(sa, s)					\
-	({							\
-		allocator *_sa = (sa);			\
-		const char *_s = (s);				\
-		char *_res = sa_strdup(_sa, _s);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_strdup(%p,len=%zu) -> %p\n",	\
-				_sa, strlen(_s), _res);	\
-		_res;						\
-	})
-#define sa_strndup(sa, s, l)					\
-	({							\
-		allocator *_sa = (sa);			\
-		const char *_s = (s);				\
-		size_t _l = (l);				\
-		char *_res = sa_strndup(_sa, _s, _l);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_strndup(%p,len=%zu) -> %p\n", 	\
-				_sa, _l, _res);		\
-		_res;						\
-	})
-#endif
-
 /*
  * @+ Binary Association Tables
  * Having gone to the previous preliminary definitions, we will now
@@ -783,10 +654,6 @@ typedef struct {
 gdk_export void *VALconvert(int typ, ValPtr t);
 gdk_export char *VALformat(const ValRecord *res)
 	__attribute__((__warn_unused_result__));
-gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
-	__attribute__((__access__(write_only, 1)));
-gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
-	__attribute__((__access__(write_only, 1)));
 gdk_export void VALempty(ValPtr v)
 	__attribute__((__access__(write_only, 1)));
 gdk_export void VALclear(ValPtr v);
@@ -1614,8 +1481,10 @@ gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
+#define MAXPATH	1024		/* maximum supported file path */
 
-gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid, const char *dir, const char *nme, const char *ext)
+	__attribute__((__access__(write_only, 1, 2)));
 gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
@@ -2660,7 +2529,7 @@ TIMEOUT_TEST(QryCtx *qc)
 	} while (0)
 
 typedef struct gdk_callback {
-	char *name;
+	const char *name;
 	int argc;
 	int interval;  // units sec
 	lng last_called; // timestamp GDKusec
@@ -2671,8 +2540,146 @@ typedef struct gdk_callback {
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
-gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
-		*argv[], int interval);
-gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
+gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
+				       int argc, void *argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
-#endif /* _GDK_H_ */
+
+#define SQLSTATE(sqlstate)	#sqlstate "!"
+#define MAL_MALLOC_FAIL	"Could not allocate space"
+
+#include <setjmp.h>
+
+typedef struct exception_buffer {
+#ifdef HAVE_SIGLONGJMP
+	sigjmp_buf state;
+#else
+	jmp_buf state;
+#endif
+	int code;
+	const char *msg;
+	int enabled;
+} exception_buffer;
+
+gdk_export exception_buffer *eb_init(exception_buffer *eb)
+	__attribute__((__access__(write_only, 1)));
+
+/* != 0 on when we return to the savepoint */
+#ifdef HAVE_SIGLONGJMP
+#define eb_savepoint(eb) ((eb)->enabled = 1, sigsetjmp((eb)->state, 0))
+#else
+#define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
+#endif
+gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
+
+typedef struct allocator {
+	struct allocator *pa;
+	size_t size;	/* size of the allocator in terms of blocks */
+	size_t nr;	/* number of blocks allocated */
+	char **blks;
+	size_t used; 	/* memory used in last block */
+	size_t usedmem;	/* used memory */
+	size_t objects; /* number of objects */
+	size_t inuse;   /* number of objects in use*/
+	size_t freelist_hits; /* number of object reuse*/
+	void *freelist;	/* list of freed objects */
+	void *freelist_blks;	/* list of freed blks */
+
+	size_t tmp_used; /* keeps total of tmp allocated bytes */
+	bool tmp_active; /* currently only one level of temp usage */
+	exception_buffer eb;
+} allocator;
+
+gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
+	__attribute__((__access__(write_only, 1)));
+gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
+	__attribute__((__access__(write_only, 1)));
+
+gdk_export allocator *sa_create( allocator *pa );
+gdk_export allocator *sa_reset( allocator *sa );
+gdk_export void *sa_alloc( allocator *sa,  size_t sz );
+gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
+gdk_export void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
+gdk_export void sa_destroy( allocator *sa );
+gdk_export char *sa_strndup( allocator *sa, const char *s, size_t l);
+gdk_export char *sa_strdup( allocator *sa, const char *s);
+gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
+gdk_export size_t sa_size( allocator *sa );
+gdk_export void sa_open( allocator *sa );  /* open new frame of tempory allocations */
+gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to old state */
+gdk_export void sa_free( allocator *sa, void *);
+
+#define ma_create(pa)		sa_create(pa)
+#define ma_destroy(ma)		sa_destroy(ma)
+#define ma_alloc(ma, sz)	(void*)sa_alloc(ma, sz)
+#define ma_zalloc(ma, sz)	(void*)sa_zalloc(ma, sz)
+#define ma_open(ma)		sa_open(ma)
+#define ma_close(ma)		sa_close(ma)
+#define ma_free(ma, obj)	sa_free(ma, obj)
+
+#define MA_NEW( sa, type )				((type*)sa_alloc( sa, sizeof(type)))
+#define MA_ZNEW( sa, type )				((type*)sa_zalloc( sa, sizeof(type)))
+#define MA_NEW_ARRAY( sa, type, size )			(type*)sa_alloc( sa, ((size)*sizeof(type)))
+#define MA_ZNEW_ARRAY( sa, type, size )			(type*)sa_zalloc( sa, ((size)*sizeof(type)))
+#define MA_RENEW_ARRAY( sa, type, ptr, sz, osz )	(type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
+#define MA_STRDUP( sa, s)				sa_strdup(sa, s)
+#define MA_STRNDUP( sa, s, l)				sa_strndup(sa, s, l)
+
+
+#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
+#define sa_alloc(sa, sz)					\
+	({							\
+		allocator *_sa = (sa);			\
+		size_t _sz = (sz);				\
+		void *_res = sa_alloc(_sa, _sz);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_alloc(%p,%zu) -> %p\n",	\
+				_sa, _sz, _res);	\
+		_res;						\
+	})
+#define sa_zalloc(sa, sz)					\
+	({							\
+		allocator *_sa = (sa);			\
+		size_t _sz = (sz);				\
+		void *_res = sa_zalloc(_sa, _sz);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_zalloc(%p,%zu) -> %p\n",	\
+				_sa, _sz, _res);	\
+		_res;						\
+	})
+#define sa_realloc(sa, ptr, sz, osz)					\
+	({								\
+		allocator *_sa = (sa);				\
+		void *_ptr = (ptr);					\
+		size_t _sz = (sz);					\
+		size_t _osz = (osz);					\
+		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
+				_sa, _ptr, _sz, _osz, _res);		\
+		_res;							\
+	})
+#define sa_strdup(sa, s)					\
+	({							\
+		allocator *_sa = (sa);			\
+		const char *_s = (s);				\
+		char *_res = sa_strdup(_sa, _s);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_strdup(%p,len=%zu) -> %p\n",	\
+				_sa, strlen(_s), _res);	\
+		_res;						\
+	})
+#define sa_strndup(sa, s, l)					\
+	({							\
+		allocator *_sa = (sa);			\
+		const char *_s = (s);				\
+		size_t _l = (l);				\
+		char *_res = sa_strndup(_sa, _s, _l);		\
+		TRC_DEBUG(ALLOC,				\
+				"sa_strndup(%p,len=%zu) -> %p\n", 	\
+				_sa, _l, _res);		\
+		_res;						\
+	})
+#endif
+#endif
+

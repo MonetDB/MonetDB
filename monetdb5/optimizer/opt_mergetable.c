@@ -2302,6 +2302,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		/* pack if there is a group statement following a groupdone (ie aggr(distinct)) */
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupedfirstnRef)
+				groupdone = 1;
 		if (getModuleId(p) == groupRef && p->argc == 5
 			&& (getFunctionId(p) == subgroupRef
 				|| getFunctionId(p) == subgroupdoneRef

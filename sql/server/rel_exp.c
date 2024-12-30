@@ -742,6 +742,8 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_any(ne);
 	if (is_symmetric(oe))
 		set_symmetric(ne);
+	if (is_partitioning(oe))
+		set_partitioning(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))
@@ -1214,6 +1216,15 @@ exp_equal( sql_exp *e1, sql_exp *e2)
 	if (e1 == e2)
 		return 0;
 	if (e1->alias.label && e1->alias.label == e2->alias.label)
+		return 0;
+	return -1;
+}
+
+int
+is_conflict( sql_exp *e1, sql_exp *e2)
+{
+	if (e1->alias.label && e1->alias.label == e2->alias.label &&
+		e1->nid && e1->nid != e2->nid)
 		return 0;
 	return -1;
 }

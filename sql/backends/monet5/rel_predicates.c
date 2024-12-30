@@ -16,6 +16,7 @@
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "mal_backend.h"
+#include "sql_storage.h"
 
 static sql_column *
 bt_find_column( sql_rel *rel, char *tname, char *name)

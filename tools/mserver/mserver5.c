@@ -336,10 +336,12 @@ main(int argc, char **av)
 		{"threads", no_argument, NULL, 0},
 		{"transactions", no_argument, NULL, 0},
 
-		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"loadmodule", required_argument, NULL, 0},
 		{"without-geom", no_argument, NULL, 0},
+
+		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"process-wal-and-exit", no_argument, NULL, 0},
+		{"clean-BBP", no_argument, NULL, 0},
 
 		{NULL, 0, NULL, 0}
 	};
@@ -519,6 +521,11 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "process-wal-and-exit") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline,
 									   "process-wal-and-exit", "yes");
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "clean-BBP") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "clean-BBP", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {

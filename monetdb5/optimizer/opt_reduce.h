@@ -12,7 +12,6 @@
 
 #ifndef _MAL_REDUCE_
 #define _MAL_REDUCE_
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_instruction.h"
 

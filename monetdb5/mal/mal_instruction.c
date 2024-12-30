@@ -47,16 +47,17 @@ newSymbol(const char *nme, int kind)
 	assert(kind == COMMANDsymbol || kind == PATTERNsymbol || kind == FUNCTIONsymbol);
 	if (nme == NULL)
 		return NULL;
-	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+	cur = (Symbol) GDKmalloc(sizeof(SymRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = putName(nme);
+	*cur = (SymRecord) {
+		.name = putName(nme),
+		.kind = kind,
+	};
 	if (cur->name == NULL) {
 		GDKfree(cur);
 		return NULL;
 	}
-	cur->kind = kind;
-	cur->peer = NULL;
 	if (kind == FUNCTIONsymbol) {
 		cur->def = newMalBlk(STMT_INCREMENT);
 		if (cur->def == NULL) {
@@ -76,7 +77,7 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	} else if (s->allocated && s->func) {
-		GDKfree(s->func->comment);
+		GDKfree((char*)s->func->comment);
 		GDKfree((char*)s->func->cname);
 		GDKfree(s->func->args);
 		GDKfree(s->func);
@@ -634,12 +635,11 @@ char *
 getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 {
 	char *s = mb->var[idx].name;
-	if (getVarKind(mb, idx) == 0)
-		setVarKind(mb, idx, REFMARKER);
 	if (s == NULL) {
-		(void) snprintf(buf, IDLENGTH, "%c_%d", getVarKind(mb, idx), idx);
+		char kind = getVarKind(mb, idx);
+		(void) snprintf(buf, IDLENGTH, "%c_%d", kind ? kind : REFMARKER, idx);
 	} else {
-		(void) snprintf(buf, IDLENGTH, "%s", s);
+		strcpy_len(buf, s, IDLENGTH);
 	}
 	return buf;
 }
@@ -659,7 +659,9 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	}
 	n = mb->vtop;
-	mb->var[n].name = NULL;
+	mb->var[n] = (VarRecord) {
+		.name = NULL,
+	};
 	if (name && len > 0) {
 		char *nme = MA_NEW_ARRAY(mb->ma, char, len+1);
 		if (!nme) {
