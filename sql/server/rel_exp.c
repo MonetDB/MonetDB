@@ -3918,11 +3918,12 @@ list_find_exp( list *exps, sql_exp *e)
 void
 free_exps_list(allocator *sa, list *exps)
 {
-	if (!list_empty(exps))
+	if (!list_empty(exps)) {
 		for (node *n=exps->h; n ; n=n->next) {
 			free_exp(sa, n->data);
 			n->data = NULL;
 		}
+	}
 }
 
 
