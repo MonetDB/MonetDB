@@ -2079,16 +2079,6 @@ typedef struct freed_t {
 	struct freed_t *n;
 } freed_t;
 
-//static void
-//sa_destroy_freelist( freed_t *f )
-//{
-//	while(f) {
-//		freed_t *n = f->n;
-//		GDKfree(f);
-//		f = n;
-//	}
-//}
-
 static void
 sa_free_obj(allocator *pa, void *obj, size_t sz)
 {
@@ -2121,7 +2111,6 @@ sa_free_blk(allocator *pa, void *blk)
 	if (pa->pa) {
 		sa_free_blk(pa->pa, blk);
 	} else {
-		// assert(!pa->pa); // must be root allocator
 		size_t i;
 
 		for(i = 0; i < pa->nr; i++) {
@@ -2200,8 +2189,7 @@ sa_use_freed(allocator *pa, size_t sz)
 	return NULL;
 }
 
-
-allocator *sa_reset( allocator *sa )
+allocator *sa_reset(allocator *sa)
 {
 	size_t i ;
 
@@ -2211,7 +2199,6 @@ allocator *sa_reset( allocator *sa )
 		else
 			sa_free_blk(sa->pa, sa->blks[i]);
 	}
-	//if (!sa->pa)
 	sa->freelist_blks = NULL;
 	sa->nr = 1;
 	sa->used = 0;
@@ -2225,7 +2212,7 @@ allocator *sa_reset( allocator *sa )
 static void * _sa_alloc_internal(allocator* sa, size_t sz);
 
 static void *
-_sa_realloc_internal( allocator *sa, void *p, size_t sz, size_t oldsz )
+_sa_realloc_internal(allocator *sa, void *p, size_t sz, size_t oldsz)
 {
 	void *r = _sa_alloc_internal(sa, sz);
 
@@ -2249,7 +2236,7 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 #define round16(sz) ((sz+15)&~15)
 #define round_block_size(sz) ((sz + (SA_BLOCK_SIZE - 1))&~(SA_BLOCK_SIZE - 1))
 static void *
-_sa_alloc_internal( allocator *sa, size_t sz )
+_sa_alloc_internal(allocator *sa, size_t sz)
 {
 	assert(sz > 0);
 	sz = round16(sz);
@@ -2312,7 +2299,7 @@ _sa_alloc_internal( allocator *sa, size_t sz )
 
 #undef sa_alloc
 void *
-sa_alloc( allocator *sa, size_t sz )
+sa_alloc(allocator *sa, size_t sz)
 {
 	size_t nsize = round16(sz) + SA_HEADER_SIZE;
 	char* r = (char*) _sa_alloc_internal(sa, nsize);
@@ -2383,7 +2370,6 @@ sa_destroy( allocator *sa )
 		return;
 	}
 	// root allocator
-	// sa_destroy_freelist(sa->freelist_blks);
 	for (size_t i = 0; i<sa->nr; i++) {
 		GDKfree(sa->blks[i]);
 	}
@@ -2446,14 +2432,6 @@ sa_close(allocator *sa)
 	assert(sa->tmp_active);
 	sa->tmp_active = 0;
 	sa_reset(sa);
-	//while (sa->tmp_used) {
-	//	assert(sa->used >= sa->tmp_used);
-	//	if (sa->used >= sa->tmp_used) {
-	//		sa->used -= sa->tmp_used;
-	//		sa->usedmem -= sa->tmp_used;
-	//		sa->tmp_used = 0;
-	//	}
-	//}
 }
 
 void
