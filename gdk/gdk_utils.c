@@ -2082,19 +2082,19 @@ typedef struct freed_t {
 static void
 sa_free_obj(allocator *pa, void *obj, size_t sz)
 {
-	size_t i;
+	//size_t i;
 
-	char *obj_start = (char *) obj;
-	char *obj_end = obj_start + sz;
+	//char *obj_start = (char *) obj;
+	//char *obj_end = obj_start + sz;
 
-	// find the block this object belongs to
-	for(i = 0; i < pa->nr; i++) {
-		char * blk_start = (char *) pa->blks[i];
-		char * blk_end = blk_start + SA_BLOCK_SIZE;
-		if ((obj_start >= blk_start) && (obj_end <= blk_end))
-			break;
-	}
-	assert (i < pa->nr);
+	//// find the block this object belongs to
+	//for(i = 0; i < pa->nr; i++) {
+	//	char * blk_start = (char *) pa->blks[i];
+	//	char * blk_end = blk_start + SA_BLOCK_SIZE;
+	//	if ((obj_start >= blk_start) && (obj_end <= blk_end))
+	//		break;
+	//}
+	//assert (i < pa->nr);
 	// put on the freelist
 	freed_t *f = memset(obj, 0, sz);
 	f->sz = sz;
