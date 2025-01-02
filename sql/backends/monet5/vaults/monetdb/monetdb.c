@@ -24,6 +24,7 @@
 #include "mal_backend.h"
 #include "sql_types.h"
 #include "rel_bin.h"
+#include "sql_storage.h"
 #include "mapi.h"
 
 #include "rel_remote.h"
