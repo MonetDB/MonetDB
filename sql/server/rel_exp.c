@@ -3936,7 +3936,8 @@ _free_exp_internal(allocator *sa, sql_exp *e)
 		// free_props(sa, e->p);
 		e->p = NULL;
 	}
-	*e = (sql_exp){};
+	sql_exp zero = {0};
+	*e = zero;
 	sa_free(sa, e);
 }
 
