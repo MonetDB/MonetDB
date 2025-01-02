@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -21,19 +21,6 @@
 #define LOG_OK		0
 #define LOG_ERR		(-1)
 #define LOG_CONFLICT	(-2)
-
-#define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
-#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
-#define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
-#define isLocalTemp(x)   ((x)->persistence==SQL_LOCAL_TEMP)
-#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
-#define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
-
-typedef enum store_type {
-	store_bat,	/* delta bats, ie multi user read/write */
-	store_tst,
-	store_mem
-} store_type;
 
 
 struct sqlstore;

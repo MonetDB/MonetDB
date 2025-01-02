@@ -43710,12 +43710,12 @@ str_2dec_lng;
 cast to dec(lng) and check for overflow
 calc
 max
-pattern calc.max(X_0:any_1, X_1:any_1):any_1
+pattern calc.max(X_0:any_1, X_1:any_1...):any_1
 CALCmax;
 Return max of V1 and V2
 calc
 max_no_nil
-pattern calc.max_no_nil(X_0:any_1, X_1:any_1):any_1
+pattern calc.max_no_nil(X_0:any_1, X_1:any_1...):any_1
 CALCmax_no_nil;
 Return max of V1 and V2, ignoring nil values
 calc
@@ -43730,12 +43730,12 @@ mbrFromString;
 (empty)
 calc
 min
-pattern calc.min(X_0:any_1, X_1:any_1):any_1
+pattern calc.min(X_0:any_1, X_1:any_1...):any_1
 CALCmin;
 Return min of V1 and V2
 calc
 min_no_nil
-pattern calc.min_no_nil(X_0:any_1, X_1:any_1):any_1
+pattern calc.min_no_nil(X_0:any_1, X_1:any_1...):any_1
 CALCmin_no_nil;
 Return min of V1 and V2, ignoring nil values
 calc

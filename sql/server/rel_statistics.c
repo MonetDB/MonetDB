@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -15,6 +15,7 @@
 #include "rel_statistics.h"
 #include "rel_basetable.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)

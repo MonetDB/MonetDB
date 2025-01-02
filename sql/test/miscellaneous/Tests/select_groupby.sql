@@ -184,6 +184,6 @@ prepare select cast(? as interval second);
 exec ** (blob 'aaaa'); --error, cannot cast
 
 prepare select cast(? as interval second);
-exec ** (time '10:00:00' + 1); --error, no such binary operator
+exec ** (time '10:00:00' + 1); --error, no such operator
 
 drop schema "myschema" cascade;

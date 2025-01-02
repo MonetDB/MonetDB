@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,7 +26,6 @@ typedef enum tokens {
 	SQL_BETWEEN,
 	SQL_BINCOPYFROM,
 	SQL_BINCOPYINTO,
-	SQL_BINOP,
 	SQL_CACHE,
 	SQL_CALL,
 	SQL_CASE,
@@ -119,7 +118,6 @@ typedef enum tokens {
 	SQL_NOT_NULL,
 	SQL_NULL,
 	SQL_NULLIF,
-	SQL_OP,
 	SQL_OR,
 	SQL_ORDERBY,
 	SQL_PARAMETER,
@@ -157,7 +155,6 @@ typedef enum tokens {
 	SQL_UNION,
 	SQL_UNIQUE,
 	SQL_UNIQUE_NULLS_NOT_DISTINCT,
-	SQL_UNOP,
 	SQL_UPDATE,
 	SQL_USING,
 	SQL_VALUES,

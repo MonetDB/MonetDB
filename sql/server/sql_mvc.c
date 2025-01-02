@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 #include "sql_mvc.h"
 #include "sql_qc.h"
 #include "sql_types.h"
+#include "sql_storage.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_partition.h"
@@ -476,6 +477,12 @@ void
 mvc_cancel_session(mvc *m)
 {
 	(void)sql_trans_end(m->session, SQL_ERR);
+}
+
+void
+mvc_query_processed(mvc *m)
+{
+	scanner_query_processed(&(m->scanner));
 }
 
 int

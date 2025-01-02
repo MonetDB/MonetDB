@@ -3,5 +3,5 @@ QUERY = select * from GENERATE_SERIES(1,41) sample 1.25;            --should giv
 ERROR = !Illegal argument p should be between 0 and 1.0
 MAPI  = monetdb@localhost:50000
 QUERY = select * from GENERATE_SERIES(1,41) seed 1; --error, seed without sample
-ERROR = !SEED: cannot have SEED without SAMPLE
+ERROR = !syntax error, unexpected SEED, expecting SCOLON or ':' in: "select * from generate_series(1,41) seed"
 CODE  = 42000

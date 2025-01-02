@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4472,6 +4472,8 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 		printf("Running database upgrade commands:\n%s\n", query);
 		fflush(stdout);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
 	}
 
 	if ((err = SQLstatementIntern(c, "select id from sys.functions where name = 'quantile' and schema_id = 2000 and contains(func, 'ordered');\n", "update", true, false, &output)) == MAL_SUCCEED) {
@@ -4713,7 +4715,26 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			err = SQLstatementIntern(c, query, "update", true, false, NULL);
 		}
 		res_table_destroy(output);
+		if (err)
+			return err;
 	}
+
+	sql_find_subtype(&tp, "date", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "dayname", &tp, NULL, F_FUNC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char query[] = "create function dayname(d date) returns varchar(10) return date_to_str(d, '%A');\n"
+			"create function monthname(d date) returns varchar(10) return date_to_str(d, '%B');\n"
+			"grant execute on function dayname(date) to public;\n"
+			"grant execute on function monthname(date) to public;\n"
+			"update sys.functions set system = true where system <> true and name in ('dayname', 'monthname') and schema_id = 2000 and type = (select function_type_id from sys.function_types where function_type_name = 'Scalar function');\n";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
+	}
+
 	return err;
 }
 

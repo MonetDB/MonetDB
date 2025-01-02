@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -2547,6 +2547,9 @@ gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
 				       int argc, void *argv[], int interval);
 gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
+
+#define SQLSTATE(sqlstate)	#sqlstate "!"
+#define MAL_MALLOC_FAIL	"Could not allocate space"
 
 #include <setjmp.h>
 

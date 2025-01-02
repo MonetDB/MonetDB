@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -494,7 +494,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		r = sql_symbol2relation(sql, m->sym);
 
 		assert(m->emode != m_prepare);
-		scanner_query_processed(&(m->scanner));
+		mvc_query_processed(m);
 		if ((err = mvc_status(m)) ) {
 			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);

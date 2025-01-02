@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,6 +26,7 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
+#include "sql_storage.h"
 
 #include "mal_authorize.h"
 #include "mal_exception.h"
