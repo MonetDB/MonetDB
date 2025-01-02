@@ -23,7 +23,7 @@ BEGIN
       VALUE "FileDescription", "MonetDB ODBC Driver DLL\0"
       VALUE "FileVersion", sversion(11,51,8)
       VALUE "InternalName", "MonetODBC\0"
-      VALUE "LegalCopyright", "Copyright (c) 2024 MonetDB Foundation\0"
+      VALUE "LegalCopyright", "Copyright (c) 2024, 2025 MonetDB Foundation\0"
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "MonetODBC.dll\0"
       VALUE "PrivateBuild", "\0"
