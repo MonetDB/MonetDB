@@ -406,6 +406,7 @@ int yydebug=1;
 
 %type <l>
 	indirection
+	opt_indirection
 	opt_array_bounds
 	as_subquery_clause
 	assignment_commalist
@@ -469,6 +470,8 @@ int yydebug=1;
 	procedure_body
 	routine_designator
 	expr_list
+	array_expr
+	array_expr_list
 	schema_element_list
 	schema_name_clause
 	schema_name_list
@@ -3604,7 +3607,8 @@ simple_select:
 		$5->h->next->next->data.sym,
 		$5->h->next->next->next->data.sym,
 		NULL, NULL, NULL, NULL, NULL, NULL,
-		$5->h->next->next->next->next->data.sym);
+		$5->h->next->next->next->next->data.sym,
+		$5->h->next->next->next->next->next->data.sym);
 	}
   |  values_clause 		{ $$ = $1; }
   |  select_clause UNION set_distinct opt_corresponding select_clause
@@ -3657,7 +3661,7 @@ select_no_parens:
 				$$ = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3685,7 +3689,7 @@ select_no_parens:
 				$$ = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3?$3->h->data.sym:NULL, $3?$3->h->next->data.sym:NULL, $4, $5, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3?$3->h->data.sym:NULL, $3?$3->h->next->data.sym:NULL, $4, $5, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3711,7 +3715,7 @@ select_no_parens:
 				$$ = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $3, $4, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $3, $4, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3740,7 +3744,7 @@ select_no_parens:
 				$2 = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3769,7 +3773,7 @@ select_no_parens:
 				$2 = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $4?$4->h->data.sym:NULL, $4?$4->h->next->data.sym:NULL, $5, $6, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $4?$4->h->data.sym:NULL, $4?$4->h->next->data.sym:NULL, $5, $6, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3796,7 +3800,7 @@ select_no_parens:
 				$2 = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $4, $5, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $4, $5, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3917,7 +3921,7 @@ table_ref:
 				  if ($$->token == SQL_SELECT) {
 					SelectNode *sn = (SelectNode*)$1;
 					sn->name = $2;
-				  } else if ($$->token == SQL_VALUES || $$->token == SQL_NOP) {
+				  } else if ($$->token == SQL_VALUES || $$->token == SQL_ROW || $$->token == SQL_SET || $$->token == SQL_NOP) {
 					symbol *s = $$;
 			        	dlist *l = L();
 				  	append_symbol(l, s);
@@ -3936,7 +3940,7 @@ table_ref:
 					SelectNode *sn = (SelectNode*)$2;
 					sn->name = $3;
 					sn->lateral = 1;
-				  } else if ($$->token == SQL_VALUES || $$->token == SQL_NOP) {
+				  } else if ($$->token == SQL_VALUES || $$->token == SQL_ROW || $$->token == SQL_SET || $$->token == SQL_NOP) {
 					symbol *s = $$;
 			        	dlist *l = L();
 				  	append_symbol(l, s);
@@ -4752,8 +4756,20 @@ opt_over:
  |                                    { $$ = NULL; }
  ;
 
+array_expr:
+    '[' expr_list ']'	 	{ $$ = $2; }
+ |  '[' array_expr_list ']' 	{ $$ = $2; }
+ |  '[' ']'		 	{ $$ = NULL; }
+ ;
+
+
+array_expr_list:
+    array_expr                         { $$ = $1; }
+ |  array_expr_list ',' array_expr     { $$ = $3; }
+ ;
+
 value_exp:
-    atom
+    atom			{ $$ = $1; }
  |  cast_exp
  |  aggr_or_window_ref opt_over {
 		if ($2 && $2->token == SQL_NAME)
@@ -4764,9 +4780,11 @@ value_exp:
 			$$ = $1;
 	}
  |  case_exp
- |  column_ref       { $$ = _symbol_create_list(SQL_COLUMN, $1); }
- |  '(' scalar_exp ')'{ $$ = $2; }
- |  '(' expr_list ',' scalar_exp ')'{ $$ = _symbol_create_list(SQL_VALUES, append_list(L(), append_symbol($2, $4))); }
+ |  column_ref       				{ $$ = _symbol_create_list(SQL_COLUMN, $1); }
+ |  '(' scalar_exp ')' opt_indirection 		{ $$ = $2; }
+ |  '(' expr_list ',' scalar_exp ')' 		{ $$ = _symbol_create_list(SQL_ROW, append_symbol($2, $4)); }
+ |  ARRAY select_with_parens			{ $$ = $2; }
+ |  ARRAY array_expr		{ $$ = _symbol_create_list(SQL_SET, $2); }
  |  session_user     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_user"))); }
  |  CURRENT_SCHEMA   { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_schema"))); }
  |  CURRENT_ROLE     { $$ = _symbol_create_list(SQL_NAME, append_string(append_string(L(), sa_strdup(SA, "sys")), sa_strdup(SA, "current_role"))); }
@@ -5818,6 +5836,10 @@ indirection:
  | indirection indirection_el    { $$ = append_node($1, $2); }
  ;
 
+opt_indirection:
+    /*EMPTY*/				{ $$ = NULL; }
+ |  opt_indirection indirection_el	{ if ($1) $$ = append_node($1, $2); else $$ = append_node(L(), $2);  }
+ ;
 
 qname:
     column_id			{ $$ = append_string(L(), $1); }
@@ -7589,6 +7611,7 @@ char *token2string(tokens token)
 	SQL(REVOKE_ROLES);
 	SQL(ROLLUP);
 	SQL(ROUTINE);
+	SQL(ROW);
 	SQL(SCHEMA);
 	SQL(SELECT);
 	SQL(SEQUENCE);

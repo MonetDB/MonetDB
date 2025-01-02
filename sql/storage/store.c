@@ -585,6 +585,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 		}
 		sql_init_subtype(&c->type, lt, sz, d);
 	}
+	c->type.multiset = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "multiset"));
 	c->def = NULL;
 	def = (char*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "default"));
 	if (!strNil(def))
@@ -597,7 +598,6 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	if (!strNil(st))
 		c->storage_type =_STRDUP(st);
 	c->column_type = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "column_type"));
-	c->type.multiset = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "multiset"));
 	ATOMIC_PTR_INIT(&c->data, NULL);
 	c->t = t;
 	if (isTable(c->t))
@@ -956,7 +956,7 @@ load_type(sql_trans *tr, sql_schema *s, sqlid tid, subrids *rs)
 		/* load fields */
 		t->d.fields = list_create((fdestroy) &arg_destroy);
 		if (rs) {
-			for (rid = store->table_api.subrids_next(rs); !is_oid_nil(rid); rid = store->table_api.subrids_next(rs)) {
+			for (oid rid = store->table_api.subrids_next(rs); !is_oid_nil(rid); rid = store->table_api.subrids_next(rs)) {
 				sql_arg *a = load_arg(tr, t->s, rid);
 
 				if (a == NULL)
@@ -1777,6 +1777,7 @@ dup_sql_type(sql_trans *tr, sql_schema *s, sql_subtype *oc, sql_subtype *nc)
 			GDKfatal("SQL type %s missing", nc->type->base.name);
 		sql_init_subtype(nc, lt, nc->digits, nc->scale);
 	}
+	nc->multiset = oc->multiset;
 }
 
 static sql_column *
@@ -3810,9 +3811,6 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 	if (!tpe)
 		return -1; /* TODO not sure what to do here */
 
-	if (tpe->type->composite) {
-		printf("composite type %s\n", tpe->type->base.name);
-	}
 	col = create_sql_column_with_id(NULL, next_oid(tr->store), t, name, tpe, column_type);
 
 	if (isTable(col->t))
@@ -3894,7 +3892,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		if (c->type.multiset == MS_SETOF || c->type.multiset == MS_ARRAY) { /* sets and arrays need oid col */
 			/* create number column */
 			char *name = "id"; /* TODO generate proper name */
-			sql_subtype tp = *sql_bind_localtype("oid");
+			sql_subtype tp = *sql_bind_localtype("int");
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, t, name, &tp, column_intern) < 0)
 				return -2;

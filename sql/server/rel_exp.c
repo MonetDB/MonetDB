@@ -3682,22 +3682,17 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 	node *n, *m;
 	list *vals = NULL;
 	assert(t->type->composite);
-	if (!exp_is_rel(exp) && !is_values(exp))
+	if (!exp_is_rel(exp) && !is_row(exp))
 		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
 
 	if (exp_is_rel(exp)) {
+		assert(0);
 		sql_rel *valr = exp_rel_get_rel(sql->sa, exp);
 		if (!valr || !is_project(valr->op) || !valr->exps)
 			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
 		vals = valr->exps;
-	} else { /* values */
-		list *tuple = exp_get_values(exp);
-		if (list_length(tuple) != 1)
-			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
-		sql_exp *e = tuple->h->data;
-		if (!is_values(e))
-			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
-		vals = exp_get_values(e);
+	} else { /* attributes */
+		vals = exp_get_values(exp);
 	}
 	for(n = t->type->d.fields->h, m = vals->h; n && m; n = n->next, m = m->next) {
 		sql_arg *f = n->data;
@@ -3709,11 +3704,39 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert values into composite type '%s', too many values given", t->type->base.name);
 		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert values into composite type '%s', missing values", t->type->base.name);
 	}
-	if (!exp_is_rel(exp)) {
-		list *tuple = exp_get_values(exp);
-		sql_exp *e = tuple->h->data;
-		e->tpe = *t;
+	if (!exp_is_rel(exp))
+		exp->tpe = *t;
+	return exp;
+}
+
+static sql_exp *
+exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
+{
+	assert(t->type->composite);
+	if (!exp_is_rel(exp) && !is_values(exp))
+		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+
+	list *msvals = NULL;
+	if (exp_is_rel(exp)) {
+		assert(0);
+		sql_rel *valr = exp_rel_get_rel(sql->sa, exp);
+		if (!valr || !is_project(valr->op) || !valr->exps)
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		msvals = valr->exps;
+	} else { /* values within the multiset */
+		msvals = exp_get_values(exp);
 	}
+	sql_subtype ct = *t;
+	ct.multiset = false;
+	for(node *v = msvals->h; v; v = v->next) {
+		sql_exp *r = v->data;
+
+		if (!is_row(r))
+			v->data = exp_check_multiset_type(sql, &ct, rel, r, tpe);
+		else
+			v->data = exp_check_composite_type(sql, &ct, rel, r, tpe);
+	}
+	exp->tpe = *t;
 	return exp;
 }
 
@@ -3724,8 +3747,11 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 
-	if (t->type->composite)
+	if (t->type->composite) {
+		if (t->multiset || !is_row(exp))
+			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		return exp_check_composite_type(sql, t, rel, exp, tpe);
+	}
 	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
 		return exp;
 

@@ -67,6 +67,7 @@ typedef struct expression {
 	 need_no_nil:1,
 	 has_no_nil:1,
 	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
+	 row:1,		/* e_atom ->f is a list of values or a list of attributes aka a row/tuple */
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
@@ -183,6 +184,7 @@ typedef enum operator_type {
 /* a simple atom is a literal or on the query stack */
 #define is_simple_atom(e) 	(is_atom((e)->type) && !(e)->r && !(e)->f)
 #define is_values(e) 		((e)->type == e_atom && (e)->f)
+#define is_row(e)			((e)->type == e_atom && (e)->f && (e)->row)
 #define is_func(et) 		(et == e_func)
 #define is_aggr(et) 		(et == e_aggr)
 #define is_convert(et) 		(et == e_convert)

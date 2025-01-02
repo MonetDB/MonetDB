@@ -307,6 +307,11 @@ rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 static node *
 skip_nested_columns(mvc *sql, sql_column *ct, node *n)
 {
+	if (ct->type.multiset) { /* skip  id and optional number columns */
+		n = n->next;
+		if (ct->type.multiset == MS_ARRAY)
+			n = n->next;
+	}
 	/* skip fields */
 	for(node *fn = ct->type.type->d.fields->h; fn; fn = fn->next) {
 		sql_arg *f = fn->data;

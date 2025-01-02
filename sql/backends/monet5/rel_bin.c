@@ -626,11 +626,13 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	return s;
 }
 
-static stmt * value_list(backend *be, list *vals, stmt *left, stmt *sel);
+
+static stmt * value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel);
+
 static stmt *
 composite_value_list(backend *be, sql_exp *tuple, stmt *left, stmt *sel)
 {
-	assert(is_values(tuple));
+	assert(is_row(tuple));
 	list *fields = exp_get_values(tuple);
 	list *f = sa_list(be->mvc->sa);
 	for (node *n = fields->h; n; n = n->next) {
@@ -638,7 +640,7 @@ composite_value_list(backend *be, sql_exp *tuple, stmt *left, stmt *sel)
 		stmt *i;
 
 		if(is_values(e))
-			i = value_list(be, exp_get_values(e), left, sel);
+			i = value_list(be, e, left, sel);
 		else
 			i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 		if (!i)
@@ -649,15 +651,150 @@ composite_value_list(backend *be, sql_exp *tuple, stmt *left, stmt *sel)
 }
 
 static stmt *
-value_list(backend *be, list *vals, stmt *left, stmt *sel)
+set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 {
+	assert(is_values(vals_exp));
+	list *vals = exp_get_values(vals_exp);
 	sql_subtype *type = exp_subtype(vals->h->data);
-	list *l;
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
-	if (type->type->composite)
-		return composite_value_list(be, vals->h->data, left, sel);
+
+	/* create bat append values */
+	list *l = sa_list(be->mvc->sa);
+	for (node *n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+
+		if (!i)
+			return NULL;
+
+		if (list_length(vals) == 1)
+			return i;
+		list_append(l, i);
+	}
+	/*  n-tuples */
+	//for (node *n = l->h; n; n = n->next) {
+
+	//}
+	return stmt_append_bulk(be, stmt_temp(be, type), l);
+}
+
+static int
+tuple_create_result(backend *be, sql_exp *tuple, list *cols, bte multiset)
+{
+	if (multiset && !is_row(tuple)) {
+		assert(is_values(tuple));
+		list *tuples = exp_get_values(tuple);
+		tuple = tuples->h->data;
+	}
+	assert(is_row(tuple));
+
+	list *attr = exp_get_values(tuple);
+	if (list_empty(attr)) {
+		(void)sql_error(be->mvc, 02, SQLSTATE(42000) "Cannot handle empty composite type");
+		return -1;
+	}
+	for(node *n = attr->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		sql_subtype *type = exp_subtype(e);
+		if (type->type->composite) {
+			/* todo handle arrays and nesting */
+			assert(0);
+		}
+		append(cols, sa_list(be->mvc->sa));
+	}
+	if (multiset)
+		append(cols, sa_list(be->mvc->sa));
+	if (multiset == MS_ARRAY)
+		append(cols, sa_list(be->mvc->sa));
+	return 0;
+}
+
+static int
+append_tuple(backend *be, sql_exp *tuple, stmt *left, stmt *sel, list *cols, int rowcnt, int lcnt, bte multiset)
+{
+	if (multiset && !is_row(tuple)) {
+		assert(is_values(tuple));
+		list *tuples = exp_get_values(tuple);
+		int i = 1;
+		for(node *n = tuples->h; n; n = n->next, i++)
+			if (append_tuple(be, n->data, left, sel, cols, rowcnt, i, multiset) < 0)
+				return -1;
+		return 0;
+	}
+	assert(tuple->row);
+	list *attr = exp_get_values(tuple);
+	node *n, *m;
+	for(n = attr->h, m = cols->h; n; n = n->next, m = m->next) {
+		sql_exp *e = n->data;
+		list *vals = m->data;
+
+		sql_subtype *type = exp_subtype(e);
+		if (type->type->composite) {
+			/* todo handle arrays and nesting */
+			assert(0);
+		}
+		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+		append(vals, i);
+	}
+	if (multiset) {
+		list *vals = m->data;
+		append(vals, stmt_atom_int(be, rowcnt));
+		m = m->next;
+	}
+	if (multiset == MS_ARRAY) {
+		list *vals = m->data;
+		append(vals, stmt_atom_int(be, lcnt));
+		m = m->next;
+	}
+	return 0;
+}
+
+static stmt *
+tuple_result(backend *be, list *cols)
+{
+	list *row = sa_list(be->mvc->sa);
+
+	for (node *n = cols->h; n; n = n->next) {
+		list *vals = n->data;
+		sql_subtype *type = tail_type(vals->h->data);
+		append(row, stmt_append_bulk(be, stmt_temp(be, type), vals));
+	}
+	return stmt_list(be, row);
+}
+
+static stmt *
+value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
+{
+	assert(is_values(vals_exp));
+	list *vals = exp_get_values(vals_exp);
+	sql_subtype *type = exp_subtype(vals_exp);
+	list *l;
+
+	if (!type || list_empty(vals))
+		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
+
+	if (!is_row(vals_exp) && type->type->composite) {
+		bte multiset = type->multiset;
+		list *attr = sa_list(be->mvc->sa);
+		if (tuple_create_result(be, vals->h->data, attr, multiset) < 0)
+			return NULL;
+		int rowcnt = 1;
+		for (node *n = vals->h; n; n = n->next, rowcnt++) {
+			if (append_tuple(be, n->data, left, sel, attr, rowcnt, 1, multiset) < 0)
+				return NULL;
+		}
+		return tuple_result(be, attr);
+	}
+	if (type->multiset || (!is_row(vals_exp) && type->type->composite))
+		return set_value_list(be, vals_exp, left, sel);
+
+	if (is_row(vals_exp))
+		return composite_value_list(be, vals_exp, left, sel);
+
+	type = exp_subtype(vals->h->data);
 
 	/* create bat append values */
 	l = sa_list(be->mvc->sa);
@@ -1596,7 +1733,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			assert(vname->name);
 			s = stmt_var(be, vname->sname ? a_create(sql->sa, sa_strdup(sql->sa, vname->sname)) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
-			s = value_list(be, e->f, left, sel);
+			s = value_list(be, e, left, sel);
 		} else {			/* arguments */
 			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
 			if (!t && 0) {
@@ -5563,6 +5700,10 @@ insert_composite(stmt **updates, sql_column *c, node *n, stmt *input_tuple)
 		input_tuple = input_tuple->op1;
 	if (input_tuple->type != st_list)
 		return NULL;
+	/* TODO we need to insert the id into the composite column itself if this is a multiset */
+	if (c->type.multiset) {
+		printf("todo insert next id?\n");
+	}
 	for(m = input_tuple->op4.lval->h, n = n->next, f = c->type.type->d.fields->h; n && m && f; m = m->next, f = f->next) {
 		sql_column *c = n->data;
 
@@ -5572,6 +5713,20 @@ insert_composite(stmt **updates, sql_column *c, node *n, stmt *input_tuple)
 			updates[c->colnr] = m->data;
 			n = n->next;
 		}
+	}
+	if (c->type.multiset) {
+		sql_column *c = n->data;
+
+		updates[c->colnr] = m->data;
+		n = n->next;
+		m = m->next;
+	}
+	if (c->type.multiset == MS_ARRAY) {
+		sql_column *c = n->data;
+
+		updates[c->colnr] = m->data;
+		n = n->next;
+		m = m->next;
 	}
 	if (f || m) /* did we find all fields and use all values */
 		return NULL;
