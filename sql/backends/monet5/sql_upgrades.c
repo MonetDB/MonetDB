@@ -4367,35 +4367,6 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
-static str
-sql_update_aug2024_sp3(Client c, mvc *sql, sql_schema *s)
-{
-	char *err;
-	res_table *output;
-	BAT *b;
-
-	(void) sql;
-	(void) s;
-	err = SQLstatementIntern(c, "SELECT id FROM sys.keys WHERE type = 3 AND name LIKE '%_?';\n", "update", true, false, &output);
-	if (err)
-		return err;
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			/* do update */
-			const char query1[] =
-				"UPDATE sys.keys k SET name = (SELECT t.name FROM sys._tables t WHERE t.id = k.table_id) || '_' || (SELECT group_concat(kc.name, '_' /* ORDER BY kc.nr */) FROM sys.objects kc WHERE kc.id = k.id) || '_nndunique' WHERE k.type = 3 AND (k.table_id, k.name) IN (SELECT t.id, t.name || '_?' FROM sys._tables t WHERE NOT t.system);\n";
-			printf("Running database upgrade commands:\n%s\n", query1);
-			fflush(stdout);
-			err = SQLstatementIntern(c, query1, "update", true, false, NULL);
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_table_destroy(output);
-
-	return err;
-}
-
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -4451,10 +4422,6 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_aug2024(c, m, s)) != NULL) {
-		goto handle_error;
-	}
-
-	if ((err = sql_update_aug2024_sp3(c, m, s)) != NULL) {
 		goto handle_error;
 	}
 
