@@ -18,6 +18,7 @@
 #include "rel_exp.h"
 #include "rel_select.h"
 #include "rel_rewriter.h"
+#include "rel_multiset.h"
 
 static void
 exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
@@ -4594,6 +4595,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
+	rel = rel_multiset(sql, rel);
 	rel = run_exp_rewriter(&v, rel, &rel_simplify_exp_and_rank, false, "simplify_exp_and_rank");
 	rel = run_rel_rewriter(&v, rel, &rel_unnest_simplify, "unnest_simplify");
 	rel = run_exp_rewriter(&v, rel, &rewrite_complex, true, "rewrite_complex");

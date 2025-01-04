@@ -600,7 +600,7 @@ load_column(sql_trans *tr, sql_table *t, res_table *rt_cols)
 	c->column_type = *(bte*)store->table_api.table_fetch_value(rt_cols, find_sql_column(columns, "column_type"));
 	ATOMIC_PTR_INIT(&c->data, NULL);
 	c->t = t;
-	if (isTable(c->t))
+	if (isTable(c->t) && (c->type.multiset || !c->type.type->composite))
 		store->storage_api.create_col(tr, c);
 	TRC_DEBUG(SQL_STORE, "Load column: %s\n", c->base.name);
 	if (!c->null)
@@ -951,7 +951,7 @@ load_type(sql_trans *tr, sql_schema *s, sqlid tid, subrids *rs)
 	} else {
 		assert(rs);
 		t->composite = true;
-		t->localtype = TYPE_oid;
+		t->localtype = TYPE_int;
 
 		/* load fields */
 		t->d.fields = list_create((fdestroy) &arg_destroy);
@@ -3880,30 +3880,35 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 
 	if (c->type.type->composite) {
 		needs_data = false;
-		//char *name = "%nr";
+		sql_table *tt = t;
+		if (c->type.multiset) {
+			char buf[16];
+			snprintf(buf, 16, "%%ms_%d", c->base.id);
+			col->storage_type = _STRDUP(buf);
+			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, 0, 0, 0)) != LOG_OK)
+				return res;
+		}
 		/* All nested types, need the internal columns for the field contents */
 		for (node *n = col->type.type->d.fields->h; n; n = n->next) {
 			sql_arg *f = n->data;
 			sql_column *ic = NULL;
 			/* how to store names (list) ? */
-			if (sql_trans_create_column_intern( &ic, tr, t, f->name, &f->type, column_intern) < 0)
+			if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
 				return -2;
 		}
 		if (c->type.multiset == MS_SETOF || c->type.multiset == MS_ARRAY) { /* sets and arrays need oid col */
-			/* create number column */
-			char *name = "id"; /* TODO generate proper name */
+			char *name = "id";
 			sql_subtype tp = *sql_bind_localtype("int");
 			sql_column *ic = NULL;
-			if (sql_trans_create_column_intern( &ic, tr, t, name, &tp, column_intern) < 0)
+			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
 			needs_data = true;	/* column its self is reference id */
 		}
 		if (c->type.multiset == MS_ARRAY) { /* array need order */
-			/* create number column */
-			char *name = "number"; /* TODO generate proper name */
+			char *name = "nr";
 			sql_subtype tp = *sql_bind_localtype("int");
 			sql_column *ic = NULL;
-			if (sql_trans_create_column_intern( &ic, tr, t, name, &tp, column_intern) < 0)
+			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
 		}
 	}
@@ -5234,7 +5239,7 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 	sqlstore *store = tr->store;
 	sql_type *t;
 	sql_table *systype;
-	int localtype = impl?ATOMindex(impl) : TYPE_oid, number = 0;
+	int localtype = impl?ATOMindex(impl) : TYPE_int, number = 0;
 	sql_class eclass = EC_EXTERNAL;
 	int eclass_cast = (int) eclass, res = LOG_OK;
 

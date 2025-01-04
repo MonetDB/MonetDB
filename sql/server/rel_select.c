@@ -716,6 +716,30 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 }
 
 static sql_rel *
+rel_unnest_func(sql_query *query, list *exps, char *tname)
+{
+	if (list_empty(exps))
+		return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset missing");
+	for( node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (!e->freevar || e->type != e_column)
+			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset not found");
+		sql_rel *r = query_fetch_outer(query, e->freevar-1);
+		if (!r || !is_basetable(r->op))
+			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table missing");
+		sql_table *t = r->l;
+		sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
+		if (!c)
+			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset column '%s' missing", exp_name(e));
+		sql_table *st = mvc_bind_table(query->sql, t->s, c->storage_type);
+		if (!st)
+			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table '%s' missing", c->storage_type);
+		return rel_basetable(query->sql, st, a_create(query->sql->sa, tname?st->base.name:tname));
+	}
+	return NULL;
+}
+
+static sql_rel *
 rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 {
 	sql_subfunc *f = NULL;
@@ -773,7 +797,10 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	dnode *l = sym->data.lval->h, *n;
 	char *fname = qname_schema_object(l->data.lval);
 	char *sname = qname_schema(l->data.lval);
+	bool unnest = (!sname && strcmp(fname, "unnest") == 0);
 
+	if (unnest)
+		lateral = 1;
 	tl = sa_list(sql->sa);
 	exps = sa_list(sql->sa);
 	if (l->next)
@@ -811,12 +838,16 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 					append(exps, e);
 					is_value &= exp_is_atom(e);
 				}
-				if (!is_value || (lateral && outer))
-					sq = rel_project(sql->sa, NULL, exps);
-				if (lateral && outer) {
-					sq = rel_crossproduct(sql->sa, sq, outer, op_join);
-					set_dependent(sq);
-					set_processed(sq);
+				if (unnest) {
+					is_value = 1;
+				} else {
+					if (!is_value || (lateral && outer))
+						sq = rel_project(sql->sa, NULL, exps);
+					if (lateral && outer) {
+						sq = rel_crossproduct(sql->sa, sq, outer, op_join);
+						set_dependent(sq);
+						set_processed(sq);
+					}
 				}
 			}
 		}
@@ -838,8 +869,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 				append(tl, exp_subtype(e));
 			}
 		} else {
-			for (node *en = exps->h; en; en = en->next)
-				append(tl, exp_subtype(en->data));
+			tl = exp_types(sql->sa, exps);
 		}
 	}
 
@@ -853,6 +883,10 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 
 	if (!sname && strcmp(fname, "file_loader") == 0) {
 		rel = rel_file_loader(sql, exps, tl, tname);
+		if (!rel)
+			return NULL;
+	} else if (!sname && strcmp(fname, "unnest") == 0) {
+		rel = rel_unnest_func(query, exps, tname);
 		if (!rel)
 			return NULL;
 	} else if (!(e = find_table_function(sql, sname, fname, list_empty(exps) ? NULL : exps, tl, F_UNION)))
@@ -1221,8 +1255,17 @@ check_is_lateral(symbol *tableref)
 {
 	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE ||
 		tableref->token == SQL_VALUES) {
-		if (dlist_length(tableref->data.lval) == 3)
-			return tableref->data.lval->h->next->data.i_val;
+		if (dlist_length(tableref->data.lval) == 3) {
+			if (tableref->data.lval->h->next->data.i_val)
+				return 1;
+		}
+		if (tableref->data.lval->h->type == type_symbol && tableref->data.lval->h->data.sym->token == SQL_NOP) {
+			symbol *sym = tableref->data.lval->h->data.sym;
+			dlist *qname = sym->data.lval->h->data.lval;
+			/* first is the qname */
+			if (dlist_length(qname) == 1 && strcmp(qname->h->data.sval, "unnest")==0)
+				return 1;
+		}
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
 		if (dlist_length(tableref->data.lval) == 5)

@@ -2035,7 +2035,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, bool isbat)
 	if ((res = update_col_execute(tr, &delta, c->t, isNew(c), tids, upd, isbat)) != LOG_OK)
 		return res;
 	assert(delta == odelta);
-	if (delta->cs.st == ST_DEFAULT && c->storage_type)
+	if (delta->cs.st == ST_DEFAULT && !c->type.multiset && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
 }
@@ -2344,7 +2344,7 @@ append_col(sql_trans *tr, sql_column *c, BUN offset, BAT *offsets, void *data, B
 			return LOG_CONFLICT;
 		}
 	}
-	if (delta->cs.st == ST_DEFAULT && c->storage_type)
+	if (delta->cs.st == ST_DEFAULT && !c->type.multiset && c->storage_type)
 		res = sql_trans_alter_storage(tr, c, NULL);
 	return res;
 }
@@ -3997,7 +3997,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		sql_column *c = n->data;
 		column_storage *cs = ATOMIC_PTR_GET(&c->data);
 
-		if (c->type.type->composite)
+		if (c->type.type->composite && !c->type.multiset)
 			continue;
 		if (cs->cleared) {
 			ok = (tr_log_cs(tr, t, cs, NULL, c->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;

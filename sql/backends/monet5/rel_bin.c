@@ -695,6 +695,8 @@ tuple_create_result(backend *be, sql_exp *tuple, list *cols, bte multiset)
 		(void)sql_error(be->mvc, 02, SQLSTATE(42000) "Cannot handle empty composite type");
 		return -1;
 	}
+	if (multiset) /* rowid */
+		append(cols, sa_list(be->mvc->sa));
 	for(node *n = attr->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
@@ -705,9 +707,9 @@ tuple_create_result(backend *be, sql_exp *tuple, list *cols, bte multiset)
 		}
 		append(cols, sa_list(be->mvc->sa));
 	}
-	if (multiset)
+	if (multiset) /* multisetid */
 		append(cols, sa_list(be->mvc->sa));
-	if (multiset == MS_ARRAY)
+	if (multiset == MS_ARRAY) /* multisetnr */
 		append(cols, sa_list(be->mvc->sa));
 	return 0;
 }
@@ -726,8 +728,15 @@ append_tuple(backend *be, sql_exp *tuple, stmt *left, stmt *sel, list *cols, int
 	}
 	assert(tuple->row);
 	list *attr = exp_get_values(tuple);
-	node *n, *m;
-	for(n = attr->h, m = cols->h; n; n = n->next, m = m->next) {
+	node *n, *m = cols->h;
+	if (multiset) {
+		if (lcnt == 1) {
+			list *vals = m->data;
+			append(vals, stmt_atom_int(be, rowcnt));
+		}
+		m = m->next;
+	}
+	for(n = attr->h; n; n = n->next, m = m->next) {
 		sql_exp *e = n->data;
 		list *vals = m->data;
 
@@ -781,9 +790,9 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 		list *attr = sa_list(be->mvc->sa);
 		if (tuple_create_result(be, vals->h->data, attr, multiset) < 0)
 			return NULL;
-		int rowcnt = 1;
-		for (node *n = vals->h; n; n = n->next, rowcnt++) {
-			if (append_tuple(be, n->data, left, sel, attr, rowcnt, 1, multiset) < 0)
+		int rowcnt = 1, lcnt = 1;
+		for (node *n = vals->h; n; n = n->next, lcnt++) {
+			if (append_tuple(be, n->data, left, sel, attr, rowcnt, lcnt++, multiset) < 0)
 				return NULL;
 		}
 		return tuple_result(be, attr);
@@ -1584,6 +1593,20 @@ is_const_func(sql_subfunc *f, list *attr)
 }
 
 static stmt*
+exp2bin_multiset(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
+{
+	(void)be;
+	(void)fe;
+	(void)right;
+	(void)sel;
+	assert(list_length(left->op4.lval) == 1);
+	stmt *s = left->op4.lval->h->data;
+	while(s->type == st_alias)
+		s = s->op1;
+	return s;
+}
+
+static stmt*
 exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
 	assert(left == NULL); (void)left;
@@ -1812,6 +1835,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
 			if (strcmp(fname, "file_loader") == 0)
 				return exp2bin_file_loader(be, e, left, right, sel);
+			if (strcmp(fname, "multiset") == 0)
+				return exp2bin_multiset(be, e, left, right, sel);
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
@@ -2804,7 +2829,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				}
 			}
 		}
-		assert(rel->flag != TABLE_PROD_FUNC || !sub || !(sub->nrcols));
+		//assert(rel->flag != TABLE_PROD_FUNC || !sub || !(sub->nrcols));
 		sub = stmt_list(be, l);
 		return sub;
 	} else if (rel->l) { /* handle sub query via function */
@@ -5784,7 +5809,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; m = m->next) {
 		sql_column *c = n->data;
 
-		if (c->type.type->composite) {
+		if (c->type.type->composite && !c->type.multiset) {
 			n = insert_composite(updates, c, n, m->data);
 		} else {
 			updates[c->colnr] = m->data;

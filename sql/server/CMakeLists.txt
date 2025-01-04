@@ -65,6 +65,7 @@ target_sources(sqlserver
   rel_xml.c
   rel_dump.c
   rel_file_loader.c
+  rel_multiset.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
   rel_rewriter.h
@@ -95,6 +96,7 @@ target_sources(sqlserver
   sql_tokens.h
   sql_partition.h
   rel_file_loader.h
+  rel_multiset.h
   ${BISON_sqlparser_OUTPUT_HEADER}
   ${BISON_sqlparser_OUTPUT_SOURCE}
   PUBLIC

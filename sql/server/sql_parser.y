@@ -3952,13 +3952,6 @@ table_ref:
 					append_symbol($$->data.lval, $3);
 				  }
 				}
-/*
- |  select_with_parens
-				{ $$ = NULL;
-				  yyerror(m, "subquery table reference needs alias, use AS xxx");
-				  YYABORT;
-				}
-*/
  |  joined_table		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
  |  '(' joined_table ')' table_name	{ $$ = $2;
