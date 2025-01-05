@@ -134,6 +134,7 @@ flatten_multiset(visitor *v, sql_rel *rel)
 		return fm_insert(v, rel);
 	default:
 		//printf("todo %d\n", rel->op);
+		return rel;
 	}
 	return rel;
 }
