@@ -85,23 +85,23 @@ fm_project(visitor *v, sql_rel *rel)
 					e = exp_ref(v->sql, e);
 					sql_alias *cn = a_create(v->sql->sa, e->alias.name);
 					sql_exp *mse = exp_column(v->sql->sa, cn, "rowid", inttype, 1,1, 1, 1);
-					exp_setalias(mse, -(++v->sql->label), cn, "rowid");
+					mse->alias.label = -(++v->sql->label);
 					mse->nid = e->alias.label;
 					append(nexps, mse);
 					for(node *f = t->type->d.fields->h; f; f = f->next) {
 						sql_arg *field = f->data;
 						mse = exp_column(v->sql->sa, cn, field->name, &field->type, 1,1, 1, 1);
-						exp_setalias(mse, -(++v->sql->label), cn, field->name);
+						mse->alias.label = -(++v->sql->label);
 						mse->nid = e->alias.label;
 						append(nexps, mse);
 					}
 					mse = exp_column(v->sql->sa, cn, "multisetid", inttype, 1,1, 1, 1);
-					exp_setalias(mse, -(++v->sql->label), cn, "multisetid");
+					mse->alias.label = -(++v->sql->label);
 					mse->nid = e->alias.label;
 					append(nexps, mse);
 					if (t->multiset == MS_ARRAY) {
 						mse = exp_column(v->sql->sa, cn, "multisetnr", inttype, 1,1, 1, 1);
-						exp_setalias(mse, -(++v->sql->label), cn, "multsetnr");
+						mse->alias.label = -(++v->sql->label);
 						mse->nid = e->alias.label;
 						append(nexps, mse);
 					}
