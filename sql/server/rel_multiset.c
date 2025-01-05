@@ -65,6 +65,40 @@ fm_insert(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+fm_join(visitor *v, sql_rel *rel)
+{
+	if (list_empty(rel->exps)) {
+		bool needed = false;
+		sql_rel *l = rel->l;
+		sql_rel *r = rel->r;
+		list *exps = rel_projections(v->sql, l, NULL, 0, 1);
+		for(node *n = exps->h; n && !needed; n = n->next) {
+			sql_subtype *t = exp_subtype(n->data);
+			needed = (t && t->multiset);
+		}
+		if (needed) {
+			for(node *n = exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				sql_subtype *t = exp_subtype(e);
+				if (t->multiset) {
+					v->changes++;
+					sql_exp *le = exp_ref(v->sql, e);
+					list *rexps = rel_projections(v->sql, r, NULL, 0, 1);
+					sql_exp *re = exps_bind_column(rexps, "id", NULL, NULL, 0);
+					if (le && re) {
+						re = exp_ref(v->sql, re);
+						e = exp_compare(v->sql->sa, le, re, cmp_equal);
+						rel->exps = sa_list_append(v->sql->sa, rel->exps, e);
+					}
+					return rel;
+				}
+			}
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
 fm_project(visitor *v, sql_rel *rel)
 {
 	if (!rel->l && rel->exps) { /* check for type multiset */
@@ -82,26 +116,28 @@ fm_project(visitor *v, sql_rel *rel)
 				sql_exp *e = n->data;
 				sql_subtype *t = exp_subtype(e);
 				if (t->multiset) {
+					int label = v->sql->label;
+					v->sql->label += 2 + (t->multiset == MS_ARRAY) + list_length(t->type->d.fields);
 					e = exp_ref(v->sql, e);
 					sql_alias *cn = a_create(v->sql->sa, e->alias.name);
 					sql_exp *mse = exp_column(v->sql->sa, cn, "rowid", inttype, 1,1, 1, 1);
-					mse->alias.label = -(++v->sql->label);
+					mse->alias.label = -(++label);
 					mse->nid = e->alias.label;
 					append(nexps, mse);
 					for(node *f = t->type->d.fields->h; f; f = f->next) {
 						sql_arg *field = f->data;
 						mse = exp_column(v->sql->sa, cn, field->name, &field->type, 1,1, 1, 1);
-						mse->alias.label = -(++v->sql->label);
+						mse->alias.label = -(++label);
 						mse->nid = e->alias.label;
 						append(nexps, mse);
 					}
 					mse = exp_column(v->sql->sa, cn, "multisetid", inttype, 1,1, 1, 1);
-					mse->alias.label = -(++v->sql->label);
+					mse->alias.label = -(++label);
 					mse->nid = e->alias.label;
 					append(nexps, mse);
 					if (t->multiset == MS_ARRAY) {
 						mse = exp_column(v->sql->sa, cn, "multisetnr", inttype, 1,1, 1, 1);
-						mse->alias.label = -(++v->sql->label);
+						mse->alias.label = -(++label);
 						mse->nid = e->alias.label;
 						append(nexps, mse);
 					}
@@ -130,6 +166,8 @@ flatten_multiset(visitor *v, sql_rel *rel)
 	switch(rel->op) {
 	case op_project:
 		return fm_project(v, rel);
+	case op_join:
+		return fm_join(v, rel);
 	case op_insert:
 		return fm_insert(v, rel);
 	default:
