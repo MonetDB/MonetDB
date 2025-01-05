@@ -4848,6 +4848,9 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if ((res = sys_drop_default_object(tr, col, drop_action)))
 		return res;
 
+	if (col->type.multiset && col->storage_type && (res = sql_trans_drop_table(tr, col->t->s, col->storage_type, drop_action)))
+		return res;
+
 	col->base.deleted = 1;
 	if (!isNew(col) && !isTempTable(col->t))
 		if ((res = store->storage_api.drop_col(tr, (sql_column*)dup_base(&col->base))))
