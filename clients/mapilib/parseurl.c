@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 
 #include "msettings.h"
+#include "msettings_internal.h"
 
 #include <assert.h>
 #include <ctype.h>

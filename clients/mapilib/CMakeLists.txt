@@ -26,6 +26,7 @@ target_sources(mapi
   mapi.c
   connect.c
   msettings.c
+  msettings_internal.h
   parseurl.c
   $<$<BOOL:${HAVE_SYS_UN_H}>:connect_unix.c>
   $<$<BOOL:${OPENSSL_FOUND}>:connect_openssl.c>
