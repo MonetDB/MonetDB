@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -214,9 +214,6 @@ CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME 
 GRANT EXECUTE ON FUNCTION ST_NumInteriorRing(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."InteriorRingN";
 GRANT EXECUTE ON FUNCTION ST_InteriorRingN(Geometry, integer) TO PUBLIC;
-CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom."InteriorRings";
-GRANT EXECUTE ON FUNCTION ST_InteriorRings(Geometry) TO PUBLIC;
---CREATE FUNCTION ST_SetInteriorRings(geom GeometryA) RETURNS Geometry EXTERNAL NAME geom."SetInteriorRings"; --what is this function supposed to do????
 
 --Functions on GeomCollection
 CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumGeometries";
@@ -224,7 +221,7 @@ GRANT EXECUTE ON FUNCTION ST_NumGeometries(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_GeometryN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."GeometryN";
 GRANT EXECUTE ON FUNCTION ST_GeometryN(Geometry, integer) TO PUBLIC;
 
---Functions on Polyhedral Surfaces (a simple surface, consisting of a number of Polygon pathes or facets)
+--Functions on Polyhedral Surfaces (a simple surface, consisting of a number of Polygon paths or facets)
 --CREATE FUNCTION ST_Geometries(geom Geometry) RETURNS TABLE(geom Geometries) EXTERNAL NAME geom."Geometries";
 --CREATE FUNCTION NumSurfaces(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumSurfaces";
 --CREATE FUNCTION Surface(positionNum integer) RETURNS Geometry EXTERNAL NAME geom."SurfaceN";
@@ -268,7 +265,7 @@ GRANT EXECUTE ON FUNCTION ST_BdPolyFromText(string, integer) TO PUBLIC;
 CREATE FUNCTION ST_BdMPolyFromText(wkt string, srid integer) RETURNS Geometry external name geom."BdMPolyFromText";
 GRANT EXECUTE ON FUNCTION ST_BdMPolyFromText(string, integer) TO PUBLIC;
 
---Construct a Geoemtry from a WKB
+--Construct a Geometry from a WKB
 --CREATE FUNCTION ST_GeomFromWKB(wkb_raw WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."GeomFromWKB";
 --CREATE FUNCTION ST_PointFromWKB(wkb_arr WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."PointFromWKB";
 --CREATE FUNCTION ST_LineFromWKB(wkb_arr WHATEVER_IS_STORED_IN_DB, srid integer) RETURNS Geometry EXTERNAL NAME geom."LineFromWKB";

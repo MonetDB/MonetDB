@@ -42,7 +42,7 @@ COPY 27 RECORDS INTO args_test FROM STDIN NULL AS ''
 6815|6802|stmt|12|
 1|1|dummy|1|
 
-query ITII rowsort
+query ITII nosort
 select func_id, (select name from functions_test f where f.id = func_id) as name, max(number), count(*) from args_test
 group by func_id having count(*) > 8 order by func_id limit 12
 ----

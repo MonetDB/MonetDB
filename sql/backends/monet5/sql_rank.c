@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -55,7 +55,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (pci->argc > 2) {
 			if (isaBatType(getArgType(mb, pci, 2))) {
 				if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
-					msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
@@ -64,7 +64,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				c = b;
 				if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
-					msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				gdk_code = GDKanalyticaldiff(r, b, c, NULL, b->ttype);
@@ -74,7 +74,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		} else {
 			if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
-				msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 			if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
@@ -90,7 +90,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
-			msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
@@ -144,7 +144,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 1))))) {
-			msg = createException(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.window_bound", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		tp1 = b->ttype;
@@ -164,7 +164,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (is_a_bat) { //SQL_CURRENT_ROW shall never fall in limit validation
 			if ((!(l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5))))) {
-				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 		} else {
@@ -172,7 +172,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (part_offset) {
 			if ((!(p = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
-				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 		}
@@ -212,7 +212,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.row_number", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT))) {
@@ -226,7 +226,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			/* order info not used */
 			if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-				msg = createException(SQL, "sql.row_number", SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, "sql.row_number", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 			BATiter pi = bat_iterator(p);
@@ -285,7 +285,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT))) {
@@ -300,7 +300,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2))) || !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter pi = bat_iterator(p);
@@ -318,7 +318,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter pi = bat_iterator(p);
@@ -333,7 +333,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter oi = bat_iterator(o);
@@ -391,7 +391,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT))) {
@@ -406,7 +406,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2))) || !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter pi = bat_iterator(p);
@@ -424,7 +424,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				bat_iterator_end(&oi);
 			} else { /* single value, ie no ordering */
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter pi = bat_iterator(p);
@@ -439,7 +439,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.dense_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter oi = bat_iterator(o);
@@ -498,7 +498,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
@@ -513,7 +513,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2))) || !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter pi = bat_iterator(p);
@@ -565,7 +565,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter oi = bat_iterator(o);
@@ -632,7 +632,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
@@ -645,7 +645,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2))) || !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter pi = bat_iterator(p);
@@ -696,7 +696,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
 				if (!(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.cume_dist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 				BATiter oi = bat_iterator(o);
@@ -773,13 +773,13 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.ntile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			tp2 = getBatType(getArgType(mb, pci, 2));
 			if (!(n = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-				msg = createException(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, "sql.ntile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 		} else {
@@ -791,7 +791,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-			msg = createException(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.ntile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((p && BATcount(b) != BATcount(p)) || (n && BATcount(b) != BATcount(n))) {
@@ -847,17 +847,17 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 	assert(*frame_type >= 0 && *frame_type <= 6);
 
 	if (isaBatType(getArgType(mb, pci, 1)) && !(*b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
-		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (*b && !(*r = COLnew((*b)->hseqbase, rtype ? rtype : (*b)->ttype, BATcount(*b), TRANSIENT)))
 		throw(MAL, mod, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (isaBatType(getArgType(mb, pci, 2)) && !(*p = BATdescriptor(*getArgReference_bat(stk, pci, 2))))
-		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((*frame_type == 3 || *frame_type == 4) && isaBatType(getArgType(mb, pci, 3)) && !(*o = BATdescriptor(*getArgReference_bat(stk, pci, 3))))
-		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (*frame_type < 3 && isaBatType(getArgType(mb, pci, 5)) && !(*s = BATdescriptor(*getArgReference_bat(stk, pci, 5))))
-		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (*frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(*e = BATdescriptor(*getArgReference_bat(stk, pci, 6))))
-		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((*s && BATcount(*b) != BATcount(*s)) || (*e && BATcount(*b) != BATcount(*e)) ||
 		(*p && BATcount(*b) != BATcount(*p)) || (*o && BATcount(*b) != BATcount(*o)))
 		throw(SQL, mod, ILLEGAL_ARGUMENT " Requires bats of identical size");
@@ -917,7 +917,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT))) {
@@ -925,11 +925,11 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 			goto bailout;
 		}
 		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(e = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e))) {
@@ -1008,7 +1008,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		tpe = getBatType(tpe);
@@ -1018,18 +1018,18 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (is_a_bat) {
 			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 		} else {
 			nth = getArgReference_lng(stk, pci, 2);
 		}
 		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
-			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
-			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (l && BATcount(b) != BATcount(l))) {
@@ -1082,7 +1082,7 @@ bailout:
 		TPE rval; \
 		if (tp2_is_a_bat) { \
 			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) { \
-				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor"); \
+				msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
 				goto bailout; \
 			} \
 			MT_lock_set(&l->theaplock); \
@@ -1157,7 +1157,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 
 			tp3 = getBatType(tp3);
 			if (!(d = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 			bpi = bat_iterator(d);
@@ -1189,7 +1189,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	if (isaBatType(tp1)) {
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 
@@ -1200,7 +1200,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		}
 		if (isaBatType(getArgType(mb, pci, base))) {
 			if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, base)))) {
-				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 		}
@@ -1311,7 +1311,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
 	if (isaBatType(getArgType(mb, pci, 1)) && (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (b && !(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
@@ -1319,19 +1319,19 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 	if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (frame_type < 3 && isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o))) {
@@ -1381,7 +1381,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	if (isaBatType(tp1)) {
 		tp1 = getBatType(tp1);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 	}
@@ -1395,19 +1395,19 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			goto bailout;
 		}
 		if (isaBatType(getArgType(mb, pci, 2)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 3)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 5)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o))) {
@@ -1682,8 +1682,6 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
-		ValRecord *input1 = &(stk)->stk[(pci)->argv[1]];
-
 		switch (tpe) {
 			case TYPE_bte:
 			case TYPE_sht:
@@ -1694,7 +1692,7 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 #endif
 			case TYPE_flt:
 			case TYPE_dbl:
-				*res = VALisnil(input1) ? dbl_nil : 0;
+				*res = dbl_nil;
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));
@@ -1935,11 +1933,11 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (is_a_bat1 && !(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
 		if (is_a_bat2 && !(c = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
@@ -1947,19 +1945,19 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			goto bailout1;
 		}
 		if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
 		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
-			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
 		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o)) || (c && BATcount(b) != BATcount(c))) {
@@ -2098,7 +2096,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT))) {
@@ -2108,7 +2106,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (separator_offset) {
 			if (isaBatType(getArgType(mb, pci, 2))) {
 				if (!(sep = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-					msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+					msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
 			} else
@@ -2117,19 +2115,19 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			separator = ",";
 
 		if (isaBatType(getArgType(mb, pci, 2 + separator_offset)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 2 + separator_offset)))) {
-			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 3 + separator_offset)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3 + separator_offset)))) {
-			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 5 + separator_offset)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 5 + separator_offset)))) {
-			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6 + separator_offset)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 6 + separator_offset)))) {
-			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
 		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o)) || (sep && BATcount(b) != BATcount(sep))) {

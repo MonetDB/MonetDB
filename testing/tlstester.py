@@ -6,7 +6,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -38,6 +38,9 @@ with warnings.catch_warnings():
     from cryptography import x509
     from cryptography.hazmat.primitives import serialization, hashes
     from cryptography.hazmat.primitives.asymmetric import rsa
+    # we need default_backed for cryptography 2.X which is what's used
+    # in Ubuntu 20.04 LTS (see two calls below where this is used)
+    from cryptography.hazmat.backends import default_backend
 
 VERSION = "0.3.1"
 
@@ -226,7 +229,7 @@ class Certs:
     ):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', category=UserWarning)
-            key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+            key = rsa.generate_private_key(public_exponent=65537, key_size=2048, backend=default_backend())
 
         if parent_name:
             issuer_name = parent_name
@@ -249,7 +252,7 @@ class Certs:
             builder = builder.add_extension(ext, critical=True)
         for ext in noncritical_extensions:
             builder = builder.add_extension(ext, critical=False)
-        cert = builder.sign(issuer_key, hashes.SHA256())
+        cert = builder.sign(issuer_key, hashes.SHA256(), backend=default_backend())
 
         self._keys[subject_name] = key
         self._certs[subject_name] = cert
@@ -416,6 +419,32 @@ class TLSTester:
         for t in threads:
             t.join()
 
+    def spawn_server(self, name, server_class, addr, port, handler):
+        fam = server_class.address_family.name
+        try:
+            server = server_class((addr, port), handler)
+        except Exception as e:
+            log.debug(f"Could not bind {name} to {fam} = {addr} port {port}: {e}")
+            raise
+        bound_addr, bound_port = server.server_address[:2]
+        log.debug(f"Bound {name}: {fam} = {bound_addr} port {bound_port}")
+        self.portmap[name] = bound_port
+        self.workers.append(server.serve_forever)
+        return bound_port
+
+    def spawn_servers(self, name, server_classes, addr, port, handler):
+        exceptions = []
+        for server_class in server_classes:
+            try:
+                # update 'port' so all servers use the same port number
+                port = self.spawn_server(name, server_class, addr, port, handler)
+            except OSError as e:
+                exceptions.append(e)
+        if len(exceptions) == len(server_classes):
+            e = exceptions[0]
+            log.error(f"Could not spawn any listener for {name} on {addr}: {e}")
+            raise e
+
     def spawn_http(self, name: str, only_preassigned: bool):
         if only_preassigned and name not in self.preassigned:
             return
@@ -425,11 +454,7 @@ class TLSTester:
         handler = lambda req, addr, server: WebHandler(
             req, addr, server, self.certs, self.portmap
         )
-        server = http.server.HTTPServer((self.listen_addr, port), handler)
-        port = server.server_address[1]
-        log.debug(f"Bound port {name} to {port}")
-        self.portmap[name] = port
-        self.workers.append(server.serve_forever)
+        self.spawn_servers(name, [MyHTTPServer, MyHTTP6Server], self.listen_addr, port, handler)
 
     def spawn_mapi(self, name: str, only_preassigned, ctx: SSLContext, check_alpn=None, redirect_to=None):
         if only_preassigned and name not in self.preassigned:
@@ -438,11 +463,7 @@ class TLSTester:
             return
         port = self.allocate_port(name)
         handler = lambda req, addr, server: MapiHandler(req, addr, server, self, name, ctx, check_alpn, redirect_to)
-        server = MyTCPServer((self.listen_addr, port), handler)
-        port = server.server_address[1]
-        log.debug(f"Bound port {name} to {port}")
-        self.portmap[name] = port
-        self.workers.append(server.serve_forever)
+        self.spawn_servers(name, [MyTCPServer, MyTCP6Server], self.listen_addr, port, handler)
 
     def spawn_forward(self, name, ctx: SSLContext):
         if name in self.portmap:
@@ -451,11 +472,8 @@ class TLSTester:
         handler = lambda req, addr, server: ForwardHandler(
             req, addr, server, name, ctx, self.forward_to
         )
-        server = MyTCPServer((self.listen_addr, local_port), handler)
-        port = server.server_address[1]
-        log.debug(f"Bound port {name} to {port}")
-        self.portmap[name] = port
-        self.workers.append(server.serve_forever)
+        self.spawn_servers(name, [MyTCPServer, MyTCP6Server], self.listen_addr, local_port, handler)
+
 
     def allocate_port(self, name):
         if name in self.preassigned:
@@ -551,6 +569,14 @@ class MyTCPServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     pass
 
+class MyTCP6Server(MyTCPServer):
+    address_family = socket.AF_INET6
+
+class MyHTTPServer(http.server.HTTPServer):
+    pass
+
+class MyHTTP6Server(MyHTTPServer):
+    address_family = socket.AF_INET6
 
 class MapiHandler(socketserver.BaseRequestHandler):
     tlstester: TLSTester

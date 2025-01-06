@@ -305,7 +305,7 @@ insert into T values (25,25,25,25,25)
 statement ok
 insert into T values (30,30,30,30,30)
 
-query IIIII rowsort
+query IIIII nosort
 with Raw as (select a,b,c,count(*) as value from  T where e<10 and c<50 group by a,b,c) select Raw.*, row_number() over (partition by a order by value desc) from Raw
 ----
 1

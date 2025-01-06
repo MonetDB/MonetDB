@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -53,7 +53,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
 		MCcloseClient(c);
 		return msg;
 	}
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
@@ -79,7 +79,7 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
  *
  * In interactive mode,  the closing statement is never reached.  The
  * 'main' procedure is typically cleaned between successive external
- * messages except for its variables, which are considerd global.  This
+ * messages except for its variables, which are considered global.  This
  * storage container is re-used when during the previous call nothing
  * was added.  At the end of the session we have to garbage collect the
  * BATs introduced.
@@ -124,7 +124,7 @@ MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
 	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if (cntxt->curprg == 0)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((idx = findVariable(cntxt->curprg->def, "main")) >= 0)
+	if ((idx = findVariable(cntxt->curprg->def, mainRef)) >= 0)
 		setVarType(cntxt->curprg->def, idx, TYPE_void);
 	insertSymbol(cntxt->usermodule, cntxt->curprg);
 
@@ -333,7 +333,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 		}
 	}
 
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not allocate space\n");
 		cleanUpScheduleClient(c, &command, &msg);
 		return;
@@ -376,8 +376,6 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
 	if (msg != MAL_SUCCEED) {
-		mnstr_printf(fout, "!could not serve client\n");
-		exit_streams(fin, fout);
 		freeException(msg);
 	}
 }
@@ -614,16 +612,13 @@ MALreader(Client c)
  * the estimate is more expensive than just counting the lines.
  */
 static int
-prepareMalBlk(MalBlkPtr mb, str s)
+prepareMalBlk(MalBlkPtr mb, const char *s)
 {
 	int cnt = STMT_INCREMENT;
 
-	while (s) {
-		s = strchr(s, '\n');
-		if (s) {
-			s++;
+	if (s && *s) {
+		while ((s = strchr(s + 1, '\n')) != NULL)
 			cnt++;
-		}
 	}
 	cnt = (int) (cnt * 1.1);
 	return resizeMalBlk(mb, cnt);

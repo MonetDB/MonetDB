@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -34,7 +34,7 @@
    ascii-encoded and to false otherwise
 */
 int utf8_strlen(const char *utf8_str, bool *ascii);
-size_t utf32_strlen(const Py_UNICODE *utf32_str);
+size_t utf32_strlen(const wchar_t *utf32_str);
 
 //! Returns the length in bytes of a single utf8 character [1,2,3 or 4] based on
 //! the signature of the first byte, returns -1 if the character is not a valid
@@ -56,13 +56,13 @@ int utf8_length(unsigned char utf8_char);
 	utf32: An array of utf32 characters
 */
 bool utf32_to_utf8(size_t offset, size_t size, char *utf8_storage,
-				   const Py_UNICODE *utf32);
+				   const wchar_t *utf32);
 
 bool ucs2_to_utf8(size_t offset, size_t size, char *utf8_storage,
-				  const Py_UNICODE *ucs2);
+				  const wchar_t *ucs2);
 
 bool unicode_to_utf8(size_t offset, size_t size, char *utf8_storage,
-					 const Py_UNICODE *unicode);
+					 const wchar_t *unicode);
 //! Converts a utf8 string to a utf32 string, returns TRUE on success and FALSE
 //! on failure
 /* Arguments:
@@ -73,7 +73,7 @@ bool unicode_to_utf8(size_t offset, size_t size, char *utf8_storage,
    string in. To ensure the utf32 string fits this has to be [size] bytes.
 	utf8: An array of utf8 characters
 */
-bool utf8_to_utf32(size_t offset, size_t size, Py_UNICODE *utf32_storage,
+bool utf8_to_utf32(size_t offset, size_t size, wchar_t *utf32_storage,
 				   const unsigned char *utf8);
 
 //! Converts a single utf8 char to a single utf32 char, returns the size of the
@@ -84,7 +84,7 @@ bool utf8_to_utf32(size_t offset, size_t size, Py_UNICODE *utf32_storage,
 	offset:
 	utf8_char:
 */
-int utf8_char_to_utf32_char(size_t position, Py_UNICODE *utf32_storage,
+int utf8_char_to_utf32_char(size_t position, wchar_t *utf32_storage,
 							int offset, const unsigned char *utf8_char);
 
 //! Converts a single utf32 char to a single utf8 char, returns the size of the

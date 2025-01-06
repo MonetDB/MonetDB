@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4781,46 +4781,10 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				}
 				HEAPdecref(oidxh, false);
 			} else {
-				Imprints *imprints = NULL;
-				if ((pb == NULL || bi.count == BATcount(pb)) &&
-				    BATcheckimprints(b)) {
-					if (pb != NULL) {
-						MT_lock_set(&pb->batIdxLock);
-						imprints = pb->timprints;
-						if (imprints != NULL)
-							IMPSincref(imprints);
-						else
-							imprints = NULL;
-						MT_lock_unset(&pb->batIdxLock);
-					} else {
-						MT_lock_set(&b->batIdxLock);
-						imprints = b->timprints;
-						if (imprints != NULL)
-							IMPSincref(imprints);
-						else
-							imprints = NULL;
-						MT_lock_unset(&b->batIdxLock);
-					}
-				}
-				if (imprints) {
-					int i;
-
-					MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
-					pos = oid_nil;
-					/* find first non-empty bin */
-					for (i = 0; i < imprints->bits; i++) {
-						if (imprints->stats[i + 128]) {
-							pos = imprints->stats[i] + b->hseqbase;
-							break;
-						}
-					}
-					IMPSdecref(imprints, false);
-				} else {
-					struct canditer ci;
-					canditer_init(&ci, b, NULL);
-					(void) do_groupmin(&pos, &bi, NULL, 1, 0, 0, &ci,
-							   skipnil, false);
-				}
+				struct canditer ci;
+				canditer_init(&ci, b, NULL);
+				(void) do_groupmin(&pos, &bi, NULL, 1, 0, 0, &ci,
+						   skipnil, false);
 			}
 		}
 		if (is_oid_nil(pos)) {
@@ -4947,46 +4911,10 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 				}
 				HEAPdecref(oidxh, false);
 			} else {
-				Imprints *imprints = NULL;
-				if ((pb == NULL || BATcount(b) == BATcount(pb)) &&
-				    BATcheckimprints(b)) {
-					if (pb != NULL) {
-						MT_lock_set(&pb->batIdxLock);
-						imprints = pb->timprints;
-						if (imprints != NULL)
-							IMPSincref(imprints);
-						else
-							imprints = NULL;
-						MT_lock_unset(&pb->batIdxLock);
-					} else {
-						MT_lock_set(&b->batIdxLock);
-						imprints = b->timprints;
-						if (imprints != NULL)
-							IMPSincref(imprints);
-						else
-							imprints = NULL;
-						MT_lock_unset(&b->batIdxLock);
-					}
-				}
-				if (imprints) {
-					int i;
-
-					MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
-					pos = oid_nil;
-					/* find last non-empty bin */
-					for (i = imprints->bits - 1; i >= 0; i--) {
-						if (imprints->stats[i + 128]) {
-							pos = imprints->stats[i + 64] + b->hseqbase;
-							break;
-						}
-					}
-					IMPSdecref(imprints, false);
-				} else {
-					struct canditer ci;
-					canditer_init(&ci, b, NULL);
-					(void) do_groupmax(&pos, &bi, NULL, 1, 0, 0, &ci,
-							   skipnil, false);
-				}
+				struct canditer ci;
+				canditer_init(&ci, b, NULL);
+				(void) do_groupmax(&pos, &bi, NULL, 1, 0, 0, &ci,
+						   skipnil, false);
 			}
 		}
 		if (is_oid_nil(pos)) {
@@ -5283,8 +5211,15 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !bi.nonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
+			while (min < prev) {
+				if (bunfastapp_nocheck(bn, dnil) != GDK_SUCCEED)
+					goto bunins_failed;
+				min++;
+				nils++;
+			}
 			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED)
 				goto bunins_failed;
+			min++;
 		}
 		bat_iterator_end(&bi);
 		nils += ngrp - BATcount(bn);

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -304,6 +304,7 @@ RMTconnectScen(str *ret,
 		/* we support hge, and for remote, we don't know */
 		msg = RMTquery(&hdl, "remote.connect", m, "x := 0:hge;");
 		if (msg) {
+			freeException(msg);
 			c->int128 = false;
 		} else {
 			mapi_close_handle(hdl);
@@ -424,33 +425,26 @@ RMTfindconn(connection *ret, const char *conn)
  * function the caller is in. But also the runtime context is important.
  * The format is rmt<id>_<retvar>_<type>.  Every RMTgetId uses a fresh id,
  * to distinguish amongst different (parallel) execution context.
- * Re-use of this remote identifier should be done with care.
+ * Reuse of this remote identifier should be done with care.
  * The encoding of the type allows for ease of type checking later on.
  */
 static inline str
 RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 {
-	InstrPtr f;
-	const char *mod;
-	char *var;
 	str rt;
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 	static ATOMIC_TYPE idtag = ATOMIC_VAR_INIT(0);
 
 	if (p->retc == 0)
 		throw(MAL, "remote.getId",
 			  ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
-	var = getArgNameIntoBuffer(mb, p, arg, name);
-	f = getInstrPtr(mb, 0);		/* top level function */
-	mod = getModuleId(f);
-	if (mod == NULL)
-		mod = "user";
+	getArgNameIntoBuffer(mb, p, arg, name);
 	rt = getTypeIdentifier(getArgType(mb, p, arg));
 	if (rt == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), var,
+	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), name,
 			 rt);
 
 	GDKfree(rt);
@@ -1550,7 +1544,7 @@ RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		&& BATcount(b) < BATcount(BBP_desc(VIEWvtparent(b)))) {
 		if ((b = BATdescriptor(bid)) == NULL) {
 			BBPunfix(bid);
-			throw(MAL, "remote.bincopyto", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "remote.bincopyto", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		v = COLcopy(b, b->ttype, true, TRANSIENT);
 		BBPunfix(b->batCacheid);

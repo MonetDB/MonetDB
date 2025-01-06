@@ -39,7 +39,7 @@ INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat2', 7, 7.5, '2013-06-17 18:17
 statement ok
 INSERT INTO "sys"."unitTestDontDelete" VALUES ('Cat1', 8, 8.5, '2013-06-18 19:18:18.000000')
 
-query I rowsort
+query I nosort
 with "cp_t" as
 (
   select
@@ -96,7 +96,7 @@ order by "co_f1"
 27
 28
 
-query I rowsort
+query I nosort
 with "cp_t" as
 (
   select

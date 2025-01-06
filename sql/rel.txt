@@ -77,7 +77,7 @@ GROUPBY  (card ATOM (no group by exps), AGGR)
 TOPN	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> exps 	(list) lng limit, [ lng offset ] -> if the limit is a NULL value, then it's ignored, ie only the offset will be used
 	-> l		is relation
-	-> flag 	(bounds for limit can be including (1) or excluding (0) (ie later just returns the topN, including will return atleast N)
+	-> flag 	(bounds for limit can be including (1) or excluding (0) (ie later just returns the topN, including will return at least N)
 
 SAMPLE	(card ATOM, AGGR, or MULTI (same card as lower relation))
 	-> exps		first is either an lng for rownumbers or double between [0,1] for percentage. An optional second contains an int for the seed value. -> if the first value is a NULL, then it's ignored, ie only the offset will be used
@@ -145,7 +145,7 @@ e_cmp
 			cmp_in = 8,			in list handling 	->r is a list of values
 			cmp_notin = 9		not in list handling	->r is a list of values
 
-			/* The followin cmp_* are only used within stmt (not sql_exp) */
+			/* The following cmp_* are only used within stmt (not sql_exp) */
 			cmp_all = 12,			/* special case for crossproducts */
 			cmp_project = 13,		/* special case for projection joins */
 			cmp_joined = 14, 		/* special case already joined */
@@ -163,6 +163,8 @@ for aggr
 	-> flag DISTINCT and NO_NIL could be set
 for window functions
 	-> r contains a list with two values: the first is a list with the partition by expressions, and the second a list with order by expressions
+for aggregate functions
+	-> r contains a list with two values: the first is a list with the order by expressions, and the second is a list with filter expressions
 
 e_column
 	-> rname alias for the relation (i.e., alias of ->l, used by higher expressions)

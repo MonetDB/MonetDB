@@ -106,16 +106,16 @@ query T nosort
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
-| table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
-) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+| table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
+) [ "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL ] [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL ]
 
 onlyif threads=1
 query T nosort
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
-| table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ]
-) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
+| table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
+) [ "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL ] [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL ]
 
 query IIII rowsort
 SELECT DISTINCT col0, col1, col2, col0 FROM tab0
@@ -138,9 +138,9 @@ PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 ----
 project (
 | select (
-| | table("sys"."tab2") [ "tab2"."col0", "tab2"."col2" ]
-| ) [ (bigint(63)["tab2"."col2"]) = (bigint(63) "40") ]
-) [ "tab2"."col0" ]
+| | table("sys"."tab2") [ "tab2"."col0" NOT NULL, "tab2"."col2" NOT NULL ]
+| ) [ (bigint(63)["tab2"."col2" NOT NULL] NOT NULL) = (bigint(63) "40") ]
+) [ "tab2"."col0" NOT NULL ]
 
 query I rowsort
 SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
@@ -154,7 +154,7 @@ SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70
 11
 11
 
-query I rowsort
+query I nosort
 SELECT col0 FROM tab0 ORDER BY tab0.col0
 ----
 15
@@ -202,7 +202,7 @@ SELECT DISTINCT * FROM tab2 WHERE NOT ( - + 50 + ( 70 ) ) = + col2
 67
 58
 
-query I rowsort
+query I nosort
 SELECT col0 FROM tab0 ORDER BY sys.tab0.col0
 ----
 15
@@ -416,11 +416,11 @@ group by
 project (
 | group by (
 | | left outer join (
-| | | table("sys"."tab1") [ "tab1"."part" UNIQUE as "myalias0"."part", "tab1"."tet" UNIQUE as "myalias0"."tet" ],
-| | | table("sys"."tab2") [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" UNIQUE as "myalias1"."ups" ]
-| | ) [ ("myalias0"."part" UNIQUE) = ("myalias1"."myk") ]
-| ) [ "myalias1"."ups", "myalias0"."part", "myalias0"."tet" as "track" ] [ "myalias0"."part", "track", "track" as "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "myalias0"."part" as "part", "myalias0"."tet" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
+| | | table("sys"."tab1") [ "tab1"."part" NOT NULL UNIQUE as "myalias0"."part", "tab1"."tet" NOT NULL UNIQUE as "myalias0"."tet" ],
+| | | table("sys"."tab2") [ "tab2"."myk" NOT NULL as "myalias1"."myk", "tab2"."ups" NOT NULL UNIQUE as "myalias1"."ups" ]
+| | ) [ ("myalias0"."part" NOT NULL UNIQUE) = ("myalias1"."myk" NOT NULL) ]
+| ) [ "myalias1"."ups", "myalias0"."part" NOT NULL, "myalias0"."tet" NOT NULL as "track" ] [ "myalias0"."part" NOT NULL, "track" NOT NULL, "track" NOT NULL as "myalias0"."tet", "sys"."count"() NOT NULL as "%1"."%1" ]
+) [ "myalias0"."part" NOT NULL as "part", "myalias0"."tet" NOT NULL as "tet", "%1"."%1" NOT NULL as "mycount", "track" NOT NULL ]
 
 query IIII rowsort
 select

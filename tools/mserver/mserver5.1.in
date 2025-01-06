@@ -4,14 +4,14 @@
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright 2024, 2025 MonetDB Foundation;
 .\" Copyright August 2008 - 2023 MonetDB B.V.;
 .\" Copyright 1997 - July 2008 CWI.
 .\"
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MSERVER5 1 2023-12-21 MonetDB "MonetDB Applications"
+.TH MSERVER5 1 2024-08-19 MonetDB "MonetDB Applications"
 .SH NAME
 mserver5 \- the MonetDB server version 5
 .SH SYNOPSIS
@@ -227,6 +227,7 @@ effects of MAL optimizers
 .B 268435456
 (HEAPMASK) trace/debug HEAPextend;
 used only for development & debugging
+.TP
 .B 536870912
 (FORCEMITOMASK) forcefully activate mitosis even on
 small tables, i.e., split small tables
@@ -282,6 +283,9 @@ This option is used by
 .IR monetdbd (1)
 when creating a new database with an administrator password and should
 not be used otherwise.
+.TP
+.B \-\-process\-wal\-and\-exit
+Stop the server immediately after processing the write-ahead log.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)
@@ -363,7 +367,7 @@ directory.
 .TP
 .B mapi_listenaddr
 The TCP/IP interface on which the server will listen for connections.
-Possibilites are:
+Possibilities are:
 .RS
 .TP
 .B localhost
@@ -459,7 +463,7 @@ no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,dead
 The sequential pipeline is identical to the default pipeline, except
 that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
-avoid ambigious output, by avoiding parallelism.
+avoid ambiguous output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
 sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .RE

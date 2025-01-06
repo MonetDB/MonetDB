@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,6 +26,7 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
+#include "sql_storage.h"
 
 #include "mal_authorize.h"
 #include "mal_exception.h"
@@ -253,10 +254,32 @@ mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *t
 	return t;
 }
 
+sql_table *
+mvc_create_remote_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, const char *loc, const char *action)
+{
+	sql_table *t = NULL;
+	switch(mvc_create_remote(&t, sql, s, tname, SQL_DECLARED_TABLE, loc)) {
+		case -1:
+			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		case -2:
+		case -3:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: transaction conflict detected", action);
+		case -4:
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: the partition's expression is too long", action);
+		case -5:
+			return NULL;
+		default:
+			break;
+	}
+	if (as_subquery(sql, t, tt_remote, sq, column_spec, action) != 0)
+		return NULL;
+	return t;
+}
+
 static char *
 table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
-	/* create a descriptive name like table_col_pkey */
+	/* create a descriptive name like table_col1_col2_pkey */
 	char *suffix;		/* stores the type of this constraint */
 	dnode *nms = NULL;
 	char *buf;
@@ -264,24 +287,28 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 	switch (s->token) {
 		case SQL_UNIQUE:
-			suffix = "_unique";
+			suffix = "unique";
+			nms = s->data.lval->h;	/* list of columns */
+			break;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:
+			suffix = "nndunique";
 			nms = s->data.lval->h;	/* list of columns */
 			break;
 		case SQL_PRIMARY_KEY:
-			suffix = "_pkey";
+			suffix = "pkey";
 			nms = s->data.lval->h;	/* list of columns */
 			break;
 		case SQL_FOREIGN_KEY:
-			suffix = "_fkey";
-			nms = s->data.lval->h->next->data.lval->h;	/* list of colums */
+			suffix = "fkey";
+			nms = s->data.lval->h->next->data.lval->h;	/* list of columns */
 			break;
 		case SQL_CHECK:
-			suffix = "_check";
+			suffix = "check";
 			char name[512], name2[512], *nme, *nme2;
 			bool found;
 			do {
 				nme = number2name(name, sizeof(name), ++sql->label);
-				buflen = snprintf(name2, sizeof(name2), "%s_%s%s", t->base.name, nme, suffix);
+				buflen = snprintf(name2, sizeof(name2), "%s_%s_%s", t->base.name, nme, suffix);
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
 			} while (found);
@@ -289,7 +316,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 			strcpy(buf, nme2);
 			return buf;
 		default:
-			suffix = "_?";
+			suffix = "?";
 			nms = NULL;
 	}
 
@@ -317,13 +344,13 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 	/* add suffix */
 	slen = strlen(suffix);
-	while (len + slen >= buflen) {
+	while (len + 1 + slen >= buflen) {
 		size_t nbuflen = buflen + BUFSIZ;
 		char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
 		buf = nbuf;
 		buflen = nbuflen;
 	}
-	snprintf(buf + len, buflen - len, "%s", suffix);
+	snprintf(buf + len, buflen - len, "_%s", suffix);
 	return buf;
 }
 
@@ -375,7 +402,7 @@ static key_type
 token2key_type(int token)
 {
 		switch (token) {
-		case SQL_UNIQUE: 					return ukey;
+		case SQL_UNIQUE:					return ukey;
 		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
 		case SQL_PRIMARY_KEY:				return pkey;
 		case SQL_CHECK:						return ckey;
@@ -390,9 +417,11 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel *rel = rel_basetable(sql, t, t->base.name);
-	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.sym, sql_sel | sql_no_subquery, ek);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery, ek);
+
 	if (!e || !rel || !is_basetable(rel->op))
 		return NULL;
+	e->comment = sa_strdup(sql->sa, s->data.lval->h->next->data.sval);
 	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);
@@ -442,8 +471,8 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			return res;
 		}
 		char* check = NULL;
+		sql_rel* check_rel = NULL;
 		if (kt == ckey) {
-			sql_rel* check_rel = NULL;
 			if ((check_rel = create_check_plan(query, s, t)) == NULL) {
 				return -3;
 			}
@@ -460,6 +489,32 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			default:
 				break;
 		}
+		if (check) {
+			sql_rel* btrel = check_rel->l;
+			node* n = NULL;
+			for (n = btrel->exps->h; n; n = n->next) {
+				sql_exp* e = n->data;
+				const char *nm = e->alias.name;
+				sql_column *c = mvc_bind_column(sql, t, nm);
+				if (!c) {
+					(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT CHECK: no such column '%s' for table '%s'",
+							nm, t->base.name);
+					return SQL_ERR;
+				}
+				switch (mvc_create_kc(sql, k, c)) {
+					case -1:
+						(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						return SQL_ERR;
+					case -2:
+					case -3:
+						(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT CHECK: transaction conflict detected");
+						return SQL_ERR;
+					default:
+						break;
+				}
+			}
+		}
+		else
 		switch (mvc_create_kc(sql, k, cs)) {
 			case -1:
 				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1044,6 +1099,9 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	if (l->h->next->next)
 		opt_list = l->h->next->next->data.lval;
 
+	if (ctype && ctype->type->eclass == EC_DEC && !ctype->digits && !ctype->scale) /* default 18,3 */
+		ctype = sql_bind_subtype(query->sql->sa, "decimal", 18, 3);
+
 	if (cname && ctype) {
 		sql_column *cs = NULL;
 
@@ -1087,7 +1145,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		(partition_find_part(sql->session->tr, t, NULL) &&
 			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
 			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
-		char *msg = "";
+		const char *msg = "";
 
 		switch (s->token) {
 		case SQL_TABLE:
@@ -1540,18 +1598,32 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 							 TABLE_TYPE_DESCRIPTION(tt, properties));
 
 		/* create table */
-		if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
-			rel_destroy(sq);
-			return NULL;
+		if (tt == tt_remote) {
+			if (!mapiuri_valid(loc))
+				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
+			if ((t = mvc_create_remote_as_subquery(sql, sq, s, name, column_spec, loc, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
+				rel_destroy(sq);
+				return NULL;
+			}
+		} else {
+			if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
+				rel_destroy(sq);
+				return NULL;
+			}
 		}
 
 		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
-		res = rel_table(sql, ddl_create_table, s->base.name, t, temp);
-		if (with_data) {
-			res = rel_insert(query->sql, res, sq);
-		} else {
+		if (tt == tt_remote) {
+			res = rel_create_remote(sql, ddl_create_table, s->base.name, t, pw_encrypted, username, password);
+			/* we cannot insert in remote so just remove the subquery */
 			rel_destroy(sq);
+		} else {
+			res = rel_table(sql, ddl_create_table, s->base.name, t, (tt == tt_table)?temp:SQL_PERSIST);
+			if (with_data) {
+				res = rel_insert(query->sql, res, sq);
+			} else {
+				rel_destroy(sq);
+			}
 		}
 		return res;
 	}

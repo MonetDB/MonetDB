@@ -127,7 +127,7 @@ INSERT INTO "t920585"."schemas" VALUES (4535, 'tmp', 2)
 statement ok
 CREATE VIEW "t920585"."tables" AS SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "t920585"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "t920585"."ttables" AS t) AS tables
 
-query TTIIII rowsort
+query TTIIII nosort
 select name, query, istable, system, commit_action, "temporary"
 	from (
 		select *
@@ -142,7 +142,7 @@ select name, query, istable, system, commit_action, "temporary"
 ----
 180 values hashing to be349abacf34264a8167c64792dae275
 
-query TTTTTTTTTT rowsort
+query TTTTTTTTTT nosort
 select * from (
 SELECT 'null' AS TABLE_CAT,
 	schemas.name AS TABLE_SCHEM,

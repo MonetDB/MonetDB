@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,7 +18,6 @@
 #include "geom.h"
 #include "geod.h"
 #include "geom_atoms.h"
-#include "gdk_logger.h"
 #include "mal_exception.h"
 
 mbr mbrNIL = {0}; // will be initialized properly by geom prelude
@@ -81,7 +80,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 
@@ -115,7 +114,7 @@ wkbCollectAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const b
 		goto free;
 	}
 
-	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	//Create a new BAT column of wkb type, with length equal to the number of groups
 	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
@@ -241,7 +240,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 	int geomCollectionType = -1;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(MAL, "geom.Collect", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		return msg;
 	}
 
@@ -277,7 +276,7 @@ wkbCollectAggr (wkb **out, const bat *bid) {
 		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
     // Cleanup
-    // Data ownership has been transfered from unionGroup elements to
+    // Data ownership has been transferred from unionGroup elements to
     // collection. Check libgeos GEOSGeom_createCollection_r(geoshandle, ) for more.
     bat_iterator_end(&bi);
     GEOSGeom_destroy_r(geoshandle, collection);
@@ -297,7 +296,7 @@ wkbCollect (wkb **out, wkb * const *a, wkb * const *b) {
 	int type_a, type_b;
 
 	if ((err = wkbGetCompatibleGeometries(a, b, &geoms[0], &geoms[1])) != MAL_SUCCEED)
-		throw(MAL,"geom.Collect", "%s", err);
+		return err;
 
 	//int srid = GEOSGetSRID_r(geoshandle, ga);
 	type_a = GEOSGeomTypeId_r(geoshandle, geoms[0]);
@@ -2078,7 +2077,7 @@ dumpPointsPolygon(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry, un
 	const int lvlDigitsNum = 10;	//MAX_UNIT = 4,294,967,295
 	size_t pathLength = strlen(path);
 	char *newPath;
-	char *extraStr = ",";
+	const char extraStr[] = ",";
 	int extraLength = 1;
 
 	//get the exterior ring of the polygon
@@ -2133,7 +2132,7 @@ dumpPointsMultiGeometry(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeomet
 	unsigned int lvl = 0;
 	size_t pathLength = strlen(path);
 	char *newPath = NULL;
-	char *extraStr = ",";
+	const char extraStr[] = ",";
 	int extraLength = 1;
 
 	geometriesNum = GEOSGetNumGeometries_r(geoshandle, geosGeometry);
@@ -2916,7 +2915,7 @@ wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag)
 
 	if ((geosGeometry = GEOSGeom_createPoint_r(geoshandle, seq)) == NULL) {
 		GEOSCoordSeq_destroy_r(geoshandle, seq);
-		throw(MAL, "geom.MakePoint", SQLSTATE(38000) "Geos opertion GEOSGeometry failed");
+		throw(MAL, "geom.MakePoint", SQLSTATE(38000) "Geos operation GEOSGeometry failed");
 	}
 
 	*out = geos2wkb(geosGeometry);
@@ -3454,8 +3453,7 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	if (size == 1) {
 		msg = wkbFromWKB(outWKB, &aWKB);
 		if (msg) {
-			freeException(msg);
-			throw(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			return msg;
 		}
 		return MAL_SUCCEED;
 	}
@@ -3464,14 +3462,21 @@ wkbMakeLineAggrArray(wkb **outWKB, wkb **inWKB_array, int size) {
 	outCoordSeq = GEOSCoordSeq_create_r(geoshandle, size, 2);
 
 	msg = wkbExtractPointToCoordSeq(&outCoordSeq, aWKB, 0);
+	if (msg)
+		return msg;
 	msg = wkbExtractPointToCoordSeq(&outCoordSeq, bWKB, 1);
+	if (msg)
+		return msg;
 
 	// add one more segment for each following row
 	for (i = 2; msg == MAL_SUCCEED && i < size; i++) {
 		msg = wkbExtractPointToCoordSeq(&outCoordSeq, inWKB_array[i], i);
+		if (msg)
+			return msg;
 	}
 	if ((outGeometry = GEOSGeom_createLineString_r(geoshandle, outCoordSeq)) == NULL) {
 		msg = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_createLineString failed");
+		return msg;
 	}
 	*outWKB = geos2wkb(outGeometry);
 	GEOSGeom_destroy_r(geoshandle, outGeometry);
@@ -3491,7 +3496,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	str msg = MAL_SUCCEED;
 
 	oid min, max;
-	BUN ngrp;
+	BUN ngrp = 0;
 	struct canditer ci;
 
 	oid lastGrp = -1;
@@ -3506,7 +3511,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 	if ((b = BATdescriptor(*bid)) == NULL ||
 		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
 		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
-		msg = createException(MAL, "aggr.MakeLine", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
 
@@ -3540,7 +3545,7 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 		goto free;
 	}
 
-	//Create a new BAT column of wkb type, with lenght equal to the number of groups
+	//Create a new BAT column of wkb type, with length equal to the number of groups
 	if ((out = COLnew(min, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
@@ -3590,9 +3595,6 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 
 	if (BUNappendmulti(out, lines, ngrp, false) != GDK_SUCCEED) {
 		msg = createException(MAL, "geom.Union", SQLSTATE(38000) "BUNappend operation failed");
-		for (BUN i = 0; i < ngrp; i++)
-			GDKfree(lines[i]);
-		GDKfree(lines);
 		bat_iterator_end(&bi);
 		goto free;
 	}
@@ -3611,6 +3613,11 @@ wkbMakeLineAggrSubGroupedCand(bat *outid, const bat *bid, const bat *gid, const 
 		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
 free:
+	if (lines) {
+		for (BUN i = 0; i < ngrp; i++)
+			GDKfree(lines[i]);
+		GDKfree(lines);
+	}
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (g)
@@ -4862,12 +4869,12 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((bpy = BATdescriptor(*point_y)) == NULL) {
 		BBPunfix(bpx->batCacheid);
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/*Check BATs alignment */
@@ -4931,11 +4938,11 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 
 	/*Get the BATs */
 	if ((bpx = BATdescriptor(*point_x)) == NULL) {
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bpy = BATdescriptor(*point_y)) == NULL) {
 		BBPunfix(bpx->batCacheid);
-		throw(MAL, "geom.point", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "geom.point", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/*Check BATs alignment */
@@ -5633,7 +5640,7 @@ batgeom_YMaxFromMBR_mbr(bat *ret, bat *b)
 static mel_atom geom_init_atoms[] = {
  { .name="mbr", .basetype="lng", .size=sizeof(mbr), .tostr=mbrTOSTR, .fromstr=mbrFROMSTR, .hash=mbrHASH, .null=mbrNULL, .cmp=mbrCOMP, .read=mbrREAD, .write=mbrWRITE, },
  { .name="wkb", .tostr=wkbTOSTR, .fromstr=wkbFROMSTR, .hash=wkbHASH, .null=wkbNULL, .cmp=wkbCOMP, .read=wkbREAD, .write=wkbWRITE, .put=wkbPUT, .del=wkbDEL, .length=wkbLENGTH, .heap=wkbHEAP, },
- { .name="wkba", .tostr=wkbaTOSTR, .fromstr=wkbaFROMSTR, .null=wkbaNULL, .hash=wkbaHASH, .cmp=wkbaCOMP, .read=wkbaREAD, .write=wkbaWRITE, .put=wkbaPUT, .del=wkbaDEL, .length=wkbaLENGTH, .heap=wkbaHEAP, },  { .cmp=NULL }
+ { .cmp=NULL }
 };
 static mel_func geom_init_funcs[] = {
  //TODO Fill in descriptions
@@ -5701,7 +5708,6 @@ static mel_func geom_init_funcs[] = {
  command("geom", "Polygon", wkbMakePolygon, false, "Returns a Polygon created from the provided LineStrings", args(1,4, arg("",wkb),arg("",wkb),batarg("",wkb),arg("",int))),
  command("geom", "ExteriorRing", wkbExteriorRing, false, "Returns a line string representing the exterior ring of the POLYGON geometry. Return NULL if the geometry is not a polygon.", args(1,2, arg("",wkb),arg("w",wkb))),
  command("geom", "InteriorRingN", wkbInteriorRingN, false, "Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.", args(1,3, arg("",wkb),arg("w",wkb),arg("n",int))),
- command("geom", "InteriorRings", wkbInteriorRings, false, "Returns an 'array' with all the interior rings of the polygon", args(1,2, arg("",wkba),arg("w",wkb))),
  command("geom", "IsClosed", wkbIsClosed, false, "Returns TRUE if the LINESTRING's start and end points are coincident.", args(1,2, arg("",bit),arg("w",wkb))),
  command("geom", "IsEmpty", wkbIsEmpty, false, "Returns true if this Geometry is an empty geometry.", args(1,2, arg("",bit),arg("w",wkb))),
  command("geom", "IsRing", wkbIsRing, false, "Returns TRUE if this LINESTRING is both closed and simple.", args(1,2, arg("",bit),arg("w",wkb))),

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -231,7 +231,7 @@ setup_compression(stream *inner, pump_state *state, int level)
 	// When pumping data into the compressor, the output buffer must be
 	// sufficiently large to hold all output caused by the current input. We
 	// will restrict our writes to be at most WRITE_CHUCK large and allocate
-	// a buffer that can accomodate even the worst case amount of output
+	// a buffer that can accommodate even the worst case amount of output
 	// caused by input of that size.
 
 	// The required size depends on the preferences so we set those first.

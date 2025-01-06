@@ -10,43 +10,43 @@ INSERT INTO t1114540 VALUES (11)
 statement ok
 INSERT INTO t1114540 VALUES (12)
 
-query I rowsort
+query I nosort
 SELECT * FROM t1114540 WHERE (id=10) OR (id=11) ORDER BY id
 ----
 10
 11
 
-query I rowsort
+query I nosort
 SELECT * FROM t1114540 WHERE ((id=10) OR (id=11)) OR id=12 ORDER BY id
 ----
 10
 11
 12
 
-query I rowsort
+query I nosort
 SELECT id FROM t1114540 WHERE id<11 OR id>11 ORDER BY id
 ----
 10
 12
 
-query I rowsort
+query I nosort
 SELECT id FROM t1114540 WHERE id>11 OR id<11 ORDER BY id
 ----
 10
 12
 
-query I rowsort
+query I nosort
 SELECT id FROM t1114540 WHERE id>=11 OR id<=10 ORDER BY id
 ----
 10
 11
 12
 
-query I rowsort
+query I nosort
 SELECT id FROM t1114540 WHERE id>12 OR id<10 ORDER BY id
 ----
 
-query I rowsort
+query I nosort
 SELECT id FROM t1114540 WHERE id<11 OR id IS NULL ORDER BY id
 ----
 10

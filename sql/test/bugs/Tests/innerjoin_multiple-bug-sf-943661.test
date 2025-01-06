@@ -1,4 +1,4 @@
-query TTT rowsort
+query TTT nosort
 select schemas.name, tables.name, columns.name from
 	columns
 		inner join
@@ -11,9 +11,9 @@ select schemas.name, tables.name, columns.name from
 			'objects', 'keys', 'modules', 'sequences')
  order by schemas.name, tables.name, columns.name
 ----
-435 values hashing to bb81bada51b1bbe50f43e6f3cc184250
+438 values hashing to 2bd7ef18b01fbee6f139b64003828536
 
-query TTT rowsort
+query TTT nosort
 select s.name, t.name, c.name from
 	columns c
 		inner join
@@ -26,5 +26,5 @@ select s.name, t.name, c.name from
 			'objects', 'keys', 'modules', 'sequences')
  order by s.name, t.name, c.name
 ----
-435 values hashing to bb81bada51b1bbe50f43e6f3cc184250
+438 values hashing to 2bd7ef18b01fbee6f139b64003828536
 

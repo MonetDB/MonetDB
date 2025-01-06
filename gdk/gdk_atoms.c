@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1274,7 +1274,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 			p = pe;
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
-		    || !isfinite(d) /* no NaN or Infinte */
+		    || !isfinite(d) /* no NaN or Infinite */
 		    ) {
 			GDKerror("overflow or not a number\n");
 			return -1;
@@ -1290,7 +1290,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 ssize_t
 dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 {
-	int i;
+	int l = 0;
 
 	atommem(dblStrlen);
 	if (is_dbl_nil(*src)) {
@@ -1301,12 +1301,19 @@ dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 		strcpy(*dst, str_nil);
 		return 1;
 	}
-	for (i = 4; i < 18; i++) {
-		snprintf(*dst, *len, "%.*g", i, *src);
+	if (*src <= (dbl) 999999999999999 &&
+	    *src >= (dbl) -999999999999999 &&
+	    (dbl) (int) *src == *src) {
+		l = snprintf(*dst, *len, "%.0f", *src);
+		if (strtod(*dst, NULL) == *src)
+			return (ssize_t) l;
+	}
+	for (int i = 4; i < 18; i++) {
+		l = snprintf(*dst, *len, "%.*g", i, *src);
 		if (strtod(*dst, NULL) == *src)
 			break;
 	}
-	return (ssize_t) strlen(*dst);
+	return (ssize_t) l;
 }
 
 atom_io(dbl, Lng, lng)
@@ -1364,7 +1371,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 ssize_t
 fltToStr(char **dst, size_t *len, const flt *src, bool external)
 {
-	int i;
+	int l = 0;
 
 	atommem(fltStrlen);
 	if (is_flt_nil(*src)) {
@@ -1375,12 +1382,19 @@ fltToStr(char **dst, size_t *len, const flt *src, bool external)
 		strcpy(*dst, str_nil);
 		return 1;
 	}
-	for (i = 4; i < 10; i++) {
-		snprintf(*dst, *len, "%.*g", i, *src);
+	if (*src <= (flt) 9999999 &&
+	    *src >= (flt) -9999999 &&
+	    (flt) (int) *src == *src) {
+		l = snprintf(*dst, *len, "%.0f", *src);
+		if (strtof(*dst, NULL) == *src)
+			return (ssize_t) l;
+	}
+	for (int i = 4; i < 10; i++) {
+		l = snprintf(*dst, *len, "%.*g", i, *src);
 		if (strtof(*dst, NULL) == *src)
 			break;
 	}
-	return (ssize_t) strlen(*dst);
+	return (ssize_t) l;
 }
 
 atom_io(flt, Int, int)
@@ -1736,11 +1750,8 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	s = *tostr;
 
 	for (i = 0; i < p->nitems; i++) {
-		int val = (p->data[i] >> 4) & 15;
-
-		*s++ = hexit[val];
-		val = p->data[i] & 15;
-		*s++ = hexit[val];
+		*s++ = hexit[(p->data[i] >> 4) & 15];
+		*s++ = hexit[p->data[i] & 15];
 	}
 	*s = '\0';
 	return (ssize_t) (s - *tostr);
@@ -1797,7 +1808,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	   // Read the values of the blob.
 	 */
 	for (i = 0; i < nitems; ++i) {
-		char res = 0;
+		int res = 0;
 
 		for (;;) {
 			if (*s >= '0' && *s <= '9') {
@@ -1831,7 +1842,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		}
 		s++;
 
-		result->data[i] = res;
+		result->data[i] = (uint8_t) res;
 	}
 	while (GDKisspace(*s))
 		s++;

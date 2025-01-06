@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -277,7 +277,15 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 	case e_func: {
 		if (e->l)
 			nr += exps_mark_used(subrel, e->l, local_proj);
-		assert(!e->r);
+		if (e->r) {
+			list *r = e->r;
+			list *obes = r->h->data;
+			nr += exps_mark_used(subrel, obes, local_proj);
+			if (r->h->next) {
+				list *exps = r->h->next->data;
+				nr += exps_mark_used(subrel, exps, local_proj);
+			}
+		}
 		break;
 	}
 	case e_cmp:
@@ -389,7 +397,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 			}
 		}
 	}
-	/* for count/rank we need atleast one column */
+	/* for count/rank we need at least one column */
 	if (!nr && subrel && (is_project(subrel->op) || is_base(subrel->op)) && !list_empty(subrel->exps) &&
 		(is_simple_project(rel->op) && project_unsafe(rel, false))) {
 		sql_exp *e = subrel->exps->h->data;
@@ -532,6 +540,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_update:
 	case op_delete:
 		if (proj && rel->r) {
+			rel_used(rel);
 			sql_rel *r = rel->r;
 
 			if (!list_empty(r->exps)) {
@@ -677,7 +686,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				node *next = n->next;
 				sql_exp *e = n->data;
 
-				/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by rel_exps_mark_used */
+				/* at least one (needed for crossproducts, count(*), rank() and single value projections) !, handled by rel_exps_mark_used */
 				if (!e->used && list_length(rel->exps) > 1)
 					list_remove_node(rel->exps, NULL, n);
 				n = next;
@@ -711,7 +720,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 				node *next = n->next;
 				sql_exp *e = n->data;
 
-				/* atleast one (needed for crossproducts, count(*), rank() and single value projections) */
+				/* at least one (needed for crossproducts, count(*), rank() and single value projections) */
 				if (!e->used && list_length(rel->exps) > 1)
 					list_remove_node(rel->exps, NULL, n);
 				n = next;
@@ -1380,6 +1389,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			int fnd = 1;
 			for (node *n = obes->h; n && fnd; n = n->next) {
 				sql_exp *obe = n->data;
+				int part = is_partitioning(obe);
 				int asc = is_ascending(obe);
 				int nl = nulls_last(obe);
 				/* only simple rename expressions */
@@ -1392,6 +1402,8 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 					if (exp_is_atom(pe))
 						return rel;
 					pe = exp_ref(v->sql, pe);
+					if (part)
+						set_partitioning(pe);
 					if (asc)
 						set_ascending(pe);
 					if (nl)

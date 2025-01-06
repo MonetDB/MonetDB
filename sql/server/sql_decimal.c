@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -201,13 +201,13 @@ number_bits(lng val)
 		val = -val;
 	unsigned bits = 0;
 #ifdef HAVE_HGE
-	hge m = ((hge)1)<<bits;
-	for( ;(val & ~m) > m; bits++)
-		m = ((hge)1)<<bits;
+	hge m = (hge)1 << bits;
+	for( ; (val & ~m) > m; bits++)
+		m = (hge)1 << bits;
 #else
-	lng m = ((lng)1)<<bits;
-	for( ;(val & ~m) > m; bits++)
-		m = ((lng)1)<<bits;
+	lng m = (lng)1 << bits;
+	for( ; (val & ~m) > m; bits++)
+		m = ((lng)1) << bits;
 #endif
 	if (!bits)
 		bits = 1;

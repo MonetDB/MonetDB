@@ -12,7 +12,10 @@ JDBC_EXTRA_ARGS=os.getenv('JDBC_EXTRA_ARGS', default='')
 
 URL=f"jdbc:monetdb://{HOST}:{MAPIPORT}/{TSTDB}?user={USER}&password={PASSWORD}{JDBC_EXTRA_ARGS}"
 
-cmd = ['java', 'JDBC_API_Tester', URL]
+JDBC_API_TESTER_ARGS=''
+# JDBC_API_TESTER_ARGS='-skipMALoutput'
+
+cmd = ['java', 'JDBC_API_Tester', URL, JDBC_API_TESTER_ARGS]
 try:
     p = run(cmd, stdout=PIPE, stderr=PIPE, check=True, encoding='utf-8')
     sys.stderr.write(p.stdout)

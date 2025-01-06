@@ -4,7 +4,7 @@
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
 .\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 2024 MonetDB Foundation;
+.\" Copyright 2024, 2025 MonetDB Foundation;
 .\" Copyright August 2008 - 2023 MonetDB B.V.;
 .\" Copyright 1997 - July 2008 CWI.
 .\"
@@ -73,7 +73,7 @@ can be omitted if it is the last option.
 .TP
 \fB\-\-host=\fP\fIhostname\fP (\fB\-h\fP \fIhostname\fP)
 Specify the name of the host on which the server runs (default:
-localhost).
+.BR localhost ).
 .TP
 \fB\-\-port=\fP\fIportnr\fP (\fB\-p\fP \fIportnr\fP)
 Specify the portnumber of the server (default: 50000).
@@ -90,13 +90,15 @@ When dumping the table data, use INSERT INTO statements, rather than
 COPY INTO + CSV values.
 INSERT INTO statements are more portable, and necessary when the
 load of the dump is processed by e.g. a JDBC application.
+When the dump is to be used to feed back into MonetDB, COPY
+INTO is preferred since that is processed more efficiently.
 .TP
 \fB\-\-noescape\fP (\fB\-e\fP)
 When dumping the table data, use the NO ESCAPE option on the COPY INTO
 query.
 .TP
 \fB\-\-functions\fP (\fB\-f\fP)
-Only dump functions definitions.
+Only dump function definitions.
 .TP
 \fB\-\-table=[\fIschema\fP\fB.\fP]\fItable\fP (\fB\-t\fP [\fIschema\fP\fB.\fP]\fItable\fP)
 Only dump the specified table.
@@ -135,7 +137,7 @@ option are specified, the last one is used.
 The
 .B \-\-outputdir
 option is not compatible with the
-\B \-\-inserts
+.B \-\-inserts
 option.
 .TP
 \fB\-\-compression=\fP\fIextension\fP (\fB\-x\fP \fIextension\fP)

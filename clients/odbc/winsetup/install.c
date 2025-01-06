@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -119,7 +119,7 @@ RemoveMyDriver(const char *drivername)
 	DWORD valtype, valsize, rc;
 
 	/* most of this is equivalent to what SQLRemoveDriver is
-	   suppposed to do, except that it consistently causes a
+	   supposed to do, except that it consistently causes a
 	   crash, so we do it ourselves */
 	snprintf(buf, sizeof(buf), "SOFTWARE\\ODBC\\ODBCINST.INI\\%s",
 			 drivername);

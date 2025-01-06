@@ -1,4 +1,4 @@
-query TTI rowsort
+query TTI nosort
 SELECT   a.name, b.name, COUNT(*)
 FROM     tables a, columns ta,
          tables b, columns tb

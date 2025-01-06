@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -70,7 +70,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (t->kind == FUNCTIONsymbol && t->def->stmt[0]->fcnname[0] == '#')
 						continue;
 					char buf[1024];
-					char *comment = NULL;
+					const char *comment = NULL;
 					if (t->kind == FUNCTIONsymbol) {
 						comment = t->def->help;
 						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));

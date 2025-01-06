@@ -85,3 +85,4 @@ drop schema foo cascade
 
 statement ok
 drop schema bar cascade
+

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -20,7 +20,6 @@
 #include "mal_backend.h"
 #include "mal_builder.h"
 #include "mal_linker.h"
-#include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_gencode.h"
@@ -408,9 +407,9 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		m->sa = sa_reset(m->sa);
 	m->scanner.mode = LINE_N;
 	m->scanner.rs = c->fdin;
-	scanner_query_processed(&(m->scanner));
+	mvc_query_processed(m);
 
-	if ((mdbe->msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED)
+	if ((mdbe->msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED)
 		goto cleanup;
 	if (prepare_id)
 		m->emode = m_prepare;
@@ -1169,7 +1168,7 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		int scale		= results[i].scale;
 
 		if (b == NULL) {
-			error = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor");
+			error = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			break;
 		}
 
@@ -1252,7 +1251,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		!(bcolumn	= BATdescriptor(results[5].id))	||
 		!(bimpl		= BATdescriptor(results[6].id)))
 	{
-		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "monetdbe.monetdbe_prepare_cb", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto cleanup;
 	}
 
@@ -2702,7 +2701,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 	// otherwise we have to convert the column
 	b = BATdescriptor(result->monetdbe_resultset->cols[column_index].b);
 	if (!b) {
-		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", RUNTIME_OBJECT_MISSING));
+		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING));
 		goto cleanup;
 	}
 	bat_type = b->ttype;

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1017,7 +1017,7 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
 	BAT *b, *bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batpcre.replace_first", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batpcre.replace_first", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	msg = pcre_replace_bat(&bn, b, *pat, *repl, *flags, false);
 	if (msg == MAL_SUCCEED) {
@@ -1623,8 +1623,8 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 			}
 
 			else
-				rev = BATnegcands(b->batCount, bn);
-			/* BAT *rev = BATnegcands(b->batCount, bn); */
+				rev = BATnegcands(0, b->batCount, bn);
+			/* BAT *rev = BATnegcands(0, b->batCount, bn); */
 			BBPunfix(bn->batCacheid);
 			bn = rev;
 		}

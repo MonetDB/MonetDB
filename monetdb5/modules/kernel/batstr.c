@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -21,7 +21,7 @@
 
 /* In order to make available a bulk version of a string function with
  * candidates, all possible combinations of scalar/vector version of
- * each argument must be avaiable for the function. Obviously this won't
+ * each argument must be available for the function. Obviously this won't
  * scale for functions with a large number of arguments, so we keep a
  * blacklist for functions without candidate versions. */
 static const char *batstr_funcs_with_no_cands[8] =

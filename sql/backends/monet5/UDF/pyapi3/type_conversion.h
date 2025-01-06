@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -35,7 +35,7 @@ int hge_to_string(char *str, hge);
 //! Converts a base-10 string to a hge value
 str str_to_hge(const char *ptr, size_t maxsize, hge *value);
 //! Converts a base-10 utf32-encoded string to a hge value
-str unicode_to_hge(Py_UNICODE *utf32, size_t maxsize, hge *value);
+str unicode_to_hge(wchar_t *utf32, size_t maxsize, hge *value);
 //! Converts a PyObject to a hge value
 str pyobject_to_hge(PyObject **ptr, size_t maxsize, hge *value);
 //! Create a PyLongObject from a hge integer
@@ -52,21 +52,21 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value);
 
 str pyobject_to_date(PyObject **ptr, size_t maxsize, date *value);
 str str_to_date(const char *ptr, size_t maxsize, date *value);
-str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value);
+str unicode_to_date(wchar_t *ptr, size_t maxsize, date *value);
 
 str pyobject_to_daytime(PyObject **ptr, size_t maxsize, daytime *value);
 str str_to_daytime(const char *ptr, size_t maxsize, daytime *value);
-str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value);
+str unicode_to_daytime(wchar_t *ptr, size_t maxsize, daytime *value);
 
 str pyobject_to_timestamp(PyObject **ptr, size_t maxsize, timestamp *value);
 str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value);
-str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value);
+str unicode_to_timestamp(wchar_t *ptr, size_t maxsize, timestamp *value);
 
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
     str str_to_##tpe(const char *ptr, size_t maxsize, tpe *value);          \
-    str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value);                  \
+    str unicode_to_##tpe(wchar_t *ptr, size_t maxsize, tpe *value);                  \
     str pyobject_to_##tpe(PyObject **ptr, size_t maxsize, tpe *value);
 
 CONVERSION_FUNCTION_HEADER_FACTORY(bte)

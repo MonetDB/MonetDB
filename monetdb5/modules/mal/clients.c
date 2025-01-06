@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -338,10 +338,10 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.setmemorylimit", "Illegal session id");
 	if (is_int_nil(limit))
 		throw(MAL, "clients.setmemorylimit",
-			  "The memmory limit cannot be NULL");
+			  "The memory limit cannot be NULL");
 	if (limit < 0)
 		throw(MAL, "clients.setmemorylimit",
-			  "The memmory limit cannot be negative");
+			  "The memory limit cannot be negative");
 
 	lng mlimit = (lng) limit << 20;
 
@@ -475,16 +475,10 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "clients.setquerytimeout",
 							  "Session not active anymore");
 	else {
-		/* when testing (FORCEMITOMASK), reduce timeout of 1 sec to 1 msec */
-		lng timeout_micro = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK
+		/* when testing (TESTINGMASK), reduce timeout of 1 sec to 1 msec */
+		lng timeout_micro = ATOMIC_GET(&GDKdebug) & TESTINGMASK
 				&& qto == 1 ? 1000 : (lng) qto * 1000000;
 		mal_clients[idx].querytimeout = timeout_micro;
-		if (timeout_micro != 1000) {
-			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-			if (qry_ctx) {
-				qry_ctx->endtime = qry_ctx->starttime && timeout_micro ? qry_ctx->starttime + timeout_micro : 0;
-			}
-		}
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -580,7 +574,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Long running queries are traced in the logger
  * with a message from the interpreter.
- * This value should be set to minutes to avoid a lengthly log */
+ * This value should be set to minutes to avoid a lengthy log */
 static str
 CLTsetPrintTimeout(void *ret, const int *secs)
 {
@@ -804,7 +798,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "quit", CLTquit, true, "Terminate the client session.", args(1,1, arg("",void))),
  pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
  command("clients", "getLogins", CLTLogin, false, "Pseudo bat of client id and login time.", args(2,2, batarg("user",oid),batarg("start",str))),
- pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligble statement.", args(0,1, arg("id",int))),
+ pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligible statement.", args(0,1, arg("id",int))),
  pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "wakeup", CLTwakeup, true, "Wakeup a client process", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "getprofile", CLTgetProfile, false, "Retrieve the profile settings for a client", args(5,5, arg("opt",str),arg("q",int),arg("s",int),arg("w",int),arg("m",int))),

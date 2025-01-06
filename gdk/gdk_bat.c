@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -575,7 +575,6 @@ BATclear(BAT *b, bool force)
 
 	/* kill all search accelerators */
 	HASHdestroy(b);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
@@ -667,7 +666,6 @@ BATfree(BAT *b)
 	}
 	MT_rwlock_rdunlock(&b->thashlock);
 	HASHfree(b);
-	IMPSfree(b);
 	OIDXfree(b);
 	STRMPfree(b);
 	RTREEfree(b);
@@ -1200,6 +1198,9 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 							maxvalp = t;
 						}
 					}
+				} else {
+					b->tnil = true;
+					b->tnonil = false;
 				}
 				p++;
 			}
@@ -1219,6 +1220,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
+			b->tnil = false;
+			b->tnonil = true;
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				mskSetVal(b, p, *(msk *) t);
@@ -1255,12 +1258,16 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 							maxvalp = t;
 						}
 					}
+				} else {
+					b->tnil = true;
+					b->tnonil = false;
 				}
 				p++;
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
 		}
 	} else {
+		/* inserting nils, unless it's msk */
 		for (BUN i = 0; i < count; i++) {
 			gdk_return rc = tfastins_nocheck(b, p, t);
 			if (rc != GDK_SUCCEED) {
@@ -1273,6 +1280,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			p++;
 		}
 		nunique = b->thash ? b->thash->nunique : 0;
+		b->tnil = b->ttype != TYPE_msk;
+		b->tnonil = false;
 	}
 	MT_lock_set(&b->theaplock);
 	b->tminpos = bi.minpos;
@@ -1283,8 +1292,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	if (b->ttype == TYPE_oid) {
 		/* spend extra effort on oid (possible candidate list) */
 		if (values == NULL || is_oid_nil(((oid *) values)[0])) {
-			b->tnil = true;
-			b->tnonil = false;
 			b->tsorted = false;
 			b->trevsorted = false;
 			b->tkey = false;
@@ -1295,8 +1302,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				b->trevsorted = true;
 				b->tkey = true;
 				b->tseqbase = count == 1 ? ((oid *) values)[0] : oid_nil;
-				b->tnil = false;
-				b->tnonil = true;
 			} else {
 				if (!is_oid_nil(b->tseqbase) &&
 				    (count > 1 ||
@@ -1325,8 +1330,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			for (BUN i = 1; i < count; i++) {
 				if (is_oid_nil(((oid *) values)[i])) {
-					b->tnil = true;
-					b->tnonil = false;
 					b->tsorted = false;
 					b->trevsorted = false;
 					b->tkey = false;
@@ -1357,18 +1360,14 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 		}
 	} else if (!ATOMlinear(b->ttype)) {
-		b->tnil = b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	} else if (b->batCount == 0) {
 		if (values == NULL) {
 			b->tsorted = b->trevsorted = true;
 			b->tkey = count == 1;
-			b->tnil = true;
-			b->tnonil = false;
 			b->tunique_est = 1;
 		} else {
 			int c;
-			b->tnil = b->tnonil = false;
 			switch (count) {
 			case 1:
 				b->tsorted = b->trevsorted = b->tkey = true;
@@ -1415,11 +1414,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tnokey[0] = 0;
 		b->tnokey[1] = !b->tkey;
 		b->tunique_est = (double) (1 + b->tkey);
-		b->tnil |= values == NULL;
-		b->tnonil = false;
 	} else {
-		b->tnil |= values == NULL;
-		b->tnonil = false;
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
 	BATsetcount(b, p);
@@ -1428,7 +1423,6 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
-	IMPSdestroy(b);		/* no support for inserts in imprints yet */
 	OIDXdestroy(b);
 	STRMPdestroy(b);	/* TODO: use STRMPappendBitstring */
 	RTREEdestroy(b);
@@ -1533,7 +1527,6 @@ BUNdelete(BAT *b, oid o)
 		}
 	}
 	MT_lock_unset(&b->theaplock);
-	IMPSdestroy(b);
 	OIDXdestroy(b);
 	return GDK_SUCCEED;
 }
@@ -1697,7 +1690,6 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 			MT_lock_unset(&b->theaplock);
 		}
 		OIDXdestroy(b);
-		IMPSdestroy(b);
 		STRMPdestroy(b);
 		RTREEdestroy(b);
 
@@ -2340,7 +2332,7 @@ static gdk_return
 backup_new(Heap *hp, bool lock)
 {
 	int batret, bakret, ret = -1;
-	char *batpath, *bakpath;
+	char batpath[MAXPATH], bakpath[MAXPATH];
 	struct stat st;
 
 	char *bak_filename = NULL;
@@ -2349,9 +2341,8 @@ backup_new(Heap *hp, bool lock)
 	else
 		bak_filename = hp->filename;
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, bak_filename, "new");
-	if (batpath != NULL && bakpath != NULL) {
+	if (GDKfilepath(batpath, sizeof(batpath), hp->farmid, BATDIR, hp->filename, "new") == GDK_SUCCEED &&
+	    GDKfilepath(bakpath, sizeof(bakpath), hp->farmid, BAKDIR, bak_filename, "new") == GDK_SUCCEED) {
 		/* file actions here interact with the global commits */
 		if (lock)
 			BBPtmlock();
@@ -2377,8 +2368,6 @@ backup_new(Heap *hp, bool lock)
 		if (lock)
 			BBPtmunlock();
 	}
-	GDKfree(batpath);
-	GDKfree(bakpath);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 

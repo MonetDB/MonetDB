@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -28,6 +28,7 @@
 #include "rel_unnest.h"
 #include "rel_sequence.h"
 #include "rel_file_loader.h"
+#include "rel_optimizer_private.h"
 
 #define VALUE_FUNC(f) (f->func->type == F_FUNC || f->func->type == F_FILT)
 #define check_card(card,f) ((card == card_none && !f->res) || (CARD_VALUE(card) && f->res && VALUE_FUNC(f)) || card == card_loader || (card == card_relation && f->func->type == F_UNION))
@@ -258,12 +259,52 @@ rel_subquery_optname(sql_query *query, symbol *ast, list *refs)
 	return rel_table_optname(sql, sq, sn->name, refs);
 }
 
+static void
+rel_rename(mvc *sql, sql_rel *nrel, char *rname, sql_rel *brel)
+{
+	assert(is_project(nrel->op));
+	if (brel) {
+		if (is_project(nrel->op) && nrel->exps) {
+			for (node *ne = nrel->exps->h, *be = brel->exps->h; ne && be; ne = ne->next, be = be->next) {
+				sql_exp *e = ne->data;
+				sql_exp *b = be->data;
+				char *name = NULL;
+
+				if (!is_intern(e)) {
+					if (!exp_name(e))
+						name = make_label(sql->sa, ++sql->label);
+					noninternexp_setname(sql, e, rname, name);
+					set_basecol(e);
+					e->alias.label = b->alias.label;
+				}
+			}
+		}
+		list_hash_clear(nrel->exps);
+	} else if (is_project(nrel->op) && nrel->exps) {
+		node *ne = nrel->exps->h;
+
+		for (; ne; ne = ne->next) {
+			sql_exp *e = ne->data;
+			char *name = NULL;
+
+			if (!is_intern(e)) {
+				if (!exp_name(e))
+					name = make_label(sql->sa, ++sql->label);
+				noninternexp_setname(sql, e, rname, name);
+				set_basecol(e);
+			}
+		}
+		list_hash_clear(nrel->exps);
+	}
+}
+
 sql_rel *
 rel_with_query(sql_query *query, symbol *q )
 {
 	mvc *sql = query->sql;
 	dnode *d = q->data.lval->h;
 	symbol *next = d->next->data.sym;
+	bool recursive = d->next->next->data.i_val;
 	sql_rel *rel;
 
 	if (!stack_push_frame(sql, NULL))
@@ -273,20 +314,75 @@ rel_with_query(sql_query *query, symbol *q )
 		symbol *sym = d->data.sym;
 		dnode *dn = sym->data.lval->h->next;
 		char *rname = qname_schema_object(dn->data.lval);
-		sql_rel *nrel;
+		sql_rel *nrel, *base_rel = NULL;
+		symbol *recursive_part = NULL;
+		sql_rel_view *recursive_union = NULL;
+		int recursive_distinct = 0;
 
 		if (frame_find_rel_view(sql, rname)) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 01, SQLSTATE(42000) "View '%s' already declared", rname);
+		}
+		if (recursive) {
+			symbol *union_stmt = dn->next->next->data.sym;
+			if (union_stmt->token == SQL_UNION) { /* split in base and recursive part */
+				dnode *n = union_stmt->data.lval->h;
+				symbol *base = n->data.sym;
+				recursive_distinct = n->next->data.i_val;
+				dlist *corresponding = n->next->next->data.lval;
+				recursive_part = n->next->next->next->data.sym;
+				if (corresponding)
+					return sql_error(sql, 01, SQLSTATE(42000) "Recursive with corresponding is not supported");
+				dn->next->next->data.sym = base;
+			}
 		}
 		nrel = rel_semantic(query, sym);
 		if (!nrel) {
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		if (!stack_push_rel_view(sql, rname, nrel)) {
+		if (!(recursive_union = stack_push_rel_view(sql, rname, nrel))) {
 			stack_pop_frame(sql);
 			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		if (recursive && recursive_part) {
+			base_rel = nrel;
+			rel_rename(sql, base_rel, rname, base_rel);
+			dn->next->next->data.sym = recursive_part;
+			set_processed(nrel);
+			nrel = rel_semantic(query, sym);
+			if (!nrel) {
+				stack_pop_frame(sql);
+				return NULL;
+			}
+			list *ls = rel_projections(sql, base_rel, NULL, 0, 1);
+			list *rs = rel_projections(sql, nrel, NULL, 0, 1);
+
+			if (!rel_is_ref(base_rel)) { /* not recursive */
+				nrel = rel_setop_n_ary_check_types(sql, base_rel, nrel, ls, rs, op_munion);
+			} else {
+				base_rel->used |= statistics_gathered;
+				prop *p = base_rel->p = prop_create(sql->sa, PROP_COUNT, base_rel->p);
+				p->value.lval = 1000000; /* random ? */
+
+				/* down cast the recursive side (on errors users should add casts on the base side) */
+				list *nrs = new_exp_list(sql->sa);
+				if(!nrs)
+					return NULL;
+
+				for (node *n = ls->h, *m = rs->h; n && m; n = n->next, m = m->next) {
+					sql_subtype *t = exp_subtype(n->data);
+					append(nrs, exp_check_type(sql, t, nrel, m->data, type_equal));
+				}
+				nrel = rel_project(sql->sa, nrel, nrs);
+				nrel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), base_rel), nrel), op_munion);
+				set_recursive(nrel);
+			}
+			if (recursive_distinct)
+				set_distinct(nrel);
+			rel_setop_n_ary_set_exps(sql, nrel, rel_projections(sql, nrel, NULL, 0, 1), false);
+			set_processed(nrel);
+			recursive_union->rel_view = nrel;
 		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
@@ -296,23 +392,7 @@ rel_with_query(sql_query *query, symbol *q )
 				return NULL;
 			}
 		}
-		assert(is_project(nrel->op));
-		if (is_project(nrel->op) && nrel->exps) {
-			node *ne = nrel->exps->h;
-
-			for (; ne; ne = ne->next) {
-				sql_exp *e = ne->data;
-				char *name = NULL;
-
-				if (!is_intern(e)) {
-					if (!exp_name(e))
-						name = make_label(sql->sa, ++sql->label);
-					noninternexp_setname(sql, e, rname, name);
-					set_basecol(e);
-				}
-			}
-			list_hash_clear(nrel->exps);
-		}
+		rel_rename(sql, nrel, rname, base_rel);
 	}
 	rel = rel_semantic(query, next);
 	stack_pop_frame(sql);
@@ -492,11 +572,13 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		atp = sql_bind_localtype("str");
 
 	node *n, *m;
-	for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
-		sql_arg *a = m->data;
+	sql_arg *last = NULL;
+	for (n = exps->h, m = sf->func->ops->h; n && ((sf->func->vararg && last) || m); n = n->next, m = m?m->next:NULL) {
+		sql_arg *a = m?m->data:last;
 		sql_exp *e = n->data;
 		sql_subtype *ntp = &a->type, *t = exp_subtype(e);
 
+		last = a;
 		if (!t) {
 			if (a->type.type->eclass == EC_ANY && atp)
 				ntp = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
@@ -640,7 +722,7 @@ rel_file_loader(mvc *sql, list *exps, list *tl, char *tname)
 
 	if ((f = bind_func_(sql, NULL, "file_loader", tl, F_UNION, true, &found, false))) {
 		list *nexps = exps;
-		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
+		if (list_empty(tl) || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
 				char *err = file_loader_add_table_column_types(sql, f, nexps, res_exps, tname);
@@ -666,7 +748,7 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 	assert(type == F_UNION || type == F_LOADER);
 	if ((f = bind_func_(sql, sname, fname, tl, type, false, &found, false))) {
 		list *nexps = exps;
-		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false)))
+		if (list_empty(tl) || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false)))
 			return exp_op(sql->sa, nexps, f);
 		found = false;
 	}
@@ -705,7 +787,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 			if (l->next->type == type_symbol)
 				n = l->next;
 			else
-				n = l->next->data.lval->h;
+				n = l->next->data.lval?l->next->data.lval->h:NULL;
 
 			for (dnode *m = n; m; m = m->next) {
 				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)
@@ -811,23 +893,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		list_append(refs, tname);
 	}
 	return rel;
-}
-
-static sql_exp *
-rel_op_(mvc *sql, char *sname, char *fname, exp_kind ek)
-{
-	bool found = false;
-	sql_subfunc *f = NULL;
-	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
-		   ((ek.card == card_relation)?F_UNION:F_FUNC));
-
-	if ((f = bind_func_(sql, sname, fname, NULL, type, false, &found, true))) {
-		if (check_card(ek.card, f))
-			return exp_op(sql->sa, NULL, f);
-		found = false;
-	}
-	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s operator %s%s%s'%s'()",
-					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
 }
 
 static sql_exp*
@@ -995,8 +1060,13 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 {
 	mvc *sql = query->sql;
 	sql_rel *r = NULL;
-	dlist *rowlist = tableref->data.lval->h->data.lval;
-	symbol *optname = tableref->data.lval->t->type == type_symbol ? tableref->data.lval->t->data.sym : NULL;
+	symbol *values = tableref;
+	symbol *optname = NULL;
+	if (tableref->token == SQL_TABLE) {
+		values = tableref->data.lval->h->data.sym;
+		optname = tableref->data.lval->t->type == type_symbol ? tableref->data.lval->t->data.sym : NULL;
+	}
+	dlist *rowlist = values->data.lval;
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
@@ -1054,8 +1124,8 @@ check_is_lateral(symbol *tableref)
 			return tableref->data.lval->h->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
-		if (dlist_length(tableref->data.lval) == 4)
-			return tableref->data.lval->h->next->next->data.i_val;
+		if (dlist_length(tableref->data.lval) == 5)
+			return tableref->data.lval->h->next->next->next->data.i_val;
 		return 0;
 	} else if (tableref->token == SQL_SELECT) {
 		SelectNode *sn = (SelectNode *) tableref;
@@ -1212,7 +1282,7 @@ table_ref(sql_query *query, symbol *tableref, int lateral, list *refs)
 			list_append(refs, tname);
 		}
 		return res;
-	} else if (tableref->token == SQL_VALUES) {
+	} else if (tableref->token == SQL_VALUES || (tableref->token == SQL_TABLE && tableref->data.lval->h->data.sym->token == SQL_VALUES)) {
 		return rel_values(query, tableref, refs);
 	} else if (tableref->token == SQL_TABLE) {
 		return rel_named_table_function(query, NULL, tableref, lateral, refs);
@@ -1384,6 +1454,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 
 	if (dlist_length(l) == 1) {
 		const char *name = l->h->data.sval;
+		if (!name)
+			return NULL;
 
 		if (!exp && inner)
 			if (!(exp = rel_bind_column(sql, inner, name, f, 0)) && sql->session->status == -ERR_AMBIGUOUS)
@@ -1485,6 +1557,8 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			tname = l->h->next->data.sval;
 			cname = l->h->next->next->data.sval;
 		}
+		if (!cname)
+			return NULL;
 
 		if (!exp && rel && inner)
 			if (!(exp = rel_bind_column3(sql, inner, sname, tname, cname, f)) && sql->session->status == -ERR_AMBIGUOUS)
@@ -1702,14 +1776,12 @@ push_join_exp(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *L, sql_exp *R, sql_ex
 static sql_rel *
 rel_select_push_filter_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, list *l, list *r, int ff)
 {
-	sql_exp *ll, *rr;
+	sql_exp *ll;
 	if (exps_card(r) <= CARD_ATOM && (exps_are_atoms(r) || exps_have_freevar(sql, r) || exps_have_freevar(sql, l))) {
 		if (exps_card(l) == exps_card(r) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 		if ((ll = exps_find_one_multi_exp(l)))
 			return push_select_exp(sql, rel, e, ll, ff);
-	} else if ((ll = exps_find_one_multi_exp(l)) && (rr = exps_find_one_multi_exp(r))) { /* join */
-		return push_join_exp(sql, rel, e, ll, rr, NULL, ff);
 	}
 	if (is_outerjoin(rel->op))
 		return rel_select(sql->sa, rel, e);
@@ -2101,8 +2173,10 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 	int is_tuple = 0, add_select = 0;
 
 	/* complex case */
-	if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
-		dn = dl->h->data.lval->h;
+	//if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
+	if (dl->h->type == type_symbol && dl->h->data.sym->token == SQL_VALUES) {
+		lo = dl->h->data.sym;
+		dn = lo->data.lval->h->data.lval->h;
 		lo = dn->data.sym;
 		dn = dn->next;
 	} else {
@@ -2164,6 +2238,8 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				if (r->nrcols != ek.type)
 					return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (r->nrcols < ek.type) ? "few" : "many");
 				re = exp_rel_label(sql, re);
+				if (r && r->l && n->next) /* not a value list */
+					return sql_error(sql, 02, SQLSTATE(42000) "subquery must return only one column");
 			} else if (exp_is_rel(re)) {
 				sql_rel *r = exp_rel_get_rel(sql->sa, re);
 				add_select = 1;
@@ -2187,7 +2263,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				return NULL;
 			if (!(le->f = tuples_check_types(sql, exp_get_values(le), values)))
 				return NULL;
-		} else { /* if it's not a tuple, enforce coersion on the type for every element on the list */
+		} else { /* if it's not a tuple, enforce coercion on the type for every element on the list */
 			sql_subtype super, *le_tpe = exp_subtype(le), *values_tpe = NULL;
 
 			for (node *m = vals->h; m; m = m->next) { /* first get values supertype */
@@ -3054,23 +3130,8 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	/* never reached, as all switch cases have a `return` */
 }
 
-static sql_exp * _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *arguments, int f);
+static sql_exp * _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *arguments, symbol *orderby, int f);
 static sql_exp *rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f);
-
-static sql_exp *
-rel_op(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek )
-{
-	mvc *sql = query->sql;
-	dnode *l = se->data.lval->h;
-	char *fname = qname_schema_object(l->data.lval);
-	char *sname = qname_schema(l->data.lval);
-
-	if (find_func(sql, sname, fname, 0, F_AGGR, false, NULL, NULL))
-		return _rel_aggr(query, rel, 0, sname, fname, NULL, f);
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
-	return rel_op_(sql, sname, fname, ek);
-}
 
 sql_exp *
 rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card)
@@ -3081,7 +3142,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 		   ((card == card_relation)?F_UNION:F_FUNC));
 
 	sql_subfunc *f = bind_func(sql, sname, fname, t, NULL, 1, type, false, &found, false);
-	if (f && !f->func->vararg) {
+	if (f) {
 		sql_arg *a = f->func->ops->h->data;
 		t = &a->type;
 	}
@@ -3098,8 +3159,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 	if (f) {
 		if (check_card(card, f)) {
 			list *args = list_append(sa_list(sql->sa), e);
-			if (!f->func->vararg)
-				args = check_arguments_and_find_largest_any_type(sql, rel, args, f, card == card_relation && e->card > CARD_ATOM, false);
+			args = check_arguments_and_find_largest_any_type(sql, rel, args, f, card == card_relation && e->card > CARD_ATOM, false);
 			if (args)
 				return exp_op(sql->sa, args, f);
 		}
@@ -3111,26 +3171,6 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 	sql->errstr[0] = '\0';
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s unary operator %s%s%s'%s'(%s)",
 					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, t ? t->type->base.name : "?");
-}
-
-static sql_exp *
-rel_unop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
-{
-	mvc *sql = query->sql;
-	dnode *l = se->data.lval->h;
-	char *fname = qname_schema_object(l->data.lval);
-	char *sname = qname_schema(l->data.lval);
-	exp_kind iek = {type_value, card_column, FALSE};
-	sql_exp *e = NULL;
-
-	if (find_func(sql, sname, fname, 1, F_AGGR, false, NULL, NULL))
-		return rel_aggr(query, rel, se, f);
-
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
-	if (!(e = rel_value_exp(query, rel, l->next->next->data.sym, f|sql_farg, iek)))
-		return NULL;
-	return rel_unop_(sql, rel ? *rel : NULL, e, sname, fname, ek.card);
 }
 
 sql_exp *
@@ -3169,8 +3209,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 		t1 = exp_subtype(l);
 		t2 = exp_subtype(r);
 		list *args = list_append(list_append(sa_list(sql->sa), l), r);
-		if (!f->func->vararg)
-			args = check_arguments_and_find_largest_any_type(sql, rel, args, f, 0, false);
+
+		args = check_arguments_and_find_largest_any_type(sql, rel, args, f, 0, false);
 		if (args)
 				return exp_op(sql->sa, args, f);
 		return NULL;
@@ -3181,28 +3221,6 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s binary operator %s%s%s'%s'(%s,%s)",
 					 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname,
 					 exp_subtype(l)->type->base.name, exp_subtype(r)->type->base.name);
-}
-
-static sql_exp *
-rel_binop(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
-{
-	mvc *sql = query->sql;
-	dnode *dl = se->data.lval->h;
-	sql_exp *l, *r;
-	char *fname = qname_schema_object(dl->data.lval);
-	char *sname = qname_schema(dl->data.lval);
-	exp_kind iek = {type_value, card_column, FALSE};
-
-	if (find_func(sql, sname, fname, 2, F_AGGR, false, NULL, NULL))
-		return rel_aggr(query, rel, se, f);
-
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
-	if (!(l = rel_value_exp(query, rel, dl->next->next->data.sym, f|sql_farg, iek)))
-		return NULL;
-	if (!(r = rel_value_exp(query, rel, dl->next->next->next->data.sym, f|sql_farg, iek)))
-		return NULL;
-	return rel_binop_(sql, rel ? *rel : NULL, l, r, sname, fname, ek.card, false);
 }
 
 sql_exp *
@@ -3273,40 +3291,50 @@ static sql_exp *
 rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	int nr_args = 0, err = 0;
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->next->data.lval?l->next->next->data.lval->h:NULL;
+	list *names = NULL;
+	char *fname = NULL, *sname = NULL;;
+
+	if (l->type != type_int) {
+		int nargs = 0;
+		fname = qname_schema_object(l->data.lval);
+		sname = qname_schema(l->data.lval);
+
+		for (dnode *n = ops; n; n = n->next)
+			nargs++;
+
+		/* first try aggregate */
+		if (find_func(sql, sname, fname, nargs, F_AGGR, false, NULL, NULL)) {
+			dnode *dn = l->next->next;
+			symbol *orderby = dn->next?dn->next->data.sym:NULL;
+			return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, dn->data.lval->h, orderby, fs);
+		}
+	}
+
+	int nr_args = 0;
+	int split = (l->type == type_int && l->data.i_val == -1);
 	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
 	exp_kind iek = {type_value, card_column, FALSE};
-	char buf[ERRSIZE];
-	int split = (l->type == type_int && l->data.i_val == -1);
-	list *names = NULL;
 
 	if (split)
 		names = sa_list(sql->sa);
 	for (; ops; ops = ops->next, nr_args++) {
-		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
-			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
-			if (!e) {
-				err = sql->session->status;
-				strcpy(buf, sql->errstr);
-				continue;
-			}
-			if (split) {
-				ops = ops->next;
-				append(names, ops->data.sval);
-			}
-			append(exps, e);
-			append(tl, exp_subtype(e));
+		sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
+		if (!e)
+			return NULL;
+		if (split) {
+			ops = ops->next;
+			append(names, ops->data.sval);
 		}
+		append(exps, e);
+		append(tl, exp_subtype(e));
 	}
 	if (l->type == type_int) {
 		/* exec nr (ops)*/
 		int nr = l->data.i_val;
 		cq *q = NULL;
 
-		if (err)
-			return NULL;
 		if (nr == -1 || (q = qc_find(sql->qc, nr))) {
 			list *nexps = new_exp_list(sql->sa);
 			sql_func *f = q?q->f:inplace_func(sql);
@@ -3330,18 +3358,13 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 						e = exp_check_type(sql, ntp, NULL, e, type_equal);
 					else
 						a->type = *exp_subtype(e);
-					if (!e) {
-						err = sql->session->status;
-						strcpy(buf, sql->errstr);
-						break;
-					}
+					if (!e)
+						return NULL;
 					append(nexps, e);
 					append(tl, exp_subtype(e));
 				}
 			}
 
-			if (err)
-				return NULL;
 			if (q)
 				sql->type = q->type;
 			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
@@ -3349,12 +3372,20 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
 		}
 	}
-	char *fname = qname_schema_object(l->data.lval);
-	char *sname = qname_schema(l->data.lval);
+
+	if (nr_args == 2 && is_commutative(sname, fname)) {
+		sql_subtype *t1 = tl->h->data;
+		sql_subtype *t2 = tl->t->data;
+
+		if (t1 && t2 && ((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
+           ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass)))) {
+			list_revert(exps);
+			list_revert(tl);
+		}
+
+	}
 
 	if (!sname && strcmp(fname, "field") == 0) { /* map into join */
-		if (err)
-			return NULL;
 		if (list_length(exps) < 2)
 			return sql_error(sql, 02, SQLSTATE(42000) "Field function called with not enough arguments");
 		sql_exp *le = exps->h->data;
@@ -3376,20 +3407,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			return re;
 		}
 	}
-	/* first try aggregate */
-	if (find_func(sql, sname, fname, nr_args, F_AGGR, false, NULL, NULL)) { /* We have to pass the arguments properly, so skip call to rel_aggr */
-		/* reset error */
-		sql->session->status = 0;
-		sql->errstr[0] = '\0';
-		return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, l->next->next->data.lval->h, fs);
-	}
-	if (err) {
-		sql->session->status = err;
-		strcpy(sql->errstr, buf);
-		return NULL;
-	}
-	sql->session->status = 0; /* if the function was not found clean the error */
-	sql->errstr[0] = '\0';
 	return _rel_nop(sql, sname, fname, tl, rel ? *rel : NULL, exps, ek);
 }
 
@@ -3416,7 +3433,7 @@ exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
 			}
 		}
-	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is allready aggregated */
+	} else if (!v->changes && vf && vf == ai->groupby) { /* check if input is already aggregated */
 		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
 		sql_exp *a = NULL;
 
@@ -3442,8 +3459,10 @@ exps_valid(sql_query *query, list *exps, int groupby)
 	return NULL;
 }
 
+static list * rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct, int f);
+
 static sql_exp *
-_rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *args, int f)
+_rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *aname, dnode *args, symbol *orderby, int f)
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_column, FALSE};
@@ -3714,6 +3733,19 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	if ((!exps || exps_card(exps) > CARD_ATOM) && (!res || !groupby))
 		return NULL;
 
+	list *obe = NULL;
+	bool handled_order = true;
+	if (args)
+			return NULL;
+	if (orderby) { /* handle order by */
+		int base = (!groupby || !is_project(groupby->op) || is_base(groupby->op) || is_processed(groupby));
+		sql_rel *gl = base?groupby:groupby->l;//, *ogl = gl; /* handle case of subqueries without correlation */
+		obe = rel_order_by(query, &gl, orderby, 0, f);
+		if (!obe)
+			return NULL;
+		handled_order = false;
+	}
+
 	if (all_freevar) {
 		query_update_outer(query, res, all_freevar-1);
 	} else if (rel) {
@@ -3725,6 +3757,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	}
 
 	if (!has_args) {	/* count(*) case */
+		obe = NULL; /* no errors, although the order by is useless */
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
@@ -3783,8 +3816,22 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 #endif
 							);
 		a = sql_bind_func_result(sql, sname, aname, F_AGGR, true, tpe, 1, exp_subtype(exps->h->data));
-	} else
+	} else {
 		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
+		if (!a && obe && list_length(obe) == 1) { /* try to find aggregation function with requires order by column */
+			list *nexps = append(sa_list(sql->sa), obe->h->data);
+			nexps = list_merge(nexps, exps, (fdup) NULL);
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false);
+			if (a && a->func->order_required) {
+				/* reset error */
+				handled_order = true;
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+				exps = nexps;
+				obe = NULL;
+			}
+		}
+	}
 
 	if (a) {
 		found = true;
@@ -3798,6 +3845,14 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
+		if (!obe && a->func->order_required && !handled_order) {
+			/* TODO preper error on missing order by */
+			return NULL;
+		}
+		if (obe && !a->func->order_required && !a->func->opt_order)
+			obe = NULL;
+		if (obe) /* add order by expressions */
+			e->r = append(sa_list(sql->sa), obe);
 		if (!groupby)
 			return e;
 		if (all_freevar)
@@ -3814,7 +3869,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		}
 		return e;
 	}
-	char *type = "unknown", *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
+	const char *type = "unknown";
+	char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 
 	if (!list_empty(exps)) {
 		sql_exp *e = exps->h->data;
@@ -3829,11 +3885,12 @@ rel_aggr(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
 	dnode *d = l->h->next->next;
+	symbol *orderby = d->next?d->next->data.sym:NULL;
 	int distinct = l->h->next->data.i_val;
 	char *aname = qname_schema_object(l->h->data.lval);
 	char *sname = qname_schema(l->h->data.lval);
 
-	return _rel_aggr(query, rel, distinct, sname, aname, d, f);
+	return _rel_aggr(query, rel, distinct, sname, aname, d->data.lval?d->data.lval->h:NULL, orderby, f);
 }
 
 static sql_exp *
@@ -4008,6 +4065,8 @@ rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 }
 
+#define E_ATOM_STRING(e) ((atom*)(e)->l)->data.val.sval
+
 static sql_exp *
 rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
@@ -4020,6 +4079,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (!e)
 		return NULL;
+
 	/* strings may need to be truncated */
 	if (EC_VARCHAR(tpe->type->eclass) && tpe->digits > 0) {
 		sql_subtype *et = exp_subtype(e);
@@ -4030,10 +4090,44 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
 	}
+
+	if (tpe->type->eclass == EC_DEC) {
+		sql_subtype *et = exp_subtype(e);
+		if (e->type == e_atom && !tpe->digits) {
+			if (et->type->eclass == EC_NUM || et->type->eclass == EC_DEC) {
+				tpe->digits = atom_num_digits(e->l);
+				tpe = sql_bind_subtype(sql->sa, "decimal", tpe->digits, et->scale);
+			} else if (EC_VARCHAR(et->type->eclass)) {
+				char *s = E_ATOM_STRING(e);
+				unsigned int min_precision = 0, min_scale = 0;
+				bool dot_seen = false;
+				for (size_t i = 0; i < strlen(s); i++) {
+					if (isdigit(s[i])) {
+						min_precision++;
+						if (dot_seen)
+							min_scale++;
+					} else if (s[i] == '.') {
+						dot_seen = true;
+					}
+				}
+				tpe = sql_bind_subtype(sql->sa, "decimal", min_precision, min_scale);
+			} else { /* fallback */
+				tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
+			}
+		} else if (!tpe->digits && !tpe->scale) {
+			if (et->type->eclass == EC_NUM)
+				tpe = sql_bind_subtype(sql->sa, "decimal", et->digits, 0);
+			else /* fallback */
+				tpe = sql_bind_subtype(sql->sa, "decimal", 18, 3);
+		}
+	}
+
 	if (e)
 		e = exp_check_type(sql, tpe, rel ? *rel : NULL, e, type_cast);
+
 	if (e && e->type == e_convert)
 		exp_label(sql->sa, e, ++sql->label);
+
 	return e;
 }
 
@@ -4046,6 +4140,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_subtype t;
 	sql_subfunc *f;
 
+	if (!sname)
+		sname = "sys";
 	if (!stack_find_rel_view(sql, seqname)) {
 		if (!(seq = find_sequence_on_scope(sql, sname, seqname, "NEXT VALUE FOR")))
 			return NULL;
@@ -4055,8 +4151,8 @@ rel_next_value_for( mvc *sql, symbol *se )
 	sql_find_subtype(&t, "varchar", 0, 0);
 	f = sql_bind_func(sql, "sys", "next_value_for", &t, &t, F_FUNC, true, true);
 	assert(f);
-	/* sequence found in the stack. use session's schema? */
-	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : "sys", &t), exp_atom_str(sql->sa, seqname, &t), f);
+	/* sequence found in the stack, ie just created. use given schema? */
+	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : sname, &t), exp_atom_str(sql->sa, seqname, &t), f);
 }
 
 /* some users like to use aliases already in the groupby */
@@ -4256,7 +4352,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 		symbol *grouping = o->data.sym;
 		list *next_set = NULL;
 
-		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the genererated sets */
+		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the generated sets */
 			list *other = rel_groupings(query, rel, grouping, selection, f, true, &next_set);
 			if (!other)
 				return NULL;
@@ -4755,7 +4851,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	list *gbe = NULL, *obe = NULL, *args = NULL, *types = NULL, *fargs = NULL;
 	dnode *dn = window_function->data.lval->h, *dargs = NULL;
 	int distinct = 0, frame_type, pos, nf = f, nfargs = 0;
-	bool is_nth_value, supports_frames, found = false;
+	bool is_nth_value, supports_frames = false, found = false;
 
 	frame_clear_visited_flag(sql); /* clear visited flags before iterating */
 
@@ -4784,7 +4880,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	is_nth_value = !strcmp(aname, "nth_value");
 	bool is_value = is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
-	supports_frames = window_function->token != SQL_RANK || is_value;
+	bool rank = false;
+	if (strcmp(aname, "row_number") == 0 || strcmp(aname, "rank") == 0 || strcmp(aname, "dense_rank") == 0 ||
+	    strcmp(aname, "percent_rank") == 0 || strcmp(aname, "cume_dist") == 0 || strcmp(aname, "ntile") == 0 ||
+	    strcmp(aname, "lag") == 0 || strcmp(aname, "lead") == 0 || strcmp(aname, "fetch") == 0)
+		rank = true;
+	supports_frames = (!rank || is_value);
 
 	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
@@ -4799,17 +4900,10 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: window functions cannot be nested", toUpperCopy(uaname, aname));
 	}
-	if (window_function->token == SQL_UNOP || window_function->token == SQL_OP) {
-		window_function->token = SQL_NOP;
+	if (window_function->token == SQL_AGGR) {
+		dn->next->next->type = type_list;
 		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym); /* make a list */
 	}
-	if (window_function->token == SQL_BINOP) {
-		window_function->token = SQL_NOP;
-		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym), dn->next->next->next->data.sym); /* make a list */
-		dn->next->next->next = dn->next->next->next->next; /* skip second arg */
-	}
-	if (window_function->token == SQL_AGGR)
-		dn->next->next->data.lval = dlist_append_symbol(sql->sa, dlist_create( sql->sa ), dn->next->next->data.sym); /* make a list */
 	if (window_function->token == SQL_NOP)
 		window_function->token = SQL_AGGR;
 	if (window_function->token != SQL_RANK && window_function->token != SQL_AGGR) {
@@ -4843,7 +4937,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 
 	fargs = sa_list(sql->sa);
-	if (window_function->token == SQL_RANK) { /* rank function call */
+	if (rank) { /* rank function call */
 		dlist *dl = dn->next->next->data.lval;
 		bool is_lag = !strcmp(aname, "lag"), is_lead = !strcmp(aname, "lead"),
 			 extra_input = !strcmp(aname, "ntile") || !strcmp(aname, "rank") || !strcmp(aname, "dense_rank") || !strcmp(aname, "row_number") || !strcmp(aname, "percent_rank") || !strcmp(aname, "cume_dist");
@@ -4886,7 +4980,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 	} else { /* aggregation function call */
 		distinct = dn->next->data.i_val;
-		for (dargs = dn->next->next->data.lval->h ; dargs && dargs->data.sym ; dargs = dargs->next) {
+		assert(dn->next->next->type == type_list);
+		dlist *dl = dn->next->next->data.lval;
+		for (dargs = dl?dl->h:NULL; dargs && dargs->data.sym ; dargs = dargs->next) {
 			exp_kind ek = {type_value, card_column, FALSE};
 			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
@@ -5127,12 +5223,6 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 	}
 
 	switch (se->token) {
-	case SQL_OP:
-		return rel_op(query, rel, se, f, ek);
-	case SQL_UNOP:
-		return rel_unop(query, rel, se, f, ek);
-	case SQL_BINOP:
-		return rel_binop(query, rel, se, f, ek);
 	case SQL_NOP:
 		return rel_nop(query, rel, se, f, ek);
 	case SQL_AGGR:
@@ -5384,8 +5474,21 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 			return NULL;
 		*rel = r;
 		return sa_list(sql->sa);
-	} else if (column_e->token == SQL_TABLE) {
-		char *tname = column_e->data.lval->h->data.sval;
+	}
+	char *tname = NULL;
+	if (column_e->token == SQL_TABLE) {
+		tname = column_e->data.lval->h->data.sval;
+	} else if (column_e->token == SQL_COLUMN && column_e->data.lval->h->type == type_symbol) {
+		symbol *sym = column_e->data.lval->h->data.sym;
+		if (sym->token == SQL_COLUMN)
+			tname = sym->data.lval->h->data.sval;
+		else
+			return NULL;
+	} else {
+		return NULL;
+	}
+
+
 		list *exps = NULL;
 		sql_rel *project = *rel, *groupby = NULL;
 
@@ -5428,8 +5531,7 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 		if (!tname)
 			return sql_error(sql, 02, SQLSTATE(42000) "Table expression without table name");
 		return sql_error(sql, 02, SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
-	}
-	return NULL;
+	//return NULL;
 }
 
 sql_exp *
@@ -5684,7 +5786,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	for (dnode *n = sn->selection->h; n; n = n->next) {
 		/* Here we could get real column expressions
 		 * (including single atoms) but also table results.
-		 * Therefor we try both rel_column_exp
+		 * Therefore we try both rel_column_exp
 		 * and rel_table_exp.
 		 */
 		list *te = NULL;
@@ -6031,7 +6133,7 @@ rel_setquery(sql_query *query, symbol *q)
 	if (!corresponding && list_length(t1->exps) != list_length(t2->exps)) {
 		int t1nrcols = list_length(t1->exps);
 		int t2nrcols = list_length(t2->exps);
-		char *op = "UNION";
+		const char *op = "UNION";
 		if (q->token == SQL_EXCEPT)
 			op = "EXCEPT";
 		else if (q->token == SQL_INTERSECT)
@@ -6317,7 +6419,7 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 			if (l->next->type == type_symbol)
 				n = l->next;
 			else
-				n = l->next->data.lval->h;
+				n = l->next->data.lval?l->next->data.lval->h:NULL;
 
 			for (dnode *m = n; m; m = m->next) {
 				if (m->type == type_symbol && m->data.sym->token == SQL_SELECT)

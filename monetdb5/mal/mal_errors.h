@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -20,7 +20,7 @@
  * MAL_MALLOC_FAIL
  * An operation allocates space for an object failed.
  * Either the pre-requisites are not satisfied, or the system
- * runs low on resources and can not accomodate the object.
+ * runs low on resources and can not accommodate the object.
  * For failures to create BATs it sometimes indicates that an
  * intermediate BAT size is too large.
  * OPERATION_FAILED
@@ -44,8 +44,6 @@
 #ifndef MAL_ERRORS
 #define MAL_ERRORS
 
-#define SQLSTATE(sqlstate)	#sqlstate "!"
-
 #define MANUAL_HELP "See documentation for details"
 
 #define PROGRAM_GENERAL "Program contains errors."
@@ -66,7 +64,6 @@
 #define INTERNAL_OBJ_CREATE "Can not create object"
 #define INTERNAL_AUTHORIZATION "authorization BATs not empty"
 
-#define MAL_MALLOC_FAIL	"Could not allocate space"
 #define MAL_STACK_FAIL	"Running out of stack space."
 #define MAL_CALLDEPTH_FAIL	"Recursive call limit reached."
 

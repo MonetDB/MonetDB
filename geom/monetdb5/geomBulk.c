@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -823,10 +823,10 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 			GEOSSetSRID_r(geoshandle, transformedGeosGeometry, *srid_dst);
 			/* get the wkb */
 			if ((transformedWKB = geos2wkb(transformedGeosGeometry)) == NULL)
-				throw(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
+				err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
 			else {
 				if (BUNappend(outBAT, transformedWKB, false) != GDK_SUCCEED) {
-					throw(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					err = createException(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
 
@@ -842,10 +842,14 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 	BBPunfix(inBAT->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
-	*outBAT_id = outBAT->batCacheid;
-	BBPkeepref(outBAT);
+	if (err) {
+		BBPreclaim(outBAT);
+	} else {
+		*outBAT_id = outBAT->batCacheid;
+		BBPkeepref(outBAT);
+	}
 
-	return MAL_SUCCEED;
+	return err;
 #endif
 }
 
@@ -1126,7 +1130,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(38000) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,7 +13,7 @@
 /*
  * This code was created by Peter Harvey (mostly during Christmas 98/99).
  * This code is LGPL. Please ensure that this message remains in future
- * distributions and uses of this code (thats about all I get out of it).
+ * distributions and uses of this code (that's about all I get out of it).
  * - Peter Harvey pharvey@codebydesign.com
  *
  * This file has been modified for the MonetDB project.  See the file
@@ -311,7 +311,6 @@ end:
 
 
 SQLRETURN
-
 MNDBConnect(ODBCDbc *dbc,
 	    const SQLCHAR *ServerName,
 	    SQLSMALLINT NameLength1,
@@ -324,10 +323,10 @@ MNDBConnect(ODBCDbc *dbc,
 	// If unset, 'goto failure' will assume an allocation error.
 	const char *error_state = NULL;
 	const char *error_explanation = NULL;
+	SQLRETURN ret = SQL_ERROR;
 
 	// These will be free'd / destroyed at the 'end' label at the bottom of this function
 	char *dsn = NULL;
-	Mapi mid = NULL;
 	msettings *settings = NULL;
 	void *scratch = NULL;
 
@@ -418,8 +417,6 @@ MNDBConnect(ODBCDbc *dbc,
 	assert(error_state == NULL);
 	assert(error_explanation == NULL);
 
-	SQLRETURN ret;
-
 	ret = MNDBConnectSettings(dbc, dsn, settings);
 	settings = NULL; // must not be free'd now
 
@@ -433,14 +430,11 @@ failure:
 			error_state = "HY009"; // invalid argument
 	}
 	addDbcError(dbc, error_state, error_explanation, 0);
-	ret = SQL_ERROR;
 
 	// fallthrough
 end:
 	free(dsn);
 	free(scratch);
-	if (mid)
-		mapi_destroy(mid);
 	msettings_destroy(settings);
 
 	return ret;
@@ -465,12 +459,15 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 		mapi_reconnect(mid);
 	}
 	if (mid == NULL || mapi_error(mid)) {
-		const char *error_state;
+		const char *error_state = "08001";
 		const char *error_explanation = mid ? mapi_error_str(mid) : NULL;
-		if (error_explanation && strncmp(error_explanation, "InvalidCredentialsException:", 28) == 0)
-			error_state = "28000";
-		else
-			error_state = "08001";
+		if (error_explanation) {
+			if (strncmp(error_explanation, "InvalidCredentialsException:", 28) == 0)
+				error_state = "28000";
+			else
+			if (strncmp(error_explanation, "could not connect: Connection timed out", 39) == 0)
+				error_state = "HYT00";
+		}
 		addDbcError(dbc, error_state, error_explanation, 0);
 		if (mid)
 			mapi_destroy(mid);

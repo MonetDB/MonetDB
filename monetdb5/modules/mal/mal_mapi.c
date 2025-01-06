@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -29,7 +29,7 @@
  * an index in a locally maintained table. It provides a handle
  * to easily detect havoc clients.
  *
- * A cleaner and simplier interface for distributed processing is available in
+ * A cleaner and simpler interface for distributed processing is available in
  * the module remote.
  */
 #include "monetdb_config.h"
@@ -185,7 +185,7 @@ doChallenge(void *data)
 
 	if (chdata->peer.ss_family == AF_UNSPEC) {
 		peer = NULL;
-#ifdef AF_UNIX
+#ifdef HAVE_SYS_UN_H
 	} else if (chdata->peer.ss_family == AF_UNIX) {
 		peer = "<UNIX SOCKET>";
 #endif
@@ -292,7 +292,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		/* Wait up to 0.1 seconds (0.01 if testing) */
 		retval = poll(pfd, npfd,
-					  ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10 : 100);
+					  ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 10 : 100);
 		if (retval == -1 && errno == EINTR)
 			continue;
 #else
@@ -308,7 +308,7 @@ SERVERlistenThread(SOCKET *Sock)
 		}
 		/* Wait up to 0.1 seconds (0.01 if testing) */
 		struct timeval tv = (struct timeval) {
-			.tv_usec = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10000 : 100000,
+			.tv_usec = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 10000 : 100000,
 		};
 
 		retval = select((int) msgsock + 1, &fds, NULL, NULL, &tv);
@@ -380,7 +380,7 @@ SERVERlistenThread(SOCKET *Sock)
 			struct cmsghdr *cmsg;
 
 			/* BEWARE: unix domain sockets have a slightly different
-			 * behaviour initialy than normal sockets, because we can
+			 * behaviour initially than normal sockets, because we can
 			 * send filedescriptors or credentials with them.  To do so,
 			 * we need to use sendmsg/recvmsg, which operates on a bare
 			 * socket.  Unfortunately we *have* to send something, so it
@@ -403,7 +403,11 @@ SERVERlistenThread(SOCKET *Sock)
 			msgh.msg_control = ccmsg;
 			msgh.msg_controllen = sizeof(ccmsg);
 
+#ifdef MSG_CMSG_CLOEXEC
+			rv = recvmsg(msgsock, &msgh, MSG_CMSG_CLOEXEC);
+#else
 			rv = recvmsg(msgsock, &msgh, 0);
+#endif
 			if (rv == -1) {
 				closesocket(msgsock);
 				continue;
@@ -431,6 +435,9 @@ SERVERlistenThread(SOCKET *Sock)
 				 */
 				c_d = (int *) CMSG_DATA(cmsg);
 				msgsock = *c_d;
+#if !defined(MSG_CMSG_CLOEXEC) && defined(HAVE_FCNTL)
+				(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 			}
 				break;
 			default:
@@ -1046,7 +1053,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
  * perform access control.
  *
  * We use a single result set handle. All data should be
- * consumed before continueing.
+ * consumed before continuing.
  *
  * A few extra routines should be defined to
  * dump and inspect the sessions table.
@@ -1880,8 +1887,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				GDKfree(qry);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			strcpy(s, qry);
-			strcat(s, fld);
+			stpcpy(stpcpy(s, qry), fld);
 			GDKfree(qry);
 			qry = s;
 		}
@@ -2010,7 +2016,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		size_t len;
 
 		if (!b)
-			throw(MAL, "mapi.put", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
@@ -2093,7 +2099,7 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Mapi mid;
 	MapiHdl hdl = 0;
 	char buf[BUFSIZ];
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 
 	(void) cntxt;
 	key = getArgReference_int(stk, pci, pci->retc);

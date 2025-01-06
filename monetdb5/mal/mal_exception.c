@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -77,7 +77,8 @@ concatErrors(char *err1, const char *err2)
  * showException such that they share the same code, because reuse
  * is good.
  */
-static str __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
+__attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
+static str
 createExceptionInternal(enum malexception type, const char *fcn,
 						const char *format, va_list ap)
 {
@@ -85,10 +86,7 @@ createExceptionInternal(enum malexception type, const char *fcn,
 	int len;
 	char *msg;
 	va_list ap2;
-#ifndef NDEBUG
-	// if there is an error we allow memory allocation once again
-	GDKsetmallocsuccesscount(-1);
-#endif
+
 	va_copy(ap2, ap);			/* we need to use it twice */
 	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
 	len = vsnprintf(NULL, 0, format, ap);	/* count necessary length */
@@ -169,9 +167,7 @@ createException(enum malexception type, const char *fcn, const char *format,
 		}
 		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported%s: %s",
-								  strstr(p,
-										 EXITING_MSG) == NULL ? " error" : "",
-								  p);
+								  strstr(p, EXITING_MSG) ? "" : " error", p);
 		GDKclrerr();
 		assert(ret);
 		return ret;
@@ -197,7 +193,8 @@ freeException(str msg)
  * showScriptException such that they share the same code, because reuse
  * is good.
  */
-static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
+__attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
+static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 						   char *prev, const char *format, va_list ap)
 {

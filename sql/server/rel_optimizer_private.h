@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -23,8 +23,9 @@ typedef struct global_props {
 		needs_mergetable_rewrite:1,
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1,
-		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefor cannot be used for constraint checking */
-		opt_level:1; /* 0 run necessary rewriters, 1 run all optimizers */
+		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
+		opt_level:1, /* 0 run necessary rewriters, 1 run all optimizers */
+		recursive:1;
 	uint8_t opt_cycle; /* the optimization cycle number */
 } global_props;
 
@@ -53,7 +54,7 @@ typedef struct sql_optimizer {
 #define is_rel_remote_func_used(X)      ((X & rel_remote_func_used) == rel_remote_func_used)
 #define is_rewrite_gt_zero_used(X)      ((X & rewrite_gt_zero_used) == rewrite_gt_zero_used)
 
-/* At the moment the follwowing optimizers 'packs' can be disabled,
+/* At the moment the following optimizers 'packs' can be disabled,
    later we could disable individual optimizers from the 'pack' */
 #define split_select                        (1 << 0)
 #define push_project_down                   (1 << 1)
@@ -112,7 +113,7 @@ extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribut
 extern sql_exp *exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) __attribute__((__visibility__("hidden")));
 extern sql_exp *add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel) __attribute__((__visibility__("hidden")));
 
-/* these functions are used across diferent optimizers */
+/* these functions are used across different optimizers */
 extern sql_rel *rel_find_ref(sql_rel *r) __attribute__((__visibility__("hidden")));
 extern void rel_rename_exps(mvc *sql, list *exps1, list *exps2) __attribute__((__visibility__("hidden")));
 extern atom *exp_flatten(mvc *sql, bool value_based_opt, sql_exp *e) __attribute__((__visibility__("hidden")));

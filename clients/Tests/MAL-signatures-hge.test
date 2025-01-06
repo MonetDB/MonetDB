@@ -3332,17 +3332,17 @@ aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1]):any_1
 zero_or_one;
-if col contains exactly one value return this. Incase of more raise an exception else return nil
+if col contains exactly one value return this. In case of more raise an exception else return nil
 aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1], X_1:bit):any_1
 zero_or_one_error;
-if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil
+if col contains exactly one value return this. In case of more raise an exception if err is true else return nil
 aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1], X_1:bat[:bit]):any_1
 zero_or_one_error_bat;
-if col contains exactly one value return this. Incase of more raise an exception if err is true else return nil
+if col contains exactly one value return this. In case of more raise an exception if err is true else return nil
 alarm
 ctime
 unsafe command alarm.ctime():str
@@ -3444,6 +3444,11 @@ command algebra.groupby(X_0:bat[:oid], X_1:bat[:lng]):bat[:oid]
 ALGgroupby;
 Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.
 algebra
+groupedfirstn
+pattern algebra.groupedfirstn(X_0:lng, X_1:bat[:oid], X_2:bat[:oid], X_3:any...):bat[:oid]
+ALGgroupedfirstn;
+Grouped firstn
+algebra
 intersect
 command algebra.intersect(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:oid], X_3:bat[:oid], X_4:bit, X_5:bit, X_6:lng):bat[:oid]
 ALGintersect;
@@ -3532,7 +3537,7 @@ algebra
 outerselect
 command algebra.outerselect(X_0:bat[:oid], X_1:bat[:bit], X_2:bat[:bit], X_3:bit) (X_4:bat[:oid], X_5:bat[:bit])
 ALGouterselect;
-Per input lid return atleast one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
+Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.
 algebra
 project
 pattern algebra.project(X_0:bat[:any_1], X_1:any_2):bat[:any_2]
@@ -3782,7 +3787,7 @@ bat
 getSize
 command bat.getSize(X_0:bat[:any_1]):lng
 BKCgetSize;
-Calculate the actual size of the BAT descriptor, heaps, hashes and imprint indices in bytes@rounded to the memory page size (see bbp.getPageSize()).
+Calculate the actual size of the BAT descriptor, heaps, hashes in bytes@rounded to the memory page size (see bbp.getPageSize()).
 bat
 getVHeapSize
 command bat.getVHeapSize(X_0:bat[:any_1]):lng
@@ -3798,76 +3803,6 @@ hasorderidx
 pattern bat.hasorderidx(X_0:bat[:any_1]):bit
 OIDXhasorderidx;
 Return true if order index exists
-bat
-imprints
-command bat.imprints(X_0:bat[:bte]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:dbl]):void
-CMDBATimprints;
-Check for existence or create an imprint index on the BAT.
-bat
-imprints
-command bat.imprints(X_0:bat[:flt]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:hge]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:int]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:lng]):void
-CMDBATimprints;
-(empty)
-bat
-imprints
-command bat.imprints(X_0:bat[:sht]):void
-CMDBATimprints;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:bte]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:dbl]):lng
-CMDBATimprintsize;
-Return the storage size of the imprints index structure.
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:flt]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:hge]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:int]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:lng]):lng
-CMDBATimprintsize;
-(empty)
-bat
-imprintsize
-command bat.imprintsize(X_0:bat[:sht]):lng
-CMDBATimprintsize;
-(empty)
 bat
 info
 command bat.info(X_0:bat[:any_1]) (X_1:bat[:str], X_2:bat[:str])
@@ -3977,7 +3912,7 @@ bat
 partition
 pattern bat.partition(X_0:bat[:any_1]):bat[:any_1]...
 CMDBATpartition;
-Create a serie of slices over the BAT argument. The BUNs are distributed evenly.
+Create a series of slices over the BAT argument. The BUNs are distributed evenly.
 bat
 replace
 command bat.replace(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:any_1]):bat[:any_1]
@@ -4019,11 +3954,6 @@ command bat.setHash(X_0:bat[:any_1]):bit
 BKCsetHash;
 Create a hash structure on the column
 bat
-setImprints
-command bat.setImprints(X_0:bat[:any_1]):bit
-BKCsetImprints;
-Create an imprints structure on the column
-bat
 setName
 command bat.setName(X_0:bat[:any_1], X_1:str):void
 BKCsetName;
@@ -4042,7 +3972,7 @@ bat
 single
 pattern bat.single(X_0:any_1):bat[:any_1]
 CMDBATsingle;
-Create a BAT with a single elemenet
+Create a BAT with a single element
 bat
 vacuum
 command bat.vacuum(X_0:bat[:str]):bat[:str]
@@ -30603,91 +30533,6 @@ eval
 pattern batcapi.eval(X_0:ptr, X_1:bit, X_2:str, X_3:any...):any...
 CUDFevalStd;
 Execute a simple CUDF script value
-batcolor
-blue
-command batcolor.blue(X_0:bat[:color]):bat[:int]
-CLRbatBlue;
-Extracts blue component from a color atom
-batcolor
-cb
-command batcolor.cb(X_0:bat[:color]):bat[:int]
-CLRbatCb;
-Extracts Cb(blue color) component from a color atom
-batcolor
-color
-command batcolor.color(X_0:bat[:str]):bat[:color]
-CLRbatColor;
-Converts string to color
-batcolor
-cr
-command batcolor.cr(X_0:bat[:color]):bat[:int]
-CLRbatCr;
-Extracts Cr(red color) component from a color atom
-batcolor
-green
-command batcolor.green(X_0:bat[:color]):bat[:int]
-CLRbatGreen;
-Extracts green component from a color atom
-batcolor
-hsv
-command batcolor.hsv(X_0:bat[:flt], X_1:bat[:flt], X_2:bat[:flt]):bat[:color]
-CLRbatHsv;
-Converts an HSV triplets to a color atom
-batcolor
-hue
-command batcolor.hue(X_0:bat[:color]):bat[:flt]
-CLRbatHue;
-Extracts hue component from a color atom
-batcolor
-hue
-command batcolor.hue(X_0:bat[:color]):bat[:int]
-CLRbatHueInt;
-Extracts hue component from a color atom
-batcolor
-luminance
-command batcolor.luminance(X_0:bat[:color]):bat[:int]
-CLRbatLuminance;
-Extracts Y(luminance) component from a color atom
-batcolor
-red
-command batcolor.red(X_0:bat[:color]):bat[:int]
-CLRbatRed;
-Extracts red component from a color atom
-batcolor
-rgb
-command batcolor.rgb(X_0:bat[:int], X_1:bat[:int], X_2:bat[:int]):bat[:color]
-CLRbatRgb;
-Converts an RGB triplets to a color atom
-batcolor
-saturation
-command batcolor.saturation(X_0:bat[:color]):bat[:flt]
-CLRbatSaturation;
-Extracts saturation component from a color atom
-batcolor
-saturation
-command batcolor.saturation(X_0:bat[:color]):bat[:int]
-CLRbatSaturationInt;
-Extracts saturation component from a color atom
-batcolor
-str
-command batcolor.str(X_0:bat[:color]):bat[:str]
-CLRbatStr;
-Identity mapping for string bats
-batcolor
-value
-command batcolor.value(X_0:bat[:color]):bat[:flt]
-CLRbatValue;
-Extracts value component from a color atom
-batcolor
-value
-command batcolor.value(X_0:bat[:color]):bat[:int]
-CLRbatValueInt;
-Extracts value component from a color atom
-batcolor
-ycc
-command batcolor.ycc(X_0:bat[:flt], X_1:bat[:flt], X_2:bat[:flt]):bat[:color]
-CLRbatycc;
-Converts an YCC triplets to a color atom
 batgeom
 AsEWKT
 command batgeom.AsEWKT(X_0:bat[:wkb]):bat[:str]
@@ -32375,22 +32220,22 @@ MTIMEstr_to_date_bulk;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:date]
-MTIMEstr_to_date_bulk_p1;
-(empty)
-batmtime
-str_to_date
 pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng):bat[:date]
 MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
-pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:date]
-MTIMEstr_to_date_bulk_p2;
+pattern batmtime.str_to_date(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:date]
+MTIMEstr_to_date_bulk_p1;
 (empty)
 batmtime
 str_to_date
 pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng):bat[:date]
+MTIMEstr_to_date_bulk_p2;
+(empty)
+batmtime
+str_to_date
+pattern batmtime.str_to_date(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:date]
 MTIMEstr_to_date_bulk_p2;
 (empty)
 batmtime
@@ -32405,22 +32250,22 @@ MTIMEstr_to_time_bulk;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:daytime]
-MTIMEstr_to_time_bulk_p1;
-(empty)
-batmtime
-str_to_time
 pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng):bat[:daytime]
 MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
-pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:daytime]
-MTIMEstr_to_time_bulk_p2;
+pattern batmtime.str_to_time(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:daytime]
+MTIMEstr_to_time_bulk_p1;
 (empty)
 batmtime
 str_to_time
 pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng):bat[:daytime]
+MTIMEstr_to_time_bulk_p2;
+(empty)
+batmtime
+str_to_time
+pattern batmtime.str_to_time(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:daytime]
 MTIMEstr_to_time_bulk_p2;
 (empty)
 batmtime
@@ -32435,22 +32280,22 @@ MTIMEstr_to_timestamp_bulk;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:timestamp]
-MTIMEstr_to_timestamp_bulk_p1;
-(empty)
-batmtime
-str_to_timestamp
 pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng):bat[:timestamp]
 MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
-pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:bat[:oid], X_3:lng):bat[:timestamp]
-MTIMEstr_to_timestamp_bulk_p2;
+pattern batmtime.str_to_timestamp(X_0:str, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:timestamp]
+MTIMEstr_to_timestamp_bulk_p1;
 (empty)
 batmtime
 str_to_timestamp
 pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng):bat[:timestamp]
+MTIMEstr_to_timestamp_bulk_p2;
+(empty)
+batmtime
+str_to_timestamp
+pattern batmtime.str_to_timestamp(X_0:bat[:str], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:timestamp]
 MTIMEstr_to_timestamp_bulk_p2;
 (empty)
 batmtime
@@ -33425,22 +33270,22 @@ MTIMEtimestamptz_to_str_bulk;
 (empty)
 batmtime
 timestamptz_to_str
-pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimestamptz_to_str_bulk_p1;
-(empty)
-batmtime
-timestamptz_to_str
 pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng):bat[:str]
 MTIMEtimestamptz_to_str_bulk_p1;
 (empty)
 batmtime
 timestamptz_to_str
-pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimestamptz_to_str_bulk_p2;
+pattern batmtime.timestamptz_to_str(X_0:timestamp, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:str]
+MTIMEtimestamptz_to_str_bulk_p1;
 (empty)
 batmtime
 timestamptz_to_str
 pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng):bat[:str]
+MTIMEtimestamptz_to_str_bulk_p2;
+(empty)
+batmtime
+timestamptz_to_str
+pattern batmtime.timestamptz_to_str(X_0:bat[:timestamp], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:str]
 MTIMEtimestamptz_to_str_bulk_p2;
 (empty)
 batmtime
@@ -33455,22 +33300,22 @@ MTIMEtimetz_to_str_bulk;
 (empty)
 batmtime
 timetz_to_str
-pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimetz_to_str_bulk_p1;
-(empty)
-batmtime
-timetz_to_str
 pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng):bat[:str]
 MTIMEtimetz_to_str_bulk_p1;
 (empty)
 batmtime
 timetz_to_str
-pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:bat[:oid], X_3:lng):bat[:str]
-MTIMEtimetz_to_str_bulk_p2;
+pattern batmtime.timetz_to_str(X_0:daytime, X_1:bat[:str], X_2:lng, X_3:bat[:oid]):bat[:str]
+MTIMEtimetz_to_str_bulk_p1;
 (empty)
 batmtime
 timetz_to_str
 pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng):bat[:str]
+MTIMEtimetz_to_str_bulk_p2;
+(empty)
+batmtime
+timetz_to_str
+pattern batmtime.timetz_to_str(X_0:bat[:daytime], X_1:str, X_2:lng, X_3:bat[:oid]):bat[:str]
 MTIMEtimetz_to_str_bulk_p2;
 (empty)
 batmtime
@@ -35342,7 +35187,7 @@ batxml
 root
 command batxml.root(X_0:bat[:xml], X_1:str, X_2:str):bat[:xml]
 BATXMLroot;
-Contruct the root nodes.
+Construct the root nodes.
 batxml
 serialize
 command batxml.serialize(X_0:bat[:xml]):bat[:str]
@@ -43865,12 +43710,12 @@ str_2dec_lng;
 cast to dec(lng) and check for overflow
 calc
 max
-pattern calc.max(X_0:any_1, X_1:any_1):any_1
+pattern calc.max(X_0:any_1, X_1:any_1...):any_1
 CALCmax;
 Return max of V1 and V2
 calc
 max_no_nil
-pattern calc.max_no_nil(X_0:any_1, X_1:any_1):any_1
+pattern calc.max_no_nil(X_0:any_1, X_1:any_1...):any_1
 CALCmax_no_nil;
 Return max of V1 and V2, ignoring nil values
 calc
@@ -43885,12 +43730,12 @@ mbrFromString;
 (empty)
 calc
 min
-pattern calc.min(X_0:any_1, X_1:any_1):any_1
+pattern calc.min(X_0:any_1, X_1:any_1...):any_1
 CALCmin;
 Return min of V1 and V2
 calc
 min_no_nil
-pattern calc.min_no_nil(X_0:any_1, X_1:any_1):any_1
+pattern calc.min_no_nil(X_0:any_1, X_1:any_1...):any_1
 CALCmin_no_nil;
 Return min of V1 and V2, ignoring nil values
 calc
@@ -44717,7 +44562,7 @@ clients
 stop
 unsafe pattern clients.stop(X_0:int):void
 CLTstop;
-Stop the query execution at the next eligble statement.
+Stop the query execution at the next eligible statement.
 clients
 stopsession
 unsafe pattern clients.stopsession(X_0:int):void
@@ -44733,91 +44578,6 @@ wakeup
 unsafe pattern clients.wakeup(X_0:int):void
 CLTwakeup;
 Wakeup a client process
-color
-blue
-command color.blue(X_0:color):int
-CLRblue;
-Extracts blue component from a color atom
-color
-cb
-command color.cb(X_0:color):int
-CLRcb;
-Extracts Cb(blue color) component from a color atom
-color
-color
-command color.color(X_0:str):color
-CLRcolor;
-Converts string to color
-color
-cr
-command color.cr(X_0:color):int
-CLRcr;
-Extracts Cr(red color) component from a color atom
-color
-green
-command color.green(X_0:color):int
-CLRgreen;
-Extracts green component from a color atom
-color
-hsv
-command color.hsv(X_0:flt, X_1:flt, X_2:flt):color
-CLRhsv;
-Converts an HSV triplets to a color atom
-color
-hue
-command color.hue(X_0:color):flt
-CLRhue;
-Extracts hue component from a color atom
-color
-hue
-command color.hue(X_0:color):int
-CLRhueInt;
-Extracts hue component from a color atom
-color
-luminance
-command color.luminance(X_0:color):int
-CLRluminance;
-Extracts Y(luminance) component from a color atom
-color
-red
-command color.red(X_0:color):int
-CLRred;
-Extracts red component from a color atom
-color
-rgb
-command color.rgb(X_0:int, X_1:int, X_2:int):color
-CLRrgb;
-Converts an RGB triplets to a color atom
-color
-saturation
-command color.saturation(X_0:color):flt
-CLRsaturation;
-Extracts saturation component from a color atom
-color
-saturation
-command color.saturation(X_0:color):int
-CLRsaturationInt;
-Extracts saturation component from a color atom
-color
-str
-command color.str(X_0:color):str
-CLRstr;
-Converts color to string 
-color
-value
-command color.value(X_0:color):flt
-CLRvalue;
-Extracts value component from a color atom
-color
-value
-command color.value(X_0:color):int
-CLRvalueInt;
-Extracts value component from a color atom
-color
-ycc
-command color.ycc(X_0:int, X_1:int, X_2:int):color
-CLRycc;
-Converts an YCC triplets to a color atom
 csv
 epilogue
 command csv.epilogue():void
@@ -45599,11 +45359,6 @@ command geom.InteriorRingN(X_0:wkb, X_1:int):wkb
 wkbInteriorRingN;
 Return the Nth interior linestring ring of the polygon geometry. Return NULL if the geometry is not a polygon or the given N is out of range.
 geom
-InteriorRings
-command geom.InteriorRings(X_0:wkb):wkba
-wkbInteriorRings;
-Returns an 'array' with all the interior rings of the polygon
-geom
 Intersection
 command geom.Intersection(X_0:wkb, X_1:wkb):wkb
 wkbIntersection;
@@ -46338,11 +46093,6 @@ subgroupdone
 command group.subgroupdone(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bat[:oid], X_4:bat[:lng]) (X_5:bat[:oid], X_6:bat[:oid])
 GRPsubgroup9;
 (empty)
-identifier
-identifier
-command identifier.identifier(X_0:str):identifier
-IDentifier;
-Cast a string to an identifer 
 inet
 !=
 command inet.!=(X_0:inet, X_1:inet):bit
@@ -46492,7 +46242,7 @@ inspect
 getEnvironment
 command inspect.getEnvironment(X_0:str):str
 INSPECTgetEnvironmentKey;
-Get the value of an environemnt variable
+Get the value of an environment variable
 inspect
 getExistence
 pattern inspect.getExistence(X_0:str, X_1:str):bit
@@ -46567,7 +46317,7 @@ io
 print
 pattern io.print(X_0:bat[:any]...):void
 IOtable;
-BATs are printed with '#' for legend @lines, and the BUNs on seperate lines @between brackets, containing each to @comma separated values (head and tail). @If multiple BATs are passed for printing, @print() performs an implicit natural @join on the void head, producing a multi attribute table.
+BATs are printed with '#' for legend @lines, and the BUNs on separate lines @between brackets, containing each to @comma separated values (head and tail). @If multiple BATs are passed for printing, @print() performs an implicit natural @join on the void head, producing a multi attribute table.
 io
 printf
 pattern io.printf(X_0:str):void
@@ -46588,11 +46338,6 @@ printf
 pattern io.printf(X_0:streams, X_1:str, X_2:any...):void
 IOprintfStream;
 Select default format 
-io
-setmallocsuccesscount
-command io.setmallocsuccesscount(X_0:lng):void
-IOsetmallocsuccesscount;
-Set number of mallocs that are allowed to succeed.
 io
 stdin
 pattern io.stdin():bstream
@@ -46837,7 +46582,7 @@ language
 pass
 pattern language.pass(X_0:any_1):void
 MALpass;
-Cheap instruction to disgard storage while retaining the dataflow dependency
+Cheap instruction to discard storage while retaining the dataflow dependency
 logging
 compinfo
 pattern logging.compinfo() (X_0:bat[:int], X_1:bat[:str], X_2:bat[:str])
@@ -47367,7 +47112,7 @@ mmath
 atan2
 command mmath.atan2(X_0:dbl, X_1:dbl):dbl
 MATHbinary_ATAN2dbl;
-The atan2(x,y) function calculates the arc tangent of the two @variables x and y.  It is similar to calculating the arc@tangent of y / x, except that the signs of both arguments are @used to determine the quadrant of the result.  The value is @returned in radians and is mathematically defined to be between @-PI/2 and PI/2 (inclusive).
+The atan2(x,y) function calculates the arc tangent of the two @variables x and y. It is similar to calculating the arc@tangent of y / x, except that the signs of both arguments are @used to determine the quadrant of the result. The value is @returned in radians and is mathematically defined to be between @-PI/2 and PI/2 (inclusive).
 mmath
 atan2
 command mmath.atan2(X_0:flt, X_1:flt):flt
@@ -47407,7 +47152,7 @@ mmath
 cosh
 command mmath.cosh(X_0:dbl):dbl
 MATHunary_COSHdbl;
-The cosh() function  returns the hyperbolic cosine of x, which is @defined mathematically as (exp(x) + exp(-x)) / 2.
+The cosh() function returns the hyperbolic cosine of x, which is @defined mathematically as (exp(x) + exp(-x)) / 2.
 mmath
 cosh
 command mmath.cosh(X_0:flt):flt
@@ -47447,7 +47192,7 @@ mmath
 fabs
 command mmath.fabs(X_0:dbl):dbl
 MATHunary_FABSdbl;
-The fabs(x) function  returns  the  absolute value of the @floating-point number x.
+The fabs(x) function returns the absolute value of the floating-point number x.
 mmath
 finite
 command mmath.finite(X_0:dbl):bit
@@ -47527,12 +47272,12 @@ mmath
 nextafter
 command mmath.nextafter(X_0:dbl, X_1:dbl):dbl
 MATHbinary_NEXTAFTERdbl;
-The returns the next representable floating-point value of x in the direction of y.
+The nextafter(x,y) function returns the next representable floating-point value of x in the direction of y.
 mmath
 nextafter
 command mmath.nextafter(X_0:flt, X_1:flt):flt
 MATHbinary_NEXTAFTERflt;
-The returns the next representable floating-point value of x in the direction of y.
+The nextafter(x,y) function returns the next representable floating-point value of x in the direction of y.
 mmath
 pi
 command mmath.pi():dbl
@@ -47542,7 +47287,7 @@ mmath
 pow
 command mmath.pow(X_0:dbl, X_1:dbl):dbl
 MATHbinary_POWdbl;
-The pow(x,y) function  returns the value of x raised to the power of y.
+The pow(x,y) function returns the value of x raised to the power of y.
 mmath
 pow
 command mmath.pow(X_0:flt, X_1:flt):flt
@@ -47592,7 +47337,7 @@ mmath
 sinh
 command mmath.sinh(X_0:dbl):dbl
 MATHunary_SINHdbl;
-The sinh() function  returns  the  hyperbolic sine of x, which @is defined mathematically as (exp(x) - exp(-x)) / 2.
+The sinh() function returns the hyperbolic sine of x, which is @defined mathematically as (exp(x) - exp(-x)) / 2.
 mmath
 sinh
 command mmath.sinh(X_0:flt):flt
@@ -49007,7 +48752,7 @@ sql
 copy_from
 unsafe pattern sql.copy_from(X_0:ptr, X_1:str, X_2:str, X_3:str, X_4:str, X_5:str, X_6:lng, X_7:lng, X_8:int, X_9:str, X_10:int, X_11:int, X_12:str, X_13:str):bat[:any]...
 mvc_import_table_wrap;
-Import a table from bstream s with the @given tuple and seperators (sep/rsep)
+Import a table from bstream s with the @given tuple and separators (sep/rsep)
 sql
 copy_rejects
 pattern sql.copy_rejects() (X_0:bat[:lng], X_1:bat[:int], X_2:bat[:str], X_3:bat[:str])
@@ -49302,7 +49047,7 @@ sql
 eval
 unsafe pattern sql.eval(X_0:str, X_1:bit):void
 SQLstatement;
-Compile and execute a single sql statement (and optionaly set the output to columnar format)
+Compile and execute a single sql statement (and optionally set the output to columnar format)
 sql
 evalAlgebra
 unsafe pattern sql.evalAlgebra(X_0:str, X_1:bit):void
@@ -49628,6 +49373,11 @@ rank
 pattern sql.rank(X_0:any_1, X_1:bit, X_2:bit):int
 SQLrank;
 return the ranked groups
+sql
+read_dump_rel
+pattern sql.read_dump_rel(X_0:str):str
+SQLread_dump_rel;
+Reads sql_rel string into sql_rel object and then writes it to the return value
 sql
 register
 unsafe pattern sql.register(X_0:str, X_1:str, X_2:str, X_3:str):int
@@ -49968,6 +49718,11 @@ transaction_rollback
 unsafe pattern sql.transaction_rollback(X_0:int, X_1:str):void
 SQLtransaction_rollback;
 A transaction statement (type can be commit,release,rollback or start)
+sql
+unclosed_result_sets
+pattern sql.unclosed_result_sets() (X_0:bat[:oid], X_1:bat[:int])
+sql_unclosed_result_sets;
+return query_id/res_id of unclosed result sets
 sql
 unionfunc
 pattern sql.unionfunc(X_0:str, X_1:str, X_2:any...):any...

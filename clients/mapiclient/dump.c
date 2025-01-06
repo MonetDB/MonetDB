@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1286,6 +1286,8 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 
 	s = sescape(schema);
 	t = sescape(tname);
+	if (s == NULL || t == NULL)
+		goto bailout;
 	maxquerylen = 5120 + strlen(t) + strlen(s);
 	query = malloc(maxquerylen);
 	if (query == NULL)
@@ -2249,10 +2251,10 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 				goto doreturn;
 			}
 			for (int64_t i = 0; i < rows; i++) {
-				mapi_fetch_row(hdl);
-				tables[i].schema = strdup(mapi_fetch_field(hdl, 0));
-				tables[i].table = strdup(mapi_fetch_field(hdl, 1));
-				if (tables[i].schema == NULL || tables[i].table == NULL) {
+				tables[i].schema = tables[i].table = NULL;
+				if (mapi_fetch_row(hdl) == 0 ||
+					(tables[i].schema = strdup(mapi_fetch_field(hdl, 0))) == NULL ||
+					(tables[i].table = strdup(mapi_fetch_field(hdl, 1))) == NULL) {
 					do {
 						free(tables[i].schema);
 						free(tables[i].table);
@@ -3365,7 +3367,6 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 			mnstr_printf(sqlf, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
 			if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR) {
 				mapi_close_handle(hdl);
-				hdl = NULL;
 				goto bailout2;
 			}
 		}

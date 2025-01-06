@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -47,8 +47,10 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 	if (fsd == NULL || elmsize != 1) {
 		return -1;
 	}
-	if (fsd->eof)
+	if (fsd->eof) {
+		s->eof = 1;
 		return 0;
+	}
 
 	while (to_write > 0) {
 		/* input conversion */
@@ -59,14 +61,18 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 				if (actually_read < 0) {
 					return actually_read;	/* this is an error */
 				}
-				fsd->eof |= fsd->s->eof;
-				return (ssize_t) buf_written;	/* skip last line */
+				if (actually_read == 0) {
+					fsd->eof |= fsd->s->eof;
+					s->eof = fsd->eof;
+					return (ssize_t) buf_written;	/* skip last line */
+				}
 			}
 			/* consume to next newline */
 			while (fsd->s->read(fsd->s, &nl_buf, 1, 1) == 1 &&
 			       nl_buf != '\n')
 				;
 			fsd->eof |= fsd->s->eof;
+			s->eof = fsd->eof;
 
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
 				char *val_start, *val_end;

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -57,7 +57,7 @@ struct scanner {
 	 *
 	 * Because we need to be backward compatible (i.e. we need have ``select
 	 * char_length('a\nb')`` return 3) the next 2 members will probably stay for
-	 * the forseeable future.
+	 * the foreseeable future.
 	 */
 	bool next_string_is_raw;
 	bool raw_string_mode;
@@ -67,7 +67,7 @@ struct scanner {
 
 extern char *query_cleaned(allocator *sa, const char *query);
 extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
-sql_export void scanner_query_processed(struct scanner *s);
+extern void scanner_query_processed(struct scanner *s);
 
 extern int scanner_init_keywords(void);
 #endif /* _SQL_SCAN_H_ */

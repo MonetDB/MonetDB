@@ -4,13 +4,13 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-# python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
-# "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-SQL-Installer.wxs
-# "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB5-SQL-Installer.wixobj
+# python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB-SQL-Installer.wxs
+# "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-SQL-Installer.wxs
+# "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB-SQL-Installer.wixobj
 
 import sys, os
 
@@ -76,8 +76,8 @@ def main():
     pyapi3 = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
-    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB5" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], version))
-    print(r'    <Package Id="*" Comments="MonetDB5/SQL Server and Client" Compressed="yes" InstallerVersion="301" Keywords="MonetDB5 MonetDB SQL Database" Languages="1033" Manufacturer="MonetDB Foundation" Platform="{}"/>'.format(arch))
+    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], version))
+    print(r'    <Package Id="*" Comments="MonetDB/SQL Server and Client" Compressed="yes" InstallerVersion="301" Keywords="MonetDB SQL Database" Languages="1033" Manufacturer="MonetDB Foundation" Platform="{}"/>'.format(arch))
     print(r'    <Upgrade Id="{}">'.format(geomupgradecode[arch]))
     # up to and including 11.29.3, the geom module can not be
     # uninstalled if MonetDB/SQL is not installed; this somehow also
@@ -123,7 +123,7 @@ def main():
     print(r'    <Property Id="OLDGEOMINSTALLED">')
     print(r'      <ProductSearch UpgradeCode="{}" Minimum="11.1.1" Maximum="11.29.3" IncludeMinimum="yes" IncludeMaximum="yes"/>'.format(geomupgradecode[arch]))
     print(r'    </Property>')
-    print(r'    <Condition Message="Please uninstall MonetDB5 SQL GIS Module first, then rerun and select to install Complete package.">')
+    print(r'    <Condition Message="Please uninstall MonetDB SQL GIS Module first, then rerun and select to install Complete package.">')
     print(r'      NOT OLDGEOMINSTALLED')
     print(r'    </Condition>')
     print(r'    <Property Id="ApplicationFolderName" Value="MonetDB"/>')
@@ -140,7 +140,7 @@ def main():
     print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="{}\{}\MergeModules\{}"/>'.format(msvc, d, fn))
     print(r'      <Directory Id="{}">'.format(folder))
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
-    print(r'          <Directory Id="INSTALLDIR" Name="MonetDB5">')
+    print(r'          <Directory Id="INSTALLDIR" Name="MonetDB">')
     print(r'            <Component Id="registry">')
     print(r'              <RegistryKey Key="Software\[Manufacturer]\[ProductName]" Root="HKLM">')
     print(r'                <RegistryValue Name="InstallPath" Type="string" Value="[INSTALLDIR]"/>')

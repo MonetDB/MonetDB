@@ -4,19 +4,19 @@ create table kw(x integer primary key check(x >= 1), nm varchar(30) check (nm IS
 statement ok
 insert into kw values(1, 'FIRST')
 
-statement error UPDATE: CHECK constraint violated: kw_x_check
+statement error 40002!INSERT INTO: violated constraint 'sys.kw_x_check' CHECK(x >= 1)
 insert into kw values(0, 'FIRST')
 
-statement eror UPDATE: CHECK constraint violated: kwname_upper
+statement error 40002!INSERT INTO: violated constraint 'sys.kwname_upper' CHECK(nm = upper(nm))
 insert into kw values(2, 'Second')
 
 statement ok
 insert into kw values(3, 'FREE')
 
-statement eror UPDATE: CHECK constraint violated: kwname_len_1
+statement error 40002!INSERT INTO: violated constraint 'sys.kwname_len_1' CHECK(length(nm) > 0)
 insert into kw values(4, '')
 
-statement eror UPDATE: CHECK constraint violated: kw_nm_check
+statement error 40002!INSERT INTO: violated constraint 'sys.kw_nm_check' CHECK(nm is not null and length(nm) >= 0)
 insert into kw values(5, NULL)
 
 query IT rowsort
@@ -47,6 +47,33 @@ insert into kw values(4, '')
 
 statement ok
 insert into kw values(5, NULL)
+
+statement ok
+alter table kw add constraint kw_x_check check(x >= 1)
+
+statement error 40002!UPDATE: violated constraint 'sys.kw_nm_check' CHECK(nm is not null and length(nm) >= 0)
+alter table kw add constraint kw_nm_check check (nm IS NOT NULL AND length(nm) >= 0)
+
+statement error 40002!UPDATE: violated constraint 'sys.kwname_upper' CHECK(nm = upper(nm))
+alter table kw add constraint kwname_upper check (nm = upper(nm))
+
+statement error 40002!UPDATE: violated constraint 'sys.kwname_len_1' CHECK(length(nm) > 0)
+alter table kw add constraint kwname_len_1 check (length(nm) > 0)
+
+statement ok
+delete from kw where nm IS NULL OR length(nm) = 0 or (nm <> upper(nm))
+
+statement ok
+alter table kw add constraint kw_nm_check check (nm IS NOT NULL AND length(nm) >= 0)
+
+statement ok
+alter table kw add constraint kwname_upper check (nm = upper(nm))
+
+statement ok
+alter table kw add constraint kwname_len_1 check (length(nm) > 0)
+
+statement ok
+insert into kw values(5, 'FIVE')
 
 statement ok
 drop table kw

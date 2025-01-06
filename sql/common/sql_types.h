@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -17,7 +17,6 @@
 #include "sql_list.h"
 #include "sql_string.h"
 #include "sql_catalog.h"
-#include "sql_storage.h"
 #include "sql_backend.h"
 #include "stream.h"
 
@@ -28,7 +27,7 @@ extern unsigned int bits2digits(unsigned int b);
 extern unsigned int digits2bits(unsigned int d);
 extern unsigned int type_digits_to_char_digits(sql_subtype *t);
 
-extern int sql_type_convert(int form, int to); /* return 1, convert possible but it's a down cast, 2 convert possible can be done savely */
+extern int sql_type_convert(int form, int to); /* return 1, convert possible but it's a down cast, 2 convert possible can be done safely */
 extern int sql_type_convert_preference(int form, int to);
 extern bool is_commutative(const char *sname, const char *fnm); 	/* return true if commutative */
 

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -132,16 +132,16 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 
 				switch (t1->type->eclass) {
 				case EC_DATE: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmax->data.val.ival, (date)rmin->data.val.ival));
-					res2 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmin->data.val.ival, (date)rmax->data.val.ival));
+					res1 = atom_int(sql->sa, exp_subtype(e), date_diff_imp((date)lmax->data.val.ival, (date)rmin->data.val.ival));
+					res2 = atom_int(sql->sa, exp_subtype(e), date_diff_imp((date)lmin->data.val.ival, (date)rmax->data.val.ival));
 				} break;
 				case EC_TIME: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmax->data.val.lval, (daytime)rmin->data.val.lval));
-					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmin->data.val.lval, (daytime)rmax->data.val.lval));
+					res1 = atom_int(sql->sa, exp_subtype(e), daytime_diff((daytime)lmax->data.val.lval, (daytime)rmin->data.val.lval));
+					res2 = atom_int(sql->sa, exp_subtype(e), daytime_diff((daytime)lmin->data.val.lval, (daytime)rmax->data.val.lval));
 				} break;
 				case EC_TIMESTAMP: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), TSDIFF((timestamp)lmax->data.val.lval, (timestamp)rmin->data.val.lval));
-					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), TSDIFF((timestamp)lmin->data.val.lval, (timestamp)rmax->data.val.lval));
+					res1 = atom_int(sql->sa, exp_subtype(e), TSDIFF((timestamp)lmax->data.val.lval, (timestamp)rmin->data.val.lval));
+					res2 = atom_int(sql->sa, exp_subtype(e), TSDIFF((timestamp)lmin->data.val.lval, (timestamp)rmax->data.val.lval));
 				} break;
 				default:
 					break;
@@ -604,7 +604,7 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
 	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
-	p->value.dval = 31;
+	p->value.dval = (dbl) (nmax - nmin + 1);
 }
 
 static void

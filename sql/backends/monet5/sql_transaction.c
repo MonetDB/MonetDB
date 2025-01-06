@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,7 +24,6 @@
 #include "sql_qc.h"
 #include "sql_optimizer.h"
 #include "mal_namespace.h"
-#include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
 
@@ -118,7 +117,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		default:
 			break;
 	}
-	/* set transaction properties after successfuly starting */
+	/* set transaction properties after successfully starting */
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	return MAL_SUCCEED;

@@ -13042,7 +13042,7 @@ COPY 224 RECORDS INTO "sys"."video" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 commit
 
-query TTTTT rowsort
+query TTTTT nosort
  SELECT * FROM MOA_DD WHERE name='Video' AND type='match' ORDER BY  name, type, field1, field2, field3
 ----
 Video
@@ -13051,11 +13051,11 @@ ID
 MediaInformationFK
 NULL
 
-query TTTTT rowsort
+query TTTTT nosort
  SELECT * FROM MOA_DD WHERE name='Creation' AND type='match' ORDER BY  name, type, field1, field2, field3
 ----
 
-query TTTTT rowsort
+query TTTTT nosort
  SELECT * FROM MOA_DD WHERE name='CreationCreator' AND type='match' ORDER BY  name, type, field1, field2, field3
 ----
 CreationCreator
@@ -13064,11 +13064,11 @@ CreationFK
 CreatorFK
 NULL
 
-query TTTTT rowsort
+query TTTTT nosort
  SELECT * FROM MOA_DD WHERE name='CreationCreator' AND type='primary' ORDER BY  name, type, field1, field2, field3
 ----
 
-query TTTTT rowsort
+query TTTTT nosort
  SELECT * FROM MOA_DD WHERE name='Creator' AND type='match' ORDER BY  name, type, field1, field2, field3
 ----
 Creator
@@ -13077,7 +13077,7 @@ CreatorPK
 IndividualFK
 NULL
 
-query TTTTT rowsort
+query TTTTT nosort
  SELECT * FROM MOA_DD WHERE name='Individual' AND type='match' ORDER BY  name, type, field1, field2, field3
 ----
 
@@ -13111,7 +13111,7 @@ statement ok
 statement ok
  INSERT INTO _t5 SELECT Individual.IndividualPK, Individual.PersonName FROM Individual,_t4 WHERE (Individual.IndividualPK = _t4.IndividualFK)
 
-query ITTI rowsort
+query ITTI nosort
  SELECT * from _t2 ORDER BY  id, imdb, image, mediainformationfk
 ----
 1
@@ -13119,14 +13119,14 @@ query ITTI rowsort
 http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792156684.01.MZZZZZZZ.gif
 1
 
-query ITT rowsort
+query ITT nosort
  SELECT * from _t1 ORDER BY  creationpk, title, creationdate
 ----
 1
 Titanic
 1997
 
-query II rowsort
+query II nosort
  SELECT * from _t3 ORDER BY  creationfk, creatorfk
 ----
 1
@@ -13164,7 +13164,7 @@ query II rowsort
 1
 5839
 
-query ITI rowsort
+query ITI nosort
  SELECT * from _t4 ORDER BY  creatorpk, role, individualfk
 ----
 5823
@@ -13219,15 +13219,31 @@ Writer
 Director
 376
 
-query IT rowsort
+query IT nosort
  SELECT * from _t5 ORDER BY  individualpk, personname
 ----
+3
+Abernathy,+Lewis
+43
+Amis,+Suzy
+156
+Bates,+Kathy
+376
+Cameron,+James
+376
+Cameron,+James
+415
+Cascone,+Nicholas
+693
+DiCaprio,+Leonardo
+884
+Fisher,+Frances
+973
+Garber,+Victor
 1222
 Hill,+Bernard
 1312
 Hyde,+Jonathan
-156
-Bates,+Kathy
 2066
 Paxton,+Bill
 2328
@@ -13240,47 +13256,31 @@ Warner,+David
 Winslet,+Kate
 2978
 Zane,+Billy
-3
-Abernathy,+Lewis
-376
-Cameron,+James
-376
-Cameron,+James
-415
-Cascone,+Nicholas
-43
-Amis,+Suzy
-693
-DiCaprio,+Leonardo
-884
-Fisher,+Frances
-973
-Garber,+Victor
 
-query RTTR rowsort
+query RTTR nosort
  SELECT * from Video ORDER BY  id, imdb, image, mediainformationfk
 ----
-896 values hashing to 62c679681b876f3de4d08ac0b740cc2e
+896 values hashing to fa825bcff873b78b672428fa5f2b814e
 
-query RTT rowsort
+query RTT nosort
  SELECT * from Creation ORDER BY  creationpk, title, creationdate
 ----
-672 values hashing to de395f8f771af42553a032a2c7f6761e
+672 values hashing to d552f4aaf4581ad4e5df5451510fcb34
 
-query RR rowsort
+query RR nosort
  SELECT * from CreationCreator ORDER BY  creationfk, creatorfk
 ----
-7992 values hashing to 6df6f964549b493d7260dfda4e341c6b
+7992 values hashing to 798550cddb1d7660c6a728db16231696
 
-query RTR rowsort
+query RTR nosort
  SELECT * from Creator ORDER BY  creatorpk, role, individualfk
 ----
-11988 values hashing to ecd881f6bcb6454b8c6a8ece1765c3cc
+11988 values hashing to dcf8dbebea2fb0a318f4b0e8c4580be7
 
-query RT rowsort
+query RT nosort
  SELECT * from Individual ORDER BY  individualpk, personname
 ----
-5974 values hashing to fd53998e38ae1ad5c81a25fed8ffcf79
+5974 values hashing to ea101a57cd4d5bea79b5042b558bb6d2
 
 statement ok
  create table _t6 (CreatorPK int, Role varchar(255), IndividualFK int)
@@ -13300,20 +13300,20 @@ statement ok
 statement ok
  INSERT INTO _t8 SELECT Individual.IndividualPK, Individual.PersonName FROM Individual,_t6 WHERE (Individual.IndividualPK = _t6.IndividualFK)
 
-query II rowsort
+query II nosort
  SELECT * from _t7 ORDER BY  creationfk, creatorfk
 ----
-486 values hashing to acb495f5fae863cbfa3bbfbcdef12ab9
+486 values hashing to 3bc0a635c3da3a162d9f76a16192f91e
 
-query ITI rowsort
+query ITI nosort
  SELECT * from _t6 ORDER BY  creatorpk, role, individualfk
 ----
-729 values hashing to 167fe17d7918b1c5ede6828ef1b39f1d
+729 values hashing to d59c9808eb101eb075f112a2aa9510b5
 
-query IT rowsort
+query IT nosort
  SELECT * from _t8 ORDER BY  individualpk, personname
 ----
-486 values hashing to 00699564678b0bcddb6493acb26e0bd4
+486 values hashing to 8209517ffecc8d2124a21a6dca8e764a
 
 statement ok
  create table _t9 (CreationPK int, Title varchar(255), CreationDate varchar(255))
@@ -13363,9 +13363,25 @@ statement ok
 statement ok
  INSERT INTO _t16 SELECT _t15.IndividualPK, _t15.PersonName FROM _t15,_t14 WHERE (_t15.IndividualPK = _t14.IndividualFK)
 
-query ITTI rowsort
+query ITTI nosort
  SELECT * from _t10 ORDER BY  id, imdb, image, mediainformationfk
 ----
+9
+0116629
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif
+1
+19
+0117998
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif
+1
+45
+0117060
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif
+1
+76
+0116695
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0800141741.01.MZZZZZZZ.gif
+1
 103
 0117438
 http%3A%2F%2Fposters.imdb.com%2FPosters%2Fr%2Fransom.jpg
@@ -13394,10 +13410,6 @@ http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729660.01.MZZZZZZZ.gif
 0116313
 http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305182051.01.MZZZZZZZ.gif
 1
-19
-0117998
-http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif
-1
 191
 0117333
 http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630471193X.01.MZZZZZZZ.gif
@@ -13410,22 +13422,22 @@ http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630521610X.01.MZZZZZZZ.gif
 0116213
 http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729601.01.MZZZZZZZ.gif
 1
-45
-0117060
-http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif
-1
-76
-0116695
-http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0800141741.01.MZZZZZZZ.gif
-1
-9
-0116629
-http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif
-1
 
-query ITT rowsort
+query ITT nosort
  SELECT * from _t9 ORDER BY  creationpk, title, creationdate
 ----
+9
+Independence Day
+1996
+19
+Twister
+1996
+45
+Mission: Impossible
+1996
+76
+Jerry Maguire
+1996
 103
 Ransom
 1996
@@ -13447,9 +13459,6 @@ Time to Kill, A
 188
 First Wives Club, The
 1996
-19
-Twister
-1996
 191
 Phenomenon
 1996
@@ -13459,19 +13468,24 @@ Scream
 214
 Eraser
 1996
-45
-Mission: Impossible
-1996
-76
-Jerry Maguire
-1996
-9
-Independence Day
-1996
 
-query II rowsort
+query II nosort
  SELECT * from _t13 ORDER BY  creationfk, creatorfk
 ----
+9
+5640
+9
+5641
+19
+5390
+19
+5391
+45
+4745
+45
+4746
+76
+3952
 103
 3280
 103
@@ -13500,10 +13514,6 @@ query II rowsort
 1172
 188
 1173
-19
-5390
-19
-5391
 191
 1098
 195
@@ -13512,20 +13522,16 @@ query II rowsort
 532
 214
 533
-45
-4745
-45
-4746
-76
-3952
-9
-5640
-9
-5641
 
-query ITI rowsort
+query ITI nosort
  SELECT * from _t14 ORDER BY  creatorpk, role, individualfk
 ----
+532
+Writer
+1082
+533
+Writer
+2169
 1000
 Writer
 2882
@@ -13583,12 +13589,6 @@ Writer
 4746
 Writer
 994
-532
-Writer
-1082
-533
-Writer
-2169
 5390
 Writer
 1716
@@ -13602,9 +13602,33 @@ Writer
 Writer
 689
 
-query IT rowsort
+query IT nosort
  SELECT * from _t16 ORDER BY  individualpk, personname
 ----
+540
+Cook,+Douglas+(I)
+540
+Cook,+Douglas+(I)
+578
+Crichton,+Michael
+578
+Crichton,+Michael
+578
+Crichton,+Michael
+578
+Crichton,+Michael
+585
+Crowe,+Cameron
+689
+Devlin,+Dean
+690
+Di+Pego,+Gerald
+807
+Emmerich,+Roland
+994
+Geller,+Bruce
+994
+Geller,+Bruce
 1043
 Goldsman,+Akiva
 1043
@@ -13659,30 +13683,6 @@ Weisberg,+David+(I)
 Williamson,+Kevin
 2882
 Williamson,+Kevin
-540
-Cook,+Douglas+(I)
-540
-Cook,+Douglas+(I)
-578
-Crichton,+Michael
-578
-Crichton,+Michael
-578
-Crichton,+Michael
-578
-Crichton,+Michael
-585
-Crowe,+Cameron
-689
-Devlin,+Dean
-690
-Di+Pego,+Gerald
-807
-Emmerich,+Roland
-994
-Geller,+Bruce
-994
-Geller,+Bruce
 
 statement ok
  create table _t17 (CreatorPK int, Role varchar(255), IndividualFK int)
@@ -13702,20 +13702,20 @@ statement ok
 statement ok
  INSERT INTO _t19 SELECT Creation.CreationPK, Creation.Title, Creation.CreationDate FROM Creation,_t18 WHERE (Creation.CreationPK = _t18.CreationFK)
 
-query ITI rowsort
+query ITI nosort
  SELECT * from _t17 ORDER BY  creatorpk, role, individualfk
 ----
-729 values hashing to 167fe17d7918b1c5ede6828ef1b39f1d
+729 values hashing to d59c9808eb101eb075f112a2aa9510b5
 
-query II rowsort
+query II nosort
  SELECT * from _t18 ORDER BY  creationfk, creatorfk
 ----
-486 values hashing to acb495f5fae863cbfa3bbfbcdef12ab9
+486 values hashing to 3bc0a635c3da3a162d9f76a16192f91e
 
-query ITT rowsort
+query ITT nosort
  SELECT * from _t19 ORDER BY  creationpk, title, creationdate
 ----
-729 values hashing to 67bc03866027b60b565dc476be356fab
+729 values hashing to d44bb15c186960d94b804682322ebc42
 
 statement ok
  create table _t20 (IndividualPK int, PersonName varchar(255))
@@ -13765,13 +13765,13 @@ statement ok
 statement ok
  INSERT INTO _t27 SELECT _t26.CreationPK, _t26.Title, _t26.CreationDate FROM _t26,_t25 WHERE (_t26.CreationPK = _t25.CreationFK)
 
-query IT rowsort
+query IT nosort
  SELECT * from _t20 ORDER BY  individualpk, personname
 ----
 2522
 Spielberg,+Steven
 
-query ITI rowsort
+query ITI nosort
  SELECT * from _t22 ORDER BY  creatorpk, role, individualfk
 ----
 2290
@@ -13805,7 +13805,7 @@ Director
 Director
 2522
 
-query ITI rowsort
+query ITI nosort
  SELECT * from _t23 ORDER BY  creatorpk, role, individualfk
 ----
 2290
@@ -13839,15 +13839,15 @@ Director
 Director
 2522
 
-query II rowsort
+query II nosort
  SELECT * from _t25 ORDER BY  creationfk, creatorfk
 ----
-119
-2884
+4
+5767
+5
+5743
 13
 5543
-143
-2290
 18
 5417
 22
@@ -13856,25 +13856,25 @@ query II rowsort
 5217
 35
 4994
-4
-5767
 46
 4722
-5
-5743
+119
+2884
+143
+2290
 
-query ITT rowsort
+query ITT nosort
  SELECT * from _t27 ORDER BY  creationpk, title, creationdate
 ----
-119
-Close Encounters of the Third Kind
-1977
+4
+E.T. the Extra-Terrestrial
+1982
+5
+Jurassic Park
+1993
 13
 Jaws
 1975
-143
-Hook
-1991
 18
 Raiders of the Lost Ark
 1981
@@ -13887,15 +13887,15 @@ Saving Private Ryan
 35
 Indiana Jones and the Last Crusade
 1989
-4
-E.T. the Extra-Terrestrial
-1982
 46
 Indiana Jones and the Temple of Doom
 1984
-5
-Jurassic Park
-1993
+119
+Close Encounters of the Third Kind
+1977
+143
+Hook
+1991
 
 statement ok
  create table _t29 (IndividualPK int, PersonName varchar(255))
@@ -13927,7 +13927,7 @@ statement ok
 statement ok
  INSERT INTO _t32 SELECT _t31.IndividualPK, _t31.PersonName, _t31.CreatorPK, _t31.Role, _t31.IndividualFK, _t31.CreationFK, _t31.CreatorFK, Creation.CreationPK, Creation.Title, Creation.CreationDate FROM _t31,Creation WHERE (_t31.CreationFK = Creation.CreationPK)
 
-query ITITIIIITT rowsort
+query ITITIIIITT nosort
  SELECT * from _t32 ORDER BY  individualpk, personname, creatorpk, role, individualfk, creationfk, creatorfk, creationpk, title, creationdate
 ----
 2522

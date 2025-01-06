@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -80,7 +80,7 @@ mal_export const char *mal_version(void);
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
- * the only place where it is currently used. Maybe, we should concider
+ * the only place where it is currently used. Maybe, we should consider
  * also moving the implementation there...
  */
 
@@ -216,7 +216,7 @@ typedef struct MALSTK {
  * for use in profiling instructions.
  */
 	struct timeval clock;		/* time this stack was created */
-	char status;				/* srunning 'R' suspended 'S', quiting 'Q' */
+	char status;				/* running 'R' suspended 'S', quitting 'Q' */
 	int pcup;					/* saved pc upon a recursive all */
 	oid tag;					/* unique invocation call tag */
 	lng memory;					/* Actual memory claims for highwater mark */

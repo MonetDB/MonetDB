@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,7 +24,7 @@
  * The URL syntax is specified in RFC2396, Uniform Resource Identifiers
  * (URI): Generic Syntax. The URL syntax is dependent upon the scheme.
  * In general, a URL has the form <scheme>:<scheme-specific-part>.
- * Thus, accepting a valid URL is a simple proccess, unless the scheme
+ * Thus, accepting a valid URL is a simple process, unless the scheme
  * is known and schema-specific syntax is checked (e.g., http or ftp
  * scheme). For the URL module implemented here, we assume some common
  * fields of the <scheme-specific-part> that are shared among different

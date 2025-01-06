@@ -1,3 +1,446 @@
+monetdb (11.51.7) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7112: Need keyboard shortcut to interrupt query execution rather than
+    session
+  * GH#7205: Unpredictable performance when performing joins over nested
+    queries
+  * GH#7574: Assertion failure at `rel2bin_select` when using `STARTSWITH`
+  * GH#7588: incorrect output with single row inputs for var_samp(c) over()
+  * GH#7589: "SELECT * FROM sessions" crashes monetdb/e
+  * GH#7593: A value is being returned with unnecessary scientific notation
+  * GH#7595: SQLTestCase leaks pymonetdb connections
+  * GH#7597: Upgrade + quick restart causes database inconsistency
+  * GH#7599: str_to_date fails when combined with SQL CASE clause
+  * GH#7602: COPY INTO from multiple files causes an assertion error.
+  * GH#7603: COPY INTO from three or more files crashes the server.
+  * GH#7604: file_loader() causes server crash when csv file contains too
+    few field separators or contains empty lines
+  * GH#7607: Adding a column of serial type fails with "Access denied for
+    <user> to schema 'sys'"
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Dec 2024 12:45:20 +0100
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7281: UDFs defined at compile time in a user schema should not become
+    system functions
+  * GH#7563: Unexpected result when using `IS DISTINCT FROM` in `VIEW`
+  * GH#7567: creating remote table from subquery crashes the server
+  * GH#7569: Column of temporary table changes when another is updated
+  * GH#7570: BUG in the "str_to_timestamp" function
+  * GH#7571: Crash when integer overflow in `ORDER BY`
+  * GH#7572: column max length is not stored as specified and accepted at
+    creation time
+  * GH#7575: Incorrect BAT properties after mmapped BAT "leaks" to disk with
+    restart.
+  * GH#7576: unescaping UTF-16 code units goes wrong in json.text
+  * GH#7577: Crash when using `CHECK` constraint
+  * GH#7580: statistics optimizer handles date difference incorrectly
+  * GH#7582: SIGSEGV when creating a SQL function with RETURN CASE WHEN
+    EXISTS (..)
+  * GH#7583: Query slowdown after deleting rows from large table
+  * GH#7584: SO_KEEPALIVE should be configured sensibly
+  * GH#7585: rel2bin_join: Assertion `sql->session->status == -10' failed.
+  * GH#7587: Line/row numbers get out of sync with COPY INTO .. BEST EFFORT
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 24 Oct 2024 14:18:25 +0200
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * sql: Improve casting to generic decimal type by choosing a better fit for
+    precision and scale instead of defaulting to 18 and 3, respectively.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Mon, 21 Oct 2024 14:18:25 +0200
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * sql: When for whatever reason the upgrade code produces an error, we now
+    exit the server.  Before the server would limp on with what is basically
+    a broken database.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 17 Oct 2024 14:18:25 +0200
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * monetdb5: The server prints out an informative message for the case of a graceful
+    termination.
+
+ -- stefanos mavros <stemavros@gmail.com>  Mon, 14 Oct 2024 14:18:25 +0200
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * merovingian: Tweak socket parameters to simulate network activity on client connections.
+    This prevents firewalls from killing connections that seem idle but are
+    actually waiting for a long-running query. Can be controlled with a new
+    'keepalive' option to monetdbd.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Mon, 7 Oct 2024 14:18:25 +0200
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * sql: Improved the violation message of CHECK constraints when violated. It
+    now includes the schema name of the constraint and the check clause.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 26 Sep 2024 14:18:25 +0200
+
+monetdb (11.51.5) unstable; urgency=low
+
+  * sql: Increase the buffer size used by hot snapshot from 64kiB to 1MiB,
+    and make it configurable through setting 'hot_snapshot_buffer_size'.
+    It must be a multiple of 512.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Fri, 23 Aug 2024 14:18:25 +0200
+
+monetdb (11.51.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7562: Assertion failure when comparing `INTERVAL` value
+  * GH#7566: After a while, all new sessions (connections) may get refused
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Aug 2024 12:54:58 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7045: A value filtered in a subquery finds its way to a later filter
+    in the outer query
+  * GH#7097: Add an 'ANY' or 'ARBITRARY' aggregate function
+  * GH#7245: monetdbe silently importing 0 rows, at random
+  * GH#7265: COPY INTO Not Reading in all records of fixed width delimited
+    file
+  * GH#7272: Missed rewrite to bulk operators in simple SQL UDF
+  * GH#7312: Test Button for ODBC Driver
+  * GH#7332: Support IS [NOT] DISTINCT FROM predicate
+  * GH#7353: INTERVAL SECOND columns become incorrect when an INTERVAL HOUR
+    column is present
+  * GH#7367: Libraries linked more than once?
+  * GH#7370: timestamp_to_str function not aware of timezone
+  * GH#7374: Different date and time returns
+  * GH#7392: Evaluate Profile-Guided Optimization
+  * GH#7424: Performance issue in select-joins
+  * GH#7459: Crash when using `CONTAINS` in `ORDER BY` clause
+  * GH#7460: Crash when using `CAST` and `BETWEEN AND`
+  * GH#7463: Unexpected result when using `CONTAINS` and type casting
+  * GH#7466: Crash when `INNER JOIN` with `CONTAINS`
+  * GH#7467: Conversion TIMESTAMPTZ to TIME does not take session TZ into
+    account
+  * GH#7474: MonetDB server crashes in `VLTgenerator_table_`
+  * GH#7475: MonetDB server crashes in `__nss_database_lookup`
+  * GH#7476: MonetDB server crashes in `subrel_bin`
+  * GH#7477: MonetDB server crashes in `atom_cmp`
+  * GH#7480: MonetDB server crashes in `get_rel_count`
+  * GH#7481: MonetDB server crashes in `mvc_row_result_wrap`
+  * GH#7482: MonetDB server crashes in `bin_find_smallest_column`
+  * GH#7483: MonetDB server crashes in `rel_get_statistics_`
+  * GH#7484: MonetDB server crashes in `rel_optimize_projections_`
+  * GH#7485: MonetDB server crashes in `exp_setalias`
+  * GH#7486: MonetDB server crashes in `ALGgroupby`
+  * GH#7488: MonetDB server crashes in `strCmp`
+  * GH#7497: Multi-column IN clause with value list produces syntax error
+  * GH#7500: request: ANALYZE statement should be allowed to be used in the
+    body of a procedure or function or trigger.
+  * GH#7514: Nonexistent window function raises
+    `ParseException:SQLparser:42000!Query too complex: running out of stack
+    space`
+  * GH#7517: UNLOGGED tables don't get cleaned up properly when DROPped.
+  * GH#7521: Unexpected result when using `IS DISTINCT FROM`
+  * GH#7522: Crash when creating view with `HAVING`
+  * GH#7523: Assertion failure when using `CONTAINS`
+  * GH#7524: Unexpected error when using `NATURAL RIGHT JOIN`
+  * GH#7525: Related to bug #7422 (variadic arguments in aggregate UDFs)
+  * GH#7527: Unexpected result when using `IS DISTINCT FROM` with `RIGHT
+    JOIN`
+  * GH#7528: Assertion failure when using `JAROWINKLER` in `ORDER BY` clause
+  * GH#7529: Finding minimum value in reverse sorted column with NULL values
+    at the end gives wrong result.
+  * GH#7530: Assertion failure when using `JAROWINKLER` with empty string
+  * GH#7533: DROP of a schema with CASCADE option drops tables, but bats are
+    not removed.
+  * GH#7534: Unexpected result when using `IS DISTINCT FROM` with `AND`
+  * GH#7535: Assertion failure when using `GROUP BY` when `CREATE VIEW`
+  * GH#7538: BUG with decimal values
+  * GH#7539: Crash when using `IS DISTINCT FROM` with `SIN`
+  * GH#7540: Assertion failure when using `STARTSWITH`
+  * GH#7542: Nested query triggers an assert
+  * GH#7543: Unexpected result when using `IS DISTINCT FROM` with constants
+  * GH#7544: Unexpected result when using `STARTSWITH`
+  * GH#7545: Crash when creating view with `GROUP BY`
+  * GH#7547: drop login trigger causes server crash
+  * GH#7550: non-admin user can no longer query sys.statistics or
+    information_schema.tables
+  * GH#7552: Unexpected result when using `NULL` constant in comparison
+  * GH#7553: Assertion failure when using `INNER JOIN` on `STARTSWITH`
+  * GH#7554: Unexpected result when using range comparison with `NULL`
+  * GH#7555: Unexpected result when casting integer to boolean in comparison
+  * GH#7556: Assertion failure when using `STARTSWITH` with view
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Aug 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * odbc: Extended ODBC Data Source Setup program on Windows with fields to specify
+    optional Client Information such as Application Name and Client Remark.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Wed, 7 Aug 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * MonetDB: The CMake configuration files for building extensions have now been
+    included in the various MonetDB development RPMs and debs.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 6 Aug 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * odbc: Extended ODBC Data Source Setup program on Windows with fields to specify
+    new TLS Connection settings.
+  * odbc: Extended ODBC Data Source Setup program on Windows with a Test-button
+    to quickly test connectivity to a MonetDB server.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 1 Aug 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: The "phash" column in the sys.storage() table now indicates whether a
+    hash exists.  If the hash is not loaded but there is a hash available
+    on disk, the phash value is "true", but the "hashes" value is 0.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 16 Jul 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Added execution privilege on all sys.generate_series(first, limit)
+    and sys.generate_series(first, limit, stepsize) functions to public,
+    so all users can now call these table producing generator functions.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 11 Jul 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * MonetDB: Removed upgrade code for versions before Jul2021.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * mapilib: Add new columns to sys.sessions. Column 'language' is usually 'sql'.
+    Column 'peer' is the network address of the client (something like
+    '[::1]:46558' or '<UNIX SOCKET>'). Columns 'hostname', 'application',
+    'client', 'clientpid' and 'remark' can be set by the client.
+    Libmapi/mclient, pymonetdb and monetdb-java have been modified to fill
+    in sensible default values.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Extend CREATE USER MAX_MEMORY and ALTER USER MAX_MEMORY to accept
+    strings of the form '10MiB', '10G', etc.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Extended view sys.sessions and function sys.sessions() with new columns:
+    language, peer, hostname, application, client, clientpid and remark.
+  * sql: All users now have SELECT privilege on view sys.sessions, but non-admin
+    users only see their own sessions.
+  * sql: Added procedure sys.setclientinfo(property string, value string)
+    to allow the client application to set a specific client info property.
+  * sql: Added system table sys.clientinfo_properties that lists the supported
+    client info properties and their associated column name in sys.sessions view.
+    It contains property names: ClientHostname, ApplicationName,
+    ClientLibrary, ClientPid and ClientRemark.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * odbc: ODBC now supports TLS. It can be configured through the following
+    DSN- or Connection String attributes (canonical name / user friendly name):
+      TLS / Encrypt = ON/OFF
+      CERT / Server Certificate = PATH
+      CERTHASH / Server Certificate Hash = sha256:HEXDIGITS
+      CLIENTKEY / Client Key = PATH
+      CLIENTCERT / Client Certificate = PATH
+  * odbc: Several more connection properties have been made configurable:
+      SCHEMA / Schema = NAME
+      TIMEZONE / Time Zone = Minutes East Of UTC
+      REPLYSIZE / Reply Size = NUMBER
+      LOGFILE / Log File = PATH
+      LOGINTIMEOUT / Login Timeout = MILLISECONDS
+      CONNECTIONTIMEOUT / Connection Timeout = MILLISECONDS
+      AUTOCOMMIT / Autocommit = ON/OFF
+      SOCK / Unix Socket = PATH (unix only)
+  * odbc: SQLBrowseConnect() adds On/Off suggestions to boolean settings
+    and prioritizes the DATABASE attribute if it notices monetdbd
+    requires one. Apart from that only UID/User and PWD/Password
+    are required, all others have sensible defaults.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Extended sys.generate_series() to generate dates. Added 2 new functions:
+    sys.generate_series(first date, "limit" date, stepsize interval month) and
+    sys.generate_series(first date, "limit" date, stepsize interval day).
+
+ -- Niels Nes <niels@cwi.nl>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Added support for select exp, count(*) group by 1 order by 1;
+    ie. using numeric references in group by clause.
+  * sql: Added support for GROUP BY ALL. This finds all expressions from the
+    selections which aren't aggregations and groups on those.
+    At least one aggregation must be specified.
+    The ALL keyword can also be replaced by '*', so: GROUP BY *.
+  * sql: Added support for ORDER BY ALL. This orders on all columns of the selection.
+    The ALL keyword can also be replaced by '*', so: ORDER BY *.
+
+ -- Niels Nes <niels@cwi.nl>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * MonetDB: The shared library (.dll aka .so files) now have the version number
+    as part of the name.  This should allow the building of compatibility
+    versions that can be installed in parallel to the latest version.
+  * MonetDB: Some of the Debian/Ubuntu packages have been renamed.  The old monetdb5
+    names have been changed to plain monetdb, and libmonetdb5-server-*
+    packages have been renamed monetdb-*.
+  * MonetDB: The names of some of the provided RPM files have been changed.
+    References to the old MonetDB5 name have been removed.  All packages
+    are now just MonetDB.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * gdk: Various changes were made having to do with things like case-insensitive
+    comparisons and converting to upper or lower case.  Case insensitive
+    comparison (i.e. the ILIKE operator) uses case folding which is similar
+    to converting to lower case, but changes more characters, also sometimes
+    to multiple characters (e.g. German sharp s (ß) compares equal to SS).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * stream: ICONV support has been removed from the stream library.  The server
+    itself only needs UTF-8 support.  The client (mclient) does have
+    iconv support.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Removed the obsolete ANALYZE statement syntax options: SAMPLE nn and
+    MINMAX. Both options have been ignored since release Jan2022. Now they
+    are no longer accepted in the ANALYZE statement.
+  * sql: The ANALYZE statement can now be used in procedures, functions and triggers.
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Make schema renaming more permissive. A schema can be renamed if it
+    does not contain objects that are a dependency for objects outside
+    the schema. If such dependencies exist, they are shown in the
+    table sys.dependencies.
+
+ -- Lucas Pereira <lucas.pereira@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * gdk: Made some changes to how BAT descriptors are allocated.  They are now
+    allocated in bulk, meaning fewer malloc/free calls during processing.
+  * gdk: Removed macro BBP_cache and its associated code.  Checking whether a
+    BAT is cached (loaded in memory) can be done by checking the BBPLOADED
+    bit in the BBP_status value.  Getting a pointer to the BAT descriptor
+    can be done by using BBP_desc.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Introduce IS [NOT] DISTINCT FROM syntax. The syntax allows two values
+    to be compared. The comparison always returns boolean FALSE or TRUE
+    never NULL.
+
+ -- Yunus Koning <yunus.koning@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: SQL2023 feature: Introduce UNIQUE NULLS [NOT] DISTINCT syntax which
+    allows for NULLS to be treated as unique, i.e. a column with this
+    constraint can have one NULL value at most.
+  * sql: SQL2023 feature: Allow project and ORDER BY expressions on
+    UNIQUE constrained columns when the primary key column is
+    used in a GROUP BY expression.
+
+ -- Yunus Koning <yunus.koning@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * stream: CURL support has been removed from the stream library.  If support is
+    needed, look at the source code in either streamcat.c or mclient.c.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * gdk: The SQL transaction ID is no longer saved in the BBP.dir file.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * clients: Msqldump now accepts --output and --outputdir options.  When the
+    --outputdir option is used, the dump is placed in the file dump.sql in
+    the specified directory and all tables are dumped to separate CSV files.
+    In this way it is feasible to edit the dump script by hand if needed,
+    even for a large database.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * clients: The --table (-t) option of msqldump now accepts SQL-style % wildcard
+    characters to dump all tables that match the pattern.  E.g. -t
+    %test%.%test% dumps all tables with 'test' in both the schema and
+    table name.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * clients: Implemented interrupt handling in mclient.  When using mclient
+    interactively, an interrupt (usually control-C) stops whatever the
+    client is doing.  When editing a line, the line is discarded; when
+    editing a second or later line of a query, the whole query is discarded;
+    when a query is being executed, the server is asked to stop the query
+    at its earliest convenience.  Stopping a running query can only be
+    done with an up-to-date server.  All of this does not work on Windows.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * gdk: Made some changes to the TIMEOUT macros.  Most importantly, they
+    now get a pointer to a QryCtx structure as argument instead of the
+    timeout value.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sat, 29 Jun 2024 14:51:59 +0200
+
+monetdb (11.51.1) unstable; urgency=low
+
+  * sql: Add a DECIMAL AS clause to COPY INTO that configures the decimal separator
+    and thousands separator for decimals, temporal types and floats.
+
+ -- Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>  Sat, 29 Jun 2024 14:51:59 +0200
+
 monetdb (11.49.11) unstable; urgency=low
 
   * Rebuilt.
@@ -580,7 +1023,7 @@ monetdb (11.47.5) unstable; urgency=low
 
   * sql: An upgrade that both creates a new .snapshot user and extends the
     sys.db_user_info table with (among others) a password column did
-    these in such a way that the passord value for the new user was NULL.
+    these in such a way that the password value for the new user was NULL.
     This is fixed by updating the password.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 22 Jun 2023 13:12:19 +0200
@@ -661,7 +1104,7 @@ monetdb (11.47.1) unstable; urgency=low
   * sql: New functionality for string matching and similarity: startswith,
     endswith, contains, Levenshtein distance and Jaro-Winkler similarity.
     The functions startswith, endswith and contains have a version where
-    a case insentive flag can be used.
+    a case insensitive flag can be used.
     Also, there are new custom join functionality for startswith, endswith,
     contains, Levenshtein distance and Jaro-Winkler similarity.
   * sql: Renamed previous Levenshtein distance to Damerau-Levenshtein distance.
@@ -976,7 +1419,7 @@ monetdb (11.45.13) unstable; urgency=low
 monetdb (11.45.13) unstable; urgency=low
 
   * sql: Fixed cleanup after a failed allocation where the data being cleaned
-    up was unitialized but still used as pointers to memory that also had
+    up was uninitialized but still used as pointers to memory that also had
     to be freed.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 14 Dec 2022 13:18:55 +0100
@@ -1111,7 +1554,7 @@ monetdb (11.45.3) unstable; urgency=low
 monetdb (11.45.3) unstable; urgency=low
 
   * gdk: Fixed a bug in ORDER BY with both NULLS LAST and LIMIT when the ordering
-    was on an interger or integer-like column and NULL values are present.
+    was on an integer or integer-like column and NULL values are present.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 19 Sep 2022 09:39:01 +0200
 
@@ -1141,7 +1584,7 @@ monetdb (11.45.1) unstable; urgency=low
   * GH#7282: call sys.dump_table_data(); fails
   * GH#7285: C-UDFs: aggr_group.count has wrong value (number of input rows
     instead of number of groups).
-  * GH#7296: Implictly cast a timestamp string to DATE when appropriate
+  * GH#7296: Implicitly cast a timestamp string to DATE when appropriate
   * GH#7297: Parsing partial dates behaves unpredictable
   * GH#7306: ODBC Driver Assertion `stmt->Dbc->FirstStmt' Failed
   * GH#7314: ODBC Driver : please mask/hide password
@@ -1646,7 +2089,7 @@ monetdb (11.43.11) unstable; urgency=low
   * gdk: Fixed a bug in the append code for msk (bit mask) bats.
   * gdk: Conversions from floating point types to integral types that involve
     multiplication now use the "long double" as intermediate type, thereby
-    loosing as few significant bits as is feasible.
+    losing as few significant bits as is feasible.
   * gdk: Found and fixed another source for the now infamous BBPcheckbats error
     that sometimes occurs at startup of the server.
 
@@ -1759,7 +2202,7 @@ monetdb (11.43.3) unstable; urgency=low
 monetdb (11.43.1) unstable; urgency=low
 
   * Rebuilt.
-  * GH#7168: Loosing the documentation
+  * GH#7168: Losing the documentation
   * GH#7180: GROUP BY-subquery crashes MonetDb
   * GH#7182: Queries against sys.querylog_catalog, sys.querylog_calls or
     sys.querylog_history fail after restore of a db created using call
@@ -1780,7 +2223,7 @@ monetdb (11.43.1) unstable; urgency=low
 monetdb (11.43.1) unstable; urgency=low
 
   * sql: With the storage cleanup in the 11.41.5 (Jul2021) release, the ANALYZE
-    statement was updated to accomodate those changes. The SAMPLE parameter
+    statement was updated to accommodate those changes. The SAMPLE parameter
     is now ignored because ANALYZE generated statistics used by
     relational operators, are required to be precise.
   * sql: In order to mitigate the I/O required to update the 'statistics' table,
@@ -2524,7 +2967,7 @@ monetdb (11.39.9) unstable; urgency=low
   * GH#7023: CREATE VIEW: SELECT: cannot use non GROUP BY column '%1' in
     query results without an aggregate function
   * GH#7024: DELETE FROM or TRUNCATE on freshly created table leads to
-    loosing all further inserts in same transaction
+    losing all further inserts in same transaction
   * GH#7030: DROP TABLE with AUTO_INCREMENT doesn't drop sequence causing
     left-over dependency
   * GH#7034: User with sysadmin role cannot create another user
@@ -2605,7 +3048,7 @@ monetdb (11.39.1) unstable; urgency=low
     conditions
   * BZ#6943: JSON parser is too permissive
   * BZ#6948: msqldump with Empty BLOBs cannot be imported
-  * BZ#6949: Loosing timing precision
+  * BZ#6949: Losing timing precision
   * BZ#6950: redundant/replicated code line in gdk/gdk_hash.c
   * BZ#6951: Use a different naming scheme for MAL blocks
   * BZ#6954: FILTER functions no longer find their implementation
@@ -2855,7 +3298,7 @@ monetdb (11.37.7) unstable; urgency=low
 monetdb (11.37.5) unstable; urgency=low
 
   * Rebuilt.
-  * BZ#6864: (I)LIKE with multiple % doen't find matches
+  * BZ#6864: (I)LIKE with multiple % doesn't find matches
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 26 May 2020 10:38:30 +0200
 
@@ -3261,7 +3704,7 @@ monetdb (11.37.1) unstable; urgency=low
 monetdb (11.37.1) unstable; urgency=low
 
   * monetdb5: The MAL profiler now assigns the SQL TRACE output to the client record
-    thereby avoiding the interaction with other queries, but loosing
+    thereby avoiding the interaction with other queries, but losing
     insight of competing queries. The stethoscope should be used for that.
 
  -- Martin Kersten <mk@cwi.nl>  Sat, 22 Feb 2020 11:10:50 +0200
@@ -3367,9 +3810,9 @@ monetdb (11.35.1) unstable; urgency=low
   * BZ#6695: timestamp transformation
   * BZ#6700: Monetdb Bugs in Subselect statements:
   * BZ#6722: window functions issues
-  * BZ#6740: while upgrading the database from verison (MonetDB-11.27.13)
+  * BZ#6740: while upgrading the database from version (MonetDB-11.27.13)
     to (MonetDB-11.33.3) we are unable to bring up the database
-  * BZ#6754: in mclient a strang msg is reported after issueing command:
+  * BZ#6754: in mclient a strang msg is reported after issuing command:
     set schema sys;
   * BZ#6755: Assertion failure in rel_bin.c
   * BZ#6756: Error in optimizer garbageCollector on merge tables select
@@ -3479,7 +3922,7 @@ monetdb (11.35.1) unstable; urgency=low
     day of the month and the number of months since the year -4712
     separately in a single 32 bit integer of which only 26 bits are
     used.  Dates now use the proleptic Gregorian calendar, meaning the
-    normal Gregorian callendar has been extended backward, and before
+    normal Gregorian calendar has been extended backward, and before
     the year 1, we have the year 0.  Both the old and new timestamp
     types are a combination of a daytime and a date value, but since
     those types have changed, the timestamp type has also changed.  The
@@ -3639,8 +4082,8 @@ monetdb (11.33.5) unstable; urgency=low
 monetdb (11.33.3) unstable; urgency=low
 
   * Rebuilt.
-  * BZ#6647: Add suport to Python 3 on Windows
-  * BZ#6696: Re-use of MAL explain plans with complex type coercions
+  * BZ#6647: Add support to Python 3 on Windows
+  * BZ#6696: Reuse of MAL explain plans with complex type coercions
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 26 Apr 2019 15:11:15 +0200
 
@@ -3820,7 +4263,7 @@ monetdb (11.33.1) unstable; urgency=low
 
   * sql: Improved and extended storagemodel functionality. Changes include:
   * sql: Added views sys."tablestorage" and sys."schemastorage" for easy and
-    quick assesment of aggregated storage usage per table or per schema.
+    quick assessment of aggregated storage usage per table or per schema.
   * sql: Excluded listing system tables in views sys."storage", sys."tablestorage"
     and sys."schemastorage". You can still use sys."storage"() to query
     storage of system tables and columns.
@@ -4366,7 +4809,7 @@ monetdb (11.31.1) unstable; urgency=low
     recorded pid is running. If not, we start stethoscope, assuming that
     something went wrong before.
   * merovingian: Changed the monetdb stop command to try to stop stethoscope before
-    stoping the server. The error conditions that can arrise from attempting
+    stopping the server. The error conditions that can arrise from attempting
     to stop stethoscope are:
     - The database is not running.
     - The profilerlogpath is not set.
@@ -4438,7 +4881,7 @@ monetdb (11.29.5) unstable; urgency=low
     statement
   * BZ#6574: server crashed could not find ordered index while creating
     a table
-  * BZ#6576: Sqlitelogictest aritmetic expressions with negative numbers
+  * BZ#6576: Sqlitelogictest arithmetic expressions with negative numbers
     handling
   * BZ#6577: creating temp table kills performance of the original query
   * BZ#6578: One two-tuple insert gives different results than two single
@@ -4993,7 +5436,7 @@ monetdb (11.27.11) unstable; urgency=low
   * BZ#6470: mitosis gets in the way of simple select
   * BZ#6471: calls to sys.generate_series should auto-convert arguments
   * BZ#6472: Assertion failure in rel_rename (Sqlsmith)
-  * BZ#6477: assertion eror rel_push_project_up (sqlsmith)
+  * BZ#6477: assertion error rel_push_project_up (sqlsmith)
   * BZ#6478: Crash with nested order by/ limit offset
   * BZ#6479: Mserver receives an assertion error on a procedure call
   * BZ#6480: Segfault in mvc_find_subexp (sqlsmith)
@@ -5012,7 +5455,7 @@ monetdb (11.27.11) unstable; urgency=low
 
 monetdb (11.27.9) unstable; urgency=low
 
-  * BZ#6460: selinux doen't allow mmap
+  * BZ#6460: selinux doesn't allow mmap
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Sun, 5 Nov 2017 09:56:39 +0100
 
@@ -5397,7 +5840,7 @@ monetdb (11.25.23) unstable; urgency=low
   * BZ#6300: Protect against missing BATs (sqlsmith)
   * BZ#6314: Lateral crash report (sqlsmith)
   * BZ#6315: Exist operator on type bigint missing (sqlsmith)
-  * BZ#6316: Coalesc and limit error (sqlsmith)
+  * BZ#6316: Coalesce and limit error (sqlsmith)
   * BZ#6317: Two-column integer aggregation extremely slow
   * BZ#6318: Daemon crashes if .merovignian_properties for a database
     contains more than 42 entries
@@ -5517,7 +5960,7 @@ monetdb (11.25.11) unstable; urgency=low
 monetdb (11.25.11) unstable; urgency=low
 
   * gdk: Fixed a bug when appending string bats that are fully duplicate
-    eliminated.  It could happend that the to-be-appended bat had an empty
+    eliminated.  It could happen that the to-be-appended bat had an empty
     string at an offset and at that same offset in the to-be-appended-to bat
     there happened to be a (sequence of) NULL(s).  Then this offset would be
     used, even though it might nog be the right offset for the empty string
@@ -5564,7 +6007,7 @@ monetdb (11.25.7) unstable; urgency=low
   * BZ#6193: converting to a smaller precision (fewer or no decimals after
     decimal point) should round/truncate consistently
   * BZ#6194: splitpart returns truncated last part if it contains non
-    ascii caracters
+    ascii characters
   * BZ#6195: Cast from huge decimal type to smaller returns wrong results
   * BZ#6196: Database crashes after generate_series query
   * BZ#6198: COALESCE could be more optimized
@@ -5765,7 +6208,7 @@ monetdb (11.25.1) unstable; urgency=low
 monetdb (11.25.1) unstable; urgency=low
 
   * sql: The syntax of bat.new(:oid,:any) has been changed by dropping the
-    superflous :oid.  All BATs are now binary associations between a void
+    superfluous :oid.  All BATs are now binary associations between a void
     column and a materialized value column.  (except for the internal
     :bat[:void,:void] representation of simple oid ranged tails.)
 
@@ -7229,7 +7672,7 @@ monetdb (11.19.1) unstable; urgency=low
 
 monetdb (11.19.1) unstable; urgency=low
 
-  * monetdb5: Removed algebra.topN and its imlementation BATtopN.  The function was
+  * monetdb5: Removed algebra.topN and its implementation BATtopN.  The function was
     not used.
   * monetdb5: Removed aggr.histogram and its implementation BAThistogram.  The
     function was not used, and did not produce output in the "headless"
@@ -7542,7 +7985,7 @@ monetdb (11.15.19) unstable; urgency=low
   * BZ#3368: BAT sortedness info ignored on ORDER BY and TOPN
   * BZ#3374: UNIQUE constraint does not set tkey property on the
     corresponding BAT
-  * BZ#3382: Response to PREPARE emtpy if query contains a LIMIT
+  * BZ#3382: Response to PREPARE empty if query contains a LIMIT
   * BZ#3385: Simple query fails with 'identifier not found'
   * BZ#3387: mclient does not properly double quote schema names when
     using autofill tab
@@ -7843,7 +8286,7 @@ monetdb (11.15.1) unstable; urgency=low
 
 monetdb (11.15.1) unstable; urgency=low
 
-  * clients: msqldump: Implmented an option (--table/-t) to dump a single table.
+  * clients: msqldump: Implemented an option (--table/-t) to dump a single table.
   * clients: Changed msqdump's trace option to be in line with mclient.  In both
     cases, the long option is --Xdebug and the short option is -X.
 
@@ -7956,7 +8399,7 @@ monetdb (11.13.1) unstable; urgency=low
 monetdb (11.13.1) unstable; urgency=low
 
   * clients: all strings returned by python2 are unicode, removed use_unicode option
-  * clients: python2 and 3 type convertion speed improvements
+  * clients: python2 and 3 type conversion speed improvements
   * clients: python2 uses new styl objects now (bug #3104)
   * clients: split python2 and python3
 
@@ -8095,7 +8538,7 @@ monetdb (11.11.1) unstable; urgency=low
 
 monetdb (11.11.1) unstable; urgency=low
 
-  * buildtools: Created seperate RPM and DEB packages for MonetDB/JAQL.
+  * buildtools: Created separate RPM and DEB packages for MonetDB/JAQL.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 2 Jul 2012 11:02:20 +0200
 
@@ -8108,7 +8551,7 @@ monetdb (11.11.1) unstable; urgency=low
 
 monetdb (11.11.1) unstable; urgency=low
 
-  * clients: ODBC: Fixed a bug where SQLNativeSql expected a statment handle instead
+  * clients: ODBC: Fixed a bug where SQLNativeSql expected a statement handle instead
     of a connection handle.
 
  -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 29 Jun 2012 11:02:20 +0200
@@ -8799,7 +9242,7 @@ monetdb (11.5.3) unstable; urgency=low
 monetdb (11.5.3) unstable; urgency=low
 
   * monetdb5: Fixed a problem where MAL variables weren't properly cleared before
-    reuse of the data strucutre.  This problem could cause the data flow
+    reuse of the data structure.  This problem could cause the data flow
     scheduler to generate dependencies between instructions that didn't
     actually exist, which in turn could cause circular dependencies among
     instructions with deadlock as a result.  Bugs 2865 and 2888.
@@ -9006,7 +9449,7 @@ monetdb (11.5.1) unstable; urgency=low
 monetdb (11.5.1) unstable; urgency=low
 
   * clients: When the first non-option argument of mclient does not refer to an
-    exising file, it now is taken as database name.  This allows to simply
+    existing file, it now is taken as database name.  This allows to simply
     do `mclient mydb`.
 
  -- Fabian Groffen <fabian@cwi.nl>  Tue, 26 Jul 2011 09:13:39 +0200
@@ -9091,7 +9534,7 @@ monetdb (11.3.5) unstable; urgency=low
 monetdb (11.3.5) unstable; urgency=low
 
   * sql: Fixed incorrect insert counts.
-  * sql: Fixed bug 2823: MAL exeption on SQL query with subquery in the where
+  * sql: Fixed bug 2823: MAL exception on SQL query with subquery in the where
     part.
   * sql: Redirect error from create scripts back to the first client.  This
     fixes bug 2813.

@@ -17,7 +17,7 @@ y
 c
 x
 
-query TT rowsort
+query TT nosort
 select * from testorder order by 1
 ----
 a
@@ -27,15 +27,15 @@ y
 c
 x
 
-query TT rowsort
+query TT nosort
 select * from testorder order by 2
 ----
-a
-z
-b
-y
 c
 x
+b
+y
+a
+z
 
 statement ok
 rollback

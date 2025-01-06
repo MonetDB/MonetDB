@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -656,7 +656,7 @@ static void ctl_handle_client(
 					free(e);
 				} else {
 					/* announce database, but need to do it the
-					 * right way so we don't accidentially announce
+					 * right way so we don't accidentally announce
 					 * an unshared database */
 					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
@@ -938,7 +938,7 @@ static void ctl_handle_client(
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 
-	/* comands below this point are multi line and hence you can't
+	/* commands below this point are multi line and hence you can't
 	 * combine them, so they disconnect the client afterwards */
 
 			} else if (strcmp(p, "version") == 0) {

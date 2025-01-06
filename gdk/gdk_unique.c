@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -122,7 +122,7 @@ BATunique(BAT *b, BAT *s)
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
 			if (!(seen[val >> 5] & m)) {
 				seen[val >> 5] |= m;
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+				if (bunfastappOID(bn, o) != GDK_SUCCEED)
 					goto bunins_failed;
 				if (bn->batCount == 256) {
 					/* there cannot be more than
@@ -148,7 +148,7 @@ BATunique(BAT *b, BAT *s)
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
 			if (!(seen[val >> 5] & m)) {
 				seen[val >> 5] |= m;
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+				if (bunfastappOID(bn, o) != GDK_SUCCEED)
 					goto bunins_failed;
 				if (bn->batCount == 65536) {
 					/* there cannot be more than
@@ -166,7 +166,7 @@ BATunique(BAT *b, BAT *s)
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			if (prev == NULL || (*cmp)(v, prev) != 0) {
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+				if (bunfastappOID(bn, o) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 			prev = v;
@@ -178,11 +178,8 @@ BATunique(BAT *b, BAT *s)
 		     (b->batRole == PERSISTENT && GDKinmemory(0))) &&
 		    ci.ncand == bi.count &&
 		    BAThash(b) == GDK_SUCCEED)) {
-		BUN lo = 0;
-
 		/* we already have a hash table on b, or b is
-		 * persistent and we could create a hash table, or b
-		 * is a view on a bat that already has a hash table */
+		 * persistent and we could create a hash table */
 		algomsg = "unique: existing hash";
 		MT_rwlock_rdlock(&b->thashlock);
 		hs = b->thash;
@@ -196,19 +193,19 @@ BATunique(BAT *b, BAT *s)
 			o = canditer_next(&ci);
 			p = o - hseq;
 			v = VALUE(p);
-			for (hb = HASHgetlink(hs, p + lo);
-			     hb != BUN_NONE && hb >= lo;
+			for (hb = HASHgetlink(hs, p);
+			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
-				assert(hb < p + lo);
+				assert(hb < p);
 				if (cmp(v, BUNtail(bi, hb)) == 0 &&
-				    canditer_contains(&ci, hb - lo + hseq)) {
+				    canditer_contains(&ci, hb + hseq)) {
 					/* we've seen this value
 					 * before */
 					break;
 				}
 			}
-			if (hb == BUN_NONE || hb < lo) {
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED) {
+			if (hb == BUN_NONE) {
+				if (bunfastappOID(bn, o) != GDK_SUCCEED) {
 					MT_rwlock_rdunlock(&b->thashlock);
 					hs = NULL;
 					goto bunins_failed;
@@ -266,7 +263,7 @@ BATunique(BAT *b, BAT *s)
 			}
 			if (hb == BUN_NONE) {
 				p = o - hseq;
-				if (bunfastappTYPE(oid, bn, &o) != GDK_SUCCEED)
+				if (bunfastappOID(bn, o) != GDK_SUCCEED)
 					goto bunins_failed;
 				/* enter into hash table */
 				HASHputlink(hs, p, HASHget(hs, prb));

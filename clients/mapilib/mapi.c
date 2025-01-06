@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -182,7 +182,7 @@
  * 		fprintf(fp, "usage: %s <host>    <db> <port> <mode> <query>\n", prog);
  * 		fprintf(fp, "  e.g. %s localhost demo 50000  xml    '1+1'\n",   prog);
  * 	} else {
- * 		// CONNECT TO SERVER, default unsecure user/password, language="sql"
+ * 		// CONNECT TO SERVER, default insecure user/password, language="sql"
  * 		Mapi    mid = mapi_connect(host, port, "monetdb", "monetdb", "sql", db);
  * 		MapiHdl hdl;
  * 		if (mid == NULL) {
@@ -519,7 +519,7 @@
  * zero is returned upon encountering an error or when the database value
  * is NULL; this can be analyzed in using @code{mapi\_error()}.
  *
- * @item size_t mapi_fetch_fiels_len(MapiHdl hdl, int fnr)
+ * @item size_t mapi_fetch_field_len(MapiHdl hdl, int fnr)
  *
  * Return the length of the C-string representation excluding trailing NULL
  * byte of the value.  Zero is returned upon encountering an error, when the
@@ -1217,7 +1217,7 @@ mapi_log_header(Mapi mid, const char *funcname, long line, const char *mark1, co
 	if (firstcall == 0)
 		firstcall = now;
 	double seconds = (double)(now - firstcall) / 1e6;
-	mnstr_printf(mid->tracelog, "\342\226\266 [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line); /* U+25B6: right-pointing triangle */
+	mnstr_printf(mid->tracelog, "\n** [%u] t=%.3fs %s%s %s(), line %ld\n", mid->index, seconds, mark1, mark2, funcname, line);
 }
 
 void
@@ -1551,7 +1551,7 @@ add_error(struct MapiResultSet *result, char *error)
 	    (isdigit((unsigned char) error[4]) ||
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
-			/* remeber SQLSTATE for first error */
+			/* remember SQLSTATE for first error */
 			strcpy_len(result->sqlstate, error,
 				   sizeof(result->sqlstate));
 		}
@@ -1561,10 +1561,8 @@ add_error(struct MapiResultSet *result, char *error)
 	REALLOC(result->errorstr, size + strlen(error) + 2);
 	if (result->errorstr == NULL)
 		result->errorstr = mapi_nomem;
-	else {
-		strcpy(result->errorstr + size, error);
-		strcat(result->errorstr + size, "\n");
-	}
+	else
+		stpcpy(stpcpy(result->errorstr + size, error), "\n");
 }
 
 const char *
@@ -1682,8 +1680,8 @@ finish_handle(MapiHdl hdl)
 			assert(mid->active == NULL || mid->active == hdl);
 			hdl->needmore = false;
 			mid->active = hdl;
-			mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-			check_stream(mid, mid->to, "write error on stream", mid->error);
+			int f = mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
+			check_stream(mid, mid->to, f, "write error on stream", mid->error);
 			read_into_cache(hdl, 0);
 		}
 		for (i = 0; i < hdl->npending_close; i++) {
@@ -1712,8 +1710,8 @@ finish_handle(MapiHdl hdl)
 			assert(mid->active == NULL || mid->active == hdl);
 			hdl->needmore = false;
 			mid->active = hdl;
-			mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-			check_stream(mid, mid->to, "write error on stream", mid->error);
+			int f = mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
+			check_stream(mid, mid->to, f, "write error on stream", mid->error);
 			read_into_cache(hdl, 0);
 		}
 	}
@@ -1786,21 +1784,22 @@ mapi_new(msettings *settings)
 	mid = malloc(sizeof(*mid));
 	if (mid == NULL)
 		return NULL;
-	if (settings == NULL)
-		settings = msettings_create();
-	if (settings == NULL) {
-		free(mid);
-		return NULL;
-	}
 
 	/* then fill in some details */
 	*mid = MapiStructDefaults;
-	mid->settings = settings;
 	mid->index =  (uint32_t) ATOMIC_ADD(&index, 1); /* for distinctions in log records */
 	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
 		return NULL;
 	}
+	if (settings == NULL) {
+		settings = msettings_create();
+		if (settings == NULL) {
+			mapi_destroy(mid);
+			return NULL;
+		}
+	}
+	mid->settings = settings;
 	mid->blk.buf[0] = 0;
 	mid->blk.buf[mid->blk.lim] = 0;
 
@@ -2401,6 +2400,16 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 
 
 MapiMsg
+mapi_set_rtimeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
+{
+	mapi_check(mid);
+	if (mid->trace)
+		printf("Set timeout to %u\n", timeout);
+	mnstr_settimeout(mid->from, timeout, callback, callback_data);
+	return MOK;
+}
+
+MapiMsg
 mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
 {
 	mapi_check(mid);
@@ -2715,7 +2724,7 @@ read_line(Mapi mid)
 			} else
 				break;
 		}
-		check_stream(mid, mid->from, "Connection terminated during read line", (mid->blk.eos = true, (char *) 0));
+		check_stream(mid, mid->from, len, "Connection terminated during read line", (mid->blk.eos = true, (char *) 0));
 		mapi_log_data(mid, "RECV", mid->blk.buf + mid->blk.end, len);
 		mid->blk.buf[mid->blk.end + len] = 0;
 		if (mid->trace) {
@@ -3419,8 +3428,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 	assert(mid->active == hdl);
 	if (hdl->needmore) {
 		hdl->needmore = false;
-		mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-		check_stream(mid, mid->to, "write error on stream", mid->error);
+		int f = mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
+		check_stream(mid, mid->to, f, "write error on stream", mid->error);
 	}
 	if ((result = hdl->active) == NULL)
 		result = hdl->result;	/* may also be NULL */
@@ -3555,21 +3564,21 @@ mapi_execute_internal(MapiHdl hdl)
 
 	if (is_sql) {
 		/* indicate to server this is a SQL command */
-		mnstr_write(mid->to, "s", 1, 1);
-		check_stream(mid, mid->to, "write error on stream", mid->error);
+		ssize_t w = mnstr_write(mid->to, "s", 1, 1);
+		check_stream(mid, mid->to, w, "write error on stream", mid->error);
 	}
-	mnstr_write(mid->to, cmd, 1, size);
-	check_stream(mid, mid->to, "write error on stream", mid->error);
+	ssize_t w = mnstr_write(mid->to, cmd, 1, size);
+	check_stream(mid, mid->to, w, "write error on stream", mid->error);
 	/* all SQL statements should end with a semicolon */
 	/* for the other languages it is assumed that the statements are correct */
 	if (is_sql) {
-		mnstr_write(mid->to, "\n;", 2, 1);
-		check_stream(mid, mid->to, "write error on stream", mid->error);
+		w = mnstr_write(mid->to, "\n;", 2, 1);
+		check_stream(mid, mid->to, w, "write error on stream", mid->error);
 	}
-	mnstr_write(mid->to, "\n", 1, 1);
-	check_stream(mid, mid->to, "write error on stream", mid->error);
-	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-	check_stream(mid, mid->to, "write error on stream", mid->error);
+	w = mnstr_write(mid->to, "\n", 1, 1);
+	check_stream(mid, mid->to, w, "write error on stream", mid->error);
+	w = mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
+	check_stream(mid, mid->to, w, "write error on stream", mid->error);
 	mid->active = hdl;
 
 	return MOK;
@@ -3693,12 +3702,12 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 		printf("mapi_query_part:%zu:%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = false;
-	mnstr_write(mid->to, query, 1, size);
+	size = mnstr_write(mid->to, query, 1, size);
 	if (mid->tracelog) {
 		mnstr_write(mid->tracelog, query, 1, size);
 		mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 	}
-	check_stream(mid, mid->to, "write error on stream", mid->error);
+	check_stream(mid, mid->to, size, "write error on stream", mid->error);
 	return mid->error;
 }
 
@@ -3713,8 +3722,8 @@ mapi_query_done(MapiHdl hdl)
 	assert(mid->active == NULL || mid->active == hdl);
 	mid->active = hdl;
 	hdl->needmore = false;
-	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-	check_stream(mid, mid->to, "write error on stream", mid->error);
+	int f = mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
+	check_stream(mid, mid->to, f, "write error on stream", mid->error);
 	ret = mid->error;
 	if (ret == MOK)
 		ret = read_into_cache(hdl, 1);
@@ -3730,8 +3739,7 @@ mapi_query_abort(MapiHdl hdl, int reason)
 	mapi_hdl_check(hdl);
 	mid = hdl->mid;
 	assert(mid->active == NULL || mid->active == hdl);
-	if (mid->oobintr && !hdl->aborted) {
-		mnstr_putoob(mid->to, reason);
+	if (mid->oobintr && !hdl->aborted && mnstr_putoob(mid->to, reason) == 0) {
 		hdl->aborted = true;
 		return MOK;
 	}
@@ -3741,7 +3749,7 @@ mapi_query_abort(MapiHdl hdl, int reason)
 MapiMsg
 mapi_cache_limit(Mapi mid, int limit)
 {
-	/* clean out superflous space TODO */
+	/* clean out superfluous space TODO */
 	msettings_error err = msetting_set_long(mid->settings, MP_REPLYSIZE, limit);
 	if (err)
 		return mapi_setError(mid, err, __func__, MERROR);
@@ -3902,11 +3910,12 @@ mapi_fetch_line(MapiHdl hdl)
 		mapi_log_record(hdl->mid, "W", "X" "export %d %" PRId64 "\n",
 				     result->tableid,
 				     result->cache.first + result->cache.tuplecount);
-		if (mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
+		int e;
+		if ((e = mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
 				 result->tableid,
-				 result->cache.first + result->cache.tuplecount) < 0 ||
-		    mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA))
-			check_stream(hdl->mid, hdl->mid->to, "sending export command", NULL);
+				      result->cache.first + result->cache.tuplecount)) < 0 ||
+		    (e = mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA)) < 0)
+			check_stream(hdl->mid, hdl->mid->to, e, "sending export command", NULL);
 		reply = mapi_fetch_line_internal(hdl);
 	}
 	return reply;
@@ -4424,10 +4433,11 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			hdl->active = result;
 			mapi_log_record(mid, "SEND", "X" "export %d %" PRId64 "\n",
 					     result->tableid, result->cache.first + result->cache.tuplecount);
-			if (mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
-					 result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
-			    mnstr_flush(mid->to, MNSTR_FLUSH_DATA))
-				check_stream(mid, mid->to, "sending export command", 0);
+			int e;
+			if ((e = mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
+					      result->tableid, result->cache.first + result->cache.tuplecount)) < 0 ||
+			    (e = mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) < 0)
+				check_stream(mid, mid->to, e, "sending export command", 0);
 		}
 		if (mid->active)
 			read_into_cache(mid->active, 0);

@@ -48,7 +48,7 @@ B
 3.142
 iasdfhiasdhagdsnfgankkkjfgjklfgjklsklsklsdfg
 
-query IITTRT rowsort
+query IITTRT nosort
 select count(*) as count_dupl_rows, id, nm, dt, qnt, descr from tab
 group by id, nm, dt, qnt, descr having count(*) > 1
 order by id, nm, dt, qnt, descr

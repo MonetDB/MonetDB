@@ -6,7 +6,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -61,6 +61,9 @@ geosre = re.compile(r'MULTIPOINT *\((?P<points>[^()]*)\)')
 ptsre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
 geoszre = re.compile(r'MULTIPOINT *Z *\((?P<points>[^()]*)\)')
 ptszre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
+# geos 3.13 introduced parentheses around EMPTY in MULTIPOLYGON (but not
+# in all cases)
+geosere = re.compile(r'MULTIPOLYGON \(EMPTY\)')
 
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
@@ -79,9 +82,7 @@ skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def secure_resolve(self, filename: str) -> Optional[Path]:
-        return Path(filename).resolve()
-
-transfer_handler = UnsafeDirectoryHandler('.')
+        return (self.dir / filename).resolve()
 
 class SQLLogicSyntaxError(Exception):
     pass
@@ -122,8 +123,11 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     tail='\n'.join(tail)
     return head + '\n' + tail, head, stmt
 
+def dq(s):
+    return s.replace('"', '""')
+
 class SQLLogic:
-    def __init__(self, report=None, out=sys.stdout):
+    def __init__(self, srcdir='.', report=None, out=sys.stdout):
         self.dbh = None
         self.crs = None
         self.out = out
@@ -138,6 +142,7 @@ class SQLLogic:
         self.threshold = 100
         self.seenerr = False
         self.__last = ''
+        self.srcdir = srcdir
 
     def __enter__(self):
         return self
@@ -155,6 +160,7 @@ class SQLLogic:
         self.timeout = timeout
         self.alltests = alltests
         if language == 'sql':
+            transfer_handler = UnsafeDirectoryHandler(self.srcdir)
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
                                      hostname=hostname,
@@ -224,40 +230,40 @@ class SQLLogic:
         self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0].replace('"', '""'), row[1].replace('"', '""')))
+                self.crs.execute(f'drop {row[2]} "{dq(row[0])}"."{dq(row[1])}" cascade')
             except pymonetdb.Error:
                 # perhaps already dropped because of the cascade
                 pass
         self.crs.execute('select s.name, f.name, ft.function_type_keyword from functions f, schemas s, function_types ft where not f.system and f.schema_id = s.id and f.type = ft.function_type_id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop all {} "{}"."{}"'.format(row[2], row[0].replace('"', '""'), row[1].replace('"', '""')))
+                self.crs.execute(f'drop all {row[2]} "{dq(row[0])}"."{dq(row[1])}"')
             except pymonetdb.Error:
                 # perhaps already dropped
                 pass
         self.crs.execute('select s.name, q.name from sys.sequences q, schemas s where q.schema_id = s.id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop sequence "{}"."{}"'.format(row[0].replace('"', '""'), row[1].replace('"', '""')))
+                self.crs.execute(f'drop sequence "{dq(row[0])}"."{dq(row[1])}"')
             except pymonetdb.Error:
                 # perhaps already dropped
                 pass
         self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('alter user "{}" SET SCHEMA "sys"'.format(row[0].replace('"', '""')))
+                self.crs.execute(f'alter user "{dq(row[0])}" SET SCHEMA "sys"')
             except pymonetdb.Error:
                 pass
         self.crs.execute('select name from sys.schemas where not system')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop schema "{}" cascade'.format(row[0].replace('"', '""')))
+                self.crs.execute(f'drop schema "{dq(row[0])}" cascade')
             except pymonetdb.Error:
                 pass
         self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop user "{}"'.format(row[0].replace('"', '""')))
+                self.crs.execute(f'drop user "{dq(row[0])}"')
             except pymonetdb.Error:
                 pass
 
@@ -284,28 +290,42 @@ class SQLLogic:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
                     if expected_err_code and expected_err_msg and err_code_received and err_msg_received:
-                        if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
-                            result.append(err_code_received + '!' + expected_err_msg)
-                            return result
-                        result.append(err_code_received + '!' + err_msg_received)
-                        if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
-                            return result
+                        if expected_err_msg.startswith('/') and expected_err_msg.endswith('/'):
+                            res = re.search(expected_err_msg[1:-1], err_msg_received)
+                            if expected_err_code == err_code_received and res is not None:
+                                result.append(err_code_received + '!' + expected_err_msg)
+                                return result
+                            result.append(err_code_received + '!' + err_msg_received)
+                        else:
+                            if expected_err_msg.endswith('...') and expected_err_code == err_code_received and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                result.append(err_code_received + '!' + expected_err_msg)
+                                return result
+                            result.append(err_code_received + '!' + err_msg_received)
+                            if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
+                                return result
                     else:
                         if expected_err_code and err_code_received:
                             result.append(err_code_received + '!')
                             if expected_err_code == err_code_received:
                                 return result
                         elif expected_err_msg and err_msg_received:
-                            if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
-                                result.append(expected_err_msg)
-                                return result
-                            result.append(err_msg_received)
-                            if expected_err_msg.lower() == err_msg_received.lower():
-                                return result
+                            if expected_err_msg.startswith('/') and expected_err_msg.endswith('/'):
+                                res = re.search(expected_err_msg[1:-1], err_msg_received)
+                                if res is not None:
+                                    result.append(expected_err_msg)
+                                    return result
+                                result.append(err_msg_received)
+                            else:
+                                if expected_err_msg.endswith('...') and err_msg_received.lower().startswith(expected_err_msg[:expected_err_msg.find('...')].lower()):
+                                    result.append(expected_err_msg)
+                                    return result
+                                result.append(err_msg_received)
+                                if expected_err_msg.lower() == err_msg_received.lower():
+                                    return result
                     msg = "statement was expected to fail with" \
-                            + (f" error code {expected_err_code}" if expected_err_code else '') \
-                            + (f", error message {repr(expected_err_msg)}" if expected_err_msg else '') \
-                            + f", received code {err_code_received}, message {repr(err_msg_received)}"
+                            + (f" error code {expected_err_code}," if expected_err_code else '') \
+                            + (f" error message {repr(expected_err_msg)}," if expected_err_msg else '') \
+                            + f" received code {err_code_received}, message {repr(err_msg_received)}"
                     self.query_error(err_stmt or statement, str(msg), str(e))
                 return result
         except ConnectionError as e:
@@ -322,9 +342,9 @@ class SQLLogic:
             if expectok:
                 if expected_rowcount is not None:
                     result.append('rowcount')
-                    result.append('{}'.format(affected_rowcount))
+                    result.append(f'{affected_rowcount}')
                     if expected_rowcount != affected_rowcount:
-                        self.query_error(err_stmt or statement, "statement was expecting to succeed with {} rows but received {} rows!".format(expected_rowcount, affected_rowcount))
+                        self.query_error(err_stmt or statement, f"statement was expecting to succeed with {expected_rowcount} rows but received {affected_rowcount} rows!")
                 return result
             msg = None
         self.query_error(err_stmt or statement, expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't", msg)
@@ -386,7 +406,7 @@ class SQLLogic:
         return ndata
 
     def raise_error(self, message):
-        print('Syntax error in test file, line {}:'.format(self.qline), file=self.out)
+        print(f'Syntax error in test file, line {self.qline}:', file=self.out)
         print(message, file=self.out)
         raise SQLLogicSyntaxError(message)
 
@@ -405,6 +425,7 @@ class SQLLogic:
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
+        crs.description = None
         try:
             if verbose:
                 print(f'Executing:\n{query}')
@@ -418,6 +439,10 @@ class SQLLogic:
             tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
+        if crs.description is None:
+            # it's not a query, it's a statement
+            self.query_error(query, 'query without results')
+            return ['statement', 'ok'], []
         try:
             data = crs.fetchall()
         except KeyboardInterrupt:
@@ -439,6 +464,9 @@ class SQLLogic:
                     if res is not None:
                         points = ptszre.sub(r'(\g<0>)', res.group('points'))
                         col = col[:res.start('points')] + points + col[res.end('points'):]
+                    res = geosere.search(col)
+                    if res is not None:
+                        col = col[:res.start(0)] + 'MULTIPOLYGON EMPTY' + col[res.end(0):]
                 nrow.append(col)
             ndata.append(nrow)
         data = ndata
@@ -453,7 +481,7 @@ class SQLLogic:
                     rescols.append('T')
             rescols = ''.join(rescols)
             if len(crs.description) != len(columns):
-                self.query_error(query, 'received {} columns, expected {} columns'.format(len(crs.description), len(columns)), data=data)
+                self.query_error(query, f'received {len(crs.description)} columns, expected {len(columns)} columns', data=data)
                 columns = rescols
                 err = True
         else:
@@ -462,7 +490,7 @@ class SQLLogic:
             rescols = 'T'
         if sorting != 'python' and crs.rowcount * len(columns) != nresult:
             if not err:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(crs.rowcount, nresult // len(columns)), data=data)
+                self.query_error(query, f'received {crs.rowcount} rows, expected {nresult // len(columns)} rows', data=data)
                 err = True
         if self.res is not None:
             for row in data:
@@ -556,7 +584,7 @@ class SQLLogic:
             if (len(ndata)):
                 ncols = len(ndata[0])
             if len(ndata)*ncols != nresult:
-                self.query_error(query, 'received {} rows, expected {} rows'.format(len(ndata)*ncols, nresult), data=data)
+                self.query_error(query, f'received {len(ndata)*ncols} rows, expected {nresult} rows', data=data)
                 err = True
             for row in ndata:
                 for col in row:
@@ -652,7 +680,7 @@ class SQLLogic:
         if hashlabel:
             result1.append(hashlabel)
         if len(result) > self.threshold:
-            result2 = ['{} values hashing to {}'.format(len(result), h if resdata is None else resh)]
+            result2 = [f'{len(result)} values hashing to {h if resdata is None else resh}']
         else:
             result2 = result
         return result1, result2
@@ -701,8 +729,10 @@ class SQLLogic:
                     # line = line.replace('\''+val.replace('\\', '\\\\'),
                     #                     '\'${Q'+key+'}')
                     # line = line.replace(val, '${'+key+'}')
-                    line = line.replace('\''+val.replace('\\', '\\\\'),
-                                        '\'$Q'+key)
+                    line = line.replace("r'"+val, "r'$"+key)
+                    line = line.replace("R'"+val, "R'$"+key)
+                    line = line.replace("'"+val.replace('\\', '\\\\'),
+                                        "'$Q"+key)
                     line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
@@ -764,6 +794,7 @@ class SQLLogic:
             if line == '\n':
                 self.writeline()
                 continue
+            self.qline = self.line
             conn = None
             # look for connection string
             if line.startswith('@connection'):
@@ -900,21 +931,23 @@ class SQLLogic:
                     self.writeline(' '.join(result1))
                     for line in query:
                         self.writeline(line.rstrip(), replace=True)
-                    self.writeline('----')
-                    for line in result2:
-                        self.writeline(line)
+                    if result1[0] == 'query':
+                        self.writeline('----')
+                        for line in result2:
+                            self.writeline(line)
                 else:
                     self.writeline(qrline.rstrip())
                     for line in query:
                         self.writeline(line.rstrip())
                     self.writeline('----')
                     if hash:
-                        self.writeline('{} values hashing to {}'.format(
-                            nresult, hash))
+                        self.writeline(f'{nresult} values hashing to {hash}')
                     else:
                         for line in expected:
                             self.writeline(line)
                 self.writeline()
+            else:
+                self.raise_error(f'unrecognized command {words[0]}')
 
 if __name__ == '__main__':
     import argparse
@@ -962,7 +995,7 @@ if __name__ == '__main__':
             if not opts.nodrop:
                 sql.drop()
             if opts.verbose:
-                print('now testing {}'. format(test))
+                print(f'now testing {test}')
             try:
                 sql.parse(test, approve=opts.approve, verbose=opts.verbose,
                           defines=opts.define, run_until=opts.run_until)

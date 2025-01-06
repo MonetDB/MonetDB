@@ -1,4 +1,4 @@
-query T rowsort
+query T nosort
 SELECT name FROM tables WHERE endswith(name, 'keys') ORDER BY name
 ----
 dependency_columns_on_keys
@@ -62,3 +62,4 @@ robert doe
 
 statement ok
 DROP TABLE foo
+

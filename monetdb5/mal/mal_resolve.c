@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -483,7 +483,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 					goto wrapup;
 			}
 		}
-		/* Any previousely found error in the block
+		/* Any previously found error in the block
 		 * turns the complete block into erroneous.
 		 if (mb->errors) {
 		 p->typeresolved = false;
@@ -619,7 +619,7 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		if (s1 >= 0)
 			return;
 		/*
-		 * Could not find a function that statisfies the constraints.
+		 * Could not find a function that satisfies the constraints.
 		 * If the instruction is just a function header we may
 		 * continue.  Likewise, the function and module may refer to
 		 * string variables known only at runtime.
@@ -810,7 +810,7 @@ chkProgram(Module s, MalBlkPtr mb)
  * Polymorphic type analysis
  * MAL provides for type variables of the form any$N. This feature
  * supports polymorphic types, but also complicates the subsequent
- * analysis. A variable typed with any$N not occuring in the function
+ * analysis. A variable typed with any$N not occurring in the function
  * header leads to a dynamic typed statement. In principle we have
  * to type check the function upon each call.
  */
@@ -858,7 +858,7 @@ getPolyType(malType t, int *polytype)
  * (The parser currently enforces a single digit from 1-2 )
  * The polymorphic type 'any', i.e. any_0, does never constraint an operation
  * it can match with all polymorphic types.
- * The routine returns the instanciated formal type for subsequent
+ * The routine returns the instantiated formal type for subsequent
  * type resolution.
  */
 static int

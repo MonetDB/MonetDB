@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 #include <sys/un.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
@@ -57,6 +58,8 @@ struct clientdata {
 	char challenge[32];
 };
 
+static void configureKeepAlive(int sock, int keepalive);
+
 static void *
 handleClient(void *data)
 {
@@ -80,6 +83,7 @@ handleClient(void *data)
 	int sock;
 	bool isusock;
 	struct threads *self;
+	int keepalive;
 
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	pthread_setname_np(
@@ -94,6 +98,11 @@ handleClient(void *data)
 	self = ((struct clientdata *) data)->self;
 	memcpy(chal, ((struct clientdata *) data)->challenge, sizeof(chal));
 	free(data);
+
+	keepalive = getConfNum(_mero_props, "keepalive");
+	if (keepalive > 0 && !isusock)
+		configureKeepAlive(sock, keepalive);
+
 	fdin = socket_rstream(sock, "merovingian<-client (read)");
 	if (fdin == NULL) {
 		self->dead = true;
@@ -562,7 +571,7 @@ acceptConnections(int socks[3])
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
 			/* BEWARE: unix domain sockets have a slightly different
-			 * behaviour initialy than normal sockets, because we can
+			 * behaviour initially than normal sockets, because we can
 			 * send filedescriptors or credentials with them.  To do so,
 			 * we need to use sendmsg/recvmsg, which operates on a bare
 			 * socket.  Unfortunately we *have* to send something, so it
@@ -660,4 +669,38 @@ error:
 		closesocket(socks[1]);
 	}
 	return(newErr("accept connection: %s", msg));
+}
+
+static void
+configureKeepAlive(int sock, const int keepalive)
+{
+	// It seems that on MacOS, TCP_KEEPIDLE is called TCP_KEEPALIVE.
+	// (Not to be confused with SO_KEEPALIVE).
+	int flag;
+	#if !defined(TCP_KEEPIDLE) && defined(TCP_KEEPALIVE)
+	flag = TCP_KEEPALIVE;
+	#else
+	flag = TCP_KEEPIDLE;
+	#endif
+	if (setsockopt(sock, IPPROTO_TCP, flag, &keepalive, sizeof(keepalive)) < 0) {
+		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPIDLE on socket: %s\n", strerror(errno));
+		return;
+	}
+
+	if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPINTVL, &keepalive, sizeof(keepalive)) < 0) {
+		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPINTVL on socket: %s\n", strerror(errno));
+		return;
+	}
+
+	const int keepcnt = 127; // fixed value, maximum allowed
+	if (setsockopt(sock, IPPROTO_TCP, TCP_KEEPCNT, &keepcnt, sizeof(keepcnt)) < 0) {
+		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPCNT on socket: %s\n", strerror(errno));
+		return;
+	}
+
+	const int enabled = 1;
+	if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &enabled, sizeof(enabled)) < 0) {
+		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set SO_KEEPALIVE on socket: %s\n", strerror(errno));
+		return;
+	}
 }

@@ -303,7 +303,7 @@ GROUP BY CUBE(col1, col2, col5)
 ----
 145 values hashing to 2180373d9debdb69ad704a767deb2e0a
 
-query IIIII rowsort
+query IIIII nosort
 SELECT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
     NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a2,
@@ -314,9 +314,9 @@ FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST
 ----
-145 values hashing to 2180373d9debdb69ad704a767deb2e0a
+145 values hashing to 3c204c36a8646e9c367a2448d07511f0
 
-query IRIIIIII rowsort
+query IRIIIIII nosort
 SELECT
     GROUPING(col1, col2, col3, col4, col5, col6, col7, col8), AVG(col1), CAST(SUM(col2) * 3 AS BIGINT), col3 + col4,
     CAST(MAX(col5) * MIN(col6) AS BIGINT), col7, col1 IN (SELECT ColID FROM tbl_ProductSales), col2 IN (SELECT ColID + col3 FROM tbl_ProductSales)
@@ -324,7 +324,7 @@ FROM another_T
 GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8)
 ORDER BY GROUPING(col1, col2, col3, col4, col5, col6, col7, col8)
 ----
-264 values hashing to d0905fd084d3f4a80c43f4a39006486b
+264 values hashing to e0c30d0cb9accfece68544da2ed35846
 
 query I rowsort
 SELECT
@@ -336,12 +336,65 @@ GROUP BY ROLLUP(col1)
 1
 NULL
 
-query I rowsort
+query I nosort
 SELECT
-    LAST_VALUE(col5) OVER (PARTITION BY AVG(col8) ORDER BY SUM(col7) NULLS FIRST)
+    LAST_VALUE(col5) OVER (PARTITION BY AVG(col8) ORDER BY SUM(col7), col5 NULLS FIRST)
 FROM another_T
 GROUP BY CUBE(col1, col2, col5, col8)
 ----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+5
+5
+5
+5
+5
+5
+5
+5
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+55
+55
+55
+55
+55
+55
+55
+55
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+555
+555
+555
+555
+555
+555
+555
+555
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 5555
 5555
 5555
@@ -350,59 +403,6 @@ GROUP BY CUBE(col1, col2, col5, col8)
 5555
 5555
 5555
-5555
-5555
-5555
-5555
-5555
-5555
-5555
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
 
 query IIIII rowsort
 SELECT
@@ -456,7 +456,7 @@ NULL
 NULL
 1
 
-query IIIII rowsort
+query IIIII nosort
 SELECT
     DISTINCT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
@@ -468,7 +468,17 @@ FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST
 ----
+NULL
+1
 0
+NULL
+0
+NULL
+1
+0
+NULL
+1
+NULL
 1
 0
 1
@@ -483,33 +493,23 @@ NULL
 0
 NULL
 1
-1
-1
 0
 1
 0
 1
-1
-0
-NULL
-0
-NULL
-1
 0
 1
-0
-NULL
 1
 0
 NULL
 0
-NULL
+1
 1
 0
-NULL
 1
+0
 
-query IIIIIIIIIIITI rowsort
+query IIIIIIIIIIITI nosort
 SELECT
     GROUPING(col1, col2, col5, col8) a1,
     col1 IN (SELECT ColID + col2 FROM tbl_ProductSales) a2,
@@ -532,7 +532,7 @@ ORDER BY
     a11 ASC NULLS FIRST, a12 DESC NULLS LAST,
     a14 DESC NULLS LAST
 ----
-793 values hashing to b203a4a5e17a727140e5fcdff19d5b8e
+793 values hashing to ab0dd63cf7f5c8f50b0d10437fd9fd0f
 
 statement error
 SELECT
@@ -545,7 +545,7 @@ FROM another_T t1
 GROUP BY CUBE(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
 ORDER BY a1 ASC NULLS FIRST, a2 ASC NULLS LAST
 
-query I rowsort
+query I nosort
 SELECT
     CAST((SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT MAX(tp.ColID) + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp HAVING NULL IS NOT NULL) AS tp2) AS BIGINT) AS a1
 FROM another_T t1
@@ -565,7 +565,7 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 SELECT
     DISTINCT
     CAST((SELECT tp2.proj * t1.col1 + MAX(t1.col5) FROM LATERAL (SELECT MAX(tp.ColID) + MIN(t1.col6) - t1.col1 as proj FROM tbl_ProductSales tp HAVING NULL IS NOT NULL) AS tp2) AS BIGINT) AS a1
@@ -575,7 +575,7 @@ ORDER BY a1 ASC NULLS FIRST
 ----
 NULL
 
-query I rowsort
+query I nosort
 SELECT
     NOT GROUPING(t1.col2, t1.col4) <> ALL (SELECT t1.col2 FROM tbl_ProductSales tp WHERE tp.colID = 1) a1
 FROM another_T t1
@@ -679,7 +679,7 @@ NULL
 0
 0
 
-query III rowsort
+query III nosort
 SELECT
     CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
     CASE WHEN SUM(t1.col3) IN (SELECT MAX(t1.col3) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
@@ -690,9 +690,6 @@ GROUP BY ROLLUP(t1.col1, t1.col2)
 1
 1
 2
-1
-1
-2
 2
 1
 2
@@ -700,6 +697,9 @@ GROUP BY ROLLUP(t1.col1, t1.col2)
 1
 2
 2
+1
+2
+1
 1
 2
 2

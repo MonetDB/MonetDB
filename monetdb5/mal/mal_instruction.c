@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -47,16 +47,17 @@ newSymbol(const char *nme, int kind)
 	assert(kind == COMMANDsymbol || kind == PATTERNsymbol || kind == FUNCTIONsymbol);
 	if (nme == NULL)
 		return NULL;
-	cur = (Symbol) GDKzalloc(sizeof(SymRecord));
+	cur = (Symbol) GDKmalloc(sizeof(SymRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = putName(nme);
+	*cur = (SymRecord) {
+		.name = putName(nme),
+		.kind = kind,
+	};
 	if (cur->name == NULL) {
 		GDKfree(cur);
 		return NULL;
 	}
-	cur->kind = kind;
-	cur->peer = NULL;
 	if (kind == FUNCTIONsymbol) {
 		cur->def = newMalBlk(STMT_INCREMENT);
 		if (cur->def == NULL) {
@@ -76,7 +77,7 @@ freeSymbol(Symbol s)
 		freeMalBlk(s->def);
 		s->def = NULL;
 	} else if (s->allocated && s->func) {
-		GDKfree(s->func->comment);
+		GDKfree((char*)s->func->comment);
 		GDKfree((char*)s->func->cname);
 		GDKfree(s->func->args);
 		GDKfree(s->func);
@@ -169,22 +170,6 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 			return -1;
 		}
 	}
-
-
-	if (elements > mb->vsize) {
-		VarRecord *ovar = mb->var;
-		mb->var = GDKrealloc(mb->var, elements * sizeof(VarRecord));
-		if (mb->var) {
-			memset(((char *) mb->var) +sizeof(VarRecord) * mb->vsize, 0,
-				   (elements - mb->vsize) * sizeof(VarRecord));
-			mb->vsize = elements;
-		} else {
-			mb->var = ovar;
-			mb->errors = createMalException(mb, 0, TYPE,
-											SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			return -1;
-		}
-	}
 	return 0;
 }
 
@@ -255,7 +240,7 @@ resetMalBlk(MalBlkPtr mb)
 
 
 /* The freeMalBlk code is quite defensive. It is used to localize an
- * illegal re-use of a MAL blk. */
+ * illegal reuse of a MAL blk. */
 void
 freeMalBlk(MalBlkPtr mb)
 {
@@ -468,7 +453,7 @@ freeInstruction(InstrPtr p)
 
 /* Query optimizers walk their way through a MAL program block. They
  * require some primitives to move instructions around and to remove
- * superflous instructions. The removal is based on the assumption
+ * superfluous instructions. The removal is based on the assumption
  * that indeed the instruction belonged to the block. */
 void
 removeInstruction(MalBlkPtr mb, InstrPtr p)
@@ -602,12 +587,11 @@ char *
 getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 {
 	char *s = mb->var[idx].name;
-	if (getVarKind(mb, idx) == 0)
-		setVarKind(mb, idx, REFMARKER);
 	if (s == NULL) {
-		(void) snprintf(buf, IDLENGTH, "%c_%d", getVarKind(mb, idx), idx);
+		char kind = getVarKind(mb, idx);
+		(void) snprintf(buf, IDLENGTH, "%c_%d", kind ? kind : REFMARKER, idx);
 	} else {
-		(void) snprintf(buf, IDLENGTH, "%s", s);
+		strcpy_len(buf, s, IDLENGTH);
 	}
 	return buf;
 }
@@ -627,7 +611,9 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	}
 	n = mb->vtop;
-	mb->var[n].name = NULL;
+	mb->var[n] = (VarRecord) {
+		.name = NULL,
+	};
 	if (name && len > 0) {
 		char *nme = GDKmalloc(len+1);
 		if (!nme) {
@@ -1117,13 +1103,11 @@ void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
-	int extra;
 	InstrPtr q;
 	if (p == NULL)
 		return;
-	extra = mb->vsize - mb->vtop;	/* the extra variables already known */
 	if (mb->stop + 1 >= mb->ssize) {
-		int s = ((mb->ssize + extra) / MALCHUNK + 1) * MALCHUNK;
+		int s = (mb->ssize / MALCHUNK + 1) * MALCHUNK;
 		if (resizeMalBlk(mb, s) < 0) {
 			/* we are now left with the situation that the new
 			 * instruction is dangling.  The hack is to take an

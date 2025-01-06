@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -68,9 +68,9 @@ atom_int( allocator *sa, sql_subtype *tpe,
 		atom *a = atom_create(sa);
 		if(!a)
 			return NULL;
-
 		a->isnull = 0;
 		a->tpe = *tpe;
+		a->data.len = 0;
 		a->data.vtype = tpe->type->localtype;
 		switch (ATOMstorage(a->data.vtype)) {
 		case TYPE_bte:
@@ -99,9 +99,6 @@ atom_int( allocator *sa, sql_subtype *tpe,
 		int bits = number_bits(val);
 		if (a->tpe.type->eclass == EC_NUM)
 			a->tpe.digits = bits;
-		else if (a->tpe.type->eclass == EC_DEC)
-			a->tpe.digits = bits2digits(bits) + 1;;
-		a->data.len = 0;
 		return a;
 	}
 }

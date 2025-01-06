@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -767,6 +767,18 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 					const void *t = BUNtail(vi, p);
 
 					if (q < cnt) {
+						if (b->tnosorted == q)
+							b->tnosorted = 0;
+						if (b->tnorevsorted == q)
+							b->tnorevsorted = 0;
+						if (b->tnokey[0] == q ||
+						    b->tnokey[1] == q) {
+							b->tnokey[0] = 0;
+							b->tnokey[1] = 0;
+						}
+						b->tkey = false;
+						b->tsorted = false;
+						b->tkey = false;
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
 							bat_iterator_end(&vi);
@@ -1034,7 +1046,7 @@ tr_commit(logger *lg, trans *tr)
 }
 
 static gdk_return
-log_read_types_file(logger *lg, FILE *fp, int version)
+log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 {
 	int id = 0;
 	char atom_name[IDLENGTH];
@@ -1042,8 +1054,22 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
-		if (version < 52303 && strcmp(atom_name, "BAT") == 0)
+		if (version < 52303 && strcmp(atom_name, "BAT") == 0) {
+			*needsnew = true;
 			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "color") == 0) {
+			*needsnew = true;
+			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "identifier") == 0) {
+			*needsnew = true;
+			continue;
+		}
+		if (version < 52304 && strcmp(atom_name, "wkba") == 0) {
+			*needsnew = true;
+			continue;
+		}
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1065,7 +1091,7 @@ log_read_types_file(logger *lg, FILE *fp, int version)
 }
 
 
-gdk_return
+static gdk_return
 log_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
@@ -1115,6 +1141,7 @@ log_create_types_file(logger *lg, const char *filename)
 
 #define rotation_lock(lg)	MT_lock_set(&(lg)->rotation_lock)
 #define rotation_unlock(lg)	MT_lock_unset(&(lg)->rotation_lock)
+#define rotation_trylock(lg, ms) MT_lock_trytime(&(lg)->rotation_lock, ms)
 
 static gdk_return
 log_open_output(logger *lg)
@@ -1127,14 +1154,14 @@ log_open_output(logger *lg)
 	}
 	if (!LOG_DISABLED(lg)) {
 		char id[32];
-		char *filename;
+		char filename[MAXPATH];
 
 		if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
 			TRC_CRITICAL(GDK, "filename is too large\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
 		}
-		if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+		if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "allocation failure\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
@@ -1151,10 +1178,10 @@ log_open_output(logger *lg)
 			TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 			close_stream(new_range->output_log);
 			GDKfree(new_range);
-			GDKfree(filename);
 			return GDK_FAIL;
 		}
-		GDKfree(filename);
+	} else {
+		new_range->output_log = NULL;
 	}
 	ATOMIC_INIT(&new_range->refcount, 1);
 	ATOMIC_INIT(&new_range->last_ts, 0);
@@ -1259,7 +1286,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 		case LOG_UPDATE:
 		case LOG_CREATE:
 		case LOG_DESTROY:
-			if (updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
+			if (tr != NULL && updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
 				BATiter cni = bat_iterator(lg->catalog_id);
 				BUN p;
 				BUN posnew = BUN_NONE;
@@ -1531,7 +1558,7 @@ check_version(logger *lg, FILE *fp, bool *needsnew)
 		fclose(fp);
 		return GDK_FAIL;
 	}
-	if (log_read_types_file(lg, fp, version) != GDK_SUCCEED) {
+	if (log_read_types_file(lg, fp, version, needsnew) != GDK_SUCCEED) {
 		fclose(fp);
 		return GDK_FAIL;
 	}
@@ -1940,19 +1967,12 @@ bm_subcommit(logger *lg, logged_range *pending, uint32_t *updated, BUN maxupdate
 static gdk_return
 log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 {
-	str filenamestr = NULL;
-
-	if ((filenamestr = GDKfilepath(0, lg->dir, LOGFILE, NULL)) == NULL)
-		return GDK_FAIL;
-	size_t len = strcpy_len(filename, filenamestr, FILENAME_MAX);
-	GDKfree(filenamestr);
-	if (len >= FILENAME_MAX) {
+	if (GDKfilepath(filename, FILENAME_MAX, 0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED) {
 		GDKerror("Logger filename path is too large\n");
 		return GDK_FAIL;
 	}
 	if (bak) {
-		len = strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL);
-		if (len >= FILENAME_MAX) {
+		if (strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL) >= FILENAME_MAX) {
 			GDKerror("Logger filename path is too large\n");
 			return GDK_FAIL;
 		}
@@ -1991,6 +2011,51 @@ log_json_upgrade_finalize(void)
 	return GDK_SUCCEED;
 }
 #endif
+
+/* clean up old junk left over from old upgrades: bats that are
+ * persistent but not in the SQL catalog and that have no name, and bats
+ * that do have a name that starts with "stat_opt_" (from the statistics
+ * optimizer that was removed in 2017) are removed here
+ *
+ * this function ignores any errors */
+static void
+clean_bbp(logger *lg)
+{
+	BAT *b = COLnew(0, TYPE_int, 256, TRANSIENT);
+	if (b == NULL)
+		return;
+	if (BUNappend(b, &(int){0}, false) != GDK_SUCCEED) {
+		BBPreclaim(b);
+		return;
+	}
+	/* mark persistent bats that have no name or have a name
+	 * starting with "stat_opt_" */
+	for (bat bid = 1, bsz = getBBPsize(); bid < bsz; bid++)
+		if (BBP_status(bid) & BBPEXISTING &&
+		    (BBP_logical(bid) == NULL ||
+		     strncmp(BBP_logical(bid), "tmp_", 4) == 0 ||
+		     strncmp(BBP_logical(bid), "stat_opt_", 9) == 0))
+			BBP_status_on(bid, 1U << 31);
+	/* remove mark from bats that are in the SQL catalog */
+	for (BUN i = 0, n = BATcount(lg->catalog_bid); i < n; i++)
+		BBP_status_off(((int *) lg->catalog_bid->theap->base)[i], 1U << 31);
+	/* what's left over are junk bats */
+	for (bat bid = 1, bsz = getBBPsize(); bid < bsz; bid++)
+		if (BBP_status(bid) & (1U << 31)) {
+			BBP_status_off(bid, 1U << 31);
+			if (BATmode(BBP_desc(bid), true) != GDK_SUCCEED ||
+			    BUNappend(b, &bid, false) != GDK_SUCCEED) {
+				BBPreclaim(b);
+				return;
+			}
+			printf("# removing bat %d (tmp_%o)\n", bid, bid);
+		}
+	/* if there were any junk bats, commit their removal */
+	if (b->batCount > 1 &&
+	    TMsubcommit_list(Tloc(b, 0), NULL, (int) b->batCount, -1) != GDK_SUCCEED)
+		printf("clean_bbp transaction failed\n");
+	BBPreclaim(b);
+}
 
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,
@@ -2262,19 +2327,22 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 
 	if (readlogs) {
 		ulng log_id = lg->saved_id + 1;
+		bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
 		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
-		if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
-			goto error;
-		if (needsnew) {
-			if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
-				TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
-				return GDK_FAIL;
-			}
-			if (log_create_types_file(lg, filename) != GDK_SUCCEED) {
-				TRC_CRITICAL(GDK, "couldn't write new log\n");
-				return GDK_FAIL;
+		if (!earlyexit) {
+			if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
+				goto error;
+			if (needsnew) {
+				if (GDKmove(0, lg->dir, LOGFILE, NULL, lg->dir, LOGFILE, "bak", true) != GDK_SUCCEED) {
+					TRC_CRITICAL(GDK, "couldn't move log to log.bak\n");
+					return GDK_FAIL;
+				}
+				if (log_create_types_file(lg, filename) != GDK_SUCCEED) {
+					TRC_CRITICAL(GDK, "couldn't write new log\n");
+					return GDK_FAIL;
+				}
 			}
 		}
 		dbg = ATOMIC_GET(&GDKdebug);
@@ -2285,6 +2353,10 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		ATOMIC_SET(&GDKdebug, dbg);
 		for (; log_id <= lg->saved_id; log_id++)
 			(void) log_cleanup(lg, log_id);	/* ignore error of removing file */
+		if (earlyexit) {
+			printf("# mserver5 exiting\n");
+			exit(0);
+		}
 		if (needsnew &&
 		    GDKunlink(0, lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "couldn't remove old log.bak file\n");
@@ -2292,11 +2364,17 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		}
 	} else {
 		lg->id = lg->saved_id + 1;
+		if (GDKgetenv_isyes("process-wal-and-exit")) {
+			printf("# mserver5 exiting\n");
+			exit(0);
+		}
 	}
 #ifdef GDKLIBRARY_JSON
 	if (log_json_upgrade_finalize() == GDK_FAIL)
 		goto error;
 #endif
+	if (GDKgetenv_isyes("clean-BBP"))
+		clean_bbp(lg);
 	return GDK_SUCCEED;
   error:
 	if (fp)
@@ -2335,7 +2413,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	lng max_file_age = GDKgetenv_int("wal_max_file_age", 600);
 	lng max_file_size = 0;
 
-	if (GDKdebug & FORCEMITOMASK) {
+	if (GDKdebug & TESTINGMASK) {
 		max_file_size = 2048; /* 2 KiB */
 	} else {
 		const char *max_file_size_str = GDKgetenv("wal_max_file_size");
@@ -2372,7 +2450,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.max_file_size = max_file_size >= 0 ? max_file_size : 2147483648,
 
 		.id = 0,
-		.saved_id = getBBPlogno(),	/* get saved log numer from bbp */
+		.saved_id = getBBPlogno(),	/* get saved log number from bbp */
 		.nr_flushers = ATOMIC_VAR_INIT(0),
 		.fn = GDKstrdup(fn),
 		.dir = GDKstrdup(filename),
@@ -2414,6 +2492,8 @@ do_flush_range_cleanup(logger *lg)
 	logged_range *frange = lg->flush_ranges;
 	logged_range *first = frange;
 
+	if (frange == NULL)
+		return NULL;
 	while (frange->next) {
 		if (ATOMIC_GET(&frange->refcount) > 1)
 			break;
@@ -2517,6 +2597,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 	};
 	lg->current = &dummy;
 	if (log_open_output(lg) != GDK_SUCCEED) {
+		lg->current = NULL;
 		log_destroy(lg);
 		return NULL;
 	}
@@ -2530,7 +2611,7 @@ log_create(int debug, const char *fn, const char *logdir, int version,
 static logged_range *
 log_next_logfile(logger *lg, ulng ts)
 {
-	int m = (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) ? 1000 : 100;
+	int m = (ATOMIC_GET(&GDKdebug) & TESTINGMASK) ? 1000 : 100;
 	if (!lg->pending || !lg->pending->next)
 		return NULL;
 	rotation_lock(lg);
@@ -2649,31 +2730,28 @@ log_flush(logger *lg, ulng ts)
 	size_t allocated = 0;
 	while (cid < lid && res == LOG_OK) {
 		if (!lg->input_log) {
-			char *filename;
+			char filename[MAXPATH];
 			char id[32];
 			if (snprintf(id, sizeof(id), LLFMT, cid + 1) >= (int) sizeof(id)) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
-			if ((filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)) == NULL) {
+			if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
 				GDKfree(updated);
 				return GDK_FAIL;
 			}
 			if (strlen(filename) >= FILENAME_MAX) {
 				GDKfree(updated);
 				TRC_CRITICAL(GDK, "Logger filename path is too large\n");
-				GDKfree(filename);
 				return GDK_FAIL;
 			}
 
 			bool filemissing = false;
 			if (log_open_input(lg, filename, &filemissing) != GDK_SUCCEED) {
 				GDKfree(updated);
-				GDKfree(filename);
 				return GDK_FAIL;
 			}
-			GDKfree(filename);
 		}
 		/* we read the full file because skipping is impossible with current log format */
 		log_lock(lg);
@@ -2769,7 +2847,7 @@ log_sequence(logger *lg, int seq, lng *id)
 }
 
 gdk_return
-log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
+log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt)
 {
 	bte tpe = find_type(lg, type);
 	gdk_return ok = GDK_SUCCEED;
@@ -3228,8 +3306,8 @@ log_tdone(logger *lg, logged_range *range, ulng commit_ts)
 gdk_return
 log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 {
+	rotation_lock(lg);
 	if (lg->flushnow) {
-		rotation_lock(lg);
 		logged_range *p = lg->current;
 		assert(lg->flush_ranges == lg->current);
 		assert(ATOMIC_GET(&lg->current->flushed_ts) == ATOMIC_GET(&lg->current->last_ts));
@@ -3246,10 +3324,11 @@ log_tflush(logger *lg, ulng file_id, ulng commit_ts)
 		return log_commit(lg, p, NULL, 0);
 	}
 
-	if (LOG_DISABLED(lg))
+	if (LOG_DISABLED(lg)) {
+		rotation_unlock(lg);
 		return GDK_SUCCEED;
+	}
 
-	rotation_lock(lg);
 	logged_range *frange = do_flush_range_cleanup(lg);
 
 	while (frange->next && frange->id < file_id) {
@@ -3453,7 +3532,7 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 			return GDK_SUCCEED;
 		}
 		/* I am now the exclusive flusher */
-		if (ATOMIC_GET(&lg->nr_flushers)) {
+		while (ATOMIC_GET(&lg->nr_flushers)) {
 			/* I am waiting until all existing flushers are done */
 			MT_cond_wait(&lg->excl_flush_cv, &lg->rotation_lock);
 		}
@@ -3502,8 +3581,11 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 void
 log_printinfo(logger *lg)
 {
+	if (!rotation_trylock(lg, 1000)) {
+		printf("Logger is currently locked, so no logger information\n");
+		return;
+	}
 	printf("logger %s:\n", lg->fn);
-	rotation_lock(lg);
 	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
 	       lg->id, lg->saved_id);
 	printf("current transaction id %d, saved transaction id %d\n",
@@ -3513,7 +3595,8 @@ log_printinfo(logger *lg)
 	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		char buf[32];
-		if (p->output_log == NULL ||
+		if ((lg->debug & 128 || lg->inmemory) ||
+		    p->output_log == NULL ||
 		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
 			buf[0] = 0;
 		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");

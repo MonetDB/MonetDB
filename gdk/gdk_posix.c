@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -212,9 +212,9 @@
  *
  * Two crude suggestions:
  * - If we are under RSS pressure without unloadable tiles and with
- *   savable tiles, we should consider suspending *all* other threads
+ *   saveable tiles, we should consider suspending *all* other threads
  *   until we manage to unload a tile.
- * - if there are no savable tiles (or in case of read-only maps)
+ * - if there are no saveable tiles (or in case of read-only maps)
  *   we could resort to saving and unloading random tiles.
  *
  * To do better, our BAT algorithms should provide even more detailed
@@ -563,7 +563,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 						return NULL;
 					}
 
-					strcat(strcpy(p, path), ".tmp");
+					stpcpy(stpcpy(p, path), ".tmp");
 					fd = open(p, O_RDWR | O_CREAT | O_CLOEXEC,
 						  MONETDB_MODE);
 					if (fd < 0) {
@@ -1013,7 +1013,7 @@ ctime_r(const time_t *restrict t, char *restrict buf)
 }
 #endif
 
-#ifndef HAVE_STRERROR_R
+#if !defined(HAVE_STRERROR_R) && !defined(HAVE_STRERROR_S)
 static MT_Lock strerrlock = MT_LOCK_INITIALIZER(strerrlock);
 
 int

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -21,7 +21,6 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 /*
  * Some utility routines to generate code
@@ -306,6 +305,30 @@ create_bat(MalBlkPtr mb, int tt)
 	q = pushType(mb, q, tt);
 	pushInstruction(mb, q);
 	return getDestVar(q);
+}
+
+stmt *
+stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
+{
+	InstrPtr q = newStmt(be->mb, batRef, newRef);
+	int tt = tpe->type->localtype;
+
+	if (q == NULL)
+		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushType(be->mb, q, tt);
+	if (estimate > 0)
+		q = pushInt(be->mb, q, (int)estimate);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
 }
 
 static int *
@@ -698,7 +721,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 
 		if (c && isTable(c->t)) {
-			BUN rows = (BUN) store->storage_api.count_col(tr, c, QUICK);
+			BUN rows = (BUN) store->storage_api.count_col(tr, c, RDONLY);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -1209,19 +1232,18 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
+stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int nr_obe, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int l, p, g, c;
+	int l, g, c;
 
 	if (col == NULL || offset == NULL || limit == NULL || col->nr < 0 || offset->nr < 0 || limit->nr < 0)
 		goto bailout;
-	if (piv && (piv->nr < 0 || gid->nr < 0))
+	if (piv && (piv->nr < 0 || (gid && gid->nr < 0)))
 		goto bailout;
 
 	c = (col) ? col->nr : 0;
-	p = (piv) ? piv->nr : 0;
 	g = (gid) ? gid->nr : 0;
 
 	/* first insert single value into a bat */
@@ -1245,38 +1267,67 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		c = k;
 	}
 	if (order) {
-		int topn = 0;
+		if (piv && piv->q) {
+			q = piv->q;
+			q = pushArgument(mb, q, c);
+			q = pushBit(mb, q, dir);
+			q = pushBit(mb, q, nullslast);
+			return piv;
+		} else {
+			int topn = 0;
 
-		q = newStmt(mb, calcRef, plusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, limit->nr);
-		topn = getDestVar(q);
-		pushInstruction(mb, q);
+			q = newStmt(mb, calcRef, plusRef);
+			if (q == NULL)
+				goto bailout;
+			q = pushArgument(mb, q, offset->nr);
+			q = pushArgument(mb, q, limit->nr);
+			topn = getDestVar(q);
+			pushInstruction(mb, q);
 
-		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
-		if (q == NULL)
-			goto bailout;
-		if (!last) /* we need the groups for the next firstn */
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, c);
-		if (p)
-			q = pushArgument(mb, q, p);
-		else
-			q = pushNilBat(mb, q);
-		if (g)
-			q = pushArgument(mb, q, g);
-		else
-			q = pushNilBat(mb, q);
-		q = pushArgument(mb, q, topn);
-		q = pushBit(mb, q, dir);
-		q = pushBit(mb, q, nullslast);
-		q = pushBit(mb, q, distinct != 0);
+			if (!gid || (piv && !piv->q)) { /* use algebra.firstn (possibly concurrently) */
+				int p = (piv) ? piv->nr : 0;
+				q = newStmtArgs(mb, algebraRef, firstnRef, 9);
+				if (q == NULL)
+					goto bailout;
+				if (nr_obe > 1) /* we need the groups for the next firstn */
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				if (p)
+					q = pushArgument(mb, q, p);
+				else
+					q = pushNilBat(mb, q);
+				if (g)
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+				q = pushArgument(mb, q, topn);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+				q = pushBit(mb, q, distinct != 0);
 
-		l = getArg(q, 0);
-		l = getDestVar(q);
-		pushInstruction(mb, q);
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			} else {
+				q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
+				if (q == NULL)
+					goto bailout;
+				q = pushArgument(mb, q, topn);
+				q = pushNilBat(mb, q);	/* candidates */
+				if (g)					/* grouped case */
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+
+				q = pushArgument(mb, q, c);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			}
+		}
 	} else {
 		int len;
 
@@ -4058,7 +4109,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		//q = pushInt(mb, q, f->digits);
 		/* push the SRID of the inserted value */
 		//q = pushInt(mb, q, f->scale);
-		/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside alreay */
+		/* we decided to create the EWKB type also used by PostGIS and has the SRID provided by the user inside already */
 		/* push the SRID provided for this value */
 		/* GEOS library is able to store in the returned wkb the type an
  		 * number if coordinates but not the SRID so SRID should be provided
@@ -4611,10 +4662,13 @@ tail_type(stmt *st)
 			if (!st->reduce)
 				return sql_bind_localtype("bit");
 			return sql_bind_localtype("oid");
+		case st_alias:
+			if (!st->op1)
+				return &st->op4.typeval;
+			/* fall through */
 		case st_append:
 		case st_append_bulk:
 		case st_replace:
-		case st_alias:
 		case st_gen_group:
 		case st_order:
 			st = st->op1;
@@ -4843,6 +4897,8 @@ schema_name(allocator *sa, stmt *st)
 			return schema_name(sa, st->op1);
 		return NULL;
 	case st_alias:
+		if (!st->op1)
+			return NULL;
 		return schema_name(sa, st->op1);
 	case st_bat:
 		return st->op4.cval->t->s->base.name;
@@ -4990,7 +5046,7 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 	if (q == NULL)
 		return NULL;
 	q->retc = q->argc;
-	/* Lets make it a propper assignment */
+	/* Let's make it a proper assignment */
 	for (i = 0, n = l->h; n; n = n->next, i++) {
 		stmt *c = n->data;
 

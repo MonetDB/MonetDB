@@ -5,14 +5,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
 
 /*
  * (authors) M. Kersten, F. Groffen
- * Authorisation adminstration management
+ * Authorisation administration management
  * Authorisation of users is a key concept in protecting the server from
  * malicious and unauthorised users.  This file contains a number of
  * functions that administrate a set of BATs backing the authorisation
@@ -107,8 +107,8 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 {
 	/* Cyphering and decyphering can be done using many algorithms.
 	 * Future requirements might want a stronger cypher than the XOR
-	 * cypher chosen here.  It is left up to the implementor how to do
-	 * that once those algoritms become available.  It could be
+	 * cypher chosen here.  It is left up to the implementer how to do
+	 * that once those algorithms become available.  It could be
 	 * #ifdef-ed or on if-basis depending on whether the cypher
 	 * algorithm is a compile, or runtime option.  When necessary, this
 	 * function could be extended with an extra argument that indicates

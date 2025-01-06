@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -20,6 +20,7 @@
 #define CATALOG_JUL2021 52300	/* first in Jul2021 */
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
+#define CATALOG_AUG2024 52303	/* first in Aug2024 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -56,13 +57,20 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_AUG2024
+	if (oldversion == CATALOG_AUG2024) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
 #if defined CATALOG_JUL2021 || defined CATALOG_JAN2022
 /* replace a column in a system table with a new column
- * colid is the SQL id for the column, oldcolid is the BAT id of the
- * to-be-replaced BAT */
+ * colid is the SQL id for the column, newcol is the new BAT */
 static gdk_return
 replace_bat(logger *lg, int colid, BAT *newcol)
 {
@@ -104,9 +112,10 @@ log_temp_descriptor(log_bid b)
 	return temp_descriptor(b);
 }
 
-#if defined CATALOG_JAN2022 || defined CATALOG_SEP2022
+#if defined CATALOG_JAN2022 || defined CATALOG_SEP2022 || defined CATALOG_AUG2024
+/* cannot use attribute((sentinel)) since sentinel is not a pointer */
 static gdk_return
-tabins(logger *lg, bool first, int tt, int nid, ...)
+tabins(logger *lg, ...)
 {
 	va_list va;
 	int cid;
@@ -114,48 +123,33 @@ tabins(logger *lg, bool first, int tt, int nid, ...)
 	gdk_return rc;
 	BAT *b;
 
-	va_start(va, nid);
+	va_start(va, lg);
+	BATiter cni = bat_iterator(lg->catalog_id);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
 		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
-			va_end(va);
-			return GDK_FAIL;
-		}
-		if (first) {
-			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
-			if (bn == NULL) {
-				va_end(va);
-				bat_destroy(b);
-				return GDK_FAIL;
-			}
-			if (replace_bat(lg, cid, bn) != GDK_SUCCEED) {
-				va_end(va);
-				bat_destroy(b);
-				bat_destroy(bn);
-				return GDK_FAIL;
-			}
-			/* logical refs of b stay the same: it is moved from catalog_bid to del */
-			bat_destroy(b);
-			b = bn;
+			rc = GDK_FAIL;
+			break;
 		}
 		rc = BUNappend(b, cval, true);
-		bat_destroy(b);
-		if (rc != GDK_SUCCEED) {
-			va_end(va);
-			return rc;
+		if (rc == GDK_SUCCEED) {
+			BUN p;
+			MT_rwlock_rdlock(&cni.b->thashlock);
+			HASHloop_int(cni, cni.b->thash, p, &cid) {
+				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
+					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
+					break;
+				}
+			}
+			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
-	}
-	va_end(va);
-
-	if (tt >= 0) {
-		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
-			return GDK_FAIL;
-		rc = log_bat_persists(lg, b, nid);
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
-			return rc;
+			break;
 	}
-	return GDK_SUCCEED;
+	bat_iterator_end(&cni);
+	va_end(va);
+	return rc;
 }
 #endif
 
@@ -164,7 +158,6 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
-	bool tabins_first = true;
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
@@ -686,7 +679,7 @@ bl_postversion(void *Store, logger *lg)
 		bat_destroy(b1);
 		bat_destroy(colnr);
 		bat_destroy(colid);
-		rc = tabins(lg, true, -1, 0,
+		rc = tabins(lg,
 					prid, &(msk) {false}, /* sys.privileges */
 					privids[0], &dbid, /* sys.privileges.obj_id */
 					privids[1], &(int) {USER_MONETDB}, /* sys.privileges.auth_id */
@@ -701,60 +694,251 @@ bl_postversion(void *Store, logger *lg)
 
 #ifdef CATALOG_SEP2022
 	if (store->catalog_version <= CATALOG_SEP2022) {
-			/* new STRING column sys.keys.check */
-			BAT *b = log_temp_descriptor(log_find_bat(lg, 2088)); /* sys.keys.id */
-			if (b == NULL)
-				return GDK_FAIL;
-			BAT *check = BATconstant(b->hseqbase, TYPE_str, ATOMnilptr(TYPE_str), BATcount(b), PERSISTENT);
-			bat_destroy(b);
-			if (check == NULL)
-				return GDK_FAIL;
-			if ((check = BATsetaccess(check, BAT_READ)) == NULL ||
+		/* new STRING column sys.keys.check */
+		BAT *b = log_temp_descriptor(log_find_bat(lg, 2088)); /* sys.keys.id */
+		if (b == NULL)
+			return GDK_FAIL;
+		BAT *check = BATconstant(b->hseqbase, TYPE_str, ATOMnilptr(TYPE_str), BATcount(b), PERSISTENT);
+		bat_destroy(b);
+		if (check == NULL)
+			return GDK_FAIL;
+		if ((check = BATsetaccess(check, BAT_READ)) == NULL ||
 				/* 2165 is sys.keys.check */
 				BUNappend(lg->catalog_id, &(int) {2165}, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &check->batCacheid, true) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_cnt, &(lng){BATcount(check)}, false) != GDK_SUCCEED
-				) {
-				bat_destroy(check);
+		) {
+			bat_destroy(check);
+			return GDK_FAIL;
+		}
+		BBPretain(check->batCacheid);
+		bat_destroy(check);
+
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2165 is sys.keys.check */
+				   2077, &(int) {2165},		/* sys._columns.id */
+				   2078, "check",			/* sys._columns.name */
+				   2079, "varchar",			/* sys._columns.type */
+				   2080, &(int) {2048},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2087 is sys.keys */
+				   2082, &(int) {2087},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {6},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2166 is tmp.keys.check */
+				   2077, &(int) {2166},		/* sys._columns.id */
+				   2078, "check",			/* sys._columns.name */
+				   2079, "varchar",			/* sys._columns.type */
+				   2080, &(int) {2048},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2135 is tmp.keys */
+				   2082, &(int) {2135},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {6},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
+
+#ifdef CATALOG_AUG2024
+	if (store->catalog_version <= CATALOG_AUG2024) {
+		/* remove function sys.st_interiorrings and its arguments since
+		 * it references the now removed type GEOMETRYA */
+		BAT *del_funcs = log_temp_descriptor(log_find_bat(lg, 2016)); /* sys.functions */
+		if (del_funcs == NULL)
+			return GDK_FAIL;
+		BAT *dels = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
+		if (dels == NULL) {
+			bat_destroy(del_funcs);
+			return GDK_FAIL;
+		}
+		BAT *b = log_temp_descriptor(log_find_bat(lg, 2026)); /* sys.functions.schema_id */
+		if (b == NULL) {
+			bat_destroy(del_funcs);
+			bat_destroy(dels);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 */
+		BAT *cands = BATselect(b, dels, &(int) {2000}, NULL, true, true, false, false);
+		bat_destroy(b);
+		bat_destroy(dels);
+		b = log_temp_descriptor(log_find_bat(lg, 2018)); /* sys.functions.name */
+		if (cands == NULL || b == NULL) {
+			bat_destroy(del_funcs);
+			bat_destroy(cands);
+			bat_destroy(b);
+			return GDK_FAIL;
+		}
+		/* select * from sys.functions where schema_id = 2000 and name = 'st_interiorrings' */
+		BAT *funcs = BATselect(b, cands, "st_interiorrings", NULL, true, true, false, false);
+		bat_destroy(cands);
+		bat_destroy(b);
+		if (funcs == NULL) {
+			bat_destroy(del_funcs);
+			return GDK_FAIL;
+		}
+		/* here, funcs contains the BUNs for the function
+		 * sys.st_interiorrings; if there are none, we're done */
+		if (BATcount(funcs) > 0) {
+			b = log_temp_descriptor(log_find_bat(lg, 2017)); /* sys.functions.id */
+			if (b == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(funcs);
 				return GDK_FAIL;
 			}
-			BBPretain(check->batCacheid);
-			bat_destroy(check);
+			BAT *del_args = log_temp_descriptor(log_find_bat(lg, 2028)); /* sys.args */
+			if (del_args == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(funcs);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			dels = BATmaskedcands(0, BATcount(del_args), del_args, false);
+			if (dels == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(del_args);
+				bat_destroy(funcs);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			BAT *a = log_temp_descriptor(log_find_bat(lg, 2030)); /* sys.args.func_id */
+			if (a == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(del_args);
+				bat_destroy(funcs);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			BAT *r1, *r2;
+			gdk_return rc;
+			/* find arguments to function sys.st_interiorrings */
+			rc = BATjoin(&r1, &r2, b, a, funcs, dels, false, 10);
+			bat_destroy(dels);
+			bat_destroy(b);
+			bat_destroy(a);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(del_funcs);
+				bat_destroy(del_args);
+				bat_destroy(funcs);
+				return GDK_FAIL;
+			}
+			b = COLcopy(del_funcs, del_funcs->ttype, true, PERSISTENT);
+			a = COLcopy(del_args, del_args->ttype, true, PERSISTENT);
+			bat_destroy(del_funcs);
+			bat_destroy(del_args);
+			if (b == NULL || a == NULL) {
+				bat_destroy(funcs);
+				bat_destroy(r1);
+				bat_destroy(r2);
+				return GDK_FAIL;
+			}
+			/* now set the deleted bit for all functions and all
+			 * arguments that we've found (i.e. just the input and
+			 * output arg for sys.st_interiorrings and the function
+			 * itself) */
+			BUN p, q;
+			BATloop (r1, p, q) {
+				oid o = BUNtoid(r1, p);
+				if (BUNreplace(b, o, &(bool) {true}, false) != GDK_SUCCEED) {
+					bat_destroy(funcs);
+					bat_destroy(r1);
+					bat_destroy(r2);
+					bat_destroy(b);
+					bat_destroy(a);
+					return GDK_FAIL;
+				}
+				o = BUNtoid(r2, p);
+				if (BUNreplace(a, o, &(bool) {true}, false) != GDK_SUCCEED) {
+					bat_destroy(funcs);
+					bat_destroy(r1);
+					bat_destroy(r2);
+					bat_destroy(b);
+					bat_destroy(a);
+					return GDK_FAIL;
+				}
+			}
+			bat_destroy(r1);
+			bat_destroy(r2);
+			rc = replace_bat(lg, 2016, b);
+			if (rc == GDK_SUCCEED)
+				rc = replace_bat(lg, 2028, a);
+			bat_destroy(b);
+			bat_destroy(a);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(funcs);
+				return rc;
+			}
+		}
+		bat_destroy(funcs);
+	}
+	if (store->catalog_version <= CATALOG_AUG2024) {
+		/* new TINYINT column sys.functions.order_specification */
+		BAT *ftype = log_temp_descriptor(log_find_bat(lg, 2022)); /* sys.functions.type (int) */
+		BAT *fname = log_temp_descriptor(log_find_bat(lg, 2018)); /* sys.functions.name (str) */
+		if (ftype == NULL || fname == NULL)
+			return GDK_FAIL;
+		bte zero = 0;
+		BAT *order_spec = BATconstant(ftype->hseqbase, TYPE_bte, &zero, BATcount(ftype), PERSISTENT);
+		/* update functions set order_specification=1 where type == aggr and name in ('group_concat', 'listagg', 'xmlagg')
+		 * update functions set order_specification=2 where type == aggr and name = 'quantile' */
+		if (order_spec == NULL) {
+			bat_destroy(ftype);
+			bat_destroy(fname);
+			return GDK_FAIL;
+		}
+		bte *os = (bte*)Tloc(order_spec, 0);
+		int *ft = (int*)Tloc(ftype, 0);
+		BATiter fni = bat_iterator_nolock(fname);
+		for(BUN b = 0; b < BATcount(ftype); b++) {
+			if (ft[b] == F_AGGR) {
+				const char *f = BUNtvar(fni, b);
+				if (strcmp(f, "group_concat") == 0 || strcmp(f, "listagg") == 0 || strcmp(f, "xmlagg") == 0)
+					os[b] = 1;
+				else if (strcmp(f, "quantile") == 0 || strcmp(f, "quantile_avg") == 0)
+					os[b] = 2;
+			}
+		}
+		bat_destroy(ftype);
+		bat_destroy(fname);
+		if ((order_spec = BATsetaccess(order_spec, BAT_READ)) == NULL ||
+			/* 2167 is sys.functions.order_specification */
+			BUNappend(lg->catalog_id, &(int) {2167}, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_bid, &order_spec->batCacheid, true) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_cnt, &(lng){BATcount(order_spec)}, false) != GDK_SUCCEED
+			) {
+			bat_destroy(order_spec);
+			return GDK_FAIL;
+		}
+		BBPretain(order_spec->batCacheid);
+		bat_destroy(order_spec);
 
-			if (tabins(lg, tabins_first, -1, 0,
-					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2165 is sys.keys.check */
-					   2077, &(int) {2165},		/* sys._columns.id */
-					   2078, "check",			/* sys._columns.name */
-					   2079, "varchar",			/* sys._columns.type */
-					   2080, &(int) {2048},		/* sys._columns.type_digits */
-					   2081, &(int) {0},		/* sys._columns.type_scale */
-					   /* 2087 is sys.keys */
-					   2082, &(int) {2087},		/* sys._columns.table_id */
-					   2083, str_nil,			/* sys._columns.default */
-					   2084, &(bit) {TRUE},		/* sys._columns.null */
-					   2085, &(int) {6},		/* sys._columns.number */
-					   2086, str_nil,			/* sys._columns.storage */
-					   0) != GDK_SUCCEED)
-				return GDK_FAIL;
-			tabins_first = false;
-			if (tabins(lg, tabins_first, -1, 0,
-					   2076, &(msk) {false},	/* sys._columns */
-					   /* 2165 is tmp.keys.check */
-					   2077, &(int) {2166},		/* sys._columns.id */
-					   2078, "check",			/* sys._columns.name */
-					   2079, "varchar",			/* sys._columns.type */
-					   2080, &(int) {2048},		/* sys._columns.type_digits */
-					   2081, &(int) {0},		/* sys._columns.type_scale */
-					   /* 2135 is tmp.keys */
-					   2082, &(int) {2135},		/* sys._columns.table_id */
-					   2083, str_nil,			/* sys._columns.default */
-					   2084, &(bit) {TRUE},		/* sys._columns.null */
-					   2085, &(int) {6},		/* sys._columns.number */
-					   2086, str_nil,			/* sys._columns.storage */
-					   0) != GDK_SUCCEED)
-				return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2167 is sys.functions.order_specification */
+				   2077, &(int) {2167},		/* sys._columns.id */
+				   2078, "order_specification",			/* sys._columns.name */
+				   2079, "tinyint",			/* sys._columns.type */
+				   2080, &(int) {7},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   /* 2016 is sys.functions */
+				   2082, &(int) {2016},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {12},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 
@@ -847,7 +1031,8 @@ bl_sequence(sqlstore *store, int seq, lng id)
 /* Write a plan entry to copy part of the given file.
  * That part of the file must remain unchanged until the plan is executed.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
 {
 	if (mnstr_printf(plan, "c %" PRIu64 " %s\n", extent, name) < 0) {
@@ -861,7 +1046,8 @@ snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
  * The contents are included in the plan so the source file is allowed to
  * change in the mean time.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
 	gdk_return ret = GDK_FAIL;
@@ -925,7 +1111,8 @@ end:
 }
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
 	char log_file[FILENAME_MAX];
@@ -958,7 +1145,8 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename, const char *suffix, uint64_t extent)
 {
 	char path1[FILENAME_MAX];
@@ -1008,7 +1196,8 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_bats(stream *plan, const char *db_dir)
 {
 	char bbpdir[FILENAME_MAX];
@@ -1095,7 +1284,8 @@ end:
 	return ret;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 snapshot_vaultkey(stream *plan, const char *db_dir)
 {
 	char path[FILENAME_MAX];
@@ -1124,12 +1314,11 @@ bl_snapshot(sqlstore *store, stream *plan)
 {
 	logger *bat_logger = store->logger;
 	gdk_return ret;
-	char *db_dir = NULL;
+	char db_dir[MAXPATH];
 	size_t db_dir_len;
 
 	// Farm 0 is always the persistent farm.
-	db_dir = GDKfilepath(0, NULL, "", NULL);
-	if (db_dir == NULL)
+	if (GDKfilepath(db_dir, sizeof(db_dir), 0, NULL, "", NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 	db_dir_len = strlen(db_dir);
 	if (db_dir[db_dir_len - 1] == DIR_SEP)
@@ -1157,7 +1346,6 @@ bl_snapshot(sqlstore *store, stream *plan)
 
 	ret = GDK_SUCCEED;
 end:
-	GDKfree(db_dir);
 	return ret;
 }
 

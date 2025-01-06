@@ -13,8 +13,11 @@
 **.gz  = BIN
 **.ico = BIN
 **.jpg = BIN
+**.lz4 = BIN
+**.parquet = BIN
 **.pdf = BIN
 **.png = BIN
+**.xz  = BIN
 **.zip = BIN
 
 # all the rest is text

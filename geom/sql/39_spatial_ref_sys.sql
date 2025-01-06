@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -38,7 +38,7 @@ create view sys.geometry_columns as
 		get_type(c.type_digits, 0) as geometry_type
 	from sys.columns c, sys.tables t, sys.schemas s
 	where c.table_id = t.id and t.schema_id = s.id
-	  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
+	  and c.type in (select sqlname from sys.types where systemname = 'wkb');
 
 GRANT SELECT ON sys.geometry_columns TO PUBLIC;
 

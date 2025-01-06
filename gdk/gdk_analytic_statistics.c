@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -369,7 +369,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	lng n = 0, rr = 0;
 	dbl *rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
@@ -383,6 +383,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 #endif
 	BAT *st = NULL;
 
+	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
 		switch (frame_type) {
 		case 3: /* unbounded until current row */
@@ -635,7 +636,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
 	bool has_nils = false, last = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = si.base, *restrict end = ei.base,
 		*levels_offset = NULL, nlevels = 0;
 	lng rem = 0, ncnt = 0;
 	bit *np = pi.base, *op = oi.base;
@@ -643,6 +644,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
 
+	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
 		switch (frame_type) {
 		case 3: /* unbounded until current row */
@@ -911,6 +913,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	gdk_return res = GDK_SUCCEED;					\
 	BAT *st = NULL;							\
 									\
+	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
 		case 3: /* unbounded until current row */		\
@@ -1125,7 +1128,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	BATiter si = bat_iterator(s);					\
 	BATiter ei = bat_iterator(e);					\
 	bool has_nils = false, last = false;				\
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = si.base, *restrict end = ei.base,	\
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = si.base, *restrict end = ei.base,	\
 		*levels_offset = NULL, nlevels = 0;			\
 	lng n = 0;							\
 	bit *np = pi.base, *op = oi.base;				\
@@ -1134,6 +1137,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	gdk_return res = GDK_SUCCEED;					\
 	BAT *st = NULL;							\
 									\
+	assert(np == NULL || cnt == 0 || np[0] == 0);			\
 	if (cnt > 0) {							\
 		switch (frame_type) {					\
 		case 3: /* unbounded until current row */		\
@@ -1381,7 +1385,7 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	BATiter b2i = bat_iterator(b2);
 	BATiter si = bat_iterator(s);
 	BATiter ei = bat_iterator(e);
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1),
+	oid i = 1, j = 0, k = 0, l = 0, cnt = BATcount(b1),
 		*levels_offset = NULL, nlevels = 0;
 	const oid *restrict start = si.base, *restrict end = ei.base;
 	lng n = 0;
@@ -1391,6 +1395,7 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	gdk_return res = GDK_SUCCEED;
 	BAT *st = NULL;
 
+	assert(np == NULL || cnt == 0 || np[0] == 0);
 	if (cnt > 0) {
 		switch (frame_type) {
 		case 3: /* unbounded until current row */

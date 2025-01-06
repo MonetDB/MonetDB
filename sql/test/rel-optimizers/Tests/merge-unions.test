@@ -15,18 +15,18 @@ plan select * from f_uchain
 ----
 munion (
 | project (
-| | table("sys"."f4") [ "f4"."n" UNIQUE ]
-| ) [ "f4"."n" UNIQUE as "f_uchain"."n" ],
+| | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
+| ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
-| | table("sys"."f3") [ "f3"."n" UNIQUE ]
-| ) [ "f3"."n" UNIQUE as "f_uchain"."n" ],
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
+| ) [ "f3"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
-| | table("sys"."f1") [ "f1"."n" UNIQUE ]
-| ) [ "f1"."n" UNIQUE as "f_uchain"."n" ],
+| | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
+| ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
-| | table("sys"."f2") [ "f2"."n" UNIQUE ]
-| ) [ "f2"."n" UNIQUE as "f_uchain"."n" ]
-) [ "f_uchain"."n" ]
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]
+| ) [ "f2"."n" NOT NULL UNIQUE as "f_uchain"."n" ]
+) [ "f_uchain"."n" NOT NULL ]
 
 query I rowsort
 select * from f_uchain
@@ -46,28 +46,24 @@ plan select * from f_uchain
 munion (
 | project (
 | | select (
-| | | table("sys"."f4") [ "f4"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f4"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f4"."n" UNIQUE as "f_uchain"."n" ],
+| | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
+| | ) [ (int(2) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
+| project (
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
+| ) [ "f3"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | select (
-| | | table("sys"."f3") [ "f3"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f3"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f3"."n" UNIQUE as "f_uchain"."n" ],
+| | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
+| | ) [ (int(2) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
-| | select (
-| | | table("sys"."f1") [ "f1"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f1"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f1"."n" UNIQUE as "f_uchain"."n" ],
-| project (
-| | select (
-| | | table("sys"."f2") [ "f2"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f2"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f2"."n" UNIQUE as "f_uchain"."n" ]
-) [ "f_uchain"."n" ]
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]
+| ) [ "f2"."n" NOT NULL UNIQUE as "f_uchain"."n" ]
+) [ "f_uchain"."n" NOT NULL ]
 
 query II rowsort
-select n, count(n) from f_uchain group by n 
+select n, count(n) from f_uchain group by n
 ----
 1
 1
@@ -87,25 +83,21 @@ plan select * from f_uchain
 munion (
 | project (
 | | select (
-| | | table("sys"."f4") [ "f4"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f4"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f4"."n" UNIQUE as "f_uchain"."n" ],
+| | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
+| | ) [ (int(2) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
+| project (
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
+| ) [ "f3"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | select (
-| | | table("sys"."f3") [ "f3"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f3"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f3"."n" UNIQUE as "f_uchain"."n" ],
+| | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
+| | ) [ (int(2) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
-| | select (
-| | | table("sys"."f1") [ "f1"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f1"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f1"."n" UNIQUE as "f_uchain"."n" ],
-| project (
-| | select (
-| | | table("sys"."f2") [ "f2"."n" UNIQUE ]
-| | ) [ (int(2) "1") < ("f2"."n" UNIQUE) < (int(2) "5") ]
-| ) [ "f2"."n" UNIQUE as "f_uchain"."n" ]
-) [ "f_uchain"."n" ]
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]
+| ) [ "f2"."n" NOT NULL UNIQUE as "f_uchain"."n" ]
+) [ "f_uchain"."n" NOT NULL ]
 
 query I rowsort
 select * from f_merge
@@ -124,20 +116,20 @@ plan select * from f_merge
 ----
 munion (
 | project (
-| | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge"."n" ]
-| ) [ "f_merge"."n" UNIQUE ],
+| | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ],
 | project (
-| | table("sys"."f2") [ "f2"."n" UNIQUE as "f_merge"."n" ]
-| ) [ "f_merge"."n" UNIQUE ],
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ],
 | project (
-| | table("sys"."f3") [ "f3"."n" UNIQUE as "f_merge"."n" ]
-| ) [ "f_merge"."n" UNIQUE ],
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ],
 | project (
-| | table("sys"."f4") [ "f4"."n" UNIQUE as "f_merge"."n" ]
-| ) [ "f_merge"."n" UNIQUE ]
-) [ "f_merge"."n" ]
+| | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ]
+) [ "f_merge"."n" NOT NULL ]
 
-query T rowsort
+query I rowsort
 select * from f_merge
 where n > 1 and n < 5
 ----
@@ -155,25 +147,21 @@ plan select * from f_merge
 munion (
 | project (
 | | select (
-| | | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge"."n" ]
-| | ) [ (int(31) "1") < ("f_merge"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge"."n" UNIQUE ],
+| | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| | ) [ (int(31) "1") < ("f_merge"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ],
+| project (
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ],
+| project (
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ],
 | project (
 | | select (
-| | | table("sys"."f2") [ "f2"."n" UNIQUE as "f_merge"."n" ]
-| | ) [ (int(31) "1") < ("f_merge"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge"."n" UNIQUE ],
-| project (
-| | select (
-| | | table("sys"."f3") [ "f3"."n" UNIQUE as "f_merge"."n" ]
-| | ) [ (int(31) "1") < ("f_merge"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge"."n" UNIQUE ],
-| project (
-| | select (
-| | | table("sys"."f4") [ "f4"."n" UNIQUE as "f_merge"."n" ]
-| | ) [ (int(31) "1") < ("f_merge"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge"."n" UNIQUE ]
-) [ "f_merge"."n" ]
+| | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge"."n" ]
+| | ) [ (int(31) "1") < ("f_merge"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| ) [ "f_merge"."n" NOT NULL UNIQUE ]
+) [ "f_merge"."n" NOT NULL ]
 
 query I rowsort
 select * from f_merge_rec
@@ -192,18 +180,18 @@ plan select * from f_merge_rec
 ----
 munion (
 | project (
-| | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge_rec"."n" ]
-| ) [ "f_merge_rec"."n" UNIQUE ],
+| | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
 | project (
-| | table("sys"."f2") [ "f2"."n" UNIQUE as "f_merge_rec"."n" ]
-| ) [ "f_merge_rec"."n" UNIQUE ],
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
 | project (
-| | table("sys"."f3") [ "f3"."n" UNIQUE as "f_merge_rec"."n" ]
-| ) [ "f_merge_rec"."n" UNIQUE ],
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
 | project (
-| | table("sys"."f4") [ "f4"."n" UNIQUE as "f_merge_rec"."n" ]
-| ) [ "f_merge_rec"."n" UNIQUE ]
-) [ "f_merge_rec"."n" ]
+| | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ]
+) [ "f_merge_rec"."n" NOT NULL ]
 
 query I rowsort
 select * from f_merge_rec
@@ -223,28 +211,24 @@ plan select * from f_merge_rec
 munion (
 | project (
 | | select (
-| | | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge_rec"."n" UNIQUE ],
+| | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
+| project (
+| | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
+| project (
+| | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
 | project (
 | | select (
-| | | table("sys"."f2") [ "f2"."n" UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge_rec"."n" UNIQUE ],
-| project (
-| | select (
-| | | table("sys"."f3") [ "f3"."n" UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge_rec"."n" UNIQUE ],
-| project (
-| | select (
-| | | table("sys"."f4") [ "f4"."n" UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" UNIQUE) < (int(31) "5") ]
-| ) [ "f_merge_rec"."n" UNIQUE ]
-) [ "f_merge_rec"."n" ]
+| | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| ) [ "f_merge_rec"."n" NOT NULL UNIQUE ]
+) [ "f_merge_rec"."n" NOT NULL ]
 
 query II rowsort
-select n, count(n) from f_merge_rec group by n 
+select n, count(n) from f_merge_rec group by n
 ----
 1
 1
@@ -258,24 +242,24 @@ select n, count(n) from f_merge_rec group by n
 1
 
 query T nosort
-plan select n, count(n) from f_merge_rec group by n 
+plan select n, count(n) from f_merge_rec group by n
 ----
 project (
 | group by (
 | | munion (
 | | | group by (
-| | | | table("sys"."f1") [ "f1"."n" UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ],
+| | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
 | | | group by (
-| | | | table("sys"."f2") [ "f2"."n" UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ],
+| | | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
 | | | group by (
-| | | | table("sys"."f3") [ "f3"."n" UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ],
+| | | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
 | | | group by (
-| | | | table("sys"."f4") [ "f4"."n" UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" UNIQUE ] [ "f_merge_rec"."n" UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" UNIQUE) NOT NULL as "%1"."%1" ]
-| | ) [ "f_merge_rec"."n", "%1"."%1" NOT NULL ]
-| ) [ "f_merge_rec"."n" ] [ "f_merge_rec"."n", "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
-) [ "f_merge_rec"."n" UNIQUE, "%1"."%1" NOT NULL ]
+| | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | ) [ "f_merge_rec"."n" NOT NULL, "%1"."%1" NOT NULL ]
+| ) [ "f_merge_rec"."n" NOT NULL ] [ "f_merge_rec"."n" NOT NULL, "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
+) [ "f_merge_rec"."n" NOT NULL UNIQUE, "%1"."%1" NOT NULL ]
 

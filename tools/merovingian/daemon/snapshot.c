@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
@@ -737,7 +737,7 @@ bailout:
 #define TAR_BLOCK_SIZE (512)
 
 /* Read a full block from the stream.
- * Return 0 on succes, -1 on failure.
+ * Return 0 on success, -1 on failure.
  * Set *err to NULL if the failure is caused by an end of file
  * on a block boundary, non-NULL on read error.
  */
@@ -784,16 +784,26 @@ extract_tar_member_filename(const char *block)
 	return buf;
 }
 
-static ssize_t
+static int64_t
 extract_tar_member_size(const char *block)
 {
-	size_t size;
-	char buf[13];
-	memmove(buf, block + 124, 12);
-	buf[12] = '\0';
-	if (sscanf(buf, "%zo", &size) != 1)
-		return -1;
-	return (ssize_t) size;
+	int64_t size;
+	const uint8_t *field = (const uint8_t*)&block[124];
+	if (field[0] >= 0x80) {
+		// binary format
+		size = 0;
+		for (int i = 4; i < 12; i++) {
+			size = (size << 8) + field[i];
+		}
+	} else {
+		// octal format. copy so we can append a trailing \0.
+		char buf[13];
+		memmove(buf, field, 12);
+		buf[12] = '\0';
+		if (sscanf(buf, "%"SCNo64"o", &size) != 1)
+			return -1;
+	}
+	return size;
 }
 
 
@@ -851,7 +861,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 			e = newErr("Could not open %s", destfile);
 			goto bailout;
 		}
-		ssize_t size = extract_tar_member_size(block);
+		int64_t size = extract_tar_member_size(block);
 		while (size > 0) {
 			int read_result = read_tar_block(tarstream, block, &e);
 			if (e != NO_ERR) {
@@ -861,7 +871,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 				e = newErr("unexpected end of tar file");
 				goto bailout;
 			}
-			size_t nwrite = size > TAR_BLOCK_SIZE ? TAR_BLOCK_SIZE : size;
+			size_t nwrite = size > TAR_BLOCK_SIZE ? TAR_BLOCK_SIZE : (size_t)size;
 			size_t written = fwrite(block, 1, nwrite, outfile);
 			if (written < nwrite) {
 				e = newErr("Error writing %s: %s", destfile, strerror(errno));

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -14,7 +14,7 @@
  * @+ Implementation
  * The implementation needs the stream abstraction, which also provides
  * primitives to compress/decompress files on the fly.
- * The file can plain ASCII, gzipped or bzipped, decided by the extention
+ * The file can plain ASCII, gzipped or bzipped, decided by the extension
  * (none, gz or bz2). The default is plain ASCII, which is formatted to
  * pre presented on the screen directly.
  */

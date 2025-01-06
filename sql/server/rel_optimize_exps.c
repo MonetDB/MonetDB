@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -377,7 +377,7 @@ bind_simplify_math(visitor *v, global_props *gp)
 
 /*
  * Casting decimal values on both sides of a compare expression is expensive,
- * both in preformance (cpu cost) and memory requirements (need for large
+ * both in performance (cpu cost) and memory requirements (need for large
  * types).
  */
 

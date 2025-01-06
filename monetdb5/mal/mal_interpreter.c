@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -571,6 +571,9 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		}
 
+		freeException(ret);
+		ret = MAL_SUCCEED;
+
 		if (stk->status) {
 			/* pause procedure from SYSMON */
 			if (stk->status == 'p') {
@@ -590,11 +593,21 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		//Ensure we spread system resources over multiple users as well.
 		runtimeProfileBegin(cntxt, mb, stk, pci, &runtimeProfile);
 		if (runtimeProfile.ticks > lastcheck + CHECKINTERVAL) {
-			if (cntxt->fdin && !mnstr_isalive(cntxt->fdin->s)) {
-				cntxt->mode = FINISHCLIENT;
-				stkpc = stoppc;
-				ret = createException(MAL, "mal.interpreter",
-									  "prematurely stopped client");
+			if (cntxt->fdin && TIMEOUT_TEST(&cntxt->qryctx)) {
+				if (cntxt->qryctx.endtime != QRY_INTERRUPT && cntxt->qryctx.endtime != QRY_TIMEOUT)
+					cntxt->mode = FINISHCLIENT;
+				switch (cntxt->qryctx.endtime) {
+				case QRY_TIMEOUT:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_TIMEOUT);
+					break;
+				case QRY_INTERRUPT:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) RUNTIME_QRY_INTERRUPT);
+					break;
+				default:
+					ret = createException(MAL, "mal.interpreter", SQLSTATE(HYT00) "Client disconnected");
+					cntxt->mode = FINISHCLIENT;
+					break;
+				}
 				break;
 			}
 			lastcheck = runtimeProfile.ticks;
@@ -619,7 +632,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		/* The interpreter loop
 		 * The interpreter is geared towards execution a MAL
 		 * procedure together with all its descendant
-		 * invocations. As such, it provides the MAL abtract
+		 * invocations. As such, it provides the MAL abstract
 		 * machine processor.
 		 *
 		 * The value-stack frame of the surrounding scope is
@@ -651,8 +664,6 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 		}
 
-		freeException(ret);
-		ret = MAL_SUCCEED;
 		switch (pci->token) {
 		case ASSIGNsymbol:
 			/* Assignment command
@@ -666,7 +677,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			 * activity is made part of the start-up procedure.
 			 *
 			 * The before after calls should be reconsidered here,
-			 * because their. They seem superflous and the way
+			 * because their. They seem superfluous and the way
 			 * they are used will cause errors in multi-assignment
 			 * statements.
 			 */
@@ -838,7 +849,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 			w = instruction2str(mb, 0, pci, FALSE);
 			if (w) {
-				ret = createException(MAL, "interpreter", "unkown operation:%s",
+				ret = createException(MAL, "interpreter", "unknown operation:%s",
 									  w);
 				GDKfree(w);
 			} else {
@@ -1065,11 +1076,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default: {
-				char name[IDLENGTH] = { 0 };
+				char name[IDLENGTH];
 				ret = createException(MAL, "mal.interpreter",
-									  "%s: Unknown barrier type", getVarNameIntoBuffer(mb,
-																			 getDestVar
-																			 (pci), name));
+									  "%s: Unknown barrier type",
+									  getVarNameIntoBuffer(mb,
+														   getDestVar
+														   (pci), name));
 					 }
 			}
 			stkpc++;
@@ -1241,13 +1253,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			str new, n;
 			n = createException(MAL, nme, "exception not caught");
 			if (n) {
-				new = GDKzalloc(strlen(ret) + strlen(n) + 16);
+				new = GDKmalloc(strlen(ret) + strlen(n) + 16);
 				if (new) {
-					strcpy(new, ret);
-					if (new[strlen(new) - 1] != '\n')
-						strcat(new, "\n");
-					strcat(new, "!");
-					strcat(new, n);
+					char *p = stpcpy(new, ret);
+					if (p[-1] != '\n')
+						*p++ = '\n';
+					*p++ = '!';
+					p = stpcpy(p, n);
 					freeException(n);
 					freeException(ret);
 					ret = new;
@@ -1344,7 +1356,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * block.
  * MAL interpretation then continues until it reaches the end of the block.
  * If no exception variable was defined, we should abandon the function
- * alltogether searching for a catch block at a higher layer.
+ * altogether searching for a catch block at a higher layer.
  *
  * For the time being we have ignored cascaded/stacked exceptions.
  * The policy is to pass the first recognized exception to a context
@@ -1356,7 +1368,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * upon leaving the linked library routine.
  *
  * Second, exceptional cases can be handled deeply in the recursion, where they
- * may also be handled, i.e. by issueing an GDKerror message. The upper layers
+ * may also be handled, i.e. by issuing an GDKerror message. The upper layers
  * merely receive a negative integer value to indicate occurrence of an
  * error somewhere in the calling sequence.
  * We then have to also look into GDKerrbuf to see if there was
@@ -1365,7 +1377,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * The policy is to require all C-functions to return a string-pointer.
  * Upon a successful call, it is a NULL string. Otherwise it contains an
  * encoding of the exceptional state encountered. This message
- * starts with the exception identifer, followed by contextual details.
+ * starts with the exception identifier, followed by contextual details.
  */
 
 /*
@@ -1432,7 +1444,7 @@ garbageElement(Client cntxt, ValPtr v)
  * This situation is indicated by the 'global' in the stack frame.
  * Upon termination of the session, the stack should be cleared.
  * Beware that variables may be know polymorphic, their actual
- * type should be saved for variables that recide on a global
+ * type should be saved for variables that reside on a global
  * stack frame.
  */
 void

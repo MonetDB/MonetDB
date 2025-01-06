@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -16,7 +16,7 @@
  * The math module
  * This module contains the math commands. The implementation is very simply,
  * the c math library functions are called. See for documentation the
- * ANSI-C/POSIX manuals of the equaly named functions.
+ * ANSI-C/POSIX manuals of the equally named functions.
  *
  * NOTE: the operand itself is being modified, rather than that we produce
  * a new BAT. This to save the expensive copying.
@@ -328,7 +328,7 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "atan", MATHunary_ATANflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "atan", MATHunary_ATANdbl, false, "The atan(x) function calculates the arc tangent of x, that is the value \nwhose tangent is x. The value is returned in radians and is mathematically \ndefined to be between -PI/2 and PI/2 (inclusive).", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "atan2", MATHbinary_ATAN2flt, false, "", args(1,3, arg("",flt),arg("x",flt),arg("y",flt))),
- command("mmath", "atan2", MATHbinary_ATAN2dbl, false, "The atan2(x,y) function calculates the arc tangent of the two \nvariables x and y.  It is similar to calculating the arc\ntangent of y / x, except that the signs of both arguments are \nused to determine the quadrant of the result.  The value is \nreturned in radians and is mathematically defined to be between \n-PI/2 and PI/2 (inclusive).", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
+ command("mmath", "atan2", MATHbinary_ATAN2dbl, false, "The atan2(x,y) function calculates the arc tangent of the two \nvariables x and y. It is similar to calculating the arc\ntangent of y / x, except that the signs of both arguments are \nused to determine the quadrant of the result. The value is \nreturned in radians and is mathematically defined to be between \n-PI/2 and PI/2 (inclusive).", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
  command("mmath", "cos", MATHunary_COSflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "cos", MATHunary_COSdbl, false, "The cos(x) function returns the cosine of x, where x is given in \nradians. The return value is between -1 and 1.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "sin", MATHunary_SINflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
@@ -338,9 +338,9 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "cot", MATHunary_COTflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "cot", MATHunary_COTdbl, false, "The cot(x) function returns the Cotangent of x,\nwhere x is given in radians", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "cosh", MATHunary_COSHflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
- command("mmath", "cosh", MATHunary_COSHdbl, false, "The cosh() function  returns the hyperbolic cosine of x, which is \ndefined mathematically as (exp(x) + exp(-x)) / 2.", args(1,2, arg("",dbl),arg("x",dbl))),
+ command("mmath", "cosh", MATHunary_COSHdbl, false, "The cosh() function returns the hyperbolic cosine of x, which is \ndefined mathematically as (exp(x) + exp(-x)) / 2.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "sinh", MATHunary_SINHflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
- command("mmath", "sinh", MATHunary_SINHdbl, false, "The sinh() function  returns  the  hyperbolic sine of x, which \nis defined mathematically as (exp(x) - exp(-x)) / 2.", args(1,2, arg("",dbl),arg("x",dbl))),
+ command("mmath", "sinh", MATHunary_SINHdbl, false, "The sinh() function returns the hyperbolic sine of x, which is \ndefined mathematically as (exp(x) - exp(-x)) / 2.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "tanh", MATHunary_TANHflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "tanh", MATHunary_TANHdbl, false, "The tanh() function returns the hyperbolic tangent of x, which is \ndefined mathematically as sinh(x) / cosh(x).", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "radians", MATHunary_RADIANSflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
@@ -358,16 +358,16 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "log2", MATHunary_LOG2flt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "log2", MATHunary_LOG2dbl, false, "The log2(x) function returns the base-2 logarithm of x.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "pow", MATHbinary_POWflt, false, "", args(1,3, arg("",flt),arg("x",flt),arg("y",flt))),
- command("mmath", "pow", MATHbinary_POWdbl, false, "The pow(x,y) function  returns the value of x raised to the power of y.", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
- command("mmath", "nextafter", MATHbinary_NEXTAFTERflt, false, "The returns the next representable floating-point value of x in the direction of y.", args(1,3, arg("",flt),arg("x",flt),arg("y",flt))),
- command("mmath", "nextafter", MATHbinary_NEXTAFTERdbl, false, "The returns the next representable floating-point value of x in the direction of y.", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
+ command("mmath", "pow", MATHbinary_POWdbl, false, "The pow(x,y) function returns the value of x raised to the power of y.", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
+ command("mmath", "nextafter", MATHbinary_NEXTAFTERflt, false, "The nextafter(x,y) function returns the next representable floating-point value of x in the direction of y.", args(1,3, arg("",flt),arg("x",flt),arg("y",flt))),
+ command("mmath", "nextafter", MATHbinary_NEXTAFTERdbl, false, "The nextafter(x,y) function returns the next representable floating-point value of x in the direction of y.", args(1,3, arg("",dbl),arg("x",dbl),arg("y",dbl))),
  command("mmath", "sqrt", MATHunary_SQRTflt, false, "", args(1,2, arg("",flt),arg("y",flt))),
  command("mmath", "sqrt", MATHunary_SQRTdbl, false, "The sqrt(x) function returns the non-negative root of x.", args(1,2, arg("",dbl),arg("y",dbl))),
  command("mmath", "cbrt", MATHunary_CBRTflt, false, "", args(1,2, arg("",flt),arg("y",flt))),
  command("mmath", "cbrt", MATHunary_CBRTdbl, false, "The cbrt(x) function returns the cube root of x.", args(1,2, arg("",dbl),arg("y",dbl))),
  command("mmath", "ceil", MATHunary_CEILflt, false, "", args(1,2, arg("",flt),arg("y",flt))),
  command("mmath", "ceil", MATHunary_CEILdbl, false, "The ceil(x) function rounds x upwards to the nearest integer.", args(1,2, arg("",dbl),arg("y",dbl))),
- command("mmath", "fabs", MATHunary_FABSdbl, false, "The fabs(x) function  returns  the  absolute value of the \nfloating-point number x.", args(1,2, arg("",dbl),arg("y",dbl))),
+ command("mmath", "fabs", MATHunary_FABSdbl, false, "The fabs(x) function returns the absolute value of the floating-point number x.", args(1,2, arg("",dbl),arg("y",dbl))),
  command("mmath", "floor", MATHunary_FLOORflt, false, "", args(1,2, arg("",flt),arg("y",flt))),
  command("mmath", "floor", MATHunary_FLOORdbl, false, "The floor(x) function rounds x downwards to the nearest integer.", args(1,2, arg("",dbl),arg("y",dbl))),
  command("mmath", "round", MATHbinary_ROUNDflt, false, "", args(1,3, arg("",flt),arg("x",flt),arg("y",int))),

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -178,10 +178,6 @@ struct stream {
 void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
 	__attribute__((__visibility__("hidden")));
 
-void mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)))
-	__attribute__((__visibility__("hidden")));
-
 void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
 	__attribute__((__format__(__printf__, 3, 4)))
 	__attribute__((__visibility__("hidden")));
@@ -265,8 +261,8 @@ typedef struct bs bs;
 struct bs {
 	unsigned nr;		/* how far we got in buf */
 	unsigned itotal;	/* amount available in current read block */
-	int64_t blks;		/* read/writen blocks (possibly partial) */
-	int64_t bytes;		/* read/writen bytes */
+	int64_t blks;		/* read/written blocks (possibly partial) */
+	int64_t bytes;		/* read/written bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of
 				 * size-short */
 };

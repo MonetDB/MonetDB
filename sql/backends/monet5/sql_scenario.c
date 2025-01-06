@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -48,7 +48,6 @@
 #include "msabaoth.h"
 #include "gdk_time.h"
 #include "optimizer.h"
-#include "opt_prelude.h"
 #include "opt_pipes.h"
 #include "opt_mitosis.h"
 #include <unistd.h>
@@ -97,9 +96,17 @@ CLIENTprintinfo(void)
 	char mmbuf[64];
 	char tmbuf[64];
 	char trbuf[64];
+	char chbuf[64];
+	char cabuf[64];
+	char clbuf[64];
+	char crbuf[64];
+	char cpbuf[64];
 	struct tm tm;
 
-	MT_lock_set(&mal_contextLock);
+	if (!MT_lock_trytime(&mal_contextLock, 1000)) {
+		printf("Clients are currently locked, so no client information\n");
+		return;
+	}
 	printf("Clients:\n");
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		switch (c->mode) {
@@ -122,7 +129,27 @@ CLIENTprintinfo(void)
 				snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
 			else
 				trbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf);
+			if (c->client_hostname)
+				snprintf(chbuf, sizeof(chbuf), ", client host: %s", c->client_hostname);
+			else
+				chbuf[0] = 0;
+			if (c->client_application)
+				snprintf(cabuf, sizeof(cabuf), ", client app: %s", c->client_application);
+			else
+				cabuf[0] = 0;
+			if (c->client_library)
+				snprintf(clbuf, sizeof(clbuf), ", client lib: %s", c->client_library);
+			else
+				clbuf[0] = 0;
+			if (c->client_remark)
+				snprintf(crbuf, sizeof(crbuf), ", client remark: %s", c->client_remark);
+			else
+				crbuf[0] = 0;
+			if (c->client_pid)
+				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
+			else
+				cpbuf[0] = 0;
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
@@ -726,16 +753,18 @@ SQLinit(Client c, const char *initpasswd)
 			const char *createdb_inline =
 				"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
 				//"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n"
-				/* only system functions until now */
-				"update sys.functions set system = true;\n"
-				/* only system tables until now */
-				"update sys._tables set system = true;\n"
-				/* only system schemas until now */
-				"update sys.schemas set system = true;\n"
+				/* set "system" attribute for all system schemas; be
+				 * explicit about which ones they are (id 2000 is sys,
+				 * 2114 is tmp; these values are immutable) */
+				"update sys.schemas set system = true where id in (2000, 2114) or name in ('json', 'profiler', 'logging', 'information_schema');\n"
 				/* correct invalid FK schema ids, set them to schema id 2000
 				 * (the "sys" schema) */
-				"update sys.types set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n"
-				"update sys.functions set schema_id = 2000 where schema_id = 0 and schema_id not in (select id from sys.schemas);\n";
+				"update sys.types set schema_id = 2000 where schema_id = 0;\n"
+				"update sys.functions set schema_id = 2000 where schema_id = 0;\n"
+				/* set system attribute for all system tables and
+				 * functions (i.e. ones in system schemas) */
+				"update sys.functions set system = true where schema_id in (select id from sys.schemas s where s.system);\n"
+				"update sys._tables set system = true where schema_id in (select id from sys.schemas s where s.system);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
@@ -1037,7 +1066,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * The SQLreader is called from two places: the SQL parser and
  * the MAL debugger.
  * The former only occurs during the parsing phase and the
- * second only during exection.
+ * second only during execution.
  * This means we can safely change the language setting for
  * the duration of these calls.
  */
@@ -1234,7 +1263,7 @@ SQLchannelcmd(Client c, backend *be)
 			sqlcleanup(be, 0);
 		return msg;
 	}
-	static const char* columnar_protocol = "columnar_protocol ";
+	static const char columnar_protocol[] = "columnar_protocol ";
 	if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
 		v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
 
@@ -1384,7 +1413,7 @@ SQLparser_body(Client c, backend *be)
 		}
 
 		m->type = Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
-		scanner_query_processed(&(m->scanner));
+		mvc_query_processed(m);
 
 		/* For deallocate statements just export a simple output */
 		if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->qryctx.starttime, c->curprg->def->optimize)) < 0)
@@ -1410,7 +1439,7 @@ SQLparser_body(Client c, backend *be)
 		be->vtop = oldvtop;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
 		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
-			scanner_query_processed(&(m->scanner));
+			mvc_query_processed(m);
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
@@ -1450,7 +1479,7 @@ SQLparser_body(Client c, backend *be)
 				freeException(c->curprg->def->errors);
 				c->curprg->def->errors = NULL;
 			} else
-				opt = ((m->emod & mod_exec) == 0); /* no need to optimze prepare - execute */
+				opt = ((m->emod & mod_exec) == 0); /* no need to optimize prepare - execute */
 
 			Tend = GDKusec();
 			if(profilerStatus > 0)
@@ -1526,7 +1555,7 @@ SQLparser_body(Client c, backend *be)
 					err = 1;
 				}
 			}
-			scanner_query_processed(&(m->scanner));
+			mvc_query_processed(m);
 			if (be->q && backend_dumpproc(be, c, be->q, r) < 0) {
 				msg = handle_error(m, 0, msg);
 				err = 1;

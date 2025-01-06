@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -418,12 +418,16 @@ void msettings_set_localizer(msettings *mp, const char* (*localizer)(const void 
 const char*
 msetting_string(const msettings *mp, mparm parm)
 {
-	if (mparm_classify(parm) != MPCLASS_STRING)
+	if (mparm_classify(parm) != MPCLASS_STRING) {
 		FATAL();
+		return "";
+	}
 	int i = parm - MP__STRING_START;
 	struct string const *p = &mp->dummy_start_string + 1 + i;
-	if (p >=  &mp->dummy_end_string)
+	if (p >=  &mp->dummy_end_string) {
 		FATAL();
+		return "";
+	}
 	char *s = p->str;
 
 	if (s == NULL) {
@@ -473,7 +477,6 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 				mp->lang_is_mal = true;
 			else if (strstr(value, "sql") == value)
 				mp->lang_is_sql = true;
-			else if (strcmp(value, "`"))
 			break;
 		default:
 			break;

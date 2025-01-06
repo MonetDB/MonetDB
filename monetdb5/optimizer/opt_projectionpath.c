@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -64,8 +64,8 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	/*
-	 * Count the variable re-use  used as arguments first.
-	 * A pass operation is not a real re-use
+	 * Count the variable reuse  used as arguments first.
+	 * A pass operation is not a real reuse
 	 */
 	for (i = 0; i < limit; i++) {
 		p = old[i];

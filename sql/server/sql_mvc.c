@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 #include "sql_mvc.h"
 #include "sql_qc.h"
 #include "sql_types.h"
+#include "sql_storage.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_partition.h"
@@ -478,6 +479,12 @@ mvc_cancel_session(mvc *m)
 	(void)sql_trans_end(m->session, SQL_ERR);
 }
 
+void
+mvc_query_processed(mvc *m)
+{
+	scanner_query_processed(&(m->scanner));
+}
+
 int
 mvc_trans(mvc *m)
 {
@@ -814,17 +821,14 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 		qc_destroy(m->qc);
 		return NULL;
 	}
-	if (init_global_variables(m) < 0) {
-		qc_destroy(m->qc);
-		list_destroy(m->global_vars);
-		return NULL;
-	}
+
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
 	m->timezone = 0;
 	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
+	m->div_min_scale = 3;
 
 	m->emode = m_normal;
 	m->emod = mod_none;
@@ -835,6 +839,12 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->nid = 1;
 	m->cascade_action = NULL;
 	m->runs = NULL;
+
+	if (init_global_variables(m) < 0) {
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
+		return NULL;
+	}
 
 	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);
@@ -1068,16 +1078,16 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 
 int
 mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
-				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	int lres = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create function: %s\n", name);
 	if (sa) {
-		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect, order_required, opt_order);
 		(*f)->s = s;
 	} else
-		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect, order_required, opt_order);
 	return lres;
 }
 

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -226,6 +226,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 						mytime, type, dbname, pid, (int) (p - q), q);
 			}
 		}
+		fflush(stream);
 	} while (rest);
 	fflush(stream);
 }
@@ -461,6 +462,7 @@ main(int argc, char *argv[])
 #else
 		{"snapshotcompression", strdup(".tar"),     0,                 STR},
 #endif
+		{"keepalive",     strdup("60"),            60,                 INT},
 
 		{ NULL,           NULL,                    0,                  INVALID}
 	};
@@ -880,8 +882,8 @@ main(int argc, char *argv[])
 	// the duplications is happening so we can write err messages both
 	// to the console stderr, through `oerr` FILE*, and through the
 	// logging thread to the merovingian logfile. the latter is
-	// happening through replacing the standartd fd for stderr (namely
-	// fd=2) with a writting end of a pipe which reading end goes to the
+	// happening through replacing the standard fd for stderr (namely
+	// fd=2) with a writing end of a pipe which reading end goes to the
 	// logging thread
 #ifdef F_DUPFD_CLOEXEC
 	if ((ret = fcntl(2, F_DUPFD_CLOEXEC, 3)) < 0) {
@@ -1259,7 +1261,7 @@ shutdown:
 		close(lockfd);
 	}
 
-	/* the child's return code at this point doesn't matter, as noone
+	/* the child's return code at this point doesn't matter, as no one
 	 * will see it */
 	return(0);
 }

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -29,7 +29,7 @@
  * i.e., an sql.append() statement that is eventually followed by some other
  * statement later on in the MAL program that uses the same v0 BAT as
  * argument as the sql.append() statement does,
- * Do you assume a single re-use of the variable v0?
+ * Do you assume a single reuse of the variable v0?
  * Do you assume a non-nested  MAL block ?
  *
  * and transform them into
@@ -73,7 +73,7 @@
  * This allows the optimizer implementation to find them and react on them.
  */
 #include "monetdb_config.h"
-#include "opt_prelude.h"
+#include "opt_support.h"
 #include "mal_interpreter.h"
 
 /* focus initially on persistent tables. */
@@ -182,7 +182,7 @@ OPTsql_appendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					 * q1 = newStmt(mb, aggrRef,countRef);
 					 * setArgType(mb,q1,TYPE_lng) */
 					/* it will be added to the block and even my
-					 * re-use MAL instructions */
+					 * reuse MAL instructions */
 					q1 = newInstruction(mb,aggrRef,countRef);
 					if (q1) {
 						getArg(q1,0) = newTmpVariable(mb, TYPE_lng);

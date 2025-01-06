@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -46,7 +46,7 @@
  * case characters.
  *
  * The search(str,chr) function searches for the first occurrence of a
- * character from the begining of the string. The search(chr,str)
+ * character from the beginning of the string. The search(chr,str)
  * searches for the last occurrence (or first from the end of the
  * string). The last search function locates the position of first
  * occurrence of the string s2 in string s. All search functions
@@ -1692,9 +1692,9 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 	v = *buf;
 	if (strt > 0)
 		v = UTF8_strncpy(v, s, strt);
-	strcpy(v, s2);
+	v = stpcpy(v, s2);
 	if (strt + l < l1)
-		strcat(v, UTF8_strtail(s, strt + l));
+		strcpy(v, UTF8_strtail(s, strt + l));
 	return MAL_SUCCEED;
 }
 
@@ -1874,11 +1874,11 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 		with_strimps_anti = false;
 
 	if (!(b = BATdescriptor(b_id)))
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!is_bat_nil(cb_id) && !(cb = BATdescriptor(cb_id))) {
 		BBPreclaim(b);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
@@ -1944,7 +1944,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 			bn->tnonil = true;
 			bn->tseqbase = rcnt == 0 ?
 				0 : rcnt == 1 ?
-				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.hseq : oid_nil;
+				*(const oid *) Tloc(bn, 0) : rcnt == ci.ncand && ci.tpe == cand_dense ? ci.seq : oid_nil;
 
 			if (with_strimps_anti) {
 				BAT *rev;
@@ -1959,7 +1959,7 @@ STRselect(MalStkPtr stk, InstrPtr pci,
 					assert(rev->batCount == old_s->batCount - bn->batCount);
 #endif
 				} else
-					rev = BATnegcands(b->batCount, bn);
+					rev = BATnegcands(0, b->batCount, bn);
 
 				BBPreclaim(bn);
 				bn = rev;
@@ -2756,13 +2756,13 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 
 	if (!(l = BATdescriptor(l_id)) || !(r = BATdescriptor(r_id))) {
 		BBPnreclaim(2, l, r);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((cl_id && !is_bat_nil(cl_id) && (cl = BATdescriptor(cl_id)) == NULL) ||
 		(cr_id && !is_bat_nil(cr_id) && (cr = BATdescriptor(cr_id)) == NULL)) {
 		BBPnreclaim(4, l, r, cl, cr);
-		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
+		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	rl = COLnew(0, TYPE_oid, BATcount(l), TRANSIENT);
@@ -2875,19 +2875,22 @@ ignorecase(const bat *ic_id, bool *icase, str fname)
 	if ((c = BATdescriptor(*ic_id)) == NULL)
 		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (BATcount(c) != 1) {
-		BUN cnt = BATcount(c);
+	BUN cnt = BATcount(c);
+	if (cnt < 1) {
 		BBPreclaim(c);
-		if (cnt == 0)
-			throw(MAL, fname, SQLSTATE(42000) "Missing ignore case value\n");
-		else
-			throw(MAL, fname, SQLSTATE(42000) "Multiple ignore case values passed, only one expected\n");
+		throw(MAL, fname, SQLSTATE(42000) "Missing ignore case value\n");
 	}
 
 	BATiter bi = bat_iterator(c);
 	*icase = *(bit *) BUNtloc(bi, 0);
+	for(BUN i = 1; i<cnt; i++) {
+		if (*icase != *(bit*)BUNtloc(bi, i)) {
+			bat_iterator_end(&bi);
+			BBPreclaim(c);
+			throw(MAL, fname, SQLSTATE(42000) "Multiple ignore case values passed, only one expected\n");
+		}
+	}
 	bat_iterator_end(&bi);
-
 	BBPreclaim(c);
 	return MAL_SUCCEED;
 }

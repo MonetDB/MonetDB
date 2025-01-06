@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -322,7 +322,7 @@ control_setup(
 				if (p == NULL) {
 					/* the server doesn't support what we can */
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"unsupported hash algoritms: %s", algos);
+							"unsupported hash algorithms: %s", algos);
 					close_stream(control->fdout);
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));

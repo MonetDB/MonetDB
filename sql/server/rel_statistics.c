@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -15,6 +15,7 @@
 #include "rel_statistics.h"
 #include "rel_basetable.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
@@ -176,6 +177,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_munion:
 		case op_project:
 		case op_groupby: {
+			if (is_recursive(rel))
+				return NULL;
 			sql_exp *found;
 			atom *fval;
 			prop *est;
@@ -300,7 +303,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 		*rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 	prop *est;
 
-	/* for the intersection, if both expresssions don't overlap, it can be pruned */
+	/* for the intersection, if both expressions don't overlap, it can be pruned */
 	if (is_inter(rel->op) && !has_nil(le) && !has_nil(re) &&
 		((rval_max && lval_min && atom_cmp(rval_max, lval_min) < 0) || (rval_min && lval_max && atom_cmp(rval_min, lval_max) > 0)))
 		return true;
@@ -351,6 +354,8 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 static void
 rel_munion_get_statistics(mvc *sql, sql_rel *rel, list *rels, sql_exp *e, int i)
 {
+	if (is_recursive(rel))
+		return ;
 	assert(is_munion(rel->op));
 
 	sql_rel *l = rels->h->data;
@@ -605,7 +610,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					(is_anti(e) ? ((lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0) || (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0) || atom_cmp(rval_min, fval_max) > 0) :
 					 ((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
 			} else if (!fe) {
-				if (!is_semantics(e)) /* trival not null cmp null case */
+				if (!is_semantics(e)) /* trivial not null cmp null case */
 					always_false |= !is_anti(e) && ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
 				switch (e->flag) {
 				case cmp_equal:
@@ -868,6 +873,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		BUN cnt = 0;
 		bool needs_pruning = false;
 
+		if (is_recursive(rel))
+			break;
 		for (node *n = l->h; n; n = n->next) {
 			sql_rel *r = n->data, *pl = r;
 

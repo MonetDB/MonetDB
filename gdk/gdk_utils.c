@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -339,7 +339,8 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
  * Single-lined comments can now be logged safely, together with
  * process, thread and user ID, and the current time.
  */
-static void __attribute__((__format__(__printf__, 2, 3)))
+__attribute__((__format__(__printf__, 2, 3)))
+static void
 GDKlog(FILE *lockFile, const char *format, ...)
 {
 	va_list ap;
@@ -451,9 +452,6 @@ size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
  * fall-back for other compilers. */
 #include "matomic.h"
 static ATOMIC_TYPE GDK_mallocedbytes_estimate = ATOMIC_VAR_INIT(0);
-#ifndef NDEBUG
-static volatile lng GDK_malloc_success_count = -1;
-#endif
 static ATOMIC_TYPE GDK_vm_cursize = ATOMIC_VAR_INIT(0);
 
 size_t _MT_pagesize = 0;	/* variable holding page size */
@@ -825,12 +823,6 @@ MT_init(void)
 static int THRinit(void);
 static gdk_return GDKlockHome(int farmid);
 
-#ifndef __COVERITY__
-#ifndef NDEBUG
-static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
-#endif
-#endif
-
 void
 GDKsetdebug(unsigned debug)
 {
@@ -1059,7 +1051,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 #endif
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	const char *allow = mo_find_option(set, setlen, "allow_hge_upgrade");
-	if (BBPinit(allow && strcmp(allow, "yes") == 0) != GDK_SUCCEED)
+	const char *procwalxit = mo_find_option(set, setlen, "process-wal-and-exit");
+	if (BBPinit(allow && strcmp(allow, "yes") == 0, procwalxit && strcmp(procwalxit, "yes") == 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 
@@ -1386,15 +1379,14 @@ GDKlockHome(int farmid)
 {
 	int fd;
 	struct stat st;
-	char *gdklockpath;
+	char gdklockpath[1024];
 	FILE *GDKlockFile;
 
 	assert(BBPfarms[farmid].dirname != NULL);
 	assert(BBPfarms[farmid].lock_file == NULL);
 
-	if ((gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL)) == NULL) {
+	if (GDKfilepath(gdklockpath, sizeof(gdklockpath), farmid, NULL, GDKLOCK, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
-	}
 
 	/*
 	 * Obtain the global database lock.
@@ -1403,13 +1395,11 @@ GDKlockHome(int farmid)
 	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "could not create %s\n",
 			 BBPfarms[farmid].dirname);
-		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if ((fd = MT_lockf(gdklockpath, F_TLOCK)) < 0) {
 		TRC_CRITICAL(GDK, "Database lock '%s' denied\n",
 			 gdklockpath);
-		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -1419,7 +1409,6 @@ GDKlockHome(int farmid)
 	if ((GDKlockFile = fdopen(fd, "r+")) == NULL) {
 		GDKsyserror("Could not fdopen %s\n", gdklockpath);
 		close(fd);
-		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 
@@ -1429,23 +1418,19 @@ GDKlockHome(int farmid)
 	if (fseek(GDKlockFile, 0, SEEK_SET) == -1) {
 		fclose(GDKlockFile);
 		TRC_CRITICAL(GDK, "Error while setting the file pointer on %s\n", gdklockpath);
-		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (ftruncate(fileno(GDKlockFile), 0) < 0) {
 		fclose(GDKlockFile);
 		TRC_CRITICAL(GDK, "Could not truncate %s\n", gdklockpath);
-		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	if (fflush(GDKlockFile) == EOF) {
 		fclose(GDKlockFile);
 		TRC_CRITICAL(GDK, "Could not flush %s\n", gdklockpath);
-		GDKfree(gdklockpath);
 		return GDK_FAIL;
 	}
 	GDKlog(GDKlockFile, GDKLOGON);
-	GDKfree(gdklockpath);
 	BBPfarms[farmid].lock_file = GDKlockFile;
 	return GDK_SUCCEED;
 }
@@ -1455,12 +1440,12 @@ static void
 GDKunlockHome(int farmid)
 {
 	if (BBPfarms[farmid].lock_file) {
-		char *gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL);
-		if (gdklockpath)
+		char gdklockpath[MAXPATH];
+
+		if (GDKfilepath(gdklockpath, sizeof(gdklockpath), farmid, NULL, GDKLOCK, NULL) == GDK_SUCCEED)
 			MT_lockf(gdklockpath, F_ULOCK);
 		fclose(BBPfarms[farmid].lock_file);
 		BBPfarms[farmid].lock_file = NULL;
-		GDKfree(gdklockpath);
 	}
 }
 
@@ -1719,19 +1704,6 @@ GDKmalloc_internal(size_t size, bool clear)
 	size_t nsize;
 
 	assert(size != 0);
-#ifndef NDEBUG
-	/* fail malloc for testing purposes depending on set limit */
-	if (GDK_malloc_success_count > 0) {
-		MT_lock_set(&mallocsuccesslock);
-		if (GDK_malloc_success_count > 0)
-			GDK_malloc_success_count--;
-		MT_lock_unset(&mallocsuccesslock);
-	}
-	if (GDK_malloc_success_count == 0) {
-		GDKerror("allocation failed because of testing limit\n");
-		return NULL;
-	}
-#endif
 #ifndef SIZE_CHECK_IN_HEAPS_ONLY
 	if (size > SMALL_MALLOC &&
 	    GDKvm_cursize() + size >= GDK_vm_maxsize &&
@@ -1935,15 +1907,6 @@ GDKmallocated(const void *s)
 	return ((const size_t *) s)[-1]; /* how much allocated last */
 }
 
-void
-GDKsetmallocsuccesscount(lng count)
-{
-	(void) count;
-#ifndef NDEBUG
-	GDK_malloc_success_count = count;
-#endif
-}
-
 /*
  * @- virtual memory
  * allocations affect only the logical VM resources.
@@ -2094,7 +2057,7 @@ eb_init(exception_buffer *eb)
 }
 
 void
-eb_error( exception_buffer *eb, char *msg, int val )
+eb_error(exception_buffer *eb, const char *msg, int val)
 {
 	eb->code = val;
 	eb->msg = msg;
@@ -2114,7 +2077,7 @@ typedef struct freed_t {
 } freed_t;
 
 static void
-sa_destroy_freelist( freed_t *f )
+sa_destroy_freelist(freed_t *f)
 {
 	while(f) {
 		freed_t *n = f->n;
@@ -2190,7 +2153,8 @@ sa_create(allocator *pa)
 	return sa;
 }
 
-allocator *sa_reset( allocator *sa )
+allocator *
+sa_reset(allocator *sa)
 {
 	size_t i ;
 
@@ -2209,7 +2173,7 @@ allocator *sa_reset( allocator *sa )
 #undef sa_realloc
 #undef sa_alloc
 void *
-sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
+sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -2220,7 +2184,7 @@ sa_realloc( allocator *sa, void *p, size_t sz, size_t oldsz )
 
 #define round16(sz) ((sz+15)&~15)
 void *
-sa_alloc( allocator *sa, size_t sz )
+sa_alloc(allocator *sa, size_t sz)
 {
 	char *r;
 	sz = round16(sz);
@@ -2273,7 +2237,8 @@ sa_alloc( allocator *sa, size_t sz )
 }
 
 #undef sa_zalloc
-void *sa_zalloc( allocator *sa, size_t sz )
+void *
+sa_zalloc(allocator *sa, size_t sz)
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -2282,7 +2247,8 @@ void *sa_zalloc( allocator *sa, size_t sz )
 	return r;
 }
 
-void sa_destroy( allocator *sa )
+void
+sa_destroy(allocator *sa)
 {
 	if (sa->pa) {
 		sa_reset(sa);
@@ -2299,7 +2265,8 @@ void sa_destroy( allocator *sa )
 }
 
 #undef sa_strndup
-char *sa_strndup( allocator *sa, const char *s, size_t l)
+char *
+sa_strndup(allocator *sa, const char *s, size_t l)
 {
 	char *r = sa_alloc(sa, l+1);
 
@@ -2311,12 +2278,14 @@ char *sa_strndup( allocator *sa, const char *s, size_t l)
 }
 
 #undef sa_strdup
-char *sa_strdup( allocator *sa, const char *s )
+char *
+sa_strdup(allocator *sa, const char *s)
 {
-	return sa_strndup( sa, s, strlen(s));
+	return sa_strndup(sa, s, strlen(s));
 }
 
-char *sa_strconcat( allocator *sa, const char *s1, const char *s2 )
+char *
+sa_strconcat(allocator *sa, const char *s1, const char *s2)
 {
 	size_t l1 = strlen(s1);
 	size_t l2 = strlen(s2);
@@ -2330,7 +2299,8 @@ char *sa_strconcat( allocator *sa, const char *s1, const char *s2 )
 	return r;
 }
 
-size_t sa_size( allocator *sa )
+size_t
+sa_size(allocator *sa)
 {
 	return sa->usedmem;
 }

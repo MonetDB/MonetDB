@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -296,7 +296,7 @@ str str_to_date(const char *ptr, size_t maxsize, date *value)
 	return GDKstrdup("Implicit conversion of string to date is not allowed.");
 }
 
-str unicode_to_date(Py_UNICODE *ptr, size_t maxsize, date *value)
+str unicode_to_date(wchar_t *ptr, size_t maxsize, date *value)
 {
 	(void)ptr;
 	(void)maxsize;
@@ -314,7 +314,7 @@ str str_to_daytime(const char *ptr, size_t maxsize, daytime *value)
 	return GDKstrdup("Implicit conversion of string to daytime is not allowed.");
 }
 
-str unicode_to_daytime(Py_UNICODE *ptr, size_t maxsize, daytime *value)
+str unicode_to_daytime(wchar_t *ptr, size_t maxsize, daytime *value)
 {
 	(void)ptr;
 	(void)maxsize;
@@ -332,7 +332,7 @@ str str_to_timestamp(const char *ptr, size_t maxsize, timestamp *value)
 	return GDKstrdup("Implicit conversion of string to timestamp is not allowed.");
 }
 
-str unicode_to_timestamp(Py_UNICODE *ptr, size_t maxsize, timestamp *value)
+str unicode_to_timestamp(wchar_t *ptr, size_t maxsize, timestamp *value)
 {
 	(void)ptr;
 	(void)maxsize;
@@ -444,7 +444,7 @@ str pyobject_to_##type(PyObject **pyobj, size_t maxsize, type *value)	\
 
 #define CONVERSION_FUNCTION_FACTORY(tpe, inttpe)						\
 	STRING_TO_NUMBER_FACTORY(tpe)										\
-	str unicode_to_##tpe(Py_UNICODE *ptr, size_t maxsize, tpe *value)   \
+	str unicode_to_##tpe(wchar_t *ptr, size_t maxsize, tpe *value)   \
 	{																	\
 		char utf8[1024];												\
 	if (maxsize == 0)													\

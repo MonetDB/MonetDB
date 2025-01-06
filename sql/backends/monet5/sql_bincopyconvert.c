@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -368,25 +368,25 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 				goto end;
 			}
 			if (tpe == TYPE_str) {
-					if (width > 0) {
-						int w = UTF8_strlen(start);
-						if (w > width) {
-							msg = createException(SQL, "sql.importColumn", "string too wide for column");
-							goto end;
-						}
+				if (width > 0 && !strNil(start)) {
+					int w = UTF8_strlen(start);
+					if (w > width) {
+						msg = createException(SQL, "sql.importColumn", "string too wide for column");
+						goto end;
 					}
-					value = start;
+				}
+				value = start;
 			} else {
-					ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
-					if (n <= 0) {
-							msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
-							goto end;
-					}
-					value = buffer;
-			}
-			if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				ssize_t n = ATOMfromstr(tpe, &buffer, &buffer_len, start, false);
+				if (n <= 0) {
 					msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
 					goto end;
+				}
+				value = buffer;
+			}
+			if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+				msg = createException(SQL, "sql.importColumn", GDK_EXCEPTION);
+				goto end;
 			}
 		}
 		bs->pos = start - buf_start;
@@ -474,6 +474,12 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 
 	*eof_reached = 0;
 
+	/* we know nothing about the ordering of the input data */
+	bat->tsorted = false;
+	bat->trevsorted = false;
+	bat->tkey = false;
+	/* keep tno* properties: if they're set they remain valid when
+	 * appending */
 	while (1) {
 		const blob *value;
 		// Read the header
@@ -492,6 +498,8 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 
 		if (header.length == ~(uint64_t)0) {
 			value = nil_value;
+			bat->tnonil = false;
+			bat->tnil = true;
 		} else {
 			size_t length;
 			size_t needed;
@@ -535,7 +543,7 @@ load_blob(BAT *bat, stream *s, int *eof_reached, int width, bool byteswap)
 			value = buffer;
 		}
 
-		if (BUNappend(bat, value, false) != GDK_SUCCEED) {
+		if (bunfastapp(bat, value) != GDK_SUCCEED) {
 				msg = createException(SQL, mal_operator, GDK_EXCEPTION);
 				goto end;
 		}

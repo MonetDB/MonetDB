@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -19,6 +19,7 @@
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 void
 rel_set_exps(sql_rel *rel, list *exps)
@@ -27,7 +28,7 @@ rel_set_exps(sql_rel *rel, list *exps)
 	rel->nrcols = list_length(exps);
 }
 
-/* some projections results are order dependend (row_number etc) */
+/* some projections results are order dependent (row_number etc) */
 int
 project_unsafe(sql_rel *rel, bool allow_identity)
 {
@@ -303,6 +304,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
+	if (is_insert(rel->op))
+		rel = rel->r;
 	if ((is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = NULL;
 
@@ -891,7 +894,7 @@ rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 	}
 
 	rel->exps = exps;
-	// TODO: probably setting nrcols is redundant as we have allready done
+	// TODO: probably setting nrcols is redundant as we have already done
 	// that when we create the setop_n_ary. check rel_setop_n_ary()
 	rel->nrcols = ((sql_rel*)((list*)rel->l)->h->data)->nrcols;
 }
@@ -1028,7 +1031,7 @@ rel_select_add_exp(allocator *sa, sql_rel *l, sql_exp *e)
 	if ((l->op != op_select && !is_outerjoin(l->op)) || rel_is_ref(l))
 		return rel_select(sa, l, e);
 
-/* 	allow during AST->relational for bool expresssions as well
+/* 	allow during AST->relational for bool expressions as well
 	if (e->type != e_cmp && e->card > CARD_ATOM) {
 		sql_exp *t = exp_atom_bool(sa, 1);
 		e = exp_compare(sa, e, t, cmp_equal);
@@ -1281,7 +1284,7 @@ exps_reset_props(list *exps, bool setnil)
 	}
 }
 
-/* Return a list with all the projection expressions, that optionaly
+/* Return a list with all the projection expressions, that optionally
  * refer to the tname relation, anywhere in the relational tree
  */
 list *

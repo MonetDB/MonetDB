@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,7 +13,7 @@
 #include "geod.h"
 
 /**
-*  Convertions
+*  Conversions
 *
 **/
 
@@ -349,18 +349,27 @@ static BoundingBox *
 boundingBoxLines(GeoLines lines)
 {
 	CartPoint3D c;
-	BoundingBox *bb = GDKzalloc(sizeof(BoundingBox));
+	BoundingBox *bb;
 
 	//If there are no segments, return NULL
 	if (lines.pointCount == 0)
 		return NULL;
 
+	bb = GDKmalloc(sizeof(BoundingBox));
+	if (bb == NULL)
+		return NULL;
+
 	c = geo2cartFromDegrees(lines.points[0]);
 
 	//Initialize the bounding box with the first point
-	bb->xmin = bb->xmax = c.x;
-	bb->ymin = bb->ymax = c.y;
-	bb->zmin = bb->zmax = c.z;
+	*bb = (BoundingBox) {
+		.xmin = c.x,
+		.xmax = c.x,
+		.ymin = c.y,
+		.ymax = c.y,
+		.zmin = c.z,
+		.zmax = c.z,
+	};
 
 	for (int i = 1; i < lines.pointCount; i++) {
 		c = geo2cartFromDegrees(lines.points[i]);
@@ -375,26 +384,12 @@ boundingBoxContainsPoint(BoundingBox bb, CartPoint3D pt)
 	return bb.xmin <= pt.x && bb.xmax >= pt.x && bb.ymin <= pt.y && bb.ymax >= pt.y && bb.zmin <= pt.z && bb.zmax >= pt.z;
 }
 
-static BoundingBox*
-boundingBoxCopy(BoundingBox bb)
-{
-	//TODO Malloc fail?
-	BoundingBox *copy = GDKmalloc(sizeof(BoundingBox));
-	copy->xmin = bb.xmin;
-	copy->xmax = bb.xmax;
-	copy->ymin = bb.ymin;
-	copy->ymax = bb.ymax;
-	copy->zmin = bb.zmin;
-	copy->zmax = bb.zmax;
-	return copy;
-}
-
 /* Returns a point outside of the polygon's bounding box, for Point-In-Polygon calculation */
 static GeoPoint
 pointOutsidePolygon(GeoPolygon polygon)
 {
-	BoundingBox bb = *(polygon.bbox);
-	BoundingBox *bb2 = boundingBoxCopy(*(polygon.bbox));
+	BoundingBox bb = *polygon.bbox;
+	BoundingBox bb2 = *polygon.bbox;
 
 	//TODO: From POSTGIS -> CHANGE
 	double grow = M_PI / 180.0 / 60.0;
@@ -446,9 +441,8 @@ pointOutsidePolygon(GeoPolygon polygon)
 		corners[7].z = bb.zmax;
 
 		for (int i = 0; i < 8; i++)
-			if (!boundingBoxContainsPoint(*bb2, corners[i])) {
+			if (!boundingBoxContainsPoint(bb2, corners[i])) {
 				CartPoint3D pt_cart = corners[i];
-				GDKfree(bb2);
 				return rad2DegPoint(cart2geo(pt_cart));
 			}
 		grow *= 2.0;
@@ -752,7 +746,7 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 }
 
 //The distance_min_limit argument is used for DWithin and Intersects.
-//If we get to the minimum distance for the predicate, return immediatly
+//If we get to the minimum distance for the predicate, return immediately
 //It is equal to 0 if the operation is Distance
 static double
 geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)

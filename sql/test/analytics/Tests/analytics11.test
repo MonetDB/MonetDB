@@ -187,7 +187,7 @@ GROUP BY CUBE((Product_Category, Product_Name, ColID))
 0
 3
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Category)
 FROM tbl_ProductSales
@@ -220,7 +220,7 @@ HAVING GROUPING(Product_Category) = 0
 0
 0
 
-query II rowsort
+query II nosort
 SELECT
     GROUPING(Product_Category, Product_Name, ColID), GROUPING(Product_Name, ColID)
 FROM tbl_ProductSales
@@ -238,7 +238,7 @@ ORDER BY GROUPING(Product_Category, ColID)
 7
 3
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Category, Product_Name, ColID) + 1
 FROM tbl_ProductSales
@@ -246,15 +246,15 @@ GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 HAVING GROUPING(Product_Category, Product_Name, ColID) <> 3
 ORDER BY GROUPING(Product_Category, Product_Name, ColID) DESC
 ----
-1
-1
-1
-1
-2
-2
-2
-2
 8
+2
+2
+2
+2
+1
+1
+1
+1
 
 query IR rowsort
 SELECT
@@ -337,6 +337,7 @@ SELECT
     GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
+ORDER BY Product_Category, Product_Name
 ----
 0
 100.000
@@ -432,7 +433,7 @@ CREATE TABLE tbl_X (ColID int, NItems int)
 statement ok
 INSERT INTO tbl_X VALUES (1,1000),(2,500),(3,323),(4,0)
 
-query II rowsort
+query II nosort
 SELECT myalias, COUNT(*) FROM
 (
     SELECT
@@ -461,7 +462,7 @@ INNER JOIN tbl_X
 ON tbl_ProductSales.ColID = tbl_X.ColID
 GROUP BY CUBE(tbl_ProductSales.Product_Category)
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(tbl_ProductSales.ColID, tbl_X.ColID) AS myalias
 FROM tbl_ProductSales

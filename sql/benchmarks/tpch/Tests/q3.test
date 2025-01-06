@@ -1,0 +1,67 @@
+#Q3
+query IRTI rowsort
+select
+	l_orderkey,
+	sum(l_extendedprice * (1 - l_discount)) as revenue,
+	o_orderdate,
+	o_shippriority
+from
+	customer,
+	orders,
+	lineitem
+where
+	c_mktsegment = 'BUILDING'
+	and c_custkey = o_custkey
+	and l_orderkey = o_orderkey
+	and o_orderdate < date '1995-03-15'
+	and l_shipdate > date '1995-03-15'
+group by
+	l_orderkey,
+	o_orderdate,
+	o_shippriority
+order by
+	revenue desc,
+	o_orderdate
+limit 10
+----
+10916
+241320.081
+1995-03-11
+0
+1637
+243512.798
+1995-02-08
+0
+21956
+254541.128
+1995-02-02
+0
+22276
+266351.556
+1995-01-29
+0
+30497
+208566.697
+1995-02-07
+0
+32965
+263768.341
+1995-02-25
+0
+450
+205447.423
+1995-03-05
+0
+47204
+204478.521
+1995-03-13
+0
+47714
+267010.589
+1995-03-11
+0
+9696
+201502.219
+1995-02-20
+0
+

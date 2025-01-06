@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -306,7 +306,8 @@ gdk_export const uuid uuid_nil;
  * this would make the commit tremendously complicated.
  */
 
-static inline gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static inline gdk_return
 ATOMputVAR(BAT *b, var_t *dst, const void *src)
 {
 	assert(BATatoms[b->ttype].atomPut != NULL);
@@ -316,7 +317,8 @@ ATOMputVAR(BAT *b, var_t *dst, const void *src)
 }
 
 
-static inline gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static inline gdk_return
 ATOMputFIX(int type, void *dst, const void *src)
 {
 	assert(BATatoms[type].atomPut == NULL);
@@ -349,7 +351,8 @@ ATOMputFIX(int type, void *dst, const void *src)
 	return GDK_SUCCEED;
 }
 
-static inline gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static inline gdk_return
 ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
 {
 	var_t loc = *dst;
@@ -402,25 +405,29 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-static inline bool __attribute__((__pure__))
+__attribute__((__pure__))
+static inline bool
 strEQ(const char *l, const char *r)
 {
 	return strcmp(l, r) == 0;
 }
 
-static inline bool __attribute__((__pure__))
+__attribute__((__pure__))
+static inline bool
 strNil(const char *s)
 {
 	return s == NULL || (s[0] == '\200' && s[1] == '\0');
 }
 
-static inline size_t __attribute__((__pure__))
+__attribute__((__pure__))
+static inline size_t
 strLen(const char *s)
 {
 	return strNil(s) ? 2 : strlen(s) + 1;
 }
 
-static inline int __attribute__((__pure__))
+__attribute__((__pure__))
+static inline int
 strCmp(const char *l, const char *r)
 {
 	return strNil(r)
@@ -428,6 +435,7 @@ strCmp(const char *l, const char *r)
 		: strNil(l) ? -1 : strcmp(l, r);
 }
 
+__attribute__((__pure__))
 static inline size_t
 VarHeapVal(const void *b, BUN p, int w)
 {
@@ -447,7 +455,8 @@ VarHeapVal(const void *b, BUN p, int w)
 	}
 }
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 strHash(const char *key)
 {
 	BUN y = 0;

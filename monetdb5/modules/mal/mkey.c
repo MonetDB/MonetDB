@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -213,12 +213,12 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batmkey.bathash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, "batmkey.bathash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	canditer_init(&ci, b, bs);
@@ -386,7 +386,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	(void) mb;
 	if (!(hb = BATdescriptor(*hid))) {
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (!(b = BATdescriptor(*bid))) {
@@ -406,7 +406,7 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if ((sid1 && !is_bat_nil(*sid1) && !(s1 = BATdescriptor(*sid1)))
 		|| (sid2 && !is_bat_nil(*sid2) && !(s2 = BATdescriptor(*sid2)))) {
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 
@@ -546,12 +546,12 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	(void) cntxt;
 	if (!(hb = BATdescriptor(*hid))) {
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	canditer_init(&ci, hb, bs);
@@ -660,12 +660,12 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	(void) mb;
 	if (!(b = BATdescriptor(*bid))) {
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
-							  SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	canditer_init(&ci, b, bs);

@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -57,7 +57,7 @@ monetdb_default_compiler_options()
 
 include(monetdb-defines)
 
-# required for symbol existance tests
+# required for symbol existence tests
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
   add_definitions(-D_XOPEN_SOURCE -D_GNU_SOURCE)
   set(CMAKE_REQUIRED_DEFINITIONS "${CMAKE_REQUIRED_DEFINITIONS} -D_GNU_SOURCE")

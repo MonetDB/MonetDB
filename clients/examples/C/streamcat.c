@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -564,7 +564,7 @@ int cmd_bstream(char *argv[])
 				dump = false;
 				break;
 			default:
-				croak(1, "unknown opion: %s", *arg);
+				croak(1, "unknown option: %s", *arg);
 				break;
 		}
 	}
@@ -624,11 +624,10 @@ int cmd_bstream(char *argv[])
 		}
 	}
 
-	mnstr_destroy(bs);
 	if (additional) {
 		mnstr_printf(s, "%s", additional);
 	}
-	mnstr_close(s);
+	close_stream(bs);			/* this also closes and destroys s */
 
 	return 0;
 }

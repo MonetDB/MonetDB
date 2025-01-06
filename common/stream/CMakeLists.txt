@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -16,8 +16,11 @@ set(stream_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/stream.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/stream_socket.h>)
 
-add_library(stream
-  SHARED)
+if(MONETDB_STATIC)
+  add_library(stream STATIC)
+else()
+  add_library(stream SHARED)
+endif()
 
 target_sources(stream
   PRIVATE
@@ -125,11 +128,13 @@ install(TARGETS
   COMPONENT streamdev
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT streamTargets
-  FILE streamTargets.cmake
-  NAMESPACE MonetDB::
-  DESTINATION ${EXPORT_TARGET_PATH}
-  COMPONENT streamdev)
+if(NOT MONETDB_STATIC)
+  install(EXPORT streamTargets
+    FILE streamTargets.cmake
+    NAMESPACE MonetDB::
+    DESTINATION ${EXPORT_TARGET_PATH}
+    COMPONENT streamdev)
+endif()
 
 if(WIN32)
   install(FILES

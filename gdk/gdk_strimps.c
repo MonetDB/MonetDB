@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -94,7 +94,7 @@
 #define STRIMP_HEADER_SIZE 64
 #define STRIMP_PAIRS (STRIMP_HEADER_SIZE - 1)
 #define STRIMP_CREATION_THRESHOLD				\
-	((BUN) ((ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)? 100 : 5000))
+	((BUN) ((ATOMIC_GET(&GDKdebug) & TESTINGMASK)? 100 : 5000))
 
 typedef struct {
 #ifdef UTF8STRIMPS
@@ -141,7 +141,7 @@ pair_equal(const CharPair *p1, const CharPair *p2)
 #else
 /* BytePairs implementation.
  *
- * The header elemens are pairs of bytes. In this case the histogram is
+ * The header elements are pairs of bytes. In this case the histogram is
  * 256*256=65536 entries long. We use the numeric value of the 2 byte
  * sequence of the pair as the index to the histogram.
  *
@@ -347,7 +347,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 				} else if (ignored(&cp, 0)) {
 					/* Skip this pair if the first
 					 * char is ignored. This should
-					 * only happen at the beginnig
+					 * only happen at the beginning
 					 * of a string, since the pair
 					 * will have been ignored in the
 					 * previous case.
@@ -440,7 +440,7 @@ BATcheckstrimps(BAT *b)
 				 *
 				 * HSIZE must be between 200 and
 				 * 584 (inclusive): 8 bytes the
-				 * descritor, 64 bytes the pair
+				 * descriptor, 64 bytes the pair
 				 * sizes and n*64 bytes the
 				 * actual pairs where 2 <= n <=
 				 * 8.
@@ -855,7 +855,7 @@ BATsetstrimps(BAT *b)
  * strimp header and heap. If this fails then we cannot have a strimp on
  * this BAT and we report a failure after releasing the lock.
  *
- * If the strimp header is suceessfully created, then we release the
+ * If the strimp header is successfully created, then we release the
  * lock and allow the rest of the threads to compute the bitstrings of
  * the slice they have been assigned.
  *
@@ -924,7 +924,7 @@ STRMPcreate(BAT *b, BAT *s)
 				/* Strimp creation failed, but it still
 				 * exists in the SQL layer. Set the
 				 * pointer to 2 so that construction
-				 * will be attemtped again next time.
+				 * will be attempted again next time.
 				 */
 				pb->tstrimps = (Strimps *)2;
 				MT_lock_unset(&pb->batIdxLock);
@@ -1012,7 +1012,7 @@ STRMPincref(Strimps *strimps)
 void
 STRMPdestroy(BAT *b)
 {
-	if (b && b->tstrimps) {
+	if (b) {
 		MT_lock_set(&b->batIdxLock);
 		if (b->tstrimps == (Strimps *)1) {
 			b->tstrimps = NULL;
@@ -1033,7 +1033,7 @@ STRMPdestroy(BAT *b)
 void
 STRMPfree(BAT *b)
 {
-	if (b && b->tstrimps) {
+	if (b) {
 		Strimps *s;
 		MT_lock_set(&b->batIdxLock);
 		if ((s = b->tstrimps) != NULL && s != (Strimps *)1 && s != (Strimps *)2) {

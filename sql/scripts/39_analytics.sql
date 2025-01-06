@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -242,168 +242,168 @@ create window covar_pop(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 GRANT EXECUTE ON WINDOW covar_pop(DOUBLE, DOUBLE) TO PUBLIC;
 
 
-create aggregate median(val TINYINT) returns TINYINT
+create aggregate median(val TINYINT) returns TINYINT ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(TINYINT) TO PUBLIC;
-create aggregate median(val SMALLINT) returns SMALLINT
+create aggregate median(val SMALLINT) returns SMALLINT ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(SMALLINT) TO PUBLIC;
-create aggregate median(val INTEGER) returns INTEGER
+create aggregate median(val INTEGER) returns INTEGER ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTEGER) TO PUBLIC;
-create aggregate median(val BIGINT) returns BIGINT
+create aggregate median(val BIGINT) returns BIGINT ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(BIGINT) TO PUBLIC;
-create aggregate median(val DECIMAL(2)) returns DECIMAL(2)
+create aggregate median(val DECIMAL(2)) returns DECIMAL(2) ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(2)) TO PUBLIC;
-create aggregate median(val DECIMAL(4)) returns DECIMAL(4)
+create aggregate median(val DECIMAL(4)) returns DECIMAL(4) ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(4)) TO PUBLIC;
-create aggregate median(val DECIMAL(9)) returns DECIMAL(9)
+create aggregate median(val DECIMAL(9)) returns DECIMAL(9) ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(9)) TO PUBLIC;
-create aggregate median(val DECIMAL(18)) returns DECIMAL(18)
+create aggregate median(val DECIMAL(18)) returns DECIMAL(18) ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(18)) TO PUBLIC;
-create aggregate median(val REAL) returns REAL
+create aggregate median(val REAL) returns REAL ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(REAL) TO PUBLIC;
-create aggregate median(val DOUBLE) returns DOUBLE
+create aggregate median(val DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DOUBLE) TO PUBLIC;
 
-create aggregate median(val DATE) returns DATE
+create aggregate median(val DATE) returns DATE ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DATE) TO PUBLIC;
-create aggregate median(val TIME) returns TIME
+create aggregate median(val TIME) returns TIME ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(TIME) TO PUBLIC;
-create aggregate median(val TIMESTAMP) returns TIMESTAMP
+create aggregate median(val TIMESTAMP) returns TIMESTAMP ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(TIMESTAMP) TO PUBLIC;
-create aggregate median(val INTERVAL SECOND) returns INTERVAL SECOND
+create aggregate median(val INTERVAL SECOND) returns INTERVAL SECOND ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL SECOND) TO PUBLIC;
-create aggregate median(val INTERVAL DAY) returns INTERVAL DAY
+create aggregate median(val INTERVAL DAY) returns INTERVAL DAY ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL DAY) TO PUBLIC;
-create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH
+create aggregate median(val INTERVAL MONTH) returns INTERVAL MONTH ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(INTERVAL MONTH) TO PUBLIC;
 
 
-create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT
+create aggregate quantile(val TINYINT, q DOUBLE) returns TINYINT ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TINYINT, DOUBLE) TO PUBLIC;
-create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT
+create aggregate quantile(val SMALLINT, q DOUBLE) returns SMALLINT ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(SMALLINT, DOUBLE) TO PUBLIC;
-create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER
+create aggregate quantile(val INTEGER, q DOUBLE) returns INTEGER ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTEGER, DOUBLE) TO PUBLIC;
-create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT
+create aggregate quantile(val BIGINT, q DOUBLE) returns BIGINT ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(BIGINT, DOUBLE) TO PUBLIC;
-create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2)
+create aggregate quantile(val DECIMAL(2), q DOUBLE) returns DECIMAL(2) ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(2), DOUBLE) TO PUBLIC;
-create aggregate quantile(val DECIMAL(4), q DOUBLE) returns DECIMAL(4)
+create aggregate quantile(val DECIMAL(4), q DOUBLE) returns DECIMAL(4) ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(4), DOUBLE) TO PUBLIC;
-create aggregate quantile(val DECIMAL(9), q DOUBLE) returns DECIMAL(9)
+create aggregate quantile(val DECIMAL(9), q DOUBLE) returns DECIMAL(9) ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(9), DOUBLE) TO PUBLIC;
-create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18)
+create aggregate quantile(val DECIMAL(18), q DOUBLE) returns DECIMAL(18) ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(18), DOUBLE) TO PUBLIC;
-create aggregate quantile(val REAL, q DOUBLE) returns REAL
+create aggregate quantile(val REAL, q DOUBLE) returns REAL ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(REAL, DOUBLE) TO PUBLIC;
-create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE
+create aggregate quantile(val DOUBLE, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DOUBLE, DOUBLE) TO PUBLIC;
 
-create aggregate quantile(val DATE, q DOUBLE) returns DATE
+create aggregate quantile(val DATE, q DOUBLE) returns DATE ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DATE, DOUBLE) TO PUBLIC;
-create aggregate quantile(val TIME, q DOUBLE) returns TIME
+create aggregate quantile(val TIME, q DOUBLE) returns TIME ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TIME, DOUBLE) TO PUBLIC;
-create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP
+create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TIMESTAMP, DOUBLE) TO PUBLIC;
-create aggregate quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND
+create aggregate quantile(val INTERVAL SECOND, q DOUBLE) returns INTERVAL SECOND ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL SECOND, DOUBLE) TO PUBLIC;
-create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY
+create aggregate quantile(val INTERVAL DAY, q DOUBLE) returns INTERVAL DAY ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL DAY, DOUBLE) TO PUBLIC;
-create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH
+create aggregate quantile(val INTERVAL MONTH, q DOUBLE) returns INTERVAL MONTH ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(INTERVAL MONTH, DOUBLE) TO PUBLIC;
 
 
-create aggregate median_avg(val TINYINT) returns DOUBLE
+create aggregate median_avg(val TINYINT) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(TINYINT) TO PUBLIC;
-create aggregate median_avg(val SMALLINT) returns DOUBLE
+create aggregate median_avg(val SMALLINT) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(SMALLINT) TO PUBLIC;
-create aggregate median_avg(val INTEGER) returns DOUBLE
+create aggregate median_avg(val INTEGER) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(INTEGER) TO PUBLIC;
-create aggregate median_avg(val BIGINT) returns DOUBLE
+create aggregate median_avg(val BIGINT) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(BIGINT) TO PUBLIC;
-create aggregate median_avg(val DECIMAL(2)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(2)) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(2)) TO PUBLIC;
-create aggregate median_avg(val DECIMAL(4)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(4)) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(4)) TO PUBLIC;
-create aggregate median_avg(val DECIMAL(9)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(9)) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(9)) TO PUBLIC;
-create aggregate median_avg(val DECIMAL(18)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(18)) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(18)) TO PUBLIC;
-create aggregate median_avg(val REAL) returns DOUBLE
+create aggregate median_avg(val REAL) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(REAL) TO PUBLIC;
-create aggregate median_avg(val DOUBLE) returns DOUBLE
+create aggregate median_avg(val DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DOUBLE) TO PUBLIC;
 
 
-create aggregate quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val TINYINT, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(TINYINT, DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val SMALLINT, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val SMALLINT, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(SMALLINT, DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val INTEGER, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val INTEGER, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(INTEGER, DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val BIGINT, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val BIGINT, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(BIGINT, DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(2), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(2), DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL(4), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(4), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(4), DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL(9), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(9), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(9), DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(18), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(18), DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val REAL, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val REAL, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(REAL, DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DOUBLE, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DOUBLE, DOUBLE) TO PUBLIC;
 
@@ -445,3 +445,10 @@ GRANT EXECUTE ON WINDOW corr(REAL, REAL) TO PUBLIC;
 create window corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE
 	external name "sql"."corr";
 GRANT EXECUTE ON WINDOW corr(DOUBLE, DOUBLE) TO PUBLIC;
+
+create window sys.group_concat(str string) returns string
+	external name "sql"."str_group_concat";
+GRANT EXECUTE ON WINDOW sys.group_concat(string) TO PUBLIC;
+create window sys.group_concat(str string, sep string) returns string
+	external name "sql"."str_group_concat";
+GRANT EXECUTE ON WINDOW sys.group_concat(string, string) TO PUBLIC;

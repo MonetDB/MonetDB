@@ -47,16 +47,16 @@ project (
 | ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "test02"."col1" NOT NULL UNIQUE ] [ "%1"."%1" ASC NOT NULL, "test02"."col1" ASC NOT NULL UNIQUE ]
 
-query T rowsort
+query T nosort
 select col1
 from test02
 group by col1
 order by count(col1), col1
 ----
 ABC
+ABF
 ABD
 ABE
-ABF
 
 statement ok
 drop table test02

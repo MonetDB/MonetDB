@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -99,7 +99,7 @@ def filter_lines_starting_with(predicates=[]):
     return _fn
 
 
-def filter_matching_blocks(a: [str] = [], b: [str] = []):
+def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
     # TODO add some ctx before any mismatch lines
     ptr = 0
     red_a = []
@@ -107,10 +107,10 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
     min_size = min(len(a), len(b))
     s = difflib.SequenceMatcher()
     for i in range(min_size):
-        s.set_seq1(a[i].replace('\t', '').replace(' ', ''))
-        s.set_seq2(b[i].replace('\t', '').replace(' ', ''))
+        s.set_seqs(a[i].replace('\t', '').replace(' ', ''),
+                   b[i].replace('\t', '').replace(' ', ''))
         # should be high matching ratio
-        if s.quick_ratio() < 0.95:
+        if s.quick_ratio() < 1.0:
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
@@ -120,14 +120,14 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
     red_b+=b[min_size:]
     return red_a, red_b
 
-def diff(stable_file, test_file):
+def diff(stable_file, test_file, ratio=0.95):
     diff = None
     filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test', 'stderr of test', 'MAPI'])
     with open(stable_file) as fstable:
         stable = list(filter(filter_fn, fstable.read().split('\n')))
         with open(test_file) as ftest:
             test = list(filter(filter_fn, ftest.read().split('\n')))
-            a, b = filter_matching_blocks(stable, test)
+            a, b = filter_matching_blocks(stable, test, ratio)
             diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
             if len(diff) > 0:
                 diff = '\n'.join(diff)
@@ -421,7 +421,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                 raise SystemExit(e)
         return self
 
-    def assertMatchStableOut(self, fout, ignore_headers=False):
+    def assertMatchStableOut(self, fout, ignore_headers=False, ratio=0.95):
         stable = []
         data = list(filter(filter_junk, self.output.split('\n')))
         with open(fout, 'r') as f:
@@ -429,18 +429,21 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         if ignore_headers:
             stable = list(filter(filter_headers, stable))
             data = list(filter(filter_headers, data))
-        a, b = filter_matching_blocks(stable, data)
+        a, b = filter_matching_blocks(stable, data, ratio)
         if a or b:
             diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
             if len(diff) > 0:
                 err_file = self.test_case.err_file
-                msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
+                msg = "expected to match stable output {} but it didn't\n".format(fout)
                 msg+='\n'.join(diff)
                 self.assertion_errors.append(AssertionError(msg))
                 self.fail(msg)
+        if os.getenv('MTEST_APPROVE'):
+            with open(fout+'.newtest', 'w') as f:
+                f.write(self.output or '')
         return self
 
-    def assertMatchStableError(self, ferr, ignore_err_messages=False):
+    def assertMatchStableError(self, ferr, ignore_err_messages=False, ratio=0.95):
         stable = []
         err = []
         filter_fn = filter_lines_starting_with(['--', '#', 'stderr of test', 'MAPI'])
@@ -448,20 +451,25 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             err = list(filter(filter_fn, self.test_run_error.split('\n')))
         with open(ferr, 'r') as f:
             stable = list(filter(filter_fn, f.read().split('\n')))
-        a, b = filter_matching_blocks(stable, err)
+        a, b = filter_matching_blocks(stable, err, ratio)
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
-            msg = "expected to match stable error {} but it didnt\'t\n".format(ferr)
+            msg = "expected to match stable error {} but it didn't\n".format(ferr)
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             self.fail(msg)
+        if os.getenv('MTEST_APPROVE'):
+            with open(ferr+'.newtest', 'w') as f:
+                # normalize error message: use fixed host and port
+                import re
+                f.write(re.sub('^MAPI  = (.*)@.*:.*$', r'MAPI  = \1@localhost:50000', self.test_run_error or '', flags=re.M))
         return self
 
-    def assertDataResultMatch(self, expected):
+    def assertDataResultMatch(self, expected, ratio=0.95):
         data = list(filter(filter_junk, self.output.split('\n')))
         data = list(filter(filter_headers, data))
-        a, b = filter_matching_blocks(expected, data)
+        a, b = filter_matching_blocks(expected, data, ratio)
         diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
@@ -565,20 +573,23 @@ class SQLDump():
         self.data = data
         self.assertion_errors = [] # holds assertion errors
 
-    def assertMatchStableOut(self, fout):
+    def assertMatchStableOut(self, fout, ratio=0.95):
         stable = []
         data = self.data.split('\n') if self.data else []
         dump = list(filter(filter_junk, data))
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
-        a, b = filter_matching_blocks(stable, dump)
+        a, b = filter_matching_blocks(stable, dump, ratio)
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
-            msg = "sql dump expected to match stable output {} but it didnt\'t\n".format(fout)
+            msg = "sql dump expected to match stable output {} but it didn't\n".format(fout)
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             print(msg, file=err_file)
+        if os.getenv('MTEST_APPROVE'):
+            with open(fout+'.newtest', 'w') as f:
+                f.write(self.data or '')
 
 class SQLTestCase():
     def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
@@ -586,10 +597,12 @@ class SQLTestCase():
         self.err_file = err_file
         self.test_results = []
         self._conn_ctx = None
+        self._conn_trash = []
         self.in_memory = False
         self.client = 'pymonetdb'
 
     def __enter__(self):
+        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -599,6 +612,9 @@ class SQLTestCase():
         if self._conn_ctx:
             self._conn_ctx.close()
         self._conn_ctx = None
+        for ctx in self._conn_trash:
+            ctx.close()
+        self._conn_trash = []
 
     def exit(self):
         self.close()
@@ -617,8 +633,9 @@ class SQLTestCase():
     def connect(self,
             username='monetdb', password='monetdb', port=MAPIPORT,
             hostname='localhost', database=TSTDB, language='sql'):
-        if self._conn_ctx:
-            self.close()
+        old = self._conn_ctx
+        if old:
+            self._conn_trash.append(old)
         if database == 'in-memory' \
            or database == ':memory:': # backward compatibility
             import monetdbe
@@ -634,17 +651,10 @@ class SQLTestCase():
                                  port=port,
                                  database=database or 'in-memory',
                                  language=language)
-        return self._conn_ctx
-
-    def default_conn_ctx(self):
-        if self.in_memory:
-            return  monetdbe.connect('in-memory', autocommit=True)
-        ctx = PyMonetDBConnectionContext()
-        return ctx
 
     @property
     def conn_ctx(self):
-        return self._conn_ctx or self.default_conn_ctx()
+        return self._conn_ctx
 
     def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
         '''Execute query with specified client. Default client is pymonetbd.'''
@@ -674,7 +684,7 @@ class SQLTestCase():
         else:
             cmd = 'sql'
             # TODO should more options be allowed here
-            args = ['-lsql', '-D']
+            args = ['-lsql', '-D', '-z']
         try:
             with process.client(cmd, **kwargs, args=args, stdout=process.PIPE, stderr=process.PIPE) as p:
                 dump, err = p.communicate()

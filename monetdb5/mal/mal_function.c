@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -96,7 +96,7 @@ chkFlow(MalBlkPtr mb)
 	int endseen = 0, retseen = 0;
 	InstrPtr p, sig;
 	str msg = MAL_SUCCEED;
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 
 	if (mb->errors != MAL_SUCCEED)
 		return mb->errors;
@@ -127,11 +127,13 @@ chkFlow(MalBlkPtr mb)
 			break;
 		case EXITsymbol:
 			v = getDestVar(p);
-			if (btop > 0 && var[btop - 1] != v)
+			if (btop > 0 && var[btop - 1] != v) {
+				char name2[IDLENGTH];
 				throw(MAL, "chkFlow",
-					  "%s.%s exit-label '%s' doesnot match '%s'",
+					  "%s.%s exit-label '%s' does not match '%s'",
 					  getModuleId(sig), getFunctionId(sig), getVarNameIntoBuffer(mb, v, name),
-					  getVarNameIntoBuffer(mb, var[btop - 1], name));
+					  getVarNameIntoBuffer(mb, var[btop - 1], name2));
+			}
 			if (btop == 0)
 				throw(MAL, "chkFlow",
 					  "%s.%s exit-label '%s' without begin-label",
@@ -165,9 +167,9 @@ chkFlow(MalBlkPtr mb)
 				if (var[j] == v)
 					break;
 			if (j < 0) {
-				str nme = getVarNameIntoBuffer(mb, v, name);
 				throw(MAL, "chkFlow", "%s.%s label '%s' not in guarded block",
-					  getModuleId(sig), getFunctionId(sig), nme);
+					  getModuleId(sig), getFunctionId(sig),
+					  getVarNameIntoBuffer(mb, v, name));
 			}
 			break;
 		case RETURNsymbol: {
@@ -694,7 +696,7 @@ chkDeclarations(MalBlkPtr mb)
 	short blks[MAXDEPTH], top = 0, blkId = 1;
 	int dflow = -1;
 	str msg = MAL_SUCCEED;
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 
 	if (mb->errors)
 		return GDKstrdup(mb->errors);
@@ -790,7 +792,7 @@ chkDeclarations(MalBlkPtr mb)
 				blks[++top] = blkId;
 			}
 			if (blockExit(p) && top > 0) {
-				if (dflow == blkId) {
+				if (dflow == blks[top]) {
 					dflow = -1;
 				} else
 					/*

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -40,8 +40,13 @@
 #define IDC_EDIT_TIMEZONE               2026
 #define IDC_EDIT_LOGFILE                2027
 
-#define IDC_BUTTON_TEST                 2031
-#define IDC_BUTTON_HELP                 2032
+// Client Info settings
+#define IDC_EDIT_CLIENTINFO             2031
+#define IDC_EDIT_APPLICNAME             2032
+#define IDC_EDIT_CLIENTREMARK           2033
+
+#define IDC_BUTTON_TEST                 2041
+#define IDC_BUTTON_HELP                 2042
 
 // Next default values for new objects
 //

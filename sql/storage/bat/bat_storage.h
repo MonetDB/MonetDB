@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -38,12 +38,12 @@ typedef struct sql_delta {
 typedef struct segment {
 	BUN start;
 	BUN end;
-	bool deleted;	/* we need to keep a dense segment set, 0 - end of last segemnt,
+	bool deleted;	/* we need to keep a dense segment set, 0 - end of last segment,
 					   some segments maybe deleted */
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
 	ulng oldts;		/* keep previous ts, for rollbacks */
-	ATOMIC_PTR_TYPE next;	/* usualy one should be enough */
+	ATOMIC_PTR_TYPE next;	/* usually one should be enough */
 	struct segment *prev;	/* used in destruction list */
 } segment;
 
@@ -57,7 +57,7 @@ typedef struct segments {
 
 typedef struct storage {
 	column_storage cs;	/* storage on disk */
-	segments *segs;	/* local used segements */
+	segments *segs;	/* local used segments */
 	struct storage *next;
 } storage;
 

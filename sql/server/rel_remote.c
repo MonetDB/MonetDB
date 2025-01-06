@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -50,10 +50,10 @@ mapiuri_valid( const char *uri)
 	if (*p != '/')
 		return 0;
 	p++;
-	/* now find at most 2 '/'s, with some string inbetween */
+	/* now find at most 2 '/'s, with some string in between */
 	for(; *p; p++, l++) {
 		if (*p == '/') {
-			if (l == 0) /* no string inbetween */
+			if (l == 0) /* no string in between */
 				return 0;
 			if (i == 2) /* 3 parts (ie database/schema/table) */
 				return 0;

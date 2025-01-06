@@ -4,19 +4,20 @@ CREATE TABLE t0 ( c1 INT )
 statement ok
 INSERT INTO t0(c1) VALUES (1)
 
-query I
+query I nosort
 SELECT * FROM t0
 ----
 1
 
-query I
+query I nosort
 SELECT ((NULL NOT BETWEEN 1 AND 2)=(t0.c1 NOT IN (t0.c1))) FROM t0
 ----
 NULL
 
-query I
+query I nosort
 SELECT * FROM t0 WHERE ((NULL NOT BETWEEN 1 AND 2)=(t0.c1 NOT IN (t0.c1)))
 ----
 
 statement ok
 DROP TABLE t0
+

@@ -238,47 +238,47 @@ query IIII rowsort
 SELECT "depend_type", * FROM "sys"."dependencies" WHERE "depend_type" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "id", * FROM "sys"."functions" WHERE "id" IS NULL
 ----
 
-query TITTTIIIIIIII rowsort
+query TITTTIIIIIIIII rowsort
 SELECT "name", * FROM "sys"."functions" WHERE "name" IS NULL OR "name" = ''
 ----
 
-query TITTTIIIIIIII rowsort
+query TITTTIIIIIIIII rowsort
 SELECT "func", * FROM "sys"."functions" WHERE "func" IS NULL OR "func" = ''
 ----
 
-query TITTTIIIIIIII rowsort
+query TITTTIIIIIIIII rowsort
 SELECT "mod", * FROM "sys"."functions" WHERE "mod" IS NULL OR "mod" = ''
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "language", * FROM "sys"."functions" WHERE "language" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "type", * FROM "sys"."functions" WHERE "type" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "side_effect", * FROM "sys"."functions" WHERE "side_effect" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "varres", * FROM "sys"."functions" WHERE "varres" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "vararg", * FROM "sys"."functions" WHERE "vararg" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "schema_id", * FROM "sys"."functions" WHERE "schema_id" IS NULL
 ----
 
-query IITTTIIIIIIII rowsort
+query IITTTIIIIIIIII rowsort
 SELECT "system", * FROM "sys"."functions" WHERE "system" IS NULL
 ----
 

@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -40,6 +40,14 @@ returns table(
 external name sql.sessions;
 create view sys.sessions as select * from sys.sessions();
 grant select on sys.sessions to public;
+
+create function sys.unclosed_result_sets()
+returns table(
+	"query_id" oid,
+	"res_id" int
+)
+external name sql.unclosed_result_sets;
+grant execute on function sys.unclosed_result_sets() to public;
 
 create procedure sys.setclientinfo(property string, value string)
 	external name clients.setinfo;

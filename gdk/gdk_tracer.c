@@ -5,14 +5,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "gdk_tracer.h"
 #include "gdk_private.h"
 #include "mutils.h"
 
@@ -69,7 +68,22 @@ static const char *level_str[] = {
  * GDKtracer Stream Macros
  */
 // Exception
-#define GDK_TRACER_EXCEPTION(MSG, ...)				\
+#define GDK_TRACER_EXCEPTION(MSG)				\
+	fprintf(stderr,						\
+		"%s "						\
+		"%-"MXW"s "					\
+		"%"MXW"s:%d "					\
+		"%"MXW"s "					\
+		"%-"MXW"s "					\
+		"%-"MXW"s # "MSG,				\
+		get_timestamp((char[TS_SIZE]){0}, TS_SIZE),	\
+		__FILE__,					\
+		__func__,					\
+		__LINE__,					\
+		STR(M_CRITICAL),				\
+		STR(GDK_TRACER),				\
+		MT_thread_getname());
+#define GDK_TRACER_EXCEPTION2(MSG, ...)				\
 	fprintf(stderr,						\
 		"%s "						\
 		"%-"MXW"s "					\
@@ -84,7 +98,7 @@ static const char *level_str[] = {
 		STR(M_CRITICAL),				\
 		STR(GDK_TRACER),				\
 		MT_thread_getname(),				\
-		## __VA_ARGS__);
+		__VA_ARGS__);
 
 
 #define GDK_TRACER_RESET_OUTPUT()					\
@@ -157,8 +171,8 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 	active_tracer = MT_fopen(file_name, "a");
 
 	if (active_tracer == NULL) {
-		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
-				     GDKstrerror(errno, (char[64]){0}, 64));
+		GDK_TRACER_EXCEPTION2("Failed to open %s: %s\n", file_name,
+				      GDKstrerror(errno, (char[64]){0}, 64));
 		/* uninitialize */
 		free(file_name);
 		file_name = NULL;
@@ -590,7 +604,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if (interrupted)
 		reinit();
 
-	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK)) {
+	if (level <= M_WARNING || (ATOMIC_GET(&GDKdebug) & TESTINGMASK)) {
 		fprintf(level <= M_ERROR && !isexit ? stderr : stdout,
 			"#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -5011,9 +5011,9 @@ bailout:
 	return NULL;
 }
 
-#define HANDLE_TIMEOUT							\
+#define HANDLE_TIMEOUT(qry_ctx)						\
 	do {								\
-		GDKerror("%s\n", GDKexiting() ? EXITING_MSG : TIMEOUT_MSG); \
+		GDKerror("%s\n", TIMEOUT_MESSAGE(qry_ctx));		\
 		BBPreclaim(bn);						\
 		bn = NULL;						\
 	} while (0)
@@ -5076,7 +5076,7 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 			bn->tkey = ci.ncand <= 1;
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
-			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
 		}
 	} else {
 		bn = BATcalcbetween_intern(bi.base, 1,
@@ -5150,7 +5150,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 			bn->tkey = ci.ncand <= 1;
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
-			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
 		}
 	} else {
 		bn = BATcalcbetween_intern(bi.base, 1,
@@ -5224,7 +5224,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 			bn->tkey = ci.ncand <= 1;
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
-			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
 		}
 	} else {
 		bn = BATcalcbetween_intern(bi.base, 1,
@@ -5304,7 +5304,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 			bn->tkey = ci.ncand <= 1;
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;
-			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT);
+			TIMEOUT_CHECK(qry_ctx, HANDLE_TIMEOUT(qry_ctx));
 		}
 	} else {
 		bn = BATcalcbetween_intern(bi.base, 1,

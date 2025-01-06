@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -36,7 +36,11 @@ set(gdk_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_cand.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/gdk_time.h>)
 
-add_library(bat SHARED)
+if(MONETDB_STATIC)
+  add_library(bat STATIC)
+else()
+  add_library(bat SHARED)
+endif()
 
 target_sources(bat
   PRIVATE
@@ -64,6 +68,7 @@ target_sources(bat
   gdk_string.c
   gdk_qsort.c
   gdk_qsort_impl.h
+  gdk_rsort.c
   gdk_storage.c
   gdk_bat.c
   gdk_delta.c gdk_delta.h
@@ -77,7 +82,6 @@ target_sources(bat
   gdk_private.h
   gdk_system_private.h
   gdk_group.c
-  gdk_imprints.c gdk_imprints.h
   gdk_join.c
   gdk_project.c
   gdk_time.c gdk_time.h
@@ -158,11 +162,13 @@ install(TARGETS
   COMPONENT monetdbdev
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT gdkTargets
-  FILE gdkTargets.cmake
-  NAMESPACE MonetDB::
-  DESTINATION ${EXPORT_TARGET_PATH}
-  COMPONENT monetdbdev)
+if(NOT MONETDB_STATIC)
+  install(EXPORT gdkTargets
+    FILE gdkTargets.cmake
+    NAMESPACE MonetDB::
+    DESTINATION ${EXPORT_TARGET_PATH}
+    COMPONENT monetdbdev)
+endif()
 
 if(WIN32)
   install(FILES

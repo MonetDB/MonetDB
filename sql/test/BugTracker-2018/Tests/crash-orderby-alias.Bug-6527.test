@@ -4,7 +4,7 @@ create table "t1" ("d1" int)
 statement ok
 insert into "t1" values (1), (2), (3), (4), (5)
 
-query I rowsort
+query I nosort
 select
     "d1" as "value"
 from "t1"
@@ -16,7 +16,7 @@ order by "value"
 4
 5
 
-query I rowsort
+query I nosort
 select
     a."value"
 from (
@@ -32,7 +32,7 @@ from (
 4
 5
 
-query I rowsort
+query I nosort
 select
     a."value"
 from (

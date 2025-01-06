@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -437,8 +437,8 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 			if (bn->batCacheid != 0) {
 				lng l = BATcount(bn);
 				int heat_ = 0, len;
-				char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
-				char *mode = "persistent";
+				const char *loc = BBP_status(i) & BBPLOADED ? "load" : "disk";
+				const char *mode = "persistent";
 				int refs = BBP_refs(i);
 				int lrefs = BBP_lrefs(i);
 

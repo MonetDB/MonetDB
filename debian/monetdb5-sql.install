@@ -1,7 +1,0 @@
-debian/tmp/usr/bin/monetdbd usr/bin
-debian/tmp/usr/bin/monetdb usr/bin
-debian/tmp/usr/lib/systemd/system/monetdbd.service lib/systemd/system
-debian/tmp/etc/logrotate.d/monetdbd etc/logrotate.d
-debian/tmp/etc/tmpfiles.d/monetdbd.conf usr/lib/tmpfiles.d
-debian/tmp/var/monetdb5/dbfarm/.merovingian_properties var/monetdb5/dbfarm
-debian/tmp/var/monetdb5/dbfarm/.merovingian_lock var/monetdb5/dbfarm

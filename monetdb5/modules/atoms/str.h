@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -149,7 +149,7 @@ mal_export int str_strlen(const char *s);
    if the function succeeded (ie malloc failure or invalid unicode character). str_wchr_at function also
    follows this pattern. */
 
-/* Warning, the following functions don't test for NULL values, that's resposibility from the caller */
+/* Warning, the following functions don't test for NULL values, that's responsibility from the caller */
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c)
 		__attribute__((__visibility__("hidden")));

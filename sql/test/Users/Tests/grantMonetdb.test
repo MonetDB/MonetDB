@@ -11,7 +11,7 @@ statement ok
 CREATE TABLE library.orders(price int, name VARCHAR(100))
 
 @connection(id=tc, username=alice, password=alice)
-statement error 42000!Role (sysadmin) missing
+statement error HY009!Role (sysadmin) missing
 SET ROLE sysadmin
 
 @connection(id=tc)

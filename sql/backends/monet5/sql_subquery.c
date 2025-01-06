@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,7 +24,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	const void *p = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "sql.zero_or_one", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	c = BATcount(b);
 	if (c == 0) {
 		bi = bat_iterator(NULL);
@@ -142,7 +142,7 @@ SQLall(ptr ret, const bat *bid)
 	BUN c, q = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, "sql.all", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "sql.all", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	c = BATcount(b);
 	if (b->ttype == TYPE_void) {
@@ -273,7 +273,7 @@ SQLnil(bit *ret, const bat *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "sql.nil", SQLSTATE(HY005) "Cannot access column descriptor");
+		throw(SQL, "sql.nil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	*ret = FALSE;
 	if (BATcount(b) == 0)
@@ -400,15 +400,15 @@ SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if (cid && (cmp = BATdescriptor(*cid)) == NULL) {
-		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (nlid && (nl = BATdescriptor(*nlid)) == NULL) {
-		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (nrid && (nr = BATdescriptor(*nrid)) == NULL) {
-		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.any_cmp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	cmpi = bat_iterator(cmp);
@@ -509,15 +509,15 @@ SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if (cid && (cmp = BATdescriptor(*cid)) == NULL) {
-		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (nlid && (nl = BATdescriptor(*nlid)) == NULL) {
-		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (nrid && (nr = BATdescriptor(*nrid)) == NULL) {
-		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all_cmp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	cmpi = bat_iterator(cmp);
@@ -625,11 +625,11 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if ((l = BATdescriptor(*bid1)) == NULL) {
-		msg = createException(SQL, "sql.any =", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.any =", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if ((r = BATdescriptor(*bid2)) == NULL) {
-		msg = createException(SQL, "sql.any =", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.any =", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (l->ttype != r->ttype) {
@@ -872,11 +872,11 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	if ((l = BATdescriptor(*bid1)) == NULL) {
-		msg = createException(SQL, "sql.all <>", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all <>", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if ((r = BATdescriptor(*bid2)) == NULL) {
-		msg = createException(SQL, "sql.all <>", SQLSTATE(HY005) "Cannot access column descriptor");
+		msg = createException(SQL, "sql.all <>", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
 	if (l->ttype != r->ttype) {

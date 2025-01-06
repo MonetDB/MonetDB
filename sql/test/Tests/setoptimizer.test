@@ -46,6 +46,9 @@ stable
 sequential_pipe
 optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.deadcode();optimizer.pushselect();optimizer.aliases();optimizer.for();optimizer.dict();optimizer.mergetable();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.matpack();optimizer.reorder();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.profiler();optimizer.garbageCollector();
 stable
+recursive_pipe
+optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.deadcode();optimizer.pushselect();optimizer.aliases();optimizer.for();optimizer.dict();optimizer.mergetable();optimizer.aliases();optimizer.constants();optimizer.projectionpath();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.profiler();optimizer.garbageCollector();
+stable
 
 statement ok
 set optimizer='default_pipe'

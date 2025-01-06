@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -16,7 +16,6 @@
 
 #define ORDERIDX_VERSION	((oid) 3)
 
-#ifdef PERSISTENTIDX
 static void
 BATidxsync(void *arg)
 {
@@ -68,7 +67,6 @@ BATidxsync(void *arg)
 	MT_lock_unset(&b->batIdxLock);
 	BBPunfix(b->batCacheid);
 }
-#endif
 
 /* return TRUE if we have a orderidx on the tail, even if we need to read
  * one from disk */
@@ -101,11 +99,7 @@ BATcheckorderidx(BAT *b)
 				oid hdata[ORDERIDXOFF];
 
 				if (read(fd, hdata, sizeof(hdata)) == sizeof(hdata) &&
-				    hdata[0] == (
-#ifdef PERSISTENTIDX
-					    ((oid) 1 << 24) |
-#endif
-					    ORDERIDX_VERSION) &&
+				    hdata[0] == (((oid) 1 << 24) | ORDERIDX_VERSION) &&
 				    hdata[1] == (oid) BATcount(b) &&
 				    (hdata[2] == 0 || hdata[2] == 1) &&
 				    fstat(fd, &st) == 0 &&
@@ -171,7 +165,6 @@ createOIDXheap(BAT *b, bool stable)
 void
 persistOIDX(BAT *b)
 {
-#ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount &&
 	    !b->theap->dirty &&
@@ -185,14 +178,15 @@ persistOIDX(BAT *b)
 			BBPunfix(b->batCacheid);
 	} else
 		TRC_DEBUG(ACCELERATOR, "persistOIDX(" ALGOBATFMT "): NOT persisting order index\n", ALGOBATPAR(b));
-#else
-	(void) b;
-#endif
 }
 
 gdk_return
 BATorderidx(BAT *b, bool stable)
 {
+	if (b->ttype == TYPE_void) {
+		GDKerror("No order index on void type bats\n");
+		return GDK_FAIL;
+	}
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
@@ -499,7 +493,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	}
 
 	b->torderidx = m;
-#ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
@@ -511,7 +504,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			BBPunfix(b->batCacheid);
 	} else
 		TRC_DEBUG(ACCELERATOR, "GDKmergeidx(%s): NOT persisting index\n", BATgetId(b));
-#endif
 
 	MT_lock_unset(&b->batIdxLock);
 	bat_iterator_end(&bi);
@@ -521,7 +513,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 void
 OIDXfree(BAT *b)
 {
-	if (b && b->torderidx) {
+	if (b) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);
@@ -541,7 +533,7 @@ OIDXfree(BAT *b)
 void
 OIDXdestroy(BAT *b)
 {
-	if (b && b->torderidx) {
+	if (b) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);

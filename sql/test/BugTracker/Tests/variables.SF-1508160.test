@@ -1,8 +1,3 @@
-query I rowsort
-select debug
-----
-0
-
 statement error
 select @debug
 

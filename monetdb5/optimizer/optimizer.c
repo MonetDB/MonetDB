@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -28,18 +28,6 @@
 #include "optimizer_private.h"
 #include "opt_pipes.h"
 #include "mal_session.h"
-
-/*
- * Upon loading the module it should inspect the scenario table
- * for any unresolved references to the MALoptimizer and set the
- * callback function.
-*/
-static str
-optimizer_prelude(void)
-{
-	optimizerInit();
-	return MAL_SUCCEED;
-}
 
 str
 optimizer_epilogue(void *ret)
@@ -139,6 +127,5 @@ static mel_func optimizer_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_optimizer_mal)
 {
-	mal_module2("optimizer", NULL, optimizer_init_funcs, optimizer_prelude,
-				NULL);
+	mal_module2("optimizer", NULL, optimizer_init_funcs, NULL, NULL);
 }

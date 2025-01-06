@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -25,6 +25,7 @@
 #  include "getopt.h"
 # endif
 #endif
+#include "stream.h"
 #include "mapi.h"
 #include <unistd.h>
 #include <string.h>
@@ -38,7 +39,6 @@
 #include <readline/history.h>
 #include "ReadlineTools.h"
 #endif
-#include "stream.h"
 #include "msqldump.h"
 #define LIBMUTILS 1
 #include "mprompt.h"
@@ -1177,10 +1177,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtod(s, NULL);
-				for (j = 4; j < 11; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtod(buf, NULL))
-						break;
+				if (v > (double) 999999999999999 ||
+					v < (double) -999999999999999 ||
+					(double) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtod(buf, NULL) != v) {
+					for (j = 4; j < 11; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtod(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else if (strcmp(tp, "real") == 0) {
@@ -1190,10 +1196,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtof(s, NULL);
-				for (j = 4; j < 6; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtof(buf, NULL))
-						break;
+				if (v > (float) 9999999 ||
+					v < (float) -9999999 ||
+					(float) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtof(buf, NULL) != v) {
+					for (j = 4; j < 6; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtof(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else
@@ -1308,6 +1320,10 @@ sigint_handler(int signum)
 	(void) signum;
 
 	state = INTERRUPT;
+#ifndef HAVE_SIGACTION
+	if (signal(signum, sigint_handler) == SIG_ERR)
+		perror("Could not reinstall signal handler");
+#endif
 #ifdef HAVE_LIBREADLINE
 	readline_int_handler();
 #endif
@@ -2289,7 +2305,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			char *newbuf;
 			state = READING;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
-			if (l == -1 && state == INTERRUPT) {
+			if (l <= 0 && state == INTERRUPT) {
 				/* we were interrupted */
 				mnstr_clearerr(fp);
 				mnstr_write(toConsole, "\n", 1, 1);
@@ -3219,7 +3235,8 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 		close_stream(priv->f);
 		priv->f = NULL;
 		if (fname) {
-			MT_remove(fname);
+			if (MT_remove(fname) < 0)
+				perror(fname);
 			free(fname);
 		}
 		if (filename == NULL)
@@ -3269,7 +3286,7 @@ usage(const char *prog, int xit)
 	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
 	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
 
-	mnstr_printf(stderr_stream, "\nSQL specific opions \n");
+	mnstr_printf(stderr_stream, "\nSQL specific options \n");
 	mnstr_printf(stderr_stream, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
 	mnstr_printf(stderr_stream, " -a          | --autocommit       turn off autocommit mode\n");
 	mnstr_printf(stderr_stream, " -R          | --allow-remote     allow remote content\n");
@@ -3293,8 +3310,19 @@ isfile(FILE *fp)
 	return true;
 }
 
+static bool
+interrupted(void *m)
+{
+	Mapi mid = m;
+	if (state == INTERRUPT) {
+		mnstr_set_error(mapi_get_from(mid), MNSTR_INTERRUPT, NULL);
+		return true;
+	}
+	return false;
+}
+
 static void
-catch_interrupts(void)
+catch_interrupts(Mapi mid)
 {
 #ifdef HAVE_SIGACTION
 	struct sigaction sa;
@@ -3309,6 +3337,7 @@ catch_interrupts(void)
 		perror("Could not install signal handler");
 	}
 #endif
+	mapi_set_rtimeout(mid, 100, interrupted, mid);
 }
 
 int
@@ -3397,7 +3426,7 @@ main(int argc, char **argv)
 		exit(2);
 	}
 
-	/* Windows does't know about SIGPIPE */
+	/* Windows doesn't know about SIGPIPE */
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		perror("sigaction");
 #endif
@@ -3743,7 +3772,7 @@ main(int argc, char **argv)
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
 
-		catch_interrupts();
+		catch_interrupts(mid);
 
 		if (mode == SQL) {
 			lang = "/SQL";
@@ -3843,7 +3872,7 @@ main(int argc, char **argv)
 
 			if (s == NULL) {
 				if (strcmp(arg, "-") == 0) {
-					catch_interrupts();
+					catch_interrupts(mid);
 					s = stdin_rastream();
 				} else {
 					s = open_rastream(arg);

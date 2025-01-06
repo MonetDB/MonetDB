@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -32,7 +32,7 @@
  * (waiting for input) in the read function.  Instead, we only call
  * the read function when we know there is input available.  This is
  * to prevent a deadlock situation, especially for reading from pipes,
- * when another thread were to also interact with pipes (as happend in
+ * when another thread were to also interact with pipes (as happened in
  * the scipy Python module as used in the sql/backends/monet5/pyapi05
  * test). */
 
@@ -94,6 +94,8 @@ console_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			return -1;
 		}
 		c->rd = 0;
+		if (c->len == 0)
+			Sleep(100);
 		if (c->len > 0 && c->wbuf[0] == 26) {	/* control-Z */
 			c->len = 0;
 			s->eof = true;

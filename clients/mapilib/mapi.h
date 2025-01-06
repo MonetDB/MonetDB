@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -208,6 +208,8 @@ mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)
 mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
 	__attribute__((__nonnull__(1)));
 
+mapi_export MapiMsg mapi_set_rtimeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
+	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_timeout(Mapi mid, unsigned int time)

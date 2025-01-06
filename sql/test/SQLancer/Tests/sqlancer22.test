@@ -98,34 +98,34 @@ select max(((select mct20.c0) union all (select interval '1' day))) over () from
 statement ok rowcount 1
 INSERT INTO mct20 VALUES (INTERVAL '1' DAY, DATE '2010-01-01')
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 from mct20 where ((select true) union all (select true))
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(norc0)
 on true and greatest(((select nort0.norc0) union all (select true)), true)
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(norc0)
 on ((select nort0.norc0) union all (select true))
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 select 1 from mct20 inner join (select x.x from (values (true)) x(x)) as nort0(norc0)
 on true where ((select nort0.norc0) union all (select true))
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 select rank() over (order by ((select mct20.c0) union all (select interval '1' day))) from mct20
 ----
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 select sum(((select mct20.c0) union all (select interval '1' day))) over () from mct20
 ----
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select sum(((select interval '2' day) union all (select interval '1' day))) over () from mct20
 ----
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 select max(((select mct20.c0) union all (select interval '1' day))) over () from mct20
 ----
 
@@ -704,7 +704,7 @@ SELECT EXISTS (SELECT 1 FROM (SELECT DISTINCT 1) y(y) WHERE x.x = ANY(VALUES (y.
 0
 0
 
-statement error 42000!syntax error, unexpected ',' in: "select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),"
+statement error 42000!subquery must return only one column
 select c1 from t4 where (c0,3) in ((select 2,3 union all select 3,4),(select 2,3 union all select 6,7))
 
 statement ok
@@ -798,9 +798,9 @@ select 1 where (2,3) in (select 2 union all select 3)
 statement error SELECT: subquery must return only one column
 select 1 where (2) in (with x(x,y) as (select 2,3) select x,y from x)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select x FROM (VALUES (1),(2),(3)) x(x) where ((select 3 union all select 3)) in (select 3)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select x FROM (VALUES (1),(2),(3)) x(x) where (2, (select 3 union all select 3)) in (select 2,3)
 

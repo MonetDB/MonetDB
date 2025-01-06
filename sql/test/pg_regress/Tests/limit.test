@@ -1,4 +1,4 @@
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 50
 		ORDER BY unique1 LIMIT 2
@@ -12,7 +12,7 @@ ZBAAAA
 985
 ACAAAA
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS five, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60
 		ORDER BY unique1 LIMIT 5
@@ -38,7 +38,7 @@ MCAAAA
 64
 NCAAAA
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS two, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60 AND unique1 < 63
 		ORDER BY unique1 LIMIT 5
@@ -52,7 +52,7 @@ JCAAAA
 633
 KCAAAA
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS three, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 100
 		ORDER BY unique1 LIMIT 3 OFFSET 20
@@ -70,63 +70,63 @@ SEAAAA
 777
 TEAAAA
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS zero, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 8 OFFSET 99
 ----
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS eleven, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 20 OFFSET 39
 ----
 (empty)
-0
-998
-AAAAAA
-(empty)
-1
-214
-BAAAAA
-(empty)
 10
 520
 KAAAAA
 (empty)
-2
-326
-CAAAAA
-(empty)
-3
-431
-DAAAAA
-(empty)
-4
-833
-EAAAAA
-(empty)
-5
-541
-FAAAAA
-(empty)
-6
-978
-GAAAAA
-(empty)
-7
-647
-HAAAAA
+9
+49
+JAAAAA
 (empty)
 8
 653
 IAAAAA
 (empty)
-9
-49
-JAAAAA
+7
+647
+HAAAAA
+(empty)
+6
+978
+GAAAAA
+(empty)
+5
+541
+FAAAAA
+(empty)
+4
+833
+EAAAAA
+(empty)
+3
+431
+DAAAAA
+(empty)
+2
+326
+CAAAAA
+(empty)
+1
+214
+BAAAAA
+(empty)
+0
+998
+AAAAAA
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS ten, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990
@@ -177,7 +177,7 @@ SELECT '' AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990 LIMIT 5
 
-query TIIT rowsort
+query TIIT nosort
 SELECT '' AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 LIMIT 5 OFFSET 900

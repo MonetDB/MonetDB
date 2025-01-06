@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -223,15 +223,16 @@ globalModule(const char *nme)
 	Module cur;
 
 	// Global modules are not named 'user'
-	assert(strcmp(nme, "user"));
+	assert(strcmp(nme, userRef));
 	nme = putName(nme);
 	if (nme == NULL)
 		return NULL;
-	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
+	cur = (Module) GDKmalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = nme;
-	cur->link = NULL;
+	*cur = (ModuleRecord) {
+		.name = nme,
+	};
 	addModuleToIndex(cur);
 	return cur;
 }
@@ -243,15 +244,13 @@ userModule(void)
 {
 	Module cur;
 
-	cur = (Module) GDKzalloc(sizeof(ModuleRecord));
+	cur = (Module) GDKmalloc(sizeof(ModuleRecord));
 	if (cur == NULL)
 		return NULL;
-	cur->name = putName("user");
-	if (cur->name == NULL) {
-		GDKfree(cur);
-		return NULL;
-	}
-	cur->link = NULL;
+	*cur = (ModuleRecord) {
+		.name = userRef,
+		.link = NULL,
+	};
 	return cur;
 }
 
@@ -307,7 +306,7 @@ freeModule(Module m)
 		}
 	}
 	freeSubScope(m);
-	if (strcmp(m->name, "user")) {
+	if (strcmp(m->name, userRef)) {
 		clrModuleIndex(m);
 	}
 	if (m->help)

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -170,7 +170,7 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 	for (int i = 0; i < shp_conn.numFieldDefinitions; i++)
 	{
 		/*If the next column definition doesn't fit in the buffer, resize the buffers to double
-		Compare current buffer size with current lenght + field name lenght + 11 (lenght of string column definition)*/
+		Compare current buffer size with current length + field name length + 11 (length of string column definition)*/
 		if (size <= (11 + strlen(field_definitions[i].fieldName) + strlen(temp_buf)))
 		{
 			size = 2 * size;

@@ -2,7 +2,7 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE VIEW v AS SELECT a1, a2 FROM (VALUES (1,2)) as (a1,a2) GROUP BY a1, a2
+CREATE VIEW v AS SELECT a1, a2 FROM (VALUES (1,2)) as a(a1,a2) GROUP BY a1, a2
 
 query I rowsort
 SELECT a1 from v

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -25,7 +25,6 @@
 #include "sql_partition.h"
 #include "sql_statistics.h"
 #include "mal_namespace.h"
-#include "opt_prelude.h"
 #include "querylog.h"
 #include "mal_builder.h"
 
@@ -789,6 +788,12 @@ IDXdrop(mvc *sql, const char *sname, const char *tname, const char *iname, void 
 	return MAL_SUCCEED;
 }
 
+static void
+dummy(BAT *b)
+{
+	(void) b;
+}
+
 static str
 drop_index(mvc *sql, char *sname, char *iname)
 {
@@ -807,7 +812,7 @@ drop_index(mvc *sql, char *sname, char *iname)
 	if (i->type == ordered_idx || i->type == imprints_idx) {
 		sql_kc *ic = i->columns->h->data;
 		sql_class icls = ic->c->type.type->eclass;
-		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : (icls == EC_STRING ? STRMPdestroy : IMPSdestroy))))
+		if ((msg = IDXdrop(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, i->type == ordered_idx ? OIDXdestroy : (icls == EC_STRING ? STRMPdestroy : dummy))))
 			return msg;
 	}
 	switch (mvc_drop_idx(sql, s, i)) {
@@ -1065,7 +1070,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->errstr[0] = '\0';
 		}
 	}
-	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect, f->order_required, f->opt_order)) {
 		case -1:
 			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:
@@ -1352,9 +1357,25 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					 * PCRElikeselect.
 					 */
 					r = BATsetstrimps(b);
-				}
-				else {
-					r = BATimprints(b);
+				} else {
+					switch (ATOMbasetype(b->ttype)) {
+					default: {
+						const char *tp = ATOMname(b->ttype);
+						BBPunfix(b->batCacheid);
+						throw(SQL, "sql.alter_table", SQLSTATE(HY005) "Cannot create imprint index %s on type %s", i->base.name, tp);
+					}
+					case TYPE_bte:
+					case TYPE_sht:
+					case TYPE_int:
+					case TYPE_lng:
+#ifdef HAVE_HGE
+					case TYPE_hge:
+#endif
+					case TYPE_flt:
+					case TYPE_dbl:
+						r = GDK_SUCCEED; /* fake imprints creation */
+						break;
+					}
 				}
 
 				BBPunfix(b->batCacheid);
@@ -1443,7 +1464,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *bid = getArgReference_bat(stk, pci, 4);
 
 		if (!(b = BATdescriptor(*bid)))
-			throw(SQL, "sql.alter_seq", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "sql.alter_seq", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (BATcount(b) != 1) {
 			BBPunfix(b->batCacheid);
 			throw(SQL, "sql.alter_seq", SQLSTATE(42000) "Only one value allowed to alter a sequence value");

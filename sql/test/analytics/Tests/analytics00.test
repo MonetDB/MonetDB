@@ -21,7 +21,7 @@ select min(aa) over (partition by bb) from analytics
 5
 NULL
 
-query I rowsort
+query I nosort
 select min(aa) over (partition by bb order by bb asc) from analytics
 ----
 2
@@ -35,33 +35,33 @@ select min(aa) over (partition by bb order by bb asc) from analytics
 5
 NULL
 
-query I rowsort
+query I nosort
 select min(aa) over (partition by bb order by bb desc) from analytics
 ----
-2
-2
-2
-3
-3
-3
-5
-5
-5
 NULL
+5
+5
+5
+3
+3
+3
+2
+2
+2
 
-query I rowsort
+query I nosort
 select min(aa) over (order by bb desc) from analytics
 ----
-2
-2
-2
-3
-3
-3
-5
-5
-5
 NULL
+5
+5
+5
+3
+3
+3
+2
+2
+2
 
 query I rowsort
 select max(aa) over (partition by bb) from analytics
@@ -77,47 +77,47 @@ select max(aa) over (partition by bb) from analytics
 8
 NULL
 
-query I rowsort
+query I nosort
 select max(aa) over (partition by bb order by bb asc) from analytics
 ----
-15
-15
-15
 4
 4
 4
 8
 8
 8
+15
+15
+15
 NULL
 
-query I rowsort
+query I nosort
 select max(aa) over (partition by bb order by bb desc) from analytics
 ----
-15
-15
-15
-4
-4
-4
-8
-8
-8
 NULL
+15
+15
+15
+8
+8
+8
+4
+4
+4
 
-query I rowsort
+query I nosort
 select max(aa) over (order by bb desc) from analytics
 ----
-15
-15
-15
-15
-15
-15
-15
-15
-15
 NULL
+15
+15
+15
+15
+15
+15
+15
+15
+15
 
 query I rowsort
 select cast(sum(aa) over (partition by bb) as bigint) from analytics
@@ -133,47 +133,47 @@ select cast(sum(aa) over (partition by bb) as bigint) from analytics
 9
 NULL
 
-query I rowsort
+query I nosort
 select cast(sum(aa) over (partition by bb order by bb asc) as bigint) from analytics
 ----
+9
+9
+9
 11
 11
 11
 26
 26
 26
-9
-9
-9
 NULL
 
-query I rowsort
+query I nosort
 select cast(sum(aa) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-11
-11
-11
-26
-26
-26
-9
-9
-9
 NULL
+26
+26
+26
+11
+11
+11
+9
+9
+9
 
-query I rowsort
+query I nosort
 select cast(sum(aa) over (order by bb desc) as bigint) from analytics
 ----
-26
-26
-26
-37
-37
-37
-46
-46
-46
 NULL
+26
+26
+26
+37
+37
+37
+46
+46
+46
 
 query I rowsort
 select cast(prod(aa) over (partition by bb) as bigint) from analytics
@@ -189,7 +189,7 @@ select cast(prod(aa) over (partition by bb) as bigint) from analytics
 450
 NULL
 
-query I rowsort
+query I nosort
 select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from analytics
 ----
 24
@@ -203,33 +203,33 @@ select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from anal
 450
 NULL
 
-query I rowsort
+query I nosort
 select cast(prod(aa) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-24
-24
-24
-24
-24
-24
-450
-450
-450
 NULL
+450
+450
+450
+24
+24
+24
+24
+24
+24
 
-query I rowsort
+query I nosort
 select cast(prod(aa) over (order by bb desc) as bigint) from analytics
 ----
-10800
-10800
-10800
-259200
-259200
-259200
-450
-450
-450
 NULL
+450
+450
+450
+10800
+10800
+10800
+259200
+259200
+259200
 
 query R rowsort
 select avg(aa) over (partition by bb) from analytics
@@ -245,7 +245,7 @@ select avg(aa) over (partition by bb) from analytics
 8.667
 NULL
 
-query R rowsort
+query R nosort
 select avg(aa) over (partition by bb order by bb asc) from analytics
 ----
 3.000
@@ -259,33 +259,33 @@ select avg(aa) over (partition by bb order by bb asc) from analytics
 8.667
 NULL
 
-query R rowsort
+query R nosort
 select avg(aa) over (partition by bb order by bb desc) from analytics
 ----
-3.000
-3.000
-3.000
-5.500
-5.500
-5.500
-8.667
-8.667
-8.667
 NULL
+8.667
+8.667
+8.667
+5.500
+5.500
+5.500
+3.000
+3.000
+3.000
 
-query R rowsort
+query R nosort
 select avg(aa) over (order by bb desc) from analytics
 ----
-5.750
-5.750
-5.750
-7.400
-7.400
-7.400
-8.667
-8.667
-8.667
 NULL
+8.667
+8.667
+8.667
+7.400
+7.400
+7.400
+5.750
+5.750
+5.750
 
 query I rowsort
 select count(aa) over (partition by bb) from analytics
@@ -301,35 +301,35 @@ select count(aa) over (partition by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select count(aa) over (partition by bb order by bb asc) from analytics
 ----
+3
+3
+3
+2
+2
+2
+3
+3
+3
 0
-2
-2
-2
-3
-3
-3
-3
-3
-3
 
-query I rowsort
+query I nosort
 select count(aa) over (partition by bb order by bb desc) from analytics
 ----
 0
-2
-2
-2
 3
 3
 3
+2
+2
+2
 3
 3
 3
 
-query I rowsort
+query I nosort
 select count(aa) over (order by bb desc) from analytics
 ----
 0
@@ -357,7 +357,7 @@ select min(cc) over (partition by bb) from analytics
 5
 NULL
 
-query I rowsort
+query I nosort
 select min(cc) over (partition by bb order by bb asc) from analytics
 ----
 2
@@ -371,33 +371,33 @@ select min(cc) over (partition by bb order by bb asc) from analytics
 5
 NULL
 
-query I rowsort
+query I nosort
 select min(cc) over (partition by bb order by bb desc) from analytics
 ----
-2
-2
-2
-3
-3
-3
-5
-5
-5
 NULL
+5
+5
+5
+3
+3
+3
+2
+2
+2
 
-query I rowsort
+query I nosort
 select min(cc) over (order by bb desc) from analytics
 ----
-2
-2
-2
-3
-3
-3
-5
-5
-5
 NULL
+5
+5
+5
+3
+3
+3
+2
+2
+2
 
 query I rowsort
 select max(cc) over (partition by bb) from analytics
@@ -413,47 +413,47 @@ select max(cc) over (partition by bb) from analytics
 8
 NULL
 
-query I rowsort
+query I nosort
 select max(cc) over (partition by bb order by bb asc) from analytics
 ----
-15
-15
-15
 4
 4
 4
 8
 8
 8
+15
+15
+15
 NULL
 
-query I rowsort
+query I nosort
 select max(cc) over (partition by bb order by bb desc) from analytics
 ----
-15
-15
-15
-4
-4
-4
-8
-8
-8
 NULL
+15
+15
+15
+8
+8
+8
+4
+4
+4
 
-query I rowsort
+query I nosort
 select max(cc) over (order by bb desc) from analytics
 ----
-15
-15
-15
-15
-15
-15
-15
-15
-15
 NULL
+15
+15
+15
+15
+15
+15
+15
+15
+15
 
 query I rowsort
 select cast(sum(cc) over (partition by bb) as bigint) from analytics
@@ -469,47 +469,47 @@ select cast(sum(cc) over (partition by bb) as bigint) from analytics
 9
 NULL
 
-query I rowsort
+query I nosort
 select cast(sum(cc) over (partition by bb order by bb asc) as bigint) from analytics
 ----
+9
+9
+9
 11
 11
 11
 26
 26
 26
-9
-9
-9
 NULL
 
-query I rowsort
+query I nosort
 select cast(sum(cc) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-11
-11
-11
-26
-26
-26
-9
-9
-9
 NULL
+26
+26
+26
+11
+11
+11
+9
+9
+9
 
-query I rowsort
+query I nosort
 select cast(sum(cc) over (order by bb desc) as bigint) from analytics
 ----
-26
-26
-26
-37
-37
-37
-46
-46
-46
 NULL
+26
+26
+26
+37
+37
+37
+46
+46
+46
 
 query I rowsort
 select cast(prod(cc) over (partition by bb) as bigint) from analytics
@@ -525,7 +525,7 @@ select cast(prod(cc) over (partition by bb) as bigint) from analytics
 450
 NULL
 
-query I rowsort
+query I nosort
 select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from analytics
 ----
 24
@@ -539,19 +539,19 @@ select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from anal
 450
 NULL
 
-query I rowsort
+query I nosort
 select cast(prod(cc) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-24
-24
-24
-24
-24
-24
-450
-450
-450
 NULL
+450
+450
+450
+24
+24
+24
+24
+24
+24
 
 query R rowsort
 select avg(cc) over (partition by bb) from analytics
@@ -567,7 +567,7 @@ select avg(cc) over (partition by bb) from analytics
 8.667
 NULL
 
-query R rowsort
+query R nosort
 select avg(cc) over (partition by bb order by bb asc) from analytics
 ----
 3.000
@@ -581,33 +581,33 @@ select avg(cc) over (partition by bb order by bb asc) from analytics
 8.667
 NULL
 
-query R rowsort
+query R nosort
 select avg(cc) over (partition by bb order by bb desc) from analytics
 ----
-3.000
-3.000
-3.000
-5.500
-5.500
-5.500
-8.667
-8.667
-8.667
 NULL
+8.667
+8.667
+8.667
+5.500
+5.500
+5.500
+3.000
+3.000
+3.000
 
-query R rowsort
+query R nosort
 select avg(cc) over (order by bb desc) from analytics
 ----
-5.750
-5.750
-5.750
-7.400
-7.400
-7.400
-8.667
-8.667
-8.667
 NULL
+8.667
+8.667
+8.667
+7.400
+7.400
+7.400
+5.750
+5.750
+5.750
 
 query I rowsort
 select count(cc) over (partition by bb) from analytics
@@ -623,35 +623,35 @@ select count(cc) over (partition by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select count(cc) over (partition by bb order by bb asc) from analytics
 ----
+3
+3
+3
+2
+2
+2
+3
+3
+3
 0
-2
-2
-2
-3
-3
-3
-3
-3
-3
 
-query I rowsort
+query I nosort
 select count(cc) over (partition by bb order by bb desc) from analytics
 ----
 0
-2
-2
-2
 3
 3
 3
+2
+2
+2
 3
 3
 3
 
-query I rowsort
+query I nosort
 select count(cc) over (order by bb desc) from analytics
 ----
 0
@@ -679,21 +679,21 @@ select count(*) over (partition by bb) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select count(*) over (partition by bb order by bb asc) from analytics
 ----
+3
+3
+3
+3
+3
+3
+3
+3
+3
 1
-3
-3
-3
-3
-3
-3
-3
-3
-3
 
-query I rowsort
+query I nosort
 select count(*) over (partition by bb order by bb desc) from analytics
 ----
 1
@@ -707,19 +707,19 @@ select count(*) over (partition by bb order by bb desc) from analytics
 3
 3
 
-query I rowsort
+query I nosort
 select count(*) over (order by bb desc) from analytics
 ----
 1
-10
-10
-10
 4
 4
 4
 7
 7
 7
+10
+10
+10
 
 query I rowsort
 select min(aa) over () from analytics
@@ -1011,44 +1011,44 @@ check
 ok
 ok
 
-query T rowsort
+query T nosort
 select min(aa) over (partition by bb order by bb asc) from stressme
 ----
+another
+another
+another
+ok
+ok
+check
+check
+check
 NULL
-another
-another
-another
-check
-check
-check
-ok
-ok
 
-query T rowsort
+query T nosort
 select min(aa) over (partition by bb order by bb desc) from stressme
 ----
 NULL
-another
-another
-another
 check
 check
 check
 ok
 ok
+another
+another
+another
 
-query T rowsort
+query T nosort
 select min(aa) over (order by bb desc) from stressme
 ----
 NULL
+check
+check
+check
+check
+check
 another
 another
 another
-check
-check
-check
-check
-check
 
 query T rowsort
 select max(aa) over (partition by bb) from stressme
@@ -1063,33 +1063,33 @@ stress
 stress
 stress
 
-query T rowsort
+query T nosort
 select max(aa) over (partition by bb order by bb asc) from stressme
 ----
+stress
+stress
+stress
+ok
+ok
+please
+please
+please
 NULL
-ok
-ok
-please
-please
-please
-stress
-stress
-stress
 
-query T rowsort
+query T nosort
 select max(aa) over (partition by bb order by bb desc) from stressme
 ----
 NULL
+please
+please
+please
 ok
 ok
-please
-please
-please
 stress
 stress
 stress
 
-query T rowsort
+query T nosort
 select max(aa) over (order by bb desc) from stressme
 ----
 NULL
@@ -1115,33 +1115,33 @@ select count(aa) over (partition by bb) from stressme
 3
 3
 
-query I rowsort
+query I nosort
 select count(aa) over (partition by bb order by bb asc) from stressme
 ----
+3
+3
+3
+1
+1
+3
+3
+3
 0
-1
-1
-3
-3
-3
-3
-3
-3
 
-query I rowsort
+query I nosort
 select count(aa) over (partition by bb order by bb desc) from stressme
 ----
 0
+3
+3
+3
 1
 1
-3
-3
-3
 3
 3
 3
 
-query I rowsort
+query I nosort
 select count(aa) over (order by bb desc) from stressme
 ----
 0
@@ -1167,33 +1167,33 @@ select count(*) over (partition by bb) from stressme
 3
 3
 
-query I rowsort
+query I nosort
 select count(*) over (partition by bb order by bb asc) from stressme
 ----
+3
+3
+3
+2
+2
+3
+3
+3
 1
-2
-2
-3
-3
-3
-3
-3
-3
 
-query I rowsort
+query I nosort
 select count(*) over (partition by bb order by bb desc) from stressme
 ----
 1
+3
+3
+3
 2
 2
-3
-3
-3
 3
 3
 3
 
-query I rowsort
+query I nosort
 select count(*) over (order by bb desc) from stressme
 ----
 1
@@ -1219,33 +1219,33 @@ select min(bb) over (partition by aa) from stressme
 3
 3
 
-query I rowsort
+query I nosort
 select min(bb) over (partition by aa order by aa asc) from stressme
 ----
-1
-1
-1
 2
 2
+1
+3
+3
 2
+1
 3
-3
-3
+1
 
-query I rowsort
+query I nosort
 select min(bb) over (partition by aa order by aa desc) from stressme
 ----
 1
+3
 1
+2
+3
+3
 1
 2
 2
-2
-3
-3
-3
 
-query I rowsort
+query I nosort
 select min(bb) over (order by aa desc) from stressme
 ----
 1
@@ -1271,33 +1271,33 @@ select max(bb) over (partition by aa) from stressme
 4
 4
 
-query I rowsort
+query I nosort
 select max(bb) over (partition by aa order by aa asc) from stressme
 ----
+4
+4
 1
-1
-1
+3
+3
 2
+1
 3
-3
-3
-4
-4
+1
 
-query I rowsort
+query I nosort
 select max(bb) over (partition by aa order by aa desc) from stressme
 ----
 1
-1
+3
 1
 2
 3
 3
-3
+1
 4
 4
 
-query I rowsort
+query I nosort
 select max(bb) over (order by aa desc) from stressme
 ----
 1
@@ -1323,44 +1323,44 @@ select cast(sum(bb) over (partition by aa) as bigint) from stressme
 6
 6
 
-query I rowsort
+query I nosort
 select cast(sum(bb) over (partition by aa order by aa asc) as bigint) from stressme
 ----
+6
+6
 1
-1
-1
+3
+3
 2
+1
 3
-3
-3
-6
-6
+1
 
-query I rowsort
+query I nosort
 select cast(sum(bb) over (partition by aa order by aa desc) as bigint) from stressme
 ----
 1
-1
+3
 1
 2
 3
 3
-3
+1
 6
 6
 
-query I rowsort
+query I nosort
 select cast(sum(bb) over (order by aa desc) as bigint) from stressme
 ----
 1
+4
+5
+7
 10
 13
 14
 20
 20
-4
-5
-7
 
 query I rowsort
 select cast(prod(bb) over (partition by aa) as bigint) from stressme
@@ -1375,44 +1375,44 @@ select cast(prod(bb) over (partition by aa) as bigint) from stressme
 8
 8
 
-query I rowsort
+query I nosort
 select cast(prod(bb) over (partition by aa order by aa asc) as bigint) from stressme
 ----
+8
+8
 1
-1
-1
+3
+3
 2
+1
 3
-3
-3
-8
-8
+1
 
-query I rowsort
+query I nosort
 select cast(prod(bb) over (partition by aa order by aa desc) as bigint) from stressme
 ----
 1
-1
+3
 1
 2
 3
 3
-3
+1
 8
 8
 
-query I rowsort
+query I nosort
 select cast(prod(bb) over (order by aa desc) as bigint) from stressme
 ----
 1
-18
 3
 3
-432
-432
-54
-54
 6
+18
+54
+54
+432
+432
 
 query R rowsort
 select avg(bb) over (partition by aa) from stressme
@@ -1427,42 +1427,42 @@ select avg(bb) over (partition by aa) from stressme
 3.000
 3.000
 
-query R rowsort
+query R nosort
 select avg(bb) over (partition by aa order by aa asc) from stressme
 ----
+3.000
+3.000
 1.000
-1.000
-1.000
+3.000
+3.000
 2.000
+1.000
 3.000
-3.000
-3.000
-3.000
-3.000
+1.000
 
-query R rowsort
+query R nosort
 select avg(bb) over (partition by aa order by aa desc) from stressme
 ----
 1.000
-1.000
+3.000
 1.000
 2.000
 3.000
 3.000
-3.000
+1.000
 3.000
 3.000
 
-query R rowsort
+query R nosort
 select avg(bb) over (order by aa desc) from stressme
 ----
 1.000
+2.000
 1.667
 1.750
 2.000
-2.000
-2.000
 2.167
+2.000
 2.222
 2.222
 
@@ -1479,20 +1479,20 @@ select count(bb) over (partition by aa) from stressme
 2
 2
 
-query I rowsort
+query I nosort
 select count(bb) over (partition by aa order by aa asc) from stressme
 ----
-1
-1
-1
-1
-1
-1
-1
 2
 2
+1
+1
+1
+1
+1
+1
+1
 
-query I rowsort
+query I nosort
 select count(bb) over (partition by aa order by aa desc) from stressme
 ----
 1
@@ -1505,7 +1505,7 @@ select count(bb) over (partition by aa order by aa desc) from stressme
 2
 2
 
-query I rowsort
+query I nosort
 select count(bb) over (order by aa desc) from stressme
 ----
 1
@@ -1531,20 +1531,20 @@ select count(*) over (partition by aa) from stressme
 2
 2
 
-query I rowsort
+query I nosort
 select count(*) over (partition by aa order by aa asc) from stressme
 ----
-1
-1
-1
-1
-1
-1
-1
 2
 2
+1
+1
+1
+1
+1
+1
+1
 
-query I rowsort
+query I nosort
 select count(*) over (partition by aa order by aa desc) from stressme
 ----
 1
@@ -1557,7 +1557,7 @@ select count(*) over (partition by aa order by aa desc) from stressme
 2
 2
 
-query I rowsort
+query I nosort
 select count(*) over (order by aa desc) from stressme
 ----
 1
@@ -1596,33 +1596,33 @@ select max(100) over (partition by bb) from stressme
 100
 100
 
-query I rowsort
+query I nosort
 select cast(sum(8 / (- 2)) over (partition by aa order by aa asc) as bigint) from stressme
 ----
--4
--4
--4
--4
--4
--4
--4
 -8
 -8
+-4
+-4
+-4
+-4
+-4
+-4
+-4
 
-query I rowsort
+query I nosort
 select cast(prod(4 + 0) over (partition by bb order by bb asc) as bigint) from stressme
 ----
+64
+64
+64
 16
 16
+64
+64
+64
 4
-64
-64
-64
-64
-64
-64
 
-query R rowsort
+query R nosort
 select avg(4 + null) over (partition by bb order by bb asc) from stressme
 ----
 NULL
@@ -1635,18 +1635,18 @@ NULL
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select count(case when 4 = 4 then 4 else 0 end) over (partition by aa order by aa asc) from stressme
 ----
-1
-1
-1
-1
-1
-1
-1
 2
 2
+1
+1
+1
+1
+1
+1
+1
 
 statement ok
 create table debugme (aa real, bb int)
@@ -1668,47 +1668,47 @@ select sum(aa) over (partition by bb) from debugme
 9.000
 NULL
 
-query R rowsort
+query R nosort
 select sum(aa) over (partition by bb order by bb asc) from debugme
 ----
+9.000
+9.000
+9.000
 11.000
 11.000
 11.000
 26.000
 26.000
 26.000
-9.000
-9.000
-9.000
 NULL
 
-query R rowsort
+query R nosort
 select sum(aa) over (partition by bb order by bb desc) from debugme
 ----
-11.000
-11.000
-11.000
-26.000
-26.000
-26.000
-9.000
-9.000
-9.000
 NULL
+26.000
+26.000
+26.000
+11.000
+11.000
+11.000
+9.000
+9.000
+9.000
 
-query R rowsort
+query R nosort
 select sum(aa) over (order by bb desc) from debugme
 ----
-26.000
-26.000
-26.000
-37.000
-37.000
-37.000
-46.000
-46.000
-46.000
 NULL
+26.000
+26.000
+26.000
+37.000
+37.000
+37.000
+46.000
+46.000
+46.000
 
 query R rowsort
 select prod(aa) over (partition by bb) from debugme
@@ -1724,7 +1724,7 @@ select prod(aa) over (partition by bb) from debugme
 450.000
 NULL
 
-query R rowsort
+query R nosort
 select prod(aa) over (partition by bb order by bb asc) from debugme
 ----
 24.000
@@ -1738,33 +1738,33 @@ select prod(aa) over (partition by bb order by bb asc) from debugme
 450.000
 NULL
 
-query R rowsort
+query R nosort
 select prod(aa) over (partition by bb order by bb desc) from debugme
 ----
-24.000
-24.000
-24.000
-24.000
-24.000
-24.000
-450.000
-450.000
-450.000
 NULL
+450.000
+450.000
+450.000
+24.000
+24.000
+24.000
+24.000
+24.000
+24.000
 
-query R rowsort
+query R nosort
 select prod(aa) over (order by bb desc) from debugme
 ----
-10800.000
-10800.000
-10800.000
-259200.000
-259200.000
-259200.000
-450.000
-450.000
-450.000
 NULL
+450.000
+450.000
+450.000
+10800.000
+10800.000
+10800.000
+259200.000
+259200.000
+259200.000
 
 query R rowsort
 select avg(aa) over (partition by bb) from debugme
@@ -1780,7 +1780,7 @@ select avg(aa) over (partition by bb) from debugme
 8.667
 NULL
 
-query R rowsort
+query R nosort
 select avg(aa) over (partition by bb order by bb asc) from debugme
 ----
 3.000
@@ -1794,33 +1794,33 @@ select avg(aa) over (partition by bb order by bb asc) from debugme
 8.667
 NULL
 
-query R rowsort
+query R nosort
 select avg(aa) over (partition by bb order by bb desc) from debugme
 ----
-3.000
-3.000
-3.000
-5.500
-5.500
-5.500
-8.667
-8.667
-8.667
 NULL
+8.667
+8.667
+8.667
+5.500
+5.500
+5.500
+3.000
+3.000
+3.000
 
-query R rowsort
+query R nosort
 select avg(aa) over (order by bb desc) from debugme
 ----
-5.750
-5.750
-5.750
-7.400
-7.400
-7.400
-8.667
-8.667
-8.667
 NULL
+8.667
+8.667
+8.667
+7.400
+7.400
+7.400
+5.750
+5.750
+5.750
 
 statement ok
 create table overflowme (a int)
@@ -1850,7 +1850,7 @@ O_COMMENT        VARCHAR(79) NOT NULL)
 statement ok
 insert into myorders values (1, 1, '1', 1, date '2010-01-01', '1', '1', 1, '1'), (2, 2, '2', 2, date '2010-01-02', '2', '2', 2, '2')
 
-query IIR rowsort
+query IIR nosort
 SELECT o_custkey, EXTRACT(MONTH FROM o_orderdate) AS purchase_month,
        CAST(SUM(o_totalprice) OVER (PARTITION BY o_custkey  ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS DECIMAL(15,2))
 FROM myorders
@@ -1871,11 +1871,11 @@ project (
 | | | project (
 | | | | table("sys"."myorders") [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "myorders"."o_orderdate" NOT NULL UNIQUE ]
 | | | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "sys"."month"("myorders"."o_orderdate" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
-| | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL UNIQUE, "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" NOT NULL UNIQUE) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(1) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(1) "0", int(1) "0", bigint(63) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(3) "5", int(1) "0", bigint(63) "0")) as "%4"."%4" ]
+| | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" PART ASC NOT NULL UNIQUE, "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" PART NOT NULL UNIQUE) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(1) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(1) "0", int(1) "0", bigint(63) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(3) "5", int(1) "0", bigint(63) "0")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
-query R rowsort
+query R nosort
 SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM myorders
 ----
 1.000
@@ -1894,7 +1894,7 @@ project (
 | ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(1) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(1) "1", int(1) "0", int(1) "0", tinyint(7) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(1) "1", int(3) "5", int(1) "0", tinyint(7) "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 
-query R rowsort
+query R nosort
 SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders
 ----
 1.000
@@ -1913,7 +1913,7 @@ project (
 | ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."count"("myorders"."o_totalprice" NOT NULL UNIQUE, boolean(1) "true", "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(2) "2", "sys"."window_bound"("%3"."%3", int(2) "2", int(1) "0", int(1) "0", tinyint(2) "2"), "sys"."window_bound"("%3"."%3", int(2) "2", int(2) "3", int(1) "0", bigint(63) "9223372036854775807")) NOT NULL as "%4"."%4" ]
 ) [ "%4"."%4" NOT NULL ]
 
-query I rowsort
+query I nosort
 SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders
 ----
 2

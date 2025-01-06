@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -37,7 +37,7 @@
 
 #include <string.h>
 
-static const char *myname = 0;	// avoid tracing the profiler module
+static const char *myname = NULL;	// avoid tracing the profiler module
 
 /* The JSON rendering can be either using '\n' separators between
  * each key:value pair or as a single line.
@@ -338,7 +338,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (profilerMode == 0 && stk) {
 			if (!logadd(&logbuf, ",\"args\":["))
 				goto cleanup_and_exit;
-			char name[IDLENGTH] = { 0 };
+			char name[IDLENGTH];
 			for (j = 0; j < pci->argc; j++) {
 				int tpe = getVarType(mb, getArg(pci, j));
 				str tname = 0, cv;
@@ -476,12 +476,6 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						if (di.vh
 							&& !logadd(&logbuf, ",\"vheap\":" BUNFMT,
 									   di.vhfree)) {
-							BBPunfix(d->batCacheid);
-							goto cleanup_and_exit;
-						}
-						if (d->timprints
-							&& !logadd(&logbuf, ",\"imprints\":" LLFMT,
-									   (lng) IMPSimprintsize(d))) {
 							BBPunfix(d->batCacheid);
 							goto cleanup_and_exit;
 						}
@@ -720,8 +714,8 @@ openProfilerStream(Client cntxt, int m)
 	prevUsage = infoUsage;
 #endif
 	MT_lock_set(&mal_profileLock);
-	if (myname == 0) {
-		myname = putName("profiler");
+	if (myname == NULL) {
+		myname = profilerRef;
 		logjsonInternal(monet_characteristics, true);
 	}
 	if (maleventstream) {
@@ -784,8 +778,8 @@ startProfiler(Client cntxt)
 		throw(MAL, "profiler.start",
 			  "Profiler already running, stream not available");
 	}
-	if (myname == 0) {
-		myname = putName("profiler");
+	if (myname == NULL) {
+		myname = profilerRef;
 	}
 	profilerStatus = 1;
 	logjsonInternal(monet_characteristics, true);
@@ -1053,9 +1047,7 @@ getDiskSpace(void)
 					size += tailsize(b, cnt);
 					if (b->thash)
 						size += sizeof(BUN) * cnt;
-					/* also add the size of an imprint, ordered index or mosaic */
-					if (b->timprints)
-						size += IMPSimprintsize(b);
+					/* also add the size of an ordered index */
 					if (b->torderidx)
 						size += HEAPvmsize(b->torderidx);
 				} else {
@@ -1087,7 +1079,7 @@ static void
 profilerHeartbeat(void *dummy)
 {
 	int t;
-	const int timeout = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 10 : 25;
+	const int timeout = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 10 : 25;
 
 	(void) dummy;
 	for (;;) {

@@ -32618,7 +32618,7 @@ SELECT COUNT(*) AS cnt from tradeDate
 ----
 32605
 
-query II rowsort
+query II nosort
 WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT date, rn from e ORDER BY date limit 5
 ----
 19251231
@@ -32632,7 +32632,7 @@ WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) 
 19260106
 5
 
-query IIII rowsort
+query IIII nosort
 WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn = e1.rn limit 5
 ----
 19251231
@@ -32656,7 +32656,7 @@ WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) 
 19260106
 5
 
-query IIII rowsort
+query IIII nosort
 WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn limit 5
 ----
 19260102

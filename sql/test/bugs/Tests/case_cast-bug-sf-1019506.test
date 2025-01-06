@@ -1,4 +1,4 @@
-query TTTITTIITTIIT rowsort
+query TTTITTIITTIIT nosort
 select 	cast(null as clob) as table_cat,
 	cast(s.name as clob) as table_schem,
 	cast(t.name as clob) as table_name,

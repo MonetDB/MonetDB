@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -22,7 +22,6 @@
 #include "sql_backend.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
-#include "sql_storage.h"
 #include "sql_keyword.h"
 #include "mapi_querytype.h"
 #include "sql_atom.h"
@@ -47,7 +46,7 @@
 #define card_column 	2
 #define card_set	3 /* some operators require only a set (IN/EXISTS) */
 #define card_exists	4
-/* to be removed ie are in type (aka dimention) */
+/* to be removed ie are in type (aka dimension) */
 #define card_relation 	5
 #define card_loader 	6
 
@@ -112,8 +111,8 @@ typedef struct sql_frame {
 /* a single SQL optimizer run */
 typedef struct {
 	const char *name; /* the optimizer name itself */
-	int nchanges; /* how many changes it did */
-	lng time; /* how long it did take (all runs) */
+	int nchanges;     /* how many changes it did */
+	lng time;         /* how long it did take (all runs) */
 } sql_optimizer_run;
 
 typedef struct mvc {
@@ -124,45 +123,45 @@ typedef struct mvc {
 	struct scanner scanner;
 
 	list *params;
-	sqlid objid;	/* when replacing an existing view, it can't be seen */
-	sql_func *forward;	/* forward definitions for recursive functions */
-	list *global_vars; /* SQL declared variables on the global scope */
-	sql_frame **frames;	/* stack of frames with variables */
+	sqlid objid;                /* when replacing an existing view, it can't be seen */
+	sql_func *forward;	        /* forward definitions for recursive functions */
+	list *global_vars;          /* SQL declared variables on the global scope */
+	sql_frame **frames;	        /* stack of frames with variables */
 	int topframes;
 	int sizeframes;
 	int frame;
 	struct symbol *sym;
 
 	bool use_views:1,
-		   schema_path_has_sys:1, /* speed up object search */
-		   schema_path_has_tmp:1,
-		   no_int128:1;
+		schema_path_has_sys:1,  /* speed up object search */
+		schema_path_has_tmp:1,
+		no_int128:1;
 	struct qc *qc;
-	int clientid;		/* id of the owner */
+	int clientid;		        /* id of the owner */
 
 	/* session variables */
 	sqlid user_id;
 	sqlid role_id;
-	int timezone;		/* milliseconds west of UTC */
-	int reply_size;		/* reply size */
+	int timezone;		        /* milliseconds west of UTC */
+	unsigned int div_min_scale; /* minimum scale for division op*/
+	int reply_size;		        /* reply size */
 	int debug;
-	int sql_optimizer; /* SQL optimizer mask */
-	sql_optimizer_run *runs; /* Information about SQL optimizer runs */
-
-	char emode;		/* execution mode */
-	char emod;		/* execution modifier */
-
+	int sql_optimizer;          /* SQL optimizer mask */
+	sql_optimizer_run *runs;    /* Information about SQL optimizer runs */
+	char emode;		            /* execution mode */
+	char emod;		            /* execution modifier */
 	sql_session *session;
 	sql_store store;
 
 	/* per query context */
-	mapi_query_t type;	/* query type */
+	mapi_query_t type;	        /* query type */
 
 	/* during query needed flags */
-	unsigned int label;	/* numbers for relational projection labels */
-	int nid;	/* numbers for relational names */
-	list *cascade_action;  /* protection against recursive cascade actions */
-	list *schema_path; /* schema search path for object lookup */
+	bool recursive;				/* query has recursive parts */
+	unsigned int label;	        /* numbers for relational projection labels */
+	int nid;	                /* numbers for relational names */
+	list *cascade_action;       /* protection against recursive cascade actions */
+	list *schema_path;          /* schema search path for object lookup */
 	uintptr_t sp;
 } mvc;
 
@@ -180,6 +179,7 @@ extern int mvc_error_retry(mvc *c); // error code on errors else 0, errors AMBIG
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
 extern void mvc_cancel_session(mvc *m);
+sql_export void mvc_query_processed(mvc *m);
 
 /* since Savepoints and transactions are related the
  * commit function includes the savepoint creation.
@@ -209,7 +209,7 @@ extern int mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigne
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
 extern int mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
-						   const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
+						   const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
 extern int mvc_drop_func(mvc *c, sql_schema *s, sql_func * func, int drop_action);
 extern int mvc_drop_all_func(mvc *c, sql_schema *s, list *list_func, int drop_action);
 
@@ -315,8 +315,10 @@ extern int mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger *
 
 extern sql_rel *sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
 
-extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
+extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
+extern int sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 

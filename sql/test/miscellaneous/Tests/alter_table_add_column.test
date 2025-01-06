@@ -48,7 +48,7 @@ NULL
 NULL
 NULL
 
-query ITTI rowsort
+query ITTI nosort
 SELECT Columns."number", Columns."name", Columns."type", Columns.type_scale FROM sys.columns as Columns
 WHERE Columns.table_id = (SELECT Tables."id" FROM sys.tables as Tables
                           WHERE Tables.schema_id = (SELECT "schema"."id" FROM sys.schemas as "schema" WHERE "schema"."name" = 'schema1') AND Tables."name" = 'table1')
@@ -108,7 +108,7 @@ insert into "schema1"."table2" values ('1','1','1','1',date '1990-10-01','1','1'
                                       ('1','1','1','1',date '1890-02-20','1','1','1',timestamp '2009-04-02 01:01','4','4',timestamp '2012-05-05 05:05',2,timestamp '2015-08-08 08:08',date '1978-12-21',timestamp '2018-11-11 11:11'),
                                       ('1','1','1','1',date '1790-03-30','1','1','1',timestamp '2010-05-03 02:02','8','7',timestamp '2013-06-06 06:06',3,timestamp '2016-09-09 09:09',date '1987-12-11',timestamp '2019-12-12 00:00')
 
-query ITTI rowsort
+query ITTI nosort
 select columns."number", columns."name", columns."type", columns.type_scale from sys."columns" as columns
 where columns.table_id = (select tables."id" from sys."tables" as tables
                           where tables.schema_id = (select "schema"."id" from sys."schemas" as "schema" where "schema"."name" = 'schema1') and tables."name" = 'table2') order by columns."number"
@@ -120,30 +120,6 @@ varchar
 1
 col2
 varchar
-0
-10
-col11
-varchar
-0
-11
-col12
-timestamp
-0
-12
-col13
-bigint
-0
-13
-col14
-timestamp
-0
-14
-col15
-date
-0
-15
-col16
-timestamp
 0
 2
 col3
@@ -177,6 +153,30 @@ timestamp
 col10
 varchar
 0
+10
+col11
+varchar
+0
+11
+col12
+timestamp
+0
+12
+col13
+bigint
+0
+13
+col14
+timestamp
+0
+14
+col15
+date
+0
+15
+col16
+timestamp
+0
 
 statement ok
 ALTER TABLE "schema1"."table2" ADD COLUMN "col17" varchar(42)
@@ -193,7 +193,7 @@ ALTER TABLE "schema1"."table2" RENAME COLUMN "col17" TO "col5"
 statement ok
 ALTER TABLE "schema1"."table2" ADD "col18" varchar(42)
 
-query ITTI rowsort
+query ITTI nosort
 select columns."number", columns."name", columns."type", columns.type_scale from sys."columns" as columns
 where columns.table_id = (select tables."id" from sys."tables" as tables
                           where tables.schema_id = (select "schema"."id" from sys."schemas" as "schema" where "schema"."name" = 'schema1') and tables."name" = 'table2') order by columns."number"
@@ -204,6 +204,38 @@ varchar
 0
 1
 col2
+varchar
+0
+2
+col3
+varchar
+0
+3
+col4
+varchar
+0
+4
+col6
+char
+0
+5
+col7
+varchar
+0
+6
+col8
+varchar
+0
+7
+col9
+timestamp
+0
+8
+col10
+varchar
+0
+9
+col11
 varchar
 0
 10
@@ -232,38 +264,6 @@ varchar
 0
 16
 col18
-varchar
-0
-2
-col3
-varchar
-0
-3
-col4
-varchar
-0
-4
-col6
-char
-0
-5
-col7
-varchar
-0
-6
-col8
-varchar
-0
-7
-col9
-timestamp
-0
-8
-col10
-varchar
-0
-9
-col11
 varchar
 0
 
@@ -297,7 +297,7 @@ insert into "schema1"."table2" values ('1','1','1','1',date '1990-10-01','1','1'
                                       ('1','1','1','1',date '1890-02-20','1','1','1',timestamp '2009-04-02 01:01','4','4',timestamp '2012-05-05 05:05',2,timestamp '2015-08-08 08:08',date '1978-12-21',timestamp '2018-11-11 11:11'),
                                       ('1','1','1','1',date '1790-03-30','1','1','1',timestamp '2010-05-03 02:02','8','7',timestamp '2013-06-06 06:06',3,timestamp '2016-09-09 09:09',date '1987-12-11',timestamp '2019-12-12 00:00')
 
-query ITTI rowsort
+query ITTI nosort
 select columns."number", columns."name", columns."type", columns.type_scale from sys."columns" as columns
 where columns.table_id = (select tables."id" from sys."tables" as tables
                           where tables.schema_id = (select "schema"."id" from sys."schemas" as "schema" where "schema"."name" = 'schema1') and tables."name" = 'table2') order by columns."number"
@@ -309,30 +309,6 @@ varchar
 1
 col2
 varchar
-0
-10
-col11
-varchar
-0
-11
-col12
-timestamp
-0
-12
-col13
-bigint
-0
-13
-col14
-timestamp
-0
-14
-col15
-date
-0
-15
-col16
-timestamp
 0
 2
 col3
@@ -366,6 +342,30 @@ timestamp
 col10
 varchar
 0
+10
+col11
+varchar
+0
+11
+col12
+timestamp
+0
+12
+col13
+bigint
+0
+13
+col14
+timestamp
+0
+14
+col15
+date
+0
+15
+col16
+timestamp
+0
 
 statement ok
 ALTER TABLE "schema1"."table2" ADD COLUMN "col17" varchar(42)
@@ -382,7 +382,7 @@ ALTER TABLE "schema1"."table2" RENAME COLUMN "col17" TO "col5"
 statement ok
 ALTER TABLE "schema1"."table2" ADD "col18" varchar(42)
 
-query ITTI rowsort
+query ITTI nosort
 select columns."number", columns."name", columns."type", columns.type_scale from sys."columns" as columns
 where columns.table_id = (select tables."id" from sys."tables" as tables
                           where tables.schema_id = (select "schema"."id" from sys."schemas" as "schema" where "schema"."name" = 'schema1') and tables."name" = 'table2') order by columns."number"
@@ -393,6 +393,38 @@ varchar
 0
 1
 col2
+varchar
+0
+2
+col3
+varchar
+0
+3
+col4
+varchar
+0
+4
+col6
+char
+0
+5
+col7
+varchar
+0
+6
+col8
+varchar
+0
+7
+col9
+timestamp
+0
+8
+col10
+varchar
+0
+9
+col11
 varchar
 0
 10
@@ -421,38 +453,6 @@ varchar
 0
 16
 col18
-varchar
-0
-2
-col3
-varchar
-0
-3
-col4
-varchar
-0
-4
-col6
-char
-0
-5
-col7
-varchar
-0
-6
-col8
-varchar
-0
-7
-col9
-timestamp
-0
-8
-col10
-varchar
-0
-9
-col11
 varchar
 0
 

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_cand.h"
 
 bool
 BATiscand(BAT *b)
@@ -706,6 +705,8 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		}
 		ci->ncand = count_mask_bits(ci, 0, cnt);
 		return;
+	default:
+		MT_UNREACHABLE();
 	}
 	ci->ncand = cnt;
 	ci->hseq += ci->offset;
@@ -713,7 +714,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 
 /* return the next candidate without advancing */
 oid
-canditer_peek(struct canditer *ci)
+canditer_peek(const struct canditer *ci)
 {
 	oid o = oid_nil;
 	if (ci->next == ci->ncand)
@@ -728,19 +729,22 @@ canditer_peek(struct canditer *ci)
 		break;
 	case cand_except:
 		o = ci->seq + ci->add + ci->next;
-		while (ci->add < ci->nvals && o == ci->oids[ci->add]) {
-			ci->add++;
+		for (oid a = ci->add; a < ci->nvals && o == ci->oids[a]; a++)
 			o++;
-		}
 		break;
-	case cand_mask:
-		while ((ci->mask[ci->nextmsk] >> ci->nextbit) == 0) {
-			ci->nextmsk++;
-			ci->nextbit = 0;
+	case cand_mask: {
+		BUN m = ci->nextmsk;
+		uint8_t b = ci->nextbit;
+		while ((ci->mask[m] >> b) == 0) {
+			m++;
+			b = 0;
 		}
-		ci->nextbit += candmask_lobit(ci->mask[ci->nextmsk] >> ci->nextbit);
-		o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
+		b += candmask_lobit(ci->mask[m] >> b);
+		o = ci->mskoff + m * 32 + b;
 		break;
+	}
+	default:
+		MT_UNREACHABLE();
 	}
 	return o;
 }
@@ -770,6 +774,8 @@ canditer_prev(struct canditer *ci)
 		}
 		ci->next--;
 		return ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
+	default:
+		MT_UNREACHABLE();
 	}
 	oid o = ci->seq + ci->add + --ci->next;
 	while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
@@ -781,7 +787,7 @@ canditer_prev(struct canditer *ci)
 
 /* return the previous candidate without retreating */
 oid
-canditer_peekprev(struct canditer *ci)
+canditer_peekprev(const struct canditer *ci)
 {
 	oid o = oid_nil;
 
@@ -794,25 +800,28 @@ canditer_peekprev(struct canditer *ci)
 		return ci->oids[ci->next - 1];
 	case cand_except:
 		o = ci->seq + ci->add + ci->next - 1;
-		while (ci->add > 0 && o == ci->oids[ci->add - 1]) {
-			ci->add--;
+		for (oid a = ci->add; a > 0 && o == ci->oids[a - 1]; a--)
 			o--;
-		}
 		break;
-	case cand_mask:
+	case cand_mask: {
+		BUN m = ci->nextmsk;
+		uint8_t b = ci->nextbit;
 		do {
-			if (ci->nextbit == 0) {
-				ci->nextbit = 32;
-				while (ci->mask[--ci->nextmsk] == 0)
+			if (b == 0) {
+				b = 32;
+				while (ci->mask[--m] == 0)
 					;
 			}
-		} while ((ci->mask[ci->nextmsk] & (1U << --ci->nextbit)) == 0);
-		o = ci->mskoff + ci->nextmsk * 32 + ci->nextbit;
-		if (++ci->nextbit == 32) {
-			ci->nextbit = 0;
-			ci->nextmsk++;
+		} while ((ci->mask[m] & (1U << --b)) == 0);
+		o = ci->mskoff + m * 32 + b;
+		if (++b == 32) {
+			b = 0;
+			m++;
 		}
 		break;
+	}
+	default:
+		MT_UNREACHABLE();
 	}
 	return o;
 }
@@ -846,6 +855,7 @@ canditer_mask_next(const struct canditer *ci, oid o, bool next)
 				o = 31;
 				if (p == 0)
 					return oid_nil;
+				p--;
 			} else {
 				o--;
 			}
@@ -875,6 +885,8 @@ canditer_last(const struct canditer *ci)
 				return ci->mskoff + (ci->nvals - 1) * 32 + i;
 		}
 		break;		/* cannot happen */
+	default:
+		MT_UNREACHABLE();
 	}
 	return oid_nil;		/* cannot happen */
 }
@@ -933,6 +945,8 @@ canditer_idx(const struct canditer *ci, BUN p)
 		}
 		break;		/* cannot happen */
 	}
+	default:
+		MT_UNREACHABLE();
 	}
 	return oid_nil;		/* cannot happen */
 }
@@ -1036,6 +1050,8 @@ canditer_search(const struct canditer *ci, oid o, bool next)
 		if (next || ci->mask[p] & (1U << o))
 			return count_mask_bits(ci, 0, p * 32 + o) + !(ci->mask[p] & (1U << o));
 		break;
+	default:
+		MT_UNREACHABLE();
 	}
 	return BUN_NONE;
 }
@@ -1125,7 +1141,7 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 		BATsetcount(bn, hi - lo);
 		memcpy(Tloc(bn, 0), ci->oids + lo, (hi - lo) * sizeof(oid));
 		break;
-	default: /* really: case cand_dense: */
+	case cand_dense:
 		return BATdense(0, ci->seq + lo, hi - lo);
 	case cand_except:
 		o = canditer_idx(ci, lo);
@@ -1152,6 +1168,8 @@ canditer_slice(const struct canditer *ci, BUN lo, BUN hi)
 		return canditer_sliceval_mask(ci, canditer_idx(ci, lo),
 					      oid_nil, hi - lo,
 					      oid_nil, oid_nil, 0);
+	default:
+		MT_UNREACHABLE();
 	}
 	bn->tsorted = true;
 	bn->trevsorted = BATcount(bn) <= 1;
@@ -1271,6 +1289,8 @@ canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN hi2)
 					      oid_nil, hi1 - lo1,
 					      canditer_idx(ci, lo2),
 					      oid_nil, hi2 - lo2);
+	default:
+		MT_UNREACHABLE();
 	}
 	return virtualize(bn);
 }
@@ -1292,7 +1312,7 @@ canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2
 }
 
 BAT *
-BATnegcands(BUN nr, BAT *odels)
+BATnegcands(oid tseq, BUN nr, BAT *odels)
 {
 	const char *nme;
 	Heap *dels;
@@ -1300,16 +1320,20 @@ BATnegcands(BUN nr, BAT *odels)
 	ccand_t *c;
 	BAT *bn;
 
-	bn = BATdense(0, 0, nr);
+	bn = BATdense(0, tseq, nr);
 	if (bn == NULL)
 		return NULL;
 	if (BATcount(odels) == 0)
-		return bn;
+		goto doreturn;
 
 	lo = SORTfndfirst(odels, &bn->tseqbase);
 	hi = SORTfndfirst(odels, &(oid) {bn->tseqbase + BATcount(bn)});
 	if (lo == hi)
 		return bn;
+	if (lo + nr == hi) {
+		BATsetcount(bn, 0);
+		goto doreturn;
+	}
 
 	nme = BBP_physical(bn->batCacheid);
 	if ((dels = GDKmalloc(sizeof(Heap))) == NULL){
@@ -1349,10 +1373,7 @@ BATnegcands(BUN nr, BAT *odels)
 	assert(bn->tvheap == NULL);
 	bn->tvheap = dels;
 	BATsetcount(bn, bn->batCount - (hi - lo));
-	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
-		  "dels=" ALGOBATFMT ")\n",
-		  ALGOBATPAR(bn),
-		  ALGOBATPAR(odels));
+  doreturn:
 	TRC_DEBUG(ALGO, "nr=" BUNFMT ", odels=" ALGOBATFMT
 		  " -> " ALGOBATFMT "\n",
 		  nr, ALGOBATPAR(odels),

@@ -25,7 +25,7 @@ insert into lim_prob values ('mydir2/', 'mytest2')
 statement ok
 insert into lim_prob values ('mydir1/', 'mytest3')
 
-query T rowsort
+query T nosort
 select distinct concat("dir", "test") as a from lim_prob order by a limit 10
 ----
 mydir1/mytest1
@@ -36,7 +36,7 @@ mydir2/mytest1
 mydir2/mytest2
 mydir2/mytest3
 
-query T rowsort
+query T nosort
 select distinct concat("dir", "test") as a from lim_prob order by a
 ----
 mydir1/mytest1

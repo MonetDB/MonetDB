@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -424,7 +424,7 @@ run_tests_inner(stream *s, int verbose)
 	}
 
 	if (verbose >= 1) {
-		fprintf(stderr, "ran %d succesful tests from %s\n", nstarted - orig_nstarted, filename);
+		fprintf(stderr, "ran %d successful tests from %s\n", nstarted - orig_nstarted, filename);
 	}
 
 	free(location);

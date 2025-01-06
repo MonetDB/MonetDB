@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -741,6 +741,8 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_any(ne);
 	if (is_symmetric(oe))
 		set_symmetric(ne);
+	if (is_partitioning(oe))
+		set_partitioning(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
 	if (nulls_last(oe))
@@ -1218,6 +1220,15 @@ exp_equal( sql_exp *e1, sql_exp *e2)
 }
 
 int
+is_conflict( sql_exp *e1, sql_exp *e2)
+{
+	if (e1->alias.label && e1->alias.label == e2->alias.label &&
+		e1->nid && e1->nid != e2->nid)
+		return 0;
+	return -1;
+}
+
+int
 exp_match( sql_exp *e1, sql_exp *e2)
 {
 	if (exp_cmp(e1, e2) == 0)
@@ -1419,11 +1430,19 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 {
 	if (exp_match(e1, e2))
 		return 1;
-	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
-		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || (semantics && is_semantics(e1) != is_semantics(e2)) ||
+
+	if (is_ascending(e1) != is_ascending(e2) ||
+		nulls_last(e1) != nulls_last(e2) ||
+		zero_if_empty(e1) != zero_if_empty(e2) ||
+		need_no_nil(e1) != need_no_nil(e2) ||
+		is_anti(e1) != is_anti(e2) ||
+		(semantics && is_semantics(e1) != is_semantics(e2)) ||
 		(semantics && is_any(e1) != is_any(e2)) ||
-		is_symmetric(e1) != is_symmetric(e2) || is_unique(e1) != is_unique(e2) || need_distinct(e1) != need_distinct(e2))
+		is_symmetric(e1) != is_symmetric(e2) ||
+		is_unique(e1) != is_unique(e2) ||
+		need_distinct(e1) != need_distinct(e2))
 		return 0;
+
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
@@ -3253,16 +3272,15 @@ exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_rel *rel, sql_exp *l, sql_exp *r
 	sql_subtype *lt = exp_subtype(l);
 	sql_subtype *rt = exp_subtype(r);
 
-	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX && (lt->scale || rt->scale) &&
-		strcmp(sql_func_imp(f->func), "/") == 0) {
+	if (!EC_INTERVAL(lt->type->eclass) && lt->type->scale == SCALE_FIX &&
+		(lt->scale || rt->scale) && strcmp(sql_func_imp(f->func), "/") == 0) {
 		sql_subtype *res = f->res->h->data;
 		unsigned int scale, digits, digL, scaleL;
 		sql_subtype nlt;
 
 		/* scale fixing may require a larger type ! */
-		/* TODO make '3' setable by user (division_minimal_scale or so) */
-		scaleL = (lt->scale < 3) ? 3 : lt->scale;
-		scaleL += (scaleL < rt->scale)?(rt->scale - scaleL):0;
+		scaleL = (lt->scale < sql->div_min_scale) ? sql->div_min_scale : lt->scale;
+		scaleL += (scaleL < rt->scale) ? rt->scale - scaleL : 0;
 		scale = scaleL;
 		scaleL += rt->scale;
 		digL = lt->digits + (scaleL - lt->scale);
@@ -3625,7 +3643,7 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	else if (upcast && type->type->eclass == EC_FLT)
 		type = sql_bind_localtype("dbl");
 
-	/* TODO we could use the sql_query* struct to set paremeters used as freevars,
+	/* TODO we could use the sql_query* struct to set parameters used as freevars,
 	   but it requires to change a lot of interfaces */
 	/* if (is_freevar(exp))
 		rel = query_fetch_outer(query, is_freevar(exp)-1); */

@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -130,13 +130,8 @@ if(WITH_OPENSSL)
 endif()
 
 find_package(Sphinx)
-find_package(Createrepo)
-find_package(Rpmbuild)
-find_package(DpkgBuildpackage)
-find_package(Reprepro)
 find_package(Semodule)
 find_package(Awk)
-find_package(Candle)
 
 if(TAGS)
   find_program(CTAGS_PATH ctags)
@@ -148,4 +143,3 @@ if(TAGS)
     message(STATUS "Found cscope: ${CSCOPE_PATH}")
   endif(CSCOPE_PATH)
 endif(TAGS)
-

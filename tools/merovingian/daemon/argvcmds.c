@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -265,7 +265,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				};
 
 				/* re-read, this time with empty defaults, so we can see
-				 * what's available (backwards compatability) */
+				 * what's available (backwards compatibility) */
 				if (readProps(cport, ".") != 0) {
 					fprintf(stderr, "unable to read properties from %s: %s\n",
 							dbfarm, strerror(errno));

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -22,11 +22,11 @@ extern MT_Lock mmath_rse_lock __attribute__((__visibility__("hidden")));
 extern double cot(double);
 extern float cotf(float);
 
-/* degress to radians conversion */
+/* degrees to radians conversion */
 extern double radians(double);
 extern float radiansf(float);
 
-/* radians to degress conversion */
+/* radians to degrees conversion */
 extern double degrees(double);
 extern float degreesf(float);
 

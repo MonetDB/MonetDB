@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -615,27 +615,18 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
-IOsetmallocsuccesscount(void *res, lng *count)
-{
-	(void) res;
-	GDKsetmallocsuccesscount(*count);
-	return MAL_SUCCEED;
-}
-
 #include "mel.h"
 mel_func mal_io_init_funcs[] = {
  pattern("io", "stdin", io_stdin, false, "return the input stream to the database client", args(1,1, arg("",bstream))),
  pattern("io", "stdout", io_stdout, false, "return the output stream for the database client", args(1,1, arg("",streams))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value tuple .", args(1,3, arg("",void),argany("val",1),varargany("lst",0))),
- pattern("io", "print", IOtable, false, "BATs are printed with '#' for legend \nlines, and the BUNs on seperate lines \nbetween brackets, containing each to \ncomma separated values (head and tail). \nIf multiple BATs are passed for printing, \nprint() performs an implicit natural \njoin on the void head, producing a multi attribute table.", args(1,2, arg("",void),batvarargany("b1",0))),
+ pattern("io", "print", IOtable, false, "BATs are printed with '#' for legend \nlines, and the BUNs on separate lines \nbetween brackets, containing each to \ncomma separated values (head and tail). \nIf multiple BATs are passed for printing, \nprint() performs an implicit natural \njoin on the void head, producing a multi attribute table.", args(1,2, arg("",void),batvarargany("b1",0))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value.", args(1,2, arg("",void),argany("val",1))),
  pattern("io", "print", IOprint_val, false, "Print a MAL value column .", args(1,2, arg("",void),batargany("val",1))),
  pattern("io", "printf", IOprintf, false, "Select default format ", args(1,3, arg("",void),arg("fmt",str),varargany("val",0))),
  pattern("io", "printf", IOprintf, false, "Select default format ", args(1,2, arg("",void),arg("fmt",str))),
  pattern("io", "printf", IOprintfStream, false, "Select default format ", args(1,4, arg("",void),arg("filep",streams),arg("fmt",str),varargany("val",0))),
  pattern("io", "printf", IOprintfStream, false, "Select default format ", args(1,3, arg("",void),arg("filep",streams),arg("fmt",str))),
- command("io", "setmallocsuccesscount", IOsetmallocsuccesscount, false, "Set number of mallocs that are allowed to succeed.", args(1,2, arg("",void),arg("count",lng))),
  { .imp=NULL }
 };
 #include "mal_import.h"

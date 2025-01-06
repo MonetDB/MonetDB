@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -29,7 +29,7 @@ AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 											 double, bool), const bat *quantile,
 					   const double *quantile_val, const char *malfunc)
 {
-	BAT *b, *g, *e, *s, *bn = NULL, *cnts = NULL, *q = NULL;
+	BAT *b, *g = NULL, *e = NULL, *s = NULL, *bn = NULL, *cnts = NULL, *q = NULL;
 	double qvalue;
 
 	/* exactly one of grpfunc1, grpfunc2 and quantilefunc is non-NULL */
@@ -41,16 +41,11 @@ AGGRgrouped_bat_or_val(bat *retval1, bat *retval2, const bat *bid,
 	assert((quantilefunc == NULL) == (quantile == NULL && quantile_val == NULL));
 
 	b = BATdescriptor(*bid);
-	g = gid ? BATdescriptor(*gid) : NULL;
-	e = eid ? BATdescriptor(*eid) : NULL;
-	s = sid ? BATdescriptor(*sid) : NULL;
-	q = quantile ? BATdescriptor(*quantile) : NULL;
-
 	if (b == NULL ||
-		(gid != NULL && g == NULL) ||
-		(eid != NULL && e == NULL) ||
-		(sid != NULL && s == NULL) ||
-		((quantile != NULL && quantile_val != NULL) && q == NULL)) {
+		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+		(eid && !is_bat_nil(*eid) && (e = BATdescriptor(*eid)) == NULL) ||
+		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) ||
+		(quantile && !is_bat_nil(*quantile) && (q = BATdescriptor(*quantile)) == NULL)) {
 		BBPreclaim(b);
 		BBPreclaim(g);
 		BBPreclaim(e);

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -171,7 +171,7 @@ parse_interval_(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int
 	if (ek != sk) {
 		if (*n != sep) {
 			if (sql)
-				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
+				snprintf(sql->errstr, ERRSIZE, _("Interval field separator \'%c\' missing\n"), sep);
 			return -1;
 		}
 		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);
@@ -274,7 +274,7 @@ parse_interval(mvc *sql, lng sign, const char *str, int sk, int ek, int sp, int 
 	if (ek != sk) {
 		if (*n != sep) {
 			if (sql)
-				snprintf(sql->errstr, ERRSIZE, _("Interval field seperator \'%c\' missing\n"), sep);
+				snprintf(sql->errstr, ERRSIZE, _("Interval field separator \'%c\' missing\n"), sep);
 			return -1;
 		}
 		return parse_interval_(sql, sign, n + 1, sk + 1, ek, sp, ep, i);

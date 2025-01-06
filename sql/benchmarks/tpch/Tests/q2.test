@@ -1,0 +1,80 @@
+#Q2
+query RTTITTTT rowsort
+select
+	s_acctbal,
+	s_name,
+	n_name,
+	p_partkey,
+	p_mfgr,
+	s_address,
+	s_phone,
+	s_comment
+from
+	part,
+	supplier,
+	partsupp,
+	nation,
+	region
+where
+	p_partkey = ps_partkey
+	and s_suppkey = ps_suppkey
+	and p_size = 15
+	and p_type like '%BRASS'
+	and s_nationkey = n_nationkey
+	and n_regionkey = r_regionkey
+	and r_name = 'EUROPE'
+	and ps_supplycost = (
+		select
+			min(ps_supplycost)
+		from
+			partsupp,
+			supplier,
+			nation,
+			region
+		where
+			p_partkey = ps_partkey
+			and s_suppkey = ps_suppkey
+			and s_nationkey = n_nationkey
+			and n_regionkey = r_regionkey
+			and r_name = 'EUROPE'
+	)
+order by
+	s_acctbal desc,
+	n_name,
+	s_name,
+	p_partkey
+limit 100
+----
+1687.810
+Supplier#000000017
+ROMANIA
+1634
+Manufacturer#2
+c2d,ESHRSkK3WYnxpgw6aOqN0q
+29-601-884-9219
+eep against the furiously bold ideas. fluffily bold packa
+1883.370
+Supplier#000000086
+ROMANIA
+1015
+Manufacturer#4
+J1fgg5QaqnN
+29-903-665-7065
+cajole furiously special, final requests: furiously spec
+287.160
+Supplier#000000052
+ROMANIA
+323
+Manufacturer#4
+WCk XCHYzBA1dvJDSol4ZJQQcQN,
+29-974-934-4713
+dolites are slyly against the furiously regular packages. ironic, final deposits cajole quickly
+4186.950
+Supplier#000000077
+GERMANY
+249
+Manufacturer#4
+wVtcr0uH3CyrSiWMLsqnB09Syo,UuZxPMeBghlY
+17-281-345-4863
+the slyly final asymptotes. blithely pending theodoli
+

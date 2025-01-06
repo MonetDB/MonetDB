@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -37,6 +37,7 @@ gdk_export gdk_return BAThash(BAT *b);
 gdk_export void HASHdestroy(BAT *b);
 gdk_export BUN HASHprobe(const Hash *h, const void *v);
 gdk_export BUN HASHlist(Hash *h, BUN i);
+gdk_export size_t HASHsize(BAT *b);
 
 #define BUN2 2
 #define BUN4 4
@@ -111,7 +112,8 @@ HASHputlink(Hash *h, BUN i, BUN v)
 	}
 }
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 HASHget(const Hash *h, BUN i)
 {
 	switch (h->width) {
@@ -133,7 +135,8 @@ HASHget(const Hash *h, BUN i)
 	}
 }
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 HASHgetlink(const Hash *h, BUN i)
 {
 	switch (h->width) {
@@ -213,7 +216,8 @@ HASHgetlink(const Hash *h, BUN i)
 #define hash_flt(H,V)	HASHbucket(H, ATOMhash(TYPE_flt, (V)))
 #define hash_dbl(H,V)	HASHbucket(H, ATOMhash(TYPE_dbl, (V)))
 
-static inline BUN __attribute__((__pure__))
+__attribute__((__pure__))
+static inline BUN
 mix_uuid(const uuid *u)
 {
 	ulng u1, u2;

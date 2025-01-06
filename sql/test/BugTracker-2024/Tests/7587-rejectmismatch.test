@@ -1,0 +1,49 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CALL sys.clearrejects()
+
+statement ok
+CREATE TABLE foo(i INT, t TEXT, j INT)
+
+-- The file rejectmismatch.csv contains lines of the form
+-- 16,"bananabananabananabananabananabananabananabananabananabananabananabananabananabananabananabanana16",16
+--
+-- So every line starts with its line number, 1-based.
+-- However, the string '99' is replaced with 'boe'
+-- so some of the lines will be rejected
+
+statement ok
+COPY INTO foo
+FROM '7587-rejectmismatch.csv.gz' ON CLIENT
+USING DELIMITERS ',', E'\n', '"'
+NO ESCAPE
+BEST EFFORT
+
+-- 111 rejected lines, to be precise
+
+query I nosort
+SELECT COUNT(*) FROM sys.rejects
+----
+111
+
+-- Let's look at the first difference
+
+query TT nosort
+WITH temp AS (
+    SELECT
+        CAST(rowid AS TEXT) AS rowid,
+        splitpart(input, ',', 1) AS linenr,
+        rowid AS n
+    FROM sys.rejects
+)
+SELECT rowid, linenr FROM temp
+WHERE rowid <> linenr
+ORDER BY n
+LIMIT 1
+----
+
+statement ok
+ROLLBACK
+

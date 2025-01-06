@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -22,8 +22,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.23.03 of catalog */
-#define CATALOG_VERSION 52303	/* first in Aug2024 */
+/* version 05.23.04 of catalog */
+#define CATALOG_VERSION 52304	/* first after Aug2024 */
 
 ulng
 store_function_counter(sqlstore *store)
@@ -76,7 +76,7 @@ store_oldest_pending(sqlstore *store)
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2164)
+	if (id >= 2000 && id <= 2167)
 		return true;
 	return false;
 }
@@ -996,6 +996,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
 	t->system = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
 	t->semantics = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "semantics"), rid);
+	bte order_spec = (bte) store->table_api.column_find_bte(tr, find_sql_column(funcs, "order_specification"), rid);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -1022,6 +1023,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 			t->imp =_STRDUP("eval");
 		}
 	}
+	if (order_spec == 2)
+		t->order_required = true;
+	if (order_spec == 1)
+		t->opt_order = true;
 
 	TRC_DEBUG(SQL_STORE, "Load function: %s\n", t->base.name);
 
@@ -1378,7 +1383,7 @@ load_trans(sql_trans* tr)
 			NULL, NULL,
 			find_sql_column(systables, "schema_id"), /* order also on schema_id */
 			find_sql_column(syscols, "table_id"),
-			find_sql_column(syscols, "id"), NULL);
+			find_sql_column(syscols, "number"), NULL);
 
 	res_table *rt_idx = store->table_api.table_orderby(tr, sysidx,
 			find_sql_column(sysidx, "table_id"),
@@ -1584,10 +1589,11 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 		bit se = f->side_effect, vares = f->varres, varg = f->vararg, system = f->system, sem = f->semantics;
+		bte order = f->order_required?2:f->opt_order?1:0;
 
 		if (f->private) /* don't serialize private functions because they cannot be seen by users */
 			continue;
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem, &order)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -1987,6 +1993,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "schema_id", 2026, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "system", 2027, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "order_specification", 2167, "tinyint", 7) == NULL ||
 
 		(arguments = t = bootstrap_create_table(tr, s, "args", 2028)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2029, "int", 31) == NULL ||
@@ -2454,7 +2461,7 @@ store_manager(sqlstore *store)
 	MT_lock_set(&store->flush);
 
 	for (;;) {
-		const int idle = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5000 : IDLE_TIME * 1000000;
+		const int idle = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 5000 : IDLE_TIME * 1000000;
 		/* if debug bit 1024 is set, attempt immediate log activation
 		 * and clear the bit */
 		if (store->debug&(128|1024) || ATOMIC_GET(&store->lastactive) + idle < (ATOMIC_BASE_TYPE) GDKusec()) {
@@ -2538,7 +2545,8 @@ store_readonly(sqlstore *store)
 
 // Helper function for tar_write_header.
 // Our stream.h makes sure __attribute__ exists.
-static void __attribute__((__format__(__printf__, 3, 4)))
+__attribute__((__format__(__printf__, 3, 4)))
+static void
 tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 {
 	va_list ap;
@@ -2558,12 +2566,14 @@ tar_write_header_field(char **cursor_ptr, size_t size, const char *fmt, ...)
 #define TAR_BLOCK_SIZE (512)
 
 // Write a tar header to the given stream.
-static gdk_return __attribute__((__warn_unused_result__))
-tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
+__attribute__((__warn_unused_result__))
+static gdk_return
+tar_write_header(stream *tarfile, const char *path, time_t mtime, int64_t size)
 {
 	char buf[TAR_BLOCK_SIZE] = {0};
 	char *cursor = buf;
-	char *chksum;
+	char *size_field;
+	char *chksum_field;
 
 	// We set the uid/gid fields to 0 and the uname/gname fields to "".
 	// When unpacking as a normal user, they are ignored and the files are
@@ -2576,9 +2586,10 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	tar_write_header_field(&cursor, 8, "0000644");      // mode[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U);      // uid[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U);      // gid[8]
-	tar_write_header_field(&cursor, 12, "%011zo", size);      // size[12]
+	size_field = cursor;
+	cursor += 12;                                      // size[12]
 	tar_write_header_field(&cursor, 12, "%011lo", (unsigned long)mtime); // mtime[12]
-	chksum = cursor; // use this later to set the computed checksum
+	chksum_field = cursor; // use this later to set the computed checksum
 	tar_write_header_field(&cursor, 8, "%8s", ""); // chksum[8]
 	*cursor++ = '0'; // typeflag REGTYPE
 	tar_write_header_field(&cursor, 100, "%s", "");  // linkname[100]
@@ -2589,14 +2600,27 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
 	tar_write_header_field(&cursor, 8, "%07o", 0U); // devmajor[8]
 	tar_write_header_field(&cursor, 8, "%07o", 0U); // devminor[8]
 	tar_write_header_field(&cursor, 155, "%s", ""); // prefix[155]
-
 	assert(cursor - buf == 500);
 
+	int64_t max_oct_size = 077777777777;    // 0_777_7777_7777, 11 octal digits
+	// max_oct_size = 077; // for testing
+	if (size <= max_oct_size) {
+		tar_write_header_field(&size_field, 12, "%011"PRIo64, size);      // size[12]
+	} else {
+		uint8_t *field = (uint8_t *)size_field;
+		field[0] = 0x80;
+		for (int i = 11; i >= 4; i--) {
+			field[i] = size & 0xFF;
+			size >>= 8;
+		}
+	}
+
+	// checksum
 	unsigned sum = 0;
 	for (int i = 0; i < TAR_BLOCK_SIZE; i++)
 		sum += (unsigned char) buf[i];
 
-	tar_write_header_field(&chksum, 8, "%06o", sum);
+	tar_write_header_field(&chksum_field, 8, "%06o", sum);
 
 	if (mnstr_write(tarfile, buf, TAR_BLOCK_SIZE, 1) != 1) {
 		GDKerror("error writing tar header %s: %s", path, mnstr_peek_error(tarfile));
@@ -2610,8 +2634,9 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, size_t size)
  * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
  * of TAR_BLOCK_SIZE.
  */
-static gdk_return __attribute__((__warn_unused_result__))
-tar_write(stream *outfile, const char *data, size_t size)
+__attribute__((__warn_unused_result__))
+static gdk_return
+tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
 	const size_t tail = size % TAR_BLOCK_SIZE;
 	const size_t bulk = size - tail;
@@ -2619,7 +2644,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 	if (bulk) {
 		size_t written = mnstr_write(outfile, data, 1, bulk);
 		if (written != bulk) {
-			GDKerror("Wrote only %zu bytes instead of first %zu", written, bulk);
+			GDKerror("Wrote only %zu bytes of %s instead of first %zu", written, path, bulk);
 			return GDK_FAIL;
 		}
 	}
@@ -2629,7 +2654,7 @@ tar_write(stream *outfile, const char *data, size_t size)
 		memcpy(buf, data + bulk, tail);
 		size_t written = mnstr_write(outfile, buf, 1, TAR_BLOCK_SIZE);
 		if (written != TAR_BLOCK_SIZE) {
-			GDKerror("Wrote only %zu tail bytes instead of %d", written, TAR_BLOCK_SIZE);
+			GDKerror("Wrote only %zu tail bytes of %s instead of %d", written, path, TAR_BLOCK_SIZE);
 			return GDK_FAIL;
 		}
 	}
@@ -2637,7 +2662,8 @@ tar_write(stream *outfile, const char *data, size_t size)
 	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static gdk_return
 tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
 {
 	gdk_return res;
@@ -2646,60 +2672,47 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	if (res != GDK_SUCCEED)
 		return res;
 
-	return tar_write(tarfile, data, size);
+	return tar_write(tarfile, path, data, size);
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
-tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, ssize_t size)
+__attribute__((__warn_unused_result__))
+static gdk_return
+tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, int64_t size, char *buf, size_t bufsize)
 {
-	const ssize_t bufsize = 64 * 1024;
-	gdk_return ret = GDK_FAIL;
-	ssize_t file_size;
-	char *buf = NULL;
-	ssize_t to_read;
-
-	file_size = getFileSize(contents);
-	if (file_size < size) {
-		GDKerror("Have to copy %zd bytes but only %zd exist in %s", size, file_size, path);
-		goto end;
-	}
-
 	assert( (bufsize % TAR_BLOCK_SIZE) == 0);
 	assert(bufsize >= TAR_BLOCK_SIZE);
 
-	buf = GDKmalloc(bufsize);
-	if (!buf) {
-		GDKerror("could not allocate buffer");
-		goto end;
-	}
-
 	if (tar_write_header(tarfile, path, mtime, size) != GDK_SUCCEED)
-		goto end;
+		return GDK_FAIL;
 
-	to_read = size;
-
-	while (to_read > 0) {
-		ssize_t chunk = (to_read <= bufsize) ? to_read : bufsize;
+	int64_t to_do = size;
+	while (to_do > 0) {
+		size_t chunk = (to_do <= (int64_t)bufsize) ? (size_t)to_do : bufsize;
 		ssize_t nbytes = mnstr_read(contents, buf, 1, chunk);
-		if (nbytes != chunk) {
-			GDKerror("Read only %zd/%zd bytes of component %s: %s", nbytes, chunk, path, mnstr_peek_error(contents));
-			goto end;
+		if (nbytes > 0) {
+			if (tar_write(tarfile, path, buf, nbytes) != GDK_SUCCEED)
+				return GDK_FAIL;
+			to_do -= (int64_t)nbytes;
+			continue;
 		}
-		ret = tar_write(tarfile, buf, chunk);
-		if (ret != GDK_SUCCEED)
-			goto end;
-		to_read -= chunk;
+		// error handling
+		if (nbytes < 0) {
+			GDKerror("Error after reading %"PRId64"/%"PRId64" bytes: %s",
+				size - to_do, size, mnstr_peek_error(contents));
+			return GDK_FAIL;
+		} else {
+			GDKerror("Unexpected end of file after reading %"PRId64"/%"PRId64" bytes of %s",
+				size - to_do, size, path);
+			return GDK_FAIL;
+		}
 	}
 
-	ret = GDK_SUCCEED;
-end:
-	if (buf)
-		GDKfree(buf);
-	return ret;
+	return GDK_SUCCEED;
 }
 
-static gdk_return __attribute__((__warn_unused_result__))
-hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
+__attribute__((__warn_unused_result__))
+static gdk_return
+hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
 	if (plan == NULL)
 		return GDK_FAIL;
@@ -2714,6 +2727,20 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	char dest_path[100]; // size imposed by tar format.
 	char *dest_name = dest_path + snprintf(dest_path, sizeof(dest_path), "%s/", prefix);
 	stream *infile = NULL;
+	const char *bufsize_env_var = "hot_snapshot_buffer_size";
+	int bufsize = GDKgetenv_int(bufsize_env_var, 1024 * 1024);
+	char *buffer = NULL;
+
+	if (bufsize < TAR_BLOCK_SIZE || (bufsize % TAR_BLOCK_SIZE) != 0) {
+		GDKerror("invalid value for setting %s=%d: must be a multiple of %d",
+			bufsize_env_var, bufsize, TAR_BLOCK_SIZE);
+		goto end;
+	}
+	buffer = GDKmalloc(bufsize);
+	if (!buffer) {
+		GDKerror("could not allocate buffer");
+		goto end;
+	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -2726,14 +2753,19 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	src_name = abs_src_path + len - 1; // - 1 because len includes the trailing newline
 	*src_name++ = DIR_SEP;
 
+	// When testing it's sometimes useful to include the plan in the snapshot file
+	// strcpy(dest_name, "_snapshot.plan");
+	// if (tar_write_data(out, dest_path, timestamp, plan, strlen(plan)) != GDK_SUCCEED)
+	// 	goto end;
+
 	char command;
-	long size;
-	while (sscanf(p, "%c %ld %100s\n%n", &command, &size, src_name, &len) == 3) {
+	int64_t size;
+	while (sscanf(p, "%c %"SCNi64" %100s\n%n", &command, &size, src_name, &len) == 3) {
 		GDK_CHECK_TIMEOUT_BODY(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(end, qry_ctx));
 		p += len;
 		strcpy(dest_name, src_name);
 		if (size < 0) {
-			GDKerror("malformed snapshot plan for %s: size %ld < 0", src_name, size);
+			GDKerror("malformed snapshot plan for %s: size %"PRId64" < 0", src_name, size);
 			goto end;
 		}
 		switch (command) {
@@ -2743,15 +2775,15 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 					GDKerror("%s", mnstr_peek_error(NULL));
 					goto end;
 				}
-				if (tar_copy_stream(out, dest_path, timestamp, infile, size) != GDK_SUCCEED)
+				if (tar_copy_stream(out, dest_path, timestamp, infile, size, buffer, (size_t)bufsize) != GDK_SUCCEED)
 					goto end;
 				close_stream(infile);
 				infile = NULL;
 				break;
 			case 'w':
-				if (tar_write_data(out, dest_path, timestamp, p, size) != GDK_SUCCEED)
+				if (tar_write_data(out, dest_path, timestamp, p, (size_t)size) != GDK_SUCCEED)
 					goto end;
-				p += size;
+				p += (size_t)size;
 				break;
 			default:
 				GDKerror("Unknown command in snapshot plan: %c (%s)", command, src_name);
@@ -2761,14 +2793,16 @@ hot_snapshot_write_tar(stream *out, const char *prefix, char *plan)
 	}
 
 	// write a trailing block of zeros. If it succeeds, this function succeeds.
+	char *descr = "end-of-archive marker";
 	char a;
 	a = '\0';
-	ret = tar_write(out, &a, 1);
+	ret = tar_write(out, descr, &a, 1);
 	if (ret == GDK_SUCCEED)
-		ret = tar_write(out, &a, 1);
+		ret = tar_write(out, descr, &a, 1);
 
 end:
-	free(plan);
+	free((char*)plan);
+	GDKfree(buffer);
 	if (infile)
 		close_stream(infile);
 	return ret;
@@ -2779,7 +2813,8 @@ end:
  *
  * This function is not entirely safe as compared to for example mkstemp.
  */
-static str __attribute__((__warn_unused_result__))
+__attribute__((__warn_unused_result__))
+static str
 pick_tmp_name(str filename)
 {
 	str name = GDKmalloc(strlen(filename) + 10);
@@ -2804,7 +2839,7 @@ pick_tmp_name(str filename)
 	if (ext == NULL) {
 		return strcat(name, "..tmp");
 	} else {
-		char *tmp = "..tmp.";
+		const char tmp[] = "..tmp.";
 		size_t tmplen = strlen(tmp);
 		memmove(ext + tmplen, ext, strlen(ext) + 1);
 		memmove(ext, tmp, tmplen);
@@ -3359,6 +3394,8 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
 	f->private = of->private;
+	f->order_required = of->order_required;
+	f->opt_order = of->opt_order;
 	f->query = (of->query)?_STRDUP(of->query):NULL;
 	f->s = s;
 	f->sa = NULL;
@@ -3392,7 +3429,7 @@ store_reset_sql_functions(sql_trans *tr, sqlid id)
 		store->table_api.rids_destroy(depends);
 		return res;
 	}
-	/* Get SQL funcions */
+	/* Get SQL functions */
 	sql_table *funcs = find_sql_table(tr, syss, "functions");
 	sql_column *func_id = find_sql_column(funcs, "id");
 	if (!(sql_funcs = store->table_api.rids_select(tr, find_sql_column(funcs, "language"), &sql_lang, &sql_lang, NULL))) {
@@ -3794,7 +3831,7 @@ sql_trans_rollback(sql_trans *tr, bool commit_lock)
 			MT_lock_set(&store->commit);
 		store_lock(store);
 		ulng oldest = store_oldest(store, tr);
-		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup savely */
+		ulng commit_ts = store_get_timestamp(store); /* use most recent timestamp such that we can cleanup safely */
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -4096,7 +4133,7 @@ sql_trans_commit(sql_trans *tr)
 		const bool log = !tr->parent && tr->logchanges > 0;
 
 		if (log) {
-			const lng min_changes = ATOMIC_GET(&GDKdebug) & FORCEMITOMASK ? 5 : 1000000;
+			const lng min_changes = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 5 : 1000000;
 			flush = (tr->logchanges > min_changes && list_empty(store->changes));
 		}
 
@@ -5066,7 +5103,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 sql_func *
 create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
-				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -5087,12 +5124,14 @@ create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, li
 	t->fix_scale = SCALE_EQ;
 	t->s = NULL;
 	t->system = system;
+	t->order_required = order_required;
+	t->opt_order = opt_order;
 	return t;
 }
 
 int
 sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *ffres, sql_ftype type, sql_flang lang,
-					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -5101,6 +5140,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 	bit semantics = TRUE;
+	bte order_spec = order_required?2:opt_order?1:0;
 
 	sql_func *t = ZNEW(sql_func);
 	base_init(NULL, &t->base, next_oid(tr->store), true, func);
@@ -5117,6 +5157,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->ops = list_create((fdestroy) &arg_destroy);
 	t->fix_scale = SCALE_EQ;
 	t->system = system;
+	t->order_required = order_required;
+	t->opt_order = opt_order;
 	for (n=args->h; n; n = n->next)
 		list_append(t->ops, arg_dup(tr, s, n->data));
 	if (ffres) {
@@ -5130,7 +5172,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
 	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &side_effect,
-			&varres, &vararg, &s->base.id, &system, &semantics)))
+			&varres, &vararg, &s->base.id, &system, &semantics, &order_spec)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;
@@ -7251,8 +7293,10 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 {
 	sql_session *s;
 
-	if (store->singleuser > 1)
+	if (store->singleuser > 1) {
+		TRC_ERROR(SQL_STORE, "No second connection allowed in singleuser mode\n");
 		return NULL;
+	}
 
 	s = ZNEW(sql_session);
 	if (!s)
@@ -7271,7 +7315,7 @@ sql_session_create(sqlstore *store, allocator *sa, int ac)
 		return NULL;
 	}
 	if (store->singleuser)
-		store->singleuser++;
+		store->singleuser = 2;
 	return s;
 }
 
@@ -7280,7 +7324,8 @@ sql_session_destroy(sql_session *s)
 {
 	if (s->tr) {
 		sqlstore *store = s->tr->store;
-		store->singleuser--;
+		if (store->singleuser)
+			store->singleuser = 1;
 	}
 	// TODO check if s->tr is not always there
 	assert(!s->tr || s->tr->active == 0);
@@ -7406,9 +7451,11 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						v->value = NEW_ARRAY(char, vvalue.len);
-						memcpy(v->value, VALget(&vvalue), vvalue.len);
-						v->length = vvalue.len;
+						ok = v->value = NEW_ARRAY(char, vvalue.len);
+						if (ok) {
+							memcpy(v->value, VALget(&vvalue), vvalue.len);
+							v->length = vvalue.len;
+						}
 					}
 					VALclear(&vvalue);
 					if (!ok)
@@ -7433,10 +7480,17 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 
 						p->part.range.minvalue = NEW_ARRAY(char, nil_len);
 						p->part.range.maxvalue = NEW_ARRAY(char, nil_len);
-						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
-						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
-						p->part.range.minlength = nil_len;
-						p->part.range.maxlength = nil_len;
+						if (p->part.range.minvalue == NULL ||
+							p->part.range.maxvalue == NULL) {
+							ok = NULL;
+							_DELETE(p->part.range.minvalue);
+							_DELETE(p->part.range.maxvalue);
+						} else {
+							memcpy(p->part.range.minvalue, nil_ptr, nil_len);
+							memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
+							p->part.range.minlength = nil_len;
+							p->part.range.maxlength = nil_len;
+						}
 					} else {
 						ok = VALconvert(localtype, &vmin);
 						if (ok)
@@ -7444,13 +7498,20 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 						if (ok) {
 							p->part.range.minvalue = NEW_ARRAY(char, vmin.len);
 							p->part.range.maxvalue = NEW_ARRAY(char, vmax.len);
-							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
-							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
-							p->part.range.minlength = vmin.len;
-							p->part.range.maxlength = vmax.len;
+							if (p->part.range.minvalue == NULL ||
+								p->part.range.maxvalue == NULL) {
+								ok = NULL;
+								_DELETE(p->part.range.minvalue);
+								_DELETE(p->part.range.maxvalue);
+							} else {
+								memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
+								memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
+								p->part.range.minlength = vmin.len;
+								p->part.range.maxlength = vmax.len;
+							}
 						}
 					}
-					if (isPartitionedByColumnTable(p->t))
+					if (ok && isPartitionedByColumnTable(p->t))
 						col_set_range(tr, p, true);
 				}
 				VALclear(&vmin);
@@ -7486,7 +7547,10 @@ sql_trans_convert_partitions(sql_trans *tr)
 void
 store_printinfo(sqlstore *store)
 {
-	MT_lock_set(&store->commit);
+	if (!MT_lock_trytime(&store->commit, 1000)) {
+		printf("WAL is currently locked, so no WAL information\n");
+		return;
+	}
 	printf("WAL:\n");
 	printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
 	log_printinfo(store->logger);

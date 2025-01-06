@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -662,7 +662,6 @@ PYAPI3PyAPIprelude(void) {
 		wchar_t* program = L"mserver5";
 		wchar_t* argv[] = { program, NULL };
 		str msg = MAL_SUCCEED;
-		PyObject *tmp;
 
 		static_assert(PY_MAJOR_VERSION == 3, "Python 3.X required");
 #if PY_MINOR_VERSION >= 11
@@ -705,10 +704,8 @@ PYAPI3PyAPIprelude(void) {
 		}
 		_pytypes_init();
 		_loader_init();
-		tmp = PyUnicode_FromString("marshal");
-		marshal_module = PyImport_Import(tmp);
+		marshal_module = PyImport_ImportModule("marshal");
 		init_DateTimeAPI();
-		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
 			MT_lock_unset(&pyapiLock);
 			return createException(MAL, "pyapi3.eval", SQLSTATE(PY000) "Failed to load Marshal module.");

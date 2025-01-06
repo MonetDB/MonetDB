@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -21,19 +21,6 @@
 #define LOG_OK		0
 #define LOG_ERR		(-1)
 #define LOG_CONFLICT	(-2)
-
-#define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
-#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
-#define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
-#define isLocalTemp(x)   ((x)->persistence==SQL_LOCAL_TEMP)
-#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
-#define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
-
-typedef enum store_type {
-	store_bat,	/* delta bats, ie multi user read/write */
-	store_tst,
-	store_mem
-} store_type;
 
 
 struct sqlstore;
@@ -133,7 +120,7 @@ typedef struct table_functions {
 } table_functions;
 
 /* delta table setup (ie readonly col + ins + upd + del)
--- binds for column,idx (rdonly, inserts, updates) and delets
+-- binds for column,idx (rdonly, inserts, updates) and deletes
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
@@ -375,7 +362,7 @@ extern int sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlna
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
 
 extern int sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *res, sql_ftype type, sql_flang lang,
-								 const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
+								 const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
 
 extern int sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
@@ -473,7 +460,7 @@ extern sql_idx *create_sql_idx(struct sqlstore *store, allocator *sa, sql_table 
 extern sql_idx *create_sql_ic(struct sqlstore *store, allocator *sa, sql_idx *i, sql_column *c);
 extern sql_idx *create_sql_idx_done(sql_trans *tr, sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
-								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect);
+								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(allocator *sa, sql_table *t);
@@ -513,7 +500,7 @@ typedef struct sqlstore {
 	list *changes;			/* pending changes to cleanup */
 	sql_hash *dependencies; /* pending dependencies created to cleanup */
 	sql_hash *depchanges;	/* pending dependencies changes to cleanup */
-	list *seqchanges;		/* pending sequence number changes to be add to the first commiting transaction */
+	list *seqchanges;		/* pending sequence number changes to be added to the first committing transaction */
 	sql_hash *sequences;	/* loaded store sequence numbers */
 
 	allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */

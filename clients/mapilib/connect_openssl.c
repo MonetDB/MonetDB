@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -191,7 +191,7 @@ wrap_tls(Mapi mid, SOCKET sock)
 	const char *clientcert = msettings_connect_clientcert(settings);
 	enum msetting_tls_verify verify_method = msettings_connect_tls_verify(settings);
 
-	// Clear any earlier errrors
+	// Clear any earlier errors
 	do {} while (ERR_get_error() != 0);
 
 	SSL_CTX *ctx = NULL;

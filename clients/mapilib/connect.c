@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -331,7 +331,7 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 			port = -1;
 			addrtext = NULL;
 		}
-		mapi_log_record(mid, "CONN", "Trying IP %s port %d wih timeout %ld", addrtext ? addrtext : "<UNKNOWN>", port, timeout);
+		mapi_log_record(mid, "CONN", "Trying IP %s port %d with timeout %ld", addrtext ? addrtext : "<UNKNOWN>", port, timeout);
 	}
 
 
@@ -430,7 +430,7 @@ send_all_clientinfo(Mapi mid)
 
 	if (hostname[0])
 		reallocprintf(&buf, &pos, &cap, "ClientHostname=%s\n", hostname);
-	if (application_name[0])
+	if (application_name && application_name[0])
 		reallocprintf(&buf, &pos, &cap, "ApplicationName=%s\n", application_name);
 	reallocprintf(&buf, &pos, &cap, "ClientLibrary=");
 	if (mid->clientprefix)
@@ -466,7 +466,7 @@ mapi_handshake(Mapi mid)
 
 	/* consume server challenge */
 	len = mnstr_read_block(mid->from, buf, 1, sizeof(buf));
-	check_stream(mid, mid->from, "Connection terminated while starting handshake", (mid->blk.eos = true, mid->error));
+	check_stream(mid, mid->from, len, "Connection terminated while starting handshake", (mid->blk.eos = true, mid->error));
 
 	mapi_log_data(mid, "RECV HANDSHAKE", buf, len);
 
@@ -576,7 +576,7 @@ mapi_handshake(Mapi mid)
 
 	char *clientinfo = strtok_r(NULL, ":", &strtok_state);
 	if (clientinfo) {
-		if (strcmp(oobintr, "OOBINTR=1") == 0) {
+		if (strcmp(clientinfo, "CLIENTINFO") == 0) {
 			mid->clientinfo_supported = true;
 		}
 	}
@@ -603,7 +603,6 @@ mapi_handshake(Mapi mid)
 			pwdhash = mcrypt_SHA1Sum(password,
 							strlen(password));
 		} else {
-			(void)pwdhash;
 			snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
 					serverhash);
 			close_connection(mid);
@@ -619,6 +618,7 @@ mapi_handshake(Mapi mid)
 
 		char *replacement_password = malloc(1 + strlen(pwdhash) + 1);
 		if (replacement_password == NULL) {
+			free(pwdhash);
 			close_connection(mid);
 			return mapi_setError(mid, "malloc failed", __func__, MERROR);
 		}
@@ -722,10 +722,10 @@ mapi_handshake(Mapi mid)
 
 	len = strlen(buf);
 	mapi_log_data(mid, "HANDSHAKE SEND", buf, len);
-	mnstr_write(mid->to, buf, 1, len);
-	check_stream(mid, mid->to, "Could not send initial byte sequence", mid->error);
-	mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
-	check_stream(mid, mid->to, "Could not send initial byte sequence", mid->error);
+	len = mnstr_write(mid->to, buf, 1, len);
+	check_stream(mid, mid->to, len, "Could not send initial byte sequence", mid->error);
+	len = mnstr_flush(mid->to, MNSTR_FLUSH_DATA);
+	check_stream(mid, mid->to, len, "Could not send initial byte sequence", mid->error);
 
 	// Clear the redirects before we receive new ones
 	for (char **r = mid->redirects; *r != NULL; r++) {
@@ -797,10 +797,11 @@ mapi_handshake(Mapi mid)
 		if (motdlen > 0) {
 			mid->motd = malloc(motdlen + 1);
 			*mid->motd = 0;
+			char *p = mid->motd;
 			for (i = 0; i < result->cache.writer; i++)
 				if (result->cache.line[i].rows && result->cache.line[i].rows[0] == '#') {
-					strcat(mid->motd, result->cache.line[i].rows);
-					strcat(mid->motd, "\n");
+					p = stpcpy(p, result->cache.line[i].rows);
+					p = stpcpy(p, "\n");
 				}
 		}
 

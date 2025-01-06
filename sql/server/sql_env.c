@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -54,30 +54,43 @@ str
 sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 {
 	if (strcmp(s->base.name, "sys") == 0) {
-		if (strcmp(name, "debug") == 0 || strcmp(name, "current_timezone") == 0 || strcmp(name, "sql_optimizer") == 0) {
+		if (strcmp(name, "debug") == 0 ||
+			strcmp(name, "current_timezone") == 0 ||
+			strcmp(name, "sql_optimizer") == 0 ||
+			strcmp(name, "division_min_scale") == 0) {
 			VAR_UPCAST sgn = val_get_number(ptr);
-
 			if (VALisnil(ptr))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
+				throw(SQL, "sql_update_var", SQLSTATE(HY009)
+					  "Variable '%s.%s' cannot be NULL", s->base.name, name);
 			if (sgn <= (VAR_UPCAST) GDK_int_min)
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too small for '%s.%s'\n", s->base.name, name);
+				throw(SQL, "sql_update_var", SQLSTATE(HY009)
+					  "Value too small for '%s.%s'", s->base.name, name);
 			if (sgn > (VAR_UPCAST) GDK_int_max)
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Value too large for '%s.%s'\n", s->base.name, name);
-
+				throw(SQL, "sql_update_var", SQLSTATE(HY009)
+					  "Value too large for '%s.%s'", s->base.name, name);
 			if (/* DISABLES CODE */ (0) && strcmp(name, "debug") == 0) {
 				m->debug = (int) sgn;
 			} else if (strcmp(name, "current_timezone") == 0) {
 				m->timezone = (int) sgn;
+			} else if (strcmp(name, "division_min_scale") == 0) {
+				if (sgn >= 0)
+					m->div_min_scale = (unsigned int) sgn;
+				else
+					throw(SQL, "sql_update_var", SQLSTATE(HY009)
+						  "Positive value required for '%s.%s'", s->base.name, name);
 			} else {
 				m->sql_optimizer = (int) sgn;
 			}
 		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
 			if (VALisnil(ptr))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL\n", s->base.name, name);
+				throw(SQL,"sql.update_var", SQLSTATE(HY009)
+					  "Variable '%s.%s' cannot be NULL", s->base.name, name);
 			if (strcmp(name, "current_schema") == 0 && !mvc_set_schema(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", ptr->val.sval);
+				throw(SQL,"sql.update_var", SQLSTATE(3F000)
+					  "Schema (%s) missing\n", ptr->val.sval);
 			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", ptr->val.sval);
+				throw(SQL,"sql.update_var", SQLSTATE(HY009)
+					  "Role (%s) missing\n", ptr->val.sval);
 		}
 	}
 	return NULL;
@@ -95,7 +108,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(&f, m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_MAL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE, FALSE);
+	mvc_create_func(&f, m, NULL, s, "env", ops, res, F_UNION, FUNC_LANG_MAL, "inspect", "getEnvironment", "CREATE FUNCTION env() RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME inspect.\"getEnvironment\";", FALSE, FALSE, TRUE, FALSE, FALSE, FALSE);
 	if (f)
 		f->instantiated = TRUE;
 
@@ -107,7 +120,7 @@ sql_create_env(mvc *m, sql_schema *s)
 
 	/* add function */
 	ops = sa_list(m->sa);
-	mvc_create_func(&f, m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE, FALSE);
+	mvc_create_func(&f, m, NULL, s, "var", ops, res, F_UNION, FUNC_LANG_MAL, "sql", "sql_variables", "create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";", FALSE, FALSE, TRUE, FALSE, FALSE, FALSE);
 	if (f)
 		f->instantiated = TRUE;
 	return 0;

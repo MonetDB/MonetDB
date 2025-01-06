@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -29,8 +29,6 @@
 #include <winsock.h>		/* for timeval */
 #endif
 #endif
-
-#include "gdk_system.h" /* gdk_export */
 
 #ifdef NATIVE_WIN32
 #include <io.h>
@@ -108,10 +106,10 @@
 #define MMAP_WILLNEED	POSIX_MADV_WILLNEED	/* will need these pages */
 #define MMAP_DONTNEED	POSIX_MADV_DONTNEED	/* don't need these pages */
 
-#define MMAP_READ		1024	/* region is readable (default if ommitted) */
+#define MMAP_READ		1024	/* region is readable (default if omitted) */
 #define MMAP_WRITE		2048	/* region may be written into */
 #define MMAP_COPY		4096	/* writable, but changes never reach file */
-#define MMAP_ASYNC		8192	/* asynchronous writes (default if ommitted) */
+#define MMAP_ASYNC		8192	/* asynchronous writes (default if omitted) */
 #define MMAP_SYNC		16384	/* writing is done synchronously */
 
 /* in order to be sure of madvise and msync modes, pass them to mmap()
@@ -175,20 +173,25 @@ gdk_export char *asctime_r(const struct tm *restrict, char *restrict);
 #ifndef HAVE_CTIME_R
 gdk_export char *ctime_r(const time_t *restrict, char *restrict);
 #endif
-#ifndef HAVE_STRERROR_R
+#if !defined(HAVE_STRERROR_R) && !defined(HAVE_STRERROR_S)
 gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
 #endif
 
 static inline const char *
 GDKstrerror(int errnum, char *buf, size_t buflen)
 {
-#if !defined(_GNU_SOURCE) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
+#ifdef HAVE_STRERROR_S
+	if (strerror_s(buf, buflen, errnum) == 0)
+		return buf;
+	snprintf(buf, buflen, "Unknown error %d", errnum);
+	return buf;
+#elif defined(STRERROR_R_CHARP)
+	return strerror_r(errnum, buf, buflen);
+#else
 	if (strerror_r(errnum, buf, buflen) == 0)
 		return buf;
 	snprintf(buf, buflen, "Unknown error %d", errnum);
 	return buf;
-#else
-	return strerror_r(errnum, buf, buflen);
 #endif
 }
 

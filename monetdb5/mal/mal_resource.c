@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -42,7 +42,7 @@ mal_resource_reset(void)
  * concurrent use of the same variables, and the output produced.
  *
  * One heuristic is based on calculating the storage footprint
- * of the operands and assuming it preferrably should fit in memory.
+ * of the operands and assuming it preferably should fit in memory.
  * Ofcourse, there may be intermediate structures being
  * used and the size of the result is not a priori known.
  * For this, we use a high watermark on the amount of
@@ -95,9 +95,6 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
 		MT_rwlock_rdlock(&b->thashlock);
 		itotal = hashinfo(b->thash, d->batCacheid);
 		MT_rwlock_rdunlock(&b->thashlock);
-		t = IMPSimprintsize(b);
-		if (t > itotal)
-			itotal = t;
 		/* We should also consider the ordered index size */
 		t = b->torderidx
 				&& b->torderidx != (Heap *) 1 ? (lng) b->torderidx->free : 0;
@@ -125,7 +122,7 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	/* Check if we are allowed to allocate another worker thread for this client */
 	/* It is somewhat tricky, because we may be in a dataflow recursion, each of which should be counted for.
 	 * A way out is to attach the thread count to the MAL stacks, which just limits the level
-	 * of parallism for a single dataflow graph.
+	 * of parallelism for a single dataflow graph.
 	 */
 	if (cntxt->workerlimit > 0
 		&& (int) ATOMIC_GET(&cntxt->workers) >= cntxt->workerlimit)
@@ -137,7 +134,7 @@ MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	MT_lock_set(&admissionLock);
 	/* Determine if the total memory resource is exhausted, because it is overall limitation.  */
 	if (memorypool <= 0) {
-		// we accidently released too much memory or need to initialize
+		// we accidentally released too much memory or need to initialize
 		memorypool = (lng) MEMORY_THRESHOLD;
 	}
 

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -25,7 +25,7 @@ typedef enum mat_type_t {
 
 typedef struct mat {
 	InstrPtr mi;				/* mat instruction */
-	InstrPtr org;				/* orignal instruction */
+	InstrPtr org;				/* original instruction */
 	int mv;						/* mat variable */
 	int im;						/* input mat, for attribute of sub relations */
 	int pm;						/* parent mat, for sub relations */
@@ -1015,7 +1015,7 @@ join_split(Client cntxt, InstrPtr p, int args)
 	MalBlkPtr mb;
 	InstrPtr q;
 
-	if (args <= 3)				/* we asume there are no 2x1 joins! */
+	if (args <= 3)				/* we assume there are no 2x1 joins! */
 		return 1;
 
 	len = strlen(getFunctionId(p));
@@ -1222,7 +1222,7 @@ mat_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int m)
 	int isAvg = (getFunctionId(p) == avgRef);
 	InstrPtr r = NULL, s = NULL, q = NULL, u = NULL, v = NULL;
 
-	/* we pack the partitial result */
+	/* we pack the partial result */
 	r = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc);
 	if (r == NULL)
 		throw(MAL, "optimizer.mergetable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1490,7 +1490,7 @@ mat_group_project(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int e, int a)
 }
 
 /* Per partition aggregates are merged and aggregated together. For
- * most (handled) aggregates thats relatively simple. AVG is somewhat
+ * most (handled) aggregates that's relatively simple. AVG is somewhat
  * more complex. */
 static int
 mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
@@ -2317,6 +2317,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		/* pack if there is a group statement following a groupdone (ie aggr(distinct)) */
+		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupedfirstnRef)
+				groupdone = 1;
 		if (getModuleId(p) == groupRef && p->argc == 5
 			&& (getFunctionId(p) == subgroupRef
 				|| getFunctionId(p) == subgroupdoneRef

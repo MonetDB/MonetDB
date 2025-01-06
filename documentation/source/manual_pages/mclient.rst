@@ -52,6 +52,9 @@ for *mclient* to mal looks like this: **language=mal**. To disable
 reading the *.monetdb* file, set the variable **DOTMONETDBFILE** to the
 empty string in the environment.
 
+When working interactively, an interrupt (usually control-C) will clear
+any query being edited and will stop any running query.
+
 OPTIONS
 =======
 

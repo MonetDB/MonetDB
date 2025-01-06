@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -19,6 +19,7 @@
 #include "rel_statistics.h"
 #include "rel_rewriter.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 
 #define USED_LEN(nr) ((nr+31)/32)
 #define rel_base_set_used(b,nr) b->used[(nr)/32] |= (1U<<((nr)%32))
@@ -231,7 +232,7 @@ bind_col_exp(mvc *sql, rel_base_t *ba, char *name, sql_column *c)
 static sql_exp *
 bind_col(mvc *sql, sql_rel *rel, char *name, sql_column *c )
 {
-	if (rel_base_use(sql, rel, c->colnr)) {
+	if (!c || rel_base_use(sql, rel, c->colnr)) {
 		/* error */
 		return NULL;
 	}

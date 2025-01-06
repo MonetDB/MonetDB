@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -61,7 +61,7 @@ MALpass(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 mel_func language_init_funcs[] = {
  pattern("language", "dataflow", MALstartDataflow, false, "The current guarded block is executed using dataflow control. ", args(1,1, arg("",bit))),
- pattern("language", "pass", MALpass, false, "Cheap instruction to disgard storage while retaining the dataflow dependency", args(0,1, argany("v",1))),
+ pattern("language", "pass", MALpass, false, "Cheap instruction to discard storage while retaining the dataflow dependency", args(0,1, argany("v",1))),
  pattern("language", "block", deblockdataflow, false, "Block on availability of all variables w, and then pass on v", args(1,3, arg("",int),arg("v",int),varargany("w",0))),
  { .imp=NULL }
 };

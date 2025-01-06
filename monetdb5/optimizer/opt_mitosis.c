@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -67,13 +67,15 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		nr_aggrs += (p->argc > 2 && getModuleId(p) == aggrRef);
 		nr_maps += (isMapOp(p));
 
-		if (p->argc > 2 && getModuleId(p) == aggrRef
+		if ((getModuleId(p) == algebraRef &&
+		    getFunctionId(p) == groupedfirstnRef) ||
+		    (p->argc > 2 && getModuleId(p) == aggrRef
 			&& getFunctionId(p) != subcountRef && getFunctionId(p) != subminRef
 			&& getFunctionId(p) != submaxRef && getFunctionId(p) != subavgRef
 			&& getFunctionId(p) != subsumRef && getFunctionId(p) != subprodRef
 			&& getFunctionId(p) != countRef && getFunctionId(p) != minRef
 			&& getFunctionId(p) != maxRef && getFunctionId(p) != avgRef
-			&& getFunctionId(p) != sumRef && getFunctionId(p) != prodRef) {
+			&& getFunctionId(p) != sumRef && getFunctionId(p) != prodRef)) {
 			pieces = 0;
 			goto bailout;
 		}
@@ -148,7 +150,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	/*
 	 * The number of pieces should be based on the footprint of the
-	 * queryplan, such that preferrably it can be handled without
+	 * query plan, such that preferably it can be handled without
 	 * swapping intermediates.  For the time being we just go for pieces
 	 * that fit into memory in isolation.  A fictive rowcount is derived
 	 * based on argument types, such that all pieces would fit into

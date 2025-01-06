@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,6 +26,7 @@
 #else
 /* older GCC does have attributes, but not __has_attribute and not all
  * attributes that we use are known */
+#define __has_attribute__access__ 0
 #define __has_attribute__alloc_size__ 1
 #define __has_attribute__cold__ 1
 #define __has_attribute__const__ 1
@@ -42,8 +43,11 @@
 #define __has_attribute(attr)	__has_attribute##attr
 #endif
 #endif
+#if !__has_attribute(__access__)
+#define __access__(...)
+#endif
 #if !__has_attribute(__alloc_size__)
-#define __alloc_size__(a)
+#define __alloc_size__(...)
 #endif
 #if !__has_attribute(__cold__)
 #define __cold__
@@ -58,13 +62,17 @@
 #define __designated_init__
 #endif
 #if !__has_attribute(__format__)
-#define __format__(a,b,c)
+#define __format__(...)
 #endif
+/* attribute malloc with argument seems to have been introduced in gcc 13 */
 #if !__has_attribute(__malloc__)
 #define __malloc__
+#define __malloc__(...)
+#elif !defined(__GNUC__) || __GNUC__ < 13
+#define __malloc__(...)
 #endif
 #if !__has_attribute(__nonnull__)
-#define __nonnull__(a)
+#define __nonnull__(...)
 #endif
 #if !__has_attribute(__nonstring__)
 #define __nonstring__
@@ -76,9 +84,9 @@
 #define __returns_nonnull__
 #endif
 #if !__has_attribute(__visibility__)
-#define __visibility__(a)
+#define __visibility__(...)
 #elif defined(__CYGWIN__)
-#define __visibility__(a)
+#define __visibility__(...)
 #endif
 #if !__has_attribute(__warn_unused_result__)
 #define __warn_unused_result__
@@ -494,6 +502,24 @@ typedef struct MT_Lock {
 
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && (_DBG_LOCK_LOCKER(l), true))
 
+#if defined(__GNUC__) && defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+#define MT_lock_trytime(l, ms)						\
+	({								\
+		struct timespec ts;					\
+		clock_gettime(CLOCK_REALTIME, &ts);			\
+		ts.tv_nsec += (ms % 1000) * 1000000;			\
+		if (ts.tv_nsec >= 1000000000) {				\
+			ts.tv_nsec -= 1000000000;			\
+			ts.tv_sec++;					\
+		}							\
+		ts.tv_sec += (ms / 1000);				\
+		int ret = pthread_mutex_timedlock(&(l)->lock, &ts);	\
+		if (ret == 0)						\
+			_DBG_LOCK_LOCKER(l);				\
+		ret == 0;						\
+	})
+#endif
+
 #define MT_lock_set(l)						\
 	do {							\
 		_DBG_LOCK_COUNT_0(l);				\
@@ -506,6 +532,7 @@ typedef struct MT_Lock {
 		_DBG_LOCK_LOCKER(l);				\
 		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
+
 #define MT_lock_unset(l)				\
 	do {						\
 		_DBG_LOCK_UNLOCKER(l);			\
@@ -620,6 +647,11 @@ MT_rwlock_wrtry(MT_RWLock *l)
 
 typedef pthread_key_t MT_TLS_t;
 
+#endif
+
+#ifndef MT_lock_trytime
+/* simplistic way to try lock with timeout: just sleep */
+#define MT_lock_trytime(l, ms) (MT_lock_try(l) || (MT_sleep_ms(ms), MT_lock_try(l)))
 #endif
 
 gdk_export gdk_return MT_alloc_tls(MT_TLS_t *newkey);
