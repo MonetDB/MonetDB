@@ -67,7 +67,7 @@ fm_insert(visitor *v, sql_rel *rel)
 static sql_rel *
 fm_join(visitor *v, sql_rel *rel)
 {
-	if (list_empty(rel->exps)) {
+	if (list_empty(rel->exps) && is_dependent(rel)) {
 		bool needed = false;
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;

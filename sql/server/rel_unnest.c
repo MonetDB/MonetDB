@@ -468,13 +468,17 @@ rel_dependent_var(mvc *sql, sql_rel *l, sql_rel *r)
 		list *freevar = rel_freevar(sql, r);
 		if (freevar) {
 			node *n;
-			list *boundvar = rel_projections(sql, l, NULL, 1, 0);
 
 			for(n = freevar->h; n; n = n->next) {
 				sql_exp *e = n->data, *ne = NULL;
 				/* each freevar should be an e_column */
-				ne = exps_bind_nid(boundvar, e->nid);
-				if (ne) {
+				sql_rel *r = rel_bind_nid(sql, l, e);
+				if (r) {
+					ne = exps_bind_nid(r->exps, e->nid);
+					if (!ne && r->attr)
+						ne = exps_bind_nid(r->attr, e->nid);
+					assert(ne);
+					ne = exp_ref(sql, ne);
 					if (!res)
 						res = sa_list(sql->sa);
 					append(res, ne);

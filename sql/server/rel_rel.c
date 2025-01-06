@@ -1337,14 +1337,6 @@ _rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int int
 				r = rels->h->data;
 			if (r)
 				exps = _rel_projections(sql, r, tname, settname, intern, basecol);
-			/* for every other relation in the list */
-			// TODO: do we need the assertion here? for no-assert the loop is no-op
-			/*
-			for (node *n = rels->h->next; n; n = n->next) {
-				rexps = _rel_projections(sql, n->data, tname, settname, intern, basecol);
-				assert(list_length(exps) == list_length(rexps));
-			}
-			*/
 			/* it's a multi-union (expressions have to be the same in all the operands)
 			 * so we are ok only with the expressions of the first operand
 			 */
@@ -1404,10 +1396,10 @@ rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int inte
 	(e_column), in most cases this means go down the join tree and
 	find the base column.
  */
-static int
+static sql_rel *
 rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 {
-	int found = 0;
+	sql_rel *found = NULL;
 
 	if (mvc_highwater(sql)) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1426,7 +1418,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		if (!found && !list_empty(rel->attr)) {
 			assert(e->nid);
 			if (exps_bind_nid(rel->attr, e->nid))
-				found = 1;
+				found = rel;
 		}
 		break;
 	case op_semi:
@@ -1447,11 +1439,11 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		if (is_basetable(rel->op) && !rel->exps) {
 			assert(e->nid);
 			if (rel_base_has_nid(rel, e->nid))
-				found = 1;
+				found = rel;
 		} else if (rel->exps) {
 			assert(e->nid);
 			if (exps_bind_nid(rel->exps, e->nid))
-				found = 1;
+				found = rel;
 		}
 		break;
 	case op_insert:
@@ -1462,7 +1454,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_ddl:
 		break;
 	}
-	if (found)
+	if (path && found)
 		list_prepend(path, rel);
 	return found;
 }
@@ -1488,6 +1480,12 @@ rel_bind_path(mvc *sql, sql_rel *rel, sql_exp *e, list *path)
 	/* default the top relation */
 	append(path, rel);
 	return path;
+}
+
+sql_rel *
+rel_bind_nid(mvc *sql, sql_rel *rel, sql_exp *e)
+{
+	return rel_bind_path_(sql, rel, e, NULL);
 }
 
 static sql_rel *

@@ -3887,6 +3887,8 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			col->storage_type = _STRDUP(buf);
 			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, 0, 0, 0)) != LOG_OK)
 				return res;
+			if (sql_trans_create_sequence(tr, t->s, col->storage_type, 1, 1, lng_nil, 1, 1, false, true) != LOG_OK)
+				return res;
 		}
 		/* All nested types, need the internal columns for the field contents */
 		for (node *n = col->type.type->d.fields->h; n; n = n->next) {
@@ -4716,6 +4718,8 @@ sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
 static int
 sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 {
+	if (!seq)
+		return -1;
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *sysseqs = find_sql_table(tr, syss, "sequences");
@@ -4848,7 +4852,9 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if ((res = sys_drop_default_object(tr, col, drop_action)))
 		return res;
 
-	if (col->type.multiset && col->storage_type && (res = sql_trans_drop_table(tr, col->t->s, col->storage_type, drop_action)))
+	if (col->type.multiset && col->storage_type &&
+			((res = sql_trans_drop_table(tr, col->t->s, col->storage_type, drop_action)) ||
+			 (res = sql_trans_drop_sequence(tr, col->t->s, find_sql_sequence(tr, col->t->s, col->storage_type), drop_action))))
 		return res;
 
 	col->base.deleted = 1;

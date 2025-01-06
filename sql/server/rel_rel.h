@@ -77,6 +77,7 @@ extern sql_rel *rel_select_copy(allocator *sa, sql_rel *l, list *exps);
 extern sql_exp *rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname);
 extern sql_exp *rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, int f );
 extern sql_exp *rel_first_column(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_bind_nid(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern sql_rel *rel_inplace_basetable(sql_rel *rel, sql_rel *bt);
 extern sql_rel *rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps);
