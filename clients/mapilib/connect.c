@@ -533,7 +533,7 @@ mapi_handshake(Mapi mid)
 	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
 	if (!*username || !*password) {
-		mapi_setError(mid, "username and password must be set",
+		mapi_setError(mid, "both username and password must be set",
 				__func__, MERROR);
 		close_connection(mid);
 		return mid->error;
