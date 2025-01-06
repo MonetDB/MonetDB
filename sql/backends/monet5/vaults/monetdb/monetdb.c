@@ -26,16 +26,27 @@
 #include "rel_bin.h"
 #include "sql_storage.h"
 #include "mapi.h"
+#include "msettings.h"
 
 #include "rel_remote.h"
 #include "rel_basetable.h"
 #include <unistd.h>
+
+/* Return the concatenation of the arguments,
+ * with quotes doubled ONLY IN THE ODD positions.
+ * The list of arguments is terminated with a NULL.
+ *
+ * For example, { "SELECT R'",        "it's",        "' AS bla",        NULL }
+ * becomes "SELECT R'it''s' AS bla"
+ */
+static char *sql_template(allocator *sa, const char **parts);
 
 typedef struct mdb_loader_t {
 	char *uri;
 	char *sname;
 	char *tname;
 } mdb_loader_t;
+
 
 /*
  * returns an error string (static or via tmp sa_allocator allocated), NULL on success
@@ -49,44 +60,68 @@ typedef struct mdb_loader_t {
 static str
 monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *aname)
 {
-	char *uric = sa_strdup(sql->sa, uri);
-	char *tname, *sname = NULL;
+	str ret; // intentionally uninitialized to provoke control flow warnings
 
-	if (!mapiuri_valid(uric))
-		return sa_message(sql->sa, "monetdb_loader" "uri invalid '%s'\n", uri);
+	msettings *mp = msettings_create();
+	char *uri_error = NULL;
+	Mapi dbh = NULL;
+	MapiHdl hdl = NULL;
 
-	tname = strrchr(uric, '/');
-	if (tname) {
-		tname[0] = 0;
-		sname = strrchr(uric, '/');
+	if (
+		!mp
+		|| msetting_set_string(mp, MP_USER, "monetdb") != NULL
+		|| msetting_set_string(mp, MP_PASSWORD, "monetdb") != NULL
+	) {
+		ret = sa_message(sql->sa, "could not allocate msettings");
+		goto end;
 	}
-	if (!sname)
-		return sa_message(sql->sa, "monetdb_loader" "schema and/or table missing in '%s'\n", uri);
 
-	sname[0] = 0; /* stripped the schema/table name */
-	sname++;
-	tname++;
-	char buf[256];
-	const char *query = "select c.name, c.type, c.type_digits, c.type_scale from sys.schemas s, sys._tables t, sys._columns c where s.name = '%s' and s.id = t.schema_id and t.name = '%s' and t.id = c.table_id order by c.number;";
-	if (snprintf(buf, 256, query, sname, tname) < 0)
-		return RUNTIME_LOAD_ERROR;
+	if (!msettings_parse_url(mp, uri, &uri_error) || !msettings_validate(mp, &uri_error)) {
+		ret = sa_message(sql->sa, "uri '%s' invalid: %s\n", uri, uri_error);
+		goto end;
+	}
 
-	/* setup mapi connection */
-	/* TODO get username password from uri! */
-	Mapi dbh = mapi_mapiuri(uric, "monetdb", "monetdb", "sql");
+	const char *sname = msetting_string(mp, MP_TABLESCHEMA);   // not MP_SCHEMA, that's something else
+	const char *tname = msetting_string(mp, MP_TABLE);
+	assert(sname != NULL && tname != NULL); // msetting_string() never returns NULL, can return ""
+	if (!sname[0] || !tname[0]) {
+		ret = sa_message(sql->sa, "monetdb_loader" "schema and/or table missing in '%s'\n", uri);
+		goto end;
+	}
+
+	/* set up mapi connection */
+	dbh = mapi_settings(mp);
+	if (dbh) {
+		/* mp has moved into dhb, will be free'd with it*/
+		mp = NULL;
+	} else {
+		ret = MAL_MALLOC_FAIL;
+		goto end;
+	}
 	if (mapi_reconnect(dbh) < 0) {
-		printf("%s\n", mapi_error_str(dbh));
-		return RUNTIME_LOAD_ERROR;
+		ret = sa_strdup(sql->sa, mapi_error_str(dbh));
+		goto end;
 	}
 	mapi_cache_limit(dbh, 100);
-	MapiHdl hdl;
-	if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh)) {
-		printf("%s\n", mapi_error_str(dbh));
-		return RUNTIME_LOAD_ERROR;
+
+	/* construct the query with proper quoting */
+	char *query;
+	query = sql_template(sql->sa, (const char*[]) {
+		"select c.name, c.type, c.type_digits, c.type_scale from sys.schemas s, sys._tables t, sys._columns c where s.name = R'",
+		sname,
+		"' and s.id = t.schema_id and t.name = R'",
+		tname,
+		"' and t.id = c.table_id order by c.number;",
+		NULL
+	});
+
+	if ((hdl = mapi_query(dbh, query)) == NULL || mapi_error(dbh)) {
+		ret = sa_strdup(sql->sa, mapi_error_str(dbh));
+		goto end;
 	}
 
 	if (!aname)
-		aname = tname;
+		aname = sa_strdup(sql->sa, tname);
 
 	f->tname = sa_strdup(sql->sa, aname);
 
@@ -108,8 +143,10 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 			t = sql_bind_subtype(sql->sa, tpe, d, 0);
 		} else
 			t = sql_bind_subtype(sql->sa, tpe, 0, 0);
-		if (!t)
-			return sa_message(sql->sa, "monetdb_loader" "type %s not found\n", tpe);
+		if (!t) {
+			ret = sa_message(sql->sa, "monetdb_loader" "type %s not found\n", tpe);
+			goto end;
+		}
 		sql_exp *ne = exp_column(sql->sa, f->tname, nme, t, CARD_MULTI, 1, 0, 0);
 		set_basecol(ne);
 		ne->alias.label = -(sql->nid++);
@@ -117,20 +154,57 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 		list_append(typelist, t);
 		list_append(nameslist, nme);
 	}
-	mapi_close_handle(hdl);
-	mapi_destroy(dbh);
 
 	f->res = typelist;
 	f->coltypes = typelist;
 	f->colnames = nameslist;
 
 	mdb_loader_t *r = (mdb_loader_t *)sa_alloc(sql->sa, sizeof(mdb_loader_t));
-	r->sname = sname;
-	r->tname = tname;
-	r->uri = uric;
+	r->sname = sa_strdup(sql->sa, sname);
+	r->tname = sa_strdup(sql->sa, tname);
+	r->uri = sa_strdup(sql->sa, uri);
 	f->sname = (char*)r; /* pass mdb_loader */
 	return NULL;
+
+end:
+	if (hdl)
+		mapi_close_handle(hdl);
+	if (dbh)
+		mapi_destroy(dbh);
+	msettings_destroy(mp);
+	free(uri_error);		// msettings_parse_url() malloc's the error message
+	return ret;
 }
+
+static char *
+sql_template(allocator *sa, const char **parts)
+{
+	int nparts = 0;
+	while (parts[nparts] != NULL)
+		nparts++;
+
+	size_t max_length = 0;
+	for (int i = 0; i < nparts; i++) {
+		size_t length = strlen(parts[i]);
+		if (i % 2 == 1)
+			length += length;
+		max_length += length;
+	}
+	char *result = sa_alloc(sa, max_length + 1);
+
+	char *w = result;
+	for (int i = 0; i < nparts; i++) {
+		for (const char *r = parts[i]; *r; r++) {
+			*w++ = *r;
+			if (*r == '\'' && i % 2 == 1)
+				*w++ = *r;  // double that quote
+		}
+	}
+
+	assert(w <= result + max_length);
+	return result;
+}
+
 
 static void *
 monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
