@@ -752,7 +752,6 @@ const char *msetting_parm_name(const msettings *mp, mparm parm);
 msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
 int msetting_parse_bool(const char *text);
 msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
-msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
 msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
 msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
 msettings_error msetting_set_string(msettings *mp, mparm parm, const char *value) __attribute__((__nonnull__(3)));

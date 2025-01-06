@@ -231,9 +231,6 @@ struct msettings {
 	struct string client_remark;
 	struct string dummy_end_string;
 
-	char **unknown_parameters;
-	size_t nr_unknown;
-
 	bool lang_is_mal;
 	bool lang_is_sql;
 	long user_generation;
@@ -259,9 +256,6 @@ const msettings msettings_default_values = {
 	.sockdir = { "/tmp", false },
 	.binary = { "on", false },
 
-	.unknown_parameters = NULL,
-	.nr_unknown = 0,
-
 	.lang_is_mal = false,
 	.lang_is_sql = true,
 	.unix_sock_name_buffer = NULL,
@@ -284,17 +278,14 @@ msettings *msettings_create(void)
 msettings *msettings_clone(const msettings *orig)
 {
 	msettings *mp = malloc(sizeof(*mp));
-	char **unknowns = orig->nr_unknown > 0 ? calloc(2 * orig->nr_unknown, sizeof(char*)) : NULL;
 	const char *namebuf = orig->unix_sock_name_buffer;
 	char *cloned_name_buffer = namebuf ? strdup(namebuf) : NULL;
-	if (!mp || (orig->nr_unknown > 0 && !unknowns) || (namebuf && !cloned_name_buffer)) {
+	if (!mp || (namebuf && !cloned_name_buffer)) {
 		free(mp);
-		free(unknowns);
 		free(cloned_name_buffer);
 		return NULL;
 	}
 	*mp = *orig;
-	mp->unknown_parameters = unknowns;
 	mp->unix_sock_name_buffer = cloned_name_buffer;
 
 	// now we have to very carefully duplicate the strings.
@@ -312,22 +303,12 @@ msettings *msettings_clone(const msettings *orig)
 		p++;
 	}
 
-	for (size_t i = 0; i < 2 * mp->nr_unknown; i++) {
-		assert(orig->unknown_parameters[i]);
-		char *u = strdup(orig->unknown_parameters[i]);
-		if (u == NULL)
-			goto bailout;
-		mp->unknown_parameters[i] = u;
-	}
-
 	return mp;
 
 bailout:
 	for (struct string *q = start; q < p; q++)
 		if (q->must_free)
 			free(q->str);
-	for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
-		free(mp->unknown_parameters[i]);
 	free(mp->unix_sock_name_buffer);
 	free(mp);
 	return NULL;
@@ -342,13 +323,6 @@ msettings_reset(msettings *mp)
 	for (struct string *p = start; p < end; p++) {
 		if (p->must_free)
 			free(p->str);
-	}
-
-	// free unknown parameters
-	if (mp->nr_unknown) {
-		for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
-			free(mp->unknown_parameters[i]);
-		free(mp->unknown_parameters);
 	}
 
 	// free the buffer
@@ -374,11 +348,6 @@ msettings_destroy(msettings *mp)
 		if (p->must_free)
 			free(p->str);
 	}
-	for (size_t i = 0; i < mp->nr_unknown; i++) {
-		free(mp->unknown_parameters[2 * i]);
-		free(mp->unknown_parameters[2 * i + 1]);
-	}
-	free(mp->unknown_parameters);
 	free(mp->unix_sock_name_buffer);
 	free(mp);
 
@@ -599,31 +568,6 @@ msetting_as_string(const msettings *mp, mparm parm)
 	}
 }
 
-msettings_error
-msetting_set_ignored(msettings *mp, const char *key, const char *value)
-{
-	char *my_key = strdup(key);
-	char *my_value = strdup(value);
-
-	size_t n = mp->nr_unknown;
-	size_t new_size = (2 * n + 2) * sizeof(char*);
-	char **new_unknowns = realloc(mp->unknown_parameters, new_size);
-
-	if (!my_key || !my_value || !new_unknowns) {
-		free(my_key);
-		free(my_value);
-		free(new_unknowns);
-		return MALLOC_FAILED;
-	}
-
-	new_unknowns[2 * n] = my_key;
-	new_unknowns[2 * n + 1] = my_value;
-	mp->unknown_parameters = new_unknowns;
-	mp->nr_unknown += 1;
-
-	return NULL;
-}
-
 /* store named parameter */
 msettings_error
 msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value)
@@ -633,7 +577,7 @@ msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *
 		return format_error(mp, "%s: unknown parameter", key);
 
 	if (parm == MP_IGNORE)
-		return msetting_set_ignored(mp, key, value);
+		return NULL;
 
 	if (!allow_core && mparm_is_core(parm))
 		return format_error(mp, "%s: parameter not allowed here", msetting_parm_name(mp, parm));

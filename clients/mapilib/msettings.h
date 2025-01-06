@@ -128,6 +128,9 @@ mapi_export bool msettings_malloc_failed(msettings_error err);
 
 /* returns NULL if could not allocate */
 mapi_export msettings *msettings_create(void);
+
+mapi_export msettings *msettings_create_with();
+
 mapi_export msettings *msettings_clone(const msettings *mp);
 mapi_export void msettings_reset(msettings *mp);
 mapi_export const msettings *msettings_default;
@@ -153,9 +156,6 @@ mapi_export msettings_error msetting_set_bool(msettings *mp, mparm parm, bool va
 /* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
 mapi_export msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
 mapi_export char *msetting_as_string(const msettings *mp, mparm parm);
-
-/* store ignored parameter */
-mapi_export msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
 
 /* store named parameter */
 mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
