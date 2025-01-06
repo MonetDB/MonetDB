@@ -924,10 +924,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 
 	if (!sname && strcmp(fname, "proto_loader") == 0) {
 		rel = rel_proto_loader(sql, exps, tl, tname);
-		if (!rel) {
-			/* no supported protocol found in uri, try file_loader */
-			rel = rel_file_loader(sql, exps, tl, tname);
-		}
 		if (!rel)
 			return NULL;
 	} else if (!sname && strcmp(fname, "file_loader") == 0) {
