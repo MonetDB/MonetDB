@@ -160,16 +160,14 @@ mapi_export char *msetting_as_string(const msettings *mp, mparm parm);
 /* store named parameter */
 mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
 
-/* update the msettings from the URL. set *error_buffer to NULL and return true
- * if success, set *error_buffer to malloc'ed error message and return false on failure.
- * if return value is true but *error_buffer is NULL, malloc failed. */
-mapi_export bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
+/* update the msettings from the URL. */
+mapi_export msettings_error msettings_parse_url(msettings *mp, const char *url);
 
 /* 1 = true, 0 = false, -1 = could not parse */
 mapi_export int msetting_parse_bool(const char *text);
 
 /* return an error message if the validity rules are not satisfied */
-mapi_export bool msettings_validate(msettings *mp, char **errmsg);
+mapi_export msettings_error msettings_validate(msettings *mp);
 
 
 /* virtual parameters */

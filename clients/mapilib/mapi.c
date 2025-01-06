@@ -1923,11 +1923,9 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		return mid;
 	}
 
-	char *error_message = NULL;
-	if (!msettings_parse_url(mid->settings, url, &error_message)) {
-		char *msg = error_message ? error_message : "malloc failed";
-		mapi_setError(mid, msg, __func__, MERROR);
-		free(error_message);
+	const char *error_message = msettings_parse_url(mid->settings, url);
+	if (error_message) {
+		mapi_setError(mid, error_message, __func__, MERROR);
 		return mid;
 	}
 

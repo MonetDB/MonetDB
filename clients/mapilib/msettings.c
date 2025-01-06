@@ -38,7 +38,6 @@ msettings_malloc_failed(msettings_error err)
 }
 
 
-
 int msetting_parse_bool(const char *text)
 {
 	static struct { const char *word; bool value; } variants[] = {
@@ -298,10 +297,7 @@ msettings_destroy(msettings *mp)
 	return NULL;
 }
 
-static const char *format_error(msettings *mp, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
-static const char *
+const char *
 format_error(msettings *mp, const char *fmt, ...)
 {
 	va_list ap;
@@ -592,11 +588,11 @@ validate_identifier(const char *name)
 	return true;
 }
 
-bool
-msettings_validate(msettings *mp, char **errmsg)
+msettings_error
+msettings_validate(msettings *mp)
 {
 	if (mp->validated)
-		return true;
+		return NULL;
 
 	// 1. The parameters have the types listed in the table in [Section
 	//    Parameters](#parameters).
@@ -604,11 +600,10 @@ msettings_validate(msettings *mp, char **errmsg)
 
 	// 2. At least one of **sock** and **host** must be empty.
 	if (nonempty(mp, MP_SOCK) && nonempty(mp, MP_HOST)) {
-		*errmsg = allocprintf(
+		return format_error(mp,
 			"With sock='%s', host must be 'localhost', not '%s'",
 			msetting_string(mp, MP_SOCK),
 			msetting_string(mp, MP_HOST));
-		return false;
 	}
 
 	// 3. The string parameter **binary** must either parse as a boolean or as a
@@ -618,28 +613,25 @@ msettings_validate(msettings *mp, char **errmsg)
 	long level = msettings_connect_binary(mp);
 	mp->validated = false;
 	if (level < 0) {
-		*errmsg = allocprintf("invalid value '%s' for parameter 'binary'", msetting_string(mp, MP_BINARY));
-		return false;
+		return format_error(mp, "invalid value '%s' for parameter 'binary'", msetting_string(mp, MP_BINARY));
 	}
 
 	// 4. If **sock** is not empty, **tls** must be 'off'.
 	if (nonempty(mp, MP_SOCK) && msetting_bool(mp, MP_TLS)) {
-		*errmsg = allocprintf("TLS cannot be used with Unix domain sockets");
-		return false;
+		return format_error(mp, "TLS cannot be used with Unix domain sockets");
 	}
 
 	// 5. If **certhash** is not empty, it must be of the form `sha256:hexdigits`
 	//    where hexdigits is a non-empty sequence of 0-9, a-f, A-F and colons.
 	const char *certhash_msg = validate_certhash(mp);
 	if (certhash_msg) {
-		*errmsg = strdup(certhash_msg);
-		return false;
+		return format_error(mp, "%s", certhash_msg);
 	}
+
 	// 6. If **tls** is 'off', **cert** and **certhash** must be 'off' as well.
 	if (nonempty(mp, MP_CERT) || nonempty(mp, MP_CERTHASH))
 		if (!msetting_bool(mp, MP_TLS)) {
-			*errmsg = strdup("'cert' and 'certhash' can only be used with monetdbs://");
-			return false;
+			return format_error(mp, "'cert' and 'certhash' can only be used with monetdbs://");
 		}
 
 	// 7. Parameters **database**, **tableschema** and **table** must consist only of
@@ -647,32 +639,27 @@ msettings_validate(msettings *mp, char **errmsg)
 	//    start with a dash.
 	const char *database = msetting_string(mp, MP_DATABASE);
 	if (!validate_identifier(database)) {
-		*errmsg = allocprintf("invalid database name '%s'", database);
-		return false;
+		return format_error(mp, "invalid database name '%s'", database);
 	}
 	const char *tableschema = msetting_string(mp, MP_TABLESCHEMA);
 	if (!validate_identifier(tableschema)) {
-		*errmsg = allocprintf("invalid schema name '%s'", tableschema);
-		return false;
+		return format_error(mp, "invalid schema name '%s'", tableschema);
 	}
 	const char *table = msetting_string(mp, MP_TABLE);
 	if (!validate_identifier(table)) {
-		*errmsg = allocprintf("invalid table name '%s'", table);
-		return false;
+		return format_error(mp, "invalid table name '%s'", table);
 	}
 
 	// 8. Parameter **port** must be -1 or in the range 1-65535.
 	long port = msetting_long(mp, MP_PORT);
 	bool port_ok = (port == -1 || (port >= 1 && port <= 65535));
 	if (!port_ok) {
-		*errmsg = allocprintf("invalid port '%ld'", port);
-		return false;
+		return format_error(mp, "invalid port '%ld'", port);
 	}
 
 	// 9. If **clientcert** is set, **clientkey** must also be set.
 	if (nonempty(mp, MP_CLIENTCERT) && empty(mp, MP_CLIENTKEY)) {
-		*errmsg = allocprintf("clientcert can only be set together with clientkey");
-		return false;
+		return format_error(mp, "clientcert can only be set together with clientkey");
 	}
 
 	// compute this here so the getter function can take const msettings*
@@ -684,7 +671,7 @@ msettings_validate(msettings *mp, char **errmsg)
 		return false;
 
 	mp->validated = true;
-	return true;
+	return NULL;
 }
 
 bool

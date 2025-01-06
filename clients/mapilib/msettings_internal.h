@@ -76,7 +76,8 @@ struct msettings {
 };
 
 
-
+const char *format_error(msettings *mp, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
 
 
 #endif

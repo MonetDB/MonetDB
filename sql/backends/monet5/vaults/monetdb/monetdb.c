@@ -63,7 +63,7 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 	str ret; // intentionally uninitialized to provoke control flow warnings
 
 	msettings *mp = msettings_create();
-	char *uri_error = NULL;
+	const char *uri_error = NULL;
 	Mapi dbh = NULL;
 	MapiHdl hdl = NULL;
 
@@ -76,7 +76,10 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 		goto end;
 	}
 
-	if (!msettings_parse_url(mp, uri, &uri_error) || !msettings_validate(mp, &uri_error)) {
+	if (
+		(uri_error = msettings_parse_url(mp, uri))
+		|| (uri_error = msettings_validate(mp))
+	) {
 		ret = sa_message(sql->sa, "uri '%s' invalid: %s\n", uri, uri_error);
 		goto end;
 	}
@@ -172,7 +175,6 @@ end:
 	if (dbh)
 		mapi_destroy(dbh);
 	msettings_destroy(mp);
-	free(uri_error);		// msettings_parse_url() malloc's the error message
 	return ret;
 }
 

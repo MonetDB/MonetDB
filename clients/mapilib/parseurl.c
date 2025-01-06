@@ -26,24 +26,24 @@
 // Most scanner-related functions return 'false' on failure, 'true' on success.
 // Some return a character pointer, NULL on failure, non-NULL on success.
 typedef struct scanner {
-	char *buffer;				// owned buffer with the scanned text in it
-	char c;						// character we're currently looking at
-	char *p;					// pointer to where we found c (may have been updated since)
-	char error_message[256];	// error message, or empty string
+	char *buffer;			// owned buffer with the scanned text in it
+	char c;				// character we're currently looking at
+	char *p;			// pointer to where we found c (may have been updated since)
+	msettings *mp;			// this is where we leave the error messages
 } scanner;
 
 
 
 
 static bool
-initialize(scanner *sc, const char *url)
+initialize(scanner *sc, msettings *mp, const char *url)
 {
 	sc->buffer = strdup(url);
 	if (!sc->buffer)
 		return false;
 	sc->p = &sc->buffer[0];
 	sc->c = *sc->p;
-	sc->error_message[0] = '\0';
+	sc->mp = mp;
 	return true;
 }
 
@@ -56,7 +56,7 @@ deinitialize(scanner *sc)
 static bool
 has_failed(const scanner *sc)
 {
-	return sc->error_message[0] != '\0';
+	return sc->mp->error_message[0] != '\0';
 }
 
 static char
@@ -79,11 +79,11 @@ complain(scanner *sc, const char *fmt, ...)
 	if (!has_failed(sc)) {
 		va_list ap;
 		va_start(ap, fmt);
-		vsnprintf(sc->error_message, sizeof(sc->error_message), fmt, ap);
+		vsnprintf(sc->mp->error_message, sizeof(sc->mp->error_message), fmt, ap);
 		va_end(ap);
 		if (!has_failed(sc)) {
 			// error message was empty, need non-empty so we know an error has occurred
-			strcpy(sc->error_message, "?");
+			strcpy(sc->mp->error_message, "?");
 		}
 	}
 
@@ -565,10 +565,8 @@ parse(msettings *mp, scanner *sc)
 	return true;
 }
 
-/* update the msettings from the URL. set *error_buffer to NULL and return true
- * if success, set *error_buffer to malloc'ed error message and return false on failure.
- * if return value is true but *error_buffer is NULL, malloc failed. */
-bool msettings_parse_url(msettings *mp, const char *url, char **error_out)
+/* update the msettings from the URL. */
+msettings_error msettings_parse_url(msettings *mp, const char *url)
 {
 	bool ok;
 	scanner sc;
@@ -576,19 +574,14 @@ bool msettings_parse_url(msettings *mp, const char *url, char **error_out)
 	// This function is all about setting up the scanner and copying
 	// error messages out of it.
 
-	if (error_out)
-		*error_out = NULL;
+	if (!initialize(&sc, mp, url))
+		return format_error(mp, "%s", MALLOC_FAILED);
 
-	if (!initialize(&sc, url))
-		return false;
-
+	mp->error_message[0] = '\0';
 	ok = parse(mp, &sc);
-	if (!ok) {
-		assert(sc.error_message[0] != '\0');
-		if (error_out)
-			*error_out = strdup(sc.error_message);
-	}
+	if (!ok)
+		assert(mp->error_message[0] != '\0');
 
 	deinitialize(&sc);
-	return ok;
+	return ok ? NULL : mp->error_message;
 }

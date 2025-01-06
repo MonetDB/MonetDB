@@ -31,33 +31,26 @@ static msettings *mp = NULL;
 static bool
 handle_parse_command(const char *location, char *url)
 {
-	char *errmsg = NULL;
-	bool ok = msettings_parse_url(mp, url, &errmsg);
-	if (!ok) {
-		assert(errmsg);
-		fprintf(stderr, "%s: %s\n", location, errmsg);
-		free(errmsg);
-		return false;
-	}
-	return true;
+	const char *errmsg = msettings_parse_url(mp, url);
+	if (!errmsg)
+		return true;
+
+	fprintf(stderr, "%s: %s\n", location, errmsg);
+	return false;
 }
 
 static bool
 handle_accept_command(const char *location, char *url)
 {
-	char *errmsg = NULL;
-	bool ok = msettings_parse_url(mp, url, &errmsg);
-	if (!ok) {
-		assert(errmsg);
+	const char *errmsg = msettings_parse_url(mp, url);
+	if (errmsg) {
 		fprintf(stderr, "%s: %s\n", location, errmsg);
-		free(errmsg);
 		return false;
 	}
 
-	char *msg = NULL;
-	if (!msettings_validate(mp, &msg)) {
+	const char *msg = msettings_validate(mp);
+	if (msg != NULL) {
 		fprintf(stderr, "%s: URL invalid: %s\n", location, msg);
-		free(msg);
 		return false;
 	}
 	return true;
@@ -66,13 +59,11 @@ handle_accept_command(const char *location, char *url)
 static bool
 handle_reject_command(const char *location, char *url)
 {
-	bool ok = msettings_parse_url(mp, url, NULL);
-	if (!ok)
+	const char *errmsg = msettings_parse_url(mp, url);
+	if (errmsg)
 		return true;
 
-	char *msg = NULL;
-	if (!msettings_validate(mp, &msg)) {
-		free(msg);
+	if (msettings_validate(mp) != NULL) {
 		return true;
 	}
 
@@ -93,11 +84,10 @@ handle_set_command(const char *location, const char *key, const char *value)
 
 static bool
 ensure_valid(const char *location) {
-	char *msg = NULL;
-	if (msettings_validate(mp, &msg))
+	const char *msg = msettings_validate(mp);
+	if (msg == NULL)
 		return true;
 	fprintf(stderr, "%s: invalid parameter state: %s\n", location, msg);
-	free(msg);
 	return false;
 }
 
@@ -209,9 +199,7 @@ handle_expect_command(const char *location, char *key, char *value)
 		}
 		bool expected_valid = x > 0;
 
-		char * msg = NULL;
-		bool actually_valid = msettings_validate(mp, &msg);
-		free(msg);
+		bool actually_valid = msettings_validate(mp) == NULL;
 		if (actually_valid != expected_valid) {
 			fprintf(stderr, "%s: expected '%s', found '%s'\n",
 				location,
