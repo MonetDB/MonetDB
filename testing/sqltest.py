@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -107,10 +107,10 @@ def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
     min_size = min(len(a), len(b))
     s = difflib.SequenceMatcher()
     for i in range(min_size):
-        s.set_seq1(a[i].replace('\t', '').replace(' ', ''))
-        s.set_seq2(b[i].replace('\t', '').replace(' ', ''))
+        s.set_seqs(a[i].replace('\t', '').replace(' ', ''),
+                   b[i].replace('\t', '').replace(' ', ''))
         # should be high matching ratio
-        if s.quick_ratio() < ratio:
+        if s.quick_ratio() < 1.0:
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
@@ -438,6 +438,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                 msg+='\n'.join(diff)
                 self.assertion_errors.append(AssertionError(msg))
                 self.fail(msg)
+        if os.getenv('MTEST_APPROVE'):
+            with open(fout+'.newtest', 'w') as f:
+                f.write(self.output or '')
         return self
 
     def assertMatchStableError(self, ferr, ignore_err_messages=False, ratio=0.95):
@@ -456,6 +459,11 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             self.fail(msg)
+        if os.getenv('MTEST_APPROVE'):
+            with open(ferr+'.newtest', 'w') as f:
+                # normalize error message: use fixed host and port
+                import re
+                f.write(re.sub('^MAPI  = (.*)@.*:.*$', r'MAPI  = \1@localhost:50000', self.test_run_error or '', flags=re.M))
         return self
 
     def assertDataResultMatch(self, expected, ratio=0.95):
@@ -579,6 +587,9 @@ class SQLDump():
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             print(msg, file=err_file)
+        if os.getenv('MTEST_APPROVE'):
+            with open(fout+'.newtest', 'w') as f:
+                f.write(self.data or '')
 
 class SQLTestCase():
     def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
@@ -673,7 +684,7 @@ class SQLTestCase():
         else:
             cmd = 'sql'
             # TODO should more options be allowed here
-            args = ['-lsql', '-D']
+            args = ['-lsql', '-D', '-z']
         try:
             with process.client(cmd, **kwargs, args=args, stdout=process.PIPE, stderr=process.PIPE) as p:
                 dump, err = p.communicate()

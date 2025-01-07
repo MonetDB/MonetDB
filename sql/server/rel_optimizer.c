@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -19,6 +19,7 @@
 #include "rel_propagate.h"
 #include "rel_statistics.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 
 static sql_rel *
 rel_properties(visitor *v, sql_rel *rel)
@@ -28,6 +29,7 @@ rel_properties(visitor *v, sql_rel *rel)
 	/* Don't flag any changes here! */
 	gp->cnt[(int)rel->op]++;
 	gp->needs_distinct |= need_distinct(rel);
+	gp->recursive |= is_recursive(rel);
 	if (gp->instantiate && is_basetable(rel->op)) {
 		mvc *sql = v->sql;
 		sql_table *t = (sql_table *) rel->l;
@@ -677,6 +679,7 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
+		sql->recursive = gp.recursive;
 		rel = run_optimizer_set(&v, sql->runs, rel, &gp, pre_sql_optimizers);
 	}
 #ifndef NDEBUG

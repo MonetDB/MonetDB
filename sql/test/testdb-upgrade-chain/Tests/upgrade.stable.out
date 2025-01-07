@@ -48,3 +48,244 @@ SELECT d.id, i1.obj_type, i1.name,
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
 update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('ids', 'dependencies_vw');
 
+Running database upgrade commands:
+update sys.functions set func = replace(func, E'\n external', E' ordered\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');
+update sys.functions set func = replace(func, E'\n\texternal', E' ordered\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');
+update sys.functions set func = replace(func, E'\nexternal', E' ordered\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');
+update sys.functions set func = replace(func, E' external', E' with order\n external') where name = 'group_concat' and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');
+drop function sys.dump_database(boolean) cascade;
+drop view sys.dump_functions cascade;
+drop view sys.dump_comments cascade;
+drop view sys.describe_comments cascade;
+drop view sys.describe_privileges cascade;
+drop view sys.fully_qualified_functions cascade;
+drop view sys.describe_functions cascade;
+CREATE VIEW sys.fully_qualified_functions AS
+ SELECT
+  f.id id,
+  ft.function_type_keyword tpe,
+  sys.fqn(s.name, f.name) || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',' order by a.number)  || ')' nme
+ FROM sys.schemas s, sys.function_types ft, sys.functions f JOIN sys.args a ON f.id = a.func_id
+ WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+ group by f.id, ft.function_type_keyword, f.name, s.name
+ UNION
+ SELECT f.id id,
+  ft.function_type_keyword tpe,
+  sys.fqn(s.name, f.name) || '()' nme
+ FROM sys.schemas s, sys.function_types ft, sys.functions f
+ WHERE s.id= f.schema_id AND f.type = ft.function_type_id and f.id not in ( select func_id from sys.args )
+ group by f.id, ft.function_type_keyword, f.name, s.name;
+CREATE VIEW sys.describe_comments AS
+ SELECT o.id AS id, o.tpe AS tpe, o.nme AS fqn, cm.remark AS rem
+ FROM (
+  SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas WHERE NOT system
+  UNION ALL
+  SELECT t.id, ifthenelse(ts.table_type_name = 'VIEW', 'VIEW', 'TABLE'), sys.FQN(s.name, t.name)
+    FROM sys.schemas s JOIN sys._tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
+   WHERE NOT t.system
+  UNION ALL
+  SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys._tables t, sys.schemas s WHERE NOT t.system AND c.table_id = t.id AND t.schema_id = s.id
+  UNION ALL
+  SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE NOT t.system AND idx.table_id = t.id AND t.schema_id = s.id
+  UNION ALL
+  SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
+  UNION ALL
+  SELECT f.id, ft.function_type_keyword, qf.nme FROM sys.functions f, sys.function_types ft, sys.schemas s, sys.fully_qualified_functions qf
+   WHERE NOT f.system AND f.type = ft.function_type_id AND f.schema_id = s.id AND qf.id = f.id
+  ) AS o(id, tpe, nme)
+ JOIN sys.comments cm ON cm.id = o.id;
+CREATE VIEW sys.describe_privileges AS
+ SELECT
+  CASE
+   WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN
+    'COPY FROM'
+   WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN
+    'COPY INTO'
+   ELSE
+    o.nme
+  END o_nme,
+  coalesce(o.tpe, 'GLOBAL') o_tpe,
+  pc.privilege_code_name p_nme,
+  a.name a_nme,
+  g.name g_nme,
+  p.grantable grantable
+ FROM
+  sys.privileges p LEFT JOIN
+  (
+  SELECT t.id, s.name || '.' || t.name , 'TABLE'
+   from sys.schemas s, sys.tables t where s.id = t.schema_id
+  UNION ALL
+   SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
+   FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
+  UNION ALL
+   SELECT f.id, f.nme, f.tpe
+   FROM sys.fully_qualified_functions f
+  ) o(id, nme, tpe) ON o.id = p.obj_id,
+  sys.privilege_codes pc,
+  auths a, auths g
+ WHERE
+  p.privileges = pc.privilege_code_id AND
+  p.auth_id = a.id AND
+  p.grantor = g.id;
+CREATE VIEW sys.describe_functions AS
+ WITH func_args(func_id, func_arg) AS
+ (
+  SELECT
+   func_id,
+   group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ' order by number)
+  FROM sys.args
+  WHERE inout = 1
+  group by func_id
+ ),
+ func_rets(func_id, func_ret, func_ret_type) AS
+ (
+  SELECT
+   func_id,
+   group_concat(sys.dq(name) || ' ' || sys.describe_type(type, type_digits, type_scale),', ' order by number),
+   group_concat(sys.describe_type(type, type_digits, type_scale),', ' order by number)
+  FROM sys.args
+  WHERE inout = 0
+  group by func_id
+ )
+ SELECT
+  f.id o,
+  s.name sch,
+  f.name fun,
+  CASE WHEN f.language IN (1, 2) THEN f.func ELSE 'CREATE ' || ft.function_type_keyword || ' ' || sys.FQN(s.name, f.name) || '(' || coalesce(fa.func_arg, '') || ')' || CASE WHEN f.type = 5 THEN ' RETURNS TABLE (' || coalesce(fr.func_ret, '') || ')' WHEN f.type IN (1,3) THEN ' RETURNS ' || fr.func_ret_type ELSE '' END || CASE WHEN fl.language_keyword IS NULL THEN '' ELSE ' LANGUAGE ' || fl.language_keyword END || ' ' || f.func END def
+ FROM sys.functions f
+  LEFT OUTER JOIN func_args fa ON fa.func_id = f.id
+  LEFT OUTER JOIN func_rets fr ON fr.func_id = f.id
+  JOIN sys.schemas s ON f.schema_id = s.id
+  JOIN sys.function_types ft ON f.type = ft.function_type_id
+  LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
+ WHERE s.name <> 'tmp' AND NOT f.system;
+GRANT SELECT ON sys.describe_comments TO PUBLIC;
+GRANT SELECT ON sys.fully_qualified_functions TO PUBLIC;
+GRANT SELECT ON sys.describe_privileges TO PUBLIC;
+GRANT SELECT ON sys.describe_functions TO PUBLIC;
+CREATE VIEW sys.dump_functions AS
+  SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt,
+  f.sch schema_name,
+  f.fun function_name
+    FROM sys.describe_functions f;
+CREATE VIEW sys.dump_comments AS
+  SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
+CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
+BEGIN
+  SET SCHEMA sys;
+  TRUNCATE sys.dump_statements;
+  INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
+  INSERT INTO sys.dump_statements VALUES (2, 'SET SCHEMA "sys";');
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
+        FROM (
+          SELECT f.o, f.stmt FROM sys.dump_functions f
+           UNION ALL
+          SELECT t.o, t.stmt FROM sys.dump_tables t
+        ) AS stmts(o, s);
+  IF NOT DESCRIBE THEN
+    CALL sys.dump_table_data();
+  END IF;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_grants;
+  INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_function_grants;
+  INSERT INTO sys.dump_statements VALUES ((SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
+  RETURN sys.dump_statements;
+END;
+update sys.functions set system = true where not system and schema_id = 2000 and name = 'dump_database';
+update sys._tables set system = true where not system and schema_id = 2000 and name in ('dump_comments', 'dump_functions', 'describe_functions', 'describe_privileges', 'describe_comments', 'fully_qualified_functions');
+drop view information_schema.parameters cascade;
+CREATE VIEW INFORMATION_SCHEMA.PARAMETERS AS SELECT
+ cast(NULL AS varchar(1)) AS SPECIFIC_CATALOG,
+ s."name" AS SPECIFIC_SCHEMA,
+ cast(f."name"||'('||f."id"||')' AS varchar(270)) AS SPECIFIC_NAME, -- TODO: replace with full routine signature string. Note sys.fully_qualified_functions.nme does not produce the correct signature.
+ cast(sys.ifthenelse((a."inout" = 0 OR f."type" = 2), 1 + a."number", sys.ifthenelse(f."type" = 1, a."number", (1 + a."number" - f.count_out_cols))) AS int) AS ORDINAL_POSITION,
+ cast(sys.ifthenelse(a."inout" = 0, 'OUT', sys.ifthenelse(a."inout" = 1, 'IN', 'INOUT')) as varchar(5)) AS PARAMETER_MODE,  -- we do not yet support INOUT
+ cast(sys.ifthenelse(a."inout" = 0, 'YES', 'NO') as varchar(3)) AS IS_RESULT,
+ cast(NULL AS varchar(1)) AS AS_LOCATOR,
+ a."name" AS PARAMETER_NAME,
+ cast(NULL AS varchar(1)) AS FROM_SQL_SPECIFIC_CATALOG,
+ cast(NULL AS varchar(1)) AS FROM_SQL_SPECIFIC_SCHEMA,
+ cast(NULL AS varchar(1)) AS FROM_SQL_SPECIFIC_NAME,
+ cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_CATALOG,
+ cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_SCHEMA,
+ cast(NULL AS varchar(1)) AS TO_SQL_SPECIFIC_NAME,
+ cast(sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true) AS varchar(1024)) AS DATA_TYPE,
+ cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, a."type_digits", NULL) AS int) AS CHARACTER_MAXIMUM_LENGTH,
+ cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml') AND a."type_digits" > 0, 4 * cast(a."type_digits" as bigint), NULL) AS bigint) AS CHARACTER_OCTET_LENGTH,
+ cast(NULL AS varchar(1)) AS CHARACTER_SET_CATALOG,
+ cast(NULL AS varchar(1)) AS CHARACTER_SET_SCHEMA,
+ cast(sys.ifthenelse(a."type" IN ('varchar','clob','char','json','url','xml'), 'UTF-8', NULL) AS varchar(16)) AS CHARACTER_SET_NAME,
+ cast(NULL AS varchar(1)) AS COLLATION_CATALOG,
+ cast(NULL AS varchar(1)) AS COLLATION_SCHEMA,
+ cast(NULL AS varchar(1)) AS COLLATION_NAME,
+ cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a."type_digits", NULL) AS int) AS NUMERIC_PRECISION,
+ cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','oid'), 2, sys.ifthenelse(a."type" IN ('decimal','numeric'), 10, NULL)) AS int) AS NUMERIC_PRECISION_RADIX,
+ cast(sys.ifthenelse(a."type" IN ('int','smallint','tinyint','bigint','hugeint','float','real','double','decimal','numeric','oid'), a."type_scale", NULL) AS int) AS NUMERIC_SCALE,
+ cast(sys.ifthenelse(a."type" IN ('date','timestamp','timestamptz','time','timetz'), sys.ifthenelse(a."type_scale" > 0, a."type_scale" -1, 0), NULL) AS int) AS DATETIME_PRECISION,
+ cast(sys.ifthenelse(a."type" IN ('day_interval','month_interval','sec_interval'), sys."sql_datatype"(a."type", a."type_digits", a."type_scale", true, true), NULL) AS varchar(40)) AS INTERVAL_TYPE,
+ cast(CASE a."type" WHEN 'day_interval' THEN 0 WHEN 'month_interval' THEN 0 WHEN 'sec_interval' THEN (sys.ifthenelse(a."type_digits" IN (7, 10, 12, 13), sys.ifthenelse(a."type_scale" > 0, a."type_scale", 3), 0)) ELSE NULL END AS int) AS INTERVAL_PRECISION,
+ cast(NULL AS varchar(1)) AS UDT_CATALOG,
+ cast(NULL AS varchar(1)) AS UDT_SCHEMA,
+ cast(NULL AS varchar(1)) AS UDT_NAME,
+ cast(NULL AS varchar(1)) AS SCOPE_CATALOG,
+ cast(NULL AS varchar(1)) AS SCOPE_SCHEMA,
+ cast(NULL AS varchar(1)) AS SCOPE_NAME,
+ cast(NULL AS int) AS MAXIMUM_CARDINALITY,
+ cast(NULL AS varchar(1)) AS DTD_IDENTIFIER,
+ cast(NULL AS varchar(1)) AS DECLARED_DATA_TYPE,
+ cast(NULL AS int) AS DECLARED_NUMERIC_PRECISION,
+ cast(NULL AS int) AS DECLARED_NUMERIC_SCALE,
+ cast(NULL AS varchar(1)) AS PARAMETER_DEFAULT,
+ -- MonetDB column extensions
+ f."schema_id" AS schema_id,
+ f."id" AS function_id,
+ a."id" AS arg_id,
+ f."name" AS function_name,
+ f."type" AS function_type,
+ f."system" AS is_system
+ FROM sys."args" a
+ INNER JOIN (SELECT fun.id, fun.schema_id, fun.name, fun.type, fun.system, (select count(*) from sys.args a0 where a0.inout = 0 and a0.func_id = fun.id) as count_out_cols FROM sys."functions" fun WHERE fun."type" in (1, 2, 5, 7)) f ON f."id" = a."func_id"
+ INNER JOIN sys."schemas" s ON s."id" = f."schema_id"
+ ORDER BY s."name", f."name", f."id", a."inout" DESC, a."number";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.PARAMETERS TO PUBLIC WITH GRANT OPTION;
+update sys._tables set system = true where not system and schema_id = (select id from sys.schemas where name = 'information_schema') and name = 'parameters';
+
+Running database upgrade commands:
+create function dayname(d date) returns varchar(10) return date_to_str(d, '%A');
+create function monthname(d date) returns varchar(10) return date_to_str(d, '%B');
+grant execute on function dayname(date) to public;
+grant execute on function monthname(date) to public;
+update sys.functions set system = true where system <> true and name in ('dayname', 'monthname') and schema_id = 2000 and type = (select function_type_id from sys.function_types where function_type_name = 'Scalar function');
+
+Running database upgrade commands:
+drop view sys.geometry_columns;
+create view sys.geometry_columns as
+ select cast(null as varchar(1)) as f_table_catalog,
+ s.name as f_table_schema,
+ t.name as f_table_name,
+ c.name as f_geometry_column,
+ cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
+ c.type_scale as srid,
+ get_type(c.type_digits, 0) as geometry_type
+ from sys.columns c, sys.tables t, sys.schemas s
+ where c.table_id = t.id and t.schema_id = s.id
+ and c.type in (select sqlname from sys.types where systemname = 'wkb');
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
+update sys._tables set system = true where system <> true and schema_id = 2000 and name = 'geometry_columns';
+delete from sys.privileges where (obj_id) not in (select id from (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) as t);
+

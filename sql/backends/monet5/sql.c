@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -45,7 +45,6 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
-#include "gdk_cand.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
@@ -193,7 +192,7 @@ sqlcleanup(backend *be, int err)
 	be->mvc->label = 0;
 	be->mvc->nid = 1;
 	be->no_mitosis = 0;
-	scanner_query_processed(&(be->mvc->scanner));
+	mvc_query_processed(be->mvc);
 	return err;
 }
 

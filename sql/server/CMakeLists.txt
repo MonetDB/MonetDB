@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -13,7 +13,8 @@
 BISON_TARGET(sqlparser
   sql_parser.y
   ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.c
-  COMPILE_FLAGS "-d -p sql -Wno-conflicts-sr -Wno-conflicts-rr"
+  #COMPILE_FLAGS "-t -rstates,itemsets,lookaheads -ffixit,caret -d -p sql -Wno-conflicts-sr -Wno-conflicts-rr -o sql_parser.output"
+  COMPILE_FLAGS "-p sql -Werror"
   DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/sql_parser.tab.h)
 
 add_library(sqlserver STATIC)
@@ -122,7 +123,76 @@ target_compile_definitions(sqlserver
   PRIVATE
   LIBSQL)
 
-set_target_properties(sqlserver
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
+if(NOT MONETDB_STATIC)
+  set_target_properties(sqlserver
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER "${sqlserver_public_headers}")
+endif()
+
+if(WITH_SQLPARSE)
+add_executable(sqlparse)
+
+target_sources(sqlparse
+  PRIVATE
+  sql_atom.h
+  sql_atom.c
+  sql_decimal.h
+  sql_decimal.c
+  sql_scan.h
+  sql_scan.c
+  sql_symbol.h
+  sql_symbol.c
+  sql_datetime.c
+  sql_datetime.h
+
+  sql_semantic.h
+  sql_mvc.h
+  rel_sequence.h
+  ${BISON_sqlparser_OUTPUT_HEADER}
+  ${BISON_sqlparser_OUTPUT_SOURCE}
+  sqlparse.c)
+
+target_include_directories(sqlparse
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+target_link_libraries(sqlparse
+  PRIVATE
+  monetdb_config_header
+  stream
+  bat
+  sqlinclude
+  sqlcommon
+  $<$<NOT:$<PLATFORM_ID:Windows>>:m>
+  $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
+  Threads::Threads)
+
+set_target_properties(sqlparse
+  PROPERTIES
+  VERSION ${MONETDB_VERSION})
+install(TARGETS
+  sqlparse
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT server)
+endif()
+
+if(MONETDB_STATIC)
+install(TARGETS
+  sqlserver
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT server
+  LIBRARY
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  ARCHIVE
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+endif()

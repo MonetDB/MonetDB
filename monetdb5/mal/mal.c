@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -147,8 +147,6 @@ mal_reset(void)
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
 	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
-	/* No need to clean up the namespace, it will simply be extended
-	 * upon restart mal_namespace_reset(); */
 	GDKreset(0);				// terminate all other threads
 }
 

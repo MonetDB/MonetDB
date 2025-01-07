@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -74,19 +74,18 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	(void) cntxt;
-	a = (AGGRtask *) GDKzalloc(sizeof(*a));
+	a = (AGGRtask *) GDKmalloc(sizeof(*a));
 	if (a == NULL)
 		return NULL;
-	a->bid = (bat *) GDKzalloc(pci->argc * sizeof(bat));
-	a->cols = (BAT **) GDKzalloc(pci->argc * sizeof(BAT *));
-	a->unique = (BUN *) GDKzalloc(pci->argc * sizeof(BUN));
+	*a = (AGGRtask) {
+		.bid = GDKzalloc(pci->argc * sizeof(bat)),
+		.cols = GDKzalloc(pci->argc * sizeof(BAT *)),
+		.unique = GDKzalloc(pci->argc * sizeof(BUN)),
+	};
 	if (a->cols == NULL || a->bid == NULL || a->unique == NULL) {
-		if (a->cols)
-			GDKfree(a->cols);
-		if (a->bid)
-			GDKfree(a->bid);
-		if (a->unique)
-			GDKfree(a->unique);
+		GDKfree(a->cols);
+		GDKfree(a->bid);
+		GDKfree(a->unique);
 		GDKfree(a);
 		return NULL;
 	}

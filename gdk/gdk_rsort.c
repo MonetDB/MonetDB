@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -20,7 +20,7 @@
 gdk_return
 GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool isuuid)
 {
-	size_t (*counts)[NBUCKETS] = GDKmalloc(hs * sizeof(counts[0]));
+	size_t (*counts)[NBUCKETS] = GDKzalloc(hs * sizeof(counts[0]));
 	size_t pos[NBUCKETS];
 	uint8_t *h1 = h;
 	uint8_t *h2;
@@ -57,7 +57,6 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		ts = 0;
 	}
 
-	memset(counts, 0, hs * sizeof(counts[0]));
 #ifndef WORDS_BIGENDIAN
 	if (isuuid /* UUID, treat like big-endian */) {
 #endif

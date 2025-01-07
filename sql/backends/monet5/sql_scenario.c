@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -48,7 +48,6 @@
 #include "msabaoth.h"
 #include "gdk_time.h"
 #include "optimizer.h"
-#include "opt_prelude.h"
 #include "opt_pipes.h"
 #include "opt_mitosis.h"
 #include <unistd.h>
@@ -1414,7 +1413,7 @@ SQLparser_body(Client c, backend *be)
 		}
 
 		m->type = Q_SCHEMA; /* TODO DEALLOCATE statements don't fit for Q_SCHEMA */
-		scanner_query_processed(&(m->scanner));
+		mvc_query_processed(m);
 
 		/* For deallocate statements just export a simple output */
 		if (!GDKembedded() && (err = mvc_export_operation(be, c->fdout, "", c->qryctx.starttime, c->curprg->def->optimize)) < 0)
@@ -1440,7 +1439,7 @@ SQLparser_body(Client c, backend *be)
 		be->vtop = oldvtop;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
 		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
-			scanner_query_processed(&(m->scanner));
+			mvc_query_processed(m);
 
 			err = 0;
 			setVarType(c->curprg->def, 0, 0);
@@ -1556,7 +1555,7 @@ SQLparser_body(Client c, backend *be)
 					err = 1;
 				}
 			}
-			scanner_query_processed(&(m->scanner));
+			mvc_query_processed(m);
 			if (be->q && backend_dumpproc(be, c, be->q, r) < 0) {
 				msg = handle_error(m, 0, msg);
 				err = 1;

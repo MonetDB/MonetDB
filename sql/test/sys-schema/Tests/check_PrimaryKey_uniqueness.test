@@ -179,23 +179,23 @@ SELECT COUNT(*) AS duplicates, schema FROM sys.schemastorage GROUP BY schema HAV
 ----
 
 query ITTT rowsort
-SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storage GROUP BY schema, table, column HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, schema, "table", "column" FROM sys.storage GROUP BY schema, "table", "column" HAVING COUNT(*) > 1
 ----
 
 query ITTT rowsort
-SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodel GROUP BY schema, table, column HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, schema, "table", "column" FROM sys.storagemodel GROUP BY schema, "table", "column" HAVING COUNT(*) > 1
 ----
 
 query ITTT rowsort
-SELECT COUNT(*) AS duplicates, schema, table, column FROM sys.storagemodelinput GROUP BY schema, table, column HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, schema, "table", "column" FROM sys.storagemodelinput GROUP BY schema, "table", "column" HAVING COUNT(*) > 1
 ----
 
 query ITT rowsort
-SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestorage GROUP BY schema, table HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, schema, "table" FROM sys.tablestorage GROUP BY schema, "table" HAVING COUNT(*) > 1
 ----
 
 query ITT rowsort
-SELECT COUNT(*) AS duplicates, schema, table FROM sys.tablestoragemodel GROUP BY schema, table HAVING COUNT(*) > 1
+SELECT COUNT(*) AS duplicates, schema, "table" FROM sys.tablestoragemodel GROUP BY schema, "table" HAVING COUNT(*) > 1
 ----
 
 query II rowsort

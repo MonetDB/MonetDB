@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -18,7 +18,6 @@ target_sources(atoms
   PRIVATE
   streams.c streams.h
   blob.c
-  color.c color.h
   str.c str.h
   strptime.c
   url.c
@@ -26,7 +25,6 @@ target_sources(atoms
   json.c
   mtime.c mtime.h
   inet.c
-  identifier.c
   xml.c xml.h
   batxml.c)
 
@@ -45,8 +43,7 @@ target_link_libraries(atoms
   monetdb_config_header
   mutf8
   bat
-  mal
-  pg_jsonpath)
+  mal)
 
 target_compile_definitions(atoms
   PRIVATE

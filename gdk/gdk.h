@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1484,8 +1484,10 @@ gdk_export gdk_return BATsave(BAT *b)
 	__attribute__((__warn_unused_result__));
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
+#define MAXPATH	1024		/* maximum supported file path */
 
-gdk_export char *GDKfilepath(int farmid, const char *dir, const char *nme, const char *ext);
+gdk_export gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid, const char *dir, const char *nme, const char *ext)
+	__attribute__((__access__(write_only, 1, 2)));
 gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
@@ -1861,6 +1863,25 @@ bunfastapp(BAT *b, const void *v)
 			b->theap->free += b->twidth;
 	}
 	return rc;
+}
+
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+bunfastappOID(BAT *b, oid o)
+{
+	BUN p = b->batCount;
+	if (p >= BATcapacity(b)) {
+		if (p >= BUN_MAX) {
+			GDKerror("tfastins: too many elements to accommodate (" BUNFMT ")\n", BUN_MAX);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+	}
+	((oid *) b->theap->base)[b->batCount++] = o;
+	b->theap->free += sizeof(oid);
+	return GDK_SUCCEED;
 }
 
 #define bunfastappTYPE(TYPE, b, v)					\
@@ -2321,6 +2342,8 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 	__attribute__((__access__(write_only, 1)))
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
+gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
+	__attribute__((__warn_unused_result__));
 
 #include "gdk_calc.h"
 
@@ -2509,7 +2532,7 @@ TIMEOUT_TEST(QryCtx *qc)
 	} while (0)
 
 typedef struct gdk_callback {
-	char *name;
+	const char *name;
 	int argc;
 	int interval;  // units sec
 	lng last_called; // timestamp GDKusec
@@ -2520,10 +2543,13 @@ typedef struct gdk_callback {
 
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
-gdk_export gdk_return gdk_add_callback(char *name, gdk_callback_func *f, int argc, void
-		*argv[], int interval);
-gdk_export gdk_return gdk_remove_callback(char *, gdk_callback_func *f);
+gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
+				       int argc, void *argv[], int interval);
+gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
+
+#define SQLSTATE(sqlstate)	#sqlstate "!"
+#define MAL_MALLOC_FAIL	"Could not allocate space"
 
 #include <setjmp.h>
 
@@ -2534,7 +2560,7 @@ typedef struct exception_buffer {
 	jmp_buf state;
 #endif
 	int code;
-	char *msg;
+	const char *msg;
 	int enabled;
 } exception_buffer;
 
@@ -2547,7 +2573,7 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #else
 #define eb_savepoint(eb) ((eb)->enabled = 1, setjmp((eb)->state))
 #endif
-gdk_export _Noreturn void eb_error(exception_buffer *eb, char *msg, int val);
+gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
 typedef struct allocator {
 	struct allocator *pa;

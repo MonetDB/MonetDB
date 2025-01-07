@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1076,11 +1076,12 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default: {
-				char name[IDLENGTH] = { 0 };
+				char name[IDLENGTH];
 				ret = createException(MAL, "mal.interpreter",
-									  "%s: Unknown barrier type", getVarNameIntoBuffer(mb,
-																			 getDestVar
-																			 (pci), name));
+									  "%s: Unknown barrier type",
+									  getVarNameIntoBuffer(mb,
+														   getDestVar
+														   (pci), name));
 					 }
 			}
 			stkpc++;
@@ -1252,13 +1253,13 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			str new, n;
 			n = createException(MAL, nme, "exception not caught");
 			if (n) {
-				new = GDKzalloc(strlen(ret) + strlen(n) + 16);
+				new = GDKmalloc(strlen(ret) + strlen(n) + 16);
 				if (new) {
-					strcpy(new, ret);
-					if (new[strlen(new) - 1] != '\n')
-						strcat(new, "\n");
-					strcat(new, "!");
-					strcat(new, n);
+					char *p = stpcpy(new, ret);
+					if (p[-1] != '\n')
+						*p++ = '\n';
+					*p++ = '!';
+					p = stpcpy(p, n);
 					freeException(n);
 					freeException(ret);
 					ret = new;

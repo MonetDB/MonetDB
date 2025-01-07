@@ -5,32 +5,35 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-add_library(monetdb5 SHARED)
+set(MONETDB5_OBJECTS
+  $<TARGET_OBJECTS:mal>
+  $<TARGET_OBJECTS:atoms>
+  $<TARGET_OBJECTS:malmodules>
+  $<TARGET_OBJECTS:kernel>
+  $<TARGET_OBJECTS:optimizer>)
+
+if(MONETDB_STATIC)
+  add_library(monetdb5 STATIC ${MONETDB5_OBJECTS})
+else()
+  add_library(monetdb5 SHARED ${MONETDB5_OBJECTS})
+endif()
 
 target_link_libraries(monetdb5
-    PRIVATE
-    stream
-    mapi
-    msabaoth
-    mutf8
-    ${SOCKET_LIBRARIES}
-    $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
-    $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
-    $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
-    mal
-    atoms
-    malmodules
-    kernel
-    optimizer
-    pg_jsonpath
-    sqlinclude
-    sqlcommon
-    bat)
+  PRIVATE
+  stream
+  mapi
+  msabaoth
+  mutf8
+  ${SOCKET_LIBRARIES}
+  $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
+  $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
+  $<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>
+  bat)
 
 set_target_properties(monetdb5
   PROPERTIES
@@ -71,11 +74,13 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
-install(EXPORT monetdb5Targets
-  FILE monetdb5Targets.cmake
-  NAMESPACE MonetDB::
-  DESTINATION ${EXPORT_TARGET_PATH}
-  COMPONENT serverdev)
+if(NOT MONETDB_STATIC)
+  install(EXPORT monetdb5Targets
+    FILE monetdb5Targets.cmake
+    NAMESPACE MonetDB::
+    DESTINATION ${EXPORT_TARGET_PATH}
+    COMPONENT serverdev)
+endif()
 
 if(WIN32)
   install(FILES

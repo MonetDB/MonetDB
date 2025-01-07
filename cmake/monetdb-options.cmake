@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -30,6 +30,10 @@ cmake_dependent_option(CINTEGRATION
   ON
   "NOT WIN32"
   OFF)
+
+option(WITH_SQLPARSE
+  "Compile and install the sqlparse utility (default=ON)"
+  ON)
 
 option(WITH_RTREE
   "Enable support for rtrees (librtree; default=ON)"
@@ -156,3 +160,27 @@ option(CMAKE_SUMMARY
 option(CMAKE_UNITTESTS
   "Build and run the unittest for the build system"
   OFF)
+
+option(MONETDB_STATIC
+  "Enable static compilation mode"
+  OFF)
+
+option(WITH_UDF
+  "Include UDF support"
+  ON)
+
+option(WITH_VAULTS
+  "Include UDF support"
+  ON)
+
+option(WITH_MEROVINGIAN
+  "Build merovingian and friends"
+  ON)
+
+option(WITH_MSERVER5
+  "Build mserver5"
+  ON)
+
+option(WITH_MAPI_CLIENT
+  "Build mapi clients(mclient, msqldump)"
+  ON)

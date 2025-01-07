@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1935,7 +1935,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
  * If max_one is set, only a single match is allowed.  This is like
  * semi, but enforces the single match.
  *
- * t0 and swapped are only for debugging (ALGOMASK set in GDKdebug).
+ * t0, swapped, and reason are only for debugging (ALGOMASK set in
+ * GDKdebug).
  */
 static gdk_return
 mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,

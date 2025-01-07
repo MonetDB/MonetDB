@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -355,16 +355,21 @@ boundingBoxLines(GeoLines lines)
 	if (lines.pointCount == 0)
 		return NULL;
 
-	bb = GDKzalloc(sizeof(BoundingBox));
+	bb = GDKmalloc(sizeof(BoundingBox));
 	if (bb == NULL)
 		return NULL;
 
 	c = geo2cartFromDegrees(lines.points[0]);
 
 	//Initialize the bounding box with the first point
-	bb->xmin = bb->xmax = c.x;
-	bb->ymin = bb->ymax = c.y;
-	bb->zmin = bb->zmax = c.z;
+	*bb = (BoundingBox) {
+		.xmin = c.x,
+		.xmax = c.x,
+		.ymin = c.y,
+		.ymax = c.y,
+		.zmin = c.z,
+		.zmax = c.z,
+	};
 
 	for (int i = 1; i < lines.pointCount; i++) {
 		c = geo2cartFromDegrees(lines.points[i]);

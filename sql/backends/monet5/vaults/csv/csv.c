@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,6 +24,7 @@
 #include "mal_backend.h"
 #include "sql_types.h"
 #include "rel_bin.h"
+#include "sql_storage.h"
 
 #include <unistd.h>
 
@@ -37,15 +38,17 @@ csv_open_file(char* filename)
 static const char *
 next_delim(const char *s, const char *e, char delim, char quote)
 {
-	bool inquote = false;
-	for(;  s < e; s++) {
-		if (*s == quote)
-			inquote = !inquote;
-		else if (!inquote && *s == delim)
+	if (s && e) {
+		bool inquote = false;
+		for(;  s < e; s++) {
+			if (*s == quote)
+				inquote = !inquote;
+			else if (!inquote && *s == delim)
+				return s;
+		}
+		if (s <= e)
 			return s;
 	}
-	if (s <= e)
-		return s;
 	return NULL;
 }
 
@@ -242,6 +245,7 @@ detect_time(const char *s, const char *e)
 static bool
 detect_date(const char *s, const char *e)
 {
+	/* TODO detect negative years */
 	if ((e-s) != 10)
 		return false;
 	/* YYYY-MM-DD */
@@ -256,6 +260,7 @@ detect_date(const char *s, const char *e)
 static bool
 detect_timestamp(const char *s, const char *e)
 {
+	/* TODO detect negative years */
 	if ((e-s) != 16)
 		return false;
 	/* DATE TIME */
@@ -276,24 +281,26 @@ detect_types_row(const char *s, const char *e, char delim, char quote, int nr_fi
 		int scale = 0;
 
 		types[i].type = CSV_STRING;
-		if (n) {
+		types[i].scale = 0;
+		if (n && s) {
 			if (detect_null(s,n))
 				types[i].type = CSV_NULL;
 			else if (detect_bool(s,n))
 				types[i].type = CSV_BOOLEAN;
 			else if (detect_bigint(s, n))
 				types[i].type = CSV_BIGINT;
-			else if (detect_decimal(s, n, &scale))
+			else if (detect_decimal(s, n, &scale)) {
 				types[i].type = CSV_DECIMAL;
+				types[i].scale = scale;
+			}
 			else if (detect_time(s, n))
 				types[i].type = CSV_TIME;
 			else if (detect_date(s, n))
 				types[i].type = CSV_DATE;
 			else if (detect_timestamp(s, n))
 				types[i].type = CSV_TIMESTAMP;
-			types[i].scale = scale;
+			s = n+1;
 		}
-		s = n+1;
 	}
 	return types;
 }
@@ -310,7 +317,7 @@ detect_types(const char *buf, char delim, char quote, int nr_fields, bool *has_h
 
 		if (!e)
 			break;
-		csv_type *ntypes = detect_types_row( cur, e, delim, quote, nr_fields);
+		csv_type *ntypes = detect_types_row(cur, e, delim, quote, nr_fields);
 		if (!ntypes)
 			return NULL;
 		cur = e+1;
@@ -397,9 +404,7 @@ static str
 csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
 	stream *file = csv_open_file(filename);
-	char buf[8196+1];
-
-	if(file == NULL)
+	if (file == NULL)
 		return RUNTIME_FILE_NOT_FOUND;
 
 	/*
@@ -407,6 +412,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	 * detect types
 	 * detect header
 	 */
+	char buf[8196+1];
 	ssize_t l = mnstr_read(file, buf, 1, 8196);
 	mnstr_close(file);
 	mnstr_destroy(file);
@@ -424,7 +430,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 
 	f->tname = tname;
 
-	const char *p = buf, *ep = strchr(p, '\n');;
+	const char *p = buf, *ep = strchr(p, '\n');
 	list *typelist = sa_list(sql->sa);
 	list *nameslist = sa_list(sql->sa);
 	for(int col = 0; col < nr_fields; col++) {
@@ -447,12 +453,12 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				list_append(res_exps, ne);
 			} else {
 				GDKfree(types);
-				throw(SQL, SQLSTATE(42000), "csv" "type %s not found\n", st);
+				return sa_message(sql->sa, "csv" "type %s not found\n", st);
 			}
 		} else {
 			/* shouldn't be possible, we fallback to strings */
 			GDKfree(types);
-			throw(SQL, SQLSTATE(42000), "csv" "type unknown\n");
+			return sa_message(sql->sa, "csv" "type unknown\n");
 		}
 	}
 	GDKfree(types);
@@ -467,7 +473,7 @@ csv_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	r->extra_tsep = extra_tsep;
 	r->has_header = has_header;
 	f->sname = (char*)r; /* pass schema++ */
-	return MAL_SUCCEED;
+	return NULL;
 }
 
 static void *
@@ -479,7 +485,6 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	sql_table *t = NULL;
 
 	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, f->tname /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
-		//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_FILE_NOT_FOUND);
 		/* alloc error */
 		return NULL;
 
@@ -490,7 +495,6 @@ csv_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 		sql_column *c = NULL;
 
 		if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
-			//throw(SQL, SQLSTATE(42000), "csv" RUNTIME_LOAD_ERROR);
 			return NULL;
 		}
 	}

@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -50,35 +50,35 @@ create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 
-create aggregate median(val HUGEINT) returns HUGEINT
+create aggregate median(val HUGEINT) returns HUGEINT ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
 
-create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
+create aggregate median(val DECIMAL(38)) returns DECIMAL(38) ORDERED
 	external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
 
-create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
 
-create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)
+create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38) ORDERED
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;
 
-create aggregate median_avg(val HUGEINT) returns DOUBLE
+create aggregate median_avg(val HUGEINT) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;
 
-create aggregate median_avg(val DECIMAL(38)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(38)) returns DOUBLE ORDERED
 	external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;
 
-create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 
-create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE ORDERED
 	external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;
 

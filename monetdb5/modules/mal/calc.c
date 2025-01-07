@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -78,11 +78,11 @@ CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
 			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	s = GDKzalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
+	l1 = strlen(*s1) + strlen(*s2) + 1;
+	s = GDKmalloc(l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strcpy(s, *s1);
-	strcpy(s + l1, *s2);
+	strconcat_len(s, l1, *s1, *s2, NULL);
 	*ret = s;
 	return MAL_SUCCEED;
 }
@@ -604,6 +604,18 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
+	if (pci->argc > 3) {
+		for(int i = 3; i < pci->argc; i++) {
+			if (t != getArgType(mb, pci, i))
+				return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
+			ptr p2 = getArgReference(stk, pci, i);
+			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
+				p2 = *(ptr *) p2;
+			if (ATOMcmp(t, p1, nil) == 0 ||
+				(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
+				p1 = p2;
+		}
+	}
 	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -655,6 +667,18 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ATOMcmp(t, p1, nil) == 0 ||
 		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
+	if (pci->argc > 3) {
+		for(int i = 3; i < pci->argc; i++) {
+			if (t != getArgType(mb, pci, i))
+				return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
+			ptr p2 = getArgReference(stk, pci, i);
+			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
+				p2 = *(ptr *) p2;
+			if (ATOMcmp(t, p1, nil) == 0 ||
+				(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
+				p1 = p2;
+		}
+	}
 	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -2583,10 +2607,10 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",oid))),
  pattern("calc", "oid", CMDvarCONVERT, false, "Cast VALUE to oid", args(1,2, arg("",oid),arg("v",str))),
  pattern("calc", "str", CMDvarCONVERT, false, "Cast VALUE to str", args(1,2, arg("",str),argany("v",0))),
- pattern("calc", "min", CALCmin, false, "Return min of V1 and V2", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- pattern("calc", "min_no_nil", CALCmin_no_nil, false, "Return min of V1 and V2, ignoring nil values", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- pattern("calc", "max", CALCmax, false, "Return max of V1 and V2", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
- pattern("calc", "max_no_nil", CALCmax_no_nil, false, "Return max of V1 and V2, ignoring nil values", args(1,3, argany("",1),argany("v1",1),argany("v2",1))),
+ pattern("calc", "min", CALCmin, false, "Return min of V1 and V2", args(1,3, argany("",1),argany("v1",1),varargany("v2",1))),
+ pattern("calc", "min_no_nil", CALCmin_no_nil, false, "Return min of V1 and V2, ignoring nil values", args(1,3, argany("",1),argany("v1",1),varargany("v2",1))),
+ pattern("calc", "max", CALCmax, false, "Return max of V1 and V2", args(1,3, argany("",1),argany("v1",1),varargany("v2",1))),
+ pattern("calc", "max_no_nil", CALCmax_no_nil, false, "Return max of V1 and V2, ignoring nil values", args(1,3, argany("",1),argany("v1",1),varargany("v2",1))),
  command("calc", "ptr", CMDvarCONVERTptr, false, "Cast VALUE to ptr", args(1,2, arg("",ptr),arg("v",ptr))),
  pattern("calc", "ifthenelse", CALCswitchbit, false, "If VALUE is true return MIDDLE else RIGHT", args(1,4, argany("",1),arg("b",bit),argany("t",1),argany("f",1))),
  command("calc", "length", CMDstrlength, false, "Length of STRING", args(1,2, arg("",int),arg("s",str))),

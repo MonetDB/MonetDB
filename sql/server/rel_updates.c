@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,6 +24,7 @@
 #include "rel_psm.h"
 #include "sql_symbol.h"
 #include "rel_prop.h"
+#include "sql_storage.h"
 
 static sql_exp *
 insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char* action)
@@ -537,7 +538,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 		return NULL;
 
 	if (val_or_q->token == SQL_VALUES) {
-		dlist *rowlist = val_or_q->data.lval->h->data.lval;
+		dlist *rowlist = val_or_q->data.lval;
 		list *exps = new_exp_list(sql->sa);
 
 		if (!rowlist->h) {
@@ -633,7 +634,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 
 	if (val_or_q->token == SQL_VALUES) {
 		list *exps = new_exp_list(sql->sa);
-		dlist *rowlist = val_or_q->data.lval->h->data.lval;
+		dlist *rowlist = val_or_q->data.lval;
 
 		if (!rowlist->h) {
 			res = rel_project(sql->sa, NULL, NULL);
@@ -1777,6 +1778,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				rel = nrel;
 			else {
 				rel = rel_setop(sql->sa, rel, nrel, op_union);
+				rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
 				set_processed(rel);
 			}
 			if (!rel)

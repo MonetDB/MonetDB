@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -326,11 +326,15 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			for (i = 0; i < qsize; i++) {
 				// print some info. of queries not "finished"
 				if (strcmp(QRYqueue[i].status, "finished") != 0) {
+					struct tm tmp;
+					char tbuf[64];
+					(void) localtime_r(&QRYqueue[i].start, &tmp);
+					strftime(tbuf, sizeof(tbuf), "%F %T", &tmp);
 					TRC_INFO_ENDIF(MAL_SERVER,
 								   "QRYqueue[%zu]: stk(%p), tag(" OIDFMT
-								   "), username(%s), start(%ld), status(%s), query(%s)",
+								   "), username(%s), start(%s), status(%s), query(%s)",
 								   i, QRYqueue[i].stk, QRYqueue[i].tag,
-								   QRYqueue[i].username, QRYqueue[i].start,
+								   QRYqueue[i].username, tbuf,
 								   QRYqueue[i].status, QRYqueue[i].query);
 				}
 			}

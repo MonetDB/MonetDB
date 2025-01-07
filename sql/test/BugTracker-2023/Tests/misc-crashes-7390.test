@@ -299,7 +299,7 @@ CREATE TABLE v0(v1 BIGINT)
 statement ok
 INSERT INTO v0 VALUES (13),(53),(-1),(13),(54),((SELECT v1 FROM v0 WHERE v1 IS NULL AND v1 IN (7 ^ v1))),(72),(2147483647)
 
-statement ok
+statement error 42000!SELECT: identifier 'v1' ambiguous
 WITH v0 AS (SELECT 2147483647, * FROM v0) INSERT INTO v0 SELECT v1 * -32768 FROM v0 AS v2,v0,v0 AS v5,v0 AS v3,v0 AS v4 ORDER BY v1 * 127 ^ -1
 
 statement error 42000!row frame bound must be non negative and non null.
@@ -562,11 +562,12 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 
-statement error 42S22!SELECT: no such column 'v0.v2'
-SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
+query I
+SELECT 2 FROM v0 AS v0 WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
+----
 
 statement ok
-DELETE FROM v0 WHERE EXISTS ( SELECT 2 FROM v0 AS WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1 )
+DELETE FROM v0 WHERE EXISTS ( SELECT 2 FROM v0 AS v0 WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1 )
 
 statement ok
 DROP TABLE v0

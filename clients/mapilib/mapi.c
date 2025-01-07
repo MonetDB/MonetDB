@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1561,10 +1561,8 @@ add_error(struct MapiResultSet *result, char *error)
 	REALLOC(result->errorstr, size + strlen(error) + 2);
 	if (result->errorstr == NULL)
 		result->errorstr = mapi_nomem;
-	else {
-		strcpy(result->errorstr + size, error);
-		strcat(result->errorstr + size, "\n");
-	}
+	else
+		stpcpy(stpcpy(result->errorstr + size, error), "\n");
 }
 
 const char *
