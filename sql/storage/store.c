@@ -3887,7 +3887,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			col->storage_type = _STRDUP(buf);
 			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, 0, 0, 0)) != LOG_OK)
 				return res;
-			if (sql_trans_create_sequence(tr, t->s, col->storage_type, 1, 1, lng_nil, 1, 1, false, true) != LOG_OK)
+			if (sql_trans_create_sequence(tr, t->s, col->storage_type, 1, 1, GDK_lng_max, 1, 1, false, true) != LOG_OK)
 				return res;
 		}
 		/* All nested types, need the internal columns for the field contents */

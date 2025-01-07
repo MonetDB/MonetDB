@@ -788,11 +788,14 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 	if (!is_row(vals_exp) && type->type->composite) {
 		bte multiset = type->multiset;
 		list *attr = sa_list(be->mvc->sa);
+		sql_exp *v = vals->h->data;
 		if (tuple_create_result(be, vals->h->data, attr, multiset) < 0)
 			return NULL;
-		int rowcnt = 1, lcnt = 1;
-		for (node *n = vals->h; n; n = n->next, lcnt++) {
-			if (append_tuple(be, n->data, left, sel, attr, rowcnt, lcnt++, multiset) < 0)
+		int rowcnt = 0, lcnt = 1;
+		int irc = is_row(v)?0:1;
+		int lrc = is_row(v)?1:0;
+		for (node *n = vals->h; n; n = n->next, rowcnt += irc, lcnt += lrc) {
+			if (append_tuple(be, n->data, left, sel, attr, rowcnt, lcnt, multiset) < 0)
 				return NULL;
 		}
 		return tuple_result(be, attr);
@@ -1595,15 +1598,22 @@ is_const_func(sql_subfunc *f, list *attr)
 static stmt*
 exp2bin_multiset(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
-	(void)be;
 	(void)fe;
 	(void)right;
 	(void)sel;
-	assert(list_length(left->op4.lval) == 1);
-	stmt *s = left->op4.lval->h->data;
-	while(s->type == st_alias)
-		s = s->op1;
-	return s;
+	list *l = sa_list(be->mvc->sa);
+	for(node *n = left->op4.lval->h; n; n = n->next) {
+		stmt *s = n->data, *ns = s;
+		while(ns->type == st_alias)
+			ns = ns->op1;
+		if (ns->type == st_list) {
+			for(node *m = ns->op4.lval->h; m; m = m->next)
+				append(l, m->data);
+		} else {
+			append(l, s);
+		}
+	}
+	return stmt_list(be, l);
 }
 
 static stmt*

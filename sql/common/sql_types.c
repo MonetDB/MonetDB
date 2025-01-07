@@ -1740,16 +1740,13 @@ sqltypeinit( allocator *sa)
 	sql_create_procedure(sa, "sys_update_tables", "sql", "update_tables", FALSE, 0);
 
 	/* virtual multiset mapping functions */
-	sql_create_func(sa, "rowid", "", "", TRUE, TRUE, SCALE_NONE, 0, OID, 0);
-	sql_create_func(sa, "multisetid", "", "", TRUE, TRUE, SCALE_NONE, 0, OID, 1, ANY);
-	sql_create_func(sa, "multisetnr", "", "", TRUE, TRUE, SCALE_NONE, 0, INT, 1, ANY);
-	sql_create_func(sa, "multisetfield", "", "", TRUE, TRUE, SCALE_NONE, 0, ANY, 1, ANY);
 	f = sql_create_union(sa, "multiset", "", "", TRUE, SCALE_NONE, 0, TABLE, 1, ANY);
 	f->vararg = 1;
 	f->varres = 1;
 	f = sql_create_union(sa, "unnest", "", "", TRUE, SCALE_NONE, 0, TABLE, 1, ANY); /* unnest multiset */
 	f->vararg = 1;
 	f->varres = 1;
+	sql_create_func(sa, "renumber", "sql", "renumber", FALSE, FALSE, SCALE_NONE, 0, INT, 3, INT, INT, INT);
 }
 
 void

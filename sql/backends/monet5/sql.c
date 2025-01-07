@@ -1003,6 +1003,89 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
+static str
+mvc_renumber(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	assert(0);
+	return MAL_SUCCEED;
+}
+
+static str
+mvc_renumber_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat *input = getArgReference_bat(stk, pci, 1);
+	bat *old_id = getArgReference_bat(stk, pci, 2);
+	bat *new_id = getArgReference_bat(stk, pci, 3);
+	(void)cntxt;
+	(void)mb;
+
+	BAT *r, *i, *bo, *bn;
+
+	i = BATdescriptor(*input);
+	bo = BATdescriptor(*old_id);
+	bn = BATdescriptor(*new_id);
+	if (!i || !bo || !bn) {
+		BBPreclaim(bo);
+		BBPreclaim(bn);
+		return createException(SQL, "sql.renumber", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	BUN cnt = BATcount(i);
+	BUN bcnt = BATcount(bo);
+	int *ii = Tloc(i,0);
+	int *oi = Tloc(bo,0);
+	int *ni = Tloc(bn,0);
+	/* TODO handle nils */
+	/* if oi is dense, use offset based renumbers */
+	if (!bo->tsorted || !BATtkey(bo) || (bcnt && (oi[0] + (int)(bcnt-1)) != oi[bcnt-1]) ) {
+		BAT *lo = NULL;
+		printf("not dense %d\n", oi[0]);
+		if (BATleftjoin(&lo, NULL, i, bo, NULL, NULL, false, cnt) != GDK_SUCCEED) {
+			BBPreclaim(i);
+			BBPreclaim(bo);
+			BBPreclaim(bn);
+			throw(SQL, "sql.renumber", SQLSTATE(42000) "renumber failed\n");
+		}
+		r = BATproject(lo, bn);
+		BBPreclaim(lo);
+		if (!r) {
+			BBPreclaim(i);
+			BBPreclaim(bo);
+			BBPreclaim(bn);
+			throw(SQL, "sql.renumber", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	} else {
+		if (!(r = COLnew(0, TYPE_int, cnt, TRANSIENT))) {
+			BBPreclaim(i);
+			BBPreclaim(bo);
+			BBPreclaim(bn);
+			throw(SQL, "sql.renumber", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+		int *ri = Tloc(r,0);
+		int base = oi[0];
+		for (BUN j = 0; j<cnt; j++){
+			ri[j] = ni[ii[j]-base];
+		}
+		BATsetcount(r, cnt);
+	}
+	r->tnonil = i->tnonil;
+	r->tnil = i->tnil;
+	r->tsorted = i->tsorted;
+	r->trevsorted = i->trevsorted;
+	r->tkey = i->tkey;
+	BBPreclaim(i);
+	BBPreclaim(bo);
+	BBPreclaim(bn);
+	*res = r->batCacheid;
+	BBPkeepref(r);
+	return MAL_SUCCEED;
+}
+
 str
 mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -5633,6 +5716,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "setVariable", setVariable, true, "Set the value of a session variable", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("varname",str),argany("value",1))),
  pattern("sql", "getVariable", getVariable, false, "Get the value of a session variable", args(1,4, argany("",1),arg("mvc",int),arg("sname",str),arg("varname",str))),
  pattern("sql", "logfile", mvc_logfile, true, "Enable/disable saving the sql statement traces", args(1,2, arg("",void),arg("filename",str))),
+ //pattern("batsql", "renumber", mvc_renumber_bulk, false, "return the input b renumbered using values from base", args(1,6, batarg("res",int),batarg("input",int),batarg("mapping_oid",int),batarg("mapping_nid",int),batarg("s1",oid),batarg("s2",oid),batarg("s3",oid))),
+ pattern("batsql", "renumber", mvc_renumber_bulk, false, "return the input b renumbered using values from base", args(1,4, batarg("res",int),batarg("input",int),batarg("mapping_oid",int),batarg("mapping_nid",int))),
+ pattern("sql", "renumber", mvc_renumber, false, "return the input b renumbered using values from base", args(1,4, arg("res",int),arg("input",int),arg("mapping_oid",int),arg("mapping_nid",int))),
  pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),

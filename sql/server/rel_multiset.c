@@ -6,6 +6,8 @@
 #include "rel_basetable.h"
 #include "rel_updates.h"
 
+extern void _rel_print(mvc *sql, sql_rel *cur);
+
 static sql_rel *
 fm_insert(visitor *v, sql_rel *rel)
 {
@@ -22,22 +24,52 @@ fm_insert(visitor *v, sql_rel *rel)
 			sql_rel *cur = NULL;
 			sql_rel *ins = rel->r;
 			assert(is_project(ins->op) || is_base(ins->op));
-			list *exps = ins->exps;
+			list *exps = ins->exps, *niexps = sa_list(v->sql->sa);
 			list *btexps = sa_list(v->sql->sa);
 			/* do insert per multiset and once for base table */
+			rel->r = ins = rel_project(v->sql->sa, ins, niexps);
 			for(node *n = ol_first_node(t->columns), *m = exps->h; n && m; n = n->next) {
 				sql_column *c = n->data;
 				if (c->type.multiset) {
+					sql_subfunc *next_val = sql_find_func(v->sql, "sys", "next_value_for", 2, F_FUNC, false, NULL);
+					list *args = sa_list(v->sql->sa);
+					sql_exp *rowid = m->data;
+					append(args, exp_atom_clob(v->sql->sa, "sys"));
+					append(args, exp_atom_clob(v->sql->sa, c->storage_type));
+					sql_exp *nrowid = exp_op(v->sql->sa, args, next_val), *e;
+					sql_subtype *inttype = sql_bind_localtype("int");
+					nrowid = exp_convert(v->sql, nrowid, exp_subtype(nrowid), inttype);
+					exp_prop_alias(v->sql->sa, nrowid, rowid);
+					append(niexps, nrowid);
+					nrowid = exp_ref(v->sql, nrowid);
+
+					exp_setalias(rowid, ++v->sql->label, rowid->alias.parent, "oldid");
+					rowid = exp_ref(v->sql, rowid);
+
 					list *nexps = sa_list(v->sql->sa);
-					append(btexps, exp_ref(v->sql, m->data)); /* rowid */
+					append(btexps, nrowid);
 					m = m->next;
 					/* find fields and msid,nr from right handside */
-					for(node *f = c->type.type->d.fields->h; f; f = f->next, m = m->next)
-						append(nexps, exp_ref(v->sql, m->data));
+					for(node *f = c->type.type->d.fields->h; f; f = f->next, m = m->next) {
+						append(niexps, e = exp_ref(v->sql, m->data));
+						append(nexps, exp_ref(v->sql, e));
+					}
+
+					sql_subfunc *renumber = sql_find_func(v->sql, "sys", "renumber", 3, F_FUNC, false, NULL);
+					args = sa_list(v->sql->sa);
+					sql_exp *msid = exp_ref(v->sql, m->data);
+					append(args, msid);
+					append(args, rowid);
+					append(args, nrowid);
+					sql_exp *nmsid = exp_op(v->sql->sa, args, renumber);
+					exp_prop_alias(v->sql->sa, nmsid, msid);
+					append(niexps, nmsid);
+
 					append(nexps, exp_ref(v->sql, m->data));
 					m = m->next;
 					if (c->type.multiset == MS_ARRAY) {
-						append(nexps, exp_ref(v->sql, m->data));
+						append(niexps, e = exp_ref(v->sql, m->data));
+						append(nexps, exp_ref(v->sql, e));
 						m = m->next;
 					}
 					sql_table *t = mvc_bind_table(v->sql, c->t->s, c->storage_type);
@@ -53,7 +85,10 @@ fm_insert(visitor *v, sql_rel *rel)
 					else
 						cur = i;
 				} else {
-					append(btexps, exp_ref(v->sql, m->data));
+					sql_exp *e = exp_ref(v->sql, m->data);
+					append(niexps, e);
+					append(btexps, exp_ref(v->sql, e));
+					m = m->next;
 				}
 			}
 			rel->r = rel_project(v->sql->sa, rel->r, btexps);
@@ -170,6 +205,7 @@ flatten_multiset(visitor *v, sql_rel *rel)
 		return fm_join(v, rel);
 	case op_insert:
 		return fm_insert(v, rel);
+	//case op_truncate: ie also truncate multiset table and restart sequence number
 	default:
 		//printf("todo %d\n", rel->op);
 		return rel;
