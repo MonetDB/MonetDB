@@ -218,6 +218,7 @@ int yydebug=1;
 	interval_expression
 	join_spec
 	joined_table
+	json_funcs
 	like_exp
 	like_predicate
 	like_table
@@ -777,7 +778,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %nonassoc UNBOUNDED
 %nonassoc IDENT PARTITION RANGE ROWS GROUPS PRECEDING FOLLOWING CUBE ROLLUP
                         SET OBJECT VALUE WITH WITHOUT PATH 
-%left '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING
+%left '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING JSON_VALUE
 %left '*' '/' '%'
 %left AT
 %right UMINUS
@@ -4725,6 +4726,7 @@ value_exp:
  |  NEXT VALUE FOR qname                  { $$ = _symbol_create_list(SQL_NEXT, $4); }
  |  null
  |  param
+ |  json_funcs
  |  string_funcs
  |  XML_value_function
  |  odbc_scalar_func_escape
@@ -4904,6 +4906,21 @@ trim_list:
   | 	FROM expr_list 			{ $$ = $2; }
   |	expr_list			{ $$ = $$; }
   ;
+
+json_funcs:
+	JSON_VALUE '(' scalar_exp ',' scalar_exp ')'
+	{
+		 dlist *l = L();
+		dlist *ops = L();
+		append_list(l,
+		append_string(L(), sa_strdup(SA, "json_value")));
+		append_int(l, FALSE); /* ignore distinct */
+		append_symbol(ops, $3);
+		append_symbol(ops, $5);
+		append_list(l, ops);
+		$$ = _symbol_create_list( SQL_NOP, l );
+	}
+
 
 string_funcs:
     SUBSTRING '(' scalar_exp FROM scalar_exp FOR scalar_exp ')'
