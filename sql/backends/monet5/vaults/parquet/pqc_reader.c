@@ -29,25 +29,25 @@ static int
 gzip_uncompress( char *dest, size_t ul, char *src, size_t cl)
 {
 	z_stream z = { 0 };
-        z.next_in = (unsigned char *)src;
-        z.avail_in = cl;
+	z.next_in = (unsigned char *)src;
+	z.avail_in = cl;
 	z.zalloc = Z_NULL;
 	z.zfree = Z_NULL;
 	z.opaque = Z_NULL;
 
 	if (inflateInit2(&z, 31) != Z_OK) { /* 15 bits window and 16 for gzip format */
-            	//error("Failed to initialize z_stream");
+		//error("Failed to initialize z_stream");
 		return -1;
-        }
+	}
 
-        z.next_out = (unsigned char *)dest;
-        z.avail_out = ul;
+	z.next_out = (unsigned char *)dest;
+	z.avail_out = ul;
 
 	int res = inflate(&z, Z_FINISH);
 	if (res != Z_OK && res != Z_STREAM_END) {
-            printf("Failed to decompress GZIP block %d\n", res);
-	    return -10;
-        }
+		printf("Failed to decompress GZIP block %d\n", res);
+		return -10;
+	}
 	inflateEnd(&z); /* cleanup */
 	return 0;
 }
@@ -72,10 +72,10 @@ typedef struct pqc_creader_t {
 	char *data;
 	char *dict;
 	char *odict;
-	char first_definition; 	/* first definition (alternating 0/1)  TODO handle levels */
+	char first_definition;	/* first definition (alternating 0/1)  TODO handle levels */
 	int *definition;	/* definition lengths */
 	int definitionsize;	/* size of definition lengths */
-	char first_repetition; 	/* first repetition (alternating 0/1)  TODO handle levels */
+	char first_repetition;	/* first repetition (alternating 0/1)  TODO handle levels */
 	int *repetition;	/* repetition lengths */
 	int repetitionsize;	/* size of repetition lengths */
 	int curdef;
@@ -386,7 +386,7 @@ pqc_data_pageV2(pqc_reader_t *r, pqc_creader_t *pr, int64_t pos, u_int32_t *num_
 
 static int
 string_read_dict( pqc_creader_t *cr, u_int32_t num_values)
-	/* in 32 bit len, string (without zero) */
+/* in 32 bit len, string (without zero) */
 {
 	u_int32_t i, hsz = 0;
 	u_int8_t *data = (u_int8_t*)cr->dict;
@@ -409,24 +409,24 @@ string_read_dict( pqc_creader_t *cr, u_int32_t num_values)
 	char *buf = mem + sizeof(char*) * num_values + sizeof(int) * num_values, *obuf = buf;
 	int *offsets = (int*)(mem + sizeof(char*) * num_values);
 	data = (u_int8_t*)cr->dict;
-    for (i=0; i<num_values; i++) {
-        unsigned int len = get_uint32(data);
+	for (i=0; i<num_values; i++) {
+		unsigned int len = get_uint32(data);
 
 		data += sizeof(int);
-        memcpy(buf, data, len);
+		memcpy(buf, data, len);
 		buf[len] = 0;
 		offsets[i] = buf - obuf;
-        rc[i] = buf;
-        buf += len+1;
+		rc[i] = buf;
+		buf += len+1;
 		data += len;
-    }
+	}
 	if (cr->dict_allocated)
 		_DELETE(cr->dict);
 	cr->dict = mem;
 	cr->dictsize = buf - obuf;
 	cr->dict_num_values = num_values;
 	cr->dict_allocated = true;
-    return num_values;
+	return num_values;
 }
 
 static int
@@ -1286,7 +1286,7 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int pos, int *ssize, int *d
 
 static int
 offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput, int64_t nrows,
-		                  int pos, int offset, int width)
+						  int pos, int offset, int width)
 {
 	if (width == 1) {
 		return offset_string_read_chunk_uchr( r, cr, output, voutput, nrows, pos, offset);
@@ -1331,15 +1331,15 @@ pqc_read_strings( pqc_creader_t *cr, char **rc, char *buf, int *lengths, int64_t
 {
 	char *data = cr->data + pos;
 
-        for (int64_t i=0; i<nrows; i++) {
-                int len = lengths[i];
+	for (int64_t i=0; i<nrows; i++) {
+		int len = lengths[i];
 
-                memcpy(buf, data, len);
+		memcpy(buf, data, len);
 		buf[len] = 0;
-                rc[i] = buf;
-                buf += len+1;
+		rc[i] = buf;
+		buf += len+1;
 		data += len;
-        }
+	}
 	return (data - cr->data);
 }
 
@@ -1349,16 +1349,16 @@ offset_read_strings_sht( pqc_creader_t *cr, usht *rc, char *buf, int *lengths, i
 {
 	char *data = cr->data + pos;
 
-        for (int64_t i=0; i<nrows; i++) {
-                int len = lengths[i];
+	for (int64_t i=0; i<nrows; i++) {
+		int len = lengths[i];
 
-                memcpy(buf, data, len);
+		memcpy(buf, data, len);
 		buf[len] = 0;
-                rc[i] = offset;
-                buf += len+1;
+		rc[i] = offset;
+		buf += len+1;
 		offset += len+1;
 		data += len;
-        }
+	}
 	return (data - cr->data);
 }
 
@@ -1378,15 +1378,15 @@ offset_read_strings( pqc_creader_t *cr, void *output, void *voutput, int *length
 static int64_t
 pqc_size_strings( pqc_creader_t *cr, int *lengths, int64_t nrows, int pos, int *ssize)
 {
-        size_t hsz = 0;
-		(void) cr;
-		(void) pos;
+	size_t hsz = 0;
+	(void) cr;
+	(void) pos;
 
-        for (int64_t i = 0; i<nrows; i++) {
-                int len = lengths[i];
+	for (int64_t i = 0; i<nrows; i++) {
+		int len = lengths[i];
 
-                hsz += len+1;
-        }
+		hsz += len+1;
+	}
 	*ssize = hsz;
 	return 0;
 }
@@ -1612,9 +1612,9 @@ pqc_max_definition( pqc_schema_element *pse)
 }
 
 #define YEAR_OFFSET -(-4712)
-#define DTDAY_WIDTH             5               /* 1..28/29/30/31, depending on month/year */
-#define DTDAY_SHIFT             0
-#define DTMONTH_WIDTH   21              /* enough for 174761 years (and 8 months) */
+#define DTDAY_WIDTH			 5			   /* 1..28/29/30/31, depending on month/year */
+#define DTDAY_SHIFT			 0
+#define DTMONTH_WIDTH   21			  /* enough for 174761 years (and 8 months) */
 #define DTMONTH_SHIFT   (DTDAY_WIDTH+DTDAY_SHIFT)
 #define mkdate(y, m, d) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) | ((uint32_t) (d) << DTDAY_SHIFT))
 
@@ -1639,11 +1639,11 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 		int pos = cr->bufpos;
 		if (cr->pos < 0) {
 			TRC_INFO(PARQUET, "%" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n",
-					r->fmd->rowgroups->file_offset,
-					cr->cc->file_offset,
-					cr->cc->data_page_offset,
-					cr->cc->index_page_offset,
-					cr->cc->dictionary_page_offset);
+					 r->fmd->rowgroups->file_offset,
+					 cr->cc->file_offset,
+					 cr->cc->data_page_offset,
+					 cr->cc->index_page_offset,
+					 cr->cc->dictionary_page_offset);
 			if (cr->bufsize < cr->cc->total_compressed_size) {
 				if (cr->bufsize)
 					_DELETE(cr->buffer);
@@ -1667,9 +1667,9 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			}
 
 			/*
-			if (pos > (cr->cc->data_page_offset - cr->cc->dictionary_page_offset)) {
-				printf("input broken pos > (data_page_offset-dictionary_page_offset %d!=%d %lld)\n", pos, cr->cc->data_page_offset - cr->cc->dictionary_page_offset, cr->cc->data_page_offset);
-			}
+			  if (pos > (cr->cc->data_page_offset - cr->cc->dictionary_page_offset)) {
+			  printf("input broken pos > (data_page_offset-dictionary_page_offset %d!=%d %lld)\n", pos, cr->cc->data_page_offset - cr->cc->dictionary_page_offset, cr->cc->data_page_offset);
+			  }
 			*/
 		} else {
 			if (cr->data && cr->data_allocated)
@@ -1765,7 +1765,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					if (!ssize) {
 						string_read_chunk(cr, output, voutput, nrows, pos);
 						if (cr->definition)
-								(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
+							(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
 					} else if (!voutput) {
 						return string_size_chunk(cr, nrows, pos, ssize, dict);
 					} else
@@ -1783,14 +1783,14 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					}
 				}
 			} else // todo timetype
-			if (r->pse->type == timestamptype) {
-				if (r->pse->precision == 6) {
-					int64_t *l = output;
-					for(u_int64_t i=0; i< nrows; i++) {
-						l[i] = timestamp_fromusec(l[i]);
+				if (r->pse->type == timestamptype) {
+					if (r->pse->precision == 6) {
+						int64_t *l = output;
+						for(u_int64_t i=0; i< nrows; i++) {
+							l[i] = timestamp_fromusec(l[i]);
+						}
 					}
 				}
-			}
 			ATOMIC_ADD(&r->rownr, orows);
 			cr->curnr += orows;
 			cr->cc->cur_page.num_read += orows;
@@ -1848,7 +1848,7 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					if (!ssize) {
 						string_read_chunk(cr, output, voutput, nrows, pos);
 						if (cr->definition)
-								(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
+							(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
 					} else if (!voutput) {
 						return string_size_chunk(cr, nrows, pos, ssize, dict);
 					} else
@@ -1866,14 +1866,14 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 					}
 				}
 			} else // todo timetype
-			if (r->pse->type == timestamptype) {
-				if (r->pse->precision == 6) {
-					int64_t *l = output;
-					for(u_int64_t i=0; i< nrows; i++) {
-						l[i] = timestamp_fromusec(l[i]);
+				if (r->pse->type == timestamptype) {
+					if (r->pse->precision == 6) {
+						int64_t *l = output;
+						for(u_int64_t i=0; i< nrows; i++) {
+							l[i] = timestamp_fromusec(l[i]);
+						}
 					}
 				}
-			}
 			ATOMIC_ADD(&r->rownr, orows);
 			cr->curnr += orows;
 			cr->cc->cur_page.num_read += orows;
