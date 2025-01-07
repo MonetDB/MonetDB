@@ -292,7 +292,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 		if (card < estimate)
 			estimate = card;
 		for( node *n = rel->exps->h; n; n = n->next ) {
-			int grphash = grphash;
+			int grphash = curhash;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 			sql_subtype *t = exp_subtype(e), *it = NULL;

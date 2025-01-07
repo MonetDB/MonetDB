@@ -168,6 +168,7 @@ stack_copy(MalStkPtr stk, int start)
 	return n;
 }
 
+#ifdef CPU_ZERO
 static void
 thread_runoncpu(int cpu)
 {
@@ -178,6 +179,7 @@ thread_runoncpu(int cpu)
         CPU_SET(cpu , &cpuset);
         sched_setaffinity(0, sizeof(cpuset), &cpuset);
 }
+#endif
 
 static void
 PIPELINEworker(void *T)
@@ -192,7 +194,9 @@ PIPELINEworker(void *T)
 	t->errbuf = NULL;
 
 	Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
+#ifdef CPU_ZERO
 	thread_runoncpu(t->self);
+#endif
 	if (p != NULL) {
 		for (;;) {
 			/* wait until we are allowed to start working */

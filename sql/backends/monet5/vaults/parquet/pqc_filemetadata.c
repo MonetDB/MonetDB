@@ -35,7 +35,7 @@ typedef enum oldtype {
 /*
  * pqc_file
  */
-typedef struct pqc_file {
+struct pqc_file {
 	int refcnt;
 	char *filename;
 	int fd;
@@ -49,7 +49,7 @@ typedef struct pqc_file {
 	size_t bsz;
 	char *buffer;
 	MT_Lock lock;
-} pqc_file;
+};
 
 #define PQC_MAGIC(c) ((c)[0] == 'P' && (c)[1] == 'A' && (c)[2] == 'R' && (c)[3] == '1')
 
@@ -1269,4 +1269,3 @@ pqc_get_filemetadata( pqc_file *pq )
 	assert(pq);
 	return pq->fmd;
 }
-

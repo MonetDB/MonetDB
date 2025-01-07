@@ -93,7 +93,7 @@ typedef struct pqc_creader_t {
 	u_int32_t remaining;
 } pqc_creader_t;
 
-typedef struct pqc_reader_t {
+struct pqc_reader_t {
 	struct pqc_reader_t *p;
 	pqc_filemetadata *fmd;
 	pqc_schema_element *pse;
@@ -101,13 +101,13 @@ typedef struct pqc_reader_t {
 	int colnr;		/* colnr of this reader */
 	int level;
 	u_int64_t sz;
-	u_int64_t rownr;
+	ATOMIC_TYPE rownr;
 	const void *nil;
 
 	int nrworkers;
 	pqc_file *spq;
 	pqc_creader_t *creader; /* per worker readers */
-} pqc_reader_t;
+};
 
 static int
 pqc_statistics( pqc_reader_t *r, pqc_creader_t *pr, pqc_stat *stat, int pos )
@@ -672,7 +672,7 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 	r->sz = nrows;
 	r->colnr = colnr;
 	r->rowgroup = -1;
-	r->rownr = 0;
+	ATOMIC_INIT(&r->rownr, 0);
 	r->nrworkers = nrworkers;
 	r->spq = pq;
 	r->nil = nil;
@@ -1379,12 +1379,12 @@ static int64_t
 pqc_size_strings( pqc_creader_t *cr, int *lengths, int64_t nrows, int pos, int *ssize)
 {
         size_t hsz = 0;
-	char *data = cr->data + pos;
+		(void) cr;
+		(void) pos;
 
         for (int64_t i = 0; i<nrows; i++) {
                 int len = lengths[i];
 
-		data += len;
                 hsz += len+1;
         }
 	*ssize = hsz;
@@ -1426,7 +1426,7 @@ int64_t
 pqc_mark_chunk( pqc_reader_t *r, int nr_workers, int wnr, u_int64_t nrows)
 {
 	u_int64_t orows = nrows;
-	if (r->rownr >= r->sz)
+	if (ATOMIC_GET(&r->rownr) >= r->sz)
 		return 0;
 
 	pqc_creader_t *cr = r->creader+wnr;
@@ -1621,7 +1621,7 @@ pqc_max_definition( pqc_schema_element *pse)
 int64_t
 pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, u_int64_t nrows, int *ssize, int *dict)
 {
-	if (r->rownr >= r->sz)
+	if (ATOMIC_GET(&r->rownr) >= r->sz)
 		return 0;
 
 	pqc_creader_t *cr = r->creader+wnr;
@@ -1630,8 +1630,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 	if (cr->cc && cr->curnr + nrows > cr->cc->nrows)
 		nrows = cr->cc->nrows - cr->curnr;
 
-	if (r->rownr + nrows > r->sz)
-		nrows = r->sz - r->rownr;
+	if (ATOMIC_GET(&r->rownr) + nrows > r->sz)
+		nrows = r->sz - ATOMIC_GET(&r->rownr);
 	if (nrows == 0)
 		return 0;
 	if (cr->pos < 0 || cr->cc->cur_page.num_read == cr->cc->cur_page.num_values) {
