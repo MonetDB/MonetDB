@@ -54,29 +54,6 @@ int msetting_parse_bool(const char *text)
 	return -1;
 }
 
-char* allocprintf(const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-
-char *
-allocprintf(const char *fmt, ...)
-{
-	va_list ap;
-	char *buf = NULL;
-	size_t pos = 0, cap = 0;
-	int n;
-
-	va_start(ap, fmt);
-	n = vreallocprintf(&buf, &pos, &cap, fmt, ap);
-	va_end(ap);
-
-	if (n >= 0)
-		return buf;
-	free(buf);
-	return NULL;
-}
-
-
-
 
 static const struct { const char *name;  mparm parm; }
 by_name[] = {
@@ -208,53 +185,92 @@ const msettings msettings_default_values = {
 
 const msettings *msettings_default = &msettings_default_values;
 
+static void*
+default_alloc(void *state, void *old, size_t size)
+{
+	(void)state;
+	return realloc(old, size);
+}
+
+msettings *msettings_create_with(msettings_allocator alloc, void *allocator_state)
+{
+	if (alloc == NULL) {
+		alloc = default_alloc;
+		allocator_state = NULL;
+	}
+
+	msettings *mp = alloc(allocator_state, NULL, sizeof(*mp));
+	if (!mp)
+		return NULL;
+
+	*mp = msettings_default_values;
+	mp->alloc = alloc;
+	mp->alloc_state = allocator_state;
+
+	return mp;
+}
+
 msettings *msettings_create(void)
 {
-	msettings *mp = malloc(sizeof(*mp));
-	if (!mp) {
+	return msettings_create_with(NULL, NULL);
+}
+
+msettings *msettings_clone_with(msettings_allocator alloc, void *alloc_state, const msettings *orig)
+{
+	bool free_unix_sock_name_buffer = false;
+	struct string *copy_start = NULL;
+	struct string *copy_pos = NULL;
+
+	msettings *mp = msettings_create_with(alloc, alloc_state);
+	if (!mp)
 		return NULL;
+
+	// Before we copy orig over mp, remember mp's allocator as decided by msettings_create_with.
+	alloc = mp->alloc;
+	alloc_state = mp->alloc_state;
+
+	// Copy the whole struct, including the pointers to data owned by orig.
+	// This means we must be really careful when we abort halfway and need to free 'mp'.
+	// We will use 'start' and 'pos' to keep track of which strings must be free'd BY US
+	*mp = *orig;
+	mp->alloc = alloc;
+	mp->alloc_state = alloc_state;
+	copy_start = &mp->dummy_start_string;
+	copy_pos = copy_start;
+
+	if (orig->unix_sock_name_buffer) {
+		mp->unix_sock_name_buffer = msettings_strdup(mp, orig->unix_sock_name_buffer);
+		if (mp->unix_sock_name_buffer == NULL)
+			goto bailout;
+		free_unix_sock_name_buffer = true;
 	}
-	*mp = msettings_default_values;
+
+	// Duplicate the strings that need to be duplicated
+	for (; copy_pos < &mp->dummy_end_string; copy_pos++) {
+		if (copy_pos->must_free) {
+			copy_pos->str = msettings_strdup(mp, copy_pos->str);
+			if (copy_pos->str == NULL)
+				goto bailout;
+		}
+	}
+
+	// Now all references to data allocated by 'orig' has been copied.
 	return mp;
+
+bailout:
+	if (free_unix_sock_name_buffer)
+		msettings_dealloc(mp, mp->unix_sock_name_buffer);
+	while (copy_start != copy_pos) {
+		msettings_dealloc(mp, copy_start->str);
+		copy_start++;
+	}
+	msettings_dealloc(mp, mp);
+	return NULL;
 }
 
 msettings *msettings_clone(const msettings *orig)
 {
-	msettings *mp = malloc(sizeof(*mp));
-	const char *namebuf = orig->unix_sock_name_buffer;
-	char *cloned_name_buffer = namebuf ? strdup(namebuf) : NULL;
-	if (!mp || (namebuf && !cloned_name_buffer)) {
-		free(mp);
-		free(cloned_name_buffer);
-		return NULL;
-	}
-	*mp = *orig;
-	mp->unix_sock_name_buffer = cloned_name_buffer;
-
-	// now we have to very carefully duplicate the strings.
-	// taking care to only free our own ones if that fails
-
-	struct string *start = &mp->dummy_start_string;
-	struct string *end = &mp->dummy_end_string;
-	struct string *p = start;
-	while (p < end) {
-		if (p->must_free) {
-			p->str = strdup(p->str);
-			if (p->str == NULL)
-				goto bailout;
-		}
-		p++;
-	}
-
-	return mp;
-
-bailout:
-	for (struct string *q = start; q < p; q++)
-		if (q->must_free)
-			free(q->str);
-	free(mp->unix_sock_name_buffer);
-	free(mp);
-	return NULL;
+	return msettings_clone_with(NULL, NULL, orig);
 }
 
 void
@@ -265,20 +281,24 @@ msettings_reset(msettings *mp)
 	struct string *end = &mp->dummy_end_string;
 	for (struct string *p = start; p < end; p++) {
 		if (p->must_free)
-			free(p->str);
+			msettings_dealloc(mp, p->str);
 	}
 
 	// free the buffer
-	free(mp->unix_sock_name_buffer);
+	msettings_dealloc(mp, mp->unix_sock_name_buffer);
 
-	// keep the localizer
+	// keep the localizer and the allocator
 	void *localizer = mp->localizer;
 	void *localizer_data = mp->localizer_data;
+	msettings_allocator alloc = mp->alloc;
+	void *alloc_state = mp->alloc_state;
 
 	// now overwrite the whole thing
 	*mp = *msettings_default;
 	mp->localizer = localizer;
 	mp->localizer_data = localizer_data;
+	mp->alloc = alloc;
+	mp->alloc_state = alloc_state;
 }
 
 msettings *
@@ -289,10 +309,10 @@ msettings_destroy(msettings *mp)
 
 	for (struct string *p = &mp->dummy_start_string + 1; p < &mp->dummy_end_string; p++) {
 		if (p->must_free)
-			free(p->str);
+			msettings_dealloc(mp, p->str);
 	}
-	free(mp->unix_sock_name_buffer);
-	free(mp);
+	msettings_dealloc(mp, mp->unix_sock_name_buffer);
+	msettings_dealloc(mp, mp);
 
 	return NULL;
 }
@@ -362,11 +382,11 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 	if (p >=  &mp->dummy_end_string)
 		FATAL();
 
-	char *v = strdup(value);
+	char *v = msettings_strdup(mp, value);
 	if (!v)
 		return MALLOC_FAILED;
 	if (p->must_free)
-		free(p->str);
+		msettings_dealloc(mp, p->str);
 	p->str = v;
 	p->must_free = true;
 
@@ -665,8 +685,8 @@ msettings_validate(msettings *mp)
 	// compute this here so the getter function can take const msettings*
 	const char *sockdir = msetting_string(mp, MP_SOCKDIR);
 	long effective_port = msettings_connect_port(mp);
-	free(mp->unix_sock_name_buffer);
-	mp->unix_sock_name_buffer = allocprintf("%s/.s.monetdb.%ld", sockdir, effective_port);
+	msettings_dealloc(mp, mp->unix_sock_name_buffer);
+	mp->unix_sock_name_buffer = msettings_allocprintf(mp, "%s/.s.monetdb.%ld", sockdir, effective_port);
 	if (mp->unix_sock_name_buffer == NULL)
 		return false;
 

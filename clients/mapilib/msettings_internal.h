@@ -72,6 +72,8 @@ struct msettings {
 	bool validated;
 	const char* (*localizer)(const void *data, mparm parm);
 	void *localizer_data;
+	void *(*alloc)(void *state, void *old, size_t size);
+	void *alloc_state;
 	char error_message[256];
 };
 
@@ -79,5 +81,77 @@ struct msettings {
 const char *format_error(msettings *mp, const char *fmt, ...)
 	__attribute__((__format__(__printf__, 2, 3)));
 
+// wrappers around mp->allocator
+
+static inline void*
+msettings_realloc(const msettings *mp, void *old, size_t size)
+{
+	return mp->alloc(mp->alloc_state, old, size);
+}
+
+static inline void*
+msettings_alloc(const msettings *mp, size_t size)
+{
+	return msettings_realloc(mp, NULL, size);
+}
+
+static inline void*
+msettings_alloc_zeroed(const msettings *mp, size_t size)
+{
+	char *data = msettings_realloc(mp, NULL, size);
+	memset(data, 0, size);
+	return data;
+}
+
+static inline void*
+msettings_dealloc(const msettings *mp, void *data)
+{
+	if (data != NULL)
+		msettings_realloc(mp, data, 0);
+	return NULL;
+}
+
+static inline void*
+msettings_strdup(const msettings *mp, const char *string)
+{
+	if (string == NULL)
+		return NULL;
+
+	size_t size = strlen(string);
+	char *new_string = msettings_alloc(mp, size);
+	if (new_string)
+		memcpy(new_string, string, size);
+	return new_string;
+}
+
+
+static inline char* msettings_allocprintf(const msettings *mp, const char *fmt, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
+
+static inline char*
+msettings_allocprintf(const msettings *mp, const char *fmt, ...)
+{
+	char *buffer = NULL;
+	va_list ap, ap2;
+
+	va_start(ap, fmt);
+	va_copy(ap2, ap);
+
+	int len = vsnprintf("", 0, fmt, ap2);
+	assert(len >= 0);
+	if (len < 0)
+		goto end;
+
+	buffer = msettings_alloc(mp, len + 1);
+	if (buffer == NULL)
+		goto end;
+	vsnprintf(buffer, len + 1, fmt, ap);
+	buffer[len] = '\0';
+
+end:
+	va_end(ap2);
+	va_end(ap);
+	return buffer;
+}
 
 #endif

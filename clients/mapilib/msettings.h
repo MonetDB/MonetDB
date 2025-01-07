@@ -126,12 +126,12 @@ typedef struct msettings msettings;
 typedef const char *msettings_error;
 mapi_export bool msettings_malloc_failed(msettings_error err);
 
-/* returns NULL if could not allocate */
+/* these return NULL if they cannot not allocate */
+typedef void *(*msettings_allocator)(void *state, void *old, size_t size);
 mapi_export msettings *msettings_create(void);
-
-mapi_export msettings *msettings_create_with();
-
+mapi_export msettings *msettings_create_with(msettings_allocator alloc, void *alloc_state);
 mapi_export msettings *msettings_clone(const msettings *mp);
+mapi_export msettings *msettings_clone_with(msettings_allocator alloc, void *alloc_state, const msettings *mp);
 mapi_export void msettings_reset(msettings *mp);
 mapi_export const msettings *msettings_default;
 
