@@ -1,0 +1,24 @@
+statement ok
+CREATE TABLE tunnd0(c1 int, c2 varchar(9), c3 dec(10,2), UNIQUE NULLS NOT DISTINCT (c1, c2), UNIQUE NULLS NOT DISTINCT (c2, c3))
+
+statement ok
+CREATE TABLE tunnd1(c1 int, c2 varchar(9), c3 dec(10,2), UNIQUE NULLS NOT DISTINCT (c1, c2), UNIQUE NULLS DISTINCT (c2, c3))
+
+query TI rowsort
+SELECT name, type FROM sys.keys WHERE table_id IN (SELECT id FROM sys.tables WHERE NOT system AND name LIKE 'tunnd%')
+----
+tunnd0_c1_c2_nndunique
+3
+tunnd0_c2_c3_nndunique
+3
+tunnd1_c1_c2_nndunique
+3
+tunnd1_c2_c3_unique
+1
+
+statement ok
+DROP TABLE IF EXISTS tunnd0
+
+statement ok
+DROP TABLE tunnd1
+
