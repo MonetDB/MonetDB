@@ -91,12 +91,15 @@
 		}							\
 	} while (0)
 
-gdk_return
-GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
+BAT *
+GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 {
 	BUN i = 0, cnt = BATcount(b);
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
+	BAT *r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT);
+	if (r == NULL)
+		return NULL;
 	bit *restrict rb = (bit *) Tloc(r, 0), npb = npbit ? *npbit : 0;
 	const bit *restrict np = (bit *) pi.base;
 
@@ -171,7 +174,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
-	return GDK_SUCCEED;
+	return r;
 }
 
 #define ANALYTICAL_WINDOW_BOUNDS_ROWS_PRECEDING(TPE, LIMIT, UPCAST)	\
@@ -610,9 +613,12 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 		}							\
 	} while(0)
 
-static gdk_return
-GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
+static BAT *
+GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding)
 {
+	BAT *r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+	if (r == NULL)
+		return NULL;
 	oid *restrict rb = (oid *) Tloc(r, 0), i = 0, k = 0, j = 0, cnt = BATcount(b);
 	BATiter pi = bat_iterator(p);
 	const bit *restrict np = pi.base;
@@ -649,7 +655,7 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 	BATsetcount(r, cnt);
 	r->tnonil = false;
 	r->tnil = false;
-	return GDK_SUCCEED;
+	return r;
 }
 
 #define ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED_PRECEDING(TPE, NAN_CHECK)	\
@@ -706,9 +712,12 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 
 #define NO_NAN_CHECK /* nulls match on this operator */
 
-static gdk_return
-GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when the limit is 0, ie match peer rows */
+static BAT *
+GDKanalyticalpeers(BAT *b, BAT *p, bool preceding) /* used in range when the limit is 0, ie match peer rows */
 {
+	BAT *r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+	if (r == NULL)
+		return NULL;
 	oid *restrict rb = (oid *) Tloc(r, 0), i = 0, k = 0, j = 0, l = 0, cnt = BATcount(b);
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
@@ -848,23 +857,27 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 	BATsetcount(r, cnt);
 	r->tnonil = false;
 	r->tnil = false;
-	return GDK_SUCCEED;
+	return r;
 }
 
-static gdk_return
-GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding, oid second_half)
+static BAT *
+GDKanalyticalrowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding, oid second_half)
 {
 	oid cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base;
-	oid *restrict rb = (oid *) Tloc(r, 0);
 	bool last = false;
+	BAT *r = NULL;
 
 	if (l) {		/* dynamic bounds */
 		if (li.nil)
 			goto invalid_bound;
+		r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+		if (r == NULL)
+			return NULL;
+		oid *restrict rb = (oid *) Tloc(r, 0);
 		switch (tp2) {
 		case TYPE_bte:{
 			const bte *restrict limit = (bte *) li.base;
@@ -959,10 +972,16 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
 			bat_iterator_end(&li);
-			return GDKanalyticalallbounds(r, b, p, preceding);
-		} else if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
+			return GDKanalyticalallbounds(b, p, preceding);
+		}
+		if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;
-		} else if (preceding) {
+		}
+		r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+		if (r == NULL)
+			return NULL;
+		oid *restrict rb = (oid *) Tloc(r, 0);
+		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, SINGLE, lng, limit, (oid) olimit);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, SINGLE, lng, limit, (oid) olimit);
@@ -975,30 +994,33 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 	BATsetcount(r, cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
-	return GDK_SUCCEED;
+	return r;
   bound_not_supported:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!rows frame bound type %s not supported.\n", ATOMname(tp2));
-	return GDK_FAIL;
+	return NULL;
   invalid_bound:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!row frame bound must be non negative and non null.\n");
-	return GDK_FAIL;
+	return NULL;
 }
 
-static gdk_return
-GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, bool preceding)
+static BAT *
+GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, bool preceding)
 {
-	oid cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0, *restrict rb = (oid *) Tloc(r, 0);
+	oid cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base;
 	bool last = false;
+	BAT *r = NULL;
 
 	if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && tp2 != TYPE_int && tp2 != TYPE_lng)
 		goto bound_not_supported;
@@ -1006,6 +1028,10 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 	if (l) {		/* dynamic bounds */
 		if (li.nil)
 			goto invalid_bound;
+		r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+		if (r == NULL)
+			return NULL;
+		oid *restrict rb = (oid *) Tloc(r, 0);
 		switch (tp2) {
 		case TYPE_bte:{
 			const bte *restrict limit = (bte *) li.base;
@@ -1102,13 +1128,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(r, b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding);
 				}
 				if (ll == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(r, b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding);
 				}
 				limit = is_bte_nil(ll) ? lng_nil : (lng) ll;
 				break;
@@ -1119,13 +1145,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(r, b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding);
 				}
 				if (ll == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(r, b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding);
 				}
 				limit = is_sht_nil(ll) ? lng_nil : (lng) ll;
 				break;
@@ -1136,13 +1162,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(r, b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding);
 				}
 				if (int_limit == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(r, b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding);
 				}
 				limit = is_int_nil(int_limit) ? lng_nil : (lng) int_limit;
 				break;
@@ -1153,13 +1179,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalallbounds(r, b, p, preceding);
+					return GDKanalyticalallbounds(b, p, preceding);
 				}
 				if (limit == 0) {
 					bat_iterator_end(&pi);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&li);
-					return GDKanalyticalpeers(r, b, p, preceding);
+					return GDKanalyticalpeers(b, p, preceding);
 				}
 				break;
 			}
@@ -1168,7 +1194,12 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			}
 			if (is_lng_nil(limit) || limit < 0 || is_int_nil(int_limit) || int_limit < 0) {
 				goto invalid_bound;
-			} else if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
+			}
+			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+			if (r == NULL)
+				return NULL;
+			oid *restrict rb = (oid *) Tloc(r, 0);
+			if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
 				if (tp2 == TYPE_int) {
 					if (preceding) {
 						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_PRECEDING, SINGLE, int_limit);
@@ -1197,13 +1228,18 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalallbounds(r, b, p, preceding);
+				return GDKanalyticalallbounds(b, p, preceding);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalpeers(r, b, p, preceding);
-			} else if (preceding) {
+				return GDKanalyticalpeers(b, p, preceding);
+			}
+			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+			if (r == NULL)
+				return NULL;
+			oid *restrict rb = (oid *) Tloc(r, 0);
+			if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_FLT(_PRECEDING, SINGLE, limit);
 			} else {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_FLT(_FOLLOWING, SINGLE, limit);
@@ -1218,13 +1254,18 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalallbounds(r, b, p, preceding);
+				return GDKanalyticalallbounds(b, p, preceding);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalpeers(r, b, p, preceding);
-			} else if (preceding) {
+				return GDKanalyticalpeers(b, p, preceding);
+			}
+			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+			if (r == NULL)
+				return NULL;
+			oid *restrict rb = (oid *) Tloc(r, 0);
+			if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_DBL(_PRECEDING, SINGLE, limit);
 			} else {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_DBL(_FOLLOWING, SINGLE, limit);
@@ -1240,13 +1281,18 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalallbounds(r, b, p, preceding);
+				return GDKanalyticalallbounds(b, p, preceding);
 			} else if (limit == 0) {
 				bat_iterator_end(&pi);
 				bat_iterator_end(&bi);
 				bat_iterator_end(&li);
-				return GDKanalyticalpeers(r, b, p, preceding);
-			} else if (preceding) {
+				return GDKanalyticalpeers(b, p, preceding);
+			}
+			r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+			if (r == NULL)
+				return NULL;
+			oid *restrict rb = (oid *) Tloc(r, 0);
+			if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_HGE(_PRECEDING, SINGLE, limit);
 			} else {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_HGE(_FOLLOWING, SINGLE, limit);
@@ -1264,54 +1310,63 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 	BATsetcount(r, cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
-	return GDK_SUCCEED;
+	return r;
   bound_not_supported:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!range frame bound type %s not supported.\n", ATOMname(tp2));
-	return GDK_FAIL;
+	return NULL;
   type_not_supported:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!type %s not supported for %s frame bound type.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
+	return NULL;
   calc_overflow:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("22003!overflow in calculation.\n");
-	return GDK_FAIL;
+	return NULL;
   invalid_bound:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!range frame bound must be non negative and non null.\n");
-	return GDK_FAIL;
+	return NULL;
 }
 
-static gdk_return
-GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding)
+static BAT *
+GDKanalyticalgroupsbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding)
 {
-	oid cnt = BATcount(b), *restrict rb = (oid *) Tloc(r, 0), i = 0, k = 0, j = 0;
+	oid cnt = BATcount(b), i = 0, k = 0, j = 0;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base, *restrict bp = bi.base;
 	bool last = false;
+	BAT *r = NULL;
 
 	if (bi.type != TYPE_bit) {
 		bat_iterator_end(&pi);
 		bat_iterator_end(&bi);
 		bat_iterator_end(&li);
 		GDKerror("42000!groups frame bound type must be of type bit.\n");
-		return GDK_FAIL;
+		return NULL;
 	}
 
 	if (l) {		/* dynamic bounds */
 		if (li.nil)
 			goto invalid_bound;
+		r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+		if (r == NULL)
+			return NULL;
+		oid *restrict rb = (oid *) Tloc(r, 0);
 		switch (tp2) {
 		case TYPE_bte:{
 			const bte *restrict limit = (bte *) li.base;
@@ -1406,10 +1461,16 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 			bat_iterator_end(&pi);
 			bat_iterator_end(&bi);
 			bat_iterator_end(&li);
-			return GDKanalyticalallbounds(r, b, p, preceding);
-		} else if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
+			return GDKanalyticalallbounds(b, p, preceding);
+		}
+		if (is_lng_nil(limit) || limit < 0) { /* this check is needed if the input is empty */
 			goto invalid_bound;
-		} else if (preceding) {
+		}
+		r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
+		if (r == NULL)
+			return NULL;
+		oid *restrict rb = (oid *) Tloc(r, 0);
+		if (preceding) {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, SINGLE, lng, limit, (oid) olimit);
 		} else {
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, SINGLE, lng, limit, (oid) olimit);
@@ -1421,36 +1482,38 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
-	return GDK_SUCCEED;
+	return r;
   bound_not_supported:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!groups frame bound type %s not supported.\n", ATOMname(tp2));
-	return GDK_FAIL;
+	return NULL;
   invalid_bound:
+	BBPreclaim(r);
 	bat_iterator_end(&pi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&li);
 	GDKerror("42000!groups frame bound must be non negative and non null.\n");
-	return GDK_FAIL;
+	return NULL;
 }
 
-gdk_return
-GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, int unit, bool preceding, oid second_half)
+BAT *
+GDKanalyticalwindowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, int unit, bool preceding, oid second_half)
 {
 	assert((l && !bound) || (!l && bound));
 
 	switch (unit) {
 	case 0:
-		return GDKanalyticalrowbounds(r, b, p, l, bound, tp2, preceding, second_half);
+		return GDKanalyticalrowbounds(b, p, l, bound, tp2, preceding, second_half);
 	case 1:
-		return GDKanalyticalrangebounds(r, b, p, l, bound, tp1, tp2, preceding);
+		return GDKanalyticalrangebounds(b, p, l, bound, tp1, tp2, preceding);
 	case 2:
-		return GDKanalyticalgroupsbounds(r, b, p, l, bound, tp2, preceding);
+		return GDKanalyticalgroupsbounds(b, p, l, bound, tp2, preceding);
 	default:
 		MT_UNREACHABLE();
 	}
 	GDKerror("42000!unit type %d not supported (this is a bug).\n", unit);
-	return GDK_FAIL;
+	return NULL;
 }
