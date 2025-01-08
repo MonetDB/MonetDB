@@ -38,7 +38,7 @@ gdk_export BAT *GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *l, lng *nth, int tp1)
+gdk_export BAT *GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *l, lng nth, int tp1)
 	__attribute__((__warn_unused_result__));
 
 gdk_export BAT *GDKanalyticalmin(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
