@@ -43990,7 +43990,7 @@ sht_dec2second_interval;
 cast sht decimal to a second_interval
 calc
 sha256
-command calc.sha256(X_0:str):sha256 
+command calc.sha256(X_0:str):sha256
 SHA256_fromstr;
 Convert a string to an sha256
 calc
@@ -48605,7 +48605,7 @@ mvc_append_wrap;
 Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.
 sql
 append
-pattern sql.append(X_0:int, X_1:str, X_2:str, X_3:str, X_4:oid, X_5:bat[:oid], X_6:msk, X_7:any):int 
+pattern sql.append(X_0:int, X_1:str, X_2:str, X_3:str, X_4:oid, X_5:bat[:oid], X_6:msk, X_7:any):int
 mvc_append_wrap;
 Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.
 sql
