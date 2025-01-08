@@ -3200,9 +3200,7 @@ BATcount_no_nil(BAT *b, BAT *s)
 	default:
 		nil = ATOMnilptr(t);
 		cmp = ATOMcompare(t);
-		if (nil == NULL) {
-			cnt = ci.ncand;
-		} else if (b->tvheap) {
+		if (b->tvheap) {
 			base = b->tvheap->base;
 			CAND_LOOP(&ci)
 				cnt += (*cmp)(nil, base + ((const var_t *) p)[canditer_next(&ci) - hseq]) != 0;

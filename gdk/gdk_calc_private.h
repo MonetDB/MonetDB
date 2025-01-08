@@ -147,7 +147,7 @@
 #define MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)	\
 	do {								\
 		TYPE4 c = (TYPE4) (lft) * (rgt);			\
-		if (c < (TYPE4) -(max) /*|| c > (TYPE4) (max)*/) {	\
+		if (c < (TYPE4) -(max) || c > (TYPE4) (max)) {		\
 			on_overflow;					\
 		} else {						\
 			(dst) = (TYPE3) c;				\
@@ -159,8 +159,6 @@
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #define MULU4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
-#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
 #else
 /* integer version using generic version */
@@ -175,6 +173,7 @@
 			(dst) = (TYPE3) c;				\
 		}							\
 	} while (0)
+#endif
 #ifdef HAVE_HGE
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
@@ -261,7 +260,6 @@
 		}							\
 	} while (0)
 #endif	/* HAVE_HGE */
-#endif
 #define MULF4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
 

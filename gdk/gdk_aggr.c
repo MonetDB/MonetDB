@@ -3012,8 +3012,6 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 		}
 		break;
 	}
-#endif
-#ifdef HAVE_UHGE
 	case TYPE_uhge: {
 		const uhge *vals = (const uhge *) bi.base;
 		uhge *avgs = Tloc(bn, 0);

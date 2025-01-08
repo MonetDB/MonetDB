@@ -71,7 +71,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 				rb[k] = TPE##_nil;			\
 			} else {					\
 				UPCAST nval = (UPCAST) (LNG_HGE);	\
-				VALIDATION /* validation must come after null check */ \
+				VALIDATION; /* validation must come after null check */ \
 				if (nval >= ncnt) {			\
 					rb[k] = (TPE)(j + 1);		\
 				} else {				\
@@ -83,6 +83,27 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, BAT *st, void **segment_tree,
 					else				\
 						rb[k] = (TPE)(1 + top + (j - small) / bsize); \
 				}					\
+			}						\
+		}							\
+	} while (0)
+
+#define NTILE_UCALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
+	do {								\
+		UPCAST j = 0, ncnt = (UPCAST) (i - k);			\
+		for (; k < i; k++, j++) {				\
+			TPE val = NEXT_VALUE;				\
+			UPCAST nval = (UPCAST) (LNG_HGE);		\
+			VALIDATION; /* validation must come after null check */ \
+			if (nval >= ncnt) {				\
+				rb[k] = (TPE)(j + 1);			\
+			} else {					\
+				UPCAST bsize = ncnt / nval;		\
+				UPCAST top = ncnt - nval * bsize;	\
+				UPCAST small = top * (bsize + 1);	\
+				if ((UPCAST) j < small)			\
+					rb[k] = (TPE)(1 + j / (bsize + 1)); \
+				else					\
+					rb[k] = (TPE)(1 + top + (j - small) / bsize); \
 			}						\
 		}							\
 	} while (0)
@@ -107,17 +128,50 @@ ntile##IMP##TPE:							\
 		}							\
 	} while (0)
 
+#define ANALYTICAL_UNTILE(IMP, TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION) \
+	do {								\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
+		if (p) {						\
+			while (i < cnt) {				\
+				if (np[i]) {				\
+ntile##IMP##TPE:							\
+					NTILE_UCALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION); \
+				}					\
+				if (!last)				\
+					i++;				\
+			}						\
+		}							\
+		if (!last) {						\
+			last = true;					\
+			i = cnt;					\
+			goto ntile##IMP##TPE;				\
+		}							\
+	} while (0)
+
 #define ANALYTICAL_NTILE_SINGLE_IMP(TPE, LNG_HGE, UPCAST)		\
 	do {								\
 		TPE ntl = *(TPE*) ntile;				\
 		if (!is_##TPE##_nil(ntl) && ntl <= 0) goto invalidntile; \
-		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ;); \
+		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ); \
+	} while (0)
+
+#define ANALYTICAL_NTILE_SINGLE_UIMP(TPE, LNG_HGE, UPCAST)		\
+	do {								\
+		TPE ntl = *(TPE*) ntile;				\
+		if (ntl == 0) goto invalidntile; \
+		ANALYTICAL_UNTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ); \
 	} while (0)
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST)		\
 	do {								\
 		const TPE *restrict nn = (TPE*)ni.base;			\
-		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile;); \
+		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile); \
+	} while (0)
+
+#define ANALYTICAL_NTILE_MULTI_UIMP(TPE, LNG_HGE, UPCAST)		\
+	do {								\
+		const TPE *restrict nn = (TPE*)ni.base;			\
+		ANALYTICAL_UNTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val == 0) goto invalidntile); \
 	} while (0)
 
 BAT *
@@ -140,11 +194,20 @@ GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 		case TYPE_bte:
 			ANALYTICAL_NTILE_SINGLE_IMP(bte, val, BUN);
 			break;
+		case TYPE_ubte:
+			ANALYTICAL_NTILE_SINGLE_UIMP(ubte, val, BUN);
+			break;
 		case TYPE_sht:
 			ANALYTICAL_NTILE_SINGLE_IMP(sht, val, BUN);
 			break;
+		case TYPE_usht:
+			ANALYTICAL_NTILE_SINGLE_UIMP(usht, val, BUN);
+			break;
 		case TYPE_int:
 			ANALYTICAL_NTILE_SINGLE_IMP(int, val, BUN);
+			break;
+		case TYPE_uint:
+			ANALYTICAL_NTILE_SINGLE_UIMP(uint, val, BUN);
 			break;
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_INT
@@ -153,6 +216,9 @@ GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 			ANALYTICAL_NTILE_SINGLE_IMP(lng, val, BUN);
 #endif
 			break;
+		case TYPE_ulng:
+			ANALYTICAL_NTILE_SINGLE_UIMP(ulng, val, ulng);
+			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #if SIZEOF_OID == SIZEOF_INT
@@ -160,6 +226,9 @@ GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 #else
 			ANALYTICAL_NTILE_SINGLE_IMP(hge, (val > (hge) GDK_lng_max) ? GDK_lng_max : (lng) val, BUN);
 #endif
+			break;
+		case TYPE_uhge:
+			ANALYTICAL_NTILE_SINGLE_UIMP(uhge, (val > (uhge) GDK_ulng_max) ? GDK_ulng_max : (ulng) val, ulng);
 			break;
 #endif
 		default:
@@ -170,11 +239,20 @@ GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 		case TYPE_bte:
 			ANALYTICAL_NTILE_MULTI_IMP(bte, val, BUN);
 			break;
+		case TYPE_ubte:
+			ANALYTICAL_NTILE_MULTI_UIMP(ubte, val, BUN);
+			break;
 		case TYPE_sht:
 			ANALYTICAL_NTILE_MULTI_IMP(sht, val, BUN);
 			break;
+		case TYPE_usht:
+			ANALYTICAL_NTILE_MULTI_UIMP(usht, val, BUN);
+			break;
 		case TYPE_int:
 			ANALYTICAL_NTILE_MULTI_IMP(int, val, BUN);
+			break;
+		case TYPE_uint:
+			ANALYTICAL_NTILE_MULTI_UIMP(uint, val, BUN);
 			break;
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_INT
@@ -183,6 +261,9 @@ GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 			ANALYTICAL_NTILE_MULTI_IMP(lng, val, BUN);
 #endif
 			break;
+		case TYPE_ulng:
+			ANALYTICAL_NTILE_MULTI_UIMP(ulng, val, ulng);
+			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
 #if SIZEOF_OID == SIZEOF_INT
@@ -190,6 +271,9 @@ GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 #else
 			ANALYTICAL_NTILE_MULTI_IMP(hge, val > (hge) GDK_lng_max ? GDK_lng_max : (lng) val, BUN);
 #endif
+			break;
+		case TYPE_uhge:
+			ANALYTICAL_NTILE_MULTI_UIMP(uhge, val > (uhge) GDK_ulng_max ? GDK_ulng_max : (ulng) val, ulng);
 			break;
 #endif
 		default:
@@ -231,6 +315,17 @@ invalidntile:
 		}							\
 	} while (0)
 
+#define ANALYTICAL_FIRST_UFIXED(TPE)					\
+	do {								\
+		const TPE *bp = (TPE*)bi.base;				\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
+		for (; k < cnt; k++) {					\
+			const TPE *bs = bp + start[k], *be = bp + end[k]; \
+			TPE curval = (be > bs) ? *bs : 0;		\
+			rb[k] = curval;					\
+		}							\
+	} while (0)
+
 BAT *
 GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 {
@@ -250,18 +345,33 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 	case TYPE_bte:
 		ANALYTICAL_FIRST_FIXED(bte);
 		break;
+	case TYPE_ubte:
+		ANALYTICAL_FIRST_UFIXED(ubte);
+		break;
 	case TYPE_sht:
 		ANALYTICAL_FIRST_FIXED(sht);
+		break;
+	case TYPE_usht:
+		ANALYTICAL_FIRST_UFIXED(usht);
 		break;
 	case TYPE_int:
 		ANALYTICAL_FIRST_FIXED(int);
 		break;
+	case TYPE_uint:
+		ANALYTICAL_FIRST_UFIXED(uint);
+		break;
 	case TYPE_lng:
 		ANALYTICAL_FIRST_FIXED(lng);
+		break;
+	case TYPE_ulng:
+		ANALYTICAL_FIRST_UFIXED(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		ANALYTICAL_FIRST_FIXED(hge);
+		break;
+	case TYPE_uhge:
+		ANALYTICAL_FIRST_UFIXED(uhge);
 		break;
 #endif
 	case TYPE_flt:
@@ -317,6 +427,17 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 		}							\
 	} while (0)
 
+#define ANALYTICAL_LAST_UFIXED(TPE)					\
+	do {								\
+		const TPE *bp = (TPE*)bi.base;				\
+		TPE *rb = (TPE*)Tloc(r, 0);				\
+		for (; k < cnt; k++) {					\
+			const TPE *bs = bp + start[k], *be = bp + end[k]; \
+			TPE curval = (be > bs) ? *(be - 1) : 0;		\
+			rb[k] = curval;					\
+		}							\
+	} while (0)
+
 BAT *
 GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 {
@@ -336,18 +457,33 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 	case TYPE_bte:
 		ANALYTICAL_LAST_FIXED(bte);
 		break;
+	case TYPE_ubte:
+		ANALYTICAL_LAST_UFIXED(ubte);
+		break;
 	case TYPE_sht:
 		ANALYTICAL_LAST_FIXED(sht);
+		break;
+	case TYPE_usht:
+		ANALYTICAL_LAST_UFIXED(usht);
 		break;
 	case TYPE_int:
 		ANALYTICAL_LAST_FIXED(int);
 		break;
+	case TYPE_uint:
+		ANALYTICAL_LAST_UFIXED(uint);
+		break;
 	case TYPE_lng:
 		ANALYTICAL_LAST_FIXED(lng);
+		break;
+	case TYPE_ulng:
+		ANALYTICAL_LAST_UFIXED(ulng);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		ANALYTICAL_LAST_FIXED(hge);
+		break;
+	case TYPE_uhge:
+		ANALYTICAL_LAST_UFIXED(uhge);
 		break;
 #endif
 	case TYPE_flt:
