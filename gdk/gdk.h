@@ -736,7 +736,7 @@ typedef struct {
 	bool key:1,		/* no duplicate values present */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
-		nilmask:1,	/* bat has nils seperated */
+		nilmask:1,	/* bat has nils separated */
 		sorted:1,	/* column is sorted in ascending order */
 		revsorted:1,	/* column is sorted in descending order */
 		ascii:1;	/* string column is fully ASCII (7 bit) */

@@ -2200,7 +2200,7 @@ start_of_appends(BAT *offsets, BUN bcnt)
 	return nreplacements;
 }
 
-/* allready locked when called, but needs unlock */
+/* already locked when called, but needs unlock */
 static int
 bat_append_val(sql_trans *tr, sql_delta *bat, sqlid id, BUN offset, BAT *offsets, void *i, BUN cnt, bool val)
 {
