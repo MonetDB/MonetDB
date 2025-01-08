@@ -28,10 +28,18 @@
 typedef struct rel_base_t {
 	sql_table *mt;
 	sql_alias *name;
+	list *subtables; /* list of sql_table pointers */
 	int disallowed;	/* ie check per column */
 	int basenr;
 	uint32_t used[];
 } rel_base_t;
+
+list *
+rel_base_subtables(sql_rel *r)
+{
+	rel_base_t *ba = r->r;
+	return ba->subtables;
+}
 
 void
 rel_base_disallow(sql_rel *r)
@@ -149,9 +157,164 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 	}
 }
 
+static rel_base_t*
+rel_multiset_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_table *t, list *exps)
+{
+	allocator *sa = sql->sa;
+	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
+	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
+
+	ba->basenr = sql->nid;
+	sql->nid += end;
+
+	if (!ba)
+		return NULL;
+	append(pba->subtables, t);
+
+	sql_alias *atname = a_create(sa, colname);
+	atname->parent = ba->name;
+	int i = 0;
+	prop *p = NULL;
+	sql_exp *e = NULL;
+	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
+		sql_column *c = cn->data;
+		if (!column_privs(sql, c, PRIV_SELECT))
+			continue;
+		if (c->type.multiset) {
+			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
+			if (e) {
+				e->nid = -(ba->basenr + i);
+				e->alias.label = e->nid;
+				set_basecol(e);
+				append(exps, e);
+			}
+
+			sql_table *t = mvc_bind_table(sql, c->t->s, c->storage_type);
+			if (rel_multiset_basetable_add_cols(sql, ba, c->base.name, t, exps) == NULL)
+				e = NULL;
+			else
+				continue;
+		} else {
+			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
+		}
+		if (e == NULL)
+			return NULL;
+		e->nid = -(ba->basenr + i);
+		e->alias.label = e->nid;
+		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
+			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
+			p->value.pval = c->t->pkey;
+		} else if (c->unique == 2) {
+			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
+			p->value.pval = NULL;
+		}
+		set_basecol(e);
+		sql_column_get_statistics(sql, c, e);
+		append(exps, e);
+	}
+/*
+	e = exp_alias(sql, atname, TID, atname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	if (e == NULL)
+		return NULL;
+	e->nid = -(ba->basenr + i);
+	e->alias.label = e->nid;
+	append(exps, e);
+	i++;
+*/
+	return ba;
+}
+
+static sql_rel *
+rel_multiset_basetable(mvc *sql, sql_table *t, sql_alias *atname)
+{
+	allocator *sa = sql->sa;
+	sql_rel *rel = rel_create(sa);
+	/* keep each combination subtable / base number in a list */
+	/* each has a unique sub-range of numbers claimed */
+	/* keep all column exp's as one large list in the result already */
+
+	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
+	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
+	sqlstore *store = sql->session->tr->store;
+
+	if(!rel || !ba)
+		return NULL;
+
+	ba->subtables = sa_list(sa);
+	ba->basenr = sql->nid;
+	sql->nid += end;
+	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_del(sql->session->tr, t, CNT_ACTIVE));
+	assert(atname);
+	if (!a_cmp_obj_name(atname, t->base.name))
+		ba->name = atname;
+	else
+		ba->name = table_alias(sql->sa, t, schema_alias(sql->sa, t->s));
+	int i = 0;
+	prop *p = NULL;
+	rel->exps = new_exp_list(sa);
+	sql_exp *e = NULL;
+	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
+		sql_column *c = cn->data;
+		if (!column_privs(sql, c, PRIV_SELECT))
+			continue;
+		if (c->type.multiset) {
+			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			if (e) {
+				e->nid = -(ba->basenr + i);
+				e->alias.label = e->nid;
+				set_basecol(e);
+				append(rel->exps, e);
+			}
+			sql_table *t = mvc_bind_table(sql, c->t->s, c->storage_type);
+			if (rel_multiset_basetable_add_cols(sql, ba, c->base.name, t, rel->exps) == NULL)
+				e = NULL;
+			else
+				continue;
+		} else {
+			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+		}
+		if (e == NULL) {
+			rel_destroy(rel);
+			return NULL;
+		}
+		e->nid = -(ba->basenr + i);
+		e->alias.label = e->nid;
+		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
+			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
+			p->value.pval = c->t->pkey;
+		} else if (c->unique == 2) {
+			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
+			p->value.pval = NULL;
+		}
+		set_basecol(e);
+		sql_column_get_statistics(sql, c, e);
+		append(rel->exps, e);
+	}
+	e = exp_alias(sql, atname, TID, atname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	if (e == NULL) {
+		rel_destroy(rel);
+		return NULL;
+	}
+	e->nid = -(ba->basenr + i);
+	e->alias.label = e->nid;
+	append(rel->exps, e);
+	i++;
+	/* todo add idx's */
+
+	rel->l = t;
+	rel->r = ba;
+	rel->op = op_basetable;
+	rel->card = CARD_MULTI;
+	rel->nrcols = nrcols;
+	return rel;
+}
+
 sql_rel *
 rel_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 {
+	if (t->multiset)
+		return rel_multiset_basetable(sql, t, atname);
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);

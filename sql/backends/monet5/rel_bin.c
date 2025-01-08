@@ -2425,12 +2425,15 @@ static stmt *
 rel2bin_basetable(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
-	sql_table *t = rel->l;
+	sql_table *t = rel->l, *bt = t;
 	sql_column *fcol = NULL;
 	sql_idx *fi = NULL;
 	list *l = sa_list(sql->sa);
-	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *col = NULL;
+	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *odels = dels, *col = NULL;
 	node *en;
+	list *subtables = rel_base_subtables(rel);
+	node *stn = NULL;
+	bool multiset = t->multiset;
 
 	if (l == NULL || dels == NULL)
 		return NULL;
@@ -2449,12 +2452,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			fi = i;
-			col = stmt_idx(be, i, NULL/*dels*/, dels->partition);
+			col = stmt_idx(be, i, multiset?dels:NULL, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			fcol = c;
-			col = stmt_col(be, c, NULL/*dels*/, dels->partition);
+			col = stmt_col(be, c, multiset?dels:NULL, dels->partition);
 		}
 	}
 	for (en = rel->exps->h; en; en = en->next) {
@@ -2479,17 +2482,29 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
-			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
+			s = (i == fi) ? col : stmt_idx(be, i, multiset?dels:NULL, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
+			if (!c && stn) {
+				t = bt;
+				dels = odels;
+				c = find_sql_column(t, oname);
+			}
 
-			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
+			s = (c == fcol) ? col : stmt_col(be, c, multiset?dels:NULL, dels->partition);
+			if (c->type.multiset) {
+				if (!stn)
+					stn = subtables->h;
+				t = stn->data;
+				dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
+				stn = stn->next;
+			}
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		list_append(l, s);
 	}
 	stmt *res = stmt_list(be, l);
-	if (res && dels)
+	if (res && !multiset && dels)
 		res->cand = dels;
 	return res;
 }

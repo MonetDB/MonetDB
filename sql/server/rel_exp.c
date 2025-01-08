@@ -3713,8 +3713,12 @@ static sql_exp *
 exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
 	assert(t->type->composite);
-	if (!exp_is_rel(exp) && !is_values(exp))
+	if (!exp_is_rel(exp) && !is_values(exp)) {
+		sql_subtype *et = exp_subtype(exp);
+		if (et && et->multiset == t->multiset && subtype_cmp(et, t) == 0)
+			return exp;
 		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+	}
 
 	list *msvals = NULL;
 	if (exp_is_rel(exp)) {

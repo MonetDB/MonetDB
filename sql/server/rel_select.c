@@ -734,7 +734,25 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		sql_table *st = mvc_bind_table(query->sql, t->s, c->storage_type);
 		if (!st)
 			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table '%s' missing", c->storage_type);
-		return rel_basetable(query->sql, st, a_create(query->sql->sa, tname?st->base.name:tname));
+		return rel_basetable(query->sql, st, a_create(query->sql->sa, tname?tname:exp_name(e)));
+#if 0
+		assert(c->type.multiset && c->type.type->composite);
+		list *res_exps = sa_list(query->sql->sa);
+		sql_alias *ta = a_create(query->sql->sa, tname?tname:exp_name(e));
+		for (node *n = c->type.type->d.fields->h; n; n = n->next) {
+			sql_arg *a = n->data;
+			sql_exp *e = exp_column(query->sql->sa, ta, a->name, &a->type, CARD_MULTI, 1, 0, 0);
+			e->alias.label = -(query->sql->nid++);
+
+			set_basecol(e);
+			append(res_exps, e);
+		}
+		list *args = sa_list(query->sql->sa);
+		append(args, e);
+		sql_subfunc *f = find_func(query->sql, NULL, "unnest", 1, F_UNION, true, NULL, NULL);
+		e = exp_op(query->sql->sa, args, f);
+		return rel_table_func(query->sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
+#endif
 	}
 	return NULL;
 }

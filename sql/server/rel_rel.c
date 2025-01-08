@@ -362,7 +362,10 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 			if (ambiguous || multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 		}
-		res = e1 ? e1 : e2;
+		if (e1 && e2)
+			res = !is_intern(e1) ? e1 : e2;
+		else
+			res = e1 ? e1 : e2;
 		if (res)
 			set_not_unique(res);
 		return res;

@@ -729,6 +729,9 @@ typedef struct sql_table {
 	bit system;		/* system or user table */
 	bit bootstrap;		/* system table created during bootstrap */
 	bte properties;		/* used for merge_tables */
+	unsigned char
+		composite:1,
+		multiset:1;
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
 	char *query;		/* views may require some query */
