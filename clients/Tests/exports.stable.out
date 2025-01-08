@@ -264,7 +264,7 @@ BAT *GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe) __attribute__((__warn_un
 BAT *GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, int tpe) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalmax(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalmin(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) __attribute__((__warn_unused_result__));
-BAT *GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *l, lng *nth, int tp1) __attribute__((__warn_unused_result__));
+BAT *GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *l, lng nth, int tp1) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalprod(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type) __attribute__((__warn_unused_result__));
 BAT *GDKanalyticalsum(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type) __attribute__((__warn_unused_result__));

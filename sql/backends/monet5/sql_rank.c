@@ -986,7 +986,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	is_a_bat = isaBatType(getArgType(mb, pci, 2));
 
 	if (isaBatType(tpe)) {
-		lng *nth = NULL;
+		lng nth = 0;
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
@@ -1000,7 +1000,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			}
 		} else {
-			nth = getArgReference_lng(stk, pci, 2);
+			nth = *getArgReference_lng(stk, pci, 2);
 		}
 		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
 			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);

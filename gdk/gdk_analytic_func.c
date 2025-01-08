@@ -421,7 +421,7 @@ GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
 		TPE *rb = (TPE*)Tloc(r, 0);				\
 		for (; k < cnt; k++) {					\
 			const TPE *bs = bp + start[k], *be = bp + end[k]; \
-			TPE curval = (be > bs) ? *(be - 1) : TPE##_nil;	\
+			TPE curval = (be > bs) ? be[-1] : TPE##_nil;	\
 			rb[k] = curval;					\
 			has_nils |= is_##TPE##_nil(curval);		\
 		}							\
@@ -539,7 +539,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 			for (; k < cnt; k++) {				\
 				const TPE *bs = bp + start[k];		\
 				const TPE *be = bp + end[k];		\
-				TPE curval = (be > bs && nth < (lng)(end[k] - start[k])) ? *(bs + nth) : TPE##_nil; \
+				TPE curval = (be > bs && nth < (lng)(end[k] - start[k])) ? bs[nth] : TPE##_nil; \
 				rb[k] = curval;				\
 				has_nils |= is_##TPE##_nil(curval);	\
 			}						\
@@ -559,7 +559,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 				curval = TPE##_nil;			\
 				has_nils = true;			\
 			} else {					\
-				curval = *(bs + lnth - 1);		\
+				curval = bs[lnth - 1];			\
 				has_nils |= is_##TPE##_nil(curval);	\
 			}						\
 			rb[k] = curval;					\
@@ -567,7 +567,7 @@ GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
 	} while (0)
 
 BAT *
-GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe)
+GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng nth, int tpe)
 {
 	BAT *r = COLnew(b->hseqbase, tpe, BATcount(b), TRANSIENT);
 	if (r == NULL)
@@ -579,7 +579,6 @@ GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe)
 	bool has_nils = false;
 	oid k = 0, cnt = bi.count;
 	const oid *restrict start = si.base, *restrict end = ei.base;
-	lng nth = pnth ? *pnth : 0;
 	const lng *restrict tp = ti.base;
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
