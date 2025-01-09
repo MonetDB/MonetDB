@@ -2533,16 +2533,6 @@ TIMEOUT_TEST(QryCtx *qc)
 			CALLBACK;					\
 	} while (0)
 
-typedef struct gdk_callback {
-	const char *name;
-	int argc;
-	int interval;  // units sec
-	lng last_called; // timestamp GDKusec
-	gdk_return (*func)(int argc, void *argv[]);
-	struct gdk_callback *next;
-	void *argv[];
-} gdk_callback;
-
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
 gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
