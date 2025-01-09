@@ -168,7 +168,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	bn->batCapacity = b->batCapacity;
 	bn->batRestricted = BAT_READ;
 
-	/* the T column descriptor is fully copied except for the
+	/* the column descriptor is fully copied except for the
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = bi.key;

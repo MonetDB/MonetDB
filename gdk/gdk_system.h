@@ -235,7 +235,6 @@ gdk_export char *GDKgetbuf(void);
 /*
  * @- MT Lock API
  */
-#include "matomic.h"
 
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */
