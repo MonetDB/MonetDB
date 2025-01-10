@@ -209,8 +209,19 @@ fm_join(visitor *v, sql_rel *rel)
 static sql_rel *
 fm_project(visitor *v, sql_rel *rel)
 {
-	if ((!rel->l || rel->card == CARD_ATOM) && rel->exps) { /* check for type multiset */
+	sql_rel *l = rel->l;
+
+	if ((!l || (l && rel->card == CARD_ATOM && is_project(l->op))) && rel->exps) { /* check for type multiset */
 		bool needed = false;
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			sql_subtype *t = exp_subtype(e);
+			needed = (t && t->multiset);
+			if (needed && is_intern(e)) {
+				needed = false;
+				break;
+			}
+		}
 		for(node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_subtype *t = exp_subtype(n->data);
 			needed = (t && t->multiset);
@@ -285,6 +296,8 @@ fm_project(visitor *v, sql_rel *rel)
 				sql_subtype *t = exp_subtype(e);
 				if (t->multiset) {
 					sql_exp *rowid = exps_bind_column(exps, exp_name(e), NULL, NULL, 0);
+					if (!rowid)
+						rowid = exps_bind_column(exps, "rowid", NULL, NULL, 0);
 					rowid = exp_ref(v->sql, rowid);
 					append(nexps, rowid);
 					for(node *f = t->type->d.fields->h; f; f = f->next) {
@@ -294,10 +307,14 @@ fm_project(visitor *v, sql_rel *rel)
 						append(nexps, mse);
 					}
 					sql_exp *msid = exps_bind_column(exps, "id", NULL, NULL, 0);
+					if (!msid)
+						msid = exps_bind_column(exps, "multisetid", NULL, NULL, 0);
 					msid = exp_ref(v->sql, msid);
 					append(nexps, msid);
 					if (t->multiset == MS_ARRAY) {
 						sql_exp *msnr = exps_bind_column(exps, "nr", NULL, NULL, 0);
+						if (!msnr)
+							msnr = exps_bind_column(exps, "multisetnr", NULL, NULL, 0);
 						msnr = exp_ref(v->sql, msnr);
 						append(nexps, msnr);
 					}

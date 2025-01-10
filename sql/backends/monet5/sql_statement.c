@@ -3981,10 +3981,8 @@ static stmt *
 stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 {
 	(void)sel;
-
 	int nrcols = composite_type_resultsize(t);
 
-	printf("%d\n", nrcols);
 	InstrPtr q = newStmtArgs(be->mb, "sql", "from_json", nrcols + 2);
 	if (q == NULL)
 		goto bailout;
