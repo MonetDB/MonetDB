@@ -32,7 +32,11 @@ skipdirs = ['extras']
 skipfiles = ['monet_getopt.h']
 
 # where the files are
-srcdir = r'@SOURCE@'
+srcdir = os.environ.get('TSTSRCBASE')
+if not srcdir:
+    print('cannot find source directory (TSTSRCBASE environment variable)',
+          file=sys.stderr)
+    sys.exit(1)
 
 # the export command; note the keyword we look for is a word that ends
 # in "export"
@@ -71,7 +75,7 @@ def mywalk(d):
         return [(root, [], [file])]
     return os.walk(d)
 
-def findfiles(dirlist, skipfiles = [], skipdirs = []):
+def findfiles(dirlist, skipfiles=[], skipdirs=[]):
     decls = []
     done = {}
     for d in dirlist:
@@ -95,7 +99,7 @@ def listexports():
     for lib in libs:
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
-        decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
+        decls = findfiles(dl, skipfiles=skipfiles, skipdirs=skipdirs)
         output.append(f'# {lib}\n')
         for d in decls:
             output.append(d + '\n')

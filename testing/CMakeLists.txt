@@ -115,10 +115,6 @@ configure_file(Mconvert.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mconvert.py
   @ONLY)
 
-configure_file(listexports.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
-  @ONLY)
-
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
@@ -136,7 +132,7 @@ if(PYTHON3_LIBDIR)
   install(FILES
     process.py
     __init__.py
-    ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
+    listexports.py
     exportutils.py
     melcheck.py
     sqllogictest.py
