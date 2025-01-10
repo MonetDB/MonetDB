@@ -3938,6 +3938,94 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	return NULL;
 }
 
+static int
+composite_type_resultsize(sql_subtype *t)
+{
+	int nr = 0;
+
+	if (t->multiset)
+		nr += 1 + (t->multiset == MS_ARRAY) + t->type->composite;
+	if (t->type->composite) {
+		for (node *n = t->type->d.fields->h; n; n = n->next) {
+			sql_arg *a = n->data;
+			nr += composite_type_resultsize(&a->type);
+		}
+	} else {
+		nr++;
+	}
+	return nr;
+}
+
+static int
+composite_type_result(backend *be, InstrPtr q, sql_subtype *t)
+{
+	if (t->type->composite) {
+		if (t->multiset) /* id col : rowid */
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+		for (node *n = t->type->d.fields->h; n; n = n->next) {
+			sql_arg *a = n->data;
+			if (composite_type_result(be, q, &a->type) != 0)
+				return -1;
+		}
+		if (t->multiset) /* msid */
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+		if (t->multiset == MS_ARRAY) /* msnr */
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+	} else {
+		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
+	}
+	return 0;
+}
+
+static stmt *
+stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
+{
+	(void)sel;
+
+	int nrcols = composite_type_resultsize(t);
+
+	printf("%d\n", nrcols);
+	InstrPtr q = newStmtArgs(be->mb, "sql", "from_json", nrcols + 2);
+	if (q == NULL)
+		goto bailout;
+
+	q->retc = q->argc = 0;
+	if (composite_type_result(be, q, t) != 0) {
+		freeInstruction(q);
+		goto bailout;
+	}
+
+	q = pushArgument(be->mb, q, v->nr);
+	q = pushPtr(be->mb, q, t);
+
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_convert);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = v;
+	s->nrcols = nrcols;	/* function without arguments returns single value */
+	s->key = v->key;
+	s->aggr = v->aggr;
+	s->op4.typeval = *t;
+	s->nr = getDestVar(q);
+	s->q = q;
+	//s->cand = pushed ? sel : NULL;
+	pushInstruction(be->mb, q);
+	/* for each result create stmt_result and return stmt list */
+	list *r = sa_list(be->mvc->sa);
+	for(int i = 0; i < nrcols; i++)
+		append(r, stmt_result(be, s, i));
+	return stmt_list(be, r);
+bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
@@ -3951,6 +4039,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (v->nr < 0)
 		goto bailout;
 
+	if (f->type->eclass == EC_EXTERNAL && strcmp(f->type->base.name, "json") == 0)
+		return stmt_from_json(be, v, sel, t);
 	if (f->type->eclass != EC_EXTERNAL && t->type->eclass != EC_EXTERNAL &&
 		/* general cases */
 		((t->type->localtype == f->type->localtype && t->type->eclass == f->type->eclass &&

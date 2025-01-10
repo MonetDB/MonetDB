@@ -45,6 +45,7 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
+#include "json.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
@@ -5688,6 +5689,172 @@ bailout:
 	throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
+#if 0
+static str
+insert_json(JSON *js, BAT *bats, int nr, int elm, sql_subtype *t)
+{
+	for (int i = elm; i < js->free; i++) {
+		JSONterm *jt = js->elm+i;
+
+		switch (jt->kind) {
+		case JSON_OBJECT:
+		case JSON_ARRAY:
+		case JSON_ELEMENT: // field
+		case JSON_VALUE:
+		case JSON_STRING:
+		case JSON_NUMBER:
+		case JSON_BOOL:
+		case JSON_NULL:
+			printf("%s\n", jt->name);
+		}
+	}
+	return MAL_SUCCEED;
+}
+#endif
+
+static int insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int anr, sql_subtype *t);
+static int insert_json_array(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t);
+
+static int
+insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int anr, sql_subtype *t)
+{
+	char buf[128]; /* TODO use proper buffer */
+	node *n;
+	JSONterm *jt = js->elm+elm;
+	if (jt->kind != JSON_OBJECT || !t->type->composite) {
+		*msg = "missing object start";
+		return -1;
+	}
+	const char *name = NULL;
+	int nlen = 0, pos = -1, w = list_length(t->type->d.fields), i = 0;
+	/* TODO check if full object is there */
+	for (elm++; elm >0 && elm <= jt->tail+1; elm++) {
+		JSONterm *jt = js->elm+elm;
+
+		switch (jt->kind) {
+		case JSON_OBJECT:
+			elm = insert_json_object(msg, js, bats, nr, elm, id, anr, t);
+			break;
+		case JSON_ARRAY:
+			/* TODO get id for nested array from the a global struct */
+			elm = insert_json_array(msg, js, bats, nr, elm, id, anr, t);
+			break;
+		case JSON_ELEMENT: // field
+			name = jt->value;
+			nlen = jt->valuelen;
+			break;
+		case JSON_VALUE:
+		case JSON_STRING:
+		case JSON_NUMBER:
+		case JSON_BOOL:
+		case JSON_NULL:
+			pos = -1;
+			for(i = 0, n = t->type->d.fields->h; i < w && n && pos < 0; i++, n = n->next) {
+				sql_arg *a = n->data;
+				int alen = strlen(a->name);
+				if (nlen == alen && strncmp(name, a->name, nlen) == 0)
+					pos = i;
+			}
+			char *v = buf;
+			if (pos < 0 || jt->valuelen > 128-1)
+				return -8;
+			strncpy(v, jt->value, jt->valuelen);
+			v[jt->valuelen] = 0;
+			/*
+			 * TODO check type of value
+			 * TODO insert value (not just strings)
+			 */
+			if (elm > 0 && BUNappend(bats[pos], v, false) != GDK_SUCCEED) {
+				return -5;
+			}
+		}
+	}
+
+	if (elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
+		elm = -3;
+	if (t->multiset == MS_ARRAY && elm > 0 && BUNappend(bats[w+1], &anr, false) != GDK_SUCCEED)
+		elm = -3;
+	return elm;
+}
+
+static int
+insert_json_array(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t)
+{
+	JSONterm *ja = js->elm+elm;
+	int tail = ja->tail;
+	if (ja->kind != JSON_ARRAY || !t->multiset) {
+		*msg = "missing array start";
+		return -1;
+	}
+	int anr = 1;
+	for (; elm < tail; elm=ja->next) { /* array begin, comma, end */
+		ja = js->elm+elm;
+		for (elm++; elm >0 && elm < ja->next; elm++) {
+			JSONterm *jt = js->elm+elm;
+
+			switch (jt->kind) {
+			case JSON_OBJECT:
+				elm = insert_json_object(msg, js, bats+1, nr, elm, id, anr++, t);
+				(void)oanr;
+				break;
+			default:
+				printf("todo\n");
+			}
+		}
+		if (elm < 0)
+			break;
+	}
+	if (elm > 0 && anr > 1 && BUNappend(bats[0], &id, false) != GDK_SUCCEED)
+		elm = -2;
+	return elm+1;
+}
+
+static str
+SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	str msg = NULL;
+	int mtype = getArgType(mb, pci, pci->retc);
+
+	if (strcmp(BATatoms[mtype].name, "json") != 0)
+		throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
+	str json = *(str*)getArgReference(stk, pci, pci->retc);
+	sql_subtype *t = *(sql_subtype**)getArgReference(stk, pci, pci->retc+1);
+
+	BAT **bats = (BAT**)GDKzalloc(sizeof(BAT*) * pci->retc);
+	if (!bats)
+		throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	for(int i = 0; i < pci->retc; i++) {
+		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), 10, TRANSIENT);
+		if (!bats[i])
+			goto bailout;
+	}
+
+	JSON *js = JSONparse(json);
+	if (!js) /* TODO output parser error ?? */
+		goto bailout;
+
+	if (t->multiset)
+		(void)insert_json_array(&msg, js, bats, pci->retc, 0, 1, 1, t);
+	else
+		(void)insert_json_object(&msg, js, bats, pci->retc, 0, 1, 1, t);
+	JSONfree(js);
+	if (msg)
+		goto bailout;
+	for(int i = 0; i < pci->retc && bats[i]; i++) {
+		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
+		BBPkeepref(bats[i]);
+	}
+	GDKfree(bats);
+	return MAL_SUCCEED;
+bailout:
+	for(int i = 0; i < pci->retc && bats[i]; i++)
+		BBPreclaim(bats[i]);
+	GDKfree(bats);
+	if (msg)
+		throw(SQL, "SQLfrom_json", SQLSTATE(42000) "%s", msg);
+	throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+}
 
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
@@ -6638,6 +6805,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
+ pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested structures", args(1,3, batvarargany("t",0), arg("input", json), arg("type", ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -21,35 +21,7 @@
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
-typedef enum JSONkind {
-	JSON_OBJECT = 1,
-	JSON_ARRAY,
-	JSON_ELEMENT,
-	JSON_VALUE,
-	JSON_STRING,
-	JSON_NUMBER,
-	JSON_BOOL,
-	JSON_NULL
-} JSONkind;
-
-/* The JSON index structure is meant for short lived versions */
-typedef struct JSONterm {
-	JSONkind kind;
-	char *name;					/* exclude the quotes */
-	size_t namelen;
-	const char *value;			/* start of string rep */
-	size_t valuelen;
-	int child, next, tail;		/* next offsets allow you to walk array/object chains
-								   and append quickly */
-	/* An array or object item has a number of components */
-} JSONterm;
-
-typedef struct JSON {
-	JSONterm *elm;
-	str error;
-	int size;
-	int free;
-} JSON;
+#include "json.h"
 
 typedef str json;
 
@@ -84,7 +56,6 @@ int TYPE_json;
 
 /* Internal constructors. */
 static int jsonhint = 8;
-static JSON *JSONparse(const char *j);
 
 static JSON *
 JSONnewtree(void)
@@ -125,7 +96,7 @@ JSONnew(JSON *js)
 }
 
 /* Delete a JSON structure. */
-static void
+void
 JSONfree(JSON *c)
 {
 	if (c == 0)
@@ -1471,7 +1442,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 }
 
 
-static JSON *
+JSON *
 JSONparse(const char *j)
 {
 	JSON *jt = JSONnewtree();

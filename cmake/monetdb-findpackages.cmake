@@ -132,6 +132,14 @@ endif()
 find_package(Sphinx)
 find_package(Semodule)
 find_package(Awk)
+find_package(yyjson REQUIRED)
+find_path(YYJSON_INCLUDE_DIR NAMES yyjson.h)
+find_library(YYJSON_LIBRARIES NAMES yyjson)
+add_library(YYJSON::YYJSON UNKNOWN IMPORTED)
+set_target_properties(YYJSON::YYJSON
+  PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${YYJSON_INCLUDE_DIR}"
+  IMPORTED_LINK_INTERFACE_LANGUAGES "C" IMPORTED_LOCATION "${YYJSON_LIBRARIES}")
 
 if(TAGS)
   find_program(CTAGS_PATH ctags)

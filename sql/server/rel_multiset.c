@@ -209,7 +209,7 @@ fm_join(visitor *v, sql_rel *rel)
 static sql_rel *
 fm_project(visitor *v, sql_rel *rel)
 {
-	if (!rel->l && rel->exps) { /* check for type multiset */
+	if ((!rel->l || rel->card == CARD_ATOM) && rel->exps) { /* check for type multiset */
 		bool needed = false;
 		for(node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_subtype *t = exp_subtype(n->data);

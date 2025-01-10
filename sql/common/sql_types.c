@@ -1747,6 +1747,10 @@ sqltypeinit( allocator *sa)
 	f->vararg = 1;
 	f->varres = 1;
 	sql_create_func(sa, "renumber", "sql", "renumber", FALSE, FALSE, SCALE_NONE, 0, INT, 3, INT, INT, INT);
+	f = sql_create_func(sa, "json_transform", "", "", TRUE, TRUE, SCALE_NONE, 1, ANY, 1, STR);
+	f->varres = 1;
+	f = sql_create_union(sa, "json_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
+	f->varres = 1;
 }
 
 void
