@@ -5741,7 +5741,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, in
 			break;
 		case JSON_ELEMENT: // field
 			name = jt->value;
-			nlen = jt->valuelen;
+			nlen = (int)jt->valuelen;
 			break;
 		case JSON_VALUE:
 		case JSON_STRING:
@@ -5751,7 +5751,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, in
 			pos = -1;
 			for(i = 0, n = t->type->d.fields->h; i < w && n && pos < 0; i++, n = n->next) {
 				sql_arg *a = n->data;
-				int alen = strlen(a->name);
+				int alen = (int)strlen(a->name);
 				if (nlen == alen && strncmp(name, a->name, nlen) == 0)
 					pos = i;
 			}
