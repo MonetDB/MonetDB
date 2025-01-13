@@ -3025,11 +3025,11 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 {
-	sql_rel *g=rel->l;
+	sql_rel *g = rel->l;
 
 	if (rel->op == op_project && g) // 0
 	{
-		list *exps=g->exps;
+		list *exps = g->exps;
 
 		if(g->op == op_groupby && !list_empty(exps) && !list_empty(g->r))
 		{
@@ -3042,7 +3042,7 @@ rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 					!((sql_subfunc *)e->f)->func->s && 
 			        strcmp(((sql_subfunc *)e->f)->func->base.name, "avg") == 0)
 				{
-					list *se=e->l;
+					list *se = e->l;
 
 					for(node *m = se->h; m; m = m->next)
 					{
@@ -3052,11 +3052,11 @@ rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 						{
 							exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
 
-							n->data=w;
+							n->data = w;
 
 							// Alternative;
 							//list_append_before(g->exps,n,w);
-							//m->data=NULL;
+							//m->data = NULL;
 							//list_remove_node(g->exps,NULL,n);
 
 							v->changes++;
