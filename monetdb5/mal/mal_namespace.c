@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -197,6 +197,7 @@ const char grantRef[] = "grant";
 const char grant_rolesRef[] = "grant_roles";
 const char groupbyRef[] = "groupby";
 const char groupdoneRef[] = "groupdone";
+const char groupedfirstnRef[] = "groupedfirstn";
 const char groupRef[] = "group";
 const char growRef[] = "grow";
 const char hgeRef[] = "hge";
@@ -462,6 +463,7 @@ initNamespace(void)
 	fixName(grant_rolesRef);
 	fixName(groupbyRef);
 	fixName(groupdoneRef);
+	fixName(groupedfirstnRef);
 	fixName(groupRef);
 	fixName(growRef);
 	fixName(hgeRef);

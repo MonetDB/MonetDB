@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -269,17 +269,12 @@ wrap_tls(Mapi mid, SOCKET sock)
 		return croak_openssl(mid, __func__, "X509_VERIFY_PARAM_set1_host");
 	}
 
-	// Temporarily disable the ALPN header.
-	// TODO re-enable it when test systemcertificates.py no longer relies
-	// on connecting to an HTTPS server. (Which is an ugly hack in the first place!)
-#if 0
 	unsigned char alpn_vector[] = { 6, 'm', 'a', 'p', 'i', '/', '9' };
 	// NOTE: these functions return 0 on success, not 1!
 	if (0 != SSL_set_alpn_protos(ssl, alpn_vector, sizeof(alpn_vector))) {
 		BIO_free_all(bio);
 		return croak_openssl(mid, __func__, "SSL_set_alpn_protos");
 	}
-#endif
 
 	assert(clientkey);
 	assert(clientcert);

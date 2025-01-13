@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -22,7 +22,7 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.23.03 of catalog */
+/* version 05.23.04 of catalog */
 #define CATALOG_VERSION 52304	/* first after Aug2024 */
 
 ulng
@@ -76,7 +76,7 @@ store_oldest_pending(sqlstore *store)
 static inline bool
 instore(sqlid id)
 {
-	if (id >= 2000 && id <= 2166)
+	if (id >= 2000 && id <= 2167)
 		return true;
 	return false;
 }
@@ -994,6 +994,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->vararg = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
 	t->system = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
 	t->semantics = (bool) store->table_api.column_find_bte(tr, find_sql_column(funcs, "semantics"), rid);
+	bte order_spec = (bte) store->table_api.column_find_bte(tr, find_sql_column(funcs, "order_specification"), rid);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -1020,6 +1021,10 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 			t->imp =_STRDUP("eval");
 		}
 	}
+	if (order_spec == 2)
+		t->order_required = true;
+	if (order_spec == 1)
+		t->opt_order = true;
 
 	TRC_DEBUG(SQL_STORE, "Load function: %s\n", t->base.name);
 
@@ -1582,10 +1587,11 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 		int number = 0, ftype = (int) f->type, flang = (int) FUNC_LANG_INT;
 		sqlid next_schema = f->s ? f->s->base.id : 0;
 		bit se = f->side_effect, vares = f->varres, varg = f->vararg, system = f->system, sem = f->semantics;
+		bte order = f->order_required?2:f->opt_order?1:0;
 
 		if (f->private) /* don't serialize private functions because they cannot be seen by users */
 			continue;
-		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem)))
+		if ((res = store->table_api.table_insert(tr, sysfunc, &f->base.id, &f->base.name, &f->imp, &f->mod, &flang, &ftype, &se, &vares, &varg, &next_schema, &system, &sem, &order)))
 			return res;
 		if (f->res && (res = insert_args(tr, sysarg, f->res, f->base.id, "res_%d", &number)))
 			return res;
@@ -1985,6 +1991,7 @@ store_load(sqlstore *store, allocator *pa)
 		bootstrap_create_column(tr, t, "schema_id", 2026, "int", 31) == NULL ||
 		bootstrap_create_column(tr, t, "system", 2027, "boolean", 1) == NULL ||
 		bootstrap_create_column(tr, t, "semantics", 2162, "boolean", 1) == NULL ||
+		bootstrap_create_column(tr, t, "order_specification", 2167, "tinyint", 7) == NULL ||
 
 		(arguments = t = bootstrap_create_table(tr, s, "args", 2028)) == NULL ||
 		bootstrap_create_column(tr, t, "id", 2029, "int", 31) == NULL ||
@@ -3384,6 +3391,8 @@ func_dup(sql_trans *tr, sql_func *of, sql_schema *s)
 	f->fix_scale = of->fix_scale;
 	f->system = of->system;
 	f->private = of->private;
+	f->order_required = of->order_required;
+	f->opt_order = of->opt_order;
 	f->query = (of->query)?_STRDUP(of->query):NULL;
 	f->s = s;
 	f->sa = NULL;
@@ -5089,7 +5098,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 sql_func *
 create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
-				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+				const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -5110,12 +5119,14 @@ create_sql_func(sqlstore *store, allocator *sa, const char *func, list *args, li
 	t->fix_scale = SCALE_EQ;
 	t->s = NULL;
 	t->system = system;
+	t->order_required = order_required;
+	t->opt_order = opt_order;
 	return t;
 }
 
 int
 sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char *func, list *args, list *ffres, sql_ftype type, sql_flang lang,
-					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+					  const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -5124,6 +5135,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	node *n;
 	int number = 0, ftype = (int) type, flang = (int) lang, res = LOG_OK;
 	bit semantics = TRUE;
+	bte order_spec = order_required?2:opt_order?1:0;
 
 	sql_func *t = ZNEW(sql_func);
 	base_init(NULL, &t->base, next_oid(tr->store), true, func);
@@ -5140,6 +5152,8 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	t->ops = list_create((fdestroy) &arg_destroy);
 	t->fix_scale = SCALE_EQ;
 	t->system = system;
+	t->order_required = order_required;
+	t->opt_order = opt_order;
 	for (n=args->h; n; n = n->next)
 		list_append(t->ops, arg_dup(tr, s, n->data));
 	if (ffres) {
@@ -5153,7 +5167,7 @@ sql_trans_create_func(sql_func **fres, sql_trans *tr, sql_schema *s, const char 
 	if ((res = os_add(s->funcs, tr, t->base.name, &t->base)))
 		return res;
 	if ((res = store->table_api.table_insert(tr, sysfunc, &t->base.id, &t->base.name, query?(char**)&query:&t->imp, &t->mod, &flang, &ftype, &side_effect,
-			&varres, &vararg, &s->base.id, &system, &semantics)))
+			&varres, &vararg, &s->base.id, &system, &semantics, &order_spec)))
 		return res;
 	if (t->res) for (n = t->res->h; n; n = n->next, number++) {
 		sql_arg *a = n->data;

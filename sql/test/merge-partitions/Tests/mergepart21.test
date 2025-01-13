@@ -87,7 +87,7 @@ DROP FUNCTION dosomething
 statement ok
 CREATE FUNCTION dosomethingelse(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i); END
 
-statement error 42000!SELECT: no such unary operator 'dosomethingelse'(int)
+statement error 42000!SELECT: no such operator 'dosomethingelse'(int)
 CREATE MERGE TABLE nexttest (a int, dd real) PARTITION BY VALUES USING (dosomethingelse(a))
 
 statement ok

@@ -32,7 +32,7 @@ NULL
 999
 has null
 
-statement error syntax error, unexpected ',', expecting ')' or OR in: "select i, c, ifnull(i, c,"
+statement error syntax error, unexpected ',' in: "select i, c, ifnull(i, c,"
 select i, c, IFNULL(i, c, 999) as "IFNULL(i,c,999)" from t6933
 
 statement ok

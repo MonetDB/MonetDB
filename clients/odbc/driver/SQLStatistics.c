@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -213,7 +213,7 @@ MNDBStatistics(ODBCStmt *stmt,
 		"join sys.objects kc on i.id = kc.id "
 		"join sys._columns c on (t.id = c.table_id and kc.name = c.name) "
 		"%sjoin sys.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1, 3)) "
-		"join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
+		"join sys.storage() st on (st.schema = s.name and st.\"table\" = t.name and st.\"column\" = c.name) "
 		"where 1=1",
 		SQL_INDEX_HASHED, SQL_INDEX_OTHER,
 		(Unique == SQL_INDEX_UNIQUE) ? "" : "left outer ");
@@ -262,7 +262,7 @@ MNDBStatistics(ODBCStmt *stmt,
 			"join tmp.objects kc on i.id = kc.id "
 			"join tmp._columns c on (t.id = c.table_id and kc.name = c.name) "
 			"%sjoin tmp.keys k on (k.name = i.name and i.table_id = k.table_id and k.type in (0, 1, 3))"
-			"left outer join sys.storage() st on (st.schema = s.name and st.table = t.name and st.column = c.name) "
+			"left outer join sys.storage() st on (st.schema = s.name and st.\"table\" = t.name and st.\"column\" = c.name) "
 			"where 1=1",
 			SQL_INDEX_HASHED, SQL_INDEX_OTHER,
 			(Unique == SQL_INDEX_UNIQUE) ? "" : "left outer ");

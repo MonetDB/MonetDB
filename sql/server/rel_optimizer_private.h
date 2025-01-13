@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,7 +24,8 @@ typedef struct global_props {
 		needs_remote_replica_rewrite:1,
 		needs_distinct:1,
 		has_special_modify:1, /* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
-		opt_level:1; /* 0 run necessary rewriters, 1 run all optimizers */
+		opt_level:1, /* 0 run necessary rewriters, 1 run all optimizers */
+		recursive:1;
 	uint8_t opt_cycle; /* the optimization cycle number */
 } global_props;
 

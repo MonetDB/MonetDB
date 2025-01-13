@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -168,7 +168,7 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 2024 MonetDB Foundation, all rights reserved\n");
+	printf("# Copyright (c) 2024, 2025 MonetDB Foundation, all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -336,10 +336,12 @@ main(int argc, char **av)
 		{"threads", no_argument, NULL, 0},
 		{"transactions", no_argument, NULL, 0},
 
-		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"loadmodule", required_argument, NULL, 0},
 		{"without-geom", no_argument, NULL, 0},
+
+		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"process-wal-and-exit", no_argument, NULL, 0},
+		{"clean-BBP", no_argument, NULL, 0},
 
 		{NULL, 0, NULL, 0}
 	};
@@ -519,6 +521,11 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "process-wal-and-exit") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline,
 									   "process-wal-and-exit", "yes");
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "clean-BBP") == 0) {
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "clean-BBP", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {

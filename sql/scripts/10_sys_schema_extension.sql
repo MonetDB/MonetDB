@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -526,13 +526,3 @@ SELECT 'optimizer', optimizer UNION ALL
 SELECT 'pi', pi() UNION ALL
 SELECT 'rowcnt', rowcnt;
 GRANT SELECT ON sys.var_values TO PUBLIC;
-
-CREATE AGGREGATE sys.group_concat(str string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
-GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
-CREATE AGGREGATE sys.group_concat(str string, sep string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
-GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
-
-CREATE WINDOW sys.group_concat(str string) RETURNS string EXTERNAL NAME "sql"."str_group_concat";
-GRANT EXECUTE ON WINDOW sys.group_concat(string) TO PUBLIC;
-CREATE WINDOW sys.group_concat(str string, sep string) RETURNS string EXTERNAL NAME "sql"."str_group_concat";
-GRANT EXECUTE ON WINDOW sys.group_concat(string, string) TO PUBLIC;

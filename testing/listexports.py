@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -32,7 +32,11 @@ skipdirs = ['extras']
 skipfiles = ['monet_getopt.h']
 
 # where the files are
-srcdir = r'@SOURCE@'
+srcdir = os.environ.get('TSTSRCBASE')
+if not srcdir:
+    print('cannot find source directory (TSTSRCBASE environment variable)',
+          file=sys.stderr)
+    sys.exit(1)
 
 # the export command; note the keyword we look for is a word that ends
 # in "export"
@@ -71,7 +75,7 @@ def mywalk(d):
         return [(root, [], [file])]
     return os.walk(d)
 
-def findfiles(dirlist, skipfiles = [], skipdirs = []):
+def findfiles(dirlist, skipfiles=[], skipdirs=[]):
     decls = []
     done = {}
     for d in dirlist:
@@ -95,7 +99,7 @@ def listexports():
     for lib in libs:
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
-        decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
+        decls = findfiles(dl, skipfiles=skipfiles, skipdirs=skipdirs)
         output.append(f'# {lib}\n')
         for d in decls:
             output.append(d + '\n')

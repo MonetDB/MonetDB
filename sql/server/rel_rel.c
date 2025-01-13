@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -19,6 +19,7 @@
 #include "sql_semantic.h"
 #include "sql_mvc.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 void
 rel_set_exps(sql_rel *rel, list *exps)
@@ -303,6 +304,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
+	if (is_insert(rel->op))
+		rel = rel->r;
 	if ((is_project(rel->op) || is_base(rel->op))) {
 		sql_exp *e = NULL;
 

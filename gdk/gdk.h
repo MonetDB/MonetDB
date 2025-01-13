@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -310,14 +310,9 @@
 #define _GDK_H_
 
 /* standard includes upon which all configure tests depend */
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#include <stddef.h>
-#include <string.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -711,38 +706,6 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
-/* see also comment near BATassertProps() for more information about
- * the properties */
-typedef struct {
-	uint16_t width;		/* byte-width of the atom array */
-	int8_t type;		/* type id. */
-	uint8_t shift;		/* log2 of bun width */
-	bool key:1,		/* no duplicate values present */
-		nonil:1,	/* there are no nils in the column */
-		nil:1,		/* there is a nil in the column */
-		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1,	/* column is sorted in descending order */
-		ascii:1;	/* string column is fully ASCII (7 bit) */
-	BUN nokey[2];		/* positions that prove key==FALSE */
-	BUN nosorted;		/* position that proves sorted==FALSE */
-	BUN norevsorted;	/* position that proves revsorted==FALSE */
-	BUN minpos, maxpos;	/* location of min/max value */
-	double unique_est;	/* estimated number of unique values */
-	oid seq;		/* start of dense sequence */
-
-	Heap *heap;		/* space for the column. */
-	BUN baseoff;		/* offset in heap->base (in whole items) */
-	Heap *vheap;		/* space for the varsized data. */
-	Hash *hash;		/* hash table */
-#ifdef HAVE_RTREE
-	RTree *rtree;		/* rtree geometric index */
-#endif
-	Heap *orderidx;		/* order oid index */
-	Strimps *strimps;	/* string imprint index  */
-
-	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
-} COLrec;
-
 #define ORDERIDXOFF		3
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
@@ -788,9 +751,8 @@ typedef struct BAT {
 
 	/* dynamic bat properties */
 	restrict_t batRestricted:2; /* access privileges */
-	bool
-	 batTransient:1,	/* should the BAT persist on disk? */
-	 batCopiedtodisk:1;	/* once written */
+	bool batTransient:1;	/* should the BAT persist on disk? */
+	bool batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused;	/* value=0 for now (sneakily used by mat.c) */
 
@@ -800,40 +762,40 @@ typedef struct BAT {
 	BUN batCapacity;	/* tuple capacity */
 
 	/* dynamic column properties */
-	COLrec T;		/* column info */
+	uint16_t twidth;	/* byte-width of the atom array */
+	int8_t ttype;		/* type id. */
+	uint8_t tshift;		/* log2 of bun width */
+	/* see also comment near BATassertProps() for more information
+	 * about the properties */
+	bool tkey:1;		/* no duplicate values present */
+	bool tnonil:1;		/* there are no nils in the column */
+	bool tnil:1;		/* there is a nil in the column */
+	bool tsorted:1;		/* column is sorted in ascending order */
+	bool trevsorted:1;	/* column is sorted in descending order */
+	bool tascii:1;		/* string column is fully ASCII (7 bit) */
+	BUN tnokey[2];		/* positions that prove key==FALSE */
+	BUN tnosorted;		/* position that proves sorted==FALSE */
+	BUN tnorevsorted;	/* position that proves revsorted==FALSE */
+	BUN tminpos, tmaxpos;	/* location of min/max value */
+	double tunique_est;	/* estimated number of unique values */
+	oid tseqbase;		/* start of dense sequence */
+
+	Heap *theap;		/* space for the column. */
+	BUN tbaseoff;		/* offset in heap->base (in whole items) */
+	Heap *tvheap;		/* space for the varsized data. */
+	Hash *thash;		/* hash table */
+#ifdef HAVE_RTREE
+	RTree *trtree;		/* rtree geometric index */
+#endif
+	Heap *torderidx;	/* order oid index */
+	Strimps *tstrimps;	/* string imprint index  */
+	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
 } BAT;
-
-/* macros to hide complexity of the BAT structure */
-#define ttype		T.type
-#define tkey		T.key
-#define tseqbase	T.seq
-#define tsorted		T.sorted
-#define trevsorted	T.revsorted
-#define tascii		T.ascii
-#define torderidx	T.orderidx
-#define twidth		T.width
-#define tshift		T.shift
-#define tnonil		T.nonil
-#define tnil		T.nil
-#define tnokey		T.nokey
-#define tnosorted	T.nosorted
-#define tnorevsorted	T.norevsorted
-#define tminpos		T.minpos
-#define tmaxpos		T.maxpos
-#define tunique_est	T.unique_est
-#define theap		T.heap
-#define tbaseoff	T.baseoff
-#define tvheap		T.vheap
-#define thash		T.hash
-#define tprops		T.props
-#define tstrimps	T.strimps
-#ifdef HAVE_RTREE
-#define trtree		T.rtree
-#endif
 
 /* some access functions for the bitmask type */
 static inline void
@@ -2329,6 +2291,8 @@ gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl,
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
+	__attribute__((__access__(write_only, 1)))
+	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *restrict l, BAT *restrict r);
 gdk_export BAT *BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2);
@@ -2531,22 +2495,15 @@ TIMEOUT_TEST(QryCtx *qc)
 			CALLBACK;					\
 	} while (0)
 
-typedef struct gdk_callback {
-	const char *name;
-	int argc;
-	int interval;  // units sec
-	lng last_called; // timestamp GDKusec
-	gdk_return (*func)(int argc, void *argv[]);
-	struct gdk_callback *next;
-	void *argv[];
-} gdk_callback;
-
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
 gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
 				       int argc, void *argv[], int interval);
 gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
+
+#define SQLSTATE(sqlstate)	#sqlstate "!"
+#define MAL_MALLOC_FAIL	"Could not allocate space"
 
 #include <setjmp.h>
 

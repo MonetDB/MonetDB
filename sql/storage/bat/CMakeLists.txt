@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -42,9 +42,18 @@ target_link_libraries(batstore
   sqlinclude
   sqlstorage)
 
-set_target_properties(batstore
-  PROPERTIES
-  POSITION_INDEPENDENT_CODE ON)
+if(NOT MONETDB_STATIC)
+  set_target_properties(batstore
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON)
+endif()
+
+if(MONETDB_STATIC)
+  install(TARGETS
+    batstore
+    ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR})
+endif()
 
 target_compile_definitions(batstore
   PRIVATE

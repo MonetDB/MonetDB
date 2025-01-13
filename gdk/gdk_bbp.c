@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4443,6 +4443,16 @@ gdk_bbp_reset(void)
 }
 
 static MT_Lock GDKCallbackListLock = MT_LOCK_INITIALIZER(GDKCallbackListLock);
+
+typedef struct gdk_callback {
+	const char *name;
+	int argc;
+	int interval;  // units sec
+	lng last_called; // timestamp GDKusec
+	gdk_return (*func)(int argc, void *argv[]);
+	struct gdk_callback *next;
+	void *argv[];
+} gdk_callback;
 
 static struct {
 	int cnt;

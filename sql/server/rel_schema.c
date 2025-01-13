@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,6 +26,7 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
+#include "sql_storage.h"
 
 #include "mal_authorize.h"
 #include "mal_exception.h"
@@ -278,7 +279,7 @@ mvc_create_remote_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *
 static char *
 table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
-	/* create a descriptive name like table_col_pkey */
+	/* create a descriptive name like table_col1_col2_pkey */
 	char *suffix;		/* stores the type of this constraint */
 	dnode *nms = NULL;
 	char *buf;
@@ -286,24 +287,28 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 	switch (s->token) {
 		case SQL_UNIQUE:
-			suffix = "_unique";
+			suffix = "unique";
+			nms = s->data.lval->h;	/* list of columns */
+			break;
+		case SQL_UNIQUE_NULLS_NOT_DISTINCT:
+			suffix = "nndunique";
 			nms = s->data.lval->h;	/* list of columns */
 			break;
 		case SQL_PRIMARY_KEY:
-			suffix = "_pkey";
+			suffix = "pkey";
 			nms = s->data.lval->h;	/* list of columns */
 			break;
 		case SQL_FOREIGN_KEY:
-			suffix = "_fkey";
+			suffix = "fkey";
 			nms = s->data.lval->h->next->data.lval->h;	/* list of columns */
 			break;
 		case SQL_CHECK:
-			suffix = "_check";
+			suffix = "check";
 			char name[512], name2[512], *nme, *nme2;
 			bool found;
 			do {
 				nme = number2name(name, sizeof(name), ++sql->label);
-				buflen = snprintf(name2, sizeof(name2), "%s_%s%s", t->base.name, nme, suffix);
+				buflen = snprintf(name2, sizeof(name2), "%s_%s_%s", t->base.name, nme, suffix);
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
 			} while (found);
@@ -311,7 +316,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 			strcpy(buf, nme2);
 			return buf;
 		default:
-			suffix = "_?";
+			suffix = "?";
 			nms = NULL;
 	}
 
@@ -339,13 +344,13 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 	/* add suffix */
 	slen = strlen(suffix);
-	while (len + slen >= buflen) {
+	while (len + 1 + slen >= buflen) {
 		size_t nbuflen = buflen + BUFSIZ;
 		char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
 		buf = nbuf;
 		buflen = nbuflen;
 	}
-	snprintf(buf + len, buflen - len, "%s", suffix);
+	snprintf(buf + len, buflen - len, "_%s", suffix);
 	return buf;
 }
 
@@ -397,7 +402,7 @@ static key_type
 token2key_type(int token)
 {
 		switch (token) {
-		case SQL_UNIQUE: 					return ukey;
+		case SQL_UNIQUE:					return ukey;
 		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
 		case SQL_PRIMARY_KEY:				return pkey;
 		case SQL_CHECK:						return ckey;

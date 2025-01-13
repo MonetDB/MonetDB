@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1756,6 +1756,9 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 	if (u->op == op_project && !need_distinct(u))
 		u = u->l;
 
+	if (is_recursive(u))
+		return rel;
+
 	/* make sure we don't create group by on group by's */
 	for (node *n = ((list*)u->l)->h; n; n = n->next) {
 		r = n->data;
@@ -2957,7 +2960,7 @@ rel_groupjoin(visitor *v, sql_rel *rel)
 		return rel;
 
 	sql_rel *j = rel->l;
-	if (!j || rel_is_ref(j) /*|| !is_left(j->op)*/ || j->op != op_join || list_length(rel->exps) > 1 /* only join because left joins aren't optimized jet (TODO), only length 1 as implementation of groupjoins is missing */ || !list_empty(rel->attr))
+	if (!j || rel_is_ref(j) /*|| !is_left(j->op)*/ || j->op != op_join || list_length(rel->exps) > 1 /* only join because left joins aren't optimized yet (TODO), only length 1 as implementation of groupjoins is missing */ || !list_empty(rel->attr))
 		return rel;
 	/* check group by exps == equi join exps */
 	list *gbes = rel->r;
@@ -3137,10 +3140,14 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *u = rel->l;
 		sql_rel *p = rel;
 
-		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel, false))
+		if (!u || !(is_union(u->op) || is_munion(u->op)) || need_distinct(u) || is_recursive(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel, false))
 			return rel;
 
 		sql_rel *r;
+
+		assert(!is_union(u->op));
+		if (is_recursive(u))
+			return rel;
 
 		/* don't push project down union of single values */
 		for (node *n = ((list*)u->l)->h; n; n = n->next) {
@@ -3215,7 +3222,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 	/* stacked munion flattening e.g.
 	 * munion( munion(a, b, c), munion(d, e)) => munion(a,b,c,d,e)
 	 */
-	if (rel && is_munion(rel->op)) {
+	if (rel && is_munion(rel->op) && !is_recursive(rel)) {
 		list *l = rel->l;
 		for(node *n = l->h; n; ) {
 			node *next = n->next;
@@ -3256,6 +3263,8 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
 
+		if (is_recursive(l) || is_recursive(r))
+			return rel;
 		/* we would like to optimize in place reference rels which point
 		 * to replica tables and let the replica optimizer handle those
 		 * later. otherwise we miss the push join down optimization due
@@ -3293,7 +3302,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 		if (is_munion(l->op) && is_munion(r->op) && list_length(l->l) != list_length(r->l))
 			return rel;
 
-		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
+		if (is_munion(l->op) && !need_distinct(l) && !is_single(l) && !is_recursive(l) &&
 		   !is_munion(r->op)){
 			/* join(munion(a,b,c), d) -> munion(join(a,d), join(b,d), join(c,d)) */
 			list *js = sa_list(v->sql->sa);
@@ -3317,8 +3326,8 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel_inplace_setop_n_ary(v->sql, rel, js, op_munion,
 					                       rel_projections(v->sql, rel, NULL, 1, 1));
-		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) &&
-			       is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+		} else if (is_munion(l->op) && !need_distinct(l) && !is_single(l) && !is_recursive(l) &&
+			       is_munion(r->op) && !need_distinct(r) && !is_single(r) && !is_recursive(r) &&
 			       je) {
 			/* join(munion(a,b,c), munion(d,e,f)) -> munion(join(a,d), join(b,e), join(c,f)) */
 			list *cps = sa_list(v->sql->sa);
@@ -3356,7 +3365,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			return rel_inplace_setop_n_ary(v->sql, rel, cps, op_munion,
 										   rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_munion(l->op) &&
-			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			        is_munion(r->op) && !need_distinct(r) && !is_single(r) && !is_recursive(r) &&
 			       !is_semi(rel->op)) {
 			/* join(a, munion(b,c,d)) -> munion(join(a,b), join(a,c), join(a,d)) */
 			list *js = sa_list(v->sql->sa);
@@ -3381,7 +3390,7 @@ rel_push_join_down_munion(visitor *v, sql_rel *rel)
 			return rel_inplace_setop_n_ary(v->sql, rel, js, op_munion,
 					                       rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_munion(l->op) &&
-			        is_munion(r->op) && !need_distinct(r) && !is_single(r) &&
+			        is_munion(r->op) && !need_distinct(r) && !is_single(r) && !is_recursive(r) &&
 			        is_semi(rel->op) && je) {
 			/* {semi}join ( A1, munion (B, A2a, C, A2b)) [A1.partkey = A2.partkey] ->
 			 * {semi}join ( A1, munion (A2a, A2b))

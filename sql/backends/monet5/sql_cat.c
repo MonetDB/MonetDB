@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1070,7 +1070,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 			sql->errstr[0] = '\0';
 		}
 	}
-	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect)) {
+	switch (mvc_create_func(&nf, sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system, f->side_effect, f->order_required, f->opt_order)) {
 		case -1:
 			throw(SQL,"sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		case -2:

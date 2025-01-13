@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -360,9 +360,12 @@ avg_num_deltas(hge)
 		}							\
 	} while (0)
 
-gdk_return
-GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
+BAT *
+GDKanalyticalavg(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	BAT *r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT);
+	if (r == NULL)
+		return NULL;
 	BATiter pi = bat_iterator(p);
 	BATiter oi = bat_iterator(o);
 	BATiter bi = bat_iterator(b);
@@ -418,7 +421,11 @@ cleanup:
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
 	BBPreclaim(st);
-	return res;
+	if (res != GDK_SUCCEED) {
+		BBPreclaim(r);
+		r = NULL;
+	}
+	return r;
 nosupport:
 	GDKerror("42000!average of type %s to dbl unsupported.\n", ATOMname(tpe));
 	res = GDK_FAIL;
@@ -627,9 +634,12 @@ avg_int_deltas(hge)
 		}							\
 	} while (0)
 
-gdk_return
-GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
+BAT *
+GDKanalyticalavginteger(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	BAT *r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT);
+	if (r == NULL)
+		return NULL;
 	BATiter pi = bat_iterator(p);
 	BATiter oi = bat_iterator(o);
 	BATiter bi = bat_iterator(b);
@@ -679,7 +689,11 @@ cleanup:
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
 	BBPreclaim(st);
-	return res;
+	if (res != GDK_SUCCEED) {
+		BBPreclaim(r);
+		r = NULL;
+	}
+	return r;
 nosupport:
 	GDKerror("42000!average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
 	res = GDK_FAIL;
@@ -895,9 +909,12 @@ statistics##TPE##IMP:						\
 	} while (0)
 
 #define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC)		\
-gdk_return								\
-GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
+BAT *									\
+GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 {									\
+	BAT *r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT); \
+	if (r == NULL)							\
+		return NULL;						\
 	BATiter pi = bat_iterator(p);					\
 	BATiter oi = bat_iterator(o);					\
 	BATiter bi = bat_iterator(b);					\
@@ -929,7 +946,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
 			break;						\
 		default:						\
-			if ((st = GDKinitialize_segment_tree()) == NULL) {	\
+			if ((st = GDKinitialize_segment_tree()) == NULL) { \
 				res = GDK_FAIL;				\
 				goto cleanup;				\
 			}						\
@@ -952,7 +969,11 @@ cleanup:								\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
 	BBPreclaim(st);							\
-	return res;							\
+	if (res != GDK_SUCCEED) {					\
+		BBPreclaim(r);						\
+		r = NULL;						\
+	}								\
+	return r;							\
 nosupport:								\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
 	res = GDK_FAIL;							\
@@ -1118,9 +1139,12 @@ typedef struct covariance_deltas {
 	} while (0)
 
 #define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP)			\
-gdk_return								\
-GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
+BAT *									\
+GDKanalytical_##NAME(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
 {									\
+	BAT *r = COLnew(b1->hseqbase, TYPE_dbl, BATcount(b1), TRANSIENT); \
+	if (r == NULL)							\
+		return NULL;						\
 	BATiter pi = bat_iterator(p);					\
 	BATiter oi = bat_iterator(o);					\
 	BATiter b1i = bat_iterator(b1);					\
@@ -1177,7 +1201,11 @@ cleanup:								\
 	bat_iterator_end(&si);						\
 	bat_iterator_end(&ei);						\
 	BBPreclaim(st);							\
-	return res;							\
+	if (res != GDK_SUCCEED) {					\
+		BBPreclaim(r);						\
+		r = NULL;						\
+	}								\
+	return r;							\
 nosupport:								\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
 	res = GDK_FAIL;							\
@@ -1375,9 +1403,12 @@ typedef struct correlation_deltas {
 		j = k;							\
 	} while (0)
 
-gdk_return
-GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
+BAT *
+GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
+	BAT *r = COLnew(b1->hseqbase, TYPE_dbl, BATcount(b1), TRANSIENT);
+	if (r == NULL)
+		return NULL;
 	bool has_nils = false, last = false;
 	BATiter pi = bat_iterator(p);
 	BATiter oi = bat_iterator(o);
@@ -1435,7 +1466,11 @@ cleanup:
 	bat_iterator_end(&si);
 	bat_iterator_end(&ei);
 	BBPreclaim(st);
-	return res;
+	if (res != GDK_SUCCEED) {
+		BBPreclaim(r);
+		r = NULL;
+	}
+	return r;
   nosupport:
 	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
 	res = GDK_FAIL;
