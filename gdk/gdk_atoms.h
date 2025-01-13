@@ -118,8 +118,6 @@ gdk_export ssize_t lngFromStr(const char *src, size_t *len, lng **dst, bool exte
 gdk_export ssize_t lngToStr(str *dst, size_t *len, const lng *src, bool external);
 gdk_export ssize_t intFromStr(const char *src, size_t *len, int **dst, bool external);
 gdk_export ssize_t intToStr(str *dst, size_t *len, const int *src, bool external);
-gdk_export ssize_t batFromStr(const char *src, size_t *len, bat **dst, bool external);
-gdk_export ssize_t batToStr(str *dst, size_t *len, const bat *src, bool external);
 gdk_export ssize_t ptrFromStr(const char *src, size_t *len, ptr **dst, bool external);
 gdk_export ssize_t ptrToStr(str *dst, size_t *len, const ptr *src, bool external);
 gdk_export ssize_t bitFromStr(const char *src, size_t *len, bit **dst, bool external);

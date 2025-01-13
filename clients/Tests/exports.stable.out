@@ -466,8 +466,6 @@ size_t _MT_pagesize;
 const union _dbl_nil_t _dbl_nil_;
 const union _flt_nil_t _flt_nil_;
 char *asctime_r(const struct tm *restrict, char *restrict);
-ssize_t batFromStr(const char *src, size_t *len, bat **dst, bool external);
-ssize_t batToStr(str *dst, size_t *len, const bat *src, bool external);
 ssize_t bitFromStr(const char *src, size_t *len, bit **dst, bool external);
 ssize_t bitToStr(str *dst, size_t *len, const bit *src, bool external);
 size_t blobsize(size_t nitems) __attribute__((__const__));
