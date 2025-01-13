@@ -782,7 +782,6 @@ def CreateHtmlIndex (env, ssout, sserr, *body) :
         f = openutf8("%s.html" % INDEX, "w")
         html.write(f, True)
         f.close()
-        env['_%s_BODY_' % TSTDIR] = ["", 0]
         os.chdir(BACK)
 ### CreateHtmlIndex (env, ssout, sserr, *body) #
 
@@ -1108,13 +1107,13 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
     td.addchildren(AddHref('.%s%s.html' % (TST, '.err'),
                            '%s_%s_body' % (DISTVER, TSTDIR),
                            'err', e))
-    if '_%s_BODY_' % TSTDIR not in env  or  \
-       not env['_%s_BODY_' % TSTDIR][0]  or  \
-       ( (not env['_%s_BODY_' % TSTDIR][1])  and  (o or e) ):
-        if e and not o:
-            env['_%s_BODY_' % TSTDIR] = [".%s.err.html" % TST, e]
+    if f'_{TSTDIR}_BODY_' not in env  or  \
+       not env[f'_{TSTDIR}_BODY_'][0]  or  \
+       env[f'_{TSTDIR}_BODY_'][1] < max(e, o):
+        if e > o:
+            env[f'_{TSTDIR}_BODY_'] = [".%s.err.html" % TST, e]
         else:
-            env['_%s_BODY_' % TSTDIR] = [".%s.out.html" % TST, o]
+            env[f'_{TSTDIR}_BODY_'] = [".%s.out.html" % TST, o]
 
     CreateSrcIndex(env, TST, EXT)
 
@@ -1128,7 +1127,7 @@ def AddSubToHtmlIndex (env, TSTDIR, diff) :
                              TSTDIR, diff))
     if '__BODY_' not in env  or  \
        not env['__BODY_'][0]  or  \
-       ( (not env['__BODY_'][1])  and  diff ):
+       env['__BODY_'][1] < diff:
         env['__BODY_'] = ["%s/.index.html" % TSTDIR, diff]
     return elem
 ### AddSubToHtmlIndex (env, TSTDIR, diff) #
@@ -1174,10 +1173,10 @@ def SkipTest(env, TST, EXT, REASON, length) :
                  Element('a', {'href': '.%s.SKIPPED.html' % TST,
                                'target': target},
                          Text('(skipped)')))
-    if '_%s_BODY_' % TSTDIR not in env  or  \
-       not env['_%s_BODY_' % TSTDIR][0]  or  \
-       not env['_%s_BODY_' % TSTDIR][1]:
-        env['_%s_BODY_' % TSTDIR] = [".%s.SKIPPED.html" % TST, F_SKIP]
+    if f'_{TSTDIR}_BODY_' not in env  or  \
+       not env[f'_{TSTDIR}_BODY_'][0]  or  \
+       not env[f'_{TSTDIR}_BODY_'][1]:
+        env[f'_{TSTDIR}_BODY_'] = [".%s.SKIPPED.html" % TST, F_SKIP]
     CreateSrcIndex(env, TST, EXT)
     return td
 ### SkipTest(env, TST, EXT, REASON) #
