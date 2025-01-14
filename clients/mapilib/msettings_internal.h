@@ -72,7 +72,7 @@ struct msettings {
 	bool validated;
 	const char* (*localizer)(const void *data, mparm parm);
 	void *localizer_data;
-	void *(*alloc)(void *state, void *old, size_t size);
+	void *(*alloc)(void *state, void *old, size_t size);    // NULL means regular realloc
 	void *alloc_state;
 	char error_message[256];
 };
@@ -84,9 +84,17 @@ const char *format_error(msettings *mp, const char *fmt, ...)
 // wrappers around mp->allocator
 
 static inline void*
+realloc_with_fallback(msettings_allocator alloc, void *alloc_state, void *old, size_t size)
+{
+	return alloc
+		? alloc(alloc_state, old, size)
+		: realloc(old, size);
+}
+
+static inline void*
 msettings_realloc(const msettings *mp, void *old, size_t size)
 {
-	return mp->alloc(mp->alloc_state, old, size);
+	return realloc_with_fallback(mp->alloc, mp->alloc_state, old, size);
 }
 
 static inline void*

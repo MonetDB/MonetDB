@@ -1794,10 +1794,16 @@ mapi_new(msettings *settings)
 	}
 	if (settings == NULL) {
 		settings = msettings_create();
-		if (settings == NULL) {
-			mapi_destroy(mid);
-			return NULL;
-		}
+	} else if (msettings_get_allocator(settings, NULL) != NULL) {
+		// it uses a custom allocator, reallocate using regular
+		msettings *old = settings;
+		settings = msettings_clone(old);
+		if (settings)
+			msettings_destroy(old);
+	}
+	if (settings == NULL) {
+		mapi_destroy(mid);
+		return NULL;
 	}
 	mid->settings = settings;
 	mid->blk.buf[0] = 0;

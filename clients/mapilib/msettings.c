@@ -185,21 +185,13 @@ const msettings msettings_default_values = {
 
 const msettings *msettings_default = &msettings_default_values;
 
-static void*
-default_alloc(void *state, void *old, size_t size)
-{
-	(void)state;
-	return realloc(old, size);
-}
-
 msettings *msettings_create_with(msettings_allocator alloc, void *allocator_state)
 {
 	if (alloc == NULL) {
-		alloc = default_alloc;
 		allocator_state = NULL;
 	}
 
-	msettings *mp = alloc(allocator_state, NULL, sizeof(*mp));
+	msettings *mp = realloc_with_fallback(alloc, allocator_state, NULL, sizeof(*mp));
 	if (!mp)
 		return NULL;
 
@@ -213,6 +205,16 @@ msettings *msettings_create_with(msettings_allocator alloc, void *allocator_stat
 msettings *msettings_create(void)
 {
 	return msettings_create_with(NULL, NULL);
+}
+
+msettings_allocator
+msettings_get_allocator(const msettings *mp, void **put_alloc_state_here)
+{
+	if (mp->alloc == NULL)
+		return NULL;
+	if (put_alloc_state_here)
+		*put_alloc_state_here = mp->alloc_state;
+	return mp->alloc;
 }
 
 msettings *msettings_clone_with(msettings_allocator alloc, void *alloc_state, const msettings *orig)
