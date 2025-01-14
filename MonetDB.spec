@@ -924,6 +924,7 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
+        -DWITH_RTREE=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
