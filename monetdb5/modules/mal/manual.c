@@ -35,8 +35,6 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *cx = getArgReference_bat(stk, pci, 4);
 	Module *moduleList;
 	int length;
-	int top = 0;
-	Module list[256];
 
 	mod = COLnew(0, TYPE_str, 0, TRANSIENT);
 	fcn = COLnew(0, TYPE_str, 0, TRANSIENT);
@@ -52,18 +50,12 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "manual.functions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	list[top++] = cntxt->usermodule;
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
-	while (top < 256 && top <= length) {
-		list[top] = moduleList[top - 1];
-		top++;
-	}
-	freeModuleList(moduleList);
 
-	for (int k = 0; k < top; k++) {
-		Module s = list[k];
+	for (int k = 0; k <= length; k++) {
+		Module s = k < length ? moduleList[k] : cntxt->usermodule;
 		for (int j = 0; j < MAXSCOPE; j++) {
 			if (s->space[j]) {
 				for (Symbol t = s->space[j]; t != NULL; t = t->peer) {
@@ -79,25 +71,27 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						comment = t->func->comment;
 						(void) cfcnDefinition(t, buf, TRUE, buf, sizeof(buf));
 					}
+					if (comment == NULL)
+						comment = "";
 					char *tt = strstr(buf, " address ");
 					if (tt) {
 						*tt = 0;
 						tt += 9;
+					} else {
+						tt = "";
 					}
 					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
-						|| BUNappend(fcn, t->name,
-									 false) != GDK_SUCCEED
-						|| BUNappend(com, comment ? comment : "",
-									 false) != GDK_SUCCEED
+						|| BUNappend(fcn, t->name, false) != GDK_SUCCEED
+						|| BUNappend(com, comment, false) != GDK_SUCCEED
 						|| BUNappend(sig, buf, false) != GDK_SUCCEED
-						|| BUNappend(adr, tt ? tt : "",
-									 false) != GDK_SUCCEED) {
+						|| BUNappend(adr, tt, false) != GDK_SUCCEED) {
 						goto bailout;
 					}
 				}
 			}
 		}
 	}
+	freeModuleList(moduleList);
 
 	*mx = mod->batCacheid;
 	BBPkeepref(mod);
@@ -113,6 +107,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
+	freeModuleList(moduleList);
 	BBPreclaim(mod);
 	BBPreclaim(fcn);
 	BBPreclaim(sig);
