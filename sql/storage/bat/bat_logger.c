@@ -947,8 +947,7 @@ bl_postversion(void *Store, logger *lg)
 			return GDK_FAIL;
 		BUN colcnt = BATcount(b); /* we'll need it a few times */
 		bat_destroy(b);
-		bte ct = 0;
-		BAT *coltype = BATconstant(b->hseqbase, TYPE_bte, &ct, colcnt, PERSISTENT);
+		BAT *coltype = BATconstant(b->hseqbase, TYPE_bte, &(bte) {0}, colcnt, PERSISTENT);
 		if (coltype == NULL)
 			return GDK_FAIL;
 		if ((coltype = BATsetaccess(coltype, BAT_READ)) == NULL ||
@@ -956,7 +955,7 @@ bl_postversion(void *Store, logger *lg)
 			BUNappend(lg->catalog_id, &(int) {2168}, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &coltype->batCacheid, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_cnt, &(lng){colcnt}, false) != GDK_SUCCEED
+			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
 			) {
 			bat_destroy(coltype);
 			return GDK_FAIL;
@@ -965,17 +964,15 @@ bl_postversion(void *Store, logger *lg)
 		bat_destroy(coltype);
 
 		/* new TINYINT column sys._columns.multiset */
-		ct = MS_VALUE;
-		BAT *multiset = BATconstant(b->hseqbase, TYPE_bte, &ct, colcnt, PERSISTENT);
+		BAT *multiset = BATconstant(b->hseqbase, TYPE_bte, &(bte) {MS_VALUE}, colcnt, PERSISTENT);
 		if (multiset == NULL)
 			return GDK_FAIL;
-		/* First add 2 rows for sys._columns.column_type and tmp._columns.column_type */
 		if ((multiset = BATsetaccess(multiset, BAT_READ)) == NULL ||
 			/* 2170 is sys._columns.multiset */
 			BUNappend(lg->catalog_id, &(int) {2170}, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &multiset->batCacheid, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_cnt, &(lng){colcnt}, false) != GDK_SUCCEED
+			BUNappend(lg->catalog_cnt, &(lng) {colcnt}, false) != GDK_SUCCEED
 			) {
 			bat_destroy(multiset);
 			return GDK_FAIL;
@@ -987,18 +984,16 @@ bl_postversion(void *Store, logger *lg)
 		b = log_temp_descriptor(log_find_bat(lg, 2029)); /* sys.args.id */
 		if (b == NULL)
 			return GDK_FAIL;
-		ct = MS_VALUE;
-		multiset = BATconstant(b->hseqbase, TYPE_bte, &ct, BATcount(b), PERSISTENT);
+		multiset = BATconstant(b->hseqbase, TYPE_bte, &(bte) {MS_VALUE}, BATcount(b), PERSISTENT);
 		bat_destroy(b);
 		if (multiset == NULL)
 			return GDK_FAIL;
-		/* First add 2 rows for sys._columns.column_type and tmp._columns.column_type */
 		if ((multiset = BATsetaccess(multiset, BAT_READ)) == NULL ||
 			/* 2172 is sys.args.multiset */
 			BUNappend(lg->catalog_id, &(int) {2172}, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &multiset->batCacheid, true) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_lid, &lng_nil, false) != GDK_SUCCEED ||
-			BUNappend(lg->catalog_cnt, &(lng){BATcount(multiset)}, false) != GDK_SUCCEED
+			BUNappend(lg->catalog_cnt, &(lng) {BATcount(multiset)}, false) != GDK_SUCCEED
 			) {
 			bat_destroy(multiset);
 			return GDK_FAIL;
@@ -1010,7 +1005,7 @@ bl_postversion(void *Store, logger *lg)
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2168 is sys._columns.column_type */
 				   2077, &(int) {2168},		/* sys._columns.id */
-				   2078, "column_type",			/* sys._columns.name */
+				   2078, "column_type",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
 				   2081, &(int) {0},		/* sys._columns.type_scale */
@@ -1028,7 +1023,7 @@ bl_postversion(void *Store, logger *lg)
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2169 is tmp._columns.column_type */
 				   2077, &(int) {2169},		/* sys._columns.id */
-				   2078, "column_type",			/* sys._columns.name */
+				   2078, "column_type",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
 				   2081, &(int) {0},		/* sys._columns.type_scale */
@@ -1046,7 +1041,7 @@ bl_postversion(void *Store, logger *lg)
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2170 is sys._columns.multiset */
 				   2077, &(int) {2170},		/* sys._columns.id */
-				   2078, "multiset",			/* sys._columns.name */
+				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
 				   2081, &(int) {0},		/* sys._columns.type_scale */
@@ -1064,7 +1059,7 @@ bl_postversion(void *Store, logger *lg)
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2171 is tmp._columns.multiset */
 				   2077, &(int) {2171},		/* sys._columns.id */
-				   2078, "multiset",			/* sys._columns.name */
+				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
 				   2081, &(int) {0},		/* sys._columns.type_scale */
@@ -1082,7 +1077,7 @@ bl_postversion(void *Store, logger *lg)
 				   2076, &(msk) {false},	/* sys._columns */
 				   /* 2172 is sy.args.multiset */
 				   2077, &(int) {2172},		/* sys._columns.id */
-				   2078, "multiset",			/* sys._columns.name */
+				   2078, "multiset",		/* sys._columns.name */
 				   2079, "tinyint",			/* sys._columns.type */
 				   2080, &(int) {7},		/* sys._columns.type_digits */
 				   2081, &(int) {0},		/* sys._columns.type_scale */
