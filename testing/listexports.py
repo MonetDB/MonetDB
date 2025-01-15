@@ -16,11 +16,18 @@ from . import exportutils
 
 # sets of directories/files that end up in the same shared object
 dirlist = {
-    'gdk': ['gdk', 'common/options', 'common/utils/mutils.h', 'common/utils/mprompt.h'],
-    'mapi': ['clients/mapilib', 'common/options', 'common/utils/mcrypt.h'],
-    'monetdb5': ['monetdb5', 'common/utils/msabaoth.h', 'common/utils/muuid.h'],
-    'stream': ['common/stream'],
-    'monetdbe': ['tools/monetdbe/monetdbe.h'],
+    'gdk': ['gdk',
+            os.path.join('common', 'options'),
+            os.path.join('common', 'utils', 'mutils.h'),
+            os.path.join('common', 'utils', 'mprompt.h')],
+    'mapi': [os.path.join('clients', 'mapilib'),
+             os.path.join('common', 'options'),
+             os.path.join('common', 'utils', 'mcrypt.h')],
+    'monetdb5': ['monetdb5',
+                 os.path.join('common', 'utils', 'msabaoth.h'),
+                 os.path.join('common', 'utils', 'muuid.h')],
+    'stream': [os.path.join('common', 'stream')],
+    'monetdbe': [os.path.join('tools', 'monetdbe', 'monetdbe.h')],
     'sql': ['sql'],
     }
 libs = sorted(dirlist.keys())
@@ -75,7 +82,7 @@ def mywalk(d):
         return [(root, [], [file])]
     return os.walk(d)
 
-def findfiles(dirlist, skipfiles=[], skipdirs=[]):
+def findfiles(dirlist, skipfiles=[], skipdirs=[], fileset=None):
     decls = []
     done = {}
     for d in dirlist:
@@ -87,19 +94,36 @@ def findfiles(dirlist, skipfiles=[], skipdirs=[]):
                 if f not in done and \
                         (f.endswith('.c') or f.endswith('.h')) and \
                         not f.startswith('.') and \
-                        f not in skipfiles and \
-                        os.path.isfile(os.path.join(root, f)):
-                    decls.extend(extract(os.path.join(root, f)))
+                        f not in skipfiles:
+                    ff = os.path.join(root, f)
+                    if os.path.isfile(ff) and (fileset is None or ff in fileset):
+                        decls.extend(extract(ff))
                     done[f] = True
     decls.sort()
     return [decl for name, decl in decls]
 
+def getrepofiles():
+    curdir = os.getcwd()
+    os.chdir(srcdir)
+    if os.path.exists(os.path.join('.hg', 'store')):
+        import subprocess
+        with subprocess.Popen(['hg', 'files', '-I', '**.[ch]'],
+                              stdout=subprocess.PIPE,
+                              text=True) as p:
+            out, err = p.communicate()
+        fileset = set([os.path.join(srcdir, f) for f in filter(None, out.split('\n'))])
+    else:
+        fileset = None
+    os.chdir(curdir)
+    return fileset
+
 def listexports():
     output = []
+    fileset = getrepofiles()
     for lib in libs:
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
-        decls = findfiles(dl, skipfiles=skipfiles, skipdirs=skipdirs)
+        decls = findfiles(dl, skipfiles=skipfiles, skipdirs=skipdirs, fileset=fileset)
         output.append(f'# {lib}\n')
         for d in decls:
             output.append(d + '\n')
