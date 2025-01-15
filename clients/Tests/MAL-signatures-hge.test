@@ -33769,6 +33769,11 @@ unsafe pattern batsql.next_value(X_0:lng, X_1:str, X_2:str):bat[:lng]
 mvc_next_value_bulk
 return the next value of the sequence
 batsql
+next_value_ms
+pattern batsql.next_value_ms(X_0:bat[:any_1], X_1:str, X_2:str):bat[:lng]
+mvc_next_value_bulk;
+return the next value of the sequence
+batsql
 nth_value
 pattern batsql.nth_value(X_0:bat?[:any_1], X_1:bat?[:lng], X_2:bat?[:bit], X_3:bat?[:bit], X_4:int, X_5:bat?[:oid], X_6:bat?[:oid]):bat[:any_1]
 SQLnth_value
@@ -33848,6 +33853,11 @@ rank
 pattern batsql.rank(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:int]
 SQLrank
 return the ranked groups
+batsql
+renumber
+pattern batsql.renumber(X_0:bat[:int], X_1:bat[:int], X_2:bat[:int]):bat[:int]
+mvc_renumber_bulk;
+return the input b renumbered using values from base
 batsql
 row_number
 pattern batsql.row_number(X_0:bat[:any_1], X_1:bat?[:bit], X_2:bat?[:bit]):bat[:int]
@@ -48590,6 +48600,11 @@ SQLany_cmp
 if cmp then true, (nl or nr) nil then nil, else false
 sql
 append
+pattern sql.append(X_0:int, X_1:str, X_2:str, X_3:int, X_4:oid, X_5:bat[:oid], X_6:any):int
+mvc_append_wrap;
+Append to the column tname.col_id (possibly optimized to replace the insert bat of tname.col_id. Returns sequence number for order dependence.
+sql
+append
 pattern sql.append(X_0:int, X_1:str, X_2:str, X_3:str, X_4:oid, X_5:bat[:oid], X_6:any):int
 mvc_append_wrap
 Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.
@@ -48678,6 +48693,26 @@ avg
 pattern sql.avg(X_0:sht, X_1:bit, X_2:bit, X_3:int, X_4:oid, X_5:oid):sht
 SQLavginteger
 return the average of groups
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
+mvc_bind_wrap;
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:any_1]
+mvc_bind_wrap;
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
+mvc_bind_wrap;
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int):bat[:any_1]
+mvc_bind_wrap;
+Bind the 'schema.table.column' BAT partition with access kind:@0 - base table@1 - inserts@2 - updates
 sql
 bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
@@ -48980,6 +49015,26 @@ dump_trace
 dump the trace statistics
 sql
 emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
+mvc_bind_wrap;
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:any_1]
+mvc_bind_wrap;
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
+mvc_bind_wrap;
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int):bat[:any_1]
+mvc_bind_wrap;
+(empty)
+sql
+emptybind
 pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
 mvc_bind_wrap
 (empty)
@@ -49089,6 +49144,11 @@ pattern sql.first_value(X_0:any_1, X_1:bit, X_2:bit, X_3:int, X_4:oid, X_5:oid):
 SQLfirst_value
 return the first value of groups
 sql
+from_json
+pattern sql.from_json(X_0:json, X_1:ptr):bat[:any]...
+SQLfrom_json;
+Reads json string into table of nested structures
+sql
 getVariable
 pattern sql.getVariable(X_0:int, X_1:str, X_2:str):any_1
 getVariable
@@ -49197,6 +49257,11 @@ sql
 next_value
 unsafe pattern sql.next_value(X_0:str, X_1:str):lng
 mvc_next_value
+return the next value of the sequence
+sql
+next_value_ms
+pattern sql.next_value_ms(X_0:any_1, X_1:str, X_2:str):lng
+mvc_next_value;
 return the next value of the sequence
 sql
 nth_value
@@ -49373,6 +49438,11 @@ register
 unsafe pattern sql.register(X_0:str, X_1:str, X_2:str, X_3:str, X_4:str):int
 RAstatement2
 Compile the relational statement (rel_smt) and register it as mal function, mod.fname(signature)
+sql
+renumber
+pattern sql.renumber(X_0:int, X_1:int, X_2:int):int
+mvc_renumber;
+return the input b renumbered using values from base
 sql
 restart
 unsafe pattern sql.restart(X_0:str, X_1:str, X_2:lng):lng
