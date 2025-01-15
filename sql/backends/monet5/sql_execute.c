@@ -692,12 +692,12 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (backend_dumpstmt(be, c->curprg->def, rel, 0, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
-			SQLaddQueryToCache(c);
-			msg = SQLoptimizeFunction(c,c->curprg->def);
-			if( msg == MAL_SUCCEED)
+			//SQLaddQueryToCache(c);
+			msg = SQLoptimizeFunction(c, c->curprg->def);
+			if (msg == MAL_SUCCEED)
 				msg = SQLrun(c,m);
 			resetMalBlk(c->curprg->def);
-			SQLremoveQueryFromCache(c);
+			//SQLremoveQueryFromCache(c);
 		}
 		rel_destroy(rel);
 	}

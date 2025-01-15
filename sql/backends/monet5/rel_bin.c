@@ -750,9 +750,8 @@ append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *s
 		for(n = attr->h, o = type->type->d.fields->h; n && o; n = n->next, o = o->next) {
 			sql_exp *e = n->data;
 			list *vals = m->data;
-			sql_arg *nested_tuple = o->data;
 			sql_subtype *type = exp_subtype(e);
-			assert(type->type == nested_tuple->type.type);
+			assert(type->type == ((sql_arg*)o->data)->type.type);
 			if (type->type->composite) {
 				node *nm = append_tuple(be, e, type, left, sel, m, rowcnt, lcnt, type->multiset);
 				if (nm == m)
