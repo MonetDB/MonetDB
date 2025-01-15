@@ -3164,11 +3164,6 @@ pattern bat.appendBulk(X_0:bat[:any_1], X_1:bit, X_2:bat[:any_1]...):bat[:any_1]
 CMDBATappend_bulk;
 append the arguments ins to i
 bat
-attach
-command bat.attach(X_0:int, X_1:str):bat[:any_1]
-BKCattach;
-Returns a new BAT with dense head and tail of the given type and uses@the given file to initialize the tail. The file will be owned by the@server.
-bat
 delete
 command bat.delete(X_0:bat[:any_1], X_1:oid):bat[:any_1]
 BKCdelete;

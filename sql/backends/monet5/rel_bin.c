@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4321,7 +4321,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	stmt *rel_stmt = NULL, *sub = NULL;
 	int nr_unions = list_length((list*)rel->l);
 	if (nr_unions != 2)
-		return sql_error(sql, 10, SQLSTATE(27000) "UNION: recursive unions need a base and recusive part");
+		return sql_error(sql, 10, SQLSTATE(27000) "UNION: recursive unions need a base and recursive part");
 	stmt *l = stmt_limit_value(be, topn);
 
 	bool distinct = need_distinct(rel);
@@ -4382,7 +4382,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		r = pushLng(be->mb, r, 0);
 		if (l) {
 			r = pushArgument(be->mb, r, l->nr);
-			r = pushBit(be->mb, r, FALSE); /* not symetrical */
+			r = pushBit(be->mb, r, FALSE); /* not symmetrical */
 			r = pushBit(be->mb, r, TRUE);  /* including lower bound */
 			r = pushBit(be->mb, r, FALSE); /* excluding upper bound */
 			r = pushBit(be->mb, r, FALSE); /* nils_false */
@@ -4425,7 +4425,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
 		if (distinct) {
 			rec = rel2bin_distinct(be, rec, NULL);
-			/* remove values allready in the result table */
+			/* remove values already in the result table */
 			stmt *s = releqjoin(be, rec->op4.lval, result_table, NULL, 0 /* use hash */, 0, 1 /*is_semantics*/);
 			stmt *lm = stmt_result(be, s, 0);
 

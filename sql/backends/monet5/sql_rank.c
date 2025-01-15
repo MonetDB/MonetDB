@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -54,34 +54,31 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res = getArgReference_bat(stk, pci, 0);
 		if (pci->argc > 2) {
 			if (isaBatType(getArgType(mb, pci, 2))) {
-				if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
+				if ((c = BATdescriptor(*getArgReference_bat(stk, pci, 1))) == NULL) {
 					msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 					goto bailout;
 				}
-				if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
+				if ((b = BATdescriptor(*getArgReference_bat(stk, pci, 2))) == NULL) {
+					msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+					goto bailout;
+				}
+				if ((r = GDKanalyticaldiff(b, c, NULL, b->ttype)) == NULL) {
 					msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
-				c = b;
-				if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
-					msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-					goto bailout;
-				}
-				gdk_code = GDKanalyticaldiff(r, b, c, NULL, b->ttype);
 			} else { /* the input is a constant, so the output is the previous sql.diff output */
 				BBPretain(*res = *getArgReference_bat(stk, pci, 1));
 				return MAL_SUCCEED;
 			}
 		} else {
-			if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
+			if ((b = BATdescriptor(*getArgReference_bat(stk, pci, 1))) == NULL) {
 				msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
-			if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
+			if ((r = GDKanalyticaldiff(b, NULL, NULL, b->ttype)) == NULL) {
 				msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			gdk_code = GDKanalyticaldiff(r, b, NULL, NULL, b->ttype);
 		}
 		if (gdk_code != GDK_SUCCEED)
 			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
@@ -89,17 +86,14 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bit *restrict prev = getArgReference_bit(stk, pci, 1);
 
 		res = getArgReference_bat(stk, pci, 0);
-		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
+		if ((b = BATdescriptor(*getArgReference_bat(stk, pci, 2))) == NULL) {
 			msg = createException(SQL, "sql.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if ((r = GDKanalyticaldiff(b, NULL, prev, b->ttype)) == NULL) {
+			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
 			goto bailout;
 		}
-
-		if (GDKanalyticaldiff(r, b, NULL, prev, b->ttype) != GDK_SUCCEED)
-			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = FALSE;
@@ -158,10 +152,6 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (is_a_bat)
 			tp2 = getBatType(tp2);
 
-		if (!(r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, "sql.window_bound", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (is_a_bat) { //SQL_CURRENT_ROW shall never fall in limit validation
 			if ((!(l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5))))) {
 				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -178,7 +168,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		//On RANGE frame, when "CURRENT ROW" is not specified, the ranges are calculated with SQL intervals in mind
-		if (GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, second_half) != GDK_SUCCEED)
+		if ((r = GDKanalyticalwindowbounds(b, p, l, limit, tp1, tp2, unit, preceding, second_half)) == NULL)
 			msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
 	} else {
 		oid *res = getArgReference_oid(stk, pci, 0);
@@ -742,16 +732,16 @@ bailout:
 	return msg;
 }
 
-#define NTILE_VALUE_SINGLE_IMP(TPE) \
-	do { \
-		TPE val = *(TPE*) VALget(ntile); \
-		if (!is_##TPE##_nil(val) && val < 1) { \
+#define NTILE_VALUE_SINGLE_IMP(TPE)										\
+	do {																\
+		TPE val = *(TPE*) VALget(ntile);								\
+		if (!is_##TPE##_nil(val) && val < 1) {							\
 			msg = createException(SQL, "sql.ntile", SQLSTATE(42000) "ntile must be greater than zero"); \
-			goto bailout; 	\
-		}	\
-		if (!is_##TPE##_nil(val)) \
-			val = 1; \
-		VALset(res, tp2, &val); \
+			goto bailout;												\
+		}																\
+		if (!is_##TPE##_nil(val))										\
+			val = 1;													\
+		VALset(res, tp2, &val);											\
 	} while(0)
 
 str
@@ -786,10 +776,6 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tp2 = getArgType(mb, pci, 2);
 			ntile = getArgReference(stk, pci, 2);
 		}
-		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
 			msg = createException(SQL, "sql.ntile", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
@@ -799,7 +785,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 
-		if (GDKanalyticalntile(r, b, p, n, tp2, ntile) != GDK_SUCCEED)
+		if ((r = GDKanalyticalntile(b, p, n, tp2, ntile)) == NULL)
 			msg = createException(SQL, "sql.ntile", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
@@ -807,25 +793,25 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int tp2 = getArgType(mb, pci, 2);
 
 		switch (tp2) {
-			case TYPE_bte:
-				NTILE_VALUE_SINGLE_IMP(bte);
-				break;
-			case TYPE_sht:
-				NTILE_VALUE_SINGLE_IMP(sht);
-				break;
-			case TYPE_int:
-				NTILE_VALUE_SINGLE_IMP(int);
-				break;
-			case TYPE_lng:
-				NTILE_VALUE_SINGLE_IMP(lng);
-				break;
+		case TYPE_bte:
+			NTILE_VALUE_SINGLE_IMP(bte);
+			break;
+		case TYPE_sht:
+			NTILE_VALUE_SINGLE_IMP(sht);
+			break;
+		case TYPE_int:
+			NTILE_VALUE_SINGLE_IMP(int);
+			break;
+		case TYPE_lng:
+			NTILE_VALUE_SINGLE_IMP(lng);
+			break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				NTILE_VALUE_SINGLE_IMP(hge);
-				break;
+		case TYPE_hge:
+			NTILE_VALUE_SINGLE_IMP(hge);
+			break;
 #endif
-			default:
-				msg = createException(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(tp2));
+		default:
+			msg = createException(SQL, "sql.ntile", SQLSTATE(42000) "ntile not available for %s", ATOMname(tp2));
 		}
 	}
 
@@ -848,7 +834,7 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 
 	if (isaBatType(getArgType(mb, pci, 1)) && !(*b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
 		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (*b && !(*r = COLnew((*b)->hseqbase, rtype ? rtype : (*b)->ttype, BATcount(*b), TRANSIENT)))
+	if (r && *b && !(*r = COLnew((*b)->hseqbase, rtype ? rtype : (*b)->ttype, BATcount(*b), TRANSIENT)))
 		throw(MAL, mod, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (isaBatType(getArgType(mb, pci, 2)) && !(*p = BATdescriptor(*getArgReference_bat(stk, pci, 2))))
 		throw(SQL, mod, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -869,11 +855,11 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 
 static str
 SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
-				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
+				   BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, op);
+	str msg = SQLanalytics_args(NULL, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, op);
 	bat *res = NULL;
 
 	if (msg)
@@ -881,7 +867,7 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, cons
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 
-		if (func(r, p, o, b, s, e, getBatType(tpe), frame_type) != GDK_SUCCEED)
+		if ((r = func(p, o, b, s, e, getBatType(tpe), frame_type)) == NULL)
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
@@ -899,7 +885,7 @@ bailout:
 
 static str
 do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
-			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+			   BAT *(*func)(BAT *, BAT *, BAT *, int))
 {
 	int tpe = getArgType(mb, pci, 1);
 	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL; /* p and o are ignored for this one */
@@ -920,10 +906,6 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
 		}
-		if (!(r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
 			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
@@ -941,7 +923,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 			goto bailout;
 		}
 
-		if (func(r, b, s, e, tpe) != GDK_SUCCEED)
+		if ((r = func(b, s, e, tpe)) == NULL)
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
@@ -969,22 +951,22 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", GDKanalyticallast);
 }
 
-#define NTH_VALUE_SINGLE_IMP(TPE) \
-	do { \
-		TPE val = *(TPE*) VALget(nth); \
-		if (!VALisnil(nth) && val < 1) \
+#define NTH_VALUE_SINGLE_IMP(TPE)										\
+	do {																\
+		TPE val = *(TPE*) VALget(nth);									\
+		if (!VALisnil(nth) && val < 1)									\
 			throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero"); \
-		if (VALisnil(nth) || val > 1) { \
-			ValRecord def = (ValRecord) {.vtype = TYPE_void,}; \
+		if (VALisnil(nth) || val > 1) {									\
+			ValRecord def = (ValRecord) {.vtype = TYPE_void,};			\
 			if (!VALinit(&def, tp1, ATOMnilptr(tp1)) || !VALcopy(res, &def)) { \
-				VALclear(&def); \
+				VALclear(&def);											\
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-			} \
-			VALclear(&def); \
-		} else { \
-			if (!VALcopy(res, in)) \
+			}															\
+			VALclear(&def);												\
+		} else {														\
+			if (!VALcopy(res, in))										\
 				throw(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		} \
+		}																\
 	} while(0)
 
 str
@@ -1004,7 +986,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	is_a_bat = isaBatType(getArgType(mb, pci, 2));
 
 	if (isaBatType(tpe)) {
-		lng *nth = NULL;
+		lng nth = 0;
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
@@ -1012,17 +994,13 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 		tpe = getBatType(tpe);
-		if (b && !(r = COLnew(b->hseqbase, tpe, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (is_a_bat) {
 			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 				goto bailout;
 			}
 		} else {
-			nth = getArgReference_lng(stk, pci, 2);
+			nth = *getArgReference_lng(stk, pci, 2);
 		}
 		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
 			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1041,7 +1019,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		}
 
-		if (GDKanalyticalnthvalue(r, b, s, e, l, nth, tpe) != GDK_SUCCEED)
+		if ((r = GDKanalyticalnthvalue(b, s, e, l, nth, tpe)) == NULL)
 			msg = createException(SQL, "sql.nth_value", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
@@ -1077,36 +1055,36 @@ bailout:
 	return msg;
 }
 
-#define CHECK_L_VALUE(TPE) \
-	do { \
-		TPE rval; \
-		if (tp2_is_a_bat) { \
+#define CHECK_L_VALUE(TPE)												\
+	do {																\
+		TPE rval;														\
+		if (tp2_is_a_bat) {												\
 			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) { \
 				msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING); \
-				goto bailout; \
-			} \
-			MT_lock_set(&l->theaplock); \
-			rval = ((TPE*)Tloc(l, 0))[0]; \
-			MT_lock_unset(&l->theaplock); \
-		} else { \
-			rval = *getArgReference_##TPE(stk, pci, 2); \
-		} \
-		if (!is_##TPE##_nil(rval) && rval < 0) { \
-			gdk_call = dual; \
-			rval *= -1; \
-		} \
-		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (BUN)rval; \
+				goto bailout;											\
+			}															\
+			MT_lock_set(&l->theaplock);									\
+			rval = ((TPE*)Tloc(l, 0))[0];								\
+			MT_lock_unset(&l->theaplock);								\
+		} else {														\
+			rval = *getArgReference_##TPE(stk, pci, 2);					\
+		}																\
+		if (!is_##TPE##_nil(rval) && rval < 0) {						\
+			gdk_call = dual;											\
+			rval *= -1;													\
+		}																\
+		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (BUN)rval;			\
 	} while(0)
 
 static str
 do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char* desc,
-			gdk_return (*func)(BAT *, BAT *, BAT *, BUN, const void* restrict, int),
-			gdk_return (*dual)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
+			BAT *(*func)(BAT *, BAT *, BUN, const void* restrict, int),
+			BAT *(*dual)(BAT *, BAT *, BUN, const void* restrict, int))
 {
 	int tp1, tp2, tp3, base = 2;
 	BUN l_value = 1;
 	void *restrict default_value;
-	gdk_return (*gdk_call)(BAT *, BAT *, BAT *, BUN, const void* restrict, int) = func;
+	BAT *(*gdk_call)(BAT *, BAT *, BUN, const void* restrict, int) = func;
 	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
 	bool tp2_is_a_bat, free_default_value = false;
 	str msg = MAL_SUCCEED;
@@ -1125,25 +1103,25 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			tp2 = getBatType(tp2);
 
 		switch (tp2) {
-			case TYPE_bte:
-				CHECK_L_VALUE(bte);
-				break;
-			case TYPE_sht:
-				CHECK_L_VALUE(sht);
-				break;
-			case TYPE_int:
-				CHECK_L_VALUE(int);
-				break;
-			case TYPE_lng:
-				CHECK_L_VALUE(lng);
-				break;
+		case TYPE_bte:
+			CHECK_L_VALUE(bte);
+			break;
+		case TYPE_sht:
+			CHECK_L_VALUE(sht);
+			break;
+		case TYPE_int:
+			CHECK_L_VALUE(int);
+			break;
+		case TYPE_lng:
+			CHECK_L_VALUE(lng);
+			break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				CHECK_L_VALUE(hge);
-				break;
+		case TYPE_hge:
+			CHECK_L_VALUE(hge);
+			break;
 #endif
-			default:
-				throw(SQL, op, SQLSTATE(42000) "%s value not available for %s", desc, ATOMname(tp2));
+		default:
+			throw(SQL, op, SQLSTATE(42000) "%s value not available for %s", desc, ATOMname(tp2));
 		}
 		base = 3;
 	}
@@ -1194,10 +1172,6 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 		}
 
 		tp1 = getBatType(tp1);
-		if (!(r = COLnew(b->hseqbase, tp1, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (isaBatType(getArgType(mb, pci, base))) {
 			if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, base)))) {
 				msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1209,7 +1183,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 			goto bailout;
 		}
 
-		if (gdk_call(r, b, p, l_value, default_value, tp1) != GDK_SUCCEED)
+		if ((r = gdk_call(b, p, l_value, default_value, tp1)) == NULL)
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
@@ -1320,10 +1294,6 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (b && !(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
-		msg = createException(SQL, "sql.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
 	if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
 		msg = createException(SQL, "sql.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -1352,7 +1322,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 
-		if (GDKanalyticalcount(r, p, o, b, s, e, ignore_nils, tpe, frame_type) != GDK_SUCCEED)
+		if ((r = GDKanalyticalcount(p, o, b, s, e, ignore_nils, tpe, frame_type)) == NULL)
 			msg = createException(SQL, "sql.count", GDK_EXCEPTION);
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
@@ -1369,7 +1339,7 @@ bailout:
 
 static str
 do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int, int))
+					  BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int, int, int))
 {
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
 	int tp1, tp2, frame_type;
@@ -1396,10 +1366,6 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
-		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
-		}
 		if (isaBatType(getArgType(mb, pci, 2)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout;
@@ -1425,7 +1391,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			goto bailout;
 		}
 
-		if (func(r, p, o, b, s, e, tp1, tp2, frame_type) != GDK_SUCCEED)
+		if ((r = func(p, o, b, s, e, tp1, tp2, frame_type)) == NULL)
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		/* the pointers here will always point from bte to dbl, so no strings are handled here */
@@ -1434,7 +1400,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		int scale = 0;
 
 		switch (tp2) {
-		case TYPE_bte:{
+		case TYPE_bte:
 			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_bte((bte*)res, &scale, (bte*)in);
@@ -1443,8 +1409,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
-		case TYPE_sht:{
+		case TYPE_sht:
 			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_sht((sht*)res, &scale, (bte*)in);
@@ -1456,8 +1421,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
-		case TYPE_int:{
+		case TYPE_int:
 			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_int((int*)res, &scale, (bte*)in);
@@ -1472,8 +1436,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
-		case TYPE_lng:{
+		case TYPE_lng:
 			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
@@ -1491,9 +1454,8 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
 #ifdef HAVE_HGE
-		case TYPE_hge:{
+		case TYPE_hge:
 			switch (tp1) {
 			case TYPE_bte:
 				msg = bte_dec2_hge((hge*)res, &scale, (bte*)in);
@@ -1514,9 +1476,8 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
 #endif
-		case TYPE_flt:{
+		case TYPE_flt:
 			switch (tp1) {
 			case TYPE_flt:
 				*(flt*)res = *((flt*)in);
@@ -1525,8 +1486,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
-		case TYPE_dbl:{
+		case TYPE_dbl:
 			switch (tp1) {
 			case TYPE_flt: {
 				flt fp = *((flt*)in);
@@ -1539,7 +1499,6 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 			}
 			break;
-		}
 		default:
 			msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
 		}
@@ -1568,7 +1527,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg");
+	str msg = SQLanalytics_args(NULL, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, "sql.avg");
 	bat *res = NULL;
 
 	if (msg)
@@ -1579,7 +1538,7 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 
-		if (GDKanalyticalavg(r, p, o, b, s, e, tpe, frame_type) != GDK_SUCCEED)
+		if ((r = GDKanalyticalavg(p, o, b, s, e, tpe, frame_type)) == NULL)
 			msg = createException(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
 		/* the pointers here will always point from bte to dbl, so no strings are handled here */
@@ -1588,32 +1547,33 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int scale = 0;
 
 		switch (tpe) {
-			case TYPE_bte:
-				msg = bte_dec2_dbl((dbl*)res, &scale, (bte*)in);
-				break;
-			case TYPE_sht:
-				msg = sht_dec2_dbl((dbl*)res, &scale, (sht*)in);
-				break;
-			case TYPE_int:
-				msg = int_dec2_dbl((dbl*)res, &scale, (int*)in);
-				break;
-			case TYPE_lng:
-				msg = lng_dec2_dbl((dbl*)res, &scale, (lng*)in);
-				break;
+		case TYPE_bte:
+			msg = bte_dec2_dbl((dbl*)res, &scale, (bte*)in);
+			break;
+		case TYPE_sht:
+			msg = sht_dec2_dbl((dbl*)res, &scale, (sht*)in);
+			break;
+		case TYPE_int:
+			msg = int_dec2_dbl((dbl*)res, &scale, (int*)in);
+			break;
+		case TYPE_lng:
+			msg = lng_dec2_dbl((dbl*)res, &scale, (lng*)in);
+			break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-				msg = hge_dec2_dbl((dbl*)res, &scale, (hge*)in);
-				break;
+		case TYPE_hge:
+			msg = hge_dec2_dbl((dbl*)res, &scale, (hge*)in);
+			break;
 #endif
-			case TYPE_flt: {
-				flt fp = *((flt*)in);
-				*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
-			} break;
-			case TYPE_dbl:
-				*(dbl*)res = *((dbl*)in);
-				break;
-			default:
-				msg = createException(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to dbl", ATOMname(tpe));
+		case TYPE_flt: {
+			flt fp = *((flt*)in);
+			*(dbl*)res = is_flt_nil(fp) ? dbl_nil : (dbl) fp;
+			break;
+		}
+		case TYPE_dbl:
+			*(dbl*)res = *((dbl*)in);
+			break;
+		default:
+			msg = createException(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to dbl", ATOMname(tpe));
 		}
 	}
 
@@ -1628,7 +1588,7 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, "sql.avg");
+	str msg = SQLanalytics_args(NULL, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, "sql.avg");
 	bat *res = NULL;
 
 	if (msg)
@@ -1639,25 +1599,25 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 
-		if (GDKanalyticalavginteger(r, p, o, b, s, e, tpe, frame_type) != GDK_SUCCEED)
+		if ((r = GDKanalyticalavginteger(p, o, b, s, e, tpe, frame_type)) == NULL)
 			msg = createException(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
 		switch (tpe) {
-			case TYPE_bte:
-			case TYPE_sht:
-			case TYPE_int:
-			case TYPE_lng:
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
 #ifdef HAVE_HGE
-			case TYPE_hge:
+		case TYPE_hge:
 #endif
-				if (!VALcopy(res, in))
-					msg = createException(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
-				break;
-			default:
-				msg = createException(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to %s", ATOMname(tpe), ATOMname(tpe));
+			if (!VALcopy(res, in))
+				msg = createException(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
+			break;
+		default:
+			msg = createException(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to %s", ATOMname(tpe), ATOMname(tpe));
 		}
 	}
 
@@ -1669,11 +1629,11 @@ bailout:
 
 static str
 do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
-					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
+					   BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
 	int tpe = getArgType(mb, pci, 1), frame_type = 0;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op);
+	str msg = SQLanalytics_args(NULL, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, op);
 	bat *res = NULL;
 
 	if (msg)
@@ -1684,24 +1644,24 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 
-		if (func(r, p, o, b, s, e, tpe, frame_type) != GDK_SUCCEED)
+		if ((r = func(p, o, b, s, e, tpe, frame_type)) == NULL)
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
 		switch (tpe) {
-			case TYPE_bte:
-			case TYPE_sht:
-			case TYPE_int:
-			case TYPE_lng:
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
 #ifdef HAVE_HGE
-			case TYPE_hge:
+		case TYPE_hge:
 #endif
-			case TYPE_flt:
-			case TYPE_dbl:
-				*res = dbl_nil;
-				break;
-			default:
-				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));
+		case TYPE_flt:
+		case TYPE_dbl:
+			*res = dbl_nil;
+			break;
+		default:
+			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tpe));
 		}
 	}
 
@@ -1736,178 +1696,177 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
-	do { \
-		TPE *restrict bp = (TPE*)di.base; \
-		for (; k < i;) { \
-			j = k; \
-			do {	\
-				n += !is_##TPE##_nil(bp[k]);	\
-				k++; \
-			} while (k < i && !opp[k]);	\
+	do {																\
+		TPE *restrict bp = (TPE*)di.base;								\
+		for (; k < i;) {												\
+			j = k;														\
+			do {														\
+				n += !is_##TPE##_nil(bp[k]);							\
+				k++;													\
+			} while (k < i && !opp[k]);									\
 			if (n > minimum) { /* covariance_samp requires at least one value */ \
-				rr = val; \
-			} else { \
-				rr = dbl_nil; \
-				has_nils = true; \
-			} \
-			for (; j < k; j++) \
-				rb[j] = rr; \
-		} \
-		n = 0;	\
-		k = i; \
+				rr = val;												\
+			} else {													\
+				rr = dbl_nil;											\
+				has_nils = true;										\
+			}															\
+			for (; j < k; j++)											\
+				rb[j] = rr;												\
+		}																\
+		n = 0;															\
+		k = i;															\
 	} while (0)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
-	do { \
-		TPE *restrict bp = (TPE*)di.base; \
-		l = i - 1; \
-		for (j = l; ; j--) { \
-			n += !is_##TPE##_nil(bp[j]);	\
-			if (opp[j] || j == k) {	\
+	do {																\
+		TPE *restrict bp = (TPE*)di.base;								\
+		l = i - 1;														\
+		for (j = l; ; j--) {											\
+			n += !is_##TPE##_nil(bp[j]);								\
+			if (opp[j] || j == k) {										\
 				if (n > minimum) { /* covariance_samp requires at least one value */ \
-					rr = val; \
-				} else { \
-					rr = dbl_nil; \
-					has_nils = true; \
-				} \
-				for (; ; l--) { \
-					rb[l] = rr; \
-					if (l == j)	\
-						break;	\
-				} \
-				if (j == k)	\
-					break;	\
-				l = j - 1;	\
-			}	\
-		}	\
-		n = 0;	\
-		k = i; \
+					rr = val;											\
+				} else {												\
+					rr = dbl_nil;										\
+					has_nils = true;									\
+				}														\
+				for (; ; l--) {											\
+					rb[l] = rr;											\
+					if (l == j)											\
+						break;											\
+				}														\
+				if (j == k)												\
+					break;												\
+				l = j - 1;												\
+			}															\
+		}																\
+		n = 0;															\
+		k = i;															\
 	} while (0)
 
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE_ALL_ROWS(TPE) \
-	do { \
-		TPE *restrict bp = (TPE*)di.base; \
-		for (; j < i; j++) \
-			n += !is_##TPE##_nil(bp[j]);	\
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_ALL_ROWS(TPE)				\
+	do {																\
+		TPE *restrict bp = (TPE*)di.base;								\
+		for (; j < i; j++)												\
+			n += !is_##TPE##_nil(bp[j]);								\
 		if (n > minimum) { /* covariance_samp requires at least one value */ \
-			rr = val; \
-		} else { \
-			rr = dbl_nil; \
-			has_nils = true; \
-		} \
-		for (; k < i; k++) \
-			rb[k] = rr;	\
-		n = 0; \
+			rr = val;													\
+		} else {														\
+			rr = dbl_nil;												\
+			has_nils = true;											\
+		}																\
+		for (; k < i; k++)												\
+			rb[k] = rr;													\
+		n = 0;															\
 	} while (0)
 
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW(TPE) \
-	do { \
-		TPE *restrict bp = (TPE*)di.base; \
-		for (; k < i; k++) { \
-			n += !is_##TPE##_nil(bp[k]);	\
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW(TPE)			\
+	do {																\
+		TPE *restrict bp = (TPE*)di.base;								\
+		for (; k < i; k++) {											\
+			n += !is_##TPE##_nil(bp[k]);								\
 			if (n > minimum) { /* covariance_samp requires at least one value */ \
-				rb[k] = val; \
-			} else { \
-				rb[k] = dbl_nil; \
-				has_nils = true; \
-			} \
-			n = 0; \
-		}	\
+				rb[k] = val;											\
+			} else {													\
+				rb[k] = dbl_nil;										\
+				has_nils = true;										\
+			}															\
+			n = 0;														\
+		}																\
 	} while (0)
 
-#define INIT_AGGREGATE_COUNT(TPE, NOTHING1, NOTHING2) \
-	do { \
-		computed = 0; \
+#define INIT_AGGREGATE_COUNT(TPE, NOTHING1, NOTHING2)	\
+	do {												\
+		computed = 0;									\
 	} while (0)
-#define COMPUTE_LEVEL0_COUNT_FIXED(X, TPE, NOTHING1, NOTHING2) \
-	do { \
-		computed = !is_##TPE##_nil(bp[j + X]); \
+#define COMPUTE_LEVEL0_COUNT_FIXED(X, TPE, NOTHING1, NOTHING2)	\
+	do {														\
+		computed = !is_##TPE##_nil(bp[j + X]);					\
 	} while (0)
 #define COMPUTE_LEVELN_COUNT(VAL, NOTHING1, NOTHING2, NOTHING3) \
-	do { \
-		computed += VAL; \
+	do {														\
+		computed += VAL;										\
 	} while (0)
-#define FINALIZE_AGGREGATE_COUNT(NOTHING1, NOTHING2, NOTHING3) \
-	do { \
+#define FINALIZE_AGGREGATE_COUNT(NOTHING1, NOTHING2, NOTHING3)			\
+	do {																\
 		if (computed > minimum) { /* covariance_samp requires at least one value */ \
-			rb[k] = val; \
-		} else { \
-			rb[k] = dbl_nil; \
-			has_nils = true; \
-		} \
+			rb[k] = val;												\
+		} else {														\
+			rb[k] = dbl_nil;											\
+			has_nils = true;											\
+		}																\
 	} while (0)
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE)	\
-	do { \
-		TPE *restrict bp = (TPE*)di.base; \
-		oid ncount = i - k; \
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE)					\
+	do {																\
+		TPE *restrict bp = (TPE*)di.base;								\
+		oid ncount = i - k;												\
 		if (GDKrebuild_segment_tree(ncount, sizeof(lng), st, &segment_tree, &levels_offset, &nlevels) != GDK_SUCCEED) { \
-			msg = createException(SQL, op, GDK_EXCEPTION); \
-			goto bailout; \
-		} \
+			msg = createException(SQL, op, GDK_EXCEPTION);				\
+			goto bailout;												\
+		}																\
 		populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
-		for (; k < i; k++) \
+		for (; k < i; k++)												\
 			compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING, NOTHING); \
-		j = k; \
+		j = k;															\
 	} while (0)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(TPE, IMP)		\
-	do {						\
-		if (p) {					\
-			for (; i < cnt; i++) {		\
-				if (np[i]) 	{		\
-covariance##TPE##IMP: \
-					IMP(TPE);	\
-				} \
-			}						\
-		}	\
+	do {																\
+		if (p) {														\
+			for (; i < cnt; i++) {										\
+				if (np[i]) 	{											\
+covariance##TPE##IMP:													\
+					IMP(TPE);											\
+				}														\
+			}															\
+		}																\
 		if (!last) { /* hack to reduce code explosion, there's no need to duplicate the code to iterate each partition */ \
-			last = true; \
-			i = cnt; \
-			goto covariance##TPE##IMP; \
-		} \
+			last = true;												\
+			i = cnt;													\
+			goto covariance##TPE##IMP;									\
+		}																\
 	} while (0)
 
 #ifdef HAVE_HGE
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP) \
-	case TYPE_hge: \
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP)					\
+	case TYPE_hge:														\
 		COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(hge, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP); \
-	break;
+		break;
 #else
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP)
 #endif
 
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(IMP)		\
-	do { \
-		switch (tp1) {	\
-		case TYPE_bte:	\
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(IMP)				\
+	do {																\
+		switch (tp1) {													\
+		case TYPE_bte:													\
 			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(bte, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
-			break;	\
-		case TYPE_sht:	\
+			break;														\
+		case TYPE_sht:													\
 			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(sht, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
-			break;	\
-		case TYPE_int:	\
+			break;														\
+		case TYPE_int:													\
 			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(int, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
-			break;	\
-		case TYPE_lng:	\
+			break;														\
+		case TYPE_lng:													\
 			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(lng, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
-			break;	\
-		case TYPE_flt:	\
+			break;														\
+		case TYPE_flt:													\
 			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(flt, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
-			break;	\
-		case TYPE_dbl:	\
+			break;														\
+		case TYPE_dbl:													\
 			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(dbl, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
-			break;	\
-		COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP)	\
-		default: {	\
+			break;														\
+		COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP)					\
+		default:														\
 			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1)); \
-			goto bailout; \
-		} \
-		}	\
+			goto bailout;												\
+		}																\
 	} while (0)
 
 static str
 do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
-							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv, dbl single_case)
+							  BAT *(*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv, dbl single_case)
 {
 	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL, *st = NULL;
 	int tp1, tp2, frame_type;
@@ -1946,10 +1905,6 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
 		}
-		if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
-			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout1;
-		}
 		if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
 			msg = createException(SQL, op, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			goto bailout1;
@@ -1976,10 +1931,14 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		}
 
 		if (is_a_bat1 && is_a_bat2) {
-			if (func(r, p, o, b, c, s, e, tp1, frame_type) != GDK_SUCCEED)
+			if ((r = func(p, o, b, c, s, e, tp1, frame_type)) == NULL)
 				msg = createException(SQL, op, GDK_EXCEPTION);
 		} else {
 			/* corner case, second column is a constant, calculate it this way... */
+			if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
+				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout1;
+			}
 			BAT *d = b ? b : c;
 			BATiter di = bat_iterator(d);
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
@@ -1996,25 +1955,24 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 			if (cnt > 0) {
 				switch (frame_type) {
-				case 3: /* unbounded until current row */	{
+				case 3: /* unbounded until current row */
 					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-				} break;
-				case 4: /* current row until unbounded */	{
+					break;
+				case 4: /* current row until unbounded */
 					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-				} break;
-				case 5: /* all rows */	{
+					break;
+				case 5: /* all rows */
 					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(ALL_ROWS);
-				} break;
-				case 6: /* current row */ {
+					break;
+				case 6: /* current row */
 					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW);
-				} break;
-				default: {
+					break;
+				default:
 					if ((st = GDKinitialize_segment_tree())) {
 						COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
 					} else {
 						msg = createException(SQL, op, GDK_EXCEPTION);
 					}
-				}
 				}
 			}
 			BATsetcount(r, cnt);
@@ -2034,19 +1992,19 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
 
 		switch (tp1) {
-			case TYPE_bte:
-			case TYPE_sht:
-			case TYPE_int:
-			case TYPE_lng:
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
 #ifdef HAVE_HGE
-			case TYPE_hge:
+		case TYPE_hge:
 #endif
-			case TYPE_flt:
-			case TYPE_dbl:
-				*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : single_case;
-				break;
-			default:
-				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+		case TYPE_flt:
+		case TYPE_dbl:
+			*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : single_case;
+			break;
+		default:
+			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
 		}
 	}
 

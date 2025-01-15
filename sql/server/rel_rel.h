@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -36,6 +36,7 @@
 #define sql_or           (1 << 16) //ORed
 #define sql_merge        (1 << 17) //ORed
 #define sql_no_subquery  (1 << 18) //ORed
+#define sql_qualify      (1 << 19) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -56,6 +57,7 @@
 #define is_sql_or(X)           ((X & sql_or) == sql_or)
 #define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 #define is_sql_no_subquery(X)  ((X & sql_no_subquery) == sql_no_subquery)
+#define is_sql_qualify(X)      ((X & sql_qualify) == sql_qualify)
 
 #define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
