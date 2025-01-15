@@ -63,23 +63,21 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						continue;
 					char buf[1024];
 					const char *comment = NULL;
+					const char *tt = NULL;
 					if (t->kind == FUNCTIONsymbol) {
 						comment = t->def->help;
-						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
+						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, LIST_MAL_NOCFUNC, buf, sizeof(buf));
+						tt = t->def->binding;
 					} else {
 						assert(t->func);
 						comment = t->func->comment;
-						(void) cfcnDefinition(t, buf, TRUE, buf, sizeof(buf));
+						(void) cfcnDefinition(t, buf, sizeof(buf));
+						tt = t->func->cname;
 					}
 					if (comment == NULL)
 						comment = "";
-					char *tt = strstr(buf, " address ");
-					if (tt) {
-						*tt = 0;
-						tt += 9;
-					} else {
+					if (tt == NULL)
 						tt = "";
-					}
 					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
 						|| BUNappend(fcn, t->name, false) != GDK_SUCCEED
 						|| BUNappend(com, comment, false) != GDK_SUCCEED

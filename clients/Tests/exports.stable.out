@@ -879,7 +879,7 @@ const char bstreamRef[];
 const char calcRef[];
 str callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *glb, ValPtr argv[]);
 const char capiRef[];
-str cfcnDefinition(Symbol s, str t, int flg, str base, size_t len);
+str cfcnDefinition(Symbol s, str base, size_t len);
 str chkDeclarations(MalBlkPtr mb);
 str chkFlow(MalBlkPtr mb);
 int chkInstruction(Module s, MalBlkPtr mb, InstrPtr p);
