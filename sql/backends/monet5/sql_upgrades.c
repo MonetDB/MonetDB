@@ -100,14 +100,14 @@ sql_fix_system_tables(Client c, mvc *sql)
 						" values"
 						" (%d, %d, 'res_%d',"
 						" '%s', %u, %u, %d,"
-						" %d);\n",
+						" %d, %d);\n",
 						store_next_oid(store),
 						func->base.id,
 						number,
 						arg->type.type->base.name,
 						arg->type.digits,
 						arg->type.scale,
-						arg->inout, number);
+						arg->inout, number, arg->type.multiset);
 			}
 		}
 		for (m = func->ops->h; m; m = m->next, number++) {
@@ -117,28 +117,28 @@ sql_fix_system_tables(Client c, mvc *sql)
 						"insert into sys.args"
 						" values"
 						" (%d, %d, '%s', '%s',"
-						" %u, %u, %d, %d);\n",
+						" %u, %u, %d, %d, %d);\n",
 						store_next_oid(store),
 						func->base.id,
 						arg->name,
 						arg->type.type->base.name,
 						arg->type.digits,
 						arg->type.scale,
-						arg->inout, number);
+						arg->inout, number, arg->type.multiset);
 			else
 				pos += snprintf(buf + pos, bufsize - pos,
 						"insert into sys.args"
 						" values"
 						" (%d, %d, 'arg_%d',"
 						" '%s', %u, %u, %d,"
-						" %d);\n",
+						" %d, %d);\n",
 						store_next_oid(store),
 						func->base.id,
 						number,
 						arg->type.type->base.name,
 						arg->type.digits,
 						arg->type.scale,
-						arg->inout, number);
+						arg->inout, number, arg->type.multiset);
 		}
 	}
 
