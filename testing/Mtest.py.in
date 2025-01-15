@@ -168,57 +168,6 @@ if os.path.exists('/usr/bin/coredumpctl'):
             # if we can't raise the limit, just forget it
             pass
 
-def _configure(str):
-    # expand configure variables in str and return result
-    config = [
-        ('{source}', '@QXSOURCE@'),
-        ('${build}', '@QXBUILD@'),
-
-        ('${bindir}', '@QXbindir@'),
-##        ('${sbindir}', '@QXsbindir@'),
-        ('${libexecdir}', '@QXlibexecdir@'),
-        ('${datarootdir}', '@QXdatarootdir@'),
-        ('${datadir}', '@QXdatadir@'),
-        ('${sysconfdir}', '@QXsysconfdir@'),
-        ('${localstatedir}', '@QXlocalstatedir@'),
-        ('${libdir}', '@QXlibdir@'),
-        ('${includedir}', '@QXincludedir@'),
-##        ('${oldincludedir}', '@QXoldincludedir@'),
-        ('${infodir}', '@QXinfodir@'),
-        ('${mandir}', '@QXmandir@'),
-        ('${Qbindir}', '@QXbindir@'),
-##        ('${Qsbindir}', '@QXsbindir@'),
-        ('${Qlibexecdir}', '@QXlibexecdir@'),
-        ('${Qdatarootdir}', '@QXdatarootdir@'),
-        ('${Qdatadir}', '@QXdatadir@'),
-        ('${Qsysconfdir}', '@QXsysconfdir@'),
-        ('${Qlocalstatedir}', '@QXlocalstatedir@'),
-        ('${Qlibdir}', '@QXlibdir@'),
-        ('${Qincludedir}', '@QXincludedir@'),
-##        ('${Qoldincludedir}', '@QXoldincludedir@'),
-        ('${Qinfodir}', '@QXinfodir@'),
-        ('${Qmandir}', '@QXmandir@'),
-        # put these at end (in this order!) for efficiency
-        ('${exec_prefix}', '@QXexec_prefix@'),
-        ('${Qexec_prefix}', '@QXexec_prefix@'),
-        ('${prefix}', '@QXprefix@'),
-        ('${Qprefix}', '@QXprefix@'),
-        ]
-    if os.name == 'nt':
-        str = str.replace('%prefix%', '${prefix}')
-        str = str.replace('%exec_prefix%', '${exec_prefix}')
-    changed = True
-    while '$' in str and changed:
-        changed = False
-        for key, val in config:
-            if os.name == 'nt':
-                val = val.replace('%prefix%', '${prefix}')
-                val = val.replace('%exec_prefix%', '${exec_prefix}')
-            nstr = str.replace(key, val)
-            changed = changed or str != nstr
-            str = nstr
-    return str
-
 # use our own process module (instead of subprocess) because it has
 # _BufferedPipe
 try:
@@ -227,7 +176,7 @@ except ImportError:
     try:
         import MonetDBtesting.process as process
     except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
+        p = os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@')
         sys.path.insert(0, p)
         import MonetDBtesting.process as process
         if 'PYTHONPATH' in os.environ:
@@ -319,9 +268,9 @@ def remove(file):
         if platform.system() in ('Windows', 'Darwin'):
             shutil.rmtree(file, ignore_errors=True)
         else:
-            Warn('could not remove {}'.format(file))
+            Warn(f'could not remove {file}')
     except:
-        Warn('could not remove {}'.format(file))
+        Warn(f'could not remove {file}')
 
 def isexecutable(TST, ext = '.sh') :
     if   os.name == "nt":
@@ -331,15 +280,10 @@ def isexecutable(TST, ext = '.sh') :
             if os.path.isfile(TST+ext) or os.path.isfile(TST+ext+".src"):
                 return (True, ext)
     elif os.name == "posix":
-        #TODO:
-        # check with "file", and set executable
         TST += ext
         if ( os.path.isfile(TST       ) and os.access(TST       ,os.X_OK) ) or \
            ( os.path.isfile(TST+".src") and os.access(TST+".src",os.X_OK) ):
             return (True, ext)
-    #TODO:
-    #else:
-        # ???
     return (False, '')
 ### isexecutable(TST, ext = '.sh') #
 
@@ -615,17 +559,6 @@ stylesheet = Element('style', None, Text('''
 
 TIMES = []
 
-#TODO:
-#class TimeoutError:
-#       def __init__(self, text):
-#               self.text = text
-#       def __str__(self):
-#               return self.text
-#
-#def AlarmHandler(signum, frame) :
-#       raise TimeoutError, "Timeout"
-#### AlarmHandler(signum, frame) #
-
 def ErrMsg(TEXT) :
     print(end='', flush=True)
     print("\n%s:  ERROR:  %s\n" % (THISFILE, TEXT), file=sys.stderr, flush=True)
@@ -651,12 +584,6 @@ def startswithpath(str,pre) :
     return os.path.normcase(str[:len(pre)]) == os.path.normcase(pre)
 ### startswithpath(str,pre) #
 
-##def path(str) :
-##    return str.replace('/', os.sep)
-### path(str) #
-##def url(str) :
-##    return str.replace(os.sep, '/')
-### url(str) #
 import urllib.request, urllib.parse
 path = urllib.request.url2pathname
 def url(str) :
@@ -951,9 +878,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
 
     html.write(f, True)
     f.close()
-#TODO?
-# <A HREF='.Mtest.Slave.Log.OutErr' TARGET='"""+DISTVER+"_"+TSTDIR+"_"+TST+"_"+WHAT[1:]+"""_body'>LOG</A>).
-### CreateTstWhatXhtml (env, TST, stableWHAT, EXT, results) #
 
 def CreateSrcIndex (env, TST, EXT) :
     TSTSRCDIR = env['TSTSRCDIR']
@@ -1314,8 +1238,6 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     raise
                 except:
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
             keyfile = os.path.join(LogDBdir, '.vaultkey')
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
@@ -1323,8 +1245,6 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     os.makedirs(LogDBdir)
                 except:
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 else:
                     if not initdb:
@@ -1338,8 +1258,6 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     z = zipfile.ZipFile(initdb)
                 except IOError:
                     Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 try:
                     z.extractall(LogDBdir)
@@ -1347,20 +1265,17 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     raise
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    #TODO:
-                    # add "something" to HTML output
                     return td, elem, max(FdOut, FdErr), interrupted, test_progress
                 z.close()
                 if os.path.exists(keyfile):
-                    vaultopt = ['--set', 'monet_vault_key={}'.format(keyfile)]
+                    vaultopt = ['--set', f'monet_vault_key={keyfile}']
                 else:
                     vaultopt = []
                 if not oneserver:
-                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1] +[f'--dbpath={LogDBdir}'] + vaultopt + mserver5_opts), open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), TSTDB, dbg=env.get('DBG'))
+                    pSrvr = ServerClass(env['exe']['mserver5'][1] + [f'--dbpath={LogDBdir}'] + vaultopt + mserver5_opts, open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), TSTDB, dbg=env.get('DBG'))
                     pSrvr.LaunchIt()
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
-            #TODO: set mode to umask
             os.makedirs(TSTTRGDIR)
 
         body_good = []
@@ -1383,15 +1298,15 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         if o != 'nodrop':
                             opts.append(o)
                     if inmem:
-                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + mserver5_opts + opts
+                        cmd = env['exe']['mserver5'][1] + ['--set', f'gdk_dbname={TSTDB}', '--in-memory'] + mserver5_opts + opts
                         pollfile = None
                         cmd.append('--set')
-                        cmd.append('gdk_dbtrace={}'.format(os.path.join(LogDBdir, 'mdbtrace.log')))
+                        cmd.append(f'gdk_dbtrace={os.path.join(LogDBdir, "mdbtrace.log")}')
                     else:
-                        cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + mserver5_opts + opts
+                        cmd = env['exe']['mserver5'][1] + [f'--dbpath={LogDBdir}'] + mserver5_opts + opts
                         pollfile = os.path.join(LogDBdir, '.started')
                     if os.path.exists(keyfile):
-                        cmd.extend(['--set', 'monet_vault_key={}'.format(keyfile)])
+                        cmd.extend(['--set', f'monet_vault_key={keyfile}'])
                     if env.get('MULTIFARM'):
                         cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
@@ -1476,7 +1391,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     for ext in ['out', 'err']:
                         o = openutf8(os.path.join(TSTTRGDIR, f'SingleServer.{ext}.html'), 'w')
                         o.write('<html>\n')
-                        o.write('<head><title>{} standard {}</title></head>\n'.format(TSTDIR, 'output' if ext == 'out' else 'error'))
+                        o.write(f'<head><title>{TSTDIR} standard {"output" if ext == "out" else "error"}</title></head>\n')
                         o.write('<body>\n')
                         empty = True
                         sigusr1 = False
@@ -1516,7 +1431,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                             o.write(span1 + line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;') + span2)
                         if nused + nfree != ntotal:
                             o.write(f'<span style="background-color: rgb(100%,0%,0%);">Mismatch in free bats: total bats = {ntotal}, #free = {nfree}, #used = {nused}</span>\n')
-                        o.write('{}\n</body>\n</html>\n'.format('<p>(nothing to see here)</p>' if empty else '</pre>'))
+                        o.write(f'{"<p>(nothing to see here)</p>" if empty else "</pre>"}\n</body>\n</html>\n')
                         o.close()
                 else:
                     for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
@@ -1542,7 +1457,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                 print('\r', ' '*(ttywidth or 100), end='', sep='')
                 print('\r', end='', sep='')
             prred('ERROR')
-            print(' in directory {}'.format(TSTDIR))
+            print(f' in directory {TSTDIR}')
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1722,13 +1637,13 @@ def returnCode(proc, f = None):
 def GetBitsAndModsAndThreads(env) :
     global setpgrp
     rtrn = 0
-    cmd = splitcommand(env['exe']['mserver5'][1])
+    cmd = env['exe']['mserver5'][1].copy()
     dbpath = os.path.join(env['GDK_DBFARM'], TSTPREF)
     try:
         os.unlink(os.path.join(dbpath, '.started'))
     except OSError:
         pass
-    cmd.append('--dbpath=%s' % dbpath)
+    cmd.append(f'--dbpath={dbpath}')
     os.environ['TSTDB'] = TSTPREF
     cmd.extend(mserver5_opts)
     if procdebug:
@@ -1971,9 +1886,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
-            #TODO:
-            # ('.java',         '.java',   'Java',   'SQL'),
-            # ('.odmg',         '.odmg',   'odmg',   'SQL'),
         )
         for tst, ext, cll, srv in tests:
             if os.path.isfile(TST + tst) or \
@@ -1986,8 +1898,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         else:
             if os.name == "nt":
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
-            #TODO:
-            #elif os.name == "posix":
             else:
                 reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.R|.rb]`"
             if verbosity > 1:
@@ -2149,9 +2059,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-        #TODO:
-        #elif [ "$EXT" = "java"  -a  ! "`type -path java`" ] ; then
-        #elem = SkipTest(env, TST, EXT, "as java is not in $PATH.", length)
     elif MissingMods:
         reason = "as modules '%s` are missing." % str(MissingMods)
         elem = SkipTest(env, TST, EXT, reason, length)
@@ -2314,21 +2221,6 @@ Password = {passwd or "monetdb"}-Wrong
                     sockerr = F_ERROR
         else:
             sockerr = F_OK
-
-        #TODO:
-        ##if [ ! -f $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ] ; then  touch $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
-        ##LEFTOVERTMPBATS="`find $MONETDBFARM/dbfarm/*/bat/ -name tmp_\* -print 2> /dev/null`"
-        ##if [ "$LEFTOVERTMPBATS" ] ; then
-        ##      ls -alF $LEFTOVERTMPBATS 2> /dev/null > .all.left-over.tmp.bats.
-        ##      diff -u0 $TSTTRGBASE/Tests/.old.left-over.tmp.bats. .all.left-over.tmp.bats. | grep '^\+[^\+]' > .new.left-over.tmp.bats.
-        ##fi
-        ##if [ -s .new.left-over.tmp.bats. ] ; then
-        ##      echo -e "\n!ERROR: persistent temporary bats remained:" >> $LOGFILE.err
-        ##      sed 's|^\+|! |g' .new.left-over.tmp.bats.               >> $LOGFILE.err
-        ##      echo                                                    >> $LOGFILE.err
-        ##fi
-        ##rm -f .new.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats.
-        ##if [ -f .all.left-over.tmp.bats. ] ; then  mv -f .all.left-over.tmp.bats. $TSTTRGBASE/Tests/.old.left-over.tmp.bats. ; fi
 
         if tres == 'socket':
             if verbosity == 0 and not produce_html:
@@ -2865,10 +2757,6 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr) :
     return rc
 ### RunIt(cmd, onechild, TestIn, TestOut, TestErr) #
 
-def Log() :
-    time.strftime('%H:%M:%S> ',time.localtime(time.time()))
-### Log() #
-
 def mapi_ping(port) :
     retry = 0
     wait = 1
@@ -2893,10 +2781,10 @@ def mapi_ping(port) :
 def progress(count, total, test):
     perc = round((count/total) * 100) if total and count else 0
     print('\r', ' '*(ttywidth or 100), end='', sep='')
-    s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    s = f'[{count}/{total}] ({perc}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
-        s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+        s = f'[{count}/{total}] ({perc}%)    {test}'
     print('\r', s, end='', sep='', flush=True)
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress, options) :
@@ -2953,7 +2841,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             ClntErr = openutf8(ClntErrFile,"w")
 
             if PSRVR is None:
-                Srvr = splitcommand(exe['mserver5'][1])
+                Srvr = exe['mserver5'][1].copy()
                 if nomito:
                     try:
                         Srvr.remove('--forcemito')
@@ -2969,7 +2857,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 Srvr.append('--dbpath=%s' % dbpath)
                 if os.path.exists(os.path.join(dbpath, '.vaultkey')):
                     Srvr.extend(['--set',
-                                 'monet_vault_key={}'.format(os.path.join(dbpath, '.vaultkey'))])
+                                 f'monet_vault_key={os.path.join(dbpath, ".vaultkey")}'])
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
@@ -3061,7 +2949,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                         if lang == 'sql' and os.path.exists(TST+'.test.in'):
                             for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR', 'TSTDB', 'MAPIPORT'):
                                 if key in env:
-                                    defines.append('{}={}'.format(key, env[key]))
+                                    defines.append(f'{key}={env[key]}')
                         try:
                             sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
                         except KeyboardInterrupt:
@@ -3087,7 +2975,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     if test.match(f):
                         TSTs.append(f)
 
-                Clnt = splitcommand(exe['SQL_Client'][1].replace('${PORT}', env['MAPIPORT']))
+                Clnt = exe['SQL_Client'][1].copy()
+                for i in range(len(Clnt)):
+                    Clnt[i] = Clnt[i].replace('${PORT}', env['MAPIPORT'])
                 if user:
                     Clnt.append('-u%s' % user)
                 if passwd:
@@ -3097,11 +2987,15 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                     if returncode:
                         break
             elif CALL == "R":
-                Clnt = splitcommand(exe['R_Client'][1].replace('${PORT}', env['MAPIPORT']))
+                Clnt = exe['R_Client'][1].copy()
+                for i in range(len(Clnt)):
+                    Clnt[i] = Clnt[i].replace('${PORT}', env['MAPIPORT'])
                 RunIt(Clnt, False, openutf8(TST+EXT), ClntOut, ClntErr, TIMEOUT, pSrvr)
             elif CALL == "ruby":
-                Clnt = splitcommand(exe['ruby_client'][1].replace('${PORT}', env['MAPIPORT'])) + [TST + EXT]
-
+                Clnt = exe['ruby_client'][1].copy()
+                for i in range(len(Clnt)):
+                    Clnt[i] = Clnt[i].replace('${PORT}', env['MAPIPORT'])
+                Clnt.extend([TST + EXT])
                 Clnt[2], Clnt[1] = Clnt[1], Clnt[2]
                 Clnt.append(env['TSTDB'])
 
@@ -3201,60 +3095,6 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
 
 ### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito) #
 
-def Check(command, input) :
-    global setpgrp
-    if procdebug:
-        print('Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command))
-    setpgrp = True
-    with process.Popen(command, stdin=process.PIPE, stdout=process.PIPE,
-                       stderr=process.PIPE, text=True) as proc:
-        proc.killed = False
-        proc.onechild = True
-        t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-        try:
-            t.start()
-            qOut, qErr = proc.communicate(input = input)
-            t.cancel()
-            if procdebug:
-                print('Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode))
-        except KeyboardInterrupt:
-            t.cancel()
-            killProc(proc)
-            if procdebug:
-                print('Check: process killed "%s"\n' % '" "'.join(command))
-            raise
-    qOut = qOut.split('\n')
-    qErr = qErr.split('\n')
-    failed = False
-    if proc.returncode:
-        qOut.append('! Exit 1')
-        failed = True
-    test = re.compile( r"^!WARNING: BATpropcheck: "                                          "|"
-                       r"^!WARNING: monet_checkbat: "                                        "|"
-                       r"^!WARNING: GDKlockHome: ignoring empty or invalid .gdk_lock."       "|"
-                       r"^!WARNING: BBPdir: initializing BBP.",
-                       re.MULTILINE)
-    noErr = []
-    for l in qOut+qErr:
-        if l.startswith("!"):
-            if test.match(l):
-                if not l.startswith("!WARNING: "):
-                    noErr.append(l+"\n")
-            else:
-                ErrMsg('"%s" failed:' % '" "'.join(command))
-                failed = True
-                if qOut and qOut[-1].startswith("! Exit 1"):
-                    qErr.append(qOut.pop())
-                for l in qOut+qErr:
-                    print(l, file=sys.stderr)
-                print(file=sys.stderr, flush=True)
-                #sys.exit(1)
-    if noErr:
-        print(end='', flush=True)
-        print(*noErr, sep='\n', flush=True)
-    return failed
-### Check(command, input) #
-
 def CheckClassPath() :
     if 'CLASSPATH' in os.environ:
         cp = os.environ['CLASSPATH']
@@ -3286,7 +3126,7 @@ def CheckClassPath() :
                     break
     # check for known JARs in CLASSPATH directories
     # + fall-back using pkgdatadir/lib
-    cpx += _configure(os.path.join('@QXdatadir@','monetdb','lib'))
+    cpx += os.path.join('@QXdatadir@','monetdb','lib')
     for d in cpx.split(os.pathsep):
         if os.path.isdir(d):
             for f in listdir(d):
@@ -3326,11 +3166,11 @@ def SetExecEnv(exe,port,verbose) :
         else:
             V = v.upper()
         if exe[v][0]:
-            os.environ[V] = CALL+exe[v][1].replace('${PORT}', port)
+            os.environ[V] = CALL + ' '.join(exe[v][1]).replace('${PORT}', port)
         else:
             os.environ[V] = ""
         if verbose:
-            print("%s = %s : %s" % (V, exe[v][0], exe[v][1].replace('${PORT}', port)))
+            print("%s = %s : %s" % (V, exe[v][0], os.environ[V]))
     if verbose:
         print(end='', flush=True)
 ### SetExecEnv(exe,port,procdebug) #
@@ -3522,7 +3362,7 @@ os.environ['VERSION'] = VERSION
 if 'HTMLTITLE' in os.environ:
     HTMLTITLE = os.environ['HTMLTITLE']
 else:
-    HTMLTITLE = "{} results on {} ({})".format(THISFILE, HOST, DISTVER)       #"+ ("`date`")"
+    HTMLTITLE = f"{THISFILE} results on {HOST} ({DISTVER})"       #"+ ("`date`")"
 
 URLPREFIX = 'https://www.monetdb.org/hg/MonetDB/file/'
 
@@ -3541,8 +3381,6 @@ class OrAction(argparse.Action):
         setattr(namespace, '__seen_option_' + self.dest, True)
 
 def main(argv) :
-    #TODO:
-    #signal.signal(signal.SIGALRM, AlarmHandler)
     global global_timeout
 
     VARS = ['TSTSRCBASE', 'TSTTRGBASE', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP', 'RCLIENT', 'RUBYCLIENT']    #, 'MONETDB_MOD_PATH' ]
@@ -3550,8 +3388,8 @@ def main(argv) :
     env = {}
 
     # most intuitive (?) default settings
-    dft['TSTSRCBASE']     = r"_configure('@QXSOURCE@')"
-    dft['TSTTRGBASE']     = r"_configure('@QXprefix@')"   # or os.getcwd() ?
+    dft['TSTSRCBASE']     = r"'@QXSOURCE@'"
+    dft['TSTTRGBASE']     = r"'@QXprefix@'"   # or os.getcwd() ?
     dft['GDK_DEBUG']      = "TSTDBG"
     dft['GDK_NR_THREADS'] = "TSTTHREADS"
     dft['MONETDB_MOD_PATH'] = "''"
@@ -3581,7 +3419,7 @@ def main(argv) :
                 rdir = os.path.expanduser(res.group('dir'))
                 if not os.path.exists(rdir):
                     os.makedirs(rdir)
-    dft['RCLIENT'] = "'R --vanilla {}'".format(r_noecho)
+    dft['RCLIENT'] = f"'R --vanilla {r_noecho}'"
 
     #par = {}
     # get current environment
@@ -3589,16 +3427,14 @@ def main(argv) :
     for v in VARS:
         if v in os.environ:
             env[v] = os.environ[v]
-            #TODO:
-            # make sure, that PATHs are absolute
 
     # commandline options overrule environment
-    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (_configure(os.path.join('@QXSOURCE@','testing','README')), THISFILE))
+    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (os.path.join('@QXSOURCE@','testing','README'), THISFILE))
     parser.add_argument('--version', action='version', version='@VERSION@')
     parser.add_argument('--recursive', '-r', action='store_true', dest='recursive', help="recurse into subdirectories (implies 'All')")
     parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
-    parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % _configure('@QXSOURCE@'))
-    parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % _configure('@QXprefix@'))
+    parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % '@QXSOURCE@')
+    parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % '@QXprefix@')
     parser.add_argument('--verbose', '-v', action='count', dest='verbosity', default=0, help="more verbose test output (can be used twice)")
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
 
@@ -3606,7 +3442,7 @@ def main(argv) :
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
     parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
-    parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
+    parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=os.path.join('@QXlocalstatedir@','MonetDB'), metavar='<directory>', help="override default location of database directory")
     parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
     parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
     parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
@@ -3846,18 +3682,10 @@ def main(argv) :
     for v in vars_:
         if v not in env:
             env[v] = eval(dft[v])
-            #TODO:
-            # make sure, that PATHs are absolute
     if env['MONETDB_MOD_PATH']:
         env['setMONETDB_MOD_PATH'] = eval(dft['setMONETDB_MOD_PATH'])
     else:
         env['setMONETDB_MOD_PATH'] = ''
-
-    #TODO:
-    ## in case of inconsistencies, try to fallback to "save" settings
-    #
-    #if not os.path.indir(TSTSRCBASE):
-    #       ErrXit("Illegal TSTSRCBASE: directory '"+a"` does not exist!")
 
     # ensure consistent TSTSRCBASE
     if os.path.basename(env['TSTSRCBASE']) == TSTSUFF and \
@@ -3926,14 +3754,9 @@ def main(argv) :
     RELSRCBASE = os.path.relpath(TSTSRCBASE, TSTTRGBASE)
     env['RELSRCBASE'] = RELSRCBASE
 
-    #print(file=sys.stderr, end='', flush=True)
-    #for v in 'RELSRCBASE':
-    #       print(v+" = "+str(env[v]))
-    #print(end='', flush=True)
-
-    env['BINDIR'] = _configure('@QXbindir@')
+    env['BINDIR'] = '@QXbindir@'
     vars_.append('BINDIR')
-    env['LIBDIR'] = _configure('@QXlibdir@')
+    env['LIBDIR'] = '@QXlibdir@'
     vars_.append('LIBDIR')
 
     # start tlstester
@@ -3968,30 +3791,6 @@ def main(argv) :
 
     # add QUIET par to env
     env['QUIET'] = verbosity == 0
-
-    ## set/extend PATH & LD_LIBRARY_PATH
-    #bp = ""        #_configure(os.path.join('@QXprefix@',"bin"))
-    #lp = env['MONETDB_MOD_PATH']
-    #if os.name == "nt"  and  lp:
-    #       if bp:
-    #               bp = bp+os.pathsep+lp
-    #       else:
-    #               bp = lp
-    #if 'PATH' in os.environ:
-    #       if bp:
-    #               bp = bp+os.pathsep+os.environ['PATH']
-    #       else:
-    #               bp = os.environ['PATH']
-    #os.environ['PATH'] = bp
-    #print("PATH = "+bp)
-    #if os.name == "posix":
-    #       if 'LD_LIBRARY_PATH' in os.environ:
-    #               if lp:
-    #                       lp = lp+os.pathsep+os.environ['LD_LIBRARY_PATH']
-    #               else:
-    #                       lp = os.environ['LD_LIBRARY_PATH']
-    #       os.environ['LD_LIBRARY_PATH'] = lp
-    #       print("LD_LIBRARY_PATH = "+lp)
 
     if not startswithpath(os.getcwd() + os.sep, TSTSRCBASE + os.sep):
         Warn("Current directory %s is no descendant of TSTSRCBASE=%s;" % (os.getcwd(), TSTSRCBASE))
@@ -4046,18 +3845,14 @@ def main(argv) :
             SOCK = ""
 
         exe = {}
-        exe['mserver5']       = CheckExec('mserver5')     , 'mserver5 --debug=%s --debug=256 --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
-                                                               (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else '')  # turn off forcemito, but keep nosync
-        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], '${PORT}')
-        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}')
-        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}')
-        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, '${PORT}')
-        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], '${PORT}')
+        exe['mserver5']       = CheckExec('mserver5')     , splitcommand('mserver5 --debug=%s --debug=256 --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=0 %s %s' % \
+                                                                         (env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], SOCK, '--forcemito' if not nomito else ''))
+        exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , splitcommand('%s %s' % (env['RUBYCLIENT'], '${PORT}'))
+        exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , splitcommand('%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, '${PORT}'))
+        exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , splitcommand('%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, '${PORT}'))
+        exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , splitcommand('%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, '${PORT}'))
+        exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , splitcommand('%s --args %s' % (env['RCLIENT'], '${PORT}'))
         env['exe'] = exe
-
-        #TODO:
-        #exe['JAVA']       = 'java'
-        #exe['JAVAC']      = 'javac'
 
         # parse commandline arguments
         testdirs = []
@@ -4093,14 +3888,9 @@ def main(argv) :
                 d = os.path.realpath(args[0])
                 if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
                     dirlist.append(d)
-                #TODO:
-                #else:
-                    # WARNING/ERROR
             elif os.sep in args[0]:
                 ErrXit("'%s` is neither a valid directory in %s nor a valid test-name!" % (args[0], os.getcwd()))
             elif args[0] != "All":
-                #TODO:
-                # check, whether args[0] in All
                 testlist.append(args[0])
         elif len(args) > 1:
             i = 0
@@ -4108,29 +3898,15 @@ def main(argv) :
                 d = os.path.realpath(args[i])
                 if startswithpath(d + os.sep, TSTSRCBASE + os.sep):
                     dirlist.append(os.path.realpath(args[i]))
-                #TODO:
-                #else:
-                    # WARNING/ERROR
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != "All":
                 while i < len(args):
                     if os.sep not in args[i]:
-                        #TODO:
-                        # check, whether args[i] in All
                         testlist.append(args[i])
-                    #TODO
-                    #else:
-                        # ERROR/WARNING
                     i = i + 1
             else:
                 if i < len(args)  and  args[i] == "All":
                     i = i + 1
-                #TODO:
-                #if i < len(args):
-                    #if len(dirlist) > 1:
-                        # Warn: dirlist => ignore testlist, assume All
-                    #else:
-                        # Warn: All => ignore testlist
         else:
             # len(args) == 0: no explicit tests specified so do all
             recursive = True
@@ -4138,9 +3914,6 @@ def main(argv) :
         if not dirlist:
             dirlist.append(os.getcwd())
         if recursive:
-            #TODO
-            #if testlist:
-                # WARNING
             testlist = []
             for d in dirlist:
                 test_dirs, test_count = find_test_dirs(d)
@@ -4160,8 +3933,6 @@ def main(argv) :
 
         if len(testdirs) > 1  and  testlist:
             testlist = []
-            #TODO
-            # WARNING
         if not testdirs:
             Warn("No tests found in %s!" % ', '.join(dirlist))
             sys.exit(1)
@@ -4192,7 +3963,6 @@ def main(argv) :
             except:
                 ErrXit("Failed to remove %s" % os.path.join(TSTTRGBASE, TSTPREF))
         if not os.path.exists(env['GDK_DBFARM']):
-            #TODO: set mode to umask
             os.makedirs(env['GDK_DBFARM'])
 
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
@@ -4249,7 +4019,7 @@ def main(argv) :
 
         if procdebug:
             for k in sorted(os.environ):
-                print('{}={}'.format(k, os.environ[k]))
+                print(f'{k}={os.environ[k]}')
         print(file=sys.stderr, end='', flush=True)
         t_ = 0
         body_good = []
@@ -4327,20 +4097,6 @@ def main(argv) :
         product = os.path.split(TSTSRCBASE)[-1]
 
         compiler = ''
-        # TODO:
-        # use @compilercall@ for this
-        # (and then also allow compiler-specific output)
-        #if os.name == 'nt':
-        #    compiler = 'Mic' # Microsoft Visual Studio C
-        #    #compiler = 'Int' # Intel icc
-        #else:
-        #    f = os.path.join(env['TSTBLDBASE'],'Makefile')
-        #    if os.path.isfile(f):
-        #        r = re.compile("^CC = (.*)$", re.MULTILINE)
-        #        for l in openutf8(f):
-        #            mt = r.match(l)
-        #            if mt:
-        #                compiler = mt.group(1)
 
         # start of times.sql output preparation
         try:
@@ -4431,10 +4187,10 @@ VALUES (%s, '%s', '%s', '%s',
             else:
                 prgreen('OK')
             print()
-            print('failed={}, skipped={}'.format(Failed, len(Failure[F_SKIP])))
+            print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
-                print('see {}'.format(urllib.parse.urlunsplit(('file','',urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")),'',''))))
-            print('Ran {} tests in {:7.3f}s'.format(num_tests - len(Failure[F_SKIP]), t_))
+                print(f'see {urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")), "", ""))}')
+            print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:7.3f}s')
         elif Failed:
             print("""\
 
