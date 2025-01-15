@@ -3739,9 +3739,12 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 		sql_exp *r = v->data;
 
 		if (!is_row(r))
-			v->data = exp_check_multiset_type(sql, &ct, rel, r, tpe);
+			r = exp_check_multiset_type(sql, &ct, rel, r, tpe);
 		else
-			v->data = exp_check_composite_type(sql, &ct, rel, r, tpe);
+			r = exp_check_composite_type(sql, &ct, rel, r, tpe);
+		if (!r)
+			return r;
+		v->data = r;
 	}
 	exp->tpe = *t;
 	return exp;

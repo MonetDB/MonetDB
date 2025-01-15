@@ -1284,7 +1284,13 @@ SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (!ol_first_node(t->columns))
 		throw(SQL, "sql.count", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
-	c = ol_first_node(t->columns)->data;
+	for(node *n = ol_first_node(t->columns); n; n = n->next) {
+		c = n->data;
+		if (c->type.multiset || !c->type.type->composite)
+			break;
+	}
+	if (!c)
+		throw(SQL, "sql.count", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	sqlstore *store = m->session->tr->store;
 
 	*res = store->storage_api.count_col(m->session->tr, c, 10);

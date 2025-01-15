@@ -1134,6 +1134,8 @@ set_values_list(sql_query *query, symbol *values)
 	list *exps = sa_list(query->sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
 
+	if (!rows)
+		return exps;
 	for (dnode *o = rows->h; o; o = o->next) {
 		assert(o->type == type_symbol);
 		sql_rel *r = NULL;
@@ -5468,9 +5470,8 @@ rel_remove_internal_exp(sql_rel *rel)
 static inline int
 exp_key(sql_exp *e)
 {
-	if (e->alias.name) {
+	if (e->alias.name)
 		return hash_key(e->alias.name);
-	}
 	return 0;
 }
 

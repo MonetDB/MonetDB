@@ -3808,6 +3808,7 @@ create_sql_column_with_id(allocator *sa, sqlid id, sql_table *t, const char *nam
 static int
 sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe, bte column_type)
 {
+	bool needs_data = true;
 	sqlstore *store = tr->store;
 	sql_column *col;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
@@ -3823,16 +3824,58 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 	if (col->type.type->composite)
 		t->composite=true;
 
-	if (isTable(col->t))
-		if ((res = store->storage_api.create_col(tr, col))) {
-			ATOMIC_PTR_DESTROY(&col->data);
-			return res;
+	if (tpe->type->composite) {
+		needs_data = false;
+		sql_table *tt = t;
+		if (tpe->multiset) {
+			char buf[16];
+			snprintf(buf, 16, "%%ms_%d", col->base.id);
+			col->storage_type = _STRDUP(buf);
+			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, 0, 0, 0)) != LOG_OK)
+				return res;
+			if (sql_trans_create_sequence(tr, t->s, col->storage_type, 1, 1, GDK_lng_max, 1, 1, false, true) != LOG_OK)
+				return res;
 		}
+		/* All nested types, need the internal columns for the field contents */
+		for (node *n = col->type.type->d.fields->h; n; n = n->next) {
+			sql_arg *f = n->data;
+			sql_column *ic = NULL;
+			/* how to store names (list) ? */
+			if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+				return -2;
+		}
+		if (tpe->multiset == MS_SETOF || tpe->multiset == MS_ARRAY) { /* sets and arrays need oid col */
+			char *name = "id";
+			sql_subtype tp = *sql_bind_localtype("int");
+			sql_column *ic = NULL;
+			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
+				return -2;
+			needs_data = true;	/* column its self is reference id */
+		}
+		if (tpe->multiset == MS_ARRAY) { /* array need order */
+			char *name = "nr";
+			sql_subtype tp = *sql_bind_localtype("int");
+			sql_column *ic = NULL;
+			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
+				return -2;
+		}
+	}
+
+	if (needs_data) {
+		if (isTable(col->t)) {
+			if ((res = store->storage_api.create_col(tr, col))) {
+				ATOMIC_PTR_DESTROY(&col->data);
+				return res;
+			}
+		}
+	}
 	if (!isDeclaredTable(t)) {
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		int digits = type_digits(&col->type);
-		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
-										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil, &col->column_type, &col->type.multiset))) {
+		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name,
+						&digits, &col->type.scale, &t->base.id,
+						(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
+						(col->storage_type) ? &col->storage_type : &strnil, &col->column_type, &col->type.multiset))) {
 			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}

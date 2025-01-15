@@ -681,84 +681,108 @@ set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 }
 
 static int
-tuple_create_result(backend *be, sql_exp *tuple, list *cols, bte multiset)
+type_create_result(backend *be, sql_subtype *type, list *cols)
 {
-	if (multiset && !is_row(tuple)) {
-		assert(is_values(tuple));
-		list *tuples = exp_get_values(tuple);
-		tuple = tuples->h->data;
-	}
-	assert(is_row(tuple));
-
-	list *attr = exp_get_values(tuple);
-	if (list_empty(attr)) {
-		(void)sql_error(be->mvc, 02, SQLSTATE(42000) "Cannot handle empty composite type");
-		return -1;
-	}
-	if (multiset) /* rowid */
+	if (type->multiset) /* rowid */
 		append(cols, sa_list(be->mvc->sa));
-	for(node *n = attr->h; n; n = n->next) {
-		sql_exp *e = n->data;
+	if (type->type->composite) {
+		for(node *n = type->type->d.fields->h; n; n = n->next) {
+			sql_arg *a = n->data;
 
-		sql_subtype *type = exp_subtype(e);
-		if (type->type->composite) {
-			/* todo handle arrays and nesting */
-			assert(0);
+			if (a->type.type->composite) {
+				if(type_create_result(be, &a->type, cols) < 0)
+					return -1;
+			} else {
+				append(cols, sa_list(be->mvc->sa));
+			}
 		}
+	} else {
 		append(cols, sa_list(be->mvc->sa));
 	}
-	if (multiset) /* multisetid */
+	if (type->multiset) /* multisetid */
 		append(cols, sa_list(be->mvc->sa));
-	if (multiset == MS_ARRAY) /* multisetnr */
+	if (type->multiset == MS_ARRAY) /* multisetnr */
 		append(cols, sa_list(be->mvc->sa));
 	return 0;
 }
 
-static int
-append_tuple(backend *be, sql_exp *tuple, stmt *left, stmt *sel, list *cols, int rowcnt, int lcnt, bte multiset)
+static node *
+append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *sel, node *cols, int rowcnt, int lcnt, bool row)
 {
-	if (multiset && !is_row(tuple)) {
+	if (row && !is_row(tuple)) { /* multiset data */
+		node *ncols;
 		assert(is_values(tuple));
 		list *tuples = exp_get_values(tuple);
 		int i = 1;
+		if (list_empty(tuples)) {
+			list *vals = cols->data;
+			append(vals, stmt_atom_int(be, int_nil));
+			if (type->type->composite) {
+				node *n = cols;
+				if (type->multiset)
+					n = n->next;
+				for(node *o = type->type->d.fields->h; n && o; n = n->next, o = o->next)
+					;
+				if (type->multiset)
+					n = n->next;
+				if (type->multiset == MS_ARRAY)
+					n = n->next;
+				return n;
+			} else
+				return cols->next;
+		}
 		for(node *n = tuples->h; n; n = n->next, i++)
-			if (append_tuple(be, n->data, left, sel, cols, rowcnt, i, multiset) < 0)
-				return -1;
-		return 0;
+			if ((ncols=append_tuple(be, n->data, type, left, sel, cols, rowcnt, i, 0)) == cols)
+				return cols;
+		return ncols;
 	}
 	assert(tuple->row);
 	list *attr = exp_get_values(tuple);
-	node *n, *m = cols->h;
-	if (multiset) {
+	node *n, *m = cols, *o;
+	if (type->multiset) {
 		if (lcnt == 1) {
 			list *vals = m->data;
 			append(vals, stmt_atom_int(be, rowcnt));
 		}
 		m = m->next;
 	}
-	for(n = attr->h; n; n = n->next, m = m->next) {
-		sql_exp *e = n->data;
-		list *vals = m->data;
-
-		sql_subtype *type = exp_subtype(e);
-		if (type->type->composite) {
-			/* todo handle arrays and nesting */
-			assert(0);
+	if (type->type->composite) {
+		for(n = attr->h, o = type->type->d.fields->h; n && o; n = n->next, o = o->next) {
+			sql_exp *e = n->data;
+			list *vals = m->data;
+			sql_arg *nested_tuple = o->data;
+			sql_subtype *type = exp_subtype(e);
+			assert(type->type == nested_tuple->type.type);
+			if (type->type->composite) {
+				node *nm = append_tuple(be, e, type, left, sel, m, rowcnt, lcnt, type->multiset);
+				if (nm == m)
+					return m;
+				m = nm;
+			} else {
+				stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+				m = m->next;
+				append(vals, i);
+			}
 		}
+	} else {
+		assert(list_length(attr) == 1);
+		sql_exp *e = attr->h->data;
+		list *vals = m->data;
 		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+		m = m->next;
 		append(vals, i);
 	}
-	if (multiset) {
+	if (type->multiset) {
 		list *vals = m->data;
 		append(vals, stmt_atom_int(be, rowcnt));
 		m = m->next;
 	}
-	if (multiset == MS_ARRAY) {
+	if (type->multiset == MS_ARRAY) {
 		list *vals = m->data;
 		append(vals, stmt_atom_int(be, lcnt));
 		m = m->next;
 	}
-	return 0;
+	return m;
 }
 
 static stmt *
@@ -786,16 +810,15 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
 
 	if (!is_row(vals_exp) && type->type->composite) {
-		bte multiset = type->multiset;
 		list *attr = sa_list(be->mvc->sa);
 		sql_exp *v = vals->h->data;
-		if (tuple_create_result(be, vals->h->data, attr, multiset) < 0)
+		if (type_create_result(be, type, attr) < 0)
 			return NULL;
 		int rowcnt = 0, lcnt = 1;
 		int irc = is_row(v)?0:1;
 		int lrc = is_row(v)?1:0;
 		for (node *n = vals->h; n; n = n->next, rowcnt += irc, lcnt += lrc) {
-			if (append_tuple(be, n->data, left, sel, attr, rowcnt, lcnt, multiset) < 0)
+			if (append_tuple(be, n->data, type, left, sel, attr->h, rowcnt, lcnt, 1) == attr->h)
 				return NULL;
 		}
 		return tuple_result(be, attr);

@@ -1095,7 +1095,17 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_sequence *seq;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	BUN card = (BUN)*getArgReference_lng(stk, pci, 1);
+	BUN card = 0;
+	if (getArgType(mb, pci,1) == TYPE_lng)
+		card = (BUN)*getArgReference_lng(stk, pci, 1);
+	else {
+		bat bid = *getArgReference_bat(stk, pci, 1);
+		BAT *b = BATdescriptor(bid);
+		if (!b)
+			return createException(SQL, "sql.next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		card = BATcount(b);
+		BBPreclaim(b);
+	}
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *seqname = *getArgReference_str(stk, pci, 3);
 	BAT *r = NULL;
@@ -5887,7 +5897,10 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "renumber", mvc_renumber_bulk, false, "return the input b renumbered using values from base", args(1,4, batarg("res",int),batarg("input",int),batarg("mapping_oid",int),batarg("mapping_nid",int))),
  pattern("sql", "renumber", mvc_renumber, false, "return the input b renumbered using values from base", args(1,4, arg("res",int),arg("input",int),arg("mapping_oid",int),arg("mapping_nid",int))),
  pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
+ pattern("sql", "next_value_ms", mvc_next_value, false, "return the next value of the sequence", args(1,4, arg("",lng),argany("card",1), arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value_ms", mvc_next_value_bulk, false, "return the next value of the sequence", args(1,4, batarg("",lng),batargany("card",1), arg("sname",str),arg("sequence",str))),
+ //pattern("batsql", "next_value_ms", mvc_next_value_bulk, false, "return the next value of the sequence", args(1,5, batarg("",lng),batargany("card",1), arg("sname",str),arg("sequence",str), batarg("cand",oid))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
  pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,5, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("s1",oid),batarg("s2",oid))),
