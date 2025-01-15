@@ -14,6 +14,10 @@
 #define _REL_REMOTE_H_
 
 #include "sql_relation.h"
+#include "msettings.h"
+
+// maybe this needs to be somewhere more global?
+extern msettings *sa_msettings_create(allocator *sa);
 
 sql_export int mapiuri_valid( const char *uri);
 extern const char *mapiuri_uri(const char *uri, allocator *sa);

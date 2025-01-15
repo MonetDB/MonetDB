@@ -12,6 +12,34 @@
 
 #include "monetdb_config.h"
 #include "rel_remote.h"
+#include "msettings.h"
+
+static void *
+msettings_sa_allocator(void *state, void *old, size_t size)
+{
+	allocator *sa = state;
+
+	if (size == 0) {
+		// This is really a free(), ignore it.
+		return NULL;
+	} else if (old == NULL) {
+		// This is really a malloc()
+		return sa_alloc(sa, size);
+	} else {
+		// We can't handle generic realloc because we don't know how large the
+		// previous allocation was, so we don't know how much to copy.
+		// Fortunately, msettings doesn't really reallocate so we don't need
+		// this for now.
+		assert(size == 0 || old == NULL);
+		return NULL;
+	}
+}
+
+msettings *
+sa_msettings_create(allocator *sa)
+{
+	return msettings_create_with(msettings_sa_allocator, sa);
+}
 
 #define mapi_prefix "mapi:"
 #define monetdb_prefix "monetdb"
