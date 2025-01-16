@@ -187,6 +187,7 @@ target_include_directories(sql
 target_link_libraries(sql
   PRIVATE
   monetdb_config_header
+  json
   sqlstorage
   sqlcommon
   batstore
@@ -226,6 +227,7 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 add_subdirectory(generator)
+add_subdirectory(vaults/json)
 if(WITH_UDF)
   add_subdirectory(UDF)
 endif()
