@@ -1,0 +1,70 @@
+statement ok
+create table foo (n int, m text);
+
+statement ok
+insert into foo values (1, 'one'), (NULL, 'mighty null'), (2, 'two');
+
+query IT rowsort
+select * from foo where n is null;
+----
+NULL
+mighty null
+
+query T
+plan select * from foo where n is null;
+----
+project (
+| select (
+| | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
+| ) [ ("foo"."n") * = (int(2) NULL) ]
+) [ "foo"."n", "foo"."m" NOT NULL ]
+
+query IT rowsort
+select * from foo where not n is null;
+----
+1
+one
+2
+two
+
+query T
+plan select * from foo where not n is null;
+----
+project (
+| select (
+| | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
+| ) [ ("foo"."n") ! * = (int(2) NULL) ]
+) [ "foo"."n" NOT NULL, "foo"."m" NOT NULL ]
+
+query IT rowsort
+select * from foo where n is not null;
+----
+1
+one
+2
+two
+
+query T
+plan select * from foo where n is not null;
+----
+project (
+| select (
+| | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
+| ) [ ("foo"."n") ! * = (int(2) NULL) ]
+) [ "foo"."n" NOT NULL, "foo"."m" NOT NULL ]
+
+query IT rowsort
+select * from foo where not n is not null;
+----
+NULL
+mighty null
+
+query T
+plan select * from foo where not n is not null;
+----
+project (
+| select (
+| | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
+| ) [ ("foo"."n") * = (int(2) NULL) ]
+) [ "foo"."n", "foo"."m" NOT NULL ]
+
