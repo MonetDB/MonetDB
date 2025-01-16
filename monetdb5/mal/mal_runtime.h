@@ -67,8 +67,6 @@ extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 								InstrPtr pci, RuntimeProfile prof);
 extern void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							   InstrPtr pci, RuntimeProfile prof);
-extern lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-extern lng getBatSpace(BAT *b);
 extern void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci, lng clk, lng ticks);
 
