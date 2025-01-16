@@ -429,13 +429,17 @@ reduce_scale(mvc *sql, atom *a)
 }
 
 static inline sql_exp *
-simplify_func_isnull_equals_bool(visitor *v, sql_exp *e)
+simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 {
-	/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
+	/* rewrite isnull/isnotnull(x) = TRUE/FALSE => x =/<> NULL */
 	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
 		return e;
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
+
+	/*if (is_atom(r->type) && r->l &&*/
+		/*strcmp(((atom*)r->l)->tpe.type->base.name, "boolean") != 0)*/
+		/*return e;*/
 
 	if (!is_func(l->type))
 		return e;
@@ -443,17 +447,27 @@ simplify_func_isnull_equals_bool(visitor *v, sql_exp *e)
 	list *args = l->l;
 	sql_exp *ie = args->h->data;
 
-	if (f->func->s || !is_isnull_func(f))
+	if (f->func->s || (!is_isnull_func(f) && !is_isnotnull_func(f)))
 		return e;
 
 	if (!has_nil(ie) || exp_is_not_null(ie)) {
-		/* is null on something that is never null, is always false */
-		ie = exp_atom_bool(v->sql->sa, 0);
+		if (is_isnull_func(f)) {
+			/* is null on something that is never null, is always false */
+			ie = exp_atom_bool(v->sql->sa, 0);
+		} else if (is_isnotnull_func(f)) {
+			/* is NOT null on something that is never null, is always true */
+			ie = exp_atom_bool(v->sql->sa, 1);
+		}
 		v->changes++;
 		e->l = ie;
 	} else if (exp_is_null(ie)) {
-		/* is null on something that is always null, is always true */
-		ie = exp_atom_bool(v->sql->sa, 1);
+		if (is_isnull_func(f)) {
+			/* is null on something that is always null, is always true */
+			ie = exp_atom_bool(v->sql->sa, 1);
+		} else if (is_isnotnull_func(f)) {
+			/* is NOT null on something that is always null, is always false */
+			ie = exp_atom_bool(v->sql->sa, 0);
+		}
 		v->changes++;
 		e->l = ie;
 	} else if (is_atom(r->type) && r->l) {
@@ -462,7 +476,8 @@ simplify_func_isnull_equals_bool(visitor *v, sql_exp *e)
 
 		if (a->isnull) {
 			if (is_semantics(e)) {
-				/* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
+				/* isnull/isnotnull(x) = NULL -> false,
+				 * isnull/isnotnull(x) <> NULL -> true */
 				int flag = e->flag == cmp_notequal;
 				if (is_anti(e))
 					flag = !flag;
@@ -473,15 +488,18 @@ simplify_func_isnull_equals_bool(visitor *v, sql_exp *e)
 			}
 			v->changes++;
 		} else {
+			/* case isnull/isnotnull(x) = TRUE/FALSE => x =/<> NULL */
 			int flag = a->data.val.bval;
 
 			assert(list_length(args) == 1);
-			l = args->h->data;
-			if (exp_subtype(l)) {
+
+			l = ie;
+			if (exp_subtype(l)->type) {
 				r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
 				e = exp_compare(v->sql->sa, l, r, e->flag);
 				if (e && !flag)
-					set_anti(e);
+					if (is_isnull_func(f))
+						set_anti(e);
 				if (e)
 					set_semantics(e);
 				v->changes++;
@@ -492,7 +510,7 @@ simplify_func_isnull_equals_bool(visitor *v, sql_exp *e)
 }
 
 static inline sql_exp *
-simplify_func_not_over_equality_exp(visitor *v, sql_exp *e) {
+simplify_not_over_equality_exp(visitor *v, sql_exp *e) {
 	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
 		return e;
 	sql_exp *l = e->l;
@@ -755,8 +773,8 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 			sql_exp *l = e->l;
 			sql_exp *r = e->r;
 
-			e = simplify_func_isnull_equals_bool(v, e);
-			e = simplify_func_not_over_equality_exp(v, e);
+			e = simplify_isnull_isnotnull_equals_bool(v, e);
+			e = simplify_not_over_equality_exp(v, e);
 
 			if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !is_any(e) && !e->f) {
 				/* compute comparisons on atoms */
