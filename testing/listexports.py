@@ -107,7 +107,7 @@ def getrepofiles():
     os.chdir(srcdir)
     if os.path.exists(os.path.join('.hg', 'store')):
         import subprocess
-        with subprocess.Popen(['hg', 'files', '-I', '**.[ch]'],
+        with subprocess.Popen(['hg', '--config', 'ui.verbose=False', 'files', '-I', '**.[ch]'],
                               stdout=subprocess.PIPE,
                               text=True) as p:
             out, err = p.communicate()
