@@ -126,9 +126,11 @@ msettings_strdup(const msettings *mp, const char *string)
 		return NULL;
 
 	size_t size = strlen(string);
-	char *new_string = msettings_alloc(mp, size);
-	if (new_string)
+	char *new_string = msettings_alloc(mp, size + 1);
+	if (new_string) {
 		memcpy(new_string, string, size);
+		new_string[size] = '\0';
+	}
 	return new_string;
 }
 
