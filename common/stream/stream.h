@@ -269,8 +269,6 @@ stream_export stream *callback_stream(
 	void (*destroy)(void *priv),
 	const char *restrict name); // used in mclient.c, for readline
 
-stream_export stream *stream_blackhole_create(void); // never used
-
 stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler); // sql.c
 
 stream_export stream *create_text_stream(stream *s);
