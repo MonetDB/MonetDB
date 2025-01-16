@@ -710,7 +710,7 @@ static node *
 append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *sel, node *cols, int rowcnt, int lcnt, bool row)
 {
 	if (row && !is_row(tuple)) { /* multiset data */
-		node *ncols;
+		node *ncols = cols;
 		assert(is_values(tuple));
 		list *tuples = exp_get_values(tuple);
 		int i = 1;
