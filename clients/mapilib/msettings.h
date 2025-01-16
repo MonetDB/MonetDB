@@ -154,9 +154,11 @@ mapi_export msettings_error msetting_set_long(msettings *mp, mparm parm, long va
 mapi_export bool msetting_bool(const msettings *mp, mparm parm);
 mapi_export msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
 
-/* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
+/* Parse into the appropriate type */
 mapi_export msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
-mapi_export char *msetting_as_string(const msettings *mp, mparm parm);
+/* Render setting as a string, requires a small scratch buffer (40 bytes is fine) for rendering integers.
+ * Changing the msettings or the scratch buffer makes the returned pointer invalid. */
+mapi_export const char *msetting_as_string(const msettings *mp, mparm parm, char *scratch, size_t scratch_size);
 
 /* store named parameter */
 mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);

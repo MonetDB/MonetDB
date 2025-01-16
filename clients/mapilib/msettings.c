@@ -503,27 +503,22 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 	}
 }
 
-char *
-msetting_as_string(const msettings *mp, mparm parm)
+const char *
+msetting_as_string(const msettings *mp, mparm parm, char *scratch, size_t scratch_size)
 {
-	bool b;
 	long l;
-	const char *s;
 	switch (mparm_classify(parm)) {
 		case MPCLASS_BOOL:
-			b = msetting_bool(mp, parm);
-			return strdup(b ? "true" : "false");
+			return msetting_bool(mp, parm) ? "true" : "false";
 		case MPCLASS_LONG:
 			l = msetting_long(mp, parm);
-			int n = 40;
-			char *buf = malloc(n);
-			if (!buf)
+			int n = snprintf(scratch, scratch_size, "%ld", l);
+			if (n > 0 && scratch_size >= (size_t)n + 1)
+				return scratch;
+			else
 				return NULL;
-			snprintf(buf, n, "%ld", l);
-			return buf;
 		case MPCLASS_STRING:
-			s = msetting_string(mp, parm);
-			return strdup(s);
+			return msetting_string(mp, parm);
 		default:
 			assert(0 && "unreachable");
 			return NULL;
