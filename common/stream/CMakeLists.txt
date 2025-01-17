@@ -39,7 +39,6 @@ target_sources(stream
   mapi_stream.c
   memio.c
   callback.c
-  blackhole.c
   fwf.c
   text_stream.c
   $<$<BOOL:${OPENSSL_FOUND}>:openssl_stream.c>
