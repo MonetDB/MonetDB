@@ -1403,7 +1403,6 @@ str RAstatementEnd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str SQLautocommit(mvc *m);
 void SQLdestroyResult(res_table *destroy);
 void SQLengine(Client c);
-str SQLengineIntern(Client c, backend *be);
 str SQLengine_(Client c);
 str SQLescapeString(str s);
 str SQLexitClient(Client c);
