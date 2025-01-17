@@ -366,7 +366,7 @@ SQLexecPostLoginTriggers(Client c)
 					stream *out = be->out;
 					be->out = NULL;	/* no output stream */
 					if (!msg)
-						msg = SQLrun(c,m);
+						msg = SQLrun(c, m);
 
 					// restore previous state
 					be->out = out;
@@ -1436,7 +1436,6 @@ SQLparser_body(Client c, backend *be)
 
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
-		be->vtop = oldvtop;
 		(void)runtimeProfileSetTag(c); /* generate and set the tag in the mal block of the clients current program. */
 		if (m->emode != m_prepare || (m->emode == m_prepare && (m->emod & mod_exec) && is_ddl(r->op)) /* direct execution prepare */) {
 			mvc_query_processed(m);
@@ -1651,6 +1650,7 @@ SQLengine_(Client c)
 	if (msg || c->mode <= FINISHCLIENT)
 		return msg;
 
+	int oldvtop = c->curprg?c->curprg->def->vtop:0;
 	if (be->language == 'X') {
 		return SQLchannelcmd(c, be);
 	} else if (be->language !='S') {
@@ -1676,11 +1676,7 @@ SQLengine_(Client c)
 	assert (m->emode != m_deallocate && m->emode != m_prepare);
 	assert (c->curprg->def->stop > 2);
 
-	if (MALcommentsOnly(c->curprg->def)) {
-		assert(0);
-		msg = MAL_SUCCEED;
-	} else
-		msg = SQLrun(c,m);
+	msg = SQLrun(c, m);
 
 	if (m->type == Q_SCHEMA && m->qc != NULL)
 		qc_clean(m->qc);
@@ -1689,7 +1685,7 @@ SQLengine_(Client c)
 		m->session->status = -10;
 	sqlcleanup(be, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, be->vtop);
+	freeVariables(c, c->curprg->def, NULL, oldvtop);
 	/*
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.
