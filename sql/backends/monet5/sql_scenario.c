@@ -1670,7 +1670,31 @@ SQLengine_(Client c)
 		sqlcleanup(be, 0);
 		return NULL;
 	}
-	return SQLengineIntern(c, be);
+
+	mvc *m = be->mvc;
+
+	assert (m->emode != m_deallocate && m->emode != m_prepare);
+	assert (c->curprg->def->stop > 2);
+
+	if (MALcommentsOnly(c->curprg->def)) {
+		assert(0);
+		msg = MAL_SUCCEED;
+	} else
+		msg = SQLrun(c,m);
+
+	if (m->type == Q_SCHEMA && m->qc != NULL)
+		qc_clean(m->qc);
+	be->q = NULL;
+	if (msg)
+		m->session->status = -10;
+	sqlcleanup(be, (!msg) ? 0 : -1);
+	MSresetInstructions(c->curprg->def, 1);
+	freeVariables(c, c->curprg->def, NULL, be->vtop);
+	/*
+	 * Any error encountered during execution should block further processing
+	 * unless auto_commit has been set.
+	 */
+	return msg;
 }
 
 void
