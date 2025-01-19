@@ -2574,13 +2574,14 @@ gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int va
 
 typedef struct allocator {
 	struct allocator *pa;
-	size_t size;	/* size of the allocator in terms of blocks */
-	size_t nr;	/* number of blocks allocated */
+	size_t size;	 /* size of the allocator in terms of blocks */
+	size_t nr;	 /* number of blocks allocated */
 	char **blks;
-	size_t used; 	/* memory used in last block */
-	size_t usedmem;	/* used memory */
-	size_t objects; /* number of objects */
-	size_t inuse;   /* number of objects in use*/
+	size_t used; 	 /* memory used in last block */
+	size_t usedmem;	 /* total used memory */
+	size_t blk_size; /* size of the last allocated block */
+	size_t objects;  /* number of objects */
+	size_t inuse;    /* number of objects in use*/
 	size_t freelist_hits; /* number of object reuse*/
 	void *freelist;	/* list of freed objects */
 	void *freelist_blks;	/* list of freed blks */
