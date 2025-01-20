@@ -443,12 +443,13 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 
 	if (!is_func(l->type))
 		return e;
-	sql_subfunc *f = l->f;
-	list *args = l->l;
-	sql_exp *ie = args->h->data;
 
+	sql_subfunc *f = l->f;
 	if (f->func->s || (!is_isnull_func(f) && !is_isnotnull_func(f)))
 		return e;
+
+	list *args = l->l;
+	sql_exp *ie = args->h->data;
 
 	if (!has_nil(ie) || exp_is_not_null(ie)) {
 		if (is_isnull_func(f)) {
