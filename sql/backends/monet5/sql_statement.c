@@ -4040,7 +4040,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (v->nr < 0)
 		goto bailout;
 
-	if (f->type->eclass == EC_EXTERNAL && strcmp(f->type->base.name, "json") == 0)
+	if (f->type->eclass == EC_EXTERNAL && t->type->composite && strcmp(f->type->base.name, "json") == 0)
 		return stmt_from_json(be, v, sel, t);
 	if (f->type->eclass != EC_EXTERNAL && t->type->eclass != EC_EXTERNAL &&
 		/* general cases */

@@ -1403,7 +1403,6 @@ str RAstatementEnd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str SQLautocommit(mvc *m);
 void SQLdestroyResult(res_table *destroy);
 void SQLengine(Client c);
-str SQLengineIntern(Client c, backend *be);
 str SQLengine_(Client c);
 str SQLescapeString(str s);
 str SQLexitClient(Client c);
@@ -1767,7 +1766,6 @@ stream *socket_wstream(SOCKET socket, const char *name);
 stream *stderr_wastream(void);
 stream *stdin_rastream(void);
 stream *stdout_wastream(void);
-stream *stream_blackhole_create(void);
 stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler);
 stream *xz_stream(stream *inner, int preset);
 

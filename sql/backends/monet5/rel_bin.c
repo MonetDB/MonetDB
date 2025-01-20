@@ -2478,6 +2478,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
+			if (c->type.multiset || c->type.type->composite)
+				continue;
 			fcol = c;
 			col = stmt_col(be, c, multiset?dels:NULL, dels->partition);
 		}
@@ -2512,6 +2514,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				dels = odels;
 				c = find_sql_column(t, oname);
 			}
+			if (!c->type.multiset && c->type.type->composite)
+				continue;
 
 			s = (c == fcol) ? col : stmt_col(be, c, multiset?dels:NULL, dels->partition);
 			if (c->type.multiset) {
@@ -4872,6 +4876,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
+		sql_subtype *st = exp_subtype(exp);
+		if (st && st->type->composite)
+			continue;
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
 
