@@ -27,6 +27,7 @@
 static int start_line = -1;
 static int nstarted = 0;
 static msettings *mp = NULL;
+static msettings_allocator allocator = NULL;
 
 static
 bool verify_roundtrip(const char *location)
@@ -54,7 +55,7 @@ bool verify_roundtrip(const char *location)
 		return false;
 	}
 
-	msettings *tmp = msettings_create();
+	msettings *tmp = msettings_create_with(allocator, NULL);
 	if (tmp == NULL) {
 		fprintf(stderr, "malloc failed\n");
 		return false;
@@ -378,7 +379,7 @@ handle_line(int lineno, const char *location, char *line, int verbose)
 			// block starts here
 			nstarted++;
 			start_line = lineno;
-			mp = msettings_create();
+			mp = msettings_create_with(allocator, NULL);
 			if (mp == NULL) {
 				fprintf(stderr, "%s: malloc failed\n", location);
 				return false;
@@ -533,4 +534,50 @@ run_tests(stream *s, int verbose)
 		mp = NULL;
 	}
 	return ok;
+}
+
+// Our custom allocator stores a magic cookie before every
+// allocation.
+//
+// This allows us to detect that the memory we're free'ing
+// wasn't allocated by us.
+// Also, if the standard allocator free's memory allocated by
+// us, it or Valgrind will hopefully notice that the pointer
+// is wrong.
+static void *
+custom_allocator(void *state, void *old, size_t size)
+{
+	(void)state;
+	const size_t prefix_size = 64;
+	const char cookie[] = "AllocCookie";
+	const size_t cookie_size = sizeof(cookie);
+	assert(cookie_size == 5 + 6 + 1);
+
+	if (old) {
+		old = (char*)old - prefix_size;
+		// check for cookie and erase it
+		if (memcmp(old, cookie, cookie_size) != 0) {
+			assert(0 && "custom allocator cookie missing");
+			abort();
+		}
+		memset(old, '\0', cookie_size);
+	}
+
+	char *new_allocation = realloc(old, size > 0 ? size + prefix_size: 0);
+	assert(size > 0 || new_allocation == NULL);
+
+	if (new_allocation) {
+		// set magic cookie
+		memcpy(new_allocation, cookie, cookie_size);
+		new_allocation += prefix_size;
+	}
+
+	return new_allocation;
+}
+
+
+void
+use_custom_allocator(void)
+{
+	allocator = custom_allocator;
 }
