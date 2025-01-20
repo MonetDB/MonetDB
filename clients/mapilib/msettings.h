@@ -96,6 +96,7 @@ typedef enum mparm_class {
 static inline mparm_class
 mparm_classify(mparm parm)
 {
+	assert(parm > MP_IGNORE);
 	if (parm < MP__LONG_START)
 		return MPCLASS_BOOL;
 	else if (parm >= MP__STRING_START)
