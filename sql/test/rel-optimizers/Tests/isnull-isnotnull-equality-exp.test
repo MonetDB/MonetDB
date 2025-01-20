@@ -68,3 +68,59 @@ project (
 | ) [ ("foo"."n") * = (int(2) NULL) ]
 ) [ "foo"."n", "foo"."m" NOT NULL ]
 
+query IT rowsort
+select * from foo where sys.isnull(n) = true
+----
+NULL
+mighty null
+
+query IT rowsort
+select * from foo where sys.isnull(n) = false
+----
+1
+one
+2
+two
+
+query IT rowsort
+select * from foo where sys.isnull(n) != true
+----
+1
+one
+2
+two
+
+query IT rowsort
+select * from foo where sys.isnull(n) != false
+----
+NULL
+mighty null
+
+query IT rowsort
+select * from foo where sys.isnotnull(n) = true
+----
+1
+one
+2
+two
+
+query IT rowsort
+select * from foo where sys.isnotnull(n) = false
+----
+NULL
+mighty null
+
+query IT rowsort
+select * from foo where sys.isnotnull(n) != true
+----
+NULL
+mighty null
+
+query IT rowsort
+select * from foo where sys.isnotnull(n) != false
+----
+1
+one
+2
+two
+
