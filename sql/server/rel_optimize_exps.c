@@ -489,8 +489,15 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 			}
 			v->changes++;
 		} else {
-			/* case isnull/isnotnull(x) = TRUE/FALSE => x =/<> NULL */
-			int flag = a->data.val.bval;
+			/* case isnull(x)  = TRUE  => x  = NULL */
+			/* case isnull(x) != TRUE  => x != NULL */
+			/* case isnull(x)  = FALSE => x != NULL <-- op switch */
+			/* case isnull(x) != FALSE => x  = NULL <-- op switch */
+			/* case isnotnull(x)  = TRUE  => x != NULL <-- op switch */
+			/* case isnotnull(x) != TRUE  => x  = NULL <-- op switch */
+			/* case isnotnull(x)  = FALSE => x  = NULL */
+			/* case isnotnull(x) != FALSE => x != NULL */
+			bool bval = a->data.val.bval;
 
 			assert(list_length(args) == 1);
 
@@ -498,9 +505,12 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 			if (exp_subtype(l)->type) {
 				r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
 				e = exp_compare(v->sql->sa, l, r, e->flag);
-				if (e && !flag)
-					if (is_isnull_func(f))
+				if (e) {
+					if (bval == false && is_isnull_func(f))
 						set_anti(e);
+					if (bval == true && is_isnotnull_func(f))
+						set_anti(e);
+				}
 				if (e)
 					set_semantics(e);
 				v->changes++;
