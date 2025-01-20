@@ -167,6 +167,13 @@ mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, c
 /* update the msettings from the URL. */
 mapi_export msettings_error msettings_parse_url(msettings *mp, const char *url);
 
+/* render the msettings as an URL. The result is always NUL terminated
+ * even if it's truncated. Returns the number of characters that have been
+ * written or would have been written if the buffer were large enough,
+ * excluding the trailing NUL.
+*/
+mapi_export size_t msettings_write_url(const msettings *mp, char *buffer, size_t);
+
 /* 1 = true, 0 = false, -1 = could not parse */
 mapi_export int msetting_parse_bool(const char *text);
 

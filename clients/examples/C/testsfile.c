@@ -28,15 +28,116 @@ static int start_line = -1;
 static int nstarted = 0;
 static msettings *mp = NULL;
 
+static
+bool verify_roundtrip(const char *location)
+{
+	const char ch = '*';
+	char buffer[1000 + 1];  // + 1 canary byte
+	memset(buffer, ch, sizeof(buffer));
+	const size_t buffer_size = sizeof(buffer) - 1;
+
+	size_t length = msettings_write_url(mp, buffer, buffer_size);
+	if (length == 0) {
+		fprintf(stderr, "%s: msettings_write_url returned 0\n", location);
+		return false;
+	}
+	if (length > buffer_size - 1) {
+		fprintf(stderr, "%s: Reconstructed the URL unexpectedly large: %zu\n", location, length);
+		return false;
+	}
+	if (memchr(buffer, '\0', buffer_size) == NULL) {
+		fprintf(stderr, "%s: msettings_write_url didn't NUL terminate the result\n", location);
+		return false;
+	}
+	if (buffer[buffer_size] != ch) {
+		fprintf(stderr, "%s: msettting_write_url wrote beyond the end of the buffer\n", location);
+		return false;
+	}
+
+	msettings *tmp = msettings_create();
+	if (tmp == NULL) {
+		fprintf(stderr, "malloc failed\n");
+		return false;
+	}
+	msettings_error err = msettings_parse_url(tmp, buffer);
+	if (err) {
+		fprintf(stderr, "%s: Reconstructed URL <%s> couldn't be parsed: %s", location, buffer, err);
+		msettings_destroy(tmp);
+		return false;
+	}
+
+	mparm parm;
+	bool ok = true;
+	for (int i = 0; (parm = mparm_enumerate(i)) != MP_UNKNOWN; i++) {
+		if (parm == MP_IGNORE)
+			continue;
+		char scratch1[100], scratch2[100];
+		const char *mp_val = msetting_as_string(mp, parm, scratch1, sizeof(scratch1));
+		const char *tmp_val = msetting_as_string(tmp, parm, scratch2, sizeof(scratch2));
+		if (strcmp(mp_val, tmp_val) != 0) {
+			fprintf(
+				stderr,
+				"%s: setting %s: reconstructed value <%s> != <%s>\n",
+				location, mparm_name(parm), tmp_val, mp_val);
+			ok = false;
+		}
+	}
+	msettings_destroy(tmp);
+	if (!ok)
+		return false;
+
+	// check if rendering to a smaller buffer returns the same length
+	// and writes a prefix of the original.
+
+	assert(length > 0); // we checked this above
+
+	char buffer2[sizeof(buffer)];
+	for (size_t shorter = length; shorter > 0; shorter--) {
+		memset(buffer2, ch, sizeof(buffer));
+		size_t n = msettings_write_url(mp, buffer2, shorter);
+		if (n != length) {
+			fprintf(
+				stderr,\
+				"%s: writing to buffer of size %zu returns %zu, expected %zu\n",
+				location, shorter, n, length);
+			return false;
+		}
+		char *first_nul = memchr(buffer2, '\0', shorter);
+		if (first_nul == NULL) {
+			fprintf(stderr, "%s: truncated <%zu> msettings_write_url didn't NUL terminate\n", location, shorter);
+			return false;
+		} else if (strncmp(buffer2, buffer, shorter - 1) != 0) {
+			fprintf(stderr,
+			"%s: truncated <%zu> msettings_write_url wrote <%s> which isn't a prefix of <%s>",
+			location, shorter,
+			buffer2, buffer
+			);
+			return false;
+		}
+		for (size_t i = shorter + 1; i < sizeof(buffer); i++) {
+			if (buffer2[i] != ch) {
+				fprintf(
+					stderr,
+					"%s: truncated <%zu> wsettings_write_url wrote beyond end of buffer (pos %zu)\n",
+					location, shorter, i);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
 static bool
 handle_parse_command(const char *location, char *url)
 {
 	const char *errmsg = msettings_parse_url(mp, url);
-	if (!errmsg)
-		return true;
+	if (errmsg) {
+		fprintf(stderr, "%s: %s\n", location, errmsg);
+		return false;
+	}
 
-	fprintf(stderr, "%s: %s\n", location, errmsg);
-	return false;
+	return verify_roundtrip(location);
 }
 
 static bool
@@ -53,7 +154,7 @@ handle_accept_command(const char *location, char *url)
 		fprintf(stderr, "%s: URL invalid: %s\n", location, msg);
 		return false;
 	}
-	return true;
+	return verify_roundtrip(location);
 }
 
 static bool
@@ -79,7 +180,10 @@ handle_set_command(const char *location, const char *key, const char *value)
 		fprintf(stderr, "%s: %s\n", location, msg);
 		return false;
 	}
-	return true;
+	if (msettings_validate(mp) == NULL)
+		return verify_roundtrip(location);
+	else
+		return true;
 }
 
 static bool
