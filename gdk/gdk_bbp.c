@@ -4444,6 +4444,16 @@ gdk_bbp_reset(void)
 
 static MT_Lock GDKCallbackListLock = MT_LOCK_INITIALIZER(GDKCallbackListLock);
 
+typedef struct gdk_callback {
+	const char *name;
+	int argc;
+	int interval;  // units sec
+	lng last_called; // timestamp GDKusec
+	gdk_return (*func)(int argc, void *argv[]);
+	struct gdk_callback *next;
+	void *argv[];
+} gdk_callback;
+
 static struct {
 	int cnt;
 	gdk_callback *head;

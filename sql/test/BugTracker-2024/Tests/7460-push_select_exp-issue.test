@@ -1,0 +1,21 @@
+statement ok
+CREATE TABLE t0( c2 BOOLEAN)
+
+statement ok
+CREATE VIEW v0(c0) AS SELECT 1 FROM t0
+
+statement ok
+INSERT INTO t0(c2) VALUES (true)
+
+query II nosort
+SELECT * FROM t0, v0 WHERE CAST((t0.c2 BETWEEN 0 AND v0.c0) AS BOOLEAN)
+----
+1
+1
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+

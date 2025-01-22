@@ -2960,7 +2960,7 @@ rel_groupjoin(visitor *v, sql_rel *rel)
 		return rel;
 
 	sql_rel *j = rel->l;
-	if (!j || rel_is_ref(j) /*|| !is_left(j->op)*/ || j->op != op_join || list_length(rel->exps) > 1 /* only join because left joins aren't optimized jet (TODO), only length 1 as implementation of groupjoins is missing */ || !list_empty(rel->attr))
+	if (!j || rel_is_ref(j) /*|| !is_left(j->op)*/ || j->op != op_join || list_length(rel->exps) > 1 /* only join because left joins aren't optimized yet (TODO), only length 1 as implementation of groupjoins is missing */ || !list_empty(rel->attr))
 		return rel;
 	/* check group by exps == equi join exps */
 	list *gbes = rel->r;

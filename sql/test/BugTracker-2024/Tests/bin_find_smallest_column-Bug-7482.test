@@ -1,5 +1,0 @@
-query R nosort
-SELECT var_samp ( '12' ) OVER ( ORDER BY CAST ( ( CASE WHEN ( 99 ) THEN COUNT ( * ) ELSE CASE WHEN 1 THEN ( FALSE ) END END ) AS BIGINT ) )
-----
-NULL
-

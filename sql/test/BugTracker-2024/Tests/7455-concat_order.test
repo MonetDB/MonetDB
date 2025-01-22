@@ -1,0 +1,78 @@
+statement ok
+CREATE TABLE t0(c0 VARCHAR, c1 VARCHAR(500))
+
+statement ok
+CREATE VIEW v0(c0) AS SELECT true FROM t0
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES ('', 0)
+
+statement ok
+INSERT INTO t0 (c0) VALUES ('a')
+
+statement ok
+INSERT INTO t0 (c0) VALUES ('b')
+
+query ITT nosort
+SELECT * FROM v0, t0
+----
+1
+(empty)
+0
+1
+a
+NULL
+1
+b
+NULL
+1
+(empty)
+0
+1
+a
+NULL
+1
+b
+NULL
+1
+(empty)
+0
+1
+a
+NULL
+1
+b
+NULL
+
+query I nosort
+SELECT (t0.c0||true BETWEEN v0.c0 AND v0.c0) FROM v0, t0
+----
+1
+0
+0
+1
+0
+0
+1
+0
+0
+
+query ITT nosort
+SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0)
+----
+1
+(empty)
+0
+1
+(empty)
+0
+1
+(empty)
+0
+
+statement ok
+DROP VIEW v0
+
+statement ok
+DROP TABLE t0
+

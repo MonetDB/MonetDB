@@ -1,0 +1,53 @@
+statement ok
+CREATE TABLE t0(c0 INTEGER, c1 BOOL, PRIMARY KEY(c0))
+
+statement ok
+CREATE TABLE t1(c0 INTEGER, PRIMARY KEY(c0))
+
+statement ok
+INSERT INTO t0 (c0) VALUES (0)
+
+statement ok
+INSERT INTO t1 (c0) VALUES (1),(2),(3)
+
+query I nosort
+SELECT t0.c1 FROM t0, t1
+----
+NULL
+NULL
+NULL
+
+query I nosort
+SELECT (((true BETWEEN t0.c1 AND t1.c0)) IS NULL) FROM t0, t1
+----
+1
+1
+1
+
+query I nosort
+SELECT t0.c1 FROM t0, t1 WHERE (((true BETWEEN t0.c1 AND t1.c0)) IS NULL)
+----
+NULL
+NULL
+NULL
+
+query I nosort
+SELECT t0.c1 FROM t0, t1 WHERE NOT (((true BETWEEN t0.c1 AND t1.c0)) IS NOT NULL)
+----
+NULL
+NULL
+NULL
+
+query I nosort
+SELECT t0.c1 FROM t0, t1 WHERE (1 BETWEEN t0.c1 AND t1.c0) IS NULL
+----
+NULL
+NULL
+NULL
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+

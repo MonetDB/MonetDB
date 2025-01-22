@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE t0(c0 INTEGER)
+
+statement ok
+INSERT INTO t0 (c0) VALUES (0), (-1), (1)
+
+query II nosort
+SELECT c0, SIGN(t0.c0) as sign FROM t0
+----
+0
+0
+-1
+-1
+1
+1
+
+query I nosort
+SELECT (t0.c0 >= SIGN(t0.c0)) FROM t0
+----
+1
+1
+1
+
+query I nosort
+SELECT * FROM t0 WHERE (t0.c0 >= SIGN(t0.c0))
+----
+0
+-1
+1
+
+statement ok
+DROP TABLE t0
+

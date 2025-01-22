@@ -1589,10 +1589,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				/*
-				if (exp->alias.label == exp->nid)
-					exp->alias.label = -(sql->nid++);
-					*/
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -1691,10 +1687,6 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
-				/*
-				if (exp->alias.label == exp->nid)
-					exp->alias.label = -(sql->nid++);
-					*/
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -2437,115 +2429,6 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	return rel_select_add_exp(sql->sa, rel, e);
 }
 
-static bool
-not_symbol_can_be_propagated(mvc *sql, symbol *sc)
-{
-	switch (sc->token) {
-	case SQL_IN:
-	case SQL_NOT_IN:
-	case SQL_EXISTS:
-	case SQL_NOT_EXISTS:
-	case SQL_LIKE:
-	case SQL_NOT_LIKE:
-	case SQL_BETWEEN:
-	case SQL_NOT_BETWEEN:
-	case SQL_IS_NULL:
-	case SQL_IS_NOT_NULL:
-	case SQL_NOT:
-	case SQL_COMPARE:
-		return true;
-	case SQL_AND:
-	case SQL_OR: {
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		return not_symbol_can_be_propagated(sql, lo) && not_symbol_can_be_propagated(sql, ro);
-	}
-	default:
-		return false;
-	}
-}
-
-/* Warning, this function assumes the entire bison tree can be negated, so call it after 'not_symbol_can_be_propagated' */
-static symbol *
-negate_symbol_tree(mvc *sql, symbol *sc)
-{
-	switch (sc->token) {
-	case SQL_IN:
-		sc->token = SQL_NOT_IN;
-		break;
-	case SQL_NOT_IN:
-		sc->token = SQL_IN;
-		break;
-	case SQL_EXISTS:
-		sc->token = SQL_NOT_EXISTS;
-		break;
-	case SQL_NOT_EXISTS:
-		sc->token = SQL_EXISTS;
-		break;
-	case SQL_LIKE:
-		sc->token = SQL_NOT_LIKE;
-		break;
-	case SQL_NOT_LIKE:
-		sc->token = SQL_LIKE;
-		break;
-	case SQL_BETWEEN:
-		sc->token = SQL_NOT_BETWEEN;
-		break;
-	case SQL_NOT_BETWEEN:
-		sc->token = SQL_BETWEEN;
-		break;
-	case SQL_IS_NULL:
-		sc->token = SQL_IS_NOT_NULL;
-		break;
-	case SQL_IS_NOT_NULL:
-		sc->token = SQL_IS_NULL;
-		break;
-	case SQL_NOT: { /* nested NOTs eliminate each other */
-		if (sc->data.sym->token == SQL_ATOM) {
-			AtomNode *an = (AtomNode*) sc->data.sym;
-			sc = newAtomNode(sql->sa, an->a);
-		} else if (sc->data.sym->token == SQL_SELECT) {
-			SelectNode *sn = (SelectNode*) sc->data.sym;
-			sc = newSelectNode(sql->sa, sn->distinct, sn->selection, sn->into, sn->from, sn->where, sn->groupby, sn->having,
-							   sn->orderby, sn->name, sn->limit, sn->offset, sn->sample, sn->seed, sn->window);
-		} else {
-			memmove(sc, sc->data.sym, sizeof(symbol));
-		}
-	} break;
-	case SQL_COMPARE: {
-		dnode *cmp_n = sc->data.lval->h;
-		comp_type neg_cmp_type = negate_compare(compare_str2type(cmp_n->next->data.sval)); /* negate the comparator */
-		if (cmp_n->next->next->next) {
-			switch(cmp_n->next->next->next->data.i_val)
-			{
-			case 0: /* negating ANY/ALL */
-				cmp_n->next->next->next->data.i_val = 1;
-				break;
-			case 1: /* negating ANY/ALL */
-				cmp_n->next->next->next->data.i_val = 0;
-				break;
-			case 2: /* negating IS [NOT] DINSTINCT FROM */
-				cmp_n->next->next->next->data.i_val = 3;
-				break;
-			case 3: /* negating IS [NOT] DINSTINCT FROM */
-				cmp_n->next->next->next->data.i_val = 2;
-				break;
-			}
-		}
-		cmp_n->next->data.sval = sa_strdup(sql->sa, compare_func(neg_cmp_type, 0));
-	} break;
-	case SQL_AND:
-	case SQL_OR: {
-		sc->data.lval->h->data.sym = negate_symbol_tree(sql, sc->data.lval->h->data.sym);
-		sc->data.lval->h->next->data.sym= negate_symbol_tree(sql, sc->data.lval->h->next->data.sym);
-		sc->token = sc->token == SQL_AND ? SQL_OR : SQL_AND;
-	} break;
-	default:
-		break;
-	}
-	return sc;
-}
-
 static int
 exp_between_check_types(sql_subtype *res, sql_subtype *t1, sql_subtype *t2, sql_subtype *t3)
 {
@@ -2823,10 +2706,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		return le;
 	}
 	case SQL_NOT: {
-		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
-			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
-			return rel_logical_value_exp(query, rel, sc->data.sym, f, ek);
-		}
 		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
@@ -3096,10 +2975,6 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_NOT: {
-		if (not_symbol_can_be_propagated(sql, sc->data.sym)) {
-			sc->data.sym = negate_symbol_tree(sql, sc->data.sym);
-			return rel_logical_exp(query, rel, sc->data.sym, f);
-		}
 		sql_exp *le = rel_value_exp(query, &rel, sc->data.sym, f|sql_farg, ek);
 		sql_subtype bt;
 
@@ -4993,7 +4868,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 
 	/* window operations are only allowed in the projection */
-	if (!is_sql_sel(f))
+	if (!is_sql_sel(f) && !is_sql_qualify(f))
 		return sql_error(sql, 02, SQLSTATE(42000) "OVER: only possible within the selection");
 
 	p = *rel;
@@ -5569,50 +5444,48 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 		return NULL;
 	}
 
+	list *exps = NULL;
+	sql_rel *project = *rel, *groupby = NULL;
 
-		list *exps = NULL;
-		sql_rel *project = *rel, *groupby = NULL;
-
-		/* if there's a group by relation in the tree, skip it for the '*' case and use the underlying projection */
-		if (project) {
-			while (is_groupby(project->op) || is_select(project->op)) {
-				if (is_groupby(project->op))
-					groupby = project;
-				if (project->l)
-					project = project->l;
-			}
-			assert(project);
+	/* if there's a group by relation in the tree, skip it for the '*' case and use the underlying projection */
+	if (project) {
+		while (is_groupby(project->op) || is_select(project->op)) {
+			if (is_groupby(project->op))
+				groupby = project;
+			if (project->l)
+				project = project->l;
 		}
+		assert(project);
+	}
 
-		if (project->op == op_project && project->l && project == *rel && !tname && !rel_is_ref(project) && !need_distinct(project) && single_exp) {
-			sql_rel *l = project->l;
-			if (!l || !is_project(l->op) || list_length(project->exps) == list_length(l->exps)) {
-				rel_remove_internal_exp(*rel);
-				exps = project->exps;
-				*rel = project->l;
-			}
+	if (project->op == op_project && project->l && project == *rel && !tname && !rel_is_ref(project) && !need_distinct(project) && single_exp) {
+		sql_rel *l = project->l;
+		if (!l || !is_project(l->op) || list_length(project->exps) == list_length(l->exps)) {
+			rel_remove_internal_exp(*rel);
+			exps = project->exps;
+			*rel = project->l;
 		}
-		if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
-			if (!(exps = check_distinct_exp_names(sql, exps)))
-				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
-			if (groupby) {
-				groupby->exps = group_merge_exps(sql, groupby->exps, exps);
-				for (node *n = groupby->exps->h ; n ; n = n->next) {
-					sql_exp *e = n->data;
+	}
+	if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
+		if (!(exps = check_distinct_exp_names(sql, exps)))
+			return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
+		if (groupby) {
+			groupby->exps = group_merge_exps(sql, groupby->exps, exps);
+			for (node *n = groupby->exps->h ; n ; n = n->next) {
+				sql_exp *e = n->data;
 
-					if (e->card > groupby->card) {
-						if (exp_name(e) && !has_label(e))
-							return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
-						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
-					}
+				if (e->card > groupby->card) {
+					if (exp_name(e) && !has_label(e))
+						return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", exp_name(e));
+					return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 				}
 			}
-			return exps;
 		}
-		if (!tname)
-			return sql_error(sql, 02, SQLSTATE(42000) "Table expression without table name");
-		return sql_error(sql, 02, SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
-	//return NULL;
+		return exps;
+	}
+	if (!tname)
+		return sql_error(sql, 02, SQLSTATE(42000) "Table expression without table name");
+	return sql_error(sql, 02, SQLSTATE(42000) "Column expression Table '%s' unknown", tname);
 }
 
 sql_exp *
@@ -5695,6 +5568,11 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
 		if (!single_value)
 			rel->l = inner;
+	}
+
+	if (sn->qualify) {
+		if (!(rel = rel_logical_exp(query, rel, sn->qualify, sql_qualify)))
+			return NULL;
 	}
 
 	if (rel && sn->distinct)

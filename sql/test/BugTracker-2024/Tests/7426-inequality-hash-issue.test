@@ -1,0 +1,81 @@
+statement ok
+CREATE TABLE t1(c1 INTEGER)
+
+statement ok
+CREATE TABLE t0(c0 BOOL, c1 INTEGER)
+
+statement ok
+INSERT INTO t1 (c1) VALUES (0)
+
+statement ok
+CREATE UNIQUE INDEX i0 ON t0(c1 , c0 )
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES (true, 0)
+
+query III nosort
+SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER JOIN t0 ON t0.c0
+----
+1
+0
+0
+
+query I nosort
+SELECT (t0.c1) IS NOT NULL FROM t1 INNER  JOIN t0 ON t0.c0
+----
+1
+
+query III nosort
+SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER  JOIN t0 ON t0.c0 WHERE (t0.c1) IS NOT NULL
+----
+1
+0
+0
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+-- repeat test but within a transaction
+statement ok
+start transaction
+
+statement ok
+CREATE TABLE t1(c1 INTEGER)
+
+statement ok
+CREATE TABLE t0(c0 BOOL, c1 INTEGER)
+
+statement ok
+INSERT INTO t1 (c1) VALUES (0)
+
+statement ok
+CREATE UNIQUE INDEX i0 ON t0(c1 , c0 )
+
+statement ok
+INSERT INTO t0 (c0, c1) VALUES (true, 0)
+
+query III nosort
+SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER JOIN t0 ON t0.c0
+----
+1
+0
+0
+
+query I nosort
+SELECT (t0.c1) IS NOT NULL FROM t1 INNER  JOIN t0 ON t0.c0
+----
+1
+
+query III nosort
+SELECT t0.c0, t0.c1, t1.c1 FROM t1 INNER  JOIN t0 ON t0.c0 WHERE (t0.c1) IS NOT NULL
+----
+1
+0
+0
+
+statement ok
+rollback
+
