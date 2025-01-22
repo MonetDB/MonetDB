@@ -247,7 +247,7 @@ monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
 	prop *p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
 	tid_uri *tu = SA_NEW(sql->sa, tid_uri);
 	tu->id = t->base.id;
-	tu->uri = r->uri;
+	tu->uri = mapiuri_uri(r->uri, sql->sa);
 	p->id = tu->id;
 	p->value.pval = append(sa_list(sql->sa), tu);
 
