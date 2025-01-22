@@ -375,6 +375,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		goto cleanup;
 	}
 	const char *uri = mapiuri_uri(rt->query, m->sa);
+	// fprintf(stderr, "\n::\n\trt->query=%s\n\turi=%s\n\ttu->uri=%s\n", rt->query, uri, tu->uri);
 	assert(strcmp(tu->uri, uri) == 0);
 	if (!rt) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);

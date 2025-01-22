@@ -32,13 +32,6 @@
 #include "rel_basetable.h"
 #include <unistd.h>
 
-/* Return the concatenation of the arguments,
- * with quotes doubled ONLY IN THE ODD positions.
- * The list of arguments is terminated with a NULL.
- *
- * For example, { "SELECT R'",        "it's",        "' AS bla",        NULL }
- * becomes "SELECT R'it''s' AS bla"
- */
 static char *sql_template(allocator *sa, const char **parts);
 
 typedef struct mdb_loader_t {
@@ -178,6 +171,13 @@ end:
 	return ret;
 }
 
+/* Return the concatenation of the arguments, with quotes doubled
+ * ONLY IN THE ODD positions.
+ * The list of arguments must be terminated with a NULL.
+ *
+ * For example, { "SELECT R'",        "it's",        "' AS bla",        NULL }
+ * becomes "SELECT R'it''s' AS bla"
+ */
 static char *
 sql_template(allocator *sa, const char **parts)
 {
