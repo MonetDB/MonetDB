@@ -167,7 +167,7 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 	r->tname = sa_strdup(sql->sa, tname);
 	r->uri = sa_strdup(sql->sa, uri);
 	f->sname = (char*)r; /* pass mdb_loader */
-	return NULL;
+	ret = NULL;
 
 end:
 	if (hdl)
