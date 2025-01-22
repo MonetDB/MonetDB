@@ -45,131 +45,56 @@ sa_msettings_create(allocator *sa)
 #define monetdb_prefix "monetdb"
 
 int
-mapiuri_valid( const char *uri)
+mapiuri_valid( const char *uri, allocator *sa)
 {
-	int i = 0, l = 0;
-	const char *p = uri;
-
-	if (strncmp(p, mapi_prefix, strlen(mapi_prefix)) == 0)
-		p += strlen(mapi_prefix);
-	if (strncmp(p, monetdb_prefix, strlen(monetdb_prefix)))
-		return 0;
-	p += strlen(monetdb_prefix);
-	if (p[0] == 's')
-		p++;
-	if (p[0] != ':' || p[1] != '/' || p[2] != '/')
-		return 0;
-	p += 3;
-	/* optional host (todo limit to valid hostnames ??) */
-	if (*p == '[') { //check for IPv6 addresses
-		for (; *p; p++) {
-			if (*p == ']')
-				break;
-		}
-	}
-	if (!p)
-		return 0;
-	for (; *p; p++) {
-		if (*p == ':' || *p == '/')
-			break;
-	}
-	if (!p)
-		return 0;
-	if (*p == ':') {
-		char *x;
-		int i = strtol(p+1, &x, 10);
-
-		if (!x || i < 0 || i >= 64*1024)
-			return 0;
-		p = x;
-	}
-	if (*p != '/')
-		return 0;
-	p++;
-	/* now find at most 2 '/'s, with some string in between */
-	for(; *p; p++, l++) {
-		if (*p == '/') {
-			if (l == 0) /* no string in between */
-				return 0;
-			if (i == 2) /* 3 parts (ie database/schema/table) */
-				return 0;
-			i++;
-			l=0;
-		}
-	}
-	if (i == 0 && l == 0) /* missing database name */
-		return 0;
-	return 1;
+	msettings *mp = sa_msettings_create(sa);
+	return msettings_parse_url(mp, uri) == NULL;
 }
 
 /* assume valid uri's next functions */
 
-/* mapiuri_uri prefix including database name */
+/* strip schema- and table name from uri  */
 const char *
 mapiuri_uri( const char *uri, allocator *sa)
 {
-	const char *p = uri, *b = uri, *e;
+	msettings *mp = sa_msettings_create(sa);
+	if (!mp || msettings_parse_url(mp, uri) != NULL)
+		return NULL;
+	msetting_set_string(mp, MP_TABLESCHEMA, "");
+	msetting_set_string(mp, MP_TABLE, "");
 
-	p = strchr(p, '/')+1;
-	p++;
-	e = p = strchr(p, '/');
-	e = strchr(p+1, '/');
-	if (e)
-		return sa_strndup(sa, b, e - b);
-	else
-		return sa_strdup(sa, b);
-}
+	size_t buffer_size = strlen(uri) + 1;
+	do {
+		char *buffer = sa_alloc(sa, buffer_size);
+		if (!buffer)
+			return NULL;
+		size_t needed = msettings_write_url(mp, buffer, buffer_size);
+		if (needed + 1 <= buffer_size)
+			return buffer;
+		// it's unlikely but remotely possible that the url as written by
+		// msettings_write_url is longer, for example because it escapes some
+		// characters that were not escaped in the original
+		buffer_size = needed + 1;
+	} while (1);
 
-const char *
-mapiuri_database( const char *uri, allocator *sa)
-{
-	const char *p = uri, *b, *e;
-
-	p = strchr(p, '/')+1;
-	p++;
-	b = p = strchr(p, '/')+1;
-	e = strchr(p, '/');
-
-	if (e) {
-		return sa_strndup(sa, b, e - b);
-	} else {
-		return sa_strdup(sa, b);
-	}
 }
 
 const char *
 mapiuri_schema( const char *uri, allocator *sa, const char *fallback)
 {
-	const char *p = uri, *b, *e;
-
-	p = strchr(p, '/')+1;
-	p = strchr(p+1, '/');
-	p = strchr(p+1, '/');
-	if (!p)
+	msettings *mp = sa_msettings_create(sa);
+	if (!mp || msettings_parse_url(mp, uri) != NULL)
 		return fallback;
- 	b = ++p;
-	e = strchr(p, '/');
-
-	if (e) {
-		return sa_strndup(sa, b, e - b);
-	} else {
-		return sa_strdup(sa, b);
-	}
+	const char *schema = msetting_string(mp, MP_TABLESCHEMA);
+	return schema[0] ? schema : fallback;
 }
 
 const char *
 mapiuri_table( const char *uri, allocator *sa, const char *fallback)
 {
-	const char *p = uri, *b;
-
-	p = strchr(p, '/')+1;
-	p = strchr(p+1, '/');
-	p = strchr(p+1, '/');
-	if (!p)
+	msettings *mp = sa_msettings_create(sa);
+	if (!mp || msettings_parse_url(mp, uri) != NULL)
 		return fallback;
-	p = strchr(p+1, '/');
-	if (!p)
-		return fallback;
- 	b = ++p;
-	return sa_strdup(sa, b);
+	const char *schema = msetting_string(mp, MP_TABLE);
+	return schema[0] ? schema : fallback;
 }
