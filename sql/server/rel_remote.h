@@ -18,6 +18,7 @@
 
 // maybe this needs to be somewhere more global?
 extern msettings *sa_msettings_create(allocator *sa);
+extern char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
 
 sql_export int mapiuri_valid( const char *uri, allocator *sa);
 extern const char *mapiuri_uri(const char *uri, allocator *sa);

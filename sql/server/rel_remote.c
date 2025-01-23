@@ -41,8 +41,20 @@ sa_msettings_create(allocator *sa)
 	return msettings_create_with(msettings_sa_allocator, sa);
 }
 
-#define mapi_prefix "mapi:"
-#define monetdb_prefix "monetdb"
+char*
+sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint)
+{
+	size_t buffer_size = size_hint ? size_hint + 1 : 80;
+	do {
+		char *buffer = sa_alloc(sa, buffer_size);
+		if (!buffer)
+			return NULL;
+		size_t needed = msettings_write_url(mp, buffer, buffer_size);
+		if (needed + 1 <= buffer_size)
+			return buffer;
+		buffer_size = needed + 1;
+	} while (1);
+}
 
 int
 mapiuri_valid( const char *uri, allocator *sa)
@@ -62,21 +74,7 @@ mapiuri_uri( const char *uri, allocator *sa)
 		return NULL;
 	msetting_set_string(mp, MP_TABLESCHEMA, "");
 	msetting_set_string(mp, MP_TABLE, "");
-
-	size_t buffer_size = strlen(uri) + 1;
-	do {
-		char *buffer = sa_alloc(sa, buffer_size);
-		if (!buffer)
-			return NULL;
-		size_t needed = msettings_write_url(mp, buffer, buffer_size);
-		if (needed + 1 <= buffer_size)
-			return buffer;
-		// it's unlikely but remotely possible that the url as written by
-		// msettings_write_url is longer, for example because it escapes some
-		// characters that were not escaped in the original
-		buffer_size = needed + 1;
-	} while (1);
-
+	return sa_msettings_to_string(mp, sa, strlen(uri));
 }
 
 const char *
