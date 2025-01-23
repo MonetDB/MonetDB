@@ -125,6 +125,24 @@ size_unit(const char *suffix)
 		return -1;
 }
 
+static bool
+looks_like_url(const char *text)
+{
+	if (text == NULL)
+		return false;
+	for (const char *p = text; *p != '\0'; p++) {
+		if (*p == ':') {
+			// Exclude :bla and c:\temp
+			return p - text > 1;
+		}
+		if (*p < 'a' || *p > 'z') {
+			return false;
+		}
+	}
+	// we ran out of string looking for the colon
+	return false;
+}
+
 %}
 /* KNOWN NOT DONE OF sql'99
  *
@@ -3860,13 +3878,11 @@ table_ref:
 				  append_int(l, 0);
 				  append_symbol(l, $2);
 				  $$ = _symbol_create_list(SQL_NAME, l); }
- |  string opt_table_name	{ 
+ |  string opt_table_name	{
 				  dlist *f = L();
 				  const char *s = $1;
-				  if (s && s[0] == DIR_SEP) /* Only normal abolute file names */
-				  	append_list(f, append_string(L(), "file_loader"));
-				  else 
-				  	append_list(f, append_string(L(), "proto_loader"));
+				  const char *loader = looks_like_url(s) ? "proto_loader" : "file_loader";
+				  append_list(f, append_string(L(), loader));
 				  append_int(f, FALSE); /* ignore distinct */
 				  int len = UTF8_strlen(s);
 				  sql_subtype t;
