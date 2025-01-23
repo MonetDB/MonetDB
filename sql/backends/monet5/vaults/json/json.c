@@ -87,13 +87,135 @@ read_json_file(JSONFileHandle *jfh)
 	return content;
 }
 
+typedef struct jobject {
+	struct jobject *parent;
+	list *fields;
+} jobject;
+
+static jobject *
+new_jobject(allocator *sa, jobject *parent)
+{
+	jobject *res = SA_NEW(sa, jobject);
+	res->parent = parent;
+	res->fields = sa_list(sa);
+	return res;
+}
+
+static size_t
+json2subtypes(mvc *sql, JSONterm *t, sql_alias **alias_pptr, list *types, list *exps, list *names, jobject **parent_pptr)
+{
+	sql_subtype *tpe = NULL;
+	sql_exp *ne = NULL;
+	sql_alias *nalias = NULL;
+	const char *cname = NULL;
+	size_t offset = 1;
+	jobject *parent = *parent_pptr;
+	sql_alias *alias = *alias_pptr;
+
+	switch(t->kind) {
+		case JSON_ARRAY:
+			tpe = sql_create_subtype(sql->sa, SA_ZNEW(sql->sa, sql_type), 0, 0);
+			tpe->type->composite = true;
+			tpe->multiset = MS_ARRAY;
+			cname = alias->name;
+			// append to parent fields
+			if (parent && parent->fields) {
+				sql_arg *field = sql_create_arg(sql->sa, cname, tpe, false); // ?inout
+				list_append(parent->fields, field);
+			}
+			ne = exp_column(sql->sa, alias, cname, tpe, CARD_MULTI, 1, 0, 0);
+			list_append(types, tpe);
+			list_append(exps , ne);
+			list_append(names, (char*)cname);
+			nalias = &ne->alias;
+			*alias_pptr = nalias;
+			offset += json2subtypes(sql, t+1, alias_pptr, types, exps, names, parent_pptr);
+			break;
+		case JSON_OBJECT:
+			tpe = sql_create_subtype(sql->sa, SA_ZNEW(sql->sa, sql_type), 0, 0);
+			tpe->type->composite = true;
+			// new object
+			jobject *jo = new_jobject(sql->sa, parent);
+			tpe->type->d.fields = jo->fields;
+			cname = alias->name;
+			if (parent) {
+				sql_arg *field = sql_create_arg(sql->sa, cname, tpe, false); // ?inout
+				list_append(parent->fields, field);
+			}
+			ne = exp_column(sql->sa, alias, cname, tpe, CARD_MULTI, 1, 0, 0);
+			set_basecol(ne);
+			ne->alias.label = -(sql->nid++);
+			list_append(exps, ne);
+			list_append(types, tpe);
+			list_append(names, (char*)cname);
+			nalias = &ne->alias;
+			*alias_pptr = nalias;
+			*parent_pptr = jo;
+			offset += json2subtypes(sql, t+1, alias_pptr, types, exps, names, parent_pptr);
+			break;
+		case JSON_ELEMENT:
+			cname = sa_strndup(sql->sa, t->value, t->valuelen);
+			nalias = a_create(sql->sa, cname);
+			nalias->parent = alias;
+			*alias_pptr = nalias;
+			offset += json2subtypes(sql, t+1, alias_pptr, types, exps, names, parent_pptr);
+			break;
+		case JSON_STRING:
+			tpe = sql_bind_localtype("str");
+			cname = alias->name;
+			// append to parent fields
+			if (parent) {
+				sql_arg *field = sql_create_arg(sql->sa, cname, tpe, false); // ?inout
+				list_append(parent->fields, field);
+			}
+			ne = exp_column(sql->sa, alias->parent, cname, tpe, CARD_MULTI, 1, 0, 0);
+			set_basecol(ne);
+			ne->alias.label = -(sql->nid++);
+			list_append(exps, ne);
+			list_append(types, tpe);
+			list_append(names, (char*)cname);
+			// adjust one level
+			*alias_pptr = alias->parent;
+			offset += json2subtypes(sql, t+1, alias_pptr, types, exps, names, parent_pptr);
+			break;
+		case JSON_NUMBER:
+			tpe = sql_bind_localtype("int");
+			cname = alias->name;
+			// append to parent fields
+			if (parent) {
+				sql_arg *field = sql_create_arg(sql->sa, cname, tpe, false); // ?inout
+				list_append(parent->fields, field);
+			}
+			ne = exp_column(sql->sa, alias->parent, cname, tpe, CARD_MULTI, 1, 0, 0);
+			set_basecol(ne);
+			ne->alias.label = -(sql->nid++);
+			list_append(exps, ne);
+			list_append(types, tpe);
+			list_append(names, (char*)cname);
+			// adjust one level
+			*alias_pptr = alias->parent;
+			offset += json2subtypes(sql, t+1, alias_pptr, types, exps, names, parent_pptr);
+			break;
+		case JSON_VALUE:
+			// break one level
+			if (parent)
+				*parent_pptr = parent->parent;
+			if (alias)
+				*alias_pptr = alias->parent;
+			break;
+		default:
+			// error ?
+			offset = 0;
+			break;
+	}
+	return offset;
+}
+
 
 static str
 json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tname)
 {
-	(void) sql;
-	(void) f;
-	(void) res_exps;
+	char *res = MAL_SUCCEED;
 	f->tname = tname;
 	allocator *sa = sa_create(NULL);
 	JSONFileHandle *jfh = json_open(filename, sa);
@@ -102,13 +224,32 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 		json_str = read_json_file(jfh);
 		json_close(jfh);
 	}
-	JSON *jt = JSONparse(json_str);
-	if (jt) {
-
+	JSON *jt = JSONparse(json_str); // should take allocator
+	if (jt && jt->error == NULL) {
+		list *types = sa_list(sql->sa);
+		list *names = sa_list(sql->sa);
+		size_t offset = 0;
+		sql_alias *alias = a_create(sql->sa, tname);
+		jobject *jo = NULL;
+		do {
+			size_t prev_offset = offset;
+			offset += json2subtypes(sql, jt->elm + offset, &alias, types, res_exps, names, &jo);
+			if (offset == prev_offset) {
+				res = createException(SQL, SQLSTATE(42000), "json" "json2subtypes failure for %s", filename);
+				break;
+			}
+		} while(offset < (size_t)jt->free);
+		JSONfree(jt);
+		if (res == MAL_SUCCEED) {
+			f->res = types;
+			f->coltypes = types;
+			f->colnames = names;
+		}
+	} else {
+		res = jt ? jt->error : createException(SQL, SQLSTATE(42000), "json" "Failure parsing %s", filename);
 	}
-	JSONfree(jt);
 	sa_destroy(sa);
-	return MAL_SUCCEED;
+	return res;
 }
 
 
