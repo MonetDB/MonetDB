@@ -30,6 +30,7 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_statistics.h"
+#include "rel_remote.h"
 
 #include "mal_authorize.h"
 #include "mal_profiler.h"
@@ -1301,13 +1302,26 @@ mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int pe
 {
 	int res = LOG_OK;
 
-	TRC_DEBUG(SQL_TRANS, "Create remote: %s %s %s\n", s->base.name, name, loc);
+	// verify and normalize url
+	msettings *mp = sa_msettings_create(m->sa);
+	if (mp == NULL) {
+		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return LOG_ERR;
+	}
+	msettings_error err = msettings_parse_url(mp, loc);
+	if (err != NULL) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "invalid remote table url: %s", err);
+		return LOG_ERR;
+	}
+	char *url = sa_msettings_to_string(mp, m->sa, strlen(loc));
+
+	TRC_DEBUG(SQL_TRANS, "Create remote: %s %s %s\n", s->base.name, name, url);
 	if (persistence == SQL_DECLARED_TABLE) {
 		*t = create_sql_table(m->store, m->sa, name, tt_remote, 0, persistence, 0, 0);
 		(*t)->s = s;
-		(*t)->query = sa_strdup(m->sa, loc);
+		(*t)->query = url;
 	} else {
-		res = sql_trans_create_table(t, m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
+		res = sql_trans_create_table(t, m->session->tr, s, name, url, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
 	return res;
 }
