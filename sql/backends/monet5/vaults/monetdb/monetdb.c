@@ -36,8 +36,8 @@ static char *sql_template(allocator *sa, const char **parts);
 
 typedef struct mdb_loader_t {
 	char *uri;
-	char *sname;
-	char *tname;
+	const char *sname;
+	const char *tname;
 } mdb_loader_t;
 
 
@@ -51,31 +51,29 @@ typedef struct mdb_loader_t {
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *aname)
+monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *aname)
 {
 	str ret; // intentionally uninitialized to provoke control flow warnings
 
-	msettings *mp = msettings_create();
 	const char *uri_error = NULL;
 	Mapi dbh = NULL;
 	MapiHdl hdl = NULL;
 
-	if (
-		!mp
-		|| msetting_set_string(mp, MP_USER, "monetdb") != NULL
-		|| msetting_set_string(mp, MP_PASSWORD, "monetdb") != NULL
-	) {
+	// Normalize uri
+	msettings *mp = sa_msettings_create(sql->sa);
+	if (!mp) {
 		ret = sa_message(sql->sa, "could not allocate msettings");
 		goto end;
 	}
 
 	if (
-		(uri_error = msettings_parse_url(mp, uri))
+		(uri_error = msettings_parse_url(mp, raw_uri))
 		|| (uri_error = msettings_validate(mp))
 	) {
-		ret = sa_message(sql->sa, "uri '%s' invalid: %s\n", uri, uri_error);
+		ret = sa_message(sql->sa, "uri '%s' invalid: %s\n", raw_uri, uri_error);
 		goto end;
 	}
+	const char *uri = sa_msettings_to_string(mp, sql->sa, strlen(raw_uri));
 
 	const char *sname = msetting_string(mp, MP_TABLESCHEMA);   // not MP_SCHEMA, that's something else
 	const char *tname = msetting_string(mp, MP_TABLE);
@@ -85,12 +83,9 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 		goto end;
 	}
 
-	/* set up mapi connection */
-	dbh = mapi_settings(mp);
-	if (dbh) {
-		/* mp has moved into dhb, will be free'd with it*/
-		mp = NULL;
-	} else {
+	/* set up mapi connection; user and password will possibly be overridden in the uri */
+	dbh = mapi_mapiuri(uri, "monetdb", "monetdb", "sql");
+	if (dbh == NULL) {
 		ret = MAL_MALLOC_FAIL;
 		goto end;
 	}
@@ -156,8 +151,8 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *uri, list *res_exps, char *anam
 	f->colnames = nameslist;
 
 	mdb_loader_t *r = (mdb_loader_t *)sa_alloc(sql->sa, sizeof(mdb_loader_t));
-	r->sname = sa_strdup(sql->sa, sname);
-	r->tname = sa_strdup(sql->sa, tname);
+	r->sname = sname;
+	r->tname = tname;
 	r->uri = sa_strdup(sql->sa, uri);
 	f->sname = (char*)r; /* pass mdb_loader */
 	ret = NULL;
@@ -167,7 +162,7 @@ end:
 		mapi_close_handle(hdl);
 	if (dbh)
 		mapi_destroy(dbh);
-	msettings_destroy(mp);
+	// do not destroy mp because r->sname and r->tname point inside it
 	return ret;
 }
 
@@ -211,6 +206,7 @@ sql_template(allocator *sa, const char **parts)
 static void *
 monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
 {
+	(void)uri; // assumed to be equivalent to mdb_loader_t->uri, though maybe unnormalized.
 	(void)topn;
 
 	backend *be = (backend*)BE;
@@ -227,7 +223,7 @@ monetdb_load(void *BE, sql_subfunc *f, char *uri, sql_exp *topn)
 	if (mvc_create_table( &t, be->mvc, be->mvc->session->tr->tmp/* misuse tmp schema */, r->tname /*gettable name*/, tt_remote, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
 		/* alloc error */
 		return NULL;
-	t->query = uri; /* set uri */
+	t->query = r->uri; /* set uri */
 	node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
 	for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
 		const char *name = nn->data;
