@@ -16,3 +16,4 @@ merge-ors-base
 merge-ors-single-col-eq-to-cmp_in
 merge-ors-multi-col-eq-to-cmp_in
 const-aggr-elim
+isnull-isnotnull-equality-exp

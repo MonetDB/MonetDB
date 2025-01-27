@@ -1905,7 +1905,6 @@ gdk_export bool BATcheckorderidx(BAT *b);
 /* functions defined in gdk_bat.c */
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *BATattach(int tt, const char *heapfile, role_t role);
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER

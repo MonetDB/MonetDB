@@ -26,13 +26,8 @@ set(sqlserver_public_headers
 
 target_sources(sqlserver
   PRIVATE
-  sql_atom.c
-  sql_datetime.c
-  sql_decimal.c
   sql_semantic.c
   sql_qc.c
-  sql_symbol.c
-  sql_scan.c
   sql_partition.c
   sql_mvc.c
   sql_env.c
@@ -83,16 +78,11 @@ target_sources(sqlserver
   rel_updates.h
   rel_psm.h
   rel_xml.h
-  sql_atom.h
-  sql_datetime.h
-  sql_decimal.h
   sql_env.h
   sql_privileges.h
   sql_query.h
   sql_qc.h
-  sql_scan.h
   sql_semantic.h
-  sql_symbol.h
   sql_tokens.h
   sql_partition.h
   rel_file_loader.h
@@ -115,6 +105,7 @@ target_link_libraries(sqlserver
   PRIVATE
   monetdb_config_header
   bat
+  sqlparserlib
   sqlcommon
   sqlinclude
   sqlstorage)
@@ -127,7 +118,54 @@ if(NOT MONETDB_STATIC)
   set_target_properties(sqlserver
     PROPERTIES
     POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER "${sqlserver_public_headers}")
+    PUBLIC_HEADER "${sqlserver_public_headers}")
+endif()
+
+add_library(sqlparserlib STATIC)
+
+target_sources(sqlparserlib
+  PRIVATE
+  sql_atom.c
+  sql_atom.h
+  sql_datetime.c
+  sql_datetime.h
+  sql_decimal.c
+  sql_decimal.h
+  sql_scan.c
+  sql_scan.h
+  sql_symbol.c
+  sql_symbol.h
+  ${BISON_sqlparser_OUTPUT_HEADER}
+  ${BISON_sqlparser_OUTPUT_SOURCE}
+  ${sqlserver_public_headers})
+
+target_include_directories(sqlparserlib
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+target_link_libraries(sqlparserlib
+  PRIVATE
+  monetdb_config_header
+  bat
+  sqlcommon
+  sqlinclude
+  sqlstorage)
+
+target_compile_definitions(sqlparserlib
+  PRIVATE
+  LIBSQL)
+
+if(NOT MONETDB_STATIC)
+  set_target_properties(sqlparserlib
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER "${sqlserver_public_headers}")
 endif()
 
 if(WITH_SQLPARSE)
@@ -135,22 +173,6 @@ add_executable(sqlparse)
 
 target_sources(sqlparse
   PRIVATE
-  sql_atom.h
-  sql_atom.c
-  sql_decimal.h
-  sql_decimal.c
-  sql_scan.h
-  sql_scan.c
-  sql_symbol.h
-  sql_symbol.c
-  sql_datetime.c
-  sql_datetime.h
-
-  sql_semantic.h
-  sql_mvc.h
-  rel_sequence.h
-  ${BISON_sqlparser_OUTPUT_HEADER}
-  ${BISON_sqlparser_OUTPUT_SOURCE}
   sqlparse.c)
 
 target_include_directories(sqlparse
@@ -163,6 +185,7 @@ target_include_directories(sqlparse
 target_link_libraries(sqlparse
   PRIVATE
   monetdb_config_header
+  sqlparserlib
   stream
   bat
   sqlinclude

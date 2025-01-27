@@ -191,6 +191,7 @@ target_link_libraries(sql
   sqlcommon
   batstore
   sqlserver
+  sqlparserlib
   sqlinclude
   copybinary
   monetdb5
