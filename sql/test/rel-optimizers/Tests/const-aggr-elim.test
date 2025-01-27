@@ -59,7 +59,7 @@ project (
 | group by (
 | | table("sys"."baz") [ "baz"."b" NOT NULL ]
 | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
-) [ "sys"."sql_add"(tinyint(2) "3", double(53) "1") NOT NULL ]
+) [ "sys"."sql_add"(double(53) "1", tinyint(2) "3") NOT NULL ]
 
 query I rowsort 
 SELECT avg(NULL) FROM baz GROUP BY b
@@ -90,7 +90,7 @@ project (
 | | | table("sys"."baz") [ "baz"."b" NOT NULL ]
 | | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
 | ) [ tinyint(2) "3" as "%1"."%1" ]
-) [ "sys"."sql_add"("%1"."%1" NOT NULL, double(53) "1") NOT NULL, "sys"."sql_mul"("%1"."%1" NOT NULL, double(53) "10") NOT NULL ]
+) [ "sys"."sql_add"(double(53) "1", "%1"."%1" NOT NULL) NOT NULL, "sys"."sql_mul"("%1"."%1" NOT NULL, double(53) "10") NOT NULL ]
 
 query II rowsort
 SELECT avg(3), avg(b) FROM baz GROUP BY b
