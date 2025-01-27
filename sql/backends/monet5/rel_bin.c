@@ -2478,7 +2478,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
-			if (c->type.multiset || c->type.type->composite)
+			if (!c || c->type.multiset || c->type.type->composite)
 				continue;
 			fcol = c;
 			col = stmt_col(be, c, multiset?dels:NULL, dels->partition);

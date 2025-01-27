@@ -3824,24 +3824,32 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 	if (col->type.type->composite)
 		t->composite=true;
 
-	if (tpe->type->composite) {
+	if (tpe->type->composite || tpe->multiset) {
 		needs_data = false;
 		sql_table *tt = t;
 		if (tpe->multiset) {
 			char buf[16];
 			snprintf(buf, 16, "%%ms_%d", col->base.id);
 			col->storage_type = _STRDUP(buf);
-			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, 0, 0, 0)) != LOG_OK)
+			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, t->commit_action, 0, 0)) != LOG_OK)
 				return res;
 			if (sql_trans_create_sequence(tr, t->s, col->storage_type, 1, 1, GDK_lng_max, 1, 1, false, true) != LOG_OK)
 				return res;
 		}
-		/* All nested types, need the internal columns for the field contents */
-		for (node *n = col->type.type->d.fields->h; n; n = n->next) {
-			sql_arg *f = n->data;
+		if (tpe->type->composite) {
+			/* All nested types, need the internal columns for the field contents */
+			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
+				sql_arg *f = n->data;
+				sql_column *ic = NULL;
+				/* how to store names (list) ? */
+				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+					return -2;
+			}
+		} else {
 			sql_column *ic = NULL;
-			/* how to store names (list) ? */
-			if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+			sql_subtype lt = *tpe;
+			lt.multiset = MS_VALUE;
+			if (sql_trans_create_column_intern( &ic, tr, tt, "elements", &lt, column_intern) < 0)
 				return -2;
 		}
 		if (tpe->multiset == MS_SETOF || tpe->multiset == MS_ARRAY) { /* sets and arrays need oid col */
@@ -3935,24 +3943,32 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if (!isNew(t) && isGlobal(t) && !isGlobalTemp(t) && (res = sql_trans_add_dependency(tr, t->base.id, dml)))
 		return res;
 
-	if (c->type.type->composite) {
+	if (c->type.type->composite || c->type.multiset) {
 		needs_data = false;
 		sql_table *tt = t;
 		if (c->type.multiset) {
 			char buf[16];
 			snprintf(buf, 16, "%%ms_%d", c->base.id);
 			col->storage_type = _STRDUP(buf);
-			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, 0, 0, 0)) != LOG_OK)
+			if ((res = sql_trans_create_table(&tt, tr, t->s, col->storage_type, NULL, tt_table, true, t->persistence, t->commit_action, 0, 0)) != LOG_OK)
 				return res;
 			if (sql_trans_create_sequence(tr, t->s, col->storage_type, 1, 1, GDK_lng_max, 1, 1, false, true) != LOG_OK)
 				return res;
 		}
-		/* All nested types, need the internal columns for the field contents */
-		for (node *n = col->type.type->d.fields->h; n; n = n->next) {
-			sql_arg *f = n->data;
+		if (c->type.type->composite) {
+			/* All nested types, need the internal columns for the field contents */
+			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
+				sql_arg *f = n->data;
+				sql_column *ic = NULL;
+				/* how to store names (list) ? */
+				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+					return -2;
+			}
+		} else {
 			sql_column *ic = NULL;
-			/* how to store names (list) ? */
-			if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
+			sql_subtype lt = c->type;
+			lt.multiset = MS_VALUE;
+			if (sql_trans_create_column_intern( &ic, tr, tt, "elements", &lt, column_intern) < 0)
 				return -2;
 		}
 		if (c->type.multiset == MS_SETOF || c->type.multiset == MS_ARRAY) { /* sets and arrays need oid col */
