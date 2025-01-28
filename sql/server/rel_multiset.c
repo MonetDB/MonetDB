@@ -345,32 +345,33 @@ fm_project(visitor *v, sql_rel *rel)
 				sql_exp *e = n->data;
 				sql_subtype *t = exp_subtype(e);
 				if (t->multiset) {
+					sql_alias *cn = a_create(v->sql->sa, e->alias.name);
 					sql_exp *rowid = exps_bind_column(exps, exp_name(e), NULL, NULL, 0);
 					if (!rowid)
-						rowid = exps_bind_column(exps, "rowid", NULL, NULL, 0);
+						rowid = exps_bind_column2(exps, cn, "rowid", NULL);
 					rowid = exp_ref(v->sql, rowid);
 					append(nexps, rowid);
 					if (t->type->composite) {
 						for(node *f = t->type->d.fields->h; f; f = f->next) {
 							sql_arg *field = f->data;
-							sql_exp *mse = exps_bind_column(exps, field->name, NULL, NULL, 0);
+							sql_exp *mse = exps_bind_column2(exps, cn, field->name, NULL);
 							mse = exp_ref(v->sql, mse);
 							append(nexps, mse);
 						}
 					} else {
-						sql_exp *mse = exps_bind_column(exps, "elements", NULL, NULL, 0);
+						sql_exp *mse = exps_bind_column2(exps, cn, "elements", NULL);
 						mse = exp_ref(v->sql, mse);
 						append(nexps, mse);
 					}
-					sql_exp *msid = exps_bind_column(exps, "id", NULL, NULL, 0);
+					sql_exp *msid = exps_bind_column2(exps, cn, "id", NULL);
 					if (!msid)
-						msid = exps_bind_column(exps, "multisetid", NULL, NULL, 0);
+						msid = exps_bind_column2(exps, cn, "multisetid", NULL);
 					msid = exp_ref(v->sql, msid);
 					append(nexps, msid);
 					if (t->multiset == MS_ARRAY) {
-						sql_exp *msnr = exps_bind_column(exps, "nr", NULL, NULL, 0);
+						sql_exp *msnr = exps_bind_column2(exps, cn, "nr", NULL);
 						if (!msnr)
-							msnr = exps_bind_column(exps, "multisetnr", NULL, NULL, 0);
+							msnr = exps_bind_column2(exps, cn, "multisetnr", NULL);
 						msnr = exp_ref(v->sql, msnr);
 						append(nexps, msnr);
 					}

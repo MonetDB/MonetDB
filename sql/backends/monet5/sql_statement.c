@@ -3296,7 +3296,7 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
 		if (t->multiset) { /* properly handle subtable */
-			printf("multiset\n");
+			printf("%multiset\n");
 		}
 		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
