@@ -1862,15 +1862,10 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     x  = isexecutable(TST)
     if not x[0]:
         x  = isexecutable(TST,'')
-    xA = isexecutable(TST + ".MAL")
     xS = isexecutable(TST + ".SQL")
     if   x[0]:
         EXT = x[1]
         CALL = "other"
-    elif xA[0]:
-        EXT = ".MAL"+xA[1]
-        CALL = "other"
-        SERVER = "MAL"
     elif xS[0]:
         EXT = ".SQL"+xS[1]
         CALL = "other"
@@ -1881,7 +1876,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
             ('.test',         '.test',   'sqltest','SQL'),
             ('.maltest',      '.maltest','maltest','SQL'),
             ('.py',           '.py',     'python', ''),
-            ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('.R',            '.R',      'R',      'SQL'),
@@ -2053,7 +2047,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
-    elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
+    elif SERVER == "SQL" and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
         elem = SkipTest(env, TST, EXT, reason, length)
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
@@ -2830,7 +2824,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
     else:
         nodrop = False
     try:
-        if SERVER in ["MAL", "SQL"]:
+        if SERVER == "SQL":
             SrvrOutFile = TST+".server.out"
             SrvrErrFile = TST+".server.err"
             SrvrOut = openutf8(SrvrOutFile,"w")
@@ -2884,7 +2878,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             ClntOut = openutf8(TestOutFile, 'a')
             ClntErr = openutf8(TestErrFile, 'a')
 
-        if SERVER not in ["MAL", "SQL"] or pSrvr.started:
+        if SERVER != "SQL" or pSrvr.started:
             if   CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, TIMEOUT, pSrvr)
@@ -3009,7 +3003,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
         if PSRVR is not None:
             PSRVR.stop()
             # PSRVR.timer.cancel()
-        if SERVER in ["MAL", "SQL"] and pSrvr is not None:
+        if SERVER == "SQL" and pSrvr is not None:
             if PSRVR is None and pSrvr.started:
                 pSrvr.terminate()
                 if procdebug:
@@ -3866,7 +3860,7 @@ def main(argv) :
                     ErrXit("%s: not a valid test name" % args[0])
                 args = [head]
                 if tail != 'All':
-                    for ext in ('.test', '.maltest', 'MAL.py', '.SQL.py',
+                    for ext in ('.test', '.maltest', '.SQL.py',
                                 '.sql', '.py', '.R', '.rb', ''):
                         # extensions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
