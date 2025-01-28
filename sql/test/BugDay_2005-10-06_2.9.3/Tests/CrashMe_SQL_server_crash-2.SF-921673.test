@@ -27,5 +27,5 @@ WHERE columns.table_id = tables.id
     'objects', 'keys', 'modules', 'sequences')
 ORDER BY TABLE_SCHEM, TABLE_NAME, ORDINAL_POSITION
 ----
-1178 values hashing to 6976ccdc7572fb904e6a9eebae5b5af3
+1197 values hashing to 56f3defdf3e9070754bc7e49db1c6fd4
 

@@ -37602,7 +37602,12 @@ sql
 from_json
 pattern sql.from_json(X_0:json, X_1:ptr):bat[:any]...
 SQLfrom_json
-Reads json string into table of nested structures
+Reads json string into table of nested/multiset structures
+sql
+from_varchar
+pattern sql.from_varchar(X_0:str, X_1:ptr):bat[:any]...
+SQLfrom_varchar
+Reads string into table of nested/multiset structures
 sql
 getVariable
 pattern sql.getVariable(X_0:int, X_1:str, X_2:str):any_1

@@ -5866,6 +5866,53 @@ bailout:
 	throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
+static str
+SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	str msg = NULL;
+	int mtype = getArgType(mb, pci, pci->retc);
+
+	if (mtype != TYPE_str)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) "Incorrect argument type");
+	str s = *(str*)getArgReference(stk, pci, pci->retc);
+	sql_subtype *t = *(sql_subtype**)getArgReference(stk, pci, pci->retc+1);
+
+	BAT **bats = (BAT**)GDKzalloc(sizeof(BAT*) * pci->retc);
+	if (!bats)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	for(int i = 0; i < pci->retc; i++) {
+		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), 10, TRANSIENT);
+		if (!bats[i])
+			goto bailout;
+	}
+
+	JSON *js = JSONparse(s);
+	if (!js) /* TODO output parser error ?? */
+		goto bailout;
+
+	if (t->multiset)
+		(void)insert_json_array(&msg, js, bats, pci->retc, 0, 1, 1, t);
+	else
+		(void)insert_json_object(&msg, js, bats, pci->retc, 0, 1, 1, t);
+	JSONfree(js);
+	if (msg)
+		goto bailout;
+	for(int i = 0; i < pci->retc && bats[i]; i++) {
+		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
+		BBPkeepref(bats[i]);
+	}
+	GDKfree(bats);
+	return MAL_SUCCEED;
+bailout:
+	for(int i = 0; i < pci->retc && bats[i]; i++)
+		BBPreclaim(bats[i]);
+	GDKfree(bats);
+	if (msg)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "%s", msg);
+	throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+}
+
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -6818,7 +6865,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
- pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested structures", args(1,3, batvarargany("t",0), arg("input", json), arg("type", ptr))),
+ pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", json), arg("type", ptr))),
+ pattern("sql", "from_varchar", SQLfrom_varchar, false, "Reads string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", str), arg("type", ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"

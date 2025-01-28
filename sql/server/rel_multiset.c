@@ -240,7 +240,7 @@ fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps
 	//sql_subtype *oidtype = sql_bind_localtype("oid");
 	sql_subtype *inttype = sql_bind_localtype("int");
 	int label = v->sql->label;
-	v->sql->label += 2 + (t->multiset == MS_ARRAY) + list_length(t->type->d.fields);
+	v->sql->label += 2 + (t->multiset == MS_ARRAY) + (t->type->composite?list_length(t->type->d.fields):1);
 	e = exp_ref(v->sql, e);
 	sql_exp *mse = exp_column(v->sql->sa, cn, "rowid", inttype, 1,1, 1, 1);
 	mse->alias.label = (++label);

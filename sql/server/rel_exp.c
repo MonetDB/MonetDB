@@ -3718,6 +3718,8 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 		/* hard code conversion from json allowed */
 		if (strcmp(et->type->base.name, "json") == 0)
 			return exp_convert(sql, exp, et, t);
+		if (EC_VARCHAR(et->type->eclass))
+			return exp_convert(sql, exp, et, t);
 		if (et && et->multiset == t->multiset && subtype_cmp(et, t) == 0)
 			return exp;
 		if (t->type->composite)
