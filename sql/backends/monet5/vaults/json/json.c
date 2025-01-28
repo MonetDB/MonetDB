@@ -138,12 +138,12 @@ append_terms(allocator *sa, JSON *jt, size_t offset, BAT *b, char **error)
 			offset +=1;
 			break;
 		default:
-			*error = createException(SQL, "json.appent_terms", "unknown json term");
+			*error = createException(SQL, "json.append_terms", "unknown json term");
 			break;
 	}
 	if (v) {
 		if (BUNappend(b, v, false) != GDK_SUCCEED) {
-			*error = createException(SQL, "json.appent_terms", "BUNappend failed!");
+			*error = createException(SQL, "json.append_terms", "BUNappend failed!");
 		}
 	}
 	return offset;
@@ -157,9 +157,11 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 	char *res = MAL_SUCCEED;
 	list *types = sa_list(sql->sa);
 	list *names = sa_list(sql->sa);
+	// use file name as columnn name ?
 	char *cname = sa_strdup(sql->sa, "json");
 	list_append(names, cname);
 	sql_subtype *tpe = sql_bind_localtype("str");
+	tpe->type->base.name = "json";
 	list_append(types, tpe);
 	sql_exp *ne = exp_column(sql->sa, a_create(sql->sa, tname), cname, tpe, CARD_MULTI, 1, 0, 0);
 	set_basecol(ne);
@@ -196,10 +198,13 @@ json_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	return s;
 }
 
+int TYPE_json;
+
 static str
 JSONprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt; (void)mb; (void)stk; (void)pci;
+	TYPE_json = ATOMindex("json");
 
 	fl_register("json", &json_relation, &json_load);
 	return MAL_SUCCEED;
@@ -212,6 +217,7 @@ JSONepilogue(void *ret)
 	(void)ret;
 	return MAL_SUCCEED;
 }
+
 
 static str
 JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -232,7 +238,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		jt = JSONparse(json_str);
 	if (jt) {
 		if (jt->error == NULL) {
-			b = COLnew(0, TYPE_str, 0, TRANSIENT);
+			b = COLnew(0, TYPE_json, 0, TRANSIENT);
 			size_t offset = 0;
 			char *error = NULL;
 			// append terms
@@ -265,7 +271,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static mel_func json_init_funcs[] = {
 	pattern("json", "prelude", JSONprelude, false, "", noargs),
 	command("json", "epilogue", JSONepilogue, false, "", noargs),
-	pattern("json", "read_json", JSONread_json, false, "Reads json file into a table", args(1,2, batarg("", str), arg("filename", str))),
+	pattern("json", "read_json", JSONread_json, false, "Reads json file into a table", args(1,2, batarg("", json), arg("filename", str))),
 { .imp=NULL }
 };
 
