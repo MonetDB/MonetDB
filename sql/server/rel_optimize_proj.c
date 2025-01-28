@@ -2501,11 +2501,22 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+// Triggers On...
+// select 1 having true;
+// select 42 from foo group by ();
+// select n from foo group by rollup(n);
+
+// Does this also trigger?
+// plan SELECT avg(a) FROM baz GROUP BY pass HAVING pass = 1439;
+
+// Expiriment with ROLL UP!
+
 static inline sql_rel *
 rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
-	if (!rel)
+	if (!rel) {
 		return rel;
+	}
 	if (rel && is_groupby(rel->op) && list_length(rel->exps) >= 1 && !rel_is_ref(rel)) {
 		int needed = 0;
 		for (node *n = rel->exps->h; n; n = n->next) {
@@ -2524,6 +2535,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 					if (exp_is_atom(exp))
 						atoms++;
 				}
+				/* possible edge case, never triggers in coverage tests */
 				if (atoms == list_length(rel->r)) {
 					list *nexps = sa_list(v->sql->sa);
 					for (node *n = rel->exps->h; n; ) {
@@ -3029,42 +3041,41 @@ static inline sql_rel *
 rel_const_aggr_elimination(visitor *v, sql_rel *rel)
 {
 	sql_rel *g = rel->l;
-
-	if (rel->op == op_project && g) // 0
+	
+	if(rel->op != op_project || !g)
 	{
-		list *exps = g->exps;
+		return rel;
+	}
 
-		if(g->op == op_groupby && !list_empty(exps) && !list_empty(g->r))
+	list *exps = g->exps;
+
+	if(g->op != op_groupby || list_empty(exps) || list_empty(g->r))
+	{
+		return rel;
+	}
+
+	for(node *n = exps->h; n; n = n->next)
+	{
+		sql_exp *e = n->data;
+
+		if(e->type == e_aggr &&
+		   !((sql_subfunc *)e->f)->func->s &&
+		   strcmp(((sql_subfunc *)e->f)->func->base.name, "count") != 0 && 
+		   ((sql_subfunc *)e->f)->func->system == 1
+		  )
 		{
-			for(node *n = exps->h; n; n = n->next)
+			list *se = e->l;
+
+			for(node *m = se->h; m; m = m->next)
 			{
-				sql_exp *e = n->data;
+				sql_exp *w = m->data;
 
-				// Check aggr type! exp_aggr_is_count(e)
-				if(e->type == e_aggr && 
-					!((sql_subfunc *)e->f)->func->s && 
-			        strcmp(((sql_subfunc *)e->f)->func->base.name, "avg") == 0)
+				if(w->type == e_atom && w->card == CARD_ATOM)
 				{
-					list *se = e->l;
+					exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
 
-					for(node *m = se->h; m; m = m->next)
-					{
-						sql_exp *w = m->data;
-
-						if(w->type == e_atom && w->card == CARD_ATOM)
-						{
-							exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
-
-							n->data = w;
-
-							// Alternative;
-							//list_append_before(g->exps,n,w);
-							//m->data = NULL;
-							//list_remove_node(g->exps,NULL,n);
-
-							v->changes++;
-						}
-					}
+					n->data = w;
+					v->changes++;
 				}
 			}
 		}
