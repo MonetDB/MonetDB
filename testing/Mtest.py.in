@@ -2726,6 +2726,8 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr) :
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     setpgrp = True
+    if TimeOut:
+        os.environ['TIMEOUT'] = str(TimeOut)
     with process.Popen(cmd, stdin=TestIn, stdout=TestOut,
                        stderr=TestErr, text=True) as proc:
         proc.killed = False
