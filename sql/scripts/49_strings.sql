@@ -59,3 +59,11 @@ grant execute on filter function contains(string, string) to public;
 create filter function sys.contains(x string, y string, icase boolean)
 external name str.contains;
 grant execute on filter function contains(string, string, boolean) to public;
+
+-- NGRAMS
+create filter function c1(h varchar, n varchar) external name ngrams.c1;
+create filter function c2(h varchar, n varchar) external name ngrams.c2;
+create filter function c3(h varchar, n varchar) external name ngrams.c3;
+
+-- create filter function c11(h varchar, n varchar, ng tinyint) external name ngrams.contains;
+-- create filter function c11(h varchar, n varchar, ng tinyint) external name ngrams.contains;
