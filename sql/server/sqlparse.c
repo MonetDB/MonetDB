@@ -294,17 +294,17 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth)
 		SelectNode *s = (SelectNode*)se;
 		char *res = s->distinct?"SELECT DISTINCT (\n":"SELECT (\n";
 		if (s->from)
-			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->from, expression, err, depth), "\n");
+			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->from, expression, err, depth), "\n");
 		if (s->where)
-			res = sa_concat(sql->ta, " ", res, "WHERE ", sp_symbol2string(sql, s->where, expression, err, depth + 1), "\n");
+			res = sa_concat(sql->ta, "", res, "WHERE ", sp_symbol2string(sql, s->where, expression, err, depth + 1), "\n");
 		if (s->groupby)
-			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->groupby, expression, err, depth), "\n");
+			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->groupby, expression, err, depth), "\n");
 		if (s->having)
-			res = sa_concat(sql->ta, " ", res, "HAVING ", sp_symbol2string(sql, s->having, expression, err, depth), "\n");
+			res = sa_concat(sql->ta, "", res, "HAVING ", sp_symbol2string(sql, s->having, expression, err, depth), "\n");
 		if (s->orderby)
-			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->orderby, expression, err, depth), "\n");
+			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->orderby, expression, err, depth), "\n");
 		if (s->selection)
-			res = sa_concat(sql->ta, " ", res, "SELECTION ", dlist2string(sql, s->selection, ", ", "( ", " )", expression, err, depth, false), "\n");
+			res = sa_concat(sql->ta, "", res, "SELECTION ", dlist2string(sql, s->selection, ", ", "( ", " )", expression, err, depth, false), "\n");
 		return res;
 	}
 	case SQL_NOP: {
@@ -324,7 +324,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth)
 			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
-			if (!(inputs[i] = sp_symbol2string(sql, aux->data.sym, expression, err, 0))) {
+			if (!(inputs[i] = sp_symbol2string(sql, aux->data.sym, expression, err, depth))) {
 				return NULL;
 			}
 			inputs_length += strlen(inputs[i]);
@@ -437,7 +437,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth)
 		/* generic */
 		if (se->type == type_list) {
 			char *tok_str = token2string(se->token);
-			char *args = dlist2string(sql, se->data.lval, ", ", "( ", " )", expression, err, depth, false);
+			char *args = dlist2string(sql, se->data.lval, ", ", " (", " )", expression, err, depth, false);
 			char *res;
 
 			if (!args)
@@ -447,7 +447,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth)
 			return res;
 		} else if (se->type == type_symbol) {
 			char *tok_str = token2string(se->token);
-			char *sym = sp_symbol2string(sql, se->data.sym, expression, err, 0);
+			char *sym = sp_symbol2string(sql, se->data.sym, expression, err, depth);
 			char *res;
 
 			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(sym) + 5)))
@@ -523,12 +523,12 @@ main(int argc, char *argv[])
 			char *res = sp_symbol2string(m, m->sym, 1, &err, 0);
 
 			if (err)
-				printf("ERROR: %s\n", err);
+				printf("ERROR:\n%s\n", err);
 			else
-				printf("SYM: %s\n", res);
+				printf("SYM:\n%s\n", res);
 	 	} else {
 			if (m->session->status)
-				printf("ERROR: %s\n", m->errstr);
+				printf("ERROR:\n%s\n", m->errstr);
 		}
 		scanner_query_processed(&m->scanner);
 		m->sym = NULL;
