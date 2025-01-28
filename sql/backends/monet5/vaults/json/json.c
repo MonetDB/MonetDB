@@ -160,8 +160,7 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 	// use file name as columnn name ?
 	char *cname = sa_strdup(sql->sa, "json");
 	list_append(names, cname);
-	sql_subtype *tpe = sql_bind_localtype("str");
-	tpe->type->base.name = "json";
+	sql_subtype *tpe = sql_bind_subtype(sql->sa, "json", 0, 0);
 	list_append(types, tpe);
 	sql_exp *ne = exp_column(sql->sa, a_create(sql->sa, tname), cname, tpe, CARD_MULTI, 1, 0, 0);
 	set_basecol(ne);
