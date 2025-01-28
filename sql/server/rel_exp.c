@@ -3712,7 +3712,7 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 static sql_exp *
 exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
-	assert(t->type->composite);
+	assert(t->type->composite || t->multiset);
 	if (!exp_is_rel(exp) && !is_values(exp)) {
 		sql_subtype *et = exp_subtype(exp);
 		/* hard code conversion from json allowed */
@@ -3720,7 +3720,9 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 			return exp_convert(sql, exp, et, t);
 		if (et && et->multiset == t->multiset && subtype_cmp(et, t) == 0)
 			return exp;
-		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		if (t->type->composite)
+			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);
+		return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into multiset type '%s[]'", t->type->base.name);
 	}
 
 	list *msvals = NULL;
@@ -3757,7 +3759,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 
-	if (t->type->composite) {
+	if (t->type->composite || t->multiset) {
 		if (t->multiset || !is_row(exp))
 			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		return exp_check_composite_type(sql, t, rel, exp, tpe);

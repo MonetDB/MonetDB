@@ -2478,7 +2478,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
-			if (c->type.multiset || c->type.type->composite)
+			if (!c || c->type.multiset || c->type.type->composite)
 				continue;
 			fcol = c;
 			col = stmt_col(be, c, multiset?dels:NULL, dels->partition);
@@ -4876,9 +4876,11 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
+		/* we need to ouput composite properly, for insert statements
 		sql_subtype *st = exp_subtype(exp);
-		if (st && st->type->composite)
+		if (rel->l && st && st->type->composite)
 			continue;
+			*/
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
 
@@ -5875,8 +5877,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(be, t, updates, 0))
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
-	insert = inserts->op4.lval->h->data;
-	if (insert->nrcols == 0) {
+	insert = inserts->op4.lval->h?inserts->op4.lval->h->data:NULL;
+	if (!insert || insert->nrcols == 0) {
 		cnt = stmt_atom_lng(be, 1);
 	} else {
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);

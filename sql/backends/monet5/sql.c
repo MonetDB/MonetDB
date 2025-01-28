@@ -1046,7 +1046,7 @@ mvc_renumber_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!bo->tsorted || !BATtkey(bo) || (bcnt && (oi[0] + (int)(bcnt-1)) != oi[bcnt-1]) ) {
 		BAT *lo = NULL;
 		printf("not dense %d\n", oi[0]);
-		if (BATleftjoin(&lo, NULL, i, bo, NULL, NULL, false, cnt) != GDK_SUCCEED) {
+		if (BATleftjoin(&lo, NULL, bo, i, NULL, NULL, false, cnt) != GDK_SUCCEED) {
 			BBPreclaim(i);
 			BBPreclaim(bo);
 			BBPreclaim(bn);
