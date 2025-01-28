@@ -110,35 +110,35 @@ query TIT rowsort
 SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL OR "table_type_name" = ''
 ----
 
-query IITTIIITIITI rowsort
+query IITTIIITIITII rowsort
 SELECT "id", * FROM "sys"."_columns" WHERE "id" IS NULL
 ----
 
-query TITTIIITIITI rowsort
+query TITTIIITIITII rowsort
 SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL OR "name" = ''
 ----
 
-query TITTIIITIITI rowsort
+query TITTIIITIITII rowsort
 SELECT "type", * FROM "sys"."_columns" WHERE "type" IS NULL OR "type" = ''
 ----
 
-query IITTIIITIITI rowsort
+query IITTIIITIITII rowsort
 SELECT "type_digits", * FROM "sys"."_columns" WHERE "type_digits" IS NULL
 ----
 
-query IITTIIITIITI rowsort
+query IITTIIITIITII rowsort
 SELECT "type_scale", * FROM "sys"."_columns" WHERE "type_scale" IS NULL
 ----
 
-query IITTIIITIITI rowsort
+query IITTIIITIITII rowsort
 SELECT "table_id", * FROM "sys"."_columns" WHERE "table_id" IS NULL
 ----
 
-query IITTIIITIITI rowsort
+query IITTIIITIITII rowsort
 SELECT "null", * FROM "sys"."_columns" WHERE "null" IS NULL
 ----
 
-query IITTIIITIITI rowsort
+query IITTIIITIITII rowsort
 SELECT "number", * FROM "sys"."_columns" WHERE "number" IS NULL
 ----
 
@@ -170,35 +170,35 @@ query IITITIIII rowsort
 SELECT "access", * FROM "sys"."_tables" WHERE "access" IS NULL
 ----
 
-query IIITTIIII rowsort
+query IIITTIIIII rowsort
 SELECT "id", * FROM "sys"."args" WHERE "id" IS NULL
 ----
 
-query IIITTIIII rowsort
+query IIITTIIIII rowsort
 SELECT "func_id", * FROM "sys"."args" WHERE "func_id" IS NULL
 ----
 
-query TIITTIIII rowsort
+query TIITTIIIII rowsort
 SELECT "name", * FROM "sys"."args" WHERE "name" IS NULL OR "name" = ''
 ----
 
-query TIITTIIII rowsort
+query TIITTIIIII rowsort
 SELECT "type", * FROM "sys"."args" WHERE "type" IS NULL OR "type" = ''
 ----
 
-query IIITTIIII rowsort
+query IIITTIIIII rowsort
 SELECT "type_digits", * FROM "sys"."args" WHERE "type_digits" IS NULL
 ----
 
-query IIITTIIII rowsort
+query IIITTIIIII rowsort
 SELECT "type_scale", * FROM "sys"."args" WHERE "type_scale" IS NULL
 ----
 
-query IIITTIIII rowsort
+query IIITTIIIII rowsort
 SELECT "inout", * FROM "sys"."args" WHERE "inout" IS NULL
 ----
 
-query IIITTIIII rowsort
+query IIITTIIIII rowsort
 SELECT "number", * FROM "sys"."args" WHERE "number" IS NULL
 ----
 
