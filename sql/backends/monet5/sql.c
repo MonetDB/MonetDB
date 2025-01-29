@@ -5866,6 +5866,54 @@ bailout:
 }
 
 static str
+ARRAYparser(char *s, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t)
+{
+	(void)bats;
+	(void)nr;
+	if (!s && s[0] != '{')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing { at start of array value");
+	s++;
+	skipspace(s);
+	/* insert id */
+	elm++;
+	int oelm = elm;
+	while (*s && s[0] != '}') {
+		elm = oelm;
+		/* insert values */
+		if (t->type->composite) {
+			if (*s && s[0] != '(')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at start of composite value");
+			/* handle composite */
+			for (node *n = t->type->d.fields->h; n; n = n->next) {
+				//sql_arg *f = n->data;
+				elm++;
+			}
+			if (*s && s[0] != ')')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at end of composite value");
+		} else {
+			/* handle literals */
+			elm++;
+		}
+		/* insert msid */
+		elm++;
+		if (t->multiset == MS_ARRAY) {
+			/* insert msnr */
+			elm++;
+		}
+
+		skipspace(s);
+		/* handle optinal ',' */
+		if (*s && s[0] != ',')
+			break;
+		s++;
+		skipspace(s);
+	}
+	if (!s && s[0] != '}')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
+	return MAL_SUCCEED;
+}
+
+static str
 SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)cntxt;
@@ -5886,15 +5934,19 @@ SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 	}
 
-	JSON *js = JSONparse(s); /* TODO: this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
-	if (!js) /* TODO output parser error ?? */
+	/*
+	JSON *js = JSONparse(s);
+	if (!js)
 		goto bailout;
 
 	if (t->multiset)
 		(void)insert_json_array(&msg, js, bats, pci->retc, 0, 1, 1, t);
-	else
-		(void)insert_json_object(&msg, js, bats, pci->retc, 0, 1, 1, t);
 	JSONfree(js);
+	*/
+
+	assert(t->multiset);
+	/* this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
+	msg = ARRAYparser(s, bats, pci->retc, 0, 1, 1, t);
 	if (msg)
 		goto bailout;
 	for(int i = 0; i < pci->retc && bats[i]; i++) {
