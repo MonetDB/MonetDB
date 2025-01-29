@@ -27,6 +27,10 @@
 #include "json.h"
 #include "mutils.h"
 
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
 #include <unistd.h>
 // #include <glob.h> // not available on Windows
 
@@ -44,7 +48,7 @@ json_open(const char *fname, allocator *sa)
 {
 	if (!sa)
 		return NULL;
-	int fd = open(fname, O_RDONLY);
+	int fd = MT_open(fname, O_RDONLY);
 	if (fd < 0){
 		// TODO add relevant trace component
 		TRC_ERROR(SQL_EXECUTION, "Error opening file %s", fname);
@@ -77,7 +81,7 @@ read_json_file(JSONFileHandle *jfh)
 {
 	char *content = NULL;
 	if (jfh) {
-		size_t length = jfh->size;
+		unsigned int length = (unsigned int)jfh->size;
 		content = sa_zalloc(jfh->sa, length + 1);
 		if (content) {
 			ssize_t nbytes = read(jfh->fd, content, length);
