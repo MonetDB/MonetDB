@@ -80,7 +80,9 @@ read_json_file(JSONFileHandle *jfh)
 		size_t length = jfh->size;
 		content = sa_zalloc(jfh->sa, length + 1);
 		if (content) {
-			read(jfh->fd, content, length);
+			ssize_t nbytes = read(jfh->fd, content, length);
+			if (nbytes < 0)
+				return NULL;
 			content[length + 1] = '\0';
 		}
 	}
