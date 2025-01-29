@@ -50,4 +50,6 @@ extern const char *mvc_export_error(backend *be, stream *s, int err_code);
 extern ssize_t convert2str(mvc *m, sql_class eclass, int d, int sc, int has_tz, const void *p, int mtype, char **buf, size_t *len);
 extern int mvc_export(mvc *m, stream *s, res_table *t, BUN nr);
 
+extern str mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t);
+
 #endif /* sql_result_H */

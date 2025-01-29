@@ -302,8 +302,7 @@ bat_max_length(hge, hge)
 
 #define DEC_FRSTR(X)													\
 	do {																\
-		sql_column *col = c->extra;										\
-		sql_subtype *t = &col->type;									\
+		sql_subtype *t = c->extra;										\
 		unsigned int scale = t->scale;									\
 		unsigned int i;													\
 		bool neg = false;												\
@@ -534,10 +533,10 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		}
 		break;
 	case TYPE_str: {
-		sql_column *col = (sql_column *) c->extra;
+		sql_subtype *t = c->extra;
 
 		s = c->data;
-		if (col->type.digits > 0 && len > 0 && !strNil(s) && UTF8_strlen(s) > (int) col->type.digits) {
+		if (t->digits > 0 && len > 0 && !strNil(s) && UTF8_strlen(s) > (int) t->digits) {
 			return NULL;
 		}
 		break;
@@ -660,7 +659,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].adt = ATOMindex(col->type.type->d.impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
-			fmt[i].extra = col;
+			fmt[i].extra = &col->type;
 			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKzalloc(fmt[i].len);
 			if(fmt[i].data == NULL || fmt[i].type == NULL) {
@@ -2062,3 +2061,131 @@ end:
 	mnstr_destroy(countstream);
 	return ret;
 }
+
+#define skipspace(s) while(*s && isspace(*s)) s++;
+
+static str
+ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtype *t)
+{
+	(void)cols;
+	(void)nr;
+	(void)oanr;
+	if (!s && s[0] != '{')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing { at start of array value");
+	s++;
+	skipspace(s);
+	int anr = 1;
+	/* insert id */
+	if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)
+		elm = -2;
+	elm++;
+	int oelm = elm;
+	while (*s && s[0] != '}') {
+		elm = oelm;
+		/* insert values */
+		if (t->type->composite) {
+			if (*s && s[0] != '(')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at start of composite value");
+			/* handle composite */
+			for (node *n = t->type->d.fields->h; n; n = n->next) {
+				//sql_arg *f = n->data;
+				elm++;
+			}
+			if (*s && s[0] != ')')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at end of composite value");
+		} else {
+			/* handle literals */
+			char *ns = strchr(s, ',');
+			if (!ns) {
+				ns = strchr(s, '}');
+			}
+			char sep = 0;
+			if (!ns)
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
+			else {
+				sep = *ns;
+				*ns = 0;
+			}
+			void *d = cols[elm].frstr(cols+elm, cols[elm].adt, s);
+			if (elm >= 0 && d && BUNappend(cols[elm].c, d, false) != GDK_SUCCEED)
+				elm = -2;
+			elm++;
+			*ns = sep;
+			s = ns;
+		}
+		/* insert msid */
+		if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)
+			elm = -2;
+		elm++;
+		if (t->multiset == MS_ARRAY) {
+			/* insert msnr */
+			if (elm >= 0 && BUNappend(cols[elm].c, &anr, false) != GDK_SUCCEED)
+				elm = -2;
+			elm++;
+		}
+
+		skipspace(s);
+		/* handle optinal ',' */
+		if (*s && s[0] != ',')
+			break;
+		s++;
+		skipspace(s);
+		anr++;
+	}
+	if (!s || s[0] != '}')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
+	return MAL_SUCCEED;
+}
+
+str
+mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
+{
+	str msg = MAL_SUCCEED;
+
+	if (!t || !t->multiset)
+		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) "Multiset type expected");
+	Column *fmt = (Column *) GDKzalloc(sizeof(Column) * nr);
+	if (!fmt)
+		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	int i = 0;
+
+	(void)m;
+	fmt[i].frstr = &_ASCIIadt_frStr;
+	fmt[i].extra = sql_bind_localtype("int");
+	fmt[i].adt = TYPE_int;
+	fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+	fmt[i].c = bats[i];
+	i++;
+	if (t->type->composite) {
+		printf("todo implement composite type array values\n");
+	} else {
+		fmt[i].frstr = &_ASCIIadt_frStr;
+		fmt[i].extra = t;
+		fmt[i].adt = t->type->localtype;
+		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+		fmt[i].c = bats[i];
+		i++;
+	}
+	/* msid */
+	fmt[i].frstr = &_ASCIIadt_frStr;
+	fmt[i].extra = sql_bind_localtype("int");
+	fmt[i].adt = TYPE_int;
+	fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+	fmt[i].c = bats[i];
+	i++;
+	/* msnr */
+	if (t->multiset == MS_ARRAY) {
+		fmt[i].frstr = &_ASCIIadt_frStr;
+		fmt[i].extra = sql_bind_localtype("int");
+		fmt[i].adt = TYPE_int;
+		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+		fmt[i].c = bats[i];
+		i++;
+	}
+	/* this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
+	msg = ARRAYparser(s, fmt, nr, 0, 1, 1, t);
+	GDKfree(fmt);
+	return msg;
+}
+
