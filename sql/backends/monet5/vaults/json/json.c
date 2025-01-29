@@ -28,7 +28,7 @@
 #include "mutils.h"
 
 #include <unistd.h>
-#include <glob.h>
+// #include <glob.h> // not available on Windows
 
 
 typedef struct JSONFileHandle {
