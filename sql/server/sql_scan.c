@@ -1513,11 +1513,11 @@ tokenize(mvc * c, int cur)
  * 	3 the identifier 'TID%' is not allowed
  */
 static bool
-valid_ident(const char *restrict s, char *restrict dst)
+valid_ident(bool admin, const char *restrict s, char *restrict dst)
 {
 	int p = 0;
 
-	if (*s == '%')
+	if (!admin && *s == '%')
 		return false;
 
 	while (*s) {
@@ -1582,7 +1582,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 		lc->rs->buf[lc->rs->pos + lc->yycur - 1] = 0;
 		switch (quote) {
 		case '"':
-			if (valid_ident(yylval->sval+1,str)) {
+			if (valid_ident(c->user_id == USER_MONETDB || c->user_id == ROLE_SYSADMIN, yylval->sval+1,str)) {
 				token = IDENT;
 			} else {
 				sql_error(c, 1, SQLSTATE(42000) "Invalid identifier '%s'", yylval->sval+1);

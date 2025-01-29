@@ -5821,8 +5821,13 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int
 static str
 SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
 	str msg = NULL;
+	mvc *m = NULL;
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
 	int mtype = getArgType(mb, pci, pci->retc);
 
 	if (strcmp(BATatoms[mtype].name, "json") != 0)
@@ -5838,6 +5843,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!bats[i])
 			goto bailout;
 	}
+	(void)m;
 
 	JSON *js = JSONparse(json);
 	if (!js) /* TODO output parser error ?? */
@@ -5865,65 +5871,18 @@ bailout:
 	throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-#define skipspace(s) while(*s && isspace(*s)) s++;
-
-static str
-ARRAYparser(char *s, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t)
-{
-	(void)bats;
-	(void)nr;
-	if (!s && s[0] != '{')
-		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing { at start of array value");
-	s++;
-	skipspace(s);
-	/* insert id */
-	(void)id;
-	(void)oanr;
-	elm++;
-	int oelm = elm;
-	while (*s && s[0] != '}') {
-		elm = oelm;
-		/* insert values */
-		if (t->type->composite) {
-			if (*s && s[0] != '(')
-				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at start of composite value");
-			/* handle composite */
-			for (node *n = t->type->d.fields->h; n; n = n->next) {
-				//sql_arg *f = n->data;
-				elm++;
-			}
-			if (*s && s[0] != ')')
-				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at end of composite value");
-		} else {
-			/* handle literals */
-			elm++;
-		}
-		/* insert msid */
-		elm++;
-		if (t->multiset == MS_ARRAY) {
-			/* insert msnr */
-			elm++;
-		}
-
-		skipspace(s);
-		/* handle optinal ',' */
-		if (*s && s[0] != ',')
-			break;
-		s++;
-		skipspace(s);
-	}
-	if (!s || s[0] != '}')
-		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
-	return MAL_SUCCEED;
-}
-
 static str
 SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt;
 	str msg = NULL;
-	int mtype = getArgType(mb, pci, pci->retc);
+	mvc *m = NULL;
 
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+
+	int mtype = getArgType(mb, pci, pci->retc);
 	if (mtype != TYPE_str)
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) "Incorrect argument type");
 	str s = *(str*)getArgReference(stk, pci, pci->retc);
@@ -5937,20 +5896,7 @@ SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!bats[i])
 			goto bailout;
 	}
-
-	/*
-	JSON *js = JSONparse(s);
-	if (!js)
-		goto bailout;
-
-	if (t->multiset)
-		(void)insert_json_array(&msg, js, bats, pci->retc, 0, 1, 1, t);
-	JSONfree(js);
-	*/
-
-	assert(t->multiset);
-	/* this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
-	msg = ARRAYparser(s, bats, pci->retc, 0, 1, 1, t);
+	msg = mvc_from_string(m, bats, pci->retc, s, t);
 	if (msg)
 		goto bailout;
 	for(int i = 0; i < pci->retc && bats[i]; i++) {
