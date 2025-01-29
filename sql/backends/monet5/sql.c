@@ -5886,7 +5886,7 @@ SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 	}
 
-	JSON *js = JSONparse(s);
+	JSON *js = JSONparse(s); /* TODO: this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
 	if (!js) /* TODO output parser error ?? */
 		goto bailout;
 
