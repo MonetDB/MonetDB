@@ -435,6 +435,10 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 	mvc *sql = query->sql;
 	int res = SQL_ERR;
 
+	if (cs && (cs->type.multiset || cs->type.type->composite)) {
+		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT: constraints on multisets or composite types are not supported");
+		return res;
+	}
 	if (isDeclared && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
 		(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT: constraints on declared tables are not supported");
 		return res;
