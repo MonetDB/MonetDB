@@ -3960,28 +3960,39 @@ composite_type_resultsize(sql_subtype *t)
 }
 
 static int
-composite_type_result(backend *be, InstrPtr q, sql_subtype *t)
+composite_type_result(backend *be, InstrPtr q, sql_subtype *t, sql_subtype *tps)
 {
+	int i = 0;
 	if (t->multiset || t->type->composite) {
-		if (t->multiset) /* id col : rowid */
+		if (t->multiset) { /* id col : rowid */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+			tps[i++] = *sql_bind_localtype("int");
+		}
 		if (t->type->composite) {
 			for (node *n = t->type->d.fields->h; n; n = n->next) {
 				sql_arg *a = n->data;
-				if (composite_type_result(be, q, &a->type) != 0)
+				int r = 0;
+				if ((r = composite_type_result(be, q, &a->type, tps+i)) < 0)
 					return -1;
+				i += r;
 			}
 		} else {
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
+			tps[i++] = *t;
 		}
-		if (t->multiset) /* msid */
+		if (t->multiset) { /* msid */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
-		if (t->multiset == MS_ARRAY) /* msnr */
+			tps[i++] = *sql_bind_localtype("int");
+		}
+		if (t->multiset == MS_ARRAY) { /* msnr */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+			tps[i++] = *sql_bind_localtype("int");
+		}
 	} else {
 		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
+		tps[i++] = *t;
 	}
-	return 0;
+	return i;
 }
 
 static stmt *
@@ -3989,13 +4000,14 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 {
 	(void)sel;
 	int nrcols = composite_type_resultsize(t);
+	sql_subtype *tps = SA_NEW_ARRAY(be->mvc->sa, sql_subtype, nrcols);
 
 	InstrPtr q = newStmtArgs(be->mb, "sql", "from_json", nrcols + 2);
 	if (q == NULL)
 		goto bailout;
 
 	q->retc = q->argc = 0;
-	if (composite_type_result(be, q, t) != 0) {
+	if (composite_type_result(be, q, t, tps) < 0) {
 		freeInstruction(q);
 		goto bailout;
 	}
@@ -4023,7 +4035,7 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	/* for each result create stmt_result and return stmt list */
 	list *r = sa_list(be->mvc->sa);
 	for(int i = 0; i < nrcols; i++)
-		append(r, stmt_result(be, s, i));
+		append(r, stmt_blackbox_result(be, s->q, i, tps+i));
 	return stmt_list(be, r);
 bailout:
 	if (be->mvc->sa->eb.enabled)
@@ -4036,13 +4048,14 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 {
 	(void)sel;
 	int nrcols = composite_type_resultsize(t);
+	sql_subtype *tps = SA_NEW_ARRAY(be->mvc->sa, sql_subtype, nrcols);
 
 	InstrPtr q = newStmtArgs(be->mb, "sql", "from_varchar", nrcols + 2);
 	if (q == NULL)
 		goto bailout;
 
 	q->retc = q->argc = 0;
-	if (composite_type_result(be, q, t) != 0) {
+	if (composite_type_result(be, q, t, tps) < 0) {
 		freeInstruction(q);
 		goto bailout;
 	}
@@ -4070,7 +4083,7 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	/* for each result create stmt_result and return stmt list */
 	list *r = sa_list(be->mvc->sa);
 	for(int i = 0; i < nrcols; i++)
-		append(r, stmt_result(be, s, i));
+		append(r, stmt_blackbox_result(be, s->q, i, tps+i));
 	return stmt_list(be, r);
 bailout:
 	if (be->mvc->sa->eb.enabled)
