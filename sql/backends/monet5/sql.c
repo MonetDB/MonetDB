@@ -5865,6 +5865,8 @@ bailout:
 	throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
+#define skipspace(s) while(*s && isspace(*s)) s++;
+
 static str
 ARRAYparser(char *s, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t)
 {
@@ -5875,6 +5877,8 @@ ARRAYparser(char *s, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype 
 	s++;
 	skipspace(s);
 	/* insert id */
+	(void)id;
+	(void)oanr;
 	elm++;
 	int oelm = elm;
 	while (*s && s[0] != '}') {
@@ -5908,7 +5912,7 @@ ARRAYparser(char *s, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype 
 		s++;
 		skipspace(s);
 	}
-	if (!s && s[0] != '}')
+	if (!s || s[0] != '}')
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
 	return MAL_SUCCEED;
 }
