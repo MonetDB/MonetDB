@@ -1045,7 +1045,6 @@ mvc_renumber_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* if oi is dense, use offset based renumbers */
 	if (!bo->tsorted || !BATtkey(bo) || (bcnt && (oi[0] + (int)(bcnt-1)) != oi[bcnt-1]) ) {
 		BAT *lo = NULL;
-		printf("not dense %d\n", oi[0]);
 		if (BATleftjoin(&lo, NULL, bo, i, NULL, NULL, false, cnt) != GDK_SUCCEED) {
 			BBPreclaim(i);
 			BBPreclaim(bo);
@@ -5866,6 +5865,109 @@ bailout:
 	throw(SQL, "SQLfrom_json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
+#define skipspace(s) while(*s && isspace(*s)) s++;
+
+static str
+ARRAYparser(char *s, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t)
+{
+	(void)bats;
+	(void)nr;
+	if (!s && s[0] != '{')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing { at start of array value");
+	s++;
+	skipspace(s);
+	/* insert id */
+	(void)id;
+	(void)oanr;
+	elm++;
+	int oelm = elm;
+	while (*s && s[0] != '}') {
+		elm = oelm;
+		/* insert values */
+		if (t->type->composite) {
+			if (*s && s[0] != '(')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at start of composite value");
+			/* handle composite */
+			for (node *n = t->type->d.fields->h; n; n = n->next) {
+				//sql_arg *f = n->data;
+				elm++;
+			}
+			if (*s && s[0] != ')')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at end of composite value");
+		} else {
+			/* handle literals */
+			elm++;
+		}
+		/* insert msid */
+		elm++;
+		if (t->multiset == MS_ARRAY) {
+			/* insert msnr */
+			elm++;
+		}
+
+		skipspace(s);
+		/* handle optinal ',' */
+		if (*s && s[0] != ',')
+			break;
+		s++;
+		skipspace(s);
+	}
+	if (!s || s[0] != '}')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
+	return MAL_SUCCEED;
+}
+
+static str
+SQLfrom_varchar(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	str msg = NULL;
+	int mtype = getArgType(mb, pci, pci->retc);
+
+	if (mtype != TYPE_str)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) "Incorrect argument type");
+	str s = *(str*)getArgReference(stk, pci, pci->retc);
+	sql_subtype *t = *(sql_subtype**)getArgReference(stk, pci, pci->retc+1);
+
+	BAT **bats = (BAT**)GDKzalloc(sizeof(BAT*) * pci->retc);
+	if (!bats)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	for(int i = 0; i < pci->retc; i++) {
+		bats[i] = COLnew(0, getBatType(getArgType(mb, pci, i)), 10, TRANSIENT);
+		if (!bats[i])
+			goto bailout;
+	}
+
+	/*
+	JSON *js = JSONparse(s);
+	if (!js)
+		goto bailout;
+
+	if (t->multiset)
+		(void)insert_json_array(&msg, js, bats, pci->retc, 0, 1, 1, t);
+	JSONfree(js);
+	*/
+
+	assert(t->multiset);
+	/* this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
+	msg = ARRAYparser(s, bats, pci->retc, 0, 1, 1, t);
+	if (msg)
+		goto bailout;
+	for(int i = 0; i < pci->retc && bats[i]; i++) {
+		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
+		BBPkeepref(bats[i]);
+	}
+	GDKfree(bats);
+	return MAL_SUCCEED;
+bailout:
+	for(int i = 0; i < pci->retc && bats[i]; i++)
+		BBPreclaim(bats[i]);
+	GDKfree(bats);
+	if (msg)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "%s", msg);
+	throw(SQL, "SQLfrom_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+}
+
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",sht),arg("force",bit))),
@@ -6818,7 +6920,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
- pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested structures", args(1,3, batvarargany("t",0), arg("input", json), arg("type", ptr))),
+ pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", json), arg("type", ptr))),
+ pattern("sql", "from_varchar", SQLfrom_varchar, false, "Reads string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", str), arg("type", ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
