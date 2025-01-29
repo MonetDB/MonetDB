@@ -2521,6 +2521,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 			if(e->type == e_aggr &&
 			   !((sql_subfunc *)e->f)->func->s &&
 			   strcmp(((sql_subfunc *)e->f)->func->base.name, "count") != 0 && 
+			   strcmp(((sql_subfunc *)e->f)->func->base.name, "sum") != 0 && 
 			   ((sql_subfunc *)e->f)->func->system == 1
 			) {
 				list *se = e->l;
