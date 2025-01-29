@@ -2,5 +2,5 @@ statement ok
 create type event as (id int, type varchar)
 
 query T
-select cast(t.josn as event) from (select json from r'$TSTTRGDIR/events.json') t
+select cast(t.json as event) from (select json from r'$TSTTRGDIR/events.json') t
 ----
