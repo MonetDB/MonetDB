@@ -227,7 +227,7 @@ dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, 
 	}
 	if (rb) {
 		/* here we do (depth - 1) * tab + 1 * newline to align with the parent op */
-		size_t depth_chars = indent ? depth : 0;
+		size_t depth_chars = indent ? (depth > 0 ? depth : 1) : 0;
 
 		char *o = SA_NEW_ARRAY(sql->ta, char, depth_chars + strlen(b) + strlen(rb) + 1);
 		if (o) {
