@@ -65,5 +65,9 @@ create filter function c1(h varchar, n varchar) external name ngrams.c1;
 create filter function c2(h varchar, n varchar) external name ngrams.c2;
 create filter function c3(h varchar, n varchar) external name ngrams.c3;
 
--- create filter function c11(h varchar, n varchar, ng tinyint) external name ngrams.contains;
--- create filter function c11(h varchar, n varchar, ng tinyint) external name ngrams.contains;
+create filter function c11(h varchar, n varchar) external name ngrams.contains;
+create filter function c11(h varchar, n varchar, ng tinyint) external name ngrams.contains;
+create filter function s11(h varchar, n varchar) external name ngrams.startswith;
+create filter function s11(h varchar, n varchar, ng tinyint) external name ngrams.startswith;
+create filter function e11(h varchar, n varchar) external name ngrams.endswith;
+create filter function e11(h varchar, n varchar, ng tinyint) external name ngrams.endswith;
