@@ -768,7 +768,7 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 	if (!proto)
 		return "URI scheme missing";
 
-	// check uri scheme on supported protocols (e.g. must be: 'file' or 'odbc' or 'monetdb')
+	// find uri scheme in registered protocols (e.g. is: 'file' or 'monetdb' or 'odbc')
 	proto_loader_t *pl = pl_find(proto);
 	if (!pl)
 		return sa_message(sql->ta, "URI protocol '%s' not supported", proto?proto:"");
@@ -794,7 +794,6 @@ rel_proto_loader(mvc *sql, list *exps, list *tl, char *tname)
 
 	if ((f = bind_func_(sql, NULL, "proto_loader", tl, F_UNION, true, &found, false))) {
 		list *nexps = exps;
-		// TODO: test uri scheme on supported protocols (e.g. must be: 'file' or 'odbc' or 'monetdb')
 		if (list_empty(tl) || f->func->vararg || (nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1, false))) {
 			list *res_exps = sa_list(sql->sa);
 			if (list_length(exps) == 1 && f && f->func->varres && strlen(f->func->mod) == 0 && strlen(f->func->imp) == 0) {
@@ -3798,7 +3797,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
 		if (!obe && a->func->order_required && !handled_order) {
-			/* TODO preper error on missing order by */
+			/* TODO proper error on missing order by */
 			return NULL;
 		}
 		if (obe && !a->func->order_required && !a->func->opt_order)
