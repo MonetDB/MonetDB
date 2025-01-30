@@ -423,7 +423,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 					  return res;
 				}
 	case SQL_AND:
-	case SQL_OR:
+	case SQL_OR: {
 		char *tok_str = token2string(se->token);
 		char *args = dlist2string(sql, se->data.lval, ", ", " (", " )", expression, err, depth + 1, indent);
 		char *res;
@@ -433,6 +433,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bo
 		 if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
 			 stpcpy(stpcpy(res, tok_str), args);
 		return res;
+	}
 	default:
 		/* generic */
 		if (se->type == type_list) {
