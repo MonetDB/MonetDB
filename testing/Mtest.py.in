@@ -1306,7 +1306,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         cmd = env['exe']['mserver5'] + ['--set', f'gdk_dbname={TSTDB}', '--in-memory'] + mserver5_opts + opts
                         pollfile = None
                         cmd.append('--set')
-                        cmd.append(f'gdk_dbtrace={os.path.join(LogDBdir, 'mdbtrace.log')}')
+                        cmd.append(f'gdk_dbtrace={os.path.join(LogDBdir, "mdbtrace.log")}')
                     else:
                         cmd = env['exe']['mserver5'] + [f'--dbpath={LogDBdir}'] + mserver5_opts + opts
                         pollfile = os.path.join(LogDBdir, '.started')
@@ -2903,7 +2903,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 Srvr.append('--dbpath=%s' % dbpath)
                 if os.path.exists(os.path.join(dbpath, '.vaultkey')):
                     Srvr.extend(['--set',
-                                 f'monet_vault_key={os.path.join(dbpath, '.vaultkey')}'])
+                                 f'monet_vault_key={os.path.join(dbpath, ".vaultkey")}'])
                 if env.get('MULTIFARM'):
                     Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
@@ -4234,7 +4234,7 @@ VALUES (%s, '%s', '%s', '%s',
             print()
             print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
-                print(f'see {urllib.parse.urlunsplit(('file', '', urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, 'index.html')), '', ''))}')
+                print(f'see {urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")), "", ""))}')
             print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:7.3f}s')
         elif Failed:
             print('''\

@@ -99,13 +99,14 @@ class _BufferedPipe:
         self._thread = threading.Thread(target=self._readerthread,
                                         args=(fd, self._queue))
         # self._thread.daemon = True
+        self._continue = True
         self._thread.start()
 
     def _readerthread(self, fh, q):
         s = 0
         w = 0
         first = True
-        while True:
+        while self._continue:
             if verbose:
                 print('fh.readline', flush=True)
             c = fh.readline()
@@ -117,20 +118,19 @@ class _BufferedPipe:
                     self._nl = b'\n'
                     self._cr = b'\r'
                     first = False
-            try:
-                if not c:
-                    q.put(c)    # put '' if at EOF
-                    break
-                c = c.replace(self._cr, self._empty)
-                if c:
-                    q.put(c)
-            except queue.ShutDown:
+            if not self._continue:
                 break
+            if not c:
+                q.put(c)    # put '' if at EOF
+                break
+            c = c.replace(self._cr, self._empty)
+            if c:
+                q.put(c)
 
     def close(self):
         if verbose:
             print('close _BufferedPipe', flush=True)
-        self._queue.shutdown()
+        self._continue = False
         if self._thread:
             if verbose:
                 print('close: joining', flush=True)
@@ -166,9 +166,6 @@ class _BufferedPipe:
                 c = self._queue.get(timeout=_remainingtime(endtime))
             except queue.Empty:
                 print('queue.empty', flush=True)
-                break
-            except queue.ShutDown:
-                print('queue shut down', flush=True)
                 break
             if len(c) > size > 0:
                 ret.append(c[:size])

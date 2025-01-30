@@ -109,7 +109,7 @@ def getrepofiles():
         import subprocess
         with subprocess.Popen(['hg', '--config', 'ui.verbose=False', 'files', '-I', '**.[ch]'],
                               stdout=subprocess.PIPE,
-                              text=True) as p:
+                              universal_newlines=True) as p:
             out, err = p.communicate()
         fileset = set([os.path.join(srcdir, f) for f in filter(None, out.split('\n'))])
     else:
