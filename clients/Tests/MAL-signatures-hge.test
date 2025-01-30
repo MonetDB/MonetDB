@@ -47376,12 +47376,12 @@ MATHunary_TANHflt
 monetdb
 epilogue
 command monetdb.epilogue():void
-MONETDBepilogue;
+MONETDBepilogue
 (empty)
 monetdb
 prelude
 pattern monetdb.prelude():void
-MONETDBprelude;
+MONETDBprelude
 (empty)
 mtime
 addmonths
@@ -49208,6 +49208,11 @@ next_value
 unsafe pattern sql.next_value(X_0:str, X_1:str):lng
 mvc_next_value
 return the next value of the sequence
+sql
+normalize_monetdb_url
+pattern sql.normalize_monetdb_url(X_0:str):str
+SQLnormalize_monetdb_url
+Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL
 sql
 nth_value
 pattern sql.nth_value(X_0:any_1, X_1:lng, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):any_1
