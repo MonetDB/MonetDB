@@ -27,8 +27,6 @@
 #include <sqlext.h>
 
 typedef struct odbc_loader_t {
-	char *url;
-	SQLCHAR *query;
 	SQLHANDLE env;
 	SQLHANDLE dbc;
 	SQLHANDLE stmt;
@@ -67,22 +65,33 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 //	list *typelist = sa_list(sql->sa);
 //	list *nameslist = sa_list(sql->sa);
 
-	// TODO validate the url, should/could start with 'odbc:', if so
-	// remove 'odbc:' prefix from url so we get an ODBC connection string
+	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
+		return "Invalid URI. Expected to start with 'odbc:'.";
 
-	SQLCHAR * con_str = (SQLCHAR *) url;
-	// TODO validate the ODBC connection string, should start with 'DSN=' or 'DRIVER='
+	// skip 'odbc:' prefix from url so we get a connection string including the query
+	char * con_str = &url[5];
+	// the connection string must start with 'DSN=' or 'DRIVER=' else the ODBC driver manager can't load the ODBC driver
+	if (con_str && (strncasecmp("DSN=", con_str, 4) != 0) && (strncasecmp("DRIVER=", con_str, 7) != 0))
+		return "Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER='.";
 
-	// TODO get the SQL query string. Not from the url but from an additional provided parameter
-	// for test we use a static query:
-	SQLCHAR * query = (SQLCHAR *) "SELECT * FROM INFORMATION_SCHEMA.TABLES";
+	// locate the 'QUERY=' part to extract the SQL query string to execute
+	char * qry_str = strstr(con_str, "QUERY=");
+	if (qry_str == NULL)
+		return "Incomplete ODBC connection string. Missing 'QUERY=' part (to specify the SQL SELECT query to execute).";
+
+	char * query = GDKstrdup(&qry_str[6]);	// we expect that QUERY= is at the end of the connection string
+
+	// create a new ODBC connection string without the QUERY= part
+	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
 
 	SQLHANDLE env = SQL_NULL_HENV;
 	SQLHANDLE dbc = SQL_NULL_HDBC;
 	SQLHANDLE stmt = SQL_NULL_HSTMT;
 	SQLRETURN ret;
 	SQLSMALLINT nr_cols = 0;
-	char * errmsg;
+	char * errmsg = NULL;
+
+	// printf("Extracted ODBC connection string: %s\nand SQL query: %s\n", odbc_con_str, query);
 
 	ret = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
@@ -91,51 +100,55 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 			ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 				SQLSMALLINT len = 0;
-				ret = SQLDriverConnect(dbc, NULL, con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+				ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+				// printf("After SQLDriverConnect(%s)\n", odbc_con_str);
 				if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 					ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 					if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-						ret = SQLExecDirect(stmt, query, SQL_NTS);
+						ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
+						// printf("After SQLExecDirect(%s)\n", query);
 						if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 							ret = SQLNumResultCols(stmt, &nr_cols);
+							// printf("Query has %d result columns\n", nr_cols);
 							// TODO for each column get the name, type, size/digits and scale
 								// list_append(nameslist, name);
 								// list_append(typelist, type);
 						} else {
-							errmsg = "ODBC SQLExecDirect query failed.\n";
+							errmsg = "ODBC SQLExecDirect query failed.";
 							goto failure;
 						}
 					} else {
-						errmsg = "Allocate ODBC STMT handle failed.\n";
+						errmsg = "Allocate ODBC STMT handle failed.";
 						goto failure;
 					}
 				} else {
-					errmsg = "ODBC SQLDriverConnect failed.\n";
+					errmsg = "Could not connect. ODBC SQLDriverConnect failed.";
 					goto failure;
 				}
 			} else {
-				errmsg = "Allocate ODBC DBC handle failed.\n";
+				errmsg = "Allocate ODBC DBC handle failed.";
 				goto failure;
 			}
 		} else {
-			errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.\n";
+			errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
 			goto failure;
 		}
 	} else {
-		errmsg = "Allocate ODBC environment handle failed.\n";
+		errmsg = "Allocate ODBC environment handle failed.";
 		goto failure;
 	}
 
 	odbc_loader_t *r = (odbc_loader_t *)sa_alloc(sql->sa, sizeof(odbc_loader_t));
-	r->url = url;
-	r->query = query;
 	r->env = env;
 	r->dbc = dbc;
 	r->stmt = stmt;
 	r->nr_cols = nr_cols;
 	f->sname = (char*)r; /* pass odbc_loader */
-	return NULL;
   failure:
+  	if (query)
+  		GDKfree(query);
+  	if (odbc_con_str)
+  		GDKfree(odbc_con_str);
 	// TODO get DiagRecMsg to get driver err message and sqlstate
 	odbc_cleanup(env, dbc, stmt);
 	return errmsg;
