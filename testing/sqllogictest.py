@@ -217,7 +217,10 @@ class SQLLogic:
             conn.dbh.close()
         self.conn_map.clear()
         if self.crs:
-            self.crs.close()
+            try:
+                self.crs.close()
+            except BrokenPipeError:
+                pass
             self.crs = None
         if self.dbh:
             self.dbh.close()
@@ -329,7 +332,7 @@ class SQLLogic:
                     self.query_error(err_stmt or statement, str(msg), str(e))
                 return result
         except ConnectionError as e:
-            self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
+            self.query_error(err_stmt or statement, 'Timeout or server may have crashed', str(e))
             return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
@@ -435,6 +438,9 @@ class SQLLogic:
             return ['statement', 'error'], []
         except KeyboardInterrupt:
             raise
+        except ConnectionError as e:
+            self.query_error(query, 'Timeout or server may have crashed', str(e))
+            return ['statement', 'crash'] # should never be approved
         except:
             tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
@@ -780,8 +786,9 @@ class SQLLogic:
             hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
             self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
+        skiprest = False
         while True:
-            skipping = False
+            skipping = skiprest
             line = self.readline()
             if not line:
                 break
@@ -805,41 +812,42 @@ class SQLLogic:
             words = line.split(maxsplit=2)
             if not words:
                 continue
-            while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif':
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+            if not skiprest:
+                while words[0] == 'skipif' or words[0] == 'onlyif':
+                    if words[0] == 'skipif':
+                        if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+                            skipping = True
+                        elif words[1].startswith('threads='):
+                            if nthreads is None:
+                                self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                                nthreads = self.crs.fetchall()[0][0]
+                            if words[1] == f'threads={nthreads}':
+                                skipping = True
+                        elif words[1] == 'has-hugeint':
+                            if hashge:
+                                skipping = True
+                        elif words[1] == 'knownfail':
+                            if not self.alltests:
+                                skipping = True
+                    elif words[0] == 'onlyif':
                         skipping = True
-                    elif words[1].startswith('threads='):
-                        if nthreads is None:
-                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
-                            nthreads = self.crs.fetchall()[0][0]
-                        if words[1] == f'threads={nthreads}':
-                            skipping = True
-                    elif words[1] == 'has-hugeint':
-                        if hashge:
-                            skipping = True
-                    elif words[1] == 'knownfail':
-                        if not self.alltests:
-                            skipping = True
-                elif words[0] == 'onlyif':
-                    skipping = True
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
-                        skipping = False
-                    elif words[1].startswith('threads='):
-                        if nthreads is None:
-                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
-                            nthreads = self.crs.fetchall()[0][0]
-                        if words[1] == f'threads={nthreads}':
+                        if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
                             skipping = False
-                    elif words[1] == 'has-hugeint':
-                        if hashge:
-                            skipping = False
-                    elif words[1] == 'knownfail':
-                        if self.alltests:
-                            skipping = False
-                self.writeline(line.rstrip())
-                line = self.readline()
-                words = line.split(maxsplit=2)
+                        elif words[1].startswith('threads='):
+                            if nthreads is None:
+                                self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                                nthreads = self.crs.fetchall()[0][0]
+                            if words[1] == f'threads={nthreads}':
+                                skipping = False
+                        elif words[1] == 'has-hugeint':
+                            if hashge:
+                                skipping = False
+                        elif words[1] == 'knownfail':
+                            if self.alltests:
+                                skipping = False
+                    self.writeline(line.rstrip())
+                    line = self.readline()
+                    words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
@@ -874,8 +882,12 @@ class SQLLogic:
                         if self.language == 'sql' and statement[-1].endswith(';'):
                             statement[-1] = statement[-1][:-1]
                         result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
-                    self.writeline(' '.join(result))
-                else:
+                    if result[1] == 'crash':
+                        skiprest = True
+                        skipping = True
+                    else:
+                        self.writeline(' '.join(result))
+                if skipping:
                     self.writeline(stline)
                 dostrip = True
                 for line in statement:
@@ -928,14 +940,18 @@ class SQLLogic:
                     nresult = len(expected)
                 if not skipping:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
-                    self.writeline(' '.join(result1))
-                    for line in query:
-                        self.writeline(line.rstrip(), replace=True)
-                    if result1[0] == 'query':
-                        self.writeline('----')
-                        for line in result2:
-                            self.writeline(line)
-                else:
+                    if result1[1] == 'crash':
+                        skiprest = True
+                        skipping = True
+                    else:
+                        self.writeline(' '.join(result1))
+                        for line in query:
+                            self.writeline(line.rstrip(), replace=True)
+                        if result1[0] == 'query':
+                            self.writeline('----')
+                            for line in result2:
+                                self.writeline(line)
+                if skipping:
                     self.writeline(qrline.rstrip())
                     for line in query:
                         self.writeline(line.rstrip())
