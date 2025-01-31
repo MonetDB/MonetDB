@@ -36,7 +36,7 @@ libs = sorted(dirlist.keys())
 skipdirs = ['extras']
 
 # individual files we skip
-skipfiles = ['monet_getopt.h']
+skipfiles = []
 
 # where the files are
 srcdir = os.environ.get('TSTSRCBASE')

@@ -24,12 +24,8 @@
 #include "msabaoth.h"
 #include "mutils.h"
 
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 
 #ifdef _MSC_VER
