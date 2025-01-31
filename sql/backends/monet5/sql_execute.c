@@ -61,7 +61,7 @@ static str
 SQLsetTrace(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr q, resultset;
-	InstrPtr tbls, cols, types, clen, scale;
+	InstrPtr tbls, cols, types, clen, scale, multiset;
 	str msg = MAL_SUCCEED;
 	int k;
 
@@ -213,6 +213,34 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	q = pushArgument(mb,q, getArg(scale,0));
+	q = pushInt(mb,q,0);
+	k = getArg(q,0);
+	pushInstruction(mb, q);
+
+	q = newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	q = pushArgument(mb, q, k);
+	q = pushInt(mb,q,0);
+	pushInstruction(mb, q);
+
+	resultset = pushArgument(mb,resultset, getArg(q,0));
+
+	/* build multiset defs */
+	multiset = newStmt(mb,batRef, newRef);
+	if (multiset == NULL) {
+		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	setVarType(mb, getArg(multiset,0), newBatType(TYPE_int));
+	multiset = pushType(mb, multiset, TYPE_int);
+	pushInstruction(mb, multiset);
+
+	q = newStmt(mb,batRef,appendRef);
+	if (q == NULL) {
+		throw(SQL, "sql.statement", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	q = pushArgument(mb,q, getArg(multiset,0));
 	q = pushInt(mb,q,0);
 	k = getArg(q,0);
 	pushInstruction(mb, q);

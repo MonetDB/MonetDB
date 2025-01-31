@@ -2548,7 +2548,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int */
+/* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int],multiset:bat[:int], cols:bat[:any]...) :int */
 /* New result set rendering infrastructure */
 
 static str
@@ -2560,15 +2560,16 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat tpeId= *getArgReference_bat(stk, pci,3);
 	bat lenId= *getArgReference_bat(stk, pci,4);
 	bat scaleId= *getArgReference_bat(stk, pci,5);
+	bat multisetId= *getArgReference_bat(stk, pci,6);
 	bat bid;
 	int i, res, ok;
 	const char *tblname, *colname, *tpename;
 	str msg= MAL_SUCCEED;
-	int *digits, *scaledigits;
+	int *digits, *scaledigits, *ms;
 	oid o = 0;
-	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
+	BATiter itertbl,iteratr,itertpe,iterdig,iterscl,iterms;
 	backend *be = NULL;
-	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL;
+	BAT *b = NULL, *tbl = NULL, *atr = NULL, *tpe = NULL,*len = NULL,*scale = NULL, *multiset = NULL;
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
@@ -2578,7 +2579,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto wrapup_result_set;
 	}
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 6), Q_TABLE);
 	BBPunfix(b->batCacheid);
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2590,7 +2591,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
-	if (tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+	multiset = BATdescriptor(multisetId);
+	if (tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL || multiset == NULL)
 		goto wrapup_result_set;
 	/* mimic the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
@@ -2598,10 +2600,12 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertpe = bat_iterator(tpe);
 	iterdig = bat_iterator(len);
 	iterscl = bat_iterator(scale);
+	iterms = bat_iterator(multiset);
 	digits = (int*) iterdig.base;
 	scaledigits = (int*) iterscl.base;
+	ms = (int*) iterms.base;
 
-	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+	for( i = 7; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		bid = *getArgReference_bat(stk,pci,i);
 		tblname = BUNtvar(itertbl,o);
 		colname = BUNtvar(iteratr,o);
@@ -2609,7 +2613,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
+		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, *ms++, b))
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
@@ -2619,6 +2623,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertpe);
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
+	bat_iterator_end(&iterms);
 	/* now send it to the channel cntxt->fdout */
 	if (bstream_getoob(cntxt->fdin))
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY000) "Query aboted");
@@ -2633,6 +2638,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tpe) BBPunfix(tpeId);
 	if( len) BBPunfix(lenId);
 	if( scale) BBPunfix(scaleId);
+	if( multiset) BBPunfix(multisetId);
 	return msg;
 }
 
@@ -2718,7 +2724,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b = BATdescriptor(bid);
 		if ( b == NULL)
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, b))
+		else if (mvc_result_column(be, tblname, colname, tpename, *digits++, *scaledigits++, MS_VALUE, b))
 			msg = createException(SQL, "sql.resultSet", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);
 		if( b)
 			BBPunfix(bid);
@@ -2791,7 +2797,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:any...) :int */
+/* unsafe pattern resultSet(tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int],multiset:bat[:int],cols:any...) :int */
 str
 mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -2801,20 +2807,21 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat tpeId= *getArgReference_bat(stk, pci,3);
 	bat lenId= *getArgReference_bat(stk, pci,4);
 	bat scaleId= *getArgReference_bat(stk, pci,5);
+	bat multisetId= *getArgReference_bat(stk, pci,6);
 	int i, res, ok;
 	const char *tblname, *colname, *tpename;
 	str msg= MAL_SUCCEED;
-	int *digits, *scaledigits;
+	int *digits, *scaledigits, *ms;
 	oid o = 0;
-	BATiter itertbl,iteratr,itertpe,iterdig,iterscl;
+	BATiter itertbl,iteratr,itertpe,iterdig,iterscl,iterms;
 	backend *be = NULL;
 	ptr v;
 	int mtype;
-	BAT *tbl = NULL, *atr = NULL, *tpe = NULL, *len = NULL, *scale = NULL;
+	BAT *tbl = NULL, *atr = NULL, *tpe = NULL, *len = NULL, *scale = NULL, *multiset = NULL;
 
 	if ((msg = getBackendContext(cntxt, &be)) != NULL)
 		return msg;
-	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 5), Q_TABLE);
+	res = *res_id = mvc_result_table(be, mb->tag, pci->argc - (pci->retc + 6), Q_TABLE);
 	if (res < 0) {
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
@@ -2825,6 +2832,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
+	multiset = BATdescriptor(multisetId);
 	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set;
 	/* mimic the old rsColumn approach; */
@@ -2833,10 +2841,12 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	itertpe = bat_iterator(tpe);
 	iterdig = bat_iterator(len);
 	iterscl = bat_iterator(scale);
+	iterms = bat_iterator(multiset);
 	digits = (int*) iterdig.base;
 	scaledigits = (int*) iterscl.base;
+	ms = (int*) iterms.base;
 
-	for( i = 6; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
+	for( i = 7; msg == MAL_SUCCEED && i< pci->argc; i++, o++){
 		tblname = BUNtvar(itertbl,o);
 		colname = BUNtvar(iteratr,o);
 		tpename = BUNtvar(itertpe,o);
@@ -2845,13 +2855,14 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mtype = getArgType(mb, pci, i);
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
-		if ((ok = mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype) < 0)) {
+		if ((ok = mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, *ms++, v, mtype) < 0)) {
 			msg = createException(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, be->out, ok));
 			bat_iterator_end(&itertbl);
 			bat_iterator_end(&iteratr);
 			bat_iterator_end(&itertpe);
 			bat_iterator_end(&iterdig);
 			bat_iterator_end(&iterscl);
+			bat_iterator_end(&iterms);
 			goto wrapup_result_set;
 		}
 	}
@@ -2860,6 +2871,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&itertpe);
 	bat_iterator_end(&iterdig);
 	bat_iterator_end(&iterscl);
+	bat_iterator_end(&iterms);
 	if (!msg && (ok = mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, true, cntxt->qryctx.starttime, mb->optimize)) < 0)
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(cntxt->sqlcontext, cntxt->fdout, ok));
   wrapup_result_set:
@@ -2871,6 +2883,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tpe) BBPunfix(tpeId);
 	if( len) BBPunfix(lenId);
 	if( scale) BBPunfix(scaleId);
+	if( multiset) BBPunfix(multisetId);
 	return msg;
 }
 
@@ -2956,7 +2969,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mtype = getArgType(mb, pci, i);
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
-		if ((ok = mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype)) < 0) {
+		if ((ok = mvc_result_value(be, tblname, colname, tpename, *digits++, *scaledigits++, MS_VALUE, v, mtype)) < 0) {
 			msg = createException(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed: %s", mvc_export_error(be, s, ok));
 			bat_iterator_end(&itertbl);
 			bat_iterator_end(&iteratr);
@@ -3027,35 +3040,6 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( len) BBPunfix(lenId);
 	if( scale) BBPunfix(scaleId);
 	return msg;
-}
-
-str
-mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str res = MAL_SUCCEED;
-	backend *be = NULL;
-	str msg;
-	int *res_id;
-	int nr_cols;
-	mapi_query_t qtype;
-
-	if ( pci->argc > 6)
-		return mvc_result_set_wrap(cntxt,mb,stk,pci);
-
-	assert(0);
-	res_id = getArgReference_int(stk, pci, 0);
-	nr_cols = *getArgReference_int(stk, pci, 1);
-	qtype = (mapi_query_t) *getArgReference_int(stk, pci, 2);
-	bat order_bid = *getArgReference_bat(stk, pci, 3);
-	(void)order_bid;
-	/* TODO remove use */
-
-	if ((msg = getBackendContext(cntxt, &be)) != NULL)
-		return msg;
-	*res_id = mvc_result_table(be, mb->tag, nr_cols, qtype);
-	if (*res_id < 0)
-		res = createException(SQL, "sql.resultSet", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return res;
 }
 
 /* str mvc_affected_rows_wrap(int *m, int m, lng *nr, str *w); */
@@ -3181,7 +3165,7 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 }
 
 str
-/*mvc_scalar_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, ptr p, int mtype)*/
+/*mvc_scalar_value_wrap(int *ret, int *qtype, str tn, str name, str type, int *digits, int *scale, int *eclass, int *multiset, ptr p, int mtype)*/
 mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	const char *tn = *getArgReference_str(stk, pci, 1);
@@ -3189,8 +3173,9 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *type = *getArgReference_str(stk, pci, 3);
 	int digits = *getArgReference_int(stk, pci, 4);
 	int scale = *getArgReference_int(stk, pci, 5);
-	ptr p = getArgReference(stk, pci, 7);
-	int mtype = getArgType(mb, pci, 7);
+	int multiset = *getArgReference_int(stk, pci, 7);
+	ptr p = getArgReference(stk, pci, 8);
+	int mtype = getArgType(mb, pci, 8);
 	str msg;
 	backend *be = NULL;
 	int res_id, ok;
@@ -3207,7 +3192,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mb->optimize = 0;
 		throw(SQL, "sql.exportValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, p, mtype)) < 0) {
+	if ((ok = mvc_result_value(be, tn, cn, type, digits, scale, multiset, p, mtype)) < 0) {
 		cntxt->qryctx.starttime = 0;
 		cntxt->qryctx.endtime = 0;
 		mb->optimize = 0;
@@ -6022,9 +6007,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
  pattern("sql", "delete", mvc_delete_wrap, true, "Delete a row from a table. Returns sequence number for order dependence.", args(1,5, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),argany("b",0))),
- pattern("sql", "resultSet", mvc_scalar_value_wrap, true, "Prepare a table result set for the client front-end.", args(1,8, arg("",int),arg("tbl",str),arg("attr",str),arg("tpe",str),arg("len",int),arg("scale",int),arg("eclass",int),argany("val",0))),
- pattern("sql", "resultSet", mvc_row_result_wrap, true, "Prepare a table result set for the client front-end", args(1,7, arg("",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),varargany("cols",0))),
- pattern("sql", "resultSet", mvc_table_result_wrap, true, "Prepare a table result set for the client in default CSV format", args(1,7, arg("",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),batvarargany("cols",0))),
+ pattern("sql", "resultSet", mvc_scalar_value_wrap, true, "Prepare a table result set for the client front-end.", args(1,9, arg("",int),arg("tbl",str),arg("attr",str),arg("tpe",str),arg("len",int),arg("scale",int),arg("eclass",int),arg("multiset",int),argany("val",0))),
+ pattern("sql", "resultSet", mvc_row_result_wrap, true, "Prepare a table result set for the client front-end", args(1,8, arg("",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),batarg("multiset",int),varargany("cols",0))),
+ pattern("sql", "resultSet", mvc_result_set_wrap, true, "Prepare a table result set for the client in default CSV format", args(1,8, arg("",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),batarg("multiset",int),batvarargany("cols",0))),
  pattern("sql", "export_table", mvc_export_row_wrap, true, "Prepare a table result set for the COPY INTO stream", args(1,14, arg("",int),arg("fname",str),arg("fmt",str),arg("colsep",str),arg("recsep",str),arg("qout",str),arg("nullrep",str),arg("onclient",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),varargany("cols",0))),
  pattern("sql", "export_table", mvc_export_table_wrap, true, "Prepare a table result set for the COPY INTO stream", args(1,14, arg("",int),arg("fname",str),arg("fmt",str),arg("colsep",str),arg("recsep",str),arg("qout",str),arg("nullrep",str),arg("onclient",int),batarg("tbl",str),batarg("attr",str),batarg("tpe",str),batarg("len",int),batarg("scale",int),batvarargany("cols",0))),
  pattern("sql", "exportHead", mvc_export_head_wrap, true, "Export a result (in order) to stream s", args(1,3, arg("",void),arg("s",streams),arg("res_id",int))),

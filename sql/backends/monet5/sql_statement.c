@@ -3272,14 +3272,14 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 {
 	node *n;
 	// gather the meta information
-	int tblId, nmeId, tpeId, lenId, scaleId;
+	int tblId, nmeId, tpeId, lenId, scaleId, multisetId;
 	int args;
 	InstrPtr list;
-	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr;
+	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr;
 
 	args = list_length(l) + 1;
 
-	list = newInstructionArgs(mb,sqlRef, resultSetRef, args + 5);
+	list = newInstructionArgs(mb,sqlRef, resultSetRef, args + 6);
 	if(!list) {
 		return NULL;
 	}
@@ -3289,15 +3289,13 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 	meta(tpePtr, tpeId, TYPE_str, args);
 	meta(lenPtr, lenId, TYPE_int, args);
 	meta(scalePtr, scaleId, TYPE_int, args);
-	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
+	meta(multisetPtr, multisetId, TYPE_int, args);
+	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL || multisetPtr == NULL)
 		return NULL;
 
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		if (t->multiset) { /* properly handle subtable */
-			printf("%%multiset\n");
-		}
 		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
 		const char *tn = (tname) ? tname->name : _empty;
@@ -3318,6 +3316,7 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 			tpePtr = pushStr(mb, tpePtr, (t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
+			multisetPtr = pushInt(mb, multisetPtr, t->multiset);
 			list = pushArgument(mb,list,c->nr);
 		} else
 			return NULL;
@@ -3367,6 +3366,7 @@ stmt_output(backend *be, stmt *lst)
 			q = pushInt(mb, q, t->digits);
 			q = pushInt(mb, q, t->scale);
 			q = pushInt(mb, q, t->type->eclass);
+			q = pushInt(mb, q, t->multiset);
 			q = pushArgument(mb, q, c->nr);
 			pushInstruction(mb, q);
 		}

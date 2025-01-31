@@ -925,17 +925,17 @@ create_prepare_result(backend *b, cq *q, int nrows)
 		goto wrapup;
 	}
 
-	if (	mvc_result_column(b, ".prepare", "type"		, "varchar",	len1, 0, btype	) ||
-			mvc_result_column(b, ".prepare", "digits"	, "int",		len2, 0, bdigits) ||
-			mvc_result_column(b, ".prepare", "scale"	, "int",		len3, 0, bscale	) ||
-			mvc_result_column(b, ".prepare", "schema"	, "varchar",	len4, 0, bschema) ||
-			mvc_result_column(b, ".prepare", "table"	, "varchar",	len5, 0, btable	) ||
-			mvc_result_column(b, ".prepare", "column"	, "varchar",	len6, 0, bcolumn)) {
+	if (	mvc_result_column(b, ".prepare", "type"		, "varchar",	len1, 0, MS_VALUE, btype	) ||
+			mvc_result_column(b, ".prepare", "digits"	, "int",		len2, 0, MS_VALUE, bdigits) ||
+			mvc_result_column(b, ".prepare", "scale"	, "int",		len3, 0, MS_VALUE, bscale	) ||
+			mvc_result_column(b, ".prepare", "schema"	, "varchar",	len4, 0, MS_VALUE, bschema) ||
+			mvc_result_column(b, ".prepare", "table"	, "varchar",	len5, 0, MS_VALUE, btable	) ||
+			mvc_result_column(b, ".prepare", "column"	, "varchar",	len6, 0, MS_VALUE, bcolumn)) {
 		error = -1;
 		goto wrapup;
 	}
 
-	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, bimpl))
+	if ((b->client->protocol == PROTOCOL_COLUMNAR || GDKembedded()) && mvc_result_column(b, "prepare", "impl" , "varchar", len7, 0, MS_VALUE, bimpl))
 		error = -1;
 
 	wrapup:
@@ -1913,17 +1913,17 @@ mvc_result_table(backend *be, oid query_id, int nr_cols, mapi_query_t type)
 }
 
 int
-mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, BAT *b)
+mvc_result_column(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, BAT *b)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, true, b->ttype, b, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, multiset, true, b->ttype, b, false) ? 0 : -1;
 }
 
 int
-mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
+mvc_result_value(backend *be, const char *tn, const char *name, const char *typename, int digits, int scale, int multiset, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
-	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, false, mtype, p, false) ? 0 : -1;
+	return res_col_create(be->mvc->session->tr, be->results, tn, name, typename, digits, scale, multiset, false, mtype, p, false) ? 0 : -1;
 }
 
 /* Translate error code from export function to error string */

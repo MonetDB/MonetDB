@@ -1166,13 +1166,14 @@ monetdbe_set_remote_results(backend *be, char* tblname, columnar_result* results
 		char* tpename	= results[i].tpename;
 		int digits		= results[i].digits;
 		int scale		= results[i].scale;
+		/* TODO handle fetching multisets */
 
 		if (b == NULL) {
 			error = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			break;
 		}
 
-		int res = mvc_result_column(be, tblname, colname, tpename, digits, scale, b);
+		int res = mvc_result_column(be, tblname, colname, tpename, digits, scale, MS_VALUE, b);
 		BBPunfix(b->batCacheid);
 		if (res) {
 			error = createException(MAL,"monetdbe.monetdbe_result_cb", SQLSTATE(42000) "Cannot access column descriptor %s.%s",tblname,colname);

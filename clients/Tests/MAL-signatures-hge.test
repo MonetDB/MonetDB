@@ -46409,6 +46409,11 @@ pattern json.dump(X_0:json):bat[:str]
 JSONdump
 (empty)
 json
+epilogue
+command json.epilogue():void
+JSONepilogue
+(empty)
+json
 filter
 command json.filter(X_0:json, X_1:str):json
 JSONfilter
@@ -46523,6 +46528,16 @@ number
 command json.number(X_0:json):dbl
 JSONjson2number
 Convert simple JSON values to a double, return nil upon error.
+json
+prelude
+pattern json.prelude():void
+JSONprelude
+(empty)
+json
+read_json
+pattern json.read_json(X_0:str):bat[:json]
+JSONread_json
+Reads json file into a table
 json
 renderarray
 pattern json.renderarray(X_0:any...):json
@@ -49145,7 +49160,7 @@ SQLfirst_value
 return the first value of groups
 sql
 from_json
-pattern sql.from_json(X_0:json, X_1:ptr):bat[:any]...
+pattern sql.from_json(X_0:bat?[:json], X_1:ptr):bat[:any]...
 SQLfrom_json
 Reads json string into table of nested/multiset structures
 sql
@@ -49455,19 +49470,19 @@ mvc_restart_seq
 restart the sequence with value start
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:any...):int
+unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:bat[:any]...):int
+mvc_result_set_wrap
+Prepare a table result set for the client in default CSV format
+sql
+resultSet
+unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:any...):int
 mvc_row_result_wrap
 Prepare a table result set for the client front-end
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:any):int
+unsafe pattern sql.resultSet(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int, X_7:any):int
 mvc_scalar_value_wrap
 Prepare a table result set for the client front-end.
-sql
-resultSet
-unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:any]...):int
-mvc_table_result_wrap
-Prepare a table result set for the client in default CSV format
 sql
 resume_log_flushing
 unsafe pattern sql.resume_log_flushing():void

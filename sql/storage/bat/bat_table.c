@@ -416,7 +416,7 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 			return NULL;
 		}
 		bat_destroy(b);
-		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, true, rc->ttype, rc, true)) {
+		if (!res_col_create(tr, rt, t->base.name, o->base.name, o->type.type->base.name, o->type.type->digits, o->type.type->scale, MS_VALUE, true, rc->ttype, rc, true)) {
 			bat_destroy(cl);
 			res_table_destroy(rt);
 			return NULL;
