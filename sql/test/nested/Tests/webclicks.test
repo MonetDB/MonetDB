@@ -1,0 +1,15 @@
+statement ok
+create type kv as (key varchar, value varchar)
+
+statement ok
+create type loc as (list kv[])
+
+statement ok
+create type event as (id int , type varchar, location loc)
+
+statement ok
+create table events(ev event[])
+
+statement ok
+insert into events values (array[(1, "click", array[("hostname", "localhost")])])
+
