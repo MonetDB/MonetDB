@@ -5820,6 +5820,21 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int
 }
 
 static str
+insert_json_str(const char *jstr, BAT **bats, int cnt, sql_subtype *t)
+{
+	char *res = MAL_SUCCEED;
+	JSON *js = JSONparse(jstr);
+	if (!js)
+		throw(SQL, "insert_json_str", "JSONparse error");
+	if (t->multiset)
+		(void)insert_json_array(&res, js, bats, cnt, 0, 1, 1, t);
+	else
+		(void)insert_json_object(&res, js, bats, cnt, 0, 1, 1, t);
+	JSONfree(js);
+	return res;
+}
+
+static str
 SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = NULL;
@@ -5830,25 +5845,6 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	int mtype = getArgType(mb, pci, pci->retc);
-
-	if (isaBatType(mtype)) {
-		if(strcmp(BATatoms[getBatType(mtype)].name, "json") != 0 )
-			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect bat argument type");
-		bat bid = *getArgReference_bat(stk, pci, pci->retc);
-		BAT *b = BATdescriptor(bid);
-		BATiter bi = bat_iterator(b);
-		BUN p, q;
-		BATloop(b, p, q) {
-			const char *json = (const char *) BUNtail(bi, p);
-			(void) json;
-		}
-		bat_iterator_end(&bi);
-	} else {
-		if (strcmp(BATatoms[mtype].name, "json") != 0)
-			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
-	}
-
-	str json = *(str*)getArgReference(stk, pci, pci->retc);
 	sql_subtype *t = *(sql_subtype**)getArgReference(stk, pci, pci->retc+1);
 
 	BAT **bats = (BAT**)GDKzalloc(sizeof(BAT*) * pci->retc);
@@ -5859,19 +5855,30 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!bats[i])
 			goto bailout;
 	}
+
 	(void)m;
 
-	JSON *js = JSONparse(json);
-	if (!js) /* TODO output parser error ?? */
-		goto bailout;
+	if (isaBatType(mtype)) {
+		if(strcmp(BATatoms[getBatType(mtype)].name, "json") != 0 )
+			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect bat argument type");
+		bat bid = *getArgReference_bat(stk, pci, pci->retc);
+		BAT *b = BATdescriptor(bid);
+		BATiter bi = bat_iterator(b);
+		BUN p, q;
+		BATloop(b, p, q) {
+			const char *json = (const char *) BUNtail(bi, p);
+			if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED)
+				goto bailout;
+		}
+		bat_iterator_end(&bi);
+	} else {
+		if (strcmp(BATatoms[mtype].name, "json") != 0)
+			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
+		str json = *(str*)getArgReference(stk, pci, pci->retc);
+		if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED)
+			goto bailout;
+	}
 
-	if (t->multiset)
-		(void)insert_json_array(&msg, js, bats, pci->retc, 0, 1, 1, t);
-	else
-		(void)insert_json_object(&msg, js, bats, pci->retc, 0, 1, 1, t);
-	JSONfree(js);
-	if (msg)
-		goto bailout;
 	for(int i = 0; i < pci->retc && bats[i]; i++) {
 		*getArgReference_bat(stk, pci, i) = bats[i]->batCacheid;
 		BBPkeepref(bats[i]);
