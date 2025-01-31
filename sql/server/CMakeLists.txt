@@ -145,7 +145,6 @@ target_include_directories(sqlparserlib
   $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
-  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -156,8 +155,7 @@ target_link_libraries(sqlparserlib
   bat
   sqlcommon
   sqlinclude
-  sqlstorage
-  $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
+  sqlstorage)
 
 target_compile_definitions(sqlparserlib
   PRIVATE
@@ -179,6 +177,7 @@ target_sources(sqlparse
 
 target_include_directories(sqlparse
   PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
