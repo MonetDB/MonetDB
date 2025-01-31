@@ -2518,18 +2518,65 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if(e->type == e_aggr &&
-			   !((sql_subfunc *)e->f)->func->s &&
-			   strcmp(((sql_subfunc *)e->f)->func->base.name, "count") != 0 && 
-			   strcmp(((sql_subfunc *)e->f)->func->base.name, "sum") != 0 && 
-			   ((sql_subfunc *)e->f)->func->system == 1
-			) {
+			if(e->type != e_aggr) {
+				continue;
+			}
+
+			sql_func *j = ((sql_subfunc *)e->f)->func;
+
+			int sum = strcmp(j->base.name, "sum") == 0,
+				prd = strcmp(j->base.name, "prod") == 0,
+				cnt = strcmp(j->base.name, "count") == 0;
+
+			if(!j->s && j->system == 1) { // && !cnt
 				list *se = e->l;
+
+				if(se == NULL) {
+					continue;
+				}
 
 				for(node *m = se->h; m; m = m->next) {
 					sql_exp *w = m->data;
 
 					if(w->type == e_atom && w->card == CARD_ATOM) {
+						if(sum && !(((atom*)w->l)->isnull || atom_is_zero((atom*)w->l))) {
+							continue;
+						}
+
+						if(prd && !(((atom*)w->l)->isnull || ((atom*)w->l)->data.val.lval == 1)) {
+							continue;
+						}
+					
+						/*if(cnt && ((atom*)w->l)->isnull) { // && 0
+							list_remove_node(se, NULL, m);
+							sql_exp *rr=exp_atom_lng(v->sql->sa, 0);
+							list_append(se, rr);
+							
+
+							exp_setalias(rr,e->alias.label,e->alias.rname,e->alias.name);
+							n->data = rr;
+
+							v->changes++;
+
+							continue;
+						}
+						else if(cnt) {
+							continue;
+						}*/
+
+						/* Handle: select count(distinct NULL) + 3 == 3 */
+						if(cnt) {
+							if(((atom*)w->l)->isnull) {
+								list_remove_node(se, NULL, m);
+
+								w=exp_atom_lng(v->sql->sa, 0);
+								list_append(se, w);
+							}
+							else {
+								continue;
+							}
+						}
+
 						exp_setalias(w,e->alias.label,e->alias.rname,e->alias.name);
 
 						n->data = w;
