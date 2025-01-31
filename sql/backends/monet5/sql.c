@@ -2318,6 +2318,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(res->batCacheid);
 			res = nres;
 			ret = BATappend(res, u, cminu, true);
+
 			BBPunfix(u->batCacheid);
 			BBPunfix(cminu->batCacheid);
 			cminu = NULL;
@@ -5830,8 +5831,23 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	int mtype = getArgType(mb, pci, pci->retc);
 
-	if (strcmp(BATatoms[mtype].name, "json") != 0)
-		throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
+	if (isaBatType(mtype)) {
+		if(strcmp(BATatoms[getBatType(mtype)].name, "json") != 0 )
+			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect bat argument type");
+		bat bid = *getArgReference_bat(stk, pci, pci->retc);
+		BAT *b = BATdescriptor(bid);
+		BATiter bi = bat_iterator(b);
+		BUN p, q;
+		BATloop(b, p, q) {
+			const char *json = (const char *) BUNtail(bi, p);
+			(void) json;
+		}
+		bat_iterator_end(&bi);
+	} else {
+		if (strcmp(BATatoms[mtype].name, "json") != 0)
+			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
+	}
+
 	str json = *(str*)getArgReference(stk, pci, pci->retc);
 	sql_subtype *t = *(sql_subtype**)getArgReference(stk, pci, pci->retc+1);
 
@@ -6866,7 +6882,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
- pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", json), arg("type", ptr))),
+ pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", json), arg("type", ptr))),
  pattern("sql", "from_varchar", SQLfrom_varchar, false, "Reads string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", str), arg("type", ptr))),
  { .imp=NULL }
 };
