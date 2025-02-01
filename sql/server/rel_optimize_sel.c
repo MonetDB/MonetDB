@@ -2294,7 +2294,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 }
 
 static int
-rels_find_one_rel( sql_rel **rels, int nr, sql_exp *e)
+exp_find_one_rel( sql_rel **rels, int nr, sql_exp *e)
 {
 	int fnd = 0;
 
@@ -2304,6 +2304,22 @@ rels_find_one_rel( sql_rel **rels, int nr, sql_exp *e)
 				return 0;
 			fnd = i;
 		}
+	}
+	return fnd;
+}
+
+static int
+exps_find_one_rel( sql_rel **rels, int nr, list *exps)
+{
+	int fnd = 0;
+
+	for(node *n = exps->h; n; n = n->next) {
+		int nfnd = exp_find_one_rel(rels, nr, n->data);
+		if (nfnd != fnd && fnd)
+			return 0;
+		fnd = nfnd;
+		if (!fnd)
+			return 0;
 	}
 	return fnd;
 }
@@ -2377,18 +2393,16 @@ order_joins(visitor *v, list *rels, list *exps)
 
 		h[ci] = r1[ci] = r2[ci] = 0;
 		r3[ci] = 0;
-		/* h[ci] = exp_find_rels(cje, rels) */
-		if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
-		   (cje->type == e_cmp && cje->f == NULL)) {
+		if (cje->type == e_cmp) {
 			cje->tmp = ci;
-			r1[ci] = rels_find_one_rel(rels_a, nr_rels, cje->l);
-			r2[ci] = rels_find_one_rel(rels_a, nr_rels, cje->r);
+			r1[ci] = cje->flag == cmp_filter ? exps_find_one_rel(rels_a, nr_rels, cje->l) : exp_find_one_rel(rels_a, nr_rels, cje->l);
+			r2[ci] = cje->flag == cmp_filter ? exps_find_one_rel(rels_a, nr_rels, cje->r) : exp_find_one_rel(rels_a, nr_rels, cje->r);
 			if (r1[ci])
 				h[ci] |= ((ulng)1)<<((r1[ci]-1)%64);
 			if (r2[ci])
 				h[ci] |= ((ulng)1)<<((r2[ci]-1)%64);
-			if (cje->f) {
-				r3[ci] = rels_find_one_rel(rels_a, nr_rels, cje->f);
+			if (cje->f && cje->flag != cmp_filter) {
+				r3[ci] = exp_find_one_rel(rels_a, nr_rels, cje->f);
 				if (r3[ci] == r2[ci])
 					r3[ci] = 0;
 				if (r3[ci])
@@ -2409,8 +2423,7 @@ order_joins(visitor *v, list *rels, list *exps)
 			 * */
 			if (0 && popcount64(h[cje->tmp]) > 2)
 				assert(0);
-			if (cje->type != e_cmp || !is_complex_exp(cje->flag) || !find_prop(cje->p, PROP_HASHCOL) ||
-				(cje->type == e_cmp && cje->f == NULL)) {
+			if (cje->type == e_cmp) {
 				l = rels_a[r1[cje->tmp]];
 				r = rels_a[r2[cje->tmp]];
 				if (l && r)

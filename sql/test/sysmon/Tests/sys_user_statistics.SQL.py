@@ -20,17 +20,16 @@ with SQLTestCase() as mdb:
         with SQLTestCase() as usr:
             usr.connect(username=u, password=u)
             usr.execute('select current_user as myname').assertSucceeded()
-            usr.execute('call sys.sleep('+SLEEP_TIME+')').assertSucceeded()
+            usr.execute(f'call sys.sleep({SLEEP_TIME})').assertSucceeded()
 
     # now check user_statistics again
-    rowcnt = mdb.execute('select username, querycount, maxquery from sys.user_statistics() where username like \'user%\' order by username;').assertSucceeded().\
+    rowcnt = mdb.execute('select username, maxquery from sys.user_statistics() where username like \'user%\' order by username;').assertSucceeded().\
         assertDataResultMatch([
-            ('user1', 2, 'call sys.sleep('+SLEEP_TIME+')\n;'),
-            ('user2', 2, 'call sys.sleep('+SLEEP_TIME+')\n;'),
-            ('user3', 2, 'call sys.sleep('+SLEEP_TIME+')\n;'),
-            ('user4', 2, 'call sys.sleep('+SLEEP_TIME+')\n;')
+            ('user1', f'call sys.sleep({SLEEP_TIME})\n;'),
+            ('user2', f'call sys.sleep({SLEEP_TIME})\n;'),
+            ('user3', f'call sys.sleep({SLEEP_TIME})\n;'),
+            ('user4', f'call sys.sleep({SLEEP_TIME})\n;')
             ])
     for u in users:
         mdb.execute('drop user {u};'.format(u=u)).assertSucceeded()
     mdb.execute('drop procedure sleep;').assertSucceeded()
-

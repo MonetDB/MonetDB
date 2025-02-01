@@ -18,7 +18,3 @@ assert_variable_exists(HAVE_CUDF)
 if(HAVE_LIBR)
   assert_variable_exists(RHOME)
 endif()
-
-if(DEFINED HAVE_GETOPT_H)
-  assert_variable_exists(HAVE_GETOPT)
-endif()

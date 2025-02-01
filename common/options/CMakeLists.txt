@@ -11,8 +11,7 @@
 #]]
 
 set(moptions_public_headers
-  ${CMAKE_CURRENT_SOURCE_DIR}/monet_options.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/monet_getopt.h)
+  ${CMAKE_CURRENT_SOURCE_DIR}/monet_options.h)
 
 add_library(moptions
   STATIC)
@@ -24,16 +23,13 @@ target_sources(moptions
   ${moptions_public_headers})
 
 target_include_directories(moptions
-  PRIVATE
-  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_link_libraries(moptions
   PRIVATE
-  monetdb_config_header
-  $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
+  monetdb_config_header)
 
 if(NOT MONETDB_STATIC)
   set_target_properties(moptions
@@ -44,7 +40,6 @@ endif()
 
 install(FILES
   monet_options.h
-  monet_getopt.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT
   monetdbdev)
