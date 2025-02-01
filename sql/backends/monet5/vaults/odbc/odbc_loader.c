@@ -14,6 +14,9 @@
 #include "rel_proto_loader.h"
 #include "rel_exp.h"
 
+#include "mal_exception.h"
+#include "mal_client.h"
+
 //#ifdef _MSC_VER
 //#include <WTypes.h>
 //#endif
