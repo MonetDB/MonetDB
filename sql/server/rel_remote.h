@@ -16,12 +16,11 @@
 #include "sql_relation.h"
 #include "msettings.h"
 
-// maybe this needs to be somewhere more global?
-extern msettings *sa_msettings_create(allocator *sa);
-extern char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
+sql_export msettings *sa_msettings_create(allocator *sa);
+sql_export char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
 
 sql_export int mapiuri_valid( const char *uri, allocator *sa);
-extern const char *mapiuri_uri(const char *uri, allocator *sa);
+sql_export const char *mapiuri_uri(const char *uri, allocator *sa);
 extern const char *mapiuri_schema(const char *uri, allocator *sa, const char *fallback);
 extern const char *mapiuri_table(const char *uri, allocator *sa, const char *fallback);
 

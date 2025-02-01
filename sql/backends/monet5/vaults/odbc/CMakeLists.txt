@@ -21,8 +21,8 @@ if(ODBC_FOUND)
     PRIVATE
     $<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>
     $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+    $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
@@ -33,9 +33,10 @@ if(ODBC_FOUND)
   target_link_libraries(odbc_loader
     PRIVATE
     monetdb_config_header
-    bat
+    sqlinclude
+    sql
     monetdb5
-    sqlinclude)
+    bat)
 
   set_target_properties(odbc_loader
     PROPERTIES
