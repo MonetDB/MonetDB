@@ -132,7 +132,6 @@
 #cmakedefine HAVE_GETENTROPY 1
 #cmakedefine HAVE_GETEXECNAME 1
 #cmakedefine HAVE_GETLOGIN 1
-#cmakedefine HAVE_GETOPT_LONG 1
 #cmakedefine HAVE_GETRLIMIT 1
 #cmakedefine HAVE_GETTIMEOFDAY 1
 #cmakedefine HAVE_GETUID 1
@@ -168,7 +167,6 @@
 #cmakedefine HAVE_PTHREAD_MUTEX_TIMEDLOCK 1
 #cmakedefine HAVE_PTHREAD_SETNAME_NP 1
 #cmakedefine HAVE_PTHREAD_SIGMASK 1
-#cmakedefine HAVE_GETOPT 1
 // End Section: monetdb configure defines
 
 // Section: monetdb macro variables
@@ -422,8 +420,6 @@ stpcpy(char *restrict dst, const char *restrict src)
 /* type used by connect */
 #define socklen_t int
 #define strtok_r(t,d,c) strtok_s(t,d,c)
-
-#define HAVE_GETOPT_LONG 1
 
 /* there is something very similar to localtime_r on Windows: */
 #include <time.h>
