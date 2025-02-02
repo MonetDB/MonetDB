@@ -1,0 +1,15 @@
+
+statement ok
+CREATE table arr_tbl (f1 int[])
+
+statement ok
+insert into arr_tbl values ('{1,2,3}')
+
+statement ok
+insert into arr_tbl values ('{2,3,4}')
+
+query T nosort
+select * from arr_tbl
+----
+{1,2,3}
+{2,3,4}

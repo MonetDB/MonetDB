@@ -1246,6 +1246,15 @@ mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 }
 
 static int
+multiset_size(res_col *c)
+{
+	if (c->type.multiset) {
+		return 1+(c->type.multiset == MS_ARRAY?3:2);
+	}
+	return 0;
+}
+
+static int
 mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset, BUN nr, const char *btag, const char *sep, const char *rsep, const char *ssep, const char *ns)
 {
 	Tablet as;
@@ -1277,6 +1286,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
 
+	int multiset = 0;
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
 
@@ -1300,6 +1310,13 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].rsep = rsep;
 		}
+		fmt[i].multiset = c->type.multiset;
+		multiset += multiset_size(c);
+		if (multiset>1) {
+			fmt[i].sep = NULL;
+			fmt[i].seplen = 0;
+			multiset--;
+		}
 		if (json) {
 			res_col *p = t->cols + (i - 1);
 
@@ -1311,13 +1328,13 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			 */
 			if (i == 1) {
 				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(btag));
-				snprintf(bj, strlen(p->name) + strlen(btag), btag, p->name);
+				snprintf(bj, strlen(p->name) + strlen(btag), "%s%s", btag, p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
 			} else if (i <= t->nr_cols) {
 				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(sep));
-				snprintf(bj, strlen(p->name) + 10, sep, p->name);
+				snprintf(bj, strlen(p->name) + 10, "%s%s", sep, p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
@@ -1633,6 +1650,12 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	return mvc_affrows(b->mvc, s, val, w, query_id, b->last_id, starttime, maloptimizer, b->reloptimizer);
 }
 
+static inline int
+skip_multiset(res_col *c)
+{
+	return (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+}
+
 int
 mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer)
 {
@@ -1668,7 +1691,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		return -4;
 
 	/* column count */
-	if (mvc_send_int(s, t->nr_cols) != 1 || mnstr_write(s, " ", 1, 1) != 1)
+	if (mvc_send_int(s, t->nr_output_cols) != 1 || mnstr_write(s, " ", 1, 1) != 1)
 		return -4;
 
 	/* row count, min(count, reply_size) */
@@ -1699,6 +1722,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 		if (len && mnstr_write(s, c->tn, len, 1) != 1)
 			return -4;
+		i += skip_multiset(c);
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1727,6 +1751,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 				return -4;
 		}
 
+		i += skip_multiset(c);
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1736,8 +1761,14 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	for (i = 0; i < t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 
-		if (mnstr_write(s, c->type.type->base.name, strlen(c->type.type->base.name), 1) != 1)
+		if (c->type.multiset) {
+		   if (mnstr_write(s, "varchar", 7, 1) != 1)
+				return -4;
+		} else if (mnstr_write(s, c->type.type->base.name, strlen(c->type.type->base.name), 1) != 1)
 			return -4;
+		//if (c->type.multiset && mnstr_write(s, "[]", 2, 1) != 1)
+			//return -4;
+		i += skip_multiset(c);
 		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1751,6 +1782,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 			if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
 				return res;
+			i += skip_multiset(c);
 			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
@@ -1765,6 +1797,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 			if (mnstr_printf(s, "%u %u", c->type.digits, c->type.scale) < 0)
 				return -4;
+			i += skip_multiset(c);
 			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
@@ -1886,7 +1919,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 		return -4;
 
 	/* column count */
-	if (mvc_send_int(s, t->nr_cols) != 1 || mnstr_write(s, " ", 1, 1) != 1)
+	if (mvc_send_int(s, t->nr_output_cols) != 1 || mnstr_write(s, " ", 1, 1) != 1)
 		return -4;
 
 	/* row count */

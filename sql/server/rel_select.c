@@ -1248,6 +1248,8 @@ static sql_exp *
 sql_exp_values(sql_query *query, symbol *values)
 {
 	list *exps = values_list(query, values);
+	if (!exps)
+		return NULL;
 	sql_exp *e = exp_values(query->sql->sa, exps);
 	if (e && values->token == SQL_ROW)
 		e->row = 1;
@@ -5296,6 +5298,8 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		} else if (se->token == SQL_VALUES || se->token == SQL_ROW || se->token == SQL_SET) {
 			if (ek.card <= card_row && !(rel && *rel)) {
 				sql_exp *e = sql_exp_values(query, se);
+				if (!e)
+					return NULL;
 				if (exp_is_atom(e)) /* single tuple */
 					return e;
 				r = rel_project(query->sql->sa, NULL, e->f);

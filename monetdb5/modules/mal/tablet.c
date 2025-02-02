@@ -222,6 +222,7 @@ TABLET_error(stream *s)
 /* The output line is first built before being sent. It solves a problem
    with UDP, where you may loose most of the information using short writes
 */
+
 static inline int
 output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 			Column *fmt, stream *fd, BUN nr_attrs, oid id)
@@ -274,6 +275,100 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 	if (fd && mnstr_write(fd, *buf, 1, fill) != fill)
 		return TABLET_error(fd);
 	return 0;
+}
+
+#define MS_ARRAY 2
+/* move into sql_result and store in format */
+static int
+multiset_size( Column *fmt)
+{
+	int nrattrs = 1 + (fmt->multiset == MS_ARRAY);
+	//if (fmt[1]) { /* todo check composite types */
+		nrattrs ++;
+	//}
+	return nrattrs;
+}
+
+static inline ssize_t
+output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs);
+
+static ssize_t
+output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+				  Column *fmt, stream *fd, BUN nr_attrs, int multiset, int id)
+{
+	nr_attrs -= (multiset == MS_ARRAY)?2:1;
+	Column *msid = fmt + nr_attrs;
+	int *idp = (int*)Tloc(msid->c, msid->p);
+	int first = 1;
+	for (; *idp == id; idp++, msid->p++) {
+		if (!first)
+			(*buf)[fill++] = ',';
+		if ((fill = output_line_multiset(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs)) < 0) {
+			break;
+		}
+		first = 0;
+	}
+	return fill;
+}
+
+static inline ssize_t
+output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+				  Column *fmt, stream *fd, BUN nr_attrs)
+{
+	BUN i;
+
+	for (i = 0; i < nr_attrs; i++) {
+		Column *f = fmt + i;
+		const char *p;
+		ssize_t l = 0;
+
+		if (f->c) {
+			p = BUNtail(f->ci, f->p);
+
+			if (p && i && f->multiset) {
+				int nr_attrs = multiset_size(f);
+				assert(f->c->ttype == TYPE_int);
+
+				(*buf)[fill++] = '\'';
+				(*buf)[fill++] = '{';
+				(*buf)[fill] = 0;
+				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + i + 1, fd, nr_attrs, f->multiset, *(int*)p);
+				(*buf)[fill++] = '}';
+				(*buf)[fill++] = '\'';
+				(*buf)[fill] = 0;
+				i += nr_attrs;
+				f->p++;
+				f = fmt + i;
+			} else
+
+			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+				p = f->nullstr;
+				l = (ssize_t) strlen(p);
+			} else {
+				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				if (l < 0)
+					return -1;
+				p = *localbuf;
+			}
+			if (fill + l + f->seplen >= (ssize_t) * len) {
+				/* extend the buffer */
+				char *nbuf;
+				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				if (nbuf == NULL)
+					return -1;	/* *buf freed by caller */
+				*buf = nbuf;
+				*len = fill + l + f->seplen + BUFSIZ;
+			}
+			if (l) {
+				strncpy(*buf + fill, p, l);
+				fill += l;
+				f->p++;
+			}
+		}
+		strncpy(*buf + fill, f->sep, f->seplen);
+		fill += f->seplen;
+	}
+	return fill;
 }
 
 static inline int
@@ -428,6 +523,36 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 }
 
 static int
+output_multiset(Tablet *as, stream *fd, bstream *in)
+{
+	size_t len = BUFSIZ, locallen = BUFSIZ;
+	int res = 0;
+	char *buf = GDKmalloc(len);
+	char *localbuf = GDKmalloc(len);
+	BUN i = 0;
+
+	if (buf == NULL || localbuf == NULL) {
+		GDKfree(buf);
+		GDKfree(localbuf);
+		return -1;
+	}
+	for (i = 0; i < as->nr; i++) {
+		if ((i & 8191) == 8191 && bstream_getoob(in)) {
+			res = -5;			/* "Query aborted" */
+			break;
+		}
+		if ((res = output_line_multiset(&buf, &len, 0, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
+			break;
+		}
+		if (fd && mnstr_write(fd, buf, 1, res) != res)
+			return TABLET_error(fd);
+	}
+	GDKfree(localbuf);
+	GDKfree(buf);
+	return res;
+}
+
+static int
 output_file_dense(Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
@@ -500,7 +625,14 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
 			as->nr = maxnr;
 	}
 	assert(as->nr != BUN_NONE);
+	int multiset = 0;
+	for (unsigned int i = 1; i < as->nr_attrs; i++)
+	   multiset |= as->format[i].multiset;
 
+	if (multiset) {
+		assert(!order);
+		return output_multiset(as, s, in);
+	}
 	base = check_BATs(as);
 	if (!order || !is_oid_nil(base)) {
 		if (!order || order->hseqbase == base)

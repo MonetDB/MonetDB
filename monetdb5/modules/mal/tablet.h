@@ -43,6 +43,7 @@ typedef struct Column_t {
 	size_t null_length;			/* its length */
 	unsigned int width;			/* actual column width */
 	unsigned int maxwidth;		/* permissible width */
+	int multiset;				/* multiset */
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;

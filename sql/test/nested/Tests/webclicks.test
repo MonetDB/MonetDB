@@ -10,6 +10,6 @@ create type event as (id int , type varchar, location loc)
 statement ok
 create table events(ev event[])
 
-statement ok
+statement error
 insert into events values (array[(1, "click", array[("hostname", "localhost")])])
 

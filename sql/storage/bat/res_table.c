@@ -63,6 +63,11 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->type.multiset = multiset;
 	c->tn = _STRDUP(tn);
 	c->name = _STRDUP(name);
+	if (c->type.multiset)
+		t->nr_output_cols -= 2;
+	if (c->type.multiset == MS_ARRAY)
+		t->nr_output_cols--;
+	t->nr_output_cols++;
 	if (c->tn == NULL || c->name == NULL) {
 		_DELETE(c->tn);
 		_DELETE(c->name);
