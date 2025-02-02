@@ -549,7 +549,9 @@ output_multiset(Tablet *as, stream *fd, bstream *in)
 	}
 	GDKfree(localbuf);
 	GDKfree(buf);
-	return res;
+	if (res < 0)
+		return -1;
+	return 0;
 }
 
 static int
