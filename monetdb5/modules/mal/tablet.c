@@ -526,7 +526,7 @@ static int
 output_multiset(Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
-	int res = 0;
+	ssize_t res = 0;
 	char *buf = GDKmalloc(len);
 	char *localbuf = GDKmalloc(len);
 	BUN i = 0;
@@ -550,7 +550,7 @@ output_multiset(Tablet *as, stream *fd, bstream *in)
 	GDKfree(localbuf);
 	GDKfree(buf);
 	if (res < 0)
-		return -1;
+		return (int)res;
 	return 0;
 }
 
