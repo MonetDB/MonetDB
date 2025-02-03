@@ -797,12 +797,16 @@ class SQLLogic:
         self.approve = approve
         self.initfile(f, defines, run_until=run_until)
         nthreads = None
+        if self.timeout:
+            timeout = int((time.time() - self.starttime) + self.timeout)
+        else:
+            timeout = 0
         if self.language == 'sql':
-            self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
+            self.crs.execute(f'call sys.setsessiontimeout({timeout})')
             global hashge
             hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
-            self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
+            self.crs.execute(f'clients.setsessiontimeout({timeout}:int)')
         skiprest = False
         while True:
             skipping = skiprest
