@@ -11,12 +11,8 @@
  */
 
 #include "monetdb_config.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 #include "mapi.h"
 #include <unistd.h>

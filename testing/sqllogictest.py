@@ -50,6 +50,7 @@ import re
 import sys
 import platform
 import importlib
+import time
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
@@ -140,7 +141,8 @@ class SQLLogic:
         self.port = None
         self.approve = None
         self.threshold = 100
-        self.seenerr = False
+        self.seenerr = False    # there was an error before timeout
+        self.timedout = False   # there was a timeout
         self.__last = ''
         self.srcdir = srcdir
 
@@ -150,9 +152,18 @@ class SQLLogic:
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
+    def _remainingtime(self):
+        if self.timeout > 0:
+            t = time.time()
+            if self.starttime + self.timeout > t:
+                return self.starttime + self.timeout - t
+            return 0
+        return -1
+
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo',
-                language='sql', timeout=None, alltests=False):
+                language='sql', timeout: Optional[int]=0, alltests=False):
+        self.starttime = time.time()
         self.language = language
         self.hostname = hostname
         self.port = port
@@ -162,24 +173,27 @@ class SQLLogic:
         if language == 'sql':
             transfer_handler = UnsafeDirectoryHandler(self.srcdir)
             self.dbh = pymonetdb.connect(username=username,
-                                     password=password,
-                                     hostname=hostname,
-                                     port=port,
-                                     database=database,
-                                     autocommit=True)
+                                         password=password,
+                                         hostname=hostname,
+                                         port=port,
+                                         database=database,
+                                         autocommit=True,
+                                         connect_timeout=timeout if timeout > 0 else -1)
             self.dbh.set_uploader(transfer_handler)
             self.dbh.set_downloader(transfer_handler)
             self.crs = self.dbh.cursor()
         else:
             dbh = malmapi.Connection()
-            dbh.connect(
-                                     database=database,
-                                     username=username,
-                                     password=password,
-                                     language=language,
-                                     hostname=hostname,
-                                     port=port)
+            dbh.connect(database=database,
+                        username=username,
+                        password=password,
+                        language=language,
+                        hostname=hostname,
+                        port=port,
+                        connect_timeout=timeout if timeout > 0 else -1)
             self.crs = MapiCursor(dbh)
+        if timeout > 0:
+            self.dbh.settimeout(timeout)
 
     def add_connection(self, conn_id, username='monetdb', password='monetdb'):
         if self.conn_map.get(conn_id, None) is None:
@@ -187,22 +201,27 @@ class SQLLogic:
             port = self.port
             database = self.database
             language = self.language
+            t = self._remainingtime()
+            if t == 0:
+                raise TimeoutError('timed out')
             if language == 'sql':
                 dbh  = pymonetdb.connect(username=username,
-                                     password=password,
-                                     hostname=hostname,
-                                     port=port,
-                                     database=database,
-                                     autocommit=True)
+                                         password=password,
+                                         hostname=hostname,
+                                         port=port,
+                                         database=database,
+                                         autocommit=True,
+                                         connect_timeout=t)
                 crs = dbh.cursor()
             else:
                 dbh = malmapi.Connection()
                 dbh.connect(database=database,
-                         username=username,
-                         password=password,
-                         language=language,
-                         hostname=hostname,
-                         port=port)
+                            username=username,
+                            password=password,
+                            language=language,
+                            hostname=hostname,
+                            port=port,
+                            connect_timeout=t)
                 crs = MapiCursor(dbh)
             conn = SQLLogicConnection(conn_id, dbh=dbh, crs=crs, language=language)
             self.conn_map[conn_id] = conn
@@ -217,7 +236,10 @@ class SQLLogic:
             conn.dbh.close()
         self.conn_map.clear()
         if self.crs:
-            self.crs.close()
+            try:
+                self.crs.close()
+            except BrokenPipeError:
+                pass
             self.crs = None
         if self.dbh:
             self.dbh.close()
@@ -328,8 +350,11 @@ class SQLLogic:
                             + f" received code {err_code_received}, message {repr(err_msg_received)}"
                     self.query_error(err_stmt or statement, str(msg), str(e))
                 return result
+        except TimeoutError as e:
+            self.query_error(err_stmt or statement, 'Timeout', str(e))
+            return ['statement', 'crash'] # should never be approved
         except ConnectionError as e:
-            self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
+            self.query_error(err_stmt or statement, 'Timeout or server may have crashed', str(e))
             return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
@@ -411,7 +436,10 @@ class SQLLogic:
         raise SQLLogicSyntaxError(message)
 
     def query_error(self, query, message, exception=None, data=None):
-        self.seenerr = True
+        if message == 'Timeout':
+            self.timedout = True
+        elif not self.timedout:
+            self.seenerr = True
         if self.rpt:
             print(self.rpt, file=self.out)
         print(message, file=self.out)
@@ -435,6 +463,12 @@ class SQLLogic:
             return ['statement', 'error'], []
         except KeyboardInterrupt:
             raise
+        except TimeoutError as e:
+            self.query_error(query, 'Timeout', str(e))
+            return ['statement', 'crash'] # should never be approved
+        except ConnectionError as e:
+            self.query_error(query, 'Timeout or server may have crashed', str(e))
+            return ['statement', 'crash'] # should never be approved
         except:
             tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
@@ -780,8 +814,9 @@ class SQLLogic:
             hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
             self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
+        skiprest = False
         while True:
-            skipping = False
+            skipping = skiprest
             line = self.readline()
             if not line:
                 break
@@ -799,47 +834,53 @@ class SQLLogic:
             # look for connection string
             if line.startswith('@connection'):
                 conn_params = self.parse_connection_string(line)
-                conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
+                try:
+                    conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
+                except TimeoutError as e:
+                    self.query_error(line, 'Timeout', str(e))
+                    conn = None
+                    skiprest = True
                 self.writeline(line.rstrip())
                 line = self.readline()
             words = line.split(maxsplit=2)
             if not words:
                 continue
-            while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif':
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+            if not skiprest:
+                while words[0] == 'skipif' or words[0] == 'onlyif':
+                    if words[0] == 'skipif':
+                        if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+                            skipping = True
+                        elif words[1].startswith('threads='):
+                            if nthreads is None:
+                                self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                                nthreads = self.crs.fetchall()[0][0]
+                            if words[1] == f'threads={nthreads}':
+                                skipping = True
+                        elif words[1] == 'has-hugeint':
+                            if hashge:
+                                skipping = True
+                        elif words[1] == 'knownfail':
+                            if not self.alltests:
+                                skipping = True
+                    elif words[0] == 'onlyif':
                         skipping = True
-                    elif words[1].startswith('threads='):
-                        if nthreads is None:
-                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
-                            nthreads = self.crs.fetchall()[0][0]
-                        if words[1] == f'threads={nthreads}':
-                            skipping = True
-                    elif words[1] == 'has-hugeint':
-                        if hashge:
-                            skipping = True
-                    elif words[1] == 'knownfail':
-                        if not self.alltests:
-                            skipping = True
-                elif words[0] == 'onlyif':
-                    skipping = True
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
-                        skipping = False
-                    elif words[1].startswith('threads='):
-                        if nthreads is None:
-                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
-                            nthreads = self.crs.fetchall()[0][0]
-                        if words[1] == f'threads={nthreads}':
+                        if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
                             skipping = False
-                    elif words[1] == 'has-hugeint':
-                        if hashge:
-                            skipping = False
-                    elif words[1] == 'knownfail':
-                        if self.alltests:
-                            skipping = False
-                self.writeline(line.rstrip())
-                line = self.readline()
-                words = line.split(maxsplit=2)
+                        elif words[1].startswith('threads='):
+                            if nthreads is None:
+                                self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                                nthreads = self.crs.fetchall()[0][0]
+                            if words[1] == f'threads={nthreads}':
+                                skipping = False
+                        elif words[1] == 'has-hugeint':
+                            if hashge:
+                                skipping = False
+                        elif words[1] == 'knownfail':
+                            if self.alltests:
+                                skipping = False
+                    self.writeline(line.rstrip())
+                    line = self.readline()
+                    words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
@@ -874,8 +915,12 @@ class SQLLogic:
                         if self.language == 'sql' and statement[-1].endswith(';'):
                             statement[-1] = statement[-1][:-1]
                         result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
-                    self.writeline(' '.join(result))
-                else:
+                    if result[1] == 'crash':
+                        skiprest = True
+                        skipping = True
+                    else:
+                        self.writeline(' '.join(result))
+                if skipping:
                     self.writeline(stline)
                 dostrip = True
                 for line in statement:
@@ -928,14 +973,18 @@ class SQLLogic:
                     nresult = len(expected)
                 if not skipping:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
-                    self.writeline(' '.join(result1))
-                    for line in query:
-                        self.writeline(line.rstrip(), replace=True)
-                    if result1[0] == 'query':
-                        self.writeline('----')
-                        for line in result2:
-                            self.writeline(line)
-                else:
+                    if result1[1] == 'crash':
+                        skiprest = True
+                        skipping = True
+                    else:
+                        self.writeline(' '.join(result1))
+                        for line in query:
+                            self.writeline(line.rstrip(), replace=True)
+                        if result1[0] == 'query':
+                            self.writeline('----')
+                            for line in result2:
+                                self.writeline(line)
+                if skipping:
                     self.writeline(qrline.rstrip())
                     for line in query:
                         self.writeline(line.rstrip())
@@ -966,6 +1015,8 @@ if __name__ == '__main__':
                         help='language to use for testing')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
+    parser.add_argument('--timeout', action='store', type=int, default=0,
+                        help='timeout in seconds (<= 0 is no timeout) after which test is terminated')
     parser.add_argument('--verbose', action='store_true',
                         help='be a bit more verbose')
     parser.add_argument('--results', action='store',
@@ -989,7 +1040,10 @@ if __name__ == '__main__':
     args = opts.tests
     sql = SQLLogic(report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password, alltests=opts.alltests)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database,
+                language=opts.language, username=opts.user,
+                password=opts.password, alltests=opts.alltests,
+                timeout=opts.timeout if opts.timeout > 0 else 0)
     for test in args:
         try:
             if not opts.nodrop:
@@ -1005,4 +1059,6 @@ if __name__ == '__main__':
             break
     sql.close()
     if sql.seenerr:
+        sys.exit(2)
+    if sql.timedout:
         sys.exit(1)

@@ -177,6 +177,7 @@ target_sources(sqlparse
 
 target_include_directories(sqlparse
   PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
