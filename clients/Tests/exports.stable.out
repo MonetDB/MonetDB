@@ -1627,6 +1627,7 @@ str lng_num2dec_flt(flt *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_int(int *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_lng(lng *res, const lng *v, const int *d2, const int *s2);
 str lng_num2dec_sht(sht *res, const lng *v, const int *d2, const int *s2);
+const char *mapiuri_uri(const char *uri, allocator *sa);
 int mapiuri_valid(const char *uri, allocator *sa);
 sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
@@ -1653,6 +1654,8 @@ list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, i
 void res_tables_destroy(res_table *results);
 list *sa_list(allocator *sa);
 char *sa_message(allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
+msettings *sa_msettings_create(allocator *sa);
+char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
 str sht_dec2_bte(bte *res, const int *s1, const sht *v);
 str sht_dec2_dbl(dbl *res, const int *s1, const sht *v);
 str sht_dec2_flt(flt *res, const int *s1, const sht *v);
