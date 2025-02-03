@@ -2539,34 +2539,19 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 					sql_exp *w = m->data;
 
 					if(w->type == e_atom && w->card == CARD_ATOM) {
-						if(sum && !(((atom*)w->l)->isnull || atom_is_zero((atom*)w->l))) {
+						atom *wa = w->l;
+
+						if(sum && !(wa->isnull || atom_is_zero(wa))) {
 							continue;
 						}
 
-						if(prd && !(((atom*)w->l)->isnull || ((atom*)w->l)->data.val.lval == 1)) {
+						if(prd && !(wa->isnull || atom_is_one(wa))) {
 							continue;
 						}
-					
-						/*if(cnt && ((atom*)w->l)->isnull) { // && 0
-							list_remove_node(se, NULL, m);
-							sql_exp *rr=exp_atom_lng(v->sql->sa, 0);
-							list_append(se, rr);
-							
-
-							exp_setalias(rr,e->alias.label,e->alias.rname,e->alias.name);
-							n->data = rr;
-
-							v->changes++;
-
-							continue;
-						}
-						else if(cnt) {
-							continue;
-						}*/
 
 						/* Handle: select count(distinct NULL) + 3 == 3 */
 						if(cnt) {
-							if(((atom*)w->l)->isnull) {
+							if(wa->isnull) {
 								list_remove_node(se, NULL, m);
 
 								w=exp_atom_lng(v->sql->sa, 0);
