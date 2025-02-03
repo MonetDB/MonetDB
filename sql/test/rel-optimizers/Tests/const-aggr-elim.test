@@ -120,3 +120,67 @@ project (
 | | table("sys"."baz") [ "baz"."b" NOT NULL ]
 | ) [ "baz"."b" NOT NULL ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
+
+query T nosort
+plan select prod(cast(1 as real)) from baz group by b;
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+) [ real(24) "1" as "%1"."%1" ]
+
+query T nosort
+plan select prod(1), sum(0) from baz group by a
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."a" NOT NULL ]
+| ) [ "baz"."a" NOT NULL ] [ "baz"."a" NOT NULL ]
+) [ tinyint(1) "1" as "%1"."%1", tinyint(1) "0" as "%2"."%2" ]
+
+query II rowsort
+select prod(1), sum(0) from baz group by a
+----
+1
+0
+1
+0
+1
+0
+1
+0
+1
+0
+
+query II rowsort
+select prod(null) + 1, sum(null) + 1 from baz group by a
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query T nosort
+plan select count(null) + 3 from baz group by a
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."a" NOT NULL ]
+| ) [ "baz"."a" NOT NULL ] [ "baz"."a" NOT NULL ]
+) [ "sys"."sql_add"(bigint(1) "0", bigint(2) "3") NOT NULL ]
+
+query I rowsort
+select count(null) + 3 from baz group by a
+----
+3
+3
+3
+3
+3
