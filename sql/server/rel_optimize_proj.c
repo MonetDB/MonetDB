@@ -2515,6 +2515,11 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 	}
 
 	if(!list_empty(rel->r)) {
+		/* in the general case in an expression of an aggregate over
+		 * a constant can be rewritten as just the const e.g.
+		 *   aggr(const) -> const
+		 */
+
 		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -2524,11 +2529,17 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 
 			sql_func *j = ((sql_subfunc *)e->f)->func;
 
+			/* some aggregates with const values can only be eliminated
+			 * under certain circumstances e.g.
+			 *   sum(NULL)   -> NULL, sum(0)  -> 0
+			 *   prod(NULL)  -> NULL, prod(1) -> 1
+			 *   count(NULL) -> 0
+			 */
 			int sum = strcmp(j->base.name, "sum") == 0,
 				prd = strcmp(j->base.name, "prod") == 0,
 				cnt = strcmp(j->base.name, "count") == 0;
 
-			if(!j->s && j->system == 1) { // && !cnt
+			if(!j->s && j->system == 1) {
 				list *se = e->l;
 
 				if(se == NULL) {
@@ -2549,7 +2560,6 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 							continue;
 						}
 
-						/* Handle: select count(distinct NULL) + 3 == 3 */
 						if(cnt) {
 							if(wa->isnull) {
 								list_remove_node(se, NULL, m);
@@ -2572,9 +2582,9 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 		}
 	}
 
-	/* 
+	/*
 	 * Below code replaces GROUP BY with PROJECT in some cases;
-	 * Triggers on... 
+	 * Triggers on...
 	 * select 1 having true; select 42 from foo group by x; select n from foo group by rollup(n);
 	*/
 
