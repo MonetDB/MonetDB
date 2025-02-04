@@ -248,10 +248,7 @@ class SQLLogic:
                 pass
             self.crs = None
         if self.dbh:
-            try:
-                self.dbh.close()
-            except AttributeError:
-                pass
+            self.dbh.close()
             self.dbh = None
 
 
