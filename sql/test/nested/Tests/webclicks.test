@@ -2,14 +2,20 @@ statement ok
 create type kv as (key varchar, value varchar)
 
 statement ok
-create type loc as (list kv[])
+create type elem as (element kv)
 
 statement ok
-create type event as (id int , type varchar, location loc)
+create type webusr as (list elem[])
 
 statement ok
-create table events(ev event[])
+create type loc as (list elem[])
 
-statement error
-insert into events values (array[(1, "click", array[("hostname", "localhost")])])
+statement ok
+create type event as (eventid varchar, event varchar, timestamp timestamp, location loc, "user" webusr)
+
+statement ok
+create table events(events event[])
+
+statement ok
+insert into events values (array[('111', 'click', '2024-11-30 22:13:37.823000 UTC', (array[(('hostname', 'localhost'))]), null)])
 
