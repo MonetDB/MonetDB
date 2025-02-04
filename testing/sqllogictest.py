@@ -156,7 +156,7 @@ class SQLLogic:
         if self.timeout > 0:
             t = time.time()
             if self.starttime + self.timeout > t:
-                return self.starttime + self.timeout - t
+                return int(self.starttime + self.timeout - t)
             return 0
         return -1
 
@@ -213,6 +213,9 @@ class SQLLogic:
                                          autocommit=True,
                                          connect_timeout=t)
                 crs = dbh.cursor()
+                if t > 0:
+                    dbh.settimeout(t)
+                    crs.execute(f'call sys.setsessiontimeout({t})')
             else:
                 dbh = malmapi.Connection()
                 dbh.connect(database=database,
@@ -223,6 +226,9 @@ class SQLLogic:
                             port=port,
                             connect_timeout=t)
                 crs = MapiCursor(dbh)
+                if t > 0:
+                    dbh.settimeout(t)
+                    crs.execute(f'clients.setsessiontimeout({t}:int)')
             conn = SQLLogicConnection(conn_id, dbh=dbh, crs=crs, language=language)
             self.conn_map[conn_id] = conn
             return conn
