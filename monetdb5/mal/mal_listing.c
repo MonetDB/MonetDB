@@ -156,15 +156,13 @@ beginning of each line.
 */
 
 str
-cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
+cfcnDefinition(Symbol s, str base, size_t len)
 {
 	unsigned int i;
 	str arg, tpe;
 	mel_func *f = s->func;
+	str t = base;
 
-	len -= t - base;
-	if (!flg && !copystring(&t, "#", &len))
-		return base;
 	if (f->unsafe && !copystring(&t, "unsafe ", &len))
 		return base;
 	if (!copystring(&t, operatorName(s->kind), &len) ||
@@ -251,12 +249,6 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			return base;
 	}
 
-	if (f->cname) {
-		if (!copystring(&t, " address ", &len) ||
-			!copystring(&t, f->cname, &len))
-			return base;
-	}
-	(void) copystring(&t, ";", &len);
 	return base;
 }
 
@@ -324,12 +316,14 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 			return base;
 	}
 
-	if (mb->binding[0]) {
-		if (!copystring(&t, " address ", &len) ||
-			!copystring(&t, mb->binding, &len))
-			return base;
+	if ((flg & LIST_MAL_NOCFUNC) == 0) {
+		if (mb->binding[0]) {
+			if (!copystring(&t, " address ", &len) ||
+				!copystring(&t, mb->binding, &len))
+				return base;
+		}
+		(void) copystring(&t, ";", &len);
 	}
-	(void) copystring(&t, ";", &len);
 	/* add the extra properties for debugging */
 	if (flg & LIST_MAL_PROPS) {
 		char extra[256];

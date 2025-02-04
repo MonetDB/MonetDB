@@ -539,13 +539,9 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			if (!output)
 				sql->out = NULL;	/* no output stream */
 			be->depth++;
-			msg = SQLrun(c,m);
+			msg = SQLrun(c, m);
 			be->depth--;
-			if (c->curprg->def->stop > 1) {
-				assert(0);
-				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, NULL, oldvtop);
-			}
+			assert (c->curprg->def->stop <= 1);
 			sqlcleanup(sql, 0);
 			if (!execute)
 				goto endofcompile;
@@ -600,38 +596,6 @@ endofcompile:
 		str other = SQLresetClient(c);
 		freeException(other);
 	}
-	return msg;
-}
-
-str
-SQLengineIntern(Client c, backend *be)
-{
-	str msg = MAL_SUCCEED;
-	//char oldlang = be->language;
-	mvc *m = be->mvc;
-
-	assert (m->emode != m_deallocate && m->emode != m_prepare);
-	assert (c->curprg->def->stop > 2);
-
-	//be->language = 'D';
-	if (MALcommentsOnly(c->curprg->def))
-		msg = MAL_SUCCEED;
-	else
-		msg = SQLrun(c,m);
-
-	if (m->type == Q_SCHEMA && m->qc != NULL)
-		qc_clean(m->qc);
-	be->q = NULL;
-	if (msg)
-		m->session->status = -10;
-	sqlcleanup(be, (!msg) ? 0 : -1);
-	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, be->vtop);
-	//be->language = oldlang;
-	/*
-	 * Any error encountered during execution should block further processing
-	 * unless auto_commit has been set.
-	 */
 	return msg;
 }
 
@@ -692,12 +656,10 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (backend_dumpstmt(be, c->curprg->def, rel, 0, 1, NULL) < 0) {
 			msg = createException(SQL,"RAstatement","Program contains errors"); // TODO: use macro definition.
 		} else {
-			SQLaddQueryToCache(c);
-			msg = SQLoptimizeFunction(c,c->curprg->def);
-			if( msg == MAL_SUCCEED)
+			msg = SQLoptimizeFunction(c, c->curprg->def);
+			if (msg == MAL_SUCCEED)
 				msg = SQLrun(c,m);
 			resetMalBlk(c->curprg->def);
-			SQLremoveQueryFromCache(c);
 		}
 		rel_destroy(m, rel);
 	}

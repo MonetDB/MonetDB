@@ -71,7 +71,7 @@ init_global_variables(mvc *sql)
 	mal_optimizer = GDKgetenv("sql_optimizer");
 	if (!mal_optimizer)
 		mal_optimizer = "default_pipe";
-	/* TODO: Change optmizer to mal_optimizer */
+	/* TODO: Change optimizer to mal_optimizer */
 	SQL_GLOBAL(sname, "optimizer", mal_optimizer);
 
 	sql_find_subtype(&ctype, "sec_interval", inttype2digits(ihour, isec), 0);

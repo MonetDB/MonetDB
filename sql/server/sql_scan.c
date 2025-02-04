@@ -523,6 +523,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("TIES", TIES);
 	failed += keywords_insert("GROUPS", GROUPS);
 	failed += keywords_insert("WINDOW", WINDOW);
+	failed += keywords_insert("QUALIFY", QUALIFY);
 
 	/* special SQL/XML keywords */
 	failed += keywords_insert("XMLCOMMENT", XMLCOMMENT);

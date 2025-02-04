@@ -550,65 +550,6 @@ bitToStr(char **dst, size_t *len, const bit *src, bool external)
 	return 5;
 }
 
-ssize_t
-batFromStr(const char *src, size_t *len, bat **dst, bool external)
-{
-	char *s;
-	const char *t, *r = src;
-	int c;
-	bat bid = 0;
-
-	atommem(sizeof(bat));
-
-	if (strNil(src)) {
-		**dst = bat_nil;
-		return 1;
-	}
-
-	while (GDKisspace(*r))
-		r++;
-
-	if (external && strcmp(r, "nil") == 0) {
-		**dst = bat_nil;
-		return (ssize_t) (r - src) + 3;
-	}
-
-	if (*r == '<')
-		r++;
-	t = r;
-	while ((c = *t) && (c == '_' || GDKisalnum(c)))
-		t++;
-
-	s = GDKstrndup(r, t - r);
-	if (s == NULL)
-		return -1;
-	bid = BBPindex(s);
-	GDKfree(s);
-	**dst = bid == 0 ? bat_nil : bid;
-	return (ssize_t) (t + (c == '>') - src);
-}
-
-ssize_t
-batToStr(char **dst, size_t *len, const bat *src, bool external)
-{
-	bat b = *src;
-	size_t i;
-	str s;
-
-	if (is_bat_nil(b) || !BBPcheck(b) || (s = BBP_logical(b)) == NULL || *s == 0) {
-		atommem(4);
-		if (external) {
-			strcpy(*dst, "nil");
-			return 3;
-		}
-		strcpy(*dst, str_nil);
-		return 1;
-	}
-	i = strlen(s) + 3;
-	atommem(i);
-	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
-}
-
 
 /*
  * numFromStr parses the head of the string for a number, accepting an

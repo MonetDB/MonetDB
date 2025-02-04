@@ -169,12 +169,9 @@ addModuleToIndex(Module cur)
 Module
 getModule(const char *name)
 {
-	int index = getModuleIndex(name);
-	Module m = moduleIndex[index];
-	while (m) {
+	for (Module m = moduleIndex[getModuleIndex(name)]; m; m = m->link) {
 		if (name == m->name)
 			return m;
-		m = m->link;
 	}
 	return NULL;
 }

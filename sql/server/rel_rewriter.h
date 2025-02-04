@@ -18,6 +18,7 @@
 
 #define is_ifthenelse_func(sf) (strcmp((sf)->func->base.name, "ifthenelse") == 0)
 #define is_isnull_func(sf) (strcmp((sf)->func->base.name, "isnull") == 0)
+#define is_isnotnull_func(sf) (strcmp((sf)->func->base.name, "isnotnull") == 0)
 #define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0)
 #define is_caselike_func(sf) (strcmp((sf)->func->base.name, "case") == 0 || \
 							  strcmp((sf)->func->base.name, "casewhen") == 0 || \

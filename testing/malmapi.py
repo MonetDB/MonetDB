@@ -164,6 +164,10 @@ class Connection(object):
         self.socket.settimeout(socket.getdefaulttimeout())
         self.state = STATE_READY
 
+    def settimeout(self, timeout):
+        """ set the amount of time before a connection times out """
+        self.socket.settimeout(timeout)
+
     def _login(self, iteration=0):
         """ Reads challenge from line, generate response and check if
         everything is okay """

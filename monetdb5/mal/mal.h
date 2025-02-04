@@ -94,6 +94,7 @@ mal_export const char *mal_version(void);
 #define LIST_MAL_REMOTE  64		/* output MAL for remote execution */
 #define LIST_MAL_FLOW   128		/* output MAL dataflow dependencies */
 #define LIST_MAL_ALGO	256		/* output algorithm used */
+#define LIST_MAL_NOCFUNC	512		/* skip C function */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)

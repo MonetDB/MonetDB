@@ -24,23 +24,11 @@
  */
 #include "monetdb_config.h"
 #include "monet_options.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
-#endif
 #include <string.h>
 #include <ctype.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifndef HAVE_GETOPT_LONG
-#  include "getopt.c"
-#  include "getopt1.c"
 #endif
 
 #ifdef NATIVE_WIN32

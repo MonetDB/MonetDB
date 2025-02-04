@@ -1599,8 +1599,9 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 		int len = 0, need_length_reduction = 0;
 		int rec = is_recursive(s);
 
-		/* Incase of recursive push up the project of the base side (inplace) */
-		/* push normaly into right side, but stop when we hit this base again */
+		/* In case of recursive push up the project of the base side
+		 * (inplace) push normally into right side, but stop when we hit
+		 * this base again */
 
 		/* left of rel should be a set */
 		list *rlist = sa_list(sql->sa);
