@@ -283,9 +283,14 @@ static int
 multiset_size( Column *fmt)
 {
 	int nrattrs = 1 + (fmt->multiset == MS_ARRAY);
-	//if (fmt[1]) { /* todo check composite types */
+	if (fmt[0].composite) {
+		nrattrs += fmt[0].composite;
+		for (int i = 0; i<fmt[0].composite; i++)
+			if (fmt[i+1].multiset)
+				nrattrs += multiset_size(fmt+(i+1));
+	} else {
 		nrattrs ++;
-	//}
+	}
 	return nrattrs;
 }
 
@@ -293,8 +298,24 @@ static inline ssize_t
 output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs);
 
 static ssize_t
+output_line_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite)
+{
+	(void)composite;
+	(*buf)[fill++] = '(';
+	if (!fmt->multiset) {
+		fmt++;
+		nr_attrs--;
+	}
+	if ((fill = output_line_multiset(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs)) < 0) {
+		return -1;
+	}
+	(*buf)[fill++] = ')';
+	return fill;
+}
+
+static ssize_t
 output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
-				  Column *fmt, stream *fd, BUN nr_attrs, int multiset, int id)
+				  Column *fmt, stream *fd, BUN nr_attrs, int multiset, int composite, int id)
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
 	Column *msid = fmt + nr_attrs;
@@ -303,8 +324,14 @@ output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 	for (; *idp == id; idp++, msid->p++) {
 		if (!first)
 			(*buf)[fill++] = ',';
-		if ((fill = output_line_multiset(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs)) < 0) {
-			break;
+		if (composite) {
+			if ((fill = output_line_composite(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, composite)) < 0) {
+				break;
+			}
+		} else {
+			if ((fill = output_line_multiset(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs)) < 0) {
+				break;
+			}
 		}
 		first = 0;
 	}
@@ -332,7 +359,7 @@ output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, siz
 				(*buf)[fill++] = '\'';
 				(*buf)[fill++] = '{';
 				(*buf)[fill] = 0;
-				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + i + 1, fd, nr_attrs, f->multiset, *(int*)p);
+				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + i + 1, fd, nr_attrs, f->multiset, f->composite, *(int*)p);
 				(*buf)[fill++] = '}';
 				(*buf)[fill++] = '\'';
 				(*buf)[fill] = 0;

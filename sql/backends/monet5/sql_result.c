@@ -1246,10 +1246,15 @@ mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 }
 
 static int
-multiset_size(res_col *c)
+complex_type_size(res_col *c)
 {
 	if (c->type.multiset) {
-		return 1+(c->type.multiset == MS_ARRAY?3:2);
+		int res = (c->type.multiset == MS_ARRAY?2:1);
+		if (c->type.type->composite)
+			res += list_length(c->type.type->d.fields);
+		else
+			res ++;
+		return res;
 	}
 	return 0;
 }
@@ -1286,7 +1291,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
 
-	int multiset = 0;
+	int complex_type = 0;
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
 
@@ -1311,11 +1316,12 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			fmt[i].rsep = rsep;
 		}
 		fmt[i].multiset = c->type.multiset;
-		multiset += multiset_size(c);
-		if (multiset>1) {
-			fmt[i].sep = NULL;
-			fmt[i].seplen = 0;
-			multiset--;
+		fmt[i].composite = c->type.type->composite?list_length(c->type.type->d.fields):0;
+		complex_type += complex_type_size(c);
+		if (complex_type>1) {
+			fmt[i].sep = NULL;// ", ";
+			fmt[i].seplen = 0;//2;
+			complex_type--;
 		}
 		if (json) {
 			res_col *p = t->cols + (i - 1);
@@ -1353,7 +1359,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
 		fmt[i].ws = 0;
-		fmt[i].quote = ssep ? ssep[0] : 0;
+		if (complex_type)
+			fmt[i].quote = '"';
+		else
+			fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
@@ -1651,9 +1660,19 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 }
 
 static inline int
-skip_multiset(res_col *c)
+next_col(res_col *c)
 {
-	return (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+	int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+	if (c->type.type->composite) {
+		int nr = list_length(c->type.type->d.fields);
+		res += nr;
+		for(int i = 0; i < nr; i++) {
+			res += next_col(c+i+1);
+		}
+	} else {
+		res++;
+	}
+	return res;
 }
 
 int
@@ -1716,20 +1735,20 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
 		return -4;
-	for (i = 0; i < t->nr_cols; i++) {
+	for (i = 0; i < t->nr_cols; ) {
 		res_col *c = t->cols + i;
 		size_t len = strlen(c->tn);
 
 		if (len && mnstr_write(s, c->tn, len, 1) != 1)
 			return -4;
-		i += skip_multiset(c);
-		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+		i += next_col(c);
+		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
 	if (mnstr_write(s, " # table_name\n% ", 16, 1) != 1)
 		return -4;
 
-	for (i = 0; i < t->nr_cols; i++) {
+	for (i = 0; i < t->nr_cols; ) {
 		res_col *c = t->cols + i;
 
 		if (strpbrk(c->name, ", \t#\"\\")) {
@@ -1750,40 +1769,40 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
 				return -4;
 		}
+		i += next_col(c);
 
-		i += skip_multiset(c);
-		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
 	if (mnstr_write(s, " # name\n% ", 10, 1) != 1)
 		return -4;
 
-	for (i = 0; i < t->nr_cols; i++) {
+	for (i = 0; i < t->nr_cols; ) {
 		res_col *c = t->cols + i;
 
-		if (c->type.multiset) {
+		if (c->type.multiset || c->type.type->composite) {
 		   if (mnstr_write(s, "varchar", 7, 1) != 1)
 				return -4;
 		} else if (mnstr_write(s, c->type.type->base.name, strlen(c->type.type->base.name), 1) != 1)
 			return -4;
 		//if (c->type.multiset && mnstr_write(s, "[]", 2, 1) != 1)
 			//return -4;
-		i += skip_multiset(c);
-		if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+		i += next_col(c);
+		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
 	if (mnstr_write(s, " # type\n% ", 10, 1) != 1)
 		return -4;
 	if (compute_lengths) {
-		for (i = 0; i < t->nr_cols; i++) {
+		for (i = 0; i < t->nr_cols; ) {
 			res_col *c = t->cols + i;
 			int mtype = c->type.type->localtype;
 			sql_class eclass = c->type.type->eclass;
 
 			if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
 				return res;
-			i += skip_multiset(c);
-			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+			i += next_col(c);
+			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
 		if (mnstr_write(s, " # length\n", 10, 1) != 1)
@@ -1792,13 +1811,13 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (b->sizeheader) {
 		if (mnstr_write(s, "% ", 2, 1) != 1)
 			return -4;
-		for (i = 0; i < t->nr_cols; i++) {
+		for (i = 0; i < t->nr_cols; ) {
 			res_col *c = t->cols + i;
 
 			if (mnstr_printf(s, "%u %u", c->type.digits, c->type.scale) < 0)
 				return -4;
-			i += skip_multiset(c);
-			if (i + 1 < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
+			i += next_col(c);
+			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
 		if (mnstr_write(s, " # typesizes\n", 13, 1) != 1)

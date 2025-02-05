@@ -190,7 +190,7 @@ rel_multiset_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_ta
 			}
 
 			sql_table *t = mvc_bind_table(sql, c->t->s, c->storage_type);
-			if (rel_multiset_basetable_add_cols(sql, ba, c->base.name, t, exps) == NULL)
+			if (rel_multiset_basetable_add_cols(sql, pba, c->base.name, t, exps) == NULL)
 				e = NULL;
 			else
 				continue;

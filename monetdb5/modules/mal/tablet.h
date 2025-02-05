@@ -44,6 +44,7 @@ typedef struct Column_t {
 	unsigned int width;			/* actual column width */
 	unsigned int maxwidth;		/* permissible width */
 	int multiset;				/* multiset */
+	int composite;				/* 0 no composite type else number of composite fields */
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;

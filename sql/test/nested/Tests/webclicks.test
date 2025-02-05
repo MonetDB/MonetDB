@@ -13,3 +13,6 @@ create table events(ev event[])
 statement error
 insert into events values (array[(1, "click", array[("hostname", "localhost")])])
 
+statement ok
+insert into events values (array[(1, 'click', array[('hostname', 'localhost')])])
+

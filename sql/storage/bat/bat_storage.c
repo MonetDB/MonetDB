@@ -3105,7 +3105,7 @@ static int
 create_col(sql_trans *tr, sql_column *c)
 {
 	int ok = LOG_OK, new = 0;
-	int type = c->type.type->localtype;
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
 	sql_delta *bat = ATOMIC_PTR_GET(&c->data);
 
 	if (!bat) {

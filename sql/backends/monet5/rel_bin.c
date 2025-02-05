@@ -2443,6 +2443,26 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 	return stmt_list(be, l);
 }
 
+typedef struct subtable_e {
+	sql_table *t;
+	int nr;
+	stmt *dels;
+} subtable_e;
+
+static sql_column *
+subtable_e_find(subtable_e *sts, const char *name, int nr, stmt **dels)
+{
+	for(int i = 0; i < nr; i++) {
+		sql_table *t = sts[i].t;
+		sql_column *c = find_sql_column(t, name);
+		if (c) {
+			*dels = sts[i].dels;
+			return c;
+		}
+	}
+	return NULL;
+}
+
 static stmt *
 rel2bin_basetable(backend *be, sql_rel *rel)
 {
@@ -2454,7 +2474,17 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *odels = dels, *col = NULL;
 	node *en;
 	list *subtables = rel_base_subtables(rel);
-	node *stn = NULL;
+	int nr = list_length(subtables);
+	subtable_e *sts = NULL;
+	if (nr) {
+		sts = (subtable_e*)sa_alloc(be->mvc->sa, sizeof(subtable_e)*nr);
+		int i = 0;
+		for(node *n = subtables->h; n; n = n->next, i++) {
+			sts[i].t = n->data;
+			sts[i].nr = 0;
+			sts[i].dels = stmt_tid(be, sts[i].t, rel->flag == REL_PARTITION);
+		}
+	}
 	bool multiset = t->multiset;
 
 	if (l == NULL || dels == NULL)
@@ -2508,23 +2538,17 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				continue;
 			s = (i == fi) ? col : stmt_idx(be, i, multiset?dels:NULL, dels->partition);
 		} else {
-			sql_column *c = find_sql_column(t, oname);
-			if (!c && stn) {
-				t = bt;
+			sql_column *c = find_sql_column(bt, oname);
+			if (c) {
 				dels = odels;
-				c = find_sql_column(t, oname);
+			} else if (sts) {
+				c = subtable_e_find(sts, oname, nr, &dels);
 			}
+			assert(c);
 			if (!c->type.multiset && c->type.type->composite)
 				continue;
 
 			s = (c == fcol) ? col : stmt_col(be, c, multiset?dels:NULL, dels->partition);
-			if (c->type.multiset) {
-				if (!stn)
-					stn = subtables->h;
-				t = stn->data;
-				dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
-				stn = stn->next;
-			}
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		list_append(l, s);

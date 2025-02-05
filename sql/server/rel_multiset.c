@@ -237,7 +237,6 @@ fm_join(visitor *v, sql_rel *rel)
 static void
 fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps)
 {
-	//sql_subtype *oidtype = sql_bind_localtype("oid");
 	sql_subtype *inttype = sql_bind_localtype("int");
 	int label = v->sql->label;
 	v->sql->label += 2 + (t->multiset == MS_ARRAY) + (t->type->composite?list_length(t->type->d.fields):1);
@@ -278,6 +277,47 @@ fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps
 		mse->alias.label = (++label);
 		mse->nid = mse->alias.label;
 		append(nexps, mse);
+	}
+}
+
+static void
+fm_project_ms_bt(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps, list *exps)
+{
+	sql_exp *rowid = exps_bind_column(exps, exp_name(e), NULL, NULL, 0);
+	if (!rowid)
+		rowid = exps_bind_column2(exps, cn, "rowid", NULL);
+	rowid = exp_ref(v->sql, rowid);
+	append(nexps, rowid);
+	if (t->type->composite) {
+		for(node *f = t->type->d.fields->h; f; f = f->next) {
+			sql_arg *field = f->data;
+
+			if (field->type.multiset) {
+				sql_alias *nn = a_create(v->sql->sa, field->name);
+				//nn->parent = cn;
+				fm_project_ms_bt(v, e, &field->type, nn, nexps, exps);
+			} else {
+				sql_exp *mse = exps_bind_column2(exps, cn, field->name, NULL);
+				mse = exp_ref(v->sql, mse);
+				append(nexps, mse);
+			}
+		}
+	} else {
+		sql_exp *mse = exps_bind_column2(exps, cn, "elements", NULL);
+		mse = exp_ref(v->sql, mse);
+		append(nexps, mse);
+	}
+	sql_exp *msid = exps_bind_column2(exps, cn, "id", NULL);
+	if (!msid)
+		msid = exps_bind_column2(exps, cn, "multisetid", NULL);
+	msid = exp_ref(v->sql, msid);
+	append(nexps, msid);
+	if (t->multiset == MS_ARRAY) {
+		sql_exp *msnr = exps_bind_column2(exps, cn, "nr", NULL);
+		if (!msnr)
+			msnr = exps_bind_column2(exps, cn, "multisetnr", NULL);
+		msnr = exp_ref(v->sql, msnr);
+		append(nexps, msnr);
 	}
 }
 
@@ -342,6 +382,7 @@ fm_project(visitor *v, sql_rel *rel)
 			if (!is_project(l->op))
 				exps = rel_projections(v->sql, l, NULL, 0, 1);
 			for(node *n = rel->exps->h; n; n = n->next) {
+				/* TODO handle nesting */
 				sql_exp *e = n->data;
 				sql_subtype *t = exp_subtype(e);
 				if (t->multiset) {
@@ -354,9 +395,16 @@ fm_project(visitor *v, sql_rel *rel)
 					if (t->type->composite) {
 						for(node *f = t->type->d.fields->h; f; f = f->next) {
 							sql_arg *field = f->data;
-							sql_exp *mse = exps_bind_column2(exps, cn, field->name, NULL);
-							mse = exp_ref(v->sql, mse);
-							append(nexps, mse);
+
+							if (field->type.multiset) {
+								sql_alias *nn = a_create(v->sql->sa, field->name);
+								//nn->parent = cn;
+								fm_project_ms_bt(v, e, &field->type, nn, nexps, exps);
+							} else {
+								sql_exp *mse = exps_bind_column2(exps, cn, field->name, NULL);
+								mse = exp_ref(v->sql, mse);
+								append(nexps, mse);
+							}
 						}
 					} else {
 						sql_exp *mse = exps_bind_column2(exps, cn, "elements", NULL);

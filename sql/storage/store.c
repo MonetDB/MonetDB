@@ -3841,7 +3841,6 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
 				sql_arg *f = n->data;
 				sql_column *ic = NULL;
-				/* how to store names (list) ? */
 				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
 					return -2;
 			}
@@ -3960,7 +3959,6 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			for (node *n = col->type.type->d.fields->h; n; n = n->next) {
 				sql_arg *f = n->data;
 				sql_column *ic = NULL;
-				/* how to store names (list) ? */
 				if (sql_trans_create_column_intern( &ic, tr, tt, f->name, &f->type, column_intern) < 0)
 					return -2;
 			}

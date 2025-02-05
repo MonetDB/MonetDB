@@ -770,6 +770,7 @@ typedef struct res_table {
 	mapi_query_t query_type;
 	int nr_cols;
 	int nr_output_cols;
+	int multiset;
 	BUN nr_rows;
 	BUN cur_row;
 	int cur_col;
