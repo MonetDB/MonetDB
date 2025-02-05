@@ -19,7 +19,7 @@ import os
 import shutil
 import tarfile
 
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
