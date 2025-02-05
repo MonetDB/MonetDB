@@ -656,6 +656,8 @@ set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 	assert(is_values(vals_exp));
 	list *vals = exp_get_values(vals_exp);
 	sql_subtype *type = exp_subtype(vals->h->data);
+	bool single_value = list_length(vals) <= 1;
+	int multi_result = 0;
 
 	if (!type)
 		return sql_error(be->mvc, 02, SQLSTATE(42000) "Could not infer the type of a value list column");
@@ -668,15 +670,31 @@ set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 
 		if (!i)
 			return NULL;
-
-		if (list_length(vals) == 1)
+		if (single_value)
 			return i;
 		list_append(l, i);
+
+		if (i->type == st_list && list_length(i->op4.lval) > 1)
+			multi_result = list_length(i->op4.lval);
 	}
 	/*  n-tuples */
-	//for (node *n = l->h; n; n = n->next) {
-
-	//}
+	if (multi_result) {
+		list *rl = sa_list(be->mvc->sa);
+		for(int i = 0; i < multi_result; i++) {
+			node *n = l->h;
+			stmt *s = n->data;
+			stmt *input = list_fetch(s->op4.lval, i);
+			sql_subtype *type = tail_type(input);
+			list *nl = list_append(sa_list(be->mvc->sa), input);
+			for (; n; n = n->next) {
+				stmt *s = n->data;
+				stmt *input = list_fetch(s->op4.lval, i);
+				nl = list_append(nl, input);
+			}
+			append(rl, stmt_append_bulk(be, stmt_temp(be, type), nl));
+		}
+		return stmt_list(be, rl);
+	}
 	return stmt_append_bulk(be, stmt_temp(be, type), l);
 }
 
