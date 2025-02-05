@@ -51,6 +51,111 @@ odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
 	}
 }
 
+
+static sql_subtype *
+map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDigits, mvc * sql)
+{
+	char * typenm;
+
+	switch (dataType) {
+	case SQL_CHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
+	default:
+		return sql_bind_subtype(sql->sa, "varchar", (int) columnSize, 0);
+
+	case SQL_DECIMAL:
+	case SQL_NUMERIC:
+		return sql_bind_subtype(sql->sa, "decimal", (int) decimalDigits, 6);
+
+	case SQL_BINARY:
+	case SQL_VARBINARY:
+	case SQL_LONGVARBINARY:
+		return sql_bind_subtype(sql->sa, "blob", (int) columnSize, 0);
+
+	case SQL_TINYINT:
+		typenm = "tinyint";
+		break;
+	case SQL_SMALLINT:
+		typenm = "smallint";
+		break;
+	case SQL_INTEGER:
+		typenm = "integer";
+		break;
+	case SQL_BIGINT:
+		typenm = "bigint";
+		break;
+	case SQL_REAL:
+		typenm = "real";
+		break;
+	case SQL_DOUBLE:
+		typenm = "double";
+		break;
+	case SQL_FLOAT:
+		typenm = "float";
+		break;
+	case SQL_TYPE_DATE:
+		typenm = "date";
+		break;
+	case SQL_TYPE_TIME:
+		typenm = "time";
+		break;
+	case SQL_TYPE_TIMESTAMP:
+		typenm = "timeestamp";
+		break;
+	case SQL_BIT:
+		typenm = "boolean";
+		break;
+	case SQL_INTERVAL_MONTH:
+		typenm = "INTERVAL MONTH";
+		break;
+	case SQL_INTERVAL_YEAR:
+		typenm = "INTERVAL YEAR";
+		break;
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+		typenm = "INTERVAL YEAR TO MONTH";
+		break;
+	case SQL_INTERVAL_DAY:
+		typenm = "INTERVAL DAY";
+		break;
+	case SQL_INTERVAL_HOUR:
+		typenm = "INTERVAL HOUR";
+		break;
+	case SQL_INTERVAL_MINUTE:
+		typenm = "INTERVAL MINUTE";
+		break;
+	case SQL_INTERVAL_SECOND:
+		typenm = "INTERVAL SECOND";
+		break;
+	case SQL_INTERVAL_DAY_TO_HOUR:
+		typenm = "INTERVAL DAY TO HOUR";
+		break;
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+		typenm = "INTERVAL DAY TO MINUTE";
+		break;
+	case SQL_INTERVAL_DAY_TO_SECOND:
+		typenm = "INTERVAL DAY TO SECOND";
+		break;
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+		typenm = "INTERVAL HOUR TO MINUTE";
+		break;
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+		typenm = "INTERVAL HOUR TO SECOND";
+		break;
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		typenm = "INTERVAL MINUTE TO SECOND";
+		break;
+	case SQL_GUID:
+		typenm = "UUID";
+		break;
+	}
+
+	return sql_bind_subtype(sql->sa, typenm, 0, 0);
+}
+
 /*
  * returns an error string (static or via tmp sa_allocator allocated), NULL on success
  *
@@ -65,11 +170,10 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 {
 	(void) res_exps;
 	(void) aname;
-//	list *typelist = sa_list(sql->sa);
-//	list *nameslist = sa_list(sql->sa);
+	bool trace_enabled = true;
 
 	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
-		return "Invalid URI. Expected to start with 'odbc:'.";
+		return "Invalid URI. Must start with 'odbc:'.";
 
 	// skip 'odbc:' prefix from url so we get a connection string including the query
 	char * con_str = &url[5];
@@ -87,59 +191,91 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 	// create a new ODBC connection string without the QUERY= part
 	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
 
+	if (trace_enabled)
+		printf("\nExtracted ODBC connection string: %s\nand SQL query: %s\n", odbc_con_str, query);
+
+	SQLRETURN ret = SQL_INVALID_HANDLE;
 	SQLHANDLE env = SQL_NULL_HENV;
 	SQLHANDLE dbc = SQL_NULL_HDBC;
 	SQLHANDLE stmt = SQL_NULL_HSTMT;
-	SQLRETURN ret;
-	SQLSMALLINT nr_cols = 0;
 	char * errmsg = NULL;
 
-	// printf("Extracted ODBC connection string: %s\nand SQL query: %s\n", odbc_con_str, query);
-
 	ret = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
-	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-		ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
-		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-			ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
-			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-				SQLSMALLINT len = 0;
-				ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
-				// printf("After SQLDriverConnect(%s)\n", odbc_con_str);
-				if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-					ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
-					if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-						ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
-						// printf("After SQLExecDirect(%s)\n", query);
-						if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-							ret = SQLNumResultCols(stmt, &nr_cols);
-							// printf("Query has %d result columns\n", nr_cols);
-							// TODO for each column get the name, type, size/digits and scale
-								// list_append(nameslist, name);
-								// list_append(typelist, type);
-						} else {
-							errmsg = "ODBC SQLExecDirect query failed.";
-							goto failure;
-						}
-					} else {
-						errmsg = "Allocate ODBC STMT handle failed.";
-						goto failure;
-					}
-				} else {
-					errmsg = "Could not connect. ODBC SQLDriverConnect failed.";
-					goto failure;
-				}
-			} else {
-				errmsg = "Allocate ODBC DBC handle failed.";
-				goto failure;
-			}
-		} else {
-			errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
-			goto failure;
-		}
-	} else {
-		errmsg = "Allocate ODBC environment handle failed.";
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "Allocate ODBC ENV handle failed.";
 		goto failure;
 	}
+	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
+		goto failure;
+	}
+	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "Allocate ODBC DBC handle failed.";
+		goto failure;
+	}
+
+	SQLSMALLINT len = 0;
+	ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+	if (trace_enabled)
+		printf("After SQLDriverConnect(%s) returned %d\n", odbc_con_str, ret);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "Could not connect. ODBC SQLDriverConnect failed.";
+		goto failure;
+	}
+
+	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "Allocate ODBC STMT handle failed.";
+		goto failure;
+	}
+
+	ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
+	if (trace_enabled)
+		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "ODBC SQLExecDirect query failed.";
+		goto failure;
+	}
+
+	SQLSMALLINT nr_cols = 0;
+	ret = SQLNumResultCols(stmt, &nr_cols);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "ODBC SQLNumResultCols failed.";
+		goto failure;
+	}
+	if (nr_cols <= 0) {
+		errmsg = "ODBC query did not return a resultset.";
+		goto failure;
+	}
+	if (trace_enabled)
+		printf("Query has %d result columns\n", nr_cols);
+
+	char name[2048];
+	SQLSMALLINT dataType = 0;
+	SQLULEN columnSize = 0;
+	SQLSMALLINT decimalDigits = 0;
+	list * typelist = sa_list(sql->sa);
+	list * nameslist = sa_list(sql->sa);
+	for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
+		/* for each result column get name, datatype, size and decdigits */
+		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) name, (SQLSMALLINT) sizeof(name),
+			NULL, &dataType, &columnSize, &decimalDigits, NULL);
+		if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+			errmsg = "ODBC SQLDescribeCol failed.";
+			goto failure;
+		}
+		if (trace_enabled)
+			printf("ResCol %d, name: %s, type %d, size %d, decdigits %d\n",
+				col, name, (int)dataType, (int)columnSize, (int)decimalDigits);
+		list_append(nameslist, name);
+		list_append(typelist, map_rescol_type(dataType, columnSize, decimalDigits, sql));
+	}
+
+	f->res = typelist;
+	f->coltypes = typelist;
+	f->colnames = nameslist;
 
 	odbc_loader_t *r = (odbc_loader_t *)sa_alloc(sql->sa, sizeof(odbc_loader_t));
 	r->env = env;
