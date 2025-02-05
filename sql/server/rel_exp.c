@@ -3697,7 +3697,10 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 	for(n = t->type->d.fields->h, m = vals->h; n && m; n = n->next, m = m->next) {
 		sql_arg *f = n->data;
 		sql_exp *e = m->data;
-		m->data = e = exp_check_type(sql, &f->type, rel, e, tpe);
+		e = exp_check_type(sql, &f->type, rel, e, tpe);
+		if (!e)
+			return NULL;
+		m->data = e;
 	}
 	if (n || m) {
 		if (m)
@@ -3762,6 +3765,8 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	sql_subtype *fromtype = exp_subtype(exp);
 
 	if (t->type->composite || t->multiset) {
+		if (fromtype && subtype_cmp(t, fromtype) == 0)
+			return exp;
 		if (t->multiset || !is_row(exp))
 			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		return exp_check_composite_type(sql, t, rel, exp, tpe);
