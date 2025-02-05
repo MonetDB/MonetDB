@@ -14,8 +14,8 @@ statement ok
 create type event as (eventid varchar, event varchar, timestamp timestamp, location loc, "user" webusr)
 
 statement ok
-create table events(events event[])
+create table events(events event)
 
 statement ok
-insert into events values (array[('111', 'click', '2024-11-30 22:13:37.823000 UTC', (array[(('hostname', 'localhost'))]), null)])
+insert into events values (('111', 'click', '2024-11-30 22:13:37.823000', (array[(('hostname', 'localhost'))]), null))
 
