@@ -512,28 +512,6 @@ class Comment:
     def write(self, f, newline = False):
         f.write(str(self))
 
-class Timer:
-    # interface to the threading.Timer function that interprets a
-    # timeout of 0 as no timeout
-    def __init__(self, interval, function, args):
-        self.timer = None
-        self.function = function
-        self.args = args
-        self.interval = interval
-
-    def settimeout(self, interval):
-        self.interval = interval
-
-    def start(self):
-        if self.timer is None and self.interval > 0:
-            self.timer = threading.Timer(self.interval, self.function, args=self.args)
-            self.timer.start()
-
-    def cancel(self):
-        if self.timer is not None:
-            self.timer.cancel()
-            self.timer = None
-
 REV = ''                # revision (output of hg id), default unknown
 
 black = 'black'                         # #000000
@@ -1354,7 +1332,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                         crs = dbh.cursor()
                         try:
                             crs.execute("call logging.setcomplevel('SQL_EXECUTION', 'INFO')")
-                        except socket.timeout:
+                        except TimeoutError:
                             print('\nTimeout setting log level.\n')
                         crs.close()
                         dbh.close()
@@ -1708,7 +1686,7 @@ def GetBitsAndModsAndThreads(env) :
                     crs = dbh.cursor()
                     try:
                         crs.execute('select distinct module from sys.malfunctions() order by module')
-                    except socket.timeout:
+                    except TimeoutError:
                         pass
                     else:
                         mods = crs.fetchall()
@@ -2582,13 +2560,13 @@ def stacktrace(proc, outfile):
             with process.Popen(['gdb', '-p', str(proc.pid), '-batch', '-ex', 'thread apply all bt full'], stdout=process.PIPE,
                                text=True) as p:
                 try:
+                    out, err = p.communicate(timeout=60)
+                except TimeoutExpired:
                     # gdb sometimes hangs when trying to get the stack
                     # trace: kill it mercilessly if it does
-                    t = Timer(60, reallyKill, args = [p])
-                    t.start()
-                except AttributeError:
-                    t = None
-                out, err = p.communicate()
+                    p.kill()
+                    p.wait()
+                    out = err = ''
             if t is not None:
                 t.cancel()
         except KeyboardInterrupt:
@@ -2650,7 +2628,6 @@ class ServerClass:
         self.inmem = inmem
         self.dbg = dbg
         self.dbname = dbname
-        self.running = None
         self.lock = threading.Lock()
 
     def poll(self):
@@ -2662,7 +2639,7 @@ class ServerClass:
         else:
             self.proc.terminate()
         try:
-            self.proc.wait(timeout=60)
+            self.proc.wait(timeout=30)
         except TimeoutExpired:
             self.proc.kill()
             self.wait()
@@ -2673,14 +2650,15 @@ class ServerClass:
         self.errfile.close()
 
     def start(self, timeout):
-        self.running = Timer(timeout, self.stopsessions, [])
-        self.running.start()
+        if timeout:
+            self.timer = threading.Timer(timeout, self.stopsessions, [])
+            self.timer.start()
 
     def stop(self):
         if self.lock.acquire():
-            if self.running:
-                self.running.cancel()
-                self.running = None
+            if self.timer:
+                self.timer.cancel()
+                self.timer = None
             self.lock.release()
 
     def sendusr1(self):
@@ -2697,7 +2675,7 @@ class ServerClass:
     def stopsessions(self):
         if self.lock.acquire(blocking=False):
             try:
-                if self.running is not None:
+                if self.timer is not None:
                     self.stacktrace()
                     try:
                         dbh = pymonetdb.connect(username='monetdb',
@@ -2717,11 +2695,11 @@ class ServerClass:
                                 crs.execute(f'call sys.stopsession({x[0]})')
                         if procdebug and not ids:
                             print('no sessions to stop')
-                    except socket.timeout:
+                    except TimeoutError:
                         self.proc.kill()
                     crs.close()
                     dbh.close()
-                    self.running = None
+                    self.timer = None
             finally:
                 self.lock.release()
 
@@ -3001,7 +2979,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             elif CALL == 'python':
                 # do clean up between tests if no dependent tests
                 # borrow clean up function from sqllogictest
-                if not nodrop and not os.path.exists(TST+'.reqtests'):
+                if not nodrop and not os.path.exists(TST+'.reqtests') and pSrvr is not None:
                     import MonetDBtesting.sqllogictest as sqllogictest
                     with sqllogictest.SQLLogic(out=ClntErr) as sql:
                         try:
@@ -3015,6 +2993,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                         alltests=CONDITIONALS['KNOWNFAIL'])
                         except KeyboardInterrupt:
                             raise
+                        except TimeoutError:
+                            returncode = 'timeout'
                         except:
                             returncode = 'error'
                         else:
@@ -3022,10 +3002,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 sql.drop()
                             except KeyboardInterrupt:
                                 raise
+                            except TimeoutError:
+                                returncode = 'timeout'
                             except:
                                 pass
-                cmd = [sys.executable, TST + EXT, TST]
-                returncode = RunIt(cmd, False, '', ClntOut, ClntErr, TIMEOUT, pSrvr)
+                if returncode is None:
+                    cmd = [sys.executable, TST + EXT, TST]
+                    returncode = RunIt(cmd, False, '', ClntOut, ClntErr, TIMEOUT, pSrvr)
             elif CALL == 'sqltest' or CALL == 'maltest':
                 issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
@@ -3045,6 +3028,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     alltests=CONDITIONALS['KNOWNFAIL'])
                     except KeyboardInterrupt:
                         raise
+                    except TimeoutError:
+                        returncode = 'timeout'
                     except:
                         returncode = 'error'
                     else:
@@ -3053,29 +3038,39 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 sql.drop()
                             except KeyboardInterrupt:
                                 raise
+                            except TimeoutError:
+                                returncode = 'timeout'
                             except:
                                 pass
-                        defines = []
-                        if lang == 'sql' and os.path.exists(TST+'.test.in'):
-                            for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR', 'TSTDB', 'MAPIPORT'):
-                                if key in env:
-                                    defines.append(f'{key}={env[key]}')
-                        try:
-                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
-                        except KeyboardInterrupt:
-                            raise
-                        except sqllogictest.SQLLogicSyntaxError:
-                            pass
-                        except BrokenPipeError:
-                            # server timeout
-                            pass
-                        except ConnectionResetError:
-                            # server crash?
-                            pass
-                        except:
-                            # something went wrong, we don't know what
-                            # print a stack trace and continue
-                            sys.excepthook(*sys.exc_info())
+                        if returncode is None:
+                            defines = []
+                            if lang == 'sql' and os.path.exists(TST+'.test.in'):
+                                for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR', 'TSTDB', 'MAPIPORT'):
+                                    if key in env:
+                                        defines.append(f'{key}={env[key]}')
+                            try:
+                                sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
+                            except KeyboardInterrupt:
+                                raise
+                            except sqllogictest.SQLLogicSyntaxError:
+                                pass
+                            except TimeoutError:
+                                returncode = 'timeout'
+                            except BrokenPipeError:
+                                # server timeout
+                                pass
+                            except ConnectionResetError:
+                                # server crash?
+                                pass
+                            except:
+                                # something went wrong, we don't know what
+                                # print a stack trace and continue
+                                sys.excepthook(*sys.exc_info())
+                            else:
+                                if sql.seenerr:
+                                    returncode = 'error'
+                                elif sql.timedout:
+                                    returncode = 'timeout'
             elif CALL == 'sql':
                 TSTs = []
                 test = re.compile('^'+TST+EXT+'$', re.MULTILINE)
