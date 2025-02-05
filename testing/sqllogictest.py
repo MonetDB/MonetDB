@@ -156,7 +156,7 @@ class SQLLogic:
         if self.timeout > 0:
             t = time.time()
             if self.starttime + self.timeout > t:
-                return self.starttime + self.timeout - t
+                return int(self.starttime + self.timeout - t)
             return 0
         return -1
 
@@ -213,6 +213,9 @@ class SQLLogic:
                                          autocommit=True,
                                          connect_timeout=t)
                 crs = dbh.cursor()
+                if t > 0:
+                    dbh.settimeout(t)
+                    crs.execute(f'call sys.setsessiontimeout({t})')
             else:
                 dbh = malmapi.Connection()
                 dbh.connect(database=database,
@@ -223,6 +226,9 @@ class SQLLogic:
                             port=port,
                             connect_timeout=t)
                 crs = MapiCursor(dbh)
+                if t > 0:
+                    dbh.settimeout(t)
+                    crs.execute(f'clients.setsessiontimeout({t}:int)')
             conn = SQLLogicConnection(conn_id, dbh=dbh, crs=crs, language=language)
             self.conn_map[conn_id] = conn
             return conn
@@ -808,12 +814,16 @@ class SQLLogic:
         self.approve = approve
         self.initfile(f, defines, run_until=run_until)
         nthreads = None
+        if self.timeout:
+            timeout = int((time.time() - self.starttime) + self.timeout)
+        else:
+            timeout = 0
         if self.language == 'sql':
-            self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
+            self.crs.execute(f'call sys.setsessiontimeout({timeout})')
             global hashge
             hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
-            self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
+            self.crs.execute(f'clients.setsessiontimeout({timeout}:int)')
         skiprest = False
         while True:
             skipping = skiprest

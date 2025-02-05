@@ -2979,7 +2979,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
             elif CALL == 'python':
                 # do clean up between tests if no dependent tests
                 # borrow clean up function from sqllogictest
-                if not nodrop and not os.path.exists(TST+'.reqtests'):
+                if not nodrop and not os.path.exists(TST+'.reqtests') and pSrvr is not None:
                     import MonetDBtesting.sqllogictest as sqllogictest
                     with sqllogictest.SQLLogic(out=ClntErr) as sql:
                         try:
