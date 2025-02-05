@@ -4428,7 +4428,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 							sql_base *bc = ncol->data;
 							sql_column *c = (sql_column *) ncol->data;
-
+							if (!c->type.multiset && c->type.type->composite)
+								continue; // virtual column, e.g. no column info
 							if( cname && strcmp(bc->name, cname) )
 								continue;
 							bs = store->storage_api.bind_col(tr, c, QUICK);
