@@ -690,7 +690,7 @@ set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 			stmt *input = list_fetch(s->op4.lval, i);
 			sql_subtype *type = tail_type(input);
 			list *nl = list_append(sa_list(be->mvc->sa), input);
-			for (; n; n = n->next) {
+			for (n = n->next; n; n = n->next) {
 				stmt *s = n->data;
 				stmt *input = list_fetch(s->op4.lval, i);
 				nl = list_append(nl, input);

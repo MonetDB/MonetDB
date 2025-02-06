@@ -6876,7 +6876,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
  pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", json), arg("type", ptr))),
- pattern("sql", "from_varchar", SQLfrom_varchar, false, "Reads string into table of nested/multiset structures", args(1,3, batvarargany("t",0), arg("input", str), arg("type", ptr))),
+ pattern("sql", "from_varchar", SQLfrom_varchar, false, "Reads string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", str), arg("type", ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
