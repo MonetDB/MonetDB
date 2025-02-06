@@ -114,6 +114,7 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		/* decimalDigits contains the precision of fractions of a second */
 		typenm = "time";
 		break;
+	case SQL_DATETIME:
 	case SQL_TYPE_TIMESTAMP:
 		/* decimalDigits contains the precision of fractions of a second */
 		typenm = "timestamp";
@@ -201,9 +202,13 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 
 	// skip 'odbc:' prefix from url so we get a connection string including the query
 	char * con_str = &url[5];
-	// the connection string must start with 'DSN=' or 'DRIVER=' else the ODBC driver manager can't load the ODBC driver
-	if (con_str && (strncasecmp("DSN=", con_str, 4) != 0) && (strncasecmp("DRIVER=", con_str, 7) != 0))
-		return "Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER='.";
+	/* the connection string must start with 'DSN=' or 'DRIVER=' or 'FILEDSN='
+	   else the ODBC driver manager can't load the ODBC driver */
+	if (con_str
+	  && (strncmp("DSN=", con_str, 4) != 0)
+	  && (strncmp("DRIVER=", con_str, 7) != 0)
+	  && (strncmp("FILEDSN=", con_str, 8) != 0))
+		return "Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.";
 
 	// locate the 'QUERY=' part to extract the SQL query string to execute
 	char * qry_str = strstr(con_str, "QUERY=");
@@ -312,9 +317,41 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
   		GDKfree(query);
   	if (odbc_con_str)
   		GDKfree(odbc_con_str);
-	// TODO get DiagRecMsg to get driver err message and sqlstate
+
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		SQLSMALLINT handleType;
+		SQLHANDLE handle;
+		SQLCHAR state[6];
+		SQLINTEGER errnr;
+		SQLCHAR msg[2048];
+		SQLSMALLINT msglen;
+
+		/* get err message(s) from the right handle */
+		if (stmt != SQL_NULL_HSTMT) {
+			handleType = SQL_HANDLE_STMT;
+			handle = stmt;
+		} else
+		if (dbc != SQL_NULL_HDBC) {
+			handleType = SQL_HANDLE_DBC;
+			handle = dbc;
+		} else {
+			handleType = SQL_HANDLE_ENV;
+			handle = env;
+		}
+		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, sizeof(msg), &msglen);
+		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+			str retmsg;
+			if (errmsg != NULL) {
+				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, (int)errnr, (char*)msg);
+			} else {
+				retmsg = sa_message(sql->sa, "odbc_loader" " SQLstate %s, Errnr %d, Message %s", (char*)state, (int)errnr, (char*)msg);
+			}
+			odbc_cleanup(env, dbc, stmt);
+			return retmsg;
+		}
+	}
 	odbc_cleanup(env, dbc, stmt);
-	return errmsg;
+	return (str)errmsg;
 }
 
 static void *
