@@ -5766,10 +5766,10 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, in
 		}
 	}
 
-	//if (elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
-	//	elm = -3;
-	//if (t->multiset == MS_ARRAY && elm > 0 && BUNappend(bats[w+1], &anr, false) != GDK_SUCCEED)
-	//	elm = -3;
+	if (elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
+		elm = -3;
+	if (t->multiset == MS_ARRAY && elm > 0 && BUNappend(bats[w+1], &anr, false) != GDK_SUCCEED)
+		elm = -3;
 	return elm;
 }
 
