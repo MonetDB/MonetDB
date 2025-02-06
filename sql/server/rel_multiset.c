@@ -426,7 +426,7 @@ fm_project(visitor *v, sql_rel *rel)
 				}
 				append(fexps, exp_ref(v->sql, e));
 			}
-			sql_rel *nrel = rel_project(v->sql->sa, NULL, rel->exps);
+			sql_rel *nrel = rel_project(v->sql->sa, l, rel->exps);
 			list *tl = append(sa_list(v->sql->sa), exp_subtype(fexps->h->data));//exp_types(v->sql->sa, fexps);
 			list *rl = exp_types(v->sql->sa, nexps);
 			sql_subfunc *msf = sql_bind_func_(v->sql, NULL, "multiset", tl, F_UNION, true, true, false);
