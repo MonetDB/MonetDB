@@ -1,4 +1,5 @@
-import pymonetdb, os
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os
 
 def connect(autocommit):
     return pymonetdb.connect(database = os.getenv('TSTDB'),

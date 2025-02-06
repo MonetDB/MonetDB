@@ -1,4 +1,5 @@
-import os, sys, shutil, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, shutil
 
 src = os.environ['RELSRCDIR']
 dst = os.environ['TSTTRGDIR']
