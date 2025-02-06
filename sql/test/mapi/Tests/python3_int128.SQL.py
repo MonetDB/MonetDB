@@ -10,7 +10,7 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import sys, os
 
 dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),database=os.getenv('TSTDB'),hostname=os.getenv('MAPIHOST'),autocommit=True)

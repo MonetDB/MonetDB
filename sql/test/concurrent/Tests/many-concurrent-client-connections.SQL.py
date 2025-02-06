@@ -1,4 +1,5 @@
-import os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 if os.name == 'posix' and os.uname().sysname == 'Linux':

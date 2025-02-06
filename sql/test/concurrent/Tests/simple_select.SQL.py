@@ -1,4 +1,5 @@
-import pymonetdb, sys, threading, os
+from MonetDBtesting import tpymonetdb as pymonetdb
+import sys, threading, os
 
 query = 'select 1,2;'
 
