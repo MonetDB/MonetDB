@@ -1544,7 +1544,10 @@ def coredumpctl(pid):
                        stdout=process.PIPE,
                        stderr=process.PIPE,
                        text=True) as p:
-        out, err = p.communicate()
+        try:
+            out, err = p.communicate(timeout=60)
+        except process.TimeoutExpired:
+            p.kill()
     os.unlink(name)
     s = []
     for l in out.split('\n'):
@@ -1694,7 +1697,7 @@ def GetBitsAndModsAndThreads(env) :
                 qErr = proc.stderr.read(timeout=5)
                 try:
                     proc.wait(timeout=5)
-                except TimeoutExpired:
+                except process.TimeoutExpired:
                     proc.kill()
                     proc.wait()
         finally:
@@ -2478,13 +2481,19 @@ def stacktrace(proc, outfile):
             with process.Popen([cdb, '-pv', '-p', str(proc.pid),
                                 '-y', f'{sym}cache*;srv*http://msdl.microsoft.com/download/symbols', '-lines', '-c', '~*kP;!locks;q'],
                                stdout=process.PIPE, text=True) as p:
-                out, err = p.communicate()
+                try:
+                    out, err = p.communicate(timeout=60)
+                except process.TimeoutExpired:
+                    p.kill()
         else:
             out = ''
     elif platform.system() == 'Darwin':
         try:
             with process.Popen(['lldb', '--attach-pid', str(proc.pid), '--batch', '--one-line', 'bt all'], stdout=process.PIPE, text=True) as p:
-                out, err = p.communicate()
+                try:
+                    out, err = p.communicate(timeout=60)
+                except process.TimeoutExpired:
+                    p.kill()
         except KeyboardInterrupt:
             raise
         except:
@@ -2495,7 +2504,7 @@ def stacktrace(proc, outfile):
                                text=True) as p:
                 try:
                     out, err = p.communicate(timeout=60)
-                except TimeoutExpired:
+                except process.TimeoutExpired:
                     # gdb sometimes hangs when trying to get the stack
                     # trace: kill it mercilessly if it does
                     p.kill()
@@ -2574,9 +2583,9 @@ class ServerClass:
             self.proc.terminate()
         try:
             self.proc.wait(timeout=30)
-        except TimeoutExpired:
+        except process.TimeoutExpired:
             self.proc.kill()
-            self.wait()
+            self.proc.wait()
         self.code = returnCode(self.proc, self.errfile)
         if self.pollfile is None:
             self.outfile.write(self.proc.stdout.read())
