@@ -200,8 +200,14 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *r = getArgReference_bat(stk, pci, 0),
 		*bid = getArgReference_bat(stk, pci, 1);
 	bit force = *getArgReference_bit(stk, pci, 2);
+	bit ms = false;
+	int argc = 3;
+	if (getArgType(mb, pci, argc) == TYPE_bit && getArgType(mb, pci, argc + 1) != TYPE_bit) {
+		ms = *getArgReference_bit(stk, pci, argc);
+		argc++;
+	}
 	BAT *b;
-	BUN inputs = (BUN) (pci->argc - 3), number_existing = 0, total = 0;
+	BUN inputs = (BUN) (pci->argc - argc), number_existing = 0, total = 0;
 
 	(void) cntxt;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -210,9 +216,32 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (inputs > 0) {
 		number_existing = BATcount(b);
 
-		if (isaBatType(getArgType(mb, pci, 3))) {	/* use BATappend for the bulk case */
+		if (isaBatType(getArgType(mb, pci, argc))) {	/* use BATappend for the bulk case */
 			gdk_return rt;
-			for (int i = 3, args = pci->argc; i < args; i++) {
+			if (ms) {
+				int nr = -1;
+				for (int i = argc, args = pci->argc; i < args; i++) {
+					BAT *d = BATdescriptor(*getArgReference_bat(stk, pci, i));
+					if (!d) {
+						BBPunfix(b->batCacheid);
+						throw(MAL, "bat.append_bulk",
+								SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+					}
+					if (i > argc) {
+						int *t = Tloc(d, 0);
+						for(BUN n = 0; n < BATcount(d); n++)
+							t[n] += nr;
+					}
+					rt = BATappend(b, d, NULL, force);
+					nr = *(int*)Tloc(b, BATcount(b)-1);
+					BBPunfix(d->batCacheid);
+					if (rt != GDK_SUCCEED) {
+						BBPunfix(b->batCacheid);
+						throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
+					}
+				}
+			} else
+			for (int i = argc, args = pci->argc; i < args; i++) {
 				BAT *d = BATdescriptor(*getArgReference_bat(stk, pci, i));
 				if (!d) {
 					BBPunfix(b->batCacheid);
@@ -242,7 +271,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 				throw(MAL, "bat.append_bulk", GDK_EXCEPTION);
 			}
-			for (int i = 3, args = pci->argc; i < args; i++) {
+			for (int i = argc, args = pci->argc; i < args; i++) {
 				ptr u = getArgReference(stk, pci, i);
 				if (external)
 					u = (ptr) *(ptr *) u;
@@ -291,6 +320,7 @@ mel_func batExtensions_init_funcs[] = {
  pattern("bat", "partition", CMDBATpartition2, false, "Create the n-th slice over the BAT broken into several pieces.", args(1,4, batargany("",1),batargany("b",1),arg("pieces",int),arg("n",int))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
+ pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,5, batargany("",1), batargany("i",1),arg("force",bit),arg("inc",bit), batvarargany("ins",1))),
  command("bat", "vacuum", CMDBATvacuum, false, "", args(1,2, batarg("",str),batarg("b",str))),
  { .imp=NULL }
 };
