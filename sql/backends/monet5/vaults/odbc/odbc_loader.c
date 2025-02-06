@@ -51,11 +51,11 @@ odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
 	}
 }
 
-
 static sql_subtype *
 map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDigits, mvc * sql)
 {
 	char * typenm;
+	int interval_type = 0;
 
 	switch (dataType) {
 	case SQL_CHAR:
@@ -64,17 +64,24 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	case SQL_WCHAR:
 	case SQL_WVARCHAR:
 	case SQL_WLONGVARCHAR:
-	default:
+	default:	/* all other ODBC types are also mapped to varchar for now */
+		/* all ODBC char datatypes are mapped to varchar. char and clob are internally not used anymore */
 		return sql_bind_subtype(sql->sa, "varchar", (int) columnSize, 0);
-
-	case SQL_DECIMAL:
-	case SQL_NUMERIC:
-		return sql_bind_subtype(sql->sa, "decimal", (int) decimalDigits, 6);
 
 	case SQL_BINARY:
 	case SQL_VARBINARY:
 	case SQL_LONGVARBINARY:
 		return sql_bind_subtype(sql->sa, "blob", (int) columnSize, 0);
+
+	case SQL_DECIMAL:
+	case SQL_NUMERIC:
+		/* columnSize contains the defined number of digits, so precision. */
+		/* decimalDigits contains the scale (which can be negative). */
+		return sql_bind_subtype(sql->sa, "decimal", (int) columnSize, (int) decimalDigits);
+
+	case SQL_BIT:
+		typenm = "boolean";
+		break;
 
 	case SQL_TINYINT:
 		typenm = "tinyint";
@@ -83,11 +90,12 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		typenm = "smallint";
 		break;
 	case SQL_INTEGER:
-		typenm = "integer";
+		typenm = "int";
 		break;
 	case SQL_BIGINT:
 		typenm = "bigint";
 		break;
+
 	case SQL_REAL:
 		typenm = "real";
 		break;
@@ -95,65 +103,81 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		typenm = "double";
 		break;
 	case SQL_FLOAT:
-		typenm = "float";
+		/* the precision of SQL_FLOAT can be either 24 or 53: if it is 24, the SQL_FLOAT data type is the same as SQL_REAL; if it is 53, the SQL_FLOAT data type is the same as SQL_DOUBLE. */
+		typenm = (columnSize == 7) ? "real" : "double";
 		break;
+
 	case SQL_TYPE_DATE:
 		typenm = "date";
 		break;
 	case SQL_TYPE_TIME:
+		/* decimalDigits contains the precision of fractions of a second */
 		typenm = "time";
 		break;
 	case SQL_TYPE_TIMESTAMP:
-		typenm = "timeestamp";
+		/* decimalDigits contains the precision of fractions of a second */
+		typenm = "timestamp";
 		break;
-	case SQL_BIT:
-		typenm = "boolean";
-		break;
+
 	case SQL_INTERVAL_MONTH:
-		typenm = "INTERVAL MONTH";
+		typenm = "month_interval";
+		interval_type = 3;
 		break;
 	case SQL_INTERVAL_YEAR:
-		typenm = "INTERVAL YEAR";
+		typenm = "month_interval";
+		interval_type = 1;
 		break;
 	case SQL_INTERVAL_YEAR_TO_MONTH:
-		typenm = "INTERVAL YEAR TO MONTH";
+		typenm = "month_interval";
+		interval_type = 2;
 		break;
 	case SQL_INTERVAL_DAY:
-		typenm = "INTERVAL DAY";
+		typenm = "day_interval";
+		interval_type = 4;
 		break;
 	case SQL_INTERVAL_HOUR:
-		typenm = "INTERVAL HOUR";
+		typenm = "sec_interval";
+		interval_type = 8;
 		break;
 	case SQL_INTERVAL_MINUTE:
-		typenm = "INTERVAL MINUTE";
+		typenm = "sec_interval";
+		interval_type = 11;
 		break;
 	case SQL_INTERVAL_SECOND:
-		typenm = "INTERVAL SECOND";
+		typenm = "sec_interval";
+		interval_type = 13;
 		break;
 	case SQL_INTERVAL_DAY_TO_HOUR:
-		typenm = "INTERVAL DAY TO HOUR";
+		typenm = "sec_interval";
+		interval_type = 5;
 		break;
 	case SQL_INTERVAL_DAY_TO_MINUTE:
-		typenm = "INTERVAL DAY TO MINUTE";
+		typenm = "sec_interval";
+		interval_type = 6;
 		break;
 	case SQL_INTERVAL_DAY_TO_SECOND:
-		typenm = "INTERVAL DAY TO SECOND";
+		typenm = "sec_interval";
+		interval_type = 7;
 		break;
 	case SQL_INTERVAL_HOUR_TO_MINUTE:
-		typenm = "INTERVAL HOUR TO MINUTE";
+		typenm = "sec_interval";
+		interval_type = 9;
 		break;
 	case SQL_INTERVAL_HOUR_TO_SECOND:
-		typenm = "INTERVAL HOUR TO SECOND";
+		typenm = "sec_interval";
+		interval_type = 10;
 		break;
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
-		typenm = "INTERVAL MINUTE TO SECOND";
+		typenm = "sec_interval";
+		interval_type = 12;
 		break;
+
 	case SQL_GUID:
-		typenm = "UUID";
+		/* represents a uuid of length 36, such as: dbe7343c-1f11-4fa9-a9c8-a31cd26f92fe */
+		typenm = "uuid";
 		break;
 	}
-
-	return sql_bind_subtype(sql->sa, typenm, 0, 0);
+	return sql_bind_subtype(sql->sa, typenm, interval_type, 0);
 }
 
 /*
