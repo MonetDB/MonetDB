@@ -131,6 +131,7 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     melcheck.py
     sqllogictest.py
+    tpymonetdb.py
     explain.py
     plan.py
     floatutil.py

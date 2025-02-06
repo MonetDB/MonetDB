@@ -1,5 +1,6 @@
 from MonetDBtesting.sqltest import SQLTestCase
-import pymonetdb, os
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os
 
 conn1 = pymonetdb.connect(database=os.getenv("TSTDB"), port=int(os.getenv("MAPIPORT")), autocommit=True)
 cur1 = conn1.cursor()

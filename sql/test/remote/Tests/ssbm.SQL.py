@@ -1,4 +1,5 @@
-import os, sys, glob, pymonetdb, threading, time, codecs, tempfile
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, glob, threading, time, codecs, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:

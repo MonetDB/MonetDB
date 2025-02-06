@@ -164,9 +164,8 @@ class PyMonetDBConnectionContext(object):
                                          connect_timeout=1.0 if self.timeout > 0 else None)
                 if self.timeout > 0:
                     self.dbh.settimeout(self.timeout)
-                    crs = self.dbh.cursor()
-                    crs.execute(f'call sys.setsessiontimeout({self.timeout})')
-                    crs.close()
+                    with self.dbh.cursor() as crs:
+                        crs.execute(f'call sys.setsessiontimeout({self.timeout})')
                 self.dbh.set_uploader(transfer_handler)
                 self.dbh.set_downloader(transfer_handler)
             else:
