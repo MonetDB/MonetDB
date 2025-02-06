@@ -181,6 +181,53 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	return sql_bind_subtype(sql->sa, typenm, interval_type, 0);
 }
 
+static char *
+nameofSQLtype(SQLSMALLINT dataType)
+{
+	/* https://docs.microsoft.com/en-us/sql/odbc/reference/appendixes/sql-data-types */
+	switch (dataType) {
+	case SQL_CHAR:		return "CHAR";
+	case SQL_VARCHAR:	return "VARCHAR";
+	case SQL_LONGVARCHAR:	return "LONG VARCHAR";
+	case SQL_WCHAR:		return "WCHAR";
+	case SQL_WVARCHAR:	return "WVARCHAR";
+	case SQL_WLONGVARCHAR:	return "WLONGVARCHAR";
+	case SQL_DECIMAL:	return "DECIMAL";
+	case SQL_NUMERIC:	return "NUMERIC";
+	case SQL_SMALLINT:	return "SMALLINT";
+	case SQL_INTEGER:	return "INTEGER";
+	case SQL_REAL:		return "REAL";
+	case SQL_FLOAT:		return "FLOAT";
+	case SQL_DOUBLE:	return "DOUBLE";
+	case SQL_BIT:		return "BIT";
+	case SQL_TINYINT:	return "TINYINT";
+	case SQL_BIGINT:	return "BIGINT";
+	case SQL_BINARY:	return "BINARY";
+	case SQL_VARBINARY:	return "VARBINARY";
+	case SQL_LONGVARBINARY:	return "LONG VARBINARY";
+	case SQL_DATETIME:	return "DATETIME";
+	case SQL_TYPE_DATE:	return "DATE";
+	case SQL_TYPE_TIME:	return "TIME";
+	case SQL_TYPE_TIMESTAMP:	return "TIMESTAMP";
+	case SQL_INTERVAL_MONTH:	return "INTERVAL MONTH";
+	case SQL_INTERVAL_YEAR:		return "INTERVAL YEAR";
+	case SQL_INTERVAL_YEAR_TO_MONTH: return "INTERVAL YEAR TO MONTH";
+	case SQL_INTERVAL_DAY:		return "INTERVAL DAY";
+	case SQL_INTERVAL_HOUR:		return "INTERVAL HOUR";
+	case SQL_INTERVAL_MINUTE:	return "INTERVAL MINUTE";
+	case SQL_INTERVAL_SECOND:	return "INTERVAL SECOND";
+	case SQL_INTERVAL_DAY_TO_HOUR:	return "INTERVAL DAY TO HOUR";
+	case SQL_INTERVAL_DAY_TO_MINUTE:	return "INTERVAL DAY TO MINUTE";
+	case SQL_INTERVAL_DAY_TO_SECOND:	return "INTERVAL DAY TO SECOND";
+	case SQL_INTERVAL_HOUR_TO_MINUTE:	return "INTERVAL HOUR TO MINUTE";
+	case SQL_INTERVAL_HOUR_TO_SECOND:	return "INTERVAL HOUR TO SECOND";
+	case SQL_INTERVAL_MINUTE_TO_SECOND:	return "INTERVAL MINUTE TO SECOND";
+	case SQL_GUID:		return "GUID";
+/*	case SQL_HUGEINT:	return "HUGEINT";	0x4000 (defined in ODBCGlobal.h) */
+	default:		return "Driver specific type";
+	}
+}
+
 /*
  * returns an error string (static or via tmp sa_allocator allocated), NULL on success
  *
@@ -191,12 +238,12 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
  * Fill the list res_exps, with one result expressions per resulting column.
  */
 static str
-odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
+odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, int caller)
 {
-	(void) res_exps;
-	(void) aname;
-	bool trace_enabled = true;
+	(void) topn;
+	bool trace_enabled = true;	/* used for development only */
 
+	/* check received url and extract the ODBC connection string and yhe SQL query */
 	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
 		return "Invalid URI. Must start with 'odbc:'.";
 
@@ -223,6 +270,8 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 	if (trace_enabled)
 		printf("\nExtracted ODBC connection string: %s\nand SQL query: %s\n", odbc_con_str, query);
 
+
+	/* now we can try to connect to the ODBC driver and execute the SQL query */
 	SQLRETURN ret = SQL_INVALID_HANDLE;
 	SQLHANDLE env = SQL_NULL_HENV;
 	SQLHANDLE dbc = SQL_NULL_HDBC;
@@ -232,17 +281,17 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 	ret = SQLAllocHandle(SQL_HANDLE_ENV, SQL_NULL_HANDLE, &env);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "Allocate ODBC ENV handle failed.";
-		goto failure;
+		goto finish;
 	}
 	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
-		goto failure;
+		goto finish;
 	}
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "Allocate ODBC DBC handle failed.";
-		goto failure;
+		goto finish;
 	}
 
 	SQLSMALLINT len = 0;
@@ -250,69 +299,112 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 	if (trace_enabled)
 		printf("After SQLDriverConnect(%s) returned %d\n", odbc_con_str, ret);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = "Could not connect. ODBC SQLDriverConnect failed.";
-		goto failure;
+		errmsg = "Could not connect. SQLDriverConnect failed.";
+		goto finish;
 	}
 
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "Allocate ODBC STMT handle failed.";
-		goto failure;
+		goto finish;
 	}
 
 	ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 	if (trace_enabled)
 		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = "ODBC SQLExecDirect query failed.";
-		goto failure;
+		errmsg = "SQLExecDirect query failed.";
+		goto finish;
 	}
 
 	SQLSMALLINT nr_cols = 0;
 	ret = SQLNumResultCols(stmt, &nr_cols);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = "ODBC SQLNumResultCols failed.";
-		goto failure;
+		errmsg = "SQLNumResultCols failed.";
+		goto finish;
 	}
 	if (nr_cols <= 0) {
 		errmsg = "ODBC query did not return a resultset.";
-		goto failure;
+		goto finish;
 	}
 	if (trace_enabled)
 		printf("Query has %d result columns\n", nr_cols);
 
-	char name[2048];
-	SQLSMALLINT dataType = 0;
-	SQLULEN columnSize = 0;
-	SQLSMALLINT decimalDigits = 0;
-	list * typelist = sa_list(sql->sa);
-	list * nameslist = sa_list(sql->sa);
-	for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
-		/* for each result column get name, datatype, size and decdigits */
-		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) name, (SQLSMALLINT) sizeof(name),
-			NULL, &dataType, &columnSize, &decimalDigits, NULL);
-		if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-			errmsg = "ODBC SQLDescribeCol failed.";
-			goto failure;
+	/* when called from odbc_relation() */
+	if (caller == 1) {
+		char tname[1024];
+		char cname[1024];
+		SQLSMALLINT dataType = 0;
+		SQLULEN columnSize = 0;
+		SQLSMALLINT decimalDigits = 0;
+		sql_subtype * sql_mtype;
+		list * typelist = sa_list(sql->sa);
+		list * nameslist = sa_list(sql->sa);
+		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
+			/* for each result column get name, datatype, size and decdigits */
+			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname),
+				NULL, &dataType, &columnSize, &decimalDigits, NULL);
+			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+				errmsg = "SQLDescribeCol failed.";
+				goto finish;
+			}
+			if (trace_enabled)
+				printf("ResCol %d, name: %s, type %d (%s), size %d, decdigits %d\n",
+					col, cname, (int)dataType, nameofSQLtype(dataType), (int)columnSize, (int)decimalDigits);
+			list_append(nameslist, cname);
+			sql_mtype = map_rescol_type(dataType, columnSize, decimalDigits, sql);
+			list_append(typelist, sql_mtype);
+
+			/* also get the table name for this result column */
+			ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) sizeof(tname), NULL, NULL);
+			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+				strcpy(tname, "");
+			}
+			sql_exp *ne = exp_column(sql->sa, tname, cname, sql_mtype, CARD_MULTI, 1, 0, 0);
+			set_basecol(ne);
+			ne->alias.label = -(sql->nid++);
+			list_append(res_exps, ne);
 		}
-		if (trace_enabled)
-			printf("ResCol %d, name: %s, type %d, size %d, decdigits %d\n",
-				col, name, (int)dataType, (int)columnSize, (int)decimalDigits);
-		list_append(nameslist, name);
-		list_append(typelist, map_rescol_type(dataType, columnSize, decimalDigits, sql));
+
+		/* f->tname = sa_strdup(sql->sa, aname); */
+		f->res = typelist;
+		f->coltypes = typelist;
+		f->colnames = nameslist;
+
+		odbc_loader_t *r = (odbc_loader_t *)sa_alloc(sql->sa, sizeof(odbc_loader_t));
+		r->env = env;
+		r->dbc = dbc;
+		r->stmt = stmt;
+		r->nr_cols = nr_cols;
+		f->sname = (char*)r; /* pass odbc_loader */
+
+		goto finish;
 	}
 
-	f->res = typelist;
-	f->coltypes = typelist;
-	f->colnames = nameslist;
+	/* when called from odbc_load() we can now fetch the data */
+	if (caller == 2 && stmt != SQL_NULL_HSTMT) {
+		// TODO create an internal transient table to store fetched data
+		// if (mvc_create_table(&t, be->mvc, be->mvc->session->tr->tmp /* misuse tmp schema */, r->tname /*gettable name*/, tt_remote, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
 
-	odbc_loader_t *r = (odbc_loader_t *)sa_alloc(sql->sa, sizeof(odbc_loader_t));
-	r->env = env;
-	r->dbc = dbc;
-	r->stmt = stmt;
-	r->nr_cols = nr_cols;
-	f->sname = (char*)r; /* pass odbc_loader */
-  failure:
+		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
+			// TODO for each result column create a buffer and bind it. Also create a BAT column.
+			// ret = SQLBindCol(stmt, 1, );
+			// if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
+		}
+
+		// repeat fetching data, adding data work table
+		ret = SQLFetch(stmt);
+		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+			// TODO for each result column append to created transient table
+			for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
+				// ret = SQLGetData(stmt, col, ...);
+				// copy buffer value to BUN and append
+			}
+			ret = SQLFetch(stmt);	// get data of next row
+		}
+	}
+
+  finish:
   	if (query)
   		GDKfree(query);
   	if (odbc_con_str)
@@ -354,43 +446,28 @@ odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 	return (str)errmsg;
 }
 
+/*
+ * returns an error string (static or via tmp sa_allocator allocated), NULL on success
+ *
+ * Extend the subfunc f with result columns, ie.
+	f->res = typelist;
+	f->coltypes = typelist;
+	f->colnames = nameslist; use tname if passed, for the relation name
+ * Fill the list res_exps, with one result expressions per resulting column.
+ */
+static str
+odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
+{
+	(void) aname;
+	return odbc_query(sql, f, url, res_exps, NULL, 1);
+}
+
 static void *
 odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 {
-	(void) url;
-	(void) topn;
-	(void) BE;
-//	backend *be = (backend*)BE;
-//	mvc *sql = be->mvc;
-	odbc_loader_t *r = (odbc_loader_t*)f->sname;
-	SQLHANDLE stmt = r->stmt;
-	SQLSMALLINT nr_cols = r->nr_cols;
-
-	if (stmt != SQL_NULL_HSTMT) {
-		SQLRETURN ret;
-		// TODO create an internal transient table to store fetched data
-		// if (mvc_create_table(&t, be->mvc, be->mvc->session->tr->tmp /* misuse tmp schema */, r->tname /*gettable name*/, tt_remote, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
-
-		for (SQLSMALLINT i = 1; i <= nr_cols; i++) {
-			// TODO for each result column create a buffer and bind it. Also create a BAT column.
-			// ret = SQLBindCol(stmt, 1, );
-			// if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
-		}
-
-		// repeat fetching data, adding data work table
-		ret = SQLFetch(stmt);
-		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-			// TODO for each result column append to created transient table
-			for (SQLSMALLINT i = 1; i <= nr_cols; i++) {
-				// copy buffer value to BUN and append
-			}
-			ret = SQLFetch(stmt);	// get data of next row
-		}
-	}
-
-	// finally cleanup
-	odbc_cleanup(r->env, r->dbc, stmt);
-	return NULL;
+	backend *be = (backend*)BE;
+	mvc *sql = be->mvc;
+	return odbc_query(sql, f, url, NULL, topn, 2);
 }
 
 static str
