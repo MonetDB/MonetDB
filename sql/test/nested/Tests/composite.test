@@ -1,0 +1,62 @@
+statement ok
+create type myt as (n int, m text[])
+
+statement ok
+create table foo (c myt)
+
+## array syntax
+
+statement ok
+insert into foo values ((10, 'test'))
+
+statement ok
+insert into foo values ((20, 'alice')), ((30, 'bob'))
+
+query I nosort
+select count(*) from foo
+----
+3
+
+query IT nosort
+select c.n, c.m from foo
+----
+10
+test
+20
+alice
+30
+bob
+
+## literal syntax
+
+statement ok
+insert into foo values ('{(0, "head")}')
+
+statement ok
+insert into foo values ('{(1, "hello")}'), ('{(2, "world")}')
+
+query IT nosort
+select c.n, c.m from foo
+----
+10
+test
+20
+alice
+30
+bob
+0
+head
+1
+hello
+2
+world
+
+## modify table
+
+statement ok
+truncate foo
+
+query I nosort
+select count(*) from foo
+----
+0
