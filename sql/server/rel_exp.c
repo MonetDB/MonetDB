@@ -3783,6 +3783,11 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		if (t->type->composite && (is_row(exp) || is_values(exp)))
 			return exp_check_composite_type(sql, t, rel, exp, tpe);
+		sql_subtype *et = exp_subtype(exp);
+		if (strcmp(et->type->base.name, "json") == 0)
+			return exp_convert(sql, exp, et, t);
+		if (EC_VARCHAR(et->type->eclass))
+			return exp_convert(sql, exp, et, t);
 		if (is_values(exp))
 			return NULL;
 	}
