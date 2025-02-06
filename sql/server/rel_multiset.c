@@ -79,6 +79,33 @@ fm_table(visitor *v, sql_rel *rel)
 }
 #endif
 
+static node * fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins);
+
+static node *
+fm_insert_composite(visitor *v, node *m, node **N, sql_subtype *t, sql_table *subtable, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins)
+{
+	node *n = *N;
+	assert (t->type->composite && !t->multiset);
+	n = n->next; /* skip virtual column */
+	for(node *o = t->type->d.fields->h; n && m && o; o = o->next) {
+		sql_column *c = n->data;
+		if (!c->type.multiset && c->type.type->composite) {
+			m = fm_insert_composite(v, m, &n, &c->type, subtable, btexps, niexps, cur, ins);
+		} else if (c->type.multiset) {
+			m = fm_insert_ms(v, m, &c->type, subtable, c->storage_type, btexps, niexps, cur, ins);
+			n = n->next;
+		} else {
+			sql_exp *e = exp_ref(v->sql, m->data);
+			append(niexps, e = exp_ref(v->sql, m->data));
+			append(btexps, exp_ref(v->sql, e));
+			m = m->next;
+			n = n->next;
+		}
+	}
+	*N = n;
+	return m;
+}
+
 static node *
 fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins)
 {
@@ -115,15 +142,19 @@ fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, lis
 	append(btexps, nrowid);
 	m = m->next;
 	if (t->type->composite) {
-		for(node *n = ol_first_node(subtable->columns), *o = t->type->d.fields->h; n && m && o; n = n->next, o = o->next) {
+		for(node *n = ol_first_node(subtable->columns), *o = t->type->d.fields->h; n && m && o; o = o->next) {
 			sql_column *c = n->data;
-			if (c->type.multiset) {
+			if (!c->type.multiset && c->type.type->composite) {
+				m = fm_insert_composite(v, m, &n, &c->type, subtable, nexps, niexps, cur, ins);
+			} else if (c->type.multiset) {
 				m = fm_insert_ms(v, m, &c->type, subtable, c->storage_type, nexps, niexps, cur, ins);
+				n = n->next;
 			} else {
 				sql_exp *e = exp_ref(v->sql, m->data);
 				append(niexps, e = exp_ref(v->sql, m->data));
 				append(nexps, exp_ref(v->sql, e));
 				m = m->next;
+				n = n->next;
 			}
 		}
 	} else {
@@ -176,15 +207,19 @@ fm_insert(visitor *v, sql_rel *rel)
 			list *niexps = sa_list(v->sql->sa); /* inject extra project, such that referencing becomes easier */
 			/* do insert per multiset and once for base table */
 			rel->r = ins = rel_project(v->sql->sa, ins, niexps);
-			for(node *n = ol_first_node(t->columns), *m = exps->h; n && m; n = n->next) {
+			for(node *n = ol_first_node(t->columns), *m = exps->h; n && m; ) {
 				sql_column *c = n->data;
-				if (c->type.multiset) {
+				if (!c->type.multiset && c->type.type->composite) {
+					m = fm_insert_composite(v, m, &n, &c->type, t, btexps, niexps, &cur, ins);
+				} else if (c->type.multiset) {
 					m = fm_insert_ms(v, m, &c->type, t, c->storage_type, btexps, niexps, &cur, ins);
+					n = n->next;
 				} else {
 					sql_exp *e = exp_ref(v->sql, m->data);
 					append(niexps, e);
 					append(btexps, exp_ref(v->sql, e));
 					m = m->next;
+					n = n->next;
 				}
 			}
 			rel->r = rel_project(v->sql->sa, rel->r, btexps);
@@ -234,6 +269,35 @@ fm_join(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static void fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps);
+
+static void
+fm_project_composite(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps)
+{
+	assert (t->type->composite);
+	int label = v->sql->label;
+	v->sql->label += list_length(t->type->d.fields);
+
+	for(node *f = t->type->d.fields->h; f; f = f->next) {
+		sql_arg *field = f->data;
+
+		if (field->type.type->composite && !field->type.multiset) {
+			sql_alias *nn = a_create(v->sql->sa, field->name);
+			nn->parent = cn;
+			fm_project_composite(v, e, &field->type, nn, nexps);
+		} else if (field->type.multiset) {
+			sql_alias *nn = a_create(v->sql->sa, field->name);
+			nn->parent = cn;
+			fm_project_ms(v, e, &field->type, nn, nexps);
+		} else {
+			sql_exp *mse = exp_column(v->sql->sa, cn, field->name, &field->type, 1,1, 1, 1);
+			mse->alias.label = (++label);
+			mse->nid = mse->alias.label;
+			append(nexps, mse);
+		}
+	}
+}
+
 static void
 fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps)
 {
@@ -249,7 +313,11 @@ fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps
 		for(node *f = t->type->d.fields->h; f; f = f->next) {
 			sql_arg *field = f->data;
 
-			if (field->type.multiset) {
+			if (field->type.type->composite && !field->type.multiset) {
+				sql_alias *nn = a_create(v->sql->sa, field->name);
+				nn->parent = cn;
+				fm_project_composite(v, e, &field->type, nn, nexps);
+			} else if (field->type.multiset) {
 				sql_alias *nn = a_create(v->sql->sa, field->name);
 				nn->parent = cn;
 				fm_project_ms(v, e, &field->type, nn, nexps);
@@ -331,7 +399,7 @@ fm_project(visitor *v, sql_rel *rel)
 		for(node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
-			needed = (t && t->multiset);
+			needed = (t && (t->multiset || t->type->composite));
 			if (needed && is_intern(e)) {
 				needed = false;
 				break;
@@ -347,7 +415,10 @@ fm_project(visitor *v, sql_rel *rel)
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
 				sql_subtype *t = exp_subtype(e);
-				if (t->multiset) {
+				if (t->type->composite && !t->multiset) {
+					sql_alias *cn = a_create(v->sql->sa, e->alias.name);
+					fm_project_composite(v, e, t, cn, nexps);
+				} else if (t->multiset) {
 					sql_alias *cn = a_create(v->sql->sa, e->alias.name);
 					fm_project_ms(v, e, t, cn, nexps);
 				} else {

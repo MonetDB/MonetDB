@@ -645,7 +645,11 @@ composite_value_list(backend *be, sql_exp *tuple, stmt *left, stmt *sel)
 			i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 		if (!i)
 			return NULL;
-		list_append(f, i);
+		if (i->type == st_list) {
+			for( node *n = i->op4.lval->h; n; n = n->next)
+				list_append(f, n->data);
+		} else
+			list_append(f, i);
 	}
 	return stmt_list(be, f);
 }
@@ -764,21 +768,25 @@ append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *s
 		}
 		m = m->next;
 	}
-	if (type->type->composite) {
-		for(n = attr->h, o = type->type->d.fields->h; n && o; n = n->next, o = o->next) {
+	sql_subtype *ntype = type;
+	if (is_row(tuple) && list_length(type->type->d.fields) == 1) {
+		sql_arg *f = type->type->d.fields->h->data;
+		ntype = &f->type;
+	}
+	if (ntype->type->composite) {
+		for(n = attr->h, o = ntype->type->d.fields->h; n && o; n = n->next, o = o->next) {
+			sql_arg *f = o->data;
 			sql_exp *e = n->data;
 			list *vals = m->data;
-			sql_subtype *type = exp_subtype(e);
-			assert(type->type == ((sql_arg*)o->data)->type.type);
-			if (type->type->composite) {
-				node *nm = append_tuple(be, e, type, left, sel, m, rowcnt, lcnt, type->multiset);
+			if (f->type.type->composite) {
+				node *nm = append_tuple(be, e, &f->type, left, sel, m, rowcnt, lcnt, ntype->multiset);
 				if (nm == m)
 					return m;
 				m = nm;
 			} else {
 				stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-				m = m->next;
 				append(vals, i);
+				m = m->next;
 			}
 		}
 	} else {
@@ -5816,27 +5824,27 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 }
 
 static node *
-insert_composite(stmt **updates, sql_column *c, node *n, stmt *input_tuple)
+insert_composite(stmt **updates, sql_column *c, node *n, node **M)
 {
-	node *m, *f;
+	node *m = *M, *f;
+	/*
 	while(input_tuple->type == st_alias)
 		input_tuple = input_tuple->op1;
 	if (input_tuple->type != st_list)
 		return NULL;
-	/* TODO we need to insert the id into the composite column itself if this is a multiset */
-	if (c->type.multiset) {
-		printf("todo insert next id?\n");
-	}
-	for(m = input_tuple->op4.lval->h, n = n->next, f = c->type.type->d.fields->h; n && m && f; m = m->next, f = f->next) {
+		*/
+	for(n = n->next, f = c->type.type->d.fields->h; n && m && f; f = f->next) {
 		sql_column *c = n->data;
 
-		if (c->type.type->composite) {
-			n = insert_composite(updates, c, n, m->data);
+		if (c->type.type->composite && !c->type.multiset) {
+			n = insert_composite(updates, c, n, &m);
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;
+			m = m->next;
 		}
 	}
+	/*
 	if (c->type.multiset) {
 		sql_column *c = n->data;
 
@@ -5851,8 +5859,10 @@ insert_composite(stmt **updates, sql_column *c, node *n, stmt *input_tuple)
 		n = n->next;
 		m = m->next;
 	}
-	if (f || m) /* did we find all fields and use all values */
-		return NULL;
+	*/
+	//if (f || m) /* did we find all fields and use all values */
+		//return NULL;
+	*M = m;
 	return n;
 }
 
@@ -5904,14 +5914,15 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 
 	updates = table_update_stmts(sql, t, &len);
-	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; m = m->next) {
+	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; ) {
 		sql_column *c = n->data;
 
 		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, m->data);
+			n = insert_composite(updates, c, n, &m);
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;
+			m = m->next;
 		}
 	}
 

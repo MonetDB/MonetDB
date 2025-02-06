@@ -3697,7 +3697,12 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 	for(n = t->type->d.fields->h, m = vals->h; n && m; n = n->next, m = m->next) {
 		sql_arg *f = n->data;
 		sql_exp *e = m->data;
-		e = exp_check_type(sql, &f->type, rel, e, tpe);
+		sql_subtype *ftype = &f->type;
+		if (!ftype->multiset && ftype->type->composite && list_length(ftype->type->d.fields) == 1) {
+			sql_arg *f1 = ftype->type->d.fields->h->data;
+			ftype = &f1->type;
+		}
+		e = exp_check_type(sql, ftype, rel, e, tpe);
 		if (!e)
 			return NULL;
 		m->data = e;
@@ -3715,6 +3720,8 @@ exp_check_composite_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, c
 static sql_exp *
 exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe)
 {
+	if (t->multiset && exp_is_null(exp))
+		return exp;
 	assert(t->type->composite || t->multiset);
 	if (!exp_is_rel(exp) && !is_values(exp)) {
 		sql_subtype *et = exp_subtype(exp);
@@ -3742,6 +3749,11 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 	}
 	sql_subtype ct = *t;
 	ct.multiset = false;
+
+	if (ct.type->composite && list_length(ct.type->d.fields) == 1) {
+		sql_arg *f1 = ct.type->d.fields->h->data;
+		ct = f1->type;
+	}
 	for(node *v = msvals->h; v; v = v->next) {
 		sql_exp *r = v->data;
 
