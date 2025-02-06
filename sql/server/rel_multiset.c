@@ -389,12 +389,28 @@ fm_project_ms_bt(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *ne
 	}
 }
 
+static bool
+exps_are_complex_convert(list *exps)
+{
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type == e_convert) {
+			sql_subtype *t = exp_subtype(e);
+			if (t->multiset || t->type->composite)
+				return true;
+		}
+	}
+	return false;
+}
+
 static sql_rel *
 fm_project(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
 
-	if ((!l || (l && rel->card == CARD_ATOM && is_project(l->op))) && rel->exps) { /* check for type multiset */
+	if ((!l || (l && (rel->card == CARD_ATOM || exps_are_complex_convert(rel->exps)) && is_project(l->op))) && rel->exps) { /* check for type multiset */
 		bool needed = false;
 		for(node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
