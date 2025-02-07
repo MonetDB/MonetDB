@@ -1,0 +1,9 @@
+statement ok
+create type event as (id int, type varchar)
+
+query T
+select cast(t.json as event) from (select json from r'$TSTTRGDIR/events.json') t
+----
+
+statement ok
+drop type event
