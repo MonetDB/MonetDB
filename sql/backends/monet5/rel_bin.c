@@ -4926,11 +4926,11 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		return NULL;
 	for (en = rel->exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
-		/* we need to ouput composite properly, for insert statements
-		sql_subtype *st = exp_subtype(exp);
-		if (rel->l && st && st->type->composite)
+
+		if (exp->virt) {
+			/* we need to ouput composite properly, for insert statements */
 			continue;
-			*/
+		}
 		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
 

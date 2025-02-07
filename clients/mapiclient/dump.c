@@ -491,6 +491,45 @@ bailout:
 	return false;
 }
 
+static bool
+has_multiset(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid,
+						  "select id from sys._columns"
+						  " where table_id = 2076"
+						  " and name = 'multiset'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
 static int
 dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *tid, stream *sqlf)
 {
@@ -795,9 +834,12 @@ toUpper(const char *s)
 	size_t len = strlen(s);
 
 	if (len >= sizeof(toupperbuf))
-		return s;	/* too long: it's not *that* important */
-	for (i = 0; i < len; i++)
-		toupperbuf[i] = toupper((int)s[i]);
+		return NULL;	/* too long */
+	for (i = 0; i < len; i++) {
+		if (s[i] & 0x80 || isupper(s[i]))
+			return NULL;		/* not all ASCII lower case */
+		toupperbuf[i] = toupper(((unsigned char *) s)[i]);
+	}
 	toupperbuf[i] = '\0';
 	return toupperbuf;
 }
@@ -824,7 +866,7 @@ static const char *geomsubtypes[] = {
 };
 
 static int
-dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits, const char *c_type_scale, bool hashge)
+dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits, const char *c_type_scale, int c_multiset, bool hashge)
 {
 	int space = 0;
 
@@ -939,21 +981,29 @@ dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits,
 		} else {
 			mnstr_printf(sqlf, "GEOMETRY");
 		}
-	} else if (strcmp(c_type_digits, "0") == 0) {
-		space = mnstr_printf(sqlf, "%s", toUpper(c_type));
-	} else if (strcmp(c_type_scale, "0") == 0) {
-		space = mnstr_printf(sqlf, "%s(%s)",
-				toUpper(c_type), c_type_digits);
 	} else {
-		if (strcmp(c_type, "decimal") == 0) {
-			if (strcmp(c_type_digits, "39") == 0)
-				c_type_digits = "38";
-			else if (!hashge && strcmp(c_type_digits, "19") == 0)
-				c_type_digits = "18";
+		const char *s = toUpper(c_type);
+		if (s)
+			space = mnstr_printf(sqlf, "%s", s);
+		else
+			space = dquoted_print(sqlf, c_type, NULL);
+		if (strcmp(c_type_digits, "0") != 0) {
+			if (strcmp(c_type_scale, "0") == 0) {
+				space += mnstr_printf(sqlf, "(%s)", c_type_digits);
+			} else {
+				if (strcmp(c_type, "decimal") == 0) {
+					if (strcmp(c_type_digits, "39") == 0)
+						c_type_digits = "38";
+					else if (!hashge && strcmp(c_type_digits, "19") == 0)
+						c_type_digits = "18";
+				}
+				space += mnstr_printf(sqlf, "(%s,%s)",
+									  c_type_digits, c_type_scale);
+			}
 		}
-		space = mnstr_printf(sqlf, "%s(%s,%s)",
-				toUpper(c_type), c_type_digits, c_type_scale);
 	}
+	if (c_multiset == 2)
+		space += mnstr_printf(sqlf, "[]");
 	return space;
 }
 
@@ -997,10 +1047,15 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_digits, "	/* 2 */
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
-				"c.number "			/* 5 */
+				"%s,"				/* 5 */
+				"c.number "			/* 6 */
 			 "FROM sys._columns c "
 			 "WHERE c.table_id = %s "
-			 "ORDER BY c.number", tid);
+				 "%s"
+			 "ORDER BY c.number",
+				 has_multiset(mid) ? "c.multiset" : "cast(0 as tinyint)",
+				 tid,
+				 has_multiset(mid) ? "AND c.column_type = 0 " : "");
 	else
 		snprintf(query, maxquerylen,
 			 "SELECT c.name, "		/* 0 */
@@ -1008,7 +1063,8 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_digits, "	/* 2 */
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
-				"c.number "			/* 5 */
+				"%s,"				/* 5 */
+				"c.number "			/* 6 */
 			 "FROM sys._columns c, "
 			      "sys._tables t, "
 			      "sys.schemas s "
@@ -1016,7 +1072,11 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			   "AND t.name = '%s' "
 			   "AND t.schema_id = s.id "
 			   "AND s.name = '%s' "
-			 "ORDER BY c.number", t, s);
+			   "%s"
+			 "ORDER BY c.number",
+				 has_multiset(mid) ? "c.multiset" : "cast(0 as tinyint)",
+				 t, s,
+				 has_multiset(mid) ? "AND c.column_type = 0 " : "");
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
@@ -1028,6 +1088,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		char *c_type_digits = strdup(mapi_fetch_field(hdl, 2));
 		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
+		int c_multiset = atoi(mapi_fetch_field(hdl, 5));
 		int space;
 
 		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
@@ -1071,7 +1132,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			if (c_type_digits == NULL)
 				goto bailout;
 		}
-		space = dump_type(mid, sqlf, c_type, c_type_digits, c_type_scale, hashge);
+		space = dump_type(mid, sqlf, c_type, c_type_digits, c_type_scale, c_multiset, hashge);
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(sqlf, "%*s NOT NULL",
 						 CAP(13 - space), "");
@@ -2032,6 +2093,7 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf
 	snprintf(query, maxquerylen,
 			 "SELECT name, storage FROM sys._columns "
 			 "WHERE storage IS NOT NULL "
+			 "AND storage NOT LIKE '!%%ms!_%%' ESCAPE '!' "
 			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
 			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
 			 t, s);
@@ -2406,10 +2468,12 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 	ffunc = strdup(ffunc);
 	query_len = snprintf(query, query_size,
 			     "SELECT a.name, a.type, a.type_digits, "
-				    "a.type_scale, a.inout "
+				    "a.type_scale, a.inout, %s "
 			     "FROM sys.args a, sys.functions f "
 			     "WHERE a.func_id = f.id AND f.id = %s "
-			     "ORDER BY a.inout DESC, a.number", fid);
+				 "ORDER BY a.inout DESC, a.number",
+				 has_multiset(mid) ? "a.multiset" : "cast(0 as tinyint)",
+				 fid);
 	assert(query_len < (int) query_size);
 	if (!ffunc || query_len < 0 || query_len >= (int) query_size) {
 		free(ffunc);
@@ -2445,6 +2509,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 			char *adigs = mapi_fetch_field(hdl, 2);
 			char *ascal = mapi_fetch_field(hdl, 3);
 			const char *ainou = mapi_fetch_field(hdl, 4);
+			int multiset = atoi(mapi_fetch_field(hdl, 5));
 
 			if (strcmp(ainou, "0") == 0) {
 				/* end of arguments */
@@ -2471,7 +2536,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 
 			mnstr_printf(sqlf, "%s", sep);
 			dquoted_print(sqlf, aname, " ");
-			dump_type(mid, sqlf, atype, adigs, ascal, hashge);
+			dump_type(mid, sqlf, atype, adigs, ascal, multiset, hashge);
 			sep = ", ";
 
 			free(atype);
@@ -2487,6 +2552,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 				char *atype = strdup(mapi_fetch_field(hdl, 1));
 				char *adigs = strdup(mapi_fetch_field(hdl, 2));
 				char *ascal = strdup(mapi_fetch_field(hdl, 3));
+				int multiset = atoi(mapi_fetch_field(hdl, 5));
 
 				if (atype == NULL || adigs == NULL || ascal == NULL) {
 					free(atype);
@@ -2509,7 +2575,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 					dquoted_print(sqlf, aname, " ");
 					sep = ", ";
 				}
-				dump_type(mid, sqlf, atype, adigs, ascal, hashge);
+				dump_type(mid, sqlf, atype, adigs, ascal, multiset, hashge);
 
 				free(atype);
 				free(adigs);
@@ -2545,6 +2611,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 			char *adigs = strdup(mapi_fetch_field(hdl, 2));
 			char *ascal = strdup(mapi_fetch_field(hdl, 3));
 			const char *ainou = mapi_fetch_field(hdl, 4);
+			int multiset = atoi(mapi_fetch_field(hdl, 5));
 
 			if (!atype || !adigs || !ascal) {
 				free(atype);
@@ -2562,7 +2629,7 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 				break;
 			}
 			mnstr_printf(sqlf, "%s", sep);
-			dump_type(mid, sqlf, atype, adigs, ascal, hashge);
+			dump_type(mid, sqlf, atype, adigs, ascal, multiset, hashge);
 			sep = ", ";
 
 			free(atype);
@@ -2715,10 +2782,35 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 {
 	const char start_trx[] = "START TRANSACTION";
 	const char end[] = "ROLLBACK";
-	const char types[] =
+	const char *types =
+		has_multiset(mid) ?
 		"SELECT s.name, "
 		       "t.systemname, "
-		       "t.sqlname "
+		       "t.sqlname, "
+		       "a.name, "
+		       "a.type, "
+		       "a.type_digits, "
+		       "a.type_scale, "
+		       "a.number, "
+		       "a.multiset "
+		"FROM sys.types t "
+		"LEFT JOIN sys.schemas s ON s.id = t.schema_id "
+		"LEFT OUTER JOIN sys.args a ON t.id = a.func_id "
+		"WHERE t.eclass = 18 "
+		  "AND (t.schema_id <> 2000 "
+		       "OR (t.schema_id = 2000 "
+		           "AND t.sqlname NOT IN ('geometrya','mbr','url','inet','json','uuid'))) "
+		"ORDER BY t.id, a.number"
+		:
+		"SELECT s.name, "
+		       "t.systemname, "
+		       "t.sqlname, "
+		       "CAST(NULL AS VARCHAR(256)), "
+		       "CAST(NULL AS VARCHAR(1024)), "
+		       "CAST(NULL AS INTEGER), "
+		       "CAST(NULL AS INTEGER), "
+		       "CAST(NULL AS INTEGER), "
+		       "CAST(0 AS TINYINT) "
 		"FROM sys.types t LEFT JOIN sys.schemas s ON s.id = t.schema_id "
 		"WHERE t.eclass = 18 "
 		  "AND (t.schema_id <> 2000 "
@@ -2825,7 +2917,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND p.privileges = pc.privilege_code_id "
 		  "AND p.grantable = go.id "
 		"ORDER BY s.name, t.name, c.name, a.name, g.name, p.grantable";
-	const char function_grants[] =
+	const char *function_grants =
+		has_multiset(mid) ?
 		"SELECT f.id, "
 			   "s.name, "
 			   "f.name, "
@@ -2834,6 +2927,45 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 			   "a.type_scale, "
 			   "a.inout, "
 			   "a.number, "
+			   "a.multiset, "
+			   "au.name, "
+			   "pc.privilege_code_name, "
+			   "go.opt, "
+			   "ft.function_type_keyword "
+		"FROM sys.schemas s, "
+			 "sys.functions f LEFT OUTER JOIN sys.args a ON f.id = a.func_id, "
+			 "sys.auths au, "
+			 "sys.privileges p, "
+			 "sys.auths g, "
+			 "sys.function_types ft, "
+			 "sys.privilege_codes pc, "
+			 "(VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"WHERE NOT f.system "
+		  "AND s.id = f.schema_id "
+		  "AND f.id = p.obj_id "
+		  "AND p.auth_id = au.id "
+		  "AND p.grantor = g.id "
+		  "AND p.privileges = pc.privilege_code_id "
+		  "AND f.type = ft.function_type_id "
+		  "AND p.grantable = go.id "
+		"ORDER BY s.name, "
+				 "f.name, "
+				 "au.name, "
+				 "g.name, "
+				 "p.grantable, "
+				 "f.id, "
+				 "a.inout DESC, "
+				 "a.number"
+		:
+		"SELECT f.id, "
+			   "s.name, "
+			   "f.name, "
+			   "a.type, "
+			   "a.type_digits, "
+			   "a.type_scale, "
+			   "a.inout, "
+			   "a.number, "
+			   "cast(0 as tinyint), "
 			   "au.name, "
 			   "pc.privilege_code_name, "
 			   "go.opt, "
@@ -2887,9 +3019,10 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"FROM sys.schemas sch, "
 		     "sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
+		  "AND seq.name NOT LIKE '!%ms!_%' ESCAPE '!' "
 		"ORDER BY sch.name, seq.name";
 	const char sequences2[] =
-		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
+		"SELECT * FROM sys.describe_sequences WHERE seq NOT LIKE '!%ms!_%' ESCAPE '!' ORDER BY sch, seq";
 	const char tables[] =
 		"SELECT t.id AS id, "
 			   "s.name AS sname, "
@@ -3166,15 +3299,42 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 	if ((hdl = mapi_query(mid, types)) == NULL || mapi_error(mid))
 		goto bailout;
 
+	bool incomplextype = false;
 	while (mapi_fetch_row(hdl) != 0) {
 		const char *sname = mapi_fetch_field(hdl, 0);
 		const char *sysname = mapi_fetch_field(hdl, 1);
 		const char *sqlname = mapi_fetch_field(hdl, 2);
-		mnstr_printf(sqlf, "CREATE TYPE ");
-		dquoted_print(sqlf, sname, ".");
-		dquoted_print(sqlf, sqlname, " EXTERNAL NAME ");
-		dquoted_print(sqlf, sysname, ";\n");
+		const char *aname = mapi_fetch_field(hdl, 3);
+		const char *atype = mapi_fetch_field(hdl, 4);
+		const char *atpdg = mapi_fetch_field(hdl, 5);
+		const char *atpsc = mapi_fetch_field(hdl, 6);
+		const char *anumb = mapi_fetch_field(hdl, 7);
+		const char *amuls = mapi_fetch_field(hdl, 8);
+		if (anumb == NULL || strcmp(anumb, "0") == 0) {
+			if (incomplextype) {
+				mnstr_printf(sqlf, ");\n");
+				incomplextype = false;
+			}
+			mnstr_printf(sqlf, "CREATE TYPE ");
+			dquoted_print(sqlf, sname, ".");
+			dquoted_print(sqlf, sqlname, " ");
+			if (sysname != NULL) {
+				mnstr_printf(sqlf, "EXTERNAL NAME ");
+				dquoted_print(sqlf, sysname, ";\n");
+			} else {
+				mnstr_printf(sqlf, "AS (");
+			}
+		}
+		if (anumb != NULL) {
+			if (incomplextype)
+				mnstr_printf(sqlf, ", ");
+			incomplextype = true;
+			dquoted_print(sqlf, aname, " ");
+			dump_type(mid, sqlf, atype, atpdg, atpsc, atoi(amuls), hashge);
+		}
 	}
+	if (incomplextype)
+		mnstr_printf(sqlf, ");\n");
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
@@ -3605,10 +3765,11 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		const char *argscale = mapi_fetch_field(hdl, 5);
 		const char *arginout = mapi_fetch_field(hdl, 6);
 		const char *argnumber = mapi_fetch_field(hdl, 7);
-		const char *aname = mapi_fetch_field(hdl, 8);
-		const char *priv = mapi_fetch_field(hdl, 9);
-		const char *grantable = mapi_fetch_field(hdl, 10);
-		const char *ftype = mapi_fetch_field(hdl, 11);
+		int multiset = atoi(mapi_fetch_field(hdl, 8));
+		const char *aname = mapi_fetch_field(hdl, 9);
+		const char *priv = mapi_fetch_field(hdl, 10);
+		const char *grantable = mapi_fetch_field(hdl, 11);
+		const char *ftype = mapi_fetch_field(hdl, 12);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
@@ -3622,7 +3783,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		}
 		if (arginout != NULL && strcmp(arginout, "1") == 0) {
 			mnstr_printf(sqlf, "%s", sep);
-			dump_type(mid, sqlf, argtype, argdigits, argscale, hashge);
+			dump_type(mid, sqlf, argtype, argdigits, argscale, multiset, hashge);
 			sep = ", ";
 		} else if (argnumber == NULL || strcmp(argnumber, "0") == 0) {
 			mnstr_printf(sqlf, ") TO ");

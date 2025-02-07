@@ -33,7 +33,6 @@ typedef struct sql_alias {
 	int label;
 	struct sql_alias *parent;
 	const char *name;
-	//const char *rname;
 } sql_alias;
 
 typedef struct sql_var_name {
@@ -70,6 +69,7 @@ typedef struct expression {
 	 row:1,		/* e_atom ->f is a list of values or a list of attributes aka a row/tuple */
 
 	 base:1,
+	 virt:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
 	 used:1,	/* used for quick dead code removal */
 	 symmetric:1; /* compare between symmetric */
