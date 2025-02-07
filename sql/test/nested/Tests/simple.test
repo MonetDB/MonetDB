@@ -140,20 +140,20 @@ statement ok
 create type ipair AS (pleft varchar, pright integer)
 
 query ITIII nosort
-select  cast(json '[ { "pleft": "left", "pright": "1" }]' as ipair[])
+select  cast(json '[ { "pleft": "left", "pright": 1 }]' as ipair[])
 ----
 1
 "left"
-2240802
+1
 1
 1
 
 query ITIII nosort
-select  cast(json '[ { "pleft": "left", "pright": "1" }, { "pleft": "l1", "pright": "2" }]' as ipair[])
+select  cast(json '[ { "pleft": "left", "pright": 1 }, { "pleft": "l1", "pright": "2" }]' as ipair[])
 ----
 1
 "left"
-2240802
+1
 1
 1
 
