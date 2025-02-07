@@ -248,11 +248,8 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	json_str = read_json_file(jfh);
 	json_close(jfh);
-	if (json_str) {
-		printf("%s\n", json_str);
-		fflush(stdout);
+	if (json_str)
 		jt = JSONparse(json_str);
-	}
 	if (jt) {
 		if (jt->error == NULL) {
 			b = COLnew(0, TYPE_json, 0, TRANSIENT);
