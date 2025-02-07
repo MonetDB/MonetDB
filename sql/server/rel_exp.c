@@ -761,6 +761,8 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_unique(ne);
 	if (is_basecol(oe))
 		set_basecol(ne);
+	if (oe->virt)
+		ne->virt = 1;
 	ne->p = prop_copy(sa, oe->p);
 	return ne;
 }
@@ -790,6 +792,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		set_unique(e);
 	if (is_intern(o))
 		set_intern(e);
+	if (o->virt)
+		e->virt = 1;
 	return exp_propagate(sa, e, o);
 }
 

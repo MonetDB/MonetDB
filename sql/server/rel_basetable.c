@@ -383,6 +383,8 @@ bind_col_exp(mvc *sql, rel_base_t *ba, sql_alias *name, sql_column *c)
 		e->nid = -(ba->basenr + c->colnr);
 		e->alias.label = e->nid;
 	}
+	if (c->type.type->composite && !c->type.multiset)
+		e->virt = 1;
 	if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 		p = e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 		p->value.pval = c->t->pkey;
