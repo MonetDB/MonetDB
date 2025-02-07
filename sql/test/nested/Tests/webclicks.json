@@ -1,0 +1,76 @@
+[{
+  "eventid": "996257967-103007874",
+  "event": "productDetail",
+  "timestamp": "2024-11-30 22:13:37.823000",
+  "location": {
+    "list": [{
+      "element": {
+        "key": "hash",
+        "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+      }
+    }, {
+      "element": {
+        "key": "hostname",
+        "value": "e13dacd9566ecf8efd4aff212960c02de20aa110"
+      }
+    }, {
+      "element": {
+        "key": "pageSubType",
+        "value": "d5d4cd07616a542891b7ec2d0257b3a24b69856e"
+      }
+    }, {
+      "element": {
+        "key": "pageType",
+        "value": "6b5cdf4073b8166e5cc01a2532469d2e356eebfd"
+      }
+    }, {
+      "element": {
+        "key": "pathname",
+        "value": "0b28998c6a5efc0afb854752b1bba65f37c70230"
+      }
+    }, {
+      "element": {
+        "key": "protocol",
+        "value": "c3437dbc7c1255d3a21d444d86ebf2e9234c22bd"
+      }
+    }, {
+      "element": {
+        "key": "referrer",
+        "value": "27bbe94658bf6bd4c431052e2065de0457ec8546"
+      }
+    }, {
+      "element": {
+        "key": "search",
+        "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+      }
+    }, {
+      "element": {
+        "key": "state",
+        "value": "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+      }
+    }, {
+      "element": {
+        "key": "title",
+        "value": "d08339b839a6716a96334736c1c769091a0a8644"
+      }
+    }]
+  },
+  "user": {
+    "list": [{
+      "element": {
+        "key": "customerId",
+        "value": "d5d4cd07616a542891b7ec2d0257b3a24b69856e"
+      }
+    }, {
+      "element": {
+        "key": "customerType",
+        "value": "d5d4cd07616a542891b7ec2d0257b3a24b69856e"
+      }
+    }, {
+      "element": {
+        "key": "isAuthenticated",
+        "value": "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04"
+      }
+    }]
+  }
+}]

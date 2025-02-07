@@ -22,3 +22,20 @@ insert into events values (('111', 'click', '2024-11-30 22:13:37.823000', array[
 #statement ok
 #insert into events values (('111', 'click', '2024-11-30 22:13:37.823000', (array[(('hostname', 'localhost'))]), null))
 
+#load from file
+query TTTTT
+select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json') t
+----
+
+# clean up
+statement ok
+drop table events cascade
+
+statement ok
+drop type loc
+
+statement ok
+drop type webusr
+
+statement ok
+drop type event
