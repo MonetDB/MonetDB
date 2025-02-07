@@ -56,7 +56,7 @@ query T nosort
 select * from bar
 ----
 {"left","right"}
-{"l1","r2"}
+{"l2","r2"}
 
 statement ok
 insert into bar values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
@@ -65,7 +65,7 @@ query T nosort
 select * from bar
 ----
 {"left","right"}
-{"l1","r2"}
+{"l2","r2"}
 {"single"}
 {"a","b","c"}
 {"one","two"}
