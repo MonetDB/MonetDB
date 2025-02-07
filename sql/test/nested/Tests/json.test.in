@@ -1,0 +1,13 @@
+statement ok
+create type event as (id int, type varchar)
+
+query TT
+select cast(t.json as event) from (select json from r'$TSTSRCDIR/events.json') t
+----
+49
+"click"
+50
+"scroll"
+
+statement ok
+drop type event

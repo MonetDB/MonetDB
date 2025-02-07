@@ -3729,6 +3729,11 @@ pattern bat.appendBulk(X_0:bat[:any_1], X_1:bit, X_2:bat[:any_1]...):bat[:any_1]
 CMDBATappend_bulk
 append the arguments ins to i
 bat
+appendBulk
+pattern bat.appendBulk(X_0:bat[:any_1], X_1:bit, X_2:bit, X_3:bat[:any_1]...):bat[:any_1]
+CMDBATappend_bulk
+append the arguments ins to i
+bat
 delete
 command bat.delete(X_0:bat[:any_1], X_1:oid):bat[:any_1]
 BKCdelete
@@ -49165,7 +49170,7 @@ SQLfrom_json
 Reads json string into table of nested/multiset structures
 sql
 from_varchar
-pattern sql.from_varchar(X_0:str, X_1:ptr):bat[:any]...
+pattern sql.from_varchar(X_0:bat?[:str], X_1:ptr):bat[:any]...
 SQLfrom_varchar
 Reads string into table of nested/multiset structures
 sql

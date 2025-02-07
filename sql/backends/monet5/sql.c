@@ -5881,10 +5881,13 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p, q;
 		BATloop(b, p, q) {
 			const char *json = (const char *) BUNtail(bi, p);
-			if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED)
+			if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED) {
+				BBPreclaim(b);
 				goto bailout;
+			}
 		}
 		bat_iterator_end(&bi);
+		BBPreclaim(b);
 	} else {
 		if (strcmp(BATatoms[mtype].name, "json") != 0)
 			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");

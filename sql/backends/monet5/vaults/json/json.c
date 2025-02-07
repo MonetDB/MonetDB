@@ -241,10 +241,13 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char* json_str = NULL;
 	JSON *jt = NULL;
 	BAT *b = NULL;
-	if (jfh) {
-		json_str = read_json_file(jfh);
-		json_close(jfh);
+	if (!jfh) {
+		sa_destroy(sa);
+		msg = createException(SQL, "json.read_json", "Failed to open file %s", fname);
+		return msg;
 	}
+	json_str = read_json_file(jfh);
+	json_close(jfh);
 	if (json_str)
 		jt = JSONparse(json_str);
 	if (jt) {

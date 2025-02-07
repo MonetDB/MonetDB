@@ -1,0 +1,72 @@
+statement ok
+create table foo (n int[])
+
+query I nosort
+select * from foo
+----
+
+statement ok
+insert into foo values ('{1, 2}')
+
+query T nosort
+select * from foo
+----
+{1,2}
+
+statement ok
+insert into foo values ('{1, 2}')
+
+query T nosort
+select * from foo
+----
+{1,2}
+{1,2}
+
+statement ok
+insert into foo values ('{3, 4}'), ('{5}'), ('{6, 7, 8}')
+
+query T nosort
+select * from foo
+----
+{1,2}
+{1,2}
+{3,4}
+{5}
+{6,7,8}
+
+statement ok
+create table bar (n text[])
+
+query I nosort
+select * from bar
+----
+
+statement ok
+insert into bar values ('{"left", "right"}')
+
+query T nosort
+select * from bar
+----
+{"left","right"}
+
+statement ok
+insert into bar values ('{"l2", "r2"}')
+
+query T nosort
+select * from bar
+----
+{"left","right"}
+{"l2","r2"}
+
+statement ok
+insert into bar values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
+
+query T nosort
+select * from bar
+----
+{"left","right"}
+{"l2","r2"}
+{"single"}
+{"a","b","c"}
+{"one","two"}
+

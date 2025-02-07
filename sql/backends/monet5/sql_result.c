@@ -2147,7 +2147,22 @@ ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtyp
 				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at end of composite value");
 		} else {
 			/* handle literals */
-			char *ns = strchr(s, ',');
+			int skip = 0;
+			char *ns = NULL;
+			if (t->type->localtype == TYPE_str) {
+				/* todo improve properly skip "" strings. */
+				if (*s != '"')
+					throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at start of string value");
+				s++;
+				ns = s;
+				while(*ns && *ns != '"')
+					ns++;
+				if (*ns != '"')
+					throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at end of string value");
+				skip++;
+			} else {
+				ns = strchr(s, ',');
+			}
 			if (!ns) {
 				ns = strchr(s, '}');
 			}
@@ -2164,6 +2179,8 @@ ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtyp
 			elm++;
 			*ns = sep;
 			s = ns;
+			if (skip)
+				s++;
 		}
 		/* insert msid */
 		if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)

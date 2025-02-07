@@ -3440,6 +3440,7 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	bool needs_columns = false;
+	bool ms = false;
 
 	if (c->nr < 0)
 		goto bailout;
@@ -3455,14 +3456,18 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 			stmt *t = n->data;
 			if (t->nrcols == 0)
 				n->data = const_column(be, t);
+			if (t->multiset)
+				ms = true;
 		}
 	}
 
-	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3);
+	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3 + (ms?1:0));
 	if (q == NULL)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
 	q = pushBit(mb, q, TRUE);
+	if (ms)
+		q = pushBit(mb, q, TRUE);
 	for (node *n = l->h ; n ; n = n->next) {
 		stmt *a = n->data;
 		q = pushArgument(mb, q, a->nr);
@@ -3959,14 +3964,20 @@ composite_type_resultsize(sql_subtype *t)
 	return nr;
 }
 
+typedef struct result_subtype {
+	sql_subtype st;
+	bool multiset; /* multiset id */
+} result_subtype;
+/* mark multiset rowid and msid as multiset, for later id correction */
 static int
-composite_type_result(backend *be, InstrPtr q, sql_subtype *t, sql_subtype *tps)
+composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *tps)
 {
 	int i = 0;
 	if (t->multiset || t->type->composite) {
 		if (t->multiset) { /* id col : rowid */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
-			tps[i++] = *sql_bind_localtype("int");
+			tps[i].st = *sql_bind_localtype("int");
+			tps[i++].multiset = true;
 		}
 		if (t->type->composite) {
 			for (node *n = t->type->d.fields->h; n; n = n->next) {
@@ -3978,19 +3989,23 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, sql_subtype *tps)
 			}
 		} else {
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
-			tps[i++] = *t;
+			tps[i].st = *t;
+			tps[i++].multiset = false;
 		}
 		if (t->multiset) { /* msid */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
-			tps[i++] = *sql_bind_localtype("int");
+			tps[i].st = *sql_bind_localtype("int");
+			tps[i++].multiset = true;
 		}
 		if (t->multiset == MS_ARRAY) { /* msnr */
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
-			tps[i++] = *sql_bind_localtype("int");
+			tps[i].st = *sql_bind_localtype("int");
+			tps[i++].multiset = false;
 		}
 	} else {
 		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
-		tps[i++] = *t;
+		tps[i].st = *t;
+		tps[i++].multiset = false;
 	}
 	return i;
 }
@@ -4000,7 +4015,7 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 {
 	(void)sel;
 	int nrcols = composite_type_resultsize(t);
-	sql_subtype *tps = SA_NEW_ARRAY(be->mvc->sa, sql_subtype, nrcols);
+	result_subtype *tps = SA_NEW_ARRAY(be->mvc->sa, result_subtype, nrcols);
 
 	InstrPtr q = newStmtArgs(be->mb, "sql", "from_json", nrcols + 2);
 	if (q == NULL)
@@ -4034,8 +4049,12 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	pushInstruction(be->mb, q);
 	/* for each result create stmt_result and return stmt list */
 	list *r = sa_list(be->mvc->sa);
-	for(int i = 0; i < nrcols; i++)
-		append(r, stmt_blackbox_result(be, s->q, i, tps+i));
+	for(int i = 0; i < nrcols; i++) {
+		stmt *br = stmt_blackbox_result(be, s->q, i, &tps[i].st);
+		append(r, br);
+		if (tps[i].multiset)
+			br->multiset = true;
+	}
 	return stmt_list(be, r);
 bailout:
 	if (be->mvc->sa->eb.enabled)
@@ -4048,7 +4067,7 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 {
 	(void)sel;
 	int nrcols = composite_type_resultsize(t);
-	sql_subtype *tps = SA_NEW_ARRAY(be->mvc->sa, sql_subtype, nrcols);
+	result_subtype *tps = SA_NEW_ARRAY(be->mvc->sa, result_subtype, nrcols);
 
 	InstrPtr q = newStmtArgs(be->mb, "sql", "from_varchar", nrcols + 2);
 	if (q == NULL)
@@ -4082,8 +4101,12 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	pushInstruction(be->mb, q);
 	/* for each result create stmt_result and return stmt list */
 	list *r = sa_list(be->mvc->sa);
-	for(int i = 0; i < nrcols; i++)
-		append(r, stmt_blackbox_result(be, s->q, i, tps+i));
+	for(int i = 0; i < nrcols; i++) {
+		stmt *br = stmt_blackbox_result(be, s->q, i, &tps[i].st);
+		append(r, br);
+		if (tps[i].multiset)
+			br->multiset = true;
+	}
 	return stmt_list(be, r);
 bailout:
 	if (be->mvc->sa->eb.enabled)
@@ -4721,6 +4744,7 @@ stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *ali
 	s->nrcols = op1->nrcols;
 	s->key = op1->key;
 	s->aggr = op1->aggr;
+	s->multiset = op1->multiset;
 
 	s->tname = tname;
 	s->cname = alias;

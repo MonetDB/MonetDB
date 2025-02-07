@@ -124,7 +124,8 @@ typedef struct stmt {
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
 	 reduce:1,		/* used to reduce number of rows (also for joins) */
-	 loop:1;		/* cond statement is looping */
+	 loop:1,		/* cond statement is looping */
+	 multiset:1;	/* id column of multiset */
 
 	struct stmt *cand;	/* optional candidate list */
 

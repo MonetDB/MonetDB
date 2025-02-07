@@ -3758,7 +3758,10 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 		sql_exp *r = v->data;
 
 		if (!is_row(r))
-			r = exp_check_multiset_type(sql, &ct, rel, r, tpe);
+			if (t->type->composite)
+				r = exp_check_multiset_type(sql, &ct, rel, r, tpe);
+			else
+				r = exp_check_type(sql, &ct, rel, r, tpe);
 		else
 			r = exp_check_composite_type(sql, &ct, rel, r, tpe);
 		if (!r)
