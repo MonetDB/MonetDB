@@ -3461,7 +3461,7 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 		}
 	}
 
-	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3 + ms?1:0);
+	q = newStmtArgs(mb, batRef, appendBulkRef, list_length(l) + 3 + (ms?1:0));
 	if (q == NULL)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
