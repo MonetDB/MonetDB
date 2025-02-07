@@ -5711,6 +5711,32 @@ insert_json(JSON *js, BAT *bats, int nr, int elm, sql_subtype *t)
 static int insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int anr, sql_subtype *t);
 static int insert_json_array(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int oanr, sql_subtype *t);
 
+static ValPtr
+jsonv2local(const ValPtr t, char *v)
+{
+	// TODO add remaining types
+	switch (t->vtype) {
+		case TYPE_int:
+			t->val.ival = strtol(v, NULL, 10);
+			break;
+		case TYPE_lng:
+			t->val.lval = strtol(v, NULL, 10);
+			break;
+		case TYPE_flt:
+			t->val.fval = (flt) strtod(v, NULL);
+			break;
+		case TYPE_dbl:
+			t->val.dval = strtod(v, NULL);
+			break;
+		case TYPE_str:
+			t->val.sval = v;
+			break;
+		default:
+			return NULL;
+	}
+	return t;
+}
+
 static int
 insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int anr, sql_subtype *t)
 {
@@ -5745,28 +5771,30 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, in
 		case JSON_BOOL:
 		case JSON_NULL:
 			pos = -1;
+			ValPtr v = NULL;
+			if (jt->valuelen > 128-1)
+				return -8;
+			strncpy(buf, jt->value, jt->valuelen);
+			buf[jt->valuelen] = 0;
 			for(i = 0, n = t->type->d.fields->h; i < w && n && pos < 0; i++, n = n->next) {
 				sql_arg *a = n->data;
 				int alen = (int)strlen(a->name);
-				if (nlen == alen && strncmp(name, a->name, nlen) == 0)
+				if (nlen == alen && strncmp(name, a->name, nlen) == 0) {
 					pos = i;
+					ValRecord vr = (ValRecord) {.bat=false, .vtype=a->type.type->localtype};
+					v = jsonv2local(&vr, buf);
+					break;
+				}
 			}
-			char *v = buf;
-			if (pos < 0 || jt->valuelen > 128-1)
+			if (pos < 0 || v == NULL)
 				return -8;
-			strncpy(v, jt->value, jt->valuelen);
-			v[jt->valuelen] = 0;
-			/*
-			 * TODO check type of value
-			 * TODO insert value (not just strings)
-			 */
-			if (elm > 0 && BUNappend(bats[pos], v, false) != GDK_SUCCEED) {
+			if (elm > 0 && BUNappend(bats[pos], VALget(v), false) != GDK_SUCCEED) {
 				return -5;
 			}
 		}
 	}
 
-	if (elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
+	if (t->multiset && elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
 		elm = -3;
 	if (t->multiset == MS_ARRAY && elm > 0 && BUNappend(bats[w+1], &anr, false) != GDK_SUCCEED)
 		elm = -3;
@@ -5778,7 +5806,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, int
 {
 	JSONterm *ja = js->elm+elm;
 	int tail = ja->tail;
-	if (ja->kind != JSON_ARRAY || !t->multiset) {
+	if (ja->kind != JSON_ARRAY) {
 		*msg = "missing array start";
 		return -1;
 	}
