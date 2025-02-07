@@ -45,7 +45,7 @@ query TTTT rowsort
 select "name", "query", "type", "remark" from describe_table('sys', 'rt1')
 ----
 rt1
-mapi:monetdb://localhost:50000/test
+monetdb://localhost./test
 REMOTE TABLE
 NULL
 

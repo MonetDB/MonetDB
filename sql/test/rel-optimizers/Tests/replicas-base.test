@@ -8,7 +8,7 @@ statement ok
 create remote table foo_r2 (n int, m text) on 'mapi:monetdb://localhost:50002/node2'
 
 statement ok
-create remote table foo_r3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
+create remote table foo_r3 (n int, m text) on 'monetdb://localhost:50003/node3'
 
 statement ok
 create table bar_local (n int, m text)
@@ -20,7 +20,7 @@ statement ok
 create remote table bar_r2 (n int, m text) on 'mapi:monetdb://localhost:50002/node2'
 
 statement ok
-create remote table bar_r3 (n int, m text) on 'mapi:monetdb://localhost:50003/node3'
+create remote table bar_r3 (n int, m text) on 'monetdb://localhost:50003/node3'
 
 statement ok
 create remote table buz_rmt (l int) on 'mapi:monetdb://localhost:50002/node2'
