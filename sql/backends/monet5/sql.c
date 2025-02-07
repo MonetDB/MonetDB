@@ -5766,7 +5766,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int nr, int elm, int id, in
 		}
 	}
 
-	if (elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
+	if (t->multiset && elm > 0 && BUNappend(bats[w], &id, false) != GDK_SUCCEED)
 		elm = -3;
 	if (t->multiset == MS_ARRAY && elm > 0 && BUNappend(bats[w+1], &anr, false) != GDK_SUCCEED)
 		elm = -3;
@@ -5853,10 +5853,13 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p, q;
 		BATloop(b, p, q) {
 			const char *json = (const char *) BUNtail(bi, p);
-			if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED)
+			if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED) {
+				BBPreclaim(b);
 				goto bailout;
+			}
 		}
 		bat_iterator_end(&bi);
+		BBPreclaim(b);
 	} else {
 		if (strcmp(BATatoms[mtype].name, "json") != 0)
 			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
