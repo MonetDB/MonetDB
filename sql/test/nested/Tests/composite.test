@@ -1,5 +1,5 @@
 statement ok
-create type myt as (n int, m text[])
+create type myt as (n int, m text)
 
 statement ok
 create table foo (c myt)
