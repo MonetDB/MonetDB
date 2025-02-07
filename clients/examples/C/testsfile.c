@@ -563,8 +563,11 @@ custom_allocator(void *state, void *old, size_t size)
 		memset(old, '\0', cookie_size);
 	}
 
+	if (size == 0) {
+		free(old);
+		return NULL;
+	}
 	char *new_allocation = realloc(old, size > 0 ? size + prefix_size: 0);
-	assert(size > 0 || new_allocation == NULL);
 
 	if (new_allocation) {
 		// set magic cookie
