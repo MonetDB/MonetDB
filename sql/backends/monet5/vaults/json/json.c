@@ -103,43 +103,27 @@ append_terms(allocator *sa, JSON *jt, size_t offset, BAT *b, char **error)
 	JSONterm *next = offset < (size_t)jt->free ? jt->elm + (offset + 1): NULL;
 	switch(t->kind) {
 		case JSON_ARRAY:
-			if ( (prev == NULL && next && next->kind > JSON_ARRAY)
-				   	|| (prev && prev->kind == JSON_ARRAY) ) {
+			if (prev==NULL && (next && next->kind < JSON_ELEMENT)) {
+				offset += 1;
+			} else {
 				// array of basic types or array of arrays
 				v = sa_strndup(sa, t->value, t->valuelen);
-				size_t depth = 0;
 				do {
 					offset += 1;
 					next = offset < (size_t)jt->free ? jt->elm + offset : NULL;
-					if (next && next->kind <=JSON_ARRAY)
-						depth ++;
-					if ((depth > 0 && next && (next->kind == JSON_VALUE || next->kind == 0))
-							|| (depth > 0 && next == NULL))
-						depth --;
-				} while((next && next->kind != JSON_VALUE) || depth > 0);
-			} else {
-				offset += 1;
+				} while((next && next->kind != JSON_VALUE));
 			}
 			break;
 		case JSON_OBJECT:
 			v = sa_strndup(sa, t->value, t->valuelen);
-			size_t depth = 0;
 			do {
 				offset += 1;
 				next = offset < (size_t)jt->free ? jt->elm + offset : NULL;
-				if (next && next->kind <=JSON_ARRAY)
-					depth ++;
-				if ((depth > 0 && next && (next->kind == JSON_VALUE || next->kind == 0))
-					   	|| (depth > 0 && next == NULL))
-					depth --;
-			} while((next && next->kind != JSON_VALUE) || depth > 0);
+			} while((next && next->kind != JSON_VALUE));
 			break;
 		case JSON_ELEMENT:
 		case JSON_STRING:
 		case JSON_NUMBER:
-			// should not happen
-			assert(0);
-			break;
 		case JSON_VALUE:
 			offset +=1;
 			break;
