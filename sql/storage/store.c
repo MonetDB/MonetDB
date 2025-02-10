@@ -177,7 +177,6 @@ idx_destroy(sqlstore *store, sql_idx * i)
 
 	if (ATOMIC_PTR_GET(&i->data))
 		store->storage_api.destroy_idx(store, i);
-	ATOMIC_PTR_DESTROY(&i->data);
 	_DELETE(i->base.name);
 	_DELETE(i);
 }
@@ -209,7 +208,6 @@ column_destroy(sqlstore *store, sql_column *c)
 		return;
 	if (ATOMIC_PTR_GET(&c->data))
 		store->storage_api.destroy_col(store, c);
-	ATOMIC_PTR_DESTROY(&c->data);
 	_DELETE(c->min);
 	_DELETE(c->max);
 	_DELETE(c->def);
@@ -233,7 +231,6 @@ table_destroy(sqlstore *store, sql_table *t)
 		return;
 	if (isTable(t))
 		store->storage_api.destroy_del(store, t);
-	ATOMIC_PTR_DESTROY(&t->data);
 	/* cleanup its parts */
 	list_destroy2(t->members, store);
 	ol_destroy(t->idxs, store);
@@ -776,7 +773,6 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	if (isTable(t)) {
 		if (store->storage_api.create_del(tr, t) != LOG_OK) {
 			TRC_ERROR(SQL_STORE, "Load table '%s' is missing 'deletes'", t->base.name);
-			ATOMIC_PTR_DESTROY(&t->data);
 			return NULL;
 		}
 	}
@@ -3053,7 +3049,6 @@ column_dup(sql_trans *tr, sql_column *oc, sql_table *t, sql_column **cres)
 	if (isTable(c->t)) {
 		if (isTempTable(c->t)) {
 			if ((res = store->storage_api.create_col(tr, c))) {
-				ATOMIC_PTR_DESTROY(&c->data);
 				return res;
 			}
 		} else {
@@ -3146,7 +3141,6 @@ idx_dup(sql_trans *tr, sql_idx * i, sql_table *t, sql_idx **ires)
 	if (isTable(i->t)) {
 		if (isTempTable(i->t)) {
 			if ((res = store->storage_api.create_idx(tr, ni))) {
-				ATOMIC_PTR_DESTROY(&ni->data);
 				return res;
 			}
 		} else {
@@ -3160,7 +3154,6 @@ idx_dup(sql_trans *tr, sql_idx * i, sql_table *t, sql_idx **ires)
 		list_append(ni->columns, kc_dup(okc, t));
 	}
 	if (isGlobal(t) && (res = os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base)))) {
-		ATOMIC_PTR_DESTROY(&ni->data);
 		return res;
 	}
 	*ires = ni;
@@ -3330,7 +3323,6 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name,
 
 cleanup:
 	if (res) {
-		ATOMIC_PTR_DESTROY(&t->data);
 		t = NULL;
 	}
 	*tres = t;
@@ -3598,12 +3590,10 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i, sql_idx **ires)
 	if (isDeclaredTable(i->t))
 		if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 			if ((res = store->storage_api.create_idx(tr, ni))) {
-				ATOMIC_PTR_DESTROY(&ni->data);
 				return res;
 			}
 	if (!isDeclaredTable(t))
 		if ((res = store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, &ni->base.name))) {
-			ATOMIC_PTR_DESTROY(&ni->data);
 			return res;
 		}
 
@@ -3735,7 +3725,6 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if (isDeclaredTable(c->t))
 		if (isTable(t))
 			if ((res = store->storage_api.create_col(tr, col))) {
-				ATOMIC_PTR_DESTROY(&col->data);
 				return res;
 			}
 
@@ -3746,16 +3735,13 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 					&digits, &col->type.scale, &t->base.id,
 					(col->def) ? &col->def : &strnil, &col->null, &col->colnr,
 					(col->storage_type) ? &col->storage_type : &strnil))) {
-			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
 		if (c->type.type->s) { /* column depends on type */
 			if ((res = sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY))) {
-				ATOMIC_PTR_DESTROY(&col->data);
 				return res;
 			}
 			if (!isNew(c->type.type) && (res = sql_trans_add_dependency(tr, c->type.type->base.id, ddl))) {
-				ATOMIC_PTR_DESTROY(&col->data);
 				return res;
 			}
 		}
@@ -5926,7 +5912,6 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 
 	if (isTable(t))
 		if ((res = store->storage_api.create_del(tr, t))) {
-			ATOMIC_PTR_DESTROY(&t->data);
 			return res;
 		}
 	if (isPartitionedByExpressionTable(t)) {
@@ -5940,7 +5925,6 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 		char *strnil = (char*)ATOMnilptr(TYPE_str);
 		if ((res = store->table_api.table_insert(tr, systable, &t->base.id, &t->base.name, &s->base.id,
 										  (t->query) ? &t->query : &strnil, &t->type, &t->system, &ca, &t->access))) {
-			ATOMIC_PTR_DESTROY(&t->data);
 			return res;
 		}
 	}
@@ -6200,7 +6184,6 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 
 	if (isTable(col->t))
 		if ((res = store->storage_api.create_col(tr, col))) {
-			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
 	if (!isDeclaredTable(t)) {
@@ -6208,18 +6191,15 @@ sql_trans_create_column(sql_column **rcol, sql_trans *tr, sql_table *t, const ch
 		int digits = type_digits(&col->type);
 		if ((res = store->table_api.table_insert(tr, syscolumn, &col->base.id, &col->base.name, &col->type.type->base.name, &digits, &col->type.scale,
 										  &t->base.id, (col->def) ? &col->def : &strnil, &col->null, &col->colnr, (col->storage_type) ? &col->storage_type : &strnil))) {
-			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
 	}
 
 	if (tpe->type->s) {/* column depends on type */
 		if ((res = sql_trans_create_dependency(tr, tpe->type->base.id, col->base.id, TYPE_DEPENDENCY))) {
-			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
 		if (!isNew(tpe->type) && (res = sql_trans_add_dependency(tr, tpe->type->base.id, ddl))) {
-			ATOMIC_PTR_DESTROY(&col->data);
 			return res;
 		}
 	}
@@ -6903,12 +6883,10 @@ sql_trans_create_idx(sql_idx **i, sql_trans *tr, sql_table *t, const char *name,
 	ATOMIC_PTR_INIT(&ni->data, NULL);
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
 		if ((res = store->storage_api.create_idx(tr, ni))) {
-			ATOMIC_PTR_DESTROY(&ni->data);
 			return res;
 		}
 	if (!isDeclaredTable(t))
 		if ((res = store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, &ni->base.name))) {
-			ATOMIC_PTR_DESTROY(&ni->data);
 			return res;
 		}
 	*i = ni;

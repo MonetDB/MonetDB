@@ -141,7 +141,6 @@ tc_gc_seg( sql_store Store, sql_change *change, ulng oldest)
 	if (s->ts <= oldest) {
 		while(s) {
 			segment *n = s->prev;
-			ATOMIC_PTR_DESTROY(&s->next);
 			_DELETE(s);
 			s = n;
 		}
@@ -453,7 +452,6 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 					if (cur == s->segs->t)
 						s->segs->t = seg;
 					if (commit_ts == oldest) {
-						ATOMIC_PTR_DESTROY(&cur->next);
 						_DELETE(cur);
 					} else
 						mark4destroy(cur, change, commit_ts);
@@ -2549,7 +2547,6 @@ destroy_segments(segments *s)
 	segment *seg = s->h;
 	while(seg) {
 		segment *n = ATOMIC_PTR_GET(&seg->next);
-		ATOMIC_PTR_DESTROY(&seg->next);
 		_DELETE(seg);
 		seg = n;
 	}
