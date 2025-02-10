@@ -5731,6 +5731,9 @@ jsonv2local(const ValPtr t, char *v)
 		case TYPE_str:
 			t->val.sval = v;
 			break;
+		case TYPE_timestamp:
+			sql_timestamp_fromstr(v+1, &t->val.lval, 0, 0);
+			break;
 		default:
 			return NULL;
 	}
@@ -5847,12 +5850,14 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 			switch (jt->kind) {
 			case JSON_OBJECT:
 				// FIX assumes array of composite?
-				n = t->type->d.fields->h;
-				if (n) {
-					sql_arg *a = n->data;
-					sql_subtype *atype = &a->type;
-					if (atype->type->composite)
-						t = atype;
+				if (t->type->composite && list_length(t->type->d.fields) == 1) {
+					n = t->type->d.fields->h;
+					if (n) {
+						sql_arg *a = n->data;
+						sql_subtype *atype = &a->type;
+						if (atype->type->composite)
+							t = atype;
+					}
 				}
 				elm = insert_json_object(msg, js, bats, bat_offset + 1, nr, elm, id, anr++, t);
 				(void)oanr; // outer array number
