@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Mon Feb 10 2025 stefanos mavros <stemavros@gmail.com>
+- Extended the constant aggregate optimizer in order to eliminate
+  aggregates with constant arguments whenever possible.
+
 * Fri Dec 20 2024 Niels Nes <niels@cwi.nl>
 - Added support for aggregates which order within the group such
   as quantile and which potentially order within the group such as
