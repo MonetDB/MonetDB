@@ -116,10 +116,19 @@ append_terms(allocator *sa, JSON *jt, size_t offset, BAT *b, char **error)
 			break;
 		case JSON_OBJECT:
 			v = sa_strndup(sa, t->value, t->valuelen);
+			int depth = 0;
 			do {
 				offset += 1;
 				next = offset < (size_t)jt->free ? jt->elm + offset : NULL;
-			} while((next && next->kind != JSON_VALUE));
+				prev = jt->elm + (offset - 1);
+				if ((next && next->kind == JSON_OBJECT) && prev->kind == JSON_ELEMENT)
+					depth += 1;
+				if (next && next->kind == JSON_VALUE) {
+					depth -= 1;
+				}
+				if (next && next->kind == JSON_VALUE && prev->kind == JSON_VALUE)
+					depth = 0;
+			} while((next && next->kind != JSON_VALUE) || (next && depth > 0));
 			break;
 		case JSON_ELEMENT:
 		case JSON_STRING:
