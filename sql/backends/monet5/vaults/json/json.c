@@ -93,59 +93,48 @@ read_json_file(JSONFileHandle *jfh)
 	return content;
 }
 
-
-static size_t
-append_terms(allocator *sa, JSON *jt, size_t offset, BAT *b, char **error)
+static str
+append_terms(allocator *sa, JSON *jt, BAT *b)
 {
-	JSONterm *t = jt->elm + offset;
+	str error = MAL_SUCCEED;
+	size_t offset = 0;
+	JSONterm *root = jt->elm, *t;
 	char *v = NULL;
-	JSONterm *prev = offset > 0 ? (jt->elm + (offset - 1)) : NULL;
-	JSONterm *next = offset < (size_t)jt->free ? jt->elm + (offset + 1): NULL;
-	switch(t->kind) {
-		case JSON_ARRAY:
-			if (prev==NULL && (next && next->kind < JSON_ELEMENT)) {
-				offset += 1;
-			} else {
-				// array of basic types or array of arrays
-				v = sa_strndup(sa, t->value, t->valuelen);
-				do {
-					offset += 1;
-					next = offset < (size_t)jt->free ? jt->elm + offset : NULL;
-				} while((next && next->kind != JSON_VALUE));
-			}
-			break;
-		case JSON_OBJECT:
-			v = sa_strndup(sa, t->value, t->valuelen);
-			int depth = 0;
-			do {
-				offset += 1;
-				next = offset < (size_t)jt->free ? jt->elm + offset : NULL;
-				prev = jt->elm + (offset - 1);
-				if ((next && next->kind == JSON_OBJECT) && prev->kind == JSON_ELEMENT)
-					depth += 1;
-				if (next && next->kind == JSON_VALUE) {
-					depth -= 1;
+	int depth = 0;
+
+	while(offset < (size_t) jt->free && !error) {
+		t = jt->elm + offset;
+		JSONterm *prev = offset > 0 ? jt->elm + (offset - 1) : NULL;
+		switch(t->kind) {
+			case JSON_ARRAY:
+			case JSON_OBJECT:
+				if ((root->kind == JSON_ARRAY && depth == 1) || root->kind == JSON_OBJECT) {
+					v = sa_strndup(sa, t->value, t->valuelen);
+					if (v) {
+						if (BUNappend(b, v, false) != GDK_SUCCEED) {
+							error = createException(SQL, "json.append_terms", "BUNappend failed!");
+						}
+					}
 				}
-				if (next && next->kind == JSON_VALUE && prev->kind == JSON_VALUE)
-					depth = 0;
-			} while((next && next->kind != JSON_VALUE) || (next && depth > 0));
-			break;
-		case JSON_ELEMENT:
-		case JSON_STRING:
-		case JSON_NUMBER:
-		case JSON_VALUE:
-			offset +=1;
-			break;
-		default:
-			*error = createException(SQL, "json.append_terms", "unknown json term");
-			break;
-	}
-	if (v) {
-		if (BUNappend(b, v, false) != GDK_SUCCEED) {
-			*error = createException(SQL, "json.append_terms", "BUNappend failed!");
+				if ((prev && (prev->kind == JSON_ARRAY || prev->kind == JSON_VALUE)) || (prev==NULL && root->kind ==
+							JSON_ARRAY))
+					depth ++;
+				break;
+			case JSON_ELEMENT:
+			case JSON_STRING:
+			case JSON_NUMBER:
+			case JSON_NULL:
+				break;
+			case JSON_VALUE:
+				depth --;
+				break;
+			default:
+				error = createException(SQL, "json.append_terms", "unknown json term");
+				break;
 		}
+		offset +=1;
 	}
-	return offset;
+	return error;
 }
 
 
@@ -246,17 +235,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (jt) {
 		if (jt->error == NULL) {
 			b = COLnew(0, TYPE_json, 0, TRANSIENT);
-			size_t offset = 0;
-			char *error = NULL;
-			// append terms
-			do {
-				offset = append_terms(sa, jt, offset, b, &error);
-				if (error) {
-					msg = error;
-					break;
-				}
-			} while(offset < (size_t)jt->free);
-			if (msg == MAL_SUCCEED) {
+			if ((msg = append_terms(sa, jt, b)) == MAL_SUCCEED) {
 				bat *res = getArgReference_bat(stk, pci, 0);
 				*res = b->batCacheid;
 				BBPkeepref(b);
