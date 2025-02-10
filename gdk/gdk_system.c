@@ -200,13 +200,13 @@ struct mtthread {
 	struct thread_funcs *thread_funcs; /* callback funcs */
 	int nthread_funcs;
 	MT_Lock *lockwait;	/* lock we're waiting for */
-	MT_Sema *semawait;	/* semaphore we're waiting for */
+	ATOMIC_PTR_TYPE semawait;/* semaphore we're waiting for */
 	MT_Cond *condwait;	/* condition variable we're waiting for */
 #ifdef LOCK_OWNER
 	MT_Lock *mylocks;	/* locks we're holding */
 #endif
 	struct mtthread *joinwait; /* process we are joining with */
-	const char *working;	/* what we're currently doing */
+	ATOMIC_PTR_TYPE working;/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
 	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
@@ -232,6 +232,8 @@ struct mtthread {
 static struct mtthread mainthread = {
 	.threadname = "main-thread",
 	.exited = ATOMIC_VAR_INIT(0),
+	.working = ATOMIC_PTR_VAR_INIT(NULL),
+	.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	.refs = 1,
 	.tid = 1,
 };
@@ -315,9 +317,10 @@ dump_threads(void)
 		printf("Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
 		MT_Lock *lk = t->lockwait;
-		MT_Sema *sm = t->semawait;
+		MT_Sema *sm = ATOMIC_PTR_GET(&t->semawait);
 		MT_Cond *cn = t->condwait;
 		struct mtthread *jn = t->joinwait;
+		const char *working = ATOMIC_PTR_GET(&t->working);
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
 #ifdef HAVE_PTHREAD_H
@@ -339,7 +342,7 @@ dump_threads(void)
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
 				   ATOMIC_GET(&t->exited) ? "exiting" :
-				   t->working ? t->working : "nothing");
+				   working ? working : "nothing");
 #ifdef LOCK_OWNER
 		const char *sep = ", locked: ";
 		for (MT_Lock *l = t->mylocks; l && pos < (int) sizeof(buf); l = l->nxt) {
@@ -441,6 +444,8 @@ MT_thread_register(void)
 		.refs = 1,
 		.tid = (MT_Id) ATOMIC_INC(&GDKthreadid),
 		.exited = ATOMIC_VAR_INIT(0),
+		.working = ATOMIC_PTR_VAR_INIT(NULL),
+		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
 	thread_setself(self);
@@ -625,7 +630,7 @@ MT_thread_setsemawait(MT_Sema *sema)
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->semawait = sema;
+		ATOMIC_PTR_SET(&self->semawait, sema);
 }
 
 static void
@@ -688,13 +693,13 @@ MT_thread_setworking(const char *work)
 
 	if (self) {
 		if (work == NULL)
-			self->working = NULL;
+			ATOMIC_PTR_SET(&self->working, NULL);
 		else if (strcmp(work, "store locked") == 0)
 			self->limit_override = true;
 		else if (strcmp(work, "store unlocked") == 0)
 			self->limit_override = false;
 		else
-			self->working = work;
+			ATOMIC_PTR_SET(&self->working, work);
 	}
 }
 
@@ -937,6 +942,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.refs = 1,
 		.tid = (MT_Id) ATOMIC_INC(&GDKthreadid),
 		.exited = ATOMIC_VAR_INIT(0),
+		.working = ATOMIC_PTR_VAR_INIT(NULL),
+		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
@@ -1035,7 +1042,7 @@ MT_exiting_thread(void)
 	self = thread_self();
 	if (self) {
 		ATOMIC_SET(&self->exited, 1);
-		self->working = NULL;
+		ATOMIC_PTR_SET(&self->working, NULL);
 	}
 }
 

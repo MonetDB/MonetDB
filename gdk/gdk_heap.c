@@ -874,12 +874,17 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 		  nme?nme:"", ext, (int) h->newstorage, free, h->size,
 		  dosync?"true":"false");
+	if (lock)
+		MT_lock_set(lock);
+	if (free == h->free)
+		h->dirty = false;
+	if (lock)
+		MT_lock_unset(lock);
 	rc = GDKsave(h->farmid, nme, ext, h->base, free, store, dosync);
 	if (lock)
 		MT_lock_set(lock);
 	if (rc == GDK_SUCCEED) {
 		h->hasfile = true;
-		h->dirty = free != h->free;
 		h->wasempty = false;
 	} else {
 		h->dirty = true;

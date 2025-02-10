@@ -1480,10 +1480,8 @@ static sqlid
 next_oid(sqlstore *store)
 {
 	sqlid id = 0;
-	MT_lock_set(&store->lock);
-	id = store->obj_id++;
+	id = (sqlid) ATOMIC_ADD(&store->obj_id, 1);
 	assert(id < 2000000000);
-	MT_lock_unset(&store->lock);
 	return id;
 }
 
@@ -1618,8 +1616,8 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, const char *name, sqlid id,
 	sqlstore *store = tr->store;
 	sql_column *col = ZNEW(sql_column);
 
-	if (store->obj_id <= id)
-		store->obj_id = id+1;
+	if ((sqlid) ATOMIC_GET(&store->obj_id) <= id)
+		ATOMIC_SET(&store->obj_id, id + 1);
 	TRC_DEBUG(SQL_STORE, "Create column: %s\n", name);
 
 	base_init(NULL, &col->base, id, t->base.new, name);
@@ -1799,8 +1797,8 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, const char *name, sqlid id)
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
 	sql_table *t;
 
-	if (store->obj_id <= id)
-		store->obj_id = id+1;
+	if ((sqlid) ATOMIC_GET(&store->obj_id) <= id)
+		ATOMIC_SET(&store->obj_id, id + 1);
 	t = create_sql_table_with_id(NULL, id, name, tt_table, 1, persistence, commit_action, 0);
 	t->bootstrap = 1;
 
@@ -1826,8 +1824,8 @@ bootstrap_create_schema(sql_trans *tr, const char *name, sqlid id, sqlid auth_id
 	sqlstore *store = tr->store;
 	sql_schema *s = ZNEW(sql_schema);
 
-	if (store->obj_id <= id)
-		store->obj_id = id+1;
+	if ((sqlid) ATOMIC_GET(&store->obj_id) <= id)
+		ATOMIC_SET(&store->obj_id, id + 1);
 	TRC_DEBUG(SQL_STORE, "Create schema: %s %d %d\n", name, auth_id, owner);
 
 	if (strcmp(name, dt_schema) == 0) {
@@ -1926,7 +1924,7 @@ store_load(sqlstore *store, allocator *pa)
 	types_init(store->sa); /* initialize global lists of types and functions, TODO: needs to move */
 
 	/* we store some spare oids */
-	store->obj_id = FUNC_OIDS;
+	ATOMIC_SET(&store->obj_id, FUNC_OIDS);
 
 	tr = sql_trans_create(store, NULL, NULL);
 	if (!tr) {
@@ -2177,8 +2175,8 @@ store_load(sqlstore *store, allocator *pa)
 
 	store->logger_api.get_sequence(store, OBJ_SID, &lng_store_oid);
 	store->prev_oid = (sqlid)lng_store_oid;
-	if (store->obj_id < store->prev_oid)
-		store->obj_id = store->prev_oid;
+	if ((sqlid) ATOMIC_GET(&store->obj_id) < store->prev_oid)
+		ATOMIC_SET(&store->obj_id, store->prev_oid);
 
 	/* load remaining schemas, tables, columns etc */
 	tr->active = 1;
@@ -2233,6 +2231,7 @@ store_init(int debug, store_type store_tpe, int readonly, int singleuser)
 		.lastactive = ATOMIC_VAR_INIT(0),
 		.function_counter = ATOMIC_VAR_INIT(0),
 		.oldest = ATOMIC_VAR_INIT(0),
+		.obj_id = ATOMIC_VAR_INIT(0),
 		.sa = pa,
 	};
 
@@ -4140,14 +4139,14 @@ sql_trans_commit(sql_trans *tr)
 				}
 				sequences_unlock(store);
 			}
-			if (ok == LOG_OK && store->prev_oid != store->obj_id) {
+			if (ok == LOG_OK && store->prev_oid != (sqlid) ATOMIC_GET(&store->obj_id)) {
 				if (!flush)
 					MT_lock_set(&store->flush);
-				ok = store->logger_api.log_tsequence(store, OBJ_SID, store->obj_id);
+				ok = store->logger_api.log_tsequence(store, OBJ_SID, (sqlid) ATOMIC_GET(&store->obj_id));
 				if (!flush)
 					MT_lock_unset(&store->flush);
 			}
-			store->prev_oid = store->obj_id;
+			store->prev_oid = (sqlid) ATOMIC_GET(&store->obj_id);
 
 
 			if (ok == LOG_OK)
