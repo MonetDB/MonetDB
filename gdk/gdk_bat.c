@@ -369,7 +369,9 @@ BATextend(BAT *b, BUN newcap)
 	 * otherwise you may easily corrupt the administration of
 	 * malloc.
 	 */
+	MT_lock_set(&b->theaplock);
 	if (newcap <= BATcapacity(b)) {
+		MT_lock_unset(&b->theaplock);
 		return GDK_SUCCEED;
 	}
 
@@ -380,7 +382,6 @@ BATextend(BAT *b, BUN newcap)
 		theap_size = (size_t) newcap << b->tshift;
 	}
 
-	MT_lock_set(&b->theaplock);
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
@@ -925,6 +926,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		if (dense) {
 			MT_lock_set(&b->theaplock);
+			assert(BATtdense(b)); /* no change (coverity) */
 			if (b->batCount == 0)
 				b->tseqbase = ovals ? ovals[0] : oid_nil;
 			BATsetcount(b, BATcount(b) + count);
@@ -1287,74 +1289,45 @@ BUNappend(BAT *b, const void *t, bool force)
 gdk_return
 BUNdelete(BAT *b, oid o)
 {
-	BUN p;
-	BATiter bi = bat_iterator_nolock(b);
-	const void *val;
-	bool locked = false;
-	BUN nunique;
+	BATiter bi = bat_iterator(b);
 
-	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
-	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
-		/* value already not there */
-		return GDK_SUCCEED;
+	if (bi.count == 0) {
+		bat_iterator_end(&bi);
+		GDKerror("cannot delete from empty bat\n");
+		return GDK_FAIL;
 	}
-	assert(BATcount(b) > 0); /* follows from "if" above */
-	p = o - b->hseqbase;
-	if (p < b->batInserted) {
+	if (is_oid_nil(b->hseqbase)) {
+		bat_iterator_end(&bi);
+		GDKerror("cannot delete from bat with VOID hseqbase\n");
+		return GDK_FAIL;
+	}
+
+	BUN p = o - b->hseqbase;
+
+	if (bi.count - 1 != p) {
+		bat_iterator_end(&bi);
+		GDKerror("cannot delete anything other than last value\n");
+		return GDK_FAIL;
+	}
+	if (b->batInserted >= bi.count) {
+		bat_iterator_end(&bi);
 		GDKerror("cannot delete committed value\n");
 		return GDK_FAIL;
 	}
+
 	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
-	val = BUNtail(bi, p);
-	/* writing the values should be locked, reading could be done
-	 * unlocked (since we're the only thread that should be changing
-	 * anything) */
+	BUN nunique = HASHdelete(&bi, p, BUNtail(bi, p));
+	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
+	bat_iterator_end(&bi);
+
 	MT_lock_set(&b->theaplock);
 	if (b->tmaxpos == p)
 		b->tmaxpos = BUN_NONE;
 	if (b->tminpos == p)
 		b->tminpos = BUN_NONE;
-	MT_lock_unset(&b->theaplock);
-	nunique = HASHdelete(&bi, p, val);
-	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
-	if (p != BATcount(b) - 1 &&
-	    (b->ttype != TYPE_void || BATtdense(b))) {
-		/* replace to-be-delete BUN with last BUN; materialize
-		 * void column before doing so */
-		if (b->ttype == TYPE_void &&
-		    BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
-			return GDK_FAIL;
-		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			msk mval = mskGetVal(b, BATcount(b) - 1);
-			assert(b->thash == NULL);
-			mskSetVal(b, p, mval);
-			/* don't leave garbage */
-			mskClr(b, BATcount(b) - 1);
-		} else {
-			val = Tloc(b, BATcount(b) - 1);
-			nunique = HASHdelete(&bi, BATcount(b) - 1, val);
-			memcpy(Tloc(b, p), val, b->twidth);
-			nunique = HASHinsert(&bi, p, val);
-			MT_lock_set(&b->theaplock);
-			locked = true;
-			if (b->tminpos == BATcount(b) - 1)
-				b->tminpos = p;
-			if (b->tmaxpos == BATcount(b) - 1)
-				b->tmaxpos = p;
-		}
-		/* no longer sorted */
-		if (!locked) {
-			MT_lock_set(&b->theaplock);
-			locked = true;
-		}
-		b->tsorted = b->trevsorted = false;
-		b->theap->dirty = true;
-	}
-	if (!locked)
-		MT_lock_set(&b->theaplock);
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
@@ -1376,6 +1349,9 @@ BUNdelete(BAT *b, oid o)
 	}
 	MT_lock_unset(&b->theaplock);
 	OIDXdestroy(b);
+	STRMPdestroy(b);
+	RTREEdestroy(b);
+	PROPdestroy(b);
 	return GDK_SUCCEED;
 }
 

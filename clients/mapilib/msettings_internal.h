@@ -88,6 +88,8 @@ realloc_with_fallback(msettings_allocator alloc, void *alloc_state, void *old, s
 {
 	return alloc
 		? alloc(alloc_state, old, size)
+		: size == 0
+		? (free(old), NULL)
 		: realloc(old, size);
 }
 
@@ -114,8 +116,11 @@ msettings_alloc_zeroed(const msettings *mp, size_t size)
 static inline void*
 msettings_dealloc(const msettings *mp, void *data)
 {
-	if (data != NULL)
-		msettings_realloc(mp, data, 0);
+	if (data != NULL) {
+		void *p = msettings_realloc(mp, data, 0);
+		(void) p;	/* in case we don't have asserts */
+		assert(p == NULL);
+	}
 	return NULL;
 }
 

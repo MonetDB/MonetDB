@@ -356,23 +356,24 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		if (BATextend(b, grows) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
-	if (mayshare &&
-	    BATcount(b) == 0 &&
-	    b->batRole == TRANSIENT &&
-	    ni->restricted == BAT_READ &&
-	    b->tvheap != ni->vh) {
-		/* if b is still empty, in the transient farm, and n
-		 * is read-only, we replace b's vheap with a reference
-		 * to n's */
+	if (mayshare) {
 		MT_lock_set(&b->theaplock);
-		bat bid = b->tvheap->parentid;
-		HEAPdecref(b->tvheap, true);
-		HEAPincref(ni->vh);
-		b->tvheap = ni->vh;
+		if (BATcount(b) == 0 &&
+		    b->batRole == TRANSIENT &&
+		    ni->restricted == BAT_READ &&
+		    b->tvheap != ni->vh) {
+			/* if b is still empty, in the transient farm,
+			 * and n is read-only, we replace b's vheap with
+			 * a reference to n's */
+			bat bid = b->tvheap->parentid;
+			HEAPdecref(b->tvheap, true);
+			HEAPincref(ni->vh);
+			b->tvheap = ni->vh;
+			BBPretain(ni->vh->parentid);
+			if (bid != b->batCacheid)
+				BBPrelease(bid);
+		}
 		MT_lock_unset(&b->theaplock);
-		BBPretain(ni->vh->parentid);
-		if (bid != b->batCacheid)
-			BBPrelease(bid);
 	}
 	if (b->tvheap == ni->vh) {
 		/* if b and n use the same vheap, we only need to copy

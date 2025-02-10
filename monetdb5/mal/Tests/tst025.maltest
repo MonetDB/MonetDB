@@ -20,7 +20,7 @@ io.print(b)
 2
 5645862
 
-statement ok
+statement error
 bat.delete(b,1@0)
 
 query II rowsort
@@ -29,6 +29,8 @@ io.print(b)
 0
 5140046
 1
+5442033
+2
 5645862
 
 statement ok
