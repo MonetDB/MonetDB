@@ -1122,6 +1122,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	    VALcopy(&maxprop, prop) != NULL)
 		maxbound = VALptr(&maxprop);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
+	bool setnil = false;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
@@ -1201,8 +1202,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 						}
 					}
 				} else {
-					b->tnil = true;
-					b->tnonil = false;
+					setnil = true;
 				}
 				p++;
 			}
@@ -1222,8 +1222,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
-			b->tnil = false;
-			b->tnonil = true;
+			assert(!b->tnil);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				mskSetVal(b, p, *(msk *) t);
@@ -1261,8 +1260,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 						}
 					}
 				} else {
-					b->tnil = true;
-					b->tnonil = false;
+					setnil = true;
 				}
 				p++;
 			}
@@ -1282,10 +1280,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			p++;
 		}
 		nunique = b->thash ? b->thash->nunique : 0;
-		b->tnil = b->ttype != TYPE_msk;
-		b->tnonil = false;
+		setnil |= b->ttype != TYPE_msk;
 	}
 	MT_lock_set(&b->theaplock);
+	if (setnil) {
+		b->tnil = true;
+		b->tnonil = false;
+	}
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
 	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)

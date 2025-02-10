@@ -404,6 +404,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	if (nr > BATcount(b)) {
 		BATsetcount(b, nr);
 	}
+	b->theap->dirty = true;
 	MT_lock_unset(&b->theaplock);
 
 	bat_destroy(b);
@@ -2393,9 +2394,10 @@ deletes_conflict_updates(sql_trans *tr, sql_table *t, oid rid, size_t cnt)
 static int
 storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
+	lock_table(tr->store, t->base.id);
+
 	int in_transaction = segments_in_transaction(tr, t);
 
-	lock_table(tr->store, t->base.id);
 	/* find segment of rid, split, mark new segment deleted (for tr->tid) */
 	segment *seg = s->segs->h, *p = NULL;
 	for (; seg; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
@@ -3865,7 +3867,9 @@ clear_table(sql_trans *tr, sql_table *t)
 
 	if (!d)
 		return BUN_NONE;
+	lock_table(tr->store, t->base.id);
 	in_transaction = segments_in_transaction(tr, t);
+	unlock_table(tr->store, t->base.id);
 	clear = !in_transaction;
 	sz = count_col(tr, c, CNT_ACTIVE);
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)

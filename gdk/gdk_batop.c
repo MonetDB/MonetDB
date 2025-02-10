@@ -2004,13 +2004,16 @@ BATordered(BAT *b)
 	lng t0 = GDKusec();
 	bool sorted;
 
+	MT_rwlock_rdlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return true;
 	}
 	if (b->tnosorted > 0 || !ATOMlinear(b->ttype)) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return false;
 	}
 
@@ -2121,6 +2124,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
+	MT_rwlock_rdunlock(&b->thashlock);
 	sorted = b->tsorted;
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
@@ -2185,17 +2189,21 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
+	MT_rwlock_rdlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	if (BATcount(b) <= 1 || b->trevsorted) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return true;
 	}
 	if (b->ttype == TYPE_void) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return is_oid_nil(b->tseqbase);
 	}
 	if (BATtdense(b) || b->tnorevsorted > 0) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return false;
 	}
 	BATiter bi = bat_iterator_nolock(b);
@@ -2240,6 +2248,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
+	MT_rwlock_rdunlock(&b->thashlock);
 	revsorted = b->trevsorted;
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);

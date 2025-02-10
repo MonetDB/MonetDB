@@ -2555,13 +2555,13 @@ log_next_logfile(logger *lg, ulng ts)
 	if (ATOMIC_GET(&lg->pending->refcount) == 0 && lg->pending != lg->current && lg->pending != lg->flush_ranges &&
 	    (ulng) ATOMIC_GET(&lg->pending->last_ts) == (ulng) ATOMIC_GET(&lg->pending->flushed_ts) &&
 	    (ulng) ATOMIC_GET(&lg->pending->flushed_ts) <= ts) {
-		rotation_unlock(lg);
 		logged_range *p = lg->pending;
 		for (int i = 1;
 		     i < m && ATOMIC_GET(&p->refcount) == 0 && p->next && p->next != lg->current &&
 		     p->next != lg->flush_ranges && (ulng) ATOMIC_GET(&p->last_ts) == (ulng) ATOMIC_GET(&p->flushed_ts)
 		     && (ulng) ATOMIC_GET(&p->flushed_ts) <= ts; i++)
 			p = p->next;
+		rotation_unlock(lg);
 		return p;
 	}
 	rotation_unlock(lg);
@@ -2928,8 +2928,8 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 	/* if offset is just for the log, but BAT is already sliced, reset offset */
 	if (sliced)
 		offset = 0;
+	BATiter bi = bat_iterator(b);
 	if (b->ttype == TYPE_msk) {
-		BATiter bi = bat_iterator(b);
 		if (offset % 32 == 0) {
 			if (!mnstr_writeIntArray(lg->current->output_log, (int *) ((char *) bi.base + offset / 32),
 			     (size_t) ((nr + 31) / 32)))
@@ -2945,26 +2945,22 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 				}
 			}
 		}
-		bat_iterator_end(&bi);
-	} else if (b->ttype < TYPE_str && !isVIEW(b)) {
-		BATiter bi = bat_iterator(b);
+	} else if (b->ttype < TYPE_str && bi.h->parentid == b->batCacheid) {
 		const void *t = BUNtail(bi, (BUN) offset);
 
 		ok = wt(t, lg->current->output_log, (size_t) nr);
-		bat_iterator_end(&bi);
 	} else if (b->ttype == TYPE_str) {
 		/* efficient string writes */
 		ok = string_writer(lg, b, offset, nr);
 	} else {
-		BATiter bi = bat_iterator(b);
 		BUN end = (BUN) (offset + nr);
 		for (p = (BUN) offset; p < end && ok == GDK_SUCCEED; p++) {
 			const void *t = BUNtail(bi, p);
 
 			ok = wt(t, lg->current->output_log, 1);
 		}
-		bat_iterator_end(&bi);
 	}
+	bat_iterator_end(&bi);
 
 	TRC_DEBUG(WAL, "Logged %d " LLFMT " inserts\n", id, nr);
 

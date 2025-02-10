@@ -1084,10 +1084,13 @@ SQLreader(Client c, backend *be)
 	mvc *m = NULL;
 	bool blocked = isa_block_stream(in->s);
 
+	MT_lock_set(&mal_contextLock);
 	if (!SQLstore || c->mode <= FINISHCLIENT) {
 		c->mode = FINISHCLIENT;
+		MT_lock_unset(&mal_contextLock);
 		return MAL_SUCCEED;
 	}
+	MT_lock_unset(&mal_contextLock);
 	language = be->language;	/* 'S', 's' or 'X' */
 	m = be->mvc;
 	m->errstr[0] = 0;
@@ -1184,7 +1187,9 @@ SQLreader(Client c, backend *be)
 	}
 	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
+		MT_lock_set(&mal_contextLock);
 		c->mode = FINISHCLIENT;
+		MT_lock_unset(&mal_contextLock);
 		return msg;
 	}
 	return msg;
