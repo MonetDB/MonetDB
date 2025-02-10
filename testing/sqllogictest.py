@@ -172,16 +172,17 @@ class SQLLogic:
         self.alltests = alltests
         if language == 'sql':
             transfer_handler = UnsafeDirectoryHandler(self.srcdir)
-            self.dbh = pymonetdb.connect(username=username,
-                                         password=password,
-                                         hostname=hostname,
-                                         port=port,
-                                         database=database,
-                                         autocommit=True,
-                                         connect_timeout=timeout if timeout > 0 else -1)
-            self.dbh.set_uploader(transfer_handler)
-            self.dbh.set_downloader(transfer_handler)
-            self.crs = self.dbh.cursor()
+            dbh = pymonetdb.connect(username=username,
+                                    password=password,
+                                    hostname=hostname,
+                                    port=port,
+                                    database=database,
+                                    autocommit=True,
+                                    connect_timeout=timeout if timeout > 0 else -1)
+            self.dbh = dbh
+            dbh.set_uploader(transfer_handler)
+            dbh.set_downloader(transfer_handler)
+            self.crs = dbh.cursor()
         else:
             dbh = malmapi.Connection()
             dbh.connect(database=database,
@@ -193,7 +194,7 @@ class SQLLogic:
                         connect_timeout=timeout if timeout > 0 else -1)
             self.crs = MapiCursor(dbh)
         if timeout > 0:
-            self.dbh.settimeout(timeout)
+            dbh.settimeout(timeout)
 
     def add_connection(self, conn_id, username='monetdb', password='monetdb'):
         if self.conn_map.get(conn_id, None) is None:
