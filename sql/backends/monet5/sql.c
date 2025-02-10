@@ -5850,7 +5850,9 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 				n = t->type->d.fields->h;
 				if (n) {
 					sql_arg *a = n->data;
-					t = &a->type;
+					sql_subtype *atype = &a->type;
+					if (atype->type->composite)
+						t = atype;
 				}
 				elm = insert_json_object(msg, js, bats, bat_offset + 1, nr, elm, id, anr++, t);
 				(void)oanr; // outer array number
