@@ -153,7 +153,7 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 	sql_schema *jsons = mvc_bind_schema(sql, "sys");
 	if (!jsons)
 		return NULL;
-	sql_subtype *st = SA_NEW(sql->sa, sql_subtype);
+	sql_subtype *st = SA_ZNEW(sql->sa, sql_subtype);
 	st->digits = st->scale = 0;
 	st->multiset = 0;
 	st->type = schema_bind_type(sql, jsons, "json");

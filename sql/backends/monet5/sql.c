@@ -5741,6 +5741,7 @@ static int
 insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, int id, int anr, sql_subtype *t)
 {
 	char buf[128]; /* TODO use proper buffer */
+	int old_bat_offset = bat_offset;
 	node *n;
 	JSONterm *jt = js->elm+elm;
 	if (jt->kind != JSON_OBJECT || !t->type->composite) {
@@ -5788,6 +5789,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 			nlen = (int)jt->valuelen;
 			break;
 		case JSON_VALUE:
+			break;
 		case JSON_STRING:
 		case JSON_NUMBER:
 		case JSON_BOOL:
@@ -5817,10 +5819,13 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 		}
 	}
 
-	if (t->multiset && elm > 0 && BUNappend(bats[w + bat_offset], &id, false) != GDK_SUCCEED)
-		elm = -3;
-	if (t->multiset == MS_ARRAY && elm > 0 && BUNappend(bats[w + 1 + bat_offset], &anr, false) != GDK_SUCCEED)
-		elm = -3;
+	if (bat_offset > old_bat_offset && old_bat_offset != 0) {
+		if (elm > 0 && BUNappend(bats[bat_offset], &id, false) != GDK_SUCCEED)
+			elm = -3;
+		if (elm > 0 && BUNappend(bats[bat_offset + 1], &anr, false) != GDK_SUCCEED)
+			elm = -3;
+	}
+
 	return elm;
 }
 
@@ -5833,7 +5838,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 		*msg = "missing array start";
 		return -1;
 	}
-	int anr = 1;
+	int anr = 1; // array number
 	node *n;
 	for (; elm < tail; elm=ja->next) { /* array begin, comma, end */
 		ja = js->elm+elm;
@@ -5848,7 +5853,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 					t = &a->type;
 				}
 				elm = insert_json_object(msg, js, bats, bat_offset + 1, nr, elm, id, anr++, t);
-				(void)oanr;
+				(void)oanr; // outer array number
 				break;
 			default:
 				printf("todo\n");
@@ -5863,16 +5868,16 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 }
 
 static str
-insert_json_str(const char *jstr, BAT **bats, int cnt, sql_subtype *t)
+insert_json_str(const char *jstr, BAT **bats, int cnt, unsigned int row_id, sql_subtype *t)
 {
 	char *res = MAL_SUCCEED;
 	JSON *js = JSONparse(jstr);
 	if (!js)
 		throw(SQL, "insert_json_str", "JSONparse error");
 	if (t->multiset)
-		(void)insert_json_array(&res, js, bats, 0, cnt, 0, 1, 1, t);
+		(void)insert_json_array(&res, js, bats, 0, cnt, 0, row_id, 1, t);
 	else
-		(void)insert_json_object(&res, js, bats, 0, cnt, 0, 1, 1, t);
+		(void)insert_json_object(&res, js, bats, 0, cnt, 0, row_id, 1, t);
 	JSONfree(js);
 	return res;
 }
@@ -5910,7 +5915,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p, q;
 		BATloop(b, p, q) {
 			const char *json = (const char *) BUNtail(bi, p);
-			if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED) {
+			if ((msg = insert_json_str(json, bats, pci->retc, p, t)) != MAL_SUCCEED) {
 				BBPreclaim(b);
 				goto bailout;
 			}
@@ -5921,7 +5926,7 @@ SQLfrom_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (strcmp(BATatoms[mtype].name, "json") != 0)
 			throw(SQL, "SQLfrom_json", SQLSTATE(HY013) "Incorrect argument type");
 		str json = *(str*)getArgReference(stk, pci, pci->retc);
-		if ((msg = insert_json_str(json, bats, pci->retc, t )) != MAL_SUCCEED)
+		if ((msg = insert_json_str(json, bats, pci->retc, 1, t)) != MAL_SUCCEED)
 			goto bailout;
 	}
 
