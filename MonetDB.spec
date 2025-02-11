@@ -563,6 +563,8 @@ embedded library (%{name}-embedded).
 %endif
 %{_libdir}/monetdb5*/lib_csv.so
 %{_libdir}/monetdb5*/lib_generator.so
+%{_libdir}/monetdb5*/lib_monetdb_loader.so
+%{_libdir}/monetdb5*/lib_odbc_loader.so
 
 %package server
 Summary: MonetDB - Monet Database Management System
