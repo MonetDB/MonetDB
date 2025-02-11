@@ -577,7 +577,9 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package provides an interface to the MonetDB server through which
-data from remote databases can be loaded through an ODBC interface.
+data from remote databases can be loaded through an ODBC interface.  In
+order to use this module, mserver5 needs to be run with the option
+--loadmodule odbc_loader.
 
 %files odbc-loader
 %defattr(-,root,root)

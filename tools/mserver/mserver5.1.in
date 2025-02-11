@@ -120,6 +120,10 @@ sections.
 Load extra module in the form of a dynamic link library (.dll or .so
 file) which should be located in the lib/monetdb5 directory.
 This option can be repeated for different modules.
+Also see the
+.B loadmodules
+entry in
+.IR monetdb (1).
 .TP
 .B \-\-without\-geom
 Start the server without 
