@@ -646,7 +646,7 @@ int yydebug=1;
 %token MAXVALUE MINVALUE CYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
-%token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
+%token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL imitators */
 
 /* SQL's terminator, the semi-colon */
 %token SCOLON AT
@@ -1173,7 +1173,7 @@ opt_with_grant:
  ;
 
 opt_with_admin:
-	/* emtpy */		    { $$ = 0; }
+	/* empty */		    { $$ = 0; }
  |	WITH ADMIN OPTION	{ $$ = 1; }
  ;
 
