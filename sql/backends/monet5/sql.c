@@ -5770,7 +5770,11 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 					}
 				}
 			}
-			elm = insert_json_object(msg, js, bats, bat_offset, nr, elm, id, anr, t);
+			if (bat_offset > old_bat_offset && old_bat_offset != 0) {
+				elm = insert_json_object(msg, js, bats, bat_offset + 2, nr, elm, id, anr, t);
+			} else {
+				elm = insert_json_object(msg, js, bats, bat_offset, nr, elm, id, anr, t);
+			}
 			break;
 		case JSON_ARRAY:
 			/* TODO get id for nested array from the a global struct */
@@ -5785,7 +5789,11 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 					}
 				}
 			}
-			elm = insert_json_array(msg, js, bats, bat_offset, nr, elm, id, anr, t);
+			if (bat_offset > old_bat_offset && old_bat_offset != 0) {
+				elm = insert_json_array(msg, js, bats, bat_offset + 2, nr, elm, id, anr, t);
+			} else {
+				elm = insert_json_array(msg, js, bats, bat_offset, nr, elm, id, anr, t);
+			}
 			break;
 		case JSON_ELEMENT: // field
 			name = jt->value;
