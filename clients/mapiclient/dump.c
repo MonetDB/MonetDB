@@ -870,72 +870,74 @@ dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits,
 {
 	int space = 0;
 
+	if (c_multiset == 1)
+		space += mnstr_printf(sqlf, "SETOF ");
 	if (strcmp(c_type, "boolean") == 0) {
-		space = mnstr_printf(sqlf, "BOOLEAN");
+		space += mnstr_printf(sqlf, "BOOLEAN");
 	} else if (strcmp(c_type, "int") == 0) {
-		space = mnstr_printf(sqlf, "INTEGER");
+		space += mnstr_printf(sqlf, "INTEGER");
 	} else if (strcmp(c_type, "smallint") == 0) {
-		space = mnstr_printf(sqlf, "SMALLINT");
+		space += mnstr_printf(sqlf, "SMALLINT");
 	} else if (strcmp(c_type, "tinyint") == 0) {
-		space = mnstr_printf(sqlf, "TINYINT");
+		space += mnstr_printf(sqlf, "TINYINT");
 	} else if (strcmp(c_type, "bigint") == 0) {
-		space = mnstr_printf(sqlf, "BIGINT");
+		space += mnstr_printf(sqlf, "BIGINT");
 	} else if (strcmp(c_type, "hugeint") == 0) {
-		space = mnstr_printf(sqlf, "HUGEINT");
+		space += mnstr_printf(sqlf, "HUGEINT");
 	} else if (strcmp(c_type, "date") == 0) {
-		space = mnstr_printf(sqlf, "DATE");
+		space += mnstr_printf(sqlf, "DATE");
 	} else if (strcmp(c_type, "month_interval") == 0) {
 		if (strcmp(c_type_digits, "1") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL YEAR");
+			space += mnstr_printf(sqlf, "INTERVAL YEAR");
 		else if (strcmp(c_type_digits, "2") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL YEAR TO MONTH");
+			space += mnstr_printf(sqlf, "INTERVAL YEAR TO MONTH");
 		else if (strcmp(c_type_digits, "3") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL MONTH");
+			space += mnstr_printf(sqlf, "INTERVAL MONTH");
 		else
 			fprintf(stderr, "Internal error: unrecognized month interval %s\n", c_type_digits);
 	} else if (strcmp(c_type, "day_interval") == 0 || strcmp(c_type, "sec_interval") == 0) {
 		if (strcmp(c_type_digits, "4") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL DAY");
+			space += mnstr_printf(sqlf, "INTERVAL DAY");
 		else if (strcmp(c_type_digits, "5") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL DAY TO HOUR");
+			space += mnstr_printf(sqlf, "INTERVAL DAY TO HOUR");
 		else if (strcmp(c_type_digits, "6") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL DAY TO MINUTE");
+			space += mnstr_printf(sqlf, "INTERVAL DAY TO MINUTE");
 		else if (strcmp(c_type_digits, "7") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL DAY TO SECOND");
+			space += mnstr_printf(sqlf, "INTERVAL DAY TO SECOND");
 		else if (strcmp(c_type_digits, "8") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL HOUR");
+			space += mnstr_printf(sqlf, "INTERVAL HOUR");
 		else if (strcmp(c_type_digits, "9") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL HOUR TO MINUTE");
+			space += mnstr_printf(sqlf, "INTERVAL HOUR TO MINUTE");
 		else if (strcmp(c_type_digits, "10") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL HOUR TO SECOND");
+			space += mnstr_printf(sqlf, "INTERVAL HOUR TO SECOND");
 		else if (strcmp(c_type_digits, "11") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL MINUTE");
+			space += mnstr_printf(sqlf, "INTERVAL MINUTE");
 		else if (strcmp(c_type_digits, "12") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL MINUTE TO SECOND");
+			space += mnstr_printf(sqlf, "INTERVAL MINUTE TO SECOND");
 		else if (strcmp(c_type_digits, "13") == 0)
-			space = mnstr_printf(sqlf, "INTERVAL SECOND");
+			space += mnstr_printf(sqlf, "INTERVAL SECOND");
 		else
 			fprintf(stderr, "Internal error: unrecognized second interval %s\n", c_type_digits);
 	} else if (strcmp(c_type, "clob") == 0 ||
 		   (strcmp(c_type, "varchar") == 0 &&
 		    strcmp(c_type_digits, "0") == 0)) {
-		space = mnstr_printf(sqlf, "CHARACTER LARGE OBJECT");
+		space += mnstr_printf(sqlf, "CHARACTER LARGE OBJECT");
 		if (strcmp(c_type_digits, "0") != 0)
 			space += mnstr_printf(sqlf, "(%s)", c_type_digits);
 	} else if (strcmp(c_type, "blob") == 0) {
-		space = mnstr_printf(sqlf, "BINARY LARGE OBJECT");
+		space += mnstr_printf(sqlf, "BINARY LARGE OBJECT");
 		if (strcmp(c_type_digits, "0") != 0)
 			space += mnstr_printf(sqlf, "(%s)", c_type_digits);
 	} else if (strcmp(c_type, "timestamp") == 0 ||
 		   strcmp(c_type, "timestamptz") == 0) {
-		space = mnstr_printf(sqlf, "TIMESTAMP");
+		space += mnstr_printf(sqlf, "TIMESTAMP");
 		if (strcmp(c_type_digits, "7") != 0)
 			space += mnstr_printf(sqlf, "(%d)", atoi(c_type_digits) - 1);
 		if (strcmp(c_type, "timestamptz") == 0)
 			space += mnstr_printf(sqlf, " WITH TIME ZONE");
 	} else if (strcmp(c_type, "time") == 0 ||
 		   strcmp(c_type, "timetz") == 0) {
-		space = mnstr_printf(sqlf, "TIME");
+		space += mnstr_printf(sqlf, "TIME");
 		if (strcmp(c_type_digits, "1") != 0)
 			space += mnstr_printf(sqlf, "(%d)", atoi(c_type_digits) - 1);
 		if (strcmp(c_type, "timetz") == 0)
@@ -943,25 +945,25 @@ dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits,
 	} else if (strcmp(c_type, "real") == 0) {
 		if (strcmp(c_type_digits, "24") == 0 &&
 		    strcmp(c_type_scale, "0") == 0)
-			space = mnstr_printf(sqlf, "REAL");
+			space += mnstr_printf(sqlf, "REAL");
 		else if (strcmp(c_type_scale, "0") == 0)
-			space = mnstr_printf(sqlf, "FLOAT(%s)", c_type_digits);
+			space += mnstr_printf(sqlf, "FLOAT(%s)", c_type_digits);
 		else
-			space = mnstr_printf(sqlf, "FLOAT(%s,%s)",
+			space += mnstr_printf(sqlf, "FLOAT(%s,%s)",
 					c_type_digits, c_type_scale);
 	} else if (strcmp(c_type, "double") == 0) {
 		if (strcmp(c_type_digits, "53") == 0 &&
 		    strcmp(c_type_scale, "0") == 0)
-			space = mnstr_printf(sqlf, "DOUBLE");
+			space += mnstr_printf(sqlf, "DOUBLE");
 		else if (strcmp(c_type_scale, "0") == 0)
-			space = mnstr_printf(sqlf, "FLOAT(%s)", c_type_digits);
+			space += mnstr_printf(sqlf, "FLOAT(%s)", c_type_digits);
 		else
-			space = mnstr_printf(sqlf, "FLOAT(%s,%s)",
+			space += mnstr_printf(sqlf, "FLOAT(%s,%s)",
 					c_type_digits, c_type_scale);
 	} else if (strcmp(c_type, "decimal") == 0 &&
 		   strcmp(c_type_digits, "1") == 0 &&
 		   strcmp(c_type_scale, "0") == 0) {
-		space = mnstr_printf(sqlf, "DECIMAL");
+		space += mnstr_printf(sqlf, "DECIMAL");
 	} else if (strcmp(c_type, "table") == 0) {
 		mnstr_printf(sqlf, "TABLE ");
 		dump_column_definition(mid, sqlf, NULL, NULL, c_type_digits, 1, hashge);
@@ -984,9 +986,9 @@ dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits,
 	} else {
 		const char *s = toUpper(c_type);
 		if (s)
-			space = mnstr_printf(sqlf, "%s", s);
+			space += mnstr_printf(sqlf, "%s", s);
 		else
-			space = dquoted_print(sqlf, c_type, NULL);
+			space += dquoted_print(sqlf, c_type, NULL);
 		if (strcmp(c_type_digits, "0") != 0) {
 			if (strcmp(c_type_scale, "0") == 0) {
 				space += mnstr_printf(sqlf, "(%s)", c_type_digits);
