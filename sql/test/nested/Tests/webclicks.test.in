@@ -11,25 +11,47 @@ statement ok
 create type loc as (list elem[])
 
 statement ok
-create type event as (eventid varchar, event varchar, timestamp timestamp, location loc, "user" webusr)
+create type actionfields as (list elem[])
 
 statement ok
-create table events(events event)
+create type attributes as (list elem[])
 
 statement ok
-insert into events values (('111', 'click', '2024-11-30 22:13:37.823000', array[('hostname', 'localhost')], array[('user','niels')]))
+create type oelement as (type varchar, id varchar, attributes attributes)
 
-#statement ok
-#insert into events values (('111', 'click', '2024-11-30 22:13:37.823000', (array[(('hostname', 'localhost'))]), null))
+statement ok
+create type oelement_container as (element oelement)
 
-#load from file
-query TTTTT
-select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json') t
+statement ok
+create type eobjects as (list oelement_container[])
+
+statement ok
+create type ecommerce as (name varchar, actionfields actionfields, objects eobjects)
+
+statement ok
+create type event as (
+    eventid varchar,
+    sessionid varchar,
+    userid varchar,
+    event varchar,
+    timestamp timestamp,
+    user_agent varchar,
+    location loc, 
+    "user" webusr,
+    ecommerce ecommerce)
+
+query I
+select count(*) from r'/tmp/webclicks.json'
+----
+2
+
+query TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+select cast(t.json as event) from (select json from r'/tmp/webclicks.json') t
 ----
 
 # clean up
 statement ok
-drop table events cascade
+drop type event
 
 statement ok
 drop type loc
@@ -38,4 +60,20 @@ statement ok
 drop type webusr
 
 statement ok
-drop type event
+drop type ecommerce
+
+statement ok
+drop type actionfields
+
+statement ok
+drop type attributes
+
+statement ok
+drop type eobjects
+
+statement ok
+drop type elem
+
+statement ok
+drop type kv
+
