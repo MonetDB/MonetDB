@@ -5883,7 +5883,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 }
 
 static str
-insert_json_str(const char *jstr, BAT **bats, int cnt, unsigned int row_id, sql_subtype *t)
+insert_json_str(const char *jstr, BAT **bats, int cnt, size_t row_id, sql_subtype *t)
 {
 	char *res = MAL_SUCCEED;
 	JSON *js = JSONparse(jstr);
