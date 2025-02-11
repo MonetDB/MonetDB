@@ -5967,7 +5967,7 @@ data_type:
  |  SETOF simple_data_type ARRAY			{ $$ = $2; $$.multiset = MS_SETOF; }
  ;
 
-/* for now no multi dimential array's */
+/* for now no multi dimential arrays */
 opt_array_bounds:
     /*opt_array_bounds*/ '[' ']' 		{  $$ = append_int(L(), -1); }
  |  /*opt_array_bounds*/ '[' posint ']' 	{  $$ = append_int(L(), $2); }
