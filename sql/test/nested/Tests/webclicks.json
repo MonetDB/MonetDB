@@ -5,7 +5,7 @@
         "userid": "8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64",
         "event": "productDetail",
         "timestamp": "2024-11-30 22:13:37.823000",
-        "user_agent": "Mozilla/5.0 (Linux; Android 10; AGR-W09; HMSCore 6.14.0.321) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.196 HuaweiBrowser/15.0.4.312 Mobile Safari/537.36",
+        "user_agent": "Mozilla",
         "location": {
             "list": [{
                 "element": {
@@ -111,7 +111,7 @@
         "userid": "8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64",
         "event": "productDetail",
         "timestamp": "2024-11-30 22:13:37.823000",
-        "user_agent": "Mozilla/5.0 (Linux; Android 10; AGR-W09; HMSCore 6.14.0.321) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.196 HuaweiBrowser/15.0.4.312 Mobile Safari/537.36",
+        "user_agent": "Mozilla",
         "location": {
             "list": [{
                 "element": {

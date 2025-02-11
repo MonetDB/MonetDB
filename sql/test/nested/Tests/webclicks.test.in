@@ -41,12 +41,12 @@ create type event as (
     ecommerce ecommerce)
 
 query I
-select count(*) from r'/tmp/webclicks.json'
+select count(*) from r'$TSTSRCDIR/webclicks.json'
 ----
 2
 
 query TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-select cast(t.json as event) from (select json from r'/tmp/webclicks.json') t
+select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json') t
 ----
 
 # clean up
