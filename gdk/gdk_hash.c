@@ -350,8 +350,6 @@ HASHgrowbucket(BAT *b)
 	    HASHupgradehashheap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	h->heapbckt.dirty = true;
-	h->heaplink.dirty = true;
 	while (h->nunique >= (nbucket = h->nbucket) * 7 / 8) {
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
@@ -418,6 +416,8 @@ HASHgrowbucket(BAT *b)
 		else
 			HASHputlink(h, lold, BUN_NONE);
 	}
+	h->heapbckt.dirty = true;
+	h->heaplink.dirty = true;
 	TRC_DEBUG_IF(ACCELERATOR) if (h->nbucket > onbucket) {
 		TRC_DEBUG_ENDIF(ACCELERATOR, ALGOBATFMT " " BUNFMT
 			" -> " BUNFMT " buckets (" LLFMT " usec)\n",
@@ -553,8 +553,6 @@ BATcheckhash(BAT *b)
 								h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 								h->heaplink.parentid = b->batCacheid;
 								h->heapbckt.parentid = b->batCacheid;
-								h->heaplink.dirty = false;
-								h->heapbckt.dirty = false;
 								b->thash = h;
 								h->heapbckt.hasfile = true;
 								h->heaplink.hasfile = true;
@@ -625,16 +623,20 @@ BAThashsave_intern(BAT *b, bool dosync)
 		 * mean time */
 		if (!b->theap->dirty &&
 		    ((size_t *) h->heapbckt.base)[1] == BATcount(b) &&
-		    ((size_t *) h->heapbckt.base)[4] == BATcount(b) &&
-		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
-		    HEAPsave(&h->heapbckt, h->heapbckt.filename, NULL, dosync, h->heapbckt.free, NULL) == GDK_SUCCEED) {
+		    ((size_t *) h->heapbckt.base)[4] == BATcount(b)) {
 			h->heaplink.dirty = false;
 			h->heapbckt.dirty = false;
-			h->heaplink.hasfile = true;
-			h->heapbckt.hasfile = true;
-			gdk_return rc = HASHfix(h, true, dosync);
-			TRC_DEBUG(ACCELERATOR,
-				  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), h->heapbckt.filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+			if (HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync, h->heaplink.free, NULL) == GDK_SUCCEED &&
+			    HEAPsave(&h->heapbckt, h->heapbckt.filename, NULL, dosync, h->heapbckt.free, NULL) == GDK_SUCCEED) {
+				h->heaplink.hasfile = true;
+				h->heapbckt.hasfile = true;
+				gdk_return rc = HASHfix(h, true, dosync);
+				TRC_DEBUG(ACCELERATOR,
+					  ALGOBATFMT ": persisting hash %s%s (" LLFMT " usec)%s\n", ALGOBATPAR(b), h->heapbckt.filename, dosync ? "" : " no sync", GDKusec() - t0, rc == GDK_SUCCEED ? "" : " failed");
+			} else {
+				h->heaplink.dirty = true;
+				h->heapbckt.dirty = true;
+			}
 		}
 		GDKclrerr();
 	}
@@ -1195,10 +1197,10 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	if (hb == BUN_NONE || hb < p) {
 		/* bucket is empty, or bucket is used by lower numbered
 		 * position */
-		h->heaplink.dirty = true;
-		h->heapbckt.dirty = true;
 		HASHputlink(h, p, hb);
 		HASHput(h, c, p);
+		h->heaplink.dirty = true;
+		h->heapbckt.dirty = true;
 		if (hb == BUN_NONE) {
 			h->nheads++;
 		} else {
@@ -1222,9 +1224,9 @@ HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 			seen = atomcmp(v, BUNtail(*bi, hb)) == 0;
 		BUN hb2 = HASHgetlink(h, hb);
 		if (hb2 == BUN_NONE || hb2 < p) {
-			h->heaplink.dirty = true;
 			HASHputlink(h, p, hb2);
 			HASHputlink(h, hb, p);
+			h->heaplink.dirty = true;
 			while (!seen && hb2 != BUN_NONE) {
 				seen = atomcmp(v, BUNtail(*bi, hb2)) == 0;
 				hb2 = HASHgetlink(h, hb2);
@@ -1281,10 +1283,10 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(h->type);
 	if (hb == p) {
 		BUN hb2 = HASHgetlink(h, p);
-		h->heaplink.dirty = true;
-		h->heapbckt.dirty = true;
 		HASHput(h, c, hb2);
 		HASHputlink(h, p, BUN_NONE);
+		h->heaplink.dirty = true;
+		h->heapbckt.dirty = true;
 		if (hb2 == BUN_NONE) {
 			h->nheads--;
 		} else {
@@ -1326,9 +1328,9 @@ HASHdelete_locked(BATiter *bi, BUN p, const void *v)
 			return;
 		}
 	}
-	h->heaplink.dirty = true;
 	HASHputlink(h, hb, HASHgetlink(h, p));
 	HASHputlink(h, p, BUN_NONE);
+	h->heaplink.dirty = true;
 	if (!seen)
 		h->nunique--;
 }

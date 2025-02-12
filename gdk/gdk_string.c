@@ -126,11 +126,11 @@ strCleanHash(Heap *h, bool rebuild)
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
 		memcpy(h->base, newhash, sizeof(newhash));
-		if (h->storage == STORE_MMAP) {
-			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
-				(void) MT_msync(h->base, GDK_STRHASHSIZE);
-		} else
+		if (h->storage != STORE_MMAP ||
+		    ATOMIC_GET(&GDKdebug) & NOSYNCMASK ||
+		    MT_msync(h->base, GDK_STRHASHSIZE) < 0) {
 			h->dirty = true;
+		}
 	}
 #ifndef NDEBUG
 	if (GDK_ELIMDOUBLES(h)) {
@@ -199,13 +199,13 @@ strPut(BAT *b, var_t *dst, const void *V)
 			h = b->tvheap;
 		}
 		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		h->dirty = true;
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
 		/* fill should solve initialization problems within valgrind */
 		memset(h->base, 0, h->size);
 #endif
+		h->dirty = true;
 		b->tascii = true;
 	}
 
@@ -302,7 +302,6 @@ strPut(BAT *b, var_t *dst, const void *V)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
 	h->free += pad + len;
-	h->dirty = true;
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
@@ -312,6 +311,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		*(stridx_t *) (h->base + pos) = *bucket;
 	}
 	*bucket = (stridx_t) pos;	/* set bucket to the new string */
+	h->dirty = true;
 
 	if (b->tascii && !strNil(v)) {
 		for (const uint8_t *p = (const uint8_t *) v; *p; p++) {

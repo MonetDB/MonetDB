@@ -945,24 +945,24 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			oid cur = bi.tseq, *dst = (oid *) Tloc(bn, 0);
 			const oid inc = !is_oid_nil(cur);
 
-			bn->theap->free = bi.count * sizeof(oid);
-			bn->theap->dirty |= bi.count > 0;
 			for (BUN p = 0; p < bi.count; p++) {
 				dst[p] = cur;
 				cur += inc;
 			}
+			bn->theap->free = bi.count * sizeof(oid);
+			bn->theap->dirty |= bi.count > 0;
 		} else if (ATOMstorage(bi.type) == TYPE_msk) {
 			/* convert number of bits to number of bytes,
 			 * and round the latter up to a multiple of
 			 * 4 (copy in units of 4 bytes) */
 			bn->theap->free = ((bi.count + 31) / 32) * 4;
-			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
+			bn->theap->dirty |= bi.count > 0;
 		} else {
 			/* case (4): optimized for simple array copy */
 			bn->theap->free = bi.count << bn->tshift;
-			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
+			bn->theap->dirty |= bi.count > 0;
 		}
 		/* copy all properties (size+other) from the source bat */
 		BATsetcount(bn, bi.count);
