@@ -267,7 +267,7 @@ class Popen(subprocess.Popen):
         self.terminate()
         try:
             self.wait(timeout=10)
-        except process.TimeoutExpired:
+        except TimeoutExpired:
             self.kill()
             self.wait()
         self._clean_dotmonetdbfile()
