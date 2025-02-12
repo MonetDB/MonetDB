@@ -265,13 +265,23 @@ class Popen(subprocess.Popen):
 
     def __exit__(self, exc_type, value, traceback):
         self.terminate()
+        try:
+            self.wait(timeout=10)
+        except process.TimeoutExpired:
+            self.kill()
+            self.wait()
         self._clean_dotmonetdbfile()
         super().__exit__(exc_type, value, traceback)
         if self.returncode and self.returncode < 0 and -self.returncode in _coresigs:
             raise RuntimeError('process exited with coredump generating signal %r' % signal.Signals(-self.returncode))
 
     def __del__(self):
-        if self._child_created:
+        if self._child_created and self.returncode is None:
+            # this may well fail in Python 3.13.2 ("TypeError:
+            # 'NoneType' object is not callable" in import signal), but
+            # it is very unlikely we actually get here since the above
+            # __exit__ will normally have been executed first and so
+            # returncode will have been set
             self.terminate()
         self._clean_dotmonetdbfile()
         super().__del__()
