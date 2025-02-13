@@ -938,4 +938,9 @@ typedef struct pl {
 	 semantics:1;
 } pl;
 
+typedef int msid_t;
+typedef int msindex_t;
+#define MSID_NAME "multisetid";
+#define MSINDEX_NAME "multisetnr";
+
 #endif /* SQL_CATALOG_H */

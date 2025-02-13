@@ -5708,8 +5708,8 @@ insert_json(JSON *js, BAT *bats, int nr, int elm, sql_subtype *t)
 }
 #endif
 
-static int insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, int anr, sql_subtype *t);
-static int insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, int oanr, sql_subtype *t);
+static int insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t anr, sql_subtype *t);
+static int insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t oanr, sql_subtype *t);
 
 static ValPtr
 jsonv2local(const ValPtr t, char *v)
@@ -5741,7 +5741,7 @@ jsonv2local(const ValPtr t, char *v)
 }
 
 static int
-insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, int anr, sql_subtype *t)
+insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t anr, sql_subtype *t)
 {
 	char buf[128]; /* TODO use proper buffer */
 	int old_bat_offset = bat_offset;
@@ -5841,7 +5841,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 }
 
 static int
-insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, int oanr, sql_subtype *t)
+insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t oanr, sql_subtype *t)
 {
 	JSONterm *ja = js->elm+elm;
 	int tail = ja->tail;
