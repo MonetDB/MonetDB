@@ -79,7 +79,7 @@ fm_table(visitor *v, sql_rel *rel)
 }
 #endif
 
-static node * fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins);
+static node * fm_insert_ms(visitor *v, sql_exp *rowid, sql_subtype *t, sql_table *pt, char *name, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins);
 
 static node *
 fm_insert_composite(visitor *v, node *m, node **N, sql_subtype *t, sql_table *subtable, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins)
@@ -92,7 +92,8 @@ fm_insert_composite(visitor *v, node *m, node **N, sql_subtype *t, sql_table *su
 		if (!c->type.multiset && c->type.type->composite) {
 			m = fm_insert_composite(v, m, &n, &c->type, subtable, btexps, niexps, cur, ins);
 		} else if (c->type.multiset) {
-			m = fm_insert_ms(v, m, &c->type, subtable, c->storage_type, btexps, niexps, cur, ins);
+			fm_insert_ms(v, m->data, &c->type, subtable, c->storage_type, btexps, niexps, cur, ins);
+			m = m->next;
 			n = n->next;
 		} else {
 			sql_exp *e = exp_ref(v->sql, m->data);
@@ -107,13 +108,15 @@ fm_insert_composite(visitor *v, node *m, node **N, sql_subtype *t, sql_table *su
 }
 
 static node *
-fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins)
+fm_insert_ms(visitor *v, sql_exp *rowid, sql_subtype *t, sql_table *pt, char *name, list *btexps, list *niexps, sql_rel **cur, sql_rel *ins)
 {
 	assert (t->multiset);
+	assert(rowid->type == e_column && rowid->f);
+	list *exps = rowid->f;
+	node *m = exps->h;
 
 	sql_subfunc *next_val = sql_find_func(v->sql, "sys", "next_value_for", 3, F_FUNC, false, NULL);
 	list *args = sa_list(v->sql->sa);
-	sql_exp *rowid = m->data;
 
 	/* give old rowid unique label !*/
 	sql_alias a = rowid->alias;
@@ -140,14 +143,14 @@ fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, lis
 
 	list *nexps = sa_list(v->sql->sa);
 	append(btexps, nrowid);
-	m = m->next;
 	if (t->type->composite) {
 		for(node *n = ol_first_node(subtable->columns), *o = t->type->d.fields->h; n && m && o; o = o->next) {
 			sql_column *c = n->data;
 			if (!c->type.multiset && c->type.type->composite) {
 				m = fm_insert_composite(v, m, &n, &c->type, subtable, nexps, niexps, cur, ins);
 			} else if (c->type.multiset) {
-				m = fm_insert_ms(v, m, &c->type, subtable, c->storage_type, nexps, niexps, cur, ins);
+				fm_insert_ms(v, m->data, &c->type, subtable, c->storage_type, nexps, niexps, cur, ins);
+				m = m->next;
 				n = n->next;
 			} else {
 				sql_exp *e = exp_ref(v->sql, m->data);
@@ -193,6 +196,7 @@ fm_insert_ms(visitor *v, node *m, sql_subtype *t, sql_table *pt, char *name, lis
 static sql_rel *
 fm_insert(visitor *v, sql_rel *rel)
 {
+	return rel;
 	sql_rel *bt = rel->l;
 	if (is_basetable(bt->op)) {
 		sql_table *t = bt->l;
@@ -212,7 +216,8 @@ fm_insert(visitor *v, sql_rel *rel)
 				if (!c->type.multiset && c->type.type->composite) {
 					m = fm_insert_composite(v, m, &n, &c->type, t, btexps, niexps, &cur, ins);
 				} else if (c->type.multiset) {
-					m = fm_insert_ms(v, m, &c->type, t, c->storage_type, btexps, niexps, &cur, ins);
+					fm_insert_ms(v, m->data, &c->type, t, c->storage_type, btexps, niexps, &cur, ins);
+					m = m->next;
 					n = n->next;
 				} else {
 					sql_exp *e = exp_ref(v->sql, m->data);
@@ -415,7 +420,7 @@ fm_project(visitor *v, sql_rel *rel)
 		for(node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
-			needed = (t && (t->multiset || t->type->composite));
+			needed = (t && !(e->type == e_column && e->f) && (t->multiset || t->type->composite));
 			if (needed && is_intern(e)) {
 				needed = false;
 				break;
@@ -456,7 +461,7 @@ fm_project(visitor *v, sql_rel *rel)
 		for(node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
-			needed = (t && t->multiset);
+			needed = (t && !(e->type == e_column && e->f) && t->multiset);
 			if (needed && is_intern(e)) {
 				needed = false;
 				break;

@@ -904,6 +904,9 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		if (!rel)
 			return NULL;
 	} else if (!sname && strcmp(fname, "unnest") == 0) {
+		tname = NULL;
+		if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
+			tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
 		rel = rel_unnest_func(query, exps, tname);
 		if (!rel)
 			return NULL;

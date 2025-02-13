@@ -43,10 +43,12 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 		}
 	} else {
 		exp_kind ek = {type_value, card_value, FALSE};
+#if 0
 		if (c->type.type->composite) {
 			ek.card = card_row;
 			ek.type = list_length(c->type.type->d.fields); /* TODO how to handle recursive onces */
 		}
+#endif
 		sql_exp *e = rel_value_exp2(query, r, s, sql_sel | sql_values, ek);
 
 		if (!e)

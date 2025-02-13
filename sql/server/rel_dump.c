@@ -277,6 +277,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			alias = 0;
 		if(!exp_relname(e) && exp_name(e) && !e->l && strcmp(exp_name(e), e->r)==0)
 			alias = 0;
+		if (e->f)
+			exps_print(sql, fout, e->f, depth, refs, 0, 1, decorate, 0);
 	} break;
 	case e_cmp:
 		if (e->flag == cmp_in || e->flag == cmp_notin) {

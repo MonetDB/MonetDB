@@ -794,6 +794,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		set_intern(e);
 	if (o->virt)
 		e->virt = 1;
+	if (o->type == e_column && o->f)
+		e->f = o->f;
 	return exp_propagate(sa, e, o);
 }
 
@@ -2853,6 +2855,11 @@ exps_bind_nid(list *exps, int nid)
 
 			if (e->alias.label == nid)
 				return e;
+			if (e->f && e->type == e_column) {
+				e = exps_bind_nid(e->f, nid);
+				if (e)
+					return e;
+			}
 		}
 	}
 	return NULL;
