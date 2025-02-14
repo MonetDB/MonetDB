@@ -41,7 +41,7 @@ target_sources(malmodules
   projectionpath.c
   tablet.c tablet.h
   batcalc.c calc.c
-  ngrams.c)
+  ngrams.c ngrams.h)
 
 target_include_directories(malmodules
   PRIVATE
