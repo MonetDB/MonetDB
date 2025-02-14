@@ -17,6 +17,26 @@
 #include "string.h"
 #include "str.h"
 
+static inline int
+is_prefix(const char *s1, const char *s2, int s2_len)
+{
+	return strncmp(s1, s2, s2_len);
+}
+
+static inline int
+is_suffix(const char *s1, const char *s2, int s2_len)
+{
+	int sl = str_strlen(s1);
+	return sl < s2_len ? -1 : strcmp(s1 + sl - s2_len, s2);
+}
+
+static inline int
+is_contains(const char *s1, const char *s2, int s2_len)
+{
+	(void) s2_len;
+	return strstr(s1, s2) == NULL;
+}
+
 static inline void
 BBPreclaim_n(int nargs, ...)
 {
@@ -47,10 +67,10 @@ ngrams_create(size_t b_cnt, size_t ng_sz)
 {
 	Ngrams *ng = GDKmalloc(sizeof(Ngrams));
 	if (ng) {
-		ng->idx  = GDKzalloc(ng_sz * sizeof(NGRAM_TYPE));
-		ng->sigs = GDKzalloc(b_cnt * sizeof(NGRAM_TYPE));
-		ng->h    = GDKzalloc(ng_sz * sizeof(unsigned));
-		ng->pos  = GDKzalloc(ng_sz * sizeof(unsigned));
+		ng->idx  = GDKmalloc(ng_sz * sizeof(NGRAM_TYPE));
+		ng->sigs = GDKmalloc(b_cnt * sizeof(NGRAM_TYPE));
+		ng->h    = GDKmalloc(ng_sz * sizeof(unsigned));
+		ng->pos  = GDKmalloc(ng_sz * sizeof(unsigned));
 		ng->rid  = GDKzalloc(NGRAM_MULTIPLE * b_cnt * sizeof(unsigned));
 	}
 	if (!ng || !ng->idx || !ng->sigs || !ng->h || !ng->pos || !ng->rid) {
@@ -770,11 +790,11 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	unsigned *pos = ng->pos;
 	unsigned *rid = ng->rid;
 	unsigned *h_tmp = GDKzalloc(UNIGRAM_SZ * sizeof(unsigned));
-	unsigned *ascii_map = GDKmalloc(UNIGRAM_SZ * sizeof(unsigned));
+	unsigned *map = GDKmalloc(UNIGRAM_SZ * sizeof(unsigned));
 
-	if (!h_tmp || !ascii_map) {
+	if (!h_tmp || !map) {
 		GDKfree(h_tmp);
-		GDKfree(ascii_map);
+		GDKfree(map);
 		return -1;
 	}
 
@@ -786,12 +806,12 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	}
 
 	for(size_t i = 0; i < UNIGRAM_SZ; i++) {
-		ascii_map[i] = i;
+		map[i] = i;
 		idx[i] = pos[i] = 0;
 		h[i] = h_tmp[i];
 	}
 
-	GDKqsort(h_tmp, ascii_map, NULL, UNIGRAM_SZ,
+	GDKqsort(h_tmp, map, NULL, UNIGRAM_SZ,
 			 sizeof(unsigned), sizeof(unsigned), TYPE_int, true, false);
 
 	unsigned j = UNIGRAM_SZ - 1, sum = 0;
@@ -805,7 +825,7 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 
 	int n_shift = 0;
 	for(size_t i = 0; i < UNIGRAM_SZ && h[i] > 0; i++) {
-		unsigned x = ascii_map[i];
+		unsigned x = map[i];
 		idx[x] = NGRAM_CST(1) << n_shift;
 		n_shift++;
 		n_shift %= NGRAM_BITS;
@@ -814,7 +834,7 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	unsigned p = 1;
 	for(size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
-		if (!strNil(s) && *s) {
+		if (!strNil(s) && s[0]) {
 			NGRAM_TYPE sig = 0;
 			for(; *s; s++) {
 				unsigned c = CHAR_MAP(*s);
@@ -840,7 +860,7 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	}
 
 	GDKfree(h_tmp);
-	GDKfree(ascii_map);
+	GDKfree(map);
 	return 0;
 }
 
@@ -854,11 +874,11 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	unsigned *rid = ng->rid;
 	unsigned (*h_tmp)[GZ] = GDKzalloc(BIGRAM_SZ * sizeof(unsigned));
 	unsigned *h_tmp_ptr = (unsigned*) h_tmp;
-	unsigned *ascii_map = GDKmalloc(BIGRAM_SZ * sizeof(unsigned));
+	unsigned *map = GDKmalloc(BIGRAM_SZ * sizeof(unsigned));
 
-	if (!h_tmp || !ascii_map) {
+	if (!h_tmp || !map) {
 		GDKfree(h_tmp);
-		GDKfree(ascii_map);
+		GDKfree(map);
 		return -1;
 	}
 
@@ -872,12 +892,12 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	}
 
 	for(size_t i = 0; i < BIGRAM_SZ; i++) {
-		ascii_map[i] = i;
+		map[i] = i;
 		idx[i] = 0;
 		ng->h[i] = h_tmp_ptr[i];
 	}
 
-	GDKqsort(h_tmp, ascii_map, NULL, BIGRAM_SZ,
+	GDKqsort(h_tmp, map, NULL, BIGRAM_SZ,
 			 sizeof(unsigned), sizeof(unsigned), TYPE_int, true, false);
 
 	unsigned j = BIGRAM_SZ - 1, sum = 0;
@@ -891,8 +911,8 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 
 	int n_shift = 0;
 	for (size_t i = 0; i < BIGRAM_SZ && h_tmp_ptr[i] > 0; i++) {
-		unsigned x = (ascii_map[i]/GZ) % GZ;
-		unsigned y = ascii_map[i] % GZ;
+		unsigned x = (map[i]/GZ) % GZ;
+		unsigned y = map[i] % GZ;
 		idx[x * GZ + y] = NGRAM_CST(1) << n_shift;
 		n_shift++;
 		n_shift %= NGRAM_BITS;
@@ -928,7 +948,7 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	}
 
 	GDKfree(h_tmp);
-	GDKfree(ascii_map);
+	GDKfree(map);
 	return 0;
 }
 
@@ -1033,6 +1053,11 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 int (*str_cmp)(const char *, const char *, int))
 {
 	Ngrams *ng = ngrams_create(l_cnt, UNIGRAM_SZ);
+	NGRAM_TYPE *idx = ng->idx;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->h;
+	unsigned *pos = ng->pos;
+	unsigned *rid = ng->rid;
 
 	if (!ng)
 		throw(MAL, "join_unigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1044,52 +1069,52 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	oid *o_rl = Tloc(rl, 0);
 	oid *o_rr = Tloc(rr, 0);
 
-	for(size_t i = 0; i < r_cnt; i++) {
-		const char *s = BUNtail(*ri, i), *os = s;
+	for (size_t j = 0; j < r_cnt; j++) {
+		const char *rs = BUNtail(*ri, j), *rsc = rs;
 		NGRAM_TYPE sig = 0;
-		if (!strNil(s) && s[0]) {
+		if (!strNil(rs) && rs[0]) {
 			unsigned min = ng->max;
 			unsigned min_pos = 0;
-			for(; *s; s++) {
-				unsigned int c = CHAR_MAP(*s);
-				sig |= ng->idx[c];
-				if (ng->h[c] < min) {
-					min = ng->h[c];
-					min_pos = c;
+			for (; *rsc; rsc++) {
+				unsigned d = CHAR_MAP(*rsc);
+				sig |= idx[d];
+				if (h[d] < min) {
+					min = h[d];
+					min_pos = d;
 				}
 			}
 			if (min <= ng->min) {
-				unsigned int rrr = ng->pos[min_pos];
-				int hcnt = ng->h[min_pos];
-				for(int k = 0; k<hcnt; k++, rrr++) {
-					unsigned int hr = ng->rid[rrr];
-					if (((ng->sigs[hr] & sig) == sig)) {
-						char *hs = BUNtail(*li, hr);
-						if (str_cmp(hs, os, str_strlen(os)) == 0) {
+				unsigned rrr = pos[min_pos];
+				unsigned l_cnt = h[min_pos];
+				for(size_t i = 0; i < l_cnt; i++, rrr++) {
+					unsigned hr = rid[rrr];
+					if (((sigs[hr] & sig) == sig)) {
+						char *ls = BUNtail(*li, hr);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
 							*o_rl++ = hr;
-							*o_rr++ = i;
+							*o_rr++ = j;
 						}
 					}
 				}
 			} else {
-				for(size_t k = 0; k < l_cnt; k++) {
-					if (((ng->sigs[k] & sig) == sig)) {
-						char *hs = BUNtail(*li, k);
-						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*o_rl++ = k;
-							*o_rr++ = i;
+				for (size_t i = 0; i < l_cnt; i++) {
+					if (((sigs[i] & sig) == sig)) {
+						char *ls = BUNtail(*li, i);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*o_rl++ = i;
+							*o_rr++ = j;
 						}
 					}
 				}
 			}
 			if (min > nmax)
 				nmax = min;
-		} else if (!strNil(s)) {
-			for(size_t k = 0; k < l_cnt; k++) {
-				char *hs = BUNtail(*li, k);
-				if (str_cmp(hs, os, str_strlen(os)) == 0) {
-					*o_rl++ = k;
-					*o_rr++ = i;
+		} else if (!strNil(rs)) {
+			for (size_t i = 0; i < l_cnt; i++) {
+				const char *ls = BUNtail(*li, i);
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+					*o_rl++ = i;
+					*o_rr++ = j;
 				}
 			}
 		}
@@ -1107,6 +1132,11 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 int (*str_cmp)(const char *, const char *, int))
 {
 	Ngrams *ng = ngrams_create(l_cnt, BIGRAM_SZ);
+	NGRAM_TYPE *idx = ng->idx;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->h;
+	unsigned *pos = ng->pos;
+	unsigned *rid = ng->rid;
 
 	if (!ng)
 		throw(MAL, "join_bigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1131,18 +1161,18 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			unsigned char p = CHAR_MAP(*s++);
 			for (; *s; p = CHAR_MAP(*s), s++) {
 				unsigned int k = p * GZ + CHAR_MAP(*s);
-				sig |= ng->idx[k];
-				if (ng->h[k] < min) {
-					min = ng->h[k];
+				sig |= idx[k];
+				if (h[k] < min) {
+					min = h[k];
 					min_pos = k; /* encoded min ngram */
 				}
 			}
 			if (min <= ng->min) {
-				unsigned int rrr = ng->pos[min_pos];
-				int hcnt = ng->h[min_pos];
+				unsigned int rrr = pos[min_pos];
+				int hcnt = h[min_pos];
 				for (int k = 0; k < hcnt; k++, rrr++) {
-					unsigned int hr = ng->rid[rrr];
-					if (((ng->sigs[hr] & sig) == sig)) {
+					unsigned int hr = rid[rrr];
+					if (((sigs[hr] & sig) == sig)) {
 						char *hs = BUNtail(*li, hr);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
 							*ol++ = hr;
@@ -1152,7 +1182,7 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 				}
 			} else {
 				for (size_t k = 0; k < l_cnt; k++) {
-					if (((ng->sigs[k] & sig) == sig)) {
+					if (((sigs[k] & sig) == sig)) {
 						char *hs = BUNtail(*li, k);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
 							*ol++ = k;
@@ -1186,6 +1216,11 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 int (*str_cmp)(const char *, const char *, int))
 {
 	Ngrams *ng = ngrams_create(l_cnt, TRIGRAM_SZ);
+	NGRAM_TYPE *idx = ng->idx;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->h;
+	unsigned *pos = ng->pos;
+	unsigned *rid = ng->rid;
 
 	if (!ng)
 		throw(MAL, "join_trigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1211,18 +1246,18 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			unsigned char p = CHAR_MAP(*s++);
 			for(; *s; pp = p, p = CHAR_MAP(*s), s++) {
 				unsigned int k = pp *GZ * GZ + p * GZ + CHAR_MAP(*s);
-				sig |= ng->idx[k];
-				if (ng->h[k] < min) {
-					min = ng->h[k];
+				sig |= idx[k];
+				if (h[k] < min) {
+					min = h[k];
 					min_pos = k; /* encoded min ngram */
 				}
 			}
 			if (min <= ng->min) {
-				unsigned int rrr = ng->pos[min_pos];
-				unsigned int hcnt = ng->h[min_pos]; /* no unsigned */
+				unsigned int rrr = pos[min_pos];
+				unsigned int hcnt = h[min_pos]; /* no unsigned */
 				for (size_t k = 0; k < hcnt; k++, rrr++) {
-					unsigned int hr = ng->rid[rrr];
-					if (((ng->sigs[hr] & sig) == sig)) {
+					unsigned int hr = rid[rrr];
+					if (((sigs[hr] & sig) == sig)) {
 						char *hs = BUNtail(*li, hr);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
 							*ol++ = hr;
@@ -1232,7 +1267,7 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 				}
 			} else {
 				for (size_t k = 0; k < l_cnt; k++) {
-					if (((ng->sigs[k] & sig) == sig)) {
+					if (((sigs[k] & sig) == sig)) {
 						char *hs = BUNtail(*li, k);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
 							*ol++ = k;
@@ -1337,6 +1372,9 @@ NGjoin(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, fname, SQLSTATE(42000) "Only uni, bi or trigrams available.");
 	}
 
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
+
 	if (!msg) {
 		*RL = rl->batCacheid;
 		BBPkeepref(rl);
@@ -1348,8 +1386,6 @@ NGjoin(MalStkPtr stk, InstrPtr pci,
 		BBPreclaim_n(2, rl, rr);
 	}
 
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
 	BBPreclaim_n(2, l, r);
 	return msg;
 }
@@ -1368,7 +1404,7 @@ NGstartswith(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*r = bit_nil;
 	} else {
 		int s2_len = str_strlen(s2);
-		*r = str_is_prefix(s1, s2, s2_len) == 0;
+		*r = is_prefix(s1, s2, s2_len) == 0;
 	}
 	return MAL_SUCCEED;
 }
@@ -1387,7 +1423,7 @@ NGendswith(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*r = bit_nil;
 	} else {
 		int s2_len = str_strlen(s2);
-		*r = str_is_suffix(s1, s2, s2_len) == 0;
+		*r = is_suffix(s1, s2, s2_len) == 0;
 	}
 	return MAL_SUCCEED;
 }
@@ -1406,7 +1442,7 @@ NGcontains(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*r = bit_nil;
 	} else {
 		int s2_len = str_strlen(s2);
-		*r = str_contains(s1, s2, s2_len) == 0;
+		*r = is_contains(s1, s2, s2_len) == 0;
 	}
 	return MAL_SUCCEED;
 }
@@ -1427,7 +1463,7 @@ NGstartswithjoin(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) c;
 	(void) mb;
-	return NGjoin(stk, pci, str_is_prefix, "ng.startswithjoin");
+	return NGjoin(stk, pci, is_prefix, "ng.startswithjoin");
 }
 
 static str
@@ -1435,7 +1471,7 @@ NGendswithjoin(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) c;
 	(void) mb;
-	return NGjoin(stk, pci, str_is_suffix, "ng.endswithjoin");
+	return NGjoin(stk, pci, is_suffix, "ng.endswithjoin");
 }
 
 static str
@@ -1443,7 +1479,7 @@ NGcontainsjoin(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) c;
 	(void) mb;
-	return NGjoin(stk, pci, str_contains, "ng.contains_join");
+	return NGjoin(stk, pci, is_contains, "ng.containsjoin");
 }
 
 #include "mel.h"
@@ -1525,6 +1561,7 @@ static mel_func ngrams_init_functions[] = {
 			args(2, 9, batarg("rl", oid), batarg("rr", oid), batarg("l", str), batarg("r", str), batarg("cl", oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
 	pattern("ngrams", "startswithjoin", NGstartswithjoin, false, "",
 			args(2, 10, batarg("rl", oid), batarg("rr", oid), batarg("l", str), batarg("r", str), batarg("ngram", bte), batarg("cl", oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
+
 	pattern("ngrams", "endswithjoin", NGendswithjoin, false, "",
 			args(1, 8, batarg("rl", oid), batarg("l", str), batarg("r", str), batarg("cl",oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
 	pattern("ngrams", "endswithjoin", NGendswithjoin, false, "",
@@ -1533,6 +1570,7 @@ static mel_func ngrams_init_functions[] = {
 			args(2, 9, batarg("rl", oid), batarg("rr", oid), batarg("l", str), batarg("r", str), batarg("cl", oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
 	pattern("ngrams", "endswithjoin", NGendswithjoin, false, "",
 			args(2, 10, batarg("rl", oid), batarg("rr", oid), batarg("l", str), batarg("r", str), batarg("ngram", bte), batarg("cl", oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
+
 	pattern("ngrams", "containsjoin", NGcontainsjoin, false, "",
 			args(1, 8, batarg("rl", oid), batarg("l", str), batarg("r", str), batarg("cl",oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
 	pattern("ngrams", "containsjoin", NGcontainsjoin, false, "",

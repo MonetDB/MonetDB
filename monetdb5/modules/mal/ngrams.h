@@ -14,7 +14,6 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 #include "string.h"
-#include "str.h"
 
 #if 0
 #define GZ 128
