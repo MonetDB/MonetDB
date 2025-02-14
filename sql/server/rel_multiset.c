@@ -341,12 +341,12 @@ fm_project_ms(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *nexps
 		mse->nid = mse->alias.label;
 		append(nexps, mse);
 	}
-	mse = exp_column(v->sql->sa, cn, "multisetid", inttype, 1,1, 1, 1);
+	mse = exp_column(v->sql->sa, cn, MSID_NAME, inttype, 1,1, 1, 1);
 	mse->alias.label = (++label);
 	mse->nid = mse->alias.label;
 	append(nexps, mse);
 	if (t->multiset == MS_ARRAY) {
-		mse = exp_column(v->sql->sa, cn, "multisetnr", inttype, 1,1, 1, 1);
+		mse = exp_column(v->sql->sa, cn, MSINDEX_NAME, inttype, 1,1, 1, 1);
 		mse->alias.label = (++label);
 		mse->nid = mse->alias.label;
 		append(nexps, mse);
@@ -382,13 +382,13 @@ fm_project_ms_bt(visitor *v, sql_exp *e, sql_subtype *t, sql_alias *cn, list *ne
 	}
 	sql_exp *msid = exps_bind_column2(exps, cn, "id", NULL);
 	if (!msid)
-		msid = exps_bind_column2(exps, cn, "multisetid", NULL);
+		msid = exps_bind_column2(exps, cn, MSID_NAME, NULL);
 	msid = exp_ref(v->sql, msid);
 	append(nexps, msid);
 	if (t->multiset == MS_ARRAY) {
 		sql_exp *msnr = exps_bind_column2(exps, cn, "nr", NULL);
 		if (!msnr)
-			msnr = exps_bind_column2(exps, cn, "multisetnr", NULL);
+			msnr = exps_bind_column2(exps, cn, MSINDEX_NAME, NULL);
 		msnr = exp_ref(v->sql, msnr);
 		append(nexps, msnr);
 	}
@@ -505,13 +505,13 @@ fm_project(visitor *v, sql_rel *rel)
 					}
 					sql_exp *msid = exps_bind_column2(exps, cn, "id", NULL);
 					if (!msid)
-						msid = exps_bind_column2(exps, cn, "multisetid", NULL);
+						msid = exps_bind_column2(exps, cn, MSID_NAME, NULL);
 					msid = exp_ref(v->sql, msid);
 					append(nexps, msid);
 					if (t->multiset == MS_ARRAY) {
 						sql_exp *msnr = exps_bind_column2(exps, cn, "nr", NULL);
 						if (!msnr)
-							msnr = exps_bind_column2(exps, cn, "multisetnr", NULL);
+							msnr = exps_bind_column2(exps, cn, MSINDEX_NAME, NULL);
 						msnr = exp_ref(v->sql, msnr);
 						append(nexps, msnr);
 					}
