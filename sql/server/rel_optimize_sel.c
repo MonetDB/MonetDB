@@ -2151,7 +2151,7 @@ order_joins(visitor *v, list *rels, list *exps)
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	if (list_length(rels) >= 2 && sdje->h) {
-		for (node *n = sdje->h; n && !l && !r; n = n->next, ci++) {
+		for (node *n = sdje->h; n && (!l || !r); n = n->next, ci++) {
 			cje = n->data;
 
 			if (n->next && r3[cje->tmp])
