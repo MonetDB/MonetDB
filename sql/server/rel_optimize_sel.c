@@ -2223,9 +2223,10 @@ order_joins(visitor *v, list *rels, list *exps)
 					l = rels_a[r1[cje->tmp]];
 				if (rel_mask & (((ulng)1)<<((r2[cje->tmp]-1)%64)))
 					r = rels_a[r2[cje->tmp]];
-				if (cje->f && r3[cje->tmp] && (rel_mask & (((ulng)1)<<((r3[cje->tmp]-1)%64)))) {
-					f = rels_a[r3[cje->tmp]];
+				if (cje->f && r3[cje->tmp]) {
 					needs3 = 1;
+					if (rel_mask & (((ulng)1)<<((r3[cje->tmp]-1)%64)))
+						f = rels_a[r3[cje->tmp]];
 				}
 			}
 			if (!direct) { /* check if at least one side in n_rels */
