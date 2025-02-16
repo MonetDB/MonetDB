@@ -646,8 +646,8 @@ BATstrimpsync(BAT *b)
 							fsync(fd);
 #endif
 						}
-						hp->dirty = false;
 					} else {
+						hp->dirty = true;
 						perror("write strimps");
 					}
 					close(fd);
@@ -656,9 +656,9 @@ BATstrimpsync(BAT *b)
 				((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
 				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, sizeof(uint64_t)) < 0) {
+					hp->dirty = true;
 					((uint64_t *)hp->base)[0] &= ~((uint64_t) 1 << 32);
 				} else {
-					hp->dirty = false;
 					failed = "";
 				}
 			}

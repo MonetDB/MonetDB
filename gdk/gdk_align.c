@@ -317,7 +317,6 @@ BATmaterialize(BAT *b, BUN cap)
 	h = b->theap;
 	b->theap = tail;
 	b->tbaseoff = 0;
-	b->theap->dirty = true;
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	b->ttype = TYPE_oid;
 	BATsetdims(b, 0);

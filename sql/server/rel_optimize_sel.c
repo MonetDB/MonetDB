@@ -2356,7 +2356,7 @@ popcount64(uint64_t x)
 static sql_rel *
 order_joins(visitor *v, list *rels, list *exps)
 {
-	sql_rel *top = NULL, *l = NULL, *r = NULL;
+	sql_rel *top = NULL, *l = NULL, *r = NULL, *f = NULL;
 	sql_exp *cje;
 	node *djn;
 	list *sdje, *n_rels = NULL;
@@ -2396,8 +2396,7 @@ order_joins(visitor *v, list *rels, list *exps)
 	for (node *n = sdje->h; n; n = n->next, ci++) {
 		sql_exp *cje = n->data;
 
-		h[ci] = r1[ci] = r2[ci] = 0;
-		r3[ci] = 0;
+		h[ci] = r1[ci] = r2[ci] = r3[ci] = 0;
 		if (cje->type == e_cmp) {
 			cje->tmp = ci;
 			r1[ci] = cje->flag == cmp_filter ? exps_find_one_rel(rels_a, nr_rels, cje->l) : exp_find_one_rel(rels_a, nr_rels, cje->l);
@@ -2408,7 +2407,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				h[ci] |= ((ulng)1)<<((r2[ci]-1)%64);
 			if (cje->f && cje->flag != cmp_filter) {
 				r3[ci] = exp_find_one_rel(rels_a, nr_rels, cje->f);
-				if (r3[ci] == r2[ci])
+				if (r3[ci] == r2[ci] || r3[ci] == r1[ci])
 					r3[ci] = 0;
 				if (r3[ci])
 					h[ci] |= ((ulng)1)<<((r3[ci]-1)%64);
@@ -2418,16 +2417,18 @@ order_joins(visitor *v, list *rels, list *exps)
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	if (list_length(rels) >= 2 && sdje->h) {
-		for (node *n = sdje->h; n && !l && !r; n = n->next, ci++) {
+		for (node *n = sdje->h; n && (!l || !r); n = n->next, ci++) {
 			cje = n->data;
 
-			/* find the involved relations */
+			if (n->next && r3[cje->tmp])
+				continue;
 
 			/* complex expressions may touch multiple base tables
 			 * Should be pushed up to extra selection.
 			 * */
 			if (0 && popcount64(h[cje->tmp]) > 2)
 				assert(0);
+			/* find the involved relations */
 			if (cje->type == e_cmp) {
 				l = rels_a[r1[cje->tmp]];
 				r = rels_a[r2[cje->tmp]];
@@ -2450,10 +2451,10 @@ order_joins(visitor *v, list *rels, list *exps)
 		}
 
 		/* Create a relation between l and r. Since the calling
-	   	   functions rewrote the join tree, into a list of expressions
-	   	   and a list of (simple) relations, there are no outer joins
-	   	   involved, we can simply do a crossproduct here.
-	 	 */
+		   functions rewrote the join tree, into a list of expressions
+		   and a list of (simple) relations, there are no outer joins
+		   involved, we can simply do a crossproduct here.
+		   */
 		rsingle = is_single(r);
 		reset_single(r);
 		top = rel_crossproduct(v->sql->sa, l, r, op_join);
@@ -2479,7 +2480,8 @@ order_joins(visitor *v, list *rels, list *exps)
 		/* find the first expression which could be added */
 		for(djn = sdje->h; djn && !fnd && rels->h; djn = (!fnd)?djn->next:NULL) {
 			node *en;
-			l = r = NULL;
+			l = r = f = NULL;
+			int needs3 = 0;
 
 			cje = djn->data;
 			if ((h[cje->tmp] & rel_mask) > 0) {
@@ -2487,48 +2489,66 @@ order_joins(visitor *v, list *rels, list *exps)
 					l = rels_a[r1[cje->tmp]];
 				if (rel_mask & (((ulng)1)<<((r2[cje->tmp]-1)%64)))
 					r = rels_a[r2[cje->tmp]];
+				if (cje->f && r3[cje->tmp]) {
+					needs3 = 1;
+					if (rel_mask & (((ulng)1)<<((r3[cje->tmp]-1)%64)))
+						f = rels_a[r3[cje->tmp]];
+				}
 			}
 			if (!direct) { /* check if at least one side in n_rels */
 				if (l && !list_find(n_rels, l, NULL))
 					l = NULL;
 				if (r && !list_find(n_rels, r, NULL))
 					r = NULL;
+				if (f && !list_find(n_rels, f, NULL))
+					f = NULL;
 			}
 
-			if (l && r) {
+			if ((!needs3 && l && r) || (needs3 && l && r && f)) {
 				assert(0);
 				/* create a selection on the current */
 				rel_join_add_exp(v->sql->sa, top, cje);
 				fnd = 1;
-			} else if (l || r) {
-				/* TODO: handle case for joins which need > 2 relations, ie where the current 'top' of the
-				 * join tree needs to add more then one relation */
+			} else if ((!needs3 && (l || r)) || (needs3 && (l || r || f))) {
+				sql_rel *nr[2]= {NULL, NULL};
 				rel_mask |= h[cje->tmp];
-				if (l) {
-					r = rels_a[r2[cje->tmp]];
-				} else {
-					l = r;
-					r = rels_a[r1[cje->tmp]];
-				}
-				if (!r) {
+				int i = 0;
+				if (!l)
+					nr[i++] = rels_a[r1[cje->tmp]];
+				if (!r)
+					nr[i++] = rels_a[r2[cje->tmp]];
+				if (needs3 && !f)
+					nr[i++] = rels_a[r3[cje->tmp]];
+				if (!nr[0]) {
 					fnd = 1; /* not really, but this bails out */
 					list_remove_data(sdje, NULL, cje); /* handle later as select */
 					continue;
 				}
-
 				/* remove the expression from the lists */
 				list_remove_data(sdje, NULL, cje);
 
-				list_remove_data(rels, NULL, r);
+				list_remove_data(rels, NULL, nr[0]);
 				if (!direct)
-					append(n_rels, r);
+					append(n_rels, nr[0]);
+				if (i > 1 && nr[1]) {
+					list_remove_data(rels, NULL, nr[1]);
+					if (!direct)
+						append(n_rels, nr[1]);
+				}
 
 				/* create a join using the current expression */
-				rsingle = is_single(r);
-				reset_single(r);
-				top = rel_crossproduct(v->sql->sa, top, r, op_join);
+				rsingle = is_single(nr[0]);
+				reset_single(nr[0]);
+				top = rel_crossproduct(v->sql->sa, top, nr[0], op_join);
 				if (rsingle)
-					set_single(r);
+					set_single(nr[0]);
+				if (i > 1 && nr[1]) {
+					rsingle = is_single(nr[1]);
+					reset_single(nr[1]);
+					top = rel_crossproduct(v->sql->sa, top, nr[1], op_join);
+					if (rsingle)
+						set_single(nr[1]);
+				}
 				rel_join_add_exp(v->sql->sa, top, cje);
 
 				/* all join expressions on these tables */
