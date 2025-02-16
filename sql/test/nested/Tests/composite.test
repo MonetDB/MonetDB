@@ -2,23 +2,23 @@ statement ok
 create type myt as (n int, m text)
 
 statement ok
-create table foo (c myt)
+create table ct_col (c myt)
 
 ## array syntax
 
 statement ok
-insert into foo values ((10, 'test'))
+insert into ct_col values ((10, 'test'))
 
 statement ok
-insert into foo values ((20, 'alice')), ((30, 'bob'))
+insert into ct_col values ((20, 'alice')), ((30, 'bob'))
 
 query I nosort
-select count(*) from foo
+select count(*) from ct_col
 ----
 3
 
 query IT nosort
-select c.n, c.m from foo
+select c.n, c.m from ct_col
 ----
 10
 test
@@ -30,13 +30,13 @@ bob
 ## literal syntax
 
 statement ok
-insert into foo values ('{(0, "head")}')
+insert into ct_col values ('{(0, "head")}')
 
 statement ok
-insert into foo values ('{(1, "hello")}'), ('{(2, "world")}')
+insert into ct_col values ('{(1, "hello")}'), ('{(2, "world")}')
 
 query IT nosort
-select c.n, c.m from foo
+select c.n, c.m from ct_col
 ----
 10
 test
@@ -54,9 +54,9 @@ world
 ## modify table
 
 statement ok
-truncate foo
+truncate ct_col
 
 query I nosort
-select count(*) from foo
+select count(*) from ct_col
 ----
 0
