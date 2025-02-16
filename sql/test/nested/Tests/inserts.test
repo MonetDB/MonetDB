@@ -11,11 +11,15 @@ create type ct as (n int, m text)
 statement ok
 create table ct_col (c ct)
 
-statement ok
-create type cat as (na int[], m text)
+# composite with basic-array type
 
 statement ok
-create table cat_col (ca cat)
+create type cbat as (na int[], m text)
+
+statement ok
+create table cbat_col (cba cbat)
+
+# arrays
 
 statement ok
 create table bt_arr (n int[])
@@ -32,11 +36,11 @@ statement ok
 insert into ct_col values ((1, 'hello')), ((2, 'world'))
 
 statement error 42000!
-insert into cat_col values (((1, 2), 'alice')), (((3, 4), 'bob'))
+insert into cbat_col values (((1, 2), 'alice')), (((3, 4), 'bob'))
 
 ### CRASH
 ###statement ok
-###insert into cat_col values ((array[1, 2], 'alice')), ((array[3, 4], 'bob'))
+###insert into cbat_col values ((array[1, 2], 'alice')), ((array[3, 4], 'bob'))
 
 ### CRASH
 ###statement ok
