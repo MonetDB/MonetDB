@@ -19,6 +19,14 @@ create type cbat as (na int[], m text)
 statement ok
 create table cbat_col (cba cbat)
 
+# composite with composite-array type
+
+statement ok
+create type ccat as (ca ct[], m text)
+
+statement ok
+create table ccat_col (cca ccat)
+
 # arrays
 
 statement ok
@@ -41,6 +49,13 @@ insert into cbat_col values (((1, 2), 'alice')), (((3, 4), 'bob'))
 ### CRASH
 ###statement ok
 ###insert into cbat_col values ((array[1, 2], 'alice')), ((array[3, 4], 'bob'))
+
+statement ok
+insert into ccat_col values ((array[(1, 'tic'), (2, 'tac')], 'alice'))
+
+### CRASH
+###statement ok
+###insert into ccat_col values ((array[(10, 'one'), (20, 'two')], 'bob')), ((array[(30, 'hop')], 'joe'))
 
 ### CRASH
 ###statement ok
