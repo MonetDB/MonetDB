@@ -43,8 +43,8 @@ BATidxsync(void *arg)
 							fsync(fd);
 #endif
 						}
-						hp->dirty = false;
 					} else {
+						hp->dirty = true;
 						perror("write hash");
 					}
 					close(fd);
@@ -53,9 +53,9 @@ BATidxsync(void *arg)
 				((oid *) hp->base)[0] |= (oid) 1 << 24;
 				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_OID) < 0) {
+					hp->dirty = true;
 					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
 				} else {
-					hp->dirty = false;
 					failed = ""; /* not failed */
 				}
 			}

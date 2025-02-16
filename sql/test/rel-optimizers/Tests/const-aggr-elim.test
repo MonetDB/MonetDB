@@ -1,0 +1,186 @@
+statement ok
+CREATE TABLE baz (a INT, b INT)
+
+statement ok
+INSERT INTO baz (a, b) VALUES (42, 1), (31, 6), (32, 6), (36, 7), (57, 3)
+
+query I rowsort 
+SELECT avg(b) FROM baz GROUP BY b
+----
+1
+3
+6
+7
+
+query I rowsort 
+select avg(3) from generate_series(cast(0 as integer), 10, 1);
+----
+3
+
+query T nosort
+PLAN SELECT avg(3) FROM generate_series(cast(0 as integer), 10, 1);
+----
+project (
+| group by (
+| | table ("sys"."generate_series"(int(31) "0", int(4) "10", int(1) "1"), 
+| | ) [ "%1"."value" ]
+| ) [  ] [ "sys"."avg" no nil (tinyint(2) "3") UNIQUE as "%2"."%2" ]
+) [ "%2"."%2" UNIQUE ]
+
+query I rowsort 
+SELECT avg(3) FROM baz GROUP BY b
+----
+3
+3
+3
+3
+
+query T nosort
+PLAN SELECT avg(3) FROM baz GROUP BY b
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+) [ tinyint(2) "3" as "%1"."%1" ]
+
+query I rowsort 
+SELECT 1 + avg(3) FROM baz GROUP BY b
+----
+4
+4
+4
+4
+
+query T nosort
+PLAN SELECT 1 + avg(3) FROM baz GROUP BY b
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+) [ "sys"."sql_add"(double(53) "1", tinyint(2) "3") NOT NULL ]
+
+query I rowsort 
+SELECT avg(NULL) FROM baz GROUP BY b
+----
+NULL
+NULL
+NULL
+NULL
+
+query II rowsort
+SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
+----
+4
+30
+4
+30
+4
+30
+4
+30
+
+query T nosort
+PLAN SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
+----
+project (
+| project (
+| | group by (
+| | | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+| ) [ tinyint(2) "3" as "%1"."%1" ]
+) [ "sys"."sql_add"(double(53) "1", "%1"."%1" NOT NULL) NOT NULL, "sys"."sql_mul"("%1"."%1" NOT NULL, double(53) "10") NOT NULL ]
+
+query II rowsort
+SELECT avg(3), avg(b) FROM baz GROUP BY b
+----
+3
+1
+3
+3
+3
+6
+3
+7
+
+query I rowsort
+SELECT count(3) FROM baz GROUP BY b
+----
+1
+1
+1
+2
+
+query T nosort
+PLAN SELECT count(3) FROM baz GROUP BY b
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
+
+query T nosort
+plan select prod(cast(1 as real)) from baz group by b;
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."b" NOT NULL ]
+| ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
+) [ real(24) "1" as "%1"."%1" ]
+
+query T nosort
+plan select prod(1), sum(0) from baz group by a
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."a" NOT NULL ]
+| ) [ "baz"."a" NOT NULL ] [ "baz"."a" NOT NULL ]
+) [ tinyint(1) "1" as "%1"."%1", tinyint(1) "0" as "%2"."%2" ]
+
+query II rowsort
+select prod(1), sum(0) from baz group by a
+----
+1
+0
+1
+0
+1
+0
+1
+0
+1
+0
+
+query II rowsort
+select prod(null) + 1, sum(null) + 1 from baz group by a
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query T nosort
+plan select count(null) + 3 from baz group by a
+----
+project (
+| group by (
+| | table("sys"."baz") [ "baz"."a" NOT NULL ]
+| ) [ "baz"."a" NOT NULL ] [ "baz"."a" NOT NULL ]
+) [ "sys"."sql_add"(bigint(1) "0", bigint(2) "3") NOT NULL ]
+
+query I rowsort
+select count(null) + 3 from baz group by a
+----
+3
+3
+3
+3
+3

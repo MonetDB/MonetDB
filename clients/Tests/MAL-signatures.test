@@ -35868,6 +35868,16 @@ tanh
 command mmath.tanh(X_0:flt):flt
 MATHunary_TANHflt
 (empty)
+monetdb
+epilogue
+command monetdb.epilogue():void
+MONETDBepilogue
+(empty)
+monetdb
+prelude
+pattern monetdb.prelude():void
+MONETDBprelude
+(empty)
 mtime
 addmonths
 command mtime.addmonths(X_0:date, X_1:int):date
@@ -37728,6 +37738,11 @@ next_value_ms
 pattern sql.next_value_ms(X_0:any_1, X_1:str, X_2:str):lng
 mvc_next_value
 return the next value of the sequence
+sql
+normalize_monetdb_url
+pattern sql.normalize_monetdb_url(X_0:str):str
+SQLnormalize_monetdb_url
+Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL
 sql
 nth_value
 pattern sql.nth_value(X_0:any_1, X_1:lng, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):any_1

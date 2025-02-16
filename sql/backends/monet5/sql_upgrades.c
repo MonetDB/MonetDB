@@ -4370,7 +4370,7 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
+sql_update_mar2025_geom(Client c, mvc *sql, sql_schema *s)
 {
 	str err;
 	res_table *output = NULL;
@@ -4408,7 +4408,7 @@ sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 {
 	char *err = MAL_SUCCEED;
 	sql_subtype tp;
@@ -4736,6 +4736,23 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			return err;
 	}
 
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "normalize_monetdb_url", &tp, NULL, F_FUNC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char query[] =
+			"create function sys.normalize_monetdb_url(u string)\n"
+			"returns string external name sql.normalize_monetdb_url;\n"
+			"grant execute on function sys.normalize_monetdb_url(string) to public;\n"
+			"update sys.functions set system = true where system <> true and name = 'normalize_monetdb_url' and schema_id = 2000;\n"
+			"update sys._tables set query = sys.normalize_monetdb_url(query) where type in (5,6);";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
+	}
+
 	return err;
 }
 
@@ -4797,12 +4814,12 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_mar2025(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
+	if ((err = sql_update_mar2025_geom(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

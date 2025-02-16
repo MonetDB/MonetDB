@@ -66,3 +66,8 @@ GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
 create aggregate sys.group_concat(str string, sep string) returns string with order
 	external name "aggr"."str_group_concat";
 GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
+
+create function sys.normalize_monetdb_url(u string)
+returns string external name sql.normalize_monetdb_url;
+grant execute on function sys.normalize_monetdb_url(string) to public;
+

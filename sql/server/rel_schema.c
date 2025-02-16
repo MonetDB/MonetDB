@@ -1547,7 +1547,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		int res = LOG_OK;
 
 		if (tt == tt_remote) {
-			if (!mapiuri_valid(loc))
+			if (!mapiuri_valid(loc, sql->sa))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 			res = mvc_create_remote(&t, sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
@@ -1603,7 +1603,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 
 		/* create table */
 		if (tt == tt_remote) {
-			if (!mapiuri_valid(loc))
+			if (!mapiuri_valid(loc, sql->sa))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 			if ((t = mvc_create_remote_as_subquery(sql, sq, s, name, column_spec, loc, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
 				rel_destroy(sq);

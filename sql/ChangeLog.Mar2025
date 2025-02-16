@@ -1,0 +1,44 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Mon Feb 10 2025 stefanos mavros <stemavros@gmail.com>
+- Extended the constant aggregate optimizer in order to eliminate
+  aggregates with constant arguments whenever possible.
+
+* Fri Dec 20 2024 Niels Nes <niels@cwi.nl>
+- Added support for aggregates which order within the group such
+  as quantile and which potentially order within the group such as
+  group_concat. The ordering for such operators in now handled once in
+  the relational plan. For this the create function statements can now
+  have an optional order specification, using the keywords 'ORDERED'
+  and 'WITH ORDER'.
+
+* Fri Dec 20 2024 Sjoerd Mullender <sjoerd@acm.org>
+- Added support for recursive CTE's.
+- The SQL parser was cleaned up.  This resulted in some keywords being
+  used more strictly.  If any of these keywords are to be used as column
+  names, they have to be quoted using double quotes: AS, TABLE, COLUMN,
+  DISTINCT, EXEC, EXECUTE.
+
+* Tue Oct  8 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
+- Introduce the RETURNING clause for INSERT, UPDATE and DELETE statements.
+  Specifying a RETURNING clause causes the SQL statement to return the
+  modified records which can be queried using SELECT like expressions
+  in the RETURNING clause. Aggregate functions are allowed.
+  This is a common non-standard SQL extension.
+
+  Examples:
+
+  INSERT INTO foo values (1,10), (-1,-10) RETURNING i+2*j AS bar
+  ----
+  21
+  -21
+
+  UPDATE foo SET i = -i WHERE i >0 RETURNING sum(j), count(j)
+  ----
+  -60|3
+
+* Tue Sep 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Introduce division_min_scale SQL environment variable for specifying
+  minimum scale of the division result. The default value is 3.
+

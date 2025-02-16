@@ -84,10 +84,9 @@ scan_unix_sockets(Mapi mid)
 MapiMsg
 mapi_reconnect(Mapi mid)
 {
-	char *err = NULL;
-	if (!msettings_validate(mid->settings, &err)) {
+	const char *err = msettings_validate(mid->settings);
+	if (err) {
 		mapi_setError(mid, err, __func__, MERROR);
-		free(err);
 		return MERROR;
 	}
 
@@ -103,18 +102,16 @@ mapi_reconnect(Mapi mid)
 static MapiMsg
 scan_sockets(Mapi mid)
 {
+	msettings_error errmsg;
+
 	if (scan_unix_sockets(mid) == MOK)
 		return MOK;
 
-	// When the Unix sockets have been scanned we can freely modify 'original'.
-	msettings_error errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
-	char *allocated_errmsg = NULL;
-	if (!errmsg && !msettings_validate(mid->settings, &allocated_errmsg)) {
-		errmsg = allocated_errmsg;
-	}
+	errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
+	if (!errmsg)
+		errmsg = msettings_validate(mid->settings);
 	if (errmsg) {
 		MapiMsg err = mapi_setError(mid, errmsg, __func__, MERROR);
-		free(allocated_errmsg);
 		return err;
 	}
 	return establish_connection(mid);
@@ -533,7 +530,7 @@ mapi_handshake(Mapi mid)
 	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
 	if (!*username || !*password) {
-		mapi_setError(mid, "username and password must be set",
+		mapi_setError(mid, "both username and password must be set",
 				__func__, MERROR);
 		close_connection(mid);
 		return mid->error;
@@ -823,18 +820,17 @@ mapi_handshake(Mapi mid)
 			/* we only implement following the first */
 			char *red = mid->redirects[0];
 
-			char *error_message = NULL;
-			if (!msettings_parse_url(mid->settings, red, &error_message)
-			    || !msettings_validate(mid->settings, &error_message)
+			const char *error_message = NULL;
+			if ((error_message = msettings_parse_url(mid->settings, red))
+			    || (error_message = msettings_validate(mid->settings))
 			) {
 				mapi_close_handle(hdl);
 				close_connection(mid);
 				MapiMsg err = mapi_printError(
 					mid, __func__, MERROR,
 					"%s: %s",
-					error_message ? error_message : "invalid redirect",
+					error_message,
 					red);
-				free(error_message);
 				return err;
 			}
 

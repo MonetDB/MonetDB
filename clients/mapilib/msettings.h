@@ -96,6 +96,7 @@ typedef enum mparm_class {
 static inline mparm_class
 mparm_classify(mparm parm)
 {
+	assert(parm > MP_IGNORE);
 	if (parm < MP__LONG_START)
 		return MPCLASS_BOOL;
 	else if (parm >= MP__STRING_START)
@@ -126,9 +127,13 @@ typedef struct msettings msettings;
 typedef const char *msettings_error;
 mapi_export bool msettings_malloc_failed(msettings_error err);
 
-/* returns NULL if could not allocate */
+/* these return NULL if they cannot not allocate */
+typedef void *(*msettings_allocator)(void *state, void *old, size_t size);
 mapi_export msettings *msettings_create(void);
+mapi_export msettings *msettings_create_with(msettings_allocator alloc, void *alloc_state);
 mapi_export msettings *msettings_clone(const msettings *mp);
+mapi_export msettings *msettings_clone_with(msettings_allocator alloc, void *alloc_state, const msettings *mp);
+mapi_export msettings_allocator msettings_get_allocator(const msettings *mp, void **put_alloc_state_here);
 mapi_export void msettings_reset(msettings *mp);
 mapi_export const msettings *msettings_default;
 
@@ -150,26 +155,30 @@ mapi_export msettings_error msetting_set_long(msettings *mp, mparm parm, long va
 mapi_export bool msetting_bool(const msettings *mp, mparm parm);
 mapi_export msettings_error msetting_set_bool(msettings *mp, mparm parm, bool value);
 
-/* parse into the appropriate type, or format into newly malloc'ed string (NULL means malloc failed) */
+/* Parse into the appropriate type */
 mapi_export msettings_error msetting_parse(msettings *mp, mparm parm, const char *text);
-mapi_export char *msetting_as_string(const msettings *mp, mparm parm);
-
-/* store ignored parameter */
-mapi_export msettings_error msetting_set_ignored(msettings *mp, const char *key, const char *value);
+/* Render setting as a string, requires a small scratch buffer (40 bytes is fine) for rendering integers.
+ * Changing the msettings or the scratch buffer makes the returned pointer invalid. */
+mapi_export const char *msetting_as_string(const msettings *mp, mparm parm, char *scratch, size_t scratch_size);
 
 /* store named parameter */
 mapi_export msettings_error msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *value);
 
-/* update the msettings from the URL. set *error_buffer to NULL and return true
- * if success, set *error_buffer to malloc'ed error message and return false on failure.
- * if return value is true but *error_buffer is NULL, malloc failed. */
-mapi_export bool msettings_parse_url(msettings *mp, const char *url, char **error_buffer);
+/* update the msettings from the URL. */
+mapi_export msettings_error msettings_parse_url(msettings *mp, const char *url);
+
+/* render the msettings as an URL. The result is always NUL terminated
+ * even if it's truncated. Returns the number of characters that have been
+ * written or would have been written if the buffer were large enough,
+ * excluding the trailing NUL.
+*/
+mapi_export size_t msettings_write_url(const msettings *mp, char *buffer, size_t);
 
 /* 1 = true, 0 = false, -1 = could not parse */
 mapi_export int msetting_parse_bool(const char *text);
 
 /* return an error message if the validity rules are not satisfied */
-mapi_export bool msettings_validate(msettings *mp, char **errmsg);
+mapi_export msettings_error msettings_validate(msettings *mp);
 
 
 /* virtual parameters */

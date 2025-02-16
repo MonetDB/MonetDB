@@ -1736,6 +1736,10 @@ sqltypeinit( allocator *sa)
 	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
 	f->varres = 1;
 
+	/* generic proto_loader which expects an URI starting with the protocol like: 'odbc:' or 'monetdb:' or 'file:' */
+	f = sql_create_union(sa, "proto_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
+	f->varres = 1;
+
 	/* sys_update_schemas, sys_update_tables */
 	sql_create_procedure(sa, "sys_update_schemas", "sql", "update_schemas", FALSE, 0);
 	sql_create_procedure(sa, "sys_update_tables", "sql", "update_tables", FALSE, 0);

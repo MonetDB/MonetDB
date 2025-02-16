@@ -23,6 +23,7 @@
 #include "rel_updates.h"
 #include "rel_predicates.h"
 #include "rel_file_loader.h"
+#include "rel_proto_loader.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -1709,6 +1710,42 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	return (stmt*)fl->load(be, f, filename, topn);
 }
 
+static stmt*
+exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
+{
+	assert(left == NULL); (void)left;
+	assert(right == NULL); (void)right;
+	assert(sel == NULL); (void)sel;
+	sql_subfunc *f = fe->f;
+
+	list *arg_list = fe->l;
+	/*
+	list *type_list = f->res;
+	assert(1 + list_length(type_list) == list_length(arg_list));
+	*/
+
+	sql_exp *eexp = arg_list->h->next->data;
+	assert(is_atom(eexp->type));
+	atom *ea = eexp->l;
+	assert(ea->data.vtype == TYPE_str);
+	char *ext = ea->data.val.sval;
+
+	proto_loader_t *pl = pl_find(ext);
+	if (!pl)
+		pl = pl_find("mapi");
+	if (!pl)
+		return NULL;
+	sql_exp *fexp = arg_list->h->data;
+	assert(is_atom(fexp->type));
+	atom *fa = fexp->l;
+	assert(fa->data.vtype == TYPE_str);
+	char *filename = fa->data.val.sval;
+	sql_exp *topn = NULL;
+	if (list_length(arg_list) == 3)
+		topn = list_fetch(arg_list, 2);
+	return (stmt*)pl->load(be, f, filename, topn);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1902,6 +1939,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
 			if (strcmp(fname, "file_loader") == 0)
 				return exp2bin_file_loader(be, e, left, right, sel);
+			if (strcmp(fname, "proto_loader") == 0)
+				return exp2bin_proto_loader(be, e, left, right, sel);
 			if (strcmp(fname, "multiset") == 0)
 				return exp2bin_multiset(be, e, left, right, sel);
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
