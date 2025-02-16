@@ -200,11 +200,14 @@ BATsample(BAT *b, BUN n)
 {
 	static random_state_engine rse;
 
+	MT_lock_set(&b->theaplock);
+	BUN batcount = BATcount(b);
+	MT_lock_unset(&b->theaplock);
 	MT_lock_set(&rse_lock);
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
 		init_random_state_engine(rse, (uint64_t) GDKusec());
 	MT_lock_unset(&rse_lock);
-	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, &rse_lock);
+	BAT *bn = do_batsample(b->hseqbase, batcount, n, rse, &rse_lock);
 	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
 		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;

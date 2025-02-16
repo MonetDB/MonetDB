@@ -65,6 +65,7 @@ extern atom *atom_inc(allocator *sa, atom *a);
 extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
+extern int atom_is_one(atom *a);
 
 extern unsigned int atom_digits(atom *a);
 

@@ -4677,7 +4677,11 @@ BBPprintinfo(void)
 		}
 		MT_lock_unset(&GDKswapLock(i));
 	}
-	uint32_t nfree = BBP_nfree;
+	uint32_t nfree = 0;
+	if (MT_lock_trytime(&GDKcacheLock, 1000)) {
+		nfree = BBP_nfree;
+		MT_lock_unset(&GDKcacheLock);
+	}
 	BBPtmunlock();
 	printf("BATs:\n");
 	if (bats[1][1][1][1][1].nr > 0)

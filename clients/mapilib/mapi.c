@@ -1794,10 +1794,16 @@ mapi_new(msettings *settings)
 	}
 	if (settings == NULL) {
 		settings = msettings_create();
-		if (settings == NULL) {
-			mapi_destroy(mid);
-			return NULL;
-		}
+	} else if (msettings_get_allocator(settings, NULL) != NULL) {
+		// it uses a custom allocator, reallocate using regular
+		msettings *old = settings;
+		settings = msettings_clone(old);
+		if (settings)
+			msettings_destroy(old);
+	}
+	if (settings == NULL) {
+		mapi_destroy(mid);
+		return NULL;
 	}
 	mid->settings = settings;
 	mid->blk.buf[0] = 0;
@@ -1923,11 +1929,9 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		return mid;
 	}
 
-	char *error_message = NULL;
-	if (!msettings_parse_url(mid->settings, url, &error_message)) {
-		char *msg = error_message ? error_message : "malloc failed";
-		mapi_setError(mid, msg, __func__, MERROR);
-		free(error_message);
+	const char *error_message = msettings_parse_url(mid->settings, url);
+	if (error_message) {
+		mapi_setError(mid, error_message, __func__, MERROR);
 		return mid;
 	}
 

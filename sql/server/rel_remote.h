@@ -14,10 +14,13 @@
 #define _REL_REMOTE_H_
 
 #include "sql_relation.h"
+#include "msettings.h"
 
-extern int mapiuri_valid( const char *uri);
-extern const char *mapiuri_uri(const char *uri, allocator *sa);
-extern const char *mapiuri_database(const char *uri, allocator *sa);
+sql_export msettings *sa_msettings_create(allocator *sa);
+sql_export char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
+
+sql_export int mapiuri_valid( const char *uri, allocator *sa);
+sql_export const char *mapiuri_uri(const char *uri, allocator *sa);
 extern const char *mapiuri_schema(const char *uri, allocator *sa, const char *fallback);
 extern const char *mapiuri_table(const char *uri, allocator *sa, const char *fallback);
 

@@ -27,52 +27,145 @@
 static int start_line = -1;
 static int nstarted = 0;
 static msettings *mp = NULL;
+static msettings_allocator allocator = NULL;
+
+static
+bool verify_roundtrip(const char *location)
+{
+	const char ch = '*';
+	char buffer[1000 + 1];  // + 1 canary byte
+	memset(buffer, ch, sizeof(buffer));
+	const size_t buffer_size = sizeof(buffer) - 1;
+
+	size_t length = msettings_write_url(mp, buffer, buffer_size);
+	if (length == 0) {
+		fprintf(stderr, "%s: msettings_write_url returned 0\n", location);
+		return false;
+	}
+	if (length > buffer_size - 1) {
+		fprintf(stderr, "%s: Reconstructed the URL unexpectedly large: %zu\n", location, length);
+		return false;
+	}
+	if (memchr(buffer, '\0', buffer_size) == NULL) {
+		fprintf(stderr, "%s: msettings_write_url didn't NUL terminate the result\n", location);
+		return false;
+	}
+	if (buffer[buffer_size] != ch) {
+		fprintf(stderr, "%s: msettting_write_url wrote beyond the end of the buffer\n", location);
+		return false;
+	}
+
+	msettings *tmp = msettings_create_with(allocator, NULL);
+	if (tmp == NULL) {
+		fprintf(stderr, "malloc failed\n");
+		return false;
+	}
+	msettings_error err = msettings_parse_url(tmp, buffer);
+	if (err) {
+		fprintf(stderr, "%s: Reconstructed URL <%s> couldn't be parsed: %s", location, buffer, err);
+		msettings_destroy(tmp);
+		return false;
+	}
+
+	mparm parm;
+	bool ok = true;
+	for (int i = 0; (parm = mparm_enumerate(i)) != MP_UNKNOWN; i++) {
+		if (parm == MP_IGNORE)
+			continue;
+		char scratch1[100], scratch2[100];
+		const char *mp_val = msetting_as_string(mp, parm, scratch1, sizeof(scratch1));
+		const char *tmp_val = msetting_as_string(tmp, parm, scratch2, sizeof(scratch2));
+		if (strcmp(mp_val, tmp_val) != 0) {
+			fprintf(
+				stderr,
+				"%s: setting %s: reconstructed value <%s> != <%s>\n",
+				location, mparm_name(parm), tmp_val, mp_val);
+			ok = false;
+		}
+	}
+	msettings_destroy(tmp);
+	if (!ok)
+		return false;
+
+	// check if rendering to a smaller buffer returns the same length
+	// and writes a prefix of the original.
+
+	assert(length > 0); // we checked this above
+
+	char buffer2[sizeof(buffer)];
+	for (size_t shorter = length; shorter > 0; shorter--) {
+		memset(buffer2, ch, sizeof(buffer));
+		size_t n = msettings_write_url(mp, buffer2, shorter);
+		if (n != length) {
+			fprintf(
+				stderr,\
+				"%s: writing to buffer of size %zu returns %zu, expected %zu\n",
+				location, shorter, n, length);
+			return false;
+		}
+		char *first_nul = memchr(buffer2, '\0', shorter);
+		if (first_nul == NULL) {
+			fprintf(stderr, "%s: truncated <%zu> msettings_write_url didn't NUL terminate\n", location, shorter);
+			return false;
+		} else if (strncmp(buffer2, buffer, shorter - 1) != 0) {
+			fprintf(stderr,
+			"%s: truncated <%zu> msettings_write_url wrote <%s> which isn't a prefix of <%s>",
+			location, shorter,
+			buffer2, buffer
+			);
+			return false;
+		}
+		for (size_t i = shorter + 1; i < sizeof(buffer); i++) {
+			if (buffer2[i] != ch) {
+				fprintf(
+					stderr,
+					"%s: truncated <%zu> wsettings_write_url wrote beyond end of buffer (pos %zu)\n",
+					location, shorter, i);
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
 
 static bool
 handle_parse_command(const char *location, char *url)
 {
-	char *errmsg = NULL;
-	bool ok = msettings_parse_url(mp, url, &errmsg);
-	if (!ok) {
-		assert(errmsg);
+	const char *errmsg = msettings_parse_url(mp, url);
+	if (errmsg) {
 		fprintf(stderr, "%s: %s\n", location, errmsg);
-		free(errmsg);
 		return false;
 	}
-	return true;
+
+	return verify_roundtrip(location);
 }
 
 static bool
 handle_accept_command(const char *location, char *url)
 {
-	char *errmsg = NULL;
-	bool ok = msettings_parse_url(mp, url, &errmsg);
-	if (!ok) {
-		assert(errmsg);
+	const char *errmsg = msettings_parse_url(mp, url);
+	if (errmsg) {
 		fprintf(stderr, "%s: %s\n", location, errmsg);
-		free(errmsg);
 		return false;
 	}
 
-	char *msg = NULL;
-	if (!msettings_validate(mp, &msg)) {
+	const char *msg = msettings_validate(mp);
+	if (msg != NULL) {
 		fprintf(stderr, "%s: URL invalid: %s\n", location, msg);
-		free(msg);
 		return false;
 	}
-	return true;
+	return verify_roundtrip(location);
 }
 
 static bool
 handle_reject_command(const char *location, char *url)
 {
-	bool ok = msettings_parse_url(mp, url, NULL);
-	if (!ok)
+	const char *errmsg = msettings_parse_url(mp, url);
+	if (errmsg)
 		return true;
 
-	char *msg = NULL;
-	if (!msettings_validate(mp, &msg)) {
-		free(msg);
+	if (msettings_validate(mp) != NULL) {
 		return true;
 	}
 
@@ -88,16 +181,18 @@ handle_set_command(const char *location, const char *key, const char *value)
 		fprintf(stderr, "%s: %s\n", location, msg);
 		return false;
 	}
-	return true;
+	if (msettings_validate(mp) == NULL)
+		return verify_roundtrip(location);
+	else
+		return true;
 }
 
 static bool
 ensure_valid(const char *location) {
-	char *msg = NULL;
-	if (msettings_validate(mp, &msg))
+	const char *msg = msettings_validate(mp);
+	if (msg == NULL)
 		return true;
 	fprintf(stderr, "%s: invalid parameter state: %s\n", location, msg);
-	free(msg);
 	return false;
 }
 
@@ -209,9 +304,7 @@ handle_expect_command(const char *location, char *key, char *value)
 		}
 		bool expected_valid = x > 0;
 
-		char * msg = NULL;
-		bool actually_valid = msettings_validate(mp, &msg);
-		free(msg);
+		bool actually_valid = msettings_validate(mp) == NULL;
 		if (actually_valid != expected_valid) {
 			fprintf(stderr, "%s: expected '%s', found '%s'\n",
 				location,
@@ -286,7 +379,7 @@ handle_line(int lineno, const char *location, char *line, int verbose)
 			// block starts here
 			nstarted++;
 			start_line = lineno;
-			mp = msettings_create();
+			mp = msettings_create_with(allocator, NULL);
 			if (mp == NULL) {
 				fprintf(stderr, "%s: malloc failed\n", location);
 				return false;
@@ -441,4 +534,53 @@ run_tests(stream *s, int verbose)
 		mp = NULL;
 	}
 	return ok;
+}
+
+// Our custom allocator stores a magic cookie before every
+// allocation.
+//
+// This allows us to detect that the memory we're free'ing
+// wasn't allocated by us.
+// Also, if the standard allocator free's memory allocated by
+// us, it or Valgrind will hopefully notice that the pointer
+// is wrong.
+static void *
+custom_allocator(void *state, void *old, size_t size)
+{
+	(void)state;
+	const size_t prefix_size = 64;
+	const char cookie[] = "AllocCookie";
+	const size_t cookie_size = sizeof(cookie);
+	assert(cookie_size == 5 + 6 + 1);
+
+	if (old) {
+		old = (char*)old - prefix_size;
+		// check for cookie and erase it
+		if (memcmp(old, cookie, cookie_size) != 0) {
+			assert(0 && "custom allocator cookie missing");
+			abort();
+		}
+		memset(old, '\0', cookie_size);
+	}
+
+	if (size == 0) {
+		free(old);
+		return NULL;
+	}
+	char *new_allocation = realloc(old, size > 0 ? size + prefix_size: 0);
+
+	if (new_allocation) {
+		// set magic cookie
+		memcpy(new_allocation, cookie, cookie_size);
+		new_allocation += prefix_size;
+	}
+
+	return new_allocation;
+}
+
+
+void
+use_custom_allocator(void)
+{
+	allocator = custom_allocator;
 }

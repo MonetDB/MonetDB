@@ -1704,6 +1704,18 @@ exps_uses_exp(list *exps, sql_exp *e)
  * 	                      groupby( c, [gbe], [ count, sum] ) ],
  * 			 [gbe], [sum, sum] )
  */
+static inline bool
+rel_has_groupby(sql_rel *r)
+{
+	if (r) {
+		if (is_groupby(r->op))
+			return true;
+		if (is_simple_project(r->op))
+			return rel_has_groupby(r->l);
+	}
+	return false;
+}
+
 static inline sql_rel *
 rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 {
@@ -1723,7 +1735,7 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 	/* make sure we don't create group by on group by's */
 	for (node *n = ((list*)u->l)->h; n; n = n->next) {
 		r = n->data;
-		if (r->op == op_groupby)
+		if (rel_has_groupby(r))
 			return rel;
 	}
 
@@ -2465,9 +2477,90 @@ rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_remove_const_aggr(visitor *v, sql_rel *rel)
 {
-	if (!rel)
+	if(!rel) {
 		return rel;
-	if (rel && is_groupby(rel->op) && list_length(rel->exps) >= 1 && !rel_is_ref(rel)) {
+	}
+
+	list *exps = rel->exps;
+
+	if(rel->op != op_groupby || list_empty(exps)) {
+		return rel;
+	}
+
+	if(!list_empty(rel->r)) {
+		/* in the general case in an expression of an aggregate over
+		 * a constant can be rewritten as just the const e.g.
+		 *   aggr(const) -> const
+		 */
+
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if(e->type != e_aggr) {
+				continue;
+			}
+
+			sql_func *j = ((sql_subfunc *)e->f)->func;
+
+			/* some aggregates with const values can only be eliminated
+			 * under certain circumstances e.g.
+			 *   sum(NULL)   -> NULL, sum(0)  -> 0
+			 *   prod(NULL)  -> NULL, prod(1) -> 1
+			 *   count(NULL) -> 0
+			 */
+			int sum = strcmp(j->base.name, "sum") == 0,
+				prd = strcmp(j->base.name, "prod") == 0,
+				cnt = strcmp(j->base.name, "count") == 0;
+
+			if(!j->s && j->system == 1) {
+				list *se = e->l;
+
+				if(se == NULL) {
+					continue;
+				}
+
+				for(node *m = se->h; m; m = m->next) {
+					sql_exp *w = m->data;
+
+					if(w->type == e_atom && w->card == CARD_ATOM) {
+						atom *wa = w->l;
+
+						if(sum && !(wa->isnull || atom_is_zero(wa))) {
+							continue;
+						}
+
+						if(prd && !(wa->isnull || atom_is_one(wa))) {
+							continue;
+						}
+
+						if(cnt) {
+							if(wa->isnull) {
+								list_remove_node(se, NULL, m);
+
+								w=exp_atom_lng(v->sql->sa, 0);
+								list_append(se, w);
+							}
+							else {
+								continue;
+							}
+						}
+
+						exp_setalias(w, e->alias.label, exp_relname(e) , exp_name(e));
+						n->data = w;
+						v->changes++;
+					}
+				}
+			}
+		}
+	}
+
+	/*
+	 * Below code replaces GROUP BY with PROJECT in some cases;
+	 * Triggers on...
+	 * select 1 having true; select 42 from foo group by x; select n from foo group by rollup(n);
+	*/
+
+	if (!rel_is_ref(rel)) {
 		int needed = 0;
 		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
@@ -2485,6 +2578,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 					if (exp_is_atom(exp))
 						atoms++;
 				}
+				/* possible edge case, never triggers in coverage tests */
 				if (atoms == list_length(rel->r)) {
 					list *nexps = sa_list(v->sql->sa);
 					for (node *n = rel->exps->h; n; ) {
@@ -2549,6 +2643,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 			return nrel;
 		}
 	}
+
 	return rel;
 }
 
@@ -2996,6 +3091,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		return rel;
 
 	rel = rel_remove_const_aggr(v, rel);
+
 	if (v->value_based_opt) {
 		rel = rel_simplify_sum(v, rel);
 		rel = rel_simplify_groupby_columns(v, rel);
@@ -3007,6 +3103,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
 	rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
+
 	/* only when value_based_opt is on, ie not for dependency resolution */
 	if (v->value_based_opt) {
 		rel = rel_simplify_count(v, rel);
@@ -3032,6 +3129,19 @@ bind_optimize_projections(visitor *v, global_props *gp)
 		   || gp->cnt[op_inter] || gp->cnt[op_except]) && (flag & optimize_projections) ? rel_optimize_projections : NULL;
 }
 
+
+static bool
+exps_have_selfref(list *exps)
+{
+	bool selfref = false;
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n && !selfref; n = n->next) {
+		sql_exp *e = n->data;
+		selfref |= is_selfref(e);
+	}
+	return selfref;
+}
 
 static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
@@ -3072,7 +3182,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			r = rel_dup(n->data);
 
 			/* introduce projection around each operand if needed */
-			if (!is_project(r->op))
+			if (!is_project(r->op) || exps_have_selfref(r->exps))
 				r = rel_project(v->sql->sa, r,
 						rel_projections(v->sql, r, NULL, 1, 1));
 			/* check if we need distinct */
