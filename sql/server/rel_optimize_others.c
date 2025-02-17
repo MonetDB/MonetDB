@@ -269,8 +269,10 @@ exps_mark_all_used(list *exps, int nid, int local_proj)
 
 			if (e->alias.label == nid) {
 				if (local_proj <= -1 || i < local_proj) {
-					e->used = 1;
-					return 1;
+					if (e->nid != e->alias.label) {
+						e->used = 1;
+						return 1;
+					}
 				}
 			}
 			if (e->f && e->type == e_column && (local_proj <= -1 || i < local_proj)) {
