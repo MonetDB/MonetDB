@@ -14,18 +14,18 @@ create table ct_col (c ct)
 # composite with basic-array type
 
 statement ok
-create type cbat as (na int[], m text)
+create type cabt as (an int[], m text)
 
 statement ok
-create table cbat_col (cba cbat)
+create table cabt_col (cab cabt)
 
 # composite with composite-array type
 
 statement ok
-create type ccat as (ca ct[], m text)
+create type cact as (ac ct[], m text)
 
 statement ok
-create table ccat_col (cca ccat)
+create table cact_col (cac cact)
 
 # arrays
 
@@ -44,18 +44,18 @@ statement ok
 insert into ct_col values ((1, 'hello')), ((2, 'world'))
 
 statement error 42000!
-insert into cbat_col values (((1, 2), 'alice')), (((3, 4), 'bob'))
+insert into cabt_col values (((1, 2), 'alice')), (((3, 4), 'bob'))
 
 ### CRASH
 ###statement ok
-###insert into cbat_col values ((array[1, 2], 'alice')), ((array[3, 4], 'bob'))
+###insert into cabt_col values ((array[1, 2], 'alice')), ((array[3, 4], 'bob'))
 
 statement ok
-insert into ccat_col values ((array[(1, 'tic'), (2, 'tac')], 'alice'))
+insert into cact_col values ((array[(1, 'tic'), (2, 'tac')], 'alice'))
 
 ### CRASH
 ###statement ok
-###insert into ccat_col values ((array[(10, 'one'), (20, 'two')], 'bob')), ((array[(30, 'hop')], 'joe'))
+###insert into cact_col values ((array[(10, 'one'), (20, 'two')], 'bob')), ((array[(30, 'hop')], 'joe'))
 
 ### CRASH
 ###statement ok
