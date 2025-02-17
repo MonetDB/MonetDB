@@ -798,6 +798,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 			return GDK_FAIL;
 		}
 	}
+	h->dirty = false;	/* we're about to read it, so it's clean */
 	if (h->storage == STORE_MEM && h->free == 0) {
 		h->base = GDKmalloc(h->size);
 		h->wasempty = true;
@@ -816,7 +817,6 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 		return GDK_FAIL; /* file could  not be read satisfactorily */
 	}
 
-	h->dirty = false;	/* we just read it, so it's clean */
 	return GDK_SUCCEED;
 }
 
@@ -1098,7 +1098,6 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
-		heap->dirty = true;
 		hheader = HEAP_index(heap, 0, HEADER);
 
 		blockp = HEAP_index(heap, block, CHUNK);
@@ -1145,6 +1144,8 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		trailp->next = blockp->next;
 	}
+
+	heap->dirty = true;
 
 	block += hheader->alignment;
 	return (var_t) block;

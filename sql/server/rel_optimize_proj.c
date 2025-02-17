@@ -1743,6 +1743,18 @@ exps_uses_exp(list *exps, sql_exp *e)
  * 	                      groupby( c, [gbe], [ count, sum] ) ],
  * 			 [gbe], [sum, sum] )
  */
+static inline bool
+rel_has_groupby(sql_rel *r)
+{
+	if (r) {
+		if (is_groupby(r->op))
+			return true;
+		if (is_simple_project(r->op))
+			return rel_has_groupby(r->l);
+	}
+	return false;
+}
+
 static inline sql_rel *
 rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 {
@@ -1762,7 +1774,7 @@ rel_push_aggr_down_n_arry(visitor *v, sql_rel *rel)
 	/* make sure we don't create group by on group by's */
 	for (node *n = ((list*)u->l)->h; n; n = n->next) {
 		r = n->data;
-		if (r->op == op_groupby)
+		if (rel_has_groupby(r))
 			return rel;
 	}
 
@@ -3158,6 +3170,19 @@ bind_optimize_projections(visitor *v, global_props *gp)
 }
 
 
+static bool
+exps_have_selfref(list *exps)
+{
+	bool selfref = false;
+	if (list_empty(exps))
+		return false;
+	for(node *n = exps->h; n && !selfref; n = n->next) {
+		sql_exp *e = n->data;
+		selfref |= is_selfref(e);
+	}
+	return selfref;
+}
+
 static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
 {
@@ -3197,7 +3222,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			r = rel_dup(n->data);
 
 			/* introduce projection around each operand if needed */
-			if (!is_project(r->op))
+			if (!is_project(r->op) || exps_have_selfref(r->exps))
 				r = rel_project(v->sql->sa, r,
 						rel_projections(v->sql, r, NULL, 1, 1));
 			/* check if we need distinct */
