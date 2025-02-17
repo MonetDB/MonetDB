@@ -726,16 +726,42 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		if (!e->freevar || e->type != e_column)
 			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset not found");
 		sql_rel *r = query_fetch_outer(query, e->freevar-1);
-		if (!r || !is_basetable(r->op))
+		if (r && is_basetable(r->op)) {
+			sql_table *t = r->l;
+			sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
+			if (!c)
+				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset column '%s' missing", exp_name(e));
+
+			sql_table *st = mvc_bind_table(query->sql, t->s, c->storage_type);
+			if (!st)
+				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table '%s' missing", c->storage_type);
+			return rel_basetable(query->sql, st, a_create(query->sql->sa, tname?tname:exp_name(e)));
+		} else if (r) {
+			sql_subtype *t = exp_subtype(e);
+			reset_freevar(e);
+			if (t->multiset) {
+				assert(e->f);
+				list *exps = e->f, *nexps = sa_list(query->sql->sa);
+				sql_alias *ta = a_create(query->sql->sa, tname?tname:exp_name(e));
+				bool first = true;
+				for(node *n = exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					sql_exp *ne = exp_ref(query->sql, e);
+					sql_subtype *tt = exp_subtype(ne);
+
+					if (first)
+						tt->multiset = MS_VALUE;
+					exp_setname(query->sql, ne, ta, exp_name(e));
+					append(nexps, ne);
+					first = false;
+				}
+				return rel_project(query->sql->sa, rel_dup(r), nexps);
+			} else {
+				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table missing");
+			}
+		} else {
 			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table missing");
-		sql_table *t = r->l;
-		sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
-		if (!c)
-			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset column '%s' missing", exp_name(e));
-		sql_table *st = mvc_bind_table(query->sql, t->s, c->storage_type);
-		if (!st)
-			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table '%s' missing", c->storage_type);
-		return rel_basetable(query->sql, st, a_create(query->sql->sa, tname?tname:exp_name(e)));
+		}
 #if 0
 		assert(c->type.multiset && c->type.type->composite);
 		list *res_exps = sa_list(query->sql->sa);
@@ -6345,7 +6371,8 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 
 	query_processed(query);
 	if (a_match(rel_name(t1), rel_name(t2))) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1)->name);
+		if (rel_name(t1) || rel_name(t2))
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1)->name);
 	}
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)

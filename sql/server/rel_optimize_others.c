@@ -242,7 +242,7 @@ exp_range_overlap(atom *min, atom *max, atom *emin, atom *emax, bool min_exclusi
 }
 
 
-/* if local_proj is >= -1, the current expression is from the same projection
+/* if local_proj is > -1, the current expression is from the same projection
    if local_proj is -1, then we don't care about self references (eg used to check for order by exps) */
 static int exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj);
 
@@ -258,6 +258,48 @@ exps_mark_used(sql_rel *subrel, list *l, int local_proj)
 	return nr;
 }
 
+/* mark all expression related to this nid */
+static int
+exps_mark_all_used(list *exps, int nid, int local_proj)
+{
+	if (!list_empty(exps)) {
+		int i = 0;
+		for(node *n = exps->h; n; n = n->next, i++) {
+			sql_exp *e = n->data;
+
+			if (e->alias.label == nid) {
+				if (local_proj <= -1 || i < local_proj) {
+					e->used = 1;
+					return 1;
+				}
+			}
+			if (e->f && e->type == e_column && (local_proj <= -1 || i < local_proj)) {
+				if (exps_mark_all_used(e->f, nid, -2)) {
+					e->used = 1;
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+static int
+rel_mark_all_used(sql_rel *r, int nid, int local_proj)
+{
+	if (is_project(r->op) || (is_base(r->op) && r->exps))
+		return exps_mark_all_used(r->exps, nid, local_proj);
+	if (is_select(r->op) || is_semi(r->op))
+		return rel_mark_all_used(r->l, nid, local_proj);
+	if (is_join(r->op)) {
+		if (r->l && rel_mark_all_used(r->l, nid, local_proj))
+			return 1;
+		else if (r->r)
+			return rel_mark_all_used(r->r, nid, local_proj);
+	}
+	return 0;
+}
+
 static int
 exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 {
@@ -266,7 +308,10 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 
 	switch(e->type) {
 	case e_column:
-		ne = rel_find_exp(subrel, e);
+		if (e->nid && subrel && subrel->exps && rel_mark_all_used(subrel, e->nid, local_proj))
+			nr++;
+		else
+			ne = rel_find_exp(subrel, e);
 		/* if looking in the same projection, make sure 'ne' is projected before the searched column */
 		if (ne && local_proj > -1 && list_position(subrel->exps, ne) >= local_proj)
 			ne = NULL;
@@ -1090,7 +1135,6 @@ static sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel;
 	return rel_dce_(v->sql, rel);
 }
 

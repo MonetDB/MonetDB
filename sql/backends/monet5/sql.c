@@ -5745,15 +5745,15 @@ insert_json(JSON *js, BAT *bats, int nr, int elm, sql_subtype *t)
 }
 #endif
 
-static int insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t anr, sql_subtype *t);
-static int insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t oanr, sql_subtype *t);
+static int insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, size_t id, msindex_t anr, sql_subtype *t);
+static int insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, size_t id, msindex_t oanr, sql_subtype *t);
 
 static ValPtr
 jsonv2local(const ValPtr t, char *v)
 {
 	// TODO add remaining types
 	switch (t->vtype) {
-		case TYPE_int:
+		case TYPE_int: /* todo handle extra double quotes */
 			t->val.ival = strtol(v, NULL, 10);
 			break;
 		case TYPE_lng:
@@ -5769,7 +5769,7 @@ jsonv2local(const ValPtr t, char *v)
 			t->val.sval = v;
 			break;
 		case TYPE_timestamp:
-			sql_timestamp_fromstr(v+1, &t->val.lval, 0, 0);
+			sql_timestamp_fromstr(v, &t->val.lval, 0, 0);
 			break;
 		default:
 			return NULL;
@@ -5778,10 +5778,10 @@ jsonv2local(const ValPtr t, char *v)
 }
 
 static int
-insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t anr, sql_subtype *t)
+insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, size_t id, msindex_t anr, sql_subtype *t)
 {
 	char buf[128]; /* TODO use proper buffer */
-	int old_bat_offset = bat_offset;
+	int bat_offset = *BO;
 	node *n;
 	JSONterm *jt = js->elm+elm;
 	if (jt->kind != JSON_OBJECT || !t->type->composite) {
@@ -5807,11 +5807,11 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 					}
 				}
 			}
-			if (bat_offset > old_bat_offset && old_bat_offset != 0) {
-				elm = insert_json_object(msg, js, bats, bat_offset + 2, nr, elm, id, anr, t);
-			} else {
-				elm = insert_json_object(msg, js, bats, bat_offset, nr, elm, id, anr, t);
-			}
+			//if (bat_offset > old_bat_offset && old_bat_offset != 0) {
+				elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, id, anr, t);
+			//} else {
+				//elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, id, anr, t);
+			//}
 			break;
 		case JSON_ARRAY:
 			/* TODO get id for nested array from the a global struct */
@@ -5826,11 +5826,11 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 					}
 				}
 			}
-			if (bat_offset > old_bat_offset && old_bat_offset != 0) {
-				elm = insert_json_array(msg, js, bats, bat_offset + 2, nr, elm, id, anr, t);
-			} else {
-				elm = insert_json_array(msg, js, bats, bat_offset, nr, elm, id, anr, t);
-			}
+			//if (bat_offset > old_bat_offset && old_bat_offset != 0) {
+				//elm = insert_json_array(msg, js, bats, bat_offset + 2, nr, elm, id, anr, t);
+			//} else {
+				elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, id, anr, t);
+			//}
 			break;
 		case JSON_ELEMENT: // field
 			name = jt->value;
@@ -5839,6 +5839,11 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 		case JSON_VALUE:
 			break;
 		case JSON_STRING:
+
+			jt->value ++;
+			jt->valuelen --;
+			jt->valuelen --;
+			/* fall through */
 		case JSON_NUMBER:
 		case JSON_BOOL:
 		case JSON_NULL:
@@ -5858,8 +5863,10 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 					break;
 				}
 			}
-			if (pos < 0 || v == NULL)
+			if (pos < 0 || v == NULL) {
+				*msg = "field name missing";
 				return -8;
+			}
 			if (elm > 0 && BUNappend(bats[bat_offset], VALget(v), false) != GDK_SUCCEED) {
 				return -5;
 			}
@@ -5867,19 +5874,20 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int
 		}
 	}
 
-	if (bat_offset > old_bat_offset && old_bat_offset != 0) {
-		if (elm > 0 && BUNappend(bats[bat_offset], &id, false) != GDK_SUCCEED)
+	if (t->multiset) {
+		if (elm > 0 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
 			elm = -3;
-		if (elm > 0 && BUNappend(bats[bat_offset + 1], &anr, false) != GDK_SUCCEED)
+		if (elm > 0 && BUNappend(bats[bat_offset++], &anr, false) != GDK_SUCCEED)
 			elm = -3;
 	}
-
+	*BO = bat_offset;
 	return elm;
 }
 
 static int
-insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int elm, size_t id, msindex_t oanr, sql_subtype *t)
+insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, size_t id, msindex_t oanr, sql_subtype *t)
 {
+	int old_bat_offset = *BO, bat_offset = *BO;
 	JSONterm *ja = js->elm+elm;
 	int tail = ja->tail;
 	if (ja->kind != JSON_ARRAY) {
@@ -5895,6 +5903,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 			switch (jt->kind) {
 			case JSON_OBJECT:
 				// FIX assumes array of composite?
+				bat_offset = old_bat_offset;
 				if (t->type->composite && list_length(t->type->d.fields) == 1) {
 					n = t->type->d.fields->h;
 					if (n) {
@@ -5904,7 +5913,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 							t = atype;
 					}
 				}
-				elm = insert_json_object(msg, js, bats, bat_offset + 1, nr, elm, id, anr++, t);
+				elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, id, anr++, t);
 				(void)oanr; // outer array number
 				break;
 			default:
@@ -5914,8 +5923,9 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int bat_offset, int nr, int 
 		if (elm < 0)
 			break;
 	}
-	if (elm > 0 && anr > 1 && BUNappend(bats[bat_offset], &id, false) != GDK_SUCCEED)
+	if (elm > 0 && anr > 1 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
 		elm = -2;
+	*BO = bat_offset;
 	return elm+1;
 }
 
@@ -5926,10 +5936,11 @@ insert_json_str(const char *jstr, BAT **bats, int cnt, size_t row_id, sql_subtyp
 	JSON *js = JSONparse(jstr);
 	if (!js)
 		throw(SQL, "insert_json_str", "JSONparse error");
+	int bat_offset = 0;
 	if (t->multiset)
-		(void)insert_json_array(&res, js, bats, 0, cnt, 0, row_id, 1, t);
+		(void)insert_json_array(&res, js, bats, &bat_offset, cnt, 0, row_id, 1, t);
 	else
-		(void)insert_json_object(&res, js, bats, 0, cnt, 0, row_id, 1, t);
+		(void)insert_json_object(&res, js, bats, &bat_offset, cnt, 0, row_id, 1, t);
 	JSONfree(js);
 	return res;
 }

@@ -715,8 +715,6 @@ set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 static int
 type_create_result(backend *be, sql_subtype *type, list *cols)
 {
-	if (type->multiset) /* rowid */
-		append(cols, sa_list(be->mvc->sa));
 	if (type->type->composite) {
 		for(node *n = type->type->d.fields->h; n; n = n->next) {
 			sql_arg *a = n->data;
@@ -734,6 +732,8 @@ type_create_result(backend *be, sql_subtype *type, list *cols)
 	if (type->multiset) /* multisetid */
 		append(cols, sa_list(be->mvc->sa));
 	if (type->multiset == MS_ARRAY) /* multisetnr */
+		append(cols, sa_list(be->mvc->sa));
+	if (type->multiset) /* rowid */
 		append(cols, sa_list(be->mvc->sa));
 	return 0;
 }
@@ -771,13 +771,6 @@ append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *s
 	assert(tuple->row);
 	list *attr = exp_get_values(tuple);
 	node *n, *m = cols, *o;
-	if (type->multiset) {
-		if (lcnt == 1) {
-			list *vals = m->data;
-			append(vals, stmt_atom_int(be, rowcnt));
-		}
-		m = m->next;
-	}
 	sql_subtype *ntype = type;
 	if (is_row(tuple) && list_length(type->type->d.fields) == 1) {
 		sql_arg *f = type->type->d.fields->h->data;
@@ -817,6 +810,13 @@ append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *s
 		append(vals, stmt_atom_int(be, lcnt));
 		m = m->next;
 	}
+	if (type->multiset) {
+		if (lcnt == 1) {
+			list *vals = m->data;
+			append(vals, stmt_atom_int(be, rowcnt));
+		}
+		m = m->next;
+	}
 	return m;
 }
 
@@ -849,7 +849,7 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 		sql_exp *v = vals->h->data;
 		if (type_create_result(be, type, attr) < 0)
 			return NULL;
-		int rowcnt = 0, lcnt = 1;
+		int rowcnt = 1, lcnt = 1;
 		int irc = is_row(v)?0:1;
 		int lrc = is_row(v)?1:0;
 		for (node *n = vals->h; n; n = n->next, rowcnt += irc, lcnt += lrc) {
@@ -1656,6 +1656,7 @@ is_const_func(sql_subfunc *f, list *attr)
 static stmt*
 exp2bin_multiset(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
+	return left;
 	(void)fe;
 	(void)right;
 	(void)sel;
@@ -1900,6 +1901,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_convert(be, l, sel, from, to);
 		} else {
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
+		}
+		if (s && s->type == st_list && e->f) {
+			list *f = e->f;
+			list *o = s->op4.lval;
+			if (list_length(f) != list_length(o))
+				return NULL;
+			for(node *n = f->h, *m = o->h; n && m; n = n->next, m = m->next) {
+				sql_exp *e = n->data;
+				stmt *s = m->data;
+				s->label = e->alias.label;
+			}
 		}
 	} 	break;
 	case e_func: {
@@ -2558,6 +2570,10 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exp
 			assert(c);
 			if (exp->f && (c->type.multiset || c->type.type->composite)) {
 				s = rel2bin_subtable(be, t, dels, c, exp->f);
+				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
+					stmt *ns = stmt_col(be, c, dels, dels->partition);
+					list_append(s->op4.lval, ns);
+				}
 			} else {
 				s = stmt_col(be, c, dels, dels->partition);
 			}
@@ -2637,8 +2653,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				s = rel2bin_subtable(be, t, dels, c, exp->f);
 				if (!s)
 					return s;
-				if (s && s->type == st_list && c->type.multiset)
-					s = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
+				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
+					stmt *ns = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
+					list_append(s->op4.lval, ns);
+					s->nr = ns->nr;
+				}
 			} else {
 				s = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
 			}
@@ -5891,46 +5910,92 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 }
 
 static node *
-insert_composite(stmt **updates, sql_column *c, node *n, node **M)
+insert_composite(stmt **updates, sql_column *c, node *n, node *m)
 {
-	node *m = *M, *f;
-	/*
+	node *f;
+	stmt *input_tuple = m->data;
+
 	while(input_tuple->type == st_alias)
 		input_tuple = input_tuple->op1;
 	if (input_tuple->type != st_list)
 		return NULL;
-		*/
-	for(n = n->next, f = c->type.type->d.fields->h; n && m && f; f = f->next) {
+	for(n = n->next, f = c->type.type->d.fields->h, m = input_tuple->op4.lval->h; n && m && f; f = f->next) {
 		sql_column *c = n->data;
 
 		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, &m);
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;
 			m = m->next;
 		}
 	}
-	/*
-	if (c->type.multiset) {
-		sql_column *c = n->data;
-
-		updates[c->colnr] = m->data;
-		n = n->next;
-		m = m->next;
-	}
-	if (c->type.multiset == MS_ARRAY) {
-		sql_column *c = n->data;
-
-		updates[c->colnr] = m->data;
-		n = n->next;
-		m = m->next;
-	}
-	*/
-	//if (f || m) /* did we find all fields and use all values */
-		//return NULL;
-	*M = m;
 	return n;
+}
+
+static stmt *
+insert_ms(backend *be, sql_table *st, stmt *ms)
+{
+	mvc *sql = be->mvc;
+
+	while(ms && ms->type == st_alias)
+		ms = ms->op1;
+	if (ms->type != st_list)
+		return NULL;
+
+	int len;
+	stmt **updates = table_update_stmts(sql, st, &len);
+	stmt *insert = NULL, *cnt, *pos;
+
+	node *n, *m;
+	for (n = ol_first_node(st->columns), m = ms->op4.lval->h; n && m; ) {
+		sql_column *c = n->data;
+
+		if (c->type.multiset) {
+			sql_table *nst = mvc_bind_table(sql, st->s, c->storage_type);
+			if (!nst)
+				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
+			updates[c->colnr] = insert_ms(be, nst, m->data);
+			n = n->next;
+			m = m->next;
+		} else if (c->type.type->composite && !c->type.multiset) {
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
+		} else {
+			insert = updates[c->colnr] = m->data;
+			n = n->next;
+			m = m->next;
+		}
+	}
+
+	if (!insert || insert->nrcols == 0) {
+		cnt = stmt_atom_lng(be, 1);
+	} else {
+		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+	}
+
+	list *l = sa_list(sql->sa);
+
+	if (st->s) /* only not declared tables, need this */
+		pos = stmt_claim(be, st, cnt);
+
+	int mvc_var = be->mvc_var;
+	for (n = ol_first_node(st->columns); n; n = n->next) {
+
+		sql_column *c = n->data;
+		stmt *ins = updates[c->colnr];
+
+		if (ins) {
+			insert = stmt_append_col(be, c, pos, ins, &mvc_var, false);
+			if (!insert)
+				return NULL;
+			append(l,insert);
+		}
+	}
+	be->mvc_var = mvc_var;
+
+	return m->data;
 }
 
 static stmt *
@@ -5991,10 +6056,12 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 			sql_table *st = mvc_bind_table(sql, t->s, c->storage_type);
 			if (!st)
 				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
-			//n = insert_multiset();
-			(void)st;
+			updates[c->colnr] = insert_ms(be, st, m->data);
+			n = n->next;
+			m = m->next;
 		} else if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, &m);
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;
@@ -6131,7 +6198,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		t = rel_ddl_table_get(tr);
 	}
-	if (t->multiset)
+	if (t->multiset || t->composite)
 		return rel2bin_insert_ms(be, rel, refs);
 
 	if (rel->r) /* first construct the inserts relation */
@@ -6158,7 +6225,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		sql_column *c = n->data;
 
 		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, &m);
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;

@@ -579,7 +579,7 @@ stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
 	if (s == NULL)
 		return NULL;
 	s->op4.typeval = *t;
-	s->nrcols = 1;
+	s->nrcols = 2;
 	s->q = q;
 	s->nr = getArg(q, retnr);
 	s->flag = retnr;
@@ -3974,11 +3974,6 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 {
 	int i = 0;
 	if (t->multiset || t->type->composite) {
-		if (t->multiset) { /* id col : rowid */
-			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
-			tps[i].st = *sql_bind_localtype("int");
-			tps[i++].multiset = true;
-		}
 		if (t->type->composite) {
 			for (node *n = t->type->d.fields->h; n; n = n->next) {
 				sql_arg *a = n->data;
@@ -4001,6 +3996,12 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
 			tps[i].st = *sql_bind_localtype("int");
 			tps[i++].multiset = false;
+		}
+		/* end with the rowid */
+		if (t->multiset) { /* id col : rowid */
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+			tps[i].st = *sql_bind_localtype("int");
+			tps[i++].multiset = true;
 		}
 	} else {
 		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
@@ -4039,7 +4040,7 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 		goto bailout;
 	}
 	s->op1 = v;
-	s->nrcols = nrcols?2:1;
+	s->nrcols = 2;
 	s->key = v->key;
 	s->aggr = v->aggr;
 	s->op4.typeval = *t;
@@ -4091,7 +4092,7 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 		goto bailout;
 	}
 	s->op1 = v;
-	s->nrcols = nrcols?2:1;
+	s->nrcols = 2;
 	s->key = v->key;
 	s->aggr = v->aggr;
 	s->op4.typeval = *t;

@@ -180,6 +180,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
 		mnstr_printf(fout, "]");
+		if (e->f)
+			exps_print(sql, fout, e->f, depth, refs, 0, 1, decorate, 0);
 	 	break;
 	}
 	case e_atom: {

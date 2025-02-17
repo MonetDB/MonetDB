@@ -2127,10 +2127,6 @@ ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtyp
 	s++;
 	skipspace(s);
 	int anr = 1;
-	/* insert id */
-	if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)
-		elm = -2;
-	elm++;
 	int oelm = elm;
 	while (*s && s[0] != '}') {
 		elm = oelm;
@@ -2201,6 +2197,10 @@ ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtyp
 		skipspace(s);
 		anr++;
 	}
+	/* insert row-id */
+	if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)
+		elm = -2;
+	elm++;
 	if (!s || s[0] != '}')
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
 	return MAL_SUCCEED;
@@ -2220,14 +2220,9 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 	int i = 0;
 
 	(void)m;
-	fmt[i].frstr = &_ASCIIadt_frStr;
-	fmt[i].extra = sql_bind_localtype("int");
-	fmt[i].adt = TYPE_int;
-	fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-	fmt[i].c = bats[i];
-	i++;
 	if (t->type->composite) {
 		printf("todo implement composite type array values\n");
+		assert(0);
 	} else {
 		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = t;
@@ -2252,6 +2247,12 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 		fmt[i].c = bats[i];
 		i++;
 	}
+	fmt[i].frstr = &_ASCIIadt_frStr;
+	fmt[i].extra = sql_bind_localtype("int");
+	fmt[i].adt = TYPE_int;
+	fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+	fmt[i].c = bats[i];
+	i++;
 	/* this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
 	msg = ARRAYparser(s, fmt, nr, 0, 1, 1, t);
 	GDKfree(fmt);
