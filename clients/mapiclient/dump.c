@@ -298,42 +298,8 @@ bailout:
 	return 0;
 }
 
-static bool
-has_schema_path(Mapi mid)
-{
-	MapiHdl hdl;
-	bool ret;
-	static int answer = -1;
-
-	if (answer >= 0)
-		return answer;
-
-	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = (select id from sys.schemas where name = 'sys')) and name = 'schema_path'")) == NULL ||
-	    mapi_error(mid))
-		goto bailout;
-	ret = mapi_get_row_count(hdl) == 1;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		if (mapi_error(mid))
-			goto bailout;
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	mapi_close_handle(hdl);
-	answer = ret;
-	return ret;
-
-bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return false;
-}
-
+/* columns sys.db_user_info.max_memory and sys.db_user_info.max_workers
+ * introduced Sep2022 */
 static bool
 has_schema_max_memory(Mapi mid)
 {
@@ -344,7 +310,7 @@ has_schema_max_memory(Mapi mid)
 	if (answer >= 0)
 		return answer;
 
-	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = (select id from sys.schemas where name = 'sys')) and name = 'max_memory'")) == NULL ||
+	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = 2000) and name = 'max_memory'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -370,47 +336,7 @@ bailout:
 	return false;
 }
 
-static bool
-has_table_partitions(Mapi mid)
-{
-	MapiHdl hdl;
-	bool ret;
-	static int answer = -1;
-
-	if (answer >= 0)
-		return answer;
-
-	if ((hdl = mapi_query(mid,
-			      "select id from sys._tables"
-			      " where name = 'table_partitions'"
-			      " and schema_id = ("
-			      "select id from sys.schemas"
-			      " where name = 'sys')")) == NULL ||
-	    mapi_error(mid))
-		goto bailout;
-	ret = mapi_get_row_count(hdl) == 1;
-	while ((mapi_fetch_row(hdl)) != 0) {
-		if (mapi_error(mid))
-			goto bailout;
-	}
-	if (mapi_error(mid))
-		goto bailout;
-	mapi_close_handle(hdl);
-	answer = ret;
-	return ret;
-
-bailout:
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-	return false;
-}
-
+/* table sys.remote_user_info introduced Jun2023 */
 static bool
 has_remote_user_info_table(Mapi mid)
 {
@@ -424,9 +350,7 @@ has_remote_user_info_table(Mapi mid)
 	if ((hdl = mapi_query(mid,
 			      "select id from sys._tables"
 			      " where name = 'remote_user_info'"
-			      " and schema_id = ("
-			      "select id from sys.schemas"
-			      " where name = 'sys')")) == NULL ||
+			      " and schema_id = 2000")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -1433,7 +1357,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			squoted_print(sqlf, rt_hash, '\'', false);
 			mapi_close_handle(hdl);
 			hdl = NULL;
-		} else if (type == 3 && has_table_partitions(mid)) { /* A merge table might be partitioned */
+		} else if (type == 3) { /* A merge table might be partitioned */
 			int properties = 0;
 
 			snprintf(query, maxquerylen, "SELECT tp.type FROM sys.table_partitions tp WHERE tp.table_id = '%d'", table_id);
@@ -2726,7 +2650,6 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		             "AND t.sqlname NOT IN ('geometrya','mbr','url','inet','json','uuid')))"
 		"ORDER BY s.name, t.sqlname";
 	const char *users =
-		has_schema_path(mid) ?
 		has_schema_max_memory(mid) ?
 		"SELECT ui.name, "
 		       "ui.fullname, "
@@ -2748,18 +2671,6 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		       "sys.password_hash(ui.name), "
 		       "s.name, "
 			   "ui.schema_path, "
-			   "0, 0, 'default_pipe', cast(null as clob) "
-		"FROM sys.db_user_info ui, "
-		     "sys.schemas s "
-		"WHERE ui.default_schema = s.id "
-		  "AND ui.name <> 'monetdb' "
-		  "AND ui.name <> '.snapshot' "
-		"ORDER BY ui.name" :
-		"SELECT ui.name, "
-		       "ui.fullname, "
-		       "sys.password_hash(ui.name), "
-		       "s.name, "
-			   "cast(null as clob), "
 			   "0, 0, 'default_pipe', cast(null as clob) "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
@@ -2901,8 +2812,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		  "AND t.system = FALSE "
 		  "AND s.id = t.schema_id "
 		"ORDER BY id";
-	const char *mergetables =
-		has_table_partitions(mid) ?
+	const char mergetables[] =
 		"SELECT subq.s1name, "
 		       "subq.t1name, "
 		       "subq.s2name, "
@@ -2928,26 +2838,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 			"AND t2.schema_id = s2.id "
 		      "ORDER BY t1.id, t2.id) subq "
 			"LEFT OUTER JOIN sys.table_partitions "
-				"ON subq.id = table_partitions.table_id"
-		:
-		"SELECT s1.name, "
-		       "t1.name, "
-		       "s2.name, "
-		       "t2.name, "
-		       "0 "
-		"FROM sys.schemas s1, "
-		     "sys._tables t1, "
-		     "sys.dependencies d, "
-		     "sys.schemas s2, "
-		     "sys._tables t2 "
-		"WHERE t1.type = 3 "
-		  "AND t1.schema_id = s1.id "
-		  "AND s1.name <> 'tmp' "
-		  "AND t1.system = FALSE "
-		  "AND t1.id = d.depend_id "
-		  "AND d.id = t2.id "
-		  "AND t2.schema_id = s2.id "
-		"ORDER BY t1.id, t2.id";
+				"ON subq.id = table_partitions.table_id";
 	/* we must dump views, functions/procedures and triggers in order
 	 * of creation since they can refer to each other */
 	const char views_functions_triggers[] =
