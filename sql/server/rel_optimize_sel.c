@@ -2315,6 +2315,9 @@ exps_find_one_rel( sql_rel **rels, int nr, list *exps)
 	int fnd = 0;
 
 	for(node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (exp_is_atom(e))
+			continue;
 		int nfnd = exp_find_one_rel(rels, nr, n->data);
 		if (nfnd != fnd && fnd)
 			return 0;
@@ -2522,6 +2525,8 @@ order_joins(visitor *v, list *rels, list *exps)
 				if (!nr[0]) {
 					fnd = 1; /* not really, but this bails out */
 					list_remove_data(sdje, NULL, cje); /* handle later as select */
+					if (!list_find(exps, cje, NULL))
+						append(exps, cje);
 					continue;
 				}
 				/* remove the expression from the lists */
