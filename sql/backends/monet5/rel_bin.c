@@ -24,6 +24,7 @@
 #include "rel_predicates.h"
 #include "rel_file_loader.h"
 #include "rel_proto_loader.h"
+#include "rel_tvtree.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -871,6 +872,20 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 		list_append(l, i);
 	}
 	return stmt_append_bulk(be, stmt_temp(be, type), l);
+}
+
+static stmt *
+value_tvtree(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
+{
+	assert(is_values(vals_exp));
+	list *vals = exp_get_values(vals_exp);
+	sql_subtype *st = exp_subtype(vals_exp);
+
+	tv_tree *t = tv_create(be, st);
+	if (false == tv_parse_values(be, t, vals, left, sel))
+		return NULL;
+	stmt *ret = tv_generate_stmts(be, t);
+	return ret;
 }
 
 static stmt *
@@ -1852,6 +1867,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_var(be, vname->sname ? a_create(sql->sa, sa_strdup(sql->sa, vname->sname)) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
 			s = value_list(be, e, left, sel);
+			/*s = value_tvtree(be, e, left, sel);*/
 		} else {			/* arguments */
 			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
 			if (!t && 0) {
