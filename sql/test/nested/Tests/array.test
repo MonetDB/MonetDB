@@ -1,32 +1,34 @@
+## fixed-length type array
+
 statement ok
-create table foo (n int[])
+create table flent_arr (n int[])
 
 query I nosort
-select * from foo
+select * from flent_arr
 ----
 
 statement ok
-insert into foo values ('{1, 2}')
+insert into flent_arr values ('{1, 2}')
 
 query T nosort
-select * from foo
+select * from flent_arr
 ----
 {1,2}
 
 statement ok
-insert into foo values ('{1, 2}')
+insert into flent_arr values ('{1, 2}')
 
 query T nosort
-select * from foo
+select * from flent_arr
 ----
 {1,2}
 {1,2}
 
 statement ok
-insert into foo values ('{3, 4}'), ('{5}'), ('{6, 7, 8}')
+insert into flent_arr values ('{3, 4}'), ('{5}'), ('{6, 7, 8}')
 
 query T nosort
-select * from foo
+select * from flent_arr
 ----
 {1,2}
 {1,2}
@@ -34,35 +36,37 @@ select * from foo
 {5}
 {6,7,8}
 
+## variable-length type array
+
 statement ok
-create table bar (n text[])
+create table vlent_arr (s text[])
 
 query I nosort
-select * from bar
+select * from vlent_arr
 ----
 
 statement ok
-insert into bar values ('{"left", "right"}')
+insert into vlent_arr values ('{"left", "right"}')
 
 query T nosort
-select * from bar
+select * from vlent_arr
 ----
 {"left","right"}
 
 statement ok
-insert into bar values ('{"l2", "r2"}')
+insert into vlent_arr values ('{"l2", "r2"}')
 
 query T nosort
-select * from bar
+select * from vlent_arr
 ----
 {"left","right"}
 {"l2","r2"}
 
 statement ok
-insert into bar values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
+insert into vlent_arr values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
 
 query T nosort
-select * from bar
+select * from vlent_arr
 ----
 {"left","right"}
 {"l2","r2"}

@@ -51,12 +51,12 @@ json_open(const char *fname, allocator *sa)
 	int fd = MT_open(fname, O_RDONLY);
 	if (fd < 0){
 		// TODO add relevant trace component
-		TRC_ERROR(SQL_EXECUTION, "Error opening file %s", fname);
+		TRC_ERROR(SQL_EXECUTION, "Error opening file %s: %s", fname, strerror(errno));
 		return NULL;
 	}
 	struct stat stb;
     if (MT_stat(fname, &stb) != 0) {
-		TRC_ERROR(SQL_EXECUTION, "Error stat file %s", fname);
+		TRC_ERROR(SQL_EXECUTION, "Error stat file %s: %s", fname, strerror(errno));
 		close(fd);
 		return NULL;
 	}

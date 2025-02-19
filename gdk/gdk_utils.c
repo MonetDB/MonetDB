@@ -859,6 +859,10 @@ GDKsetdebug(unsigned debug)
 		GDKtracer_set_component_level("io", "debug");
 	else
 		GDKtracer_reset_component_level("io");
+	if (debug & LOADMASK)
+		GDKtracer_set_component_level("mal_loader", "debug");
+	else
+		GDKtracer_reset_component_level("mal_loader");
 	if (debug & PARMASK)
 		GDKtracer_set_component_level("par", "debug");
 	else
@@ -875,6 +879,10 @@ GDKsetdebug(unsigned debug)
 		GDKtracer_set_component_level("thrd", "debug");
 	else
 		GDKtracer_reset_component_level("thrd");
+	if (debug & TMMASK)
+		GDKtracer_set_component_level("tm", "debug");
+	else
+		GDKtracer_reset_component_level("tm");
 }
 
 unsigned
@@ -906,6 +914,9 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("io");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= IOMASK;
+	lvl = GDKtracer_get_component_level("mal_loader");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= LOADMASK;
 	lvl = GDKtracer_get_component_level("par");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= PARMASK;
@@ -918,6 +929,9 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("thrd");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= THRDMASK;
+	lvl = GDKtracer_get_component_level("tm");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= TMMASK;
 	return (unsigned) debug;
 }
 

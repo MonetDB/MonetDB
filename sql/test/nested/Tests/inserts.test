@@ -1,0 +1,66 @@
+## columns types
+
+statement ok
+create table bt_col (n int)
+
+# composite col type
+
+statement ok
+create type ct as (n int, m text)
+
+statement ok
+create table ct_col (c ct)
+
+# composite with basic-array type
+
+statement ok
+create type cabt as (an int[], m text)
+
+statement ok
+create table cabt_col (cab cabt)
+
+# composite with composite-array type
+
+statement ok
+create type cact as (ac ct[], m text)
+
+statement ok
+create table cact_col (cac cact)
+
+# arrays
+
+statement ok
+create table bt_arr (n int[])
+
+statement ok
+create table ct_arr (c ct[])
+
+## dml
+
+statement ok
+insert into bt_col values (1), (2)
+
+statement ok
+insert into ct_col values ((1, 'hello')), ((2, 'world'))
+
+statement error 42000!
+insert into cabt_col values (((1, 2), 'alice')), (((3, 4), 'bob'))
+
+### CRASH
+###statement ok
+###insert into cabt_col values ((array[1, 2], 'alice')), ((array[3, 4], 'bob'))
+
+statement ok
+insert into cact_col values ((array[(1, 'tic'), (2, 'tac')], 'alice'))
+
+### CRASH
+###statement ok
+###insert into cact_col values ((array[(10, 'one'), (20, 'two')], 'bob')), ((array[(30, 'hop')], 'joe'))
+
+### CRASH
+###statement ok
+###insert into bt_arr values (array[1, 2]), (array[10, 20])
+
+statement ok
+insert into ct_arr values (array[(1, 'tic'), (2, 'tac')]), (array[(10, 'abc'), (20, 'xyz')])
+
