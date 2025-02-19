@@ -137,6 +137,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		}
 		GDKfree(cv);
 	}
+	*bufend = 0;
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
 	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb, varid)
