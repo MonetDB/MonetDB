@@ -1022,6 +1022,19 @@ exp_exception(allocator *sa, sql_exp *cond, const char *error_message)
 	return e;
 }
 
+static void
+exps_setname(mvc *sql, list *exps, sql_alias *p, const char *name)
+{
+	sql_alias *ta = a_create(sql->sa, name);
+	ta->parent = p;
+	if (!list_empty(exps)) {
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			exp_setname(sql, e, ta, exp_name(e));
+		}
+	}
+}
+
 /* Set a name (alias) for the expression, such that we can refer
    to this expression by this simple name.
  */
@@ -1034,6 +1047,8 @@ exp_setname(mvc *sql, sql_exp *e, sql_alias *p, const char *name )
 	if (name)
 		e->alias.name = name;
 	e->alias.parent = p;
+	if ((e->type == e_convert || e->type == e_column) && e->f)
+		exps_setname(sql, e->f, p, name);
 }
 
 void
@@ -2902,7 +2917,7 @@ exps_bind_nid(list *exps, int nid)
 
 			if (e->alias.label == nid)
 				return e;
-			if (e->f && e->type == e_column) {
+			if (e->f && (e->type == e_column || e->type == e_convert)) {
 				e = exps_bind_nid(e->f, nid);
 				if (e)
 					return e;

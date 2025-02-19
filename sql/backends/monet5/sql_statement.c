@@ -4011,6 +4011,20 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 	return i;
 }
 
+/* for each result create stmt_result and return stmt list */
+static stmt *
+result_list(backend *be, InstrPtr q, int cur, result_subtype *tps, int nrcols)
+{
+	list *r = sa_list(be->mvc->sa);
+	for(int i = cur; i < nrcols; i++) {
+		stmt *br = stmt_blackbox_result(be, q, i, &tps[i].st);
+		append(r, br);
+		if (tps[i].multiset)
+			br->multiset = true;
+	}
+	return stmt_list(be, r);
+}
+
 static stmt *
 stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 {
@@ -4048,15 +4062,7 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	s->q = q;
 	//s->cand = pushed ? sel : NULL;
 	pushInstruction(be->mb, q);
-	/* for each result create stmt_result and return stmt list */
-	list *r = sa_list(be->mvc->sa);
-	for(int i = 0; i < nrcols; i++) {
-		stmt *br = stmt_blackbox_result(be, s->q, i, &tps[i].st);
-		append(r, br);
-		if (tps[i].multiset)
-			br->multiset = true;
-	}
-	return stmt_list(be, r);
+	return result_list(be, s->q, 0, tps, nrcols);
 bailout:
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
@@ -4100,15 +4106,7 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	s->q = q;
 	//s->cand = pushed ? sel : NULL;
 	pushInstruction(be->mb, q);
-	/* for each result create stmt_result and return stmt list */
-	list *r = sa_list(be->mvc->sa);
-	for(int i = 0; i < nrcols; i++) {
-		stmt *br = stmt_blackbox_result(be, s->q, i, &tps[i].st);
-		append(r, br);
-		if (tps[i].multiset)
-			br->multiset = true;
-	}
-	return stmt_list(be, r);
+	return result_list(be, s->q, 0, tps, nrcols);
 bailout:
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);

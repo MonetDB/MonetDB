@@ -464,8 +464,11 @@ rel_bind_column2( mvc *sql, sql_rel *rel, sql_alias *tname, const char *cname, i
 		} else {
 			exp = rel_bind_column(sql, rel, tname->name, f, 0);
 		}
-		if (exp && !exp->tpe.multiset)
-			return exps_bind_column(exp->f, cname, NULL, NULL, 0);
+		if (exp && !exp->tpe.multiset) {
+			sql_exp *e = exps_bind_column(exp->f, cname, NULL, NULL, 0);
+			if (e)
+				return exp_ref(sql, e);
+		}
 		tname = tname->parent;
 	}
 	return NULL;

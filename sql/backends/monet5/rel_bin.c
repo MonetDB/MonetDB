@@ -1747,6 +1747,31 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	return (stmt*)pl->load(be, f, filename, topn);
 }
 
+static stmt *
+nested_stmts(backend *be, list *exps, node **M)
+{
+	node *m = *M;
+	list *r = sa_list(be->mvc->sa);
+
+	if (!list_empty(exps)) {
+		for (node *n = exps->h; n && m; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type == e_column && e->f) {
+				stmt *s = nested_stmts(be, e->f, &m);
+				s->label = e->alias.label;
+				append(r, s);
+			} else {
+				stmt *s = m->data;
+				s->label = e->alias.label;
+				m = m->next;
+				append(r, s);
+			}
+		}
+	}
+	*M = m;
+	return stmt_list(be, r);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1902,17 +1927,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else {
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
 		}
-		if (s && s->type == st_list && e->f) {
-			list *f = e->f;
-			list *o = s->op4.lval;
-			if (list_length(f) != list_length(o))
-				return NULL;
-			for(node *n = f->h, *m = o->h; n && m; n = n->next, m = m->next) {
-				sql_exp *e = n->data;
-				stmt *s = m->data;
-				s->label = e->alias.label;
-			}
-		}
+		if (s && s->type == st_list && e->f)
+			s = nested_stmts(be, e->f, &s->op4.lval->h);
 	} 	break;
 	case e_func: {
 		node *en;
@@ -5935,7 +5951,7 @@ insert_composite(stmt **updates, sql_column *c, node *n, node *m)
 }
 
 static stmt *
-insert_ms(backend *be, sql_table *st, stmt *ms)
+insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
 {
 	mvc *sql = be->mvc;
 
@@ -5956,7 +5972,7 @@ insert_ms(backend *be, sql_table *st, stmt *ms)
 			sql_table *nst = mvc_bind_table(sql, st->s, c->storage_type);
 			if (!nst)
 				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
-			updates[c->colnr] = insert_ms(be, nst, m->data);
+			updates[c->colnr] = insert_ms(be, nst, &c->type, m->data);
 			n = n->next;
 			m = m->next;
 		} else if (c->type.type->composite && !c->type.multiset) {
@@ -5981,6 +5997,32 @@ insert_ms(backend *be, sql_table *st, stmt *ms)
 		pos = stmt_claim(be, st, cnt);
 
 	int mvc_var = be->mvc_var;
+	stmt *rowids = m->data;
+	stmt *msid = updates[len-1 -((ct->multiset == MS_ARRAY)?1:0)];
+
+	/* nrowids = next_value_for(rowids, "schema?", st->base.name) */
+	InstrPtr q = newStmt(be->mb, batsqlRef, "next_value_ms");
+	q = pushArgument(be->mb, q, rowids->nr);
+	q = pushStr(be->mb, q, st->s->base.name); /* sequence schema name */
+	q = pushStr(be->mb, q, st->base.name);	  /* sequence number name */
+	pushInstruction(be->mb, q);
+
+	/* nrowids = batcalc.int(nrowids) */
+	InstrPtr r = newStmt(be->mb, batcalcRef, "int");
+	r = pushArgument(be->mb, r, getArg(q, 0));
+	pushInstruction(be->mb, r);
+
+	/* msid = renumber(msid, rowids, nrowids); */
+	q = newStmt(be->mb, batsqlRef, "renumber");
+	q = pushArgument(be->mb, q, msid->nr);
+	q = pushArgument(be->mb, q, rowids->nr);
+	q = pushArgument(be->mb, q, getArg(r, 0));
+	pushInstruction(be->mb, q);
+
+	/* now update msid and rowids */
+	rowids->nr = getArg(r, 0);
+	msid->nr = getArg(q, 0);
+
 	for (n = ol_first_node(st->columns); n; n = n->next) {
 
 		sql_column *c = n->data;
@@ -5995,7 +6037,7 @@ insert_ms(backend *be, sql_table *st, stmt *ms)
 	}
 	be->mvc_var = mvc_var;
 
-	return m->data;
+	return rowids;
 }
 
 static stmt *
@@ -6056,7 +6098,7 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 			sql_table *st = mvc_bind_table(sql, t->s, c->storage_type);
 			if (!st)
 				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
-			updates[c->colnr] = insert_ms(be, st, m->data);
+			updates[c->colnr] = insert_ms(be, st, &c->type, m->data);
 			n = n->next;
 			m = m->next;
 		} else if (c->type.type->composite && !c->type.multiset) {

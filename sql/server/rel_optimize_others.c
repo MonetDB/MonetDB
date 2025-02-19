@@ -154,7 +154,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return NULL;
 		return exp_propagate(sql->sa, ne, e);
 	case e_convert:
-		if (!(l = exp_push_down_prj(sql, e->l, f, t)))
+		if (e->f || !(l = exp_push_down_prj(sql, e->l, f, t)))
 			return NULL;
 		ne = exp_convert(sql, l, exp_fromtype(e), exp_totype(e));
 		return exp_propagate(sql->sa, ne, e);
@@ -269,7 +269,7 @@ exps_mark_all_used(list *exps, int nid, int local_proj)
 
 			if (e->alias.label == nid) {
 				if (local_proj <= -1 || i < local_proj) {
-					if (e->nid != e->alias.label) {
+					if (local_proj < 0 || e->nid != e->alias.label) {
 						e->used = 1;
 						return 1;
 					}

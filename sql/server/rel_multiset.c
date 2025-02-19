@@ -9,6 +9,7 @@
 
 extern void _rel_print(mvc *sql, sql_rel *cur);
 
+/* TODO handle composite/multset (ie deep nested cases) too */
 static sql_rel *
 fm_join(visitor *v, sql_rel *rel)
 {
