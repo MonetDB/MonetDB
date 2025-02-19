@@ -101,8 +101,8 @@ tv_create(backend *be, sql_subtype *st)
 	return t;
 }
 
-bool
-tv_parse_values(backend *be, tv_tree *t, list *vals, stmt *left, stmt *sel)
+static bool
+tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 {
 	switch (t->tvt) {
 		case TV_MS_BSC:
@@ -110,28 +110,41 @@ tv_parse_values(backend *be, tv_tree *t, list *vals, stmt *left, stmt *sel)
 			// TODO
 			break;
 		case TV_BASIC:
-			for (node *n = vals->h; n; n = n->next) {
-				sql_exp *e = n->data;
-				stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-				if (!i)
-					return NULL;
-				list_append(t->vals, i);
-			}
+			assert(!tuple->f);
+			stmt *i = exp_bin(be, tuple, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+			if (!i)
+				return NULL;
+			list_append(t->vals, i);
 			break;
 		case TV_MS_COMP:
 		case TV_SO_COMP:
 			// TODO
 			break;
 		case TV_COMP:
-			int i = 0;
-			for (node *n = vals->h; n; i++, n = n->next)
-				tv_parse_values(be, list_fetch(t->cf, i), n->data, left ,sel);
+			assert(tuple->f);
+			int cnt = 0;
+			list *cvals = tuple->f;
+			for (node *n = cvals->h; n; cnt++, n = n->next)
+				if (false == tv_tuple_value(be, list_fetch(t->cf, cnt), n->data, left, sel))
+					return false;
 			break;
 		default:
 			assert(0);
 			break;
 	}
 
+	return true;
+}
+
+bool
+tv_parse_values(backend *be, tv_tree *t, list *cvals, stmt *left, stmt *sel)
+{
+	/* cvals is a list with values that correspond to a column whose
+	 * (probably "complex") type is represented by the tv_tree
+	 */
+	for (node *n = cvals->h; n; n = n->next)
+		if (false == tv_tuple_value(be, t, n->data, left, sel))
+			return false;
 	return true;
 }
 
@@ -145,14 +158,16 @@ tv_generate_stmts(backend *be, tv_tree *t)
 			break;
 		case TV_BASIC:
 			return stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
-			break;
 		case TV_MS_COMP:
 		case TV_SO_COMP:
 			// TODO
 			break;
 		case TV_COMP:
-			// TODO
-			break;
+			/* gather all the composite (sub)field's statements */
+			list *fsts = sa_list(be->mvc->sa);
+			for (node *n = t->cf->h; n; n = n->next)
+				append(fsts, tv_generate_stmts(be, n->data));
+			return stmt_list(be, fsts);
 		default:
 			assert(0);
 			break;
