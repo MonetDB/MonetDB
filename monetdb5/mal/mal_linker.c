@@ -202,7 +202,15 @@ loadLibrary(const char *filename, int flag)
 		if (!handle) {
 			if (flag>0)
 				throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
+			TRC_INFO(MAL_LOADER, "Module %s not loaded\n", filename);
 			return MAL_SUCCEED;
+		}
+		TRC_INFO_IF(MAL_LOADER) {
+			if (is_monetdb5)
+				TRC_INFO_ENDIF(MAL_LOADER, "Module %s loaded\n", filename);
+			else
+				TRC_INFO_ENDIF(MAL_LOADER, "Module %s loaded from %s\n",
+							   filename, nme);
 		}
 	}
 
@@ -272,6 +280,8 @@ loadLibrary(const char *filename, int flag)
 					  s, nme, dlerror());
 		}
 #endif
+		if (handle)
+			TRC_INFO(MAL_LOADER, "Module %s loaded from %s\n", filename, nme);
 
 		if (*p == 0 || handle != NULL)
 			break;
@@ -279,31 +289,38 @@ loadLibrary(const char *filename, int flag)
 	}
 
 	if (handle == NULL) {
-		if (!is_monetdb5
-			&& strcmp(filename, "sql") != 0
-			&& strcmp(filename, "generator") != 0
-#ifdef HAVE_GEOM
-			&& strcmp(filename, "geom") != 0
-#endif
-#ifdef HAVE_LIBR
-			&& strcmp(filename, "rapi") != 0
-#endif
-#ifdef HAVE_LIBPY3
-			&& strcmp(filename, "pyapi3") != 0
-#endif
+		static const char *const optional[] = {
 #ifdef HAVE_CUDF
-			&& strcmp(filename, "capi") != 0
+			"capi",
 #endif
 #ifdef HAVE_FITS
-			&& strcmp(filename, "fits") != 0
+			"fits",
+#endif
+#ifdef HAVE_GEOM
+			"geom",
 #endif
 #ifdef HAVE_NETCDF
-			&& strcmp(filename, "netcdf") != 0
+			"netcdf",
+#endif
+#ifdef HAVE_LIBPY3
+			"pyapi3",
+#endif
+#ifdef HAVE_LIBR
+			"rapi",
 #endif
 #ifdef HAVE_SHP
-			&& strcmp(filename, "shp") != 0
+			"shp",
 #endif
-				)
+			NULL
+		};
+		for (const char * const *p = optional; *p; p++) {
+			if (strcmp(filename, *p) == 0) {
+				TRC_INFO(MAL_LOADER, "Optional module %s not loaded\n",
+						 filename);
+				return MAL_SUCCEED;
+			}
+		}
+		if (!is_monetdb5 && strcmp(filename, "sql") != 0)
 			throw(LOADER, "loadLibrary",
 				  RUNTIME_LOAD_ERROR
 				  " could not locate library %s (from within file '%s'): %s", s,
