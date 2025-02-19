@@ -1759,6 +1759,7 @@ nested_stmts(backend *be, list *exps, node **M)
 			if (e->type == e_column && e->f) {
 				stmt *s = nested_stmts(be, e->f, &m);
 				s->label = e->alias.label;
+				s->nested = true;
 				append(r, s);
 			} else {
 				stmt *s = m->data;
@@ -1927,8 +1928,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else {
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
 		}
-		if (s && s->type == st_list && e->f)
+		if (s && s->type == st_list && e->f) {
 			s = nested_stmts(be, e->f, &s->op4.lval->h);
+			s->nested = true;
+		}
 	} 	break;
 	case e_func: {
 		node *en;
@@ -2586,6 +2589,9 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exp
 			assert(c);
 			if (exp->f && (c->type.multiset || c->type.type->composite)) {
 				s = rel2bin_subtable(be, t, dels, c, exp->f);
+				if (!s)
+					return s;
+				s->nested = true;
 				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
 					stmt *ns = stmt_col(be, c, dels, dels->partition);
 					list_append(s->op4.lval, ns);
@@ -2669,6 +2675,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				s = rel2bin_subtable(be, t, dels, c, exp->f);
 				if (!s)
 					return s;
+				s->nested = true;
 				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
 					stmt *ns = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
 					list_append(s->op4.lval, ns);

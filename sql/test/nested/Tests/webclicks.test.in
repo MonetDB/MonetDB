@@ -61,11 +61,49 @@ productDetail
 2024-11-30 22:13:37.823000
 Mozilla
 
-#query
-#select e.eventid, el.element.key from ( select cast(t.json as event) as e from (select json from r'/home/niels/data/rc/default/sql/test/nested/Tests/webclicks.json') t), unnest(e.location.list) el
-#----
-#996257967-103007874
-#996257967-103007874
+query TT
+select e.eventid, el.element.key from ( select cast(t.json as event) as e from (select json from r'/home/niels/data/rc/default/sql/test/nested/Tests/webclicks.json') t), unnest(e.location.list) el
+----
+996257967-103007874
+hash
+996257967-103007874
+hostname
+996257967-103007874
+pageSubType
+996257967-103007874
+pageType
+996257967-103007874
+pathname
+996257967-103007874
+protocol
+996257967-103007874
+referrer
+996257967-103007874
+search
+996257967-103007874
+state
+996257967-103007874
+title
+996257967-103007874
+hash
+996257967-103007874
+hostname
+996257967-103007874
+pageSubType
+996257967-103007874
+pageType
+996257967-103007874
+pathname
+996257967-103007874
+protocol
+996257967-103007874
+referrer
+996257967-103007874
+search
+996257967-103007874
+state
+996257967-103007874
+title
 
 #query TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
 #select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json') t

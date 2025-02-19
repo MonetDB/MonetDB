@@ -2609,6 +2609,15 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 	return q;
 }
 
+static list *
+unnest_stmt(stmt *o)
+{
+	while (o->type == st_alias)
+		o = o->op1;
+	assert(o && o->type == st_list);
+	return o->op4.lval;
+}
+
 stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
@@ -2616,6 +2625,21 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		return NULL;
 	if (!op2->nrcols)
 		return stmt_const(be, op1, op2);
+	if (op2->nested) {
+		list *ops = unnest_stmt(op2);
+		list *nops = sa_list(be->mvc->sa);
+		for(node *n = ops->h; n; n = n->next) {
+			stmt *i = n->data;
+			if (!i->nested)
+				i = stmt_project(be, op1, i);
+			append(nops, i);
+		}
+		stmt *s = stmt_list(be, nops);
+		if (s == NULL)
+			return NULL;
+		s->nested = true;
+		return s;
+	}
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -4744,6 +4768,7 @@ stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *ali
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 	s->multiset = op1->multiset;
+	s->nested = op1->nested;
 
 	s->tname = tname;
 	s->cname = alias;

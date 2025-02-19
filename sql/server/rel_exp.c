@@ -1047,7 +1047,7 @@ exp_setname(mvc *sql, sql_exp *e, sql_alias *p, const char *name )
 	if (name)
 		e->alias.name = name;
 	e->alias.parent = p;
-	if ((e->type == e_convert || e->type == e_column) && e->f)
+	if (is_nested(e))
 		exps_setname(sql, e->f, p, name);
 }
 
@@ -2917,7 +2917,7 @@ exps_bind_nid(list *exps, int nid)
 
 			if (e->alias.label == nid)
 				return e;
-			if (e->f && (e->type == e_column || e->type == e_convert)) {
+			if (is_nested(e)) {
 				e = exps_bind_nid(e->f, nid);
 				if (e)
 					return e;
