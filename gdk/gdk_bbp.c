@@ -3791,6 +3791,8 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 	int n = subcommit ? 0 : -1;
 	FILE *obbpf, *nbbpf;
 
+	TRC_INFO(TM, "Committing %d bats\n", cnt - 1);
+
 	if (GDKfilepath(bakdir, sizeof(bakdir), 0, NULL, subcommit ? SUBDIR : BAKDIR, NULL) != GDK_SUCCEED ||
 	    GDKfilepath(deldir, sizeof(deldir), 0, NULL, DELDIR, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -3812,6 +3814,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 		BATiter bi, *bip;
 
 		const bat bid = i;
+		TRC_DEBUG(TM, "Commit bat %d\n", bid);
 		if (lock)
 			MT_lock_set(&GDKswapLock(bid));
 		/* set flag that we're syncing, i.e. that we'll
