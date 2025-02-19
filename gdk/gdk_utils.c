@@ -859,6 +859,10 @@ GDKsetdebug(unsigned debug)
 		GDKtracer_set_component_level("io", "debug");
 	else
 		GDKtracer_reset_component_level("io");
+	if (debug & LOADMASK)
+		GDKtracer_set_component_level("mal_loader", "debug");
+	else
+		GDKtracer_reset_component_level("mal_loader");
 	if (debug & PARMASK)
 		GDKtracer_set_component_level("par", "debug");
 	else
@@ -906,6 +910,9 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("io");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= IOMASK;
+	lvl = GDKtracer_get_component_level("mal_loader");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= LOADMASK;
 	lvl = GDKtracer_get_component_level("par");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= PARMASK;
