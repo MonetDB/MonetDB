@@ -2,8 +2,7 @@ statement ok
 create type event as (id int, type varchar)
 
 query IT
-select t.id, t.type from ( select cast(t.json as event) as t from (select json from r'/home/niels/data/rc/default/sql/test/nested/Tests/events.json') t );
-#select t.id, t.type from ( select cast(t.json as event) as t from (select json from r'$TSTSRCDIR/events.json') t );
+select t.id, t.type from ( select cast(t.json as event) as t from (select json from r'$TSTSRCDIR/events.json') t );
 ----
 1
 click
