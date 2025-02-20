@@ -103,7 +103,7 @@ tv_create(backend *be, sql_subtype *st)
 }
 
 static bool
-tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
+tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 {
 	switch (t->tvt) {
 		case TV_MS_BSC:
@@ -111,8 +111,8 @@ tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 			// TODO
 			break;
 		case TV_BASIC:
-			assert(!tuple->f);
-			stmt *i = exp_bin(be, tuple, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+			assert(!value->f);
+			stmt *i = exp_bin(be, value, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 			if (!i)
 				return false;
 			assert(t->vals);
@@ -120,7 +120,7 @@ tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 			break;
 		case TV_MS_COMP:
 		case TV_SO_COMP:
-			assert(tuple->f);
+			assert(value->f);
 
 			/* add the rowid to the mset "origin" table */
 			stmt *rid = stmt_atom_int(be, t->rid_idx);
@@ -129,14 +129,14 @@ tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 			assert(t->rid);
 			list_append(t->rid, rid);
 
-			/* per tuple insert actual data, msid(=rowid), msnr(for MS only) */
-			list *ms_vals = tuple->f;
+			/* per value insert actual data, msid(=rowid), msnr(for MS only) */
+			list *ms_vals = value->f;
 			for (node *n = ms_vals->h; n; n = n->next) {
 
 				int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
-				list *cvals = ((sql_exp*)n->data)->f;
-				for (node *m = cvals->h; m; m = m->next, msnr_idx++)
-					if (false == tv_tuple_value(be, list_fetch(t->cf, msnr_idx - 1), m->data, left, sel))
+				list *cf_vals = ((sql_exp*)n->data)->f;
+				for (node *m = cf_vals->h; m; m = m->next, msnr_idx++)
+					if (false == tv_parse_values_(be, list_fetch(t->cf, msnr_idx - 1), m->data, left, sel))
 						return false;
 
 				stmt *msid = stmt_atom_int(be, t->rid_idx);
@@ -152,17 +152,17 @@ tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 				}
 			}
 
-			/* we inserted all the mset values for a tuple for a given
+			/* we inserted all the mset values for a value for a given
 			 * row so now increment this tv_tree node's (mset) rowid */
 			t->rid_idx++;
 
 			break;
 		case TV_COMP:
-			assert(tuple->f);
+			assert(value->f);
 			int cnt = 0;
-			list *cvals = tuple->f;
-			for (node *n = cvals->h; n; cnt++, n = n->next)
-				if (false == tv_tuple_value(be, list_fetch(t->cf, cnt), n->data, left, sel))
+			list *cf_vals = value->f;
+			for (node *n = cf_vals->h; n; cnt++, n = n->next)
+				if (false == tv_parse_values_(be, list_fetch(t->cf, cnt), n->data, left, sel))
 					return false;
 			break;
 		default:
@@ -174,13 +174,13 @@ tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 }
 
 bool
-tv_parse_values(backend *be, tv_tree *t, list *cvals, stmt *left, stmt *sel)
+tv_parse_values(backend *be, tv_tree *t, list *col_vals, stmt *left, stmt *sel)
 {
-	/* cvals is a list with values that correspond to a column whose
+	/* col_vals is a list with values that correspond to a column whose
 	 * (probably "complex") type is represented by the tv_tree
 	 */
-	for (node *n = cvals->h; n; n = n->next)
-		if (false == tv_tuple_value(be, t, n->data, left, sel))
+	for (node *n = col_vals->h; n; n = n->next)
+		if (false == tv_parse_values_(be, t, n->data, left, sel))
 			return false;
 	return true;
 }
