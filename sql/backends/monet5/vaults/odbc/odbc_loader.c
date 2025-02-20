@@ -29,28 +29,7 @@
 #include <sql.h>
 #include <sqlext.h>
 
-typedef struct odbc_loader_t {
-	SQLHANDLE env;
-	SQLHANDLE dbc;
-	SQLHANDLE stmt;
-	SQLSMALLINT nr_cols;
-} odbc_loader_t;
-
-static void
-odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
-	if (stmt != SQL_NULL_HSTMT) {
-		SQLFreeStmt(stmt, SQL_CLOSE);
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	}
-	if (dbc != SQL_NULL_HDBC) {
-		SQLDisconnect(dbc);
-		SQLFreeHandle(SQL_HANDLE_DBC, dbc);
-	}
-	if (env != SQL_NULL_HENV) {
-		SQLFreeHandle(SQL_HANDLE_ENV, env);
-	}
-}
-
+/* map ODBC SQL datatype to MonetDB SQL datatype */
 static sql_subtype *
 map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDigits, mvc * sql)
 {
@@ -103,7 +82,9 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		typenm = "double";
 		break;
 	case SQL_FLOAT:
-		/* the precision of SQL_FLOAT can be either 24 or 53: if it is 24, the SQL_FLOAT data type is the same as SQL_REAL; if it is 53, the SQL_FLOAT data type is the same as SQL_DOUBLE. */
+		/* the precision of SQL_FLOAT can be either 24 or 53:
+		   if it is 24, the SQL_FLOAT data type is the same as SQL_REAL;
+		   if it is 53, the SQL_FLOAT data type is the same as SQL_DOUBLE. */
 		typenm = (columnSize == 7) ? "real" : "double";
 		break;
 
@@ -181,6 +162,7 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	return sql_bind_subtype(sql->sa, typenm, interval_type, 0);
 }
 
+/* return name for ODBC SQL datatype */
 static char *
 nameofSQLtype(SQLSMALLINT dataType)
 {
@@ -228,14 +210,37 @@ nameofSQLtype(SQLSMALLINT dataType)
 	}
 }
 
+/* utility function to nicely close all opened ODBC resources */
+static void
+odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
+	SQLRETURN ret = SQL_INVALID_HANDLE;
+
+	if (stmt != SQL_NULL_HSTMT) {
+		ret = SQLFreeStmt(stmt, SQL_CLOSE);
+		if (ret != SQL_INVALID_HANDLE)
+			SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	}
+	if (dbc != SQL_NULL_HDBC) {
+		ret = SQLDisconnect(dbc);
+		if (ret != SQL_INVALID_HANDLE)
+			SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+	}
+	if (env != SQL_NULL_HENV) {
+		SQLFreeHandle(SQL_HANDLE_ENV, env);
+	}
+}
+
+typedef struct odbc_loader_t {
+	SQLHANDLE env;
+	SQLHANDLE dbc;
+	SQLHANDLE stmt;
+	SQLSMALLINT nr_cols;
+} odbc_loader_t;
+
+
 /*
- * returns an error string (static or via tmp sa_allocator allocated), NULL on success
- *
- * Extend the subfunc f with result columns, ie.
-	f->res = typelist;
-	f->coltypes = typelist;
-	f->colnames = nameslist; use tname if passed, for the relation name
- * Fill the list res_exps, with one result expressions per resulting column.
+ * odbc_query() contains the logic for both odbc_relation() and odbc_load()
+ * the caller arg is 1 when called from odbc_relation and 2 when called from odbc_load
  */
 static str
 odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, int caller)
@@ -267,11 +272,11 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 	// create a new ODBC connection string without the QUERY= part
 	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
 
+	// trace_enabled = true;
 	if (trace_enabled)
-		printf("\nExtracted ODBC connection string: %s\nand SQL query: %s\n", odbc_con_str, query);
+		printf("\nExtracted ODBC connection string: %s\n  and SQL query: %s\n", odbc_con_str, query);
 
-
-	/* now we can try to connect to the ODBC driver and execute the SQL query */
+	/* now we can (try to) connect to the ODBC driver and execute the SQL query */
 	SQLRETURN ret = SQL_INVALID_HANDLE;
 	SQLHANDLE env = SQL_NULL_HENV;
 	SQLHANDLE dbc = SQL_NULL_HDBC;
@@ -288,9 +293,16 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
 		goto finish;
 	}
+
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "Allocate ODBC DBC handle failed.";
+		goto finish;
+	}
+	/* to avoid an endless blocking SQLDriverConnect() set a login timeout of 8s */
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER) (uintptr_t) 8UL, 0);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "SQLSetConnectAttr (SQL_ATTR_LOGIN_TIMEOUT 8s) failed.";
 		goto finish;
 	}
 
@@ -334,6 +346,8 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 	if (caller == 1) {
 		char tname[1024];
 		char cname[1024];
+		char * tblname;
+		char * colname;
 		SQLSMALLINT dataType = 0;
 		SQLULEN columnSize = 0;
 		SQLSMALLINT decimalDigits = 0;
@@ -343,7 +357,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 			/* for each result column get name, datatype, size and decdigits */
 			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname),
-				NULL, &dataType, &columnSize, &decimalDigits, NULL);
+					NULL, &dataType, &columnSize, &decimalDigits, NULL);
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				errmsg = "SQLDescribeCol failed.";
 				goto finish;
@@ -351,7 +365,8 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 			if (trace_enabled)
 				printf("ResCol %d, name: %s, type %d (%s), size %d, decdigits %d\n",
 					col, cname, (int)dataType, nameofSQLtype(dataType), (int)columnSize, (int)decimalDigits);
-			list_append(nameslist, sa_strdup(sql->sa, cname));
+			colname = sa_strdup(sql->sa, cname);
+			list_append(nameslist, colname);
 			sql_mtype = map_rescol_type(dataType, columnSize, decimalDigits, sql);
 			list_append(typelist, sql_mtype);
 
@@ -360,16 +375,17 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				strcpy(tname, "");
 			}
-			sql_exp *ne = exp_column(sql->sa, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname), sql_mtype, CARD_MULTI, 1, 0, 0);
+			tblname = sa_strdup(sql->sa, tname);
+			sql_exp *ne = exp_column(sql->sa, tblname, colname, sql_mtype, CARD_MULTI, 1, 0, 0);
 			set_basecol(ne);
 			ne->alias.label = -(sql->nid++);
 			list_append(res_exps, ne);
 		}
 
 		f->tname = sa_strdup(sql->sa, tname);
-		f->res = typelist;
-		f->coltypes = typelist;
 		f->colnames = nameslist;
+		f->coltypes = typelist;
+		f->res = typelist;
 
 		odbc_loader_t *r = (odbc_loader_t *)sa_alloc(sql->sa, sizeof(odbc_loader_t));
 		r->env = env;
@@ -381,9 +397,8 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		goto finish;
 	}
 
-	/* when called from odbc_load() we can now fetch the data */
+	/* when called from odbc_load() */
 	if (caller == 2 && stmt != SQL_NULL_HSTMT) {
-		//odbc_loader_t *r = (odbc_loader_t *)f->sname;
 		sql_table *t;
 
 		if (trace_enabled)
@@ -397,38 +412,60 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 			printf("After mvc_create_table()\n");
 
 		node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
-		for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
+		int col = 1;
+		for (n = f->res->h; n && col <= nr_cols; col++, n = n->next, nn = nn->next, tn = tn->next) {
 			const char *name = nn->data;
 			sql_subtype *tp = tn->data;
 			sql_column *c = NULL;
 
 			if (trace_enabled)
-				printf("Before mvc_create_column(%s)\n", name);
+				printf("%d Before mvc_create_column(%s)\n", col, name);
 			if (!tp || mvc_create_column(&c, sql, t, name, tp) != LOG_OK) {
 				return NULL;
 			}
-		}
-
-		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
-			// TODO for each result column create a buffer and bind it.
-			// ret = SQLBindCol(stmt, 1, );
+			if (trace_enabled)
+				printf("After mvc_create_column()\n");
 		}
 
 		// repeat fetching data, adding data work table
 		long rows = 0;
 		ret = SQLFetch(stmt);
 		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+			SQLLEN buflen = 65535;
+			char buf[65536];
+			SQLLEN strLen;
+
 			rows++;
 			if (trace_enabled)
 				printf("Fetched row %ld\n", rows);
 
 			// TODO for each result column append to created transient table
 			for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
-				// ret = SQLGetData(stmt, col, ...);
-				// copy buffer value to BUN and append
+				buf[buflen] = '\0';
+				strLen = SQL_NTS;
+
+				ret = SQLGetData(stmt, col, SQL_C_CHAR, (SQLPOINTER *) buf, buflen, &strLen);
+				if (buf[buflen] != '\0')
+					buf[buflen] = '\0';
+				if (strLen != SQL_NTS && strLen > 0) {
+					if (strLen <= buflen)
+						if (buf[strLen] != '\0')
+							buf[strLen] = '\0';
+				}
+				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+					if (trace_enabled)
+						printf("Failed to get data for col %d of row %ld\n", col, rows);
+				} else {
+					// TODO copy buffer value to BUN and append
+					if (trace_enabled)
+						printf("Got data for col %d of row %ld: %s\n", col, rows, buf);
+				}
 			}
 			ret = SQLFetch(stmt);	// get data of next row
 		}
+		/* the last SQLFetch() should have returned SQL_NO_DATA */
+		if (ret == SQL_NO_DATA)
+			ret = SQL_SUCCESS;	// we retrieved all rows
 	}
 
   finish:
@@ -440,7 +477,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		SQLSMALLINT handleType;
 		SQLHANDLE handle;
-		SQLCHAR state[6];
+		SQLCHAR state[SQL_SQLSTATE_SIZE +1];
 		SQLINTEGER errnr;
 		SQLCHAR msg[2048];
 		SQLSMALLINT msglen;
@@ -457,9 +494,11 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 			handleType = SQL_HANDLE_ENV;
 			handle = env;
 		}
-		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, sizeof(msg), &msglen);
+		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 			str retmsg;
+			if (state[SQL_SQLSTATE_SIZE] != '\0')
+				state[SQL_SQLSTATE_SIZE] = '\0';
 			if (errmsg != NULL) {
 				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, (int)errnr, (char*)msg);
 			} else {
