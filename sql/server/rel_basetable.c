@@ -158,7 +158,7 @@ rel_base_use_all( mvc *sql, sql_rel *rel)
 }
 
 static rel_base_t*
-rel_multiset_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_table *t, list *exps)
+rel_nested_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_table *t, list *exps)
 {
 	allocator *sa = sql->sa;
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
@@ -185,12 +185,16 @@ rel_multiset_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_ta
 			if (e) {
 				e->nid = -(ba->basenr + i);
 				e->alias.label = e->nid;
+				set_intern(e);
 				set_basecol(e);
 				append(exps, e);
+				e->f = sa_list(sql->sa);
 			}
 
+			if (!e || !e->f)
+				return NULL;
 			sql_table *t = mvc_bind_table(sql, c->t->s, c->storage_type);
-			if (rel_multiset_basetable_add_cols(sql, pba, c->base.name, t, exps) == NULL)
+			if (rel_nested_basetable_add_cols(sql, pba, c->base.name, t, e->f) == NULL)
 				e = NULL;
 			else
 				continue;
@@ -208,6 +212,7 @@ rel_multiset_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_ta
 			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 			p->value.pval = NULL;
 		}
+		set_intern(e);
 		set_basecol(e);
 		sql_column_get_statistics(sql, c, e);
 		append(exps, e);
@@ -225,7 +230,7 @@ rel_multiset_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_ta
 }
 
 static sql_rel *
-rel_multiset_basetable(mvc *sql, sql_table *t, sql_alias *atname)
+rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 {
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
@@ -253,7 +258,8 @@ rel_multiset_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 	int i = 0;
 	prop *p = NULL;
 	rel->exps = new_exp_list(sa);
-	sql_exp *e = NULL;
+	sql_exp *e = NULL, *ce = NULL;
+	int composite = 0;
 	for (node *cn = ol_first_node(t->columns); cn; cn = cn->next, i++) {
 		sql_column *c = cn->data;
 		if (!column_privs(sql, c, PRIV_SELECT))
@@ -265,12 +271,22 @@ rel_multiset_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 				e->alias.label = e->nid;
 				set_basecol(e);
 				append(rel->exps, e);
+				e->f = sa_list(sql->sa);
 			}
+			if (!e || !e->f)
+				return NULL;
 			sql_table *t = mvc_bind_table(sql, c->t->s, c->storage_type);
-			if (rel_multiset_basetable_add_cols(sql, ba, c->base.name, t, rel->exps) == NULL)
+			if (rel_nested_basetable_add_cols(sql, ba, c->base.name, t, e->f) == NULL)
 				e = NULL;
 			else
 				continue;
+		} else if (c->type.type->composite) {
+			composite = list_length(c->type.type->d.fields);
+			ce = e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			if (e)
+				e->f = sa_list(sql->sa);
+			if (!e || !e->f)
+				return NULL;
 		} else {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 		}
@@ -289,7 +305,14 @@ rel_multiset_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 		}
 		set_basecol(e);
 		sql_column_get_statistics(sql, c, e);
-		append(rel->exps, e);
+		if (ce && ce != e) {
+			append(ce->f, e);
+			composite--;
+			if (!composite)
+				ce = NULL;
+		} else {
+			append(rel->exps, e);
+		}
 	}
 	e = exp_alias(sql, atname, TID, atname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 	if (e == NULL) {
@@ -313,8 +336,8 @@ rel_multiset_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 sql_rel *
 rel_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 {
-	if (t->multiset)
-		return rel_multiset_basetable(sql, t, atname);
+	if (t->multiset || t->composite)
+		return rel_nested_basetable(sql, t, atname);
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);

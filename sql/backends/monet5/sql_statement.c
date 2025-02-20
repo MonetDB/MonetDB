@@ -579,7 +579,7 @@ stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
 	if (s == NULL)
 		return NULL;
 	s->op4.typeval = *t;
-	s->nrcols = 1;
+	s->nrcols = 2;
 	s->q = q;
 	s->nr = getArg(q, retnr);
 	s->flag = retnr;
@@ -2609,6 +2609,15 @@ stmt_project_join(backend *be, stmt *op1, stmt *op2, bool delta)
 	return q;
 }
 
+static list *
+unnest_stmt(stmt *o)
+{
+	while (o->type == st_alias)
+		o = o->op1;
+	assert(o && o->type == st_list);
+	return o->op4.lval;
+}
+
 stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
@@ -2616,6 +2625,21 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		return NULL;
 	if (!op2->nrcols)
 		return stmt_const(be, op1, op2);
+	if (op2->nested) {
+		list *ops = unnest_stmt(op2);
+		list *nops = sa_list(be->mvc->sa);
+		for(node *n = ops->h; n; n = n->next) {
+			stmt *i = n->data;
+			if (!i->nested)
+				i = stmt_project(be, op1, i);
+			append(nops, i);
+		}
+		stmt *s = stmt_list(be, nops);
+		if (s == NULL)
+			return NULL;
+		s->nested = true;
+		return s;
+	}
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -3268,34 +3292,15 @@ stmt_list(backend *be, list *l)
 }
 
 static InstrPtr
-dump_header(mvc *sql, MalBlkPtr mb, list *l)
+nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, InstrPtr nmePtr, InstrPtr tpePtr, InstrPtr lenPtr, InstrPtr scalePtr, InstrPtr multisetPtr, list *l)
 {
-	node *n;
-	// gather the meta information
-	int tblId, nmeId, tpeId, lenId, scaleId, multisetId;
-	int args;
-	InstrPtr list;
-	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr;
-
-	args = list_length(l) + 1;
-
-	list = newInstructionArgs(mb,sqlRef, resultSetRef, args + 6);
-	if(!list) {
-		return NULL;
-	}
-	getArg(list,0) = newTmpVariable(mb,TYPE_int);
-	meta(tblPtr, tblId, TYPE_str, args);
-	meta(nmePtr, nmeId, TYPE_str, args);
-	meta(tpePtr, tpeId, TYPE_str, args);
-	meta(lenPtr, lenId, TYPE_int, args);
-	meta(scalePtr, scaleId, TYPE_int, args);
-	meta(multisetPtr, multisetId, TYPE_int, args);
-	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL || multisetPtr == NULL)
-		return NULL;
-
-	for (n = l->h; n; n = n->next) {
+	if (list_empty(l))
+		return instrlist;
+	for (node *n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
+		bool virt = (!c->q && c->type == st_alias && !c->op1 && c->multiset);
+
 		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
 		const char *tn = (tname) ? tname->name : _empty;
@@ -3316,13 +3321,75 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 			tpePtr = pushStr(mb, tpePtr, (t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
-			multisetPtr = pushInt(mb, multisetPtr, t->multiset);
-			list = pushArgument(mb,list,c->nr);
-		} else
+			if (virt || c->nested) {
+				multisetPtr = pushInt(mb, multisetPtr, c->multiset + ((virt || c->nested)?4:0));
+				InstrPtr q = newStmt(mb, batRef, newRef);
+
+				if (q == NULL)
+					return NULL;
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_void));
+				q = pushType(mb, q, TYPE_void);
+				pushInstruction(mb, q);
+				instrlist = pushArgument(mb, instrlist, getArg(q, 0));
+
+				instrlist = nested_dump_header(sql, mb, instrlist, tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr, unnest_stmt(c));
+				if (!instrlist)
+					return NULL;
+			} else {
+				multisetPtr = pushInt(mb, multisetPtr, 0);
+				instrlist = pushArgument(mb, instrlist,c->nr);
+			}
+		} else {
 			return NULL;
+		}
 	}
+	return instrlist;
+}
+
+static int
+nested_len(list *l)
+{
+	int nr;
+	if (list_empty(l))
+		return 0;
+	for(node *n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		if (s->nested)
+			nr += nested_len(unnest_stmt(s));
+		else
+			nr++;
+	}
+	return nr;
+}
+
+static InstrPtr
+dump_header(mvc *sql, MalBlkPtr mb, list *l)
+{
+	// gather the meta information
+	int tblId, nmeId, tpeId, lenId, scaleId, multisetId;
+	int args;
+	InstrPtr list;
+	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr;
+
+	args = 1 + nested_len(l);
+
+	list = newInstructionArgs(mb,sqlRef, resultSetRef, args + 6);
+	if(!list)
+		return NULL;
+
+	getArg(list,0) = newTmpVariable(mb,TYPE_int);
+	meta(tblPtr, tblId, TYPE_str, args);
+	meta(nmePtr, nmeId, TYPE_str, args);
+	meta(tpePtr, tpeId, TYPE_str, args);
+	meta(lenPtr, lenId, TYPE_int, args);
+	meta(scalePtr, scaleId, TYPE_int, args);
+	meta(multisetPtr, multisetId, TYPE_int, args);
+	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL || multisetPtr == NULL)
+		return NULL;
+	list = nested_dump_header(sql, mb, list, tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr, l);
 	sa_reset(sql->ta);
-	pushInstruction(mb,list);
+	if (list)
+		pushInstruction(mb, list);
 	return list;
 }
 
@@ -3974,11 +4041,6 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 {
 	int i = 0;
 	if (t->multiset || t->type->composite) {
-		if (t->multiset) { /* id col : rowid */
-			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
-			tps[i].st = *sql_bind_localtype("int");
-			tps[i++].multiset = true;
-		}
 		if (t->type->composite) {
 			for (node *n = t->type->d.fields->h; n; n = n->next) {
 				sql_arg *a = n->data;
@@ -4002,12 +4064,32 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 			tps[i].st = *sql_bind_localtype("int");
 			tps[i++].multiset = false;
 		}
+		/* end with the rowid */
+		if (t->multiset) { /* id col : rowid */
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_int)));
+			tps[i].st = *sql_bind_localtype("int");
+			tps[i++].multiset = true;
+		}
 	} else {
 		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(t->type->localtype)));
 		tps[i].st = *t;
 		tps[i++].multiset = false;
 	}
 	return i;
+}
+
+/* for each result create stmt_result and return stmt list */
+static stmt *
+result_list(backend *be, InstrPtr q, int cur, result_subtype *tps, int nrcols)
+{
+	list *r = sa_list(be->mvc->sa);
+	for(int i = cur; i < nrcols; i++) {
+		stmt *br = stmt_blackbox_result(be, q, i, &tps[i].st);
+		append(r, br);
+		if (tps[i].multiset)
+			br->multiset = true;
+	}
+	return stmt_list(be, r);
 }
 
 static stmt *
@@ -4039,7 +4121,7 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 		goto bailout;
 	}
 	s->op1 = v;
-	s->nrcols = nrcols?2:1;
+	s->nrcols = 2;
 	s->key = v->key;
 	s->aggr = v->aggr;
 	s->op4.typeval = *t;
@@ -4047,15 +4129,7 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	s->q = q;
 	//s->cand = pushed ? sel : NULL;
 	pushInstruction(be->mb, q);
-	/* for each result create stmt_result and return stmt list */
-	list *r = sa_list(be->mvc->sa);
-	for(int i = 0; i < nrcols; i++) {
-		stmt *br = stmt_blackbox_result(be, s->q, i, &tps[i].st);
-		append(r, br);
-		if (tps[i].multiset)
-			br->multiset = true;
-	}
-	return stmt_list(be, r);
+	return result_list(be, s->q, 0, tps, nrcols);
 bailout:
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
@@ -4091,7 +4165,7 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 		goto bailout;
 	}
 	s->op1 = v;
-	s->nrcols = nrcols?2:1;
+	s->nrcols = 2;
 	s->key = v->key;
 	s->aggr = v->aggr;
 	s->op4.typeval = *t;
@@ -4099,15 +4173,7 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	s->q = q;
 	//s->cand = pushed ? sel : NULL;
 	pushInstruction(be->mb, q);
-	/* for each result create stmt_result and return stmt list */
-	list *r = sa_list(be->mvc->sa);
-	for(int i = 0; i < nrcols; i++) {
-		stmt *br = stmt_blackbox_result(be, s->q, i, &tps[i].st);
-		append(r, br);
-		if (tps[i].multiset)
-			br->multiset = true;
-	}
-	return stmt_list(be, r);
+	return result_list(be, s->q, 0, tps, nrcols);
 bailout:
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
@@ -4745,6 +4811,8 @@ stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *ali
 	s->key = op1->key;
 	s->aggr = op1->aggr;
 	s->multiset = op1->multiset;
+	s->nested = op1->nested;
+	s->virt = op1->virt;
 
 	s->tname = tname;
 	s->cname = alias;

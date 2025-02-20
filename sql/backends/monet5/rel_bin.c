@@ -254,6 +254,15 @@ list_find_column_nid(backend *be, list *l, int label)
 
 		if (s->label == label)
 			return s;
+		if (s->nrcols > 1) {
+			while(s->type == st_alias)
+				s = s->op1;
+			if (s->type == st_list) {
+				s = list_find_column_nid(be, s->op4.lval, label);
+				if (s)
+					return s;
+			}
+		}
 	}
 	return NULL;
 }
@@ -706,8 +715,6 @@ set_value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 static int
 type_create_result(backend *be, sql_subtype *type, list *cols)
 {
-	if (type->multiset) /* rowid */
-		append(cols, sa_list(be->mvc->sa));
 	if (type->type->composite) {
 		for(node *n = type->type->d.fields->h; n; n = n->next) {
 			sql_arg *a = n->data;
@@ -725,6 +732,8 @@ type_create_result(backend *be, sql_subtype *type, list *cols)
 	if (type->multiset) /* multisetid */
 		append(cols, sa_list(be->mvc->sa));
 	if (type->multiset == MS_ARRAY) /* multisetnr */
+		append(cols, sa_list(be->mvc->sa));
+	if (type->multiset) /* rowid */
 		append(cols, sa_list(be->mvc->sa));
 	return 0;
 }
@@ -762,13 +771,6 @@ append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *s
 	assert(tuple->row);
 	list *attr = exp_get_values(tuple);
 	node *n, *m = cols, *o;
-	if (type->multiset) {
-		if (lcnt == 1) {
-			list *vals = m->data;
-			append(vals, stmt_atom_int(be, rowcnt));
-		}
-		m = m->next;
-	}
 	sql_subtype *ntype = type;
 	if (is_row(tuple) && list_length(type->type->d.fields) == 1) {
 		sql_arg *f = type->type->d.fields->h->data;
@@ -806,6 +808,13 @@ append_tuple(backend *be, sql_exp *tuple, sql_subtype *type, stmt *left, stmt *s
 	if (type->multiset == MS_ARRAY) {
 		list *vals = m->data;
 		append(vals, stmt_atom_int(be, lcnt));
+		m = m->next;
+	}
+	if (type->multiset) {
+		if (lcnt == 1) {
+			list *vals = m->data;
+			append(vals, stmt_atom_int(be, rowcnt));
+		}
 		m = m->next;
 	}
 	return m;
@@ -1647,6 +1656,8 @@ is_const_func(sql_subfunc *f, list *attr)
 static stmt*
 exp2bin_multiset(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
+	assert(0);
+	return left;
 	(void)fe;
 	(void)right;
 	(void)sel;
@@ -1735,6 +1746,32 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	if (list_length(arg_list) == 3)
 		topn = list_fetch(arg_list, 2);
 	return (stmt*)pl->load(be, f, filename, topn);
+}
+
+static stmt *
+nested_stmts(backend *be, list *exps, node **M)
+{
+	node *m = *M;
+	list *r = sa_list(be->mvc->sa);
+
+	if (!list_empty(exps)) {
+		for (node *n = exps->h; n && m; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type == e_column && e->f) {
+				stmt *s = nested_stmts(be, e->f, &m);
+				s->label = e->alias.label;
+				s->nested = true;
+				append(r, s);
+			} else {
+				stmt *s = m->data;
+				s->label = e->alias.label;
+				m = m->next;
+				append(r, s);
+			}
+		}
+	}
+	*M = m;
+	return stmt_list(be, r);
 }
 
 stmt *
@@ -1891,6 +1928,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_convert(be, l, sel, from, to);
 		} else {
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
+		}
+		if (s && s->type == st_list && e->f) {
+			s = nested_stmts(be, e->f, &s->op4.lval->h);
+			s->nested = true;
 		}
 	} 	break;
 	case e_func: {
@@ -2508,49 +2549,75 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 	return stmt_list(be, l);
 }
 
-typedef struct subtable_e {
-	sql_table *t;
-	int nr;
-	stmt *dels;
-} subtable_e;
-
-static sql_column *
-subtable_e_find(subtable_e *sts, const char *name, int nr, stmt **dels)
+static stmt *
+rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exps)
 {
-	for(int i = 0; i < nr; i++) {
-		sql_table *t = sts[i].t;
-		sql_column *c = find_sql_column(t, name);
-		if (c) {
-			*dels = sts[i].dels;
-			return c;
-		}
+	mvc *sql = be->mvc;
+	list *l = sa_list(sql->sa);
+	stmt *col = NULL;
+
+	if (c->type.multiset) {
+		t = mvc_bind_table(sql, c->t->s, c->storage_type);
+		if (!t)
+			return NULL;
+		dels = stmt_tid(be, t, false);
 	}
-	return NULL;
+	for (node *en = exps->h; en; en = en->next) {
+		sql_exp *exp = en->data;
+		sql_alias *rname = exp_relname(exp)?exp_relname(exp):exp->l;
+		const char *oname = exp->r;
+		stmt *s = NULL;
+
+		assert(!is_func(exp->type));
+		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+			/* tid function  sql.tid(t) */
+
+			if (col)
+				s = stmt_mirror(be, col);
+			else {
+				s = dels?dels:stmt_tid(be, t, 0);
+				dels = NULL;
+			}
+		} else if (oname[0] == '%') {
+			sql_idx *i = find_sql_idx(t, oname+1);
+
+			/* do not include empty indices in the plan */
+			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
+				continue;
+			s = stmt_idx(be, i, dels, dels->partition);
+		} else {
+			sql_column *c = find_sql_column(t, oname);
+			assert(c);
+			if (exp->f && (c->type.multiset || c->type.type->composite)) {
+				s = rel2bin_subtable(be, t, dels, c, exp->f);
+				if (!s)
+					return s;
+				s->nested = true;
+				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
+					stmt *ns = stmt_col(be, c, dels, dels->partition);
+					list_append(s->op4.lval, ns);
+				}
+			} else {
+				s = stmt_col(be, c, dels, dels->partition);
+			}
+		}
+		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
+		list_append(l, s);
+	}
+	return stmt_list(be, l);
 }
 
 static stmt *
 rel2bin_basetable(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
-	sql_table *t = rel->l, *bt = t;
+	sql_table *t = rel->l;
 	sql_column *fcol = NULL;
 	sql_idx *fi = NULL;
 	list *l = sa_list(sql->sa);
-	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *odels = dels, *col = NULL;
+	bool complex = (t->multiset || t->composite);
+	stmt *dels = stmt_tid(be, t, !complex?rel->flag == REL_PARTITION:false), *col = NULL;
 	node *en;
-	list *subtables = rel_base_subtables(rel);
-	int nr = list_length(subtables);
-	subtable_e *sts = NULL;
-	if (nr) {
-		sts = (subtable_e*)sa_alloc(be->mvc->sa, sizeof(subtable_e)*nr);
-		int i = 0;
-		for(node *n = subtables->h; n; n = n->next, i++) {
-			sts[i].t = n->data;
-			sts[i].nr = 0;
-			sts[i].dels = stmt_tid(be, sts[i].t, rel->flag == REL_PARTITION);
-		}
-	}
-	bool multiset = t->multiset;
 
 	if (l == NULL || dels == NULL)
 		return NULL;
@@ -2569,14 +2636,14 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			fi = i;
-			col = stmt_idx(be, i, multiset?dels:NULL, dels->partition);
+			col = stmt_idx(be, i, complex?dels:NULL, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			if (!c || c->type.multiset || c->type.type->composite)
 				continue;
 			fcol = c;
-			col = stmt_col(be, c, multiset?dels:NULL, dels->partition);
+			col = stmt_col(be, c, complex?dels:NULL, dels->partition);
 		}
 	}
 	for (en = rel->exps->h; en; en = en->next) {
@@ -2601,25 +2668,30 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
-			s = (i == fi) ? col : stmt_idx(be, i, multiset?dels:NULL, dels->partition);
+			s = (i == fi) ? col : stmt_idx(be, i, complex?dels:NULL, dels->partition);
 		} else {
-			sql_column *c = find_sql_column(bt, oname);
-			if (c) {
-				dels = odels;
-			} else if (sts) {
-				c = subtable_e_find(sts, oname, nr, &dels);
-			}
+			sql_column *c = find_sql_column(t, oname);
 			assert(c);
-			if (!c->type.multiset && c->type.type->composite)
-				continue;
-
-			s = (c == fcol) ? col : stmt_col(be, c, multiset?dels:NULL, dels->partition);
+			if (exp->f && (c->type.multiset || c->type.type->composite)) {
+				s = rel2bin_subtable(be, t, dels, c, exp->f);
+				if (!s)
+					return s;
+				s->nested = true;
+				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
+					stmt *ns = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
+					list_append(s->op4.lval, ns);
+					s->nr = ns->nr;
+					s->multiset = c->type.multiset;
+				}
+			} else {
+				s = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
+			}
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		list_append(l, s);
 	}
 	stmt *res = stmt_list(be, l);
-	if (res && !multiset && dels)
+	if (res && !complex && dels)
 		res->cand = dels;
 	return res;
 }
@@ -5863,50 +5935,122 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 }
 
 static node *
-insert_composite(stmt **updates, sql_column *c, node *n, node **M)
+insert_composite(stmt **updates, sql_column *c, node *n, node *m)
 {
-	node *m = *M, *f;
-	/*
+	node *f;
+	stmt *input_tuple = m->data;
+
 	while(input_tuple->type == st_alias)
 		input_tuple = input_tuple->op1;
 	if (input_tuple->type != st_list)
 		return NULL;
-		*/
-	for(n = n->next, f = c->type.type->d.fields->h; n && m && f; f = f->next) {
+	for(n = n->next, f = c->type.type->d.fields->h, m = input_tuple->op4.lval->h; n && m && f; f = f->next) {
 		sql_column *c = n->data;
 
 		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, &m);
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;
 			m = m->next;
 		}
 	}
-	/*
-	if (c->type.multiset) {
-		sql_column *c = n->data;
-
-		updates[c->colnr] = m->data;
-		n = n->next;
-		m = m->next;
-	}
-	if (c->type.multiset == MS_ARRAY) {
-		sql_column *c = n->data;
-
-		updates[c->colnr] = m->data;
-		n = n->next;
-		m = m->next;
-	}
-	*/
-	//if (f || m) /* did we find all fields and use all values */
-		//return NULL;
-	*M = m;
 	return n;
 }
 
 static stmt *
-rel2bin_insert(backend *be, sql_rel *rel, list *refs)
+insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
+{
+	mvc *sql = be->mvc;
+
+	while(ms && ms->type == st_alias)
+		ms = ms->op1;
+	if (ms->type != st_list)
+		return NULL;
+
+	int len;
+	stmt **updates = table_update_stmts(sql, st, &len);
+	stmt *insert = NULL, *cnt, *pos;
+
+	node *n, *m;
+	for (n = ol_first_node(st->columns), m = ms->op4.lval->h; n && m; ) {
+		sql_column *c = n->data;
+
+		if (c->type.multiset) {
+			sql_table *nst = mvc_bind_table(sql, st->s, c->storage_type);
+			if (!nst)
+				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
+			updates[c->colnr] = insert_ms(be, nst, &c->type, m->data);
+			n = n->next;
+			m = m->next;
+		} else if (c->type.type->composite && !c->type.multiset) {
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
+		} else {
+			insert = updates[c->colnr] = m->data;
+			n = n->next;
+			m = m->next;
+		}
+	}
+
+	if (!insert || insert->nrcols == 0) {
+		cnt = stmt_atom_lng(be, 1);
+	} else {
+		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+	}
+
+	list *l = sa_list(sql->sa);
+
+	if (st->s) /* only not declared tables, need this */
+		pos = stmt_claim(be, st, cnt);
+
+	int mvc_var = be->mvc_var;
+	stmt *rowids = m->data;
+	stmt *msid = updates[len-1 -((ct->multiset == MS_ARRAY)?1:0)];
+
+	/* nrowids = next_value_for(rowids, "schema?", st->base.name) */
+	InstrPtr q = newStmt(be->mb, batsqlRef, "next_value_ms");
+	q = pushArgument(be->mb, q, rowids->nr);
+	q = pushStr(be->mb, q, st->s->base.name); /* sequence schema name */
+	q = pushStr(be->mb, q, st->base.name);	  /* sequence number name */
+	pushInstruction(be->mb, q);
+
+	/* nrowids = batcalc.int(nrowids) */
+	InstrPtr r = newStmt(be->mb, batcalcRef, "int");
+	r = pushArgument(be->mb, r, getArg(q, 0));
+	pushInstruction(be->mb, r);
+
+	/* msid = renumber(msid, rowids, nrowids); */
+	q = newStmt(be->mb, batsqlRef, "renumber");
+	q = pushArgument(be->mb, q, msid->nr);
+	q = pushArgument(be->mb, q, rowids->nr);
+	q = pushArgument(be->mb, q, getArg(r, 0));
+	pushInstruction(be->mb, q);
+
+	/* now update msid and rowids */
+	rowids->nr = getArg(r, 0);
+	msid->nr = getArg(q, 0);
+
+	for (n = ol_first_node(st->columns); n; n = n->next) {
+
+		sql_column *c = n->data;
+		stmt *ins = updates[c->colnr];
+
+		if (ins) {
+			insert = stmt_append_col(be, c, pos, ins, &mvc_var, false);
+			if (!insert)
+				return NULL;
+			append(l,insert);
+		}
+	}
+	be->mvc_var = mvc_var;
+
+	return rowids;
+}
+
+static stmt *
+rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
@@ -5917,6 +6061,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	sql_table *t = NULL;
 
 	if ((rel->flag&UPD_COMP)) {  /* special case ! */
+		assert(0);
 		idx_ins = 1;
 		prel = rel->l;
 		rel = rel->r;
@@ -5953,11 +6098,186 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 
 	updates = table_update_stmts(sql, t, &len);
+
+	/* now recursively insert into the sub tables (for each multiset fetch sequence number and renumber the msids) */
+	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; ) {
+		sql_column *c = n->data;
+
+		if (c->type.multiset) {
+			sql_table *st = mvc_bind_table(sql, t->s, c->storage_type);
+			if (!st)
+				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
+			updates[c->colnr] = insert_ms(be, st, &c->type, m->data);
+			n = n->next;
+			m = m->next;
+		} else if (c->type.type->composite && !c->type.multiset) {
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
+		} else {
+			updates[c->colnr] = m->data;
+			n = n->next;
+			m = m->next;
+		}
+	}
+
+/* before */
+	if (!sql_insert_triggers(be, t, updates, 0))
+		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+
+	insert = inserts->op4.lval->h?inserts->op4.lval->h->data:NULL;
+	if (!insert || insert->nrcols == 0) {
+		cnt = stmt_atom_lng(be, 1);
+	} else {
+		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+	}
+	insert = NULL;
+
+	l = sa_list(sql->sa);
+	if (t->idxs) {
+		idx_m = m;
+		for (n = ol_first_node(t->idxs); n && m; n = n->next, m = m->next) {
+			stmt *is = m->data;
+			sql_idx *i = n->data;
+
+			if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+				continue;
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				is = NULL;
+			if (i->key) {
+				stmt *ckeys = sql_insert_key(be, inserts->op4.lval, i->key, is, pin);
+
+				list_append(l, ckeys);
+			}
+			if (!insert)
+				insert = is;
+		}
+		assert(!n && !m);
+	}
+
+	if (t->s) /* only not declared tables, need this */
+		pos = stmt_claim(be, t, cnt);
+
+	if (t->idxs) {
+		for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next, m = m->next) {
+			stmt *is = m->data;
+			sql_idx *i = n->data;
+
+			if (non_updatable_index(i->type)) /* Some indexes don't hold delta structures */
+				continue;
+			if (hash_index(i->type) && list_length(i->columns) <= 1)
+				is = NULL;
+			if (is)
+				is = stmt_append_idx(be, i, pos, is);
+		}
+		assert(!n && !m);
+	}
+
+	int mvc_var = be->mvc_var;
+	for (n = ol_first_node(t->columns)/*, m = inserts->op4.lval->h*/; n /*&& m*/; n = n->next/*, m = m->next*/) {
+
+		//stmt *ins = m->data;
+		sql_column *c = n->data;
+		stmt *ins = updates[c->colnr];
+
+		if (ins) {
+			insert = stmt_append_col(be, c, pos, ins, &mvc_var, rel->flag);
+			append(l,insert);
+		}
+	}
+	be->mvc_var = mvc_var;
+	if (!insert)
+		return NULL;
+
+	if (rel->returning) {
+		list* il = sa_list(sql->sa);
+		sql_rel* inner = rel->l;
+		assert(inner->op == op_basetable);
+		for (n = inner->exps->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+			sql_exp* ce	= n->data;
+			stmt* 	ins	= m->data;
+			stmt*	s	= stmt_rename(be, ce, ins);// label each insert statement with the corresponding col exp label
+			append(il, s);
+		}
+		returning = stmt_list(be, il);
+		sql->type = Q_TABLE;
+	}
+
+	if (!sql_insert_triggers(be, t, updates, 1))
+		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
+	/* update predicate list */
+	if (rel->r && !rel_predicates(be, rel->r))
+		return NULL;
+
+	if (ddl) {
+		ret = ddl;
+		list_prepend(l, ddl);
+		return stmt_list(be, l);
+	} else {
+		ret = cnt;
+		if (add_to_rowcount_accumulator(be, ret->nr) < 0)
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		if (t->s && isGlobal(t) && !isGlobalTemp(t))
+			stmt_add_dependency_change(be, t, ret);
+		return returning?returning:ret;
+	}
+}
+
+static stmt *
+rel2bin_insert(backend *be, sql_rel *rel, list *refs)
+{
+	mvc *sql = be->mvc;
+	list *l;
+	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL, *returning = NULL;
+	int idx_ins = 0, len = 0;
+	node *n, *m, *idx_m = NULL;
+	sql_rel *tr = rel->l, *prel = rel->r;
+	sql_table *t = NULL;
+
+	if ((rel->flag&UPD_COMP)) {  /* special case ! */
+		idx_ins = 1;
+		prel = rel->l;
+		rel = rel->r;
+		tr = rel->l;
+	}
+
+	if (tr->op == op_basetable) {
+		t = tr->l;
+	} else {
+		ddl = subrel_bin(be, tr, refs);
+		ddl = subrel_project(be, ddl, refs, NULL);
+		if (!ddl)
+			return NULL;
+		t = rel_ddl_table_get(tr);
+	}
+	if (t->multiset || t->composite)
+		return rel2bin_insert_ms(be, rel, refs);
+
+	if (rel->r) /* first construct the inserts relation */
+		inserts = subrel_bin(be, rel->r, refs);
+	inserts = subrel_project(be, inserts, refs, rel->r);
+
+	if (!inserts)
+		return NULL;
+
+	if (idx_ins)
+		pin = refs_find_rel(refs, prel);
+
+	for (n = ol_first_node(t->keys); n; n = n->next) {
+		sql_key * key = n->data;
+		if (key->type == ckey)
+			sql_insert_check(be, key, inserts->op4.lval);
+	}
+
+	if (!sql_insert_check_null(be, t, inserts->op4.lval))
+		return NULL;
+
+	updates = table_update_stmts(sql, t, &len);
 	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; ) {
 		sql_column *c = n->data;
 
 		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, &m);
+			n = insert_composite(updates, c, n, m);
+			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
 			n = n->next;

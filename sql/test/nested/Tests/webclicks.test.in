@@ -45,9 +45,70 @@ select count(*) from r'$TSTSRCDIR/webclicks.json'
 ----
 2
 
-query TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
-select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json') t
+query TTTTTT
+select e.eventid, e.sessionid, e.userid, e.event, e.timestamp, e.user_agent from ( select cast(t.json as event) as e from (select json from r'$TSTSRCDIR/webclicks.json') t);
 ----
+996257967-103007874
+47f07c1399c9c6bd1012861f9c5c958e042732e259b909e077f7e8967b650c75
+8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64
+productDetail
+2024-11-30 22:13:37.823000
+Mozilla
+996257967-103007874
+47f07c1399c9c6bd1012861f9c5c958e042732e259b909e077f7e8967b650c75
+8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64
+productDetail
+2024-11-30 22:13:37.823000
+Mozilla
+
+query TT
+select e.eventid, el.element.key from ( select cast(t.json as event) as e from (select json from r'$TSTSRCDIR/webclicks.json') t), unnest(e.location.list) el
+----
+996257967-103007874
+hash
+996257967-103007874
+hostname
+996257967-103007874
+pageSubType
+996257967-103007874
+pageType
+996257967-103007874
+pathname
+996257967-103007874
+protocol
+996257967-103007874
+referrer
+996257967-103007874
+search
+996257967-103007874
+state
+996257967-103007874
+title
+996257967-103007874
+hash
+996257967-103007874
+hostname
+996257967-103007874
+pageSubType
+996257967-103007874
+pageType
+996257967-103007874
+pathname
+996257967-103007874
+protocol
+996257967-103007874
+referrer
+996257967-103007874
+search
+996257967-103007874
+state
+996257967-103007874
+title
+
+#query TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
+#select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json') t
+#----
+
 
 # clean up
 statement ok

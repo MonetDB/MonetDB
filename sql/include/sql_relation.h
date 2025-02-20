@@ -193,6 +193,7 @@ typedef enum operator_type {
 #define is_column(et)		(et != e_cmp)
 #define is_alias(et) 		(et == e_column)
 #define is_analytic(e) 		((e)->type == e_func && ((sql_subfunc*)(e)->f)->func->type == F_ANALYTIC)
+#define is_nested(e)		(e->f && ((e)->type == e_convert || (e)->type == e_column))
 
 #define is_base(op)  		(op == op_basetable || op == op_table)
 #define is_basetable(op) 	(op == op_basetable)
@@ -261,6 +262,7 @@ typedef enum operator_type {
 #define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
+#define reset_intern(e) 	(e)->intern = 0
 #define is_selfref(e) 		((e)->selfref)
 #define set_selfref(e) 		(e)->selfref = 1
 #define is_basecol(e) 		((e)->base)
