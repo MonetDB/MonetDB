@@ -1016,6 +1016,7 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
+			MT_cond_init(&GDKbatLock[i].cond, name);
 		}
 		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");

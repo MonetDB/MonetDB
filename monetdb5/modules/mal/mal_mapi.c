@@ -2012,12 +2012,10 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* generate a tuple batch */
 		/* and reload it into the proper format */
 		str ht, tt;
-		BAT *b = BBPquickdesc(BBPindex(*nme));
 		size_t len;
 
-		if (!b)
+		if (BBPindex(*nme) == 0)
 			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
 		tt = getTypeName(getBatType(tpe));
