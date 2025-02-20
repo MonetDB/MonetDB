@@ -106,10 +106,6 @@ static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 {
 	switch (t->tvt) {
-		case TV_MS_BSC:
-		case TV_SO_BSC:
-			// TODO
-			break;
 		case TV_BASIC:
 			assert(!value->f);
 			stmt *i = exp_bin(be, value, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
@@ -120,6 +116,8 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			break;
 		case TV_MS_COMP:
 		case TV_SO_COMP:
+		case TV_MS_BSC:
+		case TV_SO_BSC:
 			assert(value->f);
 
 			/* add the rowid to the mset "origin" table */
@@ -134,18 +132,27 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			list *ms_vals = value->f;
 			for (node *n = ms_vals->h; n; n = n->next, msnr_idx++) {
 
-				int cfi = 0;
-				list *cf_vals = ((sql_exp*)n->data)->f;
-				for (node *m = cf_vals->h; m; m = m->next, cfi++)
-					if (false == tv_parse_values_(be, list_fetch(t->cf, cfi), m->data, left, sel))
+				if (t->tvt == TV_MS_COMP) {
+					assert(t->cf);
+					int cfi = 0;
+					list *cf_vals = ((sql_exp*)n->data)->f;
+					for (node *m = cf_vals->h; m; m = m->next, cfi++)
+						if (false == tv_parse_values_(be, list_fetch(t->cf, cfi), m->data, left, sel))
+							return false;
+				} else {
+					assert(t->vals && !t->cf);
+					stmt *i = exp_bin(be, n->data, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+					if (!i)
 						return false;
+					list_append(t->vals, i);
+				}
 
 				stmt *msid = stmt_atom_int(be, t->rid_idx);
 				if (!msid)
 					return false;
 				list_append(t->msid, msid);
 
-				if (t->tvt == TV_MS_COMP) {
+				if (t->tvt == TV_MS_COMP || t->tvt == TV_MS_BSC) {
 					stmt *msnr = stmt_atom_int(be, msnr_idx);
 					if (!msnr)
 						return false;
@@ -153,8 +160,8 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 				}
 			}
 
-			/* we inserted all the mset values for a value for a given
-			 * row so now increment this tv_tree node's (mset) rowid */
+			/* we inserted all the mset-value subvalues so now
+			 * increment this tv_tree node's (mset) rowid index */
 			t->rid_idx++;
 
 			break;
@@ -221,14 +228,12 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 	stmt *ap;
 
 	switch (t->tvt) {
-		case TV_MS_BSC:
-		case TV_SO_BSC:
-			// TODO
-			break;
 		case TV_BASIC:
 			ap = stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
 			list_append(stmts_list, ap);
 			break;
+		case TV_MS_BSC:
+		case TV_SO_BSC:
 		case TV_MS_COMP:
 		case TV_SO_COMP:
 			stmt *tmp;
@@ -237,14 +242,20 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 			ap = stmt_append_bulk(be, tmp, t->rid);
 			append(stmts_list, ap);
 
-			for (node *n = t->cf->h; n; n = n->next)
-				tv_generate_stmts_(be, n->data, stmts_list);
+			if (t->tvt == TV_MS_COMP || t->tvt == TV_SO_COMP) {
+				for (node *n = t->cf->h; n; n = n->next)
+					tv_generate_stmts_(be, n->data, stmts_list);
+			} else {
+				tmp = stmt_temp(be, tail_type(t->vals->h->data));
+				ap = stmt_append_bulk(be, tmp, t->vals);
+				append(stmts_list, ap);
+			}
 
 			tmp = stmt_temp(be, tail_type(t->msid->h->data));
 			ap = stmt_append_bulk(be, tmp, t->msid);
 			append(stmts_list, ap);
 
-			if (t->tvt == TV_MS_COMP) {
+			if (t->tvt == TV_MS_COMP || t->tvt == TV_MS_BSC) {
 				tmp = stmt_temp(be, tail_type(t->msnr->h->data));
 				ap = stmt_append_bulk(be, tmp, t->msnr);
 				append(stmts_list, ap);
