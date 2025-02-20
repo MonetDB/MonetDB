@@ -2221,16 +2221,18 @@ BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp)
 
 static bat
 BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
-	    FILE **obbpfp, FILE *nbbpf, BATiter *bi)
+	    FILE **obbpfp, FILE *nbbpf, BATiter *bi, int *nbatp)
 {
 	if (n < -1)		/* safety catch */
 		return n;
+	int nbat = 0;
 	while (n >= 0 && n < bid) {
 		if (n > 0) {
 			if (fputs(buf, nbbpf) == EOF) {
 				GDKerror("Writing BBP.dir file failed.\n");
 				goto bailout;
 			}
+			nbat++;
 		}
 		if (fgets(buf, (int) bufsize, *obbpfp) == NULL) {
 			if (ferror(*obbpfp)) {
@@ -2254,7 +2256,9 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 		assert(BBP_status(bid) & BBPPERSISTENT);
 		if (new_bbpentry(nbbpf, bid, size, bi) != GDK_SUCCEED)
 			goto bailout;
+		nbat++;
 	}
+	*nbatp += nbat;
 	return n == -1 ? -1 : n == bid ? 0 : n;
 
   bailout:
@@ -3790,6 +3794,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 	char buf[3000];
 	int n = subcommit ? 0 : -1;
 	FILE *obbpf, *nbbpf;
+	int nbats = 0;
 
 	TRC_INFO(TM, "Committing %d bats\n", cnt - 1);
 
@@ -3927,7 +3932,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 			bip = NULL;
 		}
 		if (ret == GDK_SUCCEED) {
-			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, bip);
+			n = BBPdir_step(i, size, n, buf, sizeof(buf), &obbpf, nbbpf, bip, &nbats);
 			if (n < -1)
 				ret = GDK_FAIL;
 		}
@@ -3959,6 +3964,7 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 		if (ret != GDK_SUCCEED)
 			GDKsyserror("rename(%s,%s) failed\n", bakdir, deldir);
 		TRC_DEBUG(IO_, "rename %s %s = %d\n", bakdir, deldir, (int) ret);
+		TRC_INFO(TM, "%d bats written to BBP.dir\n", nbats);
 	}
 
 	/* AFTERMATH */
