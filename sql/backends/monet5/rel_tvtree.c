@@ -130,13 +130,14 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			list_append(t->rid, rid);
 
 			/* per value insert actual data, msid(=rowid), msnr(for MS only) */
+			int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
 			list *ms_vals = value->f;
-			for (node *n = ms_vals->h; n; n = n->next) {
+			for (node *n = ms_vals->h; n; n = n->next, msnr_idx++) {
 
-				int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
+				int cfi = 0;
 				list *cf_vals = ((sql_exp*)n->data)->f;
-				for (node *m = cf_vals->h; m; m = m->next, msnr_idx++)
-					if (false == tv_parse_values_(be, list_fetch(t->cf, msnr_idx - 1), m->data, left, sel))
+				for (node *m = cf_vals->h; m; m = m->next, cfi++)
+					if (false == tv_parse_values_(be, list_fetch(t->cf, cfi), m->data, left, sel))
 						return false;
 
 				stmt *msid = stmt_atom_int(be, t->rid_idx);
