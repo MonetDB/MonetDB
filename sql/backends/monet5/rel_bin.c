@@ -828,6 +828,8 @@ tuple_result(backend *be, list *cols)
 static stmt *
 value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 {
+	if (!be) return NULL;
+
 	assert(is_values(vals_exp));
 	list *vals = exp_get_values(vals_exp);
 	sql_subtype *type = exp_subtype(vals_exp);
@@ -877,6 +879,8 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 static stmt *
 value_tvtree(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 {
+	if (!be) return NULL;
+
 	assert(is_values(vals_exp));
 	list *vals = exp_get_values(vals_exp);
 	sql_subtype *st = exp_subtype(vals_exp);
@@ -1866,8 +1870,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			assert(vname->name);
 			s = stmt_var(be, vname->sname ? a_create(sql->sa, sa_strdup(sql->sa, vname->sname)) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
-			s = value_list(be, e, left, sel);
-			/*s = value_tvtree(be, e, left, sel);*/
+			// TODO: >>>>>>>>>>>>>>>>>>>> remove value_list and friends
+			value_list(NULL, e, left, sel);
+			s = value_tvtree(be, e, left, sel);
 		} else {			/* arguments */
 			sql_subtype *t = e->tpe.type?&e->tpe:NULL;
 			if (!t && 0) {

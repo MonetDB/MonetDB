@@ -44,11 +44,12 @@ typedef enum tv_type {
 typedef struct type_values_tree {
 	tv_type tvt;
 	sql_subtype *st;
-	list *cf;    // list of composite type (sub)fields
+	int rid_idx;  // mset values needs to know to which row they correspond to
+	list *cf;     // list of composite type (sub)fields
 	/* next members are lists of stmts IF they are instantiated */
-	list *rid;
-	list *msid;
-	list *msnr;
+	list *rid;    // row id for multisets
+	list *msid;   // multiset id (always refers to a row id)
+	list *msnr;   // multiset number is the index inside a multiset entry
 	list *vals;
 } tv_tree;
 

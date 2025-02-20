@@ -42,6 +42,7 @@ tv_node(allocator *sa, sql_subtype *st)
 
 	n->st = st;
 	n->tvt = tv_get_type(st);
+	n->rid_idx = 0;
 	n->cf = n->rid = n->msid = n->msnr = n->vals = NULL;
 
 	/* allocate only the lists that we need based on tv-tree type */
@@ -113,12 +114,48 @@ tv_tuple_value(backend *be, tv_tree *t, sql_exp *tuple, stmt *left, stmt *sel)
 			assert(!tuple->f);
 			stmt *i = exp_bin(be, tuple, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 			if (!i)
-				return NULL;
+				return false;
+			assert(t->vals);
 			list_append(t->vals, i);
 			break;
 		case TV_MS_COMP:
 		case TV_SO_COMP:
-			// TODO
+			assert(tuple->f);
+
+			/* add the rowid to the mset "origin" table */
+			stmt *rid = stmt_atom_int(be, t->rid_idx);
+			if (!rid)
+				return false;
+			assert(t->rid);
+			list_append(t->rid, rid);
+
+			/* per tuple insert actual data, msid(=rowid), msnr(for MS only) */
+			list *ms_vals = tuple->f;
+			for (node *n = ms_vals->h; n; n = n->next) {
+
+				int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
+				list *cvals = ((sql_exp*)n->data)->f;
+				for (node *m = cvals->h; m; m = m->next, msnr_idx++)
+					if (false == tv_tuple_value(be, list_fetch(t->cf, msnr_idx - 1), m->data, left, sel))
+						return false;
+
+				stmt *msid = stmt_atom_int(be, t->rid_idx);
+				if (!msid)
+					return false;
+				list_append(t->msid, msid);
+
+				if (t->tvt == TV_MS_COMP) {
+					stmt *msnr = stmt_atom_int(be, msnr_idx);
+					if (!msnr)
+						return false;
+					list_append(t->msnr, msnr);
+				}
+			}
+
+			/* we inserted all the mset values for a tuple for a given
+			 * row so now increment this tv_tree node's (mset) rowid */
+			t->rid_idx++;
+
 			break;
 		case TV_COMP:
 			assert(tuple->f);
@@ -148,30 +185,59 @@ tv_parse_values(backend *be, tv_tree *t, list *cvals, stmt *left, stmt *sel)
 	return true;
 }
 
-stmt *
-tv_generate_stmts(backend *be, tv_tree *t)
+static void
+tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 {
+	stmt *ap;
+
 	switch (t->tvt) {
 		case TV_MS_BSC:
 		case TV_SO_BSC:
 			// TODO
 			break;
 		case TV_BASIC:
-			return stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
+			ap = stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
+			list_append(stmts_list, ap);
+			break;
 		case TV_MS_COMP:
 		case TV_SO_COMP:
-			// TODO
+			stmt *tmp;
+
+			tmp = stmt_temp(be, tail_type(t->rid->h->data));
+			ap = stmt_append_bulk(be, tmp, t->rid);
+			append(stmts_list, ap);
+
+			for (node *n = t->cf->h; n; n = n->next)
+				tv_generate_stmts_(be, n->data, stmts_list);
+
+			tmp = stmt_temp(be, tail_type(t->msid->h->data));
+			ap = stmt_append_bulk(be, tmp, t->msid);
+			append(stmts_list, ap);
+
+			if (t->tvt == TV_MS_COMP) {
+				tmp = stmt_temp(be, tail_type(t->msnr->h->data));
+				ap = stmt_append_bulk(be, tmp, t->msnr);
+				append(stmts_list, ap);
+			}
 			break;
 		case TV_COMP:
 			/* gather all the composite (sub)field's statements */
-			list *fsts = sa_list(be->mvc->sa);
 			for (node *n = t->cf->h; n; n = n->next)
-				append(fsts, tv_generate_stmts(be, n->data));
-			return stmt_list(be, fsts);
+				tv_generate_stmts_(be, n->data, stmts_list);
+			break;
 		default:
 			assert(0);
 			break;
 	}
+}
 
-	return NULL;
+stmt *
+tv_generate_stmts(backend *be, tv_tree *t)
+{
+	list *stmts_list = sa_list(be->mvc->sa);
+	tv_generate_stmts_(be, t, stmts_list);
+	if (t->tvt == TV_BASIC)
+		return stmts_list->h->data;
+	else
+		return stmt_list(be, stmts_list);
 }
