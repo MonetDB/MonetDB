@@ -11,9 +11,7 @@
  */
 
 #include "monetdb_config.h"
-#include "mal_interpreter.h"
-#include "mal_exception.h"
-#include "string.h"
+#include "gdk.h"
 
 #if 0
 #define GZ 128
@@ -43,21 +41,11 @@
 
 #define NGRAM_MULTIPLE 16
 
-#define SET_EMPTY_BAT_PROPS(B)					\
-	do {										\
-		B->tnil = false;						\
-		B->tnonil = true;						\
-		B->tkey = true;							\
-		B->tsorted = true;						\
-		B->trevsorted = true;					\
-		B->tseqbase = 0;						\
-	} while (0)
-
 typedef struct {
 	NGRAM_TYPE *idx;
 	NGRAM_TYPE *sigs;
 	unsigned *h;
-	unsigned max, min;
+	unsigned min, max;
 	unsigned *pos;
 	unsigned *rid;
 } Ngrams;

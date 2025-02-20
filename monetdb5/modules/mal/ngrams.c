@@ -26,8 +26,7 @@ is_prefix(const char *s1, const char *s2, int s2_len)
 static inline int
 is_suffix(const char *s1, const char *s2, int s2_len)
 {
-	int sl = str_strlen(s1);
-	return sl < s2_len ? -1 : strcmp(s1 + sl - s2_len, s2);
+	return strcmp(s1 + strlen(s1) - s2_len, s2);
 }
 
 static inline int
@@ -53,11 +52,11 @@ static void
 ngrams_destroy(Ngrams *ng)
 {
 	if (ng) {
-		GDKfree(ng->h);
 		GDKfree(ng->idx);
+		GDKfree(ng->sigs);
+		GDKfree(ng->h);
 		GDKfree(ng->pos);
 		GDKfree(ng->rid);
-		GDKfree(ng->sigs);
 	}
 	GDKfree(ng);
 }
@@ -71,7 +70,7 @@ ngrams_create(size_t b_cnt, size_t ng_sz)
 		ng->sigs = GDKmalloc(b_cnt * sizeof(NGRAM_TYPE));
 		ng->h    = GDKmalloc(ng_sz * sizeof(unsigned));
 		ng->pos  = GDKmalloc(ng_sz * sizeof(unsigned));
-		ng->rid  = GDKzalloc(NGRAM_MULTIPLE * b_cnt * sizeof(unsigned));
+		ng->rid  = GDKmalloc(NGRAM_MULTIPLE * b_cnt * sizeof(unsigned));
 	}
 	if (!ng || !ng->idx || !ng->sigs || !ng->h || !ng->pos || !ng->rid) {
 		ngrams_destroy(ng);
@@ -80,684 +79,6 @@ ngrams_create(size_t b_cnt, size_t ng_sz)
 	return ng;
 }
 
-static Ngrams *
-ngrams_create_old(BAT *b, size_t ngramsize)
-{
-	Ngrams *n = NULL;
-	size_t sz = BATcount(b);
-
-	n = (Ngrams*)GDKmalloc(sizeof(Ngrams));
-	if (n) {
-		n->h = (unsigned int*)GDKmalloc(ngramsize*sizeof(int));
-		n->pos = (unsigned int*)GDKzalloc(ngramsize*sizeof(int));
-		n->rid = (unsigned int*)GDKmalloc(NGRAM_MULTIPLE* sz * sizeof(int));
-		n->idx = (NGRAM_TYPE*)GDKmalloc(ngramsize*sizeof(NGRAM_TYPE));
-		n->sigs = (NGRAM_TYPE*)GDKmalloc(sz * sizeof(NGRAM_TYPE));
-	}
-	if (!n || !n->h || !n->idx || !n->pos || !n->rid || !n->sigs) {
-		ngrams_destroy(n);
-		return NULL;
-	}
-	return n;
-}
-
-static int
-ngrams_init_1gram(Ngrams *n, BAT *b)
-{
-	BUN cnt = BATcount(b);
-	NGRAM_TYPE *h = (NGRAM_TYPE *)GDKzalloc(UNIGRAM_SZ*sizeof(NGRAM_TYPE)), *hist = (NGRAM_TYPE*)h, sum = 0;
-	int *id = (int*)GDKmalloc(UNIGRAM_SZ*sizeof(int)), i;
-	NGRAM_TYPE *idx = n->idx;
-
-	if (!h || !id) {
-		GDKfree(h);
-		GDKfree(id);
-		return -1;
-	}
-
-	BATiter bi = bat_iterator(b);
-	for(BUN i=0; i<cnt; i++) {
-		const char *s = BUNtail(bi,i);
-		if (!strNil(s) && *s) { /* skipped */
-			for(; *s; s++) {
-				h[CHAR_MAP(*s)]++;
-			}
-		}
-	}
-	bat_iterator_end(&bi);
-
-	int bc = 0;
-
-	for(int i=0; i<UNIGRAM_SZ; i++) {
-		id[i] = i;
-		idx[i] = 0;
-		n->h[i] = (unsigned int)hist[i];
-	}
-	GDKqsort(h, id, NULL, UNIGRAM_SZ, sizeof(NGRAM_TYPE), sizeof(int), NGRAM_TYPEID, true, false);
-	for(i=UNIGRAM_SZ-1; i>=0; i--) {
-		if ((size_t)(sum + hist[i]) >= (NGRAM_MULTIPLE*cnt)-1)
-			break;
-		sum += hist[i];
-	}
-	NGRAM_TYPE larger_cnt = hist[i];
-	for(; hist[i] == larger_cnt; i++)
-		;
-	NGRAM_TYPE max = hist[0], small = hist[i];
-	n->max = max;
-	n->min = small;
-
-	for(int i=0; i<UNIGRAM_SZ && hist[i] > 0; i++) {
-		unsigned int x=id[i];
-		idx[x] = NGRAM_CST(1)<<bc;
-		assert(idx[x] > 0);
-		bc++;
-		bc %= NGRAM_BITS;
-	}
-
-	bi = bat_iterator(b);
-	NGRAM_TYPE *sp = n->sigs;
-	unsigned int pos = 1;
-	for(BUN i=0; i<cnt; i++) {
-		const char *s = BUNtail(bi, i);
-		NGRAM_TYPE sig = 0;
-		if (!strNil(s) && s[0]) { /* too short skipped */
-			for(; *s; s++) {
-				int k = CHAR_MAP(*s);
-				sig |= idx[k];
-				if (n->h[k] <= n->min) {
-					if (n->pos[k] == 0) {
-						n->pos[k] = pos;
-						pos += n->h[k];
-						n->h[k] = 0;
-					}
-					/* deduplicate */
-					int done =  (n->h[k] > 0 && n->rid[n->pos[k] + n->h[k]-1] == i);
-					if (!done) {
-						n->rid[n->pos[k] + n->h[k]] = i;
-						n->h[k]++;
-					}
-				}
-			}
-			*sp = sig;
-		} else {
-			*sp = NGRAM_TYPENIL;
-		}
-		sp++;
-	}
-	bat_iterator_end(&bi);
-
-	GDKfree(h);
-	GDKfree(id);
-	return 0;
-}
-
-static str
-NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	(void)nil_matches;
-	(void)estimate;
-	BAT *h = BATdescriptor(*H);
-	BAT *n = BATdescriptor(*N);
-
-	if (lc && !is_bat_nil(*lc))
-		assert(0);
-	if (rc && !is_bat_nil(*rc))
-		assert(0);
-
-	if (*anti)
-		throw(MAL, "gram.c1", "No anti contains yet\n");
-	if (!h || !n) {
-		BBPreclaim(h);
-		BBPreclaim(n);
-		throw(MAL, "gram.c1", RUNTIME_OBJECT_MISSING);
-	}
-
-	if (BATcount(n) < 10) {
-		printf("todo fall back to select \n");
-	}
-
-	Ngrams *ngi = ngrams_create_old(h, UNIGRAM_SZ);
-	if (ngi && ngrams_init_1gram(ngi, h) == 0) { /* TODO add locks and only create ngram once for full (parent bat) */
-		BUN cnt = BATcount(h);
-		/* create L/R */
-		BAT *l = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-		BAT *r = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-
-		int ncnt = 0, ncnt1 = 0, ncnt2 = 0, ncnt3 = 0, ncnt4 = 0, ncnt5 = 0;
-		BATiter ni = bat_iterator(n);
-		BATiter hi = bat_iterator(h);
-		NGRAM_TYPE nmax = 0;
-		oid *ol = Tloc(l, 0), *el = ol + 10*cnt;
-		oid *or = Tloc(r, 0);
-		cnt = BATcount(n);
-		/* if needed grow */
-		for(BUN i = 0; i<cnt; i++) {
-			const char *s = BUNtail(ni,i), *os = s;
-			NGRAM_TYPE sig = 0;
-
-			if ((ol+1000) > el)
-				break;
-			if (!strNil(s) && s[0]) {
-				NGRAM_TYPE min = ngi->max;
-				unsigned int min_pos = 0;
-				for(; *s; s++) {
-					unsigned int k = CHAR_MAP(*s);
-					sig |= ngi->idx[k];
-					if (ngi->h[k] < min) {
-						min = ngi->h[k];
-						min_pos = k; /* encoded min ngram */
-					}
-				}
-				ncnt++;
-				if (min <= ngi->min) {
-					unsigned int rr = ngi->pos[min_pos];
-					int hcnt = ngi->h[min_pos];
-					ncnt1++;
-					for(int k = 0; k<hcnt; k++, rr++) {
-						unsigned int hr = ngi->rid[rr];
-						if (((ngi->sigs[hr] & sig) == sig)) {
-							char *hs = BUNtail(hi, hr);
-							ncnt3++;
-							if (strstr(hs, os) != NULL) {
-								*ol++ = hr;
-								*or++ = (oid)i;
-							}
-						}
-					}
-				} else {
-					unsigned int hcnt = BATcount(h);
-					ncnt2++;
-					for(size_t k = 0; k < hcnt; k++) {
-						if (((ngi->sigs[k] & sig) == sig)) {
-							char *hs = BUNtail(hi, k);
-							ncnt4++;
-							if (strstr(hs, os) != NULL) {
-								*ol++ = k;
-								*or++ = (oid)i;
-							}
-						}
-					}
-				}
-				if (min > nmax)
-					nmax = min;
-			} else if (!strNil(s)) { /* skipped */
-				unsigned int hcnt = BATcount(h);
-				ncnt++;
-				for(size_t k = 0; k < hcnt; k++) {
-					char *hs = BUNtail(hi, k);
-					ncnt5++;
-					if (strstr(hs, os) != NULL) {
-						*ol++ = k;
-						*or++ = (oid)i;
-					}
-				}
-			}
-		}
-		bat_iterator_end(&ni);
-		bat_iterator_end(&hi);
-		BBPreclaim(h);
-		BBPreclaim(n);
-		BATsetcount(l, ol - (oid*)Tloc(l, 0));
-		BATsetcount(r, ol - (oid*)Tloc(l, 0));
-		*L = l->batCacheid;
-		*R = r->batCacheid;
-		BBPkeepref(l);
-		BBPkeepref(r);
-		ngrams_destroy(ngi);
-		return MAL_SUCCEED;
-	}
-	BBPreclaim(h);
-	BBPreclaim(n);
-	throw(MAL, "gram.c1", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-}
-
-static str
-NGc1join1(bat *L, bat *sigs, bat *needle, bat *lc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	return NGc1join_intern(L, NULL, sigs, needle, lc, NULL, nil_matches, estimate, anti);
-}
-
-static str
-NGc1join(bat *L, bat *R, bat *sigs, bat *needle, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	return NGc1join_intern(L, R, sigs, needle, lc, rc, nil_matches, estimate, anti);
-}
-
-static int
-ngrams_init_2gram(Ngrams *n, BAT *b)
-{
-	BUN cnt = BATcount(b);
-	NGRAM_TYPE (*h)[GZ] = (NGRAM_TYPE (*)[GZ])GDKzalloc(BIGRAM_SZ*sizeof(NGRAM_TYPE)), *hist = (NGRAM_TYPE*)h, sum = 0;
-	int *id = (int*)GDKmalloc(BIGRAM_SZ*sizeof(int)), i;
-	NGRAM_TYPE *idx = n->idx;
-
-	if (!h || !id) {
-		GDKfree(h);
-		GDKfree(id);
-		return -1;
-	}
-
-	BATiter bi = bat_iterator(b);
-	for(BUN i=0; i<cnt; i++) {
-		const char *s = BUNtail(bi,i);
-		if (!strNil(s) && *s) { /* skipped */
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; p=CHAR_MAP(*s), s++) {
-				h[p][CHAR_MAP(*s)]++;
-			}
-		}
-	}
-	bat_iterator_end(&bi);
-
-	int bc = 0;
-
-	for(int i=0; i<BIGRAM_SZ; i++) {
-		id[i] = i;
-		idx[i] = 0;
-		n->h[i] = (unsigned int)hist[i];
-	}
-	GDKqsort(h, id, NULL, BIGRAM_SZ, sizeof(NGRAM_TYPE), sizeof(int), NGRAM_TYPEID, true, false);
-	for(i=BIGRAM_SZ-1; i>=0; i--) {
-		if ((size_t)(sum + hist[i]) >= (NGRAM_MULTIPLE*cnt)-1)
-			break;
-		sum += hist[i];
-	}
-	NGRAM_TYPE larger_cnt = hist[i];
-	for(; hist[i] == larger_cnt; i++)
-		;
-	NGRAM_TYPE max = hist[0], small = hist[i];
-	n->max = max;
-	n->min = small;
-	for(int i=0; i<BIGRAM_SZ && hist[i] > 0; i++) {
-		int y=(id[i]/GZ)%GZ, z=id[i]%GZ;
-		idx[y*GZ+z] = NGRAM_CST(1)<<bc;
-		assert(idx[y*GZ+z] > 0);
-		bc++;
-		bc %= NGRAM_BITS;
-	}
-
-	bi = bat_iterator(b);
-	NGRAM_TYPE *sp = n->sigs;
-	unsigned int pos = 1;
-	for(BUN i=0; i<cnt; i++) {
-		const char *s = BUNtail(bi, i);
-		NGRAM_TYPE sig = 0;
-		if (!strNil(s) && s[0] && s[1]) { /* too short skipped */
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; p=CHAR_MAP(*s), s++) {
-				int k = p*GZ+CHAR_MAP(*s);
-				sig |= idx[k];
-				if (n->h[k] <= n->min) {
-					if (n->pos[k] == 0) {
-						n->pos[k] = pos;
-						pos += n->h[k];
-						n->h[k] = 0;
-					}
-					/* deduplicate */
-					int done =  (n->h[k] > 0 && n->rid[n->pos[k] + n->h[k]-1] == i);
-					if (!done) {
-						n->rid[n->pos[k] + n->h[k]] = i;
-						n->h[k]++;
-					}
-				}
-			}
-			*sp = sig;
-		} else {
-			*sp = NGRAM_TYPENIL;
-		}
-		sp++;
-	}
-	bat_iterator_end(&bi);
-
-	GDKfree(h);
-	GDKfree(id);
-	return 0;
-}
-
-static str
-NGc2join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	(void)nil_matches;
-	(void)estimate;
-	BAT *h = BATdescriptor(*H);
-	BAT *n = BATdescriptor(*N);
-
-	if (lc && !is_bat_nil(*lc))
-		assert(0);
-	if (rc && !is_bat_nil(*rc))
-		assert(0);
-
-	if (*anti)
-		throw(MAL, "gram.c2", "No anti contains yet\n");
-	if (!h || !n) {
-		BBPreclaim(h);
-		BBPreclaim(n);
-		throw(MAL, "gram.c2", RUNTIME_OBJECT_MISSING);
-	}
-
-	if (BATcount(n) < 10) {
-	}
-
-	Ngrams *ng = ngrams_create_old(h, BIGRAM_SZ);
-	if (ng && ngrams_init_2gram(ng, h) == 0) {
-		BUN cnt = BATcount(h);
-		/* create L/R */
-		BAT *l = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-		BAT *r = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-
-		BATiter ni = bat_iterator(n);
-		BATiter hi = bat_iterator(h);
-		NGRAM_TYPE nmax = 0;
-		oid *ol = Tloc(l, 0), *el = ol + 10*cnt;
-		oid *or = Tloc(r, 0);
-		cnt = BATcount(n);
-		/* if needed grow */
-		for(BUN i = 0; i<cnt; i++) {
-			const char *s = BUNtail(ni,i), *os = s;
-			NGRAM_TYPE sig = 0;
-
-			if ((ol+1000) > el)
-				break;
-			if (!strNil(s) && s[0] && s[1]) { /* skipped */
-				NGRAM_TYPE min = ng->max;
-				unsigned int min_pos = 0;
-				unsigned char p = CHAR_MAP(*s++);
-				for(; *s; p=CHAR_MAP(*s), s++) {
-					unsigned int k = p*GZ+CHAR_MAP(*s);
-					sig |= ng->idx[k];
-					if (ng->h[k] < min) {
-						min = ng->h[k];
-						min_pos = k; /* encoded min ngram */
-					}
-				}
-				if (min <= ng->min) {
-					unsigned int rr = ng->pos[min_pos];
-					int hcnt = ng->h[min_pos];
-					for(int k = 0; k<hcnt; k++, rr++) {
-						unsigned int hr = ng->rid[rr];
-						if (((ng->sigs[hr] & sig) == sig)) {
-							char *hs = BUNtail(hi, hr);
-							if (strstr(hs, os) != NULL) {
-								*ol++ = hr;
-								*or++ = (oid)i;
-							}
-						}
-					}
-				} else {
-					unsigned int hcnt = BATcount(h);
-					for(size_t k = 0; k < hcnt; k++) {
-						if (((ng->sigs[k] & sig) == sig)) {
-							char *hs = BUNtail(hi, k);
-							if (strstr(hs, os) != NULL) {
-								*ol++ = k;
-								*or++ = (oid)i;
-							}
-						}
-					}
-				}
-				if (min > nmax)
-					nmax = min;
-			} else if (!strNil(s)) {
-				unsigned int hcnt = BATcount(h);
-				for(size_t k = 0; k < hcnt; k++) {
-					char *hs = BUNtail(hi, k);
-					if (strstr(hs, os) != NULL) {
-						*ol++ = k;
-						*or++ = (oid)i;
-					}
-				}
-			}
-		}
-		bat_iterator_end(&ni);
-		bat_iterator_end(&hi);
-		BBPreclaim(h);
-		BBPreclaim(n);
-		BATsetcount(l, ol - (oid*)Tloc(l, 0));
-		BATsetcount(r, ol - (oid*)Tloc(l, 0));
-		*L = l->batCacheid;
-		*R = r->batCacheid;
-		BBPkeepref(l);
-		BBPkeepref(r);
-		ngrams_destroy(ng);
-		return MAL_SUCCEED;
-	}
-	BBPreclaim(h);
-	BBPreclaim(n);
-	throw(MAL, "gram.c2", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-}
-
-static str
-NGc2join1(bat *L, bat *sigs, bat *needle, bat *lc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	return NGc2join_intern(L, NULL, sigs, needle, lc, NULL, nil_matches, estimate, anti);
-}
-
-static str
-NGc2join(bat *L, bat *R, bat *sigs, bat *needle, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	return NGc2join_intern(L, R, sigs, needle, lc, rc, nil_matches, estimate, anti);
-}
-
-static int
-ngrams_init_3gram(Ngrams *n, BAT *b)
-{
-	BUN cnt = BATcount(b);
-	NGRAM_TYPE (*h)[GZ][GZ] = (NGRAM_TYPE (*)[GZ][GZ])GDKzalloc(TRIGRAM_SZ*sizeof(NGRAM_TYPE)), *hist = (NGRAM_TYPE*)h, sum = 0;
-	int *id = (int*)GDKmalloc(TRIGRAM_SZ*sizeof(int)), i;
-	NGRAM_TYPE *idx = n->idx;
-
-	if (!h || !id) {
-		GDKfree(h);
-		GDKfree(id);
-		return -1;
-	}
-
-	BATiter bi = bat_iterator(b);
-	for(BUN i=0; i<cnt; i++) {
-		const char *s = BUNtail(bi,i);
-		if (!strNil(s) && *s) { /* skipped */
-			unsigned char pp = CHAR_MAP(*s++);
-			if (!*s)
-				continue;
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; pp=p, p=CHAR_MAP(*s), s++) {
-				h[pp][p][CHAR_MAP(*s)]++;
-			}
-		}
-	}
-	bat_iterator_end(&bi);
-
-	int bc = 0;
-
-	for(int i=0; i<TRIGRAM_SZ; i++) {
-		id[i] = i;
-		idx[i] = 0;
-		n->h[i] = (unsigned int)hist[i];  /* TODO check for overflow ? */
-	}
-	GDKqsort(h, id, NULL, TRIGRAM_SZ, sizeof(NGRAM_TYPE), sizeof(int), NGRAM_TYPEID, true, false);
-	for(i=TRIGRAM_SZ-1; i>=0; i--) {
-		if ((size_t)(sum + hist[i]) >= (NGRAM_MULTIPLE*cnt)-1)
-			break;
-		sum += hist[i];
-	}
-	NGRAM_TYPE larger_cnt = hist[i];
-	for(; hist[i] == larger_cnt; i++)
-		;
-	NGRAM_TYPE max = hist[0], small = hist[i];
-	n->max = max;
-	n->min = small;
-	for(int i=0; i<TRIGRAM_SZ && hist[i] > 0; i++) {
-		unsigned int x=id[i]/(GZ*GZ), y=(id[i]/GZ)%GZ,
-			z=id[i]%GZ;
-		idx[x*GZ*GZ+y*GZ+z] = NGRAM_CST(1)<<bc;
-		assert(idx[x*GZ*GZ+y*GZ+z] > 0);
-		bc++;
-		bc %= NGRAM_BITS;
-	}
-
-	bi = bat_iterator(b);
-	NGRAM_TYPE *sp = n->sigs;
-	unsigned int pos = 1;
-	for(BUN i=0; i<cnt; i++) {
-		const char *s = BUNtail(bi, i);
-		NGRAM_TYPE sig = 0;
-		if (!strNil(s) && s[0] && s[1] && s[2]) { /* too short skipped */
-			unsigned char pp = CHAR_MAP(*s++);
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; pp=p, p=CHAR_MAP(*s), s++) {
-				int k = pp*GZ*GZ+p*GZ+CHAR_MAP(*s);
-				sig |= idx[k];
-				if (n->h[k] <= n->min) {
-					if (n->pos[k] == 0) {
-						n->pos[k] = pos;
-						pos += n->h[k];
-						n->h[k] = 0;
-					}
-					/* deduplicate */
-					int done =  (n->h[k] > 0 && n->rid[n->pos[k] + n->h[k]-1] == i);
-					if (!done) {
-						n->rid[n->pos[k] + n->h[k]] = i;
-						n->h[k]++;
-					}
-				}
-			}
-			*sp = sig;
-		} else {
-			*sp = NGRAM_TYPENIL;
-		}
-		sp++;
-	}
-	bat_iterator_end(&bi);
-
-	GDKfree(h);
-	GDKfree(id);
-	return 0;
-}
-
-static str
-NGc3join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	(void)nil_matches;
-	(void)estimate;
-	BAT *h = BATdescriptor(*H);
-	BAT *n = BATdescriptor(*N);
-
-	if (lc && !is_bat_nil(*lc))
-		assert(0);
-	if (rc && !is_bat_nil(*rc))
-		assert(0);
-
-	if (*anti)
-		throw(MAL, "gram.c3", "No anti contains yet\n");
-	if (!h || !n) {
-		BBPreclaim(h);
-		BBPreclaim(n);
-		throw(MAL, "gram.c3", RUNTIME_OBJECT_MISSING);
-	}
-
-	if (BATcount(n) < 10) {
-	}
-
-	Ngrams *ngi = ngrams_create_old(h, TRIGRAM_SZ);
-	if (ngi && ngrams_init_3gram(ngi, h) == 0) { /* TODO add locks and only create ngram once for full (parent bat) */
-		BUN cnt = BATcount(h);
-		/* create L/R */
-		BAT *l = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-		BAT *r = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-
-		BATiter ni = bat_iterator(n);
-		BATiter hi = bat_iterator(h);
-		NGRAM_TYPE nmax = 0;
-		oid *ol = Tloc(l, 0), *el = ol + 10*cnt;
-		oid *or = Tloc(r, 0);
-		cnt = BATcount(n);
-		/* if needed grow */
-		for(BUN i = 0; i<cnt; i++) {
-			const char *s = BUNtail(ni,i), *os = s;
-			NGRAM_TYPE sig = 0;
-
-			if ((ol+1000) > el)
-				break;
-			if (!strNil(s) && s[0] && s[1] && s[2]) { /* skipped */
-				NGRAM_TYPE min = ngi->max;
-				unsigned int min_pos = 0;
-				unsigned char pp = CHAR_MAP(*s++);
-				unsigned char p = CHAR_MAP(*s++);
-				for(; *s; pp=p, p=CHAR_MAP(*s), s++) {
-					unsigned int k = pp*GZ*GZ+p*GZ+CHAR_MAP(*s);
-					sig |= ngi->idx[k];
-					if (ngi->h[k] < min) {
-						min = ngi->h[k];
-						min_pos = k; /* encoded min ngram */
-					}
-				}
-				if (min <= ngi->min) {
-					unsigned int rr = ngi->pos[min_pos];
-					unsigned int hcnt = ngi->h[min_pos]; /* no unsigned */
-					for(size_t k = 0; k < hcnt; k++, rr++) {
-						unsigned int hr = ngi->rid[rr];
-						if (((ngi->sigs[hr] & sig) == sig)) {
-							char *hs = BUNtail(hi, hr);
-							if (strstr(hs, os) != NULL) {
-								*ol++ = hr;
-								*or++ = (oid)i;
-							}
-						}
-					}
-				} else {
-					unsigned int hcnt = BATcount(h);
-					for(size_t k = 0; k < hcnt; k++) {
-						if (((ngi->sigs[k] & sig) == sig)) {
-							char *hs = BUNtail(hi, k);
-							if (strstr(hs, os) != NULL) {
-								*ol++ = k;
-								*or++ = (oid)i;
-							}
-						}
-					}
-				}
-				if (min > nmax)
-					nmax = min;
-			} else if (!strNil(s)) { /* skipped */
-				unsigned int hcnt = BATcount(h);
-				for(size_t k = 0; k < hcnt; k++) {
-					char *hs = BUNtail(hi, k);
-					if (strstr(hs, os) != NULL) {
-						*ol++ = k;
-						*or++ = (oid)i;
-					}
-				}
-			}
-		}
-		bat_iterator_end(&ni);
-		bat_iterator_end(&hi);
-		BBPreclaim(h);
-		BBPreclaim(n);
-		BATsetcount(l, ol - (oid*)Tloc(l, 0));
-		BATsetcount(r, ol - (oid*)Tloc(l, 0));
-		*L = l->batCacheid;
-		*R = r->batCacheid;
-		BBPkeepref(l);
-		BBPkeepref(r);
-		ngrams_destroy(ngi);
-		return MAL_SUCCEED;
-	}
-	BBPreclaim(h);
-	BBPreclaim(n);
-	throw(MAL, "gram.c3", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-}
-
-static str
-NGc3join1(bat *L, bat *sigs, bat *needle, bat *lc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	return NGc3join_intern(L, NULL, sigs, needle, lc, NULL, nil_matches, estimate, anti);
-}
-
-static str
-NGc3join(bat *L, bat *R, bat *sigs, bat *needle, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
-{
-	return NGc3join_intern(L, R, sigs, needle, lc, rc, nil_matches, estimate, anti);
-}
 
 static str
 ngram_choice(const bat *NG, bte *ngram, const char *fname)
@@ -801,8 +122,8 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	for(size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
 		if (!strNil(s) && *s)
-			for(; *s; s++)
-				h_tmp[CHAR_MAP(*s)]++;
+			for(const char *c = s; *c; c++)
+				h_tmp[CHAR_MAP(*c)]++;
 	}
 
 	for(size_t i = 0; i < UNIGRAM_SZ; i++) {
@@ -873,7 +194,7 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	unsigned *pos = ng->pos;
 	unsigned *rid = ng->rid;
 	unsigned (*h_tmp)[GZ] = GDKzalloc(BIGRAM_SZ * sizeof(unsigned));
-	unsigned *h_tmp_ptr = (unsigned*) h_tmp;
+	unsigned *h_tmp_ptr = (unsigned *) h_tmp;
 	unsigned *map = GDKmalloc(BIGRAM_SZ * sizeof(unsigned));
 
 	if (!h_tmp || !map) {
@@ -891,9 +212,9 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 		}
 	}
 
-	for(size_t i = 0; i < BIGRAM_SZ; i++) {
+	for (size_t i = 0; i < BIGRAM_SZ; i++) {
 		map[i] = i;
-		idx[i] = 0;
+		idx[i] = pos[i] = 0;
 		ng->h[i] = h_tmp_ptr[i];
 	}
 
@@ -911,7 +232,7 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 
 	int n_shift = 0;
 	for (size_t i = 0; i < BIGRAM_SZ && h_tmp_ptr[i] > 0; i++) {
-		unsigned x = (map[i]/GZ) % GZ;
+		unsigned x = (map[i] / GZ) % GZ;
 		unsigned y = map[i] % GZ;
 		idx[x * GZ + y] = NGRAM_CST(1) << n_shift;
 		n_shift++;
@@ -919,12 +240,12 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	}
 
 	unsigned int p = 1;
-	for(size_t i = 0; i < b_cnt; i++) {
+	for (size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
 		if (!strNil(s) && s[0] && s[1]) {
 			NGRAM_TYPE sig = 0;
-			unsigned char c = CHAR_MAP(*s++);
-			for(; *s; c = CHAR_MAP(*s), s++) {
+			unsigned c = CHAR_MAP(*s++);
+			for (; *s; c = CHAR_MAP(*s), s++) {
 				int k = c * GZ + CHAR_MAP(*s);
 				sig |= idx[k];
 				if (h[k] <= ng->min) {
@@ -955,103 +276,103 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 static int
 init_trigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 {
-	NGRAM_TYPE (*h)[GZ][GZ] = (NGRAM_TYPE (*)[GZ][GZ])GDKzalloc(TRIGRAM_SZ * sizeof(NGRAM_TYPE)),
-		*hist = (NGRAM_TYPE*)h, sum = 0;
 	NGRAM_TYPE *idx = ng->idx;
-	int *id = (int*)GDKmalloc(TRIGRAM_SZ*sizeof(int)), i;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->h;
+	unsigned *pos = ng->pos;
+	unsigned *rid = ng->rid;
+	unsigned (*h_tmp)[GZ][GZ] = GDKzalloc(TRIGRAM_SZ * sizeof(unsigned));
+	unsigned *h_tmp_ptr = (unsigned *) h_tmp;
+	unsigned *map = GDKmalloc(TRIGRAM_SZ * sizeof(unsigned));
 
-	if (!h || !id) {
-		GDKfree(h);
-		GDKfree(id);
+	if (!h_tmp || !map) {
+		GDKfree(h_tmp);
+		GDKfree(map);
 		return -1;
 	}
 
 	for (size_t i = 0; i < b_cnt; i++) {
-		const char *s = BUNtail(*bi,i);
+		const char *s = BUNtail(*bi, i);
 		if (!strNil(s) && *s) {
 			unsigned char pp = CHAR_MAP(*s++);
 			if (!*s)
 				continue;
 			unsigned char p = CHAR_MAP(*s++);
 			for(; *s; pp = p, p = CHAR_MAP(*s), s++)
-				h[pp][p][CHAR_MAP(*s)]++;
+				h_tmp[pp][p][CHAR_MAP(*s)]++;
 		}
 	}
 
-	int bc = 0;
-
 	for (size_t j = 0; j < TRIGRAM_SZ; j++) {
-		id[j] = j;
-		idx[j] = 0;
-		ng->h[j] = (unsigned int)hist[j];  /* TODO check for overflow ? */
+		map[j] = j;
+		idx[j] = pos[j] = 0;
+		ng->h[j] = h_tmp_ptr[j];
 	}
-	GDKqsort(h, id, NULL, TRIGRAM_SZ, sizeof(NGRAM_TYPE), sizeof(int), NGRAM_TYPEID, true, false);
-	for (i = TRIGRAM_SZ - 1; i >= 0; i--) {
-		if ((size_t)(sum + hist[i]) >= (NGRAM_MULTIPLE * b_cnt) - 1)
+
+	GDKqsort(h_tmp, map, NULL, TRIGRAM_SZ,
+			 sizeof(unsigned), sizeof(unsigned), TYPE_int, true, false);
+
+	unsigned j = TRIGRAM_SZ - 1, sum = 0;
+	for (; j; j--) {
+		sum += h_tmp_ptr[j];
+		if ((sum + h_tmp_ptr[j]) >= NGRAM_MULTIPLE * b_cnt - 1)
 			break;
-		sum += hist[i];
 	}
-	NGRAM_TYPE larger_cnt = hist[i];
-	for (; hist[i] == larger_cnt; i++)
-		;
-	NGRAM_TYPE max = hist[0], small = hist[i];
-	ng->max = max;
-	ng->min = small;
+	ng->max = h_tmp_ptr[0];
+	ng->min = h_tmp_ptr[j];
 
-	for (size_t j = 0; j < TRIGRAM_SZ && hist[j] > 0; j++) {
-		unsigned int x = id[j]/(GZ*GZ), y = (id[j]/GZ)%GZ,
-			z = id[j]%GZ;
-		idx[x*GZ*GZ+y*GZ+z] = NGRAM_CST(1)<<bc;
-		assert(idx[x*GZ*GZ+y*GZ+z] > 0);
-		bc++;
-		bc %= NGRAM_BITS;
+	int n_shift = 0;
+	for (size_t j = 0; j < TRIGRAM_SZ && h_tmp_ptr[j] > 0; j++) {
+		unsigned x = map[j]/(GZ*GZ);
+		unsigned y = (map[j]/GZ)%GZ;
+		unsigned z = map[j]%GZ;
+		idx[x*GZ*GZ+y*GZ+z] = NGRAM_CST(1) << n_shift;
+		n_shift++;
+		n_shift %= NGRAM_BITS;
 	}
 
-	NGRAM_TYPE *sp = ng->sigs;
-	unsigned int pos = 1;
-	for (size_t j = 0; j < b_cnt; j++) {
-		const char *s = BUNtail(*bi, j);
-		NGRAM_TYPE sig = 0;
+
+	unsigned p = 1;
+	for (size_t i = 0; i < b_cnt; i++) {
+		const char *s = BUNtail(*bi, i);
 		if (!strNil(s) && s[0] && s[1] && s[2]) {
-			unsigned char pp = CHAR_MAP(*s++);
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; pp = p, p = CHAR_MAP(*s), s++) {
-				int k = pp*GZ*GZ+p*GZ+CHAR_MAP(*s);
+			NGRAM_TYPE sig = 0;
+			unsigned cc = CHAR_MAP(*s++);
+			unsigned c = CHAR_MAP(*s++);
+			for(; *s; cc = c, c = CHAR_MAP(*s), s++) {
+				int k = cc * GZ * GZ +c * GZ + CHAR_MAP(*s);
 				sig |= idx[k];
-				if (ng->h[k] <= ng->min) {
-					if (ng->pos[k] == 0) {
-						ng->pos[k] = pos;
-						pos += ng->h[k];
-						ng->h[k] = 0;
+				if (h[k] <= ng->min) {
+					if (pos[k] == 0) {
+						pos[k] = p;
+						p += h[k];
+						h[k] = 0;
 					}
-					/* deduplicate */
-					int done =  (ng->h[k] > 0 && ng->rid[ng->pos[k] + ng->h[k]-1] == j);
+					int done =  (h[k] > 0 && rid[pos[k] + h[k]-1] == i);
 					if (!done) {
-						ng->rid[ng->pos[k] + ng->h[k]] = j;
-						ng->h[k]++;
+						rid[pos[k] + h[k]] = i;
+						h[k]++;
 					}
 				}
 			}
-			*sp = sig;
+			*sigs = sig;
 		} else {
-			*sp = NGRAM_TYPENIL;
+			*sigs = NGRAM_TYPENIL;
 		}
-		sp++;
+		sigs++;
 	}
 
-	GDKfree(h);
-	GDKfree(id);
+	GDKfree(h_tmp);
+	GDKfree(map);
 	return 0;
 }
-
-#define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)  (s##vars + VarHeapVal(s##vals, (x), s##i.width))
 
 static str
 join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 size_t l_cnt, size_t r_cnt,
 			 int (*str_cmp)(const char *, const char *, int))
 {
+	(void) str_cmp;
 	Ngrams *ng = ngrams_create(l_cnt, UNIGRAM_SZ);
 	NGRAM_TYPE *idx = ng->idx;
 	NGRAM_TYPE *sigs = ng->sigs;
@@ -1070,13 +391,13 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	oid *o_rr = Tloc(rr, 0);
 
 	for (size_t j = 0; j < r_cnt; j++) {
-		const char *rs = BUNtail(*ri, j), *rsc = rs;
+		const char *rs = BUNtail(*ri, j), *rs_c = rs;
 		NGRAM_TYPE sig = 0;
 		if (!strNil(rs) && rs[0]) {
 			unsigned min = ng->max;
 			unsigned min_pos = 0;
-			for (; *rsc; rsc++) {
-				unsigned d = CHAR_MAP(*rsc);
+			for (; *rs_c; rs_c++) {
+				unsigned d = CHAR_MAP(*rs_c);
 				sig |= idx[d];
 				if (h[d] < min) {
 					min = h[d];
@@ -1085,12 +406,13 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			}
 			if (min <= ng->min) {
 				unsigned rrr = pos[min_pos];
-				unsigned l_cnt = h[min_pos];
-				for(size_t i = 0; i < l_cnt; i++, rrr++) {
+				unsigned lcnt = h[min_pos];
+				for(size_t i = 0; i < lcnt; i++, rrr++) {
 					unsigned hr = rid[rrr];
 					if (((sigs[hr] & sig) == sig)) {
 						char *ls = BUNtail(*li, hr);
-						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						/* if (str_cmp(ls, rs, str_strlen(rs)) == 0) { */
+						if (strstr(ls, rs) != NULL) {
 							*o_rl++ = hr;
 							*o_rr++ = j;
 						}
@@ -1100,7 +422,8 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 				for (size_t i = 0; i < l_cnt; i++) {
 					if (((sigs[i] & sig) == sig)) {
 						char *ls = BUNtail(*li, i);
-						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						/* if (str_cmp(ls, rs, str_strlen(rs)) == 0) { */
+						if (strstr(ls, rs) != NULL) {
 							*o_rl++ = i;
 							*o_rr++ = j;
 						}
@@ -1112,7 +435,8 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 		} else if (!strNil(rs)) {
 			for (size_t i = 0; i < l_cnt; i++) {
 				const char *ls = BUNtail(*li, i);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				/* if (str_cmp(ls, rs, str_strlen(rs)) == 0) { */
+				if (strstr(ls, rs) != NULL) {
 					*o_rl++ = i;
 					*o_rr++ = j;
 				}
@@ -1120,8 +444,8 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 		}
 	}
 
-	BATsetcount(rl, o_rl - (oid*)Tloc(rl, 0));
-	BATsetcount(rr, o_rl - (oid*)Tloc(rl, 0));
+	BATsetcount(rl, o_rl - (oid *)Tloc(rl, 0));
+	BATsetcount(rr, o_rl - (oid *)Tloc(rl, 0));
 	ngrams_destroy(ng);
 	return MAL_SUCCEED;
 }
@@ -1144,23 +468,19 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	if (init_bigram_idx(ng, li, l_cnt) != 0)
 		throw(MAL, "join_bigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	NGRAM_TYPE nmax = 0;
-	oid *ol = Tloc(rl, 0), *el = ol + 10 * l_cnt;
-	oid *or = Tloc(rr, 0);
+	unsigned nmax = 0;
+	oid *o_rl = Tloc(rl, 0);
+	oid *o_rr = Tloc(rr, 0);
 
-	/* if needed grow */
-	for(size_t i = 0; i < r_cnt; i++) {
-		const char *s = BUNtail(*ri, i), *os = s;
+	for(size_t j = 0; j < r_cnt; j++) {
+		const char *s = BUNtail(*ri, j), *os = s;
 		NGRAM_TYPE sig = 0;
-
-		if ((ol + 1000) > el)
-			break;
 		if (!strNil(s) && s[0] && s[1]) { /* skipped */
-			NGRAM_TYPE min = ng->max;
-			unsigned int min_pos = 0;
+			unsigned min = ng->max;
+			unsigned min_pos = 0;
 			unsigned char p = CHAR_MAP(*s++);
 			for (; *s; p = CHAR_MAP(*s), s++) {
-				unsigned int k = p * GZ + CHAR_MAP(*s);
+				unsigned k = p * GZ + CHAR_MAP(*s);
 				sig |= idx[k];
 				if (h[k] < min) {
 					min = h[k];
@@ -1168,25 +488,25 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 				}
 			}
 			if (min <= ng->min) {
-				unsigned int rrr = pos[min_pos];
-				int hcnt = h[min_pos];
-				for (int k = 0; k < hcnt; k++, rrr++) {
-					unsigned int hr = rid[rrr];
+				unsigned rrr = pos[min_pos];
+				int lcnt = h[min_pos];
+				for (int i = 0; i < lcnt; i++, rrr++) {
+					unsigned hr = rid[rrr];
 					if (((sigs[hr] & sig) == sig)) {
 						char *hs = BUNtail(*li, hr);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*ol++ = hr;
-							*or++ = (oid)i;
+							*o_rl++ = hr;
+							*o_rr++ = j;
 						}
 					}
 				}
 			} else {
-				for (size_t k = 0; k < l_cnt; k++) {
-					if (((sigs[k] & sig) == sig)) {
-						char *hs = BUNtail(*li, k);
+				for (size_t i = 0; i < l_cnt; i++) {
+					if (((sigs[i] & sig) == sig)) {
+						char *hs = BUNtail(*li, i);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*ol++ = k;
-							*or++ = (oid)i;
+							*o_rl++ = i;
+							*o_rr++ = j;
 						}
 					}
 				}
@@ -1194,18 +514,18 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			if (min > nmax)
 				nmax = min;
 		} else if (!strNil(s)) {
-			for (size_t k = 0; k < l_cnt; k++) {
-				char *hs = BUNtail(*li, k);
+			for (size_t i = 0; i < l_cnt; i++) {
+				char *hs = BUNtail(*li, i);
 				if (str_cmp(hs, os, str_strlen(os)) == 0) {
-					*ol++ = k;
-					*or++ = (oid)i;
+					*o_rl++ = i;
+					*o_rr++ = j;
 				}
 			}
 		}
 	}
 
-	BATsetcount(rl, ol - (oid*)Tloc(rl, 0));
-	BATsetcount(rr, ol - (oid*)Tloc(rl, 0));
+	BATsetcount(rl, o_rl - (oid *)Tloc(rl, 0));
+	BATsetcount(rr, o_rl - (oid *)Tloc(rl, 0));
 	ngrams_destroy(ng);
 	return MAL_SUCCEED;
 }
@@ -1228,24 +548,21 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	if (init_trigram_idx(ng, li, l_cnt) != 0)
 		throw(MAL, "join_trigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	NGRAM_TYPE nmax = 0;
-	oid *ol = Tloc(rl, 0), *el = ol + 10 * l_cnt;
-	oid *or = Tloc(rr, 0);
+	unsigned nmax = 0;
+	oid *o_rl = Tloc(rl, 0);
+	oid *o_rr = Tloc(rr, 0);
 
-	/* if needed grow */
 	for(size_t i = 0; i < r_cnt; i++) {
 		const char *s = BUNtail(*ri, i), *os = s;
 		NGRAM_TYPE sig = 0;
 
-		if ((ol + 1000) > el)
-			break;
 		if (!strNil(s) && s[0] && s[1] && s[2]) {
-			NGRAM_TYPE min = ng->max;
-			unsigned int min_pos = 0;
+			unsigned min = ng->max;
+			unsigned min_pos = 0;
 			unsigned char pp = CHAR_MAP(*s++);
 			unsigned char p = CHAR_MAP(*s++);
 			for(; *s; pp = p, p = CHAR_MAP(*s), s++) {
-				unsigned int k = pp *GZ * GZ + p * GZ + CHAR_MAP(*s);
+				unsigned k = pp *GZ * GZ + p * GZ + CHAR_MAP(*s);
 				sig |= idx[k];
 				if (h[k] < min) {
 					min = h[k];
@@ -1253,15 +570,15 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 				}
 			}
 			if (min <= ng->min) {
-				unsigned int rrr = pos[min_pos];
-				unsigned int hcnt = h[min_pos]; /* no unsigned */
+				unsigned rrr = pos[min_pos];
+				unsigned hcnt = h[min_pos]; /* no unsigned */
 				for (size_t k = 0; k < hcnt; k++, rrr++) {
 					unsigned int hr = rid[rrr];
 					if (((sigs[hr] & sig) == sig)) {
 						char *hs = BUNtail(*li, hr);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*ol++ = hr;
-							*or++ = (oid)i;
+							*o_rl++ = hr;
+							*o_rr++ = (oid)i;
 						}
 					}
 				}
@@ -1270,8 +587,8 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					if (((sigs[k] & sig) == sig)) {
 						char *hs = BUNtail(*li, k);
 						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*ol++ = k;
-							*or++ = (oid)i;
+							*o_rl++ = k;
+							*o_rr++ = (oid)i;
 						}
 					}
 				}
@@ -1282,15 +599,15 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			for (size_t k = 0; k < l_cnt; k++) {
 				char *hs = BUNtail(*li, k);
 				if (str_cmp(hs, os, str_strlen(os)) == 0) {
-					*ol++ = k;
-					*or++ = (oid)i;
+					*o_rl++ = k;
+					*o_rr++ = (oid)i;
 				}
 			}
 		}
 	}
 
-	BATsetcount(rl, ol - (oid*)Tloc(rl, 0));
-	BATsetcount(rr, ol - (oid*)Tloc(rl, 0));
+	BATsetcount(rl, o_rl - (oid *)Tloc(rl, 0));
+	BATsetcount(rr, o_rl - (oid *)Tloc(rl, 0));
 	ngrams_destroy(ng);
 	return MAL_SUCCEED;
 }
@@ -1328,17 +645,14 @@ NGjoin(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	/* not candidate lists for now */
-	(void) CL;
-	(void) CR;
+	if ((CL && !is_bat_nil(*CL)) || (CR && !is_bat_nil(*CR)))
+		assert(0);
 
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
 
 	size_t l_cnt = BATcount(l);
 	size_t r_cnt = BATcount(r);
-
-	/* TODO: if r_cnt < 10 then fall back to select */
 
 	rl = COLnew(0, TYPE_oid, l_cnt, TRANSIENT);
 	if (RR)
@@ -1350,10 +664,6 @@ NGjoin(MalStkPtr stk, InstrPtr pci,
 		BBPreclaim_n(4, l, r, rl, rr);
 		throw(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-
-	SET_EMPTY_BAT_PROPS(rl);
-	if (RR)
-		SET_EMPTY_BAT_PROPS(rr);
 
 	switch(ngram) {
 	case 1:
@@ -1485,46 +795,6 @@ NGcontainsjoin(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func ngrams_init_functions[] = {
 
-	pattern("ngrams", "c1", NGcontains, false,
-			"predicate if value and needle equal needle",
-			args(1, 3, arg("res", bit), arg("h", str), arg("needle", str))),
-	/* command("ngrams", "c1select", NGselect, false, */
-			/* "predicate if value and needle equal needle", */
-			/* args(1, 5, batarg("res", oid), batarg("h", str), batarg("s", oid), arg("needle", str), arg("anti", bit))), */
-	command("ngrams", "c1join", NGc1join1, false,
-			"predicate if value and needle equal needle (using 1gram)",
-			args(1, 8, batarg("l", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
-	command("ngrams", "c1join", NGc1join, false,
-			"predicate if value and needle equal needle (using 1gram)",
-			args(2, 9, batarg("l", oid), batarg("r", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
-
-	pattern("ngrams", "c2", NGcontains, false,
-			"predicate if value and needle equal needle",
-			args(1, 3, arg("res", bit), arg("h", str), arg("needle", str))),
-	/* command("ngrams", "c2select", NGselect, false, */
-	/* 		"predicate if value and needle equal needle", */
-	/* 		args(1, 5, batarg("res", oid), batarg("h", str), batarg("s", oid), arg("needle", str), arg("anti", bit))), */
-	command("ngrams", "c2join", NGc2join1, false,
-			"predicate if value and needle equal needle (using 2gram)",
-			args(1, 8, batarg("l", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
-	command("ngrams", "c2join", NGc2join, false,
-			"predicate if value and needle equal needle (using 2gram)",
-			args(2, 9, batarg("l", oid), batarg("r", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
-
-	pattern("ngrams", "c3", NGcontains, false,
-			"predicate if value and needle equal needle",
-			args(1, 3, arg("res", bit), arg("h", str), arg("needle", str))),
-	/* command("ngrams", "c3select", NGselect, false, */
-	/* 		"predicate if value and needle equal needle", */
-	/* 		args(1, 5, batarg("res", oid), batarg("h", str), batarg("s", oid), arg("needle", str), arg("anti", bit))), */
-	command("ngrams", "c3join", NGc3join1, false,
-			"predicate if value and needle equal needle (using 3gram)",
-			args(1, 8, batarg("l", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
-	command("ngrams", "c3join", NGc3join, false,
-			"predicate if value and needle equal needle (using 3gram)",
-			args(2, 9, batarg("l", oid), batarg("r", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
-
-
 	pattern("ngrams", "startswith", NGstartswith, false, "",
 			args(1, 3, arg("rl", bit), arg("l", str), arg("r", str))),
 	pattern("ngrams", "startswith", NGstartswith, false, "",
@@ -1581,7 +851,6 @@ static mel_func ngrams_init_functions[] = {
 			args(2, 10, batarg("rl", oid), batarg("rr", oid), batarg("l", str), batarg("r", str), batarg("ngram", bte), batarg("cl", oid), batarg("cr", oid), arg("nil_matches", bit), arg("estimate", lng), arg("anti", bit))),
 	{ .imp=NULL }		/* sentinel */
 };
-
 #include "mal_import.h"
 #ifdef _MSC_VER
 #undef read
