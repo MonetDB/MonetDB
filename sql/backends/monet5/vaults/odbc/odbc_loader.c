@@ -213,7 +213,7 @@ nameofSQLtype(SQLSMALLINT dataType)
 /* utility function to nicely close all opened ODBC resources */
 static void
 odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
-	SQLRETURN ret = SQL_INVALID_HANDLE;
+	SQLRETURN ret = SQL_SUCCESS;
 
 	if (stmt != SQL_NULL_HSTMT) {
 		ret = SQLFreeStmt(stmt, SQL_CLOSE);
@@ -398,7 +398,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 	}
 
 	/* when called from odbc_load() */
-	if (caller == 2 && stmt != SQL_NULL_HSTMT) {
+	if (caller == 2) {
 		sql_table *t;
 
 		if (trace_enabled)
@@ -448,7 +448,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 				if (buf[buflen] != '\0')
 					buf[buflen] = '\0';
 				if (strLen != SQL_NTS && strLen > 0) {
-					if (strLen <= buflen)
+					if (strLen < buflen)
 						if (buf[strLen] != '\0')
 							buf[strLen] = '\0';
 				}
