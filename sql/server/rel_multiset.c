@@ -19,7 +19,7 @@ has_multiset(list *exps)
 		sql_subtype *t = exp_subtype(e);
 
 		needed = (t && t->multiset);
-		if (!needed && t->type->composite && is_nested(e))
+		if (!needed && t && t->type->composite && is_nested(e))
 			needed = has_multiset(e->f);
 	}
 	return needed;

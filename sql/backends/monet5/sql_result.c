@@ -1246,17 +1246,34 @@ mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 }
 
 static int
-complex_type_size(res_col *c)
+output_complex_type(res_col *cols, Column *fmt, int nr_cols, bool ms, bool composite)
 {
-	if (c->type.multiset) {
-		int res = (c->type.multiset == MS_ARRAY?2:1);
-		if (c->type.type->composite)
-			res += list_length(c->type.type->d.fields);
-		else
-			res ++;
-		return res;
+	int j = 0;
+	for(int i = 0; i < nr_cols; i++) {
+		res_col *c = cols + j;
+
+		if (c->multiset) {
+			/* c rowid */
+			j += output_complex_type(cols + j + 1, fmt + j + 1, c->composite?list_length(c->type.type->d.fields):1, true, composite);
+			j++;
+			if (c->multiset == MS_ARRAY)
+				j++;
+			j++;
+		} else if (c->composite) {
+			j += output_complex_type(cols + j+ 1, fmt + j + 1, list_length(c->type.type->d.fields), ms, true);
+			if (c->virt)
+				j++;
+		} else {
+			j++;
+			if (ms) {
+				fmt[i].sep = NULL;
+				fmt[i].seplen = 0;
+			}
+			if (ms || composite)
+				fmt[j].quote = '"';
+		}
 	}
-	return 0;
+	return j;
 }
 
 static int
@@ -1291,7 +1308,6 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
 
-	int complex_type = 0;
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
 
@@ -1317,12 +1333,8 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 		fmt[i].multiset = c->type.multiset;
 		fmt[i].composite = c->type.type->composite?list_length(c->type.type->d.fields):0;
-		complex_type += complex_type_size(c);
-		if (complex_type>1) {
-			fmt[i].sep = NULL;// ", ";
-			fmt[i].seplen = 0;//2;
-			complex_type--;
-		}
+		fmt[i].virt = c->virt;
+
 		if (json) {
 			res_col *p = t->cols + (i - 1);
 
@@ -1359,10 +1371,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
 		fmt[i].ws = 0;
-		if (complex_type)
-			fmt[i].quote = '"';
-		else
-			fmt[i].quote = ssep ? ssep[0] : 0;
+		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
@@ -1394,6 +1403,28 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			fmt[i].extra = fmt + i;
 		}
 	}
+
+	if (t->complex_type) {
+		for(int i = 0; i < t->nr_cols; ) {
+			res_col *c = t->cols + i;
+
+			if (c->multiset) {
+				/* c rowid */
+				i += output_complex_type(t->cols + i + 1, fmt + i + 2,  c->composite?list_length(c->type.type->d.fields):1, true, false);
+				i++;
+				if (c->multiset == MS_ARRAY)
+					i++;
+				i++;
+			} else if (c->composite) {
+				i += output_complex_type(t->cols + i + 1, fmt + i + 2, list_length(c->type.type->d.fields), false, true);
+				if (c->virt)
+					i++;
+			} else {
+				i++;
+			}
+		}
+	}
+
 	if (i == t->nr_cols + 1)
 		ok = TABLEToutput_file(&as, NULL, s, m->scanner.rs);
 	for (i = 0; i <= t->nr_cols; i++) {
@@ -1664,13 +1695,32 @@ next_col(res_col *c)
 {
 	int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
 	if (c->type.type->composite) {
+		if (c->virt)
+			res++;
 		int nr = list_length(c->type.type->d.fields);
-		res += nr;
+		/* needs fix ie needs to jump id,nr cols etc */
+		int o = 0;
 		for(int i = 0; i < nr; i++) {
-			res += next_col(c+i+1);
+			int j = next_col(c+o+1);
+			res += j;
+			o += j;
 		}
 	} else {
 		res++;
+	}
+	return res;
+}
+
+static int
+count_cols(res_table *t)
+{
+	int res = 0;
+
+	for(int i = 0; i < t->nr_cols; ) {
+		res_col *c = t->cols + i;
+		if (!c->virt)
+			res++;
+		i += next_col(c);
 	}
 	return res;
 }
@@ -1686,6 +1736,8 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (!s || !t)
 		return 0;
 
+	if (t->complex_type)
+		t->nr_output_cols = count_cols(t);
 	/* query type: Q_TABLE || Q_PREPARE */
 	assert(t->query_type == Q_TABLE || t->query_type == Q_PREPARE);
 	if (mnstr_write(s, "&", 1, 1) != 1 || mvc_send_int(s, (int) t->query_type) != 1 || mnstr_write(s, " ", 1, 1) != 1)

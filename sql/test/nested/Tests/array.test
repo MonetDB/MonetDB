@@ -62,8 +62,8 @@ select * from vlent_arr
 {"left","right"}
 {"l2","r2"}
 
-#statement ok
-#insert into vlent_arr values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
+statement ok
+insert into vlent_arr values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
 
 query T nosort
 select * from vlent_arr

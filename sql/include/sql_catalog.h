@@ -760,7 +760,11 @@ typedef struct res_col {
 	sql_subtype type;
 	bat b;
 	char mtype;
-	bool cached;
+	unsigned virt:1, /* just needed for headers not part of output */
+			 composite:1,
+			 multiset:2,
+			 cached:1;
+	int complex_len;
 	ptr *p;
 } res_col;
 
@@ -770,8 +774,9 @@ typedef struct res_table {
 	mapi_query_t query_type;
 	int nr_cols;
 	int nr_output_cols;
-	int multiset;
+	int complex_type;
 	BUN nr_rows;
+	int output_col;		/* col to use for output count */
 	BUN cur_row;
 	int cur_col;
 	const char *tsep;

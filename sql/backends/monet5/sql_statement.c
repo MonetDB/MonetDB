@@ -3292,34 +3292,15 @@ stmt_list(backend *be, list *l)
 }
 
 static InstrPtr
-dump_header(mvc *sql, MalBlkPtr mb, list *l)
+nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, InstrPtr nmePtr, InstrPtr tpePtr, InstrPtr lenPtr, InstrPtr scalePtr, InstrPtr multisetPtr, list *l)
 {
-	node *n;
-	// gather the meta information
-	int tblId, nmeId, tpeId, lenId, scaleId, multisetId;
-	int args;
-	InstrPtr list;
-	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr;
-
-	args = list_length(l) + 1;
-
-	list = newInstructionArgs(mb,sqlRef, resultSetRef, args + 6);
-	if(!list) {
-		return NULL;
-	}
-	getArg(list,0) = newTmpVariable(mb,TYPE_int);
-	meta(tblPtr, tblId, TYPE_str, args);
-	meta(nmePtr, nmeId, TYPE_str, args);
-	meta(tpePtr, tpeId, TYPE_str, args);
-	meta(lenPtr, lenId, TYPE_int, args);
-	meta(scalePtr, scaleId, TYPE_int, args);
-	meta(multisetPtr, multisetId, TYPE_int, args);
-	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL || multisetPtr == NULL)
-		return NULL;
-
-	for (n = l->h; n; n = n->next) {
+	if (list_empty(l))
+		return instrlist;
+	for (node *n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
+		bool virt = (!c->q && c->type == st_alias && !c->op1 && c->multiset);
+
 		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
 		const char *tn = (tname) ? tname->name : _empty;
@@ -3340,13 +3321,75 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 			tpePtr = pushStr(mb, tpePtr, (t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
-			multisetPtr = pushInt(mb, multisetPtr, t->multiset);
-			list = pushArgument(mb,list,c->nr);
-		} else
+			if (virt || c->nested) {
+				multisetPtr = pushInt(mb, multisetPtr, c->multiset + ((virt || c->nested)?4:0));
+				InstrPtr q = newStmt(mb, batRef, newRef);
+
+				if (q == NULL)
+					return NULL;
+				setVarType(mb, getArg(q, 0), newBatType(TYPE_void));
+				q = pushType(mb, q, TYPE_void);
+				pushInstruction(mb, q);
+				instrlist = pushArgument(mb, instrlist, getArg(q, 0));
+
+				instrlist = nested_dump_header(sql, mb, instrlist, tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr, unnest_stmt(c));
+				if (!instrlist)
+					return NULL;
+			} else {
+				multisetPtr = pushInt(mb, multisetPtr, 0);
+				instrlist = pushArgument(mb, instrlist,c->nr);
+			}
+		} else {
 			return NULL;
+		}
 	}
+	return instrlist;
+}
+
+static int
+nested_len(list *l)
+{
+	int nr;
+	if (list_empty(l))
+		return 0;
+	for(node *n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		if (s->nested)
+			nr += nested_len(unnest_stmt(s));
+		else
+			nr++;
+	}
+	return nr;
+}
+
+static InstrPtr
+dump_header(mvc *sql, MalBlkPtr mb, list *l)
+{
+	// gather the meta information
+	int tblId, nmeId, tpeId, lenId, scaleId, multisetId;
+	int args;
+	InstrPtr list;
+	InstrPtr tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr;
+
+	args = 1 + nested_len(l);
+
+	list = newInstructionArgs(mb,sqlRef, resultSetRef, args + 6);
+	if(!list)
+		return NULL;
+
+	getArg(list,0) = newTmpVariable(mb,TYPE_int);
+	meta(tblPtr, tblId, TYPE_str, args);
+	meta(nmePtr, nmeId, TYPE_str, args);
+	meta(tpePtr, tpeId, TYPE_str, args);
+	meta(lenPtr, lenId, TYPE_int, args);
+	meta(scalePtr, scaleId, TYPE_int, args);
+	meta(multisetPtr, multisetId, TYPE_int, args);
+	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL || multisetPtr == NULL)
+		return NULL;
+	list = nested_dump_header(sql, mb, list, tblPtr, nmePtr, tpePtr, lenPtr, scalePtr, multisetPtr, l);
 	sa_reset(sql->ta);
-	pushInstruction(mb,list);
+	if (list)
+		pushInstruction(mb, list);
 	return list;
 }
 
@@ -4769,6 +4812,7 @@ stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *ali
 	s->aggr = op1->aggr;
 	s->multiset = op1->multiset;
 	s->nested = op1->nested;
+	s->virt = op1->virt;
 
 	s->tname = tname;
 	s->cname = alias;

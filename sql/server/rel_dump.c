@@ -124,7 +124,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (!e)
 		return;
 	/*mnstr_printf(fout, "%p ", e);*/
-	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
+	if (mvc_debug_on(sql, 4) && e->alias.label != 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
 	case e_psm: {

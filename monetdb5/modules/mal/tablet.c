@@ -231,7 +231,7 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 	ssize_t fill = 0;
 
 	for (i = 0; i < nr_attrs; i++) {
-		if (fmt[i].c == NULL)
+		if (fmt[i].c == NULL || fmt[i].virt)
 			continue;
 		if (id < fmt[i].c->hseqbase
 			|| id >= fmt[i].c->hseqbase + BATcount(fmt[i].c))
@@ -277,17 +277,22 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 	return 0;
 }
 
+#define MS_VALUE 0
 #define MS_ARRAY 2
 /* move into sql_result and store in format */
 static int
 multiset_size( Column *fmt)
 {
-	int nrattrs = 1 + (fmt->multiset == MS_ARRAY);
-	if (fmt[0].composite) {
-		nrattrs += fmt[0].composite;
-		for (int i = 0; i<fmt[0].composite; i++)
-			if (fmt[i+1].multiset)
-				nrattrs += multiset_size(fmt+(i+1));
+	int nrattrs = (fmt->multiset==MS_VALUE)?0:(fmt->multiset==MS_ARRAY)?3:2;
+	if (fmt->composite) {
+		if (fmt->virt)
+			nrattrs++;
+		int o = 0;
+		for (int i = 0; i<fmt->composite; i++) {
+			int j = multiset_size(fmt+(o+1));
+			nrattrs += j;
+			o += j;
+		}
 	} else {
 		nrattrs ++;
 	}
@@ -295,18 +300,18 @@ multiset_size( Column *fmt)
 }
 
 static inline ssize_t
-output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs);
+output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, bool inms);
 
 static ssize_t
 output_line_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite)
 {
 	(void)composite;
 	(*buf)[fill++] = '(';
-	if (!fmt->multiset) {
+	if (fmt->virt) {
 		fmt++;
 		nr_attrs--;
 	}
-	if ((fill = output_line_multiset(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs)) < 0) {
+	if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, false)) < 0) {
 		return -1;
 	}
 	(*buf)[fill++] = ')';
@@ -329,7 +334,7 @@ output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 				break;
 			}
 		} else {
-			if ((fill = output_line_multiset(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs)) < 0) {
+			if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, true)) < 0) {
 				break;
 			}
 		}
@@ -339,43 +344,54 @@ output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 }
 
 static inline ssize_t
-output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
-				  Column *fmt, stream *fd, BUN nr_attrs)
+output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+				  Column *fmt, stream *fd, BUN nr_attrs, bool inms)
 {
-	BUN i;
+	BUN j;
+	int composite = 0;
 
-	for (i = 0; i < nr_attrs; i++) {
-		Column *f = fmt + i;
+	for (j = 0; j < nr_attrs; ) {
+		Column *f = fmt + j;
 		const char *p;
 		ssize_t l = 0;
 
-		if (f->c) {
-			p = BUNtail(f->ci, f->p);
-
-			if (p && i && f->multiset) {
+		if (f->virt && f->composite > 1) {
+			(*buf)[fill++] = '\'';
+			(*buf)[fill++] = '(';
+			(*buf)[fill] = 0;
+			composite = f->composite;
+			j++;
+			continue;
+		}
+		if (f->multiset && !inms) {
 				int nr_attrs = multiset_size(f);
-				assert(f->c->ttype == TYPE_int);
+				p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
-				(*buf)[fill++] = '\'';
+				if (!composite)
+					(*buf)[fill++] = '\'';
 				(*buf)[fill++] = '{';
 				(*buf)[fill] = 0;
-				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + i + 1, fd, nr_attrs, f->multiset, f->composite, *(int*)p);
+				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + j + 1, fd, nr_attrs-1, f->multiset, f->composite, *(int*)p);
 				(*buf)[fill++] = '}';
-				(*buf)[fill++] = '\'';
+				if (!composite)
+					(*buf)[fill++] = '\'';
 				(*buf)[fill] = 0;
-				i += nr_attrs;
-				f->p++;
-				f = fmt + i;
-			} else
+				fmt[j+nr_attrs].p++;
+				f = fmt + j + nr_attrs; /* closing bracket */
+				j += nr_attrs + 1;
+		} else if (f->c) {
+			p = BUNtail(f->ci, f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				p = f->nullstr;
 				l = (ssize_t) strlen(p);
+				j++;
 			} else {
 				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
 				if (l < 0)
 					return -1;
 				p = *localbuf;
+				j++;
 			}
 			if (fill + l + f->seplen >= (ssize_t) * len) {
 				/* extend the buffer */
@@ -391,9 +407,25 @@ output_line_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, siz
 				fill += l;
 				f->p++;
 			}
+		} else
+			j++;
+		if (composite) {
+			composite--;
+			if (composite) {
+				(*buf)[fill++] = ',';
+				(*buf)[fill++] = ' ';
+				(*buf)[fill] = 0;
+			} else {
+				(*buf)[fill++] = ')';
+				(*buf)[fill++] = '\'';
+				(*buf)[fill] = 0;
+				strncpy(*buf + fill, f->sep, f->seplen);
+				fill += f->seplen;
+			}
+		} else {
+			strncpy(*buf + fill, f->sep, f->seplen);
+			fill += f->seplen;
 		}
-		strncpy(*buf + fill, f->sep, f->seplen);
-		fill += f->seplen;
 	}
 	return fill;
 }
@@ -410,6 +442,8 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 		const char *p;
 		ssize_t l;
 
+		if (f->virt)
+			continue;
 		if (f->c) {
 			p = BUNtail(f->ci, f->p);
 
@@ -452,6 +486,8 @@ output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd,
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
 
+		if (f->virt)
+			continue;
 		if (f->c) {
 			const void *p = BUNtail(f->ci, id - f->c->hseqbase);
 
@@ -550,7 +586,7 @@ output_file_default(Tablet *as, BAT *order, stream *fd, bstream *in)
 }
 
 static int
-output_multiset(Tablet *as, stream *fd, bstream *in)
+output_complex(Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	ssize_t res = 0;
@@ -568,7 +604,7 @@ output_multiset(Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_multiset(&buf, &len, 0, &localbuf, &locallen, as->format, fd, as->nr_attrs)) < 0) {
+		if ((res = output_line_complex(&buf, &len, 0, &localbuf, &locallen, as->format, fd, as->nr_attrs, false)) < 0) {
 			break;
 		}
 		if (fd && mnstr_write(fd, buf, 1, res) != res)
@@ -654,13 +690,13 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in)
 			as->nr = maxnr;
 	}
 	assert(as->nr != BUN_NONE);
-	int multiset = 0;
-	for (unsigned int i = 1; i < as->nr_attrs; i++)
-	   multiset |= as->format[i].multiset;
+	int complex = 0;
+	for (unsigned int i = 1; i < as->nr_attrs && !complex; i++)
+	   complex |= (as->format[i].multiset || as->format[i].composite);
 
-	if (multiset) {
+	if (complex) {
 		assert(!order);
-		return output_multiset(as, s, in);
+		return output_complex(as, s, in);
 	}
 	base = check_BATs(as);
 	if (!order || !is_oid_nil(base)) {

@@ -262,6 +262,7 @@ typedef enum operator_type {
 #define set_symmetric(e) 	(e)->symmetric = 1
 #define is_intern(e) 		((e)->intern)
 #define set_intern(e) 		(e)->intern = 1
+#define reset_intern(e) 	(e)->intern = 0
 #define is_selfref(e) 		((e)->selfref)
 #define set_selfref(e) 		(e)->selfref = 1
 #define is_basecol(e) 		((e)->base)

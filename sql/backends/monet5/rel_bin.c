@@ -849,7 +849,7 @@ value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 		sql_exp *v = vals->h->data;
 		if (type_create_result(be, type, attr) < 0)
 			return NULL;
-		int rowcnt = 1, lcnt = 1;
+		int rowcnt = 0, lcnt = 1;
 		int irc = is_row(v)?0:1;
 		int lrc = is_row(v)?1:0;
 		for (node *n = vals->h; n; n = n->next, rowcnt += irc, lcnt += lrc) {
@@ -1656,6 +1656,7 @@ is_const_func(sql_subfunc *f, list *attr)
 static stmt*
 exp2bin_multiset(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
 {
+	assert(0);
 	return left;
 	(void)fe;
 	(void)right;
@@ -2680,6 +2681,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 					stmt *ns = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
 					list_append(s->op4.lval, ns);
 					s->nr = ns->nr;
+					s->multiset = c->type.multiset;
 				}
 			} else {
 				s = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);

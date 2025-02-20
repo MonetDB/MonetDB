@@ -125,8 +125,9 @@ typedef struct stmt {
 	 partition:1,	/* selected as mitosis candidate */
 	 reduce:1,		/* used to reduce number of rows (also for joins) */
 	 loop:1,		/* cond statement is looping */
-	 multiset:1,	/* id column of multiset */
-	 nested:1;		/* id column of nested */
+	 multiset:2,	/* id column of multiset */
+	 nested:1,		/* id column of nested */
+	 virt:1;
 
 	struct stmt *cand;	/* optional candidate list */
 
