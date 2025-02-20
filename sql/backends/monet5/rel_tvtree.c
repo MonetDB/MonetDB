@@ -173,15 +173,44 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 	return true;
 }
 
+static sql_exp *
+tv_exp_wrap_list(backend *be, tv_tree *t, list *l)
+{
+	sql_exp *e = exp_null(be->mvc->sa, t->st);
+	e->l = e->f = 0;
+	e->f = l;
+	return e;
+}
+
 bool
 tv_parse_values(backend *be, tv_tree *t, list *col_vals, stmt *left, stmt *sel)
 {
 	/* col_vals is a list with values that correspond to a column whose
-	 * (probably "complex") type is represented by the tv_tree
+	 * (possibly "complex") type is represented by the tv_tree. NOTE:
+	 * in this case col_vals might be either
+	 *   1. a list of many values or
+	 *   2. a single value of composite or mset/setof with composite type.
+	 *      TODO: mset/setof with basic type?
+	 * that's why we need to check the _row_ flag in the first entry of
+	 * the col_vals list. If it is set it means we are dealing with a
+	 * single row insert and we need a dummy expression de (to put
+	 * col_vals at its e->f) so the handling it's similar to those two cases
 	 */
-	for (node *n = col_vals->h; n; n = n->next)
-		if (false == tv_parse_values_(be, t, n->data, left, sel))
+	bool single_row_val =((sql_exp*)col_vals->h->data)->row;
+
+	if (single_row_val) {
+		/* we need to create a dummy expression to single row col_vals
+		 * to adhere to the rest of the api */
+		sql_exp *de = tv_exp_wrap_list(be, t, col_vals);
+		if (false == tv_parse_values_(be, t, de, left, sel))
 			return false;
+	} else {
+		for (node *n = col_vals->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (false == tv_parse_values_(be, t, e, left, sel))
+				return false;
+		}
+	}
 	return true;
 }
 
