@@ -283,4 +283,5 @@ extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 
+extern InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 #endif /* _SQL_STATEMENT_H_ */

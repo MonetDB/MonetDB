@@ -15,6 +15,7 @@
 #include "rel_exp.h"
 
 #include "mal_exception.h"
+#include "mal_builder.h"
 #include "mal_client.h"
 
 //#ifdef _MSC_VER
@@ -532,8 +533,45 @@ static void *
 odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
-	mvc *sql = be->mvc;
-	return odbc_query(sql, f, url, NULL, topn, 2);
+	if (!f)
+		return NULL;
+
+	(void)topn;
+
+	InstrPtr q = newStmtArgs(be->mb, "odbc", "loader", list_length(f->coltypes) + 2);
+	int col = 0;
+	list *l = sa_list(be->mvc->sa);
+	for (node *n = f->coltypes->h, *nn = f->colnames->h; n && nn; col++, n = n->next, nn = nn->next) {
+		const char *name = nn->data;
+		sql_subtype *tp = n->data;
+		int type = newBatType(tp->type->localtype);
+		if (col)
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, type));
+		else
+			getArg(q, 0) = newTmpVariable(be->mb, type);
+		stmt *s = stmt_blackbox_result(be, q, col, tp);
+		s = stmt_alias(be, s, col+1, f->tname, name);
+		list_append(l, s);
+	}
+	q = pushStr(be->mb, q, url);
+	q = pushPtr(be->mb, q, f);
+	pushInstruction(be->mb, q);
+	return stmt_list(be, l);
+}
+
+static str
+ODBCloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *be = NULL;
+	str msg;
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+		return msg;
+	(void)mb;
+	str uri = *getArgReference_str(stk, pci, pci->retc);
+	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
+
+	return odbc_query(be->mvc, f, uri, NULL, NULL, 2);
+	//return MAL_SUCCEED;
 }
 
 static str
@@ -558,6 +596,7 @@ ODBCepilogue(void *ret)
 static mel_func odbc_init_funcs[] = {
 	pattern("odbc", "prelude", ODBCprelude, false, "", noargs),
 	command("odbc", "epilogue", ODBCepilogue, false, "", noargs),
+    pattern("odbc", "loader", ODBCloader, true, "Import a table via the odbc uri", args(1,3, batvarargany("",0),arg("uri",str),arg("func",ptr))),
 { .imp=NULL }
 };
 
