@@ -299,132 +299,154 @@ multiset_size( Column *fmt)
 	return nrattrs;
 }
 
-static inline ssize_t
-output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite, bool inms);
+static ssize_t output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
 
-static ssize_t
-output_line_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite, bool inms)
+static inline ssize_t
+output_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *f)
 {
-	(*buf)[fill++] = '(';
-	if (fmt->virt) {
-		fmt++;
-		nr_attrs--;
+	assert (!f->virt && !f->composite && !f->multiset);
+
+	const char *p = BUNtail(f->ci, f->p);
+	ssize_t l = 0;
+
+	if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
+		p = f->nullstr;
+		l = (ssize_t) strlen(p);
+	} else {
+		l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+		if (l < 0)
+			return -1;
+		p = *localbuf;
 	}
-	if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, composite, inms)) < 0) {
-		return -1;
+	if (fill + l + f->seplen >= (ssize_t) * len) {
+		/* extend the buffer */
+		char *nbuf;
+		nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+		if (nbuf == NULL)
+			return -1;	/* *buf freed by caller */
+		*buf = nbuf;
+		*len = fill + l + f->seplen + BUFSIZ;
+	}
+	if (l) {
+		strncpy(*buf + fill, p, l);
+		fill += l;
+		f->p++;
 	}
 	return fill;
 }
 
 static ssize_t
-output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
-				  Column *fmt, stream *fd, BUN nr_attrs, int multiset, int composite, int id)
+output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int composite, bool quoted)
+{
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill++] = '(';
+	(void)nr_attrs;
+	/*
+	if (fmt->virt) {
+		assert(0);
+		fmt++;
+		nr_attrs--;
+	}
+	*/
+	int first = 1, j = 0;
+	for( ; composite; composite--) {
+		Column *f = fmt + j;
+
+		if (!first) {
+			(*buf)[fill++] = ',';
+			(*buf)[fill++] = ' ';
+			(*buf)[fill] = 0;
+		}
+		if (f->multiset) {
+			int nr_attrs = multiset_size(f)-1;
+			const char *p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
+
+			fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
+			fmt[j+nr_attrs].p++;
+			f = fmt + j + nr_attrs; /* closing bracket */
+			j += nr_attrs + 1;
+		} else if (f->composite) {
+			int nr_attrs = multiset_size(f)-1;
+			fill = output_composite(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j-1, f->composite, true);
+			f = fmt + j + nr_attrs; /* closing bracket */
+			j += nr_attrs + 1;
+		} else if (f->c) {
+			fill = output_value(buf, len, fill, localbuf, locallen, f);
+			j++;
+		}
+		first = 0;
+	}
+	(*buf)[fill++] = ')';
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill] = 0;
+	return fill;
+}
+
+static ssize_t
+output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
 	Column *msid = fmt + nr_attrs;
 	int *idp = (int*)Tloc(msid->c, msid->p);
 	int first = 1;
-	for (; *idp == id; idp++, msid->p++) {
+
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill++] = '{';
+	(*buf)[fill] = 0;
+	for (; *idp == id && fill > 0; idp++, msid->p++) {
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
-			if ((fill = output_line_composite(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, composite, true)) < 0) {
-				break;
-			}
+			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
 		} else {
-			if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, 0, true)) < 0) {
-				break;
-			}
+			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
 		}
 		first = 0;
 	}
+	if (fill < 0)
+		return fill;
+	(*buf)[fill++] = '}';
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill] = 0;
 	return fill;
 }
 
-static inline ssize_t
+static ssize_t
 output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
-				  Column *fmt, stream *fd, BUN nr_attrs, int composite, bool inms)
+				  Column *fmt, BUN nr_attrs)
 {
 	BUN j;
 
 	for (j = 0; j < nr_attrs; ) {
 		Column *f = fmt + j;
 		const char *p;
-		ssize_t l = 0;
 
-		if (f->virt && !f->multiset && f->composite > 1) {
-			assert(composite == 0);
-			(*buf)[fill++] = '\'';
-			(*buf)[fill++] = '(';
-			(*buf)[fill] = 0;
-			composite = f->composite;
-			j++;
-			continue;
-		}
-		if (f->multiset && !inms) {
-				int nr_attrs = multiset_size(f)-1;
-				p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
+		if (f->multiset) {
+			int nr_attrs = multiset_size(f)-1;
+			p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
-				if (!composite && !inms)
-					(*buf)[fill++] = '\'';
-				(*buf)[fill++] = '{';
-				(*buf)[fill] = 0;
-				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + j + 1, fd, nr_attrs-1, f->multiset, f->composite, *(int*)p);
-				(*buf)[fill++] = '}';
-				if (!composite && !inms)
-					(*buf)[fill++] = '\'';
-				(*buf)[fill] = 0;
-				fmt[j+nr_attrs].p++;
-				f = fmt + j + nr_attrs; /* closing bracket */
-				j += nr_attrs + 1;
+			fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			fmt[j+nr_attrs].p++;
+			f = fmt + j + nr_attrs; /* closing bracket */
+			j += nr_attrs + 1;
+		} else if (f->composite) {
+			int nr_attrs = multiset_size(f)-1;
+			fill = output_composite(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j, f->composite, false);
+			f = fmt + j + nr_attrs; /* closing bracket */
+			j += nr_attrs + 1;
 		} else if (f->c) {
-			p = BUNtail(f->ci, f->p);
-
-			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
-				p = f->nullstr;
-				l = (ssize_t) strlen(p);
-				j++;
-			} else {
-				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
-				if (l < 0)
-					return -1;
-				p = *localbuf;
-				j++;
-			}
-			if (fill + l + f->seplen >= (ssize_t) * len) {
-				/* extend the buffer */
-				char *nbuf;
-				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
-				if (nbuf == NULL)
-					return -1;	/* *buf freed by caller */
-				*buf = nbuf;
-				*len = fill + l + f->seplen + BUFSIZ;
-			}
-			if (l) {
-				strncpy(*buf + fill, p, l);
-				fill += l;
-				f->p++;
-			}
-		} else
+			fill = output_value(buf, len, fill, localbuf, locallen, f);
 			j++;
-		if (composite) {
-			composite--;
-			if (composite) {
-				(*buf)[fill++] = ',';
-				(*buf)[fill++] = ' ';
-				(*buf)[fill] = 0;
-			} else {
-				(*buf)[fill++] = ')';
-				if (!inms)
-					(*buf)[fill++] = '\'';
-				(*buf)[fill] = 0;
-				strncpy(*buf + fill, f->sep, f->seplen);
-				fill += f->seplen;
-			}
 		} else {
-			strncpy(*buf + fill, f->sep, f->seplen);
-			fill += f->seplen;
+			j++;
 		}
+		strncpy(*buf + fill, f->sep, f->seplen);
+		fill += f->seplen;
 	}
 	return fill;
 }
@@ -603,7 +625,7 @@ output_complex(Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_complex(&buf, &len, 0, &localbuf, &locallen, as->format, fd, as->nr_attrs, 0, false)) < 0) {
+		if ((res = output_line_complex(&buf, &len, 0, &localbuf, &locallen, as->format, as->nr_attrs)) < 0) {
 			break;
 		}
 		if (fd && mnstr_write(fd, buf, 1, res) != res)
