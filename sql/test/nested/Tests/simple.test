@@ -69,6 +69,16 @@ right
 l1
 r1
 
+query IT
+select * from tpv;
+----
+1
+("left", "right")
+2
+("left", "right")
+3
+("l1", "r1")
+
 statement ok
 create table tpsv( i integer, p pair[2])
 
@@ -93,6 +103,16 @@ r2
 3
 l3
 r3
+
+query IT
+select * from tpsv
+----
+1
+{("left", "right"),("l2", "r2")}
+2
+{("left", "right"),("l2", "r2")}
+3
+{("l3", "r3")}
 
 query ITT nosort
 select i, up.key, up.value from tpsv cross join unnest(p) up where i = 1
