@@ -9,11 +9,11 @@ click
 2
 scroll
 
-#query T
-#select cast(t.json as event) from (select json from r'$TSTSRCDIR/events.json') t
-#----
-#'(1,"click")'
-#'(2,"scroll")'
+query T
+select cast(t.json as event) from (select json from r'$TSTSRCDIR/events.json') t
+----
+(1, "click")
+(2, "scroll")
 
 statement ok
 drop type event
