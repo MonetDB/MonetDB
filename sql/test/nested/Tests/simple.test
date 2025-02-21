@@ -147,14 +147,22 @@ select i, count(*) from tpsv cross join unnest(p) up group by i
 statement ok
 insert into tpsv select i, p from tpsv
 
-#select cast(json '[ { "key": "left", "value": "right" }]' as pair[])
+query T nosort
+select cast(json '[ { "key": "left", "value": "right" }]' as pair[])
+----
+{("left", "right")}
+
 query TT nosort
 select b.key, b.value from (select cast(json '[ { "key": "left", "value": "right" }]' as pair[]) as a) cross join unnest (a) b
 ----
 left
 right
 
-#select cast(json '[ { "key": "left", "value": "right" }, { "key": "l1", "value": "r1" }]' as pair[])
+query T nosort
+select cast(json '[ { "key": "left", "value": "right" }, { "key": "l1", "value": "r1" }]' as pair[])
+----
+{("left", "right"),("l1", "r1")}
+
 query TT nosort
 select b.key, b.value from (select cast(json '[ { "key": "left", "value": "right" }, { "key": "l1", "value": "r1" }]' as pair[]) as a) cross join unnest (a) b
 ----

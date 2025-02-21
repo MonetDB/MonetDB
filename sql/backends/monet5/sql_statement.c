@@ -324,7 +324,7 @@ stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
-	s->op4.typeval = *tpe;
+	s->subtype = *tpe;
 	s->q = q;
 	s->nr = q->argv[0];
 	s->nrcols = 2;
@@ -415,9 +415,9 @@ stmt_var(backend *be, sql_alias *sname, const char *varname, sql_subtype *t, int
 	}
 
 	if (t)
-		s->op4.typeval = *t;
+		s->subtype = *t;
 	else
-		s->op4.typeval.type = NULL;
+		s->subtype.type = NULL;
 	s->flag = declare + (level << 1);
 	s->key = 1;
 	s->q = q;
@@ -485,9 +485,9 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 
 	s->op1 = NULL;
 	if (t)
-		s->op4.typeval = *t;
+		s->subtype = *t;
 	else
-		s->op4.typeval.type = NULL;
+		s->subtype.type = NULL;
 	s->flag = nr;
 	s->key = 1;
 	s->q = q;
@@ -557,7 +557,7 @@ stmt_temp(backend *be, sql_subtype *t)
 		freeInstruction(q);
 		goto bailout;
 	}
-	s->op4.typeval = *t;
+	s->subtype = *t;
 	s->nrcols = 1;
 	s->q = q;
 	s->nr = getDestVar(q);
@@ -578,7 +578,7 @@ stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
 	stmt *s = stmt_create(be->mvc->sa, st_result);
 	if (s == NULL)
 		return NULL;
-	s->op4.typeval = *t;
+	s->subtype = *t;
 	s->nrcols = 2;
 	s->q = q;
 	s->nr = getArg(q, retnr);
@@ -1217,11 +1217,11 @@ stmt_result(backend *be, stmt *s, int nr)
 	}
 	ns->op1 = s;
 	if (!nr && (s->type == st_order || s->type == st_reorder))
-		ns->op4.typeval = *tail_type(s->op1);
+		ns->subtype = *tail_type(s->op1);
 	else if (nr && ((s->type == st_join && s->flag == MARKJOIN) || (s->type == st_uselect2 && s->flag == MARKJOIN)))
-		ns->op4.typeval = *sql_bind_localtype("bit");
+		ns->subtype = *sql_bind_localtype("bit");
 	else
-		ns->op4.typeval = *sql_bind_localtype("oid");
+		ns->subtype = *sql_bind_localtype("oid");
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
@@ -2926,7 +2926,7 @@ stmt_rs_column(backend *be, stmt *rs, int i, sql_subtype *tpe)
 		}
 
 		s->op1 = rs;
-		s->op4.typeval = *tpe;
+		s->subtype = *tpe;
 		s->flag = i;
 		s->nrcols = 1;
 		s->key = 0;
@@ -3881,11 +3881,11 @@ tail_set_type(mvc *m, stmt *st, sql_subtype *t)
 		case st_convert:
 		case st_temp:
 		case st_single:
-			st->op4.typeval = *t;
+			st->subtype = *t;
 			return;
 		case st_var:
-			if (st->op4.typeval.type)
-				st->op4.typeval = *t;
+			if (st->subtype.type)
+				st->subtype = *t;
 			return;
 		default:
 			return;
@@ -4002,7 +4002,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	s->key = v->key;
 	s->nrcols = v->nrcols;
 	s->aggr = v->aggr;
-	s->op4.typeval = *t;
+	s->subtype = *t;
 	s->nr = getDestVar(q);
 	s->q = q;
 	s->cand = pushed ? sel : NULL;
@@ -4037,6 +4037,7 @@ typedef struct result_subtype {
 	sql_subtype st;
 	bool multiset; /* multiset id */
 } result_subtype;
+
 /* mark multiset rowid and msid as multiset, for later id correction */
 static int
 composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *tps)
@@ -4126,12 +4127,16 @@ stmt_from_json(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	s->nrcols = 2;
 	s->key = v->key;
 	s->aggr = v->aggr;
-	s->op4.typeval = *t;
+	s->subtype = *t;
 	s->nr = getDestVar(q);
 	s->q = q;
 	//s->cand = pushed ? sel : NULL;
 	pushInstruction(be->mb, q);
-	return result_list(be, s->q, 0, tps, nrcols);
+	s = result_list(be, s->q, 0, tps, nrcols);
+	s->subtype = *t;
+	s->nested = true;
+	s->multiset = t->multiset;
+	return s;
 bailout:
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
@@ -4170,12 +4175,16 @@ stmt_from_varchar(backend *be, stmt *v, stmt *sel, sql_subtype *t)
 	s->nrcols = 2;
 	s->key = v->key;
 	s->aggr = v->aggr;
-	s->op4.typeval = *t;
+	s->subtype = *t;
 	s->nr = getDestVar(q);
 	s->q = q;
 	//s->cand = pushed ? sel : NULL;
 	pushInstruction(be->mb, q);
-	return result_list(be, s->q, 0, tps, nrcols);
+	s = result_list(be, s->q, 0, tps, nrcols);
+	s->subtype = *t;
+	s->nested = true;
+	s->multiset = t->multiset;
+	return s;
 bailout:
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
@@ -4334,7 +4343,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	s->key = v->key;
 	s->nrcols = v->nrcols;
 	s->aggr = v->aggr;
-	s->op4.typeval = *t;
+	s->subtype = *t;
 	s->nr = getDestVar(q);
 	s->q = q;
 	s->cand = pushed ? sel : NULL;
@@ -4815,6 +4824,7 @@ stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *ali
 	s->multiset = op1->multiset;
 	s->nested = op1->nested;
 	s->virt = op1->virt;
+	s->subtype = op1->subtype;
 
 	s->tname = tname;
 	s->cname = alias;
@@ -4845,6 +4855,8 @@ stmt_as(backend *be, stmt *s, stmt *org)
 sql_subtype *
 tail_type(stmt *st)
 {
+	if (st->subtype.type)
+		return &st->subtype;
 	for (;;) {
 		switch (st->type) {
 		case st_const:
@@ -4865,7 +4877,7 @@ tail_type(stmt *st)
 			return sql_bind_localtype("oid");
 		case st_alias:
 			if (!st->op1)
-				return &st->op4.typeval;
+				return &st->subtype;
 			/* fall through */
 		case st_append:
 		case st_append_bulk:
@@ -4900,7 +4912,7 @@ tail_type(stmt *st)
 		case st_mirror:
 			return sql_bind_localtype("oid");
 		case st_result:
-			return &st->op4.typeval;
+			return &st->subtype;
 		case st_table_clear:
 			return sql_bind_localtype("lng");
 		case st_aggr:
@@ -4918,10 +4930,10 @@ tail_type(stmt *st)
 		case st_temp:
 		case st_single:
 		case st_rs_column:
-			return &st->op4.typeval;
+			return &st->subtype;
 		case st_var:
-			if (st->op4.typeval.type)
-				return &st->op4.typeval;
+			if (st->subtype.type)
+				return &st->subtype;
 			/* fall through */
 		case st_exception:
 			return NULL;
@@ -5336,7 +5348,7 @@ const_column(backend *be, stmt *val)
 		goto bailout;
 	}
 	s->op1 = val;
-	s->op4.typeval = *ct;
+	s->subtype = *ct;
 	s->nrcols = 1;
 
 	s->tname = val->tname;
@@ -5387,7 +5399,7 @@ stmt_fetch(backend *be, stmt *val)
 		goto bailout;
 	}
 	s->op1 = val;
-	s->op4.typeval = *ct;
+	s->subtype = *ct;
 	s->nrcols = 0;
 
 	s->tname = val->tname;

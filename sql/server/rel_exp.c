@@ -362,8 +362,9 @@ dup_subtype(allocator *sa, sql_subtype *st)
 static list *
 nested_exps(mvc *sql, sql_subtype *t, sql_alias *p, const char *name)
 {
-	sql_alias *atname = a_create(sql->sa, name);
-	atname->parent = p;
+	sql_alias *atname = name?a_create(sql->sa, name):NULL;
+	if (atname)
+		atname->parent = p;
 	list *nested = sa_list(sql->sa);
 	if (t->type->composite) {
 		for(node *n = t->type->d.fields->h; n; n = n->next) {
@@ -838,11 +839,6 @@ exp_ref_by_label(mvc *sql, sql_exp *o)
 		e->virt = 1;
 	if ((o->type == e_column || o->type == e_convert) && o->f)
 		e->f = o->f;
-	/*
-	if (o->type == e_convert && t && (t->multiset || t->type->composite)) {
-		e->f = nested_exps(sql, t, e->alias.parent, e->alias.name);
-	}
-	*/
 	return exp_propagate(sa, e, o);
 }
 

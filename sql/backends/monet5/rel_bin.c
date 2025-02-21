@@ -1749,29 +1749,38 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 }
 
 static stmt *
-nested_stmts(backend *be, list *exps, node **M)
+nested_stmts(backend *be, sql_exp *e, node **M)
 {
+	assert(is_nested(e));
 	node *m = *M;
 	list *r = sa_list(be->mvc->sa);
+	list *exps = e->f;
 
 	if (!list_empty(exps)) {
 		for (node *n = exps->h; n && m; n = n->next) {
 			sql_exp *e = n->data;
 			if (e->type == e_column && e->f) {
-				stmt *s = nested_stmts(be, e->f, &m);
-				s->label = e->alias.label;
+				stmt *s = nested_stmts(be, e, &m);
+				s = stmt_alias(be, s, e->alias.label, exp_relname(e), exp_name(e));
+				s->subtype = *exp_subtype(e);
+				//s->label = e->alias.label;
 				s->nested = true;
 				append(r, s);
 			} else {
 				stmt *s = m->data;
-				s->label = e->alias.label;
+				s = stmt_alias(be, s, e->alias.label, exp_relname(e), exp_name(e));
+				//s->label = e->alias.label;
 				m = m->next;
 				append(r, s);
 			}
 		}
 	}
 	*M = m;
-	return stmt_list(be, r);
+	stmt *s = stmt_list(be, r);
+	s->nested = true;
+	s->subtype = *exp_subtype(e);
+	s->multiset = s->subtype.multiset;
+	return s;
 }
 
 stmt *
@@ -1930,8 +1939,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_convert(be, l, (!push&&l->nrcols==0)?NULL:sel, from, to);
 		}
 		if (s && s->type == st_list && e->f) {
-			s = nested_stmts(be, e->f, &s->op4.lval->h);
-			s->nested = true;
+			s = nested_stmts(be, e, &s->op4.lval->h);
 		}
 	} 	break;
 	case e_func: {
@@ -2386,7 +2394,7 @@ stmt_set_type_param(mvc *sql, sql_subtype *type, stmt *param)
 		return -1;
 
 	if (set_type_param(sql, type, param->flag) == 0) {
-		param->op4.typeval = *type;
+		param->subtype = *type;
 		return 0;
 	}
 	return -1;
@@ -2685,7 +2693,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				} else if (s && s->type == st_list && c->type.type->composite) {
 					stmt *ns = stmt_none(be);
 					ns->type = st_alias;
-					ns->op4.typeval = *exp_subtype(exp);
+					ns->subtype = *exp_subtype(exp);
 					ns->virt = true;
 					list_append(s->op4.lval, ns);
 				}

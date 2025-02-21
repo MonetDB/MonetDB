@@ -29,7 +29,6 @@ typedef union stmtdata {
 	struct sql_idx *idxval;
 	struct sql_table *tval;
 
-	sql_subtype typeval;
 	struct sql_subfunc *funcval;
 	sql_rel *rel;
 } stmtdata;
@@ -137,6 +136,7 @@ typedef struct stmt {
 	int label;
 	sql_alias *tname;
 	const char *cname;
+	sql_subtype subtype;
 	InstrPtr q;
 	list *extra;	/* used for merge statements, this will be cleaned out on the pushcands branch :) */
 } stmt;
