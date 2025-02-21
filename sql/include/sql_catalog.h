@@ -764,7 +764,7 @@ typedef struct res_col {
 			 composite:1,
 			 multiset:2,
 			 cached:1;
-	int complex_len;
+	int nrfields;
 	ptr *p;
 } res_col;
 

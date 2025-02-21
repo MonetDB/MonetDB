@@ -62,6 +62,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 
 	if (!sql_find_subtype(&c->type, typename, digits, scale))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
+	c->nrfields = 1;
 	c->virt = (multiset&4)?true:false;
 	c->type.multiset = multiset&3;
 	c->multiset = c->type.multiset;

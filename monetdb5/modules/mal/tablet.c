@@ -277,28 +277,6 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 	return 0;
 }
 
-#define MS_VALUE 0
-#define MS_ARRAY 2
-/* move into sql_result and store in format */
-static int
-multiset_size( Column *fmt)
-{
-	int nrattrs = (fmt->multiset==MS_VALUE)?0:(fmt->multiset==MS_ARRAY)?3:2;
-	if (fmt->virt)
-		nrattrs++;
-	if (fmt->composite) {
-		int o = 0;
-		for (int i = 0; i<fmt->composite; i++) {
-			int j = multiset_size(fmt+(o+1));
-			nrattrs += j;
-			o += j;
-		}
-	} else {
-		nrattrs ++;
-	}
-	return nrattrs;
-}
-
 static ssize_t output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
 
 static inline ssize_t
@@ -359,7 +337,7 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 			(*buf)[fill] = 0;
 		}
 		if (f->multiset) {
-			int nr_attrs = multiset_size(f)-1;
+			int nr_attrs = f->nrfields - 1;
 			const char *p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
 			fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
@@ -367,7 +345,7 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->composite) {
-			int nr_attrs = multiset_size(f)-1;
+			int nr_attrs = f->nrfields - 1;
 			fill = output_composite(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j-1, f->composite, true);
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
@@ -384,6 +362,7 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 	return fill;
 }
 
+#define MS_ARRAY 2
 static ssize_t
 output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
@@ -427,7 +406,7 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 		const char *p;
 
 		if (f->multiset) {
-			int nr_attrs = multiset_size(f)-1;
+			int nr_attrs = f->nrfields - 1;
 			p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
 			fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
@@ -435,7 +414,7 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
 		} else if (f->composite) {
-			int nr_attrs = multiset_size(f)-1;
+			int nr_attrs = f->nrfields - 1;
 			fill = output_composite(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-j, f->composite, false);
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;

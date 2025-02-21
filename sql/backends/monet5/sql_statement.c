@@ -3351,13 +3351,13 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 static int
 nested_len(list *l)
 {
-	int nr;
+	int nr = 0;
 	if (list_empty(l))
 		return 0;
 	for(node *n = l->h; n; n = n->next) {
 		stmt *s = n->data;
 		if (s->nested)
-			nr += nested_len(unnest_stmt(s));
+			nr += nested_len(unnest_stmt(s)) + 1;
 		else
 			nr++;
 	}

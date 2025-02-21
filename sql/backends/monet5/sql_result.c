@@ -1307,6 +1307,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
+	fmt[0].nrfields = as.nr_attrs;
 
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
@@ -1326,6 +1327,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
+		fmt[i].nrfields = c->nrfields;
 		if (csv) {
 			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
@@ -1709,6 +1711,7 @@ next_col(res_col *c)
 	} else {
 		res++;
 	}
+	c->nrfields = res;
 	return res;
 }
 
@@ -1721,6 +1724,7 @@ count_cols(res_table *t)
 		res_col *c = t->cols + i;
 		//if (!c->virt || !c->multiset)
 			res++;
+
 		i += next_col(c);
 	}
 	return res;
@@ -1734,7 +1738,7 @@ count_rows(res_table *t) /* find real output column size */
 
 	if (c->virt) {
 		if (c->multiset)
-			res = next_col(c) - 1;
+			res = c->nrfields - 1;
 		else
 			res++;
 	}
@@ -1756,6 +1760,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (!s || !t)
 		return 0;
 
+	/* needed at the start as it fills in the nrfields */
 	if (t->complex_type) {
 		t->nr_output_cols = count_cols(t);
 		t->nr_rows = count_rows(t);
@@ -1815,7 +1820,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 		if (len && mnstr_write(s, c->tn, len, 1) != 1)
 			return -4;
-		i += next_col(c);
+		i += c->nrfields;
 		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1843,7 +1848,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
 				return -4;
 		}
-		i += next_col(c);
+		i += c->nrfields;
 
 		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
@@ -1861,7 +1866,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			return -4;
 		//if (c->type.multiset && mnstr_write(s, "[]", 2, 1) != 1)
 			//return -4;
-		i += next_col(c);
+		i += c->nrfields;
 		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1875,7 +1880,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 			if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
 				return res;
-			i += next_col(c);
+			i += c->nrfields;
 			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
@@ -1890,7 +1895,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 			if (mnstr_printf(s, "%u %u", c->type.digits, c->type.scale) < 0)
 				return -4;
-			i += next_col(c);
+			i += c->nrfields;
 			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
