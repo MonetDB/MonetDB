@@ -316,7 +316,7 @@ statment_score(stmt *c)
 	if (c->nrcols != 0) /* no need to create an extra intermediate */
 		score += 200;
 
-	if (!t)
+	if (!t || c->nested)
 		return score;
 	switch (ATOMstorage(t->type->localtype)) { /* give preference to smaller types */
 		case TYPE_bte:
@@ -354,7 +354,7 @@ static stmt *
 bin_find_smallest_column(backend *be, stmt *sub)
 {
 	stmt *res = sub->op4.lval->h->data;
-	int best_score = statment_score(sub->op4.lval->h->data);
+	int best_score = statment_score(res);
 
 	if (sub->op4.lval->h->next)
 		for (node *n = sub->op4.lval->h->next ; n ; n = n->next) {
@@ -2682,6 +2682,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 					list_append(s->op4.lval, ns);
 					s->nr = ns->nr;
 					s->multiset = c->type.multiset;
+				} else if (s && s->type == st_list && c->type.type->composite) {
+					stmt *ns = stmt_none(be);
+					ns->type = st_alias;
+					ns->op4.typeval = *exp_subtype(exp);
+					ns->virt = true;
+					list_append(s->op4.lval, ns);
 				}
 			} else {
 				s = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);

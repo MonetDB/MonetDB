@@ -82,9 +82,16 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		b = (BAT*)val;
 		if (b && t->nr_rows == BUN_NONE && !c->virt && t->cur_col == t->output_col)
 			t->nr_rows = BATcount(b);
+		/*
 		else if (c->virt) {
-			t->output_col = 4;
+			if (c->multiset && c->type.type->composite)
+				t->output_col = c->multiset + c->type.type->composite + 1;
+			else if (c->multiset)
+				t->output_col = c->multiset + 2;
+			else
+				t->output_col++;
 		}
+		*/
 	} else { // wrap scalar values in BATs for result consistency
 		b = COLnew(0, mtype, 1, TRANSIENT);
 		if (b == NULL) {

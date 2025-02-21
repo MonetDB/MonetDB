@@ -284,9 +284,9 @@ static int
 multiset_size( Column *fmt)
 {
 	int nrattrs = (fmt->multiset==MS_VALUE)?0:(fmt->multiset==MS_ARRAY)?3:2;
+	if (fmt->virt)
+		nrattrs++;
 	if (fmt->composite) {
-		if (fmt->virt)
-			nrattrs++;
 		int o = 0;
 		for (int i = 0; i<fmt->composite; i++) {
 			int j = multiset_size(fmt+(o+1));
@@ -300,21 +300,19 @@ multiset_size( Column *fmt)
 }
 
 static inline ssize_t
-output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, bool inms);
+output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite, bool inms);
 
 static ssize_t
-output_line_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite)
+output_line_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, int composite, bool inms)
 {
-	(void)composite;
 	(*buf)[fill++] = '(';
 	if (fmt->virt) {
 		fmt++;
 		nr_attrs--;
 	}
-	if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, false)) < 0) {
+	if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, composite, inms)) < 0) {
 		return -1;
 	}
-	(*buf)[fill++] = ')';
 	return fill;
 }
 
@@ -330,11 +328,11 @@ output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
-			if ((fill = output_line_composite(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, composite)) < 0) {
+			if ((fill = output_line_composite(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, composite, true)) < 0) {
 				break;
 			}
 		} else {
-			if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, true)) < 0) {
+			if ((fill = output_line_complex(buf, len, fill, localbuf, locallen, fmt, fd, nr_attrs, 0, true)) < 0) {
 				break;
 			}
 		}
@@ -345,17 +343,17 @@ output_multiset_value(char **buf, size_t *len, ssize_t fill, char **localbuf, si
 
 static inline ssize_t
 output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
-				  Column *fmt, stream *fd, BUN nr_attrs, bool inms)
+				  Column *fmt, stream *fd, BUN nr_attrs, int composite, bool inms)
 {
 	BUN j;
-	int composite = 0;
 
 	for (j = 0; j < nr_attrs; ) {
 		Column *f = fmt + j;
 		const char *p;
 		ssize_t l = 0;
 
-		if (f->virt && f->composite > 1) {
+		if (f->virt && !f->multiset && f->composite > 1) {
+			assert(composite == 0);
 			(*buf)[fill++] = '\'';
 			(*buf)[fill++] = '(';
 			(*buf)[fill] = 0;
@@ -364,16 +362,16 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 			continue;
 		}
 		if (f->multiset && !inms) {
-				int nr_attrs = multiset_size(f);
+				int nr_attrs = multiset_size(f)-1;
 				p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
-				if (!composite)
+				if (!composite && !inms)
 					(*buf)[fill++] = '\'';
 				(*buf)[fill++] = '{';
 				(*buf)[fill] = 0;
 				fill = output_multiset_value(buf, len, fill, localbuf, locallen, fmt + j + 1, fd, nr_attrs-1, f->multiset, f->composite, *(int*)p);
 				(*buf)[fill++] = '}';
-				if (!composite)
+				if (!composite && !inms)
 					(*buf)[fill++] = '\'';
 				(*buf)[fill] = 0;
 				fmt[j+nr_attrs].p++;
@@ -417,7 +415,8 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 				(*buf)[fill] = 0;
 			} else {
 				(*buf)[fill++] = ')';
-				(*buf)[fill++] = '\'';
+				if (!inms)
+					(*buf)[fill++] = '\'';
 				(*buf)[fill] = 0;
 				strncpy(*buf + fill, f->sep, f->seplen);
 				fill += f->seplen;
@@ -604,7 +603,7 @@ output_complex(Tablet *as, stream *fd, bstream *in)
 			res = -5;			/* "Query aborted" */
 			break;
 		}
-		if ((res = output_line_complex(&buf, &len, 0, &localbuf, &locallen, as->format, fd, as->nr_attrs, false)) < 0) {
+		if ((res = output_line_complex(&buf, &len, 0, &localbuf, &locallen, as->format, fd, as->nr_attrs, 0, false)) < 0) {
 			break;
 		}
 		if (fd && mnstr_write(fd, buf, 1, res) != res)

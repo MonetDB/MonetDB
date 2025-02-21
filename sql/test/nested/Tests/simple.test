@@ -15,6 +15,12 @@ right
 left
 right
 
+query T nosort
+select * from foo
+----
+("left", "right")
+("left", "right")
+
 query I nosort
 select count(*) from foo
 ----
@@ -33,6 +39,11 @@ left
 right
 left
 right
+
+query T nosort
+select * from bar;
+----
+{("left", "right"),("left", "right")}
 
 query I nosort
 select count(*) from bar, unnest(p)

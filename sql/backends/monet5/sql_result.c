@@ -1410,7 +1410,8 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 
 			if (c->multiset) {
 				/* c rowid */
-				i += output_complex_type(t->cols + i + 1, fmt + i + 2,  c->composite?list_length(c->type.type->d.fields):1, true, false);
+				i++;
+				i += output_complex_type(t->cols + i, fmt + i + 1,  c->composite?list_length(c->type.type->d.fields):1, true, false);
 				i++;
 				if (c->multiset == MS_ARRAY)
 					i++;
@@ -1694,9 +1695,9 @@ static inline int
 next_col(res_col *c)
 {
 	int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+	if (c->virt)
+		res++;
 	if (c->type.type->composite) {
-		if (c->virt)
-			res++;
 		int nr = list_length(c->type.type->d.fields);
 		/* needs fix ie needs to jump id,nr cols etc */
 		int o = 0;
@@ -1718,11 +1719,30 @@ count_cols(res_table *t)
 
 	for(int i = 0; i < t->nr_cols; ) {
 		res_col *c = t->cols + i;
-		if (!c->virt)
+		//if (!c->virt || !c->multiset)
 			res++;
 		i += next_col(c);
 	}
 	return res;
+}
+
+static BUN
+count_rows(res_table *t) /* find real output column size */
+{
+	int res = 0;
+	res_col *c = t->cols;
+
+	if (c->virt) {
+		if (c->multiset)
+			res = next_col(c) - 1;
+		else
+			res++;
+	}
+	c = t->cols + res;
+	if (c->cached)
+		return BATcount((BAT*)c->p);
+	else
+		return BATcount(BBPquickdesc(c->b));
 }
 
 int
@@ -1736,8 +1756,10 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (!s || !t)
 		return 0;
 
-	if (t->complex_type)
+	if (t->complex_type) {
 		t->nr_output_cols = count_cols(t);
+		t->nr_rows = count_rows(t);
+	}
 	/* query type: Q_TABLE || Q_PREPARE */
 	assert(t->query_type == Q_TABLE || t->query_type == Q_PREPARE);
 	if (mnstr_write(s, "&", 1, 1) != 1 || mvc_send_int(s, (int) t->query_type) != 1 || mnstr_write(s, " ", 1, 1) != 1)

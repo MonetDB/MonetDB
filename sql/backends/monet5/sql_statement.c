@@ -3300,6 +3300,8 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
 		bool virt = (!c->q && c->type == st_alias && !c->op1 && c->multiset);
+		if (!c->nested && c->virt)
+			continue;
 
 		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
@@ -4873,7 +4875,7 @@ tail_type(stmt *st)
 			st = st->op1;
 			continue;
 		case st_list:
-			st = st->op4.lval->h->data;
+			st = st->op4.lval->t->data;
 			continue;
 		case st_bat:
 			return &st->op4.cval->type;
