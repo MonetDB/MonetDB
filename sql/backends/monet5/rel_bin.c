@@ -5985,7 +5985,7 @@ insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
 
 	int len;
 	stmt **updates = table_update_stmts(sql, st, &len);
-	stmt *insert = NULL, *cnt, *pos;
+	stmt *insert = NULL, *cnt, *pos = NULL;
 
 	node *n, *m;
 	for (n = ol_first_node(st->columns), m = ms->op4.lval->h; n && m; ) {
