@@ -4399,7 +4399,7 @@ sql_trans_commit(sql_trans *tr)
 				if (!flush)
 					MT_lock_unset(&store->flush);
 			}
-			store->prev_oid = store->obj_id;
+			store->prev_oid = (sqlid) ATOMIC_GET(&store->obj_id);
 
 
 			if (ok == LOG_OK)
