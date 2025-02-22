@@ -1307,7 +1307,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
-	fmt[0].nrfields = as.nr_attrs;
+	fmt[0].nrfields = (int)as.nr_attrs;
 
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
@@ -2304,7 +2304,7 @@ ARRAYparser(char **S, Column *cols, int nr, int *elm, sql_subtype *t)
 		}
 		/* insert msid */
 		if (t->multiset) {
-			id = BATcount(cols[i + (t->multiset == MS_ARRAY?2:1)].c);
+			id = (int)BATcount(cols[i + (t->multiset == MS_ARRAY?2:1)].c);
 			if (i < 0 || BUNappend(cols[i].c, &id, false) != GDK_SUCCEED)
 				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
 			i++;
