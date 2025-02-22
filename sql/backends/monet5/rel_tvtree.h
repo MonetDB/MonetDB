@@ -54,7 +54,7 @@ typedef struct type_values_tree {
 } tv_tree;
 
 tv_tree * tv_create(backend *be, sql_subtype *st);
-bool tv_parse_values(backend *be, tv_tree *t, list *cvals, stmt *left, stmt *sel);
+bool tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *sel);
 stmt * tv_generate_stmts(backend *be, tv_tree *t);
 
 #endif /*_REL_TVTREE_H_*/

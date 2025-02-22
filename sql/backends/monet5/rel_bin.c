@@ -886,8 +886,7 @@ value_tvtree(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 	sql_subtype *st = exp_subtype(vals_exp);
 	tv_tree *t = tv_create(be, st);
 
-	list *vals = exp_get_values(vals_exp);
-	if (false == tv_parse_values(be, t, vals, left, sel))
+	if (false == tv_parse_values(be, t, vals_exp, left, sel))
 		return NULL;
 
 	stmt *ret = tv_generate_stmts(be, t);

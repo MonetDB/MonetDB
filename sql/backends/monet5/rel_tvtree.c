@@ -103,6 +103,87 @@ tv_create(backend *be, sql_subtype *st)
 }
 
 static bool
+tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel);
+
+static bool
+mset_values_from_array_constructor(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
+{
+    /* add the rowid to the mset "origin" table */
+    stmt *rid = stmt_atom_int(be, t->rid_idx);
+    if (!rid)
+        return false;
+    assert(t->rid);
+    list_append(t->rid, rid);
+
+    /* per value insert actual data, msid(=rowid), msnr(for MS only) */
+    int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
+    list *ms_vals = values->f;
+    for (node *n = ms_vals->h; n; n = n->next, msnr_idx++) {
+
+        if (t->tvt == TV_MS_COMP) {
+            assert(t->cf);
+            int cfi = 0;
+            list *cf_vals = ((sql_exp*)n->data)->f;
+            for (node *m = cf_vals->h; m; m = m->next, cfi++)
+                if (false == tv_parse_values_(be, list_fetch(t->cf, cfi), m->data, left, sel))
+                    return false;
+        } else {
+            assert(t->vals && !t->cf);
+            stmt *i = exp_bin(be, n->data, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+            if (!i)
+                return false;
+            list_append(t->vals, i);
+        }
+
+        stmt *msid = stmt_atom_int(be, t->rid_idx);
+        if (!msid)
+            return false;
+        list_append(t->msid, msid);
+
+        if (t->tvt == TV_MS_COMP || t->tvt == TV_MS_BSC) {
+            stmt *msnr = stmt_atom_int(be, msnr_idx);
+            if (!msnr)
+                return false;
+            list_append(t->msnr, msnr);
+        }
+    }
+
+    /* we inserted all the mset-value subvalues so now
+     * increment this tv_tree node's (mset) rowid index */
+    t->rid_idx++;
+
+    return true;
+}
+
+static bool
+mset_values_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
+{
+    /* per entry-value in the literal the call to exp_bin() will generate an
+     * `sql.from_varchar()` instruction. This instructions for a given returns
+     * either 3 or 4 bat results corresponding to rowid, value, msid and optionally
+     * msnr (multiset vs setof). Those return values will be in an st_list stmt
+     * so we have to retrieve them (from stmt_list's op4) and append them to the
+     * tv_tree list of stmts */
+    assert(t->tvt == TV_SO_BSC || t->tvt == TV_MS_BSC);
+	assert(t->vals && !t->cf);
+
+	stmt *i = exp_bin(be, values, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+	if (!i)
+		return NULL;
+
+	assert(i->type == st_list);
+	assert(list_length(i->op4.lval) == 3 || list_length(i->op4.lval) == 4);
+
+	list_append(t->rid, list_fetch(i->op4.lval, 0));
+	list_append(t->vals, list_fetch(i->op4.lval, 1));
+	list_append(t->msid, list_fetch(i->op4.lval, 2));
+	if (t->tvt == TV_MS_BSC)
+		list_append(t->msnr, list_fetch(i->op4.lval, 3));
+
+    return true;
+}
+
+static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 {
 	switch (t->tvt) {
@@ -118,53 +199,13 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 		case TV_SO_COMP:
 		case TV_MS_BSC:
 		case TV_SO_BSC:
-			assert(value->f);
-
-			/* add the rowid to the mset "origin" table */
-			stmt *rid = stmt_atom_int(be, t->rid_idx);
-			if (!rid)
-				return false;
-			assert(t->rid);
-			list_append(t->rid, rid);
-
-			/* per value insert actual data, msid(=rowid), msnr(for MS only) */
-			int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
-			list *ms_vals = value->f;
-			for (node *n = ms_vals->h; n; n = n->next, msnr_idx++) {
-
-				if (t->tvt == TV_MS_COMP) {
-					assert(t->cf);
-					int cfi = 0;
-					list *cf_vals = ((sql_exp*)n->data)->f;
-					for (node *m = cf_vals->h; m; m = m->next, cfi++)
-						if (false == tv_parse_values_(be, list_fetch(t->cf, cfi), m->data, left, sel))
-							return false;
-				} else {
-					assert(t->vals && !t->cf);
-					stmt *i = exp_bin(be, n->data, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-					if (!i)
-						return false;
-					list_append(t->vals, i);
-				}
-
-				stmt *msid = stmt_atom_int(be, t->rid_idx);
-				if (!msid)
-					return false;
-				list_append(t->msid, msid);
-
-				if (t->tvt == TV_MS_COMP || t->tvt == TV_MS_BSC) {
-					stmt *msnr = stmt_atom_int(be, msnr_idx);
-					if (!msnr)
-						return false;
-					list_append(t->msnr, msnr);
-				}
-			}
-
-			/* we inserted all the mset-value subvalues so now
-			 * increment this tv_tree node's (mset) rowid index */
-			t->rid_idx++;
-
-			break;
+            if (is_convert(value->type))
+               	/* VALUES ('{1, 2, 3}') */
+                return mset_values_from_literal(be, t, value, left, sel);
+            else
+               	/* VALUES (array[1, 2, 3]) */
+                return mset_values_from_array_constructor(be, t, value, left, sel);
+            break;
 		case TV_COMP:
 			assert(value->f);
 			int cnt = 0;
@@ -181,7 +222,7 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 	return true;
 }
 
-static sql_exp *
+static inline sql_exp *
 tv_exp_wrap_list(backend *be, tv_tree *t, list *l)
 {
 	sql_exp *e = exp_null(be->mvc->sa, t->st);
@@ -191,29 +232,36 @@ tv_exp_wrap_list(backend *be, tv_tree *t, list *l)
 }
 
 bool
-tv_parse_values(backend *be, tv_tree *t, list *col_vals, stmt *left, stmt *sel)
+tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *sel)
 {
-	/* col_vals is a list with values that correspond to a column whose
+	list *vals = exp_get_values(col_vals);
+	/* vals is a list with values that correspond to a column whose
 	 * (possibly "complex") type is represented by the tv_tree. NOTE:
-	 * in this case col_vals might be either
+	 * in this case vals might be either
 	 *   1. a list of many values or
-	 *   2. a single value of composite or mset/setof with composite type.
-	 *      TODO: mset/setof with basic type?
-	 * that's why we need to check the _row_ flag in the first entry of
-	 * the col_vals list. If it is set it means we are dealing with a
-	 * single row insert and we need a dummy expression de (to put
-	 * col_vals at its e->f) so the handling it's similar to those two cases
+	 *   2. a single value of composite or mset/setof with composite/basic type.
+	 * that's why we need to check for
+	 * 	 a. ->row in the first entry of col_vals exp
+	 * 	 b. for mset/setof the first ->row in the first entry of vals
+	 * If it is set it means we are dealing with a single row insert and we need
+	 * a dummy expression de (to put vals at its e->f) so parsing the values stays
+	 * similar with the general case
 	 */
-	bool single_row_val =((sql_exp*)col_vals->h->data)->row;
+	bool single_row_val = false;
+	single_row_val |= col_vals->row;
+	if ((t->tvt == TV_MS_BSC) || (t->tvt == TV_MS_COMP) ||
+	    (t->tvt == TV_SO_BSC) || (t->tvt == TV_SO_COMP))
+		single_row_val |= ((sql_exp*)vals->h->data)->row;
 
-	if (single_row_val) {
-		/* we need to create a dummy expression to single row col_vals
+
+    if (single_row_val) {
+		/* we need to create a dummy expression to single row vals
 		 * to adhere to the rest of the api */
-		sql_exp *de = tv_exp_wrap_list(be, t, col_vals);
+		sql_exp *de = tv_exp_wrap_list(be, t, vals);
 		if (false == tv_parse_values_(be, t, de, left, sel))
 			return false;
 	} else {
-		for (node *n = col_vals->h; n; n = n->next) {
+		for (node *n = vals->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			if (false == tv_parse_values_(be, t, e, left, sel))
 				return false;
