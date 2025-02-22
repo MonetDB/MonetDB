@@ -10,7 +10,11 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-add_library(monetdb_loader MODULE)
+if(MONETDB_STATIC)
+  add_library(monetdb_loader STATIC)
+else()
+  add_library(monetdb_loader MODULE)
+endif()
 
 target_sources(monetdb_loader
     PRIVATE

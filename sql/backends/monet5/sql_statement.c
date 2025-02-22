@@ -4081,6 +4081,55 @@ composite_type_result(backend *be, InstrPtr q, sql_subtype *t, result_subtype *t
 	return i;
 }
 
+static void
+nested_to_json(backend *be, InstrPtr q, list *l)
+{
+	for(node *n = l->h; n; n = n->next) {
+		stmt *s = n->data;
+		if (s->nested) {
+			nested_to_json(be, q, unnest_stmt(s));
+		} else {
+			pushArgument(be->mb, q, s->nr);
+		}
+	}
+}
+
+static stmt *
+stmt_to_json(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
+{
+	/* to_json(json res, ptr st, bats vararg) 1, 3 */
+	int nrcols = nested_len(unnest_stmt(v));
+	(void)sel;
+
+	InstrPtr q = newStmtArgs(be->mb, "sql", "to_json", nrcols + 2);
+	setVarType(be->mb, getArg(q, 0), t->type->localtype);
+	q = pushPtr(be->mb, q, f);
+	nested_to_json(be, q, unnest_stmt(v));
+
+	bool enabled = be->mvc->sa->eb.enabled;
+	be->mvc->sa->eb.enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_convert);
+	be->mvc->sa->eb.enabled = enabled;
+	if(!s) {
+		freeInstruction(q);
+		goto bailout;
+	}
+	s->op1 = v;
+	s->nrcols = 2;
+	s->key = v->key;
+	s->aggr = v->aggr;
+	s->subtype = *t;
+	s->nr = getDestVar(q);
+	s->q = q;
+	//s->cand = pushed ? sel : NULL;
+	pushInstruction(be->mb, q);
+	return s;
+bailout:
+	if (be->mvc->sa->eb.enabled)
+		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
 /* for each result create stmt_result and return stmt list */
 static stmt *
 result_list(backend *be, InstrPtr q, int cur, result_subtype *tps, int nrcols)
@@ -4206,6 +4255,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 
 	if (f->type->eclass == EC_EXTERNAL && t->type->composite && strcmp(f->type->base.name, "json") == 0)
 		return stmt_from_json(be, v, sel, t);
+	if (t->type->eclass == EC_EXTERNAL && f->type->composite && strcmp(t->type->base.name, "json") == 0)
+		return stmt_to_json(be, v, sel, f, t);
 	if (EC_VARCHAR(f->type->eclass) && (t->type->composite || t->multiset))
 		return stmt_from_varchar(be, v, sel, t);
 	if (f->type->eclass != EC_EXTERNAL && t->type->eclass != EC_EXTERNAL &&

@@ -15,5 +15,9 @@ select cast(t.json as event) from (select json from r'$TSTSRCDIR/events.json') t
 (1, "click")
 (2, "scroll")
 
+query T
+select cast(cast(t.json as event) as json) from (select json from r'$TSTSRCDIR/events.json') t
+----
+
 statement ok
 drop type event

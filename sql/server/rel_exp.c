@@ -3848,6 +3848,9 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 
+	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
+		return exp;
+
 	if (t->type->composite || t->multiset) {
 		if (fromtype && subtype_cmp(t, fromtype) == 0)
 			return exp;
@@ -3855,16 +3858,18 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		if (t->type->composite && (is_row(exp) || is_values(exp)))
 			return exp_check_composite_type(sql, t, rel, exp, tpe);
-		sql_subtype *et = exp_subtype(exp);
-		if (strcmp(et->type->base.name, "json") == 0)
-			return exp_convert(sql, exp, et, t);
-		if (EC_VARCHAR(et->type->eclass))
-			return exp_convert(sql, exp, et, t);
+		if (strcmp(fromtype->type->base.name, "json") == 0)
+			return exp_convert(sql, exp, fromtype, t);
+		if (EC_VARCHAR(fromtype->type->eclass))
+			return exp_convert(sql, exp, fromtype, t);
 		if (is_values(exp))
 			return NULL;
 	}
-	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
-		return exp;
+
+	if (fromtype->type->composite || fromtype->multiset) {
+		if (strcmp(t->type->base.name, "json") == 0)
+			return exp_convert(sql, exp, fromtype, t);
+	}
 
 	/* first try cheap internal (in-place) conversions ! */
 	if ((nexp = exp_convert_inplace(sql, t, exp)) != NULL)

@@ -371,6 +371,7 @@ main(int argc, char **av)
 #endif
 	modules[mods++] = "csv";
 	modules[mods++] = "monetdb_loader";
+	modules[mods++] = "json_loader";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif

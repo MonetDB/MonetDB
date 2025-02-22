@@ -5722,28 +5722,20 @@ SQLnormalize_monetdb_url(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	return MAL_SUCCEED;
 }
 
-#if 0
 static str
-insert_json(JSON *js, BAT *bats, int nr, int elm, sql_subtype *t)
+SQLto_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	for (int i = elm; i < js->free; i++) {
-		JSONterm *jt = js->elm+i;
+	(void)cntxt;
+	(void)mb;
+	str *res = (str*)getArgReference(stk, pci, 0);
+	sql_subtype *ft = *(sql_subtype**)getArgReference(stk, pci, pci->retc);
 
-		switch (jt->kind) {
-		case JSON_OBJECT:
-		case JSON_ARRAY:
-		case JSON_ELEMENT: // field
-		case JSON_VALUE:
-		case JSON_STRING:
-		case JSON_NUMBER:
-		case JSON_BOOL:
-		case JSON_NULL:
-			printf("%s\n", jt->name);
-		}
+	if (!ft->type->composite && !ft->multiset) {
+		throw(SQL, "SQLto_json", SQLSTATE(42000) "Invalid sql type: %s", ft->type->base.name);
 	}
+	*res = GDKstrdup("");
 	return MAL_SUCCEED;
 }
-#endif
 
 static int insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sql_subtype *t);
 static int insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sql_subtype *t);
@@ -7014,8 +7006,9 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
  pattern("sql", "normalize_monetdb_url", SQLnormalize_monetdb_url, false, "Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL", args(1,2, arg("",str),arg("u",str))),
- pattern("sql", "from_json", SQLfrom_json, false, "Reads json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", json), arg("type", ptr))),
- pattern("sql", "from_varchar", SQLfrom_varchar, false, "Reads string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", str), arg("type", ptr))),
+ pattern("sql", "from_json", SQLfrom_json, false, "Converts json string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", json), arg("type", ptr))),
+ pattern("sql", "to_json", SQLto_json, false, "Convert complex type into json", args(1,3, arg("res", json), arg("type", ptr), batvarargany("t",0))),
+ pattern("sql", "from_varchar", SQLfrom_varchar, false, "Converts string into table of nested/multiset structures", args(1,3, batvarargany("t",0), optbatarg("input", str), arg("type", ptr))),
  { .imp=NULL }
 };
 #include "mal_import.h"
