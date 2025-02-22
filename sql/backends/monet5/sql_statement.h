@@ -154,7 +154,7 @@ extern int stmt_key(stmt *s);
 
 extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
 
-extern stmt *stmt_none(backend *be);
+sql_export stmt *stmt_none(backend *be);
 
 extern stmt *stmt_var(backend *be, sql_alias *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
@@ -263,7 +263,7 @@ extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc
 
 extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
-extern stmt *stmt_alias(backend *be, stmt *op1, int label, sql_alias *tname, const char *name);
+sql_export stmt *stmt_alias(backend *be, stmt *op1, int label, sql_alias *tname, const char *name);
 extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
 
 extern int stmt_output(backend *be, stmt *l);
