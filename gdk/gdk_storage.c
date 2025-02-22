@@ -620,7 +620,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 static BAT *
 DESCload(int i)
 {
-	const char *s, *nme = BBP_physical(i);
+	const char *nme = BBP_physical(i);
 	BAT *b = NULL;
 	int tt;
 
@@ -636,7 +636,8 @@ DESCload(int i)
 	MT_lock_set(&b->theaplock);
 	tt = b->ttype;
 	if (tt < 0) {
-		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+		const char *s = ATOMunknown_name(tt);
+		if ((tt = ATOMindex(s)) < 0) {
 			MT_lock_unset(&b->theaplock);
 			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
 			return NULL;
