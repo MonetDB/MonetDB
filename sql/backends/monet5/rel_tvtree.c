@@ -32,24 +32,15 @@ tv_get_type(sql_subtype *st)
 }
 
 static tv_tree*
-tv_node_(allocator *sa, sql_subtype *st, tv_type tvt)
+tv_node(allocator *sa, sql_subtype *st, tv_type tvt)
 {
 	tv_tree *n = (sa)?SA_NEW(sa, tv_tree):MNEW(tv_tree);
 	if (n == NULL)
 		return NULL;
-
 	n->st = st;
 	n->tvt = tvt;
 	n->rid_idx = 0;
 	n->ctl = n->rid = n->msid = n->msnr = n->vals = NULL;
-
-	return n;
-}
-
-static tv_tree*
-tv_create_(allocator *sa, sql_subtype *st, tv_type tvt)
-{
-	tv_tree *n = tv_node_(sa, st, tvt);
 
 	/* allocate only the lists that we need based on the tv-tree type */
 	switch (n->tvt) {
@@ -60,7 +51,7 @@ tv_create_(allocator *sa, sql_subtype *st, tv_type tvt)
 			n->ctl = sa_list(sa);
 			for (node *sf = st->type->d.fields->h; sf; sf = sf->next) {
 				sql_arg *sfa = sf->data;
-				append(n->ctl, tv_create_(sa, &sfa->type, tv_get_type(&sfa->type)));
+				append(n->ctl, tv_node(sa, &sfa->type, tv_get_type(&sfa->type)));
 			}
         	return n;
         case TV_MSET:
@@ -76,9 +67,9 @@ tv_create_(allocator *sa, sql_subtype *st, tv_type tvt)
 			 * we need to **EXPLICITLY** specify the tv_type */
 			tv_tree *sn;
 			if (st->type->composite)
-				sn = tv_create_(sa, st, TV_COMP);
+				sn = tv_node(sa, st, TV_COMP);
 			else
-				sn = tv_create_(sa, st, TV_BASIC);
+				sn = tv_node(sa, st, TV_BASIC);
 			sn->st = st;
 
 			append(n->ctl, sn);
@@ -99,7 +90,7 @@ tv_create(backend *be, sql_subtype *st)
 	 * nodes which are mset/setof have their underlying type (composite/basic)
 	 * in the same subtype->type struct. That's why we have to be careful
 	 * with how we generate the nodes. Read carefully tv_node */
-	return tv_create_(be->mvc->sa, st, tv_get_type(st));
+	return tv_node(be->mvc->sa, st, tv_get_type(st));
 }
 
 static bool
