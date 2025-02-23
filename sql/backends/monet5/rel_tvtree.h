@@ -24,7 +24,7 @@
 #include "sql_catalog.h"
 #include "sql_statement.h"
 
-/* tree-values tree (tv-tree) represents all possible column types
+/* type-values tree (tv-tree) represents all possible column types
  * (basic, composites, arrays and their combination) together with the
  * data of each. the goal is to handle INSERT VALUES dml statements
  * without type ambiguity.
@@ -33,19 +33,17 @@
  */
 
 typedef enum tv_type {
-	TV_BASIC,    // basic type
-	TV_MS_BSC,   // multiset of basic type
-	TV_SO_BSC,   // setof of basic type
-	TV_COMP,     // composite type
-	TV_MS_COMP,  // multiset of composite type
-	TV_SO_COMP   // setof of composite type
+	TV_BASIC, // basic type
+	TV_COMP,  // composite type
+	TV_MSET,  // multiset of composite type
+	TV_SETOF  // setof of composite type
 } tv_type;
 
 typedef struct type_values_tree {
 	tv_type tvt;
 	sql_subtype *st;
 	int rid_idx;  // mset values needs to know to which row they correspond to
-	list *cf;     // list of composite type (sub)fields
+	list *ctl;    // list of child tv nodes (underlying type for sets/subfields for composite)
 	/* next members are lists of stmts IF they are instantiated */
 	list *rid;    // row id for multisets
 	list *msid;   // multiset id (always refers to a row id)

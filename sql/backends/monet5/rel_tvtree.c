@@ -20,127 +20,119 @@
 static tv_type
 tv_get_type(sql_subtype *st)
 {
-	bool comp = st->type->composite;
-
 	if (st->multiset) {
 		if (st->multiset == MS_ARRAY)
-			return comp ? TV_MS_COMP : TV_MS_BSC;
+			return TV_MSET;
 		if (st->multiset == MS_SETOF)
-			return comp ? TV_SO_COMP : TV_SO_BSC;
-	} else if (comp)
+			return TV_SETOF;
+	} else if (st->type->composite)
 		return TV_COMP;
 
 	return TV_BASIC;
 }
 
 static tv_tree*
-tv_node(allocator *sa, sql_subtype *st)
+tv_node_(allocator *sa, sql_subtype *st, tv_type tvt)
 {
 	tv_tree *n = (sa)?SA_NEW(sa, tv_tree):MNEW(tv_tree);
 	if (n == NULL)
 		return NULL;
 
 	n->st = st;
-	n->tvt = tv_get_type(st);
+	n->tvt = tvt;
 	n->rid_idx = 0;
-	n->cf = n->rid = n->msid = n->msnr = n->vals = NULL;
+	n->ctl = n->rid = n->msid = n->msnr = n->vals = NULL;
 
-	/* allocate only the lists that we need based on tv-tree type */
+	return n;
+}
+
+static tv_tree*
+tv_create_(allocator *sa, sql_subtype *st, tv_type tvt)
+{
+	tv_tree *n = tv_node_(sa, st, tvt);
+
+	/* allocate only the lists that we need based on the tv-tree type */
 	switch (n->tvt) {
-        case TV_MS_BSC:
-        	n->msnr = sa_list(sa);
-			/* fall through */
-        case TV_SO_BSC:
-        	n->rid = sa_list(sa);
-        	n->msid = sa_list(sa);
-			/* fall through */
 		case TV_BASIC:
 			n->vals = sa_list(sa);
-       		break;
-        case TV_MS_COMP:
+       		return n;
+        case TV_COMP:
+			n->ctl = sa_list(sa);
+			for (node *sf = st->type->d.fields->h; sf; sf = sf->next) {
+				sql_arg *sfa = sf->data;
+				append(n->ctl, tv_create_(sa, &sfa->type, tv_get_type(&sfa->type)));
+			}
+        	return n;
+        case TV_MSET:
 			n->msnr = sa_list(sa);
 			/* fall through */
-		case TV_SO_COMP:
+        case TV_SETOF:
         	n->rid = sa_list(sa);
         	n->msid = sa_list(sa);
-			/* fall through */
-        case TV_COMP:
-			n->cf = sa_list(sa);
-        	break;
+			n->ctl = sa_list(sa);
+
+			/* For MSET/SETOF we make a new child node for the values
+			 * NOTE: the ->st of the child is the same as this node so
+			 * we need to **EXPLICITLY** specify the tv_type */
+			tv_tree *sn;
+			if (st->type->composite)
+				sn = tv_create_(sa, st, TV_COMP);
+			else
+				sn = tv_create_(sa, st, TV_BASIC);
+			sn->st = st;
+
+			append(n->ctl, sn);
+
+			return n;
 		default:
 			assert(0);
 			break;
 	}
 
-	return n;
+	return NULL;
 }
 
 tv_tree *
 tv_create(backend *be, sql_subtype *st)
 {
-	tv_tree *t = tv_node(be->mvc->sa, st);
-
-	switch (t->tvt) {
-		case TV_MS_BSC:
-		case TV_SO_BSC:
-		case TV_BASIC:
-			/* no need to do anything */
-			break;
-		case TV_MS_COMP:
-		case TV_SO_COMP:
-		case TV_COMP:
-			for (node *n = st->type->d.fields->h; n; n = n->next) {
-				sql_arg *fa = n->data;
-				append(t->cf, tv_create(be, &fa->type));
-			}
-			break;
-		default:
-			assert(0);
-			break;
-	}
-
-	return t;
+	/* there is some ambiguity with the types-value tree construction:
+	 * nodes which are mset/setof have their underlying type (composite/basic)
+	 * in the same subtype->type struct. That's why we have to be careful
+	 * with how we generate the nodes. Read carefully tv_node */
+	return tv_create_(be->mvc->sa, st, tv_get_type(st));
 }
 
 static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel);
 
 static bool
-mset_values_from_array_constructor(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
+mset_value_from_array_constructor(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
 {
-    /* add the rowid to the mset "origin" table */
+    /* rowid */
     stmt *rid = stmt_atom_int(be, t->rid_idx);
     if (!rid)
         return false;
     assert(t->rid);
     list_append(t->rid, rid);
 
-    /* per value insert actual data, msid(=rowid), msnr(for MS only) */
+    /* per value insert actual data, msid(=rowid), msnr(for MSET only) */
     int msnr_idx = 1;  /* NOTE: in mset-value values are 1-offset indexed */
     list *ms_vals = values->f;
     for (node *n = ms_vals->h; n; n = n->next, msnr_idx++) {
 
-        if (t->tvt == TV_MS_COMP) {
-            assert(t->cf);
-            int cfi = 0;
-            list *cf_vals = ((sql_exp*)n->data)->f;
-            for (node *m = cf_vals->h; m; m = m->next, cfi++)
-                if (false == tv_parse_values_(be, list_fetch(t->cf, cfi), m->data, left, sel))
-                    return false;
-        } else {
-            assert(t->vals && !t->cf);
-            stmt *i = exp_bin(be, n->data, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
-            if (!i)
-                return false;
-            list_append(t->vals, i);
-        }
+		/* vals (in the child tree) */
+		assert(list_length(t->ctl) == 1);
+		tv_tree *ct = t->ctl->h->data;
+		tv_parse_values_(be, ct, n->data, left, sel);
 
+		/* msid */
         stmt *msid = stmt_atom_int(be, t->rid_idx);
         if (!msid)
             return false;
         list_append(t->msid, msid);
 
-        if (t->tvt == TV_MS_COMP || t->tvt == TV_MS_BSC) {
+		/* msnr */
+        if (t->tvt == TV_MSET) {
             stmt *msnr = stmt_atom_int(be, msnr_idx);
             if (!msnr)
                 return false;
@@ -148,7 +140,7 @@ mset_values_from_array_constructor(backend *be, tv_tree *t, sql_exp *values, stm
         }
     }
 
-    /* we inserted all the mset-value subvalues so now
+    /* we inserted all the mset-value's subvalues so now
      * increment this tv_tree node's (mset) rowid index */
     t->rid_idx++;
 
@@ -156,7 +148,7 @@ mset_values_from_array_constructor(backend *be, tv_tree *t, sql_exp *values, stm
 }
 
 static bool
-mset_values_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
+mset_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
 {
     /* per entry-value in the literal the call to exp_bin() will generate an
      * `sql.from_varchar()` instruction. This instructions for a given returns
@@ -164,8 +156,8 @@ mset_values_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, s
      * msnr (multiset vs setof). Those return values will be in an st_list stmt
      * so we have to retrieve them (from stmt_list's op4) and append them to the
      * tv_tree list of stmts */
-    assert(t->tvt == TV_SO_BSC || t->tvt == TV_MS_BSC);
-	assert(t->vals && !t->cf);
+    assert(t->tvt == TV_SETOF || t->tvt == TV_MSET);
+	assert(!t->vals && t->ctl);
 
 	stmt *i = exp_bin(be, values, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 	if (!i)
@@ -174,10 +166,19 @@ mset_values_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, s
 	assert(i->type == st_list);
 	assert(list_length(i->op4.lval) == 3 || list_length(i->op4.lval) == 4);
 
+	/* rowid */
 	list_append(t->rid, list_fetch(i->op4.lval, 0));
-	list_append(t->vals, list_fetch(i->op4.lval, 1));
+
+	/* vals (in the child tree) */
+	assert(list_length(t->ctl) == 1);
+	tv_tree *ct = t->ctl->h->data;
+	list_append(ct->vals, list_fetch(i->op4.lval, 1));
+
+	/* msid */
 	list_append(t->msid, list_fetch(i->op4.lval, 2));
-	if (t->tvt == TV_MS_BSC)
+
+	/* msnr */
+	if (t->tvt == TV_MSET)
 		list_append(t->msnr, list_fetch(i->op4.lval, 3));
 
     return true;
@@ -195,23 +196,21 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			assert(t->vals);
 			list_append(t->vals, i);
 			break;
-		case TV_MS_COMP:
-		case TV_SO_COMP:
-		case TV_MS_BSC:
-		case TV_SO_BSC:
+		case TV_MSET:
+		case TV_SETOF:
             if (is_convert(value->type))
                	/* VALUES ('{1, 2, 3}') */
-                return mset_values_from_literal(be, t, value, left, sel);
+                return mset_value_from_literal(be, t, value, left, sel);
             else
                	/* VALUES (array[1, 2, 3]) */
-                return mset_values_from_array_constructor(be, t, value, left, sel);
+                return mset_value_from_array_constructor(be, t, value, left, sel);
             break;
 		case TV_COMP:
 			assert(value->f);
 			int cnt = 0;
-			list *cf_vals = value->f;
-			for (node *n = cf_vals->h; n; cnt++, n = n->next)
-				if (false == tv_parse_values_(be, list_fetch(t->cf, cnt), n->data, left, sel))
+			list *ct_vals = value->f;
+			for (node *n = ct_vals->h; n; cnt++, n = n->next)
+				if (false == tv_parse_values_(be, list_fetch(t->ctl, cnt), n->data, left, sel))
 					return false;
 			break;
 		default:
@@ -243,16 +242,14 @@ tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *se
 	 * that's why we need to check for
 	 * 	 a. ->row in the first entry of col_vals exp
 	 * 	 b. for mset/setof the first ->row in the first entry of vals
-	 * If it is set it means we are dealing with a single row insert and we need
-	 * a dummy expression de (to put vals at its e->f) so parsing the values stays
-	 * similar with the general case
+	 * If it is set it means that we are dealing with a single row insert and we
+	 * need a dummy expression de (to put vals at its e->f) so parsing the values
+	 * stays similar with the general case
 	 */
 	bool single_row_val = false;
 	single_row_val |= col_vals->row;
-	if ((t->tvt == TV_MS_BSC) || (t->tvt == TV_MS_COMP) ||
-	    (t->tvt == TV_SO_BSC) || (t->tvt == TV_SO_COMP))
+	if ((t->tvt == TV_MSET) || (t->tvt == TV_SETOF))
 		single_row_val |= ((sql_exp*)vals->h->data)->row;
-
 
     if (single_row_val) {
 		/* we need to create a dummy expression to single row vals
@@ -280,30 +277,27 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 			ap = stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
 			list_append(stmts_list, ap);
 			break;
-		case TV_MS_BSC:
-		case TV_SO_BSC:
-		case TV_MS_COMP:
-		case TV_SO_COMP:
+		case TV_MSET:
+		case TV_SETOF:
 			stmt *tmp;
 
+			/* rid */
 			tmp = stmt_temp(be, tail_type(t->rid->h->data));
 			ap = stmt_append_bulk(be, tmp, t->rid);
 			append(stmts_list, ap);
 
-			if (t->tvt == TV_MS_COMP || t->tvt == TV_SO_COMP) {
-				for (node *n = t->cf->h; n; n = n->next)
-					tv_generate_stmts_(be, n->data, stmts_list);
-			} else {
-				tmp = stmt_temp(be, tail_type(t->vals->h->data));
-				ap = stmt_append_bulk(be, tmp, t->vals);
-				append(stmts_list, ap);
-			}
+			/* vals (in the child tree) */
+			assert(list_length(t->ctl) == 1);
+			tv_tree *ct = t->ctl->h->data;
+			tv_generate_stmts_(be, ct, stmts_list);
 
+			/* msid */
 			tmp = stmt_temp(be, tail_type(t->msid->h->data));
 			ap = stmt_append_bulk(be, tmp, t->msid);
 			append(stmts_list, ap);
 
-			if (t->tvt == TV_MS_COMP || t->tvt == TV_MS_BSC) {
+			/* msnr */
+			if (t->tvt == TV_MSET) {
 				tmp = stmt_temp(be, tail_type(t->msnr->h->data));
 				ap = stmt_append_bulk(be, tmp, t->msnr);
 				append(stmts_list, ap);
@@ -311,7 +305,7 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 			break;
 		case TV_COMP:
 			/* gather all the composite (sub)field's statements */
-			for (node *n = t->cf->h; n; n = n->next)
+			for (node *n = t->ctl->h; n; n = n->next)
 				tv_generate_stmts_(be, n->data, stmts_list);
 			break;
 		default:
