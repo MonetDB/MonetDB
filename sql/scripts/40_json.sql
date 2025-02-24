@@ -104,3 +104,9 @@ create aggregate json.tojsonarray( x string ) returns string external name aggr.
 GRANT EXECUTE ON AGGREGATE json.tojsonarray( string ) TO PUBLIC;
 create aggregate json.tojsonarray( x double ) returns string external name aggr.jsonaggr;
 GRANT EXECUTE ON AGGREGATE json.tojsonarray( double ) TO PUBLIC;
+
+
+create function sys.read_nd_json(fname string)
+returns table(json JSON)
+external name json.read_nd_json;
+GRANT EXECUTE ON FUNCTION json.read_nd_json(string) TO PUBLIC;
