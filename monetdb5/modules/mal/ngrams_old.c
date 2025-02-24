@@ -189,6 +189,7 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 	(void)estimate;
 	BAT *h = BATdescriptor(*H);
 	BAT *n = BATdescriptor(*N);
+	BAT *r = NULL;
 
 	if (lc && !is_bat_nil(*lc))
 		assert(0);
@@ -212,14 +213,17 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 		BUN cnt = BATcount(h);
 		/* create L/R */
 		BAT *l = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
-		BAT *r = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
+		if (R)
+			r = COLnew(0, TYPE_oid, 10*cnt, TRANSIENT);
 
 		int ncnt = 0, ncnt1 = 0, ncnt2 = 0, ncnt3 = 0, ncnt4 = 0, ncnt5 = 0;
 		BATiter ni = bat_iterator(n);
 		BATiter hi = bat_iterator(h);
 		NGRAM_TYPE nmax = 0;
 		oid *ol = Tloc(l, 0), *el = ol + 10*cnt;
-		oid *or = Tloc(r, 0);
+		oid *or = NULL;
+		if (r)
+			or = Tloc(r, 0);
 		cnt = BATcount(n);
 		/* if needed grow */
 		for(BUN i = 0; i<cnt; i++) {
@@ -252,7 +256,8 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 							ncnt3++;
 							if (strstr(hs, os) != NULL) {
 								*ol++ = hr;
-								*or++ = (oid)i;
+								if (R)
+									*or++ = (oid)i;
 							}
 						}
 					}
@@ -265,7 +270,8 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 							ncnt4++;
 							if (strstr(hs, os) != NULL) {
 								*ol++ = k;
-								*or++ = (oid)i;
+								if (R)
+									*or++ = (oid)i;
 							}
 						}
 					}
@@ -281,7 +287,8 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 					ncnt5++;
 					if (strstr(hs, os) != NULL) {
 						*ol++ = k;
-						*or++ = (oid)i;
+						if (R)
+							*or++ = (oid)i;
 					}
 				}
 			}
@@ -292,11 +299,14 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 		BBPreclaim(h);
 		BBPreclaim(n);
 		BATsetcount(l, ol - (oid*)Tloc(l, 0));
-		BATsetcount(r, ol - (oid*)Tloc(l, 0));
+		if (R)
+			BATsetcount(r, ol - (oid*)Tloc(l, 0));
 		*L = l->batCacheid;
-		*R = r->batCacheid;
 		BBPkeepref(l);
-		BBPkeepref(r);
+		if (R) {
+			*R = r->batCacheid;
+			BBPkeepref(r);
+		}
 		printf("%d, %d, %d, %d, %d, %d, %d\n", ncnt, ncnt1, ncnt2, ncnt3, ncnt4, ncnt5, (int)ngi->small);
 		ngrams_destroy(ngi);
 		return MAL_SUCCEED;
@@ -307,9 +317,9 @@ NGc1join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 }
 
 static str
-NGc1join1(bat *L, bat *sigs, bat *needle, bat *lc, bit *nil_matches, lng *estimate, bit *anti)
+NGc1join1(bat *L, bat *sigs, bat *needle, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
 {
-	return NGc1join_intern(L, NULL, sigs, needle, lc, NULL, nil_matches, estimate, anti);
+	return NGc1join_intern(L, NULL, sigs, needle, lc, rc, nil_matches, estimate, anti);
 }
 
 static str
@@ -540,9 +550,9 @@ NGc2join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 }
 
 static str
-NGc2join1(bat *L, bat *sigs, bat *needle, bat *lc, bit *nil_matches, lng *estimate, bit *anti)
+NGc2join1(bat *L, bat *sigs, bat *needle, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
 {
-	return NGc2join_intern(L, NULL, sigs, needle, lc, NULL, nil_matches, estimate, anti);
+	return NGc2join_intern(L, NULL, sigs, needle, lc, rc, nil_matches, estimate, anti);
 }
 
 static str
@@ -779,9 +789,9 @@ NGc3join_intern(bat *L, bat *R, bat *H, bat *N, bat *lc, bat *rc, bit *nil_match
 }
 
 static str
-NGc3join1(bat *L, bat *sigs, bat *needle, bat *lc, bit *nil_matches, lng *estimate, bit *anti)
+NGc3join1(bat *L, bat *sigs, bat *needle, bat *lc, bat *rc, bit *nil_matches, lng *estimate, bit *anti)
 {
-	return NGc3join_intern(L, NULL, sigs, needle, lc, NULL, nil_matches, estimate, anti);
+	return NGc3join_intern(L, NULL, sigs, needle, lc, rc, nil_matches, estimate, anti);
 }
 
 static str
@@ -799,6 +809,7 @@ static mel_func ngram_init_funcs[] = {
 	command("ngram", "c1select", NGcxselect, false,
 		"predicate if value and needle equal needle",
 		args(1, 5, batarg("res", oid), batarg("h", str), batarg("s", oid), arg("needle", str), arg("anti", bit))),
+
 	command("ngram", "c1join", NGc1join1, false,
 		"predicate if value and needle equal needle (using 1gram)",
 		args(1, 8, batarg("l", oid), batarg("h", str), batarg("needle", str), batarg("lc", oid), batarg("rc", oid), arg("nil_matches",bit), arg("estimate",lng), arg("anti", bit))),
