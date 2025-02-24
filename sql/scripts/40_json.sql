@@ -109,4 +109,4 @@ GRANT EXECUTE ON AGGREGATE json.tojsonarray( double ) TO PUBLIC;
 create function sys.read_nd_json(fname string)
 returns table(json JSON)
 external name json.read_nd_json;
-GRANT EXECUTE ON FUNCTION json.read_nd_json(string) TO PUBLIC;
+-- GRANT EXECUTE ON FUNCTION json.read_nd_json(string) TO PUBLIC;

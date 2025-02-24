@@ -1,0 +1,34 @@
+statement ok
+create type "subject" as ("cid" varchar, "uri" varchar)
+
+statement ok
+create type "record" as ("$type" varchar, "createdAt" timestamp, "subject" subject)
+
+statement ok
+create type "commit" as ("rev" varchar, "operation" varchar, "collection" varchar, "rkey" varchar, "record" "record", "cid" varchar)
+
+statement ok
+create type event as ("did" varchar, "time_us" int, "kind" varchar, "commit" "commit")
+
+statement ok
+create table bluesky ("event" event)
+
+query I
+select count(*) from read_nd_json(r'$TSTSRCDIR/bluesky.json')
+----
+5
+
+statement ok
+select cast(t.json as event) as e from (select json from read_nd_json(r'$TSTSRCDIR/bluesky.json')) t
+
+statement ok
+drop table bluesky
+
+statement ok
+drop type event
+
+statement ok
+drop type "commit"
+
+statement ok
+drop type "record"
