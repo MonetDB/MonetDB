@@ -181,10 +181,14 @@ mset_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, st
 static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 {
+	int cnt = 0;
+	stmt *i;
+	list *ct_vals;
+
 	switch (t->tvt) {
 		case TV_BASIC:
 			assert(!value->f);
-			stmt *i = exp_bin(be, value, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+			i = exp_bin(be, value, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 			if (!i)
 				return false;
 			assert(t->vals);
@@ -201,8 +205,7 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
             break;
 		case TV_COMP:
 			assert(value->f);
-			int cnt = 0;
-			list *ct_vals = value->f;
+			ct_vals = value->f;
 			for (node *n = ct_vals->h; n; cnt++, n = n->next)
 				if (false == tv_parse_values_(be, list_fetch(t->ctl, cnt), n->data, left, sel))
 					return false;
@@ -264,7 +267,7 @@ tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *se
 static void
 tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 {
-	stmt *ap;
+	stmt *ap, *tmp;
 
 	switch (t->tvt) {
 		case TV_BASIC:
@@ -273,7 +276,6 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 			break;
 		case TV_MSET:
 		case TV_SETOF:
-			stmt *tmp;
 
 			/* vals (in the child tree) */
 			assert(list_length(t->ctl) == 1);
