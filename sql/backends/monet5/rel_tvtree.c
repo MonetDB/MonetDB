@@ -152,7 +152,7 @@ mset_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, st
 
 	stmt *i = exp_bin(be, values, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 	if (!i)
-		return NULL;
+		return false;
 
 	assert(i->type == st_list);
 	assert(list_length(i->op4.lval) == 3 || list_length(i->op4.lval) == 4);
