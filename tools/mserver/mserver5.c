@@ -85,6 +85,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
+	fprintf(stderr, "    --without-geom            Do not enable geom module\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
@@ -370,6 +371,7 @@ main(int argc, char **av)
 #endif
 	modules[mods++] = "csv";
 	modules[mods++] = "monetdb_loader";
+	modules[mods++] = "json_loader";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif

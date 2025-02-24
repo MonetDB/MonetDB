@@ -124,7 +124,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (!e)
 		return;
 	/*mnstr_printf(fout, "%p ", e);*/
-	if (mvc_debug_on(sql, 4) && e->alias.label < 0)
+	if (mvc_debug_on(sql, 4) && e->alias.label != 0)
 		mnstr_printf(fout, "%d: ", e->alias.label);
 	switch(e->type) {
 	case e_psm: {
@@ -180,6 +180,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		mnstr_printf(fout, "%s[", to_type);
 		exp_print(sql, fout, e->l, depth, refs, 0, 0, decorate);
 		mnstr_printf(fout, "]");
+		if (e->f)
+			exps_print(sql, fout, e->f, depth, refs, 0, 1, decorate, 0);
 	 	break;
 	}
 	case e_atom: {
@@ -277,6 +279,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			alias = 0;
 		if(!exp_relname(e) && exp_name(e) && !e->l && strcmp(exp_name(e), e->r)==0)
 			alias = 0;
+		if (e->f)
+			exps_print(sql, fout, e->f, depth, refs, 0, 1, decorate, 0);
 	} break;
 	case e_cmp:
 		if (e->flag == cmp_in || e->flag == cmp_notin) {

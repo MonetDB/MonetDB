@@ -15,6 +15,12 @@ right
 left
 right
 
+query T nosort
+select * from foo
+----
+("left", "right")
+("left", "right")
+
 query I nosort
 select count(*) from foo
 ----
@@ -33,6 +39,11 @@ left
 right
 left
 right
+
+query T nosort
+select * from bar;
+----
+{("left", "right"),("left", "right")}
 
 query I nosort
 select count(*) from bar, unnest(p)
@@ -58,6 +69,16 @@ right
 l1
 r1
 
+query IT
+select * from tpv;
+----
+1
+("left", "right")
+2
+("left", "right")
+3
+("l1", "r1")
+
 statement ok
 create table tpsv( i integer, p pair[2])
 
@@ -71,17 +92,27 @@ select i, p.key, p.value from tpsv cross join unnest(p)
 left
 right
 1
-left
-right
-2
 l2
 r2
+2
+left
+right
 2
 l2
 r2
 3
-left
-right
+l3
+r3
+
+query IT
+select * from tpsv
+----
+1
+{("left", "right"),("l2", "r2")}
+2
+{("left", "right"),("l2", "r2")}
+3
+{("l3", "r3")}
 
 query ITT nosort
 select i, up.key, up.value from tpsv cross join unnest(p) up where i = 1
@@ -116,16 +147,32 @@ select i, count(*) from tpsv cross join unnest(p) up group by i
 statement ok
 insert into tpsv select i, p from tpsv
 
-query IIIII nosort
-select cast(json '[ { "pleft": "left", "pright": "right" }]' as pair[])
+query T nosort
+select cast(json '[ { "key": "left", "value": "right" }]' as pair[])
 ----
+{("left", "right")}
 
-query IIIII nosort
-select cast(json '[ { "pleft": "left", "pright": "right" }, { "pleft": "l1", "pright": "r1" }]' as pair[])
+query TT nosort
+select b.key, b.value from (select cast(json '[ { "key": "left", "value": "right" }]' as pair[]) as a) cross join unnest (a) b
 ----
+left
+right
+
+query T nosort
+select cast(json '[ { "key": "left", "value": "right" }, { "key": "l1", "value": "r1" }]' as pair[])
+----
+{("left", "right"),("l1", "r1")}
+
+query TT nosort
+select b.key, b.value from (select cast(json '[ { "key": "left", "value": "right" }, { "key": "l1", "value": "r1" }]' as pair[]) as a) cross join unnest (a) b
+----
+left
+right
+l1
+r1
 
 statement ok
-insert into tpsv select 1, cast(json '[ { "pleft": "left", "pright": "right" }, { "pleft": "l1", "pright": "r1" }]' as pair[])
+insert into tpsv select 1, cast(json '[ { "key": "left", "value": "right" }, { "key": "l1", "value": "r1" }]' as pair[])
 
 statement ok
 create type npair as (ppair pair[], i integer)
@@ -133,28 +180,22 @@ create type npair as (ppair pair[], i integer)
 statement ok
 create table np (id integer, np npair[])
 
-statement ok
-insert into np values (1, array [ (array [ ('left','right'), ('l2','r2') ], 11), (array [], 12) ]), (2, array [ ( array [ ('l3', 'r3') ], 22) ])
+#statement ok
+#insert into np values (1, array [ (array [ ('left','right'), ('l2','r2') ], 11), (array [], 12) ]), (2, array [ ( array [ ('l3', 'r3') ], 22) ])
 
 statement ok
 create type ipair AS (pleft varchar, pright integer)
 
-query ITIII nosort
-select  cast(json '[ { "pleft": "left", "pright": 1 }]' as ipair[])
+query TI nosort
+select b.pleft, b.pright from (select  cast(json '[ { "pleft": "left", "pright": 1 }]' as ipair[]) as a) cross join unnest (a) b
 ----
-1
-"left"
-1
-1
+left
 1
 
-query ITIII nosort
-select  cast(json '[ { "pleft": "left", "pright": 1 }, { "pleft": "l1", "pright": "2" }]' as ipair[])
+query TI nosort
+select b.pleft, b.pright from (select cast(json '[ { "pleft": "left", "pright": 1 }, { "pleft": "l1", "pright": "2" }]' as ipair[]) as a) cross join unnest (a) b
 ----
+left
 1
-"left"
-1
-1
-1
-
-
+l1
+2

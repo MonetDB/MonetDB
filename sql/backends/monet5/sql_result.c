@@ -1246,17 +1246,34 @@ mvc_export_table_columnar(stream *s, res_table *t, bstream *in)
 }
 
 static int
-complex_type_size(res_col *c)
+output_complex_type(res_col *cols, Column *fmt, int nr_cols, bool ms, bool composite)
 {
-	if (c->type.multiset) {
-		int res = (c->type.multiset == MS_ARRAY?2:1);
-		if (c->type.type->composite)
-			res += list_length(c->type.type->d.fields);
-		else
-			res ++;
-		return res;
+	int j = 0;
+	for(int i = 0; i < nr_cols; i++) {
+		res_col *c = cols + j;
+
+		if (c->multiset) {
+			/* c rowid */
+			j += output_complex_type(cols + j + 1, fmt + j + 1, c->composite?list_length(c->type.type->d.fields):1, true, composite);
+			j++;
+			if (c->multiset == MS_ARRAY)
+				j++;
+			j++;
+		} else if (c->composite) {
+			j += output_complex_type(cols + j+ 1, fmt + j + 1, list_length(c->type.type->d.fields), ms, true);
+			if (c->virt)
+				j++;
+		} else {
+			j++;
+			if (ms) {
+				fmt[i].sep = NULL;
+				fmt[i].seplen = 0;
+			}
+			if (ms || composite)
+				fmt[j].quote = '"';
+		}
 	}
-	return 0;
+	return j;
 }
 
 static int
@@ -1290,8 +1307,8 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	fmt[0].seplen = _strlen(fmt[0].sep);
 	fmt[0].ws = 0;
 	fmt[0].nullstr = NULL;
+	fmt[0].nrfields = (int)as.nr_attrs;
 
-	int complex_type = 0;
 	for (i = 1; i <= t->nr_cols; i++) {
 		res_col *c = t->cols + (i - 1);
 
@@ -1310,6 +1327,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
+		fmt[i].nrfields = c->nrfields;
 		if (csv) {
 			fmt[i].sep = ((i - 1) < (t->nr_cols - 1)) ? sep : rsep;
 			fmt[i].seplen = _strlen(fmt[i].sep);
@@ -1317,12 +1335,8 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		}
 		fmt[i].multiset = c->type.multiset;
 		fmt[i].composite = c->type.type->composite?list_length(c->type.type->d.fields):0;
-		complex_type += complex_type_size(c);
-		if (complex_type>1) {
-			fmt[i].sep = NULL;// ", ";
-			fmt[i].seplen = 0;//2;
-			complex_type--;
-		}
+		fmt[i].virt = c->virt;
+
 		if (json) {
 			res_col *p = t->cols + (i - 1);
 
@@ -1359,10 +1373,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
 		fmt[i].ws = 0;
-		if (complex_type)
-			fmt[i].quote = '"';
-		else
-			fmt[i].quote = ssep ? ssep[0] : 0;
+		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
 		if (c->type.type->eclass == EC_DEC) {
 			fmt[i].tostr = &dec_tostr;
@@ -1394,6 +1405,29 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			fmt[i].extra = fmt + i;
 		}
 	}
+
+	if (t->complex_type) {
+		for(int i = 0; i < t->nr_cols; ) {
+			res_col *c = t->cols + i;
+
+			if (c->multiset) {
+				/* c rowid */
+				i++;
+				i += output_complex_type(t->cols + i, fmt + i + 1,  c->composite?list_length(c->type.type->d.fields):1, true, false);
+				i++;
+				if (c->multiset == MS_ARRAY)
+					i++;
+				i++;
+			} else if (c->composite) {
+				i += output_complex_type(t->cols + i + 1, fmt + i + 2, list_length(c->type.type->d.fields), false, true);
+				if (c->virt)
+					i++;
+			} else {
+				i++;
+			}
+		}
+	}
+
 	if (i == t->nr_cols + 1)
 		ok = TABLEToutput_file(&as, NULL, s, m->scanner.rs);
 	for (i = 0; i <= t->nr_cols; i++) {
@@ -1663,16 +1697,56 @@ static inline int
 next_col(res_col *c)
 {
 	int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
+	if (c->virt)
+		res++;
 	if (c->type.type->composite) {
 		int nr = list_length(c->type.type->d.fields);
-		res += nr;
+		/* needs fix ie needs to jump id,nr cols etc */
+		int o = 0;
 		for(int i = 0; i < nr; i++) {
-			res += next_col(c+i+1);
+			int j = next_col(c+o+1);
+			res += j;
+			o += j;
 		}
 	} else {
 		res++;
 	}
+	c->nrfields = res;
 	return res;
+}
+
+static int
+count_cols(res_table *t)
+{
+	int res = 0;
+
+	for(int i = 0; i < t->nr_cols; ) {
+		res_col *c = t->cols + i;
+		//if (!c->virt || !c->multiset)
+			res++;
+
+		i += next_col(c);
+	}
+	return res;
+}
+
+static BUN
+count_rows(res_table *t) /* find real output column size */
+{
+	int res = 0;
+	res_col *c = t->cols;
+
+	if (c->virt) {
+		if (c->multiset)
+			res = c->nrfields - 1;
+		else
+			res++;
+	}
+	c = t->cols + res;
+	if (c->cached)
+		return BATcount((BAT*)c->p);
+	else
+		return BATcount(BBPquickdesc(c->b));
 }
 
 int
@@ -1686,6 +1760,11 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (!s || !t)
 		return 0;
 
+	/* needed at the start as it fills in the nrfields */
+	if (t->complex_type) {
+		t->nr_output_cols = count_cols(t);
+		t->nr_rows = count_rows(t);
+	}
 	/* query type: Q_TABLE || Q_PREPARE */
 	assert(t->query_type == Q_TABLE || t->query_type == Q_PREPARE);
 	if (mnstr_write(s, "&", 1, 1) != 1 || mvc_send_int(s, (int) t->query_type) != 1 || mnstr_write(s, " ", 1, 1) != 1)
@@ -1741,7 +1820,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 		if (len && mnstr_write(s, c->tn, len, 1) != 1)
 			return -4;
-		i += next_col(c);
+		i += c->nrfields;
 		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1769,7 +1848,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			if (mnstr_write(s, c->name, strlen(c->name), 1) != 1)
 				return -4;
 		}
-		i += next_col(c);
+		i += c->nrfields;
 
 		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
@@ -1787,7 +1866,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			return -4;
 		//if (c->type.multiset && mnstr_write(s, "[]", 2, 1) != 1)
 			//return -4;
-		i += next_col(c);
+		i += c->nrfields;
 		if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 			return -4;
 	}
@@ -1801,7 +1880,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 			if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
 				return res;
-			i += next_col(c);
+			i += c->nrfields;
 			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
@@ -1816,7 +1895,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 			if (mnstr_printf(s, "%u %u", c->type.digits, c->type.scale) < 0)
 				return -4;
-			i += next_col(c);
+			i += c->nrfields;
 			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)
 				return -4;
 		}
@@ -2117,80 +2196,124 @@ end:
 #define skipspace(s) while(*s && isspace(*s)) s++;
 
 static str
-ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtype *t)
+VALUEparser(char **S, Column *cols, int elm, sql_subtype *t, char tsep, char rsep)
 {
-	(void)cols;
-	(void)nr;
-	(void)oanr;
+	/* handle literals */
+	char *s = *S;
+	int skip = 0;
+	char *ns = NULL;
+	if (t->type->localtype == TYPE_str) {
+		/* todo improve properly skip "" strings. */
+		if (*s != '"')
+			throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at start of string value");
+		s++;
+		ns = s;
+		while(*ns && *ns != '"')
+			ns++;
+		if (*ns != '"')
+			throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at end of string value");
+		skip++;
+	} else if (tsep) {
+		ns = strchr(s, tsep);
+	}
+	if (!ns && rsep) {
+		ns = strchr(s, rsep);
+	}
+	char sep = 0;
+	if (!ns)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing '%c' at end of value", rsep?rsep:tsep);
+	else {
+		sep = *ns;
+		*ns = 0;
+	}
+	void *d = cols[elm].frstr(cols+elm, cols[elm].adt, s);
+	if (elm >= 0 && d && BUNappend(cols[elm].c, d, false) != GDK_SUCCEED)
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
+	*ns = sep;
+	s = ns;
+	if (skip)
+		s++;
+	*S = s;
+	return NULL;
+}
+
+static str ARRAYparser(char **s, Column *cols, int nr, int *elm, sql_subtype *t);
+
+static str
+TUPLEparser(char **S, Column *cols, int nr, int *elm, sql_subtype *t)
+{
+	char *s = *S;
+	str msg = NULL;
+	int i = *elm;
+
+	skipspace(s);
+	if (!s && *s && s[0] != '(')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at start of composite value");
+	s++;
+	/* handle composite */
+	for (node *n = t->type->d.fields->h; n && !msg; n = n->next) {
+		sql_arg *f = n->data;
+
+		if (f->type.multiset) {
+			msg = ARRAYparser(&s, cols, nr, &i, &f->type);
+		} else if (f->type.type->composite) {
+			msg = TUPLEparser(&s, cols, nr, &i, &f->type);
+		} else {
+			msg = VALUEparser(&s, cols, i, &f->type, ',', ')');
+			i++;
+		}
+		if (n->next) {
+			skipspace(s);
+			if (!s && *s && s[0] != ',')
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing , within composite value");
+			s++;
+			skipspace(s);
+		}
+	}
+	if (msg)
+		return msg;
+	skipspace(s);
+	if (!s && *s && s[0] != ')')
+		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ) at end of composite value");
+	s++;
+	*S = s;
+	*elm = i;
+	return msg;
+}
+
+static str
+ARRAYparser(char **S, Column *cols, int nr, int *elm, sql_subtype *t)
+{
+	char *s = *S;
+	str msg = NULL;
 	if (!s && s[0] != '{')
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing { at start of array value");
 	s++;
 	skipspace(s);
-	int anr = 1;
-	/* insert id */
-	if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)
-		elm = -2;
-	elm++;
-	int oelm = elm;
-	while (*s && s[0] != '}') {
-		elm = oelm;
+	int i = *elm;
+	int oelm = i;
+	int anr = 1, id = 0;
+	while (*s && s[0] != '}' && !msg) {
+		i = oelm;
 		/* insert values */
 		if (t->type->composite) {
-			if (*s && s[0] != '(')
-				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at start of composite value");
-			/* handle composite */
-			for (node *n = t->type->d.fields->h; n; n = n->next) {
-				//sql_arg *f = n->data;
-				elm++;
-			}
-			if (*s && s[0] != ')')
-				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing ( at end of composite value");
+			msg = TUPLEparser(&s, cols, nr, &i, t);
 		} else {
-			/* handle literals */
-			int skip = 0;
-			char *ns = NULL;
-			if (t->type->localtype == TYPE_str) {
-				/* todo improve properly skip "" strings. */
-				if (*s != '"')
-					throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at start of string value");
-				s++;
-				ns = s;
-				while(*ns && *ns != '"')
-					ns++;
-				if (*ns != '"')
-					throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at end of string value");
-				skip++;
-			} else {
-				ns = strchr(s, ',');
-			}
-			if (!ns) {
-				ns = strchr(s, '}');
-			}
-			char sep = 0;
-			if (!ns)
-				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
-			else {
-				sep = *ns;
-				*ns = 0;
-			}
-			void *d = cols[elm].frstr(cols+elm, cols[elm].adt, s);
-			if (elm >= 0 && d && BUNappend(cols[elm].c, d, false) != GDK_SUCCEED)
-				elm = -2;
-			elm++;
-			*ns = sep;
-			s = ns;
-			if (skip)
-				s++;
+			msg = VALUEparser(&s, cols, i, t, ',', '}');
+			i++;
 		}
 		/* insert msid */
-		if (elm >= 0 && BUNappend(cols[elm].c, &id, false) != GDK_SUCCEED)
-			elm = -2;
-		elm++;
+		if (t->multiset) {
+			id = (int)BATcount(cols[i + (t->multiset == MS_ARRAY?2:1)].c);
+			if (i < 0 || BUNappend(cols[i].c, &id, false) != GDK_SUCCEED)
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
+			i++;
+		}
 		if (t->multiset == MS_ARRAY) {
 			/* insert msnr */
-			if (elm >= 0 && BUNappend(cols[elm].c, &anr, false) != GDK_SUCCEED)
-				elm = -2;
-			elm++;
+			if (i < 0 || BUNappend(cols[i].c, &anr, false) != GDK_SUCCEED)
+				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
+			i++;
 		}
 
 		skipspace(s);
@@ -2201,34 +2324,43 @@ ARRAYparser(char *s, Column *cols, int nr, int elm, int id, int oanr, sql_subtyp
 		skipspace(s);
 		anr++;
 	}
+	/* insert row-id */
+	if (t->multiset) {
+	   	if (i < 0 || BUNappend(cols[i].c, &id, false) != GDK_SUCCEED)
+			throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
+		i++;
+	}
 	if (!s || s[0] != '}')
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
-	return MAL_SUCCEED;
+	*elm = i;
+	*S = s;
+	return msg;
 }
 
-str
-mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
+static int
+from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 {
-	str msg = MAL_SUCCEED;
+	int i = cur;
 
-	if (!t || !t->multiset)
-		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) "Multiset type expected");
-	Column *fmt = (Column *) GDKzalloc(sizeof(Column) * nr);
-	if (!fmt)
-		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	int i = 0;
-
-	(void)m;
-	fmt[i].frstr = &_ASCIIadt_frStr;
-	fmt[i].extra = sql_bind_localtype("int");
-	fmt[i].adt = TYPE_int;
-	fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-	fmt[i].c = bats[i];
-	i++;
 	if (t->type->composite) {
-		printf("todo implement composite type array values\n");
+		for(node *n = t->type->d.fields->h; n; n = n->next) {
+			if (i < 0 || i >= nr)
+				return -10;
+			sql_arg *f = n->data;
+			if (f->type.multiset || f->type.type->composite) {
+				i = from_string_cols(fmt, bats, nr, i, &f->type);
+			} else {
+				fmt[i].frstr = &_ASCIIadt_frStr;
+				fmt[i].extra = &f->type;
+				fmt[i].adt = f->type.type->localtype;
+				fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+				fmt[i].c = bats[i];
+				i++;
+			}
+		}
 	} else {
+		if (i < 0 || i >= nr)
+			return -10;
 		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = t;
 		fmt[i].adt = t->type->localtype;
@@ -2236,15 +2368,29 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 		fmt[i].c = bats[i];
 		i++;
 	}
-	/* msid */
-	fmt[i].frstr = &_ASCIIadt_frStr;
-	fmt[i].extra = sql_bind_localtype("int");
-	fmt[i].adt = TYPE_int;
-	fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-	fmt[i].c = bats[i];
-	i++;
-	/* msnr */
-	if (t->multiset == MS_ARRAY) {
+	if (t->multiset) {
+		/* msid */
+		if (i < 0 || i >= nr)
+			return -10;
+		fmt[i].frstr = &_ASCIIadt_frStr;
+		fmt[i].extra = sql_bind_localtype("int");
+		fmt[i].adt = TYPE_int;
+		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+		fmt[i].c = bats[i];
+		i++;
+		/* msnr */
+		if (t->multiset == MS_ARRAY) {
+			if (i < 0 || i >= nr)
+				return -10;
+			fmt[i].frstr = &_ASCIIadt_frStr;
+			fmt[i].extra = sql_bind_localtype("int");
+			fmt[i].adt = TYPE_int;
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].c = bats[i];
+			i++;
+		}
+		if (i < 0 || i >= nr)
+			return -10;
 		fmt[i].frstr = &_ASCIIadt_frStr;
 		fmt[i].extra = sql_bind_localtype("int");
 		fmt[i].adt = TYPE_int;
@@ -2252,8 +2398,33 @@ mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
 		fmt[i].c = bats[i];
 		i++;
 	}
+	return i;
+}
+
+str
+mvc_from_string(mvc *m, BAT **bats, int nr, char *s, sql_subtype *t)
+{
+	str msg = MAL_SUCCEED;
+
+	if (!t || (!t->multiset && !t->type->composite))
+		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) "Multiset and/or composite type expected");
+	Column *fmt = (Column *) GDKzalloc(sizeof(Column) * nr);
+	if (!fmt)
+		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	(void)m;
+
+
+	if (from_string_cols(fmt, bats, nr, 0, t) < 0) {
+		GDKfree(fmt);
+		throw(SQL, "sql.from_varchar", SQLSTATE(HY013) "Multiset and/or composite type expected");
+	}
+
 	/* this should parse { 1, 2,3 } and { (1,"string"), (2,"str2") } */
-	msg = ARRAYparser(s, fmt, nr, 0, 1, 1, t);
+	int elm = 0;
+	if (t->multiset)
+		msg = ARRAYparser(&s, fmt, nr, &elm, t);
+	else
+		msg = TUPLEparser(&s, fmt, nr, &elm, t);
 	GDKfree(fmt);
 	return msg;
 }

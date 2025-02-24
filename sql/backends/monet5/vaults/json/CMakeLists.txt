@@ -10,18 +10,17 @@
 # Copyright 1997 - July 2008 CWI.
 #]]
 
-add_library(json OBJECT)
-#if(MONETDB_STATIC)
-#  add_library(json STATIC)
-#else()
-#  add_library(json SHARED)
-#endif()
+if(MONETDB_STATIC)
+  add_library(json_loader STATIC)
+else()
+  add_library(json_loader MODULE)
+endif()
 
-target_sources(json
+target_sources(json_loader
   PRIVATE
   json.c)
 
-target_include_directories(json
+target_include_directories(json_loader
   PRIVATE
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
@@ -33,15 +32,22 @@ target_include_directories(json
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-target_link_libraries(json
+target_link_libraries(json_loader
   PRIVATE
   monetdb_config_header
   sqlinclude
+  sql
   monetdb5
   bat
   stream
 )
 
-set_target_properties(json
+set_target_properties(json_loader
   PROPERTIES
-  POSITION_INDEPENDENT_CODE ON)
+  OUTPUT_NAME
+  _json_loader)
+
+install(TARGETS
+  json_loader
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
+  COMPONENT server)

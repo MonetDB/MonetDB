@@ -47,6 +47,8 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_quer
 		.cols = tcols,
 		.nr_cols = nr_cols,
 		.next = next,
+		.nr_rows = BUN_NONE,
+		.output_col = 0,
 	};
 
 	return t;
@@ -60,22 +62,15 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 
 	if (!sql_find_subtype(&c->type, typename, digits, scale))
 		sql_init_subtype(&c->type, sql_trans_bind_type(tr, NULL, typename), digits, scale);
-	c->type.multiset = multiset;
+	c->nrfields = 1;
+	c->virt = (multiset&4)?true:false;
+	c->type.multiset = multiset&3;
+	c->multiset = c->type.multiset;
+	c->composite = c->type.type->composite;
+	t->complex_type = (t->complex_type || c->virt || c->composite || (c->multiset != MS_VALUE));
+
 	c->tn = _STRDUP(tn);
 	c->name = _STRDUP(name);
-	if (!t->multiset)
-		t->nr_output_cols++;
-	else
-		t->multiset--;
-	if (c->type.multiset) {
-		t->multiset++;
-		if (c->type.type->composite)
-			t->multiset+=list_length(c->type.type->d.fields);
-		else
-			t->multiset++;
-	}
-	if (c->type.multiset == MS_ARRAY)
-		t->multiset++;
 	if (c->tn == NULL || c->name == NULL) {
 		_DELETE(c->tn);
 		_DELETE(c->name);
@@ -86,8 +81,18 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->mtype = mtype;
 	if (isbat) {
 		b = (BAT*)val;
-		if (b && t->cur_col == 0)
+		if (b && t->nr_rows == BUN_NONE && !c->virt && t->cur_col == t->output_col)
 			t->nr_rows = BATcount(b);
+		/*
+		else if (c->virt) {
+			if (c->multiset && c->type.type->composite)
+				t->output_col = c->multiset + c->type.type->composite + 1;
+			else if (c->multiset)
+				t->output_col = c->multiset + 2;
+			else
+				t->output_col++;
+		}
+		*/
 	} else { // wrap scalar values in BATs for result consistency
 		b = COLnew(0, mtype, 1, TRANSIENT);
 		if (b == NULL) {
@@ -101,7 +106,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 			_DELETE(c->name);
 			return NULL;
 		}
-		if (t->cur_col == 0)
+		if (t->nr_rows == BUN_NONE && !c->virt)
 			t->nr_rows = 1;
 		cached = true; /* simply keep memory pointer for this small bat */
 	}
@@ -113,6 +118,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		bat_incref(c->b);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
+	t->nr_output_cols = t->nr_cols;
 	return c;
 }
 

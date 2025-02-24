@@ -58,8 +58,6 @@
 #define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
 #define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING|BBPSYNCING)
 
-#define BBPTRIM_ALL	(((size_t)1) << (sizeof(size_t)*8 - 2))	/* very large positive size_t */
-
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrade);
 gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno, BAT *bn,

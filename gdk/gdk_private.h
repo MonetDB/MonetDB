@@ -400,6 +400,7 @@ struct Strimps {
 
 typedef struct {
 	MT_Lock swap;
+	MT_Cond cond;
 } batlock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
@@ -433,6 +434,7 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 	} while (0)
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
+#define GDKswapCond(x)  GDKbatLock[(x)&BBP_BATMASK].cond
 
 #define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 #define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 2))

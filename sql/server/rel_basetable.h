@@ -24,7 +24,7 @@
 extern sql_table *rel_ddl_table_get(sql_rel *r);
 extern sql_rel *rel_ddl_basetable_get(sql_rel *r);
 
-extern sql_rel *rel_basetable(mvc *sql, sql_table *t, sql_alias *tname);
+sql_export sql_rel *rel_basetable(mvc *sql, sql_table *t, sql_alias *tname);
 extern void rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out);
 
 extern void rel_base_disallow(sql_rel *r);		/* set flag to check per column access */
@@ -33,7 +33,7 @@ extern int rel_base_idx_nid(sql_rel *t, sql_idx *i);	/* return error on (read) a
 extern bool rel_base_has_nid(sql_rel *t, int nid);
 extern int rel_base_use(mvc *ql, sql_rel *rt, int nr);	/* return error on (read) access violation */
 extern void rel_base_use_tid(mvc *sql, sql_rel *rt);
-extern void rel_base_use_all(mvc *sql, sql_rel *rel);
+sql_export void rel_base_use_all(mvc *sql, sql_rel *rel);
 extern sql_alias *rel_base_name(sql_rel *r);
 extern sql_alias *rel_base_rename(sql_rel *r, sql_alias *name);
 

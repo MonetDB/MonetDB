@@ -174,6 +174,7 @@ e_column
 	-> l 	optional relation name 
 	-> r	expression name
 	-> type 
+	-> f 	list of expressions, ie to represent nested structures
 
 e_psm
 	-> flag

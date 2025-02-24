@@ -185,7 +185,7 @@ json_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	s->nr = getDestVar(q);
 	s->q = q;
 	s->nrcols = 1;
-	s->op4.typeval = *tpe;
+	s->subtype = *tpe;
 	// is alias essential here?
 	s = stmt_alias(be, s, 1, a_create(sa, tname), cname);
 	return s;

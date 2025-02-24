@@ -1,13 +1,23 @@
 statement ok
 create type event as (id int, type varchar)
 
-query TT
-select cast(t.json as event) from (select json from r'$TSTSRCDIR/events.json') t
+query IT
+select t.id, t.type from ( select cast(t.json as event) as t from (select json from r'$TSTSRCDIR/events.json') t );
 ----
 1
-"click"
+click
 2
-"scroll"
+scroll
+
+query T
+select cast(t.json as event) from (select json from r'$TSTSRCDIR/events.json') t
+----
+(1, "click")
+(2, "scroll")
+
+query T
+select cast(cast(t.json as event) as json) from (select json from r'$TSTSRCDIR/events.json') t
+----
 
 statement ok
 drop type event

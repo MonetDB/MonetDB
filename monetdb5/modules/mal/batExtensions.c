@@ -233,7 +233,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							t[n] += nr;
 					}
 					rt = BATappend(b, d, NULL, force);
-					nr = *(int*)Tloc(b, BATcount(b)-1);
+					nr = *(int*)Tloc(b, BATcount(b)-1) + 1;
 					BBPunfix(d->batCacheid);
 					if (rt != GDK_SUCCEED) {
 						BBPunfix(b->batCacheid);

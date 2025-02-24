@@ -157,20 +157,23 @@ mset_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, st
 	assert(i->type == st_list);
 	assert(list_length(i->op4.lval) == 3 || list_length(i->op4.lval) == 4);
 
-	/* rowid */
-	list_append(t->rid, list_fetch(i->op4.lval, 0));
-
 	/* vals (in the child tree) */
 	assert(list_length(t->ctl) == 1);
 	tv_tree *ct = t->ctl->h->data;
-	list_append(ct->vals, list_fetch(i->op4.lval, 1));
+	list_append(ct->vals, list_fetch(i->op4.lval, 0));
 
 	/* msid */
-	list_append(t->msid, list_fetch(i->op4.lval, 2));
+	list_append(t->msid, list_fetch(i->op4.lval, 1));
 
-	/* msnr */
-	if (t->tvt == TV_MSET)
-		list_append(t->msnr, list_fetch(i->op4.lval, 3));
+	if (t->tvt == TV_MSET) {
+		/* msnr */
+		list_append(t->msnr, list_fetch(i->op4.lval, 2));
+		/* rowid */
+		list_append(t->rid, list_fetch(i->op4.lval, 3));
+	} else {
+		/* rowid */
+		list_append(t->rid, list_fetch(i->op4.lval, 2));
+	}
 
     return true;
 }
@@ -272,11 +275,6 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 		case TV_SETOF:
 			stmt *tmp;
 
-			/* rid */
-			tmp = stmt_temp(be, tail_type(t->rid->h->data));
-			ap = stmt_append_bulk(be, tmp, t->rid);
-			append(stmts_list, ap);
-
 			/* vals (in the child tree) */
 			assert(list_length(t->ctl) == 1);
 			tv_tree *ct = t->ctl->h->data;
@@ -293,6 +291,12 @@ tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
 				ap = stmt_append_bulk(be, tmp, t->msnr);
 				append(stmts_list, ap);
 			}
+
+			/* rid */
+			tmp = stmt_temp(be, tail_type(t->rid->h->data));
+			ap = stmt_append_bulk(be, tmp, t->rid);
+			append(stmts_list, ap);
+
 			break;
 		case TV_COMP:
 			/* gather all the composite (sub)field's statements */

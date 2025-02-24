@@ -158,6 +158,9 @@ exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses)
 				*uses |= used;
 				return false;
 			}
+			/* todo better check nested */
+			if (ne != e && !ne->nid)
+				return true;
 			if (ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne)))
 				/* maybe ne refers to a local complex exp */
 				return exp_shares_exps(ne, shared, uses);

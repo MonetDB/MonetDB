@@ -241,7 +241,7 @@ static str
 odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, int caller)
 {
 	(void) topn;
-	bool trace_enabled = true;	/* used for development only */
+	bool trace_enabled = false;	/* used for development only */
 
 	/* check received url and extract the ODBC connection string and yhe SQL query */
 	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
@@ -366,7 +366,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 			list_append(res_exps, ne);
 		}
 
-		/* f->tname = sa_strdup(sql->sa, aname); */
+		f->tname = sa_strdup(sql->sa, tname);
 		f->res = typelist;
 		f->coltypes = typelist;
 		f->colnames = nameslist;
@@ -376,25 +376,52 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		r->dbc = dbc;
 		r->stmt = stmt;
 		r->nr_cols = nr_cols;
-		f->sname = (char*)r; /* pass odbc_loader */
+		f->sname = (char *)r; /* pass odbc_loader */
 
 		goto finish;
 	}
 
 	/* when called from odbc_load() we can now fetch the data */
 	if (caller == 2 && stmt != SQL_NULL_HSTMT) {
-		// TODO create an internal transient table to store fetched data
-		// if (mvc_create_table(&t, be->mvc, be->mvc->session->tr->tmp /* misuse tmp schema */, r->tname /*gettable name*/, tt_remote, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
+		//odbc_loader_t *r = (odbc_loader_t *)f->sname;
+		sql_table *t;
+
+		if (trace_enabled)
+			printf("Before mvc_create_table(%s)\n", f->tname);
+		// create an internal transient table to store fetched data
+		if (mvc_create_table(&t, sql, sql->session->tr->tmp /* misuse tmp schema */,
+				f->tname /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
+			/* alloc error */
+			return NULL;
+		if (trace_enabled)
+			printf("After mvc_create_table()\n");
+
+		node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
+		for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
+			const char *name = nn->data;
+			sql_subtype *tp = tn->data;
+			sql_column *c = NULL;
+
+			if (trace_enabled)
+				printf("Before mvc_create_column(%s)\n", name);
+			if (!tp || mvc_create_column(&c, sql, t, name, tp) != LOG_OK) {
+				return NULL;
+			}
+		}
 
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
-			// TODO for each result column create a buffer and bind it. Also create a BAT column.
+			// TODO for each result column create a buffer and bind it.
 			// ret = SQLBindCol(stmt, 1, );
-			// if (!tp || mvc_create_column(&c, be->mvc, t, name, tp) != LOG_OK) {
 		}
 
 		// repeat fetching data, adding data work table
+		long rows = 0;
 		ret = SQLFetch(stmt);
 		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+			rows++;
+			if (trace_enabled)
+				printf("Fetched row %ld\n", rows);
+
 			// TODO for each result column append to created transient table
 			for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 				// ret = SQLGetData(stmt, col, ...);

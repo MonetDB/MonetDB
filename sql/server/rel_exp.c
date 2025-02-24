@@ -359,6 +359,45 @@ dup_subtype(allocator *sa, sql_subtype *st)
 	return res;
 }
 
+static list *
+nested_exps(mvc *sql, sql_subtype *t, sql_alias *p, const char *name)
+{
+	sql_alias *atname = name?a_create(sql->sa, name):NULL;
+	if (atname)
+		atname->parent = p;
+	list *nested = sa_list(sql->sa);
+	if (t->type->composite) {
+		for(node *n = t->type->d.fields->h; n; n = n->next) {
+			sql_arg *f = n->data;
+
+            sql_exp *e = exp_alias(sql, atname, f->name, atname, f->name, &f->type, CARD_MULTI, true, false, 1);
+			if (f->type.multiset || f->type.type->composite)
+				e->f = nested_exps(sql, &f->type, atname, f->name);
+			append(nested, e);
+		}
+	} else {
+        sql_exp *e = exp_alias(sql, atname, "elements", atname, "elements", t, CARD_MULTI, true, false, 1);
+		append(nested, e);
+	}
+	sql_subtype *it = sql_bind_localtype("int");
+	if (t->multiset) {
+		sql_exp *e = exp_alias(sql, atname, "id", atname, "id", it, CARD_MULTI, true, false, 1);
+		set_intern(e);
+		append(nested, e);
+	}
+	if (t->multiset == MS_ARRAY) {
+		sql_exp *e = exp_alias(sql, atname, "nr", atname, "nr", it, CARD_MULTI, true, false, 1);
+		set_intern(e);
+		append(nested, e);
+	}
+	if (t->multiset) {
+		sql_exp *e = exp_alias(sql, atname, "rowid", atname, "rowid", it, CARD_MULTI, true, false, 1);
+		set_intern(e);
+		append(nested, e);
+	}
+	return nested;
+}
+
 sql_exp *
 exp_convert(mvc *sql, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
 {
@@ -375,6 +414,9 @@ exp_convert(mvc *sql, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
 		e->alias.label = -(sql->nid++);
 	if (!has_nil(exp))
 		set_has_no_nil(e);
+	if (totype->multiset || totype->type->composite) {
+		e->f = nested_exps(sql, totype, NULL, NULL);
+	}
 	return e;
 }
 
@@ -768,8 +810,9 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 }
 
 static sql_exp *
-exp_ref_by_label(allocator *sa, sql_exp *o)
+exp_ref_by_label(mvc *sql, sql_exp *o)
 {
+	allocator *sa = sql->sa;
 	sql_exp *e = exp_create(sa, e_column);
 
 	if (e == NULL)
@@ -794,6 +837,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		set_intern(e);
 	if (o->virt)
 		e->virt = 1;
+	if ((o->type == e_column || o->type == e_convert) && o->f)
+		e->f = o->f;
 	return exp_propagate(sa, e, o);
 }
 
@@ -803,7 +848,7 @@ exp_ref(mvc *sql, sql_exp *e)
 	if (!has_label(e) && !exp_name(e))
 		exp_label(sql->sa, e, ++sql->label);
 	if (e->alias.label)
-		return exp_ref_by_label(sql->sa, e);
+		return exp_ref_by_label(sql, e);
 	sql_exp *ne = exp_propagate(sql->sa, exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_unique(e), is_intern(e)), e);
 	if (ne) {
 		ne->nid = e->alias.label;
@@ -973,6 +1018,19 @@ exp_exception(allocator *sa, sql_exp *cond, const char *error_message)
 	return e;
 }
 
+static void
+exps_setname(mvc *sql, list *exps, sql_alias *p, const char *name)
+{
+	sql_alias *ta = a_create(sql->sa, name);
+	ta->parent = p;
+	if (!list_empty(exps)) {
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			exp_setname(sql, e, ta, exp_name(e));
+		}
+	}
+}
+
 /* Set a name (alias) for the expression, such that we can refer
    to this expression by this simple name.
  */
@@ -985,6 +1043,8 @@ exp_setname(mvc *sql, sql_exp *e, sql_alias *p, const char *name )
 	if (name)
 		e->alias.name = name;
 	e->alias.parent = p;
+	if (is_nested(e))
+		exps_setname(sql, e->f, p, name);
 }
 
 void
@@ -2853,6 +2913,11 @@ exps_bind_nid(list *exps, int nid)
 
 			if (e->alias.label == nid)
 				return e;
+			if (is_nested(e)) {
+				e = exps_bind_nid(e->f, nid);
+				if (e)
+					return e;
+			}
 		}
 	}
 	return NULL;
@@ -3783,6 +3848,9 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 	sql_exp* nexp = NULL;
 	sql_subtype *fromtype = exp_subtype(exp);
 
+	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
+		return exp;
+
 	if (t->type->composite || t->multiset) {
 		if (fromtype && subtype_cmp(t, fromtype) == 0)
 			return exp;
@@ -3790,16 +3858,18 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 			return exp_check_multiset_type(sql, t, rel, exp, tpe);
 		if (t->type->composite && (is_row(exp) || is_values(exp)))
 			return exp_check_composite_type(sql, t, rel, exp, tpe);
-		sql_subtype *et = exp_subtype(exp);
-		if (strcmp(et->type->base.name, "json") == 0)
-			return exp_convert(sql, exp, et, t);
-		if (EC_VARCHAR(et->type->eclass))
-			return exp_convert(sql, exp, et, t);
+		if (strcmp(fromtype->type->base.name, "json") == 0)
+			return exp_convert(sql, exp, fromtype, t);
+		if (EC_VARCHAR(fromtype->type->eclass))
+			return exp_convert(sql, exp, fromtype, t);
 		if (is_values(exp))
 			return NULL;
 	}
-	if ((!fromtype || !fromtype->type) && rel_set_type_param(sql, t, rel, exp, 0) == 0)
-		return exp;
+
+	if (fromtype->type->composite || fromtype->multiset) {
+		if (strcmp(t->type->base.name, "json") == 0)
+			return exp_convert(sql, exp, fromtype, t);
+	}
 
 	/* first try cheap internal (in-place) conversions ! */
 	if ((nexp = exp_convert_inplace(sql, t, exp)) != NULL)

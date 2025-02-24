@@ -1214,13 +1214,14 @@ MT_check_nr_cores(void)
 
 
 void
-MT_cond_init(MT_Cond *cond)
+MT_cond_init(MT_Cond *cond, const char *name)
 {
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 	InitializeConditionVariable(&cond->cv);
 #else
 	pthread_cond_init(&cond->cv, NULL);
 #endif
+	strcpy_len(cond->name, name, sizeof(cond->name));
 }
 
 

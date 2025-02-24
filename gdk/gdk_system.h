@@ -843,7 +843,7 @@ typedef struct MT_Cond {
 #  define MT_COND_INITIALIZER(N) { .cv = PTHREAD_COND_INITIALIZER, .name = #N }
 #endif
 
-gdk_export void MT_cond_init(MT_Cond *cond);
+gdk_export void MT_cond_init(MT_Cond *cond, const char *name);
 gdk_export void MT_cond_destroy(MT_Cond *cond);
 gdk_export void MT_cond_wait(MT_Cond *cond, MT_Lock *lock);
 gdk_export void MT_cond_signal(MT_Cond *cond);
