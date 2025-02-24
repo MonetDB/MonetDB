@@ -2478,7 +2478,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 	MT_lock_init(&lg->lock, fn);
 	MT_lock_init(&lg->rotation_lock, "rotation_lock");
 	MT_lock_init(&lg->flush_lock, "flush_lock");
-	MT_cond_init(&lg->excl_flush_cv);
+	MT_cond_init(&lg->excl_flush_cv, "flush_cond");
 
 	if (log_load(fn, lg, filename) == GDK_SUCCEED) {
 		return lg;

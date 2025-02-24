@@ -365,7 +365,7 @@ gdk_return MT_alloc_tls(MT_TLS_t *newkey);
 int MT_check_nr_cores(void);
 void MT_cond_broadcast(MT_Cond *cond);
 void MT_cond_destroy(MT_Cond *cond);
-void MT_cond_init(MT_Cond *cond);
+void MT_cond_init(MT_Cond *cond, const char *name);
 void MT_cond_signal(MT_Cond *cond);
 void MT_cond_wait(MT_Cond *cond, MT_Lock *lock);
 int MT_create_thread(MT_Id *t, void (*function)(void *), void *arg, enum MT_thr_detach d, const char *threadname);
