@@ -5,135 +5,94 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
 
 #include "monetdb_config.h"
 #include "rel_remote.h"
+#include "msettings.h"
 
-#define mapi_prefix "mapi:monetdb://"
+static void *
+msettings_sa_allocator(void *state, void *old, size_t size)
+{
+	allocator *sa = state;
+
+	if (size == 0) {
+		// This is really a free(), ignore it.
+		return NULL;
+	} else if (old == NULL) {
+		// This is really a malloc()
+		return sa_alloc(sa, size);
+	} else {
+		// We can't handle generic realloc because we don't know how large the
+		// previous allocation was, so we don't know how much to copy.
+		// Fortunately, msettings doesn't really reallocate so we don't need
+		// this for now.
+		assert(size == 0 || old == NULL);
+		return NULL;
+	}
+}
+
+msettings *
+sa_msettings_create(allocator *sa)
+{
+	return msettings_create_with(msettings_sa_allocator, sa);
+}
+
+char*
+sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint)
+{
+	size_t buffer_size = size_hint ? size_hint + 1 : 80;
+	do {
+		char *buffer = sa_alloc(sa, buffer_size);
+		if (!buffer)
+			return NULL;
+		size_t needed = msettings_write_url(mp, buffer, buffer_size);
+		if (needed + 1 <= buffer_size)
+			return buffer;
+		buffer_size = needed + 1;
+	} while (1);
+}
 
 int
-mapiuri_valid( const char *uri)
+mapiuri_valid( const char *uri, allocator *sa)
 {
-	int i = 0, l = 0;
-	const char *p = uri;
-
-	if (strncmp(p, mapi_prefix, strlen(mapi_prefix)))
-		return 0;
-	/* optional host (todo limit to valid hostnames ??) */
-	p += strlen(mapi_prefix);
-	if (*p == '[') { //check for IPv6 addresses
-		for (; *p; p++) {
-			if (*p == ']')
-				break;
-		}
-	}
-	if (!p)
-		return 0;
-	for (; *p; p++) {
-		if (*p == ':' || *p == '/')
-			break;
-	}
-	if (!p)
-		return 0;
-	if (*p == ':') {
-		char *x;
-		int i = strtol(p+1, &x, 10);
-
-		if (!x || i < 0 || i >= 64*1024)
-			return 0;
-		p = x;
-	}
-	if (*p != '/')
-		return 0;
-	p++;
-	/* now find at most 2 '/'s, with some string in between */
-	for(; *p; p++, l++) {
-		if (*p == '/') {
-			if (l == 0) /* no string in between */
-				return 0;
-			if (i == 2) /* 3 parts (ie database/schema/table) */
-				return 0;
-			i++;
-			l=0;
-		}
-	}
-	if (i == 0 && l == 0) /* missing database name */
-		return 0;
-	return 1;
+	msettings *mp = sa_msettings_create(sa);
+	return msettings_parse_url(mp, uri) == NULL;
 }
 
 /* assume valid uri's next functions */
 
-/* mapiuri_uri prefix including database name */
+/* strip schema- and table name from uri  */
 const char *
 mapiuri_uri( const char *uri, allocator *sa)
 {
-	const char *p = uri, *b = uri, *e;
-
-	p = strchr(p, '/')+1;
-	p++;
-	e = p = strchr(p, '/');
-	e = strchr(p+1, '/');
-	if (e)
-		return sa_strndup(sa, b, e - b);
-	else
-		return sa_strdup(sa, b);
-}
-
-const char *
-mapiuri_database( const char *uri, allocator *sa)
-{
-	const char *p = uri, *b, *e;
-
-	p = strchr(p, '/')+1;
-	p++;
-	b = p = strchr(p, '/')+1;
-	e = strchr(p, '/');
-
-	if (e) {
-		return sa_strndup(sa, b, e - b);
-	} else {
-		return sa_strdup(sa, b);
-	}
+	msettings *mp = sa_msettings_create(sa);
+	if (!mp || msettings_parse_url(mp, uri) != NULL)
+		return NULL;
+	msetting_set_string(mp, MP_TABLESCHEMA, "");
+	msetting_set_string(mp, MP_TABLE, "");
+	return sa_msettings_to_string(mp, sa, strlen(uri));
 }
 
 const char *
 mapiuri_schema( const char *uri, allocator *sa, const char *fallback)
 {
-	const char *p = uri, *b, *e;
-
-	p = strchr(p, '/')+1;
-	p = strchr(p+1, '/');
-	p = strchr(p+1, '/');
-	if (!p)
+	msettings *mp = sa_msettings_create(sa);
+	if (!mp || msettings_parse_url(mp, uri) != NULL)
 		return fallback;
- 	b = ++p;
-	e = strchr(p, '/');
-
-	if (e) {
-		return sa_strndup(sa, b, e - b);
-	} else {
-		return sa_strdup(sa, b);
-	}
+	const char *schema = msetting_string(mp, MP_TABLESCHEMA);
+	return schema[0] ? schema : fallback;
 }
 
 const char *
 mapiuri_table( const char *uri, allocator *sa, const char *fallback)
 {
-	const char *p = uri, *b;
-
-	p = strchr(p, '/')+1;
-	p = strchr(p+1, '/');
-	p = strchr(p+1, '/');
-	if (!p)
+	msettings *mp = sa_msettings_create(sa);
+	if (!mp || msettings_parse_url(mp, uri) != NULL)
 		return fallback;
-	p = strchr(p+1, '/');
-	if (!p)
-		return fallback;
- 	b = ++p;
-	return sa_strdup(sa, b);
+	const char *schema = msetting_string(mp, MP_TABLE);
+	return schema[0] ? schema : fallback;
 }

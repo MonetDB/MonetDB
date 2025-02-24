@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -550,65 +550,6 @@ bitToStr(char **dst, size_t *len, const bit *src, bool external)
 	return 5;
 }
 
-ssize_t
-batFromStr(const char *src, size_t *len, bat **dst, bool external)
-{
-	char *s;
-	const char *t, *r = src;
-	int c;
-	bat bid = 0;
-
-	atommem(sizeof(bat));
-
-	if (strNil(src)) {
-		**dst = bat_nil;
-		return 1;
-	}
-
-	while (GDKisspace(*r))
-		r++;
-
-	if (external && strcmp(r, "nil") == 0) {
-		**dst = bat_nil;
-		return (ssize_t) (r - src) + 3;
-	}
-
-	if (*r == '<')
-		r++;
-	t = r;
-	while ((c = *t) && (c == '_' || GDKisalnum(c)))
-		t++;
-
-	s = GDKstrndup(r, t - r);
-	if (s == NULL)
-		return -1;
-	bid = BBPindex(s);
-	GDKfree(s);
-	**dst = bid == 0 ? bat_nil : bid;
-	return (ssize_t) (t + (c == '>') - src);
-}
-
-ssize_t
-batToStr(char **dst, size_t *len, const bat *src, bool external)
-{
-	bat b = *src;
-	size_t i;
-	str s;
-
-	if (is_bat_nil(b) || !BBPcheck(b) || (s = BBP_logical(b)) == NULL || *s == 0) {
-		atommem(4);
-		if (external) {
-			strcpy(*dst, "nil");
-			return 3;
-		}
-		strcpy(*dst, str_nil);
-		return 1;
-	}
-	i = strlen(s) + 3;
-	atommem(i);
-	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
-}
-
 
 /*
  * numFromStr parses the head of the string for a number, accepting an
@@ -1086,7 +1027,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 ssize_t
 dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 {
-	int i;
+	int l = 0;
 
 	atommem(dblStrlen);
 	if (is_dbl_nil(*src)) {
@@ -1097,12 +1038,19 @@ dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 		strcpy(*dst, str_nil);
 		return 1;
 	}
-	for (i = 4; i < 18; i++) {
-		snprintf(*dst, *len, "%.*g", i, *src);
+	if (*src <= (dbl) 999999999999999 &&
+	    *src >= (dbl) -999999999999999 &&
+	    (dbl) (int) *src == *src) {
+		l = snprintf(*dst, *len, "%.0f", *src);
+		if (strtod(*dst, NULL) == *src)
+			return (ssize_t) l;
+	}
+	for (int i = 4; i < 18; i++) {
+		l = snprintf(*dst, *len, "%.*g", i, *src);
 		if (strtod(*dst, NULL) == *src)
 			break;
 	}
-	return (ssize_t) strlen(*dst);
+	return (ssize_t) l;
 }
 
 atom_io(dbl, Lng, lng)
@@ -1160,7 +1108,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 ssize_t
 fltToStr(char **dst, size_t *len, const flt *src, bool external)
 {
-	int i;
+	int l = 0;
 
 	atommem(fltStrlen);
 	if (is_flt_nil(*src)) {
@@ -1171,12 +1119,19 @@ fltToStr(char **dst, size_t *len, const flt *src, bool external)
 		strcpy(*dst, str_nil);
 		return 1;
 	}
-	for (i = 4; i < 10; i++) {
-		snprintf(*dst, *len, "%.*g", i, *src);
+	if (*src <= (flt) 9999999 &&
+	    *src >= (flt) -9999999 &&
+	    (flt) (int) *src == *src) {
+		l = snprintf(*dst, *len, "%.0f", *src);
+		if (strtof(*dst, NULL) == *src)
+			return (ssize_t) l;
+	}
+	for (int i = 4; i < 10; i++) {
+		l = snprintf(*dst, *len, "%.*g", i, *src);
 		if (strtof(*dst, NULL) == *src)
 			break;
 	}
-	return (ssize_t) strlen(*dst);
+	return (ssize_t) l;
 }
 
 atom_io(flt, Int, int)
@@ -1532,11 +1487,8 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	s = *tostr;
 
 	for (i = 0; i < p->nitems; i++) {
-		int val = (p->data[i] >> 4) & 15;
-
-		*s++ = hexit[val];
-		val = p->data[i] & 15;
-		*s++ = hexit[val];
+		*s++ = hexit[(p->data[i] >> 4) & 15];
+		*s++ = hexit[p->data[i] & 15];
 	}
 	*s = '\0';
 	return (ssize_t) (s - *tostr);
@@ -1593,7 +1545,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	   // Read the values of the blob.
 	 */
 	for (i = 0; i < nitems; ++i) {
-		char res = 0;
+		int res = 0;
 
 		for (;;) {
 			if (*s >= '0' && *s <= '9') {
@@ -1627,7 +1579,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		}
 		s++;
 
-		result->data[i] = res;
+		result->data[i] = (uint8_t) res;
 	}
 	while (GDKisspace(*s))
 		s++;

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -141,8 +141,9 @@ buildConnectionString(const char *dsn, const msettings *settings)
 	size_t cap = 1024;
 	char *buf = malloc(cap);  // reallocprintf will deal with allocation failures
 	char *sep = "";
-	char *value = NULL;
-	char *default_value = NULL;
+	const char *value = NULL;
+	const char *default_value = NULL;
+	char scratch1[40], scratch2[40];
 	bool ok = false;
 
 	if (dsn) {
@@ -158,8 +159,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 		if (parm == MP_IGNORE || parm == MP_TABLE || parm == MP_TABLESCHEMA)
 			continue;
 
-		free(value);
-		value = msetting_as_string(settings, parm);
+		value = msetting_as_string(settings, parm, scratch1, sizeof(scratch1));
 		if (!value)
 			goto end;
 
@@ -174,8 +174,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 			show_this = true;
 		} else {
 			// skip if still default
-			free(default_value);
-			default_value = msetting_as_string(msettings_default, parm);
+			default_value = msetting_as_string(msettings_default, parm, scratch2, sizeof(scratch2));
 			if (!default_value)
 				goto end;
 			show_this = (strcmp(value, default_value) != 0);
@@ -190,8 +189,6 @@ buildConnectionString(const char *dsn, const msettings *settings)
 	ok = true;
 
 end:
-	free(value);
-	free(default_value);
 	if (ok) {
 		return buf;
 	} else {

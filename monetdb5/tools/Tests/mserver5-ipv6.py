@@ -5,7 +5,7 @@ except ImportError:
     import process
 
 with process.server(stdin=process.PIPE, stdout=process.PIPE,
-                    stderr=process.PIPE, ipv6=True) as server:
+                    stderr=process.PIPE, ipv6=True, mapiport=0) as server:
     with process.client('sql', host='::1', server=server,
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as client:

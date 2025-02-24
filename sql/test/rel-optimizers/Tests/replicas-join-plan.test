@@ -125,6 +125,6 @@ table (
 | | | ) [  ],
 | | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ]
 | | ) [  ]
-| ) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m", "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
+| ) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m", "buz_rmt"."l" ] REMOTE monetdb://localhost.:50002/node2
 ) [ "foo_rpl"."n", "foo_rpl"."m", "bar_rpl"."n", "bar_rpl"."m", "buz_rmt"."l" ]
 

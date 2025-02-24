@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -84,7 +84,11 @@ set(sql_public_headers
 )
 
 #add_library(sql MODULE)
-add_library(sql SHARED)
+if(MONETDB_STATIC)
+  add_library(sql STATIC)
+else()
+  add_library(sql SHARED)
+endif()
 
 set(include_sql_files
   10_sys_schema_extension
@@ -187,6 +191,7 @@ target_link_libraries(sql
   sqlcommon
   batstore
   sqlserver
+  sqlparserlib
   sqlinclude
   copybinary
   monetdb5
@@ -221,8 +226,12 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 add_subdirectory(generator)
-add_subdirectory(UDF)
-add_subdirectory(vaults)
+if(WITH_UDF)
+  add_subdirectory(UDF)
+endif()
+if(WITH_VAULTS)
+  add_subdirectory(vaults)
+endif()
 
 add_library(sqlembedded INTERFACE)
 
@@ -231,11 +240,13 @@ target_include_directories(sqlembedded
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-install(EXPORT sqlTargets
-  FILE sqlTargets.cmake
-  NAMESPACE MonetDB::
-  DESTINATION ${EXPORT_TARGET_PATH}
-  COMPONENT monetdbdev)
+if(NOT MONETDB_STATIC)
+  install(EXPORT sqlTargets
+    FILE sqlTargets.cmake
+    NAMESPACE MonetDB::
+    DESTINATION ${EXPORT_TARGET_PATH}
+    COMPONENT monetdbdev)
+endif()
 
 if(WIN32)
   install(FILES

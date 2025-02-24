@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,13 +26,15 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-static inline bool __attribute__((__pure__))
+__attribute__((__pure__))
+static inline bool
 isProjectConst(const InstrRecord *p)
 {
 	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
 }
 
-static int __attribute__((__pure__))
+__attribute__((__pure__))
+static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
 	int i;
@@ -118,7 +120,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
 			old[i] = NULL;
-			continue;
+			break;
 		}
 
 		/* when we enter a barrier block, we should ditch all previous instructions from consideration */

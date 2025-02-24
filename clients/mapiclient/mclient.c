@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,12 +18,8 @@
  */
 
 #include "monetdb_config.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 #include "stream.h"
 #include "mapi.h"
@@ -1177,10 +1173,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtod(s, NULL);
-				for (j = 4; j < 11; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtod(buf, NULL))
-						break;
+				if (v > (double) 999999999999999 ||
+					v < (double) -999999999999999 ||
+					(double) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtod(buf, NULL) != v) {
+					for (j = 4; j < 11; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtod(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else if (strcmp(tp, "real") == 0) {
@@ -1190,10 +1192,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtof(s, NULL);
-				for (j = 4; j < 6; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtof(buf, NULL))
-						break;
+				if (v > (float) 9999999 ||
+					v < (float) -9999999 ||
+					(float) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtof(buf, NULL) != v) {
+					for (j = 4; j < 6; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtof(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else

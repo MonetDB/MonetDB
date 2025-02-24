@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,6 +26,7 @@
 #else
 /* older GCC does have attributes, but not __has_attribute and not all
  * attributes that we use are known */
+#define __has_attribute__access__ 0
 #define __has_attribute__alloc_size__ 1
 #define __has_attribute__cold__ 1
 #define __has_attribute__const__ 1
@@ -41,6 +42,9 @@
 #define __has_attribute__warn_unused_result__ 1
 #define __has_attribute(attr)	__has_attribute##attr
 #endif
+#endif
+#if !__has_attribute(__access__)
+#define __access__(...)
 #endif
 #if !__has_attribute(__alloc_size__)
 #define __alloc_size__(...)
@@ -60,8 +64,12 @@
 #if !__has_attribute(__format__)
 #define __format__(...)
 #endif
+/* attribute malloc with argument seems to have been introduced in gcc 13 */
 #if !__has_attribute(__malloc__)
 #define __malloc__
+#define __malloc__(...)
+#elif !defined(__GNUC__) || __GNUC__ < 13
+#define __malloc__(...)
 #endif
 #if !__has_attribute(__nonnull__)
 #define __nonnull__(...)
@@ -227,7 +235,6 @@ gdk_export char *GDKgetbuf(void);
 /*
  * @- MT Lock API
  */
-#include "matomic.h"
 
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */

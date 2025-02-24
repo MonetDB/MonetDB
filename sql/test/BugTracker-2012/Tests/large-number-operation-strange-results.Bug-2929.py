@@ -1,4 +1,5 @@
-import sys, os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import sys, os
 from decimal import *
 
 db = os.getenv("TSTDB")

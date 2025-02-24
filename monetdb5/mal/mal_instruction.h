@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -58,10 +58,9 @@ setFunctionId(InstrPtr p, const char *s)
 #endif
 #define garbageControl(P)	((P)->gc)
 
-#define getInstrPtr(M,I)	(M)->stmt[I]
+#define getInstrPtr(M,I)	((M)->stmt[I])
 #define putInstrPtr(M,I,P)	(M)->stmt[I] = P
 #define getSignature(S)		getInstrPtr((S)->def,0)
-#define isMain(M)			((getInstrPtr(M,0))->fcnname == putName("main",4))
 #define getFcnName(M)		getFunctionId(getInstrPtr(M,0))
 #define getArgCount(M)		getInstrPtr(M,0)->argc
 #define getModName(M)		getModuleId(getInstrPtr(M,0))
@@ -69,7 +68,8 @@ setFunctionId(InstrPtr p, const char *s)
 
 #define getVar(M,I)			(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
-mal_export char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf);
+mal_export char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
+	__attribute__((__access__(write_only, 3)));
 
 #define getVarKind(M,I)		((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)

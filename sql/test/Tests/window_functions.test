@@ -977,9 +977,9 @@ SELECT start_terminal,
        NTILE(5) OVER ntile_window AS quintile,
        NTILE(100) OVER ntile_window AS percentile
   FROM tutorial.dc_bikeshare_q1_2012
+ WHERE start_time < '2012-01-08'
 WINDOW ntile_window AS
          (PARTITION BY start_terminal ORDER BY duration_seconds)
- WHERE start_time < '2012-01-08'
  ORDER BY start_terminal, duration_seconds
 ----
 AMS

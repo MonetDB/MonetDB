@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4066,8 +4066,15 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				if (!skip_nils && !bi.nonil)
 					nils += (*atomcmp)(v, dnil) == 0;
 			}
+			while (min < prev) {
+				if (bunfastapp_nocheck(bn, dnil) != GDK_SUCCEED)
+					goto bunins_failed;
+				min++;
+				nils++;
+			}
 			if (bunfastapp_nocheck(bn, v) != GDK_SUCCEED)
 				goto bunins_failed;
+			min++;
 		}
 		bat_iterator_end(&bi);
 		nils += ngrp - BATcount(bn);

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -17,7 +17,6 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "sql_mvc.h"
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
@@ -123,6 +122,10 @@ getSQLoptimizer(mvc *m)
 {
 	char *opt = get_string_global_var(m, "optimizer");
 	char *pipe = "default_pipe";
+	char *rec_pipe = "recursive_pipe";
+
+	if (m->recursive)
+		return rec_pipe;
 
 	if (opt)
 		pipe = opt;

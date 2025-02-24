@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -929,13 +929,14 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < vndims; i++){
 		col = mvc_bind_column(m, arr_table, dname[i]);
 		if (col == NULL){
+			msg = createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
 			for (i = 0; i < vndims; i++)
 				GDKfree(dname[i]);
 			GDKfree(dname);
 			GDKfree(dim_bids);
 			bat_destroy(pos);
 			nc_close(ncid);
-			throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
+			return msg;
 		}
 
 		dimbat = BATdescriptor(dim_bids[i]);

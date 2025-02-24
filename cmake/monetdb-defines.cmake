@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -74,10 +74,6 @@ function(monetdb_configure_defines)
   check_function_exists("getentropy" HAVE_GETENTROPY)
   check_function_exists("getexecname" HAVE_GETEXECNAME)
   check_function_exists("getlogin" HAVE_GETLOGIN)
-  cmake_push_check_state()
-    set(CMAKE_REQUIRED_INCLUDES "${HAVE_GETOPT_H}")
-    check_symbol_exists("getopt_long" "getopt.h" HAVE_GETOPT_LONG)
-  cmake_pop_check_state()
   check_function_exists("getrlimit" HAVE_GETRLIMIT)
   check_function_exists("gettid" HAVE_GETTID)
   check_function_exists("gettimeofday" HAVE_GETTIMEOFDAY)
@@ -175,9 +171,6 @@ macro(monetdb_macro_variables)
     CACHE
     INTERNAL
     "C udfs extension is available")
-  if(HAVE_GETOPT_H)
-    set(HAVE_GETOPT 1)
-  endif()
   # compiler options, profiling (google perf tools), valgrind
   # Check that posix regex is available when pcre is not found
   # "monetdb5/module/mal/pcre.c" assumes the regex library is available

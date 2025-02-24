@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 
 #include "msettings.h"
+#include "msettings_internal.h"
 #include "mstring.h"
 
 #include <assert.h>
@@ -28,14 +29,13 @@
 
 #define FATAL() do { fprintf(stderr, "\n\n abort in msettings.c: %s\n\n", __func__); abort(); } while (0)
 
-static const char * const MALLOC_FAILED = "malloc failed";
+const char * const MALLOC_FAILED = "malloc failed";
 
 bool
 msettings_malloc_failed(msettings_error err)
 {
 	return ((const char*)err == (const char*)MALLOC_FAILED);
 }
-
 
 
 int msetting_parse_bool(const char *text)
@@ -53,29 +53,6 @@ int msetting_parse_bool(const char *text)
 			return variants[i].value;
 	return -1;
 }
-
-char* allocprintf(const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-
-char *
-allocprintf(const char *fmt, ...)
-{
-	va_list ap;
-	char *buf = NULL;
-	size_t pos = 0, cap = 0;
-	int n;
-
-	va_start(ap, fmt);
-	n = vreallocprintf(&buf, &pos, &cap, fmt, ap);
-	va_end(ap);
-
-	if (n >= 0)
-		return buf;
-	free(buf);
-	return NULL;
-}
-
-
 
 
 static const struct { const char *name;  mparm parm; }
@@ -186,66 +163,6 @@ mparm_is_core(mparm parm)
 	}
 }
 
-struct string {
-	char *str;
-	bool must_free;
-};
-
-struct msettings {
-	// Must match EXACTLY the order of enum mparm
-	bool dummy_start_bool;
-	bool tls;
-	bool autocommit;
-	bool client_info;
-	bool dummy_end_bool;
-
-	// Must match EXACTLY the order of enum mparm
-	long dummy_start_long;
-	long port;
-	long timezone;
-	long replysize;
-	long map_to_long_varchar;
-	long connect_timeout;
-	long reply_timeout;
-	long dummy_end_long;
-
-	// Must match EXACTLY the order of enum mparm
-	struct string dummy_start_string;
-	struct string sock;
-	struct string sockdir;
-	struct string cert;
-	struct string clientkey;
-	struct string clientcert;
-	struct string host;
-	struct string database;
-	struct string tableschema;
-	struct string table;
-	struct string certhash;
-	struct string user;
-	struct string password;
-	struct string language;
-	struct string schema;
-	struct string binary;
-	struct string logfile;
-	struct string client_application;
-	struct string client_remark;
-	struct string dummy_end_string;
-
-	char **unknown_parameters;
-	size_t nr_unknown;
-
-	bool lang_is_mal;
-	bool lang_is_sql;
-	long user_generation;
-	long password_generation;
-	char *unix_sock_name_buffer;
-	char certhash_digits_buffer[64 + 2 + 1]; // fit more than required plus trailing '\0'
-	bool validated;
-	const char* (*localizer)(const void *data, mparm parm);
-	void *localizer_data;
-	char error_message[256];
-};
-
 static
 const msettings msettings_default_values = {
 	.tls = false,
@@ -259,9 +176,6 @@ const msettings msettings_default_values = {
 	.sockdir = { "/tmp", false },
 	.binary = { "on", false },
 
-	.unknown_parameters = NULL,
-	.nr_unknown = 0,
-
 	.lang_is_mal = false,
 	.lang_is_sql = true,
 	.unix_sock_name_buffer = NULL,
@@ -271,66 +185,94 @@ const msettings msettings_default_values = {
 
 const msettings *msettings_default = &msettings_default_values;
 
+msettings *msettings_create_with(msettings_allocator alloc, void *allocator_state)
+{
+	if (alloc == NULL) {
+		allocator_state = NULL;
+	}
+
+	msettings *mp = realloc_with_fallback(alloc, allocator_state, NULL, sizeof(*mp));
+	if (!mp)
+		return NULL;
+
+	*mp = msettings_default_values;
+	mp->alloc = alloc;
+	mp->alloc_state = allocator_state;
+
+	return mp;
+}
+
 msettings *msettings_create(void)
 {
-	msettings *mp = malloc(sizeof(*mp));
-	if (!mp) {
+	return msettings_create_with(NULL, NULL);
+}
+
+msettings_allocator
+msettings_get_allocator(const msettings *mp, void **put_alloc_state_here)
+{
+	if (mp->alloc == NULL)
 		return NULL;
+	if (put_alloc_state_here)
+		*put_alloc_state_here = mp->alloc_state;
+	return mp->alloc;
+}
+
+msettings *msettings_clone_with(msettings_allocator alloc, void *alloc_state, const msettings *orig)
+{
+	bool free_unix_sock_name_buffer = false;
+	struct string *copy_start = NULL;
+	struct string *copy_pos = NULL;
+
+	msettings *mp = msettings_create_with(alloc, alloc_state);
+	if (!mp)
+		return NULL;
+
+	// Before we copy orig over mp, remember mp's allocator as decided by msettings_create_with.
+	alloc = mp->alloc;
+	alloc_state = mp->alloc_state;
+
+	// Copy the whole struct, including the pointers to data owned by orig.
+	// This means we must be really careful when we abort halfway and need to free 'mp'.
+	// We will use 'start' and 'pos' to keep track of which strings must be free'd BY US
+	*mp = *orig;
+	mp->alloc = alloc;
+	mp->alloc_state = alloc_state;
+	copy_start = &mp->dummy_start_string;
+	copy_pos = copy_start;
+
+	if (orig->unix_sock_name_buffer) {
+		mp->unix_sock_name_buffer = msettings_strdup(mp, orig->unix_sock_name_buffer);
+		if (mp->unix_sock_name_buffer == NULL)
+			goto bailout;
+		free_unix_sock_name_buffer = true;
 	}
-	*mp = msettings_default_values;
+
+	// Duplicate the strings that need to be duplicated
+	for (; copy_pos < &mp->dummy_end_string; copy_pos++) {
+		if (copy_pos->must_free) {
+			copy_pos->str = msettings_strdup(mp, copy_pos->str);
+			if (copy_pos->str == NULL)
+				goto bailout;
+		}
+	}
+
+	// Now all references to data allocated by 'orig' has been copied.
 	return mp;
+
+bailout:
+	if (free_unix_sock_name_buffer)
+		msettings_dealloc(mp, mp->unix_sock_name_buffer);
+	while (copy_start != copy_pos) {
+		msettings_dealloc(mp, copy_start->str);
+		copy_start++;
+	}
+	msettings_dealloc(mp, mp);
+	return NULL;
 }
 
 msettings *msettings_clone(const msettings *orig)
 {
-	msettings *mp = malloc(sizeof(*mp));
-	char **unknowns = orig->nr_unknown > 0 ? calloc(2 * orig->nr_unknown, sizeof(char*)) : NULL;
-	const char *namebuf = orig->unix_sock_name_buffer;
-	char *cloned_name_buffer = namebuf ? strdup(namebuf) : NULL;
-	if (!mp || (orig->nr_unknown > 0 && !unknowns) || (namebuf && !cloned_name_buffer)) {
-		free(mp);
-		free(unknowns);
-		free(cloned_name_buffer);
-		return NULL;
-	}
-	*mp = *orig;
-	mp->unknown_parameters = unknowns;
-	mp->unix_sock_name_buffer = cloned_name_buffer;
-
-	// now we have to very carefully duplicate the strings.
-	// taking care to only free our own ones if that fails
-
-	struct string *start = &mp->dummy_start_string;
-	struct string *end = &mp->dummy_end_string;
-	struct string *p = start;
-	while (p < end) {
-		if (p->must_free) {
-			p->str = strdup(p->str);
-			if (p->str == NULL)
-				goto bailout;
-		}
-		p++;
-	}
-
-	for (size_t i = 0; i < 2 * mp->nr_unknown; i++) {
-		assert(orig->unknown_parameters[i]);
-		char *u = strdup(orig->unknown_parameters[i]);
-		if (u == NULL)
-			goto bailout;
-		mp->unknown_parameters[i] = u;
-	}
-
-	return mp;
-
-bailout:
-	for (struct string *q = start; q < p; q++)
-		if (q->must_free)
-			free(q->str);
-	for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
-		free(mp->unknown_parameters[i]);
-	free(mp->unix_sock_name_buffer);
-	free(mp);
-	return NULL;
+	return msettings_clone_with(NULL, NULL, orig);
 }
 
 void
@@ -341,27 +283,24 @@ msettings_reset(msettings *mp)
 	struct string *end = &mp->dummy_end_string;
 	for (struct string *p = start; p < end; p++) {
 		if (p->must_free)
-			free(p->str);
-	}
-
-	// free unknown parameters
-	if (mp->nr_unknown) {
-		for (size_t i = 0; i < 2 * mp->nr_unknown; i++)
-			free(mp->unknown_parameters[i]);
-		free(mp->unknown_parameters);
+			msettings_dealloc(mp, p->str);
 	}
 
 	// free the buffer
-	free(mp->unix_sock_name_buffer);
+	msettings_dealloc(mp, mp->unix_sock_name_buffer);
 
-	// keep the localizer
+	// keep the localizer and the allocator
 	void *localizer = mp->localizer;
 	void *localizer_data = mp->localizer_data;
+	msettings_allocator alloc = mp->alloc;
+	void *alloc_state = mp->alloc_state;
 
 	// now overwrite the whole thing
 	*mp = *msettings_default;
 	mp->localizer = localizer;
 	mp->localizer_data = localizer_data;
+	mp->alloc = alloc;
+	mp->alloc_state = alloc_state;
 }
 
 msettings *
@@ -372,23 +311,15 @@ msettings_destroy(msettings *mp)
 
 	for (struct string *p = &mp->dummy_start_string + 1; p < &mp->dummy_end_string; p++) {
 		if (p->must_free)
-			free(p->str);
+			msettings_dealloc(mp, p->str);
 	}
-	for (size_t i = 0; i < mp->nr_unknown; i++) {
-		free(mp->unknown_parameters[2 * i]);
-		free(mp->unknown_parameters[2 * i + 1]);
-	}
-	free(mp->unknown_parameters);
-	free(mp->unix_sock_name_buffer);
-	free(mp);
+	msettings_dealloc(mp, mp->unix_sock_name_buffer);
+	msettings_dealloc(mp, mp);
 
 	return NULL;
 }
 
-static const char *format_error(msettings *mp, const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
-static const char *
+const char *
 format_error(msettings *mp, const char *fmt, ...)
 {
 	va_list ap;
@@ -453,11 +384,11 @@ msetting_set_string(msettings *mp, mparm parm, const char* value)
 	if (p >=  &mp->dummy_end_string)
 		FATAL();
 
-	char *v = strdup(value);
+	char *v = msettings_strdup(mp, value);
 	if (!v)
 		return MALLOC_FAILED;
 	if (p->must_free)
-		free(p->str);
+		msettings_dealloc(mp, p->str);
 	p->str = v;
 	p->must_free = true;
 
@@ -572,56 +503,26 @@ msetting_parse(msettings *mp, mparm parm, const char *text)
 	}
 }
 
-char *
-msetting_as_string(const msettings *mp, mparm parm)
+const char *
+msetting_as_string(const msettings *mp, mparm parm, char *scratch, size_t scratch_size)
 {
-	bool b;
 	long l;
-	const char *s;
 	switch (mparm_classify(parm)) {
 		case MPCLASS_BOOL:
-			b = msetting_bool(mp, parm);
-			return strdup(b ? "true" : "false");
+			return msetting_bool(mp, parm) ? "true" : "false";
 		case MPCLASS_LONG:
 			l = msetting_long(mp, parm);
-			int n = 40;
-			char *buf = malloc(n);
-			if (!buf)
+			int n = snprintf(scratch, scratch_size, "%ld", l);
+			if (n > 0 && scratch_size >= (size_t)n + 1)
+				return scratch;
+			else
 				return NULL;
-			snprintf(buf, n, "%ld", l);
-			return buf;
 		case MPCLASS_STRING:
-			s = msetting_string(mp, parm);
-			return strdup(s);
+			return msetting_string(mp, parm);
 		default:
 			assert(0 && "unreachable");
 			return NULL;
 	}
-}
-
-msettings_error
-msetting_set_ignored(msettings *mp, const char *key, const char *value)
-{
-	char *my_key = strdup(key);
-	char *my_value = strdup(value);
-
-	size_t n = mp->nr_unknown;
-	size_t new_size = (2 * n + 2) * sizeof(char*);
-	char **new_unknowns = realloc(mp->unknown_parameters, new_size);
-
-	if (!my_key || !my_value || !new_unknowns) {
-		free(my_key);
-		free(my_value);
-		free(new_unknowns);
-		return MALLOC_FAILED;
-	}
-
-	new_unknowns[2 * n] = my_key;
-	new_unknowns[2 * n + 1] = my_value;
-	mp->unknown_parameters = new_unknowns;
-	mp->nr_unknown += 1;
-
-	return NULL;
 }
 
 /* store named parameter */
@@ -633,7 +534,7 @@ msetting_set_named(msettings *mp, bool allow_core, const char *key, const char *
 		return format_error(mp, "%s: unknown parameter", key);
 
 	if (parm == MP_IGNORE)
-		return msetting_set_ignored(mp, key, value);
+		return NULL;
 
 	if (!allow_core && mparm_is_core(parm))
 		return format_error(mp, "%s: parameter not allowed here", msetting_parm_name(mp, parm));
@@ -704,11 +605,11 @@ validate_identifier(const char *name)
 	return true;
 }
 
-bool
-msettings_validate(msettings *mp, char **errmsg)
+msettings_error
+msettings_validate(msettings *mp)
 {
 	if (mp->validated)
-		return true;
+		return NULL;
 
 	// 1. The parameters have the types listed in the table in [Section
 	//    Parameters](#parameters).
@@ -716,11 +617,10 @@ msettings_validate(msettings *mp, char **errmsg)
 
 	// 2. At least one of **sock** and **host** must be empty.
 	if (nonempty(mp, MP_SOCK) && nonempty(mp, MP_HOST)) {
-		*errmsg = allocprintf(
+		return format_error(mp,
 			"With sock='%s', host must be 'localhost', not '%s'",
 			msetting_string(mp, MP_SOCK),
 			msetting_string(mp, MP_HOST));
-		return false;
 	}
 
 	// 3. The string parameter **binary** must either parse as a boolean or as a
@@ -730,28 +630,25 @@ msettings_validate(msettings *mp, char **errmsg)
 	long level = msettings_connect_binary(mp);
 	mp->validated = false;
 	if (level < 0) {
-		*errmsg = allocprintf("invalid value '%s' for parameter 'binary'", msetting_string(mp, MP_BINARY));
-		return false;
+		return format_error(mp, "invalid value '%s' for parameter 'binary'", msetting_string(mp, MP_BINARY));
 	}
 
 	// 4. If **sock** is not empty, **tls** must be 'off'.
 	if (nonempty(mp, MP_SOCK) && msetting_bool(mp, MP_TLS)) {
-		*errmsg = allocprintf("TLS cannot be used with Unix domain sockets");
-		return false;
+		return format_error(mp, "TLS cannot be used with Unix domain sockets");
 	}
 
 	// 5. If **certhash** is not empty, it must be of the form `sha256:hexdigits`
 	//    where hexdigits is a non-empty sequence of 0-9, a-f, A-F and colons.
 	const char *certhash_msg = validate_certhash(mp);
 	if (certhash_msg) {
-		*errmsg = strdup(certhash_msg);
-		return false;
+		return format_error(mp, "%s", certhash_msg);
 	}
+
 	// 6. If **tls** is 'off', **cert** and **certhash** must be 'off' as well.
 	if (nonempty(mp, MP_CERT) || nonempty(mp, MP_CERTHASH))
 		if (!msetting_bool(mp, MP_TLS)) {
-			*errmsg = strdup("'cert' and 'certhash' can only be used with monetdbs://");
-			return false;
+			return format_error(mp, "'cert' and 'certhash' can only be used with monetdbs://");
 		}
 
 	// 7. Parameters **database**, **tableschema** and **table** must consist only of
@@ -759,44 +656,39 @@ msettings_validate(msettings *mp, char **errmsg)
 	//    start with a dash.
 	const char *database = msetting_string(mp, MP_DATABASE);
 	if (!validate_identifier(database)) {
-		*errmsg = allocprintf("invalid database name '%s'", database);
-		return false;
+		return format_error(mp, "invalid database name '%s'", database);
 	}
 	const char *tableschema = msetting_string(mp, MP_TABLESCHEMA);
 	if (!validate_identifier(tableschema)) {
-		*errmsg = allocprintf("invalid schema name '%s'", tableschema);
-		return false;
+		return format_error(mp, "invalid schema name '%s'", tableschema);
 	}
 	const char *table = msetting_string(mp, MP_TABLE);
 	if (!validate_identifier(table)) {
-		*errmsg = allocprintf("invalid table name '%s'", table);
-		return false;
+		return format_error(mp, "invalid table name '%s'", table);
 	}
 
 	// 8. Parameter **port** must be -1 or in the range 1-65535.
 	long port = msetting_long(mp, MP_PORT);
 	bool port_ok = (port == -1 || (port >= 1 && port <= 65535));
 	if (!port_ok) {
-		*errmsg = allocprintf("invalid port '%ld'", port);
-		return false;
+		return format_error(mp, "invalid port '%ld'", port);
 	}
 
 	// 9. If **clientcert** is set, **clientkey** must also be set.
 	if (nonempty(mp, MP_CLIENTCERT) && empty(mp, MP_CLIENTKEY)) {
-		*errmsg = allocprintf("clientcert can only be set together with clientkey");
-		return false;
+		return format_error(mp, "clientcert can only be set together with clientkey");
 	}
 
 	// compute this here so the getter function can take const msettings*
 	const char *sockdir = msetting_string(mp, MP_SOCKDIR);
 	long effective_port = msettings_connect_port(mp);
-	free(mp->unix_sock_name_buffer);
-	mp->unix_sock_name_buffer = allocprintf("%s/.s.monetdb.%ld", sockdir, effective_port);
+	msettings_dealloc(mp, mp->unix_sock_name_buffer);
+	mp->unix_sock_name_buffer = msettings_allocprintf(mp, "%s/.s.monetdb.%ld", sockdir, effective_port);
 	if (mp->unix_sock_name_buffer == NULL)
 		return false;
 
 	mp->validated = true;
-	return true;
+	return NULL;
 }
 
 bool

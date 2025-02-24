@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -14,8 +14,11 @@ if (${HAVE_ODBCINST})
   add_compile_definitions(HAVE_SQLGETPRIVATEPROFILESTRING)
 endif()
 
-add_library(MonetODBC
-  MODULE)
+if(MONETDB_STATIC)
+  add_library(MonetODBC STATIC)
+else()
+  add_library(MonetODBC MODULE)
+endif()
 
 target_sources(MonetODBC
   PRIVATE

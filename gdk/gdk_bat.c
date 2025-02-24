@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -310,159 +310,6 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	return bn;
 }
 
-BAT *
-BATattach(int tt, const char *heapfile, role_t role)
-{
-	BAT *bn;
-	char *p;
-	size_t m;
-	FILE *f;
-
-	ERRORcheck(tt <= 0 , "bad tail type (<=0)\n", NULL);
-	ERRORcheck(ATOMvarsized(tt) && ATOMstorage(tt) != TYPE_str, "bad tail type (varsized and not str)\n", NULL);
-	ERRORcheck(heapfile == NULL, "bad heapfile name\n", NULL);
-
-	if ((f = MT_fopen(heapfile, "rb")) == NULL) {
-		GDKsyserror("BATattach: cannot open %s\n", heapfile);
-		return NULL;
-	}
-	if (ATOMstorage(tt) == TYPE_str) {
-		size_t n;
-		char *s;
-		int c, u;
-
-		if ((bn = COLnew(0, tt, 0, role)) == NULL) {
-			fclose(f);
-			return NULL;
-		}
-		m = 4096;
-		n = 0;
-		u = 0;
-		s = p = GDKmalloc(m);
-		if (p == NULL) {
-			fclose(f);
-			BBPreclaim(bn);
-			return NULL;
-		}
-		while ((c = getc(f)) != EOF) {
-			if (n == m) {
-				m += 4096;
-				s = GDKrealloc(p, m);
-				if (s == NULL) {
-					GDKfree(p);
-					BBPreclaim(bn);
-					fclose(f);
-					return NULL;
-				}
-				p = s;
-				s = p + n;
-			}
-			if (c == '\n' && n > 0 && s[-1] == '\r') {
-				/* deal with CR-LF sequence */
-				s[-1] = c;
-			} else {
-				*s++ = c;
-				n++;
-			}
-			if (u) {
-				if ((c & 0xC0) == 0x80)
-					u--;
-				else
-					goto notutf8;
-			} else if ((c & 0xF8) == 0xF0)
-				u = 3;
-			else if ((c & 0xF0) == 0xE0)
-				u = 2;
-			else if ((c & 0xE0) == 0xC0)
-				u = 1;
-			else if ((c & 0x80) == 0x80)
-				goto notutf8;
-			else if (c == 0) {
-				if (BUNappend(bn, p, false) != GDK_SUCCEED) {
-					BBPreclaim(bn);
-					fclose(f);
-					GDKfree(p);
-					return NULL;
-				}
-				s = p;
-				n = 0;
-			}
-		}
-		fclose(f);
-		GDKfree(p);
-		if (n > 0) {
-			BBPreclaim(bn);
-			GDKerror("last string is not null-terminated\n");
-			return NULL;
-		}
-	} else {
-		struct stat st;
-		int atomsize;
-		BUN cap;
-		lng n;
-
-		if (fstat(fileno(f), &st) < 0) {
-			GDKsyserror("BATattach: cannot stat %s\n", heapfile);
-			fclose(f);
-			return NULL;
-		}
-		atomsize = ATOMsize(tt);
-		if (st.st_size % atomsize != 0) {
-			fclose(f);
-			GDKerror("heapfile size not integral number of atoms\n");
-			return NULL;
-		}
-		if (ATOMstorage(tt) == TYPE_msk ?
-		    (st.st_size > (off_t) (BUN_MAX / 8)) :
-		    ((size_t) (st.st_size / atomsize) > (size_t) BUN_MAX)) {
-			fclose(f);
-			GDKerror("heapfile too large\n");
-			return NULL;
-		}
-		cap = (BUN) (ATOMstorage(tt) == TYPE_msk ?
-			     st.st_size * 8 :
-			     st.st_size / atomsize);
-		bn = COLnew(0, tt, cap, role);
-		if (bn == NULL) {
-			fclose(f);
-			return NULL;
-		}
-		p = Tloc(bn, 0);
-		n = (lng) st.st_size;
-		while (n > 0 && (m = fread(p, 1, (size_t) MIN(1024*1024, n), f)) > 0) {
-			p += m;
-			n -= m;
-		}
-		fclose(f);
-		if (n > 0) {
-			GDKerror("couldn't read the complete file\n");
-			BBPreclaim(bn);
-			return NULL;
-		}
-		BATsetcount(bn, cap);
-		bn->tnonil = cap == 0;
-		bn->tnil = false;
-		bn->tseqbase = oid_nil;
-		if (cap > 1) {
-			bn->tsorted = false;
-			bn->trevsorted = false;
-			bn->tkey = false;
-		} else {
-			bn->tsorted = ATOMlinear(tt);
-			bn->trevsorted = ATOMlinear(tt);
-			bn->tkey = true;
-		}
-	}
-	return bn;
-
-  notutf8:
-	fclose(f);
-	BBPreclaim(bn);
-	GDKfree(p);
-	GDKerror("input is not UTF-8\n");
-	return NULL;
-}
-
 /*
  * If the BAT runs out of storage for BUNS it will reallocate space.
  * For memory mapped BATs we simple extend the administration after
@@ -522,7 +369,9 @@ BATextend(BAT *b, BUN newcap)
 	 * otherwise you may easily corrupt the administration of
 	 * malloc.
 	 */
+	MT_lock_set(&b->theaplock);
 	if (newcap <= BATcapacity(b)) {
+		MT_lock_unset(&b->theaplock);
 		return GDK_SUCCEED;
 	}
 
@@ -533,7 +382,6 @@ BATextend(BAT *b, BUN newcap)
 		theap_size = (size_t) newcap << b->tshift;
 	}
 
-	MT_lock_set(&b->theaplock);
 	if (b->theap->base) {
 		TRC_DEBUG(HEAP, "HEAPgrow in BATextend %s %zu %zu\n",
 			  b->theap->filename, b->theap->size, theap_size);
@@ -943,24 +791,24 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			oid cur = bi.tseq, *dst = (oid *) Tloc(bn, 0);
 			const oid inc = !is_oid_nil(cur);
 
-			bn->theap->free = bi.count * sizeof(oid);
-			bn->theap->dirty |= bi.count > 0;
 			for (BUN p = 0; p < bi.count; p++) {
 				dst[p] = cur;
 				cur += inc;
 			}
+			bn->theap->free = bi.count * sizeof(oid);
+			bn->theap->dirty |= bi.count > 0;
 		} else if (ATOMstorage(bi.type) == TYPE_msk) {
 			/* convert number of bits to number of bytes,
 			 * and round the latter up to a multiple of
 			 * 4 (copy in units of 4 bytes) */
 			bn->theap->free = ((bi.count + 31) / 32) * 4;
-			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
+			bn->theap->dirty |= bi.count > 0;
 		} else {
 			/* case (4): optimized for simple array copy */
 			bn->theap->free = bi.count << bn->tshift;
-			bn->theap->dirty |= bi.count > 0;
 			memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
+			bn->theap->dirty |= bi.count > 0;
 		}
 		/* copy all properties (size+other) from the source bat */
 		BATsetcount(bn, bi.count);
@@ -1078,6 +926,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		}
 		if (dense) {
 			MT_lock_set(&b->theaplock);
+			assert(BATtdense(b)); /* no change (coverity) */
 			if (b->batCount == 0)
 				b->tseqbase = ovals ? ovals[0] : oid_nil;
 			BATsetcount(b, BATcount(b) + count);
@@ -1120,6 +969,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	    VALcopy(&maxprop, prop) != NULL)
 		maxbound = VALptr(&maxprop);
 	const bool notnull = BATgetprop_nolock(b, GDK_NOT_NULL) != NULL;
+	bool setnil = false;
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrlock(&b->thashlock);
 	if (values && b->ttype) {
@@ -1199,8 +1049,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 						}
 					}
 				} else {
-					b->tnil = true;
-					b->tnonil = false;
+					setnil = true;
 				}
 				p++;
 			}
@@ -1220,8 +1069,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
-			b->tnil = false;
-			b->tnonil = true;
+			assert(!b->tnil);
 			for (BUN i = 0; i < count; i++) {
 				t = (void *) ((char *) values + (i << b->tshift));
 				mskSetVal(b, p, *(msk *) t);
@@ -1259,8 +1107,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 						}
 					}
 				} else {
-					b->tnil = true;
-					b->tnonil = false;
+					setnil = true;
 				}
 				p++;
 			}
@@ -1280,10 +1127,13 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			p++;
 		}
 		nunique = b->thash ? b->thash->nunique : 0;
-		b->tnil = b->ttype != TYPE_msk;
-		b->tnonil = false;
+		setnil |= b->ttype != TYPE_msk;
 	}
 	MT_lock_set(&b->theaplock);
+	if (setnil) {
+		b->tnil = true;
+		b->tnonil = false;
+	}
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
 	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)
@@ -1439,74 +1289,45 @@ BUNappend(BAT *b, const void *t, bool force)
 gdk_return
 BUNdelete(BAT *b, oid o)
 {
-	BUN p;
-	BATiter bi = bat_iterator_nolock(b);
-	const void *val;
-	bool locked = false;
-	BUN nunique;
+	BATiter bi = bat_iterator(b);
 
-	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
-	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
-		/* value already not there */
-		return GDK_SUCCEED;
+	if (bi.count == 0) {
+		bat_iterator_end(&bi);
+		GDKerror("cannot delete from empty bat\n");
+		return GDK_FAIL;
 	}
-	assert(BATcount(b) > 0); /* follows from "if" above */
-	p = o - b->hseqbase;
-	if (p < b->batInserted) {
+	if (is_oid_nil(b->hseqbase)) {
+		bat_iterator_end(&bi);
+		GDKerror("cannot delete from bat with VOID hseqbase\n");
+		return GDK_FAIL;
+	}
+
+	BUN p = o - b->hseqbase;
+
+	if (bi.count - 1 != p) {
+		bat_iterator_end(&bi);
+		GDKerror("cannot delete anything other than last value\n");
+		return GDK_FAIL;
+	}
+	if (b->batInserted >= bi.count) {
+		bat_iterator_end(&bi);
 		GDKerror("cannot delete committed value\n");
 		return GDK_FAIL;
 	}
+
 	TRC_DEBUG(ALGO, ALGOBATFMT " deleting oid " OIDFMT "\n", ALGOBATPAR(b), o);
 	/* load hash so that we can maintain it */
 	(void) BATcheckhash(b);
 
-	val = BUNtail(bi, p);
-	/* writing the values should be locked, reading could be done
-	 * unlocked (since we're the only thread that should be changing
-	 * anything) */
+	BUN nunique = HASHdelete(&bi, p, BUNtail(bi, p));
+	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
+	bat_iterator_end(&bi);
+
 	MT_lock_set(&b->theaplock);
 	if (b->tmaxpos == p)
 		b->tmaxpos = BUN_NONE;
 	if (b->tminpos == p)
 		b->tminpos = BUN_NONE;
-	MT_lock_unset(&b->theaplock);
-	nunique = HASHdelete(&bi, p, val);
-	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
-	if (p != BATcount(b) - 1 &&
-	    (b->ttype != TYPE_void || BATtdense(b))) {
-		/* replace to-be-delete BUN with last BUN; materialize
-		 * void column before doing so */
-		if (b->ttype == TYPE_void &&
-		    BATmaterialize(b, BUN_NONE) != GDK_SUCCEED)
-			return GDK_FAIL;
-		if (ATOMstorage(b->ttype) == TYPE_msk) {
-			msk mval = mskGetVal(b, BATcount(b) - 1);
-			assert(b->thash == NULL);
-			mskSetVal(b, p, mval);
-			/* don't leave garbage */
-			mskClr(b, BATcount(b) - 1);
-		} else {
-			val = Tloc(b, BATcount(b) - 1);
-			nunique = HASHdelete(&bi, BATcount(b) - 1, val);
-			memcpy(Tloc(b, p), val, b->twidth);
-			nunique = HASHinsert(&bi, p, val);
-			MT_lock_set(&b->theaplock);
-			locked = true;
-			if (b->tminpos == BATcount(b) - 1)
-				b->tminpos = p;
-			if (b->tmaxpos == BATcount(b) - 1)
-				b->tmaxpos = p;
-		}
-		/* no longer sorted */
-		if (!locked) {
-			MT_lock_set(&b->theaplock);
-			locked = true;
-		}
-		b->tsorted = b->trevsorted = false;
-		b->theap->dirty = true;
-	}
-	if (!locked)
-		MT_lock_set(&b->theaplock);
 	if (b->tnosorted >= p)
 		b->tnosorted = 0;
 	if (b->tnorevsorted >= p)
@@ -1528,6 +1349,9 @@ BUNdelete(BAT *b, oid o)
 	}
 	MT_lock_unset(&b->theaplock);
 	OIDXdestroy(b);
+	STRMPdestroy(b);
+	RTREEdestroy(b);
+	PROPdestroy(b);
 	return GDK_SUCCEED;
 }
 
@@ -2327,7 +2151,7 @@ static gdk_return
 backup_new(Heap *hp, bool lock)
 {
 	int batret, bakret, ret = -1;
-	char *batpath, *bakpath;
+	char batpath[MAXPATH], bakpath[MAXPATH];
 	struct stat st;
 
 	char *bak_filename = NULL;
@@ -2336,9 +2160,8 @@ backup_new(Heap *hp, bool lock)
 	else
 		bak_filename = hp->filename;
 	/* check for an existing X.new in BATDIR, BAKDIR and SUBDIR */
-	batpath = GDKfilepath(hp->farmid, BATDIR, hp->filename, "new");
-	bakpath = GDKfilepath(hp->farmid, BAKDIR, bak_filename, "new");
-	if (batpath != NULL && bakpath != NULL) {
+	if (GDKfilepath(batpath, sizeof(batpath), hp->farmid, BATDIR, hp->filename, "new") == GDK_SUCCEED &&
+	    GDKfilepath(bakpath, sizeof(bakpath), hp->farmid, BAKDIR, bak_filename, "new") == GDK_SUCCEED) {
 		/* file actions here interact with the global commits */
 		if (lock)
 			BBPtmlock();
@@ -2364,8 +2187,6 @@ backup_new(Heap *hp, bool lock)
 		if (lock)
 			BBPtmunlock();
 	}
-	GDKfree(batpath);
-	GDKfree(bakpath);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 

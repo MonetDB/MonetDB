@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -168,7 +168,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	bn->batCapacity = b->batCapacity;
 	bn->batRestricted = BAT_READ;
 
-	/* the T column descriptor is fully copied except for the
+	/* the column descriptor is fully copied except for the
 	 * accelerator data. We need copies because in case of a mark,
 	 * we are going to override a column with a void. */
 	bn->tkey = bi.key;
@@ -317,7 +317,6 @@ BATmaterialize(BAT *b, BUN cap)
 	h = b->theap;
 	b->theap = tail;
 	b->tbaseoff = 0;
-	b->theap->dirty = true;
 	b->tunique_est = is_oid_nil(t) ? 1.0 : (double) b->batCount;
 	b->ttype = TYPE_oid;
 	BATsetdims(b, 0);
@@ -334,45 +333,4 @@ BATmaterialize(BAT *b, BUN cap)
 	}
 
 	return GDK_SUCCEED;
-}
-
-/*
- * Destroy a view.
- */
-void
-VIEWdestroy(BAT *b)
-{
-	assert(isVIEW(b));
-	bat tp = 0, tvp = 0;
-
-	/* remove any leftover private hash structures */
-	HASHdestroy(b);
-	OIDXdestroy(b);
-	STRMPdestroy(b);
-	RTREEdestroy(b);
-
-	MT_lock_set(&b->theaplock);
-	PROPdestroy_nolock(b);
-	/* heaps that are left after VIEWunlink are ours, so need to be
-	 * destroyed (and files deleted) */
-	if (b->theap) {
-		tp = b->theap->parentid;
-		HEAPdecref(b->theap, tp == b->batCacheid);
-		b->theap = NULL;
-	}
-	if (b->tvheap) {
-		/* should never happen: if this heap exists, then it was
-		 * our own (not a view), and then it doesn't make sense
-		 * that the offset heap was a view (at least one of them
-		 * had to be) */
-		tvp = b->tvheap->parentid;
-		HEAPdecref(b->tvheap, tvp == b->batCacheid);
-		b->tvheap = NULL;
-	}
-	MT_lock_unset(&b->theaplock);
-	if (tp != 0 && tp != b->batCacheid)
-		BBPrelease(tp);
-	if (tvp != 0 && tvp != b->batCacheid)
-		BBPrelease(tvp);
-	BATfree(b);
 }

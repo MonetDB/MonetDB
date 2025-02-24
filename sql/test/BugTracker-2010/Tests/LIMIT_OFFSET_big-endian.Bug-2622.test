@@ -16,326 +16,8 @@ insert into oblo values (2)
 statement ok
 insert into oblo values (1)
 
-query T nosort
-   PLAN select * from oblo
-----
-project (
-| table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-) [ "oblo"."a" NOT NULL ]
-
-query T nosort
-   PLAN select * from oblo OFFSET 2
-----
-project (
-| top N (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ bigint(63) NULL, bigint(63) "2" ]
-) [ "oblo"."a" NOT NULL ]
-
-query T nosort
-   PLAN select * from oblo LIMIT 2
-----
-project (
-| top N (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ bigint(63) "2" ]
-) [ "oblo"."a" NOT NULL ]
-
-query T nosort
-   PLAN select * from oblo LIMIT 1 OFFSET 2
-----
-project (
-| top N (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ bigint(63) "1", bigint(63) "2" ]
-) [ "oblo"."a" NOT NULL ]
-
-query T nosort
-   PLAN select * from oblo LIMIT 2 OFFSET 1
-----
-project (
-| top N (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ bigint(63) "2", bigint(63) "1" ]
-) [ "oblo"."a" NOT NULL ]
-
-query T nosort
-   PLAN select * from oblo ORDER BY a
-----
-project (
-| table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
-
-query T nosort
-   PLAN select * from oblo ORDER BY a OFFSET 2
-----
-top N (
-| project (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
-) [ bigint(63) NULL, bigint(63) "2" ]
-
-query T nosort
-   PLAN select * from oblo ORDER BY a LIMIT 2
-----
-top N (
-| project (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
-) [ bigint(63) "2" ]
-
-query T nosort
-   PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
-----
-top N (
-| project (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
-) [ bigint(63) "2", bigint(63) "1" ]
-
-query T nosort
-   PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
-----
-top N (
-| project (
-| | table("sys"."oblo") [ "oblo"."a" NOT NULL ]
-| ) [ "oblo"."a" NOT NULL ] [ "oblo"."a" ASC NOT NULL ]
-) [ bigint(63) "1", bigint(63) "2" ]
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo
-----
-algebra.projection
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo OFFSET 2
-----
-algebra.projection
-2
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo LIMIT 2
-----
-algebra.projection
-2
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo LIMIT 1 OFFSET 2
-----
-algebra.projection
-2
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo LIMIT 2 OFFSET 1
-----
-algebra.projection
-2
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo ORDER BY a
-----
-algebra.projection
-1
-algebra.sort
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo ORDER BY a OFFSET 2
-----
-algebra.projection
-2
-algebra.sort
-1
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo ORDER BY a LIMIT 2
-----
-algebra.firstn
-1
-algebra.projection
-3
-algebra.sort
-1
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
-----
-algebra.firstn
-1
-algebra.projection
-3
-algebra.sort
-1
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
-query T python .explain.function_histogram
-EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
-----
-algebra.firstn
-1
-algebra.projection
-3
-algebra.sort
-1
-algebra.subslice
-1
-bat.pack
-5
-querylog.define
-1
-sql.bind
-1
-sql.mvc
-1
-sql.resultSet
-1
-sql.tid
-1
-user.main
-1
-
 query I rowsort
-        select * from oblo
+select * from oblo
 ----
 1
 2
@@ -343,7 +25,7 @@ query I rowsort
 4
 
 query I nosort
-        select * from oblo ORDER BY a
+select * from oblo ORDER BY a
 ----
 1
 2
@@ -351,25 +33,25 @@ query I nosort
 4
 
 query I nosort
-        select * from oblo ORDER BY a OFFSET 2
+select * from oblo ORDER BY a OFFSET 2
 ----
 3
 4
 
 query I nosort
-        select * from oblo ORDER BY a LIMIT 2
+select * from oblo ORDER BY a LIMIT 2
 ----
 1
 2
 
 query I nosort
-        select * from oblo ORDER BY a LIMIT 2 OFFSET 1
+select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
 2
 3
 
 query I nosort
-        select * from oblo ORDER BY a LIMIT 1 OFFSET 2
+select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
 3
 

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -31,6 +31,7 @@
 #include "rel_exp.h"
 #include "rel_dump.h"
 #include "rel_physical.h"
+#include "rel_remote.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -45,7 +46,6 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
-#include "gdk_cand.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
@@ -193,7 +193,7 @@ sqlcleanup(backend *be, int err)
 	be->mvc->label = 0;
 	be->mvc->nid = 1;
 	be->no_mitosis = 0;
-	scanner_query_processed(&(be->mvc->scanner));
+	mvc_query_processed(be->mvc);
 	return err;
 }
 
@@ -3719,7 +3719,10 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto bailout;
 		if (BUNappend(mlimit, &c->memorylimit, false) != GDK_SUCCEED)
 			goto bailout;
-		if (BUNappend(language, getScenarioLanguage(c), false) != GDK_SUCCEED)
+		// If the scenario is NULL we assume we're in monetdbe/e which
+		// is always SQL.
+		s = c->scenario ? getScenarioLanguage(c) : "sql";
+		if (BUNappend(language, s, false) != GDK_SUCCEED)
 			goto bailout;
 		s = c->peer ? c->peer : str_nil;
 		if (BUNappend(peer, s, false) != GDK_SUCCEED)
@@ -5582,6 +5585,44 @@ bailout:
 	throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
+static str
+SQLnormalize_monetdb_url(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	str *ret = getArgReference_str(stk, pci, 0);
+	str url = *getArgReference_str(stk, pci, 1);
+	allocator *sa;
+	backend *be = NULL;
+	str msg;
+	msettings_error err;
+	str normalized;
+
+	if (strNil(url))
+		throw(MAL, "SQLnormalize_monetdb_url", SQLSTATE(42000) "url cannot be nil");
+
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+		return msg;
+	sa = be->mvc->sa;
+
+	msettings *mp = sa_msettings_create(sa);
+	if (mp == NULL)
+		throw(SQL, "SQLnormalize_monetdb_url", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	err = msettings_parse_url(mp, url);
+	if (err != NULL)
+		throw(SQL, "SQLnormalize_monetdb_url", SQLSTATE(42000) "Invalid URL: %s", err);
+
+	normalized = sa_msettings_to_string(mp, sa, strlen(url));
+	if (normalized == NULL)
+		throw(SQL, "SQLnormalize_monetdb_url", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	*ret = _STRDUP(normalized);
+
+	return MAL_SUCCEED;
+}
+
+
+
 
 static mel_func sql_init_funcs[] = {
  pattern("sql", "shutdown", SQLshutdown_wrap, true, "", args(1,3, arg("",str),arg("delay",bte),arg("force",bit))),
@@ -6516,6 +6557,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
+ pattern("sql", "normalize_monetdb_url", SQLnormalize_monetdb_url, false, "Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL", args(1,2, arg("",str),arg("u",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

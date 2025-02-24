@@ -5,13 +5,17 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
 
 add_library(kernel OBJECT)
-add_library(microbenchmark MODULE)
+if(MONETDB_STATIC)
+  add_library(microbenchmark STATIC)
+else()
+  add_library(microbenchmark MODULE)
+endif()
 
 target_sources(kernel
   PRIVATE
@@ -23,7 +27,6 @@ target_sources(kernel
   aggr.c aggr.h
   batmmath.c
   batstr.c
-  batcolor.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 target_sources(microbenchmark

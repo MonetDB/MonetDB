@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -507,8 +507,11 @@ typedef struct sql_func {
 	vararg:1,	/* variable input arguments */
 	system:1,	/* system function */
 	instantiated:1,	/* if the function is instantiated */
-	private:1;	/* certain functions cannot be bound from user queries */
-	int fix_scale;
+	private:1,	/* certain functions cannot be bound from user queries */
+	order_required:1,	/* some aggregate functions require an order */
+	opt_order:1;	/* some aggregate functions could have the inputs sorted */
+
+	short fix_scale;
 			/*
 	   		   SCALE_NONE => nothing
 	   		   SCALE_FIX => input scale fixing,
@@ -875,6 +878,19 @@ extract_schema_and_sequence_name(allocator *sa, char *default_value, char **sche
 		}
 	}
 }
+
+#define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
+#define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
+#define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
+#define isLocalTemp(x)   ((x)->persistence==SQL_LOCAL_TEMP)
+#define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
+#define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
+
+typedef enum store_type {
+	store_bat,	/* delta bats, ie multi user read/write */
+	store_tst,
+	store_mem
+} store_type;
 
 extern void arg_destroy(sql_store store, sql_arg *a);
 extern void part_value_destroy(sql_store store, sql_part_value *pv);

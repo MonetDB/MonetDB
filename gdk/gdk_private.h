@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -91,7 +91,7 @@ void BBPdump(void)		/* never called: for debugging only */
 	__attribute__((__cold__));
 void BBPexit(void)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPinit(bool allow_hge_upgrade)
+gdk_return BBPinit(bool allow_hge_upgrade, bool no_manager)
 	__attribute__((__visibility__("hidden")));
 bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
@@ -135,9 +135,13 @@ gdk_return GDKextendf(int fd, size_t size, const char *fn)
 int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
 	__attribute__((__visibility__("hidden")));
 FILE *GDKfilelocate(int farmid, const char *nme, const char *mode, const char *ext)
-	__attribute__((__visibility__("hidden")));
+	__attribute__((__visibility__("hidden")))
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(fclose, 1)));
 FILE *GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
-	__attribute__((__visibility__("hidden")));
+	__attribute__((__visibility__("hidden")))
+	__attribute__((__malloc__))
+	__attribute__((__malloc__(fclose, 1)));
 char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
 gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2, bool report)
@@ -180,7 +184,8 @@ BUN HASHinsert(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHinsert_locked(BATiter *bi, BUN p, const void *v)
 	__attribute__((__visibility__("hidden")));
-static inline BUN __attribute__((__const__))
+__attribute__((__const__))
+static inline BUN
 HASHmask(BUN cnt)
 {
 	cnt = cnt * 8 / 7;
@@ -255,14 +260,13 @@ gdk_return TMcommit(void)
 gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void VIEWdestroy(BAT *b)
-	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
 /* calculate the integer 2 logarithm (i.e. position of highest set
  * bit) of the argument (with a slight twist: 0 gives 0, 1 gives 1,
  * 0x8 to 0xF give 4, etc.) */
+__attribute__((__const__))
 static inline unsigned
 ilog2(BUN x)
 {

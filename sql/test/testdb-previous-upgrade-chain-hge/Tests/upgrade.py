@@ -30,7 +30,8 @@ with zipfile.ZipFile(archive) as z:
     z.extractall(path=db)
 
 # start server and dump database
-with process.server(mapiport='0',
+with process.server(args=['--clean-BBP'],
+                    mapiport='0',
                     stdin=process.PIPE,
                     stdout=process.PIPE,
                     stderr=process.PIPE) as srv:
@@ -84,5 +85,15 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
         xit = 1
 else:
     sys.stdout.writelines(srvout)
+
+if xit:
+    if clterr:
+        sys.stderr.write('Client standard error:\n')
+        sys.stderr.write(clterr)
+        sys.stderr.write('\n')
+    if srverr:
+        sys.stderr.write('Server standard error:\n')
+        sys.stderr.write(srverr)
+        sys.stderr.write('\n')
 
 sys.exit(xit)

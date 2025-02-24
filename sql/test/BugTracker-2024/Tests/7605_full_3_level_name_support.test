@@ -1,0 +1,37 @@
+statement ok
+create schema test
+
+statement ok
+create table test.mytable (name clob, id clob)
+
+statement ok
+insert into test.mytable values('my', '1')
+
+statement ok
+insert into test.mytable values('my', '2')
+
+-- 42000!SELECT: cannot use non GROUP BY column 'mytable.name' in query results without an aggregate function
+skipif knownfail
+query TI nosort
+select   test.mytable.name, count(*)
+from     test.mytable
+group by test.mytable.name
+order by test.mytable.name
+----
+my
+2
+
+query TI nosort
+select   x.name, count(*)
+from     test.mytable as x
+group by x.name
+order by x.name
+----
+my
+2
+
+statement ok
+drop table test.mytable
+
+statement ok
+drop schema test

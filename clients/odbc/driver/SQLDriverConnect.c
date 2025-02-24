@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -183,8 +183,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	if (!SQL_SUCCEEDED(rc))
 		goto end;
 
-	if (!msettings_validate(settings, &scratch_alloc)) {
-		addDbcError(dbc, "HY009", scratch_alloc, 0);
+	scratch_no_alloc = msettings_validate(settings);
+	if (scratch_no_alloc != NULL) {
+		addDbcError(dbc, "HY009", scratch_no_alloc, 0);
 		rc = SQL_ERROR;
 		goto end;
 	}

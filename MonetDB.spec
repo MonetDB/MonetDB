@@ -4,11 +4,11 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-%global version 11.52.0
+%global version 11.54.0
 
 %bcond_with compat
 
@@ -95,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Aug2024-SP1/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Aug2024-SP2/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -563,6 +563,27 @@ embedded library (%{name}-embedded).
 %endif
 %{_libdir}/monetdb5*/lib_csv.so
 %{_libdir}/monetdb5*/lib_generator.so
+%{_libdir}/monetdb5*/lib_monetdb_loader.so
+
+%package odbc-loader
+Summary: MonetDB ODBC loader module
+Group: Applications/Databases
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
+
+%description odbc-loader
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package provides an interface to the MonetDB server through which
+data from remote databases can be loaded through an ODBC interface.  In
+order to use this module, mserver5 needs to be run with the option
+--loadmodule odbc_loader.
+
+%files odbc-loader
+%defattr(-,root,root)
+%{_libdir}/monetdb5*/lib_odbc_loader.so
 
 %package server
 Summary: MonetDB - Monet Database Management System
@@ -923,6 +944,8 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
+        -DWITH_RTREE=OFF \
+        -DWITH_SQLPARSE=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
         -DWITH_ZLIB=ON
@@ -989,6 +1012,26 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Dec 16 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.7-20241216
+- Rebuilt.
+- GH#7112: Need keyboard shortcut to interrupt query execution rather than
+  session
+- GH#7205: Unpredictable performance when performing joins over nested
+  queries
+- GH#7574: Assertion failure at `rel2bin_select` when using `STARTSWITH`
+- GH#7588: incorrect output with single row inputs for var_samp(c) over()
+- GH#7589: "SELECT * FROM sessions" crashes monetdb/e
+- GH#7593: A value is being returned with unnecessary scientific notation
+- GH#7595: SQLTestCase leaks pymonetdb connections
+- GH#7597: Upgrade + quick restart causes database inconsistency
+- GH#7599: str_to_date fails when combined with SQL CASE clause
+- GH#7602: COPY INTO from multiple files causes an assertion error.
+- GH#7603: COPY INTO from three or more files crashes the server.
+- GH#7604: file_loader() causes server crash when csv file contains too
+  few field separators or contains empty lines
+- GH#7607: Adding a column of serial type fails with "Access denied for
+  <user> to schema 'sys'"
+
 * Thu Oct 24 2024 Sjoerd Mullender <sjoerd@acm.org> - 11.51.5-20241024
 - Rebuilt.
 - GH#7281: UDFs defined at compile time in a user schema should not become

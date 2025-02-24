@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -214,9 +214,6 @@ CREATE FUNCTION ST_NumInteriorRing(geom Geometry) RETURNS integer EXTERNAL NAME 
 GRANT EXECUTE ON FUNCTION ST_NumInteriorRing(Geometry) TO PUBLIC;
 CREATE FUNCTION ST_InteriorRingN(geom Geometry, positionNum integer) RETURNS Geometry EXTERNAL NAME geom."InteriorRingN";
 GRANT EXECUTE ON FUNCTION ST_InteriorRingN(Geometry, integer) TO PUBLIC;
-CREATE FUNCTION ST_InteriorRings(geom Geometry) RETURNS GeometryA EXTERNAL NAME geom."InteriorRings";
-GRANT EXECUTE ON FUNCTION ST_InteriorRings(Geometry) TO PUBLIC;
---CREATE FUNCTION ST_SetInteriorRings(geom GeometryA) RETURNS Geometry EXTERNAL NAME geom."SetInteriorRings"; --what is this function supposed to do????
 
 --Functions on GeomCollection
 CREATE FUNCTION ST_NumGeometries(geom Geometry) RETURNS integer EXTERNAL NAME geom."NumGeometries";

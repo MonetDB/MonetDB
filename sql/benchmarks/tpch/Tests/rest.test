@@ -1,0 +1,63 @@
+query RI nosort
+SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 order by o_totalprice limit 10
+----
+14623.670
+2
+16236.690
+2
+126476.160
+2
+169049.460
+2
+
+query R rowsort
+SELECT max(o_totalprice) FROM sys.orders
+----
+466001.280
+
+query R rowsort
+SELECT min(o_totalprice) FROM sys.orders
+----
+874.890
+
+query I rowsort
+SELECT count(*) FROM sys.orders WHERE o_totalprice BETWEEN 38451.0 AND 38452.0
+----
+0
+
+query I rowsort
+SELECT count(*) FROM sys.orders WHERE o_totalprice = 38451.38
+----
+0
+
+query I rowsort
+SELECT count(*) FROM sys.orders WHERE o_totalprice >= 555285.16
+----
+0
+
+query I rowsort
+SELECT count(*) FROM sys.orders WHERE o_totalprice < 858.0
+----
+0
+
+query I rowsort
+SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P
+WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
+AND  p_retailprice BETWEEN 1214.0 AND 1215.0
+----
+8
+
+query I rowsort
+SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P
+WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
+AND  s_acctbal BETWEEN 1432.0 AND 1433.0
+----
+80
+
+query I rowsort
+SELECT count(*) FROM sys.partsupp as I, sys.supplier as S, sys.part as P
+WHERE I.ps_partkey = P.p_partkey AND I.ps_suppkey = S.s_suppkey
+AND ps_supplycost BETWEEN 915.0 AND 916
+----
+7
+

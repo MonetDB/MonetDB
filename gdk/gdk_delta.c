@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -41,9 +41,8 @@ BATcommit(BAT *b, BUN size)
 	if (b == NULL)
 		return;
 	assert(size <= BATcount(b) || size == BUN_NONE);
-	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
-		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
+	BUN old = b->batInserted;
 	b->batInserted = size < BATcount(b) ? size : BATcount(b);
-	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
-		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
+	TRC_DEBUG(DELTA, "%s free %zu ins from " BUNFMT " to " BUNFMT " base %p\n",
+		  BATgetId(b), b->theap->free, old, b->batInserted, b->theap->base);
 }

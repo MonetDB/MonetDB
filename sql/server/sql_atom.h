@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -65,6 +65,7 @@ extern atom *atom_inc(allocator *sa, atom *a);
 extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
+extern int atom_is_one(atom *a);
 
 extern unsigned int atom_digits(atom *a);
 

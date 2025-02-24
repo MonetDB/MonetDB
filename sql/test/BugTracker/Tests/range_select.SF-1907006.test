@@ -1,4 +1,4 @@
 query T rowsort
-select name from tables where 0<id>10
+select name from sys._tables where 0<id and id<10
 ----
 

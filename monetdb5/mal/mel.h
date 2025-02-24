@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -74,7 +74,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 	const char *mod;
 	const char *fcn;
 	const char *cname;
-	char *comment;
+	const char *comment;
 	uint32_t command:1, unsafe:1, vargs:1, vrets:1, poly:3, retc:5, argc:5;
 	union {
 		MALfcn imp;
