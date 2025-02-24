@@ -20,7 +20,7 @@ statement ok
 create type cabt_o1 as (an int[], m text)
 
 statement ok
-create table cabt_o1_col (cab cabt_1)
+create table cabt_o1_col (cab cabt_o1)
 
 statement ok
 create type cabt_o2 as (m text, an int[])
@@ -32,7 +32,7 @@ statement ok
 create type cact_o1 as (ac ct[], m text)
 
 statement ok
-create table cact_o1_col (cac cact_1)
+create table cact_o1_col (cac cact_o1)
 
 statement ok
 create type cact_o2 as (m text, ac ct[])
