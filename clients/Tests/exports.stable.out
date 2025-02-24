@@ -1644,6 +1644,7 @@ sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 int pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr pl_load);
 void pl_unregister(const char *name);
 prop *prop_create(allocator *sa, rel_prop kind, prop *pre);
+InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);
 cq *qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
@@ -1681,7 +1682,10 @@ void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsign
 void sql_register(const char *name, const unsigned char *code);
 int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
+stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
+stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+stmt *stmt_list(backend *be, list *l);
 
 # stream
 stream *block_stream(stream *s);
