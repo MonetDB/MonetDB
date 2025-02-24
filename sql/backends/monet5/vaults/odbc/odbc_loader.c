@@ -240,16 +240,15 @@ typedef struct odbc_loader_t {
 
 
 /*
- * odbc_query() contains the logic for both odbc_relation() and odbc_load()
- * the caller arg is 1 when called from odbc_relation and 2 when called from odbc_load
+ * odbc_query() contains the logic for both odbc_relation() and ODBCloader()
+ * the caller arg is 1 when called from odbc_relation and 2 when called from ODBCloader
  */
 static str
-odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, int caller)
+odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, int caller)
 {
-	(void) topn;
 	bool trace_enabled = false;	/* used for development only */
 
-	/* check received url and extract the ODBC connection string and yhe SQL query */
+	/* check received url and extract the ODBC connection string and the SQL query */
 	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
 		return "Invalid URI. Must start with 'odbc:'.";
 
@@ -510,7 +509,10 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		}
 	}
 	odbc_cleanup(env, dbc, stmt);
-	return (str)errmsg;
+	if (errmsg != NULL)
+		return (str)errmsg;
+	else
+		return MAL_SUCCEED;
 }
 
 /*
@@ -526,7 +528,7 @@ static str
 odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 {
 	(void) aname;
-	return odbc_query(sql, f, url, res_exps, NULL, 1);
+	return odbc_query(sql, f, url, res_exps, 1);
 }
 
 static void *
@@ -570,7 +572,7 @@ ODBCloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str uri = *getArgReference_str(stk, pci, pci->retc);
 	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
 
-	return odbc_query(be->mvc, f, uri, NULL, NULL, 2);
+	return odbc_query(be->mvc, f, uri, NULL, 2);
 	//return MAL_SUCCEED;
 }
 
@@ -596,7 +598,7 @@ ODBCepilogue(void *ret)
 static mel_func odbc_init_funcs[] = {
 	pattern("odbc", "prelude", ODBCprelude, false, "", noargs),
 	command("odbc", "epilogue", ODBCepilogue, false, "", noargs),
-    pattern("odbc", "loader", ODBCloader, true, "Import a table via the odbc uri", args(1,3, batvarargany("",0),arg("uri",str),arg("func",ptr))),
+	pattern("odbc", "loader", ODBCloader, true, "Import a table via the odbc uri", args(1,3, batvarargany("",0),arg("uri",str),arg("func",ptr))),
 { .imp=NULL }
 };
 
