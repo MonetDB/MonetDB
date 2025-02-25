@@ -16,6 +16,14 @@ else()
   add_library(json_loader MODULE)
 endif()
 
+  set(include_sql_files
+    74_json)
+
+  create_include_object(
+    SQL_LANGUAGE
+    name_module "json"
+    modules_list ${include_sql_files})
+
 target_sources(json_loader
   PRIVATE
   json.c)
