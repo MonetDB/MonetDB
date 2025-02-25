@@ -776,6 +776,10 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 							b->tnokey[0] = 0;
 							b->tnokey[1] = 0;
 						}
+						if (b->tminpos == q)
+							b->tminpos = BUN_NONE;
+						if (b->tmaxpos == q)
+							b->tmaxpos = BUN_NONE;
 						b->tkey = false;
 						b->tsorted = false;
 						b->tkey = false;
