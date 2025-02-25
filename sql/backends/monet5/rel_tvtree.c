@@ -187,7 +187,6 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 
 	switch (t->tvt) {
 		case TV_BASIC:
-			assert(!value->f);
 			i = exp_bin(be, value, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 			if (!i)
 				return false;
