@@ -1,0 +1,43 @@
+-- test incomplete 'odbc:' scheme specification
+
+statement error 42000!SELECT: proto_loader function failed 'Missing ':' separator to determine the URI scheme'
+select * from proto_loader('odbc')
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('odbc:')
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('ODBC:')
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('odbc:FileNotFound')
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('odbc:/tmp/FileNotFound.csv')
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader(R'odbc:C:\temp\FileNotFound.csv.gz')
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('odbc:/tmp/FileNotFound.csv.gz') as file
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('odbc:/tmp/FileNotFound.csv.gz') as file(col1, col2)
+
+statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.'
+select * from proto_loader('odbc:/tmp/FileNotFound.csv') file(col1, col2)
+
+
+statement error 42000!SELECT: no such table returning function 'sys'.'proto_loader'(varchar(5))
+select * from sys.proto_loader('odbc:')
+
+statement error 42000!SELECT: no such table returning function 'sys'.'proto_loader'(varchar(17))
+select * from sys.proto_loader('odbc:FileNotFound')
+
+statement error 42000!SELECT: no such table returning function 'sys'.'proto_loader'(varchar(21))
+select * from sys.proto_loader('odbc:FileNotFound.csv')
+
+
+statement error 42000!SELECT: proto_loader function failed 'Incomplete ODBC connection string. Missing 'QUERY=' part (to specify the SQL SELECT query to execute).'
+select * from proto_loader('odbc:DSN=MonetDB')
+
