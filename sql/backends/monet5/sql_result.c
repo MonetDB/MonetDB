@@ -2194,14 +2194,23 @@ end:
 }
 
 #define skipspace(s) while(*s && isspace(*s)) s++;
+static char *
+FINDsep(char *s, char tsep, char rsep)
+{
+	for (; *s; s++) {
+		if (s[0] == tsep || s[0] == rsep) {
+			break;
+		}
+	}
+	return s;
+}
 
 static str
 VALUEparser(char **S, Column *cols, int elm, sql_subtype *t, char tsep, char rsep)
 {
 	/* handle literals */
 	char *s = *S;
-	int skip = 0;
-	char *ns = NULL;
+	char *ns = s;
 	if (t->type->localtype == TYPE_str) {
 		/* todo improve properly skip "" strings. */
 		if (*s != '"')
@@ -2212,13 +2221,10 @@ VALUEparser(char **S, Column *cols, int elm, sql_subtype *t, char tsep, char rse
 			ns++;
 		if (*ns != '"')
 			throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing \" at end of string value");
-		skip++;
-	} else if (tsep) {
-		ns = strchr(s, tsep);
+		*ns = 0;
+		ns++;
 	}
-	if (!ns && rsep) {
-		ns = strchr(s, rsep);
-	}
+	ns = FINDsep(ns, tsep, rsep);
 	char sep = 0;
 	if (!ns)
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing '%c' at end of value", rsep?rsep:tsep);
@@ -2230,10 +2236,7 @@ VALUEparser(char **S, Column *cols, int elm, sql_subtype *t, char tsep, char rse
 	if (elm >= 0 && d && BUNappend(cols[elm].c, d, false) != GDK_SUCCEED)
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "append failed");
 	*ns = sep;
-	s = ns;
-	if (skip)
-		s++;
-	*S = s;
+	*S = ns;
 	return NULL;
 }
 
