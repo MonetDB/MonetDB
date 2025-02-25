@@ -68,6 +68,7 @@ json_open(const char *fname, allocator *sa)
 	return res;
 }
 
+
 static void
 json_close(JSONFileHandle *jfh)
 {
@@ -92,6 +93,7 @@ read_json_file(JSONFileHandle *jfh)
 	}
 	return content;
 }
+
 
 static str
 append_terms(allocator *sa, JSON *jt, BAT *b)
@@ -191,7 +193,9 @@ json_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	return s;
 }
 
+
 int TYPE_json;
+
 
 static str
 JSONprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -202,6 +206,7 @@ JSONprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fl_register("json", &json_relation, &json_load);
 	return MAL_SUCCEED;
 }
+
 
 static str
 JSONepilogue(void *ret)
@@ -252,12 +257,79 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
+
+static str
+JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt; (void) mb;
+	char *msg = MAL_SUCCEED;
+	char *fname = *(str*)getArgReference(stk, pci, pci->retc);
+	allocator *sa = sa_create(NULL);
+	JSONFileHandle *jfh = json_open(fname, sa);
+	if (!jfh) {
+		sa_destroy(sa);
+		msg = createException(SQL, "json.read_nd_json", "Failed to open file %s", fname);
+		return msg;
+	}
+	char *content = read_json_file(jfh);
+	json_close(jfh);
+	BAT *b = COLnew(0, TYPE_json, 0, TRANSIENT);
+	if (content) {
+		if (b) {
+			size_t cnt = 0;
+			char *head = content;
+			char *tail = content;
+			while (cnt < (jfh->size + 1)) {
+				if (head[0] == '\n' || (head[0] == '\r' && head[1] == '\n')) {
+					int skip = 1;
+					if (head[0] == '\r' && head[1] == '\n')
+						skip = 2;
+					head[0] = '\0';
+					JSON *jt = JSONparse(tail);
+					if (jt) {
+						// must be valid json obj str
+						if (BUNappend(b, tail, false) != GDK_SUCCEED) {
+							msg = createException(SQL, "json.read_nd_json", "BUNappend failed!");
+							break;
+						}
+					} else {
+							msg = createException(SQL, "json.read_nd_json", "Invalid json object, JSONparse failed!");
+							break;
+					}
+					tail = head + skip;
+					while (tail[0] == '\n') // multiple newlines e.g. \n\n
+						tail ++;
+					head = tail;
+				}
+				head ++;
+				cnt ++;
+			}
+		} else {
+			msg = createException(SQL, "json.read_nd_json", "Failed to allocate bat");
+		}
+	} else {
+		msg = createException(SQL, "json.read_nd_json", "Failed to read file %s", fname);
+	}
+	if (msg == MAL_SUCCEED) {
+		bat *res = getArgReference_bat(stk, pci, 0);
+		*res = b->batCacheid;
+		BBPkeepref(b);
+	} else {
+		BBPreclaim(b);
+	}
+
+	sa_destroy(sa);
+	return msg;
+}
+
+
 #include "mel.h"
 
 static mel_func json_init_funcs[] = {
 	pattern("json", "prelude", JSONprelude, false, "", noargs),
 	command("json", "epilogue", JSONepilogue, false, "", noargs),
-	pattern("json", "read_json", JSONread_json, false, "Reads json file into a table", args(1,2, batarg("", json), arg("filename", str))),
+	pattern("json", "read_json", JSONread_json, false, "Reads json file", args(1,2, batarg("", json), arg("filename", str))),
+	pattern("json", "read_nd_json", JSONread_nd_json, false, "Reads new line delimited json objects", args(1,2, batarg("", json), arg("filename", str))),
 { .imp=NULL }
 };
 

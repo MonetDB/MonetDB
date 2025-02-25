@@ -46,7 +46,7 @@ select count(*) from r'$TSTSRCDIR/webclicks.json'
 2
 
 query TTTTTT
-select e.eventid, e.sessionid, e.userid, e.event, e.timestamp, e.user_agent from ( select cast(t.json as event) as e from (select json from r'$TSTSRCDIR/webclicks.json') t);
+select e.eventid, e.sessionid, e.userid, e.event, e.timestamp, e.user_agent from ( select cast(t.json as event) as e from (select json from r'$TSTSRCDIR/webclicks.json') t)
 ----
 996257967-103007874
 47f07c1399c9c6bd1012861f9c5c958e042732e259b909e077f7e8967b650c75

@@ -199,3 +199,17 @@ left
 1
 l1
 2
+
+statement ok
+create table tpi( p pair[2], i integer)
+
+statement ok
+insert into tpi values (array [ ('left','right'), ('l2','r2') ], 1), (array [ ('left','right'), ('l2','r2') ], 2), (array [ ('l3', 'r3') ], 3)
+
+#statement ok
+#insert into tpi values ('{("l4", "r4"), ("l42", "r42")}', 4), ('{("l5", "r5")}', 5);
+
+query I
+select count(*) from tpi
+----
+3
