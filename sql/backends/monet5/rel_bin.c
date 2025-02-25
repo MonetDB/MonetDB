@@ -5948,9 +5948,12 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
+static stmt *insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms);
+
 static node *
-insert_composite(stmt **updates, sql_column *c, node *n, node *m)
+insert_composite(backend *be, stmt **updates, sql_table *st, sql_column *c, node *n, node *m)
 {
+	mvc *sql = be->mvc;
 	node *f;
 	stmt *input_tuple = m->data;
 
@@ -5961,8 +5964,15 @@ insert_composite(stmt **updates, sql_column *c, node *n, node *m)
 	for(n = n->next, f = c->type.type->d.fields->h, m = input_tuple->op4.lval->h; n && m && f; f = f->next) {
 		sql_column *c = n->data;
 
-		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, m);
+		if (c->type.multiset) {
+			sql_table *nst = mvc_bind_table(sql, st->s, c->storage_type);
+			if (!nst)
+				return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: sub table '%s' missing", c->storage_type);
+			updates[c->colnr] = insert_ms(be, nst, &c->type, m->data);
+			n = n->next;
+			m = m->next;
+		} else if (c->type.type->composite && !c->type.multiset) {
+			n = insert_composite(be, updates, st, c, n, m);
 			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
@@ -5999,7 +6009,7 @@ insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
 			n = n->next;
 			m = m->next;
 		} else if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, m);
+			n = insert_composite(be, updates, st, c, n, m);
 			m = m->next;
 		} else {
 			insert = updates[c->colnr] = m->data;
@@ -6125,7 +6135,7 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 			n = n->next;
 			m = m->next;
 		} else if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, m);
+			n = insert_composite(be, updates, t, c, n, m);
 			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
@@ -6290,7 +6300,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		sql_column *c = n->data;
 
 		if (c->type.type->composite && !c->type.multiset) {
-			n = insert_composite(updates, c, n, m);
+			n = insert_composite(be, updates, t, c, n, m);
 			m = m->next;
 		} else {
 			updates[c->colnr] = m->data;
