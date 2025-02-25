@@ -2202,6 +2202,8 @@ FINDsep(char *s, char tsep, char rsep)
 			break;
 		}
 	}
+	if (!*s)
+		return NULL;
 	return s;
 }
 
@@ -2265,7 +2267,7 @@ TUPLEparser(char **S, Column *cols, int nr, int *elm, sql_subtype *t)
 			msg = VALUEparser(&s, cols, i, &f->type, ',', ')');
 			i++;
 		}
-		if (n->next) {
+		if (!msg && n->next) {
 			skipspace(s);
 			if (!s && *s && s[0] != ',')
 				throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing , within composite value");
