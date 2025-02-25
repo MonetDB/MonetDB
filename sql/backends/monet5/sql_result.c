@@ -2336,7 +2336,7 @@ ARRAYparser(char **S, Column *cols, int nr, int *elm, sql_subtype *t)
 	if (!s || s[0] != '}')
 		throw(SQL, "SQLfrom_varchar", SQLSTATE(42000) "missing } at end of array value");
 	*elm = i;
-	*S = s;
+	*S = ++s;
 	return msg;
 }
 
