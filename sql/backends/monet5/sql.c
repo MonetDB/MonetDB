@@ -5843,6 +5843,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 		case JSON_NULL:
 			pos = -1;
 			ValPtr v = NULL;
+			ValRecord vr = (ValRecord) {.bat=false, .vtype=TYPE_void};
 			if (jt->valuelen > 128-1)
 				return -8;
 			strncpy(buf, jt->value, jt->valuelen);
@@ -5852,7 +5853,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 				int alen = (int)strlen(a->name);
 				if (nlen == alen && strncmp(name, a->name, nlen) == 0) {
 					pos = i;
-					ValRecord vr = (ValRecord) {.bat=false, .vtype=a->type.type->localtype};
+					vr.vtype = a->type.type->localtype;
 					v = jsonv2local(&vr, buf);
 					break;
 				}
