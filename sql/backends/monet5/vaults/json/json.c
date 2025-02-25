@@ -194,7 +194,7 @@ json_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 }
 
 
-int TYPE_json;
+static int TYPE_json;
 
 
 static str

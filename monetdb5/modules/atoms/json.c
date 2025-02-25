@@ -52,7 +52,7 @@ typedef str json;
 		}																\
 	} while (0)
 
-int TYPE_json;
+static int TYPE_json;
 
 /* Internal constructors. */
 static int jsonhint = 8;
