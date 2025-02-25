@@ -146,6 +146,7 @@ target_sources(sql
   rel_bin.c rel_bin.h
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
+  rel_tvtree.c rel_tvtree.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c
