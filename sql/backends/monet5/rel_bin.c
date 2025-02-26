@@ -2644,11 +2644,11 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exp
 					s->nr = ns->nr;
 					s->multiset = c->type.multiset;
 				} else if (s && s->type == st_list && c->type.type->composite) {
-					stmt *ns = stmt_none(be);
-					ns->type = st_alias;
-					ns->subtype = *exp_subtype(exp);
-					ns->virt = true;
-					list_append(s->op4.lval, ns);
+					//stmt *ns = stmt_none(be);
+					//ns->type = st_alias;
+					s->subtype = *exp_subtype(exp);
+					//ns->virt = true;
+					//list_append(s->op4.lval, ns);
 				}
 			} else {
 				s = stmt_col(be, c, dels, dels->partition);
@@ -2736,11 +2736,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 					s->nr = ns->nr;
 					s->multiset = c->type.multiset;
 				} else if (s && s->type == st_list && c->type.type->composite) {
-					stmt *ns = stmt_none(be);
-					ns->type = st_alias;
-					ns->subtype = *exp_subtype(exp);
-					ns->virt = true;
-					list_append(s->op4.lval, ns);
+					//stmt *ns = stmt_none(be);
+					//ns->type = st_alias;
+					s->subtype = *exp_subtype(exp);
+					//ns->virt = true;
+					//list_append(s->op4.lval, ns);
 				}
 			} else {
 				s = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
