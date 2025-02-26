@@ -111,6 +111,11 @@ monetdb_relation(mvc *sql, sql_subfunc *f, char *raw_uri, list *res_exps, char *
 		goto end;
 	}
 
+	if (mapi_get_row_count(hdl) == 0) { /* non existing table */
+		ret = sa_message(sql->sa, "Table %s.%s is missing on remote server", sname, tname);
+		goto end;
+	}
+
 	if (!aname)
 		aname = sa_strdup(sql->sa, tname);
 
