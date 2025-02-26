@@ -202,7 +202,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit force = *getArgReference_bit(stk, pci, 2);
 	bit ms = false;
 	int argc = 3;
-	if (getArgType(mb, pci, argc) == TYPE_bit && getArgType(mb, pci, argc + 1) != TYPE_bit) {
+	if (pci->argc > (argc+1) && getArgType(mb, pci, argc) == TYPE_bit && getArgType(mb, pci, argc + 1) != TYPE_bit) {
 		ms = *getArgReference_bit(stk, pci, argc);
 		argc++;
 	}
