@@ -399,7 +399,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
 
-	if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
+	if (rel->l && rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
 		list *l = rel->r;
 		node *n;
 
@@ -407,7 +407,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 			sql_exp *e = n->data;
 
 			e->used = 1;
-			exp_mark_used(rel, e, -1);
+			exp_mark_used(rel->l, e, -1);
 		}
 	}
 	if (rel->attr) {
