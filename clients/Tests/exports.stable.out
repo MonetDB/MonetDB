@@ -1651,14 +1651,15 @@ void qc_delete(qc *cache, cq *q);
 cq *qc_find(qc *cache, int id);
 cq *qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
 void rel_base_use_all(mvc *sql, sql_rel *rel);
-sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
+sql_rel *rel_basetable(mvc *sql, sql_table *t, sql_alias *tname);
 sql_rel *rel_project(allocator *sa, sql_rel *l, list *e);
-list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern);
+list *rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int intern);
 void res_tables_destroy(res_table *results);
 list *sa_list(allocator *sa);
 char *sa_message(allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
 msettings *sa_msettings_create(allocator *sa);
 char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
+sql_type *schema_bind_type(mvc *sql, sql_schema *s, const char *name);
 str sht_dec2_bte(bte *res, const int *s1, const sht *v);
 str sht_dec2_dbl(dbl *res, const int *s1, const sht *v);
 str sht_dec2_flt(flt *res, const int *s1, const sht *v);
@@ -1684,7 +1685,9 @@ void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsign
 void sql_register(const char *name, const unsigned char *code);
 int sql_trans_add_dependency_change(sql_trans *tr, sqlid id, sql_dependency_change_type tp);
 int sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bte properties);
+stmt *stmt_alias(backend *be, stmt *op1, int label, sql_alias *tname, const char *name);
 stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+stmt *stmt_none(backend *be);
 
 # stream
 stream *block_stream(stream *s);
