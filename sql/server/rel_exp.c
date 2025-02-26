@@ -3866,7 +3866,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 			return NULL;
 	}
 
-	if (fromtype->type->composite || fromtype->multiset) {
+	if (fromtype && (fromtype->type->composite || fromtype->multiset)) {
 		if (strcmp(t->type->base.name, "json") == 0)
 			return exp_convert(sql, exp, fromtype, t);
 	}
