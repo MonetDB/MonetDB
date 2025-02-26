@@ -8,33 +8,47 @@ select * from flent_arr
 ----
 
 statement ok
-insert into flent_arr values ('{1, 2}')
+insert into flent_arr values ('{10, 11}')
 
 query T nosort
 select * from flent_arr
 ----
-{1,2}
+{10,11}
 
 statement ok
-insert into flent_arr values ('{1, 2}')
+insert into flent_arr values (array[20, 21])
 
 query T nosort
 select * from flent_arr
 ----
-{1,2}
-{1,2}
+{10,11}
+{20,21}
 
 statement ok
-insert into flent_arr values ('{3, 4}'), ('{5}'), ('{6, 7, 8}')
+insert into flent_arr values ('{30, 31}'), ('{40}'), ('{50, 51, 52}')
 
 query T nosort
 select * from flent_arr
 ----
-{1,2}
-{1,2}
-{3,4}
-{5}
-{6,7,8}
+{10,11}
+{20,21}
+{30,31}
+{40}
+{50,51,52}
+
+statement ok
+insert into flent_arr values (array[60]), (array[70, 71])
+
+query T nosort
+select * from flent_arr
+----
+{10,11}
+{20,21}
+{30,31}
+{40}
+{50,51,52}
+{60}
+{70,71}
 
 ## variable-length type array
 

@@ -244,8 +244,12 @@ tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *se
 	 */
 	bool single_row_val = false;
 	single_row_val |= col_vals->row;
-	if ((t->tvt == TV_MSET) || (t->tvt == TV_SETOF))
+	if ((t->tvt == TV_MSET) || (t->tvt == TV_SETOF)) {
+		// single value MSET/SETOF of basic type
+		single_row_val |= !((sql_exp*)vals->h->data)->f;
+		// single value MSET/SETOF of composite type
 		single_row_val |= ((sql_exp*)vals->h->data)->row;
+	}
 
     if (single_row_val) {
 		/* we need to create a dummy expression to single row vals
