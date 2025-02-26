@@ -729,7 +729,7 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		if (r && is_basetable(r->op)) {
 			sql_table *t = r->l;
 			sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
-			if (!c)
+			if (!c || !c->storage_type)
 				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset column '%s' missing", exp_name(e));
 
 			sql_table *st = mvc_bind_table(query->sql, t->s, c->storage_type);

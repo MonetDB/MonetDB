@@ -197,6 +197,9 @@ rel_nested_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_tabl
 				e->f = sa_list(sql->sa);
 			if (!e || !e->f)
 				return NULL;
+			sql_alias *ta = a_create(sa, c->base.name);
+			ta->parent = atname;
+			atname = ta;
 		} else {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
 		}
@@ -217,8 +220,10 @@ rel_nested_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_tabl
 		if (ce && ce != e) {
 			append(ce->f, e);
 			composite--;
-			if (!composite)
+			if (!composite) {
 				ce = NULL;
+				atname = atname->parent;
+			}
 		} else {
 			append(exps, e);
 		}
@@ -277,6 +282,9 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 				e->f = sa_list(sql->sa);
 			if (!e || !e->f)
 				return NULL;
+			sql_alias *ta = a_create(sa, c->base.name);
+			ta->parent = atname;
+			atname = ta;
 		} else {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 		}
@@ -298,8 +306,10 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 		if (ce && ce != e) {
 			append(ce->f, e);
 			composite--;
-			if (!composite)
+			if (!composite) {
 				ce = NULL;
+				atname = atname->parent;
+			}
 		} else {
 			append(rel->exps, e);
 		}
