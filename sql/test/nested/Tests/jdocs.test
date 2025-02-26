@@ -74,24 +74,23 @@ insert into wljdocs select cast('{"name":"test_one","id":42,"actions":{"list":[{
 statement ok
 insert into wljdocs select cast('{"name":"test_two","id":43,"actions":{"list":[{"elem":{"key":"tic","val":20}}, {"elem":{"key":"tac","val":21}}] }}' as json)
 
-## CRASH
-#query TITI nosort jsondata
-#select jd.name, jd.id, act.list.elem.key, act.list.elem.val from fljdocs, unnest(jd.actions.list) act
-#----
-#test_one
-#42
-#ping
-#10
-#test_one
-#42
-#pong
-#11
-#test_two
-#43
-#tic
-#20
-#test_two
-#43
-#tac
-#21
+query TITI nosort jsondata
+select jd.name, jd.id, act.elem.key, act.elem.val from fljdocs, unnest(jd.actions) act
+----
+test_one
+42
+ping
+10
+test_one
+42
+pong
+11
+test_two
+43
+tic
+20
+test_two
+43
+tac
+21
 
