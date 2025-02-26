@@ -895,6 +895,18 @@ value_tvtree(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 	sql_subtype *st = exp_subtype(vals_exp);
 	tv_tree *t = tv_create(be, st);
 
+	/* EXCEPTION: we might get cases were we have a single basic type
+	 * value wrapped in e_atom->f (probably coming from unnest) in this
+	 * case we just generate the stmt and we bail out. hopefully this
+	 * will be cleaned up in the future */
+	if (t->tvt == TV_BASIC) {
+		list *vals = exp_get_values(vals_exp);
+		if (list_length(vals) == 1) {
+			sql_exp *v = vals->h->data;
+			return stmt_atom(be, v->l);
+		}
+	}
+
 	if (false == tv_parse_values(be, t, vals_exp, left, sel))
 		return NULL;
 
