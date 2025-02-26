@@ -31,7 +31,8 @@ rel_getcount(mvc *sql, sql_rel *rel)
 
 		if (t && isTable(t)) {
 			sqlstore *store = sql->session->tr->store;
-			return (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			node *fn = t->columns->l->t;//ol_first_node(t->columns);
+			return (lng)store->storage_api.count_col(sql->session->tr, fn->data, 0);
 		}
 		return 0;
 	}

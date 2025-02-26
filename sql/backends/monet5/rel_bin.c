@@ -2641,6 +2641,14 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exp
 				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
 					stmt *ns = stmt_col(be, c, dels, dels->partition);
 					list_append(s->op4.lval, ns);
+					s->nr = ns->nr;
+					s->multiset = c->type.multiset;
+				} else if (s && s->type == st_list && c->type.type->composite) {
+					stmt *ns = stmt_none(be);
+					ns->type = st_alias;
+					ns->subtype = *exp_subtype(exp);
+					ns->virt = true;
+					list_append(s->op4.lval, ns);
 				}
 			} else {
 				s = stmt_col(be, c, dels, dels->partition);

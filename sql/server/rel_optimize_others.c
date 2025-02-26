@@ -1144,7 +1144,6 @@ rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 sql_rel *
 rel_deadcode_elimination(mvc *sql, sql_rel *rel)
 {
-	return rel;
 	return rel_dce_(sql, rel);
 }
 
