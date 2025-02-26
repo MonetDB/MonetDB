@@ -903,7 +903,9 @@ value_tvtree(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 		list *vals = exp_get_values(vals_exp);
 		if (list_length(vals) == 1) {
 			sql_exp *v = vals->h->data;
-			return stmt_atom(be, v->l);
+			if (v->type == e_atom && v->l)
+				return stmt_atom(be, v->l);
+			return exp_bin(be, v, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
 		}
 	}
 
