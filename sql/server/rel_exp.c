@@ -199,7 +199,11 @@ exp_filter(allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 	if (!r) { /* split l */
 		list *nl = sa_list(sa), *nr = sa_list(sa);
 		node *n = l->h;
-		append(nl, n->data); /* sofar only first is left */
+		append(nl, n->data); /* split 1, 3 */
+		if (list_length(l) > 4) {
+			n = n->next;
+			append(nl, n->data); /* split 2, 3 */
+		}
 		for(n = n->next; n; n = n->next)
 			append(nr, n->data);
 		l = nl;
