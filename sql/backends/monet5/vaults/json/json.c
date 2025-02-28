@@ -325,6 +325,14 @@ JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 
+unsigned char _json_sql[106] = {
+"create function sys.read_nd_json(fname string)\n"
+"returns table(json JSON)\n"
+"external name json.read_nd_json;\n"
+};
+#include "monetdb_config.h"
+#include "sql_import.h"
+
 static mel_func json_init_funcs[] = {
 	pattern("json", "prelude", JSONprelude, false, "", noargs),
 	command("json", "epilogue", JSONepilogue, false, "", noargs),
@@ -338,5 +346,6 @@ static mel_func json_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_json_mal)
-{ mal_module("json", NULL, json_init_funcs); }
+{ mal_module("json", NULL, json_init_funcs);
+  sql_register("json", _json_sql); }
 
