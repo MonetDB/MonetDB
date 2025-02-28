@@ -5875,9 +5875,9 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 		case JSON_VALUE:
 			break;
 		case JSON_STRING:
-			//jt->value ++;
-			//jt->valuelen --;
-			//jt->valuelen --;
+			jt->value ++;
+			jt->valuelen --;
+			jt->valuelen --;
 			/* fall through */
 		case JSON_NUMBER:
 		case JSON_BOOL:
