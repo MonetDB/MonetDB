@@ -1,4 +1,5 @@
 incomplete_uri
 NOT_WIN32?monetodbc
 !NOT_WIN32?monetodbc-Windows
-# sqlite3odbc	# test requires SQLite ODBC driver to be installed on test servers  (/usr/lib64/libsqlite3odbc.so)
+# NOT_WIN32?sqlite3odbc	# test requires SQLite ODBC driver to be installed on test servers  (/usr/lib64/libsqlite3odbc.so)
+NOT_WIN32?sqlite3odbc_local
