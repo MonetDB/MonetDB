@@ -8,7 +8,7 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-%global version 11.52.0
+%global version 11.54.0
 
 %bcond_with compat
 
@@ -563,6 +563,27 @@ embedded library (%{name}-embedded).
 %endif
 %{_libdir}/monetdb5*/lib_csv.so
 %{_libdir}/monetdb5*/lib_generator.so
+%{_libdir}/monetdb5*/lib_monetdb_loader.so
+
+%package odbc-loader
+Summary: MonetDB ODBC loader module
+Group: Applications/Databases
+Requires: %{name}-server%{?_isa} = %{version}-%{release}
+
+%description odbc-loader
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package provides an interface to the MonetDB server through which
+data from remote databases can be loaded through an ODBC interface.  In
+order to use this module, mserver5 needs to be run with the option
+--loadmodule odbc_loader.
+
+%files odbc-loader
+%defattr(-,root,root)
+%{_libdir}/monetdb5*/lib_odbc_loader.so
 
 %package server
 Summary: MonetDB - Monet Database Management System

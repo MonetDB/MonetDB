@@ -1,0 +1,11 @@
+# ChangeLog file for sql
+# This file is updated with Maddlog
+
+* Wed Jan 29 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- REMOTE TABLES and REPLICA TABLES now fully support the monetdb://
+  and monetdbs:// URL's introduced in Aug2024.
+  Any mapi:monetdb:// URL's are normalized to the new style.
+- Add function sa_msettings_create() to allocate an msettings object
+  using the arena allocator.
+- Unused helper function mapiuri_database() has been removed from
+  rel_remote.h.

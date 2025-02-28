@@ -380,8 +380,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define THRDMASK	(1U)
 #define CHECKMASK	(1U<<1)
 #define CHECKDEBUG	if (ATOMIC_GET(&GDKdebug) & CHECKMASK)
-#define PROPMASK	(1U<<3)	/* unused */
-#define PROPDEBUG	if (ATOMIC_GET(&GDKdebug) & PROPMASK) /* unused */
 #define IOMASK		(1U<<4)
 #define BATMASK		(1U<<5)
 #define PARMASK		(1U<<7)
@@ -402,11 +400,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define DEADBEEFCHK	if (!(ATOMIC_GET(&GDKdebug) & DEADBEEFMASK))
 
 #define ALLOCMASK	(1U<<26)
-
-/* M5, only; cf.,
- * monetdb5/mal/mal.h
- */
-#define OPTMASK		(1U<<27)
 
 #define HEAPMASK	(1U<<28)
 

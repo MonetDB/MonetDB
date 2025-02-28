@@ -2,7 +2,7 @@
 
 from cmath import exp
 import os
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 conn = pymonetdb.connect(
     database=os.getenv("TSTDB"),

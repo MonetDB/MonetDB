@@ -86,7 +86,7 @@ dump_2(MalBlkPtr mb, const char *mod, const char *name, stmt *o1, stmt *o2)
 	return q;
 }
 
-static InstrPtr
+InstrPtr
 pushPtr(MalBlkPtr mb, InstrPtr q, ptr val)
 {
 	int _t;

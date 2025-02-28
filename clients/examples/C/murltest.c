@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-char *USAGE = "Usage: murltest TESTFILES..";
+char *USAGE = "Usage: murltest [-c] [-v[v[v]]] TESTFILES..";
 
 static bool
 run_file(const char *filename, int verbose)
@@ -71,7 +71,9 @@ main(int argc, char **argv)
 			*next_slot++ = arg;
 			continue;
 		}
-		if (arg[1] == 'v') {
+		if (strcmp(arg, "-c") == 0) {
+			use_custom_allocator();
+		}else if (arg[1] == 'v') {
 			char *p = &arg[1];
 			while (*p == 'v') {
 				p++;

@@ -108,6 +108,7 @@ typedef enum {
 	COMP( PERF )				\
 	COMP( TEM )				\
 	COMP( THRD )				\
+	COMP( TM )				\
 						\
 	COMP( GEOM )				\
 	COMP( FITS )				\
@@ -122,6 +123,7 @@ typedef enum {
 	COMP( MAL_REMOTE )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
+	COMP( MAL_LOADER )			\
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\

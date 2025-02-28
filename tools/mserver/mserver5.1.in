@@ -120,6 +120,10 @@ sections.
 Load extra module in the form of a dynamic link library (.dll or .so
 file) which should be located in the lib/monetdb5 directory.
 This option can be repeated for different modules.
+Also see the
+.B loadmodules
+entry in
+.IR monetdb (1).
 .TP
 .B \-\-without\-geom
 Start the server without 
@@ -147,6 +151,27 @@ in-memory.
 data will be written to disk.
 The name of the database that a client can connect to is
 .BR in\-memory .
+.TP
+.B \-\-read\-password\-initialize\-and\-exit
+Read an unencrypted password from standard input and use it to set the
+password for the
+.B monetdb
+administrator user, initialize the database, and exit.
+If the database was already initialized, the administrator password is
+not changed.
+This option is used by
+.IR monetdbd (1)
+when creating a new database with an administrator password and should
+not be used otherwise.
+.TP
+.B \-\-process\-wal\-and\-exit
+Stop the server immediately after processing the write-ahead log.
+.TP
+.B \-\-clean\-BBP
+Clean up junk BATs from the BBP (i.e. the database).  These are BATs
+that were accidentally left around by older versions of the software
+(the current version is not known to do this) and so this option should
+not normally be used.
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
@@ -180,6 +205,9 @@ The value is an integer, which can be (a bit-wise OR of):
 .B 128
 (PARMASK) Thread management
 .TP
+.B 256
+(TESTINGMASK) Used for testing
+.TP
 .B 512
 (TMMASK) Transaction management
 .TP
@@ -187,13 +215,19 @@ The value is an integer, which can be (a bit-wise OR of):
 (TEMMASK) Locks and Triggers
 .TP
 .B 4096
-(PERFMASK) BBP Performance (?)
+(PERFMASK) BBP Performance
 .TP
 .B 8192
 (DELTAMASK) Delta debugging (?)
 .TP
 .B 16384
 (LOADMASK) Module loading
+.TP
+.B 32768
+(PUSHCANDMASK)
+.TP
+.B 65536
+(TAILCHKMASK) Check sizes of .tail files during low-level commit
 .TP
 .B 1048576
 (ACCELMASK) Accelerator debugging
@@ -219,10 +253,6 @@ measurements
 .B 67108864
 (ALLOCMASK) exhaustive GDK malloc & free tracing
 for debugging (GDK developers, only)
-.TP
-.B 134217728
-(OPTMASK) trace the actions, decisions and
-effects of MAL optimizers
 .TP
 .B 268435456
 (HEAPMASK) trace/debug HEAPextend;
@@ -271,21 +301,6 @@ Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
 .TP
 .B \-\-transactions
 Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
-.TP
-.B \-\-read\-password\-initialize\-and\-exit
-Read an unencrypted password from standard input and use it to set the
-password for the
-.B monetdb
-administrator user, initialize the database, and exit.
-If the database was already initialized, the administrator password is
-not changed.
-This option is used by
-.IR monetdbd (1)
-when creating a new database with an administrator password and should
-not be used otherwise.
-.TP
-.B \-\-process\-wal\-and\-exit
-Stop the server immediately after processing the write-ahead log.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)

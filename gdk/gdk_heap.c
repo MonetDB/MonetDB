@@ -798,6 +798,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 			return GDK_FAIL;
 		}
 	}
+	h->dirty = false;	/* we're about to read it, so it's clean */
 	if (h->storage == STORE_MEM && h->free == 0) {
 		h->base = GDKmalloc(h->size);
 		h->wasempty = true;
@@ -816,7 +817,6 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 		return GDK_FAIL; /* file could  not be read satisfactorily */
 	}
 
-	h->dirty = false;	/* we just read it, so it's clean */
 	return GDK_SUCCEED;
 }
 
@@ -874,12 +874,17 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 		  nme?nme:"", ext, (int) h->newstorage, free, h->size,
 		  dosync?"true":"false");
+	if (lock)
+		MT_lock_set(lock);
+	if (free == h->free)
+		h->dirty = false;
+	if (lock)
+		MT_lock_unset(lock);
 	rc = GDKsave(h->farmid, nme, ext, h->base, free, store, dosync);
 	if (lock)
 		MT_lock_set(lock);
 	if (rc == GDK_SUCCEED) {
 		h->hasfile = true;
-		h->dirty = free != h->free;
 		h->wasempty = false;
 	} else {
 		h->dirty = true;
@@ -1093,7 +1098,6 @@ HEAP_malloc(BAT *b, size_t nbytes)
 		}
 		heap = b->tvheap;
 		heap->free = newsize;
-		heap->dirty = true;
 		hheader = HEAP_index(heap, 0, HEADER);
 
 		blockp = HEAP_index(heap, block, CHUNK);
@@ -1140,6 +1144,8 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		trailp->next = blockp->next;
 	}
+
+	heap->dirty = true;
 
 	block += hheader->alignment;
 	return (var_t) block;

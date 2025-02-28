@@ -41,9 +41,8 @@ BATcommit(BAT *b, BUN size)
 	if (b == NULL)
 		return;
 	assert(size <= BATcount(b) || size == BUN_NONE);
-	TRC_DEBUG(DELTA, "BATcommit1 %s free %zu ins " BUNFMT " base %p\n",
-		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
+	BUN old = b->batInserted;
 	b->batInserted = size < BATcount(b) ? size : BATcount(b);
-	TRC_DEBUG(DELTA, "BATcommit2 %s free %zu ins " BUNFMT " base %p\n",
-		  BATgetId(b), b->theap->free, b->batInserted, b->theap->base);
+	TRC_DEBUG(DELTA, "%s free %zu ins from " BUNFMT " to " BUNFMT " base %p\n",
+		  BATgetId(b), b->theap->free, old, b->batInserted, b->theap->base);
 }
