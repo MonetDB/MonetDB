@@ -5746,10 +5746,10 @@ jsonv2local(const ValPtr t, char *v)
 	// TODO add remaining types
 	switch (t->vtype) {
 		case TYPE_int: /* todo handle extra double quotes */
-			t->val.ival = strtol(v, NULL, 10);
+			t->val.ival = atoi(v);
 			break;
 		case TYPE_lng:
-			t->val.lval = strtol(v, NULL, 10);
+			t->val.lval = (lng) strtol(v, NULL, 10);
 			break;
 		case TYPE_flt:
 			t->val.fval = (flt) strtod(v, NULL);
@@ -5758,7 +5758,7 @@ jsonv2local(const ValPtr t, char *v)
 			t->val.dval = strtod(v, NULL);
 			break;
 		case TYPE_str:
-			t->val.sval = v;
+			t->val.sval = _STRDUP(v);
 			break;
 		case TYPE_timestamp:
 			sql_timestamp_fromstr(v, &t->val.lval, 0, 0);
@@ -5769,10 +5769,44 @@ jsonv2local(const ValPtr t, char *v)
 	return t;
 }
 
+static str
+insert_json_value(JSONterm *jt, sql_subtype *t, BAT *b, const char *kname, size_t klen)
+{
+	char *msg = MAL_SUCCEED;
+	size_t vsize = jt->valuelen;
+	char *val = (char *)jt->value;
+
+	ValPtr v = NULL;
+	ValRecord vr = (ValRecord) {.bat=false, .vtype=TYPE_void};
+	for(node *n = t->type->d.fields->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		size_t alen = strlen(a->name);
+		if (klen == alen && strncmp(kname, a->name, klen) == 0) {
+			vr.vtype = a->type.type->localtype;
+			if (vr.vtype == ATOMindex("json"))  // if json
+				vr.vtype = TYPE_str;
+			char eos = val[vsize];
+			val[vsize] = '\0';
+			v = jsonv2local(&vr, val);
+			val[vsize] = eos;
+			if (v == NULL)
+				msg = createException(SQL, "sql.insert_json_value", "jsonv2local failed");
+			break;
+		}
+	}
+	if (v) {
+		if (BUNappend(b, VALget(v), false) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.insert_json_value", "BUNappend failed");
+	} else {
+			msg = (msg == MAL_SUCCEED) ? createException(SQL, "sql.insert_json_value", "missing field") : msg;
+	}
+	return msg;
+}
+
 static int
 insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sql_subtype *t)
 {
-	char buf[128]; /* TODO use proper buffer */
+	// char buf[128]; /* TODO use proper buffer */
 	int bat_offset = *BO;
 	node *n;
 	JSONterm *ja = js->elm+elm;
@@ -5781,7 +5815,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 		return -1;
 	}
 	const char *name = NULL;
-	int nlen = 0, pos = -1, w = list_length(t->type->d.fields), i = 0;
+	int nlen = 0;
 	/* TODO check if full object is there */
 	for (elm++; elm > 0 && elm <= ja->tail+1; elm++) {
 		JSONterm *jt = js->elm+elm;
@@ -5802,7 +5836,15 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 					}
 				}
 				assert(nt && !nt->multiset);
-				elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt);
+				if (nt->type->composite)
+					elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt);
+				else {
+					// json string value
+					insert_json_value(jt, t, bats[bat_offset], name, nlen);
+					// set term offset
+					elm = ((jt - 1)->next) - 1; // ? is this right
+					bat_offset ++;
+				}
 			} else {
 				assert(0);
 			}
@@ -5833,38 +5875,39 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 		case JSON_VALUE:
 			break;
 		case JSON_STRING:
-
-			jt->value ++;
-			jt->valuelen --;
-			jt->valuelen --;
+			//jt->value ++;
+			//jt->valuelen --;
+			//jt->valuelen --;
 			/* fall through */
 		case JSON_NUMBER:
 		case JSON_BOOL:
 		case JSON_NULL:
-			pos = -1;
-			ValPtr v = NULL;
-			ValRecord vr = (ValRecord) {.bat=false, .vtype=TYPE_void};
-			if (jt->valuelen > 128-1)
-				return -8;
-			strncpy(buf, jt->value, jt->valuelen);
-			buf[jt->valuelen] = 0;
-			for(i = 0, n = t->type->d.fields->h; i < w && n && pos < 0; i++, n = n->next) {
-				sql_arg *a = n->data;
-				int alen = (int)strlen(a->name);
-				if (nlen == alen && strncmp(name, a->name, nlen) == 0) {
-					pos = i;
-					vr.vtype = a->type.type->localtype;
-					v = jsonv2local(&vr, buf);
-					break;
-				}
-			}
-			if (pos < 0 || v == NULL) {
-				*msg = "field name missing";
-				return -8;
-			}
-			if (elm > 0 && BUNappend(bats[bat_offset], VALget(v), false) != GDK_SUCCEED) {
-				return -5;
-			}
+			//pos = -1;
+			//ValPtr v = NULL;
+			//ValRecord vr = (ValRecord) {.bat=false, .vtype=TYPE_void};
+			//if (jt->valuelen > 128-1)
+			//	return -8;
+			//strncpy(buf, jt->value, jt->valuelen);
+			//buf[jt->valuelen] = 0;
+			//for(i = 0, n = t->type->d.fields->h; i < w && n && pos < 0; i++, n = n->next) {
+			//	sql_arg *a = n->data;
+			//	int alen = (int)strlen(a->name);
+			//	if (nlen == alen && strncmp(name, a->name, nlen) == 0) {
+			//		pos = i;
+			//		vr.vtype = a->type.type->localtype;
+			//		v = jsonv2local(&vr, buf);
+			//		break;
+			//	}
+			//}
+			//if (pos < 0 || v == NULL) {
+			//	*msg = "field name missing";
+			//	return -8;
+			//}
+			//if (elm > 0 && BUNappend(bats[bat_offset], VALget(v), false) != GDK_SUCCEED) {
+			//	return -5;
+			//}
+			if ((*msg = insert_json_value(jt, t, bats[bat_offset], name, nlen)) != MAL_SUCCEED)
+				return -1;
 			bat_offset ++;
 		}
 	}

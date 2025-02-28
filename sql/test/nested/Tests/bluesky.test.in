@@ -14,12 +14,12 @@ statement ok
 create table bluesky ("event" event)
 
 query I
-select count(*) from read_nd_json(r'$TSTSRCDIR/bluesky.json')
+select count(*) from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json')
 ----
-5
+10
 
 statement ok
-select cast(t.json as event) as e from (select json from read_nd_json(r'$TSTSRCDIR/bluesky.json')) t
+select cast(t.json as event) as e from (select json from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json')) t
 
 statement ok
 drop table bluesky
