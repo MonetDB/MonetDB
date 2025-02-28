@@ -5833,7 +5833,8 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 					elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt);
 				else if (nt && nt->type->localtype == ATOMindex("json")){
 					// json string value
-					insert_json_value(jt, nt, bats[bat_offset]);
+					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+						return -1;
 					// set term offset
 					elm = ((jt - 1)->next) - 1; // ? is this right
 					bat_offset ++;
@@ -5853,7 +5854,8 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 					elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, nt);
 				else if (nt && nt->type->localtype == ATOMindex("json")) {
 					// json string value
-					insert_json_value(jt, nt, bats[bat_offset]);
+					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+						return -1;
 					// set term offset
 					elm = ((jt - 1)->next) - 1; // ? is this right
 					bat_offset ++;
@@ -5884,9 +5886,10 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
 						return -1;
 					bat_offset ++;
-				}
-				else
+				} else {
 					*msg = "field name missing";
+					return -1;
+				}
 			}
 		}
 	}
