@@ -1878,7 +1878,10 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 			int mtype = c->type.type->localtype;
 			sql_class eclass = c->type.type->eclass;
 
-			if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
+			if (c->type.multiset || c->type.type->composite) {
+				if (mvc_send_lng(s, 16) != 1)
+					return -4;
+			} else if ((res = export_length(s, mtype, eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), c->b, c->p)) < 0)
 				return res;
 			i += c->nrfields;
 			if (i < t->nr_cols && mnstr_write(s, ",\t", 2, 1) != 1)

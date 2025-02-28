@@ -46542,7 +46542,12 @@ json
 read_json
 pattern json.read_json(X_0:str):bat[:json]
 JSONread_json
-Reads json file into a table
+Reads json file
+json
+read_nd_json
+pattern json.read_nd_json(X_0:str):bat[:json]
+JSONread_nd_json
+Reads new line delimited json objects
 json
 renderarray
 pattern json.renderarray(X_0:any...):json
@@ -49177,12 +49182,12 @@ sql
 from_json
 pattern sql.from_json(X_0:bat?[:json], X_1:ptr):bat[:any]...
 SQLfrom_json
-Reads json string into table of nested/multiset structures
+Converts json string into table of nested/multiset structures
 sql
 from_varchar
 pattern sql.from_varchar(X_0:bat?[:str], X_1:ptr):bat[:any]...
 SQLfrom_varchar
-Reads string into table of nested/multiset structures
+Converts string into table of nested/multiset structures
 sql
 getVariable
 pattern sql.getVariable(X_0:int, X_1:str, X_2:str):any_1
@@ -49298,6 +49303,11 @@ next_value_ms
 pattern sql.next_value_ms(X_0:any_1, X_1:str, X_2:str):lng
 mvc_next_value
 return the next value of the sequence
+sql
+normalize_monetdb_url
+pattern sql.normalize_monetdb_url(X_0:str):str
+SQLnormalize_monetdb_url
+Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL
 sql
 nth_value
 pattern sql.nth_value(X_0:any_1, X_1:lng, X_2:bit, X_3:bit, X_4:int, X_5:oid, X_6:oid):any_1
@@ -49788,6 +49798,11 @@ tid
 pattern sql.tid(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:oid]
 SQLtid
 Return the tables tid column.
+sql
+to_json
+pattern sql.to_json(X_0:ptr, X_1:bat[:any]...):json
+SQLto_json
+Convert complex type into json
 sql
 transaction_begin
 unsafe pattern sql.transaction_begin(X_0:int, X_1:str):void

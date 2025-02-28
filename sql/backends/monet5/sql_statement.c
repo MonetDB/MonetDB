@@ -2638,6 +2638,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		if (s == NULL)
 			return NULL;
 		s->nested = true;
+		s->subtype = op2->subtype;
 		return s;
 	}
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
