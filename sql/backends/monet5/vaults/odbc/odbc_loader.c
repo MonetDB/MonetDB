@@ -423,14 +423,11 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 	}
 
 	// TODO convert qry_str from UTF-8 to UCS16, so we can use ODBC W functions
-	if (caller == ODBC_RELATION)
-		ret = SQLPrepare(stmt, (SQLCHAR *) query, SQL_NTS);
-	else
-		ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
+	ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 	if (trace_enabled)
-		printf("After SQL%s(%s) returned %d\n", (caller == ODBC_RELATION) ? "Prepare" : "ExecDirect", query, ret);
+		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = (caller == ODBC_RELATION) ? "SQLPrepare query failed." : "SQLExecDirect query failed.";
+		errmsg = "SQLExecDirect query failed.";
 		goto finish;
 	}
 
@@ -746,7 +743,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 								break;
 							case TYPE_sht:
 								if (trace_enabled)
-									printf("Data row %lu col %u: %d\n", row, col+1, sht_val);
+									printf("Data row %lu col %u: %hd\n", row, col+1, sht_val);
 								gdkret = BUNappend(b, (void *) &sht_val, false);
 								break;
 							case TYPE_int:
@@ -791,7 +788,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 								daytime daytime_val = daytime_create(ts_val.hour, ts_val.minute, ts_val.second, ts_val.fraction);
 								timestamp timestamp_val = timestamp_create(mdate_val, daytime_val);
 								if (trace_enabled)
-									printf("Data row %lu col %u: timestamp((%04d-%02u-%02u %02u:%02u:%02u.%06u)\n", row, col+1,
+									printf("Data row %lu col %u: timestamp(%04d-%02u-%02u %02u:%02u:%02u.%06u)\n", row, col+1,
 										ts_val.year, ts_val.month, ts_val.day, ts_val.hour, ts_val.minute, ts_val.second, ts_val.fraction);
 								gdkret = BUNappend(b, (void *) &timestamp_val, false);
 								break;
@@ -874,15 +871,16 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 			handleType = SQL_HANDLE_ENV;
 			handle = env;
 		}
+		// TODO use ODBC W function
 		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 			str retmsg;
 			if (state[SQL_SQLSTATE_SIZE] != '\0')
 				state[SQL_SQLSTATE_SIZE] = '\0';
 			if (errmsg != NULL) {
-				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, (int)errnr, (char*)msg);
+				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, errnr, (char*)msg);
 			} else {
-				retmsg = sa_message(sql->sa, "odbc_loader" " SQLstate %s, Errnr %d, Message %s", (char*)state, (int)errnr, (char*)msg);
+				retmsg = sa_message(sql->sa, "odbc_loader" " SQLstate %s, Errnr %d, Message %s", (char*)state, errnr, (char*)msg);
 			}
 			odbc_cleanup(env, dbc, stmt);
 			return retmsg;

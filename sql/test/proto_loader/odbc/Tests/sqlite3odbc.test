@@ -6,7 +6,7 @@ select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;QUERY=SELEC
 statement error 42000!SELECT: proto_loader function failed 'odbc_loader Could not connect. SQLDriverConnect failed. SQLstate HY000, Errnr 14, Message [SQLite]connect failed'
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=~/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLPrepare query failed. SQLstate HY000, Errnr 1, Message [SQLite]no such table: INFORMATION_SCHEMA.TABLES (1)'
+statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLExecDirect query failed. SQLstate HY000, Errnr 1, Message [SQLite]no such table: INFORMATION_SCHEMA.TABLES (1)'
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 query TTT
@@ -219,4 +219,28 @@ NULL
 United Kingdom
 N1 5LH
 8
+
+query TI
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=/home/dinther/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM sqlite_sequence')
+----
+genres
+25
+media_types
+5
+artists
+275
+albums
+347
+tracks
+3503
+employees
+8
+customers
+59
+invoices
+412
+invoice_items
+2240
+playlists
+18
 
