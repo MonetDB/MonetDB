@@ -606,7 +606,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 			goto finish_fetch;
 		}
 		if (trace_enabled)
-			printf("Allocated str_val buffer of size %lu\n", (unsigned long)(largestStringSize +1) * sizeof(char));
+			printf("Allocated str_val buffer of size %zu\n", (largestStringSize +1) * sizeof(char));
 
 		bte * blob_val = NULL;
 		if (hasBlobCols) {
@@ -620,7 +620,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 				goto finish_fetch;
 			}
 			if (trace_enabled)
-				printf("Allocated blob_val buffer of size %lu\n", (unsigned long)largestBlobSize * sizeof(bte));
+				printf("Allocated blob_val buffer of size %zu\n", largestBlobSize * sizeof(bte));
 		}
 
 		unsigned long row = 0;
