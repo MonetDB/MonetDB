@@ -73,7 +73,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			varisdict[k] = getArg(p, 1);
 			vardictvalue[k] = getArg(p, 2);
 			dictunique[k] = 1;
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			old[i] = NULL;
 			continue;
 		}
@@ -100,7 +100,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vardictvalue[l] = vardictvalue[k];
 					dictunique[l] = dictunique[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -111,7 +111,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisdict[l] = varisdict[k];
 					vardictvalue[l] = vardictvalue[k];
 					dictunique[l] = dictunique[k];
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -127,7 +127,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -145,7 +145,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = varisdict[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -198,9 +198,9 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						InstrPtr s = newInstructionArgs(mb, dictRef, putName("convert"), 3);
 						InstrPtr t = newInstructionArgs(mb, algebraRef, intersectRef, 9);
 						if (r == NULL || s == NULL || t == NULL) {
-							freeInstruction(r);
-							freeInstruction(s);
-							freeInstruction(t);
+							freeInstruction(mb, r);
+							freeInstruction(mb, s);
+							freeInstruction(mb, t);
 							msg = createException(MAL, "optimizer.dict",
 												  SQLSTATE(HY013)
 												  MAL_MALLOC_FAIL);
@@ -231,7 +231,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						t = pushNil(mb, t, TYPE_lng);	/* estimate */
 						pushInstruction(mb, t);
 					}
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -254,7 +254,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(r, j + 0) = varisdict[k];
 					getArg(r, j + 1) = varisdict[l];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -285,7 +285,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(p, 6));
 					r = pushArgument(mb, r, getArg(p, 7));
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -310,7 +310,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					vardictvalue[l] = vardictvalue[m] = getArg(r, 0);
 					dictunique[l] = 0;
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -330,8 +330,8 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						InstrPtr r = newInstructionArgs(mb, dictRef, compressRef, 3);
 						InstrPtr s = newInstructionArgs(mb, dictRef, renumberRef, 3);
 						if (r == NULL || s == NULL) {
-							freeInstruction(r);
-							freeInstruction(s);
+							freeInstruction(mb, r);
+							freeInstruction(mb, s);
 							msg = createException(MAL, "optimizer.dict",
 												  SQLSTATE(HY013)
 												  MAL_MALLOC_FAIL);
@@ -361,7 +361,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = input;
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					old[i] = NULL;
 					done = true;
 					break;
@@ -396,7 +396,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (; i < slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			freeInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

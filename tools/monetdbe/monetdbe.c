@@ -1407,8 +1407,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
-	freeInstruction(e);
-	freeInstruction(r);
+	freeInstruction(mb, e);
+	freeInstruction(mb, r);
 	if (bcolumn) {
 		bat_iterator_end(&btype_iter);
 		bat_iterator_end(&bcolumn_iter);
@@ -2593,7 +2593,7 @@ remote_cleanup:
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
 			if (p == NULL) {
 				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
-				freeInstruction(e);
+				freeInstruction(mb, e);
 				freeSymbol(prg);
 				goto cleanup;
 			}

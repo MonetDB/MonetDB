@@ -2531,6 +2531,7 @@ typedef struct allocator {
 	size_t freelist_hits; /* number of object reuse*/
 	void *freelist;	/* list of freed objects */
 	void *freelist_blks;	/* list of freed blks */
+	size_t frees;
 
 	size_t tmp_used; /* keeps total of tmp allocated bytes */
 	bool tmp_active; /* currently only one level of temp usage */

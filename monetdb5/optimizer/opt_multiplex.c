@@ -297,7 +297,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			}
 			msg = OPTexpandMultiplex(cntxt, mb, stk, p);
 			if (msg == MAL_SUCCEED) {
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				old[i] = 0;
 				actions++;
 				continue;

@@ -69,7 +69,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
 	if (q == NULL) {
-		freeInstruction(defineQuery);
+		freeInstruction(mb, defineQuery);
 		msg = createException(MAL, "optimizer.querylog",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -79,7 +79,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = pushArgument(mb, defineQuery, name);
 	q = newStmt(mb, mtimeRef, "current_timestamp");
 	if (q == NULL) {
-		freeInstruction(defineQuery);
+		freeInstruction(mb, defineQuery);
 		msg = createException(MAL, "optimizer.querylog",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;

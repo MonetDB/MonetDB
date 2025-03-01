@@ -202,8 +202,8 @@ resetMalBlk(MalBlkPtr mb)
 	int i;
 
 	for (i = 1/*MALCHUNK*/; i < mb->ssize; i++) {
-		// ss
-		freeInstructionX(mb->stmt[i], mb);
+		if (mb->stmt[i])
+			freeInstruction(mb, mb->stmt[i]);
 		mb->stmt[i] = NULL;
 	}
 #if 0
@@ -260,7 +260,7 @@ freeMalBlk(MalBlkPtr mb)
 	/*
 	for (i = 0; i < mb->ssize; i++)
 		if (mb->stmt[i]) {
-			freeInstruction(mb->stmt[i]);
+			freeInstruction(mb, mb->stmt[i]);
 			mb->stmt[i] = NULL;
 		}
 	mb->stop = 0;
@@ -369,7 +369,7 @@ copyMalBlk(MalBlkPtr old)
   bailout:
 	/*
 	for (i = 0; i < old->stop; i++)
-		freeInstruction(mb->stmt[i]);
+		freeInstruction(mb, mb->stmt[i]);
 		*/
 	for (i = 0; i < old->vtop; i++) {
 		/*
@@ -476,26 +476,10 @@ clrInstruction(InstrPtr p)
 }
 
 void
-freeInstruction(InstrPtr p)
+freeInstruction(MalBlkPtr mb, InstrPtr p)
 {
-	if (p && p->blk && p->blk->ma) {
-		// size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
-		// only free default size
-		if (p->maxarg == 8)
-			sa_free(p->blk->ma, p);
-	}
-	//GDKfree(p);
-}
-
-void
-freeInstructionX(InstrPtr p, MalBlkPtr mb)
-{
-	if (p && mb && mb->ma) {
-		// size_t sz = (p->maxarg - 1)*(sizeof(p->argv[0])) + (sizeof(InstrRecord));
-		// only free default size
-		if (p->maxarg == 8)
-			sa_free(mb->ma, p);
-	}
+	assert(p && mb && mb->ma);
+	sa_free(mb->ma, p);
 }
 
 
@@ -527,7 +511,7 @@ removeInstructionBlock(MalBlkPtr mb, int pc, int cnt)
 	InstrPtr p;
 	for (i = pc; i < pc + cnt; i++) {
 		p = getInstrPtr(mb, i);
-		freeInstruction(p);
+		freeInstruction(mb, p);
 		mb->stmt[i] = NULL;
 	} for (i = pc; i < mb->stop - cnt; i++)
 		mb->stmt[i] = mb->stmt[i + cnt];
@@ -1169,18 +1153,18 @@ pushInstruction(MalBlkPtr mb, InstrPtr p)
 			for (i = 1; i < mb->stop; i++) {
 				q = getInstrPtr(mb, i);
 				if (q->token == REMsymbol) {
-					freeInstructionX(q, mb);
+					freeInstruction(mb, q);
 					mb->stmt[i] = p;
 					return;
 				}
 			}
-			freeInstructionX(getInstrPtr(mb, 0), mb);
+			freeInstruction(mb, getInstrPtr(mb, 0));
 			mb->stmt[0] = p;
 			return;
 		}
 	}
 	if (mb->stmt[mb->stop])
-		freeInstructionX(mb->stmt[mb->stop], mb);
+		freeInstruction(mb, mb->stmt[mb->stop]);
 	p->pc = mb->stop;
 	mb->stmt[mb->stop++] = p;
 }

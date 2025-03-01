@@ -58,7 +58,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				break;
 			}
 			if (setDestVar(q, newTmpVariable(mb, getArgType(mb, p, 1))) < 0) {
-				freeInstruction(q);
+				freeInstruction(mb, q);
 				msg = createException(MAL, "optimizer.matpack",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -79,7 +79,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				q = pushArgument(mb, q, v);
 				q = pushArgument(mb, q, getArg(p, j));
 				if (setDestVar(q, newTmpVariable(mb, getVarType(mb, v))) < 0) {
-					freeInstruction(q);
+					freeInstruction(mb, q);
 					msg = createException(MAL, "optimizer.matpack",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -91,7 +91,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (msg)
 				break;
 			getArg(q, 0) = getArg(p, 0);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			actions++;
 			continue;
 		}

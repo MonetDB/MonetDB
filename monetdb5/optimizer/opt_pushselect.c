@@ -398,7 +398,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							r = pushBit(mb, r, ignore_case);
 						if (r->argc < (6 + offset))
 							r = pushBit(mb, r, anti);
-						freeInstruction(p);
+						freeInstruction(mb, p);
 						p = r;
 						actions++;
 					}
@@ -415,7 +415,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				pushInstruction(mb, old[i]);
 		for (; i < slimit; i++)
 			if (old[i])
-				freeInstruction(old[i]);
+				freeInstruction(mb, old[i]);
 		//GDKfree(old);
 		if (msg != MAL_SUCCEED || !push_down_delta) {
 			goto wrapup;
@@ -458,8 +458,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr r = copyInstruction(mb, p);
 				InstrPtr s = copyInstruction(mb, q);
 				if (r == NULL || s == NULL) {
-					freeInstruction(r);
-					freeInstruction(s);
+					freeInstruction(mb, r);
+					freeInstruction(mb, s);
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -590,8 +590,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr t = copyInstruction(mb, p);
 
 				if (r == NULL || t == NULL) {
-					freeInstruction(r);
-					freeInstruction(t);
+					freeInstruction(mb, r);
+					freeInstruction(mb, t);
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -626,9 +626,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr u = copyInstruction(mb, q);
 
 				if (r == NULL || s == NULL || u == NULL) {
-					freeInstruction(r);
-					freeInstruction(s);
-					freeInstruction(u);
+					freeInstruction(mb, r);
+					freeInstruction(mb, s);
+					freeInstruction(mb, u);
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -679,8 +679,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr t = copyInstruction(mb, p);
 
 				if (r == NULL || t == NULL) {
-					freeInstruction(r);
-					freeInstruction(t);
+					freeInstruction(mb, r);
+					freeInstruction(mb, t);
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -746,9 +746,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr u = copyInstruction(mb, q);
 
 				if (r == NULL || s == NULL || u == NULL) {
-					freeInstruction(r);
-					freeInstruction(s);
-					freeInstruction(u);
+					freeInstruction(mb, r);
+					freeInstruction(mb, s);
+					freeInstruction(mb, u);
 					msg = createException(MAL, "optimizer.pushselect",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -792,7 +792,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	for (j = 1; j < i; j++)
 		if (old[j] && oclean[j])
-			freeInstruction(old[j]);
+			freeInstruction(mb, old[j]);
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);

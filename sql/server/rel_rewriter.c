@@ -51,14 +51,21 @@ exps_simplify_exp(visitor *v, list *exps)
 					sql_exp *ie = l->h->data;
 
 					if (exp_is_true(ie)) {
+						free_exp(v->sql->sa, e);
+						n->data = NULL;
 						v->changes++;
 						continue;
 					} else if (exp_is_false(ie)) {
+						e->r = NULL;
+						free_exp(v->sql->sa, e);
+						n->data = NULL;
+						nexps = list_join(nexps, r);
 						v->changes++;
-						nexps = list_merge(nexps, r, (fdup)NULL);
 						continue;
 					}
 				} else if (list_length(l) == 0) { /* left is true */
+					free_exp(v->sql->sa, e);
+					n->data = NULL;
 					v->changes++;
 					continue;
 				}
@@ -66,30 +73,43 @@ exps_simplify_exp(visitor *v, list *exps)
 					sql_exp *ie = r->h->data;
 
 					if (exp_is_true(ie)) {
+						free_exp(v->sql->sa, e);
+						n->data = NULL;
 						v->changes++;
 						continue;
 					} else if (exp_is_false(ie)) {
-						nexps = list_merge(nexps, l, (fdup)NULL);
+						e->l = NULL;
+						free_exp(v->sql->sa, e);
+						n->data = NULL;
+						nexps = list_join(nexps, l);
 						v->changes++;
 						continue;
 					}
 				} else if (list_length(r) == 0) { /* right is true */
+					free_exp(v->sql->sa, e);
+					n->data = NULL;
 					v->changes++;
 					continue;
 				}
 			}
 			/* TRUE and X -> X */
 			if (exp_is_true(e)) {
+				free_exp(v->sql->sa, e);
+				n->data = NULL;
 				v->changes++;
 				continue;
 			/* FALSE and X -> FALSE */
 			} else if (exp_is_false(e)) {
+				n->data = NULL;
+				free_exps(v->sql->sa, exps);
 				v->changes++;
 				return append(sa_list(v->sql->sa), e);
 			} else {
+				n->data = NULL;
 				append(nexps, e);
 			}
 		}
+		free_exps(v->sql->sa, exps);
 		return nexps;
 	}
 	return exps;
@@ -213,7 +233,7 @@ rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel)
 			!is_single(rel) && list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
 			list *nexps = sa_list(v->sql->sa), *toconvert = rel_projections(v->sql, rel->l, NULL, 1, 1);
 			if (is_innerjoin(rel->op))
-				toconvert = list_merge(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1), NULL);
+				toconvert = list_join(toconvert, rel_projections(v->sql, rel->r, NULL, 1, 1));
 
 			for (node *n = toconvert->h ; n ; n = n->next) {
 				sql_exp *e = n->data, *a = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));

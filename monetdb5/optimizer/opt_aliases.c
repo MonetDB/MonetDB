@@ -59,7 +59,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			&& getBeginScope(mb, getArg(p, 0)) == i
 			&& getLastUpdate(mb, getArg(p, 1)) <= i) {
 			alias[getArg(p, 0)] = alias[getArg(p, 1)];
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			actions++;
 			k--;
 			mb->stmt[k] = 0;

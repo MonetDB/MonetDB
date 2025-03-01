@@ -230,6 +230,6 @@ extern sql_exp *exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp);
 extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);
 extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype *opt_super);
 extern void free_exp(allocator *sa, sql_exp *e);
-extern void free_exps_list(allocator *sa, list *exps);
+extern void free_exps(allocator *sa, list *exps);
 
 #endif /* _REL_EXP_H_ */

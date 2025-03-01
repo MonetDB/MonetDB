@@ -291,7 +291,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (upd) {
 			matr = newInstructionArgs(mb, matRef, newRef, pieces + 1);
 			if (matr == NULL) {
-				freeInstruction(matq);
+				freeInstruction(mb, matq);
 				msg = createException(MAL, "optimizer.mitosis",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -303,8 +303,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (j = 0; j < pieces; j++) {
 			q = copyInstruction(mb, p);
 			if (q == NULL) {
-				freeInstruction(matr);
-				freeInstruction(matq);
+				freeInstruction(mb, matr);
+				freeInstruction(mb, matq);
 				for (; i < limit; i++)
 					if (old[i])
 						pushInstruction(mb, old[i]);
@@ -327,7 +327,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		pushInstruction(mb, matq);
 		if (upd)
 			pushInstruction(mb, matr);
-		freeInstruction(p);
+		freeInstruction(mb, p);
 	}
 	for (; i < slimit; i++)
 		if (old[i])

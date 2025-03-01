@@ -3770,16 +3770,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 	} else {
 		a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
 		if (!a && obe && list_length(obe) == 1) { /* try to find aggregation function with requires order by column */
-			list *nexps = append(sa_list(sql->sa), obe->h->data);
-			nexps = list_merge(nexps, exps, (fdup) NULL);
-			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, nexps), F_AGGR, false, false);
+			list_prepend(exps, obe->h->data);
+			a = sql_bind_func_(sql, sname, aname, exp_types(sql->sa, exps), F_AGGR, false, false);
 			if (a && a->func->order_required) {
 				/* reset error */
 				handled_order = true;
 				sql->session->status = 0;
 				sql->errstr[0] = '\0';
-				exps = nexps;
 				obe = NULL;
+			} else {
+				a = NULL;
 			}
 		}
 	}

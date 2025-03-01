@@ -39,7 +39,7 @@ newAssignmentArgs(MalBlkPtr mb, int args)
 								  "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	getArg(q, 0) = k;
@@ -77,7 +77,7 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 								  "Can not allocate variable");
 		addMalException(mb, msg);
 		freeException(msg);
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	return q;
@@ -132,12 +132,12 @@ newComment(MalBlkPtr mb, const char *val)
 		str msg = createException(MAL, "newComment", "Can not allocate comment");
 		addMalException(mb, msg);
 		freeException(msg);
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	k = defConstant(mb, TYPE_str, &cst);
 	if (k < 0) {
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	getArg(q, 0) = k;
@@ -162,7 +162,7 @@ newCatchStmt(MalBlkPtr mb, const char *nme)
 									  "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 	}
@@ -186,7 +186,7 @@ newRaiseStmt(MalBlkPtr mb, const char *nme)
 									  "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 	}
@@ -210,7 +210,7 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 									  "Can not allocate variable");
 			addMalException(mb, msg);
 			freeException(msg);
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 	}

@@ -2640,7 +2640,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 							getArg(q, 0) = newTmpVariable(be->mb, type);
 					}
 					if (backend_create_subfunc(be, f, ops) < 0) {
-						freeInstruction(q);
+						freeInstruction(be->mb, q);
 						return NULL;
 					}
 					str mod = sql_func_mod(f->func);
@@ -2649,7 +2649,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 					q = pushStr(be->mb, q, fcn);
 					psub = stmt_direct_func(be, q);
 					if (psub == NULL) {
-						freeInstruction(q);
+						freeInstruction(be->mb, q);
 						return NULL;
 					}
 
@@ -2738,7 +2738,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		list_append(l, s);
 	}
 	if (osub && osub->nrcols)
-		list_merge(l, osub->op4.lval, NULL);
+		list_join(l, osub->op4.lval);
 	sub = stmt_list(be, l);
 	return sub;
 }
@@ -3556,7 +3556,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		en = jexps->h;
 	} else {
 		if (list_length(sexps))
-			list_merge(jexps, sexps, NULL);
+			jexps = list_join(jexps, sexps);
 		en = jexps->h;
 		sql_exp *e = en->data;
 		assert(e->type == e_cmp);

@@ -1242,6 +1242,7 @@ rel_optimize_select_and_joins_bottomup(visitor *v, global_props *gp, sql_rel *re
 {
 	v->data = &gp->opt_cycle;
 	rel = rel_visitor_bottomup(v, rel, &rel_optimize_select_and_joins_bottomup_);
+	sa_reset(v->sql->ta);
 	v->data = gp;
 	return rel;
 }
@@ -2601,7 +2602,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		if (list_empty(exps))
 			exps = sdje;
 		else
-			exps = list_merge(exps, sdje, (fdup)NULL);
+			exps = list_join(exps, sdje);
 	}
 	if (list_length(exps)) { /* more expressions (add selects) */
 		top = rel_select(v->sql->sa, top, NULL);
@@ -2727,16 +2728,18 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 		l = push_up_join_exps(sql, rl);
 		r = push_up_join_exps(sql, rr);
 		if (l && r) {
-			l = list_merge(l, r, (fdup)NULL);
+			l = list_join(l, r);
 			r = NULL;
 		} else if (!l) {
 			l = r;
 			r = NULL;
 		}
 		if (rel->exps) {
-			if (l && !r)
-				r = l;
-			l = list_merge(rel->exps, r, (fdup)NULL);
+			assert(!r);
+			if (l)
+				l = list_join(rel->exps, l);
+			else
+				l = rel->exps;
 		}
 		rel->exps = NULL;
 		return l;
@@ -3693,7 +3696,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	/* merge 2 selects */
 	r = rel->l;
 	if (is_select(rel->op) && r && r->exps && is_select(r->op) && !(rel_is_ref(r)) && !exps_have_func(rel->exps)) {
-		(void)list_merge(r->exps, exps_copy(v->sql, rel->exps), (fdup)NULL);
+		r->exps = list_join(r->exps, exps_copy(v->sql, rel->exps));
 		rel->l = NULL;
 		rel_destroy(v->sql, rel);
 		v->changes++;

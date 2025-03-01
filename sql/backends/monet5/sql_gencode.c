@@ -484,7 +484,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -495,7 +495,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -506,7 +506,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -516,13 +516,13 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	p = pushArgument(curBlk, p, getArg(o,0));
 
 	if (!(rel_str = rel2str(m, rel))) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -532,7 +532,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	p = pushArgument(curBlk, p, getArg(o,0));
 
 	if (!(buf = sa_alloc(m->ta, len))) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -554,7 +554,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			if ((nr + nlen) > len) {
 				buf = sa_realloc(m->ta, buf, (len + nlen) * 2, len);
 				if (buf == NULL) {
-					freeInstruction(p);
+					freeInstruction(curBlk, p);
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -566,7 +566,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -584,7 +584,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			str next = sql_subtype_string(m->ta, t);
 
 			if (!next) {
-				freeInstruction(p);
+				freeInstruction(curBlk, p);
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
@@ -593,7 +593,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			if ((nr + nlen) > len) {
 				buf = sa_realloc(m->ta, buf, (len + nlen) * 2, len);
 				if (buf == NULL) {
-					freeInstruction(p);
+					freeInstruction(curBlk, p);
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
@@ -605,7 +605,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -634,7 +634,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		if (rworker_plan_uuid == NULL || lworker_plan_uuid == NULL || p == NULL) {
 			free(rworker_plan_uuid);
 			GDKfree(lworker_plan_uuid);
-			freeInstruction(p);
+			freeInstruction(curBlk, p);
 			GDKfree(lsupervisor_session);
 			GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -650,7 +650,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		 */
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		if (o == NULL) {
-			freeInstruction(p);
+			freeInstruction(curBlk, p);
 			free(rworker_plan_uuid);
 			GDKfree(lworker_plan_uuid);
 			GDKfree(lsupervisor_session);
@@ -665,7 +665,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		if (o == NULL) {
-			freeInstruction(p);
+			freeInstruction(curBlk, p);
 			free(rworker_plan_uuid);
 			GDKfree(lworker_plan_uuid);
 			GDKfree(lsupervisor_session);
@@ -680,7 +680,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		if (o == NULL) {
-			freeInstruction(p);
+			freeInstruction(curBlk, p);
 			free(rworker_plan_uuid);
 			GDKfree(lworker_plan_uuid);
 			GDKfree(lsupervisor_session);
@@ -732,7 +732,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 			/* x1 := remote.put(q, :type) */
 			o = newFcnCall(curBlk, remoteRef, putRef);
 			if (o == NULL) {
-				freeInstruction(p);
+				freeInstruction(curBlk, p);
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
@@ -750,7 +750,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		/* x1 := remote.put(q, A0); */
 		o = newStmt(curBlk, remoteRef, putRef);
 		if (o == NULL) {
-			freeInstruction(p);
+			freeInstruction(curBlk, p);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
@@ -788,7 +788,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -849,7 +849,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	if (o == NULL) {
-		freeInstruction(p);
+		freeInstruction(curBlk, p);
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -1022,6 +1022,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 
+	assert(mb->ma);
 	/* Always keep the SQL query around for monitoring */
 	if (query) {
 		while (*query && isspace((unsigned char) *query))

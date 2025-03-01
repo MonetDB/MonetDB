@@ -3916,11 +3916,12 @@ list_find_exp( list *exps, sql_exp *e)
 }
 
 void
-free_exps_list(allocator *sa, list *exps)
+free_exps(allocator *sa, list *exps)
 {
 	if (!list_empty(exps)) {
 		for (node *n=exps->h; n ; n=n->next) {
-			free_exp(sa, n->data);
+			if (n->data)
+				free_exp(sa, n->data);
 			n->data = NULL;
 		}
 	}
@@ -3936,8 +3937,7 @@ _free_exp_internal(allocator *sa, sql_exp *e)
 		// free_props(sa, e->p);
 		e->p = NULL;
 	}
-	sql_exp zero = {0};
-	*e = zero;
+	e->type = -1;
 	sa_free(sa, e);
 }
 
@@ -3950,7 +3950,7 @@ free_exp(allocator *sa, sql_exp *e)
 	switch(e->type) {
 		case e_atom:
 			if (e->f) {
-				free_exps_list(sa, e->f);
+				free_exps(sa, e->f);
 				e->f = NULL;
 			}
 			break;
@@ -3967,15 +3967,15 @@ free_exp(allocator *sa, sql_exp *e)
 			if (e->flag == cmp_or || e->flag == cmp_filter) {
 				// l and r are list
 				if (e->l)
-					free_exps_list(sa, e->l);
+					free_exps(sa, e->l);
 				if (e->r)
-					free_exps_list(sa, e->r);
+					free_exps(sa, e->r);
 			}
 			break;
 		case e_func:
 		case e_aggr:
 			if (e->l)
-				free_exps_list(sa, e->l);
+				free_exps(sa, e->l);
 			break;
 		case e_convert:
 			if (e->l)
@@ -3990,15 +3990,15 @@ free_exp(allocator *sa, sql_exp *e)
 				if (e->l)
 					free_exp(sa, e->l);
 				if (e->r)
-					free_exps_list(sa, e->r);
+					free_exps(sa, e->r);
 			}
 			if (e->flag & PSM_IF) {
 				if (e->l)
 					free_exp(sa, e->l);
 				if (e->r)
-					free_exps_list(sa, e->r);
+					free_exps(sa, e->r);
 				if (e->f)
-					free_exps_list(sa, e->f);
+					free_exps(sa, e->f);
 			}
 			break;
 		case e_column:

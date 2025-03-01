@@ -225,7 +225,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	stmt *ns = stmt_create(be->mvc->sa, st_group);
 	be->mvc->sa->eb.enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -270,7 +270,7 @@ stmt_unique(backend *be, stmt *s)
 	stmt *ns = stmt_create(be->mvc->sa, st_unique);
 	be->mvc->sa->eb.enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -410,7 +410,7 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 	stmt *s = stmt_create(be->mvc->sa, st_var);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -479,7 +479,7 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	stmt *s = stmt_create(be->mvc->sa, st_var);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -554,7 +554,7 @@ stmt_temp(backend *be, sql_subtype *t)
 	be->mvc->sa->eb.enabled = enabled;
 
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op4.typeval = *t;
@@ -627,7 +627,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	stmt *s = stmt_create(be->mvc->sa, st_tid);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -697,7 +697,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
 		if (!b) {
-			freeInstruction(q);
+			freeInstruction(be->mb, q);
 			goto bailout;
 		}
 		tt = b->ttype;
@@ -731,7 +731,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	stmt *s = stmt_create(be->mvc->sa, st_bat);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -792,7 +792,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	stmt *s = stmt_create(be->mvc->sa, st_idxbat);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -870,7 +870,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 	be->mvc->sa->eb.enabled = enabled;
 
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = b;
@@ -916,7 +916,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	stmt *s = stmt_create(be->mvc->sa, st_append_idx);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -971,7 +971,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	be->mvc->sa->eb.enabled = enabled;
 
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = tids;
@@ -1014,7 +1014,7 @@ stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 	stmt *s = stmt_create(be->mvc->sa, st_update_idx);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1065,7 +1065,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	stmt *s = stmt_create(be->mvc->sa, st_delete);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1413,7 +1413,7 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 	stmt *ns = stmt_create(be->mvc->sa, st_sample);
 	be->mvc->sa->eb.enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1464,7 +1464,7 @@ stmt_order(backend *be, stmt *s, int direction, int nullslast)
 	stmt *ns = stmt_create(be->mvc->sa, st_order);
 	be->mvc->sa->eb.enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1510,7 +1510,7 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	stmt *ns = stmt_create(be->mvc->sa, st_reorder);
 	be->mvc->sa->eb.enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1549,7 +1549,7 @@ stmt_atom(backend *be, atom *a)
 	} else {
 		int k;
 		if ((k = constantAtom(be, mb, a)) == -1) {
-			freeInstruction(q);
+			freeInstruction(be->mb, q);
 			goto bailout;
 		}
 		q = pushArgument(mb, q, k);
@@ -1562,7 +1562,7 @@ stmt_atom(backend *be, atom *a)
 	stmt *s = stmt_create(be->mvc->sa, st_atom);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1674,7 +1674,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	stmt *s = stmt_create(be->mvc->sa, st_uselect);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1819,7 +1819,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		default:
 			TRC_ERROR(SQL_EXECUTION, "Impossible select compare\n");
 			if (q)
-				freeInstruction(q);
+				freeInstruction(be->mb, q);
 			q = NULL;
 			goto bailout;
 		}
@@ -1830,7 +1830,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	stmt *s = stmt_create(be->mvc->sa, st_uselect);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2098,7 +2098,7 @@ stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2130,7 +2130,7 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2165,7 +2165,7 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2264,7 +2264,7 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2311,7 +2311,7 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2355,7 +2355,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 	stmt *s = stmt_create(be->mvc->sa, st_tinter);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2556,7 +2556,7 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	stmt *s = stmt_create(be->mvc->sa, st_semijoin);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2682,7 +2682,7 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	stmt *s = stmt_create(be->mvc->sa, st_join);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2723,7 +2723,7 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	stmt *s = stmt_create(be->mvc->sa, st_join);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2765,7 +2765,7 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 	stmt *s = stmt_create(be->mvc->sa, st_join);
 	be->mvc->sa->eb.enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -3121,7 +3121,7 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 	stmt *s = stmt_create(be->mvc->sa, st_trans);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = chain;
@@ -3209,7 +3209,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	stmt *s = stmt_create(be->mvc->sa, st_catalog);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = args;
@@ -3409,7 +3409,7 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	stmt *s = stmt_create(be->mvc->sa, st_append);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3465,7 +3465,7 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	stmt *s = stmt_create(be->mvc->sa, st_append_bulk);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3501,7 +3501,7 @@ stmt_pack(backend *be, stmt *c, int n)
 	stmt *s = stmt_create(be->mvc->sa, st_append);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3537,7 +3537,7 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 	stmt *s = stmt_create(be->mvc->sa, st_append);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3578,7 +3578,7 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	stmt *s = stmt_create(be->mvc->sa, st_claim);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = cnt;
@@ -3659,7 +3659,7 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 	stmt *s = stmt_create(be->mvc->sa, st_replace);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = r;
@@ -3742,7 +3742,7 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	stmt *s = stmt_create(be->mvc->sa, st_exception);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 	assert(cond);
@@ -3913,7 +3913,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	stmt *s = stmt_create(be->mvc->sa, st_convert);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = v;
@@ -4074,7 +4074,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	stmt *s = stmt_create(be->mvc->sa, st_convert);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = v;
@@ -4363,7 +4363,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = ops;
@@ -4520,7 +4520,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	stmt *s = stmt_create(be->mvc->sa, st_aggr);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = op1;
@@ -4912,7 +4912,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 	stmt *s = stmt_create(be->mvc->sa, st_cond);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->flag = be->mvc_var; /* keep the mvc_var of the outer context */
@@ -4960,7 +4960,7 @@ stmt_control_end(backend *be, stmt *cond)
 	stmt *s = stmt_create(be->mvc->sa, st_control_end);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = cond;
@@ -5030,7 +5030,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 	stmt *s = stmt_create(be->mvc->sa, st_return);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = val;
@@ -5130,7 +5130,7 @@ const_column(backend *be, stmt *val)
 	stmt *s = stmt_create(be->mvc->sa, st_single);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = val;
@@ -5181,7 +5181,7 @@ stmt_fetch(backend *be, stmt *val)
 	stmt *s = stmt_create(be->mvc->sa, st_single);
 	be->mvc->sa->eb.enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = val;

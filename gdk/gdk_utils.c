@@ -2112,7 +2112,7 @@ sa_free_obj(allocator *pa, void *obj, size_t sz)
 	//}
 	//assert (i < pa->nr);
 	// put on the freelist
-	freed_t *f = memset(obj, 0, sz);
+	freed_t *f = obj;
 	f->sz = sz;
 	f->n = pa->freelist;
 	pa->freelist = f;
@@ -2236,6 +2236,7 @@ allocator *sa_reset(allocator *sa)
 	}
 
 	sa->freelist_blks = NULL;
+	sa->frees = 0;
 	sa->nr = 1;
 	sa->used = 0;
 	sa->freelist = NULL;
@@ -2387,6 +2388,7 @@ sa_create(allocator *pa)
 	sa->blk_size = SA_BLOCK_SIZE;
 	sa->freelist = NULL;
 	sa->freelist_blks = NULL;
+	sa->frees = 0;
 	sa->used = 0;
 	sa->objects = 0;
 	sa->inuse = 0;
@@ -2478,8 +2480,8 @@ void
 sa_close(allocator *sa)
 {
 	assert(sa->tmp_active);
-	sa->tmp_active = 0;
 	sa_reset(sa);
+	sa->tmp_active = 0;
 }
 
 void
@@ -2491,9 +2493,11 @@ sa_free(allocator *sa, void *obj)
 	size_t sz = *((size_t *) ptr);
 	// double free check point
 	assert(*((size_t *) ptr + 1) == CANARY_VALUE);
+	sa->frees++;
 	if (sz < SA_BLOCK_SIZE) {
 		sa_free_obj(sa, ptr, sz);
 	} else {
 		// sa_free_blk(sa, ptr);
+		assert(0);
 	}
 }

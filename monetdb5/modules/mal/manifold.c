@@ -258,7 +258,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		tpe = getBatType(getArgType(mb, pci, i));
 		k = newTmpVariable(nmb, tpe);
 		if (k < 0) {
-			freeInstruction(q);
+			freeInstruction(nmb, q);
 			goto bailout;
 		}
 		q = pushArgument(nmb, q, k);

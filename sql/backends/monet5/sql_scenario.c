@@ -744,8 +744,10 @@ SQLinit(Client c, const char *initpasswd)
 			const char *createdb_inline = (const char*)sql_module[i].code;
 
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
-			if (m->sa)
+			if (m->sa) {
+				assert(0);
 				sa_destroy(m->sa);
+			}
 			m->sa = NULL;
 		}
 		/* 99_system.sql */
@@ -766,8 +768,10 @@ SQLinit(Client c, const char *initpasswd)
 				"update sys.functions set system = true where schema_id in (select id from sys.schemas s where s.system);\n"
 				"update sys._tables set system = true where schema_id in (select id from sys.schemas s where s.system);\n";
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
-			if (m->sa)
+			if (m->sa) {
+				assert(0);
 				sa_destroy(m->sa);
+			}
 			m->sa = NULL;
 		}
 		/* Commit after all the startup scripts have been processed */
@@ -1050,8 +1054,10 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = SQLstatementIntern(cntxt, bfd->buf, "sql.include", TRUE, FALSE, NULL);
 	bstream_destroy(bfd);
 	m = ((backend *) cntxt->sqlcontext)->mvc;
-	if (m->sa)
+	if (m->sa) {
+		assert(0);
 		sa_destroy(m->sa);
+	}
 	m->sa = NULL;
 	(void) mb;
 	return msg;

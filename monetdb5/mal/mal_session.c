@@ -410,7 +410,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 	for (i = start; i < mb->ssize; i++) {
 		p = getInstrPtr(mb, i);
 		if (p)
-			freeInstructionX(p, mb);
+			freeInstruction(mb, p);
 		mb->stmt[i] = NULL;
 	}
 	mb->stop = start;

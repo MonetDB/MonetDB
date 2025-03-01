@@ -106,7 +106,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	/* now see if we can resolve the instruction */
 	typeChecker(scope, mb, p, idx, TRUE);
 	if (!p->typeresolved) {
-		freeInstruction(p);
+		freeInstruction(mb, p);
 		return 0;
 	}
 	printf("#remapped: %s.%s\n", getModuleId(p), getFunctionId(p));
@@ -482,7 +482,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope)
 					   || OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			} else {
 				pushInstruction(mb, p);
@@ -500,7 +500,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			cnt = copyInstruction(mb, p);
 			if (cnt == NULL) {
-				freeInstruction(sum);
+				freeInstruction(mb, sum);
 				msg = createException(MAL, "optimizer.remap",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -570,7 +570,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			avg = pushArgument(mb, avg, getDestVar(cnt));
 			avg = pushNilBat(mb, avg);
 			avg = pushNilBat(mb, avg);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			pushInstruction(mb, avg);
 		} else {
 			pushInstruction(mb, p);

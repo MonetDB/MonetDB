@@ -37,13 +37,13 @@
 	do {																\
 		k = getArg(p, 1);												\
 		p->argc = p->retc;												\
-		q = newInstruction(0, calcRef, TPE##Ref);						\
+		q = newInstruction(mb, calcRef, TPE##Ref);						\
 		if (q == NULL) {												\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
 		if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {		\
-			freeInstruction(q);											\
+			freeInstruction(mb, q);										\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
@@ -51,13 +51,13 @@
 		typeChecker(cntxt->usermodule, mb, q, 0, TRUE);					\
 		p = pushArgument(mb, p, getArg(q, 0));							\
 		pushInstruction(mb, q);											\
-		q = newInstruction(0, calcRef, TPE##Ref);						\
+		q = newInstruction(mb, calcRef, TPE##Ref);						\
 		if (q == NULL) {												\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
 		if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {		\
-			freeInstruction(q);											\
+			freeInstruction(mb, q);											\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
@@ -66,13 +66,13 @@
 		typeChecker(cntxt->usermodule,  mb,  q,  0, TRUE);				\
 		p = pushArgument(mb, p, getArg(q, 0));							\
 		if( p->argc == 4){												\
-			q = newInstruction(0, calcRef, TPE##Ref);					\
+			q = newInstruction(mb, calcRef, TPE##Ref);					\
 			if (q == NULL) {											\
 				msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout;											\
 			}															\
 			if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {	\
-				freeInstruction(q);										\
+				freeInstruction(mb, q);										\
 				msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout;											\
 			}															\

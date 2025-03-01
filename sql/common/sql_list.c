@@ -713,6 +713,27 @@ list_map(list *l, void *data, fmap map)
 }
 
 list *
+list_join(list *l, list *data)
+{
+	assert(data->sa);
+	assert(data->sa == l->sa);
+	assert(!l->ht);
+
+	if (!data->t) {
+		sa_free(data->sa, data);
+		return l;
+	}
+	if (!l->h)
+		l->h = data->h;
+	else
+		l->t->next = data->h;
+	l->cnt += data->cnt;
+	l->t = data->t;
+	sa_free(data->sa, data);
+	return l;
+}
+
+list *
 list_merge(list *l, list *data, fdup dup)
 {
 	if (data) {

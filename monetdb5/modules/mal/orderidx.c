@@ -123,16 +123,16 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		goto bailout;			// large enough
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
-	pack = newInstruction(0, batRef, putName("orderidx"));
+	pack = newInstruction(smb, batRef, putName("orderidx"));
 	if (pack == NULL || (pack->argv[0] = newTmpVariable(smb, TYPE_void)) < 0) {
-		freeInstruction(pack);
+		freeInstruction(smb, pack);
 		msg = createException(MAL, "bat.orderidx",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	pack = pushArgument(smb, pack, arg);
 	if (smb->errors) {
-		freeInstruction(pack);
+		freeInstruction(smb, pack);
 		msg = smb->errors;
 		smb->errors = NULL;
 		goto bailout;
@@ -141,14 +141,14 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 
 	/* the costly part executed as a parallel block */
 	if ((loopvar = newTmpVariable(smb, TYPE_bit)) < 0) {
-		freeInstruction(pack);
+		freeInstruction(smb, pack);
 		msg = createException(MAL, "bat.orderidx",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	q = newStmt(smb, languageRef, dataflowRef);
 	if (q == NULL) {
-		freeInstruction(pack);
+		freeInstruction(smb, pack);
 		msg = createException(MAL, "bat.orderidx",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -164,8 +164,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		/* add slice instruction */
 		q = newInstruction(smb, algebraRef, sliceRef);
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
-			freeInstruction(q);
-			freeInstruction(pack);
+			freeInstruction(smb, q);
+			freeInstruction(smb, pack);
 			msg = createException(MAL, "bat.orderidx",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -187,8 +187,8 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		/* add sort instruction */
 		q = newInstruction(smb, algebraRef, putName("orderidx"));
 		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
-			freeInstruction(q);
-			freeInstruction(pack);
+			freeInstruction(smb, q);
+			freeInstruction(smb, pack);
 			msg = createException(MAL, "bat.orderidx",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;

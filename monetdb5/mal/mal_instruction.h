@@ -151,8 +151,7 @@ mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
 mal_export InstrPtr copyInstruction(MalBlkPtr mb, const InstrRecord *p);
 mal_export InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args);
 mal_export void clrInstruction(InstrPtr p);
-mal_export void freeInstruction(InstrPtr p);
-mal_export void freeInstructionX(InstrPtr p, MalBlkPtr mb);
+mal_export void freeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
 mal_export Symbol newSymbol(const char *nme, int kind);
 mal_export void freeSymbol(Symbol s);

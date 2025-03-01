@@ -1330,7 +1330,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			ul = rel_project(v->sql->sa, ul, NULL);
 			ul->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
-			ul->exps = list_distinct(list_merge(ul->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
+			ul->exps = list_distinct(list_join(ul->exps, exps_copy(v->sql, rcopy)), (fcmp) exp_equal, (fdup) NULL);
 			ul->nrcols = list_length(ul->exps);
 			ul->r = exps_copy(v->sql, r->r);
 			set_processed(ul);
@@ -1340,7 +1340,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			ur = rel_project(v->sql->sa, ur, NULL);
 			ur->exps = exps_copy(v->sql, r->exps);
 			/* possibly add order by column */
-			ur->exps = list_distinct(list_merge(ur->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
+			ur->exps = list_distinct(list_join(ur->exps, exps_copy(v->sql, rcopy)), (fcmp) exp_equal, (fdup) NULL);
 			ur->nrcols = list_length(ur->exps);
 			ur->r = exps_copy(v->sql, r->r);
 			set_processed(ur);
@@ -1352,7 +1352,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
-			u->exps = list_distinct(list_merge(u->exps, rcopy, NULL), (fcmp) exp_equal, (fdup) NULL);
+			u->exps = list_distinct(list_join(u->exps, rcopy), (fcmp) exp_equal, (fdup) NULL);
 			if (need_distinct(r)) {
 				set_distinct(ul);
 				set_distinct(ur);

@@ -420,7 +420,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 							}
 							getArg(r, 0) = newTmpVariable(mb, TYPE_void);
 							if (getArg(r, 0) < 0) {
-								freeInstruction(r);
+								freeInstruction(mb, r);
 								msg = createException(MAL, "optimizer.dataflow",
 													  SQLSTATE(HY013)
 													  MAL_MALLOC_FAIL);

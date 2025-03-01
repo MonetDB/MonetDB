@@ -100,6 +100,7 @@ extern list *list_sort(list *l, fkeyvalue key, fdup dup);
 extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
 extern list *list_merge_destroy(list *l, list *data, fdup dup);
+extern list *list_join(list *l, list *data);
 
 extern list *list_flatten(list *l);
 

@@ -83,7 +83,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			k = getArg(p, 0);
 			varisfor[k] = getArg(p, 1);
 			varforvalue[k] = getArg(p, 2);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			continue;
 		}
 		int done = 0;
@@ -108,7 +108,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisfor[l] = getArg(r, 0);
 					varforvalue[l] = varforvalue[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (p->argc == 2 && p->retc == 1
@@ -117,7 +117,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					int l = getArg(p, 0);
 					varisfor[l] = varisfor[k];
 					varforvalue[l] = varforvalue[k];
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == algebraRef
@@ -132,7 +132,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if ((getModuleId(p) == batRef
@@ -149,7 +149,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = varisfor[k];
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (getFunctionId(p) == thetaselectRef) {
@@ -196,7 +196,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					getArg(q, j) = varisfor[k];
 					getArg(q, 3) = getArg(r, 0);
 					pushInstruction(mb, q);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 #if 0
@@ -220,7 +220,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					r = pushArgument(mb, r, getArg(p, 7));	/* anti */
 					r = pushArgument(mb, r, getArg(p, 8));	/* unknown */
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (isSelect(p)) {
@@ -267,7 +267,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					t = pushBit(mb, t, TRUE);	/* max_one */
 					t = pushNil(mb, t, TYPE_lng);	/* estimate */
 					pushInstruction(mb, t);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 #endif
@@ -298,7 +298,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					varisfor[l] = varisfor[m] = varisfor[k];
 					varforvalue[l] = varforvalue[m] = getArg(r, 0);
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else if (getModuleId(p) == groupRef
@@ -317,7 +317,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					getArg(r, j) = input;
 					pushInstruction(mb, r);
-					freeInstruction(p);
+					freeInstruction(mb, p);
 					done = 1;
 					break;
 				} else {
@@ -349,7 +349,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (; i < slimit; i++)
 		if (old[i])
-			freeInstruction(old[i]);
+			freeInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

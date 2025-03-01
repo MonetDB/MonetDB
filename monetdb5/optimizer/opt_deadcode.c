@@ -104,7 +104,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (se)
 				pushInstruction(mb, p);
 			else {
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			}
 		}

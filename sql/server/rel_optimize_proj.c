@@ -33,6 +33,7 @@ static list *
 rel_used_projections(mvc *sql, list *exps, list *users)
 {
 	list *nexps = sa_list(sql->sa);
+	sa_open(sql->ta);
 	bool *used = SA_ZNEW_ARRAY(sql->ta, bool, list_length(exps));
 	int i = 0;
 
@@ -48,6 +49,7 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 		if (is_intern(e) || used[i])
 			append(nexps, e);
 	}
+	sa_close(sql->ta);
 	return nexps;
 }
 
@@ -579,7 +581,7 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			}
 		} else if (is_join(rel->op) && list_empty(rel->attr)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
-			list_merge(exps, r_exps, (fdup)NULL);
+			list_join(exps, r_exps);
 		}
 		if (!list_empty(rel->attr))
 			append(exps, exp_ref(v->sql, rel->attr->h->data));
@@ -2179,12 +2181,12 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 			cr = j->r = rel_groupby(sql, cr, gbe);
 		else
 			cr = j->l = rel_groupby(sql, cr, gbe);
-		cr->exps = list_merge(cr->exps, aggrs, (fdup)NULL);
+		cr->exps = list_join(cr->exps, aggrs);
 		set_processed(cr);
 		if (!is_project(cl->op))
 			cl = rel_project(sql->sa, cl,
 				rel_projections(sql, cl, NULL, 1, 1));
-		cl->exps = list_merge(cl->exps, aliases, (fdup)NULL);
+		cl->exps = list_join(cl->exps, aliases);
 		set_processed(cl);
 		if (!left)
 			j->l = cl;
@@ -2318,6 +2320,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	list *gbe = rel->r;
 
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
+		sa_open(v->sql->ta);
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
@@ -2434,11 +2437,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					/* only one reduction at a time */
 					list_hash_clear(rel->exps);
 					v->changes++;
+					sa_close(v->sql->ta);
 					return rel;
 				}
 				gbe = rel->r;
 			}
 		}
+		sa_close(v->sql->ta);
 	}
 	/* remove constants from group by list */
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
@@ -2645,7 +2650,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 						n = next;
 					}
 					rel->r = NULL; /* transform it into a global aggregate */
-					rel->exps = list_merge(nexps, rel->exps, (fdup) NULL); /* add grouping columns back as projections */
+					rel->exps = list_join(nexps, rel->exps); /* add grouping columns back as projections */
 					/* global aggregates may return 1 row, so filter it based on the count */
 					sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 					sql_exp *count = exp_aggr(v->sql->sa, NULL, cf, 0, 1, CARD_ATOM, 0);
@@ -3306,7 +3311,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 			if (is_munion(c->op)) {
 				c = rel_dup(c);
 				list_remove_node(l, NULL, n);
-				l = list_merge(l, c->l, (fdup)NULL);
+				l = list_join(l, c->l);
 				c->l = NULL;
 				rel_destroy(v->sql, oc);
 				if (!next)

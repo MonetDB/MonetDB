@@ -102,14 +102,14 @@ inlineMALblock(Client cntxt, MalBlkPtr mb, int pc, MalBlkPtr mc)
 	}
 
 	/* copy the remainder of the stable part */
-	freeInstructionX(p, mb);
+	freeInstruction(mb, p);
 	for (i = pc + 1; i < mb->stop; i++) {
 		ns[k++] = mb->stmt[i];
 	}
 	/* remove any free instruction */
 	for (; i < mb->ssize; i++)
 		if (mb->stmt[i]) {
-			//freeInstruction(mb->stmt[i]);
+			freeInstruction(mb, mb->stmt[i]);
 			mb->stmt[i] = 0;
 		}
 	//GDKfree(mb->stmt);

@@ -1729,7 +1729,7 @@ fcnHeader(Client cntxt, int kind)
 		ch = currChar(cntxt);
 	}
 	if (currChar(cntxt) != ')') {
-		freeInstruction(curInstr);
+		freeInstruction(curBlk, curInstr);
 		if (cntxt->backup)
 			curBlk = NULL;
 		parseError(cntxt, "')' expected\n");
@@ -1799,7 +1799,7 @@ fcnHeader(Client cntxt, int kind)
 			curInstr->argv[i1] = newarg[i1];
 		GDKfree(newarg);
 		if (currChar(cntxt) != ')') {
-			freeInstruction(curInstr);
+			freeInstruction(curBlk, curInstr);
 			if (cntxt->backup)
 				curBlk = NULL;
 			parseError(cntxt, "')' expected\n");
@@ -1810,7 +1810,7 @@ fcnHeader(Client cntxt, int kind)
 		setVarType(curBlk, 0, TYPE_void);
 	}
 	if (curInstr != getInstrPtr(curBlk, 0)) {
-		freeInstruction(getInstrPtr(curBlk, 0));
+		freeInstruction(curBlk, getInstrPtr(curBlk, 0));
 		putInstrPtr(curBlk, 0, curInstr);
 	}
 	return curBlk;
@@ -2040,11 +2040,11 @@ parseAssign(Client cntxt, int cntrl)
 			l = idLength(cntxt);
 			i = cstToken(cntxt, curBlk, &cst);
 			if (l == 0 || i) {
-				freeInstructionX(curInstr, curBlk);
+				freeInstruction(curBlk, curInstr);
 				parseError(cntxt, "<identifier> or <literal> expected\n");
 				return;
 			}
-			GETvariable(freeInstructionX(curInstr, curBlk));
+			GETvariable(freeInstruction(curBlk, curInstr));
 			if (currChar(cntxt) == ':') {
 				type = typeElm(cntxt, getVarType(curBlk, varid));
 				if (type < 0)
@@ -2080,7 +2080,7 @@ parseAssign(Client cntxt, int cntrl)
 				cntrl == RETURNsymbol || cntrl == EXITsymbol) {
 				curInstr->argv[0] = getBarrierEnvelop(curBlk);
 				if (currChar(cntxt) != ';') {
-					freeInstructionX(curInstr, curBlk);
+					freeInstruction(curBlk, curInstr);
 					parseError(cntxt,
 							   "<identifier> or <literal> expected in control statement\n");
 					return;
@@ -2089,7 +2089,7 @@ parseAssign(Client cntxt, int cntrl)
 				return;
 			}
 			getArg(curInstr, 0) = newTmpVariable(curBlk, TYPE_any);
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, "<identifier> or <literal> expected\n");
 			return;
 		}
@@ -2100,7 +2100,7 @@ parseAssign(Client cntxt, int cntrl)
 		}
 
 		/* Get target variable details */
-		GETvariable(freeInstructionX(curInstr, curBlk));
+		GETvariable(freeInstruction(curBlk, curInstr));
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {
@@ -2154,7 +2154,7 @@ parseAssign(Client cntxt, int cntrl)
 		/* continue with parsing a function/operator call */
 		arg = putNameLen(CURRENT(cntxt), l);
 		if (arg == NULL) {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return;
 		}
@@ -2167,19 +2167,19 @@ parseAssign(Client cntxt, int cntrl)
 		if (i) {
 			setFunctionId(curInstr, putNameLen(((char *) CURRENT(cntxt)), i));
 			if (getFunctionId(curInstr) == NULL) {
-				freeInstructionX(curInstr, curBlk);
+				freeInstruction(curBlk, curInstr);
 				parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return;
 			}
 			advance(cntxt, i);
 		} else {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, "<functionname> expected\n");
 			return;
 		}
 		skipSpace(cntxt);
 		if (currChar(cntxt) != '(') {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, "'(' expected\n");
 			return;
 		}
@@ -2205,20 +2205,20 @@ parseAssign(Client cntxt, int cntrl)
 		/* simple arithmetic operator expression */
 		setFunctionId(curInstr, putNameLen(((char *) CURRENT(cntxt)), i));
 		if (getFunctionId(curInstr) == NULL) {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return;
 		}
 		advance(cntxt, i);
 		curInstr->modname = calcRef;
 		if (curInstr->modname == NULL) {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return;
 		}
 		if ((l = idLength(cntxt))
 			&& !(l == 3 && strncmp(CURRENT(cntxt), "nil", 3) == 0)) {
-			GETvariable(freeInstructionX(curInstr, curBlk));
+			GETvariable(freeInstruction(curBlk, curInstr));
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			goto part3;
 		}
@@ -2228,17 +2228,17 @@ parseAssign(Client cntxt, int cntrl)
 		case 3:
 			goto part3;
 		}
-		freeInstructionX(curInstr, curBlk);
+		freeInstruction(curBlk, curInstr);
 		parseError(cntxt, "<term> expected\n");
 		return;
 	} else {
 		skipSpace(cntxt);
 		if (currChar(cntxt) == '(') {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, "module name missing\n");
 			return;
 		} else if (currChar(cntxt) != ';' && currChar(cntxt) != '#') {
-			freeInstructionX(curInstr, curBlk);
+			freeInstruction(curBlk, curInstr);
 			parseError(cntxt, "operator expected\n");
 			return;
 		}
@@ -2248,7 +2248,7 @@ parseAssign(Client cntxt, int cntrl)
   part3:
 	skipSpace(cntxt);
 	if (currChar(cntxt) != ';') {
-		freeInstructionX(curInstr, curBlk);
+		freeInstruction(curBlk, curInstr);
 		parseError(cntxt, "';' expected\n");
 		skipToEnd(cntxt);
 		return;
@@ -2256,7 +2256,7 @@ parseAssign(Client cntxt, int cntrl)
 	skipToEnd(cntxt);
 	if (cntrl == RETURNsymbol
 		&& !(curInstr->token == ASSIGNsymbol || getModuleId(curInstr) != 0)) {
-		freeInstructionX(curInstr, curBlk);
+		freeInstruction(curBlk, curInstr);
 		parseError(cntxt, "return assignment expected\n");
 		return;
 	}
@@ -2321,12 +2321,12 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines,
 				curInstr->barrier = 0;
 				if (VALinit(curBlk->ma, &cst, TYPE_str, start) == NULL) {
 					parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					freeInstruction(curInstr);
+					freeInstruction(curBlk, curInstr);
 					continue;
 				}
 				int cstidx = defConstant(curBlk, TYPE_str, &cst);
 				if (cstidx < 0) {
-					freeInstruction(curInstr);
+					freeInstruction(curBlk, curInstr);
 					continue;
 				}
 				getArg(curInstr, 0) = cstidx;

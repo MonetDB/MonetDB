@@ -126,7 +126,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (q->argc <= p->argc) {
 				assert(0);
 				/* no change */
-				freeInstruction(q);
+				freeInstruction(mb, q);
 				goto wrapup;
 			}
 			/*
@@ -137,7 +137,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (getBatType(getArgType(mb, q, j)) != TYPE_oid
 					&& getBatType(getArgType(mb, q, j)) != TYPE_void) {
 					/* don't use the candidate list */
-					freeInstruction(q);
+					freeInstruction(mb, q);
 					goto wrapup;
 				}
 
@@ -148,7 +148,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				setFunctionId(q, projectionpathRef);
 			q->typeresolved = false;
 
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			p = q;
 			/* keep track of the longest projection path */
 			if (p->argc > maxprefixlength)

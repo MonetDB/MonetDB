@@ -304,7 +304,7 @@ merge_freevar(list *l, list *r, bool all)
 		return r;
 	if (!r)
 		return l;
-	r  = list_merge(l, r, (fdup)NULL);
+	r  = list_join(l, r);
 	if (all)
 		return r;
 	return list_distinct(r, (fcmp)freevar_equal, (fdup)NULL);
@@ -813,7 +813,7 @@ rel_general_unnest(mvc *sql, sql_rel *rel, list *ad)
 				rel->exps = sa_list(sql->sa);
 			append(rel->exps, e);
 		}
-		list_merge(r->exps, fd, (fdup)NULL);
+		r->exps = list_join(r->exps, fd);
 		rel->r = r;
 		reset_dependent(rel);
 		return rel;
@@ -1416,8 +1416,8 @@ push_up_join(mvc *sql, sql_rel *rel, list *ad)
 					set_single(n);
 				if (!n->exps)
 					n->exps = inner_exps;
-				else
-					n->exps = list_merge(n->exps, inner_exps, (fdup)NULL);
+				else if (inner_exps)
+					n->exps = list_join(n->exps, inner_exps);
 				j->op = rel->op;
 				if (is_semi(rel->op)) {
 					j->op = op_left;
@@ -1567,7 +1567,7 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 					list_append(sexps, exp_ref(sql, e));
 				}
-				ns->exps = list_merge(sexps, ns->exps, (fdup)NULL);
+				ns->exps = list_join(sexps, ns->exps);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
 			ns->l = rel_project(sql->sa, ns->l, rel_projections(sql, ns->l, NULL, 1, 1));
@@ -1658,7 +1658,7 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 					sql_exp *e = n->data;
 					set_freevar(e, 0);
 				}
-				sl->exps = list_merge(exps, sl->exps, (fdup)NULL);
+				sl->exps = list_join(exps, sl->exps);
 				sql_rel *nl = rel_crossproduct(sql->sa, rel_dup(d), sl->l, rel->op);
 				nl->exps = exps_copy(sql, rel->exps);
 				set_dependent(nl);
@@ -1683,7 +1683,7 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 
 					list_append(sexps, exp_ref(sql, e));
 				}
-				ns->exps = list_merge(sexps, ns->exps, (fdup)NULL);
+				ns->exps = list_join(sexps, ns->exps);
 			}
 			/* add/remove projections to inner parts of the union (as we push a join or semijoin down) */
 			for(node *n = rec?rlist->h->next:rlist->h; n; n = n->next) {
@@ -2691,7 +2691,7 @@ aggrs_split_funcs(mvc *sql, sql_rel *rel)
 		if (!list_empty(projs)) {
 			/* the grouping relation may have more than 1 reference, a replacement is needed */
 			sql_rel *l = rel_dup_copy(sql->sa, rel);
-			list *nexps = list_merge(rel_projections(sql, l, NULL, 1, 1), projs, NULL);
+			list *nexps = list_join(rel_projections(sql, l, NULL, 1, 1), projs);
 			rel = rel_inplace_project(sql->sa, rel, l, nexps);
 			rel->card = exps_card(nexps);
 		}
@@ -2749,6 +2749,7 @@ static inline sql_rel *
 rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
+		sa_open(v->sql->ta);
 		int i = 0;
 		bool has_complex_exps = false, has_simple_exps = false, *complex_exps = SA_NEW_ARRAY(v->sql->ta, bool, list_length(rel->exps));
 
@@ -2783,6 +2784,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 			set_processed(nsel);
 			v->changes++;
 		}
+		sa_close(v->sql->ta);
 	}
 	return rel;
 }
@@ -2848,6 +2850,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
 	if (gbe || obe) {
+		sa_open(v->sql->ta);
 		int gbeoffset = list_length(gbe), i = 0, added = 0;
 		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
 		if (gbe)
@@ -3008,6 +3011,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 		}
+		sa_close(v->sql->ta);
 
 		/* move rank down add ref */
 		if (!exp_name(e))
@@ -3952,7 +3956,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					n->data = ne;
 				}
 			}
-			exps = list_merge(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
+			exps = list_join(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps);
 			rel = rel_project(v->sql->sa, rel, exps);
 			set_processed(rel);
 			r->used |= rewrite_fix_count_used;
@@ -4169,7 +4173,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 			append(l, ne);
 	}
 	if (!end)
-		nilrel->exps = list_merge(l, nilrel->exps, NULL);
+		nilrel->exps = list_join(l, nilrel->exps);
 	nilrel->nrcols = list_length(nilrel->exps);
 	return nilrel;
 }
@@ -4576,12 +4580,12 @@ run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direc
 	int changes = v->changes;
 	lng clk = GDKusec();
 	rel = rel_exp_visitor_bottomup(v, rel, rewriter, direction);
-	printf("%s %d " LLFMT "\n", name, (v->changes - changes), (GDKusec() - clk));
+	printf("%s %d %d %d " LLFMT "\n", name, (int)v->sql->sa->usedmem, (int)v->sql->sa->inuse, (v->changes - changes), (GDKusec() - clk));
 	return rel;
 #else
 */
 	return rel_exp_visitor_bottomup(v, rel, rewriter, direction);
-/*#endif*/
+//#endif
 }
 
 static inline sql_rel *
@@ -4593,12 +4597,12 @@ run_rel_rewriter(visitor *v, sql_rel *rel, rel_rewrite_fptr rewriter, const char
 	int changes = v->changes;
 	lng clk = GDKusec();
 	rel = rel_visitor_bottomup(v, rel, rewriter);
-	printf("%s %d " LLFMT "\n", name, (v->changes - changes), (GDKusec() - clk));
+	printf("%s %d %d %d " LLFMT "\n", name, (int)v->sql->sa->usedmem, (int)v->sql->sa->inuse, (v->changes - changes), (GDKusec() - clk));
 	return rel;
 #else
 */
 	return rel_visitor_bottomup(v, rel, rewriter);
-/*#endif*/
+//#endif
 }
 
 sql_rel *

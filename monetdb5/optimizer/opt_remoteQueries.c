@@ -132,9 +132,9 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 	do {																\
 		for (j = p->retc; j < p->argc; j++) {							\
 			if (location[getArg(p, j)] == 0 && !isVarConstant(mb, getArg(p, j))) { \
-				q = newInstruction(0, mapiRef, putRef);					\
+				q = newInstruction(mb, mapiRef, putRef);					\
 				if (q == NULL) {										\
-					freeInstruction(r);									\
+					freeInstruction(mb, r);									\
 					msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					break;												\
 				}														\
@@ -152,7 +152,7 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 		s = RQcall2str(buf, mb, p);				\
 		r = pushStr(mb, r, s + 1);				\
 		pushInstruction(mb, r);					\
-		freeInstruction(p);						\
+		freeInstruction(mb, p);					\
 		actions++;								\
 	} while (0)
 
@@ -241,7 +241,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				s = RQcall2str(buf, mb, p);
 				r = pushStr(mb, r, s + 1);
 				pushInstruction(mb, r);
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			}
 		} else if ((getModuleId(p) == sqlRef && getFunctionId(p) == bindRef)) {
@@ -351,7 +351,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						&& !isVarConstant(mb, getArg(p, j))) {
 						q = newInstruction(0, mapiRef, putRef);
 						if (q == NULL) {
-							freeInstruction(r);
+							freeInstruction(mb, r);
 							msg = createException(MAL, "optimizer.remote",
 												  SQLSTATE(HY013)
 												  MAL_MALLOC_FAIL);
@@ -368,7 +368,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				(void) pushStr(mb, r, s + 1);
 				for (j = 0; j < p->retc; j++)
 					location[getArg(p, j)] = remoteSite;
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			} else
 				pushInstruction(mb, p);

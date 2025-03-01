@@ -161,8 +161,14 @@ rel_destroy(mvc *sql, sql_rel *rel)
 	if (!list_empty(rel->exps) && sql && (!rel->l) && (!rel->r)) {
 		// perhaps separate allocator for exps
 		// for later
-		free_exps_list(sql->sa, rel->exps);
+		free_exps(sql->sa, rel->exps);
 		rel->exps = NULL;
+		/*
+		if (rel->r && is_project(rel->op))
+			free_exps(sql->sa, rel->r);
+		if (rel->attr)
+			free_exps(sql->sa, rel->attr);
+			*/
 	}
 }
 
@@ -1318,7 +1324,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
 		if (rexps)
-			lexps = list_merge(lexps, rexps, (fdup)NULL);
+			lexps = list_join(lexps, rexps);
 		if (rel->attr)
 			append(lexps, exp_ref(sql, rel->attr->h->data));
 		return lexps;
@@ -1740,12 +1746,10 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 		/* merge and expressions */
 		ll = l->l;
 		while (ll && is_select(ll->op) && !rel_is_ref(ll)) {
-			// need a copy of ll->exps, ll will be destroyed
-			// FIX version of list_merge with allocator
-			// now we loop twice over ll->exps
-			list_merge(l->exps, exps_copy(sql, ll->exps), (fdup)NULL);
+			list_join(l->exps, ll->exps);
+			ll->exps = NULL; /* have been moved over to l->exps */
 			l->l = ll->l;
-			ll->l = NULL;
+			ll->l = NULL; /* has been moved to l */
 			rel_destroy(sql, ll);
 			ll = l->l;
 		}
