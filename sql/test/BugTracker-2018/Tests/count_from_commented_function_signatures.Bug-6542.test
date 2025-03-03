@@ -45,10 +45,10 @@ project (
 | | | | | | | | | | | | select (
 | | | | | | | | | | | | | table("sys"."myfunctions") [ "myfunctions"."id" NOT NULL UNIQUE as "f"."id", "myfunctions"."schema_id" NOT NULL UNIQUE as "f"."schema_id", "myfunctions"."system" NOT NULL UNIQUE as "f"."system" ]
 | | | | | | | | | | | | ) [ ("f"."system" NOT NULL UNIQUE) = (boolean(1) "true") ],
-| | | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" NOT NULL UNIQUE as "s"."id" ]
-| | | | | | | | | | | ) [ ("f"."schema_id" NOT NULL UNIQUE) = ("s"."id" NOT NULL UNIQUE) ],
-| | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL UNIQUE HASHCOL  as "c"."id" ]
-| | | | | | | | | | ) [ ("f"."id" NOT NULL UNIQUE) = ("c"."id" NOT NULL UNIQUE HASHCOL ) ],
+| | | | | | | | | | | | table("sys"."comments") [ "comments"."id" NOT NULL UNIQUE HASHCOL  as "c"."id" ]
+| | | | | | | | | | | ) [ ("f"."id" NOT NULL UNIQUE) = ("c"."id" NOT NULL UNIQUE HASHCOL ) ],
+| | | | | | | | | | | table("sys"."schemas") [ "schemas"."id" NOT NULL UNIQUE as "s"."id" ]
+| | | | | | | | | | ) [ ("f"."schema_id" NOT NULL UNIQUE) = ("s"."id" NOT NULL UNIQUE) ],
 | | | | | | | | | | select (
 | | | | | | | | | | | table("sys"."args") [ "args"."func_id" NOT NULL as "p"."func_id", "args"."inout" NOT NULL as "p"."inout", "args"."number" NOT NULL as "p"."number" ]
 | | | | | | | | | | ) [ ("p"."inout" NOT NULL) = (tinyint(1) "1") ]

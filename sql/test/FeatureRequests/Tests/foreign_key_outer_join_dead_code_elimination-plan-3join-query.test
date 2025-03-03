@@ -35,7 +35,7 @@ plan select id from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.p
 project (
 | select (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
-| ) [ ("fk"."%fk_fk2_fkey") ! * = (oid(63) NULL), ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ]
+| ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL), ("fk"."%fk_fk2_fkey") ! * = (oid(63) NULL) ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
 
 query T python .plan.filter
@@ -56,10 +56,9 @@ plan select id, v2 from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = p
 ----
 project (
 | join (
-| | semijoin (
-| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ],
-| | | table("sys"."pk1") [ "pk1"."%TID%" NOT NULL UNIQUE ]
-| | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ],
+| | select (
+| | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
+| | ) [ ("fk"."%fk_fk1_fkey") ! * = (oid(63) NULL) ],
 | | table("sys"."pk2") [ "pk2"."v2" NOT NULL UNIQUE, "pk2"."%TID%" NOT NULL UNIQUE ]
 | ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" NOT NULL ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
