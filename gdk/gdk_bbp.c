@@ -3001,19 +3001,6 @@ decref(bat i, bool logical, bool lock, const char *func)
 			MT_lock_set(&b->theaplock);
 			locked = true;
 		}
-#if 0
-		if (b->batCount > b->batInserted && !isVIEW(b)) {
-			/* if batCount is larger than batInserted and
-			 * the dirty bits are off, it may be that a
-			 * (sub)commit happened in parallel to an
-			 * update; we must undo the turning off of the
-			 * dirty bits */
-			if (b->theap && b->theap->parentid == i)
-				b->theap->dirty = true;
-			if (b->tvheap && b->tvheap->parentid == i)
-				b->tvheap->dirty = true;
-		}
-#endif
 		if (b->theap)
 			farmid = b->theap->farmid;
 	}
