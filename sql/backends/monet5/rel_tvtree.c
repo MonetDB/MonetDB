@@ -103,6 +103,8 @@ append_values_from_varchar(backend *be, tv_tree *t, stmt *sl, stmt *left, stmt *
 
 	switch(t->tvt) {
 		case TV_BASIC:
+			assert(sl->type == result || sl->type == st_list);
+
 			if (sl->type == st_result)
 				list_append(t->vals, sl);
 			else if (sl->type == st_list) {
