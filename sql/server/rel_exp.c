@@ -3220,6 +3220,7 @@ exp_copy(mvc *sql, sql_exp * e)
 			else
 				ne->r = list_append(sa_list(sql->sa), exps_copy(sql, er->h->data));
 		}
+		ne->flag = e->flag;
 		break;
 	}
 	case e_atom:
