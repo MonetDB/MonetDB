@@ -96,10 +96,11 @@ tv_create(backend *be, sql_subtype *st)
 static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel);
 
-static bool
-append_values_from_varchar(backend *be, tv_tree *t, stmt *sl, stmt *left, stmt *sel, int *sid)
+static int
+append_values_from_varchar(backend *be, tv_tree *t, stmt *sl, stmt *left, stmt *sel)
 {
     node *n, *m;
+    int sid = 0;
 
 	switch(t->tvt) {
 		case TV_BASIC:
@@ -110,38 +111,34 @@ append_values_from_varchar(backend *be, tv_tree *t, stmt *sl, stmt *left, stmt *
 			else if (sl->type == st_list) {
 				stmt *sa = sl->op4.lval->h->data;
 				list_append(t->vals, sa->op1);
-
-				// caller (self with TV_MSET/SETOF) asserts proper sid value
-				(*sid)++;
 			}
-			return true;
+			return 1;
 		case TV_COMP:
-			for (n = t->ctl->h, m = sl->op4.lval->h; n; n = n->next, m = m->next, (*sid)++) {
+			for (n = t->ctl->h, m = sl->op4.lval->h; n; n = n->next, m = m->next) {
 			    stmt *ts = m->data;
 			    assert(ts->type == st_alias);
-				if (!append_values_from_varchar(be, n->data, ts->op1, left, sel, sid))
-					return false;
+				append_values_from_varchar(be, n->data, ts->op1, left, sel);
 			}
-			return true;
+			return list_length(t->ctl);
 		case TV_MSET:
 		case TV_SETOF:
 			assert(list_length(t->ctl) == 1);
 
-			append_values_from_varchar(be, t->ctl->h->data, sl, left, sel, sid);
+			sid = append_values_from_varchar(be, t->ctl->h->data, sl, left, sel);
 
-			list_append(t->msid, list_fetch(sl->op4.lval, (*sid)++));
+			list_append(t->msid, list_fetch(sl->op4.lval, sid++));
 			if (t->tvt == TV_MSET)
-				list_append(t->msnr, list_fetch(sl->op4.lval, (*sid)++));
-			list_append(t->rid, list_fetch(sl->op4.lval, (*sid)++));
+				list_append(t->msnr, list_fetch(sl->op4.lval, sid++));
+			list_append(t->rid, list_fetch(sl->op4.lval, sid++));
 
-			assert(list_length(sl->op4.lval) == *sid);
+			assert(list_length(sl->op4.lval) == sid);
 
-			return true;
+			return sid;
 		default:
 			assert(0);
 			break;
 	}
-	return true;
+	return 0;
 }
 
 static bool
@@ -204,8 +201,7 @@ mset_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, st
 
 	assert(i->type == st_list);
 
-	int sid = 0;
-	append_values_from_varchar(be, t, i, left, sel, &sid);
+	append_values_from_varchar(be, t, i, left, sel);
 
     return true;
 }
@@ -234,9 +230,7 @@ comp_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, st
 	if (!i)
 		return false;
 
-	// TODO: consume all the values
-	int sid = 0;
-	append_values_from_varchar(be, t, i, left, sel, &sid);
+	append_values_from_varchar(be, t, i, left, sel);
 
 	return true;
 }
