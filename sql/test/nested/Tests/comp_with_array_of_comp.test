@@ -1,0 +1,99 @@
+statement ok
+create type incomp as (n int, q text)
+
+statement ok
+create type comp_pre as (ac incomp[], m int)
+
+statement ok
+create table cac_pre (cac comp_pre, k int)
+
+statement ok
+insert into cac_pre values ((array[(11, 'a01'), (12, 'a02')], 10), 100), ((array[(21, 'b01'), (22, 'b02')], 20), 200)
+
+statement ok
+insert into cac_pre values ('({(31, "c01"), (32, "c02")}, 30)', 300), ('({(41, "d01"), (42, "d02")}, 40)', 400)
+
+query ITII nosort unnest_full
+select arr.n, arr.q, cac.m, cac_pre.k from cac_pre, unnest(cac.ac) as arr
+----
+11
+a01
+10
+100
+12
+a02
+10
+100
+21
+b01
+20
+200
+22
+b02
+20
+200
+31
+c01
+30
+300
+32
+c02
+30
+300
+41
+d01
+40
+400
+42
+d02
+40
+400
+
+statement ok
+create type comp_post as (m int, ac incomp[])
+
+statement ok
+create table cac_post (k int, cac comp_post)
+
+statement ok
+insert into cac_post values (100, (10, array[(11, 'a01'), (12, 'a02')])), (200, (20, array[(21, 'b01'), (22, 'b02')]))
+
+statement ok
+insert into cac_post values (300, '(30, {(31, "c01"), (32, "c02")})'), (400, '(40, {(41, "d01"), (42, "d02")})')
+
+query ITII nosort unnest_full
+select arr.n, arr.q, cac.m, cac_post.k from cac_post, unnest(cac.ac) as arr
+----
+11
+a01
+10
+100
+12
+a02
+10
+100
+21
+b01
+20
+200
+22
+b02
+20
+200
+31
+c01
+30
+300
+32
+c02
+30
+300
+41
+d01
+40
+400
+42
+d02
+40
+400
+
