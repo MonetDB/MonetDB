@@ -98,9 +98,7 @@ list_new_(list *l)
 int
 list_empty(list *l)
 {
-	if (l)
-		return list_length(l) == 0;
-	return 1;
+	return (!l || l->h == NULL);
 }
 
 static void

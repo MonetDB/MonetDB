@@ -3224,8 +3224,7 @@ bind_optimize_semi_and_anti(visitor *v, global_props *gp)
 {
 	/* Important -> Re-write semijoins after rel_join_order */
 	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && (gp->cnt[op_join] || gp->cnt[op_left] || gp->cnt[op_right]
-		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_semi_and_anti) ? rel_optimize_semi_and_anti : NULL;
+	return gp->opt_level == 1 && (gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_semi_and_anti) ? rel_optimize_semi_and_anti : NULL;
 }
 
 

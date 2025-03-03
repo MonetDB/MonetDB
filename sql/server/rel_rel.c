@@ -42,12 +42,12 @@ project_unsafe(sql_rel *rel, bool allow_identity)
 	if (!sub || sub->op == op_ddl)
 		return 1;
 	for(node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data, *ne;
+		sql_exp *e = n->data;//, *ne;
 
 		/* aggr func in project ! */
 		if (exp_unsafe(e, allow_identity, false))
 			return 1;
-		if ((ne = rel_find_exp(rel, e)) && ne != e)
+		if (is_selfref(e))
 			return 1; /* no self referencing */
 	}
 	return 0;

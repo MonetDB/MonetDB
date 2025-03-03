@@ -590,9 +590,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			t = (l->op == op_project && l->l)?l->l:l;
 			l_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with old right expressions */
-			r_exps = rel_projections(v->sql, r, NULL, 1, 1);
-			if (rel->attr)
-				append(r_exps, exp_ref(v->sql, rel->attr->h->data));
 			t = (r->op == op_project && r->l)?r->l:r;
 			r_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with new right expressions */
@@ -2318,12 +2315,12 @@ static inline sql_rel *
 rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 {
 	list *gbe = rel->r;
+	global_props *gp = v->data;
 
-	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
+	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
 		sa_open(v->sql->ta);
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
-		int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
 		sql_column *c;
 		sql_table **tbls = SA_NEW_ARRAY(v->sql->ta, sql_table*, ngbe);
 		sql_rel **bts = SA_NEW_ARRAY(v->sql->ta, sql_rel*, ngbe), *bt = NULL;
@@ -2348,6 +2345,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			 * the other columns using a foreign-key join (n->1), ie 1
 			 * on the to be removed side.
 			 */
+			int8_t *scores = SA_NEW_ARRAY(v->sql->ta, int8_t, ngbe);
 			for(j = 0; j < i; j++) {
 				int l, nr = 0, cnr = 0;
 
@@ -3171,7 +3169,7 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_projections(visitor *v, global_props *gp, sql_rel *rel)
 {
-	(void) gp;
+	v->data = gp;
 	return rel_visitor_topdown(v, rel, &rel_optimize_projections_);
 }
 
