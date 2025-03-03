@@ -97,6 +97,52 @@ static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel);
 
 static bool
+append_values_from_varchar(backend *be, tv_tree *t, stmt *sl, stmt *left, stmt *sel, int *sid)
+{
+    node *n, *m;
+
+	switch(t->tvt) {
+		case TV_BASIC:
+			if (sl->type == st_result)
+				list_append(t->vals, sl);
+			else if (sl->type == st_list) {
+				stmt *sa = sl->op4.lval->h->data;
+				list_append(t->vals, sa->op1);
+
+				// caller (self with TV_MSET/SETOF) asserts proper sid value
+				(*sid)++;
+			}
+			return true;
+		case TV_COMP:
+			for (n = t->ctl->h, m = sl->op4.lval->h; n; n = n->next, m = m->next, (*sid)++) {
+			    stmt *ts = m->data;
+			    assert(ts->type == st_alias);
+				if (!append_values_from_varchar(be, n->data, ts->op1, left, sel, sid))
+					return false;
+			}
+			return true;
+		case TV_MSET:
+		case TV_SETOF:
+			assert(list_length(t->ctl) == 1);
+
+			append_values_from_varchar(be, t->ctl->h->data, sl, left, sel, sid);
+
+			list_append(t->msid, list_fetch(sl->op4.lval, (*sid)++));
+			if (t->tvt == TV_MSET)
+				list_append(t->msnr, list_fetch(sl->op4.lval, (*sid)++));
+			list_append(t->rid, list_fetch(sl->op4.lval, (*sid)++));
+
+			assert(list_length(sl->op4.lval) == *sid);
+
+			return true;
+		default:
+			assert(0);
+			break;
+	}
+	return true;
+}
+
+static bool
 mset_value_from_array_constructor(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
 {
     /* rowid */
@@ -155,35 +201,48 @@ mset_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, st
 		return false;
 
 	assert(i->type == st_list);
-	assert(list_length(i->op4.lval) == 3 || list_length(i->op4.lval) == 4);
 
-	/* vals (in the child tree) */
-	assert(list_length(t->ctl) == 1);
-	tv_tree *ct = t->ctl->h->data;
-	list_append(ct->vals, list_fetch(i->op4.lval, 0));
-
-	/* msid */
-	list_append(t->msid, list_fetch(i->op4.lval, 1));
-
-	if (t->tvt == TV_MSET) {
-		/* msnr */
-		list_append(t->msnr, list_fetch(i->op4.lval, 2));
-		/* rowid */
-		list_append(t->rid, list_fetch(i->op4.lval, 3));
-	} else {
-		/* rowid */
-		list_append(t->rid, list_fetch(i->op4.lval, 2));
-	}
+	int sid = 0;
+	append_values_from_varchar(be, t, i, left, sel, &sid);
 
     return true;
 }
 
 static bool
+comp_value_from_parenthesis(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
+{
+	assert(values->f);
+	list *ct_vals = values->f;
+
+	int cnt = 0;
+	for (node *n = ct_vals->h; n; cnt++, n = n->next)
+		if (false == tv_parse_values_(be, list_fetch(t->ctl, cnt), n->data, left, sel))
+			return false;
+
+	return true;
+}
+
+static bool
+comp_value_from_literal(backend *be, tv_tree *t, sql_exp *values, stmt *left, stmt *sel)
+{
+    assert(t->tvt == TV_COMP);
+	assert(!t->vals && t->ctl);
+
+	stmt *i = exp_bin(be, values, left, NULL, NULL, NULL, NULL, sel, 0, 0, 0);
+	if (!i)
+		return false;
+
+	// TODO: consume all the values
+	int sid = 0;
+	append_values_from_varchar(be, t, i, left, sel, &sid);
+
+	return true;
+}
+
+static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 {
-	int cnt = 0;
 	stmt *i;
-	list *ct_vals;
 
 	switch (t->tvt) {
 		case TV_BASIC:
@@ -203,11 +262,12 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
                 return mset_value_from_array_constructor(be, t, value, left, sel);
             break;
 		case TV_COMP:
-			assert(value->f);
-			ct_vals = value->f;
-			for (node *n = ct_vals->h; n; cnt++, n = n->next)
-				if (false == tv_parse_values_(be, list_fetch(t->ctl, cnt), n->data, left, sel))
-					return false;
+			if (is_convert(value->type))
+				/* VALUES ('(1,"alice")') */
+				return comp_value_from_literal(be, t, value, left, sel);
+			else
+				/* VALUES ((1,'alice')) */
+				return comp_value_from_parenthesis(be, t, value, left, sel);
 			break;
 		default:
 			assert(0);
@@ -267,60 +327,61 @@ tv_parse_values(backend *be, tv_tree *t, sql_exp *col_vals, stmt *left, stmt *se
 	return true;
 }
 
-static void
-tv_generate_stmts_(backend *be, tv_tree *t, list *stmts_list)
+stmt *
+tv_generate_stmts(backend *be, tv_tree *t)
 {
-	stmt *ap, *tmp;
+	stmt *ap, *tmp, *s;
+	list *sl;
 
 	switch (t->tvt) {
 		case TV_BASIC:
-			ap = stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
-			list_append(stmts_list, ap);
-			break;
+			return stmt_append_bulk(be, stmt_temp(be, t->st), t->vals);
 		case TV_MSET:
 		case TV_SETOF:
-
 			/* vals (in the child tree) */
 			assert(list_length(t->ctl) == 1);
 			tv_tree *ct = t->ctl->h->data;
-			tv_generate_stmts_(be, ct, stmts_list);
+			tmp = tv_generate_stmts(be, ct);
+
+			/* if the lower tv node does NOT returns a list (e.g. because
+			 * it is basic type) we need to create it explicitly */
+			if (tmp->type == st_list) {
+				s = tmp;
+			} else {
+				s = stmt_list(be, sa_list(be->mvc->sa));
+				list_append(s->op4.lval, tmp);
+			}
 
 			/* msid */
 			tmp = stmt_temp(be, tail_type(t->msid->h->data));
 			ap = stmt_append_bulk(be, tmp, t->msid);
-			append(stmts_list, ap);
+			append(s->op4.lval, ap);
 
 			/* msnr */
 			if (t->tvt == TV_MSET) {
 				tmp = stmt_temp(be, tail_type(t->msnr->h->data));
 				ap = stmt_append_bulk(be, tmp, t->msnr);
-				append(stmts_list, ap);
+				append(s->op4.lval, ap);
 			}
 
 			/* rid */
 			tmp = stmt_temp(be, tail_type(t->rid->h->data));
 			ap = stmt_append_bulk(be, tmp, t->rid);
-			append(stmts_list, ap);
+			append(s->op4.lval, ap);
 
-			break;
+			/* we've appended in the stmt_list so update nrcols */
+			stmt_set_nrcols(s);
+
+			return s;
 		case TV_COMP:
+			sl = sa_list(be->mvc->sa);
 			/* gather all the composite (sub)field's statements */
 			for (node *n = t->ctl->h; n; n = n->next)
-				tv_generate_stmts_(be, n->data, stmts_list);
-			break;
+				list_append(sl, tv_generate_stmts(be, n->data));
+			return stmt_list(be, sl);
 		default:
 			assert(0);
-			break;
+			return NULL;
 	}
-}
-
-stmt *
-tv_generate_stmts(backend *be, tv_tree *t)
-{
-	list *stmts_list = sa_list(be->mvc->sa);
-	tv_generate_stmts_(be, t, stmts_list);
-	if (t->tvt == TV_BASIC)
-		return stmts_list->h->data;
-	else
-		return stmt_list(be, stmts_list);
+	return s;
 }
