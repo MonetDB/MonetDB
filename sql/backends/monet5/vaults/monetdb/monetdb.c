@@ -206,6 +206,7 @@ sql_template(allocator *sa, const char **parts)
 				*w++ = *r;  // double that quote
 		}
 	}
+	*w = 0;
 
 	assert(w <= result + max_length);
 	return result;
