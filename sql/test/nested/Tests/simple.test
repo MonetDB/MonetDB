@@ -213,3 +213,6 @@ query I
 select count(*) from tpi
 ----
 3
+
+statement ok
+truncate table tpi

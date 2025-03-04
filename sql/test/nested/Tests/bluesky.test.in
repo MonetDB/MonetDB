@@ -4,14 +4,15 @@ create type "subject" as ("cid" varchar, "uri" varchar)
 statement ok
 create type "record" as ("$type" varchar, "createdAt" timestamp, "subject" subject)
 
+# keep record as json e.g. do not decompose
 statement ok
-create type "commit" as ("rev" varchar, "operation" varchar, "collection" varchar, "rkey" varchar, "record" "record", "cid" varchar)
+create type "commit" as ("rev" varchar, "operation" varchar, "collection" varchar, "rkey" varchar, "record" json, "cid" varchar)
 
 statement ok
-create type event as ("did" varchar, "time_us" int, "kind" varchar, "commit" "commit")
+create type event as ("did" varchar, "time_us" bigint, "kind" varchar, "commit" "commit")
 
 statement ok
-create table bluesky ("event" event)
+create table bluesky (data event)
 
 query I
 select count(*) from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json')
@@ -19,7 +20,80 @@ select count(*) from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json')
 10
 
 statement ok
-select cast(t.json as event) as e from (select json from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json')) t
+insert into bluesky select * from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json') 
+
+query T
+SELECT data."commit"."collection" AS event FROM bluesky
+----
+app.bsky.feed.post
+app.bsky.feed.like
+app.bsky.graph.follow
+app.bsky.feed.like
+app.bsky.feed.post
+app.bsky.graph.follow
+app.bsky.graph.follow
+app.bsky.feed.repost
+app.bsky.feed.post
+app.bsky.feed.like
+
+
+# Q1 bluesky benchmark
+query TI
+SELECT data."commit"."collection" AS event, count(*) AS cnt FROM bluesky GROUP BY event ORDER BY cnt DESC
+----
+app.bsky.feed.post
+3
+app.bsky.feed.like
+3
+app.bsky.graph.follow
+3
+app.bsky.feed.repost
+1
+
+
+# Q2 bluesky benchmark
+query TII
+SELECT data."commit"."collection" AS event, count(*) AS cnt, count(distinct data.did) AS users FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' GROUP BY event ORDER BY cnt DESC
+----
+app.bsky.feed.post
+3
+3
+app.bsky.feed.like
+3
+3
+app.bsky.graph.follow
+3
+3
+app.bsky.feed.repost
+1
+1
+
+# Q2 CRASH bluesky benchmark
+#query TII
+#SELECT data."commit"."collection" AS event, "hour"(epoch(cast(data.time_us as bigint)/(1000*1000))) as hour_of_day, count(*) AS cnt FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" in ('app.bsky.feed.post', 'app.bsky.feed.repost', 'app.bsky.feed.like') GROUP BY event, hour_of_day ORDER BY hour_of_day, event
+#----
+
+# Q4
+query TT
+SELECT data.did as user_id, epoch(cast(min(data.time_us) as bigint)/1000000) as first_post_ts FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY first_post_ts ASC LIMIT 3
+----
+"did:plc:yj3sjq3blzpynh27cumnp5ks"
+2024-11-21 17:25:49+01:00
+"did:plc:l5o3qjrmfztir54cpwlv2eme"
+2024-11-21 17:25:49+01:00
+"did:plc:s4bwqchfzm6gjqfeb6mexgbu"
+2024-11-21 17:25:49+01:00
+
+# Q5
+query TI
+SELECT data.did as user_id, timestampdiff(epoch(cast(min(data.time_us) as bigint)/1000000),  epoch(cast(max(data.time_us) as bigint)/1000000))*1000 AS activity_span FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY activity_span DESC LIMIT 3
+----
+"did:plc:yj3sjq3blzpynh27cumnp5ks"
+0:00:00
+"did:plc:l5o3qjrmfztir54cpwlv2eme"
+0:00:00
+"did:plc:s4bwqchfzm6gjqfeb6mexgbu"
+0:00:00
 
 statement ok
 drop table bluesky
