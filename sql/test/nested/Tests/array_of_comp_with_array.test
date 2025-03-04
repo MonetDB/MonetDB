@@ -1,0 +1,170 @@
+statement ok
+create type comp_pre as (ms text[], n int)
+
+statement ok
+create table aca_pre (arr comp_pre[], k int)
+
+statement ok
+insert into aca_pre values (array[(array['Aa01', 'Aa02'], 100), (array['Ab01', 'Ab02'], 110)], 10), (array[(array['Ba01', 'Ba02'], 200), (array['Bb01', 'Bb02'], 210)], 20)
+
+statement ok
+insert into aca_pre values ('{({"Ca01", "Ca02"}, 300), ({"Cb01", "Cb02"}, 310)}', 30), ('{({"Da01", "Da02"}, 400), ({"Db01", "Db02"}, 410)}', 40)
+
+## CRASH - values are the expected ones
+#query TI nosort outer-array-unnest
+#select arr, k from aca_pre, unnest(arr);
+#----
+#({"Aa01", "Aa02"}, 100)
+#10
+#({"Ab01", "Ab02"}, 110)
+#10
+#({"Ba01", "Ba02"}, 200)
+#20
+#({"Bb01", "Bb02"}, 210)
+#20
+#({"Ca01", "Ca02"}, 300)
+#30
+#({"Cb01", "Cb02"}, 310)
+#30
+#({"Da01", "Da02"}, 400)
+#40
+#({"Db01", "Db02"}, 410)
+#40
+
+query TII nosort full-unnest 
+select in_arr.elements, out_arr.n, k from aca_pre, unnest(arr) as out_arr, unnest(out_arr.ms) as in_arr
+----
+Aa01
+100
+10
+Aa02
+100
+10
+Ab01
+110
+10
+Ab02
+110
+10
+Ba01
+200
+20
+Ba02
+200
+20
+Bb01
+210
+20
+Bb02
+210
+20
+Ca01
+300
+30
+Ca02
+300
+30
+Cb01
+310
+30
+Cb02
+310
+30
+Da01
+400
+40
+Da02
+400
+40
+Db01
+410
+40
+Db02
+410
+40
+
+statement ok
+create type comp_post as (n int, ms text[])
+
+statement ok
+create table aca_post (k int, arr comp_post[])
+
+statement ok
+insert into aca_post values (10, array[(100, array['Aa01', 'Aa02']), (110, array['Ab01', 'Ab02'])]), (20, array[(200, array['Ba01', 'Ba02']), (210, array['Bb01', 'Bb02'])])
+
+statement ok
+insert into aca_post values (30, '{(300, {"Ca01", "Ca02"}), (310, {"Cb01", "Cb02"})}'), (40, '{(400, {"Da01", "Da02"}), (410, {"Db01", "Db02"})}')
+
+## CRASH - values are the expected ones
+#query TI nosort outer-array-unnest
+#select arr, k from aca_post, unnest(arr);
+#----
+#({"Aa01", "Aa02"}, 100)
+#10
+#({"Ab01", "Ab02"}, 110)
+#10
+#({"Ba01", "Ba02"}, 200)
+#20
+#({"Bb01", "Bb02"}, 210)
+#20
+#({"Ca01", "Ca02"}, 300)
+#30
+#({"Cb01", "Cb02"}, 310)
+#30
+#({"Da01", "Da02"}, 400)
+#40
+#({"Db01", "Db02"}, 410)
+#40
+
+query TII nosort full-unnest
+select in_arr.elements, out_arr.n, k from aca_post, unnest(arr) as out_arr, unnest(out_arr.ms) as in_arr
+----
+Aa01
+100
+10
+Aa02
+100
+10
+Ab01
+110
+10
+Ab02
+110
+10
+Ba01
+200
+20
+Ba02
+200
+20
+Bb01
+210
+20
+Bb02
+210
+20
+Ca01
+300
+30
+Ca02
+300
+30
+Cb01
+310
+30
+Cb02
+310
+30
+Da01
+400
+40
+Da02
+400
+40
+Db01
+410
+40
+Db02
+410
+40
+
