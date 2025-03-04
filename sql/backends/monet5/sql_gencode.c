@@ -1725,6 +1725,73 @@ _exps_print(mvc *sql, list *l) {
 			_exp_print(sql, n->data);
 }
 
+enum tree_glyphs {
+    TG_DOT = 0,  // ●_
+    TG_BIF,      // ├─
+    TG_COL,      // │_
+    TG_END,      // ╰─
+    TG_SPC,      // __
+    TG_MAX
+} tglyphs;
+
+char *tg[TG_MAX] = {"\U000025cf ",
+                    "\U0000251c\U00002500",
+                    "\U00002502 ",
+                    "\U00002570\U00002500",
+                    "  "};
+
+static void _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last);
+
+static void
+_stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
+{
+    if (depth < 8*sizeof(size_t) && !last)
+        (*lvls) |= (1<<depth);
+
+    for (size_t msk = 1, i = 0; msk && i < depth; msk <<= 1, i++)
+        mnstr_printf(GDKstdout, "%s", ((*lvls)&msk)?tg[TG_COL]:tg[TG_SPC]);
+
+    char *node_prefix = last?tg[TG_END]:tg[TG_BIF];
+    switch (s->type) {
+        case st_list:
+            mnstr_printf(GDKstdout, "%s%sst_list (X_%d)\n",
+                         node_prefix, tg[TG_DOT], s->nr);
+            for (node *n = s->op4.lval->h; n; n = n->next)
+                _stmt_print_list_(n->data, depth+1, lvls, (n == s->op4.lval->t));
+            break;
+        case st_append_bulk:
+            mnstr_printf(GDKstdout, "%s%sst_append_bulk (X_%d)\n",
+                         node_prefix, tg[TG_DOT], s->nr);
+            break;
+        case st_alias:
+            mnstr_printf(GDKstdout, "%s%sst_alias (X_%d)\n",
+                         node_prefix, tg[TG_DOT], s->nr);
+            _stmt_print_list_(s->op1, depth+1, lvls, true);
+            break;
+        default:
+            mnstr_printf(GDKstdout, "%s%sUNKNOWN stmt type=%d (X_%d)\n",
+                         node_prefix, tg[TG_DOT], s->type, s->nr);
+            break;
+    }
+    if (depth < 8*sizeof(size_t) && !last)
+        (*lvls) ^= (1<<depth);
+}
+
+void _stmt_print_list(stmt *sl);
+
+void
+_stmt_print_list(stmt *sl)
+{
+    if (sl->type != st_list) {
+        mnstr_printf(GDKstdout, "WARNING: not st_list statement\n");
+        return;
+    }
+    mnstr_printf(GDKstdout, "%sst_list (X_%d)\n", tg[TG_DOT], sl->nr);
+    size_t lvls = 1;
+    for (node *n = sl->op4.lval->h; n; n = n->next)
+        _stmt_print_list_(n->data, 0, &lvls, (n == sl->op4.lval->t));
+}
+
 void
 rel_print(mvc *sql, sql_rel *rel, int depth)
 {
