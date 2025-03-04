@@ -1890,7 +1890,8 @@ gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 gdk_export bool BATcheckorderidx(BAT *b);
 
-#include "gdk_delta.h"
+#define DELTAdirty(b)	((b)->batInserted < BATcount(b))
+
 #include "gdk_hash.h"
 #include "gdk_bbp.h"
 #include "gdk_utils.h"
