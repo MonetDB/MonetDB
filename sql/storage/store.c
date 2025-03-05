@@ -3911,7 +3911,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 	if (c->def)
 		col->def =_STRDUP(c->def);
 	col->null = c->null;
-	col->colnr = c->colnr;
+	col->colnr = table_next_column_nr(t);
 	col->unique = c->unique;
 	col->t = t;
 	col->storage_type = NULL;
