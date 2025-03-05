@@ -586,6 +586,9 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 				GDKfree(colmetadata);
 				goto finish;
 			}
+			if (dataType == SQL_FLOAT) {
+				dataType = (columnSize == 7) ? SQL_REAL : SQL_DOUBLE;
+			}
 			colmetadata[col].dataType = dataType;
 			colmetadata[col].columnSize = columnSize;
 			colmetadata[col].decimalDigits = decimalDigits;
@@ -680,7 +683,6 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 
 			for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
 				SQLSMALLINT sqltype = colmetadata[col].dataType;
-				int mtype = colmetadata[col].mtype;
 				BAT * b = colmetadata[col].bat;
 				SQLSMALLINT targetType;
 				SQLPOINTER * targetValuePtr;
@@ -731,7 +733,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 						targetValuePtr = (SQLPOINTER *) &flt_val;
 						break;
 					case SQL_FLOAT:
-						if (mtype == TYPE_flt) {
+						if (colmetadata[col].mtype == TYPE_flt) {
 							targetType = SQL_C_FLOAT;
 							targetValuePtr = (SQLPOINTER *) &flt_val;
 						} else {
@@ -874,7 +876,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalStkPtr stk, I
 								gdkret = BUNappend(b, (void *) &dbl_val, false);
 								break;
 							case SQL_FLOAT:
-								if (mtype == TYPE_flt) {
+								if (colmetadata[col].mtype == TYPE_flt) {
 									if (trace_enabled)
 										printf("Data row %lu col %u: %f\n", row, col+1, flt_val);
 									gdkret = BUNappend(b, (void *) &flt_val, false);
