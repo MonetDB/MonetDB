@@ -1726,18 +1726,18 @@ _exps_print(mvc *sql, list *l) {
 }
 
 enum tree_glyphs {
-    TG_DOT = 0,  // ●_
-    TG_BIF,      // ├─
-    TG_COL,      // │_
-    TG_END,      // ╰─
-    TG_SPC,      // __
+    TG_DOT = 0,
+    TG_BIF,
+    TG_COL,
+    TG_END,
+    TG_SPC,
     TG_MAX
 } tglyphs;
 
-char *tg[TG_MAX] = {"\U000025cf ",
-                    "\U0000251c\U00002500",
-                    "\U00002502 ",
-                    "\U00002570\U00002500",
+char *tg[TG_MAX] = {"> ",
+                    "+-",
+                    "| ",
+                    "+-",
                     "  "};
 
 static void _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last);
