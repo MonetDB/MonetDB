@@ -505,8 +505,6 @@ rel_rewrite_remote(visitor *v, global_props *gp, sql_rel *rel)
 	(void) gp;
 	rel = rel_visitor_bottomup(v, rel, &rel_rewrite_remote_);
 	v->data = NULL;
-	rel = rel_visitor_topdown(v, rel, &rel_rewrite_replica_);
-	v->data = NULL;
 	return rel;
 }
 
@@ -526,13 +524,13 @@ rel_remote_func_(visitor *v, sql_rel *rel)
 	/* Don't modify the same relation twice */
 	if (is_rel_remote_func_used(rel->used))
 		return rel;
-	rel->used |= rel_remote_func_used;
 
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		rel = rel_unique_exps(v->sql, rel); /* remove any duplicate results (aliases) */
 		rel = rel_relational_func(v->sql->sa, rel, exps);
 	}
+	rel->used |= rel_remote_func_used;
 	return rel;
 }
 
