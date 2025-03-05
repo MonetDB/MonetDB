@@ -6143,8 +6143,6 @@ rel2bin_insert_ms(backend *be, sql_rel *rel, list *refs)
 		inserts = subrel_bin(be, rel->r, refs);
 	inserts = subrel_project(be, inserts, refs, rel->r);
 
-    _stmt_print_list(inserts);
-
 	if (!inserts)
 		return NULL;
 
