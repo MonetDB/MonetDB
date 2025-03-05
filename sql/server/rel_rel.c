@@ -2368,6 +2368,9 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	if (!rel)
 		return rel;
 
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+		return rel;
+
 	if (relations_topdown) {
 		if (rel->exps && (rel->exps = exps_exp_visitor(v, rel, rel->exps, 0, exp_rewriter, topdown, relations_topdown, false)) == NULL)
 			return NULL;
@@ -2449,19 +2452,28 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 		if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_exp_visitor(v, rel, rel->r, 0, exp_rewriter, topdown, relations_topdown, false)) == NULL)
 			return NULL;
 	}
-
+	if (rel && v->opt >= 0)
+		rel->opt = v->opt;
 	return rel;
 }
 
 sql_rel *
 rel_exp_visitor_topdown(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool relations_topdown)
 {
+	if (!rel)
+		return rel;
+	if (v->opt >= 0)
+		v->opt = rel->opt+1;
 	return rel_exp_visitor(v, rel, exp_rewriter, true, relations_topdown);
 }
 
 sql_rel *
 rel_exp_visitor_bottomup(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool relations_topdown)
 {
+	if (!rel)
+		return rel;
+	if (v->opt >= 0)
+		v->opt = rel->opt+1;
 	return rel_exp_visitor(v, rel, exp_rewriter, false, relations_topdown);
 }
 
@@ -2578,21 +2590,43 @@ do_rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool top
 	return rel;
 }
 
-static inline sql_rel *
+static sql_rel *rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdown);
+
+static sql_rel *
+rel_visitor_td(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
+{
+	v->depth++;
+	rel = rel_visitor(v, rel, rel_rewriter, true);
+	v->depth--;
+	return rel;
+}
+
+static sql_rel *
+rel_visitor_bu(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
+{
+	v->depth++;
+	rel = rel_visitor(v, rel, rel_rewriter, false);
+	v->depth--;
+	return rel;
+}
+
+static sql_rel *
 rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdown)
 {
 	sql_rel *parent = v->parent;
-
 	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
 		return NULL;
 
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+		return rel;
+
 	if (topdown && !(rel = do_rel_visitor(v, rel, rel_rewriter, true)))
 		return NULL;
 
-	sql_rel *(*func)(visitor *, sql_rel *, rel_rewrite_fptr) = topdown ? rel_visitor_topdown : rel_visitor_bottomup;
+	sql_rel *(*func)(visitor *, sql_rel *, rel_rewrite_fptr) = topdown ? rel_visitor_td : rel_visitor_bu;
 
 	v->parent = rel;
 	switch(rel->op){
@@ -2665,12 +2699,18 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 
 	if (!topdown)
 		rel = do_rel_visitor(v, rel, rel_rewriter, false);
+	if (rel && v->opt >= 0)
+		rel->opt = v->opt;
 	return rel;
 }
 
 sql_rel *
 rel_visitor_topdown(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 {
+	if (!rel)
+		return rel;
+	if (v->opt >= 0)
+		v->opt = rel->opt+1;
 	v->depth++;
 	rel = rel_visitor(v, rel, rel_rewriter, true);
 	v->depth--;
@@ -2680,6 +2720,10 @@ rel_visitor_topdown(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 sql_rel *
 rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter)
 {
+	if (!rel)
+		return rel;
+	if (v->opt >= 0)
+		v->opt = rel->opt+1;
 	v->depth++;
 	rel = rel_visitor(v, rel, rel_rewriter, false);
 	v->depth--;

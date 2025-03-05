@@ -330,6 +330,7 @@ typedef struct relation {
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
 	uint8_t used;
+	int opt;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

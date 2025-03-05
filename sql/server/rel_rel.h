@@ -143,6 +143,7 @@ extern list *rel_dependencies(mvc *sql, sql_rel *r);
 typedef struct visitor {
 	int changes;
 	int depth;		/* depth of the current relation */
+	int opt;
 	sql_rel *parent;
 	mvc *sql;
 	void *data;

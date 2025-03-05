@@ -228,7 +228,7 @@ extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 extern stmt *stmt_dict(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_for(backend *be, stmt *op1, stmt *minval);
 
-extern stmt *stmt_list(backend *be, list *l);
+sql_export stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
@@ -261,7 +261,7 @@ sql_export stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *im
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
-extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
+sql_export stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
 sql_export stmt *stmt_alias(backend *be, stmt *op1, int label, sql_alias *tname, const char *name);
 extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
@@ -285,4 +285,5 @@ extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 
+sql_export InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 #endif /* _SQL_STATEMENT_H_ */

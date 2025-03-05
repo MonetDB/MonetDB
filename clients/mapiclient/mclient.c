@@ -1382,7 +1382,8 @@ SQLrenderer(MapiHdl hdl)
 			     strcmp(s, "clob") != 0 &&
 			     strcmp(s, "char") != 0 &&
 			     strcmp(s, "str") != 0 &&
-			     strcmp(s, "json") != 0)) {
+			     strcmp(s, "json") != 0 &&
+			     strcmp(s, "uuid") != 0)) {
 				/* no table width known, use maximum,
 				 * rely on squeezing later on to fix
 				 * it to whatever is available; note

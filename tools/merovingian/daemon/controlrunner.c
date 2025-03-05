@@ -135,7 +135,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 	FD_SET(msgsock, &fds);
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
-	tv = struct timeval) {.tv_sec = 1};
+	tv = (struct timeval) {.tv_sec = 1};
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
 #endif
 	if (retval <= 0) {

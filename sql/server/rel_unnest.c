@@ -2296,15 +2296,15 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void)depth;
 	sql_exp *ne = e;
 
-	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
+	if (!e || e->type != e_func || !e->l)
 		return e;
 
-	if (e->type != e_convert) {
-		list *args = e->l;
-		sql_subfunc *f = e->f;
+	list *args = e->l;
+	sql_subfunc *f = e->f;
 
+	if (list_length(args) == 2) {
 		/* multiplication and division on decimals */
-		if (is_multiplication(f) && list_length(args) == 2) {
+		if (is_multiplication(f)) {
 			sql_exp *le = args->h->data;
 			sql_subtype *lt = exp_subtype(le);
 
@@ -2330,7 +2330,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 				}
 			}
-		} else if (is_division(f) && list_length(args) == 2) {
+		} else if (is_division(f)) {
 			sql_exp *le = args->h->data;
 			sql_subtype *lt = exp_subtype(le);
 
@@ -2493,6 +2493,8 @@ exp_set_type(mvc *sql, sql_exp *te, sql_exp *e)
 static sql_rel *
 rel_set_type(visitor *v, sql_rel *rel)
 {
+	if (!rel)
+		return rel;
 	if (is_project(rel->op) && rel->l) {
 		if (is_set(rel->op)) {
 			sql_rel *l = rel->l, *r = rel->r;
@@ -3738,7 +3740,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	sf = e->f;
 	/* TODO also handle ifthenelse with more than 3 arguments */
-	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
+	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3) {
 		list *l = e->l;
 
 		/* remove unnecessary = true expressions under ifthenelse */
@@ -3755,6 +3757,8 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *not_cond;
 
 		if (!exp_has_rel(cond) && (exp_has_rel(then_exp) || exp_has_rel(else_exp))) {
+			if (!rel_has_freevar(v->sql, rel))
+				return e;
 			bool single = false;
 			/* return sql_error(v->sql, 10, SQLSTATE(42000) "time to rewrite into union\n");
 			   union(
@@ -4483,11 +4487,12 @@ rel_inline_table_func(visitor *v, sql_rel *rel)
 								append(r->exps, e);
 							}
 							sql_args a;
+							visitor vv = *v;
 							if (f->func->ops) {
 								a.args = f->func->ops;
 								a.exps = opf->l;
-								v->data = &a;
-								r = rel_exp_visitor_topdown(v, r, &exp_inline_arg, true);
+								vv.data = &a;
+								r = rel_exp_visitor_topdown(&vv, r, &exp_inline_arg, true);
 								v->data = NULL;
 							}
 							r = rel_unnest(v->sql, r);
@@ -4565,6 +4570,7 @@ static inline sql_rel *
 run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direction, const char *name)
 {
 	(void)name;
+	v->changes = 0;
 	/*
 #ifndef NDEBUG
 	int changes = v->changes;
@@ -4582,6 +4588,7 @@ static inline sql_rel *
 run_rel_rewriter(visitor *v, sql_rel *rel, rel_rewrite_fptr rewriter, const char *name)
 {
 	(void)name;
+	v->changes = 0;
 	/*
 #ifndef NDEBUG
 	int changes = v->changes;

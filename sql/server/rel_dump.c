@@ -499,6 +499,9 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 
 	print_indent(sql, fout, depth, decorate);
 
+	if (mvc_debug_on(sql, 4) && rel->opt)
+		mnstr_printf(fout, "opt %d ", rel->opt);
+
 	if (is_single(rel))
 		mnstr_printf(fout, "single ");
 

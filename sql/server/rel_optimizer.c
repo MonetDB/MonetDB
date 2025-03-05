@@ -711,7 +711,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 			visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = instantiate };
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
+				n->data = exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
 			}
 		}
 		return rel;

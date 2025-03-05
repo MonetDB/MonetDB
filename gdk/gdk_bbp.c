@@ -2995,19 +2995,6 @@ decref(bat i, bool logical, bool lock, const char *func)
 			MT_lock_set(&b->theaplock);
 			locked = true;
 		}
-#if 0
-		if (b->batCount > b->batInserted && !isVIEW(b)) {
-			/* if batCount is larger than batInserted and
-			 * the dirty bits are off, it may be that a
-			 * (sub)commit happened in parallel to an
-			 * update; we must undo the turning off of the
-			 * dirty bits */
-			if (b->theap && b->theap->parentid == i)
-				b->theap->dirty = true;
-			if (b->tvheap && b->tvheap->parentid == i)
-				b->tvheap->dirty = true;
-		}
-#endif
 		if (b->theap)
 			farmid = b->theap->farmid;
 	}
@@ -3077,8 +3064,10 @@ decref(bat i, bool logical, bool lock, const char *func)
 			BATdelete(BBP_desc(i));
 			BBPclear(i);
 		} else {
+			MT_lock_set(&GDKswapLock(i));
 			BBP_status_off(i, BBPUNLOADING);
 			MT_cond_broadcast(&GDKswapCond(i));
+			MT_lock_unset(&GDKswapLock(i));
 		}
 	}
 	return refs;
@@ -3254,9 +3243,12 @@ BBPsave(BAT *b)
 		if (ret == GDK_SUCCEED) {
 			ret = BATsave(b);
 		}
-		/* clearing bits can be done without the lock */
+		if (lock)
+			MT_lock_set(&GDKswapLock(bid));
 		BBP_status_off(bid, BBPSAVING);
 		MT_cond_broadcast(&GDKswapCond(bid));
+		if (lock)
+			MT_lock_unset(&GDKswapLock(bid));
 	}
 	return ret;
 }
@@ -3313,8 +3305,10 @@ BBPfree(BAT *b)
 		BBPuncacheit(bid, false);
 	}
 	TRC_DEBUG(BAT_, "turn off unloading %d\n", bid);
+	MT_lock_set(&GDKswapLock(bid));
 	BBP_status_off(bid, BBPUNLOADING);
 	MT_cond_broadcast(&GDKswapCond(bid));
+	MT_lock_unset(&GDKswapLock(bid));
 	BBP_unload_dec();
 	return ret;
 }
@@ -3927,8 +3921,12 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 				if (lock)
 					MT_lock_unset(&GDKswapLock(i));
 				ret = BATsave_iter(b, &bi, size);
+				if (lock)
+					MT_lock_set(&GDKswapLock(i));
 				BBP_status_off(i, BBPSAVING);
 				MT_cond_broadcast(&GDKswapCond(i));
+				if (lock)
+					MT_lock_unset(&GDKswapLock(i));
 			}
 			bip = &bi;
 		} else {
@@ -4009,8 +4007,12 @@ BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
 	 * GDK_SUCCEED) */
 	for (int idx = 1; idx < cnt; idx++) {
 		bat i = subcommit ? subcommit[idx] : idx;
+		if (lock)
+			MT_lock_set(&GDKswapLock(i));
 		BBP_status_off(i, BBPSYNCING);
 		MT_cond_broadcast(&GDKswapCond(i));
+		if (lock)
+			MT_lock_unset(&GDKswapLock(i));
 	}
 
 	return ret;
