@@ -866,7 +866,7 @@ bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
 {
 	lock_column(tr->store, c->base.id);
 	sql_delta *d = col_timestamp_delta(tr, c);
-	int type = c->type.type->localtype;
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
 
 	if (!d) {
 		unlock_column(tr->store, c->base.id);
@@ -926,7 +926,7 @@ bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
 	lock_column(tr->store, c->base.id);
 	size_t cnt = count_col(tr, c, 0);
 	sql_delta *d = col_timestamp_delta(tr, c);
-	int type = c->type.type->localtype;
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
 
 	if (!d) {
 		unlock_column(tr->store, c->base.id);
@@ -990,7 +990,9 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access, cnt);
 	BAT *b = cs_bind_bat( &d->cs, access, cnt);
-	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
+	(void)type;
+	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == type) || (access == QUICK && b->ttype < 0));
 	return b;
 }
 
@@ -1970,7 +1972,8 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 	if (!bat)
 		return NULL;
 	ATOMIC_INIT(&bat->cs.refcnt, 1);
-	if (dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, 0) != LOG_OK) {
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
+	if (dup_cs(tr, &obat->cs, &bat->cs, type, 0) != LOG_OK) {
 		destroy_delta(bat, false);
 		return NULL;
 	}
@@ -2718,9 +2721,10 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 			}
 		}
 	}
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
 	if (min) {
 		_DELETE(c->min);
-		size_t minlen = ATOMlen(c->type.type->localtype, min);
+		size_t minlen = ATOMlen(type, min);
 		if ((c->min = GDKmalloc(minlen)) != NULL) {
 			memcpy(c->min, min, minlen);
 			ok = 1;
@@ -2728,7 +2732,7 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 	}
 	if (max) {
 		_DELETE(c->max);
-		size_t maxlen = ATOMlen(c->type.type->localtype, max);
+		size_t maxlen = ATOMlen(type, max);
 		if ((c->max = GDKmalloc(maxlen)) != NULL) {
 			memcpy(c->max, max, maxlen);
 			ok = 1;
@@ -4281,7 +4285,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	sql_base* base = &c->base;
 	sql_table* t = c->t;
 	ATOMIC_PTR_TYPE* data = &c->data;
-	int type = c->type.type->localtype;
+	int type = c->type.multiset?TYPE_int:c->type.type->localtype;
 
 	if (change->handled || isDeleted(c->t))
 		return LOG_OK;
@@ -5058,8 +5062,9 @@ vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 
 	for( node *n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
+		int type = c->type.multiset?TYPE_int:c->type.type->localtype;
 
-		if (!ATOMvarsized(c->type.type->localtype))
+		if (!ATOMvarsized(type))
 			continue;
 		sql_delta *d = NULL;
 
