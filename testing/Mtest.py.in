@@ -324,6 +324,7 @@ CONDITIONALS = {
     'HAVE_CURL'            : '@HAVE_CURL_FALSE@',
     'HAVE_FITS'            : '@HAVE_FITS_FALSE@',
     'HAVE_GEOM'            : '@HAVE_GEOM_FALSE@',
+    'HAVE_GETENTROPY'      : '@HAVE_GETENTROPY_FALSE@',
     'HAVE_HGE'             : '@HAVE_HGE_FALSE@',
     'HAVE_LIBBZ2'          : '@HAVE_LIBBZ2_FALSE@',
     'HAVE_LIBLZ4'          : '@HAVE_LIBLZ4_FALSE@',
@@ -338,27 +339,27 @@ CONDITIONALS = {
     'HAVE_OPENSSL'         : '@HAVE_OPENSSL_FALSE@',
     'HAVE_PROJ'            : '@HAVE_PROJ_FALSE@',
     'HAVE_SHP'             : '@HAVE_SHP_FALSE@',
-    'HAVE_GETENTROPY'      : '@HAVE_GETENTROPY_FALSE@',
     'NATIVE_WIN32'         : '@NATIVE_WIN32_FALSE@',
     'NOT_WIN32'            : '@NOT_WIN32_FALSE@',
     'SANITIZER'            : '@SANITIZER_FALSE@',
     # unknown at compile time;
     # hence, we set them only at runtime in main() below
     'KNOWNFAIL'            : False, # normally skip, but --alltests or explicit
-    'HAVE_MONETDBJDBC_JAR' : False,
+    'BAD_HOSTNAME'         : False,
+    'HAVE_CPP'             : False,
+    'HAVE_DATA_PATH'       : False,
+    'HAVE_IPV6'            : False,
     'HAVE_JDBCCLIENT_JAR'  : False,
-    'HAVE_JDBCTESTS_JAR'   : False,
     'HAVE_JDBCTESTS'       : False,
+    'HAVE_JDBCTESTS_JAR'   : False,
+    'HAVE_MONETDBJDBC_JAR' : False,
     'HAVE_PERL'            : False,
     'HAVE_PHP'             : False,
     'HAVE_RUBY'            : False,
-    'HAVE_CPP'             : False,
-    'HAVE_DATA_PATH'       : False,
+    'HAVE_SQLITE3ODBC'     : False,
     'MERCURIAL'            : False,
-    'RELEASERUN'           : False,
-    'BAD_HOSTNAME'         : False,
-    'HAVE_IPV6'            : False,
     'NOWAL'                : False,
+    'RELEASERUN'           : False,
     # optional Python modules
 #    'HAVE_LIBPANDAS3'      : False,
     'HAVE_LIBSCIPY3'       : False, # import scipy
@@ -3523,6 +3524,8 @@ def main(argv) :
                 if not os.path.exists(rdir):
                     os.makedirs(rdir)
     dft['RCLIENT'] = f"'R --vanilla {r_noecho}'"
+
+    CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
     #par = {}
     # get current environment
