@@ -1,24 +1,25 @@
 -- test with 'odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;' protocol specification
+-- test with 'odbc:DRIVER=/home/dinther/dev/dev/MonetDB/sql/test/proto_loader/odbc/Tests/libsqlite3odbc-0.99991.so;Database=/home/dinther/dev/dev/MonetDB/sql/test/proto_loader/odbc/Tests/chinook.db;QUERY=SELECT ...' protocol specification
 
 statement error 42000!SELECT: proto_loader function failed 'odbc_loader Could not connect. SQLDriverConnect failed. SQLstate HY000, Errnr 14, Message [SQLite]connect failed'
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 statement error 42000!SELECT: proto_loader function failed 'odbc_loader Could not connect. SQLDriverConnect failed. SQLstate HY000, Errnr 14, Message [SQLite]connect failed'
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=~/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=~/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLExecDirect query failed. SQLstate HY000, Errnr 1, Message [SQLite]no such table: INFORMATION_SCHEMA.TABLES (1)'
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-query TTT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT type, name, tbl_name FROM sqlite_schema ORDER BY 1,2,3')
+query TTT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=odbc_loader_test.db;QUERY=SELECT type, name, tbl_name FROM sqlite_schema ORDER BY 1,2,3')
 ----
 
-query TTTIT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM sqlite_schema ORDER BY 1,2,3')
+query TTTIT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM sqlite_schema ORDER BY 1,2,3')
 ----
 
-query TTTT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=/home/dinther/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT tbl_name, type, name, sql FROM sqlite_schema ORDER BY 1,2 DESC,3')
+query TTTT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT tbl_name, type, name, sql FROM sqlite_schema ORDER BY 1,2 DESC,3')
 ----
 albums
 table
@@ -117,111 +118,8 @@ index
 IFK_TrackMediaTypeId
 CREATE INDEX [IFK_TrackMediaTypeId] ON "tracks" ([MediaTypeId])
 
-query IITTTTTTI
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=/home/dinther/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM invoices limit 11')
-----
-1
-2
-2009-01-01 00:00:00
-Theodor-Heuss-Straße 34
-Stuttgart
-NULL
-Germany
-70174
-1
-2
-4
-2009-01-02 00:00:00
-Ullevålsveien 14
-Oslo
-NULL
-Norway
-0171
-3
-3
-8
-2009-01-03 00:00:00
-Grétrystraat 63
-Brussels
-NULL
-Belgium
-1000
-5
-4
-14
-2009-01-06 00:00:00
-8210 111 ST NW
-Edmonton
-AB
-Canada
-T6G 2C7
-8
-5
-23
-2009-01-11 00:00:00
-69 Salem Street
-Boston
-MA
-USA
-2113
-13
-6
-37
-2009-01-19 00:00:00
-Berger Straße 10
-Frankfurt
-NULL
-Germany
-60316
-0
-7
-38
-2009-02-01 00:00:00
-Barbarossastraße 19
-Berlin
-NULL
-Germany
-10779
-1
-8
-40
-2009-02-01 00:00:00
-8, Rue Hanovre
-Paris
-NULL
-France
-75002
-1
-9
-42
-2009-02-02 00:00:00
-9, Place Louis Barthou
-Bordeaux
-NULL
-France
-33000
-3
-10
-46
-2009-02-03 00:00:00
-3 Chatham Street
-Dublin
-Dublin
-Ireland
-NULL
-5
-11
-52
-2009-02-06 00:00:00
-202 Hoxton Street
-London
-NULL
-United Kingdom
-N1 5LH
-8
-
-query TI
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=/home/dinther/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM sqlite_sequence')
+query TI nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM sqlite_sequence')
 ----
 genres
 25
@@ -243,4 +141,196 @@ invoice_items
 2240
 playlists
 18
+
+query TTT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM sqlite_stat1')
+----
+tracks
+IFK_TrackMediaTypeId
+3503 701
+tracks
+IFK_TrackGenreId
+3503 141
+tracks
+IFK_TrackAlbumId
+3503 11
+playlist_track
+IFK_PlaylistTrackTrackId
+8715 3
+playlist_track
+sqlite_autoindex_playlist_track_1
+8715 623 1
+albums
+IFK_AlbumArtistId
+347 2
+artists
+NULL
+275
+customers
+IFK_CustomerSupportRepId
+59 20
+playlists
+NULL
+18
+employees
+IFK_EmployeeReportsTo
+8 2
+genres
+NULL
+25
+invoices
+IFK_InvoiceCustomerId
+412 7
+media_types
+NULL
+5
+invoice_items
+IFK_InvoiceLineTrackId
+2240 2
+invoice_items
+IFK_InvoiceLineInvoiceId
+2240 6
+
+query ITI nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM albums')
+----
+1041 values hashing to 5629d90611e126ef86cf716bffff1fe9
+
+query IT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM artists')
+----
+550 values hashing to f6d93e6eefe9276280048f02224c4b2f
+
+query ITTTTTTTTTTTI nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM customers')
+----
+767 values hashing to ac1c25f0abde32d6a592ad4c74375e6c
+
+query IT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM genres')
+----
+1
+Rock
+2
+Jazz
+3
+Metal
+4
+Alternative & Punk
+5
+Rock And Roll
+6
+Blues
+7
+Latin
+8
+Reggae
+9
+Pop
+10
+Soundtrack
+11
+Bossa Nova
+12
+Easy Listening
+13
+Heavy Metal
+14
+R&B/Soul
+15
+Electronica/Dance
+16
+World
+17
+Hip Hop/Rap
+18
+Science Fiction
+19
+TV Shows
+20
+Sci Fi & Fantasy
+21
+Drama
+22
+Comedy
+23
+Alternative
+24
+Classical
+25
+Opera
+
+query IIIRI nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoice_items')
+----
+11200 values hashing to a9e3a705e7d0f104f12537d7a4452fc8
+
+query IITTTTTTR nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoices')
+----
+3708 values hashing to 6468e5558d61ab41f736750792ceb3a0
+
+query IT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM media_types')
+----
+1
+MPEG audio file
+2
+Protected AAC audio file
+3
+Protected MPEG-4 video file
+4
+Purchased AAC audio file
+5
+AAC audio file
+
+query II nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM playlist_track')
+----
+17430 values hashing to b3662845bff3c7fd8568b8b25033d188
+
+query IT nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM playlists')
+----
+1
+Music
+2
+Movies
+3
+TV Shows
+4
+Audiobooks
+5
+90’s Music
+6
+Audiobooks
+7
+Movies
+8
+Music
+9
+Music Videos
+10
+TV Shows
+11
+Brazilian Music
+12
+Classical
+13
+Classical 101 - Deep Cuts
+14
+Classical 101 - Next Steps
+15
+Classical 101 - The Basics
+16
+Grunge
+17
+Heavy Metal Classic
+18
+On-The-Go 1
+
+query ITIIITIIR nosort
+select * from proto_loader('odbc:DRIVER=$TSTDATAPATH/sqlite3odbc/libsqlite3odbc-0.99991.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM tracks')
+----
+31527 values hashing to 9bdd4fdb9d8b354b75169ce5bddbda76
 

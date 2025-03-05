@@ -276,7 +276,6 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 		HEAPfree(bn->theap, true);
 		goto bailout;
 	}
-	DELTAinit(bn);
 	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
 		/* cannot happen, function always returns success */
 		goto bailout;

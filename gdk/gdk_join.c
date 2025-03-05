@@ -2976,9 +2976,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		b = BATdescriptor(VIEWtparent(r));
 		if (b == NULL)
 			goto bailout;
-		TRC_DEBUG(ALGO, "%s(%s): using "
+		TRC_DEBUG(ALGO, "%s: using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
-			  __func__,
 			  BATgetId(r), ALGOBATPAR(b),
 			  swapped ? " (swapped)" : "");
 		roff = r->tbaseoff - b->tbaseoff;
