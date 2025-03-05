@@ -19,7 +19,7 @@
   is done using the ODBC administrator (on windows: odbcad32.exe,
   on linux: odbcinst).  Once a data source for a specific ODBC
   driver has been setup using a unique name, you can reference it as:
-  DSN=my_bigdata; or FILE_DSN=/home/usernm/dsns/my_bigdata;
+  DSN=my_bigdata; or FILE_DSN=/home/usernm/dsns/my_bigdata.dsn;
   If you do not want to setup a data source, you can use DRIVER=...;
   to specify the ODBC driver program to use. However this also means
   you have to specify all the required connection parameters yourself,
@@ -31,7 +31,7 @@
   SELECT * FROM proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;
     Database=/home/martin/sqlite3/chinook.db;QUERY=SELECT * FROM customers');
   Note that the 'odbc:' scheme is experimental and not enabled by default.
-  To enable it the MonetDB server has to be started with argument:
+  To enable it, the MonetDB server has to be started with argument:
    --loadmodule odbc_loader
 
 * Mon Feb 10 2025 stefanos mavros <stemavros@gmail.com>
