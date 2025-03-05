@@ -2173,7 +2173,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         test = re.compile('^'+TST+r'(_[sp][0-9][0-9])?\..*\.in$', re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
             fff = ff[:-3]
-            if test.match(ff) and not os.path.isfile(fff):
+            if test.match(ff) and not os.path.isfile(fff) and not ff.endswith('.test.in'):
                 f = openutf8(fff,'w')
                 for l in openutf8(ff):
                     f.write(expandvars(l, env))
@@ -3045,12 +3045,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 pass
                         if returncode is None:
                             defines = []
+                            testfile = TST+EXT
                             if lang == 'sql' and os.path.exists(TST+'.test.in'):
+                                testfile = TST+'.test.in'
                                 for key in ('TSTDATAPATH', 'TSTSRCBASE', 'TSTSRCDIR', 'TSTTRGDIR', 'UTSTSRCDIR', 'TSTDB', 'MAPIPORT'):
                                     if key in env:
                                         defines.append(f'{key}={env[key]}')
                             try:
-                                sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
+                                sql.parse(testfile, approve=open(TST+'.newtest','w') if approve else None, defines=defines)
                             except KeyboardInterrupt:
                                 raise
                             except sqllogictest.SQLLogicSyntaxError:
