@@ -740,6 +740,8 @@ class SQLLogic:
                 val = val.strip()
                 defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
                              val, key))
+                defs.append((re.compile(r'\$(Q' + key + r'\b|{Q' + key + '})'),
+                             val.replace('\\', '\\\\'), 'Q'+key))
         self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
         self.lines = []
 
