@@ -160,6 +160,7 @@ typedef struct CLIENT {
 	MalStkPtr glb;				/* global variable stack */
 
 	allocator *ta;				/* temporary allocator used during parsing and optimization */
+	allocator *alloc;			/* main client allocator */
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
 	 * being just SQL.  We need a pointer for each of them, since they

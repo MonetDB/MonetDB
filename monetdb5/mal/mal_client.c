@@ -283,7 +283,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
-	c->ta = ma_create(NULL);
+	c->alloc = ma_create(NULL);
+	c->ta = ma_create(c->alloc);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
