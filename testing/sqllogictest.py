@@ -295,6 +295,13 @@ class SQLLogic:
                 self.crs.execute(f'drop user "{dq(row[0])}"')
             except pymonetdb.Error:
                 pass
+        # drop custom types created in test
+        self.crs.execute("select sqlname from sys.types where systemname is null order by id")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop type "{}"'.format(row[0]))
+            except pymonetdb.Error:
+                pass
 
     def exec_statement(self, statement, expectok,
                        err_stmt=None,
