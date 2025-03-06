@@ -2628,9 +2628,11 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 	if (op2->nested) {
 		list *ops = unnest_stmt(op2);
 		list *nops = sa_list(be->mvc->sa);
+		sql_subtype *st = tail_type(op2);
+		bool propagate = !st->multiset && st->type->composite;
 		for(node *n = ops->h; n; n = n->next) {
 			stmt *i = n->data;
-			if (!i->nested)
+			if (propagate || (st->multiset && n == ops->t))
 				i = stmt_project(be, op1, i);
 			append(nops, i);
 		}
@@ -2638,7 +2640,7 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		if (s == NULL)
 			return NULL;
 		s->nested = true;
-		s->subtype = op2->subtype;
+		s->subtype = *st;
 		return s;
 	}
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
@@ -3325,7 +3327,7 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
 			if (virt || c->nested) {
-				multisetPtr = pushInt(mb, multisetPtr, c->multiset + ((virt || c->nested)?4:0));
+				multisetPtr = pushInt(mb, multisetPtr, c->subtype.multiset + ((virt || c->nested)?4:0));
 				InstrPtr q = newStmt(mb, batRef, newRef);
 
 				if (q == NULL)

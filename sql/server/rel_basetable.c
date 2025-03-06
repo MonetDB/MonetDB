@@ -701,7 +701,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 				continue;
 
 			sql_column *c = cn->data;
-			sql_exp *e = exp_alias(sql, atname, c->base.name, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			sql_exp *e = exp_alias(sql, atname, c->base.name, ta, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), c->column_type == 16);
 
 			if (e == NULL) {
 				rel_destroy(rel);
