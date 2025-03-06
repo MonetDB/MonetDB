@@ -5334,6 +5334,11 @@ sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigne
 		for (node *n = t->d.fields->h; n; n = n->next, number++) {
 			sql_arg *a = n->data;
 			sqlid id = next_oid(tr->store);
+
+			if (a->type.type->composite)
+				if ((res = sql_trans_create_dependency(tr, a->type.type->base.id, t->base.id, TYPE_DEPENDENCY)))
+					return res;
+
 			if ((res = store->table_api.table_insert(tr, sysarg, &id, &t->base.id, &a->name, &a->type.type->base.name, &a->type.digits, &a->type.scale, &a->inout, &number, &a->type.multiset)))
 				return res;
 		}
