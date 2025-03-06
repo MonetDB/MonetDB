@@ -739,5 +739,10 @@ class SQLTestCase():
                 for row in crs.fetchall():
                     crs.execute('drop user "{}"'.format(row[0]))
 
+                # drop custom types created in test
+                crs.execute("select sqlname from sys.types where systemname is null order by id")
+                for row in crs.fetchall():
+                    crs.execute('drop type "{}"'.format(row[0]))
+
         except (pymonetdb.Error, ValueError) as e:
             pass
