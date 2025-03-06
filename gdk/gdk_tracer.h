@@ -39,7 +39,7 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_ENUM(ENUM) TRC_##ENUM,
 
 
 // ADAPTERS
@@ -87,22 +87,16 @@ typedef enum {
 
 
 
-/*
- *
- * NOTE: Adding/Removing components will affect the test tracer00.mal
- * See the test file for more details.
- *
- */
 // COMPONENTS
 #define FOREACH_COMP(COMP)			\
 	COMP( ACCELERATOR )			\
 	COMP( ALGO )				\
 	COMP( ALLOC )				\
-	COMP( BAT_ )				\
-	COMP( CHECK_ )				\
+	COMP( BAT )				\
+	COMP( CHECK )				\
 	COMP( DELTA )				\
 	COMP( HEAP )				\
-	COMP( IO_ )				\
+	COMP( IO )				\
 	COMP( WAL )				\
 	COMP( PAR )				\
 	COMP( PERF )				\
@@ -146,13 +140,13 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 // ERROR or WARNING it is logged no matter the component. In any other
 // case the component is taken into account
 #define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
-	(LOG_LEVEL <= M_WARNING  ||		\
-	 (log_level_t) ATOMIC_GET(&lvl_per_component[COMP]) >= LOG_LEVEL)
+	(TRC_##LOG_LEVEL <= TRC_M_WARNING  ||		\
+	 (log_level_t) ATOMIC_GET(&lvl_per_component[TRC_##COMP]) >= TRC_##LOG_LEVEL)
 
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, ...)			\
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
-		      LOG_LEVEL, COMP, NULL, __VA_ARGS__)
+		      TRC_##LOG_LEVEL, TRC_##COMP, NULL, __VA_ARGS__)
 
 #ifdef __COVERITY__
 /* hide this for static code analysis: too many false positives */

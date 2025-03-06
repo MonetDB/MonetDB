@@ -1674,12 +1674,10 @@ BATnegateprops(BAT *b)
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
-#define GDKerror(...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
-		      GDK, NULL, __VA_ARGS__)
+#define GDKerror(...)		TRC_ERROR(GDK, __VA_ARGS__)
 #define GDKsyserr(errno, ...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
-		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
+	GDKtracer_log(__FILE__, __func__, __LINE__, TRC_M_ERROR,	\
+		      TRC_GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
 		      __VA_ARGS__)
 #define GDKsyserror(...)	GDKsyserr(errno, __VA_ARGS__)
 
@@ -1947,7 +1945,7 @@ BBPcheck(bat x)
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
-			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
+			TRC_DEBUG(CHECK, "range error %d\n", (int) x);
 		} else {
 			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
@@ -2379,7 +2377,7 @@ TIMEOUT_ERROR(const QryCtx *qc, const char *file, const char *func, int lineno)
 {
 	const char *e = TIMEOUT_MESSAGE(qc);
 	if (e) {
-		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
+		GDKtracer_log(file, func, lineno, TRC_M_ERROR, TRC_GDK, NULL,
 			      "%s\n", e);
 	}
 }

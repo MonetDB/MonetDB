@@ -109,7 +109,7 @@ GDKcreatedir(const char *dir)
 	char *r;
 	DIR *dirp;
 
-	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
+	TRC_DEBUG(IO, "GDKcreatedir(%s)\n", dir);
 	assert(!GDKinmemory(0));
 	if (!GDKembedded() && !MT_path_absolute(dir)) {
 		GDKerror("directory '%s' is not absolute\n", dir);
@@ -159,7 +159,7 @@ GDKremovedir(int farmid, const char *dirname)
 	if (GDKfilepath(dirnamestr, sizeof(dirnamestr), farmid, NULL, dirname, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	TRC_DEBUG(IO_, "GDKremovedir(%s)\n", dirnamestr);
+	TRC_DEBUG(IO, "GDKremovedir(%s)\n", dirnamestr);
 
 	if ((dirp = opendir(dirnamestr)) == NULL) {
 		return GDK_SUCCEED;
@@ -179,13 +179,13 @@ GDKremovedir(int farmid, const char *dirname)
 		ret = MT_remove(path);
 		if (ret == -1)
 			GDKsyserror("remove(%s) failed\n", path);
-		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
+		TRC_DEBUG(IO, "Remove %s = %d\n", path, ret);
 	}
 	closedir(dirp);
 	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
 		GDKsyserror("rmdir(%s) failed\n", dirnamestr);
-	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
+	TRC_DEBUG(IO, "rmdir %s = %d\n", dirnamestr, ret);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -280,7 +280,7 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 	/* if name is null, try to get one from dir (in case it was a path) */
 	if (GDKfilepath(path, sizeof(path), farmid, dir, name, extension) == GDK_SUCCEED) {
 		FILE *f;
-		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
+		TRC_DEBUG(IO, "GDKfileopen(%s)\n", path);
 		f = MT_fopen(path, mode);
 		int err = errno;
 		errno = err;
@@ -330,7 +330,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
-		TRC_DEBUG(IO_, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
+		TRC_DEBUG(IO, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
 	} else {
 		ret = -1;
 	}
@@ -386,7 +386,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 				GDKsyserror("ftruncate to old size");
 		}
 	}
-	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
+	TRC_DEBUG(IO, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
 		  fn, (size_t) stb.st_size, size,
 		  GDKusec() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
@@ -431,7 +431,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 {
 	int err = 0;
 
-	TRC_DEBUG(IO_, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
+	TRC_DEBUG(IO, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	assert(!GDKinmemory(farmid));
 	if (mode == STORE_MMAP) {
@@ -440,7 +440,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 		if (err)
 			GDKerror("error on: name=%s, ext=%s, mode=%d\n",
 				 nme, ext ? ext : "", (int) mode);
-		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu) = %d\n",
+		TRC_DEBUG(IO, "MT_msync(buf %p, size %zu) = %d\n",
 			  buf, size, err);
 	} else {
 		int fd;
@@ -467,7 +467,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				TRC_DEBUG(IO_, "Write(fd %d, buf %p"
+				TRC_DEBUG(IO, "Write(fd %d, buf %p"
 					  ", size %u) = %zd\n",
 					  fd, buf,
 					  (unsigned) MIN(1 << 30, size),
@@ -522,7 +522,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 	assert(!GDKinmemory(farmid));
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
-	TRC_DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
+	TRC_DEBUG(IO, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(farmid, nme, "rb", ext);
@@ -544,7 +544,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					 * recognize that we're just
 					 * printing the value of ptr,
 					 * not its contents */
-					TRC_DEBUG(IO_, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
+					TRC_DEBUG(IO, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
 #endif
 
 					if (n <= 0)
@@ -595,7 +595,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				/* success: update allocated size */
 				*maxsize = size;
 			}
-			TRC_DEBUG(IO_, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
+			TRC_DEBUG(IO, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
 		}
 	}
 	return ret;
@@ -624,7 +624,7 @@ DESCload(int i)
 	BAT *b = NULL;
 	int tt;
 
-	TRC_DEBUG(IO_, "DESCload: %s\n", nme ? nme : "<noname>");
+	TRC_DEBUG(IO, "DESCload: %s\n", nme ? nme : "<noname>");
 
 	b = BBP_desc(i);
 

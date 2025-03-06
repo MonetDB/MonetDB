@@ -33,14 +33,12 @@ bool MT_thread_override_limits(void)
 			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
 			      (LPTSTR) _osmsgbuf, sizeof(_osmsgbuf),	\
 			      NULL);					\
-		GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
-			      GDK, _osmsgbuf, __VA_ARGS__);		\
+		GDKtracer_log(__FILE__, __func__, __LINE__, TRC_M_ERROR, \
+			      TRC_GDK, _osmsgbuf, __VA_ARGS__);		\
 		SetLastError(0);					\
 	} while (0)
 #endif
-#define GDKwarning(...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_WARNING,	\
-		      GDK, NULL, __VA_ARGS__)
+#define GDKwarning(...)		TRC_WARNING(GDK, __VA_ARGS__)
 
 struct freebats {
 	bat freebats;
