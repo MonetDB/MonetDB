@@ -108,6 +108,8 @@ typedef enum {
 	COMP( FITS )				\
 	COMP( SHP )				\
 						\
+	COMP( LOADER )				\
+						\
 	COMP( SQL_PARSER )			\
 	COMP( SQL_TRANS )			\
 	COMP( SQL_REWRITER )			\
