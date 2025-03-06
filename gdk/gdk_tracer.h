@@ -183,15 +183,15 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 
 // Conditional logging - Example usage
 // NOTE: When using the macro with *_IF always use the macro with
-// *_ENDIF for logging. Avoiding to do that will result into checking
-// the LOG_LEVEL of the the COMPONENT 2 times. Also NEVER use the
+// *_ENDIF for logging. Not doing that will result in checking
+// the LOG_LEVEL of the the COMPONENT twice. Also NEVER use the
 // *_ENDIF macro without before performing a check with *_IF
 // macro. Such an action will have as a consequence logging everything
 // without taking into account the LOG_LEVEL of the COMPONENT.
 /*
-    TRC_CRITICAL_IF(SQL_STORE)
+    TRC_INFO_IF(SQL_STORE)
     {
-	TRC_CRITICAL_ENDIF(SQL_STORE, "Test\n")
+	TRC_INFO_ENDIF(SQL_STORE, "Test\n")
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\

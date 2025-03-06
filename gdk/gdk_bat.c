@@ -2454,7 +2454,7 @@ BATmode(BAT *b, bool transient)
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
 #undef assert
-#define assert(test)	((void) ((test) || (TRC_CRITICAL_ENDIF(CHECK, "Assertion `%s' failed\n", #test), 0)))
+#define assert(test)	((void) ((test) || (TRC_CRITICAL(CHECK, "Assertion `%s' failed\n", #test), 0)))
 #endif
 
 static void
