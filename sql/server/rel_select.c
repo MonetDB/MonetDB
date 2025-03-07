@@ -923,7 +923,6 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 	if (l->next) { /* table call with subquery */
 		int is_value = 1;
 		if (l->next->type == type_symbol || l->next->type == type_list) {
-			exp_kind iek = {type_value, card_set, TRUE};
 			int count = 0;
 
 			if (l->next->type == type_symbol)
@@ -945,6 +944,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 					return NULL;
 				is_value = 0;
 			} else {
+				exp_kind iek = {type_value, unnest?card_row:card_set, TRUE};
 				for ( ; n; n = n->next) {
 					sql_exp *e = rel_value_exp(query, &outer, n->data.sym, sql_sel | sql_from, iek);
 
@@ -4331,6 +4331,7 @@ rel_selection_ref(sql_query *query, sql_rel **rel, char *name, dlist *selection)
 
 					nl = dlist_create(sa);
 					exp_setname(query->sql, ve, NULL, name);
+					reset_intern(ve);
 					/* now we should rewrite the selection such that it uses the new group by column */
 					dlist_append_string(sa, nl, sa_strdup(sa, name));
 					nsym = symbol_create_list(sa, to, nl);

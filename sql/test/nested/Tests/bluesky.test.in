@@ -73,37 +73,37 @@ app.bsky.feed.repost
 query TII
 SELECT data."commit"."collection" AS event, "hour"(epoch(cast(data.time_us as bigint)/(1000*1000))) as hour_of_day, count(*) AS cnt FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" in ('app.bsky.feed.post', 'app.bsky.feed.repost', 'app.bsky.feed.like') GROUP BY event, hour_of_day ORDER BY hour_of_day, event
 ----
-app.bsky.feed.post
- 17
- 3
 app.bsky.feed.like
- 17
- 3
-app.bsky.graph.repost
- 17
- 1
+17
+3
+app.bsky.feed.post
+17
+3
+app.bsky.feed.repost
+17
+1
 
 
 # Q4
 query TT
 SELECT data.did as user_id, epoch(cast(min(data.time_us) as bigint)/1000000) as first_post_ts FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY first_post_ts ASC LIMIT 3
 ----
-"did:plc:yj3sjq3blzpynh27cumnp5ks"
+did:plc:yj3sjq3blzpynh27cumnp5ks
 2024-11-21 17:25:49+01:00
-"did:plc:l5o3qjrmfztir54cpwlv2eme"
+did:plc:l5o3qjrmfztir54cpwlv2eme
 2024-11-21 17:25:49+01:00
-"did:plc:s4bwqchfzm6gjqfeb6mexgbu"
+did:plc:s4bwqchfzm6gjqfeb6mexgbu
 2024-11-21 17:25:49+01:00
 
 # Q5
-query TI
+query TT
 SELECT data.did as user_id, timestampdiff(epoch(cast(min(data.time_us) as bigint)/1000000),  epoch(cast(max(data.time_us) as bigint)/1000000))*1000 AS activity_span FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY activity_span DESC LIMIT 3
 ----
-"did:plc:yj3sjq3blzpynh27cumnp5ks"
+did:plc:yj3sjq3blzpynh27cumnp5ks
 0:00:00
-"did:plc:l5o3qjrmfztir54cpwlv2eme"
+did:plc:l5o3qjrmfztir54cpwlv2eme
 0:00:00
-"did:plc:s4bwqchfzm6gjqfeb6mexgbu"
+did:plc:s4bwqchfzm6gjqfeb6mexgbu
 0:00:00
 
 statement ok
