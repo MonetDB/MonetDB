@@ -576,6 +576,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		TIMESTAMP_STRUCT ts_val;
 //		SQL_NUMERIC_STRUCT num_val;
 		SQLGUID guid_val;
+		bte * blob_val = NULL;
 
 		/* allocate storage for all the var sized atom types. */
 		char * str_val = NULL;		// TODO: change to wchar
@@ -591,7 +592,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		if (trace_enabled)
 			printf("Allocated str_val buffer of size %zu\n", (largestStringSize +1) * sizeof(char));
 
-		bte * blob_val = NULL;
 		if (hasBlobCols) {
 			if (largestBlobSize == 0)	// no valid blob length, assume 65536 (64kB) as default
 				largestBlobSize = 65532;
@@ -1059,4 +1059,3 @@ static mel_func odbc_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_odbc_mal)
 { mal_module("odbc", NULL, odbc_init_funcs); }
-
