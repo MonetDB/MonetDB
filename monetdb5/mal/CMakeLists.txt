@@ -79,8 +79,7 @@ target_compile_definitions(mal
 target_link_libraries(mal
   PRIVATE
   monetdb_config_header
-  mcrypt
-  msabaoth
+  mutils
   stream
   mapi
   bat)

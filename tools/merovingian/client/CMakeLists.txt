@@ -24,8 +24,6 @@ target_link_libraries(monetdb
   PRIVATE
   monetdb_config_header
   meroutil
-  mcrypt
-  msabaoth
   mutils
   stream
   #$<$<BOOL:${Iconv_FOUND}>:Iconv::Iconv>)

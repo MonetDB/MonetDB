@@ -13,14 +13,16 @@
 #ifndef _MUTILS_H_
 #define _MUTILS_H_
 
-#ifdef WIN32
-#if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL) && !defined(LIBMAPI)
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
 #define mutils_export extern __declspec(dllimport)
 #else
 #define mutils_export extern __declspec(dllexport)
 #endif
 #else
 #define mutils_export extern
+#endif
 #endif
 
 #ifdef NATIVE_WIN32

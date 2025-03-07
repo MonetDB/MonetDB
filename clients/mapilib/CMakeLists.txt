@@ -50,7 +50,6 @@ target_link_libraries(mapi
   PRIVATE
   monetdb_config_header
   moptions
-  mcrypt
   stream
   mutils
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>

@@ -219,6 +219,49 @@ functionality of MonetDB.
 %{_datadir}/monetdb/cmake/monetdb_config_headerTargets.cmake
 %endif
 
+%package mutils
+Summary: MonetDB mutils library
+Group: Applications/Databases
+
+%description mutils
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains a shared library (libmutils) which is needed by
+various other components.
+
+%ldconfig_scriptlets mutils
+
+%files mutils
+%license COPYING
+%defattr(-,root,root)
+%{_libdir}/libmutils*.so.*
+
+%if %{without compat}
+%package mutils-devel
+Summary: MonetDB mutils library
+Group: Applications/Databases
+Requires: %{name}-mutils%{?_isa} = %{version}-%{release}
+
+%description mutils-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains the files to develop with the %{name}-mutils
+library.
+
+%files mutils-devel
+%defattr(-,root,root)
+%dir %{_includedir}/monetdb
+%{_libdir}/libmutils*.so
+%{_libdir}/pkgconfig/monetdb-mutils.pc
+%{_datadir}/monetdb/cmake/mutilsTargets*.cmake
+%endif
+
 %package stream
 Summary: MonetDB stream library
 Group: Applications/Databases
@@ -244,6 +287,7 @@ various other components.
 Summary: MonetDB stream library
 Group: Applications/Databases
 Requires: %{name}-stream%{?_isa} = %{version}-%{release}
+Requires: %{name}-mutils-devel%{?_isa} = %{version}-%{release}
 Requires: bzip2-devel
 Requires: libcurl-devel
 Requires: zlib-devel

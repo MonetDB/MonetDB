@@ -13,19 +13,22 @@
 #ifndef _SEEN_MUUID_H
 #define _SEEN_MUUID_H 1
 
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
+#endif
+
 /* this function is (currently) only used in msabaoth and sql;
  * msabaoth is part of monetdb5 and we want this function to be
  * exported so that the call in sql can be satisfied by the version
  * that is included in monetdb5 */
-#ifdef WIN32
-#if !defined(LIBMONETDB5) && !defined(LIBMSABAOTH)
-__declspec(dllimport)
-#else
-__declspec(dllexport)
-#endif
-#else
-extern
-#endif
-char *generateUUID(void);
+mutils_export char *generateUUID(void);
 
 #endif
