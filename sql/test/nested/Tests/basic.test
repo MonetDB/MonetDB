@@ -30,3 +30,11 @@ select f1, f.elements from arr_tbl, unnest(f1) f
 3
 {2,3,4}
 4
+
+query TI nosort
+select f1, avg(f.elements) from arr_tbl, unnest(f1) f group by f1;
+----
+{1,2,3}
+2
+{2,3,4}
+3
