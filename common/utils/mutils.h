@@ -48,9 +48,6 @@ mutils_export int closedir(DIR *dir);
 
 mutils_export char *dirname(char *path);
 
-mutils_export wchar_t *utf8towchar(const char *src);
-mutils_export char *wchartoutf8(const wchar_t *src);
-
 mutils_export FILE *MT_fopen(const char *filename, const char *mode);
 mutils_export int MT_open(const char *filename, int flags);
 mutils_export int MT_stat(const char *filename, struct stat *stb);
@@ -126,6 +123,9 @@ MT_access(const char *pathname, int mode)
 }
 
 #endif
+
+mutils_export wchar_t *utf8towchar(const char *src);
+mutils_export char *wchartoutf8(const wchar_t *src);
 
 mutils_export int MT_lockf(const char *filename, int mode);
 

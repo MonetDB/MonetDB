@@ -43,7 +43,6 @@
 #endif
 
 #ifdef NATIVE_WIN32
-
 #include <windows.h>
 #include <wchar.h>
 
@@ -52,6 +51,7 @@
 #define BIG_ENDIAN	4321
 #define LITTLE_ENDIAN	1234
 #define BYTE_ORDER	LITTLE_ENDIAN
+#endif
 
 wchar_t *
 utf8towchar(const char *src)
@@ -184,6 +184,8 @@ wchartoutf8(const wchar_t *ws)
 	}
 	return (char *) us;
 }
+
+#ifdef NATIVE_WIN32
 
 /* translate Windows error code (GetLastError()) to Unix-style error */
 int
