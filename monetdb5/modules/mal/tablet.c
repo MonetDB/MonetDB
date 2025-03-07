@@ -339,14 +339,16 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 		}
 		if (f->multiset) {
 			int nr_attrs = f->nrfields - 1;
-			const char *p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
+			Column *rowid = fmt+j+nr_attrs;
+			const char *p = BUNtail(rowid->ci, rowid->p);
 
 			/* various cases:
 			 *	rowid column dense (but for ints !!
 			 *	rowid column sorted
 			 *	else
 			 */
-			if (f->c)
+			assert(rowid->c->tsorted);
+			if (rowid->c->tkey)
 				fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
 			else
 				fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
@@ -413,27 +415,29 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
 	Column *msid = fmt + nr_attrs;
 	/* how to also keep prev id */
-	int *idp = (int*)Tloc(msid->c, msid->p);
+	BUN pos = msid->p;
+	int *idp = (int*)Tloc(msid->c, pos);
 	int first = 1;
 
 	if (msid->p) {
-		BUN pos = msid->p;
-		while (idp[-1] >= id && pos > 0) {
+		while (pos > 0 && idp[-1] >= id) {
 			idp--;
 			pos--;
 		}
+		msid->p = pos;
 	}
 
 	if (!quoted)
 		(*buf)[fill++] = '\'';
 	(*buf)[fill++] = '{';
 	(*buf)[fill] = 0;
-	for (; *idp == id && fill > 0; idp++, msid->p++) {
+	for (; *idp == id && fill > 0; idp++, msid->p++, pos++) {
 		if (!first)
 			(*buf)[fill++] = ',';
 		if (composite) {
 			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
 		} else {
+			fmt->p = pos;
 			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
 		}
 		first = 0;
@@ -459,9 +463,11 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 
 		if (f->multiset) {
 			int nr_attrs = f->nrfields - 1;
-			p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
+			Column *rowid = fmt+j+nr_attrs;
+			p = BUNtail(rowid->ci, rowid->p);
 
-			if (f->c)
+			assert(rowid->c->tsorted);
+			if (rowid->c->tkey)
 			    fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
 			else
 			    fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);

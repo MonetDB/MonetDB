@@ -13,3 +13,20 @@ select * from arr_tbl
 ----
 {1,2,3}
 {2,3,4}
+
+
+query TI nosort
+select f1, f.elements from arr_tbl, unnest(f1) f
+----
+{1,2,3}
+1
+{1,2,3}
+2
+{1,2,3}
+3
+{2,3,4}
+2
+{2,3,4}
+3
+{2,3,4}
+4
