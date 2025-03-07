@@ -1746,7 +1746,7 @@ static void
 _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
 {
     if (depth < 8*sizeof(size_t) && !last)
-        (*lvls) |= (1<<depth);
+        (*lvls) |= (((size_t)1)<<depth);
 
     for (size_t msk = 1, i = 0; msk && i < depth; msk <<= 1, i++)
         mnstr_printf(GDKstdout, "%s", ((*lvls)&msk)?tg[TG_COL]:tg[TG_SPC]);
@@ -1774,7 +1774,7 @@ _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
             break;
     }
     if (depth < 8*sizeof(size_t) && !last)
-        (*lvls) ^= (1<<depth);
+        (*lvls) ^= (((size_t)1)<<depth);
 }
 
 void _stmt_print_list(stmt *sl);
