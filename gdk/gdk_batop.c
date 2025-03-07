@@ -704,7 +704,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	if (BATttype(b) != BATttype(n) &&
 	    ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
-		TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
+		TRC_DEBUG(CHECK, "Interpreting %s as %s.\n",
 			  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
 	}
 

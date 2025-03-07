@@ -1279,6 +1279,12 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     for o in options:
                         if o.startswith('embedded'):
                             inmem = False
+                        if o == 'odbc_loader':
+                            orig_odbcsysini = os.environ.pop('ODBCSYSINI', None)
+                            orig_odbcini = os.environ.pop('ODBCINI', None)
+                            orig_odbcinstini = os.environ.pop('ODBCINSTINI', None)
+                            os.environ['ODBCSYSINI'] = TSTTRGDIR
+                            os.environ['ODBCINI'] = os.path.join(TSTTRGDIR, 'odbc.ini')
                         if o != 'nodrop':
                             opts.append(o)
                     if inmem:

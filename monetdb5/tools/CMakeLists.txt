@@ -27,8 +27,7 @@ target_link_libraries(monetdb5
   PRIVATE
   stream
   mapi
-  msabaoth
-  mutf8
+  mutils
   ${SOCKET_LIBRARIES}
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>

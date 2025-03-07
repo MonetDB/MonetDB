@@ -51,10 +51,8 @@ target_link_libraries(mclient
   PRIVATE
   monetdb_config_header
   mcutil
-  mprompt
   moptions
   mutils
-  mutf8
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
@@ -81,7 +79,6 @@ target_link_libraries(msqldump
   mutils
   mapi
   stream
-  mprompt
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
 set_target_properties(mclient msqldump

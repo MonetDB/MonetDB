@@ -1,4 +1,4 @@
 incomplete_uri
-NOT_WIN32?monetodbc
+HAVE_ODBC?monetodbc
 !NOT_WIN32?monetodbc-Windows
 HAVE_SQLITE3ODBC&HAVE_DATA_PATH?sqlite3odbc

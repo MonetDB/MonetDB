@@ -12,12 +12,10 @@ prefix=@CMAKE_INSTALL_PREFIX@
 libdir=@CMAKE_INSTALL_FULL_LIBDIR@
 includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 
-Name: monetdb-stream
-Description: MonetDB streams library
+Name: monetdb-mutils
+Description: MonetDB mutils library
 URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
-Requires.private: monetdb-utils = @MONETDB_VERSION@ @PKG_ZLIB@ @PKG_BZIP2@ @PKG_LZMA@
 
-Libs: -L${libdir} -lstream-@MONETDB_VERSION@
-Libs.private: @SOCKET_LIBS@
+Libs: -L${libdir} -lmutils-@MONETDB_VERSION@
 Cflags: -I${includedir}/monetdb

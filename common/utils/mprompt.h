@@ -10,5 +10,17 @@
  * Copyright 1997 - July 2008 CWI.
  */
 
-extern char *prompt_getlogin(void);
-extern char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
+#endif
+
+mutils_export char *prompt_getlogin(void);
+mutils_export char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);

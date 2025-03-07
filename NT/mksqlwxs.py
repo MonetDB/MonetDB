@@ -159,6 +159,7 @@ def main():
                r'bin\monetdbe.dll',
                rf'bin\monetdbsql-{version}.dll',
                rf'bin\stream-{version}.dll',
+               rf'bin\mutils-{version}.dll',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
@@ -178,7 +179,8 @@ def main():
                rf'lib\mapi-{version}.pdb',
                rf'lib\monetdb5-{version}.pdb',
                rf'lib\monetdbsql-{version}.pdb',
-               rf'lib\stream-{version}.pdb'])
+               rf'lib\stream-{version}.pdb',
+               rf'lib\mutils-{version}.pdb'])
     id = comp(geom, id, 14,
               [vcpkg.format(r'bin\geos_c.dll'),
                vcpkg.format(r'bin\geos.dll')])
@@ -220,6 +222,7 @@ def main():
                r'lib\monetdbe.lib',
                rf'lib\monetdbsql-{version}.lib',
                rf'lib\stream-{version}.lib',
+               rf'lib\mutils-{version}.lib',
                vcpkg.format(r'lib\iconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),
                vcpkg.format(r'lib\charset.lib'),

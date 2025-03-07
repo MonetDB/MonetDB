@@ -2174,12 +2174,12 @@ backup_new(Heap *hp, bool lock)
 			if ((ret = MT_rename(batpath, bakpath)) < 0)
 				GDKsyserror("backup_new: rename %s to %s failed\n",
 					    batpath, bakpath);
-			TRC_DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
+			TRC_DEBUG(IO, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
 		} else if (batret == 0) {
 			/* there is a backup already; just remove the X.new */
 			if ((ret = MT_remove(batpath)) != 0)
 				GDKsyserror("backup_new: remove %s failed\n", batpath);
-			TRC_DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
+			TRC_DEBUG(IO, "remove(%s) = %d\n", batpath, ret);
 		} else {
 			ret = 0;
 		}
@@ -2454,7 +2454,7 @@ BATmode(BAT *b, bool transient)
 #ifdef NDEBUG
 /* assertions are disabled, turn failing tests into a message */
 #undef assert
-#define assert(test)	((void) ((test) || (TRC_CRITICAL_ENDIF(CHECK_, "Assertion `%s' failed\n", #test), 0)))
+#define assert(test)	((void) ((test) || (TRC_CRITICAL(CHECK, "Assertion `%s' failed\n", #test), 0)))
 #endif
 
 static void
@@ -2806,7 +2806,7 @@ BATassertProps(BAT *b)
 			BUN mask;
 
 			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
-				TRC_WARNING(BAT_, "Cannot allocate hash table\n");
+				TRC_WARNING(BAT, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
@@ -2815,7 +2815,7 @@ BATassertProps(BAT *b)
 				 * about sizes near definition of
 				 * BBPINIT */
 				GDKfree(hs);
-				TRC_CRITICAL(BAT_, "Heap filename is too large\n");
+				TRC_CRITICAL(BAT, "Heap filename is too large\n");
 				goto abort_check;
 			}
 			if (ATOMsize(b->ttype) == 1)
@@ -2833,7 +2833,7 @@ BATassertProps(BAT *b)
 			    HASHnew(hs, b->ttype, BATcount(b),
 				    mask, BUN_NONE, false) != GDK_SUCCEED) {
 				GDKfree(hs);
-				TRC_WARNING(BAT_, "Cannot allocate hash table\n");
+				TRC_WARNING(BAT, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
 			BATloop(b, p, q) {
