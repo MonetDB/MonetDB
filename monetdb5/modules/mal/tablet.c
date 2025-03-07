@@ -417,8 +417,8 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 	int first = 1;
 
 	if (msid->p) {
-		int pos = msid->p;
-		while (idp[-1] >= id && (pos-1) >= 0) {
+		BUN pos = msid->p;
+		while (idp[-1] >= id && pos > 0) {
 			idp--;
 			pos--;
 		}
