@@ -704,16 +704,6 @@ MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam) __at
 MapiMsg mapi_timeout(Mapi mid, unsigned int time) __attribute__((__nonnull__(1)));
 void mapi_trace(Mapi mid, bool flag) __attribute__((__nonnull__(1)));
 char *mapi_unquote(char *msg) __attribute__((__nonnull__(1)));
-char *mcrypt_BackendSum(const char *string, size_t len);
-char *mcrypt_MD5Sum(const char *string, size_t len);
-char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
-char *mcrypt_SHA1Sum(const char *string, size_t len);
-char *mcrypt_SHA224Sum(const char *string, size_t len);
-char *mcrypt_SHA256Sum(const char *string, size_t len);
-char *mcrypt_SHA384Sum(const char *string, size_t len);
-char *mcrypt_SHA512Sum(const char *string, size_t len);
-const char *mcrypt_getHashAlgorithms(void) __attribute__((__const__));
-char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
 int mo_add_option(opt **Set, int setlen, opt_kind kind, const char *name, const char *value);
 int mo_builtin_settings(opt **Set);
 const char *mo_find_option(opt *set, int setlen, const char *name);
