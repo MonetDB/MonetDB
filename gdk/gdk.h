@@ -1676,8 +1676,8 @@ gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log
 
 #define GDKerror(...)		TRC_ERROR(GDK, __VA_ARGS__)
 #define GDKsyserr(errno, ...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, TRC_M_ERROR,	\
-		      TRC_GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
+	GDKtracer_log(__FILE__, __func__, __LINE__, TRC_NAME(M_ERROR),	\
+		      TRC_NAME(GDK), GDKstrerror(errno, (char[64]){0}, 64), \
 		      __VA_ARGS__)
 #define GDKsyserror(...)	GDKsyserr(errno, __VA_ARGS__)
 
@@ -2377,8 +2377,8 @@ TIMEOUT_ERROR(const QryCtx *qc, const char *file, const char *func, int lineno)
 {
 	const char *e = TIMEOUT_MESSAGE(qc);
 	if (e) {
-		GDKtracer_log(file, func, lineno, TRC_M_ERROR, TRC_GDK, NULL,
-			      "%s\n", e);
+		GDKtracer_log(file, func, lineno, TRC_NAME(M_ERROR),
+			      TRC_NAME(GDK), NULL, "%s\n", e);
 	}
 }
 
@@ -2549,8 +2549,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-				"sa_alloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);		\
+			  "sa_alloc(%p,%zu) -> %p\n",		\
+			  _sa, _sz, _res);			\
 		_res;						\
 	})
 #define sa_zalloc(sa, sz)					\
@@ -2559,8 +2559,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-				"sa_zalloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);		\
+			  "sa_zalloc(%p,%zu) -> %p\n",		\
+			  _sa, _sz, _res);			\
 		_res;						\
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
@@ -2571,8 +2571,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _osz = (osz);					\
 		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
 		TRC_DEBUG(ALLOC,					\
-				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
-				_sa, _ptr, _sz, _osz, _res);		\
+			  "sa_realloc(%p,%p,%zu,%zu) -> %p\n",		\
+			  _sa, _ptr, _sz, _osz, _res);			\
 		_res;							\
 	})
 #define sa_strdup(sa, s)						\
@@ -2581,8 +2581,8 @@ gdk_export size_t sa_size( allocator *sa );
 		const char *_s = (s);					\
 		char *_res = sa_strdup(_sa, _s);			\
 		TRC_DEBUG(ALLOC,					\
-				"sa_strdup(%p,len=%zu) -> %p\n",	\
-				_sa, strlen(_s), _res);			\
+			  "sa_strdup(%p,len=%zu) -> %p\n",		\
+			  _sa, strlen(_s), _res);			\
 		_res;							\
 	})
 #define sa_strndup(sa, s, l)						\
@@ -2592,8 +2592,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _l = (l);					\
 		char *_res = sa_strndup(_sa, _s, _l);			\
 		TRC_DEBUG(ALLOC,					\
-				"sa_strndup(%p,len=%zu) -> %p\n", 	\
-				_sa, _l, _res);				\
+			  "sa_strndup(%p,len=%zu) -> %p\n",		\
+			  _sa, _l, _res);				\
 		_res;							\
 	})
 #endif

@@ -33,8 +33,9 @@ bool MT_thread_override_limits(void)
 			      MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), \
 			      (LPTSTR) _osmsgbuf, sizeof(_osmsgbuf),	\
 			      NULL);					\
-		GDKtracer_log(__FILE__, __func__, __LINE__, TRC_M_ERROR, \
-			      TRC_GDK, _osmsgbuf, __VA_ARGS__);		\
+		GDKtracer_log(__FILE__, __func__, __LINE__,		\
+			      TRC_NAME(M_ERROR), TRC_NAME(GDK),		\
+			      _osmsgbuf, __VA_ARGS__);			\
 		SetLastError(0);					\
 	} while (0)
 #endif

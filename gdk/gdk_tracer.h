@@ -39,7 +39,9 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define GENERATE_ENUM(ENUM) TRC_##ENUM,
+#define TRC_NAME(TOKEN)		TRC_##TOKEN
+
+#define GENERATE_ENUM(ENUM) TRC_NAME(ENUM),
 
 
 // ADAPTERS
@@ -141,14 +143,14 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 // If the LOG_LEVEL of the message is one of the following: CRITICAL,
 // ERROR or WARNING it is logged no matter the component. In any other
 // case the component is taken into account
-#define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
-	(TRC_##LOG_LEVEL <= TRC_M_WARNING  ||		\
-	 (log_level_t) ATOMIC_GET(&lvl_per_component[TRC_##COMP]) >= TRC_##LOG_LEVEL)
+#define GDK_TRACER_TEST(LOG_LEVEL, COMP)				\
+	(TRC_NAME(LOG_LEVEL) <= TRC_NAME(M_WARNING)  ||			\
+	 (log_level_t) ATOMIC_GET(&lvl_per_component[TRC_NAME(COMP)]) >= TRC_NAME(LOG_LEVEL))
 
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, ...)			\
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
-		      TRC_##LOG_LEVEL, TRC_##COMP, NULL, __VA_ARGS__)
+		      TRC_NAME(LOG_LEVEL), TRC_NAME(COMP), NULL, __VA_ARGS__)
 
 #ifdef __COVERITY__
 /* hide this for static code analysis: too many false positives */

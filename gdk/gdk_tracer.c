@@ -15,9 +15,9 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
-#define DEFAULT_ADAPTER TRC_BASIC
-#define DEFAULT_LOG_LEVEL TRC_M_ERROR
-#define DEFAULT_FLUSH_LEVEL TRC_M_DEBUG
+#define DEFAULT_ADAPTER TRC_NAME(BASIC)
+#define DEFAULT_LOG_LEVEL TRC_NAME(M_ERROR)
+#define DEFAULT_FLUSH_LEVEL TRC_NAME(M_DEBUG)
 
 #define FILE_NAME "mdbtrace.log"
 
@@ -104,7 +104,7 @@ static const char *level_str[] = {
 #define GDK_TRACER_RESET_OUTPUT()					\
 	do {								\
 		write_to_tracer = false;				\
-		for (int i = 0; !write_to_tracer && i < (int) TRC_COMPONENTS_COUNT; i++) {	\
+		for (int i = 0; !write_to_tracer && i < (int) TRC_NAME(COMPONENTS_COUNT); i++) {	\
 			write_to_tracer = (log_level_t) ATOMIC_GET(&lvl_per_component[i]) > DEFAULT_LOG_LEVEL; \
 		}							\
 	} while(0)
@@ -211,22 +211,22 @@ set_level_for_layer(int layer, log_level_t level)
 	}
 	MT_lock_unset(&GDKtracer_lock);
 
-	for (int i = 0; i < TRC_COMPONENTS_COUNT; i++) {
-		if (layer == TRC_MDB_ALL) {
+	for (int i = 0; i < TRC_NAME(COMPONENTS_COUNT); i++) {
+		if (layer == TRC_NAME(MDB_ALL)) {
 			ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 		} else {
 			tok = component_str[i];
 
 			switch (layer) {
-			case TRC_SQL_ALL:
+			case TRC_NAME(SQL_ALL):
 				if (strncmp(tok, "SQL_", 4) == 0)
 					ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 				break;
-			case TRC_MAL_ALL:
+			case TRC_NAME(MAL_ALL):
 				if (strncmp(tok, "MAL_", 4) == 0)
 					ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 				break;
-			case TRC_GDK_ALL:
+			case TRC_NAME(GDK_ALL):
 				if (strncmp(tok, "GDK", 3) == 0)
 					ATOMIC_SET(&lvl_per_component[i], (ATOMIC_BASE_TYPE) level);
 				break;
@@ -244,41 +244,41 @@ static inline adapter_t
 find_adapter(const char *adptr)
 {
 	if (adptr == NULL)
-		return TRC_ADAPTERS_COUNT;
+		return TRC_NAME(ADAPTERS_COUNT);
 
-	for (int i = 0; i < (int) TRC_ADAPTERS_COUNT; i++) {
+	for (int i = 0; i < (int) TRC_NAME(ADAPTERS_COUNT); i++) {
 		if (strcasecmp(adapter_str[i], adptr) == 0) {
 			return (adapter_t) i;
 		}
 	}
-	return TRC_ADAPTERS_COUNT;
+	return TRC_NAME(ADAPTERS_COUNT);
 }
 
 static inline log_level_t
 find_level(const char *lvl)
 {
 	if (lvl == NULL)
-		return TRC_LOG_LEVELS_COUNT;
+		return TRC_NAME(LOG_LEVELS_COUNT);
 
-	for (int i = 0; i < (int) TRC_LOG_LEVELS_COUNT; i++) {
+	for (int i = 0; i < (int) TRC_NAME(LOG_LEVELS_COUNT); i++) {
 		if (strcasecmp(level_str[i] + 2, lvl) == 0) {
 			return (log_level_t) i;
 		}
 	}
-	return TRC_LOG_LEVELS_COUNT;
+	return TRC_NAME(LOG_LEVELS_COUNT);
 }
 
 static inline layer_t
 find_layer(const char *layer)
 {
 	if (layer == NULL)
-		return TRC_LAYERS_COUNT;
-	for (int i = 0; i < (int) TRC_LAYERS_COUNT; i++) {
+		return TRC_NAME(LAYERS_COUNT);
+	for (int i = 0; i < (int) TRC_NAME(LAYERS_COUNT); i++) {
 		if (strcasecmp(layer_str[i], layer) == 0) {
 			return (layer_t) i;
 		}
 	}
-	return TRC_LAYERS_COUNT;
+	return TRC_NAME(LAYERS_COUNT);
 }
 
 static inline component_t
@@ -286,14 +286,14 @@ find_component(const char *comp)
 {
 	/* special case for the (currently) three components that end in _ */
 	if (comp == NULL || *comp == 0 || comp[strlen(comp) - 1] == '_')
-		return TRC_COMPONENTS_COUNT;
+		return TRC_NAME(COMPONENTS_COUNT);
 
-	for (int i = 0; i < (int) TRC_COMPONENTS_COUNT; i++) {
+	for (int i = 0; i < (int) TRC_NAME(COMPONENTS_COUNT); i++) {
 		if (strcasecmp(component_str[i], comp) == 0) {
 			return (component_t) i;
 		}
 	}
-	return TRC_COMPONENTS_COUNT;
+	return TRC_NAME(COMPONENTS_COUNT);
 }
 
 
@@ -321,7 +321,7 @@ reinit(void)
 
 	// GDKtracer needs to reopen the file only in
 	// case the adapter is BASIC
-	if ((adapter_t) ATOMIC_GET(&cur_adapter) != TRC_BASIC)
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) != TRC_NAME(BASIC))
 		return;
 
 	if (active_tracer) {
@@ -338,7 +338,7 @@ reinit(void)
 gdk_return
 GDKtracer_stop(void)
 {
-	set_level_for_layer(TRC_MDB_ALL, DEFAULT_LOG_LEVEL);
+	set_level_for_layer(TRC_NAME(MDB_ALL), DEFAULT_LOG_LEVEL);
 	if (active_tracer) {
 		if (active_tracer != stderr)
 			fclose(active_tracer);
@@ -355,11 +355,11 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	log_level_t level = find_level(lvl);
 	component_t component = find_component(comp);
 
-	if (level == TRC_LOG_LEVELS_COUNT) {
+	if (level == TRC_NAME(LOG_LEVELS_COUNT)) {
 		GDKerror("unknown level\n");
 		return GDK_FAIL;
 	}
-	if (component == TRC_COMPONENTS_COUNT) {
+	if (component == TRC_NAME(COMPONENTS_COUNT)) {
 		GDKerror("unknown component\n");
 		return GDK_FAIL;
 	}
@@ -382,7 +382,7 @@ GDKtracer_get_component_level(const char *comp)
 {
 	component_t component = find_component(comp);
 
-	if (component == TRC_COMPONENTS_COUNT) {
+	if (component == TRC_NAME(COMPONENTS_COUNT)) {
 		GDKerror("unknown component\n");
 		return NULL;
 	}
@@ -395,7 +395,7 @@ GDKtracer_reset_component_level(const char *comp)
 {
 	component_t component = find_component(comp);
 
-	if (component == TRC_COMPONENTS_COUNT) {
+	if (component == TRC_NAME(COMPONENTS_COUNT)) {
 		GDKerror("unknown component\n");
 		return GDK_FAIL;
 	}
@@ -413,11 +413,11 @@ GDKtracer_set_layer_level(const char *layer, const char *lvl)
 {
 	layer_t lyr = find_layer(layer);
 	log_level_t level = find_level(lvl);
-	if (level == TRC_LOG_LEVELS_COUNT) {
+	if (level == TRC_NAME(LOG_LEVELS_COUNT)) {
 		GDKerror("unknown level\n");
 		return GDK_FAIL;
 	}
-	if (lyr == TRC_LAYERS_COUNT) {
+	if (lyr == TRC_NAME(LAYERS_COUNT)) {
 		GDKerror("unknown layer\n");
 		return GDK_FAIL;
 	}
@@ -431,7 +431,7 @@ gdk_return
 GDKtracer_reset_layer_level(const char *layer)
 {
 	layer_t lyr = find_layer(layer);
-	if (lyr == TRC_LAYERS_COUNT) {
+	if (lyr == TRC_NAME(LAYERS_COUNT)) {
 		GDKerror("unknown layer\n");
 		return GDK_FAIL;
 	}
@@ -445,7 +445,7 @@ gdk_return
 GDKtracer_set_flush_level(const char *lvl)
 {
 	log_level_t level = find_level(lvl);
-	if (level == TRC_LOG_LEVELS_COUNT) {
+	if (level == TRC_NAME(LOG_LEVELS_COUNT)) {
 		GDKerror("unknown level\n");
 		return GDK_FAIL;
 	}
@@ -467,7 +467,7 @@ gdk_return
 GDKtracer_set_adapter(const char *adapter)
 {
 	adapter_t adptr = find_adapter(adapter);
-	if (adptr == TRC_ADAPTERS_COUNT) {
+	if (adptr == TRC_NAME(ADAPTERS_COUNT)) {
 		GDKerror("unknown adapter\n");
 		return GDK_FAIL;
 	}
@@ -568,7 +568,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	isexit = strstr(msg, EXITING_MSG) != NULL;
 	va_end(va);
 	if (bytes_written < 0) {
-		if ((adapter_t) ATOMIC_GET(&cur_adapter) != TRC_MBEDDED)
+		if ((adapter_t) ATOMIC_GET(&cur_adapter) != TRC_NAME(MBEDDED))
 			GDK_TRACER_EXCEPTION("Failed to write logs\n");
 		return;
 	}
@@ -576,7 +576,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((p = strchr(buffer, '\n')) != NULL)
 		*p = '\0';
 
-	if (level <= TRC_M_ERROR && (comp == TRC_GDK || comp == TRC_GEOM)) {
+	if (level <= TRC_NAME(M_ERROR) && (comp == TRC_NAME(GDK) || comp == TRC_NAME(GEOM))) {
 		/* append message to GDKerrbuf (if set) */
 		char *buf = GDKerrbuf;
 		if (buf) {
@@ -591,15 +591,15 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	}
 
 	/* don't write to file in embedded case, but set the GDK error buffer */
-	if ((adapter_t) ATOMIC_GET(&cur_adapter) == TRC_MBEDDED)
+	if ((adapter_t) ATOMIC_GET(&cur_adapter) == TRC_NAME(MBEDDED))
 		return;
 
 	MT_lock_set(&GDKtracer_lock);
 	if (interrupted)
 		reinit();
 
-	if (level <= TRC_M_WARNING || (ATOMIC_GET(&GDKdebug) & TESTINGMASK)) {
-		fprintf(level <= TRC_M_ERROR && !isexit ? stderr : stdout,
+	if (level <= TRC_NAME(M_WARNING) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK)) {
+		fprintf(level <= TRC_NAME(M_ERROR) && !isexit ? stderr : stdout,
 			"#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
@@ -626,7 +626,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// like mserver5 refusing to start due to allocated port
 	// and the error is never reported to the user because it
 	// is still in the buffer which it never gets flushed.
-	if (level == cur_flush_level || level <= TRC_M_ERROR)
+	if (level == cur_flush_level || level <= TRC_NAME(M_ERROR))
 		fflush(active_tracer);
 	MT_lock_unset(&GDKtracer_lock);
 }
@@ -644,7 +644,7 @@ GDKtracer_flush_buffer(void)
 gdk_return
 GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level)
 {
-	for (int i = 0; i < TRC_COMPONENTS_COUNT; i++) {
+	for (int i = 0; i < TRC_NAME(COMPONENTS_COUNT); i++) {
 		if (BUNappend(id, &i, false) != GDK_SUCCEED)
 			return GDK_FAIL;
 

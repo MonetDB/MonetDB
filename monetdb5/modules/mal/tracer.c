@@ -130,9 +130,9 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *c = getArgReference_bat(stk, pci, 1);
 	bat *l = getArgReference_bat(stk, pci, 2);
 
-	id = COLnew(0, TYPE_int, (BUN) TRC_COMPONENTS_COUNT, TRANSIENT);
-	component = COLnew(0, TYPE_str, (BUN) TRC_COMPONENTS_COUNT, TRANSIENT);
-	log_level = COLnew(0, TYPE_str, (BUN) TRC_COMPONENTS_COUNT, TRANSIENT);
+	id = COLnew(0, TYPE_int, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
+	component = COLnew(0, TYPE_str, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
+	log_level = COLnew(0, TYPE_str, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
 
 	if (id == NULL || component == NULL || log_level == NULL) {
 		BBPreclaim(id);
