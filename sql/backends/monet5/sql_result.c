@@ -1699,7 +1699,7 @@ next_col(res_col *c)
 	int res = (c->type.multiset==MS_VALUE)?0:(c->type.multiset==MS_ARRAY)?3:2;
 	if (c->virt)
 		res++;
-	if (c->type.type->composite) {
+	if (c->type.type && c->type.type->composite) {
 		int nr = list_length(c->type.type->d.fields);
 		/* needs fix ie needs to jump id,nr cols etc */
 		int o = 0;
