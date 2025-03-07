@@ -30,10 +30,16 @@ ms_add_join_exps(visitor *v, sql_rel *rel, list *exps)
 {
 	if (list_empty(exps))
 		return rel;
+	sql_rel *r = rel->r;
+	prop *p = r->p;
+	if (!p || p->kind != PROP_UNNEST)
+		return NULL;
+	sql_exp *re = p->value.pval;
+
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
-		if (t->multiset) {
+		if (exp_match(e, re) && t->multiset) {
 			v->changes++;
 			sql_exp *le = exp_ref(v->sql, e);
 			list *rexps = rel_projections(v->sql, rel->r, NULL, 0, 1);
@@ -46,10 +52,12 @@ ms_add_join_exps(visitor *v, sql_rel *rel, list *exps)
 			return rel;
 		} else if (t->type->composite) {
 			/* sofar only handles one level */
-			return ms_add_join_exps(v, rel, e->f);
+			sql_rel *res = ms_add_join_exps(v, rel, e->f);
+			if (res)
+				return res;
 		}
 	}
-	return rel;
+	return NULL;
 }
 
 /* TODO handle composite/multset (ie deep nested cases) too */

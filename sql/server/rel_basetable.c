@@ -28,18 +28,10 @@
 typedef struct rel_base_t {
 	sql_table *mt;
 	sql_alias *name;
-	list *subtables; /* list of sql_table pointers */
 	int disallowed;	/* ie check per column */
 	int basenr;
 	uint32_t used[];
 } rel_base_t;
-
-list *
-rel_base_subtables(sql_rel *r)
-{
-	rel_base_t *ba = r->r;
-	return ba->subtables;
-}
 
 void
 rel_base_disallow(sql_rel *r)
@@ -225,7 +217,6 @@ rel_nested_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_tabl
 
 	if (!ba)
 		return NULL;
-	append(pba->subtables, t);
 
 	sql_alias *atname = a_create(sa, colname);
 	atname->parent = ba->name;
@@ -281,8 +272,6 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 {
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
-	/* keep each combination subtable / base number in a list */
-	/* each has a unique sub-range of numbers claimed */
 	/* keep all column exp's as one large list in the result already */
 
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
@@ -292,7 +281,6 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 	if(!rel || !ba)
 		return NULL;
 
-	ba->subtables = sa_list(sa);
 	ba->basenr = sql->nid;
 	sql->nid += end;
 	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */

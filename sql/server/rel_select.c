@@ -726,6 +726,11 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		if (!e->freevar || e->type != e_column)
 			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset not found");
 		sql_rel *r = query_fetch_outer(query, e->freevar-1);
+		if (r && !is_basetable(r->op)) {
+			sql_rel *rr = NULL;
+			if (rel_find_exp_and_corresponding_rel(r, e, false, &rr, NULL))
+				r = rr;
+		}
 		if (r && is_basetable(r->op)) {
 			sql_table *t = r->l;
 			sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
@@ -735,7 +740,13 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 			sql_table *st = mvc_bind_table(query->sql, t->s, c->storage_type);
 			if (!st)
 				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table '%s' missing", c->storage_type);
-			return rel_basetable(query->sql, st, a_create(query->sql->sa, tname?tname:exp_name(e)));
+			sql_rel *bt = rel_basetable(query->sql, st, a_create(query->sql->sa, tname?tname:exp_name(e)));
+			if (!bt)
+				return bt;
+			prop *p = prop_create(query->sql->sa, PROP_UNNEST, bt->p);
+			p->value.pval = e;
+			bt->p = p;
+			return bt;
 		} else if (r) {
 			sql_subtype *t = exp_subtype(e);
 			reset_freevar(e);
@@ -755,31 +766,19 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 					append(nexps, ne);
 					first = false;
 				}
-				return rel_project(query->sql->sa, rel_dup(r), nexps);
+				sql_rel *rp = rel_project(query->sql->sa, rel_dup(r), nexps);
+				if (!rp)
+					return rp;
+				prop *p = prop_create(query->sql->sa, PROP_UNNEST, rp->p);
+				p->value.pval = e;
+				rp->p = p;
+				return rp;
 			} else {
 				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table missing");
 			}
 		} else {
 			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table missing");
 		}
-#if 0
-		assert(c->type.multiset && c->type.type->composite);
-		list *res_exps = sa_list(query->sql->sa);
-		sql_alias *ta = a_create(query->sql->sa, tname?tname:exp_name(e));
-		for (node *n = c->type.type->d.fields->h; n; n = n->next) {
-			sql_arg *a = n->data;
-			sql_exp *e = exp_column(query->sql->sa, ta, a->name, &a->type, CARD_MULTI, 1, 0, 0);
-			e->alias.label = -(query->sql->nid++);
-
-			set_basecol(e);
-			append(res_exps, e);
-		}
-		list *args = sa_list(query->sql->sa);
-		append(args, e);
-		sql_subfunc *f = find_func(query->sql, NULL, "unnest", 1, F_UNION, true, NULL, NULL);
-		e = exp_op(query->sql->sa, args, f);
-		return rel_table_func(query->sql->sa, NULL, e, res_exps, TABLE_PROD_FUNC);
-#endif
 	}
 	return NULL;
 }

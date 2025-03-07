@@ -12,6 +12,7 @@
 
 #include "monetdb_config.h"
 #include "sql_relation.h"
+#include "rel_exp.h"
 #include "rel_prop.h"
 #include "sql_string.h"
 #include "sql_atom.h"
@@ -112,6 +113,7 @@ propkind2string( prop *p)
 		PT(GROUPINGS);
 		PT(MIN);
 		PT(MAX);
+		PT(UNNEST);
 	}
 	return "UNKNOWN";
 }
@@ -171,6 +173,9 @@ propvalue2string(allocator *sa, prop *p)
 			GDKfree(s);
 		}
 		return res;
+	}
+	case PROP_UNNEST: {
+		return sa_strdup(sa, exp_name((sql_exp*)p->value.pval));
 	}
 	default:
 		break;

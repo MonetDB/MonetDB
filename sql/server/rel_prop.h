@@ -23,7 +23,8 @@ typedef enum rel_prop {
 	PROP_HASHCOL,   /* could use hash idx */
 	PROP_REMOTE,    /* uri for remote execution */
 	PROP_USED,      /* number of times exp is used */
-	PROP_GROUPINGS  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
+	PROP_GROUPINGS, /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
+	PROP_UNNEST     /* used by UNNEST function, value contains the unnest expression */
 } rel_prop;
 
 typedef struct prop {

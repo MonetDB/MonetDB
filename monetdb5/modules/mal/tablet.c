@@ -277,7 +277,8 @@ output_line(char **buf, size_t *len, char **localbuf, size_t *locallen,
 	return 0;
 }
 
-static ssize_t output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
+static ssize_t output_multiset_dense(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
+static ssize_t output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id);
 
 static inline ssize_t
 output_value(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen, Column *f)
@@ -340,7 +341,15 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 			int nr_attrs = f->nrfields - 1;
 			const char *p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
-			fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
+			/* various cases:
+			 *	rowid column dense (but for ints !!
+			 *	rowid column sorted
+			 *	else
+			 */
+			if (f->c)
+				fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
+			else
+				fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
 			fmt[j+nr_attrs].p++;
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
@@ -363,14 +372,57 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 }
 
 #define MS_ARRAY 2
+/* id is prev id + 1 */
 static ssize_t
-output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+output_multiset_dense(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
 {
 	nr_attrs -= (multiset == MS_ARRAY)?2:1;
 	Column *msid = fmt + nr_attrs;
 	int *idp = (int*)Tloc(msid->c, msid->p);
 	int first = 1;
+
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill++] = '{';
+	(*buf)[fill] = 0;
+	for (; *idp == id && fill > 0; idp++, msid->p++) {
+		if (!first)
+			(*buf)[fill++] = ',';
+		if (composite) {
+			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
+		} else {
+			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
+		}
+		first = 0;
+	}
+	if (fill < 0)
+		return fill;
+	(*buf)[fill++] = '}';
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill] = 0;
+	return fill;
+}
+
+/* id >= prev id */
+static ssize_t
+output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
+{
+	nr_attrs -= (multiset == MS_ARRAY)?2:1;
+	Column *msid = fmt + nr_attrs;
+	/* how to also keep prev id */
+	int *idp = (int*)Tloc(msid->c, msid->p);
+	int first = 1;
+
+	if (msid->p) {
+		int pos = msid->p;
+		while (idp[-1] >= id && (pos-1) >= 0) {
+			idp--;
+			pos--;
+		}
+	}
 
 	if (!quoted)
 		(*buf)[fill++] = '\'';
@@ -409,7 +461,10 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 			int nr_attrs = f->nrfields - 1;
 			p = BUNtail(fmt[j+nr_attrs].ci, fmt[j+nr_attrs].p);
 
-			fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			if (f->c)
+			    fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			else
+			    fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
 			fmt[j+nr_attrs].p++;
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
