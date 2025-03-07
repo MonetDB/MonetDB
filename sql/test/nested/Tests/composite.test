@@ -32,15 +32,8 @@ bob
 statement ok
 insert into ct_col values ('(0, "head")')
 
-### CRASH
-###statement ok
-###insert into ct_col values ('(1, "hello")'), ('(2, "world")')
-
 statement ok
-insert into ct_col values ('(1, "hello")') 
-
-statement ok
-insert into ct_col values ('(2, "world")')
+insert into ct_col values ('(1, "hello")'), ('(2, "world")')
 
 query IT nosort
 select c.n, c.m from ct_col
@@ -60,6 +53,7 @@ world
 
 ## modify table
 
+### todo implement truncate for nested tables
 ### CRASH implement truncate on all related nested tables
 ###statement ok
 ###truncate ct_col
