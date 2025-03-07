@@ -10,26 +10,33 @@ insert into aca_pre values (array[(array['Aa01', 'Aa02'], 100), (array['Ab01', '
 statement ok
 insert into aca_pre values ('{({"Ca01", "Ca02"}, 300), ({"Cb01", "Cb02"}, 310)}', 30), ('{({"Da01", "Da02"}, 400), ({"Db01", "Db02"}, 410)}', 40)
 
-## CRASH - values are the expected ones
-#query TI nosort outer-array-unnest
-#select arr, k from aca_pre, unnest(arr);
-#----
-#({"Aa01", "Aa02"}, 100)
-#10
-#({"Ab01", "Ab02"}, 110)
-#10
-#({"Ba01", "Ba02"}, 200)
-#20
-#({"Bb01", "Bb02"}, 210)
-#20
-#({"Ca01", "Ca02"}, 300)
-#30
-#({"Cb01", "Cb02"}, 310)
-#30
-#({"Da01", "Da02"}, 400)
-#40
-#({"Db01", "Db02"}, 410)
-#40
+query TII nosort outer-array-unnest
+select a.ms, a.n, k from aca_pre, unnest(arr) a;
+----
+{"Aa01","Aa02"}
+100
+10
+{"Ab01","Ab02"}
+110
+10
+{"Ba01","Ba02"}
+200
+20
+{"Bb01","Bb02"}
+210
+20
+{"Ca01","Ca02"}
+300
+30
+{"Cb01","Cb02"}
+310
+30
+{"Da01","Da02"}
+400
+40
+{"Db01","Db02"}
+410
+40
 
 query TII nosort full-unnest 
 select in_arr.elements, out_arr.n, k from aca_pre, unnest(arr) as out_arr, unnest(out_arr.ms) as in_arr

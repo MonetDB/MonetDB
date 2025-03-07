@@ -33,7 +33,7 @@ statement ok
 insert into bar values (array[('left', 'right'), ('left', 'right')])
 
 query TT nosort
-select p.key, p.value from bar, unnest(p)
+select pp.key, pp.value from bar, unnest(p) pp
 ----
 left
 right
@@ -86,7 +86,7 @@ statement ok
 insert into tpsv values (1, array [ ('left','right'), ('l2','r2') ]), (2, array [ ('left','right'), ('l2','r2') ]), (3, array [ ('l3', 'r3') ])
 
 query ITT nosort
-select i, p.key, p.value from tpsv cross join unnest(p)
+select i, pp.key, pp.value from tpsv cross join unnest(p) pp
 ----
 1
 left
