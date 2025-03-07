@@ -60,11 +60,17 @@ json_open(const char *fname, allocator *sa)
 		close(fd);
 		return NULL;
 	}
+	if (stb.st_size > 2000000000) {
+		close(fd);
+		TRC_ERROR(SQL_EXECUTION, "Error file %s: Too large", fname);
+		return NULL;
+	}
+
 	JSONFileHandle *res = sa_alloc(sa, sizeof(JSONFileHandle));
 	res->sa = sa;
 	res->filename = sa_strdup(sa, fname);
 	res->fd = fd;
-	res->size = stb.st_size;
+	res->size = (size_t)stb.st_size;
 	return res;
 }
 
