@@ -10,15 +10,15 @@ statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLExecD
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 query TTT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT type, name, tbl_name FROM sqlite_schema ORDER BY 1,2,3')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT type, name, tbl_name FROM sqlite_master ORDER BY 1,2,3')
 ----
 
 query TTTIT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM sqlite_schema ORDER BY 1,2,3')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM sqlite_master ORDER BY 1,2,3')
 ----
 
 query TTTT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT tbl_name, type, name, sql FROM sqlite_schema ORDER BY 1,2 DESC,3')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT tbl_name, type, name, sql FROM sqlite_master ORDER BY 1,2 DESC,3')
 ----
 albums
 table
