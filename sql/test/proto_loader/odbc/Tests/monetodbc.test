@@ -13,7 +13,7 @@ statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDrive
 select * from proto_loader('odbc:DRIVER=libMonetODBC;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 query TT
-select * from proto_loader('odbc:DSN=MonetDB-Test;UID=monetdb;PWD=monetdb;QUERY=SELECT schema_name, table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ''_tables'' order by 1')
+select * from proto_loader('odbc:DSN=MonetDB-Test;UID=monetdb;PWD=monetdb;QUERY=SELECT table_schema, table_name FROM INFORMATION_SCHEMA.TABLES WHERE table_name = ''_tables'' order by 1')
 ----
 sys
 _tables
@@ -43,13 +43,13 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(90.123456 as decimal(8,6)
 90.123456
 
 query II
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as decimal(18,8)) as dec8_val, -1234567890.12345678 as decimal(18,8)) as dec8n_val'
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as decimal(18,8)) as dec8_val, cast(-1234567890.12345678 as decimal(18,8)) as dec8n_val'
 ----
 1234567890.12345678
 -1234567890.12345678
 
 query I
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(123456789012345678.123456789 as decimal(27,9)) as dec_val'
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(123456789012345678.123456789 as decimal(27,9)) as dec16_val'
 ----
 123456789012345678.123456789
 
