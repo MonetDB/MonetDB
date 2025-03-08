@@ -18,13 +18,15 @@
 #include "mal_exception.h"
 #include "mal_builder.h"
 #include "mal_client.h"
+#include "mutils.h"	/* utf8towchar(), wchartoutf8() */
+#include "sql_decimal.h"	/* decimal_from_str() */
 
-//#ifdef _MSC_VER
-//#include <WTypes.h>
-//#endif
-//#include <stdint.h>
-//#include <ctype.h>
-//#include <wchar.h>
+#ifdef _MSC_VER
+#include <WTypes.h>
+#endif
+#include <stdint.h>
+#include <ctype.h>
+#include <wchar.h>
 
 /**** Define the ODBC Version our ODBC application complies with ****/
 #define ODBCVER 0x0352		/* Important: this must be defined before include of sql.h and sqlext.h */
@@ -39,10 +41,16 @@
 #define MAX_COL_NAME_LEN  1024
 #define MAX_TBL_NAME_LEN  1024
 
+#ifdef HAVE_HGE
+#define MAX_PREC  38
+#else
+#define MAX_PREC  18
+#endif
+
 typedef struct {
 	SQLSMALLINT dataType;		/* ODBC datatype */
-	SQLULEN columnSize;		/* ODBC colsize */
-	SQLSMALLINT decimalDigits;	/* ODBC dec. digits */
+	SQLULEN columnSize;		/* ODBC colsize, contains precision for decimals */
+	SQLSMALLINT decimalDigits;	/* ODBC dec. digits, contains scale for decimals */
 	int battype;			/* MonetDB atom type, used to create the BAT */
 	BAT * bat;			/* MonetDB BAT */
 } rescol_t;
@@ -52,7 +60,7 @@ static sql_subtype *
 map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDigits, mvc * sql)
 {
 	char * typenm;
-	int interval_type = 0;
+	unsigned int interval_type = 0;
 
 	switch (dataType) {
 	case SQL_CHAR:
@@ -63,18 +71,35 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	case SQL_WLONGVARCHAR:
 	default:	/* all other ODBC types are also mapped to varchar for now */
 		/* all ODBC char datatypes are mapped to varchar. char and clob are internally not used anymore */
-		return sql_bind_subtype(sql->sa, "varchar", (int) columnSize, 0);
+		if (columnSize > (SQLULEN) INT_MAX)
+			columnSize = INT_MAX;
+		return sql_bind_subtype(sql->sa, "varchar", (unsigned int) columnSize, 0);
 
 	case SQL_BINARY:
 	case SQL_VARBINARY:
 	case SQL_LONGVARBINARY:
-		return sql_bind_subtype(sql->sa, "blob", (int) columnSize, 0);
+		if (columnSize > (SQLULEN) INT_MAX)
+			columnSize = INT_MAX;
+		return sql_bind_subtype(sql->sa, "blob", (unsigned int) columnSize, 0);
 
 	case SQL_DECIMAL:
 	case SQL_NUMERIC:
+	{
 		/* columnSize contains the defined number of digits, so precision. */
 		/* decimalDigits contains the scale (which can be negative). */
-		return sql_bind_subtype(sql->sa, "decimal", (int) columnSize, (int) decimalDigits);
+		if (columnSize > MAX_PREC || abs(decimalDigits) > MAX_PREC) {
+			/* too large precision/scale, not supported by MonetDB. Map this column to a string */
+			if (columnSize > (SQLULEN) INT_MAX)
+				columnSize = INT_MAX;
+			return sql_bind_subtype(sql->sa, "varchar", (unsigned int) columnSize, 0);
+		}
+
+		unsigned int prec = MIN(1, columnSize); /* precision must be >= 1 */
+		unsigned int scale = MIN(0, decimalDigits); /* negative scales are not supported by MonetDB */
+		if (prec < scale)
+			prec = scale;	/* make precision large enough to contain all decimal digits */
+		return sql_bind_subtype(sql->sa, "decimal", prec, scale);
+	}
 
 	case SQL_BIT:
 		typenm = "boolean";
@@ -119,10 +144,6 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		typenm = "timestamp";
 		break;
 
-	case SQL_INTERVAL_MONTH:
-		typenm = "month_interval";
-		interval_type = 3;
-		break;
 	case SQL_INTERVAL_YEAR:
 		typenm = "month_interval";
 		interval_type = 1;
@@ -130,6 +151,10 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	case SQL_INTERVAL_YEAR_TO_MONTH:
 		typenm = "month_interval";
 		interval_type = 2;
+		break;
+	case SQL_INTERVAL_MONTH:
+		typenm = "month_interval";
+		interval_type = 3;
 		break;
 	case SQL_INTERVAL_DAY:
 		typenm = "day_interval";
@@ -273,49 +298,6 @@ bat_create(int adt, BUN nr)
 	return b;
 }
 
-static lng
-convert_numericstr2lng(str val, int columnSize, SQLSMALLINT decimalDigits) {
-	lng ret = 0;
-	int i = 0;
-	int digits = 0;
-	int decdigits = 0;
-	char c;
-	char sign = '+';
-	int decsep = -1;
-
-	if (!val)
-		return 0;
-
-	c = val[i];
-	if (c == '-' || c == '+') {
-		sign = c;
-		i++;
-	}
-	while (val[i]) {
-		if (digits >= columnSize || decdigits >= decimalDigits)
-			break;	// we have read enough
-		c = val[i];
-		if (c >= '0' && c <= '9') {
-			ret *= 10;
-			ret += (int) c - '0';
-			digits++;
-			if (decsep >= 0)
-				decdigits++;
-		} else if (c == '.') {
-			decsep = i;
-		}
-		i++;
-	}
-	while (decdigits < decimalDigits) {
-		// align to the scale
-		ret *= 10;
-		decdigits++;
-	}
-	if (sign == '-')
-		ret = -ret;
-	return ret;
-}
-
 /*
  * odbc_query() contains the logic for both odbc_relation() and ODBCloader()
  * the caller argument is ODBC_RELATION when called from odbc_relation and ODBC_LOADER when called from ODBCloader
@@ -350,11 +332,15 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		return "Incomplete ODBC connection string. Missing 'QUERY=' part (to specify the SQL SELECT query to execute).";
 
 	char * query = GDKstrdup(&qry_str[6]);	// we expect that QUERY= is at the end of the connection string
+	if (query == NULL || (query && (strcmp("", query) == 0)))
+		return "Incomplete ODBC connection string. Missing SQL SELECT query after 'QUERY='.";
 
 	// create a new ODBC connection string without the QUERY= part
 	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
-
-	// TODO convert con_str and qry_str from UTF-8 to UCS16, so we can use ODBC W functions
+	if (odbc_con_str == NULL) {
+		GDKfree(query);
+		return "Missing ODBC connection string.";
+	}
 
 	// trace_enabled = true;
 	if (trace_enabled)
@@ -390,15 +376,23 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		goto finish;
 	}
 
-	// TODO convert con_str from UTF-8 to UCS16, so we can use ODBC W functions
 	SQLSMALLINT len = 0;
-	ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+	wchar_t * odbc_con_Wstr = utf8towchar(odbc_con_str);
+	if (odbc_con_Wstr != NULL) {
+		ret = SQLDriverConnectW(dbc, NULL, (SQLWCHAR *) odbc_con_Wstr, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+		/* we no longer need odbc_con_Wstr */
+		free(odbc_con_Wstr);
+	} else
+		ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
 	if (trace_enabled)
 		printf("After SQLDriverConnect(%s) returned %d\n", odbc_con_str, ret);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = "Could not connect. SQLDriverConnect failed.";
+		errmsg = "SQLDriverConnect failed.";
 		goto finish;
 	}
+	/* we no longer need odbc_con_str */
+	GDKfree(odbc_con_str);
+	odbc_con_str = NULL;
 
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
@@ -406,14 +400,22 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		goto finish;
 	}
 
-	// TODO convert qry_str from UTF-8 to UCS16, so we can use ODBC W functions
-	ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
+	wchar_t * query_Wstr = utf8towchar(query);
+	if (query_Wstr != NULL) {
+		ret = SQLExecDirectW(stmt, (SQLWCHAR *) query_Wstr, SQL_NTS);
+		/* we no longer need query_Wstr */
+		free(query_Wstr);
+	} else
+		ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 	if (trace_enabled)
 		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "SQLExecDirect query failed.";
 		goto finish;
 	}
+	/* we no longer need query string */
+	GDKfree(query);
+	query = NULL;
 
 	SQLSMALLINT nr_cols = 0;
 	ret = SQLNumResultCols(stmt, &nr_cols);
@@ -518,8 +520,21 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				GDKfree(colmetadata);
 				goto finish;
 			}
+			/* use same logic as used in map_rescol_type() for SQL_FLOAT and SQL_DECIMAL */
 			if (dataType == SQL_FLOAT) {
 				dataType = (columnSize == 7) ? SQL_REAL : SQL_DOUBLE;
+			} else
+			if (dataType == SQL_DECIMAL || dataType == SQL_NUMERIC) {
+				/* MonetDB has limits for the precision and scale */
+				if (columnSize > MAX_PREC || abs(decimalDigits) > MAX_PREC) {
+					/* very large precision/scale, not supported by MonetDB. Map this column to a string */
+					dataType = SQL_VARCHAR;
+				} else {
+					columnSize = MIN(1, columnSize); /* precision must be >= 1 */
+					decimalDigits = MIN(0, decimalDigits); /* negative scales are not supported by MonetDB */
+					if ((int)columnSize < decimalDigits)
+						columnSize = decimalDigits;	/* make precision large enough to contain all decimal digits */
+				}
 			}
 			colmetadata[col].dataType = dataType;
 			colmetadata[col].columnSize = columnSize;
@@ -567,19 +582,18 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		int int_val;
 		lng lng_val;
 #ifdef HAVE_HGE
-// TODO		hge hge_val;	// for large decimals
+		hge hge_val;	// for decimals with precision > 18
 #endif
 		flt flt_val;
 		dbl dbl_val;
 		DATE_STRUCT date_val;
 		TIME_STRUCT time_val;
 		TIMESTAMP_STRUCT ts_val;
-//		SQL_NUMERIC_STRUCT num_val;
 		SQLGUID guid_val;
-		bte * blob_val = NULL;
 
 		/* allocate storage for all the var sized atom types. */
 		char * str_val = NULL;		// TODO: change to wchar
+		bte * blob_val = NULL;
 		if (largestStringSize == 0)	// no valid string length, use 65535 (64kB) as default
 			largestStringSize = 65535;
 		if (largestStringSize > 16777215) // string length too large, limit to 16MB
@@ -606,6 +620,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				printf("Allocated blob_val buffer of size %zu\n", largestBlobSize * sizeof(bte));
 		}
 
+		gdk_return gdkret = GDK_SUCCEED;
 		unsigned long row = 0;
 		ret = SQLFetch(stmt);	// TODO optimisation: use SQLExtendedFetch() to pull data array wise and use BUNappendmulti()
 		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
@@ -655,7 +670,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						break;
 					case SQL_DECIMAL:
 					case SQL_NUMERIC:
-						/* we read the decimal data as string data and convert it to lng (or hge) */
+						/* we read decimal data always as string data and convert it to the right internal decimal format and bat type */
 						targetType = SQL_C_CHAR;
 						targetValuePtr = (SQLPOINTER *) str_val;
 						bufferLength = largestStringSize;
@@ -723,7 +738,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				}
 				ret = SQLGetData(stmt, col+1, targetType, targetValuePtr, bufferLength, &strLen);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-					if (trace_enabled)
+					if (trace_enabled || true)
 						printf("Failed to get data for col %u of row %lu\n", col+1, row);
 					/* as all bats need to be the correct length, append NULL value */
 					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
@@ -737,7 +752,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 							if (trace_enabled)
 								printf("BUNappend(b, ATOMnilptr(b->ttype), false) failed\n");
 					} else {
-						gdk_return gdkret = GDK_SUCCEED;
 						switch(sqltype) {
 							case SQL_CHAR:
 							case SQL_VARCHAR:
@@ -788,13 +802,91 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 							case SQL_DECIMAL:
 							case SQL_NUMERIC:
 							{
+								int battype = colmetadata[col].battype;
+								if (battype == TYPE_str) {
+									if (strLen != SQL_NTS && strLen >= 0) {
+										/* make sure it is a Nul Terminated String */
+										if ((SQLULEN) strLen < largestStringSize) {
+											if (str_val[strLen] != '\0')
+												str_val[strLen] = '\0';
+										} else {
+											if (str_val[largestStringSize] != '\0')
+												str_val[largestStringSize] = '\0';
+										}
+									}
+									if (trace_enabled)
+										printf("Data row %lu col %u: %s\n", row, col+1, str_val);
+									gdkret = BUNappend(b, (void *) str_val, false);
+									break;
+								}
+
 								if (trace_enabled)
-									printf("Data row %lu col %u: %s\n", row, col+1, str_val);
-								/* convert str_val to lng_val (or hge_val) based on sql_bind_subtype(sql->sa, "decimal", (int) columnSize, (int) decimalDigits); */
-								lng_val = convert_numericstr2lng(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
+									printf("Data row %lu col %u: %s  convert to lng/hge using colSize %d digits %d\n",
+										row, col+1, str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
+
+								/* convert str_val to lng_val or hge_val based on sql_bind_subtype(sql->sa, "decimal", columnSize, decimalDigits); */
+								int digits;
+								int scale;
+								int has_errors;
+								DEC_TPE res = decimal_from_str(str_val, &digits, &scale, &has_errors);
+								/* or use: str str_2dec(TYPE *res, const str *val, const int *d, const int *sc)) */
+								if (has_errors) {
+									if (trace_enabled)
+										printf("decimal_from_str() failed to convert dec value: %s to lng/hge\n", str_val);
+									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									break;
+								}
+
+								switch(battype) {
+#ifdef HAVE_HGE
+									case TYPE_hge:
+									{
+										hge_val = (hge) res;
+//										if (trace_enabled)
+//											printf("Data row %lu col %u: %" PRId128 "\n", row, col+1, hge_val);
+										gdkret = BUNappend(b, (void *) &hge_val, false);
+										break;
+									}
+#endif
+									case TYPE_lng:
+									{
+										lng_val = (lng) res;
+										if (trace_enabled)
+											printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
+										gdkret = BUNappend(b, (void *) &lng_val, false);
+										break;
+									}
+									case TYPE_int:
+									{
+										int_val = (int) res;
+										if (trace_enabled)
+											printf("Data row %lu col %u: %d\n", row, col+1, int_val);
+										gdkret = BUNappend(b, (void *) &int_val, false);
+										break;
+									}
+									case TYPE_sht:
+									{
+										sht_val = (sht) res;
+										if (trace_enabled)
+											printf("Data row %lu col %u: %hd\n", row, col+1, sht_val);
+										gdkret = BUNappend(b, (void *) &sht_val, false);
+										break;
+									}
+									case TYPE_bte:
+									{
+										bte_val = (bte) res;
+										if (trace_enabled)
+											printf("Data row %lu col %u: %c\n", row, col+1, bte_val);
+										gdkret = BUNappend(b, (void *) &bte_val, false);
+										break;
+									}
+									default:
+									{
+										/* battype not expected for decimals. add a NULL value */
+										gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+										break;
+									}
+								}
 								break;
 							}
 							case SQL_REAL:
