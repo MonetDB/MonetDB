@@ -18,7 +18,7 @@
 #include "mal_exception.h"
 #include "mal_builder.h"
 #include "mal_client.h"
-#include "mutils.h"	/* utf8towchar(), wchartoutf8() */
+// #include "mutils.h"	/* utf8towchar(), wchartoutf8() */
 #include "sql_decimal.h"	/* decimal_from_str() */
 
 #ifdef _MSC_VER
@@ -377,12 +377,12 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 	}
 
 	SQLSMALLINT len = 0;
-	wchar_t * odbc_con_Wstr = utf8towchar(odbc_con_str);
-	if (odbc_con_Wstr != NULL) {
-		ret = SQLDriverConnectW(dbc, NULL, (SQLWCHAR *) odbc_con_Wstr, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
-		/* we no longer need odbc_con_Wstr */
-		free(odbc_con_Wstr);
-	} else
+//	wchar_t * odbc_con_Wstr = utf8towchar(odbc_con_str);
+//	if (odbc_con_Wstr != NULL) {
+//		ret = SQLDriverConnectW(dbc, NULL, (SQLWCHAR *) odbc_con_Wstr, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+//		/* we no longer need odbc_con_Wstr */
+//		free(odbc_con_Wstr);
+//	} else
 		ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
 	if (trace_enabled)
 		printf("After SQLDriverConnect(%s) returned %d\n", odbc_con_str, ret);
@@ -400,12 +400,12 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		goto finish;
 	}
 
-	wchar_t * query_Wstr = utf8towchar(query);
-	if (query_Wstr != NULL) {
-		ret = SQLExecDirectW(stmt, (SQLWCHAR *) query_Wstr, SQL_NTS);
-		/* we no longer need query_Wstr */
-		free(query_Wstr);
-	} else
+//	wchar_t * query_Wstr = utf8towchar(query);
+//	if (query_Wstr != NULL) {
+//		ret = SQLExecDirectW(stmt, (SQLWCHAR *) query_Wstr, SQL_NTS);
+//		/* we no longer need query_Wstr */
+//		free(query_Wstr);
+//	} else
 		ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 	if (trace_enabled)
 		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
