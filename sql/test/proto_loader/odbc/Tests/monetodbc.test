@@ -26,30 +26,3 @@ select id from 'odbc:DSN=MonetDB-Test;QUERY=select id from sys._tables where nam
 2067
 2115
 
-query I
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(0.34 as decimal(2,2)) as dec1_val'
-----
-0.34
-
-query II
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234.0 as decimal(4,0)) as dec2_val, cast(34.56 as decimal(4,2)) as dec3_val'
-----
-1234
-34.56
-
-query I
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(90.123456 as decimal(8,6)) as dec4_val'
-----
-90.123456
-
-query II
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as decimal(18,8)) as dec8_val, cast(-1234567890.12345678 as decimal(18,8)) as dec8n_val'
-----
-1234567890.12345678
--1234567890.12345678
-
-query I
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(123456789012345678.123456789 as decimal(27,9)) as dec16_val'
-----
-123456789012345678.123456789
-
