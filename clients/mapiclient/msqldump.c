@@ -108,7 +108,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+		if ((argv[i] = utf16toutf8(wargv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}

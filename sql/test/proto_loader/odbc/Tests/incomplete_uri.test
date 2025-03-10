@@ -41,3 +41,6 @@ select * from sys.proto_loader('odbc:FileNotFound.csv')
 statement error 42000!SELECT: proto_loader function failed 'Incomplete ODBC connection string. Missing 'QUERY=' part (to specify the SQL SELECT query to execute).'
 select * from proto_loader('odbc:DSN=MonetDB')
 
+statement error 42000!SELECT: proto_loader function failed 'Incomplete ODBC connection string. Missing 'QUERY=' part (to specify the SQL SELECT query to execute).'
+select * from 'odbc:DSN=MonetDB'
+

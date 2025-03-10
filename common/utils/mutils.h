@@ -126,8 +126,8 @@ MT_access(const char *pathname, int mode)
 
 #endif
 
-mutils_export wchar_t *utf8towchar(const char *src);
-mutils_export char *wchartoutf8(const wchar_t *src);
+mutils_export uint16_t *utf8toutf16(const char *src);
+mutils_export char *utf16toutf8(const uint16_t *src);
 
 mutils_export int MT_lockf(const char *filename, int mode);
 

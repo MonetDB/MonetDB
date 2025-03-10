@@ -3046,11 +3046,11 @@ cvfilename(const char *filename)
 		}
 	}
 #endif
-	/* couldn't use iconv for whatever reason; alternative is to
-	 * use utf8towchar above to convert to a wide character string
-	 * (wcs) and convert that to the locale-specific encoding
-	 * using wcstombs or wcsrtombs (but preferably only if the
-	 * locale's encoding is not UTF-8) */
+	/* if encoding is set, we couldn't use iconv for whatever reason;
+	 * alternative is to convert to a wide character string (wcs) and
+	 * convert that to the locale-specific encoding using wcstombs or
+	 * wcsrtombs (but preferably only if the locale's encoding is not
+	 * UTF-8) */
 	return strdup(filename);
 }
 
@@ -3405,7 +3405,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+		if ((argv[i] = utf16toutf8(wargv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}
