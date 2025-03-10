@@ -33,8 +33,9 @@ static const char *FunctionBasePath(char *buf, size_t len)
 #ifdef NATIVE_WIN32
 	if (basepath == NULL) {
 		const wchar_t *home = _wgetenv(L"HOME");
+		static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 		if (home) {
-			char *path = wchartoutf8(home);
+			char *path = utf16toutf8(home);
 			if (path) {
 				strcpy_len(buf, path, len);
 				free(path);
