@@ -19,7 +19,7 @@
 #include "mal_builder.h"
 #include "mal_client.h"
 // #include "mutils.h"	/* utf8towchar(), wchartoutf8() */
-#include "sql_decimal.h"	/* decimal_from_str() */
+// #include "sql_decimal.h"	/* decimal_from_str() */
 
 #ifdef _MSC_VER
 #include <WTypes.h>
@@ -46,6 +46,9 @@
 #else
 #define MAX_PREC  18
 #endif
+
+/* MonetDB ODBC Driver defines in ODBCGlobal.h  SQL_HUGEINT 0x4000 */
+#define SQL_HUGEINT	0x4000
 
 typedef struct {
 	SQLSMALLINT dataType;		/* ODBC datatype */
@@ -91,14 +94,15 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 			/* too large precision/scale, not supported by MonetDB. Map this column to a string */
 			if (columnSize > (SQLULEN) INT_MAX)
 				columnSize = INT_MAX;
-			return sql_bind_subtype(sql->sa, "varchar", (unsigned int) columnSize, 0);
+			return sql_bind_subtype(sql->sa, "varchar", (unsigned int) columnSize +3, 0);
 		}
 
-		unsigned int prec = MIN(1, columnSize); /* precision must be >= 1 */
-		unsigned int scale = MIN(0, decimalDigits); /* negative scales are not supported by MonetDB */
-		if (prec < scale)
-			prec = scale;	/* make precision large enough to contain all decimal digits */
-		return sql_bind_subtype(sql->sa, "decimal", prec, scale);
+		return sql_bind_subtype(sql->sa, "varchar", (unsigned int) columnSize +3, 0);
+//		unsigned int prec = MAX(1, columnSize); /* precision must be >= 1 */
+//		unsigned int scale = MAX(0, decimalDigits); /* negative scales are not supported by MonetDB */
+//		if (prec < scale)
+//			prec = scale;	/* make precision large enough to contain all decimal digits */
+//		return sql_bind_subtype(sql->sa, "decimal", prec, scale);
 	}
 
 	case SQL_BIT:
@@ -117,6 +121,11 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	case SQL_BIGINT:
 		typenm = "bigint";
 		break;
+#ifdef HAVE_HGE
+	case SQL_HUGEINT:
+		typenm = "hugeint";
+		break;
+#endif
 
 	case SQL_REAL:
 		typenm = "real";
@@ -248,10 +257,39 @@ nameofSQLtype(SQLSMALLINT dataType)
 	case SQL_INTERVAL_HOUR_TO_SECOND:	return "INTERVAL HOUR TO SECOND";
 	case SQL_INTERVAL_MINUTE_TO_SECOND:	return "INTERVAL MINUTE TO SECOND";
 	case SQL_GUID:		return "GUID";
-/*	case SQL_HUGEINT:	return "HUGEINT";	0x4000 (defined in ODBCGlobal.h) */
+	case SQL_HUGEINT:	return "HUGEINT";
 	default:		return "Driver specific type";
 	}
 }
+
+#ifdef HAVE_HGE
+static hge
+str_to_hge(const char *s) {
+	char c;
+	char sign = '+';
+	int i = 0;
+	hge ret = 0;
+
+	if (!s)
+		return 0;
+
+	c = s[i];
+	if (c == '-' || c == '+') {
+		sign = c;
+		c = s[++i];
+	}
+	while (c) {
+		if (c >= '0' && c <= '9') {
+			ret *= 10;
+			ret += (int) c - '0';
+		}
+		c = s[++i];
+	}
+	if (sign == '-')
+		ret = -ret;
+	return ret;
+}
+#endif
 
 /* utility function to safely close all opened ODBC resources */
 static void
@@ -400,6 +438,26 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		goto finish;
 	}
 
+#ifdef HAVE_HGE
+	{
+		char name[1024];
+		ret = SQLGetInfo(dbc, SQL_DBMS_NAME, (SQLPOINTER) &name, 1023, NULL);
+		if (trace_enabled)
+			printf("After SQLGetInfo(dbc, SQL_DBMS_NAME) returned %d\n", ret);
+		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+			if (strcmp("MonetDB", name) == 0) {
+				/* let the MonetDB driver enable returning HUGEINT as column datatype */
+				ret = SQLGetTypeInfo(stmt, SQL_HUGEINT);
+				if (trace_enabled)
+					printf("After SQLGetTypeInfo(stmt, SQL_HUGEINT) returned %d\n", ret);
+				if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+					ret = SQLCloseCursor(stmt);
+				}
+			}
+		}
+	}
+#endif
+
 //	wchar_t * query_Wstr = utf8towchar(query);
 //	if (query_Wstr != NULL) {
 //		ret = SQLExecDirectW(stmt, (SQLWCHAR *) query_Wstr, SQL_NTS);
@@ -520,21 +578,30 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				GDKfree(colmetadata);
 				goto finish;
 			}
+			if (trace_enabled)
+				printf("DescCol %u, name: %s, type %d (%s), size %u, decdigits %d\n",
+					col+1, cname, dataType, nameofSQLtype(dataType), (unsigned int)columnSize, decimalDigits);
 			/* use same logic as used in map_rescol_type() for SQL_FLOAT and SQL_DECIMAL */
 			if (dataType == SQL_FLOAT) {
 				dataType = (columnSize == 7) ? SQL_REAL : SQL_DOUBLE;
+			} else
+			if (dataType == SQL_HUGEINT) {
+				dataType = SQL_VARCHAR;	/* read it as string */
+				columnSize = 50;
 			} else
 			if (dataType == SQL_DECIMAL || dataType == SQL_NUMERIC) {
 				/* MonetDB has limits for the precision and scale */
 				if (columnSize > MAX_PREC || abs(decimalDigits) > MAX_PREC) {
 					/* very large precision/scale, not supported by MonetDB. Map this column to a string */
 					dataType = SQL_VARCHAR;
-				} else {
-					columnSize = MIN(1, columnSize); /* precision must be >= 1 */
-					decimalDigits = MIN(0, decimalDigits); /* negative scales are not supported by MonetDB */
-					if ((int)columnSize < decimalDigits)
-						columnSize = decimalDigits;	/* make precision large enough to contain all decimal digits */
+//					columnSize += 3;	/* add 3 for sign, leading 0 and decimal separator */
 				}
+//				columnSize = MAX(1, columnSize); /* precision must be >= 1 */
+//				decimalDigits = MAX(0, decimalDigits); /* negative scales are not supported by MonetDB */
+//				if ((int)columnSize < decimalDigits)
+//					columnSize = decimalDigits;	/* make precision large enough to contain all decimal digits */
+				dataType = SQL_VARCHAR;	/* read it as string */
+				columnSize += 3;	/* add 3 for sign, leading 0 and decimal separator */
 			}
 			colmetadata[col].dataType = dataType;
 			colmetadata[col].columnSize = columnSize;
@@ -545,7 +612,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				if (columnSize > largestStringSize) {
 					largestStringSize = columnSize;
 				}
-			}
+			} else
 			if (battype == TYPE_blob) {
 				hasBlobCols = true;
 				if (columnSize > largestBlobSize) {
@@ -576,16 +643,16 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		}
 
 		/* allocate storage for all the fixed size atom types. */
-		bit bit_val;
-		bte bte_val;
-		sht sht_val;
-		int int_val;
-		lng lng_val;
+		bit bit_val = 0;
+		bte bte_val = 0;
+		sht sht_val = 0;
+		int int_val = 0;
+		lng lng_val = 0;
 #ifdef HAVE_HGE
-		hge hge_val;	// for decimals with precision > 18
+		hge hge_val = 0;	// for hugeint and decimals with precision > 18
 #endif
-		flt flt_val;
-		dbl dbl_val;
+		flt flt_val = 0;
+		dbl dbl_val = 0;
 		DATE_STRUCT date_val;
 		TIME_STRUCT time_val;
 		TIMESTAMP_STRUCT ts_val;
@@ -667,6 +734,12 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 					case SQL_BIGINT:
 						targetType = SQL_C_SBIGINT;
 						targetValuePtr = (SQLPOINTER *) &lng_val;
+						break;
+					case SQL_HUGEINT:
+						/* read huge int data as string data as there is no SQL_C_SHUGEINT */
+						targetType = SQL_C_CHAR;
+						targetValuePtr = (SQLPOINTER *) str_val;
+						bufferLength = largestStringSize;
 						break;
 					case SQL_DECIMAL:
 					case SQL_NUMERIC:
@@ -772,16 +845,32 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								}
 								if (trace_enabled)
 									printf("Data row %lu col %u: %s\n", row, col+1, str_val);
-								gdkret = BUNappend(b, (void *) str_val, false);
+								switch (colmetadata[col].battype) {
+									case TYPE_str:
+										gdkret = BUNappend(b, (void *) str_val, false);
+										break;
+#ifdef HAVE_HGE
+									case TYPE_hge:
+										hge_val = str_to_hge(str_val);
+										gdkret = BUNappend(b, (void *) &hge_val, false);
+										break;
+#endif
+									default:
+										if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED) {
+											if (trace_enabled)
+												printf("BUNappend(b, ATOMnilptr(b->ttype), false) failed\n");
+										}
+										break;
+								}
 								break;
 							case SQL_BIT:
 								if (trace_enabled)
-									printf("Data row %lu col %u: %c\n", row, col+1, bit_val);
+									printf("Data row %lu col %u: %x\n", row, col+1, bit_val);
 								gdkret = BUNappend(b, (void *) &bit_val, false);
 								break;
 							case SQL_TINYINT:
 								if (trace_enabled)
-									printf("Data row %lu col %u: %c\n", row, col+1, bte_val);
+									printf("Data row %lu col %u: %hd\n", row, col+1, (sht) bte_val);
 								gdkret = BUNappend(b, (void *) &bte_val, false);
 								break;
 							case SQL_SMALLINT:
@@ -799,6 +888,13 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
 								gdkret = BUNappend(b, (void *) &lng_val, false);
 								break;
+#ifdef HAVE_HGE
+//							case SQL_HUGEINT:
+//								if (trace_enabled)
+//									printf("Data row %lu col %u: %" PRId128 "\n", row, col+1, hge_val);
+//								gdkret = BUNappend(b, (void *) &hge_val, false);
+//								break;
+#endif
 							case SQL_DECIMAL:
 							case SQL_NUMERIC:
 							{
@@ -817,75 +913,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									if (trace_enabled)
 										printf("Data row %lu col %u: %s\n", row, col+1, str_val);
 									gdkret = BUNappend(b, (void *) str_val, false);
-									break;
-								}
-
-								if (trace_enabled)
-									printf("Data row %lu col %u: %s  convert to lng/hge using colSize %d digits %d\n",
-										row, col+1, str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
-
-								/* convert str_val to lng_val or hge_val based on sql_bind_subtype(sql->sa, "decimal", columnSize, decimalDigits); */
-								int digits;
-								int scale;
-								int has_errors;
-								DEC_TPE res = decimal_from_str(str_val, &digits, &scale, &has_errors);
-								/* or use: str str_2dec(TYPE *res, const str *val, const int *d, const int *sc)) */
-								if (has_errors) {
-									if (trace_enabled)
-										printf("decimal_from_str() failed to convert dec value: %s to lng/hge\n", str_val);
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
-									break;
-								}
-
-								switch(battype) {
-#ifdef HAVE_HGE
-									case TYPE_hge:
-									{
-										hge_val = (hge) res;
-//										if (trace_enabled)
-//											printf("Data row %lu col %u: %" PRId128 "\n", row, col+1, hge_val);
-										gdkret = BUNappend(b, (void *) &hge_val, false);
-										break;
-									}
-#endif
-									case TYPE_lng:
-									{
-										lng_val = (lng) res;
-										if (trace_enabled)
-											printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-										gdkret = BUNappend(b, (void *) &lng_val, false);
-										break;
-									}
-									case TYPE_int:
-									{
-										int_val = (int) res;
-										if (trace_enabled)
-											printf("Data row %lu col %u: %d\n", row, col+1, int_val);
-										gdkret = BUNappend(b, (void *) &int_val, false);
-										break;
-									}
-									case TYPE_sht:
-									{
-										sht_val = (sht) res;
-										if (trace_enabled)
-											printf("Data row %lu col %u: %hd\n", row, col+1, sht_val);
-										gdkret = BUNappend(b, (void *) &sht_val, false);
-										break;
-									}
-									case TYPE_bte:
-									{
-										bte_val = (bte) res;
-										if (trace_enabled)
-											printf("Data row %lu col %u: %c\n", row, col+1, bte_val);
-										gdkret = BUNappend(b, (void *) &bte_val, false);
-										break;
-									}
-									default:
-									{
-										/* battype not expected for decimals. add a NULL value */
-										gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
-										break;
-									}
 								}
 								break;
 							}
