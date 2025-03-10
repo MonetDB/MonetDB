@@ -315,7 +315,7 @@ macro(monetdb_configure_misc)
 
   if(NOT DEFINED PYTHON3_LIBDIR)
     # Used for installing testing python module (don't pass a location, else we need to strip this again)
-    execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print((sysconfig.get_path('purelib', vars={'base':''}, scheme='rpm_prefix') if 'rpm_prefix' in sysconfig.get_scheme_names() else sysconfig.get_path('purelib', vars={'base':''}))[1:])"
+    execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print((sysconfig.get_path('purelib', vars={'base':''}, scheme='rpm_prefix') if 'rpm_prefix' in sysconfig.get_scheme_names() else sysconfig.get_path('purelib', vars={'base':''}))[1:].replace('\\\\','/'))"
       RESULT_VARIABLE PY3_LIBDIR_CODE
       OUTPUT_VARIABLE PYTHON3_SITEDIR
       OUTPUT_STRIP_TRAILING_WHITESPACE)
