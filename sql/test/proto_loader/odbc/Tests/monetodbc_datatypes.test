@@ -1,0 +1,95 @@
+query IIIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(false as boolean) as valf, cast(true as boolean) as valt, cast(0 as boolean) as val0, cast(1 as boolean) as val1, cast(NULL as boolean) as valnil'
+----
+0
+1
+0
+1
+NULL
+
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(127 as tinyint) as val1, cast(-127 as tinyint) as val2, cast(0 as tinyint) as val0, cast(NULL as tinyint) as valnil'
+----
+127
+-127
+0
+NULL
+
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(32767 as smallint) as val1, cast(-32767 as smallint) as val2, cast(0 as smallint) as val0, cast(NULL as smallint) as valnil'
+----
+32767
+-32767
+0
+NULL
+
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(2147483647 as int) as val1, cast(-2147483647 as int) as val2, cast(0 as int) as val0, cast(NULL as int) as valnil'
+----
+2147483647
+-2147483647
+0
+NULL
+
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9223372036854775807 as bigint) as val1, cast(-9223372036854775807 as bigint) as val2, cast(0 as bigint) as val0, cast(NULL as bigint) as valnil'
+----
+9223372036854775807
+-9223372036854775807
+0
+NULL
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(0.34 as decimal(2,2)) as dec1_val'
+----
+0.34
+
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234.0 as decimal(4,0)) as dec2_val, cast(34.56 as decimal(4,2)) as dec3_val'
+----
+1234
+34.56
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(90.123456 as decimal(8,6)) as dec4_val'
+----
+90.123456
+
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as decimal(18,8)) as dec8_val, cast(-1234567890.12345678 as decimal(18,8)) as dec8n_val'
+----
+1234567890.12345678
+-1234567890.12345678
+
+query RRRR
+select cast(2147483647 as real) as val1, cast(-2147483647 as real) as val2, cast(0.00000000 as real) as val0, cast(NULL as real) as valnil
+----
+2147483600.000
+-2147483600.000
+0.000
+NULL
+
+query RRRR
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(2147483647 as real) as val1, cast(-2147483647 as real) as val2, cast(0.00000000 as real) as val0, cast(NULL as real) as valnil'
+----
+2147483600.000
+-2147483600.000
+0.000
+NULL
+
+query RRRR
+select cast(12345678901234.5678 as double) as val1, cast(-12345678901234.5678 as double) as val2, cast(0.00000000 as double) as val0, cast(NULL as double) as valnil
+----
+12345678901234.568
+-12345678901234.568
+0.000
+NULL
+
+query RRRR
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234.5678 as double) as val1, cast(-12345678901234.5678 as double) as val2, cast(0.00000000 as double) as val0, cast(NULL as double) as valnil'
+----
+12345678901234.568
+-12345678901234.568
+0.000
+NULL
+
