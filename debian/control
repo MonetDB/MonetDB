@@ -59,7 +59,7 @@ Description: MonetDB mutils library
 Package: libmonetdb-mutils-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-mutils27 (= ${source:Version})
+ libmonetdb-mutils1 (= ${source:Version})
 Description: MonetDB mutils library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -84,7 +84,7 @@ Description: MonetDB stream library
 Package: libmonetdb-stream-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream27 (= ${source:Version})
+ libmonetdb-stream27 (= ${source:Version}),
  libmonetdb-mutils1 (= ${source:Version})
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
