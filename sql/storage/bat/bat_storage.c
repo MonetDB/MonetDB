@@ -331,7 +331,6 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
-	b->theap->dirty = true;
 	BUN cnt = BATcount(b);
 
 	uint32_t *restrict dst;
