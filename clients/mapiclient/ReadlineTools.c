@@ -308,7 +308,7 @@ continue_completion(rl_completion_func_t * func)
 static void
 readline_show_error(const char *msg) {
 	rl_save_prompt();
-	rl_message(msg);
+	rl_message("%s", msg);
 	rl_restore_prompt();
 	rl_clear_message();
 }
