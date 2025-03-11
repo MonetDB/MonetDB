@@ -1,5 +1,7 @@
-CREATE SCHEMA TB;
+statement ok
+CREATE SCHEMA TB
 
+statement ok
 CREATE TABLE TB.STOCK_ITEM (
   S_W_ID INTEGER NOT NULL,
   S_I_ID INTEGER NOT NULL,
@@ -18,15 +20,44 @@ CREATE TABLE TB.STOCK_ITEM (
   S_ORDER_CNT INTEGER NOT NULL,
   S_REMOTE_CNT INTEGER NOT NULL,
   S_DATA VARCHAR(50) NOT NULL
-);
+)
 
+query TIITTT nosort
 PREPARE
 UPDATE TB.STOCK_ITEM SET
   S_QUANTITY = ?,
   S_YTD = S_YTD + ?,
   S_ORDER_CNT = S_ORDER_CNT + 1
-WHERE S_W_ID = ? AND S_I_ID = ?;
+WHERE S_W_ID = ? AND S_I_ID = ?
+----
+int
+31
+0
+NULL
+NULL
+NULL
+double
+53
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
 
-drop table TB.STOCK_ITEM;
+statement ok
+drop table TB.STOCK_ITEM
 
-drop schema TB;
+statement ok
+drop schema TB
+

@@ -54,6 +54,7 @@ BATidxsync(void *arg)
 				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_OID) < 0) {
 					hp->dirty = true;
+					failed = " sync failed";
 					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
 				} else {
 					failed = ""; /* not failed */

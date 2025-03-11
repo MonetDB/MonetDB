@@ -2752,7 +2752,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					for (line += 2; *line && my_isspace(*line); line++)
 						;
 					if (*line == 0) {
-						/* turn of logging */
+						/* turn off logging */
 						mapi_log(mid, NULL);
 					} else {
 						logfile = strdup(line);
