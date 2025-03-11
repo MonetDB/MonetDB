@@ -28,8 +28,8 @@ SELECT data."commit"."collection" AS event, count(*) AS cnt FROM bluesky GROUP B
 -- Q2
 SELECT data."commit"."collection" AS event, count(*) AS cnt, count(distinct data.did) AS users FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' GROUP BY event ORDER BY cnt DESC;
 
--- Q3 CRASH
---SELECT data."commit"."collection" AS event, "hour"(epoch(cast(data.time_us as bigint)/(1000*1000))) as hour_of_day, count(*) AS cnt FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" in ('app.bsky.feed.post', 'app.bsky.feed.repost', 'app.bsky.feed.like') GROUP BY event, hour_of_day ORDER BY hour_of_day, event;
+-- Q3
+SELECT data."commit"."collection" AS event, "hour"(epoch(cast(data.time_us as bigint)/(1000*1000))) as hour_of_day, count(*) AS cnt FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" in ('app.bsky.feed.post', 'app.bsky.feed.repost', 'app.bsky.feed.like') GROUP BY event, hour_of_day ORDER BY hour_of_day, event;
 
 -- Q4
 SELECT data.did as user_id, epoch(cast(min(data.time_us) as bigint)/1000000) as first_post_ts FROM bluesky WHERE data.kind = 'commit' AND data."commit"."operation" = 'create' AND data."commit"."collection" = 'app.bsky.feed.post' GROUP BY user_id ORDER BY first_post_ts ASC LIMIT 3;
