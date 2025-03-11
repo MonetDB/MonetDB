@@ -1,0 +1,149 @@
+## in this test we the list member of the json document is wrapped
+## around act_list composite type e.g. "actions":{"list":[...]}
+
+statement ok
+create type elem_t as (key text, val int)
+
+statement ok
+create type list_obj_t as (elem elem_t)
+
+statement ok
+create type act_list as (list list_obj_t[])
+
+statement ok
+create type jdoc_t as (name text, id int, actions act_list)
+
+statement ok
+create table jdocs (jd jdoc_t)
+
+query T nosort
+select cast('{"name":"test_one","id":401,"actions":{"list":[{"elem":{"key":"ping","val":10}},{"elem":{"key":"pong","val":11}}]}}' as json)
+----
+{"name":"test_one","id":401,"actions":{"list":[{"elem":{"key":"ping","val":10}},{"elem":{"key":"pong","val":11}}]}}
+
+statement ok
+insert into jdocs select cast('{"name":"test_one","id":401,"actions":{"list":[{"elem":{"key":"ping","val":10}},{"elem":{"key":"pong","val":11}}]}}' as json)
+
+query T nosort
+select cast('{"name":"test_two","id":402,"actions":{"list":[{"elem":{"key":"tic","val":20}}, {"elem":{"key":"tac","val":21}}] }}' as json)
+----
+{"name":"test_two","id":402,"actions":{"list":[{"elem":{"key":"tic","val":20}},{"elem":{"key":"tac","val":21}}]}}
+
+statement ok
+insert into jdocs select cast('{"name":"test_two","id":402,"actions":{"list":[{"elem":{"key":"tic","val":20}}, {"elem":{"key":"tac","val":21}}] }}' as json)
+
+query T nosort list-format-file
+select * from '$TSTSRCDIR/jdocs-wrapped-list-list-format.json'
+----
+{"name":"test_three","id":403,"actions":{"list":[{"elem":{"key":"xy","val":30}},{"elem":{"key":"yz","val":31}}]}}
+{"name":"test_four","id":404,"actions":{"list":[{"elem":{"key":"ab","val":40}}, {"elem":{"key":"bc","val":41}}]}}
+
+query T nosort list-format-file
+select json from '$TSTSRCDIR/jdocs-wrapped-list-list-format.json'
+----
+{"name":"test_three","id":403,"actions":{"list":[{"elem":{"key":"xy","val":30}},{"elem":{"key":"yz","val":31}}]}}
+{"name":"test_four","id":404,"actions":{"list":[{"elem":{"key":"ab","val":40}}, {"elem":{"key":"bc","val":41}}]}}
+
+statement ok
+insert into jdocs select json from '$TSTSRCDIR/jdocs-wrapped-list-list-format.json'
+
+## CRASH
+query T nosort list-format-file
+select json from '$TSTSRCDIR/jdocs-wrapped-list-newline-format.json'
+----
+TODO
+
+query TIT nosort
+select jd.name, jd.id, ua.elem from jdocs, unnest(jd.actions.list) as ua
+----
+test_one
+401
+("ping", 10)
+test_one
+401
+("pong", 11)
+test_two
+402
+("tic", 20)
+test_two
+402
+("tac", 21)
+test_three
+403
+("xy", 30)
+test_three
+403
+("yz", 31)
+test_four
+404
+("ab", 40)
+test_four
+404
+("bc", 41)
+
+#test_five
+#405
+#("xy", 50)
+#test_five
+#405
+#("yz", 51)
+#test_four
+#406
+#("ab", 60)
+#test_four
+#406
+#("bc", 61)
+
+query TITI nosort
+select jd.name, jd.id, ua.elem.key, ua.elem.val from jdocs, unnest(jd.actions.list) as ua
+----
+test_one
+401
+ping
+10
+test_one
+401
+pong
+11
+test_two
+402
+tic
+20
+test_two
+402
+tac
+21
+test_three
+403
+xy
+30
+test_three
+403
+yz
+31
+test_four
+404
+ab
+40
+test_four
+404
+bc
+41
+
+#test_five
+#405
+#xy
+#50
+#test_five
+#405
+#yz
+#51
+#test_four
+#406
+#ab
+#60
+#test_four
+#406
+#bc
+#61
+
