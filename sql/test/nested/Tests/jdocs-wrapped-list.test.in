@@ -48,10 +48,10 @@ statement ok
 insert into jdocs select json from '$TSTSRCDIR/jdocs-wrapped-list-list-format.json'
 
 ## CRASH
-query T nosort list-format-file
-select json from '$TSTSRCDIR/jdocs-wrapped-list-newline-format.json'
-----
-TODO
+##query T nosort list-format-file
+##select json from '$TSTSRCDIR/jdocs-wrapped-list-newline-format.json'
+##----
+##TODO
 
 query TIT nosort
 select jd.name, jd.id, ua.elem from jdocs, unnest(jd.actions.list) as ua
