@@ -507,7 +507,6 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 	uint32_t boff = b->batCount % 32;
 	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
 	b->batCount += ci->ncand;
-	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	if (ci->tpe == cand_dense) {
 		const uint32_t *np;
 		uint32_t noff, mask;
@@ -660,6 +659,7 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 		} while (!is_oid_nil(o));
 	}
 	b->theap->dirty = true;
+	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
