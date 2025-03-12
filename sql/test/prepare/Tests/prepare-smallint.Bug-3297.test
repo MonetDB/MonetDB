@@ -1,0 +1,72 @@
+statement ok
+CREATE TABLE ints ( val int )
+
+onlyif has-hugeint
+query TIITTT nosort
+prepare INSERT INTO ints VALUES ( ? - 20 )
+----
+hugeint
+127
+0
+NULL
+NULL
+NULL
+
+skipif has-hugeint
+query TIITTT nosort
+prepare INSERT INTO ints VALUES ( ? - 20 )
+----
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(1)
+
+statement ok
+exec <LAST_PREPARE_ID>(10)
+
+statement ok
+exec <LAST_PREPARE_ID>(100)
+
+statement ok
+exec <LAST_PREPARE_ID>(1000)
+
+statement ok
+exec <LAST_PREPARE_ID>(10000)
+
+statement ok
+exec <LAST_PREPARE_ID>(100000)
+
+statement ok
+exec <LAST_PREPARE_ID>(1000000)
+
+statement ok
+exec <LAST_PREPARE_ID>(10000000)
+
+statement ok
+exec <LAST_PREPARE_ID>(100000000)
+
+statement ok
+exec <LAST_PREPARE_ID>(1000000000)
+
+query I rowsort
+select * from ints
+----
+-10
+-19
+80
+980
+9980
+99980
+999980
+9999980
+99999980
+999999980
+
+statement ok
+drop table ints
+

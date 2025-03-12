@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Mar 11 2025 Niels Nes <niels@cwi.nl>
+- ranking window functions are now optimized into topn's
+  For the grouped case we added the missing grouped/heap based topn
+  implementation.
+
 * Wed Mar  5 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Added support for reading external data in a generic way via table
   returning function: proto_loader(string uri).  The uri string value
