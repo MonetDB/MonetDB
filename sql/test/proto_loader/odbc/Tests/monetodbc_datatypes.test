@@ -160,3 +160,57 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234.5678 as do
 0.000
 NULL
 
+---- DATE ----
+
+query TTTT
+select cast('2025-02-25' as date) as val1, cast('0101-01-01' as date) as val2, cast('0001-01-01' as date) as val0, cast(NULL as date) as valnil
+----
+2025-02-25
+0101-01-01
+0001-01-01
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''2025-02-25'' as date) as val1, cast(''0101-01-01'' as date) as val2, cast(''0001-01-01'' as date) as val0, cast(NULL as date) as valnil'
+----
+2025-02-25
+0101-01-01
+0001-01-01
+NULL
+
+---- TIME ----
+
+query TTTT
+select cast('08:09:05' as time) as val1, cast('23:59:59' as time) as val2, cast('00:00:00' as time) as val0, cast(NULL as time) as valnil
+----
+08:09:05
+23:59:59
+00:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''08:09:05'' as time) as val1, cast(''23:59:59'' as time) as val2, cast(''00:00:00'' as time) as val0, cast(NULL as time) as valnil'
+----
+08:09:05
+23:59:59
+00:00:00
+NULL
+
+---- TIMESTAMP ----
+
+query TTTT
+select cast('2025-02-25 08:09:05' as timestamp) as val1, cast('0101-01-01 23:59:59' as timestamp) as val2, cast('0001-01-01 00:00:00' as timestamp) as val0, cast(NULL as timestamp) as valnil
+----
+2025-02-25 08:09:05
+0101-01-01 23:59:59
+0001-01-01 00:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''2025-02-25 08:09:05'' as timestamp) as val1, cast(''0101-01-01 23:59:59'' as timestamp) as val2, cast(''0001-01-01 00:00:00'' as timestamp) as val0, cast(NULL as timestamp) as valnil'
+----
+2025-02-25 08:09:05
+0101-01-01 23:59:59
+0001-01-01 00:00:00
+NULL
+
