@@ -508,7 +508,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 			/* for each result column get name, datatype, size and decdigits */
 			// TODO use ODBC W function
-			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname) -1,
+			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) MAX_COL_NAME_LEN,
 					NULL, &dataType, &columnSize, &decimalDigits, NULL);
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				errmsg = "SQLDescribeCol failed.";
@@ -525,7 +525,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			if (res_exps) {
 				/* also get the table name for this result column */
 				// TODO use ODBC W function
-				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) sizeof(tname) -1, NULL, NULL);
+				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) MAX_TBL_NAME_LEN, NULL, NULL);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 					strcpy(tname, "");
 				}
@@ -566,7 +566,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 
 			/* for each result column get SQL datatype, size and decdigits */
 			// TODO use ODBC W function
-			ret = SQLDescribeCol(stmt, col+1, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname) -1,
+			ret = SQLDescribeCol(stmt, col+1, (SQLCHAR *) cname, (SQLSMALLINT) MAX_COL_NAME_LEN,
 					NULL, &dataType, &columnSize, &decimalDigits, NULL);
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				errmsg = "SQLDescribeCol failed.";
@@ -657,12 +657,15 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		TIME_STRUCT time_val;
 		TIMESTAMP_STRUCT ts_val;
 		SQLGUID guid_val;
+		uuid uuid_val = uuid_nil;
 
 		/* allocate storage for all the var sized atom types. */
 		char * str_val = NULL;		// TODO: change to wchar
 		bte * blob_val = NULL;
 		if (largestStringSize == 0)	// no valid string length, use 65535 (64kB) as default
 			largestStringSize = 65535;
+		if (largestStringSize < 256)
+			largestStringSize = 256;
 		if (largestStringSize > 16777215) // string length too large, limit to 16MB
 			largestStringSize = 16777215;
 		str_val = (char *)GDKzalloc((largestStringSize +1) * sizeof(char));	// +1 for the eos char
@@ -798,8 +801,13 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						targetValuePtr = (SQLPOINTER *) &lng_val;
 						break;
 					case SQL_GUID:
+						/* read guid data as string data */
+//						targetType = SQL_C_CHAR;
+//						targetValuePtr = (SQLPOINTER *) str_val;
+//						bufferLength = largestStringSize;
 						targetType = SQL_C_GUID;
 						targetValuePtr = (SQLPOINTER *) &guid_val;
+						bufferLength = 16;
 						break;
 					case SQL_BINARY:
 					case SQL_VARBINARY:
@@ -809,10 +817,12 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						bufferLength = largestBlobSize;
 						break;
 				}
+				if (trace_enabled || true)
+					printf("Before SQLGetData(col %u C_type %d buflen %ld\n", col+1, targetType, bufferLength);
 				ret = SQLGetData(stmt, col+1, targetType, targetValuePtr, bufferLength, &strLen);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 					if (trace_enabled || true)
-						printf("Failed to get data for col %u of row %lu\n", col+1, row);
+						printf("Failed to get C_type %d data for col %u of row %lu\n", targetType, col+1, row);
 					/* as all bats need to be the correct length, append NULL value */
 					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
 						if (trace_enabled)
@@ -987,10 +997,14 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								gdkret = BUNappend(b, (void *) &lng_val, false);
 								break;
 							case SQL_GUID:
-								if (trace_enabled)
-									printf("Data row %lu col %u: guid_val\n", row, col+1);
+								if (trace_enabled || true)
+									printf("Data row %lu col %u: %x-%x-%x-%x%x-%x%x%x%x%x%x\n", row, col+1,
+										guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
+										guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 								// uuid is 16 bytes, same as SQLGUID guid_val
-								gdkret = BUNappend(b, (void *) &guid_val, false);
+								memcpy((void *) &uuid_val, (void *) &guid_val, sizeof(uuid));
+//								gdkret = BUNappend(b, (void *) &uuid_val, false);
+								gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
 								break;
 							case SQL_BINARY:
 							case SQL_VARBINARY:

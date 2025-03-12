@@ -212,6 +212,86 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 	return ret;
 }
 
+static SQLRETURN
+testGetDataGUID(SQLHANDLE stmt)
+{
+	SQLRETURN ret;
+	SQLLEN RowCount = 0;
+	SWORD NumResultCols = 0;
+
+	size_t outp_len = 1800;
+	char * outp = malloc(outp_len);
+	size_t pos = 0;
+
+	char * sql = "select cast('eda7b074-3e0f-4bef-bdec-19c61bedb18f' as uuid) as val1, cast('beefc4f7-0264-4735-9b7a-75fd371ef803' as uuid) as val2, cast(NULL as uuid) as valnil;";
+	ret = SQLExecDirect(stmt, (SQLCHAR *) sql, SQL_NTS);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLExecDirect\n");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect");
+
+	ret = SQLRowCount(stmt, &RowCount);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLRowCount is " LLFMT "\n", (int64_t) RowCount);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLRowCount");
+
+	ret = SQLNumResultCols(stmt, &NumResultCols);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLNumResultCols is %d\n", NumResultCols);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLNumResultCols");
+
+	ret = SQLFetch(stmt);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLFetch\n");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch");
+
+	for (SWORD col = 1; col <= NumResultCols; col++) {
+		char buf[99];
+		SQLGUID guid_val;
+		char guid_str_val[40];
+		SQLLEN vallen = 0;
+		SQLLEN NumAttr = 0;
+
+		/* retrieve query result column metadata */
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_CONCISE_TYPE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_CONCISE_TYPE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LENGTH, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LENGTH) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_DISPLAY_SIZE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_DISPLAY_SIZE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+
+		/* test SQLGetData(SQL_C_CHAR) */
+		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_CHAR, (PTR)&guid_str_val, (SQLLEN)40, &vallen);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, SQL_C_CHAR, 36) returns %d, vallen " LLFMT ", str_val: '%s'\n",
+			col, ret, (int64_t) vallen, (vallen == SQL_NULL_DATA) ? "NULL" : guid_str_val);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
+
+		/* test SQLGetData(SQL_C_GUID) */
+		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_GUID, (PTR)&guid_val, (SQLLEN)16, &vallen);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, SQL_C_GUID, 16) returns %d, vallen " LLFMT ", data_val: %x-%x-%x-%x%x-%x%x%x%x%x%x\n",
+			col, ret, (int64_t) vallen, guid_val.Data1, guid_val.Data2, guid_val.Data3,
+			guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2], guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
+	}
+
+	compareResult("testGetDataGUID()", outp,
+			"SQLExecDirect\nSQLRowCount is 1\nSQLNumResultCols is 3\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -11\n"	/* -11 = SQL_GUID */
+			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 36\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
+			"SQLGetData(1, SQL_C_CHAR, 36) returns 0, vallen 36, str_val: 'eda7b074-3e0f-4bef-bdec-19c61bedb18f'\n"
+			"SQLGetData(1, SQL_C_GUID, 16) returns 0, vallen 16, data_val: eda7b074-3e0f-4bef-bdec-19c61bedb18f\n"
+			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -11\n"	/* -11 = SQL_GUID */
+			"SQLColAttribute(2, SQL_DESC_LENGTH) returns 0, NumAttr 36\n"
+			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
+			"SQLGetData(2, SQL_C_CHAR, 36) returns 0, vallen 36, str_val: 'beefc4f7-0264-4735-9b7a-75fd371ef803'\n"
+			"SQLGetData(2, SQL_C_GUID, 16) returns 0, vallen 16, data_val: beefc4f7-0264-4735-9b7a-75fd371ef803\n"
+			"SQLColAttribute(3, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -11\n"	/* -11 = SQL_GUID */
+			"SQLColAttribute(3, SQL_DESC_LENGTH) returns 0, NumAttr 36\n"
+			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
+			"SQLGetData(3, SQL_C_CHAR, 36) returns 0, vallen -1, str_val: 'NULL'\n"
+			"SQLGetData(3, SQL_C_GUID, 16) returns 0, vallen -1, data_val: beefc4f7-0264-4735-9b7a-75fd371ef803\n");
+
+	/* cleanup */
+	free(outp);
+	return ret;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -265,6 +345,12 @@ main(int argc, char **argv)
 
 	ret = testGetDataTruncatedString(stmt, SQL_C_WCHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_WCHAR)");
+
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+
+	ret = testGetDataGUID(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataGUID(STMT)");
 
 	/* cleanup */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
