@@ -40,7 +40,7 @@ addMalException(MalBlkPtr mb, str msg)
 }
 
 Symbol
-newSymbol(const char *nme, int kind)
+newSymbol(allocator *pa, const char *nme, int kind)
 {
 	Symbol cur;
 
@@ -59,7 +59,7 @@ newSymbol(const char *nme, int kind)
 		return NULL;
 	}
 	if (kind == FUNCTIONsymbol) {
-		cur->def = newMalBlk(STMT_INCREMENT);
+		cur->def = newMalBlk(pa, STMT_INCREMENT);
 		if (cur->def == NULL) {
 			GDKfree(cur);
 			return NULL;
@@ -114,10 +114,12 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 }
 
 MalBlkPtr
-newMalBlk(int elements)
+newMalBlk(allocator *pa, int elements)
 {
 	MalBlkPtr mb;
 	VarRecord *v;
+	// TODO why I cannot pass pa as parent
+	(void) pa;
 	allocator *ma = ma_create(NULL);
 
 	if (!ma)
@@ -303,7 +305,7 @@ copyMalBlk(MalBlkPtr old)
 {
 	MalBlkPtr mb;
 	int i;
-	allocator *ma = ma_create(NULL);
+	allocator *ma = ma_create(old->ma->pa);
 
 	if (!ma)
 		return NULL;

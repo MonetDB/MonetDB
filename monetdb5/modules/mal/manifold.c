@@ -234,7 +234,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	if (pci->retc > 1 || pci->argc > 8 || getModuleId(pci) == NULL)	// limitation on MANIFOLDjob
 		return NULL;
 	// We need a private MAL context to resolve the function call
-	nmb = newMalBlk(2);
+	nmb = newMalBlk(cntxt->alloc, 2);
 	if (nmb == NULL) {
 		mb->errors = createException(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;

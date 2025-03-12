@@ -2096,7 +2096,7 @@ typedef struct freed_t {
 } freed_t;
 
 static void
-sa_free_obj(allocator *pa, void *obj, size_t sz)
+sa_free_obj(allocator *sa, void *obj, size_t sz)
 {
 	//size_t i;
 
@@ -2106,7 +2106,7 @@ sa_free_obj(allocator *pa, void *obj, size_t sz)
 	//// find the block this object belongs to
 	//for(i = 0; i < pa->nr; i++) {
 	//	char * blk_start = (char *) pa->blks[i];
-	//	char * blk_end = blk_start + SA_BLOCK_SIZE; // FIX if size doubles
+	//	char * blk_end = blk_start + SA_BLOCK_SIZE;
 	//	if ((obj_start >= blk_start) && (obj_end <= blk_end))
 	//		break;
 	//}
@@ -2114,10 +2114,45 @@ sa_free_obj(allocator *pa, void *obj, size_t sz)
 	// put on the freelist
 	freed_t *f = obj;
 	f->sz = sz;
-	f->n = pa->freelist;
-	pa->freelist = f;
-	if (pa->inuse > 0)
-		pa->inuse -= 1;
+	f->n = sa->freelist;
+	sa->freelist = f;
+	if (sa->inuse > 0)
+		sa->inuse -= 1;
+}
+
+
+/*
+ * Put regular blks of size SA_BLOCK_SIZE on freelist_blks
+ * all others are GDKfree
+ */
+static void
+sa_free_blk(allocator *sa, void *blk)
+{
+	// free blks are maintained on the root allocator
+	if (sa->pa) {
+		sa_free_blk(sa->pa, blk);
+	} else {
+		size_t i;
+
+		for(i = 0; i < sa->nr; i++) {
+			if (sa->blks[i] == blk)
+				break;
+		}
+		assert (i < sa->nr);
+
+		size_t sz = GDKmallocated(blk);
+		if (sz == SA_BLOCK_SIZE) {
+			freed_t *f = blk;
+			f->sz = sz;
+			f->n = sa->freelist_blks;
+			sa->freelist_blks = f;
+		} else {
+			GDKfree(blk);
+			for (; i < sa->nr-1; i++)
+				sa->blks[i] = sa->blks[i+1];
+			sa->nr--;
+		}
+	}
 }
 
 
@@ -2150,24 +2185,52 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 	return NULL;
 }
 
-
+/*
+ * Free blocks are maintain at top level
+ */
 static void *
-sa_use_freed(allocator *pa, size_t sz)
+sa_use_freed_blk(allocator *pa, size_t sz)
 {
-	if ((sz < pa->dflt_blk_size) && pa->freelist) {
-		return sa_use_freed_obj(pa, sz);
+	if (pa->pa)
+		return sa_use_freed_blk(pa->pa, sz);
+	if (pa->freelist_blks && (sz == SA_BLOCK_SIZE)) {
+		freed_t *f = pa->freelist_blks;
+		pa->freelist_blks = f->n;
+		return f;
 	}
 	return NULL;
 }
 
+
+static void *
+sa_use_freed(allocator *sa, size_t sz)
+{
+	if ((sz < SA_BLOCK_SIZE) && sa->freelist) {
+		return sa_use_freed_obj(sa, sz);
+	}
+	if (sz == SA_BLOCK_SIZE) {
+		return sa_use_freed_blk(sa, sz);
+	}
+	return NULL;
+}
+
+
+/*
+ * Reset allocator to initial state
+ * free all but 1st blk
+ */
 allocator *sa_reset(allocator *sa)
 {
 	size_t i;
 
 	for (i = 1; i < sa->nr; i++) {
-		if (sa->pa == NULL) {
-			GDKfree(sa->blks[i]);
-		}
+		char *next = sa->blks[i];
+		sa_free_blk(sa, next);
+		//if (sa->pa == NULL) {
+		//	GDKfree(next);
+		//} else {
+		//	sa_free_blk(sa, next);
+		//}
 		sa->blks[i] = NULL;
 	}
 
@@ -2175,8 +2238,9 @@ allocator *sa_reset(allocator *sa)
 	sa->nr = 1;
 	sa->used = 0;
 	sa->freelist = NULL;
-	sa->usedmem = sa->dflt_blk_size;
-	sa->blk_size = sa->dflt_blk_size;
+	sa->freelist_blks = NULL;
+	sa->usedmem = SA_BLOCK_SIZE;
+	sa->blk_size = SA_BLOCK_SIZE;
 	sa->objects = 0;
 	sa->inuse = 0;
 	return sa;
@@ -2218,11 +2282,11 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 		return r;
 	if (sz > (sa->blk_size - sa->used)) {
 		// out of space need new blk
-		size_t nsize = sa->blk_size;
-		// double the size
-		do {
+		size_t nsize = SA_BLOCK_SIZE;
+		// double the size id needed
+		while (sz > nsize){
 			nsize *= 2;
-		} while(sz > nsize);
+		}
 		if (sa->pa) {
 			r = (char*) _sa_alloc_internal(sa->pa, nsize);
 		} else {
@@ -2284,33 +2348,36 @@ sa_alloc(allocator *sa, size_t sz)
 
 
 allocator *
-create_allocator(allocator *pa, size_t blk_size, size_t num_blks)
+create_allocator(allocator *pa)
 {
-	allocator *sa = (pa)? (allocator*)_sa_alloc_internal(pa, sizeof(allocator)) : (allocator*)GDKmalloc(sizeof(allocator));
-	if (sa == NULL)
+	// ask blk first so subsequent allocations are
+	// within that blk if there is pa
+	char *first_block = (pa)? (char*)_sa_alloc_internal(pa, SA_BLOCK_SIZE) : (char*)GDKmalloc(SA_BLOCK_SIZE);
+	if (first_block == NULL)
 		return NULL;
-	sa->size = num_blks;
-	sa->blks = (pa)? (char**)_sa_alloc_internal(pa, sizeof(char*) * sa->size) : (char**)GDKmalloc(sizeof(char*) * sa->size);
-	if (sa->blks == NULL) {
+	allocator *sa = (pa)? (allocator*)_sa_alloc_internal(pa, sizeof(allocator)) : (allocator*)GDKmalloc(sizeof(allocator));
+	if (sa == NULL) {
 		if (!pa)
-			GDKfree(sa);
+			GDKfree(first_block);
 		return NULL;
 	}
-	sa->blks[0] = (pa)? (char*)_sa_alloc_internal(pa, blk_size) : (char*)GDKmalloc(blk_size);
-	if (sa->blks[0] == NULL) {
+	sa->size = SA_NUM_BLOCKS;
+	sa->blks = (pa)? (char**)_sa_alloc_internal(pa, sizeof(char*) * sa->size) : (char**)GDKmalloc(sizeof(char*) * sa->size);
+	if (sa->blks == NULL) {
 		if (!pa) {
-			GDKfree(sa->blks);
+			GDKfree(first_block);
 			GDKfree(sa);
 		}
 		return NULL;
 	}
+	sa->blks[0] = first_block;
 	eb_init(&sa->eb);
 	sa->pa = pa;
 	sa->nr = 1;
-	sa->usedmem = blk_size;
-	sa->blk_size = blk_size;
-	sa->dflt_blk_size = blk_size;
+	sa->usedmem = SA_BLOCK_SIZE;
+	sa->blk_size = SA_BLOCK_SIZE;
 	sa->freelist = NULL;
+	sa->freelist_blks = NULL;
 	sa->frees = 0;
 	sa->used = 0;
 	sa->objects = 0;
@@ -2335,11 +2402,17 @@ sa_zalloc( allocator *sa, size_t sz )
 void
 sa_destroy( allocator *sa )
 {
-	if (sa->pa == NULL) {
-		// root allocator
-		for (size_t i = 0; i < sa->nr; i++) {
-			GDKfree(sa->blks[i]);
+	bool root_allocator = sa->pa == NULL;
+	for (size_t i = 0; i < sa->nr; i++) {
+		char * next = sa->blks[i];
+		if (root_allocator) {
+			GDKfree(next);
+		} else {
+			sa_free_blk(sa, next);
 		}
+
+	}
+	if (root_allocator) {
 		GDKfree(sa->blks);
 		GDKfree(sa);
 	}
@@ -2412,6 +2485,6 @@ sa_free(allocator *sa, void *obj)
 	// double free check point
 	assert(*((size_t *) ptr + 1) == CANARY_VALUE);
 	sa->frees++;
-	if (sz < sa->dflt_blk_size)
+	if (sz < SA_BLOCK_SIZE)
 		sa_free_obj(sa, ptr, sz);
 }

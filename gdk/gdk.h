@@ -2527,11 +2527,11 @@ typedef struct allocator {
 	size_t used; 	 /* memory used in last block */
 	size_t usedmem;	 /* total used memory */
 	size_t blk_size; /* size of the last allocated block */
-	size_t dflt_blk_size; /* size of initial allocated block */
 	size_t objects;  /* number of objects */
 	size_t inuse;    /* number of objects in use*/
 	size_t freelist_hits; /* number of object reuse*/
 	void *freelist;	/* list of freed objects */
+	void *freelist_blks;	/* list of freed blks */
 	size_t frees;
 
 	size_t tmp_used; /* keeps total of tmp allocated bytes */
@@ -2544,8 +2544,7 @@ gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 1)));
 
-gdk_export allocator *create_allocator( allocator *pa, size_t blk_size,
-		size_t num_blks );
+gdk_export allocator *create_allocator( allocator *pa);
 gdk_export allocator *sa_reset( allocator *sa );
 gdk_export void *sa_alloc( allocator *sa,  size_t sz );
 gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
@@ -2559,10 +2558,7 @@ gdk_export void sa_open( allocator *sa );  /* open new frame of tempory allocati
 gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to old state */
 gdk_export void sa_free( allocator *sa, void *);
 
-#define ALLOC_DEFAULT_NUM_BLOCKS 64
-#define ALLOC_DEFAULT_BLOCK_SIZE (128*1024)
-
-#define sa_create(pa)		create_allocator(pa, ALLOC_DEFAULT_BLOCK_SIZE, ALLOC_DEFAULT_NUM_BLOCKS)
+#define sa_create(pa)		create_allocator(pa)
 #define ma_create(pa)		sa_create(pa)
 #define ma_destroy(ma)		sa_destroy(ma)
 #define ma_alloc(ma, sz)	(void*)sa_alloc(ma, sz)

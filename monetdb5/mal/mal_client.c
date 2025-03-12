@@ -452,13 +452,14 @@ MCcloseClient(Client c)
 	MT_sema_destroy(&c->s);
 	MT_lock_set(&mal_contextLock);
 	c->idle = c->login = c->lastcmd = 0;
-	ma_destroy(c->ta);
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {
 		c->mode = FREECLIENT;
 		c->idx = -1;
 	}
+	ma_destroy(c->ta);
+	ma_destroy(c->alloc);
 	MT_lock_unset(&mal_contextLock);
 }
 

@@ -1560,7 +1560,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 		return NULL;
 	}
 
-	Symbol curPrg = newFunctionArgs(modnme, curFunc->fcn, kind, -1);
+	Symbol curPrg = newFunctionArgs(cntxt->alloc, modnme, curFunc->fcn, kind, -1);
 	if (!curPrg) {
 		mf_destroy(curFunc);
 		parseError(cntxt, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1692,7 +1692,7 @@ fcnHeader(Client cntxt, int kind)
 	if (nargs < 0)
 		return 0;
 	/* one extra for argument/return manipulation */
-	cntxt->curprg = newFunctionArgs(modnme, fnme, kind, nargs + 1);
+	cntxt->curprg = newFunctionArgs(cntxt->alloc, modnme, fnme, kind, nargs + 1);
 	if (cntxt->curprg == NULL) {
 		/* reinstate curprg to have a place for the error */
 		cntxt->curprg = cntxt->backup;

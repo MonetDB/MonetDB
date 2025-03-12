@@ -217,7 +217,7 @@ addFunctions(mel_func *fcn)
 		if (c == NULL && (c = globalModule(mod)) == NULL)
 			throw(LOADER, __func__, "Module %s can not be created", mod);
 
-		s = newSymbol(fcn->fcn, (fcn->command) ? COMMANDsymbol : PATTERNsymbol);
+		s = newSymbol(NULL, fcn->fcn, (fcn->command) ? COMMANDsymbol : PATTERNsymbol);
 		if (s == NULL)
 			throw(LOADER, __func__, "Can not create symbol for %s.%s missing", mod,
 				  fcn->fcn);
@@ -298,7 +298,7 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	if (c == NULL && (c = globalModule(mod)) == NULL)
 		return MEL_ERR;
 
-	s = newSymbol(fcn, command ? COMMANDsymbol : PATTERNsymbol);
+	s = newSymbol(NULL, fcn, command ? COMMANDsymbol : PATTERNsymbol);
 	if (s == NULL)
 		return MEL_ERR;
 	fcn = s->name;

@@ -21,8 +21,8 @@
 #define getEndScope(L,I)	((L)->var[I].eolife)
 #define getBeginScope(L,I)	((L)->var[I].declared)
 
-mal_export Symbol newFunction(const char *mod, const char *nme, int kind);
-mal_export Symbol newFunctionArgs(const char *mod, const char *nme, int kind,
+mal_export Symbol newFunction(allocator *pa, const char *mod, const char *nme, int kind);
+mal_export Symbol newFunctionArgs(allocator *pa, const char *mod, const char *nme, int kind,
 								  int args);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 

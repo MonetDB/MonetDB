@@ -23,14 +23,14 @@
 #include "mal_private.h"
 
 Symbol
-newFunctionArgs(const char *mod, const char *nme, int kind, int args)
+newFunctionArgs(allocator *pa, const char *mod, const char *nme, int kind, int args)
 {
 	Symbol s;
 
 	if (mod == NULL || nme == NULL)
 		return NULL;
 
-	s = newSymbol(nme, kind);
+	s = newSymbol(pa, nme, kind);
 	if (s == NULL)
 		return NULL;
 
@@ -61,9 +61,9 @@ newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 }
 
 Symbol
-newFunction(const char *mod, const char *nme, int kind)
+newFunction(allocator *pa, const char *mod, const char *nme, int kind)
 {
-	return newFunctionArgs(mod, nme, kind, MAXARG);
+	return newFunctionArgs(pa, mod, nme, kind, MAXARG);
 }
 
 int
@@ -331,7 +331,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	InstrPtr pp;
 	str msg = MAL_SUCCEED;
 
-	new = newFunctionArgs(scope->name, proc->name, proc->kind, -1);
+	new = newFunctionArgs(NULL, scope->name, proc->name, proc->kind, -1);
 	if (new == NULL) {
 		return NULL;
 	}

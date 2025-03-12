@@ -343,7 +343,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp,
 			break;
 	}
 	osa = sql->sa;
-	allocator *nsa = sql->sa = sa_create(NULL);
+	allocator *nsa = sql->sa = sa_create(osa->pa);
 	/* first check default values */
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
@@ -4947,7 +4947,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int arg = pci->retc;
 	str mod, fcn, ret = MAL_SUCCEED;
 	InstrPtr npci;
-	MalBlkPtr nmb = newMalBlk(1), omb = NULL;
+	MalBlkPtr nmb = newMalBlk(cntxt->alloc, 1), omb = NULL;
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
