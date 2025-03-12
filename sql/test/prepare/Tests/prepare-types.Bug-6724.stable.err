@@ -1,4 +1,0 @@
-MAPI  = monetdb@localhost:50000
-QUERY = exec  2(); --error
-ERROR = !EXEC called with wrong number of arguments: expected 1, got 0
-CODE  = 42000
