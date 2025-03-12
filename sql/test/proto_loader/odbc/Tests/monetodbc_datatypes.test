@@ -1,3 +1,5 @@
+---- BOOLEAN ----
+
 query IIIII
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(false as boolean) as valf, cast(true as boolean) as valt, cast(0 as boolean) as val0, cast(1 as boolean) as val1, cast(NULL as boolean) as valnil'
 ----
@@ -6,6 +8,8 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(false as boolean) as valf
 0
 1
 NULL
+
+---- TINYINT, SMALLINT, INT, BIGINT ----
 
 query IIII
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(127 as tinyint) as val1, cast(-127 as tinyint) as val2, cast(0 as tinyint) as val0, cast(NULL as tinyint) as valnil'
@@ -39,6 +43,28 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9223372036854775807 as bi
 0
 NULL
 
+---- HUGEINT -----
+
+onlyif has-hugeint
+query IIII
+select cast(170141183460469231731687303715884105727 as hugeint) as val1, cast(-170141183460469231731687303715884105727 as hugeint) as val2, cast(0 as hugeint) as val0, cast(NULL as hugeint) as valnil
+----
+170141183460469231731687303715884105727
+-170141183460469231731687303715884105727
+0
+NULL
+
+onlyif has-hugeint
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(170141183460469231731687303715884105727 as hugeint) as val1, cast(-170141183460469231731687303715884105727 as hugeint) as val2, cast(0 as hugeint) as val0, cast(NULL as hugeint) as valnil'
+----
+170141183460469231731687303715884105727
+-170141183460469231731687303715884105727
+0
+NULL
+
+---- DECIMAL ----
+
 query T
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(0.34 as decimal(2,2)) as dec1_val'
 ----
@@ -61,6 +87,45 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as de
 1234567890.12345678
 -1234567890.12345678
 
+onlyif has-hugeint
+query I
+select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val
+----
+923456789012345678
+
+onlyif has-hugeint
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val'
+----
+923456789012345678.123456789
+
+onlyif has-hugeint
+query II
+select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1
+----
+12345678901234567890
+-12345678901234567890
+
+onlyif has-hugeint
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1'
+----
+12345678901234567890.123456789
+-12345678901234567890.123456789
+
+onlyif has-hugeint
+query I
+select cast(-92345678901234567890123456789.123456789 as decimal(38,9)) as dec16_val
+----
+-92345678901234567890123456789
+
+--query T
+--select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-92345678901234567890123456789.123456789 as decimal(38,9)) as dec16_val'
+----
+-- -92345678901234567890123456789.123456789
+
+---- REAL ----
+
 query RRRR
 select cast(2147483647 as real) as val1, cast(-2147483647 as real) as val2, cast(0.00000000 as real) as val0, cast(NULL as real) as valnil
 ----
@@ -76,6 +141,8 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(2147483647 as real) as va
 -2147483600.000
 0.000
 NULL
+
+---- DOUBLE ----
 
 query RRRR
 select cast(12345678901234.5678 as double) as val1, cast(-12345678901234.5678 as double) as val2, cast(0.00000000 as double) as val0, cast(NULL as double) as valnil
