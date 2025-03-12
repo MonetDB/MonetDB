@@ -1,9 +1,7 @@
-# incomplete_uri
-# HAVE_ODBC?monetodbc
+incomplete_uri
+HAVE_ODBC?monetodbc
 !NOT_WIN32?monetodbc-Windows
 HAVE_SQLITE3ODBC&HAVE_DATA_PATH?sqlite3odbc
-# HAVE_ODBC?monetodbc_datatypes
-# HAVE_ODBC&HAVE_HGE?monetodbc_datatypes_hge
-HAVE_ODBC?wip
-# sqlite3odbc_local
-# HAVE_ODBC?monetodbc_local_41000
+HAVE_ODBC?monetodbc_datatypes
+HAVE_ODBC&HAVE_HGE?monetodbc_datatypes_hge
+
