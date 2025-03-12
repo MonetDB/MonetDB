@@ -3912,11 +3912,11 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->mid->active = hdl;
 		hdl->active = result;
 		mapi_log_record(hdl->mid, "W", "X" "export %d %" PRId64 "\n",
-				     result->tableid,
-				     result->cache.first + result->cache.tuplecount);
+				result->tableid,
+				result->cache.first + result->cache.tuplecount);
 		int e;
 		if ((e = mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
-				 result->tableid,
+				      result->tableid,
 				      result->cache.first + result->cache.tuplecount)) < 0 ||
 		    (e = mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA)) < 0)
 			check_stream(hdl->mid, hdl->mid->to, e, "sending export command", NULL);
@@ -4436,7 +4436,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			mid->active = hdl;
 			hdl->active = result;
 			mapi_log_record(mid, "SEND", "X" "export %d %" PRId64 "\n",
-					     result->tableid, result->cache.first + result->cache.tuplecount);
+					result->tableid, result->cache.first + result->cache.tuplecount);
 			int e;
 			if ((e = mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
 					      result->tableid, result->cache.first + result->cache.tuplecount)) < 0 ||
