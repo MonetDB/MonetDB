@@ -94,6 +94,7 @@ class SQLLogicConnection(object):
         self.dbh = dbh
         self.crs = crs
         self.language = language
+        self.lastprepareid = None
 
     def cursor(self):
         if self.crs:
@@ -145,6 +146,7 @@ class SQLLogic:
         self.timedout = False   # there was a timeout
         self.__last = ''
         self.srcdir = srcdir
+        self.lastprepareid = None
 
     def __enter__(self):
         return self
@@ -304,9 +306,14 @@ class SQLLogic:
                        conn=None,
                        verbose=False):
         crs = conn.cursor() if conn else self.crs
+        crs.description = None
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return ['statement', 'ok']
+        if '<LAST_PREPARE_ID>' in statement:
+            id = conn.lastprepareid if conn else self.lastprepareid
+            if id is not None:
+                statement = statement.replace('<LAST_PREPARE_ID>', f'{id}')
         try:
             if verbose:
                 print(f'Executing:\n{err_stmt or statement}')
@@ -371,6 +378,12 @@ class SQLLogic:
             return ['statement', 'error']
         else:
             result = ['statement', 'ok']
+            if crs.description is not None and crs.lastrowid is not None:
+                # it was a PREPARE query
+                if conn:
+                    conn.lastprepareid = crs.lastrowid
+                else:
+                    self.lastprepareid = crs.lastrowid
             if expectok:
                 if expected_rowcount is not None:
                     result.append('rowcount')
@@ -460,6 +473,10 @@ class SQLLogic:
     def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
+        if '<LAST_PREPARE_ID>' in query:
+            id = conn.lastprepareid if conn else self.lastprepareid
+            if id is not None:
+                query = query.replace('<LAST_PREPARE_ID>', f'{id}')
         crs.description = None
         try:
             if verbose:
@@ -492,6 +509,12 @@ class SQLLogic:
             tpe, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error'], []
+        if crs.lastrowid is not None:
+            # it was a PREPARE query
+            if conn:
+                conn.lastprepareid = crs.lastrowid
+            else:
+                self.lastprepareid = crs.lastrowid
         ndata = []
         for row in data:
             nrow = []
