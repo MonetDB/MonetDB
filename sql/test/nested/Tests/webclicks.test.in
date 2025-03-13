@@ -111,8 +111,28 @@ select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json'
 ("996257967-103007874", "47f07c1399c9c6bd1012861f9c5c958e042732e259b909e077f7e8967b650c75", "8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64", "productDetail", 2024-11-30 22:13:37.823000, "Mozilla", ({(("hash", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("hostname", "e13dacd9566ecf8efd4aff212960c02de20aa110")),(("pageSubType", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("pageType", "6b5cdf4073b8166e5cc01a2532469d2e356eebfd")),(("pathname", "0b28998c6a5efc0afb854752b1bba65f37c70230")),(("protocol", "c3437dbc7c1255d3a21d444d86ebf2e9234c22bd")),(("referrer", "27bbe94658bf6bd4c431052e2065de0457ec8546")),(("search", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("state", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("title", "d08339b839a6716a96334736c1c769091a0a8644"))}), ({(("customerId", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("customerType", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("isAuthenticated", "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04"))}), ("detail", ({(("null", "null"))}), ({(("product", "null", ({(("brand", "b8884d21754edbf713af7000a67eac0efd5df8ea"))})))})))
 ("996257967-103007874", "47f07c1399c9c6bd1012861f9c5c958e042732e259b909e077f7e8967b650c75", "8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64", "productDetail", 2024-11-30 22:13:37.823000, "Mozilla", ({(("hash", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("hostname", "e13dacd9566ecf8efd4aff212960c02de20aa110")),(("pageSubType", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("pageType", "6b5cdf4073b8166e5cc01a2532469d2e356eebfd")),(("pathname", "0b28998c6a5efc0afb854752b1bba65f37c70230")),(("protocol", "c3437dbc7c1255d3a21d444d86ebf2e9234c22bd")),(("referrer", "27bbe94658bf6bd4c431052e2065de0457ec8546")),(("search", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("state", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("title", "d08339b839a6716a96334736c1c769091a0a8644"))}), ({(("customerId", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("customerType", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("isAuthenticated", "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04"))}), ("detail", ({(("null", "null"))}), ({(("product", "null", ({(("brand", "b8884d21754edbf713af7000a67eac0efd5df8ea"))})))})))
 
+statement ok
+create table events(data event)
+
+statement ok
+insert into events select json from r'$TSTSRCDIR/webclicks.json'
+
+query I
+select count(*) from events
+----
+2
+
+query T
+select data.event from events
+----
+productDetail
+productDetail
+
 
 # clean up - the order should be reversed of creation for depended types
+
+statement ok
+drop table events
 
 statement ok
 drop type event
