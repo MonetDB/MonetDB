@@ -879,7 +879,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						break;
 				}
 				if (trace_enabled)
-					printf("Before SQLGetData(col %u C_type %d buflen %ld\n", col+1, targetType, bufferLength);
+					printf("Before SQLGetData(col %u C_type %d buflen %d\n", col+1, targetType, (int)bufferLength);
 				ret = SQLGetData(stmt, col+1, targetType, targetValuePtr, bufferLength, &strLen);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 					if (trace_enabled) {
