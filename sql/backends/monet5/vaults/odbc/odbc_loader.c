@@ -1098,7 +1098,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 							case SQL_INTERVAL_SECOND:
 							{
 								lng_val = (lng) (itv_val.intval.day_second.second * 1000)
-									+ itv_val.intval.day_second.fraction;
+									+ (itv_val.intval.day_second.fraction / 1000);
 								if (itv_val.interval_sign == SQL_TRUE)
 									lng_val = -lng_val;
 								if (trace_enabled)
@@ -1135,7 +1135,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									+ itv_val.intval.day_second.hour) *60)
 									+ itv_val.intval.day_second.minute) *60)
 									+ itv_val.intval.day_second.second) *1000)
-									+ itv_val.intval.day_second.fraction;
+									+ (itv_val.intval.day_second.fraction / 1000);
 								if (itv_val.interval_sign == SQL_TRUE)
 									lng_val = -lng_val;
 								if (trace_enabled)
@@ -1159,7 +1159,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								lng_val = (lng) (((((itv_val.intval.day_second.hour *60)
 									+ itv_val.intval.day_second.minute) *60)
 									+ itv_val.intval.day_second.second) *1000)
-									+ itv_val.intval.day_second.fraction;
+									+ (itv_val.intval.day_second.fraction / 1000);
 								if (itv_val.interval_sign == SQL_TRUE)
 									lng_val = -lng_val;
 								if (trace_enabled)
@@ -1171,7 +1171,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 							{
 								lng_val = (lng) (((itv_val.intval.day_second.minute *60)
 									+ itv_val.intval.day_second.second) *1000)
-									+ itv_val.intval.day_second.fraction;
+									+ (itv_val.intval.day_second.fraction / 1000);
 								if (itv_val.interval_sign == SQL_TRUE)
 									lng_val = -lng_val;
 								if (trace_enabled)

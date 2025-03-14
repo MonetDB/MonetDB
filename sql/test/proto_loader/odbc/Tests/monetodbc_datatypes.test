@@ -248,19 +248,25 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval day) a
 0
 NULL
 
-query TTTT
-select cast('61' as interval second) as val1, cast('-61' as interval second) as val2, cast('0' as interval second) as val0, cast(NULL as interval second) as valnil
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99'' as interval day) as val1, cast(''-99'' as interval day) as val2'
 ----
-0:01:01
--1 day, 23:58:59
+99
+-99
+
+query TTTT
+select cast('61.2468' as interval second) as val1, cast('-61.987' as interval second) as val2, cast('0' as interval second) as val0, cast(NULL as interval second) as valnil
+----
+0:01:01.246000
+-1 day, 23:58:58.013000
 0:00:00
 NULL
 
 query TTTT
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''61'' as interval second) as val1, cast(''-61'' as interval second) as val2, cast(''0'' as interval second) as val0, cast(NULL as interval second) as valnil'
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''61.2468'' as interval second) as val1, cast(''-61.987'' as interval second) as val2, cast(''0'' as interval second) as val0, cast(NULL as interval second) as valnil'
 ----
-0:01:01
--1 day, 23:58:59
+0:01:01.246000
+-1 day, 23:58:58.013000
 0:00:00
 NULL
 
