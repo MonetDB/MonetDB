@@ -2594,8 +2594,21 @@ rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 	return stmt_list(be, l);
 }
 
+static node *
+find_next_sql_column(sql_table *t, node *n, const char *name)
+{
+	if (!n)
+		n = t->columns->l->h;
+	for(; n; n = n->next) {
+		sql_column *c = n->data;
+		if (strcmp(c->base.name, name) == 0)
+			break;
+	}
+	return n;
+}
+
 static stmt *
-rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exps)
+rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, node *cn, list *exps)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
@@ -2606,6 +2619,7 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exp
 		if (!t)
 			return NULL;
 		dels = stmt_tid(be, t, false);
+		cn = NULL;
 	}
 	for (node *en = exps->h; en; en = en->next) {
 		sql_exp *exp = en->data;
@@ -2631,10 +2645,11 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, list *exp
 				continue;
 			s = stmt_idx(be, i, dels, dels->partition);
 		} else {
-			sql_column *c = find_sql_column(t, oname);
-			assert(c);
+			cn = find_next_sql_column(t, cn, oname);
+			assert(cn);
+			sql_column *c = cn->data;
 			if (exp->f && (c->type.multiset || c->type.type->composite)) {
-				s = rel2bin_subtable(be, t, dels, c, exp->f);
+				s = rel2bin_subtable(be, t, dels, c, cn, exp->f);
 				if (!s)
 					return s;
 				s->nested = true;
@@ -2669,7 +2684,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 	list *l = sa_list(sql->sa);
 	bool complex = (t->multiset || t->composite);
 	stmt *dels = stmt_tid(be, t, !complex?rel->flag == REL_PARTITION:false), *col = NULL;
-	node *en;
+	node *en, *cn = NULL;
 
 	if (l == NULL || dels == NULL)
 		return NULL;
@@ -2722,10 +2737,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				continue;
 			s = (i == fi) ? col : stmt_idx(be, i, complex?dels:NULL, dels->partition);
 		} else {
-			sql_column *c = find_sql_column(t, oname);
-			assert(c);
+			cn = find_next_sql_column(t, cn, oname);
+			assert(cn);
+			sql_column *c = cn->data;
 			if (exp->f && (c->type.multiset || c->type.type->composite)) {
-				s = rel2bin_subtable(be, t, dels, c, exp->f);
+				s = rel2bin_subtable(be, t, dels, c, cn, exp->f);
 				if (!s)
 					return s;
 				s->nested = true;
