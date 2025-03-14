@@ -232,7 +232,39 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''66'' as interval month)
 0
 NULL
 
-query TTTT
+query IIII
+select cast('12-6' as interval year to month) as val1, cast('-19-11' as interval year to month) as val2, cast('0-0' as interval year to month) as val0, cast(NULL as interval year to month) as valnil
+----
+150
+-239
+0
+NULL
+
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''12-6'' as interval year to month) as val1, cast(''-19-11'' as interval year to month) as val2, cast(''0-0'' as interval year to month) as val0, cast(NULL as interval year to month) as valnil'
+----
+150
+-239
+0
+NULL
+
+query IIII
+select cast('66' as interval year) as val1, cast('-66' as interval year) as val2, cast('0' as interval year) as val0, cast(NULL as interval year) as valnil
+----
+792
+-792
+0
+NULL
+
+query IIII
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''66'' as interval year) as val1, cast(''-66'' as interval year) as val2, cast(''0'' as interval year) as val0, cast(NULL as interval year) as valnil'
+----
+792
+-792
+0
+NULL
+
+query IIII
 select cast('32' as interval day) as val1, cast('-32' as interval day) as val2, cast('0' as interval day) as val0, cast(NULL as interval day) as valnil
 ----
 32
@@ -240,7 +272,7 @@ select cast('32' as interval day) as val1, cast('-32' as interval day) as val2, 
 0
 NULL
 
-query TTTT
+query IIII
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval day) as val1, cast(''-32'' as interval day) as val2, cast(''0'' as interval day) as val0, cast(NULL as interval day) as valnil'
 ----
 32
@@ -248,11 +280,43 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval day) a
 0
 NULL
 
-query TT
+query II
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99'' as interval day) as val1, cast(''-99'' as interval day) as val2'
 ----
 99
 -99
+
+query TTTT
+select cast('32' as interval hour) as val1, cast('-32' as interval hour) as val2, cast('0' as interval hour) as val0, cast(NULL as interval hour) as valnil
+----
+1 day, 8:00:00
+-2 days, 16:00:00
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval hour) as val1, cast(''-32'' as interval hour) as val2, cast(''0'' as interval hour) as val0, cast(NULL as interval hour) as valnil'
+----
+1 day, 8:00:00
+-2 days, 16:00:00
+0:00:00
+NULL
+
+query TTTT
+select cast('92' as interval minute) as val1, cast('-92' as interval minute) as val2, cast('0' as interval minute) as val0, cast(NULL as interval minute) as valnil
+----
+1:32:00
+-1 day, 22:28:00
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''92'' as interval minute) as val1, cast(''-92'' as interval minute) as val2, cast(''0'' as interval minute) as val0, cast(NULL as interval minute) as valnil'
+----
+1:32:00
+-1 day, 22:28:00
+0:00:00
+NULL
 
 query TTTT
 select cast('61.2468' as interval second) as val1, cast('-61.987' as interval second) as val2, cast('0' as interval second) as val0, cast(NULL as interval second) as valnil
@@ -267,6 +331,102 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''61.2468'' as interval s
 ----
 0:01:01.246000
 -1 day, 23:58:58.013000
+0:00:00
+NULL
+
+query TTTT
+select cast('32 23' as interval day to hour) as val1, cast('-32 23' as interval day to hour) as val2, cast('0 0' as interval day to hour) as val0, cast(NULL as interval day to hour) as valnil
+----
+32 days, 23:00:00
+-33 days, 1:00:00
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32 23'' as interval day to hour) as val1, cast(''-32 23'' as interval day to hour) as val2, cast(''0 0'' as interval day to hour) as val0, cast(NULL as interval day to hour) as valnil'
+----
+32 days, 23:00:00
+-33 days, 1:00:00
+0:00:00
+NULL
+
+query TTTT
+select cast('9 23:59' as interval day to minute) as val1, cast('-9 23:59' as interval day to minute) as val2, cast('0 0:0' as interval day to minute) as val0, cast(NULL as interval day to minute) as valnil
+----
+9 days, 23:59:00
+-10 days, 0:01:00
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9 23:59'' as interval day to minute) as val1, cast(''-9 23:59'' as interval day to minute) as val2, cast(''0 0:0'' as interval day to minute) as val0, cast(NULL as interval day to minute) as valnil'
+----
+9 days, 23:59:00
+-10 days, 0:01:00
+0:00:00
+NULL
+
+query TTTT
+select cast('9 23:59:59.507' as interval day to second) as val1, cast('-9 13:58:59.507' as interval day to second) as val2, cast('0 0:0:0' as interval day to second) as val0, cast(NULL as interval day to second) as valnil
+----
+9 days, 23:59:59.507000
+-10 days, 10:01:00.493000
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9 23:59:59.507'' as interval day to second) as val1, cast(''-9 13:58:59.507'' as interval day to second) as val2, cast(''0 0:0:0'' as interval day to second) as val0, cast(NULL as interval day to second) as valnil'
+----
+9 days, 23:59:59.507000
+-10 days, 10:01:00.493000
+0:00:00
+NULL
+
+query TTTT
+select cast('23:59' as interval hour to minute) as val1, cast('-23:59' as interval hour to minute) as val2, cast('0:0' as interval hour to minute) as val0, cast(NULL as interval hour to minute) as valnil
+----
+23:59:00
+-1 day, 0:01:00
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''23:59'' as interval hour to minute) as val1, cast(''-23:59'' as interval hour to minute) as val2, cast(''0:0'' as interval hour to minute) as val0, cast(NULL as interval hour to minute) as valnil'
+----
+23:59:00
+-1 day, 0:01:00
+0:00:00
+NULL
+
+query TTTT
+select cast('24:59:59.85' as interval hour to second) as val1, cast('-24:59:59.507' as interval hour to second) as val2, cast('0:0:0.000' as interval hour to second) as val0, cast(NULL as interval hour to second) as valnil
+----
+1 day, 0:59:59.850000
+-2 days, 23:00:00.493000
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''24:59:59.85'' as interval hour to second) as val1, cast(''-24:59:59.507'' as interval hour to second) as val2, cast(''0:0:0.000'' as interval hour to second) as val0, cast(NULL as interval hour to second) as valnil'
+----
+1 day, 0:59:59.850000
+-2 days, 23:00:00.493000
+0:00:00
+NULL
+
+query TTTT
+select cast('99:59.999' as interval minute to second) as val1, cast('-99:59.123' as interval minute to second) as val2, cast('0:0.000' as interval minute to second) as val0, cast(NULL as interval minute to second) as valnil
+----
+1:39:59.999000
+-1 day, 22:20:00.877000
+0:00:00
+NULL
+
+query TTTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99:59.999'' as interval minute to second) as val1, cast(''-99:59.123'' as interval minute to second) as val2, cast(''0:0.000'' as interval minute to second) as val0, cast(NULL as interval minute to second) as valnil'
+----
+1:39:59.999000
+-1 day, 22:20:00.877000
 0:00:00
 NULL
 

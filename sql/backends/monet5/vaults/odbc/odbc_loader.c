@@ -1036,28 +1036,24 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								break;
 							}
 							case SQL_INTERVAL_YEAR:
-							{
-								int_val = (int) itv_val.intval.year_month.year *12;
-								if (itv_val.interval_sign == SQL_TRUE)
-									int_val = -int_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %d\n", row, col+1, int_val);
-								gdkret = BUNappend(b, (void *) &int_val, false);
-								break;
-							}
 							case SQL_INTERVAL_YEAR_TO_MONTH:
-							{
-								int_val = (int) (itv_val.intval.year_month.year *12) + itv_val.intval.year_month.month;
-								if (itv_val.interval_sign == SQL_TRUE)
-									int_val = -int_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %d\n", row, col+1, int_val);
-								gdkret = BUNappend(b, (void *) &int_val, false);
-								break;
-							}
 							case SQL_INTERVAL_MONTH:
 							{
-								int_val = (int) itv_val.intval.year_month.month;
+								switch (itv_val.interval_type) {
+								case SQL_IS_YEAR:
+									int_val = (int) itv_val.intval.year_month.year *12;
+									break;
+								case SQL_IS_YEAR_TO_MONTH:
+									int_val = (int) (itv_val.intval.year_month.year *12)
+										+ itv_val.intval.year_month.month;
+									break;
+								case SQL_IS_MONTH:
+									int_val = (int) itv_val.intval.year_month.month;
+									break;
+								default:
+									int_val = 0;
+								}
+
 								if (itv_val.interval_sign == SQL_TRUE)
 									int_val = -int_val;
 								if (trace_enabled)
@@ -1066,112 +1062,65 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								break;
 							}
 							case SQL_INTERVAL_DAY:
-							{
-								lng_val = (lng) itv_val.intval.day_second.day * (24*60*60*1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_HOUR:
-							{
-								lng_val = (lng) itv_val.intval.day_second.hour * (60*60*1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_MINUTE:
-							{
-								lng_val = (lng) itv_val.intval.day_second.minute * (60*1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_SECOND:
-							{
-								lng_val = (lng) (itv_val.intval.day_second.second * 1000)
-									+ (itv_val.intval.day_second.fraction / 1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_DAY_TO_HOUR:
-							{
-								lng_val = (lng) ((itv_val.intval.day_second.day *24)
-									+ itv_val.intval.day_second.hour) * (60*60*1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_DAY_TO_MINUTE:
-							{
-								lng_val = (lng) ((((itv_val.intval.day_second.day *24)
-									+ itv_val.intval.day_second.hour) *60)
-									+ itv_val.intval.day_second.minute) * (60*1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_DAY_TO_SECOND:
-							{
-								lng_val = (lng) (((((((itv_val.intval.day_second.day *24)
-									+ itv_val.intval.day_second.hour) *60)
-									+ itv_val.intval.day_second.minute) *60)
-									+ itv_val.intval.day_second.second) *1000)
-									+ (itv_val.intval.day_second.fraction / 1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_HOUR_TO_MINUTE:
-							{
-								lng_val = (lng) ((itv_val.intval.day_second.hour *60)
-									+ itv_val.intval.day_second.minute) * (60*1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_HOUR_TO_SECOND:
-							{
-								lng_val = (lng) (((((itv_val.intval.day_second.hour *60)
-									+ itv_val.intval.day_second.minute) *60)
-									+ itv_val.intval.day_second.second) *1000)
-									+ (itv_val.intval.day_second.fraction / 1000);
-								if (itv_val.interval_sign == SQL_TRUE)
-									lng_val = -lng_val;
-								if (trace_enabled)
-									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
-								gdkret = BUNappend(b, (void *) &lng_val, false);
-								break;
-							}
 							case SQL_INTERVAL_MINUTE_TO_SECOND:
 							{
-								lng_val = (lng) (((itv_val.intval.day_second.minute *60)
-									+ itv_val.intval.day_second.second) *1000)
-									+ (itv_val.intval.day_second.fraction / 1000);
+								switch (itv_val.interval_type) {
+								case SQL_IS_DAY:
+									lng_val = (lng) itv_val.intval.day_second.day * (24*60*60*1000);
+									break;
+								case SQL_IS_HOUR:
+									lng_val = (lng) itv_val.intval.day_second.hour * (60*60*1000);
+									break;
+								case SQL_IS_MINUTE:
+									lng_val = (lng) itv_val.intval.day_second.minute * (60*1000);
+									break;
+								case SQL_IS_SECOND:
+									lng_val = (lng) (itv_val.intval.day_second.second * 1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								case SQL_IS_DAY_TO_HOUR:
+									lng_val = (lng) ((itv_val.intval.day_second.day *24)
+										+ itv_val.intval.day_second.hour) * (60*60*1000);
+									break;
+								case SQL_IS_DAY_TO_MINUTE:
+									lng_val = (lng) ((((itv_val.intval.day_second.day *24)
+										+ itv_val.intval.day_second.hour) *60)
+										+ itv_val.intval.day_second.minute) * (60*1000);
+									break;
+								case SQL_IS_DAY_TO_SECOND:
+									lng_val = (lng) (((((((itv_val.intval.day_second.day *24)
+										+ itv_val.intval.day_second.hour) *60)
+										+ itv_val.intval.day_second.minute) *60)
+										+ itv_val.intval.day_second.second) *1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								case SQL_IS_HOUR_TO_MINUTE:
+									lng_val = (lng) ((itv_val.intval.day_second.hour *60)
+										+ itv_val.intval.day_second.minute) * (60*1000);
+									break;
+								case SQL_IS_HOUR_TO_SECOND:
+									lng_val = (lng) (((((itv_val.intval.day_second.hour *60)
+										+ itv_val.intval.day_second.minute) *60)
+										+ itv_val.intval.day_second.second) *1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								case SQL_IS_MINUTE_TO_SECOND:
+									lng_val = (lng) (((itv_val.intval.day_second.minute *60)
+										+ itv_val.intval.day_second.second) *1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								default:
+									lng_val = 0;
+								}
+
 								if (itv_val.interval_sign == SQL_TRUE)
 									lng_val = -lng_val;
 								if (trace_enabled)
