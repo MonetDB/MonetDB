@@ -43,16 +43,6 @@ typedef struct {
 #endif
 } bignum_t;
 
-typedef union {
-	SQLGUID g;
-	struct {
-		uint32_t d1;
-		uint16_t d2, d3;
-		uint8_t d4[8];
-	} d;
-	uint8_t u[16];
-} uuid_t;
-
 /* Parse a number and store in a bignum_t.
  * 1 is returned if all is well;
  * 2 is returned if there is loss of precision (i.e. overflow of the value);
@@ -2815,25 +2805,17 @@ ODBCFetch(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
-		uuid_t u;
-		if (sscanf(data, "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"
-			   SCNx8"%2"SCNx8"%2"SCNx8,
-			   &u.u[3], &u.u[2], &u.u[1], &u.u[0],
-			   &u.u[5], &u.u[4],
-			   &u.u[7], &u.u[6],
-			   &u.u[8], &u.u[9],
-			   &u.u[10], &u.u[11], &u.u[12],
-			   &u.u[13], &u.u[14], &u.u[15]) != 16) {
-			/* Restricted data type attribute
-			 * violation */
-			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
-		}
-		WriteData(ptr, u.g, SQLGUID);
+		SQLGUID su;
+		sscanf(data,
+		       "%8"SCNx32
+		       "-%4"SCNx16
+		       "-%4"SCNx16
+		       "-%2"SCNx8"%2"SCNx8
+		       "-%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8,
+		       &su.Data1, &su.Data2, &su.Data3,
+		       &su.Data4[0], &su.Data4[1],
+		       &su.Data4[2], &su.Data4[3], &su.Data4[4], &su.Data4[5], &su.Data4[6], &su.Data4[7]);
+		WriteData(ptr, su, SQLGUID);
 		if (lenp)
 			*lenp = sizeof(SQLGUID);
 		break;
@@ -2905,7 +2887,7 @@ ODBCStore(ODBCStmt *stmt,
 	TIMESTAMP_STRUCT tsval;
 	int ivalprec = 0;	/* interval second precision */
 	SQL_INTERVAL_STRUCT ival;
-	uuid_t u;
+	SQLGUID u;
 	char *buf = *bufp;
 	size_t bufpos = *bufposp;
 	size_t buflen = *buflenp;
@@ -3364,20 +3346,17 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_GUID:
-			u.g = *(SQLGUID *)ptr;
+			u = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
+				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
 				 "-%02"PRIx8"%02"PRIx8
 				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
 				 "%02"PRIx8"%02"PRIx8"%02"PRIx8,
-				 u.u[3], u.u[2], u.u[1], u.u[0],
-				 u.u[5], u.u[4],
-				 u.u[7], u.u[6],
-				 u.u[8], u.u[9],
-				 u.u[10], u.u[11], u.u[12],
-				 u.u[13], u.u[14], u.u[15]);
+				 u.Data1, u.Data2, u.Data3,
+				 u.Data4[0], u.Data4[1],
+				 u.Data4[2], u.Data4[3],
+				 u.Data4[4], u.Data4[5],
+				 u.Data4[6], u.Data4[7]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
@@ -3907,36 +3886,29 @@ ODBCStore(ODBCStmt *stmt,
 				addStmtError(stmt, "22018", NULL, 0);
 				goto failure;
 			}
-			for (i = 0; i < 36; i++) {
-				if (strchr("0123456789abcdefABCDEF-",
-					   sval[i]) == NULL) {
-					/* not sure this is the
-					 * correct error */
-					/* Invalid character value for
-					 * cast specification */
-					addStmtError(stmt, "22018", NULL, 0);
-					goto failure;
-				}
+			if (sval[strspn(sval, "0123456789abcdefABCDEF-")] != 0) {
+				/* not sure this is the correct error */
+				/* Invalid character value for cast
+				 * specification */
+				addStmtError(stmt, "22018", NULL, 0);
+				goto failure;
 			}
 			snprintf(data, sizeof(data), "%.36s", sval);
 			break;
 		case SQL_C_GUID:
-			u.g = *(SQLGUID *)ptr;
+			u = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
 				 "UUID '"
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
+				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
 				 "-%02"PRIx8"%02"PRIx8
 				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
 				 "%02"PRIx8"%02"PRIx8"%02"PRIx8
 				 "'",
-				 u.u[3], u.u[2], u.u[1], u.u[0],
-				 u.u[5], u.u[4],
-				 u.u[7], u.u[6],
-				 u.u[8], u.u[9],
-				 u.u[10], u.u[11], u.u[12],
-				 u.u[13], u.u[14], u.u[15]);
+				 u.Data1, u.Data2, u.Data3,
+				 u.Data4[0], u.Data4[1],
+				 u.Data4[2], u.Data4[3],
+				 u.Data4[4], u.Data4[5],
+				 u.Data4[6], u.Data4[7]);
 			break;
 		default:
 			/* Restricted data type attribute violation */

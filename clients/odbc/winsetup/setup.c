@@ -161,21 +161,21 @@ TestConnection(HWND hwndDlg, struct data *datap)
 		if (datap->database && strlen(datap->database) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "DATABASE=%s;", datap->database);
 		}
-		// Only when use_tls is "on", add TLS parameters
-		if (datap->use_tls && strcmp(datap->use_tls, "on") == 0) {
-			pos += snprintf(inStr + pos, strSize - pos, "TLS=on;");
-			if (datap->servercert && strlen(datap->servercert) > 0) {
-				pos += snprintf(inStr + pos, strSize - pos, "CERT=%s;", datap->servercert);
-			}
-			if (datap->servercerthash && strlen(datap->servercerthash) > 0) {
-				pos += snprintf(inStr + pos, strSize - pos, "CERTHASH=%s;", datap->servercerthash);
-			}
-			if (datap->clientkey && strlen(datap->clientkey) > 0) {
-				pos += snprintf(inStr + pos, strSize - pos, "CLIENTKEY=%s;", datap->clientkey);
-			}
-			if (datap->clientcert && strlen(datap->clientcert) > 0) {
-				pos += snprintf(inStr + pos, strSize - pos, "CLIENTCERT=%s;", datap->clientcert);
-			}
+		// Secure connections using TLS
+		if (datap->use_tls && strlen(datap->use_tls) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "TLS=%s;", datap->use_tls);
+		}
+		if (datap->servercert && strlen(datap->servercert) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "CERT=%s;", datap->servercert);
+		}
+		if (datap->servercerthash && strlen(datap->servercerthash) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "CERTHASH=%s;", datap->servercerthash);
+		}
+		if (datap->clientkey && strlen(datap->clientkey) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "CLIENTKEY=%s;", datap->clientkey);
+		}
+		if (datap->clientcert && strlen(datap->clientcert) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "CLIENTCERT=%s;", datap->clientcert);
 		}
 		// Advanced settings
 		if (datap->schema && strlen(datap->schema) > 0) {
@@ -191,14 +191,24 @@ TestConnection(HWND hwndDlg, struct data *datap)
 			pos += snprintf(inStr + pos, strSize - pos, "REPLYSIZE=%s;", datap->replysize);
 		}
 		// in ODBC autocommit is on by specification. Only when set to off, add it to the connection string.
-		if (datap->autocommit && strcmp(datap->autocommit, "off") == 0) {
-			pos += snprintf(inStr + pos, strSize - pos, "AUTOCOMMIT=off;");
+		if (datap->autocommit && strlen(datap->autocommit) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "AUTOCOMMIT=%s;", datap->autocommit);
 		}
 		if (datap->timezone && strlen(datap->timezone) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "TIMEZONE=%s;", datap->timezone);
 		}
 		if (datap->logfile && strlen(datap->logfile) > 0) {
 			pos += snprintf(inStr + pos, strSize - pos, "LOGFILE=%s;", datap->logfile);
+		}
+		// Client Info
+		if (datap->clientinfo && strlen(datap->clientinfo) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "CLIENTINFO=%s;", datap->clientinfo);
+		}
+		if (datap->applicationname && strlen(datap->applicationname) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "APPNAME=%s;", datap->applicationname);
+		}
+		if (datap->logfile && strlen(datap->clientremark) > 0) {
+			pos += snprintf(inStr + pos, strSize - pos, "CLIENTREMARK=%s;", datap->clientremark);
 		}
 
 		ret = SQLSetConnectAttr(dbc, SQL_ATTR_LOGIN_TIMEOUT, &timeout, SQL_IS_INTEGER);

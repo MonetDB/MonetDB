@@ -38,8 +38,8 @@
 #define ODBC_LOADER   2
 
 #define QUERY_MAX_COLUMNS 4096
-#define MAX_COL_NAME_LEN  1024
-#define MAX_TBL_NAME_LEN  1024
+#define MAX_COL_NAME_LEN  1023
+#define MAX_TBL_NAME_LEN  1023
 
 #ifdef HAVE_HGE
 #define MAX_PREC  38
@@ -291,6 +291,33 @@ str_to_hge(const char *s) {
 }
 #endif
 
+/* an ODBC function call returned an error, get the error msg from the ODBC driver */
+static char *
+getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
+	SQLRETURN ret = SQL_ERROR;
+	SQLCHAR state[SQL_SQLSTATE_SIZE +1];
+	SQLINTEGER errnr;
+	SQLCHAR msg[4096];
+	SQLSMALLINT msglen;
+
+	if (handle == SQL_NULL_HSTMT)
+		return NULL;
+
+	// TODO use ODBC W function
+	ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
+	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+		const char format[] = "SQLSTATE %s, Error code %d, Message %s";
+		char * retmsg = (char *) malloc(sizeof(format) + MIN(msglen, 4096));
+		if (retmsg != NULL) {
+			if (state[SQL_SQLSTATE_SIZE] != '\0')
+				state[SQL_SQLSTATE_SIZE] = '\0';
+			sprintf(retmsg, format, (char*)state, errnr, (char*)msg);
+			return retmsg;
+		}
+	}
+	return NULL;
+}
+
 /* utility function to safely close all opened ODBC resources */
 static void
 odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
@@ -446,7 +473,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			printf("After SQLGetInfo(dbc, SQL_DBMS_NAME) returned %d\n", ret);
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 			if (strcmp("MonetDB", name) == 0) {
-				/* let the MonetDB driver enable returning HUGEINT as column datatype */
+				/* make the MonetDB ODBC driver enable returning SQL_HUGEINT as column datatype */
 				ret = SQLGetTypeInfo(stmt, SQL_HUGEINT);
 				if (trace_enabled)
 					printf("After SQLGetTypeInfo(stmt, SQL_HUGEINT) returned %d\n", ret);
@@ -495,8 +522,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 
 	/* when called from odbc_relation() */
 	if (caller == ODBC_RELATION) {
-		char tname[MAX_TBL_NAME_LEN];
-		char cname[MAX_COL_NAME_LEN];
+		char tname[MAX_TBL_NAME_LEN +1];
+		char cname[MAX_COL_NAME_LEN +1];
 		char * tblname;
 		char * colname;
 		SQLSMALLINT dataType = 0;
@@ -508,7 +535,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 			/* for each result column get name, datatype, size and decdigits */
 			// TODO use ODBC W function
-			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname) -1,
+			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) MAX_COL_NAME_LEN,
 					NULL, &dataType, &columnSize, &decimalDigits, NULL);
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				errmsg = "SQLDescribeCol failed.";
@@ -525,7 +552,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			if (res_exps) {
 				/* also get the table name for this result column */
 				// TODO use ODBC W function
-				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) sizeof(tname) -1, NULL, NULL);
+				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) MAX_TBL_NAME_LEN, NULL, NULL);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 					strcpy(tname, "");
 				}
@@ -557,7 +584,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		SQLULEN largestBlobSize = 0;
 		/* make bats with right atom type */
 		for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
-			char cname[MAX_COL_NAME_LEN];
+			char cname[MAX_COL_NAME_LEN +1];
 			SQLSMALLINT dataType = 0;
 			SQLULEN columnSize = 0;
 			SQLSMALLINT decimalDigits = 0;
@@ -566,7 +593,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 
 			/* for each result column get SQL datatype, size and decdigits */
 			// TODO use ODBC W function
-			ret = SQLDescribeCol(stmt, col+1, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname) -1,
+			ret = SQLDescribeCol(stmt, col+1, (SQLCHAR *) cname, (SQLSMALLINT) MAX_COL_NAME_LEN,
 					NULL, &dataType, &columnSize, &decimalDigits, NULL);
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				errmsg = "SQLDescribeCol failed.";
@@ -656,13 +683,17 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		DATE_STRUCT date_val;
 		TIME_STRUCT time_val;
 		TIMESTAMP_STRUCT ts_val;
+		SQL_INTERVAL_STRUCT itv_val;
 		SQLGUID guid_val;
+		uuid uuid_val = uuid_nil;
 
 		/* allocate storage for all the var sized atom types. */
 		char * str_val = NULL;		// TODO: change to wchar
 		bte * blob_val = NULL;
 		if (largestStringSize == 0)	// no valid string length, use 65535 (64kB) as default
 			largestStringSize = 65535;
+		if (largestStringSize < 256)
+			largestStringSize = 256;
 		if (largestStringSize > 16777215) // string length too large, limit to 16MB
 			largestStringSize = 16777215;
 		str_val = (char *)GDKzalloc((largestStringSize +1) * sizeof(char));	// +1 for the eos char
@@ -778,28 +809,66 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						targetType = SQL_C_TYPE_TIMESTAMP;
 						targetValuePtr = (SQLPOINTER *) &ts_val;
 						break;
-					case SQL_INTERVAL_MONTH:
 					case SQL_INTERVAL_YEAR:
+						targetType = SQL_C_INTERVAL_YEAR;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_YEAR_TO_MONTH:
-						targetType = SQL_C_SLONG;
-						targetValuePtr = (SQLPOINTER *) &int_val;
+						targetType = SQL_C_INTERVAL_YEAR_TO_MONTH;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
+					case SQL_INTERVAL_MONTH:
+						targetType = SQL_C_INTERVAL_MONTH;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
 						break;
 					case SQL_INTERVAL_DAY:
+						targetType = SQL_C_INTERVAL_DAY;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_HOUR:
+						targetType = SQL_C_INTERVAL_HOUR;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_MINUTE:
+						targetType = SQL_C_INTERVAL_MINUTE;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_SECOND:
+						targetType = SQL_C_INTERVAL_SECOND;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_DAY_TO_HOUR:
+						targetType = SQL_C_INTERVAL_DAY_TO_HOUR;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_DAY_TO_MINUTE:
+						targetType = SQL_C_INTERVAL_DAY_TO_MINUTE;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_DAY_TO_SECOND:
+						targetType = SQL_C_INTERVAL_DAY_TO_SECOND;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_HOUR_TO_MINUTE:
+						targetType = SQL_C_INTERVAL_HOUR_TO_MINUTE;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_HOUR_TO_SECOND:
+						targetType = SQL_C_INTERVAL_HOUR_TO_SECOND;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
+						break;
 					case SQL_INTERVAL_MINUTE_TO_SECOND:
-						targetType = SQL_C_SBIGINT;
-						targetValuePtr = (SQLPOINTER *) &lng_val;
+						targetType = SQL_C_INTERVAL_MINUTE_TO_SECOND;
+						targetValuePtr = (SQLPOINTER *) &itv_val;
 						break;
 					case SQL_GUID:
+						/* read guid data as string data */
+//						targetType = SQL_C_CHAR;
+//						targetValuePtr = (SQLPOINTER *) str_val;
+//						bufferLength = largestStringSize;
 						targetType = SQL_C_GUID;
 						targetValuePtr = (SQLPOINTER *) &guid_val;
+						bufferLength = 16;
 						break;
 					case SQL_BINARY:
 					case SQL_VARBINARY:
@@ -809,10 +878,17 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						bufferLength = largestBlobSize;
 						break;
 				}
+				if (trace_enabled)
+					printf("Before SQLGetData(col %u C_type %d buflen %d\n", col+1, targetType, (int)bufferLength);
 				ret = SQLGetData(stmt, col+1, targetType, targetValuePtr, bufferLength, &strLen);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-					if (trace_enabled || true)
-						printf("Failed to get data for col %u of row %lu\n", col+1, row);
+					if (trace_enabled) {
+						char * ODBCmsg = getErrMsg(SQL_HANDLE_STMT, stmt);
+						printf("Failed to get C_type %d data for col %u of row %lu. ODBCmsg: %s\n",
+							targetType, col+1, row, (ODBCmsg) ? ODBCmsg : "");
+						if (ODBCmsg)
+							free(ODBCmsg);
+					}
 					/* as all bats need to be the correct length, append NULL value */
 					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
 						if (trace_enabled)
@@ -851,6 +927,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 										break;
 #ifdef HAVE_HGE
 									case TYPE_hge:
+										/* HUGEINT values are read as string */
 										hge_val = str_to_hge(str_val);
 										gdkret = BUNappend(b, (void *) &hge_val, false);
 										break;
@@ -888,13 +965,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
 								gdkret = BUNappend(b, (void *) &lng_val, false);
 								break;
-#ifdef HAVE_HGE
-//							case SQL_HUGEINT:
-//								if (trace_enabled)
-//									printf("Data row %lu col %u: %" PRId128 "\n", row, col+1, hge_val);
-//								gdkret = BUNappend(b, (void *) &hge_val, false);
-//								break;
-#endif
 							case SQL_DECIMAL:
 							case SQL_NUMERIC:
 							{
@@ -965,13 +1035,32 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								gdkret = BUNappend(b, (void *) &timestamp_val, false);
 								break;
 							}
-							case SQL_INTERVAL_MONTH:
 							case SQL_INTERVAL_YEAR:
 							case SQL_INTERVAL_YEAR_TO_MONTH:
+							case SQL_INTERVAL_MONTH:
+							{
+								switch (itv_val.interval_type) {
+								case SQL_IS_YEAR:
+									int_val = (int) itv_val.intval.year_month.year *12;
+									break;
+								case SQL_IS_YEAR_TO_MONTH:
+									int_val = (int) (itv_val.intval.year_month.year *12)
+										+ itv_val.intval.year_month.month;
+									break;
+								case SQL_IS_MONTH:
+									int_val = (int) itv_val.intval.year_month.month;
+									break;
+								default:
+									int_val = 0;
+								}
+
+								if (itv_val.interval_sign == SQL_TRUE)
+									int_val = -int_val;
 								if (trace_enabled)
 									printf("Data row %lu col %u: %d\n", row, col+1, int_val);
 								gdkret = BUNappend(b, (void *) &int_val, false);
 								break;
+							}
 							case SQL_INTERVAL_DAY:
 							case SQL_INTERVAL_HOUR:
 							case SQL_INTERVAL_MINUTE:
@@ -982,15 +1071,71 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 							case SQL_INTERVAL_HOUR_TO_MINUTE:
 							case SQL_INTERVAL_HOUR_TO_SECOND:
 							case SQL_INTERVAL_MINUTE_TO_SECOND:
+							{
+								switch (itv_val.interval_type) {
+								case SQL_IS_DAY:
+									lng_val = (lng) itv_val.intval.day_second.day * (24*60*60*1000);
+									break;
+								case SQL_IS_HOUR:
+									lng_val = (lng) itv_val.intval.day_second.hour * (60*60*1000);
+									break;
+								case SQL_IS_MINUTE:
+									lng_val = (lng) itv_val.intval.day_second.minute * (60*1000);
+									break;
+								case SQL_IS_SECOND:
+									lng_val = (lng) (itv_val.intval.day_second.second * 1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								case SQL_IS_DAY_TO_HOUR:
+									lng_val = (lng) ((itv_val.intval.day_second.day *24)
+										+ itv_val.intval.day_second.hour) * (60*60*1000);
+									break;
+								case SQL_IS_DAY_TO_MINUTE:
+									lng_val = (lng) ((((itv_val.intval.day_second.day *24)
+										+ itv_val.intval.day_second.hour) *60)
+										+ itv_val.intval.day_second.minute) * (60*1000);
+									break;
+								case SQL_IS_DAY_TO_SECOND:
+									lng_val = (lng) (((((((itv_val.intval.day_second.day *24)
+										+ itv_val.intval.day_second.hour) *60)
+										+ itv_val.intval.day_second.minute) *60)
+										+ itv_val.intval.day_second.second) *1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								case SQL_IS_HOUR_TO_MINUTE:
+									lng_val = (lng) ((itv_val.intval.day_second.hour *60)
+										+ itv_val.intval.day_second.minute) * (60*1000);
+									break;
+								case SQL_IS_HOUR_TO_SECOND:
+									lng_val = (lng) (((((itv_val.intval.day_second.hour *60)
+										+ itv_val.intval.day_second.minute) *60)
+										+ itv_val.intval.day_second.second) *1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								case SQL_IS_MINUTE_TO_SECOND:
+									lng_val = (lng) (((itv_val.intval.day_second.minute *60)
+										+ itv_val.intval.day_second.second) *1000)
+										+ (itv_val.intval.day_second.fraction / 1000);
+									break;
+								default:
+									lng_val = 0;
+								}
+
+								if (itv_val.interval_sign == SQL_TRUE)
+									lng_val = -lng_val;
 								if (trace_enabled)
 									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
 								gdkret = BUNappend(b, (void *) &lng_val, false);
 								break;
+							}
 							case SQL_GUID:
 								if (trace_enabled)
-									printf("Data row %lu col %u: guid_val\n", row, col+1);
+									printf("Data row %lu col %u: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n", row, col+1,
+										guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
+										guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 								// uuid is 16 bytes, same as SQLGUID guid_val
-								gdkret = BUNappend(b, (void *) &guid_val, false);
+								memcpy((void *) &uuid_val, (void *) &guid_val, sizeof(uuid));
+								gdkret = BUNappend(b, (void *) &uuid_val, false);
 								break;
 							case SQL_BINARY:
 							case SQL_VARBINARY:
@@ -1049,10 +1194,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		/* an ODBC function call returned an error, get the error msg from the ODBC driver */
 		SQLSMALLINT handleType;
 		SQLHANDLE handle;
-		SQLCHAR state[SQL_SQLSTATE_SIZE +1];
-		SQLINTEGER errnr;
-		SQLCHAR msg[2048];
-		SQLSMALLINT msglen;
+		str retmsg;
+		char * ODBCmsg;
 
 		/* get err message(s) from the right handle */
 		if (stmt != SQL_NULL_HSTMT) {
@@ -1066,20 +1209,16 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			handleType = SQL_HANDLE_ENV;
 			handle = env;
 		}
-		// TODO use ODBC W function
-		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
-		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-			str retmsg;
-			if (state[SQL_SQLSTATE_SIZE] != '\0')
-				state[SQL_SQLSTATE_SIZE] = '\0';
-			if (errmsg != NULL) {
-				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, errnr, (char*)msg);
-			} else {
-				retmsg = sa_message(sql->sa, "odbc_loader" " SQLstate %s, Errnr %d, Message %s", (char*)state, errnr, (char*)msg);
-			}
-			odbc_cleanup(env, dbc, stmt);
-			return retmsg;
+		ODBCmsg = getErrMsg(handleType, handle);
+		if (errmsg != NULL) {
+			retmsg = sa_message(sql->sa, "odbc_loader" " %s %s", errmsg, (ODBCmsg) ? ODBCmsg : "");
+		} else {
+			retmsg = sa_message(sql->sa, "odbc_loader" " %s", (ODBCmsg) ? ODBCmsg : "");
 		}
+		if (ODBCmsg)
+			free(ODBCmsg);
+		odbc_cleanup(env, dbc, stmt);
+		return retmsg;
 	}
 	odbc_cleanup(env, dbc, stmt);
 	return (errmsg != NULL) ? (str)errmsg : MAL_SUCCEED;

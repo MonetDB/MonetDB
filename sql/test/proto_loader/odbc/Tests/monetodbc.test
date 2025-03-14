@@ -6,10 +6,10 @@ select * from proto_loader('odbc:Dsn=MonetDB-Test')
 statement error 42000!CATALOG: no such table returning function 'proto_loader'
 select * from proto_loader('odbc:DSN=MonetDB-Test', 'monetdb', 'monetdb', 'SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDriverConnect failed. SQLstate IM002, Errnr 0, Message [unixODBC][Driver Manager]Data source name not found and no default driver specified'
+statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDriverConnect failed. SQLSTATE IM002, Error code 0, Message [unixODBC][Driver Manager]Data source name not found and no default driver specified'
 select * from proto_loader('odbc:FILEDSN=MonetDB-Test;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDriverConnect failed. SQLstate 01000, Errnr 0, Message [unixODBC][Driver Manager]Can't open lib 'libMonetODBC' : file not found'
+statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDriverConnect failed. SQLSTATE 01000, Error code 0, Message [unixODBC][Driver Manager]Can't open lib 'libMonetODBC' : file not found'
 select * from proto_loader('odbc:DRIVER=libMonetODBC;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 query TT
