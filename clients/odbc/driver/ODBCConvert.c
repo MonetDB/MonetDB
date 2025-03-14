@@ -3907,16 +3907,12 @@ ODBCStore(ODBCStmt *stmt,
 				addStmtError(stmt, "22018", NULL, 0);
 				goto failure;
 			}
-			for (i = 0; i < 36; i++) {
-				if (strchr("0123456789abcdefABCDEF-",
-					   sval[i]) == NULL) {
-					/* not sure this is the
-					 * correct error */
-					/* Invalid character value for
-					 * cast specification */
-					addStmtError(stmt, "22018", NULL, 0);
-					goto failure;
-				}
+			if (sval[strspn(sval, "0123456789abcdefABCDEF-")] != 0) {
+				/* not sure this is the correct error */
+				/* Invalid character value for cast
+				 * specification */
+				addStmtError(stmt, "22018", NULL, 0);
+				goto failure;
 			}
 			snprintf(data, sizeof(data), "%.36s", sval);
 			break;
