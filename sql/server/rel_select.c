@@ -716,6 +716,42 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	return NULL;
 }
 
+static sql_alias *
+find_parent(sql_alias *a, sql_alias *p)
+{
+	while (a && a->parent != p)
+		a = a->parent;
+	return a;
+}
+
+static sql_column*
+unnest_find_column(sql_table *t, sql_alias *ta, sql_exp *e)
+{
+	sql_alias *a = find_parent(e->alias.parent, ta);;
+	node *n = t->columns->l->h;
+	if (a) {
+		for (; n; n = n->next) {
+			sql_column *c = n->data;
+
+			if (strcmp(a->name, c->base.name) == 0) {
+				if (e->alias.parent == a)
+					break;
+				a = find_parent(e->alias.parent, a);
+			}
+		}
+	}
+	const char *nme = exp_name(e);
+	if (n && nme) {
+		for (; n; n = n->next) {
+			sql_column *c = n->data;
+
+			if (strcmp(nme, c->base.name) == 0)
+				return c;
+		}
+	}
+	return NULL;
+}
+
 static sql_rel *
 rel_unnest_func(sql_query *query, list *exps, char *tname)
 {
@@ -733,7 +769,8 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		}
 		if (r && is_basetable(r->op)) {
 			sql_table *t = r->l;
-			sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
+			sql_column *c = t?unnest_find_column(t, rel_base_name(r), e):NULL;
+			//sql_column *c = t?mvc_bind_column(query->sql, t, exp_name(e)):NULL;
 			if (!c || !c->storage_type)
 				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset column '%s' missing", exp_name(e));
 
