@@ -41,6 +41,8 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			select_split_exps(sql, e->l, rel);
 			select_split_exps(sql, e->r, rel);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			select_split_exps(sql, e->l, rel);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = select_split_exp(sql, e->l, rel);
 			select_split_exps(sql, e->r, rel);
@@ -1357,6 +1359,13 @@ replace_column_references_with_nulls_2(mvc *sql, sql_rel *inner_join_side, sql_e
 			replace_column_references_with_nulls_1(sql, inner_join_side, r);
 			break;
 		}
+		case cmp_con:
+		case cmp_dis:
+		{
+			list* l = e->l;
+			replace_column_references_with_nulls_1(sql, inner_join_side, l);
+			break;
+		}
 		case cmp_in:
 		case cmp_notin:
 		{
@@ -1921,6 +1930,17 @@ exp_count(int *cnt, sql_exp *e)
 			}
 			*cnt += 2;
 			return 2;
+		case cmp_con:
+		case cmp_dis: {
+						  /*
+			list *l = e->l;
+			int c = 9 - 10*list_length(l);
+			*cnt += c;
+			return c;
+			*/
+			*cnt += 3;
+			return 3;
+		}
 		case cmp_in:
 		case cmp_notin: {
 			list *l = e->r;
@@ -2707,6 +2727,49 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 	return rels;
 }
 
+static sql_rel *
+remove_blocking_selects( mvc *sql, sql_rel *p, sql_rel *rel)
+{
+	if (rel_is_ref(rel))
+		return rel;
+
+	switch(rel->op) {
+	case op_select:
+		if (p) {
+			sql_rel *l = rel->l;
+			if (!is_join(l->op))
+				return rel;
+			if (!list_empty(rel->exps)) {
+				for(node *n = rel->exps->h; n; ) {
+					node *nn = n->next;
+					sql_exp *e = n->data;
+
+					if (e->type == e_cmp && e->flag == cmp_dis) {
+						if (!p->exps)
+							p->exps = sa_list(sql->sa);
+						append(p->exps, e);
+						list_remove_node(rel->exps, NULL, n);
+					}
+					n = nn;
+				}
+				if (list_empty(rel->exps)) {
+					sql_rel *l = rel->l;
+					rel->l = NULL;
+					rel_destroy(rel);
+					return remove_blocking_selects( sql, p, l);
+				}
+			}
+		}
+		return rel;
+	case op_join:
+		rel->l = remove_blocking_selects(sql, rel, rel->l);
+		rel->r = remove_blocking_selects(sql, rel, rel->r);
+		return rel;
+	default:
+		return rel;
+	}
+}
+
 static list *
 push_up_join_exps( mvc *sql, sql_rel *rel)
 {
@@ -2757,6 +2820,9 @@ reorder_join(visitor *v, sql_rel *rel)
 			if (!is_innerjoin(l->op) && !is_innerjoin(r->op))
 				return rel;
 		}
+		/* remove blocking selects */
+		rel = remove_blocking_selects(v->sql, NULL, rel);
+
 		rel->exps = push_up_join_exps(v->sql, rel);
 	}
 
@@ -3828,7 +3894,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 					if (e->type == e_cmp) {
 						/* simple comparison filter */
 						if (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_lte || e->flag == cmp_lt
-							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin
+							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_con || e->flag == cmp_dis
 							|| (e->flag == cmp_filter && ((list*)e->l)->cnt == 1)) {
 							sql_exp* column;
 							/* the column in 'like' filters is stored inside a list */
@@ -4186,7 +4252,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
 		/* don't push down functions inside attribute joins */
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
+		if (e->flag == cmp_or || e->flag == cmp_con || e->flag == cmp_dis || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
 			return 0;
 		if (depth > 0) { /* for comparisons under the top ones, they become functions */
 			int lmust = 0;
@@ -4250,7 +4316,7 @@ exp_needs_push_down(sql_rel *rel, sql_exp *e)
 	switch(e->type) {
 	case e_cmp:
 		/* don't push down functions inside attribute joins */
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
+		if (e->flag == cmp_or || e->flag == cmp_con || e->flag == cmp_dis || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
 			return 0;
 		return exp_needs_push_down(rel, e->l) || exp_needs_push_down(rel, e->r) || (e->f && exp_needs_push_down(rel, e->f));
 	case e_convert:
@@ -4305,6 +4371,9 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sq
 			if ((e->l = exps_push_single_func_down(v, rel, ol, or, e->l, depth + 1)) == NULL)
 				return NULL;
 			if ((e->r = exps_push_single_func_down(v, rel, ol, or, e->r, depth + 1)) == NULL)
+				return NULL;
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if ((e->l = exps_push_single_func_down(v, rel, ol, or, e->l, depth + 1)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if ((e->l = exp_push_single_func_down(v, rel, ol, or, e->l, depth + 1)) == NULL)

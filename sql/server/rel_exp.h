@@ -48,6 +48,9 @@ extern sql_exp *exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, 
 extern sql_exp *exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier);
 
+extern sql_exp *exp_conjunctive(allocator *sa, list *exps);
+extern sql_exp *exp_disjunctive(allocator *sa, list *exps);
+
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
 extern sql_exp *exp_convert(mvc *sql, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype );
@@ -225,6 +228,7 @@ extern int exp_aggr_is_count(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
+extern list *exps_check_type(mvc *sql, sql_subtype *t, list *exps);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);
 extern sql_exp *exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp);
 extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);

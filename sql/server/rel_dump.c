@@ -279,6 +279,14 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if (is_anti(e))
+				mnstr_printf(fout, " !");
+			if (e->flag == cmp_con)
+				mnstr_printf(fout, ".AND");
+			else
+				mnstr_printf(fout, ".OR");
+			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_or) {
 			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 			if (is_anti(e))
@@ -1535,9 +1543,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		tname = b;
 		*e = 0;
 		convertIdent(tname);
-		if (tname && !mvc_bind_schema(sql, tname))
+		if (!tname[0]) {
+			if (strcmp(cname, "AND") == 0) {
+				exp = exp_conjunctive(sql->sa, exps);
+			} else if (strcmp(cname, "OR") == 0) {
+				exp = exp_disjunctive(sql->sa, exps);
+			}
+		} else if (tname && !mvc_bind_schema(sql, tname)) {
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", tname);
-		if (grp) {
+		} else if (grp) {
 			if (exps && exps->h) {
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)

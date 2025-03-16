@@ -348,6 +348,34 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 	return e;
 }
 
+sql_exp *
+exp_conjunctive(allocator *sa, list *exps)
+{
+	sql_exp *e = exp_create(sa, e_cmp);
+
+	if (e == NULL)
+		return NULL;
+
+	e->card = exps_card(exps);
+	e->l = exps;
+	e->flag = cmp_con;
+	return e;
+}
+
+sql_exp *
+exp_disjunctive(allocator *sa, list *exps)
+{
+	sql_exp *e = exp_create(sa, e_cmp);
+
+	if (e == NULL)
+		return NULL;
+
+	e->card = exps_card(exps);
+	e->l = exps;
+	e->flag = cmp_dis;
+	return e;
+}
+
 static sql_subtype*
 dup_subtype(allocator *sa, sql_subtype *st)
 {
@@ -1454,6 +1482,10 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 			    exp_match_list(e1->l, e2->l) && exp_match_list(e1->r, e2->r))
 				return 1;
 			else if (e1->flag == e2->flag &&
+				(e1->flag == cmp_con || e1->flag == cmp_dis) &&
+			    exp_match_list(e1->l, e2->l))
+				return 1;
+			else if (e1->flag == e2->flag &&
 				(e1->flag == cmp_in || e1->flag == cmp_notin) &&
 			    exp_match_exp(e1->l, e2->l) && exp_match_list(e1->r, e2->r))
 				return 1;
@@ -1819,6 +1851,9 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 			if (rel_find_exps_and_corresponding_rel_(rel, e->l, subexp, res) ||
 				rel_find_exps_and_corresponding_rel_(rel, e->r, subexp, res))
 				return e;
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if (rel_find_exps_and_corresponding_rel_(rel, e->l, subexp, res))
+				return e;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (rel_find_exp_and_corresponding_rel_(rel, e->l, subexp, res) ||
 				rel_find_exps_and_corresponding_rel_(rel, e->r, subexp, res))
@@ -2149,6 +2184,8 @@ exp_is_null(sql_exp *e )
 		if (!is_semantics(e)) {
 			if (e->flag == cmp_or || e->flag == cmp_filter) {
 				return (exps_have_null(e->l) && exps_have_null(e->r));
+			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+				return false;
 			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 				return ((e->flag == cmp_in && exp_is_null(e->l)) ||
 						(e->flag == cmp_notin && (exp_is_null(e->l) || exps_have_null(e->r))));
@@ -2212,6 +2249,8 @@ exp_is_atom( sql_exp *e )
 			return 0;
 		if (e->flag == cmp_or || e->flag == cmp_filter)
 			return exps_are_atoms(e->l) && exps_are_atoms(e->r);
+		if (e->flag == cmp_con || e->flag == cmp_dis)
+			return exps_are_atoms(e->l);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return exp_is_atom(e->l) && exps_are_atoms(e->r);
 		return exp_is_atom(e->l) && exp_is_atom(e->r) && (!e->f || exp_is_atom(e->f));
@@ -2252,6 +2291,8 @@ exp_is_aggr(sql_rel *r, sql_exp *e)
 			return false;
 		if (e->flag == cmp_or || e->flag == cmp_filter)
 			return exps_are_aggr(r, e->l) && exps_are_aggr(r, e->r);
+		if (e->flag == cmp_con || e->flag == cmp_dis)
+			return exps_are_aggr(r, e->l);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return exp_is_aggr(r, e->l) && exps_are_aggr(r, e->r);
 		return exp_is_aggr(r, e->l) && exp_is_aggr(r, e->r) && (!e->f || exp_is_aggr(r, e->f));
@@ -2298,6 +2339,8 @@ exp_has_aggr(sql_rel *r, sql_exp *e )
 			return false;
 		if (e->flag == cmp_or || e->flag == cmp_filter)
 			return exps_have_aggr(r, e->l) && exps_have_aggr(r, e->r);
+		if (e->flag == cmp_con || e->flag == cmp_dis)
+			return exps_have_aggr(r, e->l);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return exp_has_aggr(r, e->l) && exps_have_aggr(r, e->r);
 		return exp_has_aggr(r, e->l) && exp_has_aggr(r, e->r) && (!e->f || exp_has_aggr(r, e->f));
@@ -2327,6 +2370,8 @@ exp_has_rel( sql_exp *e )
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			return (exps_have_rel_exp(e->l) || exps_have_rel_exp(e->r));
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_have_rel_exp(e->l);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return (exp_has_rel(e->l) || exps_have_rel_exp(e->r));
 		} else {
@@ -2431,6 +2476,17 @@ exp_rel_get_rel(allocator *sa, sql_exp *e)
 					xp = r;
 				}
 			}
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if (exps_have_rel_exp(e->l)) {
+				if (!(r = exps_rel_get_rel(sa, e->l)))
+					return NULL;
+				if (xp) {
+					xp = rel_crossproduct(sa, xp, r, op_join);
+					set_processed(xp);
+				} else {
+					xp = r;
+				}
+			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
 				xp = exp_rel_get_rel(sa, e->l);
@@ -2511,6 +2567,8 @@ exp_rel_update_set_freevar(sql_exp *e)
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			exps_rel_update_set_freevar(e->l);
 			exps_rel_update_set_freevar(e->r);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			exps_rel_update_set_freevar(e->l);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_rel_update_set_freevar(e->l);
 			exps_rel_update_set_freevar(e->r);
@@ -2580,6 +2638,9 @@ exp_rel_update_exp(mvc *sql, sql_exp *e, bool up)
 				e->l = exp_rel_update_exps(sql, e->l, up);
 			if (exps_have_rel_exp(e->r))
 				e->r = exp_rel_update_exps(sql, e->r, up);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if (exps_have_rel_exp(e->l))
+				e->l = exp_rel_update_exps(sql, e->l, up);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
 				e->l = exp_rel_update_exp(sql, e->l, up);
@@ -2702,6 +2763,8 @@ exp_has_func_or_cmp(sql_exp *e, bool cmp)
 			return 1;
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			return (exps_have_func_or_cmp(e->l, true) || exps_have_func_or_cmp(e->r, true));
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_have_func_or_cmp(e->l, true);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return (exp_has_func_or_cmp(e->l, true) || exps_have_func_or_cmp(e->r, true));
 		} else {
@@ -2797,7 +2860,9 @@ exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 		return exps_have_unsafe(e->l, allow_identity, card);
 	} break;
 	case e_cmp: {
-		if (e->flag == cmp_in || e->flag == cmp_notin) {
+		if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_have_unsafe(e->l, allow_identity, card);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return exp_unsafe(e->l, allow_identity, card) || exps_have_unsafe(e->r, allow_identity, card);
 		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
 			return exps_have_unsafe(e->l, allow_identity, card) || exps_have_unsafe(e->r, allow_identity, card);
@@ -3183,6 +3248,13 @@ exp_copy(mvc *sql, sql_exp * e)
 				ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
 			else
 				ne = exp_or(sql->sa, l, r, is_anti(e));
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			list *l = exps_copy(sql, e->l);
+
+			if (e->flag == cmp_con)
+				return exp_conjunctive(sql->sa, l);
+			else
+				return exp_disjunctive(sql->sa, l);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_copy(sql, e->l);
 			list *r = exps_copy(sql, e->r);
@@ -3740,6 +3812,19 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		return res;
 	}
 	return exp;
+}
+
+list*
+exps_check_type(mvc *sql, sql_subtype *t, list *exps)
+{
+	if (list_empty(exps))
+		return exps;
+	for(node *n = exps->h; n; n = n->next) {
+		n->data = exp_check_type(sql, t, NULL, n->data, type_equal);
+		if (!n->data)
+			return NULL;
+	}
+	return exps;
 }
 
 sql_exp *

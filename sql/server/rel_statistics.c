@@ -545,6 +545,9 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (!have_nil(e->l) && !have_nil(e->r))
 				set_has_no_nil(e);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if (!have_nil(e->l))
+				set_has_no_nil(e);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *le = e->l;
 			if (!has_nil(le) && !have_nil(e->r))

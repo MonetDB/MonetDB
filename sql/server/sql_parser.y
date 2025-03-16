@@ -4476,15 +4476,29 @@ scalar_exp:
 			  }
 			}
   | scalar_exp AND scalar_exp					 	%prec AND
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_symbol(l, $3);
-		  $$ = _symbol_create_list(SQL_AND, l ); }
+		{
+		  if ($1->token == SQL_AND) {
+ 			append_symbol($1->data.lval, $3);
+			$$ = $1;
+		  } else {
+ 		  	dlist *l = L();
+		  	append_symbol(l, $1);
+		  	append_symbol(l, $3);
+		  	$$ = _symbol_create_list(SQL_AND, l );
+		  }
+		}
   | scalar_exp OR scalar_exp
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_symbol(l, $3);
-		  $$ = _symbol_create_list(SQL_OR, l ); }
+		{
+		  if ($1->token == SQL_OR) {
+ 			append_symbol($1->data.lval, $3);
+			$$ = $1;
+		  } else {
+ 		  	dlist *l = L();
+		  	append_symbol(l, $1);
+		  	append_symbol(l, $3);
+		  	$$ = _symbol_create_list(SQL_OR, l );
+		  }
+		}
   | NOT scalar_exp 	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
   | like_predicate
   | filter_exp
