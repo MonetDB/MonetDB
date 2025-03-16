@@ -294,11 +294,11 @@ str_to_hge(const char *s) {
 /* an ODBC function call returned an error, get the error msg from the ODBC driver */
 static char *
 getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
-	SQLRETURN ret = SQL_ERROR;
+	SQLRETURN ret;
 	SQLCHAR state[SQL_SQLSTATE_SIZE +1];
 	SQLINTEGER errnr;
-	SQLCHAR msg[4096];
-	SQLSMALLINT msglen;
+	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH] = { 0 };
+	SQLSMALLINT msglen = SQL_MAX_MESSAGE_LENGTH -1;
 
 	if (handle == SQL_NULL_HSTMT)
 		return NULL;
@@ -307,11 +307,15 @@ getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
 	ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 		const char format[] = "SQLSTATE %s, Error code %d, Message %s";
-		char * retmsg = (char *) malloc(sizeof(format) + MIN(msglen, 4096));
+		if (msglen <= 0) {
+			/* e.g SQL_NTS */
+			msglen = strlen((char *)msg);
+		}
+		char * retmsg = (char *) GDKmalloc(sizeof(format) + SQL_SQLSTATE_SIZE + 10 + msglen);
 		if (retmsg != NULL) {
 			if (state[SQL_SQLSTATE_SIZE] != '\0')
 				state[SQL_SQLSTATE_SIZE] = '\0';
-			sprintf(retmsg, format, (char*)state, errnr, (char*)msg);
+			sprintf(retmsg, format, (char *)state, errnr, (char *)msg);
 			return retmsg;
 		}
 	}
@@ -887,7 +891,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						printf("Failed to get C_type %d data for col %u of row %lu. ODBCmsg: %s\n",
 							targetType, col+1, row, (ODBCmsg) ? ODBCmsg : "");
 						if (ODBCmsg)
-							free(ODBCmsg);
+							GDKfree(ODBCmsg);
 					}
 					/* as all bats need to be the correct length, append NULL value */
 					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
@@ -1216,7 +1220,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			retmsg = sa_message(sql->sa, "odbc_loader" " %s", (ODBCmsg) ? ODBCmsg : "");
 		}
 		if (ODBCmsg)
-			free(ODBCmsg);
+			GDKfree(ODBCmsg);
 		odbc_cleanup(env, dbc, stmt);
 		return retmsg;
 	}
