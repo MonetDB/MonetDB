@@ -121,7 +121,7 @@ MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
 
 	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0)
 		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
-	cntxt->curprg = newFunction(cntxt->alloc, putName(mod), putName(nme), FUNCTIONsymbol);
+	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
 	if (cntxt->curprg == 0)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((idx = findVariable(cntxt->curprg->def, mainRef)) >= 0)

@@ -1212,7 +1212,7 @@ RMTregisterInternal(Client cntxt, char **fcn_id, const char *conn,
 	}
 
 	Symbol prg;
-	if ((prg = newFunctionArgs(cntxt->alloc, putName(mod), putName(*fcn_id), FUNCTIONsymbol, -1)) == NULL) {
+	if ((prg = newFunctionArgs(putName(mod), putName(*fcn_id), FUNCTIONsymbol, -1)) == NULL) {
 		MT_lock_unset(&c->lock);
 		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}

@@ -292,7 +292,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	sql_rel *nr = relational_func_create_result_part1(m, r, &nargs);
 	nargs += (call && call->type == st_list) ? list_length(call->op4.lval) : rel_ops ? list_length(rel_ops) : 0;
 
-	c->curprg = newFunctionArgs(c->alloc, putName(mod), putName(name), FUNCTIONsymbol, nargs);
+	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -949,7 +949,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	sql_rel *rel2 = relational_func_create_result_part1(m, rel, &nargs);
 	if (call && call->type == st_list)
 		nargs += list_length(call->op4.lval);
-	c->curprg = newFunctionArgs(c->alloc, putName(mod), putName(name), FUNCTIONsymbol, nargs);
+	c->curprg = newFunctionArgs(putName(mod), putName(name), FUNCTIONsymbol, nargs);
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -1181,7 +1181,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (argc < MAXARG)
 		argc = MAXARG;
 	assert(cq && strlen(cq->name) < IDLENGTH);
-	c->curprg = newFunctionArgs(c->alloc, sql_private_module, cq->name = putName(cq->name), FUNCTIONsymbol, argc);
+	c->curprg = newFunctionArgs(sql_private_module, cq->name = putName(cq->name), FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -1650,7 +1650,7 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	(void) snprintf(befname, IDLENGTH, "f_" LLFMT, store_function_counter(m->store));
 	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
-	c->curprg = newFunctionArgs(c->alloc, modname, putName(befname), FUNCTIONsymbol, nargs);
+	c->curprg = newFunctionArgs(modname, putName(befname), FUNCTIONsymbol, nargs);
 
 	if ((fimp = _STRDUP(befname)) == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);

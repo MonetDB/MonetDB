@@ -4947,7 +4947,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int arg = pci->retc;
 	str mod, fcn, ret = MAL_SUCCEED;
 	InstrPtr npci;
-	MalBlkPtr nmb = newMalBlk(cntxt->alloc, 1), omb = NULL;
+	MalBlkPtr nmb = newMalBlk(1), omb = NULL;
 
 	if (!nmb)
 		return createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);

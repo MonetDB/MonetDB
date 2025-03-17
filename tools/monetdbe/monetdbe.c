@@ -816,7 +816,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	const char mod[] = "user";
 	char nme[16];
 	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
-	c->curprg = newFunction(c->alloc, putName(mod), putName(name), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	if (c->curprg == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
@@ -1278,7 +1278,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
 		char nme[16]		= {0};
 		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
-		prg					= newFunctionArgs(mdbe->c->alloc, userRef, putName(name), FUNCTIONsymbol, (int) nparams + 1);
+		prg					= newFunctionArgs(userRef, putName(name), FUNCTIONsymbol, (int) nparams + 1);
 	}
 
 	resizeMalBlk(prg->def, (int) nparams + 3 /*function declaration + remote.exec + return statement*/);
@@ -1396,7 +1396,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	 */
 	prg->def = NULL;
 	freeSymbol(prg);
-	if ((prg = newFunctionArgs(mdbe->c->alloc, userRef, putName(be->q->name), FUNCTIONsymbol, -1)) == NULL) {
+	if ((prg = newFunctionArgs(userRef, putName(be->q->name), FUNCTIONsymbol, -1)) == NULL) {
 		msg = createException(MAL, "monetdbe.monetdbe_prepare_cb", MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
@@ -1439,7 +1439,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	Client c = mdbe->c;
 
 	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
-	Symbol prg = newFunction(c->alloc, putName(mod), putName(name), FUNCTIONsymbol);
+	Symbol prg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	if (prg == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_query_remote", MAL_MALLOC_FAIL));
@@ -2095,7 +2095,7 @@ append_create_remote_append_mal_program(
 	assert(prg);
 
 	*prg	= NULL;
-	_prg	= newFunctionArgs(c->alloc, userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
+	_prg	= newFunctionArgs(userRef, putName(remote_program_name), FUNCTIONsymbol, (int) ccount + 1); // remote program
 	mb		= _prg->def;
 
 	f = getInstrPtr(mb, 0);
@@ -2542,7 +2542,7 @@ remote_cleanup:
 		const char *name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
 		Symbol prg; // local program
 
-		if ( (prg = newFunction(mdbe->c->alloc, userRef, putName(name), FUNCTIONsymbol)) == NULL ) {
+		if ( (prg = newFunction(userRef, putName(name), FUNCTIONsymbol)) == NULL ) {
 			set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
 			goto cleanup;
 		}

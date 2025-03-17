@@ -153,12 +153,12 @@ mal_export InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int 
 mal_export void clrInstruction(InstrPtr p);
 mal_export void freeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
-mal_export Symbol newSymbol(allocator *pa, const char *nme, int kind);
+mal_export Symbol newSymbol(const char *nme, int kind);
 mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
-mal_export MalBlkPtr newMalBlk(allocator *pa, int elements);
+mal_export MalBlkPtr newMalBlk(int elements);
 mal_export void resetMalBlk(MalBlkPtr mb);
 mal_export void resetMalTypes(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
