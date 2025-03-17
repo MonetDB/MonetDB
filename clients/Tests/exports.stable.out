@@ -486,7 +486,7 @@ BAT *canditer_slice2(const struct canditer *ci, BUN lo1, BUN hi1, BUN lo2, BUN h
 BAT *canditer_slice2val(const struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2);
 BAT *canditer_sliceval(const struct canditer *ci, oid lo, oid hi);
 int closedir(DIR *dir);
-allocator *create_allocator(allocator *pa, size_t blk_size, size_t num_blks);
+allocator *create_allocator(allocator *pa);
 char *ctime_r(const time_t *restrict, char *restrict);
 date date_add_day(date dt, int days) __attribute__((__const__));
 date date_add_month(date dt, int months) __attribute__((__const__));
