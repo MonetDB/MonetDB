@@ -11,14 +11,14 @@
  */
 
 #include "monetdb_config.h"
-#include "rel_proto_loader.h"
-#include "rel_exp.h"
 #include "gdk.h"	// COLnew(), BUNappend()
 #include "gdk_time.h"	// date_create(), daytime_create(), timestamp_create()
 #include "mal_exception.h"
 #include "mal_builder.h"
 #include "mal_client.h"
 #include "mutils.h"	/* utf8toutf16(), utf16toutf8() */
+#include "rel_proto_loader.h"
+#include "rel_exp.h"
 // #include "sql_decimal.h"	/* decimal_from_str() */
 
 #ifdef _MSC_VER
@@ -262,6 +262,22 @@ nameofSQLtype(SQLSMALLINT dataType)
 	}
 }
 
+/* name of ODBC SQLRETURN codes */
+static char *
+nameOfRetCode(SQLRETURN code)
+{
+	switch (code) {
+	case SQL_SUCCESS:		return "SQL_SUCCESS";
+	case SQL_SUCCESS_WITH_INFO:	return "SQL_SUCCESS_WITH_INFO";
+	case SQL_ERROR:			return "SQL_ERROR";
+	case SQL_INVALID_HANDLE:	return "SQL_INVALID_HANDLE";
+	case SQL_STILL_EXECUTING:	return "SQL_STILL_EXECUTING";
+	case SQL_NEED_DATA:		return "SQL_NEED_DATA";
+	case SQL_NO_DATA:		return "SQL_NO_DATA";
+	default:		return "SQLRETURN ??";
+	}
+}
+
 #ifdef HAVE_HGE
 static hge
 str_to_hge(const char *s) {
@@ -294,24 +310,28 @@ str_to_hge(const char *s) {
 /* an ODBC function call returned an error, get the error msg from the ODBC driver */
 static char *
 getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
-	SQLRETURN ret = SQL_ERROR;
+	SQLRETURN ret;
 	SQLCHAR state[SQL_SQLSTATE_SIZE +1];
 	SQLINTEGER errnr;
-	SQLCHAR msg[4096];
-	SQLSMALLINT msglen;
+	SQLCHAR msg[SQL_MAX_MESSAGE_LENGTH] = { 0 };
+	SQLSMALLINT msglen = SQL_MAX_MESSAGE_LENGTH -1;
 
 	if (handle == SQL_NULL_HSTMT)
 		return NULL;
 
 	// TODO use ODBC W function
-	ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
+	ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, SQL_MAX_MESSAGE_LENGTH -1, &msglen);
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 		const char format[] = "SQLSTATE %s, Error code %d, Message %s";
-		char * retmsg = (char *) malloc(sizeof(format) + MIN(msglen, 4096));
+		if (msglen <= 0) {
+			/* e.g SQL_NTS */
+			msglen = (SQLSMALLINT) strlen((char *)msg);
+		}
+		char * retmsg = (char *) GDKmalloc(sizeof(format) + SQL_SQLSTATE_SIZE + 10 + msglen);
 		if (retmsg != NULL) {
 			if (state[SQL_SQLSTATE_SIZE] != '\0')
 				state[SQL_SQLSTATE_SIZE] = '\0';
-			sprintf(retmsg, format, (char*)state, errnr, (char*)msg);
+			sprintf(retmsg, format, (char *)state, errnr, (char *)msg);
 			return retmsg;
 		}
 	}
@@ -383,22 +403,22 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 
 	// skip 'odbc:' prefix from url so we get a connection string including the query
 	char * con_str = &url[5];
-	/* the connection string must start with 'DSN=' or 'DRIVER=' or 'FILEDSN='
+	/* the connection string must start with 'DSN=' or 'FILEDSN=' or 'DRIVER='
 	   else the ODBC driver manager can't load the ODBC driver */
 	if (con_str
 	  && (strncmp("DSN=", con_str, 4) != 0)
 	  && (strncmp("DRIVER=", con_str, 7) != 0)
 	  && (strncmp("FILEDSN=", con_str, 8) != 0))
-		return "Invalid ODBC connection string. Should start with 'DSN=' or 'DRIVER=' or 'FILEDSN='.";
+		return "Invalid ODBC connection string. Must start with 'DSN=' or 'FILEDSN=' or 'DRIVER='.";
 
 	// locate the 'QUERY=' part to extract the SQL query string to execute
 	char * qry_str = strstr(con_str, "QUERY=");
 	if (qry_str == NULL)
-		return "Incomplete ODBC connection string. Missing 'QUERY=' part (to specify the SQL SELECT query to execute).";
+		return "Incomplete ODBC URI string. Missing 'QUERY=' part to specify the SQL SELECT query to execute.";
 
 	char * query = GDKstrdup(&qry_str[6]);	// we expect that QUERY= is at the end of the connection string
 	if (query == NULL || (query && (strcmp("", query) == 0)))
-		return "Incomplete ODBC connection string. Missing SQL SELECT query after 'QUERY='.";
+		return "Incomplete ODBC URI string. Missing SQL SELECT query after 'QUERY='.";
 
 	// create a new ODBC connection string without the QUERY= part
 	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
@@ -425,7 +445,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 	}
 	ret = SQLSetEnvAttr(env, SQL_ATTR_ODBC_VERSION, (SQLPOINTER) (uintptr_t) SQL_OV_ODBC3, 0);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
+		errmsg = "SQLSetEnvAttr(SQL_ATTR_ODBC_VERSION ODBC3) failed.";
 		goto finish;
 	}
 
@@ -437,20 +457,31 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 	/* to avoid an endless blocking SQLDriverConnect() set a login timeout of 8s */
 	ret = SQLSetConnectAttr(dbc, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER) (uintptr_t) 8UL, 0);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		errmsg = "SQLSetConnectAttr (SQL_ATTR_LOGIN_TIMEOUT 8s) failed.";
+		errmsg = "SQLSetConnectAttr(SQL_ATTR_LOGIN_TIMEOUT 8 sec) failed.";
 		goto finish;
 	}
 
 	SQLSMALLINT len = 0;
 	uint16_t * odbc_con_Wstr = utf8toutf16(odbc_con_str);
+#define MAX_CONNECT_OUT_STR 2048
 	if (odbc_con_Wstr != NULL) {
-		ret = SQLDriverConnectW(dbc, NULL, (SQLWCHAR *) odbc_con_Wstr, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
+		SQLWCHAR outstr[MAX_CONNECT_OUT_STR];
+		ret = SQLDriverConnectW(dbc, NULL, (SQLWCHAR *) odbc_con_Wstr, SQL_NTS, outstr, MAX_CONNECT_OUT_STR, &len, SQL_DRIVER_NOPROMPT);
 		/* we no longer need odbc_con_Wstr */
 		free(odbc_con_Wstr);
-	} else
-		ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
-	if (trace_enabled)
-		printf("After SQLDriverConnect(%s) returned %d\n", odbc_con_str, ret);
+	} else {
+		SQLCHAR outstr[MAX_CONNECT_OUT_STR];
+		ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, outstr, MAX_CONNECT_OUT_STR, &len, SQL_DRIVER_NOPROMPT);
+	}
+	if (ret == SQL_SUCCESS_WITH_INFO && caller == ODBC_RELATION) {
+		/* show the info warning, but only once */
+		char * ODBCmsg = getErrMsg(SQL_HANDLE_DBC, dbc);
+		printf("SQLDriverConnect(%s) returned %s ODBCmsg: %s\n", odbc_con_str, nameOfRetCode(ret), (ODBCmsg) ? ODBCmsg : "");
+		if (ODBCmsg)
+			GDKfree(ODBCmsg);
+	} else if (trace_enabled) {
+		printf("SQLDriverConnect(%s) returned %s\n", odbc_con_str, nameOfRetCode(ret));
+	}
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "SQLDriverConnect failed.";
 		goto finish;
@@ -467,16 +498,16 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 
 #ifdef HAVE_HGE
 	{
-		char name[1024];
-		ret = SQLGetInfo(dbc, SQL_DBMS_NAME, (SQLPOINTER) &name, 1023, NULL);
-		if (trace_enabled)
-			printf("After SQLGetInfo(dbc, SQL_DBMS_NAME) returned %d\n", ret);
+		char DBMSname[128];
+		ret = SQLGetInfo(dbc, SQL_DBMS_NAME, (SQLPOINTER) &DBMSname, 127, NULL);
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-			if (strcmp("MonetDB", name) == 0) {
-				/* make the MonetDB ODBC driver enable returning SQL_HUGEINT as column datatype */
+			if (trace_enabled)
+				printf("SQLGetInfo(dbc, SQL_DBMS_NAME) returned %s\n", DBMSname);
+			if (strcmp("MonetDB", DBMSname) == 0) {
+				/* enable the MonetDB ODBC driver to return SQL_HUGEINT as column datatype */
 				ret = SQLGetTypeInfo(stmt, SQL_HUGEINT);
 				if (trace_enabled)
-					printf("After SQLGetTypeInfo(stmt, SQL_HUGEINT) returned %d\n", ret);
+					printf("SQLGetTypeInfo(stmt, SQL_HUGEINT) returned %s\n", nameOfRetCode(ret));
 				if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 					ret = SQLCloseCursor(stmt);
 				}
@@ -490,10 +521,18 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		ret = SQLExecDirectW(stmt, (SQLWCHAR *) query_Wstr, SQL_NTS);
 		/* we no longer need query_Wstr */
 		free(query_Wstr);
-	} else
+	} else {
 		ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
-	if (trace_enabled)
-		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
+	}
+	if (ret == SQL_SUCCESS_WITH_INFO && caller == ODBC_RELATION) {
+		/* show the info warning, but only once */
+		char * ODBCmsg = getErrMsg(SQL_HANDLE_STMT, stmt);
+		printf("SQLExecDirect(%s) returned %s ODBCmsg: %s\n", query, nameOfRetCode(ret), (ODBCmsg) ? ODBCmsg : "");
+		if (ODBCmsg)
+			GDKfree(ODBCmsg);
+	} else if (trace_enabled) {
+		printf("SQLExecDirect(%s) returned %s\n", query, nameOfRetCode(ret));
+	}
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "SQLExecDirect query failed.";
 		goto finish;
@@ -651,12 +690,12 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 					col+1, cname, dataType, nameofSQLtype(dataType), (unsigned int)columnSize, decimalDigits, battype);
 
 			if (trace_enabled)
-				printf("Before create BAT %d\n", col+1);
+				printf("Before create BAT %d type %d\n", col+1, battype);
 			b = bat_create(battype, 0);
 			if (b) {
 				colmetadata[col].bat = b;
 				if (trace_enabled)
-					printf("After create BAT %d\n", col+1);
+					printf("Created BAT %d\n", col+1);
 			} else {
 				errmsg = "Failed to create bat.";
 				/* cleanup already created bats */
@@ -774,7 +813,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						break;
 					case SQL_DECIMAL:
 					case SQL_NUMERIC:
-						/* we read decimal data always as string data and convert it to the right internal decimal format and bat type */
+						/* read decimal data always as string data and convert it to the right internal decimal format and bat type */
 						targetType = SQL_C_CHAR;
 						targetValuePtr = (SQLPOINTER *) str_val;
 						bufferLength = largestStringSize;
@@ -887,9 +926,9 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						printf("Failed to get C_type %d data for col %u of row %lu. ODBCmsg: %s\n",
 							targetType, col+1, row, (ODBCmsg) ? ODBCmsg : "");
 						if (ODBCmsg)
-							free(ODBCmsg);
+							GDKfree(ODBCmsg);
 					}
-					/* as all bats need to be the correct length, append NULL value */
+					/* as all bats need to be the same length, append NULL value */
 					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
 						if (trace_enabled)
 							printf("BUNappend(b, NULL, false) failed\n");
@@ -1191,7 +1230,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		GDKfree(odbc_con_str);
 
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-		/* an ODBC function call returned an error, get the error msg from the ODBC driver */
+		/* an ODBC function call returned an error or warning, get the error msg from the ODBC driver */
 		SQLSMALLINT handleType;
 		SQLHANDLE handle;
 		str retmsg;
@@ -1216,7 +1255,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			retmsg = sa_message(sql->sa, "odbc_loader" " %s", (ODBCmsg) ? ODBCmsg : "");
 		}
 		if (ODBCmsg)
-			free(ODBCmsg);
+			GDKfree(ODBCmsg);
 		odbc_cleanup(env, dbc, stmt);
 		return retmsg;
 	}
