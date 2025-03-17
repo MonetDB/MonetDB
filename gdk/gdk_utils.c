@@ -2140,7 +2140,10 @@ sa_free_blk(allocator *sa, void *blk)
 		}
 		assert (i < sa->nr);
 
-		size_t sz = GDKmallocated(blk);
+		//size_t sz = GDKmallocated(blk);
+		// retrieve size from header
+		char* ptr = (char *) blk - SA_HEADER_SIZE;
+		size_t sz = *((size_t *) ptr);
 		if (sz == SA_BLOCK_SIZE) {
 			freed_t *f = blk;
 			f->sz = sz;
@@ -2404,13 +2407,13 @@ sa_destroy( allocator *sa )
 	if (sa) {
 		bool root_allocator = sa->pa == NULL;
 		for (size_t i = 0; i < sa->nr; i++) {
-			char * next = sa->blks[i];
+			char *next = sa->blks[i];
 			if (root_allocator) {
 				GDKfree(next);
 			} else {
 				sa_free_blk(sa, next);
 			}
-
+			sa->blks[i] = NULL;
 		}
 		if (root_allocator) {
 			GDKfree(sa->blks);
