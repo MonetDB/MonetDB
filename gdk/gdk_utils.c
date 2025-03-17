@@ -2283,9 +2283,8 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 	if (sz > (sa->blk_size - sa->used)) {
 		// out of space need new blk
 		size_t nsize = SA_BLOCK_SIZE;
-		// double the size id needed
-		while (sz > nsize){
-			nsize *= 2;
+		if (sz > nsize){
+			nsize = sz;
 		}
 		if (sa->pa) {
 			r = (char*) _sa_alloc_internal(sa->pa, nsize);
@@ -2402,19 +2401,21 @@ sa_zalloc( allocator *sa, size_t sz )
 void
 sa_destroy( allocator *sa )
 {
-	bool root_allocator = sa->pa == NULL;
-	for (size_t i = 0; i < sa->nr; i++) {
-		char * next = sa->blks[i];
-		if (root_allocator) {
-			GDKfree(next);
-		} else {
-			sa_free_blk(sa, next);
-		}
+	if (sa) {
+		bool root_allocator = sa->pa == NULL;
+		for (size_t i = 0; i < sa->nr; i++) {
+			char * next = sa->blks[i];
+			if (root_allocator) {
+				GDKfree(next);
+			} else {
+				sa_free_blk(sa, next);
+			}
 
-	}
-	if (root_allocator) {
-		GDKfree(sa->blks);
-		GDKfree(sa);
+		}
+		if (root_allocator) {
+			GDKfree(sa->blks);
+			GDKfree(sa);
+		}
 	}
 }
 
