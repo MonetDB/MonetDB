@@ -14,10 +14,10 @@ Build-Depends: debhelper-compat (= 12), cmake (>= 3.12), bison,
  libcfitsio-dev, libssl-dev (>= 1.1.1)
 Standards-Version: 4.6.2
 
-Package: libmonetdb29
+Package: libmonetdb30
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream27 (= ${source:Version})
+ libmonetdb-stream28 (= ${source:Version})
 Description: MonetDB core library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -33,7 +33,7 @@ Description: MonetDB core library
 Package: libmonetdb-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb29 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  libmonetdb-stream-dev (= ${source:Version})
 Description: MonetDB development files
  MonetDB is a database management system that is developed from a
@@ -44,7 +44,32 @@ Description: MonetDB development files
  This package contains files needed to develop extensions to the core
  functionality of MonetDB.
 
-Package: libmonetdb-stream27
+Package: libmonetdb-mutils
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: MonetDB mutils library
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains a shared library (libmutils) which is needed by
+ various other components.
+
+Package: libmonetdb-mutils-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libmonetdb-mutils (= ${source:Version})
+Description: MonetDB mutils library development files
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains the files to develop with the
+ libmonetdb-mutils library.
+
+Package: libmonetdb-stream28
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: MonetDB stream library
@@ -59,7 +84,8 @@ Description: MonetDB stream library
 Package: libmonetdb-stream-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream27 (= ${source:Version})
+ libmonetdb-stream28 (= ${source:Version}),
+ libmonetdb-mutils (= ${source:Version})
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -67,12 +93,12 @@ Description: MonetDB stream library development files
  accelerators.  It also has an SQL front end.
  .
  This package contains the files to develop with the
- libmonetdb-stream27 library.
+ libmonetdb-stream28 library.
 
-Package: libmonetdb-client27
+Package: libmonetdb-client28
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream27 (= ${source:Version})
+ libmonetdb-stream28 (= ${source:Version})
 Description: MonetDB client/server interface library
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -85,21 +111,21 @@ Description: MonetDB client/server interface library
 Package: libmonetdb-client-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-client27 (= ${source:Version})
+ libmonetdb-client28 (= ${source:Version})
 Description: MonetDB client/server interface library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains the files to develop with the libmonetdb-client27
+ This package contains the files to develop with the libmonetdb-client28
  library.
 
 Package: monetdb-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-client27 (= ${source:Version}),
- libmonetdb-stream27 (= ${source:Version})
+ libmonetdb-client28 (= ${source:Version}),
+ libmonetdb-stream28 (= ${source:Version})
 Recommends: monetdb-sql (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Description: MonetDB database client
@@ -116,7 +142,7 @@ Description: MonetDB database client
 Package: libmonetdb-client-odbc
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, odbcinst,
- libmonetdb-client27 (= ${source:Version})
+ libmonetdb-client28 (= ${source:Version})
 Description: MonetDB ODBC driver
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
@@ -128,9 +154,9 @@ Description: MonetDB ODBC driver
 Package: monetdb-client-testing
 Architecture: any
 Depends: ${shlibs:Depends}, libmonetdb-client-odbc (= ${source:Version}),
- libmonetdb-client27 (= ${source:Version}),
- libmonetdb-stream27 (= ${source:Version}),
- libmonetdb29 (= ${source:Version}),
+ libmonetdb-client28 (= ${source:Version}),
+ libmonetdb-stream28 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  monetdb-server (= ${source:Version}),
  libdbd-monetdb-perl (>= 1.0),
  php-monetdb (>= 1.0),
@@ -155,8 +181,8 @@ Package: monetdb-geom
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream27 (= ${source:Version}),
- libmonetdb29 (= ${source:Version}),
+ libmonetdb-stream28 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Replaces: libmonetdb5-server-geom (<< 11.50.0)
 Breaks: libmonetdb5-server-geom (<< 11.50.0)
@@ -195,7 +221,7 @@ Package: monetdb-cfitsio
 Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb29 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Replaces: libmonetdb5-server-cfitsio (<< 11.50.0)
 Breaks: libmonetdb5-server-cfitsio (<< 11.50.0)
@@ -217,9 +243,9 @@ Description: transitional package
 Package: monetdb-server
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, adduser,
- libmonetdb-client27 (= ${source:Version}),
- libmonetdb-stream27 (= ${source:Version}),
- libmonetdb29 (= ${source:Version}),
+ libmonetdb-client28 (= ${source:Version}),
+ libmonetdb-stream28 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
 Recommends: monetdb-sql (= ${source:Version})
 Suggests: monetdb-client (= ${source:Version})
 Replaces: monetdb5-server (<< 11.50.0)
@@ -265,8 +291,8 @@ Description: transitional package
 Package: monetdb-sql
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-client27 (= ${source:Version}),
- libmonetdb-stream27 (= ${source:Version}),
+ libmonetdb-client28 (= ${source:Version}),
+ libmonetdb-stream28 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Replaces: monetdb5-sql (<< 11.50.0)
 Breaks: monetdb5-sql (<< 11.50.0)
@@ -305,7 +331,7 @@ Description: MonetDB SQL support
 Package: monetdb-python3
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb29 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  monetdb-server (= ${source:Version}), python3-numpy
 Description: Integration of MonetDB and Python, allowing use of Python from within SQL
  MonetDB is a database management system that is developed from a
@@ -323,7 +349,7 @@ Description: Integration of MonetDB and Python, allowing use of Python from with
 Package: monetdb-r
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb29 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  monetdb-server (= ${source:Version}), r-base-core
 Description: Integration of MonetDB and R, allowing use of R from within SQL
  MonetDB is a database management system that is developed from a
@@ -341,8 +367,8 @@ Description: Integration of MonetDB and R, allowing use of R from within SQL
 Package: libmonetdbe27
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- libmonetdb-stream27 (= ${source:Version}),
- libmonetdb29 (= ${source:Version}),
+ libmonetdb-stream28 (= ${source:Version}),
+ libmonetdb30 (= ${source:Version}),
  monetdb-server (= ${source:Version})
 Description: MonetDB as an embedded library
  MonetDB is a database management system that is developed from a

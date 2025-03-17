@@ -2392,7 +2392,7 @@ create_allocator(allocator *pa)
 
 #undef sa_zalloc
 void *
-sa_zalloc( allocator *sa, size_t sz )
+sa_zalloc(allocator *sa, size_t sz)
 {
 	void *r = sa_alloc(sa, sz);
 
@@ -2402,7 +2402,7 @@ sa_zalloc( allocator *sa, size_t sz )
 }
 
 void
-sa_destroy( allocator *sa )
+sa_destroy(allocator *sa)
 {
 	if (sa) {
 		bool root_allocator = sa->pa == NULL;
@@ -2424,7 +2424,7 @@ sa_destroy( allocator *sa )
 
 #undef sa_strndup
 char *
-sa_strndup( allocator *sa, const char *s, size_t l)
+sa_strndup(allocator *sa, const char *s, size_t l)
 {
 	char *r = sa_alloc(sa, l+1);
 

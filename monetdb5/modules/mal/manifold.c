@@ -269,11 +269,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	if (nmb->errors)
 		goto bailout;
 
-/*
-	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
-	traceInstruction(MAL_SERVER, mb, 0, pci, LIST_MAL_ALL);
-	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
-*/
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors)
@@ -287,11 +282,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		if (!isVarFixed(mb, getArg(pci, 0)))
 			setVarType(mb, getArg(pci, 0), newBatType(getArgType(nmb, q, 0)));
 	}
-
-/*
-	TRC_DEBUG(MAL_SERVER, "Success? %s\n", (fcn == NULL? "no":"yes"));
-	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
-*/
 
 	freeMalBlk(nmb);
 	return fcn;

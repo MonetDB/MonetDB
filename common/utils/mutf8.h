@@ -10,8 +10,20 @@
  * Copyright 1997 - July 2008 CWI.
  */
 
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
+#else
+#define mutils_export extern __declspec(dllexport)
+#endif
+#else
+#define mutils_export extern
+#endif
+#endif
+
 /* return display width of Unicode codepoint c */
-extern int charwidth(uint32_t c);
+mutils_export int charwidth(uint32_t c);
 
 /* decode UTF-8 string byte by byte into *state and *codep, returns
 *  state; UTF-8 sequence is complete (and value is in *codep) when state
@@ -24,7 +36,7 @@ extern int charwidth(uint32_t c);
 // Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
 // See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/ for details.
 
-extern const uint8_t utf8d[364];
+mutils_export const uint8_t utf8d[364];
 #define UTF8_ACCEPT 0
 #define UTF8_REJECT 12
 

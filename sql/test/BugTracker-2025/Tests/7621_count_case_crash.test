@@ -1,0 +1,15 @@
+statement ok
+create table count_case_crash(id int, key int)
+
+query IT
+SELECT count(*),
+    CASE WHEN now() < (now() + interval '1' day) THEN
+        'yes'
+    ELSE
+        'no'
+    END AS name
+FROM
+    count_case_crash
+----
+0
+yes

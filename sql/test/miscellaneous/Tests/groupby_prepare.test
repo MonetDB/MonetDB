@@ -1,0 +1,378 @@
+statement ok
+CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER)
+
+statement ok
+INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10)
+
+query TIITTT nosort
+prepare select col0 from tab0 where (?) in (select col0 from tab0)
+----
+int
+7
+0
+(empty)
+tab0
+col0
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0)
+----
+int
+7
+0
+(empty)
+tab0
+col0
+int
+7
+0
+NULL
+NULL
+NULL
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0)
+----
+int
+7
+0
+(empty)
+tab0
+col0
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0)
+----
+int
+7
+0
+(empty)
+tab0
+col0
+int
+7
+0
+NULL
+NULL
+NULL
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select col0 from tab0 where (col0) in (?)
+----
+int
+7
+0
+(empty)
+tab0
+col0
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select col0 from tab0 where (col0) in (?,?)
+----
+int
+7
+0
+(empty)
+tab0
+col0
+int
+7
+0
+NULL
+NULL
+NULL
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select ? < ANY (select max(col0) from tab0) from tab0 t1
+----
+boolean
+1
+0
+(empty)
+%5
+%5
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select col0 = ALL (select ? from tab0) from tab0 t1
+----
+boolean
+1
+0
+(empty)
+%4
+%4
+int
+7
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select 1 from tab0 where 1 between ? and ?
+----
+tinyint
+1
+0
+(empty)
+%1
+%1
+tinyint
+1
+0
+NULL
+NULL
+NULL
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select 1 from tab0 where ? between 1 and ?
+----
+tinyint
+1
+0
+(empty)
+%1
+%1
+tinyint
+1
+0
+NULL
+NULL
+NULL
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select 1 from tab0 where ? between ? and 1
+----
+tinyint
+1
+0
+(empty)
+%1
+%1
+tinyint
+1
+0
+NULL
+NULL
+NULL
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select EXISTS (SELECT ? FROM tab0) from tab0
+----
+boolean
+1
+0
+(empty)
+%2
+%2
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select EXISTS (SELECT ?,? FROM tab0) from tab0
+----
+boolean
+1
+0
+(empty)
+%3
+%3
+boolean
+1
+0
+NULL
+NULL
+NULL
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+statement error
+prepare select col0 from tab0 where (?) in (?)
+
+statement error
+prepare select ? = ALL (select ? from tab0) from tab0 t1
+
+statement error
+prepare select 1 from tab0 where ? between ? and ?
+
+query TIITTT nosort
+prepare select case when col0 = 0 then ? else 1 end from tab0
+----
+tinyint
+1
+0
+(empty)
+%1
+%1
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select case when col0 = 0 then 1 else ? end from tab0
+----
+tinyint
+1
+0
+(empty)
+%1
+%1
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+statement error
+prepare select case when col0 = 0 then ? else ? end from tab0
+
+query TIITTT nosort
+prepare select case when col0 = 0 then ? when col0 = 1 then ? else 1 end from tab0
+----
+tinyint
+1
+0
+(empty)
+%1
+%1
+tinyint
+1
+0
+NULL
+NULL
+NULL
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+statement error
+prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0
+
+query TIITTT nosort
+prepare select ? is null from tab0
+----
+boolean
+1
+0
+(empty)
+%1
+%1
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement error
+prepare select max(?)
+
+statement error
+prepare select max(?) over ()
+
+statement ok
+CREATE TABLE tab1(col0 INTEGER, col1 STRING)
+
+query TIITTT nosort
+prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1)
+----
+tinyint
+1
+0
+(empty)
+%11
+%11
+int
+31
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+drop table tab0
+
+statement ok
+drop table tab1
+

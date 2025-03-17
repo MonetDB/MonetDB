@@ -699,19 +699,18 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-traceInstruction(component_t comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
-				 int flg)
+traceInstruction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
-	TRC_DEBUG_IF(comp) {
+	TRC_DEBUG_IF(MAL_OPTIMIZER) {
 		ps = instruction2str(mb, stk, p, flg);
 		/* ps[strlen(ps)-1] = 0; remove '\n' */
 		if (ps) {
-			TRC_DEBUG_ENDIF(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""),
-							ps);
+			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "%s%s\n",
+							(flg & LIST_MAL_MAPI ? "=" : ""), ps);
 			GDKfree(ps);
 		} else {
-			TRC_DEBUG_ENDIF(comp, "Failed instruction2str()\n");
+			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Failed instruction2str()\n");
 		}
 	}
 }

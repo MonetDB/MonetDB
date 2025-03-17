@@ -13,7 +13,7 @@
 #ifndef _SEEN_RIPEMD160_H
 #define _SEEN_RIPEMD160_H 1
 
-#include "mcrypt.h"				/* for mcrypt_export */
+#include "mcrypt.h"				/* for mutils_export */
 
 typedef struct RIPEMD160Context {
 	uint32_t digest[5];

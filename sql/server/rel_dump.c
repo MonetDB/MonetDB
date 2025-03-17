@@ -18,6 +18,7 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_unnest.h"
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
@@ -2220,15 +2221,45 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
 				if (isReplicaTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
-				rel = rel_basetable(sql, t, tname);
-				if (!table_privs(sql, t, PRIV_SELECT))  {
-					rel_base_disallow(rel);
-					if (rel_base_has_column_privileges(sql, rel) == 0)
-						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
+				bool allowed = true;
+				if (!table_privs(sql, t, PRIV_SELECT))
+					allowed = false;
+				if (isView(t)) {
+					rel = rel_parse(sql, t->s, t->query, m_instantiate);
+					rel = rel_unnest(sql, rel);
+
+					if (!rel)
+						return NULL;
+		            /* Rename columns of the rel_parse relation */
+					set_processed(rel);
+					if (is_mset(rel->op) || is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r))) {
+						/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
+						rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 0, 0));
+						set_processed(rel);
+					}
+					for (node *n = ol_first_node(t->columns), *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+						sql_column *c = n->data;
+						sql_exp *e = m->data;
+
+						m->data = e = exp_check_type(sql, &c->type, NULL, e, type_equal);
+						exp_setname(sql, e, tname, c->base.name);
+						set_basecol(e);
+					}
+					list_hash_clear(rel->exps);
+					if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
+					rel = rel_project(sql->sa, rel, NULL);
+				} else {
+					rel = rel_basetable(sql, t, tname);
+					if (!allowed) {
+						rel_base_disallow(rel);
+						if (rel_base_has_column_privileges(sql, rel) == 0)
+							return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
+					}
+					rel_base_use_all(sql, rel);
+					rel = rewrite_basetable(sql, rel);
 				}
-				rel_base_use_all(sql, rel);
-				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
 					return rel;

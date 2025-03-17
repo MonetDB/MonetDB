@@ -50,6 +50,7 @@ target_link_libraries(mserver5
   moptions
   bat
   monetdb5
+  mutils
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
@@ -82,6 +83,7 @@ if(TESTING)
     bat
     stream
     monetdb5
+    mutils
     $<$<NOT:$<PLATFORM_ID:Windows>>:m>
     $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
     Threads::Threads)

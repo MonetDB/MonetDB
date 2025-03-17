@@ -1671,12 +1671,10 @@ BATnegateprops(BAT *b)
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
-#define GDKerror(...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
-		      GDK, NULL, __VA_ARGS__)
+#define GDKerror(...)		TRC_ERROR(GDK, __VA_ARGS__)
 #define GDKsyserr(errno, ...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
-		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
+	GDKtracer_log(__FILE__, __func__, __LINE__, TRC_NAME(M_ERROR),	\
+		      TRC_NAME(GDK), GDKstrerror(errno, (char[64]){0}, 64), \
 		      __VA_ARGS__)
 #define GDKsyserror(...)	GDKsyserr(errno, __VA_ARGS__)
 
@@ -1944,7 +1942,7 @@ BBPcheck(bat x)
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
-			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
+			TRC_DEBUG(CHECK, "range error %d\n", (int) x);
 		} else {
 			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
@@ -2376,8 +2374,8 @@ TIMEOUT_ERROR(const QryCtx *qc, const char *file, const char *func, int lineno)
 {
 	const char *e = TIMEOUT_MESSAGE(qc);
 	if (e) {
-		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-			      "%s\n", e);
+		GDKtracer_log(file, func, lineno, TRC_NAME(M_ERROR),
+			      TRC_NAME(GDK), NULL, "%s\n", e);
 	}
 }
 
@@ -2583,8 +2581,8 @@ gdk_export void sa_free( allocator *sa, void *);
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-				"sa_alloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);	\
+			  "sa_alloc(%p,%zu) -> %p\n",		\
+			  _sa, _sz, _res);			\
 		_res;						\
 	})
 #define sa_zalloc(sa, sz)					\
@@ -2593,8 +2591,8 @@ gdk_export void sa_free( allocator *sa, void *);
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-				"sa_zalloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);	\
+			  "sa_zalloc(%p,%zu) -> %p\n",		\
+			  _sa, _sz, _res);			\
 		_res;						\
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
@@ -2604,9 +2602,9 @@ gdk_export void sa_free( allocator *sa, void *);
 		size_t _sz = (sz);					\
 		size_t _osz = (osz);					\
 		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
-				_sa, _ptr, _sz, _osz, _res);		\
+		TRC_DEBUG(ALLOC,					\
+			  "sa_realloc(%p,%p,%zu,%zu) -> %p\n",		\
+			  _sa, _ptr, _sz, _osz, _res);			\
 		_res;							\
 	})
 #define sa_strdup(sa, s)					\

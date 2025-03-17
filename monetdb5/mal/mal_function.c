@@ -497,26 +497,6 @@ printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd, mb, stk, flg, 0, mb->stop);
 }
 
-void
-traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk, int flg)
-{
-	int i, j;
-	InstrPtr p;
-	// Set the used bits properly
-	for (i = 0; i < mb->vtop; i++)
-		clrVarUsed(mb, i);
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		for (j = p->retc; j < p->argc; j++)
-			setVarUsed(mb, getArg(p, j));
-		if (p->barrier)
-			for (j = 0; j < p->retc; j++)
-				setVarUsed(mb, getArg(p, j));
-	}
-	for (i = 0; i < mb->stop; i++)
-		traceInstruction(comp, mb, stk, getInstrPtr(mb, i), flg);
-}
-
 /* initialize the static scope boundaries for all variables */
 void
 setVariableScope(MalBlkPtr mb)
