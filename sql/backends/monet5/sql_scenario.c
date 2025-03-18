@@ -1633,7 +1633,7 @@ SQLparser(Client c, backend *be)
 	if (eb_savepoint(&m->sa->eb)) {
 		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
 		eb_init(&m->sa->eb);
-		sa_reset(m->sa);
+		// sa_reset(m->sa); sqlcleanup does the same
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
 			freeException(c->curprg->def->errors);
 			c->curprg->def->errors = NULL;
