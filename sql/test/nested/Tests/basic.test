@@ -38,3 +38,9 @@ select f1, avg(f.elements) from arr_tbl, unnest(f1) f group by f1;
 2
 {2,3,4}
 3
+
+query I nosort
+select a from unnest(Array[1,2]) a(a);
+----
+1
+2

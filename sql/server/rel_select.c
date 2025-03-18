@@ -759,9 +759,7 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		if (!e->freevar || e->type != e_column) {
 			if ((e = exp_check_multiset(query->sql, e)) == NULL)
 				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset not found");
-			sql_exp *vals = exp_values(query->sql->sa, sa_list(query->sql->sa));
-			append(vals->f, e);
-			sql_rel *rp = rel_project(query->sql->sa, NULL, append(sa_list(query->sql->sa), vals));
+			sql_rel *rp = rel_project(query->sql->sa, NULL, append(sa_list(query->sql->sa), e));
 			rp->card = CARD_MULTI;
 			sql_exp *el = exps_bind_column(e->f, "elements", NULL, NULL, 1);
 			return rel_project(query->sql->sa, rp, append(sa_list(query->sql->sa), exp_ref(query->sql, el)));

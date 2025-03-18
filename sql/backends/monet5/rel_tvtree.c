@@ -251,8 +251,11 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			break;
 		case TV_MSET:
 		case TV_SETOF:
-			assert(is_convert(value->type));
-			uc = value->l;
+			//assert(is_convert(value->type));
+			assert(value->f);
+			uc = value;
+			if (is_convert(value->type))
+				uc = value->l;
 			if (!uc->f)
                	/* VALUES ('{1, 2, 3}') */
                 return mset_value_from_literal(be, t, value, left, sel);
