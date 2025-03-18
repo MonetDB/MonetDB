@@ -17,18 +17,14 @@ from . import exportutils
 # sets of directories/files that end up in the same shared object
 dirlist = {
     'gdk': ['gdk',
-            os.path.join('common', 'options'),
-            os.path.join('common', 'utils', 'mutils.h'),
-            os.path.join('common', 'utils', 'mprompt.h')],
+            os.path.join('common', 'options')],
     'mapi': [os.path.join('clients', 'mapilib'),
-             os.path.join('common', 'options'),
-             os.path.join('common', 'utils', 'mcrypt.h')],
-    'monetdb5': ['monetdb5',
-                 os.path.join('common', 'utils', 'msabaoth.h'),
-                 os.path.join('common', 'utils', 'muuid.h')],
+             os.path.join('common', 'options')],
+    'monetdb5': ['monetdb5'],
     'stream': [os.path.join('common', 'stream')],
     'monetdbe': [os.path.join('tools', 'monetdbe', 'monetdbe.h')],
     'sql': ['sql'],
+    'mutils': [os.path.join('common', 'utils')],
     }
 libs = sorted(dirlist.keys())
 

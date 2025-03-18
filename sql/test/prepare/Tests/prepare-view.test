@@ -1,0 +1,28 @@
+query TIITTT nosort
+prepare CREATE TABLE IF NOT EXISTS mydata ( sensor VARCHAR(64) NOT NULL, dt TIMESTAMP NOT NULL, val INTEGER NOT NULL, exponent INTEGER NOT NULL, CONSTRAINT data_pk PRIMARY KEY(sensor, dt))
+----
+
+statement ok
+exec <LAST_PREPARE_ID>()
+
+query TIITTT nosort
+prepare CREATE VIEW myview AS SELECT m.sensor, m.dt, m.val * power(10, m.exponent) FROM mydata m
+----
+
+statement ok
+exec <LAST_PREPARE_ID>()
+
+query TTII nosort
+SELECT * FROM mydata
+----
+
+query TTR nosort
+SELECT * FROM myview
+----
+
+statement ok
+DROP VIEW myview
+
+statement ok
+DROP TABLE mydata
+

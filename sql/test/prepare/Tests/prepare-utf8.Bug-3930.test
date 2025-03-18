@@ -1,0 +1,29 @@
+statement ok
+start transaction
+
+statement ok
+create table bug3930 (a varchar(4))
+
+query TIITTT nosort
+prepare select * from bug3930 where a = ?
+----
+varchar
+4
+0
+sys
+bug3930
+a
+varchar
+4
+0
+NULL
+NULL
+NULL
+
+query T nosort
+exec <LAST_PREPARE_ID>('ä123')
+----
+
+statement ok
+rollback
+

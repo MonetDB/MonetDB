@@ -1793,8 +1793,12 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 		return -4;
 
 	/* row count, min(count, reply_size) */
-	/* the columnar protocol ignores the reply size by fetching the entire resultset at once, so don't set it */
-	if (mvc_send_int(s, (b->client && b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count) ? m->reply_size : (int) count) != 1)
+	/* the columnar protocol ignores the reply size by fetching the
+	 * entire resultset at once, so don't set it; also, the MAPI
+	 * protocol doesn't allow for retrieving rows using the Xexport*
+	 * commands for Q_PREPARE results (due to an oversight), so we send
+	 * it all in the first response */
+	if (mvc_send_int(s, (b->client && b->client->protocol != PROTOCOL_COLUMNAR && m->reply_size >= 0 && (BUN) m->reply_size < count && t->query_type != Q_PREPARE) ? m->reply_size : (int) count) != 1)
 		return -4;
 
 	// export query id
@@ -1960,7 +1964,8 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 		return mvc_export_table_columnar(s, t, m->scanner.rs);
 	}
 
-	count = m->reply_size;
+	/* for Q_PREPARE results, send everything */
+	count = t->query_type == Q_PREPARE ? t->nr_rows : (BUN) m->reply_size;
 	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {
 		count = t->nr_rows;
 		clean = 1;

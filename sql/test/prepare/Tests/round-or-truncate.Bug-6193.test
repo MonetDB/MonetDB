@@ -1,0 +1,78 @@
+query R nosort
+select 6e-1
+----
+0.600
+
+query I nosort
+select cast(6e-1 as integer)
+----
+1
+
+query I nosort
+select cast(0.6 as integer)
+----
+1
+
+query R nosort
+select 1.7777777
+----
+1.778
+
+query I nosort
+select cast(1.7777777 as integer)
+----
+2
+
+query I nosort
+select cast(cast(1.7777777 as decimal(10,7)) as integer)
+----
+2
+
+statement ok
+create table testdec(testdec decimal(5,4))
+
+statement ok
+insert into testdec values (-0.12341)
+
+statement ok
+insert into testdec values (-0.12347)
+
+query TIITTT nosort
+prepare insert into testdec (testdec) values (?)
+----
+decimal
+5
+4
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID> (-0.12341)
+
+statement ok
+exec <LAST_PREPARE_ID> (-0.12347)
+
+query R rowsort
+select * from testdec
+----
+-0.123
+-0.123
+-0.123
+-0.123
+
+query I nosort
+select cast(13.8 as int)
+----
+14
+
+query I nosort
+select cast(cast(13.8 as decimal(10,7)) as int)
+----
+14
+
+query I nosort
+select cast(cast(13.8 as double) as int)
+----
+14
+

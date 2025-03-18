@@ -59,35 +59,37 @@ typedef struct Ssabuplog {
 	double crashavg30; /* average of crashes in the last 30 start attempts */
 } sabuplog;
 
-#ifdef WIN32
-#if !defined(LIBMONETDB5) && !defined(LIBMSABAOTH)
-#define msab_export extern __declspec(dllimport)
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
 #else
-#define msab_export extern __declspec(dllexport)
+#define mutils_export extern __declspec(dllexport)
 #endif
 #else
-#define msab_export extern
+#define mutils_export extern
+#endif
 #endif
 
-msab_export void msab_dbpathinit(const char *dbpath);
-msab_export void msab_dbnameinit(const char *dbname); /* switch dbname, used by multiplex-funnel */
-msab_export void msab_dbfarminit(const char *dbfarm);
-msab_export char *msab_getDBfarm(char **ret);
-msab_export char *msab_getDBname(char **ret);
-msab_export char *msab_getUUID(char **ret);
-msab_export char *msab_marchScenario(const char *lang);
-msab_export char *msab_retreatScenario(const char *lang);
-msab_export char *msab_marchConnection(const char *host, const int port);
-msab_export char *msab_wildRetreat(void);
-msab_export char *msab_registerStarting(void);
-msab_export char *msab_registerStarted(void);
-msab_export char *msab_registerStop(void);
-msab_export char *msab_pickSecret(char **generated_secret);
-msab_export char *msab_getMyStatus(sabdb** ret);
-msab_export char *msab_getStatus(sabdb** ret, const char *dbname);
-msab_export void msab_freeStatus(sabdb** ret);
-msab_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
-msab_export char *msab_serialise(char **ret, const sabdb *db);
-msab_export char *msab_deserialise(sabdb **ret, const char *sabdb);
+mutils_export void msab_dbpathinit(const char *dbpath);
+mutils_export void msab_dbnameinit(const char *dbname); /* switch dbname, used by multiplex-funnel */
+mutils_export void msab_dbfarminit(const char *dbfarm);
+mutils_export char *msab_getDBfarm(char **ret);
+mutils_export char *msab_getDBname(char **ret);
+mutils_export char *msab_getUUID(char **ret);
+mutils_export char *msab_marchScenario(const char *lang);
+mutils_export char *msab_retreatScenario(const char *lang);
+mutils_export char *msab_marchConnection(const char *host, const int port);
+mutils_export char *msab_wildRetreat(void);
+mutils_export char *msab_registerStarting(void);
+mutils_export char *msab_registerStarted(void);
+mutils_export char *msab_registerStop(void);
+mutils_export char *msab_pickSecret(char **generated_secret);
+mutils_export char *msab_getMyStatus(sabdb** ret);
+mutils_export char *msab_getStatus(sabdb** ret, const char *dbname);
+mutils_export void msab_freeStatus(sabdb** ret);
+mutils_export char *msab_getUplogInfo(sabuplog *ret, const sabdb *db);
+mutils_export char *msab_serialise(char **ret, const sabdb *db);
+mutils_export char *msab_deserialise(sabdb **ret, const char *sabdb);
 
 #endif

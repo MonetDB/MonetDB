@@ -1,0 +1,60 @@
+statement error Illegal argument p should be between 0 and 1.0
+select * from GENERATE_SERIES(1,41) sample 1.25
+
+statement error 42000!syntax error, unexpected SEED, expecting SCOLON or ':' in: "select * from generate_series(1,41) seed"
+select * from GENERATE_SERIES(1,41) seed 1
+
+query TIITTT nosort
+prepare select * from GENERATE_SERIES(1,41) sample ?
+----
+tinyint
+7
+0
+(empty)
+%1
+value
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select * from GENERATE_SERIES(1,41) sample 0.2 seed ?
+----
+tinyint
+7
+0
+(empty)
+%1
+value
+int
+31
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+prepare select * from GENERATE_SERIES(1,41) sample ? seed ?
+----
+tinyint
+7
+0
+(empty)
+%1
+value
+bigint
+63
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+

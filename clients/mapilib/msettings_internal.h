@@ -15,7 +15,7 @@
 
 #include "msettings.h"
 
-extern const char * const MALLOC_FAILED;
+extern const char MALLOC_FAILED[];
 
 
 struct string {

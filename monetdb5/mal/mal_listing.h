@@ -21,7 +21,7 @@ mal_export str fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base,
 mal_export str cfcnDefinition(Symbol s, str base, size_t len);
 mal_export void printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk,
 								 InstrPtr p, int flg);
-mal_export void traceInstruction(component_t comp, MalBlkPtr mb, MalStkPtr stk,
+mal_export void traceInstruction(MalBlkPtr mb, MalStkPtr stk,
 								 InstrPtr p, int flg);
 mal_export str instruction2str(MalBlkPtr mb, MalStkPtr stl, InstrPtr p,
 							   int hidden);

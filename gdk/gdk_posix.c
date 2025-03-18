@@ -723,10 +723,11 @@ MT_mmap(const char *path, int mode, size_t len)
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
 	void *ret;
-	wchar_t *wpath = utf8towchar(path);
+	wchar_t *wpath = utf8toutf16(path);
 	if (wpath == NULL)
 		return NULL;
 
+	static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
 	}
@@ -897,7 +898,7 @@ dlopen(const char *file, int mode)
 {
 	(void) mode;
 	if (file != NULL) {
-		wchar_t *wfile = utf8towchar(file);
+		wchar_t *wfile = utf8toutf16(file);
 		if (wfile == NULL)
 			return NULL;
 		void *ret = LoadLibraryW(wfile);

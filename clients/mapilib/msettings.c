@@ -29,12 +29,12 @@
 
 #define FATAL() do { fprintf(stderr, "\n\n abort in msettings.c: %s\n\n", __func__); abort(); } while (0)
 
-const char * const MALLOC_FAILED = "malloc failed";
+const char MALLOC_FAILED[] = "malloc failed";
 
 bool
 msettings_malloc_failed(msettings_error err)
 {
-	return ((const char*)err == (const char*)MALLOC_FAILED);
+	return (err == MALLOC_FAILED);
 }
 
 

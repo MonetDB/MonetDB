@@ -37,6 +37,7 @@ if(ODBC_FOUND)
     sql
     monetdb5
     bat
+    mutils
     ODBC::ODBC)
 
   set_target_properties(odbc_loader

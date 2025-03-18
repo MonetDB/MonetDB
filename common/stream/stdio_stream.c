@@ -15,7 +15,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
-#include "mutf8.h"
+#include "mutils.h"
 
 
 /* ------------------------------------------------------------------ */
@@ -170,65 +170,6 @@ file_fsetpos(stream *restrict s, fpos_t *restrict p)
 	return fsetpos(fp, p) ? -1 : 0;
 }
 
-/* convert a string from UTF-8 to wide characters; the return value is
- * freshly allocated */
-#ifdef NATIVE_WIN32
-static wchar_t *
-utf8towchar(const char *src)
-{
-	wchar_t *dest;
-	size_t i = 0;
-	uint32_t state = 0, codepoint = 0;
-
-	/* count how many wchar_t's we need, while also checking for
-	 * correctness of the input */
-	for (size_t j = 0; src[j]; j++) {
-		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
-		case UTF8_ACCEPT:
-			i++;
-#if SIZEOF_WCHAR_T == 2
-			i += (codepoint > 0xFFFF);
-#endif
-			break;
-		case UTF8_REJECT:
-			return NULL;
-		default:
-			break;
-		}
-	}
-	dest = malloc((i + 1) * sizeof(wchar_t));
-	if (dest == NULL)
-		return NULL;
-	/* go through the source string again, this time we can skip
-	 * the correctness tests */
-	i = 0;
-	for (size_t j = 0; src[j]; j++) {
-		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
-		case UTF8_ACCEPT:
-#if SIZEOF_WCHAR_T == 2
-			if (codepoint <= 0xFFFF) {
-				dest[i++] = (wchar_t) codepoint;
-			} else {
-				dest[i++] = (wchar_t) (0xD7C0 + (codepoint >> 10));
-				dest[i++] = (wchar_t) (0xDC00 + (codepoint & 0x3FF));
-			}
-#else
-			dest[i++] = (wchar_t) codepoint;
-#endif
-			break;
-		case UTF8_REJECT:
-			/* cannot happen because of first loop */
-			free(dest);
-			return NULL;
-		default:
-			break;
-		}
-	}
-	dest[i] = 0;
-	return dest;
-}
-#endif
-
 
 stream *
 open_stream(const char *restrict filename, const char *restrict flags)
@@ -242,8 +183,9 @@ open_stream(const char *restrict filename, const char *restrict flags)
 		return NULL;
 #ifdef NATIVE_WIN32
 	{
-		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(flags);
+		wchar_t *wfname = utf8toutf16(filename);
+		wchar_t *wflags = utf8toutf16(flags);
+		static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 		if (wfname != NULL && wflags != NULL)
 			fp = _wfopen(wfname, wflags);
 		else
@@ -443,7 +385,7 @@ file_remove(const char *filename)
 	int rc = -1;
 
 #ifdef NATIVE_WIN32
-	wchar_t *wfname = utf8towchar(filename);
+	wchar_t *wfname = utf8toutf16(filename);
 	if (wfname != NULL) {
 		rc = _wremove(wfname);
 		free(wfname);

@@ -197,7 +197,8 @@ target_link_libraries(sql
   copybinary
   monetdb5
   mapi
-  bat)
+  bat
+  mutils)
 
 set_target_properties(sql
   PROPERTIES

@@ -57,6 +57,7 @@ if(HAVE_LIBPY3)
     sql
     bat
     monetdb5
+    mutils
     monetdb_config_header)
 
   target_compile_definitions(pyapi3

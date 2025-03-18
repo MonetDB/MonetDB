@@ -1,0 +1,41 @@
+query I nosort
+select count(*) from sys.prepared_statements
+----
+0
+
+query TIITTT nosort
+prepare select 1
+----
+tinyint
+1
+0
+(empty)
+%2
+%2
+
+query TIITTT nosort
+prepare select 2
+----
+tinyint
+2
+0
+(empty)
+%2
+%2
+
+statement ok
+deallocate <LAST_PREPARE_ID>
+
+query I nosort
+select count(*) from sys.prepared_statements
+----
+1
+
+statement ok
+deallocate all
+
+query I nosort
+select count(*) from sys.prepared_statements
+----
+0
+

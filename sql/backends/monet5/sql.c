@@ -5345,18 +5345,18 @@ str_vacuum_callback(int argc, void *argv[])
 	(void) argc;
 
 	if ((sa = sa_create(NULL)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to create allocator!");
+		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to create session!");
+		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create session!");
 		sa_destroy(sa);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
-		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to begin transaction!");
+		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
 		sa_destroy(sa);
 		return GDK_FAIL;
@@ -5364,30 +5364,30 @@ str_vacuum_callback(int argc, void *argv[])
 
 	do {
 		if((s = find_sql_schema(session->tr, sname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing schema %s!",sname);
+			TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Invalid or missing schema %s!",sname);
 			res = GDK_FAIL;
 			break;
 		}
 
 		if((t = find_sql_table(session->tr, s, tname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing table %s!", tname);
+			TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Invalid or missing table %s!", tname);
 			res = GDK_FAIL;
 			break;
 		}
 		if (cname) {
 			if ((c = find_sql_column(t, cname)) == NULL) {
-				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing column %s!", cname);
+				TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Invalid or missing column %s!", cname);
 				res = GDK_FAIL;
 				break;
 			}
 
 			if((msg=do_str_column_vacuum(session->tr, c, false)) != MAL_SUCCEED) {
-				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
+				TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- %s", msg);
 				res = GDK_FAIL;
 			}
 		} else {
 			if((msg=do_str_table_vacuum(session->tr, t, false)) != MAL_SUCCEED) {
-				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
+				TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- %s", msg);
 				res = GDK_FAIL;
 			}
 		}
@@ -5397,11 +5397,11 @@ str_vacuum_callback(int argc, void *argv[])
 	if (res == GDK_SUCCEED) { /* everything is ok, do the commit route */
 		switch (sql_trans_end(session, SQL_OK)) {
 			case SQL_ERR:
-				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
+				TRC_ERROR(SQL_EXECUTION, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
 				res = GDK_FAIL;
 				break;
 			case SQL_CONFLICT:
-				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+				TRC_ERROR(SQL_EXECUTION, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 				res = GDK_FAIL;
 				break;
 			default:

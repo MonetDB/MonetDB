@@ -289,7 +289,7 @@ main(int argc, char **av)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((av[i] = wchartoutf8(argv[i])) == NULL) {
+		if ((av[i] = utf16toutf8(argv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}

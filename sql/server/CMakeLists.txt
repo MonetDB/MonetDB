@@ -195,6 +195,7 @@ target_link_libraries(sqlparse
   bat
   sqlinclude
   sqlcommon
+  mutils
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>

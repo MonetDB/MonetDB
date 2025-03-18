@@ -1,0 +1,44 @@
+statement ok
+create table t1234205 (name varchar(1024))
+
+statement ok
+insert into t1234205 values ('niels'),('fabian'),('martin')
+
+query TIITTT nosort
+prepare select name from t1234205 where name like ?
+----
+varchar
+1024
+0
+sys
+t1234205
+name
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query T rowsort
+exec <LAST_PREPARE_ID> ('%')
+----
+fabian
+martin
+niels
+
+query TIITTT nosort
+prepare select name from t1234205 where name like 'n%'
+----
+varchar
+1024
+0
+sys
+t1234205
+name
+
+query T rowsort
+exec <LAST_PREPARE_ID> ()
+----
+niels
+

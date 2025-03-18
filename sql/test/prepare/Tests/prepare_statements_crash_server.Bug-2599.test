@@ -1,0 +1,195 @@
+statement ok
+create table t_2599 (a int, b int)
+
+onlyif has-hugeint
+query TIITTT nosort
+-- work:
+prepare select * from t_2599 where a>1+?
+----
+int
+31
+0
+sys
+t_2599
+a
+int
+31
+0
+sys
+t_2599
+b
+hugeint
+127
+0
+NULL
+NULL
+NULL
+
+skipif has-hugeint
+query TIITTT nosort
+-- work:
+prepare select * from t_2599 where a>1+?
+----
+int
+31
+0
+(empty)
+t_2599
+a
+int
+31
+0
+(empty)
+t_2599
+b
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+onlyif has-hugeint
+query TIITTT nosort
+prepare select * from t_2599 where a>2*?+1
+----
+int
+31
+0
+sys
+t_2599
+a
+int
+31
+0
+sys
+t_2599
+b
+hugeint
+127
+0
+NULL
+NULL
+NULL
+
+skipif has-hugeint
+query TIITTT nosort
+prepare select * from t_2599 where a>2*?+1
+----
+int
+31
+0
+(empty)
+t_2599
+a
+int
+31
+0
+(empty)
+t_2599
+b
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+onlyif has-hugeint
+query TIITTT nosort
+-- crash:
+prepare select * from t_2599 where a>?+1
+----
+int
+31
+0
+sys
+t_2599
+a
+int
+31
+0
+sys
+t_2599
+b
+hugeint
+127
+0
+NULL
+NULL
+NULL
+
+skipif has-hugeint
+query TIITTT nosort
+-- crash:
+prepare select * from t_2599 where a>?+1
+----
+int
+31
+0
+(empty)
+t_2599
+a
+int
+31
+0
+(empty)
+t_2599
+b
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+onlyif has-hugeint
+query TIITTT nosort
+prepare select * from t_2599 where a>1+?*2
+----
+int
+31
+0
+sys
+t_2599
+a
+int
+31
+0
+sys
+t_2599
+b
+hugeint
+127
+0
+NULL
+NULL
+NULL
+
+skipif has-hugeint
+query TIITTT nosort
+prepare select * from t_2599 where a>1+?*2
+----
+int
+31
+0
+(empty)
+t_2599
+a
+int
+31
+0
+(empty)
+t_2599
+b
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+statement ok
+-- cleanup:
+drop table t_2599
+

@@ -15,8 +15,7 @@ target_link_libraries(test_malEmbeddedBoot
   PRIVATE
   monetdb_config_header
   mal
-  mcrypt
-  msabaoth
+  mutils
   stream
   bat
   ${CMAKE_DL_LIBS}
@@ -29,8 +28,7 @@ target_link_libraries(test_malInclude
   PRIVATE
   monetdb_config_header
   mal
-  mcrypt
-  msabaoth
+  mutils
   stream
   bat
   ${CMAKE_DL_LIBS}

@@ -76,6 +76,7 @@ set(MONETDBE_LINK_LIBS
   bat
   monetdb5
   sql
+  mutils
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   Threads::Threads)

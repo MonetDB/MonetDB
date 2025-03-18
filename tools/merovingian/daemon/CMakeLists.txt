@@ -38,7 +38,7 @@ target_link_libraries(monetdbd
   moptions
   stream
   mapi
-  msabaoth
+  mutils
   Threads::Threads)
 
 set_target_properties(monetdbd
