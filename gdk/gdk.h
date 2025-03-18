@@ -2527,10 +2527,11 @@ typedef struct allocator {
 	size_t blk_size; /* size of the last allocated block */
 	size_t objects;  /* number of objects */
 	size_t inuse;    /* number of objects in use*/
-	size_t freelist_hits; /* number of object reuse*/
+	size_t free_obj_hits; /* number of object reuse*/
 	void *freelist;	/* list of freed objects */
 	void *freelist_blks;	/* list of freed blks */
 	size_t frees;
+	size_t free_blk_hits;
 
 	size_t tmp_used; /* keeps total of tmp allocated bytes */
 	bool tmp_active; /* currently only one level of temp usage */

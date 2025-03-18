@@ -2176,7 +2176,7 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 			} else {
 				pa->freelist = curr->n;
 			}
-			pa->freelist_hits += 1;
+			pa->free_obj_hits += 1;
 			pa->inuse += 1;
 			return curr;
 		} else {
@@ -2199,6 +2199,7 @@ sa_use_freed_blk(allocator *pa, size_t sz)
 	if (pa->freelist_blks && (sz == SA_BLOCK_SIZE)) {
 		freed_t *f = pa->freelist_blks;
 		pa->freelist_blks = f->n;
+		pa->free_blk_hits += 1;
 		return f;
 	}
 	return NULL;
@@ -2384,7 +2385,8 @@ create_allocator(allocator *pa)
 	sa->used = 0;
 	sa->objects = 0;
 	sa->inuse = 0;
-	sa->freelist_hits = 0;
+	sa->free_obj_hits = 0;
+	sa->free_blk_hits = 0;
 	sa->tmp_active = 0;
 	sa->tmp_used = 0;
 	return sa;
