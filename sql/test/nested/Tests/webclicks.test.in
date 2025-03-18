@@ -112,10 +112,29 @@ select cast(t.json as event) from (select json from r'$TSTSRCDIR/webclicks.json'
 ("996257967-103007874", "47f07c1399c9c6bd1012861f9c5c958e042732e259b909e077f7e8967b650c75", "8359e1f53c300c44ee0e8ba1610f620c589258a8a4752ea089cfc44fee51ff64", "productDetail", 2024-11-30 22:13:37.823000, "Mozilla", ({(("hash", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("hostname", "e13dacd9566ecf8efd4aff212960c02de20aa110")),(("pageSubType", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("pageType", "6b5cdf4073b8166e5cc01a2532469d2e356eebfd")),(("pathname", "0b28998c6a5efc0afb854752b1bba65f37c70230")),(("protocol", "c3437dbc7c1255d3a21d444d86ebf2e9234c22bd")),(("referrer", "27bbe94658bf6bd4c431052e2065de0457ec8546")),(("search", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("state", "da39a3ee5e6b4b0d3255bfef95601890afd80709")),(("title", "d08339b839a6716a96334736c1c769091a0a8644"))}), ({(("customerId", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("customerType", "d5d4cd07616a542891b7ec2d0257b3a24b69856e")),(("isAuthenticated", "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04"))}), ("detail", ({(("null", "null"))}), ({(("product", "null", ({(("brand", "b8884d21754edbf713af7000a67eac0efd5df8ea"))})))})))
 
 statement ok
-create table events(data event)
+create table events(
+    eventid varchar,
+    sessionid varchar,
+    userid varchar,
+    event varchar,
+    timestamp timestamp,
+    user_agent varchar,
+    location loc,
+    "user" webusr,
+    ecommerce ecommerce)
 
 statement ok
-insert into events select json from r'$TSTSRCDIR/webclicks.json'
+insert into events
+select e.eventid,
+    e.sessionid,
+    e.userid,
+    e.event,
+    e.timestamp,
+    e.user_agent,
+    e.location,
+    e."user",
+    e.ecommerce
+from ( select cast(t.json as event) as e from (select * from r'$TSTSRCDIR/webclicks.json') t)
 
 query I
 select count(*) from events
@@ -123,10 +142,84 @@ select count(*) from events
 2
 
 query T
-select data.event from events
+select event from events
 ----
 productDetail
 productDetail
+
+query TTTTTTTTTT
+SELECT
+    timestamp,
+    sessionid,
+    userid,
+    user_agent,
+    event,
+    ecommerce.name as ecom_name,
+    CASE WHEN l.element.key = 'pageType' THEN l.element.value END AS pagetype,
+    CASE WHEN u.element.key = 'customerType' THEN u.element.value END AS customertype,
+    CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
+    CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand
+FROM events,
+    unnest(location.list),
+    unnest(ecommerce.objects.list) as eol,
+    unnest("user".list) as u,
+    unnest(eol.element.attributes.list) as eal
+----
+
+
+#WITH base AS (
+#    SELECT
+#        timestamp,
+#        sessionid,
+#        userid,
+#        user_agent,
+#        event,
+#        ecommerce.name as ecom_name,
+#        CASE WHEN l.element.key = 'pageType' THEN l.element.value END AS pagetype, -- Typical way of handling these structs & arrays.
+#        CASE WHEN u.element.key = 'customerType' THEN u.element.value END AS customertype,
+#        CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
+#        CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand,
+#    FROM events
+#    left join unnest(location.list) as l
+#    left join unnest(ecommerce.objects.list) as eol
+#    left join unnest(eol.element.attributes.list) as eal
+#    cross join unnest(user.list) as u -- Both left join unnest and cross join unnest work in bigquery. It does not really matter what syntax should be used.
+#    WHERE DATE(timestamp) = DATE("2024-11-30")
+#        AND userid != 'na' AND userid != ''
+#        AND sessionid != 'na' AND sessionid != ''
+#)
+#, last_datapoints AS (
+#    SELECT
+#        sessionid,
+#        userid,
+#        timestamp,
+#        event,
+#        max(pagetype) as pagetype,
+#        max(user_agent) as user_agent,
+#        max(ecom_name) as ecom_name,
+#        max(customertype) as customertype,
+#        max(ecom_attributes_brand) as ecom_attributes_brand,
+#        max(customerid) as customerid
+#    FROM base
+#    group by sessionid, userid, timestamp, event
+#)
+#select event,
+#ecom_name,
+#IFNULL(REGEXP_EXTRACT(user_agent, r".*Edg.*"), "No edge") as edge_user_agent, -- This does not offer very valuable information in this form on this data, but being able to do regex extracts is very important.
+#date(timestamp) as date,
+#customertype,
+#count(distinct(userid)) as users,
+#count(distinct(customerid)) as customers,
+#count(distinct(pagetype)) as pagetypes,
+#count(distinct(concat(userid, sessionid))) as sessions
+#from (
+#    SELECT *
+#    FROM last_datapoints
+#    QUALIFY ROW_NUMBER() OVER (PARTITION BY sessionid, userid, event ORDER BY timestamp ASC) = 1 -- Shortcut for row_number + where statement
+#)
+#group by 1, 2, 3, 4, 5
+#order by 3 desc;
+#
 
 
 # clean up - the order should be reversed of creation for depended types
