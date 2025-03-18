@@ -4262,6 +4262,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		return stmt_to_json(be, v, sel, f, t);
 	if (EC_VARCHAR(f->type->eclass) && (t->type->composite || t->multiset))
 		return stmt_from_varchar(be, v, sel, t);
+	if (f->type == t->type && t->multiset && v->subtype.multiset)
+		return v;
 	if (f->type->eclass != EC_EXTERNAL && t->type->eclass != EC_EXTERNAL &&
 		/* general cases */
 		((t->type->localtype == f->type->localtype && t->type->eclass == f->type->eclass &&

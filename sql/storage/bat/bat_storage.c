@@ -566,7 +566,10 @@ delta_dup(sql_delta *d)
 static void *
 col_dup(sql_column *c)
 {
+	if (!ATOMIC_PTR_GET(&c->data))
+		return NULL;
 	return delta_dup(ATOMIC_PTR_GET(&c->data));
+
 }
 
 static void *

@@ -834,6 +834,7 @@ tuple_result(backend *be, list *cols)
 	return stmt_list(be, row);
 }
 
+// TODO: >>>>>>>>>>>>>>>>>>>> remove value_list and friends
 static stmt *
 value_list(backend *be, sql_exp *vals_exp, stmt *left, stmt *sel)
 {
@@ -1798,13 +1799,11 @@ nested_stmts(backend *be, sql_exp *e, node **M)
 				stmt *s = nested_stmts(be, e, &m);
 				s = stmt_alias(be, s, e->alias.label, exp_relname(e), exp_name(e));
 				s->subtype = *exp_subtype(e);
-				//s->label = e->alias.label;
 				s->nested = true;
 				append(r, s);
 			} else {
 				stmt *s = m->data;
 				s = stmt_alias(be, s, e->alias.label, exp_relname(e), exp_name(e));
-				//s->label = e->alias.label;
 				m = m->next;
 				append(r, s);
 			}
@@ -1812,6 +1811,7 @@ nested_stmts(backend *be, sql_exp *e, node **M)
 	}
 	*M = m;
 	stmt *s = stmt_list(be, r);
+	s->nrcols = 3;
 	s->nested = true;
 	s->subtype = *exp_subtype(e);
 	s->multiset = s->subtype.multiset;
@@ -1932,8 +1932,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			assert(vname->name);
 			s = stmt_var(be, vname->sname ? a_create(sql->sa, sa_strdup(sql->sa, vname->sname)) : NULL, sa_strdup(sql->sa, vname->name), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) {		/* values */
-			// TODO: >>>>>>>>>>>>>>>>>>>> remove value_list and friends
-			value_list(NULL, e, left, sel);
 			s = value_tvtree(be, e, left, sel);
 		} else {			/* arguments */
 			sql_subtype *t = e->tpe.type?&e->tpe:NULL;

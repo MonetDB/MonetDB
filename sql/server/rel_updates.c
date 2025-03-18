@@ -430,7 +430,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				}
 				if (!e)
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
-				if (!exps && j+1 < rowcount) {
+				if (!exps) {
 					exps = exp_values(sql->sa, sa_list(sql->sa));
 					exps->tpe = c->type;
 					exp_label(sql->sa, exps, ++sql->label);
@@ -438,7 +438,6 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				if (exps) {
 					list *vals_list = exps->f;
 
-					assert(rowcount > 1);
 					list_append(vals_list, e);
 				}
 				if (!exps)
@@ -609,7 +608,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 				dnode *n;
 				node *v, *m;
 
-				if (o->next && list_empty(exps)) {
+				if (list_empty(exps)) { /* allways create an atom list, also for single atoms */
 					for (n = values->h, m = collist->h; n && m; n = n->next, m = m->next) {
 						sql_exp *vals = exp_values(sql->sa, sa_list(sql->sa));
 						sql_column *c = m->data;

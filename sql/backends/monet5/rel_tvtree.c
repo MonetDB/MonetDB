@@ -239,6 +239,7 @@ static bool
 tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 {
 	stmt *i;
+	sql_exp* uc;
 
 	switch (t->tvt) {
 		case TV_BASIC:
@@ -250,12 +251,14 @@ tv_parse_values_(backend *be, tv_tree *t, sql_exp *value, stmt *left, stmt *sel)
 			break;
 		case TV_MSET:
 		case TV_SETOF:
-            if (is_convert(value->type))
+			assert(is_convert(value->type));
+			uc = value->l;
+			if (!uc->f)
                	/* VALUES ('{1, 2, 3}') */
                 return mset_value_from_literal(be, t, value, left, sel);
             else
                	/* VALUES (array[1, 2, 3]) */
-                return mset_value_from_array_constructor(be, t, value, left, sel);
+                return mset_value_from_array_constructor(be, t, uc, left, sel);
             break;
 		case TV_COMP:
 			if (is_convert(value->type))
@@ -367,7 +370,7 @@ tv_generate_stmts(backend *be, tv_tree *t)
 
 			/* we've appended in the stmt_list so update nrcols */
 			stmt_set_nrcols(s);
-
+			s->subtype = *t->st;
 			return s;
 		case TV_COMP:
 			sl = sa_list(be->mvc->sa);

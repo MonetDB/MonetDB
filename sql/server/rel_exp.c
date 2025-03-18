@@ -1059,6 +1059,25 @@ noninternexp_setname(mvc *sql, sql_exp *e, sql_alias *rname, const char *name )
 }
 
 void
+noninternexp_settname(mvc *sql, sql_exp *e, sql_alias *rname)
+{
+	char *name = NULL;
+
+	if (!e->alias.label && e->type == e_psm && e->l) {
+		sql_rel *r = e->l;
+		if (is_project(r->op)) {
+			sql_exp *ie = r->exps->t->data;
+			e->alias = ie->alias;
+			e->alias.parent = rname;
+			return;
+		}
+	}
+	if (!exp_name(e))
+		name = make_label(sql->sa, ++sql->label);
+	noninternexp_setname(sql, e, rname, name);
+}
+
+void
 exp_setalias(sql_exp *e, int label, sql_alias *p, const char *name )
 {
 	e->alias.label = label;
@@ -3842,7 +3861,22 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 		v->data = r;
 	}
 	exp->tpe = *t;
-	return exp;
+	/* keep a list of column names with the conversion, for later name resolving */
+	return exp_convert(sql, exp, &ct, t);
+}
+
+sql_exp *
+exp_check_multiset(mvc *sql, sql_exp *e)
+{
+	if (is_values(e)) { /* check for single tuple type */
+		sql_subtype t = *exp_subtype(e);
+		t.multiset = MS_ARRAY;
+		return exp_check_multiset_type(sql, &t, NULL, e, type_equal);
+	}
+	sql_subtype *st = exp_subtype(e);
+	if (st->multiset)
+		return e;
+	return NULL;
 }
 
 sql_exp *

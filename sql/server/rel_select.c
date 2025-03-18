@@ -215,12 +215,9 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname, list *refs)
 			list_hash_clear(sq->exps);
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
-				char *name = NULL;
 
 				if (!is_intern(e)) {
-					if (!exp_name(e))
-						name = make_label(sql->sa, ++sql->label);
-					noninternexp_setname(sql, e, ta, name);
+					noninternexp_settname(sql, e, ta);
 					set_basecol(e);
 				}
 			}
@@ -759,8 +756,14 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 		return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset missing");
 	for( node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		if (!e->freevar || e->type != e_column)
-			return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset not found");
+		if (!e->freevar || e->type != e_column) {
+			if ((e = exp_check_multiset(query->sql, e)) == NULL)
+				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset not found");
+			sql_rel *rp = rel_project(query->sql->sa, NULL, append(sa_list(query->sql->sa), e));
+			rp->card = CARD_MULTI;
+			sql_exp *el = exps_bind_column(e->f, "elements", NULL, NULL, 1);
+			return rel_project(query->sql->sa, rp, append(sa_list(query->sql->sa), exp_ref(query->sql, el)));
+		}
 		sql_rel *r = query_fetch_outer(query, e->freevar-1);
 		if (r && !is_basetable(r->op)) {
 			sql_rel *rr = NULL;
@@ -1041,7 +1044,7 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		rel = rel_file_loader(sql, exps, tl, tname);
 		if (!rel)
 			return NULL;
-	} else if (!sname && strcmp(fname, "unnest") == 0) {
+	} else if (unnest) {
 		tname = NULL;
 		if (ast->data.lval->t->type == type_symbol && ast->data.lval->t->data.sym)
 			tname = ast->data.lval->t->data.sym->data.lval->h->data.sval;
