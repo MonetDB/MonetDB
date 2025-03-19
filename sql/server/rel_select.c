@@ -1685,16 +1685,17 @@ set_dependent_( sql_rel *r)
 		set_dependent(r);
 }
 
-static
-sql_rel* find_union(visitor *v, sql_rel *rel) {
+static sql_rel*
+find_union(visitor *v, sql_rel *rel) {
 	if (rel->op == op_union || rel->op == op_munion)
 		v->data = rel;
 	return rel;
 }
 
-static inline
-bool group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp,const char* sname, const char* tname) {
-	sql_table* t = find_table_or_view_on_scope(sql, NULL, sname, tname, "SELECT", false);
+static inline bool
+group_by_pk_project_uk_cond(mvc* sql, sql_rel* inner, sql_exp* exp, sql_alias *sa, const char* tname)
+{
+	sql_table* t = find_table_or_view_on_scope(sql, NULL, sa?sa->name:NULL, tname, "SELECT", false);
 	bool allow = false;
 	if (t) {
 		sql_idx* pki = NULL;
@@ -1854,20 +1855,16 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp) && !inner->flag)
 			exp = rel_groupby_add_aggr(sql, inner, exp);
-	} else if (dlist_length(l) == 2 || dlist_length(l) == 3) {
-		const char *sname = NULL;
-		const char *tname = l->h->data.sval;
-		const char *cname = l->h->next->data.sval;
-		sql_alias *ta = a_create(sql->sa, tname);
-		if (dlist_length(l) == 3) {
-			sname = l->h->data.sval;
-			tname = l->h->next->data.sval;
-			cname = l->h->next->next->data.sval;
-			sql_alias *na = a_create(sql->sa, tname);
-			na->parent = ta;
-			ta = na;
+	} else if (dlist_length(l) >= 2) {
+		dnode *dn = l->h;
+		sql_alias *ta = NULL;
+		for(; dn->next; dn = dn->next) {
+			sql_alias *nta = a_create(sql->sa, dn->data.sval);
+			nta->parent = ta;
+			ta = nta;
 		}
-		if (!cname)
+		const char *cname = dn->data.sval;
+		if (!cname || !ta)
 			return NULL;
 
 		if (!exp && rel && inner)
@@ -1899,9 +1896,9 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					break;
 			}
 			if (exp && exp->card != CARD_AGGR && is_groupby(outer->op) && !is_sql_aggr(f) && rel_find_exp(outer->l, exp))
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", ta?ta->name:"", cname);
 			if (exp && outer && outer->card <= CARD_AGGR && exp->card > CARD_AGGR && !is_sql_aggr(f))
-				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+				return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", ta?ta->name:"", cname);
 			if (exp && outer && !is_sql_aggr(f)) {
 				if (used_lower_after_processed || query_outer_used_exp( query, i, exp, f)) {
 					sql_exp *lu = used_lower_after_processed?exp:query_outer_last_used(query, i);
@@ -1928,11 +1925,11 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 		}
 
 		/* some views are just in the stack, like before and after updates views */
-		if (rel && sql->use_views) {
-			sql_rel *v = stack_find_rel_view(sql, tname);
+		if (rel && sql->use_views && ta) {
+			sql_rel *v = stack_find_rel_view(sql, ta->name);
 
 			if (v && exp && *rel && is_base(v->op) && v != *rel) /* trigger views are basetables relations, so those may conflict */
-				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", tname, cname);
+				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s.%s' ambiguous", ta->name, cname);
 			if (v && !exp) {
 				if (*rel)
 					*rel = rel_crossproduct(sql->sa, *rel, rel_dup(v), op_join);
@@ -1942,36 +1939,36 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 					return NULL;
 			}
 		}
-		if (!exp) { /* If no column was found, try a global variable */
+		if (!exp && ta) { /* If no column was found, try a global variable */
 			sql_var *var = NULL;
 			sql_subtype *tpe = NULL;
 			int level = 0;
 			sql_arg *a = NULL;
 
-			if (find_variable_on_scope(sql, tname, cname, &var, &a, &tpe, &level, "SELECT")) { /* search schema with table name, ugh */
+			if (find_variable_on_scope(sql, ta->name, cname, &var, &a, &tpe, &level, "SELECT")) { /* search schema with table name, ugh */
 				assert(level == 0);
 				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
 			}
 		}
 		if (!exp) {
-			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column2(sql, inner->l, ta, cname, f))) {
-				if (group_by_pk_project_uk_cond(sql, inner, exp, sname, tname)) {
+			if (inner && !is_sql_aggr(f) && is_groupby(inner->op) && inner->l && (exp = rel_bind_column2(sql, inner->l, ta, cname, f)) && ta) {
+				if (group_by_pk_project_uk_cond(sql, inner, exp, ta?ta->parent:NULL, ta->name)) {
 					/* SQL23 feature: very special case where primary key is used in GROUP BY expression and
 					 * unique key is in the project list or ORDER BY clause */
 					sql->session->status = 0;
 					sql->errstr[0] = 0;
 					exp->card = CARD_AGGR;
 					list_append(inner->exps, exp);
+				} else {
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", ta->name, cname);
 				}
-				else
-					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			}
 		}
 
 		if (!exp)
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", ta?ta->name:"", cname);
 		if (exp && inner && inner->card <= CARD_AGGR && exp->card > CARD_AGGR && (is_sql_sel(f) || is_sql_having(f)) && !is_sql_aggr(f))
-			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
+			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", ta?ta->name:"", cname);
 		if (exp && inner && is_groupby(inner->op) && !is_sql_aggr(f) && !is_freevar(exp))
 			exp = rel_groupby_add_aggr(sql, inner, exp);
 	} else if (dlist_length(l) > 3) {

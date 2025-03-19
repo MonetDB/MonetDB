@@ -160,7 +160,7 @@ SELECT
     CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
     CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand
 FROM events,
-    unnest(location.list),
+    unnest(location.list) as l,
     unnest(ecommerce.objects.list) as eol,
     unnest("user".list) as u,
     unnest(eol.element.attributes.list) as eal
