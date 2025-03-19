@@ -509,6 +509,19 @@ heapinit(BAT *b, const char *buf,
 
 	if (strcmp(type, "wkba") == 0)
 		GDKwarning("type wkba (SQL name: GeometryA) is deprecated\n");
+#ifdef HAVE_GEOM
+#if GDKLIBRARY <= 061050U
+	if (strcmp(type, "wkb") == 0) {
+		/* don't trust properties having to do with ordering of
+		 * type wkb because of a bug in the wkbCOMP
+		 * implementation; this was fixed during the lifetime of
+		 * BBP version 061050 */
+		minpos = maxpos = oid_nil;
+		nosorted = norevsorted = 0;
+		properties &= ~0x0081;
+	}
+#endif
+#endif
 
 	if (properties & ~0x1F81) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);

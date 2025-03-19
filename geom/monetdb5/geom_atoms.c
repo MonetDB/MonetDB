@@ -135,7 +135,7 @@ wkbCOMP(const void *L, const void *R)
 	const wkb *l = L, *r = R;
 
 	if (l->srid != r->srid)
-		return -1;
+		return l->srid - r->srid;
 
 	int len = l->len;
 
