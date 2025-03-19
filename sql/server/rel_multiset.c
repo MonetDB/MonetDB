@@ -64,7 +64,12 @@ ms_add_join_exps(visitor *v, sql_rel *rel, list *exps)
 static sql_rel *
 fm_join(visitor *v, sql_rel *rel)
 {
-	if (list_empty(rel->exps) && is_dependent(rel)) {
+	if (is_dependent(rel) && list_length(rel->exps) <= 1) {
+		if (list_length(rel->exps) == 1) {
+			sql_exp *e = rel->exps->h->data;
+			if (!exp_is_true(e))
+				return rel;
+		}
 		list *exps = rel_projections(v->sql, rel->l, NULL, 0, 1);
 		bool needed = has_multiset(exps);
 
@@ -80,6 +85,7 @@ flatten_multiset(visitor *v, sql_rel *rel)
 	(void)v;
 	switch(rel->op) {
 	case op_join:
+	case op_left:
 		return fm_join(v, rel);
 	default:
 		return rel;
