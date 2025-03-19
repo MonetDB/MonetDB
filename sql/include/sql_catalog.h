@@ -945,7 +945,10 @@ typedef struct pl {
 
 typedef int msid_t;
 typedef int msindex_t;
-#define MSID_NAME "multisetid"
-#define MSINDEX_NAME "multisetnr"
+#define MSEL_NAME "elements"
+#define MSID_NAME "ms_id"
+#define MSNR_NAME "ms_nr"
+#define MSID_TYPENAME "int"
+#define MSNR_TYPENAME "int"
 
 #endif /* SQL_CATALOG_H */

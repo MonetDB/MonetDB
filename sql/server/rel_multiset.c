@@ -43,7 +43,7 @@ ms_add_join_exps(visitor *v, sql_rel *rel, list *exps)
 			v->changes++;
 			sql_exp *le = exp_ref(v->sql, e);
 			list *rexps = rel_projections(v->sql, rel->r, NULL, 0, 1);
-			sql_exp *re = exps_bind_column(rexps, "id", NULL, NULL, 0);
+			sql_exp *re = exps_bind_column(rexps, MSID_NAME, NULL, NULL, 0);
 			if (le && re) {
 				re = exp_ref(v->sql, re);
 				e = exp_compare(v->sql->sa, le, re, cmp_equal);

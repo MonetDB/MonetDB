@@ -2632,8 +2632,13 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		bool propagate = !st->multiset && st->type->composite;
 		for(node *n = ops->h; n; n = n->next) {
 			stmt *i = n->data;
-			if (propagate || (st->multiset && n == ops->t))
+			if (propagate || (st->multiset && n == ops->t)) {
+				stmt *oi = i;
 				i = stmt_project(be, op1, i);
+				i->tname = oi->tname;
+				i->cname = oi->cname;
+				i->label = oi->label;
+			}
 			append(nops, i);
 		}
 		stmt *s = stmt_list(be, nops);
@@ -2641,6 +2646,9 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 			return NULL;
 		s->nested = true;
 		s->subtype = *st;
+		s->tname = op2->tname;
+		s->cname = op2->cname;
+		s->label = op2->label;
 		return s;
 	}
 	InstrPtr q = stmt_project_join(be, op1, op2, false);

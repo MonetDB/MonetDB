@@ -3837,11 +3837,11 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 			sql_column *ic = NULL;
 			sql_subtype lt = *tpe;
 			lt.multiset = MS_VALUE;
-			if (sql_trans_create_column_intern( &ic, tr, tt, "elements", &lt, column_intern) < 0)
+			if (sql_trans_create_column_intern( &ic, tr, tt, MSEL_NAME, &lt, column_intern) < 0)
 				return -2;
 		}
 		if (tpe->multiset == MS_SETOF || tpe->multiset == MS_ARRAY) { /* sets and arrays need oid col */
-			char *name = "id";
+			char *name = MSID_NAME;
 			sql_subtype tp = *sql_bind_localtype("int");
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
@@ -3849,7 +3849,7 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 			needs_data = true;	/* column its self is reference id */
 		}
 		if (tpe->multiset == MS_ARRAY) { /* array need order */
-			char *name = "nr";
+			char *name = MSNR_NAME;
 			sql_subtype tp = *sql_bind_localtype("int");
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
@@ -3951,20 +3951,20 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 			sql_column *ic = NULL;
 			sql_subtype lt = c->type;
 			lt.multiset = MS_VALUE;
-			if (sql_trans_create_column_intern( &ic, tr, tt, "elements", &lt, column_intern) < 0)
+			if (sql_trans_create_column_intern( &ic, tr, tt, MSEL_NAME, &lt, column_intern) < 0)
 				return -2;
 		}
 		if (c->type.multiset == MS_SETOF || c->type.multiset == MS_ARRAY) { /* sets and arrays need oid col */
-			char *name = "id";
-			sql_subtype tp = *sql_bind_localtype("int");
+			char *name = MSID_NAME;
+			sql_subtype tp = *sql_bind_localtype(MSID_TYPENAME);
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
 			needs_data = true;	/* column its self is reference id */
 		}
 		if (c->type.multiset == MS_ARRAY) { /* array need order */
-			char *name = "nr";
-			sql_subtype tp = *sql_bind_localtype("int");
+			char *name = MSNR_NAME;
+			sql_subtype tp = *sql_bind_localtype(MSNR_TYPENAME);
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;

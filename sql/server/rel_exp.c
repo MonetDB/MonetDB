@@ -380,17 +380,18 @@ nested_exps(mvc *sql, sql_subtype *t, sql_alias *p, const char *name)
 			append(nested, e);
 		}
 	} else {
-        sql_exp *e = exp_alias(sql, atname, "elements", atname, "elements", t, CARD_MULTI, true, false, 1);
+        sql_exp *e = exp_alias(sql, atname, MSEL_NAME, atname, MSEL_NAME, t, CARD_MULTI, true, false, 1);
 		append(nested, e);
 	}
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *it = sql_bind_localtype(MSID_TYPENAME);
 	if (t->multiset) {
-		sql_exp *e = exp_alias(sql, atname, "id", atname, "id", it, CARD_MULTI, true, false, 1);
+		sql_exp *e = exp_alias(sql, atname, MSID_NAME, atname, MSID_NAME, it, CARD_MULTI, true, false, 1);
 		set_intern(e);
 		append(nested, e);
 	}
 	if (t->multiset == MS_ARRAY) {
-		sql_exp *e = exp_alias(sql, atname, "nr", atname, "nr", it, CARD_MULTI, true, false, 1);
+		sql_subtype *it = sql_bind_localtype(MSNR_TYPENAME);
+		sql_exp *e = exp_alias(sql, atname, MSNR_NAME, atname, MSNR_NAME, it, CARD_MULTI, true, false, 1);
 		set_intern(e);
 		append(nested, e);
 	}
