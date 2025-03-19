@@ -147,8 +147,10 @@ select event from events
 productDetail
 productDetail
 
-query TTTTTTTTTT
-SELECT
+query I
+select count(*)
+from
+(SELECT
     timestamp,
     sessionid,
     userid,
@@ -163,9 +165,19 @@ FROM events,
     unnest(location.list) as l,
     unnest(ecommerce.objects.list) as eol,
     unnest("user".list) as u,
-    unnest(eol.element.attributes.list) as eal
+    unnest(eol.element.attributes.list) as eal) t
 ----
+60
 
+query I
+SELECT count(event)
+FROM events
+    left join unnest(location.list) as l on true
+    left join unnest(ecommerce.objects.list) as eol on true
+    left join unnest(eol.element.attributes.list) as eal on true
+    cross join unnest("user".list) as u
+----
+60
 
 #WITH base AS (
 #    SELECT
