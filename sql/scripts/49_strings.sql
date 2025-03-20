@@ -72,10 +72,6 @@ returns string external name sql.normalize_monetdb_url;
 grant execute on function sys.normalize_monetdb_url(string) to public;
 
 -- NGRAMS
-create filter function c1(h varchar, n varchar) external name ngram.c1;
-create filter function c2(h varchar, n varchar) external name ngram.c2;
-create filter function c3(h varchar, n varchar) external name ngram.c3;
-
 create filter function c(h varchar, n varchar) external name ngrams.contains;
 create filter function c(h varchar, n varchar, ng tinyint) external name ngrams.contains;
 create filter function s(h varchar, n varchar) external name ngrams.startswith;

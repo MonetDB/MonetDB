@@ -54,9 +54,9 @@ ngrams_destroy(Ngrams *ng)
 	if (ng) {
 		GDKfree(ng->idx);
 		GDKfree(ng->sigs);
-		GDKfree(ng->h);
-		GDKfree(ng->pos);
-		GDKfree(ng->rid);
+		GDKfree(ng->histogram);
+		GDKfree(ng->lists);
+		GDKfree(ng->rids);
 	}
 	GDKfree(ng);
 }
@@ -68,17 +68,16 @@ ngrams_create(size_t b_cnt, size_t ng_sz)
 	if (ng) {
 		ng->idx  = GDKmalloc(ng_sz * sizeof(NGRAM_TYPE));
 		ng->sigs = GDKmalloc(b_cnt * sizeof(NGRAM_TYPE));
-		ng->h    = GDKmalloc(ng_sz * sizeof(unsigned));
-		ng->pos  = GDKmalloc(ng_sz * sizeof(unsigned));
-		ng->rid  = GDKmalloc(NGRAM_MULTIPLE * b_cnt * sizeof(unsigned));
+		ng->histogram = GDKmalloc(ng_sz * sizeof(unsigned));
+		ng->lists  = GDKmalloc(ng_sz * sizeof(unsigned));
+		ng->rids  = GDKmalloc(2 * NGRAM_MULTIPLE * b_cnt * sizeof(unsigned));
 	}
-	if (!ng || !ng->idx || !ng->sigs || !ng->h || !ng->pos || !ng->rid) {
+	if (!ng || !ng->idx || !ng->sigs || !ng->histogram || !ng->lists || !ng->rids) {
 		ngrams_destroy(ng);
 		return NULL;
 	}
 	return ng;
 }
-
 
 static str
 ngram_choice(const bat *NG, bte *ngram, const char *fname)
@@ -107,9 +106,9 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 {
 	NGRAM_TYPE *idx = ng->idx;
 	NGRAM_TYPE *sigs = ng->sigs;
-	unsigned *h = ng->h;
-	unsigned *pos = ng->pos;
-	unsigned *rid = ng->rid;
+	unsigned *h = ng->histogram;
+	unsigned *lists = ng->lists;
+	unsigned *rids = ng->rids;
 	unsigned *h_tmp = GDKzalloc(UNIGRAM_SZ * sizeof(unsigned));
 	unsigned *map = GDKmalloc(UNIGRAM_SZ * sizeof(unsigned));
 
@@ -119,16 +118,16 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 		return -1;
 	}
 
-	for(size_t i = 0; i < b_cnt; i++) {
+	for (size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
-		if (!strNil(s) && *s)
-			for(const char *c = s; *c; c++)
-				h_tmp[CHAR_MAP(*c)]++;
+		if (!strNil(s))
+			for (; UNIGRAM(s); s++)
+				h_tmp[ENC_TOKEN1(s)]++;
 	}
 
 	for(size_t i = 0; i < UNIGRAM_SZ; i++) {
 		map[i] = i;
-		idx[i] = pos[i] = 0;
+		idx[i] = lists[i] = 0;
 		h[i] = h_tmp[i];
 	}
 
@@ -144,36 +143,37 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	ng->max = h_tmp[0];
 	ng->min = h_tmp[j];
 
-	int n_shift = 0;
-	for(size_t i = 0; i < UNIGRAM_SZ && h[i] > 0; i++) {
+	int n = 0;
+	for(size_t i = 0; i < UNIGRAM_SZ && h_tmp[i] > 0; i++) {
 		unsigned x = map[i];
-		idx[x] = NGRAM_CST(1) << n_shift;
-		n_shift++;
-		n_shift %= NGRAM_BITS;
+		idx[x] = NGRAM_CST(1) << n++;
+		n %= NGRAM_BITS;
 	}
 
-	unsigned p = 1;
+	unsigned k = 1;
 	for(size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
-		if (!strNil(s) && s[0]) {
+		if (!strNil(s) && UNIGRAM(s)) {
 			NGRAM_TYPE sig = 0;
-			for(; *s; s++) {
-				unsigned c = CHAR_MAP(*s);
-				sig |= idx[c];
-				if (h[c] <= ng->min) {
-					if (pos[c] == 0) {
-						pos[c] = p;
-						p += h[c];
-						h[c] = 0;
+			for(; UNIGRAM(s); s++) {
+				unsigned unigram = ENC_TOKEN1(s);
+				sig |= idx[unigram];
+				if (h[unigram] <= ng->min) {
+					if (lists[unigram] == 0) {
+						lists[unigram] = k;
+						k += h[unigram];
+						h[unigram] = 0;
 					}
-					int done =  (h[c] > 0 && rid[pos[c] + h[c] - 1] == i);
+					int done = (h[unigram] > 0 && rids[lists[unigram] + h[unigram] - 1] == i);
 					if (!done) {
-						rid[pos[c] + h[c]] = i;
-						h[c]++;
+						rids[lists[unigram] + h[unigram]] = i;
+						h[unigram]++;
 					}
 				}
 			}
 			*sigs = sig;
+		} else if (!strNil(s)) {
+			*sigs = 1;
 		} else {
 			*sigs = NGRAM_TYPENIL;
 		}
@@ -190,10 +190,10 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 {
 	NGRAM_TYPE *idx = ng->idx;
 	NGRAM_TYPE *sigs = ng->sigs;
-	unsigned *h = ng->h;
-	unsigned *pos = ng->pos;
-	unsigned *rid = ng->rid;
-	unsigned (*h_tmp)[GZ] = GDKzalloc(BIGRAM_SZ * sizeof(unsigned));
+	unsigned *h = ng->histogram;
+	unsigned *lists = ng->lists;
+	unsigned *rids = ng->rids;
+	unsigned (*h_tmp)[SZ] = GDKzalloc(BIGRAM_SZ * sizeof(unsigned));
 	unsigned *h_tmp_ptr = (unsigned *) h_tmp;
 	unsigned *map = GDKmalloc(BIGRAM_SZ * sizeof(unsigned));
 
@@ -205,17 +205,15 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 
 	for (size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
-		if (!strNil(s) && *s) {
-			unsigned char p = CHAR_MAP(*s++);
-			for (; *s; p = CHAR_MAP(*s), s++)
-				h_tmp[p][CHAR_MAP(*s)]++;
-		}
+		if (!strNil(s))
+			for (; BIGRAM(s); s++)
+				h_tmp[ENC_TOKEN1(s)][ENC_TOKEN2(s)]++;
 	}
 
 	for (size_t i = 0; i < BIGRAM_SZ; i++) {
 		map[i] = i;
-		idx[i] = pos[i] = 0;
-		ng->h[i] = h_tmp_ptr[i];
+		idx[i] = lists[i] = 0;
+		h[i] = h_tmp_ptr[i];
 	}
 
 	GDKqsort(h_tmp, map, NULL, BIGRAM_SZ,
@@ -230,38 +228,41 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	ng->max = h_tmp_ptr[0];
 	ng->min = h_tmp_ptr[j];
 
-	int n_shift = 0;
+	int n = 0;
 	for (size_t i = 0; i < BIGRAM_SZ && h_tmp_ptr[i] > 0; i++) {
-		unsigned x = (map[i] / GZ) % GZ;
-		unsigned y = map[i] % GZ;
-		idx[x * GZ + y] = NGRAM_CST(1) << n_shift;
-		n_shift++;
-		n_shift %= NGRAM_BITS;
+		/* unsigned x = (map[i] / SZ) % SZ, y = map[i] % SZ; */
+		/* idx[x*SZ + y] = NGRAM_CST(1) << n; */
+		/* n++; */
+		/* n %= NGRAM_BITS; */
+		/* assert(x*SZ + y == map[i]); */
+		idx[map[i]] = NGRAM_CST(1) << n++;
+		n %= NGRAM_BITS;
 	}
 
-	unsigned int p = 1;
+	unsigned int k = 1;
 	for (size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
-		if (!strNil(s) && s[0] && s[1]) {
+		if (!strNil(s) && BIGRAM(s)) {
 			NGRAM_TYPE sig = 0;
-			unsigned c = CHAR_MAP(*s++);
-			for (; *s; c = CHAR_MAP(*s), s++) {
-				int k = c * GZ + CHAR_MAP(*s);
-				sig |= idx[k];
-				if (h[k] <= ng->min) {
-					if (pos[k] == 0) {
-						pos[k] = p;
-						p += h[k];
-						h[k] = 0;
+			for (; BIGRAM(s); s++) {
+				unsigned bigram = ENC_TOKEN1(s)*SZ + ENC_TOKEN2(s);
+				sig |= idx[bigram];
+				if (h[bigram] <= ng->min) {
+					if (lists[bigram] == 0) {
+						lists[bigram] = k;
+						k += h[bigram];
+						h[bigram] = 0;
 					}
-					int done =  (h[k] > 0 && rid[pos[k] + h[k] -1] == i);
+					int done = (h[bigram] > 0 && rids[lists[bigram] + h[bigram] - 1] == i);
 					if (!done) {
-						rid[pos[k] + h[k]] = i;
-						h[k]++;
+						rids[lists[bigram] + h[bigram]] = i;
+						h[bigram]++;
 					}
 				}
 			}
 			*sigs = sig;
+		/* } else if (!strNil(s)) { */
+		/* 	*sigs = 1; */
 		} else {
 			*sigs = NGRAM_TYPENIL;
 		}
@@ -278,10 +279,10 @@ init_trigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 {
 	NGRAM_TYPE *idx = ng->idx;
 	NGRAM_TYPE *sigs = ng->sigs;
-	unsigned *h = ng->h;
-	unsigned *pos = ng->pos;
-	unsigned *rid = ng->rid;
-	unsigned (*h_tmp)[GZ][GZ] = GDKzalloc(TRIGRAM_SZ * sizeof(unsigned));
+	unsigned *h = ng->histogram;
+	unsigned *lists = ng->lists;
+	unsigned *rids = ng->rids;
+	unsigned (*h_tmp)[SZ][SZ] = GDKzalloc(TRIGRAM_SZ * sizeof(unsigned));
 	unsigned *h_tmp_ptr = (unsigned *) h_tmp;
 	unsigned *map = GDKmalloc(TRIGRAM_SZ * sizeof(unsigned));
 
@@ -293,20 +294,15 @@ init_trigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 
 	for (size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
-		if (!strNil(s) && *s) {
-			unsigned char pp = CHAR_MAP(*s++);
-			if (!*s)
-				continue;
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; pp = p, p = CHAR_MAP(*s), s++)
-				h_tmp[pp][p][CHAR_MAP(*s)]++;
-		}
+		if (!strNil(s))
+			for (; TRIGRAM(s); s++)
+				h_tmp[ENC_TOKEN1(s)][ENC_TOKEN2(s)][ENC_TOKEN3(s)]++;
 	}
 
-	for (size_t j = 0; j < TRIGRAM_SZ; j++) {
-		map[j] = j;
-		idx[j] = pos[j] = 0;
-		ng->h[j] = h_tmp_ptr[j];
+	for (size_t i = 0; i < TRIGRAM_SZ; i++) {
+		map[i] = i;
+		idx[i] = lists[i] = 0;
+		h[i] = h_tmp_ptr[i];
 	}
 
 	GDKqsort(h_tmp, map, NULL, TRIGRAM_SZ,
@@ -321,41 +317,36 @@ init_trigram_idx(Ngrams *ng, BATiter *bi, size_t b_cnt)
 	ng->max = h_tmp_ptr[0];
 	ng->min = h_tmp_ptr[j];
 
-	int n_shift = 0;
-	for (size_t j = 0; j < TRIGRAM_SZ && h_tmp_ptr[j] > 0; j++) {
-		unsigned x = map[j]/(GZ*GZ);
-		unsigned y = (map[j]/GZ)%GZ;
-		unsigned z = map[j]%GZ;
-		idx[x*GZ*GZ+y*GZ+z] = NGRAM_CST(1) << n_shift;
-		n_shift++;
-		n_shift %= NGRAM_BITS;
+	int n = 0;
+	for (size_t i = 0; i < TRIGRAM_SZ && h_tmp_ptr[i] > 0; i++) {
+		idx[map[i]] = NGRAM_CST(1) << n++;
+		n %= NGRAM_BITS;
 	}
 
-
-	unsigned p = 1;
+	unsigned k = 1;
 	for (size_t i = 0; i < b_cnt; i++) {
 		const char *s = BUNtail(*bi, i);
 		if (!strNil(s) && s[0] && s[1] && s[2]) {
 			NGRAM_TYPE sig = 0;
-			unsigned cc = CHAR_MAP(*s++);
-			unsigned c = CHAR_MAP(*s++);
-			for(; *s; cc = c, c = CHAR_MAP(*s), s++) {
-				int k = cc * GZ * GZ +c * GZ + CHAR_MAP(*s);
-				sig |= idx[k];
-				if (h[k] <= ng->min) {
-					if (pos[k] == 0) {
-						pos[k] = p;
-						p += h[k];
-						h[k] = 0;
+			for(; TRIGRAM(s); s++) {
+				unsigned trigram = ENC_TOKEN1(s)*SZ*SZ + ENC_TOKEN2(s)*SZ + ENC_TOKEN3(s);
+				sig |= idx[trigram];
+				if (h[trigram] <= ng->min) {
+					if (lists[trigram] == 0) {
+						lists[trigram] = k;
+						k += h[trigram];
+						h[trigram] = 0;
 					}
-					int done =  (h[k] > 0 && rid[pos[k] + h[k]-1] == i);
+					int done =  (h[trigram] > 0 && rids[lists[trigram] + h[trigram]-1] == i);
 					if (!done) {
-						rid[pos[k] + h[k]] = i;
-						h[k]++;
+						rids[lists[trigram] + h[trigram]] = i;
+						h[trigram]++;
 					}
 				}
 			}
 			*sigs = sig;
+		} else if (!strNil(s)) {
+			*sigs = 1;
 		} else {
 			*sigs = NGRAM_TYPENIL;
 		}
@@ -372,160 +363,203 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 size_t l_cnt, size_t r_cnt,
 			 int (*str_cmp)(const char *, const char *, int))
 {
-	(void) str_cmp;
 	Ngrams *ng = ngrams_create(l_cnt, UNIGRAM_SZ);
-	NGRAM_TYPE *idx = ng->idx;
-	NGRAM_TYPE *sigs = ng->sigs;
-	unsigned *h = ng->h;
-	unsigned *pos = ng->pos;
-	unsigned *rid = ng->rid;
-
 	if (!ng)
 		throw(MAL, "join_unigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (init_unigram_idx(ng, li, l_cnt) != 0)
-		throw(MAL, "join_unigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	NGRAM_TYPE *idx = ng->idx;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->histogram;
+	unsigned *lists = ng->lists;
+	unsigned *rids = ng->rids;
+	size_t new_cap;
+	oid *orl = NULL, *orr = NULL, l_hseqbase = li->b->hseqbase;
 
-	unsigned nmax = 0;
-	oid *o_rl = Tloc(rl, 0);
-	oid *o_rr = Tloc(rr, 0);
+	orl = Tloc(rl, 0);
+	if (rr) orr = Tloc(rr, 0);
+
+	if (init_unigram_idx(ng, li, l_cnt) != 0) {
+		ngrams_destroy(ng);
+		throw(MAL, "join_unigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	for (size_t j = 0; j < r_cnt; j++) {
-		const char *rs = BUNtail(*ri, j), *rs_c = rs;
+		const char *rs = BUNtail(*ri, j), *rs_iter = rs;
 		NGRAM_TYPE sig = 0;
-		if (!strNil(rs) && rs[0]) {
-			unsigned min = ng->max;
-			unsigned min_pos = 0;
-			for (; *rs_c; rs_c++) {
-				unsigned d = CHAR_MAP(*rs_c);
-				sig |= idx[d];
-				if (h[d] < min) {
-					min = h[d];
-					min_pos = d;
+		if (!strNil(rs) && UNIGRAM(rs)) {
+			unsigned min = ng->max, min_pos = 0;
+			for (; UNIGRAM(rs_iter); rs_iter++) {
+				unsigned unigram = ENC_TOKEN1(rs_iter);
+				sig |= idx[unigram];
+				if (h[unigram] < min) {
+					min = h[unigram];
+					min_pos = unigram;
 				}
 			}
 			if (min <= ng->min) {
-				unsigned rrr = pos[min_pos];
-				unsigned lcnt = h[min_pos];
-				for(size_t i = 0; i < lcnt; i++, rrr++) {
-					unsigned hr = rid[rrr];
-					if (((sigs[hr] & sig) == sig)) {
-						char *ls = BUNtail(*li, hr);
-						/* if (str_cmp(ls, rs, str_strlen(rs)) == 0) { */
-						if (strstr(ls, rs) != NULL) {
-							*o_rl++ = hr;
-							*o_rr++ = j;
+				unsigned list = lists[min_pos], list_cnt = h[min_pos];
+				for (size_t i = 0; i < list_cnt; i++, list++) {
+					unsigned ol = rids[list];
+					if ((sigs[ol] & sig) == sig) {
+						const char *ls = BUNtail(*li, ol);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*orl++ = ol + l_hseqbase;
+							if (rr) *orr++ = j;
+						}
+						if (*orl == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_unigram", GDK_EXCEPTION);
+							}
 						}
 					}
 				}
 			} else {
 				for (size_t i = 0; i < l_cnt; i++) {
-					if (((sigs[i] & sig) == sig)) {
-						char *ls = BUNtail(*li, i);
-						/* if (str_cmp(ls, rs, str_strlen(rs)) == 0) { */
-						if (strstr(ls, rs) != NULL) {
-							*o_rl++ = i;
-							*o_rr++ = j;
+					if ((sigs[i] & sig) == sig) {
+						const char *ls = BUNtail(*li, i);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*orl++ = i + l_hseqbase;
+							if (rr) *orr++ = j;
+						}
+						if (*orl == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_unigram", GDK_EXCEPTION);
+							}
 						}
 					}
 				}
 			}
-			if (min > nmax)
-				nmax = min;
 		} else if (!strNil(rs)) {
 			for (size_t i = 0; i < l_cnt; i++) {
 				const char *ls = BUNtail(*li, i);
-				/* if (str_cmp(ls, rs, str_strlen(rs)) == 0) { */
-				if (strstr(ls, rs) != NULL) {
-					*o_rl++ = i;
-					*o_rr++ = j;
+				if (!strNil(ls)) {
+					*orl++ = i + li->b->hseqbase;
+					if (rr) *orr++ = j;
+				}
+				if (*orl == BATcapacity(rl)) {
+					new_cap = BATgrows(rl);
+					if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+						(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+						ngrams_destroy(ng);
+						throw(MAL, "join_unigram", GDK_EXCEPTION);
+					}
 				}
 			}
 		}
 	}
 
-	BATsetcount(rl, o_rl - (oid *)Tloc(rl, 0));
-	BATsetcount(rr, o_rl - (oid *)Tloc(rl, 0));
+	BATsetcount(rl, orl - (oid *)Tloc(rl, 0));
+	if (rr) BATsetcount(rr, orl - (oid *)Tloc(rl, 0));
 	ngrams_destroy(ng);
 	return MAL_SUCCEED;
 }
 
 static str
 join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
-			 size_t l_cnt, size_t r_cnt,
-			 int (*str_cmp)(const char *, const char *, int))
+			size_t l_cnt, size_t r_cnt,
+			int (*str_cmp)(const char *, const char *, int))
 {
 	Ngrams *ng = ngrams_create(l_cnt, BIGRAM_SZ);
-	NGRAM_TYPE *idx = ng->idx;
-	NGRAM_TYPE *sigs = ng->sigs;
-	unsigned *h = ng->h;
-	unsigned *pos = ng->pos;
-	unsigned *rid = ng->rid;
-
 	if (!ng)
 		throw(MAL, "join_bigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (init_bigram_idx(ng, li, l_cnt) != 0)
-		throw(MAL, "join_bigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	NGRAM_TYPE *idx = ng->idx;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->histogram;
+	unsigned *lists = ng->lists;
+	unsigned *rids = ng->rids;
+	size_t new_cap;
+	oid *orl = NULL, *orr = NULL, l_hseqbase = li->b->hseqbase;
 
-	unsigned nmax = 0;
-	oid *o_rl = Tloc(rl, 0);
-	oid *o_rr = Tloc(rr, 0);
+	orl = Tloc(rl, 0);
+	if (rr) orr = Tloc(rr, 0);
+
+	if (init_bigram_idx(ng, li, l_cnt) != 0) {
+		ngrams_destroy(ng);
+		throw(MAL, "join_bigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	for(size_t j = 0; j < r_cnt; j++) {
-		const char *s = BUNtail(*ri, j), *os = s;
+		const char *rs = BUNtail(*ri, j), *rs_iter = rs;
 		NGRAM_TYPE sig = 0;
-		if (!strNil(s) && s[0] && s[1]) { /* skipped */
-			unsigned min = ng->max;
-			unsigned min_pos = 0;
-			unsigned char p = CHAR_MAP(*s++);
-			for (; *s; p = CHAR_MAP(*s), s++) {
-				unsigned k = p * GZ + CHAR_MAP(*s);
-				sig |= idx[k];
-				if (h[k] < min) {
-					min = h[k];
-					min_pos = k; /* encoded min ngram */
+		if (!strNil(rs) && BIGRAM(rs)) {
+			unsigned min = ng->max, min_pos = 0;
+			for (; BIGRAM(rs_iter); rs_iter++) {
+				unsigned bigram = ENC_TOKEN1(rs_iter)*SZ + ENC_TOKEN2(rs_iter);
+				sig |= idx[bigram];
+				if (h[bigram] < min) {
+					min = h[bigram];
+					min_pos = bigram;
 				}
 			}
 			if (min <= ng->min) {
-				unsigned rrr = pos[min_pos];
-				int lcnt = h[min_pos];
-				for (int i = 0; i < lcnt; i++, rrr++) {
-					unsigned hr = rid[rrr];
-					if (((sigs[hr] & sig) == sig)) {
-						char *hs = BUNtail(*li, hr);
-						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*o_rl++ = hr;
-							*o_rr++ = j;
+				unsigned list = lists[min_pos], list_cnt = h[min_pos];
+				for (size_t i = 0; i < list_cnt; i++, list++) {
+					unsigned ol = rids[list];
+					if ((sigs[ol] & sig) == sig) {
+						const char *ls = BUNtail(*li, ol);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*orl++ = ol + l_hseqbase;
+							if (rr) *orr++ = j;
+						}
+						if (*orl == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_bigram", GDK_EXCEPTION);
+							}
 						}
 					}
 				}
 			} else {
 				for (size_t i = 0; i < l_cnt; i++) {
 					if (((sigs[i] & sig) == sig)) {
-						char *hs = BUNtail(*li, i);
-						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*o_rl++ = i;
-							*o_rr++ = j;
+						const char *ls = BUNtail(*li, i);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*orl++ = i + l_hseqbase;
+							if (rr) *orr++ = j;
+						}
+						if (*orl == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_bigram", GDK_EXCEPTION);
+							}
 						}
 					}
 				}
 			}
-			if (min > nmax)
-				nmax = min;
-		} else if (!strNil(s)) {
+		} else if (!strNil(rs)) {
 			for (size_t i = 0; i < l_cnt; i++) {
-				char *hs = BUNtail(*li, i);
-				if (str_cmp(hs, os, str_strlen(os)) == 0) {
-					*o_rl++ = i;
-					*o_rr++ = j;
+				const char *ls = BUNtail(*li, i);
+				if (!strNil(ls)) {
+					if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						*orl++ = i + l_hseqbase;
+						if (rr) *orr++ = j;
+					}
+					if (*orl == BATcapacity(rl)) {
+						new_cap = BATgrows(rl);
+						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+							ngrams_destroy(ng);
+							throw(MAL, "join_trigram", GDK_EXCEPTION);
+						}
+					}
 				}
 			}
 		}
 	}
 
-	BATsetcount(rl, o_rl - (oid *)Tloc(rl, 0));
-	BATsetcount(rr, o_rl - (oid *)Tloc(rl, 0));
+	BATsetcount(rl, orl - (oid *)Tloc(rl, 0));
+	if (rr) BATsetcount(rr, orl - (oid *)Tloc(rl, 0));
 	ngrams_destroy(ng);
 	return MAL_SUCCEED;
 }
@@ -536,78 +570,100 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 int (*str_cmp)(const char *, const char *, int))
 {
 	Ngrams *ng = ngrams_create(l_cnt, TRIGRAM_SZ);
-	NGRAM_TYPE *idx = ng->idx;
-	NGRAM_TYPE *sigs = ng->sigs;
-	unsigned *h = ng->h;
-	unsigned *pos = ng->pos;
-	unsigned *rid = ng->rid;
-
 	if (!ng)
 		throw(MAL, "join_trigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	if (init_trigram_idx(ng, li, l_cnt) != 0)
+	NGRAM_TYPE *idx = ng->idx;
+	NGRAM_TYPE *sigs = ng->sigs;
+	unsigned *h = ng->histogram;
+	unsigned *lists = ng->lists;
+	unsigned *rids = ng->rids;
+	size_t new_cap;
+	oid *orl = NULL, *orr = NULL, l_hseqbase = li->b->hseqbase;
+
+	orl = Tloc(rl, 0);
+	if (rr) orr = Tloc(rr, 0);
+
+	if (init_trigram_idx(ng, li, l_cnt) != 0) {
+		ngrams_destroy(ng);
 		throw(MAL, "join_trigram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
-	unsigned nmax = 0;
-	oid *o_rl = Tloc(rl, 0);
-	oid *o_rr = Tloc(rr, 0);
-
-	for(size_t i = 0; i < r_cnt; i++) {
-		const char *s = BUNtail(*ri, i), *os = s;
+	for(size_t j = 0; j < r_cnt; j++) {
+		const char *rs = BUNtail(*ri, j), *rs_iter = rs;
 		NGRAM_TYPE sig = 0;
-
-		if (!strNil(s) && s[0] && s[1] && s[2]) {
-			unsigned min = ng->max;
-			unsigned min_pos = 0;
-			unsigned char pp = CHAR_MAP(*s++);
-			unsigned char p = CHAR_MAP(*s++);
-			for(; *s; pp = p, p = CHAR_MAP(*s), s++) {
-				unsigned k = pp *GZ * GZ + p * GZ + CHAR_MAP(*s);
-				sig |= idx[k];
-				if (h[k] < min) {
-					min = h[k];
-					min_pos = k; /* encoded min ngram */
+		if (!strNil(rs_iter) && TRIGRAM(rs)) {
+			unsigned min = ng->max, min_pos = 0;
+			for(; TRIGRAM(rs_iter); rs_iter++) {
+				unsigned trigram = ENC_TOKEN1(rs_iter)*SZ*SZ + ENC_TOKEN2(rs_iter)*SZ + ENC_TOKEN3(rs_iter);
+				sig |= idx[trigram];
+				if (h[trigram] < min) {
+					min = h[trigram];
+					min_pos = trigram;
 				}
 			}
 			if (min <= ng->min) {
-				unsigned rrr = pos[min_pos];
-				unsigned hcnt = h[min_pos]; /* no unsigned */
-				for (size_t k = 0; k < hcnt; k++, rrr++) {
-					unsigned int hr = rid[rrr];
-					if (((sigs[hr] & sig) == sig)) {
-						char *hs = BUNtail(*li, hr);
-						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*o_rl++ = hr;
-							*o_rr++ = (oid)i;
+				unsigned list = lists[min_pos], list_cnt = h[min_pos];
+				for (size_t i = 0; i < list_cnt; i++, list++) {
+					unsigned ol = rids[list];
+					if ((sigs[ol] & sig) == sig) {
+						char *ls = BUNtail(*li, ol);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*orl++ = ol + l_hseqbase;
+							if (rr) *orr++ = j;
+						}
+					}
+					if (*orl == BATcapacity(rl)) {
+						new_cap = BATgrows(rl);
+						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+							ngrams_destroy(ng);
+							throw(MAL, "join_trigram", GDK_EXCEPTION);
 						}
 					}
 				}
 			} else {
-				for (size_t k = 0; k < l_cnt; k++) {
-					if (((sigs[k] & sig) == sig)) {
-						char *hs = BUNtail(*li, k);
-						if (str_cmp(hs, os, str_strlen(os)) == 0) {
-							*o_rl++ = k;
-							*o_rr++ = (oid)i;
+				for (size_t i = 0; i < l_cnt; i++) {
+					if ((sigs[i] & sig) == sig) {
+						char *ls = BUNtail(*li, i);
+						if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+							*orl++ = i + l_hseqbase;
+							if (rr) *orr++ = j;
+						}
+						if (*orl == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_trigram", GDK_EXCEPTION);
+							}
 						}
 					}
 				}
 			}
-			if (min > nmax)
-				nmax = min;
-		} else if (!strNil(s)) {
-			for (size_t k = 0; k < l_cnt; k++) {
-				char *hs = BUNtail(*li, k);
-				if (str_cmp(hs, os, str_strlen(os)) == 0) {
-					*o_rl++ = k;
-					*o_rr++ = (oid)i;
+		} else if (!strNil(rs)) {
+			for (size_t i = 0; i < l_cnt; i++) {
+				const char *ls = BUNtail(*li, i);
+				if (!strNil(ls)) {
+					if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						*orl++ = i + l_hseqbase;
+						if (rr) *orr++ = j;
+					}
+					if (*orl == BATcapacity(rl)) {
+						new_cap = BATgrows(rl);
+						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+							ngrams_destroy(ng);
+							throw(MAL, "join_trigram", GDK_EXCEPTION);
+						}
+					}
 				}
 			}
 		}
 	}
 
-	BATsetcount(rl, o_rl - (oid *)Tloc(rl, 0));
-	BATsetcount(rr, o_rl - (oid *)Tloc(rl, 0));
+	BATsetcount(rl, orl - (oid *)Tloc(rl, 0));
+	if (rr) BATsetcount(rr, orl - (oid *)Tloc(rl, 0));
 	ngrams_destroy(ng);
 	return MAL_SUCCEED;
 }

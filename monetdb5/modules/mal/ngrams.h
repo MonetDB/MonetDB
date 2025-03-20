@@ -13,39 +13,46 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 
-#if 0
-#define GZ 128
-#define CHAR_MAP(s) (s&127)
-#else
-#define GZ 64
-#define CHAR_MAP(s) (s&63)
-#endif
-
-#define UNIGRAM_SZ GZ
-#define BIGRAM_SZ (GZ*GZ)
-#define TRIGRAM_SZ (GZ*GZ*GZ)
-
-#if 0
+#if HAVE_HGE
 #define NGRAM_TYPE hge
-#define NGRAM_TYPEID TYPE_hge
 #define NGRAM_TYPENIL hge_nil
 #define NGRAM_CST(v) ((hge)LL_CONSTANT(v))
 #define NGRAM_BITS 127
+#define CHARMAP(s) (s & NGRAM_BITS)			/* encoding */
+#define SZ 128
+
 #else
 #define NGRAM_TYPE lng
 #define NGRAM_TYPEID TYPE_lng
 #define NGRAM_TYPENIL lng_nil
 #define NGRAM_CST(v) LL_CONSTANT(v)
 #define NGRAM_BITS 63
+#define CHARMAP(s) (s & NGRAM_BITS)			/* encoding */
+#define SZ 64
 #endif
 
+#define UNIGRAM_SZ SZ
+#define BIGRAM_SZ (SZ*SZ)
+#define TRIGRAM_SZ (SZ*SZ*SZ)
 #define NGRAM_MULTIPLE 16
+
+#define TOKEN1(s) (*s)						/* first token */
+#define TOKEN2(s) (*(s + 1))				/* second token */
+#define TOKEN3(s) (*(s + 2))				/* third token */
+
+#define UNIGRAM(s)	(TOKEN1(s))
+#define BIGRAM(s) 	(TOKEN1(s) && TOKEN2(s))
+#define TRIGRAM(s) 	(TOKEN1(s) && TOKEN2(s) && TOKEN3(s))
+
+#define ENC_TOKEN1(t) CHARMAP(*t)			/* encoded token #one */
+#define ENC_TOKEN2(t) CHARMAP(*(t + 1))		/* encoded token #two */
+#define ENC_TOKEN3(t) CHARMAP(*(t + 2))		/* encoded token #three */
 
 typedef struct {
 	NGRAM_TYPE *idx;
 	NGRAM_TYPE *sigs;
-	unsigned *h;
+	unsigned *histogram;
 	unsigned min, max;
-	unsigned *pos;
-	unsigned *rid;
+	unsigned *lists;
+	unsigned *rids;
 } Ngrams;
