@@ -13,27 +13,29 @@
 #ifndef _SEEN_MCRYPT_H
 #define _SEEN_MCRYPT_H 1
 
+#ifndef mutils_export
 #if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
-#if !defined(LIBMAPI) && !defined(LIBMCRYPT)
-#define mcrypt_export extern __declspec(dllimport)
+#ifndef LIBMUTILS
+#define mutils_export extern __declspec(dllimport)
 #else
-#define mcrypt_export extern __declspec(dllexport)
+#define mutils_export extern __declspec(dllexport)
 #endif
 #else
-#define mcrypt_export extern
+#define mutils_export extern
+#endif
 #endif
 
-mcrypt_export const char *mcrypt_getHashAlgorithms(void)
+mutils_export const char *mcrypt_getHashAlgorithms(void)
 	__attribute__((__const__));
-mcrypt_export char *mcrypt_MD5Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_SHA1Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_SHA224Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_SHA256Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_SHA384Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_SHA512Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
-mcrypt_export char *mcrypt_BackendSum(const char *string, size_t len);
-mcrypt_export char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
+mutils_export char *mcrypt_MD5Sum(const char *string, size_t len);
+mutils_export char *mcrypt_SHA1Sum(const char *string, size_t len);
+mutils_export char *mcrypt_SHA224Sum(const char *string, size_t len);
+mutils_export char *mcrypt_SHA256Sum(const char *string, size_t len);
+mutils_export char *mcrypt_SHA384Sum(const char *string, size_t len);
+mutils_export char *mcrypt_SHA512Sum(const char *string, size_t len);
+mutils_export char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
+mutils_export char *mcrypt_BackendSum(const char *string, size_t len);
+mutils_export char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
 
 #define SHA_DIGEST_LENGTH    20
 #define SHA224_DIGEST_LENGTH 28

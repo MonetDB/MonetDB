@@ -1,0 +1,11 @@
+-- test with 'monetdb://localhost:$MAPIPORT/$TSTDB/sys/table;' protocol specification
+
+query I nosort
+select id from 'monetdb://127.0.0.1:$MAPIPORT/$TSTDB/sys/_tables' where name = '_tables' order by id
+----
+2067
+2115
+
+statement error 42000!SELECT: proto_loader function failed 'Table sys.tables2 is missing on remote server'
+select * from 'monetdb://127.0.0.1:$MAPIPORT/$TSTDB/sys/tables2'
+

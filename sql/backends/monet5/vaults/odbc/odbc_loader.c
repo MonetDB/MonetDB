@@ -13,8 +13,10 @@
 #include "monetdb_config.h"
 #include "rel_proto_loader.h"
 #include "rel_exp.h"
-
+#include "gdk.h"	// COLnew(), BUNappend()
+#include "gdk_time.h"	// date_create(), daytime_create(), timestamp_create()
 #include "mal_exception.h"
+#include "mal_builder.h"
 #include "mal_client.h"
 
 //#ifdef _MSC_VER
@@ -29,28 +31,23 @@
 #include <sql.h>
 #include <sqlext.h>
 
-typedef struct odbc_loader_t {
-	SQLHANDLE env;
-	SQLHANDLE dbc;
-	SQLHANDLE stmt;
-	SQLSMALLINT nr_cols;
-} odbc_loader_t;
 
-static void
-odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
-	if (stmt != SQL_NULL_HSTMT) {
-		SQLFreeStmt(stmt, SQL_CLOSE);
-		SQLFreeHandle(SQL_HANDLE_STMT, stmt);
-	}
-	if (dbc != SQL_NULL_HDBC) {
-		SQLDisconnect(dbc);
-		SQLFreeHandle(SQL_HANDLE_DBC, dbc);
-	}
-	if (env != SQL_NULL_HENV) {
-		SQLFreeHandle(SQL_HANDLE_ENV, env);
-	}
-}
+#define ODBC_RELATION 1
+#define ODBC_LOADER   2
 
+#define QUERY_MAX_COLUMNS 4096
+#define MAX_COL_NAME_LEN  1024
+#define MAX_TBL_NAME_LEN  1024
+
+typedef struct {
+	SQLSMALLINT dataType;		/* ODBC datatype */
+	SQLULEN columnSize;		/* ODBC colsize */
+	SQLSMALLINT decimalDigits;	/* ODBC dec. digits */
+	int battype;			/* MonetDB atom type, used to create the BAT */
+	BAT * bat;			/* MonetDB BAT */
+} rescol_t;
+
+/* map ODBC SQL datatype to MonetDB SQL datatype */
 static sql_subtype *
 map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDigits, mvc * sql)
 {
@@ -103,7 +100,9 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		typenm = "double";
 		break;
 	case SQL_FLOAT:
-		/* the precision of SQL_FLOAT can be either 24 or 53: if it is 24, the SQL_FLOAT data type is the same as SQL_REAL; if it is 53, the SQL_FLOAT data type is the same as SQL_DOUBLE. */
+		/* the precision of SQL_FLOAT can be either 24 or 53:
+		   if it is 24, the SQL_FLOAT data type is the same as SQL_REAL;
+		   if it is 53, the SQL_FLOAT data type is the same as SQL_DOUBLE. */
 		typenm = (columnSize == 7) ? "real" : "double";
 		break;
 
@@ -181,6 +180,7 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	return sql_bind_subtype(sql->sa, typenm, interval_type, 0);
 }
 
+/* return name for ODBC SQL datatype */
 static char *
 nameofSQLtype(SQLSMALLINT dataType)
 {
@@ -228,22 +228,109 @@ nameofSQLtype(SQLSMALLINT dataType)
 	}
 }
 
+/* utility function to safely close all opened ODBC resources */
+static void
+odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
+	SQLRETURN ret = SQL_SUCCESS;
+
+	if (stmt != SQL_NULL_HSTMT) {
+		ret = SQLFreeStmt(stmt, SQL_CLOSE);
+		if (ret != SQL_INVALID_HANDLE)
+			SQLFreeHandle(SQL_HANDLE_STMT, stmt);
+	}
+	if (dbc != SQL_NULL_HDBC) {
+		ret = SQLDisconnect(dbc);
+		if (ret != SQL_INVALID_HANDLE)
+			SQLFreeHandle(SQL_HANDLE_DBC, dbc);
+	}
+	if (env != SQL_NULL_HENV) {
+		SQLFreeHandle(SQL_HANDLE_ENV, env);
+	}
+}
+
+/* copied from monetdb5/modules/mal/tablet.c */
+static BAT *
+bat_create(int adt, BUN nr)
+{
+	BAT *b = COLnew(0, adt, nr, TRANSIENT);
+
+	/* check for correct structures */
+	if (b == NULL)
+		return NULL;
+	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL) {
+		return NULL;
+	}
+
+	/* disable all properties here */
+	b->tsorted = false;
+	b->trevsorted = false;
+	b->tnosorted = 0;
+	b->tnorevsorted = 0;
+	b->tseqbase = oid_nil;
+	b->tkey = false;
+	b->tnokey[0] = 0;
+	b->tnokey[1] = 0;
+	return b;
+}
+
+static lng
+convert_numericstr2lng(str val, int columnSize, SQLSMALLINT decimalDigits) {
+	lng ret = 0;
+	int i = 0;
+	int digits = 0;
+	int decdigits = 0;
+	char c;
+	char sign = '+';
+	int decsep = -1;
+
+	if (!val)
+		return 0;
+
+	c = val[i];
+	if (c == '-' || c == '+') {
+		sign = c;
+		i++;
+	}
+	while (val[i]) {
+		if (digits >= columnSize || decdigits >= decimalDigits)
+			break;	// we have read enough
+		c = val[i];
+		if (c >= '0' && c <= '9') {
+			ret *= 10;
+			ret += (int) c - '0';
+			digits++;
+			if (decsep >= 0)
+				decdigits++;
+		} else if (c == '.') {
+			decsep = i;
+		}
+		i++;
+	}
+	while (decdigits < decimalDigits) {
+		// align to the scale
+		ret *= 10;
+		decdigits++;
+	}
+	if (sign == '-')
+		ret = -ret;
+	return ret;
+}
+
 /*
- * returns an error string (static or via tmp sa_allocator allocated), NULL on success
- *
- * Extend the subfunc f with result columns, ie.
-	f->res = typelist;
-	f->coltypes = typelist;
-	f->colnames = nameslist; use tname if passed, for the relation name
- * Fill the list res_exps, with one result expressions per resulting column.
+ * odbc_query() contains the logic for both odbc_relation() and ODBCloader()
+ * the caller argument is ODBC_RELATION when called from odbc_relation and ODBC_LOADER when called from ODBCloader
  */
 static str
-odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, int caller)
+odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) topn;
 	bool trace_enabled = false;	/* used for development only */
 
-	/* check received url and extract the ODBC connection string and yhe SQL query */
+	if (sql == NULL)
+		return "Missing mvc value.";
+	if (f == NULL)
+		return "Missing sql_subfunc value.";
+
+	/* check received url and extract the ODBC connection string and the SQL query */
 	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
 		return "Invalid URI. Must start with 'odbc:'.";
 
@@ -267,11 +354,13 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 	// create a new ODBC connection string without the QUERY= part
 	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
 
+	// TODO convert con_str and qry_str from UTF-8 to UCS16, so we can use ODBC W functions
+
+	// trace_enabled = true;
 	if (trace_enabled)
-		printf("\nExtracted ODBC connection string: %s\nand SQL query: %s\n", odbc_con_str, query);
+		printf("\nExtracted ODBC connection string: %s\n  and SQL query: %s\n", odbc_con_str, query);
 
-
-	/* now we can try to connect to the ODBC driver and execute the SQL query */
+	/* now we can (try to) connect to the ODBC driver and execute the SQL query */
 	SQLRETURN ret = SQL_INVALID_HANDLE;
 	SQLHANDLE env = SQL_NULL_HENV;
 	SQLHANDLE dbc = SQL_NULL_HDBC;
@@ -288,12 +377,20 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		errmsg = "SQLSetEnvAttr (SQL_ATTR_ODBC_VERSION ODBC3) failed.";
 		goto finish;
 	}
+
 	ret = SQLAllocHandle(SQL_HANDLE_DBC, env, &dbc);
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		errmsg = "Allocate ODBC DBC handle failed.";
 		goto finish;
 	}
+	/* to avoid an endless blocking SQLDriverConnect() set a login timeout of 8s */
+	ret = SQLSetConnectAttr(dbc, SQL_ATTR_LOGIN_TIMEOUT, (SQLPOINTER) (uintptr_t) 8UL, 0);
+	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		errmsg = "SQLSetConnectAttr (SQL_ATTR_LOGIN_TIMEOUT 8s) failed.";
+		goto finish;
+	}
 
+	// TODO convert con_str from UTF-8 to UCS16, so we can use ODBC W functions
 	SQLSMALLINT len = 0;
 	ret = SQLDriverConnect(dbc, NULL, (SQLCHAR *) odbc_con_str, SQL_NTS, NULL, 0, &len, SQL_DRIVER_NOPROMPT);
 	if (trace_enabled)
@@ -309,6 +406,7 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		goto finish;
 	}
 
+	// TODO convert qry_str from UTF-8 to UCS16, so we can use ODBC W functions
 	ret = SQLExecDirect(stmt, (SQLCHAR *) query, SQL_NTS);
 	if (trace_enabled)
 		printf("After SQLExecDirect(%s) returned %d\n", query, ret);
@@ -329,11 +427,18 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 	}
 	if (trace_enabled)
 		printf("Query has %d result columns\n", nr_cols);
+	if (nr_cols > QUERY_MAX_COLUMNS) {
+		/* limit the number of data columns, as we do not want to block or blow up the mserver */
+		nr_cols = QUERY_MAX_COLUMNS;
+		printf("\nODBC_loader limited Query result to first %d columns.\n", nr_cols);
+	}
 
 	/* when called from odbc_relation() */
-	if (caller == 1) {
-		char tname[1024];
-		char cname[1024];
+	if (caller == ODBC_RELATION) {
+		char tname[MAX_TBL_NAME_LEN];
+		char cname[MAX_COL_NAME_LEN];
+		char * tblname;
+		char * colname;
 		SQLSMALLINT dataType = 0;
 		SQLULEN columnSize = 0;
 		SQLSMALLINT decimalDigits = 0;
@@ -342,105 +447,490 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 		list * nameslist = sa_list(sql->sa);
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 			/* for each result column get name, datatype, size and decdigits */
-			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname),
-				NULL, &dataType, &columnSize, &decimalDigits, NULL);
+			// TODO use ODBC W function
+			ret = SQLDescribeCol(stmt, col, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname) -1,
+					NULL, &dataType, &columnSize, &decimalDigits, NULL);
 			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 				errmsg = "SQLDescribeCol failed.";
 				goto finish;
 			}
 			if (trace_enabled)
-				printf("ResCol %d, name: %s, type %d (%s), size %d, decdigits %d\n",
-					col, cname, (int)dataType, nameofSQLtype(dataType), (int)columnSize, (int)decimalDigits);
-			list_append(nameslist, sa_strdup(sql->sa, cname));
+				printf("ResCol %u, name: %s, type %d (%s), size %u, decdigits %d\n",
+					col, cname, dataType, nameofSQLtype(dataType), (unsigned int)columnSize, decimalDigits);
+			colname = sa_strdup(sql->sa, cname);
+			list_append(nameslist, colname);
 			sql_mtype = map_rescol_type(dataType, columnSize, decimalDigits, sql);
 			list_append(typelist, sql_mtype);
 
-			/* also get the table name for this result column */
-			ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) sizeof(tname), NULL, NULL);
-			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
-				strcpy(tname, "");
+			if (res_exps) {
+				/* also get the table name for this result column */
+				// TODO use ODBC W function
+				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) sizeof(tname) -1, NULL, NULL);
+				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+					strcpy(tname, "");
+				}
+				tblname = sa_strdup(sql->sa, tname);
+				sql_exp *ne = exp_column(sql->sa, tblname, colname, sql_mtype, CARD_MULTI, 1, 0, 0);
+				set_basecol(ne);
+				ne->alias.label = -(sql->nid++);
+				list_append(res_exps, ne);
 			}
-			sql_exp *ne = exp_column(sql->sa, sa_strdup(sql->sa, tname), sa_strdup(sql->sa, cname), sql_mtype, CARD_MULTI, 1, 0, 0);
-			set_basecol(ne);
-			ne->alias.label = -(sql->nid++);
-			list_append(res_exps, ne);
 		}
 
 		f->tname = sa_strdup(sql->sa, tname);
-		f->res = typelist;
-		f->coltypes = typelist;
 		f->colnames = nameslist;
-
-		odbc_loader_t *r = (odbc_loader_t *)sa_alloc(sql->sa, sizeof(odbc_loader_t));
-		r->env = env;
-		r->dbc = dbc;
-		r->stmt = stmt;
-		r->nr_cols = nr_cols;
-		f->sname = (char *)r; /* pass odbc_loader */
-
+		f->coltypes = typelist;
+		f->res = typelist;
 		goto finish;
 	}
 
-	/* when called from odbc_load() we can now fetch the data */
-	if (caller == 2 && stmt != SQL_NULL_HSTMT) {
-		//odbc_loader_t *r = (odbc_loader_t *)f->sname;
-		sql_table *t;
+	/* when called from ODBCloader() */
+	if (caller == ODBC_LOADER) {
+		rescol_t * colmetadata = (rescol_t *) GDKzalloc(nr_cols * sizeof(rescol_t));
+		if (colmetadata == NULL) {
+			errmsg = "GDKzalloc colmetadata[nr_cols] failed.";
+			goto finish;
+		}
 
-		if (trace_enabled)
-			printf("Before mvc_create_table(%s)\n", f->tname);
-		// create an internal transient table to store fetched data
-		if (mvc_create_table(&t, sql, sql->session->tr->tmp /* misuse tmp schema */,
-				f->tname /*gettable name*/, tt_table, false, SQL_DECLARED_TABLE, 0, 0, false) != LOG_OK)
-			/* alloc error */
-			return NULL;
-		if (trace_enabled)
-			printf("After mvc_create_table()\n");
+		SQLULEN largestStringSize = 0;
+		bool hasBlobCols = false;
+		SQLULEN largestBlobSize = 0;
+		/* make bats with right atom type */
+		for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
+			char cname[MAX_COL_NAME_LEN];
+			SQLSMALLINT dataType = 0;
+			SQLULEN columnSize = 0;
+			SQLSMALLINT decimalDigits = 0;
+			int battype = TYPE_str;
+			BAT * b = NULL;
 
-		node *n, *nn = f->colnames->h, *tn = f->coltypes->h;
-		for (n = f->res->h; n; n = n->next, nn = nn->next, tn = tn->next) {
-			const char *name = nn->data;
-			sql_subtype *tp = tn->data;
-			sql_column *c = NULL;
+			/* for each result column get SQL datatype, size and decdigits */
+			// TODO use ODBC W function
+			ret = SQLDescribeCol(stmt, col+1, (SQLCHAR *) cname, (SQLSMALLINT) sizeof(cname) -1,
+					NULL, &dataType, &columnSize, &decimalDigits, NULL);
+			if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+				errmsg = "SQLDescribeCol failed.";
+				/* cleanup already created bats */
+				while (col > 0) {
+					col--;
+					BBPreclaim(colmetadata[col].bat);
+				}
+				GDKfree(colmetadata);
+				goto finish;
+			}
+			if (dataType == SQL_FLOAT) {
+				dataType = (columnSize == 7) ? SQL_REAL : SQL_DOUBLE;
+			}
+			colmetadata[col].dataType = dataType;
+			colmetadata[col].columnSize = columnSize;
+			colmetadata[col].decimalDigits = decimalDigits;
+			battype = getBatType(getArgType(mb, pci, col));
+			colmetadata[col].battype = battype;
+			if (battype == TYPE_str) {
+				if (columnSize > largestStringSize) {
+					largestStringSize = columnSize;
+				}
+			}
+			if (battype == TYPE_blob) {
+				hasBlobCols = true;
+				if (columnSize > largestBlobSize) {
+					largestBlobSize = columnSize;
+				}
+			}
+			if (trace_enabled)
+				printf("ResCol %u, name: %s, type %d (%s), size %u, decdigits %d, battype %d\n",
+					col+1, cname, dataType, nameofSQLtype(dataType), (unsigned int)columnSize, decimalDigits, battype);
 
 			if (trace_enabled)
-				printf("Before mvc_create_column(%s)\n", name);
-			if (!tp || mvc_create_column(&c, sql, t, name, tp) != LOG_OK) {
-				return NULL;
+				printf("Before create BAT %d\n", col+1);
+			b = bat_create(battype, 0);
+			if (b) {
+				colmetadata[col].bat = b;
+				if (trace_enabled)
+					printf("After create BAT %d\n", col+1);
+			} else {
+				errmsg = "Failed to create bat.";
+				/* cleanup already created bats */
+				while (col > 0) {
+					col--;
+					BBPreclaim(colmetadata[col].bat);
+				}
+				GDKfree(colmetadata);
+				goto finish;
 			}
 		}
 
-		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
-			// TODO for each result column create a buffer and bind it.
-			// ret = SQLBindCol(stmt, 1, );
+		/* allocate storage for all the fixed size atom types. */
+		bit bit_val;
+		bte bte_val;
+		sht sht_val;
+		int int_val;
+		lng lng_val;
+#ifdef HAVE_HGE
+// TODO		hge hge_val;	// for large decimals
+#endif
+		flt flt_val;
+		dbl dbl_val;
+		DATE_STRUCT date_val;
+		TIME_STRUCT time_val;
+		TIMESTAMP_STRUCT ts_val;
+//		SQL_NUMERIC_STRUCT num_val;
+		SQLGUID guid_val;
+		bte * blob_val = NULL;
+
+		/* allocate storage for all the var sized atom types. */
+		char * str_val = NULL;		// TODO: change to wchar
+		if (largestStringSize == 0)	// no valid string length, use 65535 (64kB) as default
+			largestStringSize = 65535;
+		if (largestStringSize > 16777215) // string length too large, limit to 16MB
+			largestStringSize = 16777215;
+		str_val = (char *)GDKzalloc((largestStringSize +1) * sizeof(char));	// +1 for the eos char
+		if (!str_val) {
+			errmsg = "Failed to alloc memory for largest rescol string.";
+			goto finish_fetch;
+		}
+		if (trace_enabled)
+			printf("Allocated str_val buffer of size %zu\n", (largestStringSize +1) * sizeof(char));
+
+		if (hasBlobCols) {
+			if (largestBlobSize == 0)	// no valid blob length, assume 65536 (64kB) as default
+				largestBlobSize = 65532;
+			if (largestBlobSize > 16777212) // blob length too large, limit to 16MB
+				largestBlobSize = 16777212;
+			blob_val = (bte *)GDKzalloc(sizeof(unsigned int) + (largestBlobSize * sizeof(bte)));
+			if (!blob_val) {
+				errmsg = "Failed to alloc memory for largest rescol blob.";
+				goto finish_fetch;
+			}
+			if (trace_enabled)
+				printf("Allocated blob_val buffer of size %zu\n", largestBlobSize * sizeof(bte));
 		}
 
-		// repeat fetching data, adding data work table
-		long rows = 0;
-		ret = SQLFetch(stmt);
+		unsigned long row = 0;
+		ret = SQLFetch(stmt);	// TODO optimisation: use SQLExtendedFetch() to pull data array wise and use BUNappendmulti()
 		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
-			rows++;
+			row++;
 			if (trace_enabled)
-				printf("Fetched row %ld\n", rows);
+				printf("Fetched row %lu\n", row);
 
-			// TODO for each result column append to created transient table
-			for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
-				// ret = SQLGetData(stmt, col, ...);
-				// copy buffer value to BUN and append
+			for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
+				SQLSMALLINT sqltype = colmetadata[col].dataType;
+				BAT * b = colmetadata[col].bat;
+				SQLSMALLINT targetType;
+				SQLPOINTER * targetValuePtr;
+				SQLLEN bufferLength = 0;
+				SQLLEN strLen = 0;
+				/* mapping based on https://learn.microsoft.com/en-us/sql/odbc/reference/appendixes/c-data-types */
+				switch(sqltype) {
+					case SQL_CHAR:
+					case SQL_VARCHAR:
+					case SQL_LONGVARCHAR:
+					case SQL_WCHAR:
+					case SQL_WVARCHAR:
+					case SQL_WLONGVARCHAR:
+					default:
+						targetType = SQL_C_CHAR;	// TODO later: SQL_C_WCHAR
+						targetValuePtr = (SQLPOINTER *) str_val;
+						bufferLength = largestStringSize;
+						break;
+					case SQL_BIT:
+						targetType = SQL_C_BIT;
+						targetValuePtr = (SQLPOINTER *) &bit_val;
+						break;
+					case SQL_TINYINT:
+						targetType = SQL_C_STINYINT;
+						targetValuePtr = (SQLPOINTER *) &bte_val;
+						break;
+					case SQL_SMALLINT:
+						targetType = SQL_C_SSHORT;
+						targetValuePtr = (SQLPOINTER *) &sht_val;
+						break;
+					case SQL_INTEGER:
+						targetType = SQL_C_SLONG;
+						targetValuePtr = (SQLPOINTER *) &int_val;
+						break;
+					case SQL_BIGINT:
+						targetType = SQL_C_SBIGINT;
+						targetValuePtr = (SQLPOINTER *) &lng_val;
+						break;
+					case SQL_DECIMAL:
+					case SQL_NUMERIC:
+						/* we read the decimal data as string data and convert it to lng (or hge) */
+						targetType = SQL_C_CHAR;
+						targetValuePtr = (SQLPOINTER *) str_val;
+						bufferLength = largestStringSize;
+						break;
+					case SQL_REAL:
+						targetType = SQL_C_FLOAT;
+						targetValuePtr = (SQLPOINTER *) &flt_val;
+						break;
+					case SQL_FLOAT:
+						if (colmetadata[col].battype == TYPE_flt) {
+							targetType = SQL_C_FLOAT;
+							targetValuePtr = (SQLPOINTER *) &flt_val;
+						} else {
+							targetType = SQL_C_DOUBLE;
+							targetValuePtr = (SQLPOINTER *) &dbl_val;
+						}
+						break;
+					case SQL_DOUBLE:
+						targetType = SQL_C_DOUBLE;
+						targetValuePtr = (SQLPOINTER *) &dbl_val;
+						break;
+					case SQL_TYPE_DATE:
+						targetType = SQL_C_TYPE_DATE;
+						targetValuePtr = (SQLPOINTER *) &date_val;
+						break;
+					case SQL_TYPE_TIME:
+						targetType = SQL_C_TYPE_TIME;
+						targetValuePtr = (SQLPOINTER *) &time_val;
+						break;
+					case SQL_DATETIME:
+					case SQL_TYPE_TIMESTAMP:
+						targetType = SQL_C_TYPE_TIMESTAMP;
+						targetValuePtr = (SQLPOINTER *) &ts_val;
+						break;
+					case SQL_INTERVAL_MONTH:
+					case SQL_INTERVAL_YEAR:
+					case SQL_INTERVAL_YEAR_TO_MONTH:
+						targetType = SQL_C_SLONG;
+						targetValuePtr = (SQLPOINTER *) &int_val;
+						break;
+					case SQL_INTERVAL_DAY:
+					case SQL_INTERVAL_HOUR:
+					case SQL_INTERVAL_MINUTE:
+					case SQL_INTERVAL_SECOND:
+					case SQL_INTERVAL_DAY_TO_HOUR:
+					case SQL_INTERVAL_DAY_TO_MINUTE:
+					case SQL_INTERVAL_DAY_TO_SECOND:
+					case SQL_INTERVAL_HOUR_TO_MINUTE:
+					case SQL_INTERVAL_HOUR_TO_SECOND:
+					case SQL_INTERVAL_MINUTE_TO_SECOND:
+						targetType = SQL_C_SBIGINT;
+						targetValuePtr = (SQLPOINTER *) &lng_val;
+						break;
+					case SQL_GUID:
+						targetType = SQL_C_GUID;
+						targetValuePtr = (SQLPOINTER *) &guid_val;
+						break;
+					case SQL_BINARY:
+					case SQL_VARBINARY:
+					case SQL_LONGVARBINARY:
+						targetType = SQL_C_BINARY;
+						targetValuePtr = (SQLPOINTER *) &blob_val;
+						bufferLength = largestBlobSize;
+						break;
+				}
+				ret = SQLGetData(stmt, col+1, targetType, targetValuePtr, bufferLength, &strLen);
+				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+					if (trace_enabled)
+						printf("Failed to get data for col %u of row %lu\n", col+1, row);
+					/* as all bats need to be the correct length, append NULL value */
+					if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
+						if (trace_enabled)
+							printf("BUNappend(b, NULL, false) failed\n");
+				} else {
+					if (strLen == SQL_NULL_DATA) {
+						if (trace_enabled)
+							printf("Data row %lu col %u: NULL\n", row, col+1);
+						if (BUNappend(b, ATOMnilptr(b->ttype), false) != GDK_SUCCEED)
+							if (trace_enabled)
+								printf("BUNappend(b, ATOMnilptr(b->ttype), false) failed\n");
+					} else {
+						gdk_return gdkret = GDK_SUCCEED;
+						switch(sqltype) {
+							case SQL_CHAR:
+							case SQL_VARCHAR:
+							case SQL_LONGVARCHAR:
+							case SQL_WCHAR:
+							case SQL_WVARCHAR:
+							case SQL_WLONGVARCHAR:
+							default:
+								if (strLen != SQL_NTS && strLen >= 0) {
+									/* make sure it is a Nul Terminated String */
+									if ((SQLULEN) strLen < largestStringSize) {
+										if (str_val[strLen] != '\0')
+											str_val[strLen] = '\0';
+									} else {
+										if (str_val[largestStringSize] != '\0')
+											str_val[largestStringSize] = '\0';
+									}
+								}
+								if (trace_enabled)
+									printf("Data row %lu col %u: %s\n", row, col+1, str_val);
+								gdkret = BUNappend(b, (void *) str_val, false);
+								break;
+							case SQL_BIT:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %c\n", row, col+1, bit_val);
+								gdkret = BUNappend(b, (void *) &bit_val, false);
+								break;
+							case SQL_TINYINT:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %c\n", row, col+1, bte_val);
+								gdkret = BUNappend(b, (void *) &bte_val, false);
+								break;
+							case SQL_SMALLINT:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %hd\n", row, col+1, sht_val);
+								gdkret = BUNappend(b, (void *) &sht_val, false);
+								break;
+							case SQL_INTEGER:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %d\n", row, col+1, int_val);
+								gdkret = BUNappend(b, (void *) &int_val, false);
+								break;
+							case SQL_BIGINT:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
+								gdkret = BUNappend(b, (void *) &lng_val, false);
+								break;
+							case SQL_DECIMAL:
+							case SQL_NUMERIC:
+							{
+								if (trace_enabled)
+									printf("Data row %lu col %u: %s\n", row, col+1, str_val);
+								/* convert str_val to lng_val (or hge_val) based on sql_bind_subtype(sql->sa, "decimal", (int) columnSize, (int) decimalDigits); */
+								lng_val = convert_numericstr2lng(str_val, (int)colmetadata[col].columnSize, colmetadata[col].decimalDigits);
+								if (trace_enabled)
+									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
+								gdkret = BUNappend(b, (void *) &lng_val, false);
+								break;
+							}
+							case SQL_REAL:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %f\n", row, col+1, flt_val);
+								gdkret = BUNappend(b, (void *) &flt_val, false);
+								break;
+							case SQL_DOUBLE:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %f\n", row, col+1, dbl_val);
+								gdkret = BUNappend(b, (void *) &dbl_val, false);
+								break;
+							case SQL_FLOAT:
+								if (colmetadata[col].battype == TYPE_flt) {
+									if (trace_enabled)
+										printf("Data row %lu col %u: %f\n", row, col+1, flt_val);
+									gdkret = BUNappend(b, (void *) &flt_val, false);
+								} else {
+									if (trace_enabled)
+										printf("Data row %lu col %u: %f\n", row, col+1, dbl_val);
+									gdkret = BUNappend(b, (void *) &dbl_val, false);
+								}
+								break;
+							case SQL_TYPE_DATE:
+							{
+								date mdate_val = date_create(date_val.year, date_val.month, date_val.day);
+								if (trace_enabled)
+									printf("Data row %lu col %u: date(%04d-%02u-%02u)\n", row, col+1, date_val.year, date_val.month, date_val.day);
+								gdkret = BUNappend(b, (void *) &mdate_val, false);
+								break;
+							}
+							case SQL_TYPE_TIME:
+							{
+								daytime daytime_val = daytime_create(time_val.hour, time_val.minute, time_val.second, 0);
+								if (trace_enabled)
+									printf("Data row %lu col %u: daytime(%02u:%02u:%02u)\n", row, col+1, time_val.hour, time_val.minute, time_val.second);
+								gdkret = BUNappend(b, (void *) &daytime_val, false);
+								break;
+							}
+							case SQL_DATETIME:
+							case SQL_TYPE_TIMESTAMP:
+							{
+								date mdate_val = date_create(ts_val.year, ts_val.month, ts_val.day);
+								daytime daytime_val = daytime_create(ts_val.hour, ts_val.minute, ts_val.second, ts_val.fraction);
+								timestamp timestamp_val = timestamp_create(mdate_val, daytime_val);
+								if (trace_enabled)
+									printf("Data row %lu col %u: timestamp(%04d-%02u-%02u %02u:%02u:%02u.%06u)\n", row, col+1,
+										ts_val.year, ts_val.month, ts_val.day, ts_val.hour, ts_val.minute, ts_val.second, ts_val.fraction);
+								gdkret = BUNappend(b, (void *) &timestamp_val, false);
+								break;
+							}
+							case SQL_INTERVAL_MONTH:
+							case SQL_INTERVAL_YEAR:
+							case SQL_INTERVAL_YEAR_TO_MONTH:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %d\n", row, col+1, int_val);
+								gdkret = BUNappend(b, (void *) &int_val, false);
+								break;
+							case SQL_INTERVAL_DAY:
+							case SQL_INTERVAL_HOUR:
+							case SQL_INTERVAL_MINUTE:
+							case SQL_INTERVAL_SECOND:
+							case SQL_INTERVAL_DAY_TO_HOUR:
+							case SQL_INTERVAL_DAY_TO_MINUTE:
+							case SQL_INTERVAL_DAY_TO_SECOND:
+							case SQL_INTERVAL_HOUR_TO_MINUTE:
+							case SQL_INTERVAL_HOUR_TO_SECOND:
+							case SQL_INTERVAL_MINUTE_TO_SECOND:
+								if (trace_enabled)
+									printf("Data row %lu col %u: %" PRId64 "\n", row, col+1, lng_val);
+								gdkret = BUNappend(b, (void *) &lng_val, false);
+								break;
+							case SQL_GUID:
+								if (trace_enabled)
+									printf("Data row %lu col %u: guid_val\n", row, col+1);
+								// uuid is 16 bytes, same as SQLGUID guid_val
+								gdkret = BUNappend(b, (void *) &guid_val, false);
+								break;
+							case SQL_BINARY:
+							case SQL_VARBINARY:
+							case SQL_LONGVARBINARY:
+							case TYPE_blob:
+							{
+								//TODO convert blob_val to blob struct which starts with length (4 bytes) and next data bytes.
+								if (trace_enabled)
+									printf("Data row %lu col %u: blob_val\n", row, col+1);
+								// TODO gdkret = BUNappend(b, (void *) blob_val, false);
+								/* for now append NULL value, as all bats need to be the correct length */
+								gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+								break;
+							}
+						}
+						if (gdkret != GDK_SUCCEED)
+							if (trace_enabled)
+								printf("BUNappend(b, val, false) failed!\n");
+					}
+				}
 			}
 			ret = SQLFetch(stmt);	// get data of next row
 		}
-	}
+		/* the last SQLFetch() will return SQL_NO_DATA at end, treat it as success */
+		if (ret == SQL_NO_DATA)
+			ret = SQL_SUCCESS;	// we retrieved all rows
+
+  finish_fetch:
+		if (str_val)
+			GDKfree(str_val);
+		if (blob_val)
+			GDKfree(blob_val);
+
+		/* pass bats to caller */
+		if (colmetadata) {
+			for (int col = 0; col < (int) nr_cols; col++) {
+				bat * rescol = getArgReference_bat(stk, pci, col);
+				BAT * b = colmetadata[col].bat;
+				if (rescol && b) {
+					*rescol = b->batCacheid;
+					BBPkeepref(b);
+				}
+			}
+			/* free locally allocated memory */
+			GDKfree(colmetadata);
+		}
+	} /* end of: if (caller == ODBC_LOADER) */
 
   finish:
-  	if (query)
-  		GDKfree(query);
-  	if (odbc_con_str)
-  		GDKfree(odbc_con_str);
+	if (query)
+		GDKfree(query);
+	if (odbc_con_str)
+		GDKfree(odbc_con_str);
 
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+		/* an ODBC function call returned an error, get the error msg from the ODBC driver */
 		SQLSMALLINT handleType;
 		SQLHANDLE handle;
-		SQLCHAR state[6];
+		SQLCHAR state[SQL_SQLSTATE_SIZE +1];
 		SQLINTEGER errnr;
 		SQLCHAR msg[2048];
 		SQLSMALLINT msglen;
@@ -457,20 +947,23 @@ odbc_query(mvc *sql, sql_subfunc *f, char *url, list *res_exps, sql_exp *topn, i
 			handleType = SQL_HANDLE_ENV;
 			handle = env;
 		}
-		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, sizeof(msg), &msglen);
+		// TODO use ODBC W function
+		ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, (sizeof(msg) -1), &msglen);
 		if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 			str retmsg;
+			if (state[SQL_SQLSTATE_SIZE] != '\0')
+				state[SQL_SQLSTATE_SIZE] = '\0';
 			if (errmsg != NULL) {
-				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, (int)errnr, (char*)msg);
+				retmsg = sa_message(sql->sa, "odbc_loader" " %s SQLstate %s, Errnr %d, Message %s", errmsg, (char*)state, errnr, (char*)msg);
 			} else {
-				retmsg = sa_message(sql->sa, "odbc_loader" " SQLstate %s, Errnr %d, Message %s", (char*)state, (int)errnr, (char*)msg);
+				retmsg = sa_message(sql->sa, "odbc_loader" " SQLstate %s, Errnr %d, Message %s", (char*)state, errnr, (char*)msg);
 			}
 			odbc_cleanup(env, dbc, stmt);
 			return retmsg;
 		}
 	}
 	odbc_cleanup(env, dbc, stmt);
-	return (str)errmsg;
+	return (errmsg != NULL) ? (str)errmsg : MAL_SUCCEED;
 }
 
 /*
@@ -486,15 +979,51 @@ static str
 odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 {
 	(void) aname;
-	return odbc_query(sql, f, url, res_exps, NULL, 1);
+	return odbc_query(ODBC_RELATION, sql, f, url, res_exps, NULL, NULL, NULL);
 }
 
 static void *
 odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
-	mvc *sql = be->mvc;
-	return odbc_query(sql, f, url, NULL, topn, 2);
+	if (!f)
+		return NULL;
+
+	(void)topn;
+
+	InstrPtr q = newStmtArgs(be->mb, "odbc", "loader", list_length(f->coltypes) + 2);
+	int col = 0;
+	list *l = sa_list(be->mvc->sa);
+	for (node *n = f->coltypes->h, *nn = f->colnames->h; n && nn; col++, n = n->next, nn = nn->next) {
+		const char *name = nn->data;
+		sql_subtype *tp = n->data;
+		int type = newBatType(tp->type->localtype);
+		if (col)
+			q = pushReturn(be->mb, q, newTmpVariable(be->mb, type));
+		else
+			getArg(q, 0) = newTmpVariable(be->mb, type);
+		stmt *s = stmt_blackbox_result(be, q, col, tp);
+		s = stmt_alias(be, s, col+1, f->tname, name);
+		list_append(l, s);
+	}
+	q = pushStr(be->mb, q, url);
+	q = pushPtr(be->mb, q, f);
+	pushInstruction(be->mb, q);
+	return stmt_list(be, l);
+}
+
+static str
+ODBCloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *be = NULL;
+	str msg;
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+		return msg;
+	str uri = *getArgReference_str(stk, pci, pci->retc);
+	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
+
+	return odbc_query(ODBC_LOADER, be->mvc, f, uri, NULL, mb, stk, pci);
+	//return MAL_SUCCEED;
 }
 
 static str
@@ -519,6 +1048,7 @@ ODBCepilogue(void *ret)
 static mel_func odbc_init_funcs[] = {
 	pattern("odbc", "prelude", ODBCprelude, false, "", noargs),
 	command("odbc", "epilogue", ODBCepilogue, false, "", noargs),
+	pattern("odbc", "loader", ODBCloader, true, "Import a query result via the odbc uri", args(1,3, batvarargany("",0),arg("uri",str),arg("func",ptr))),
 { .imp=NULL }
 };
 
@@ -529,4 +1059,3 @@ static mel_func odbc_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_odbc_mal)
 { mal_module("odbc", NULL, odbc_init_funcs); }
-

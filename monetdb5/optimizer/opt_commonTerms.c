@@ -158,7 +158,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h,
 				  hash[h]);
-		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 		if (h < 0) {
 			pushInstruction(mb, p);
@@ -180,7 +180,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 																			 q),
 						  !isUnsafeFunction(q), !isUpdateInstruction(q),
 						  isLinearFlow(q));
-				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -209,7 +209,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ",
 							  getArg(p, 0), getArg(p, 1));
-					traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+					traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 					actions++;
 					break;		/* end of search */
@@ -218,7 +218,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n",
 						  mayhaveSideEffects(cntxt, mb, q, TRUE),
 						  isUpdateInstruction(p));
-				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 			}
 		}
 
@@ -231,7 +231,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		TRC_DEBUG(MAL_OPTIMIZER,
 				  "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i,
 				  getArg(p, p->argc - 1), h, hash[h]);
-		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 		if (!mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc
 			&& isLinearFlow(p) && !isUnsafeFunction(p)

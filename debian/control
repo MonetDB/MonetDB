@@ -44,6 +44,31 @@ Description: MonetDB development files
  This package contains files needed to develop extensions to the core
  functionality of MonetDB.
 
+Package: libmonetdb-mutils1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: MonetDB mutils library
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains a shared library (libmutils) which is needed by
+ various other components.
+
+Package: libmonetdb-mutils-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ libmonetdb-mutils27 (= ${source:Version})
+Description: MonetDB mutils library development files
+ MonetDB is a database management system that is developed from a
+ main-memory perspective with use of a fully decomposed storage model,
+ automatic index management, extensibility of data types and search
+ accelerators.  It also has an SQL front end.
+ .
+ This package contains the files to develop with the
+ libmonetdb-mutils1 library.
+
 Package: libmonetdb-stream27
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
@@ -60,6 +85,7 @@ Package: libmonetdb-stream-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  libmonetdb-stream27 (= ${source:Version})
+ libmonetdb-mutils1 (= ${source:Version})
 Description: MonetDB stream library development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,

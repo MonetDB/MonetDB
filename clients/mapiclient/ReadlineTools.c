@@ -22,7 +22,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "ReadlineTools.h"
-#define LIBMUTILS 1
 #include "mutils.h"
 
 #ifdef HAVE_STRINGS_H

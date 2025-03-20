@@ -36,7 +36,6 @@
 #include "ReadlineTools.h"
 #endif
 #include "msqldump.h"
-#define LIBMUTILS 1
 #include "mprompt.h"
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
@@ -1382,7 +1381,8 @@ SQLrenderer(MapiHdl hdl)
 			     strcmp(s, "clob") != 0 &&
 			     strcmp(s, "char") != 0 &&
 			     strcmp(s, "str") != 0 &&
-			     strcmp(s, "json") != 0)) {
+			     strcmp(s, "json") != 0 &&
+			     strcmp(s, "uuid") != 0)) {
 				/* no table width known, use maximum,
 				 * rely on squeezing later on to fix
 				 * it to whatever is available; note

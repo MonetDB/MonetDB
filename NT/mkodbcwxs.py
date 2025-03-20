@@ -93,6 +93,7 @@ def main():
                r'lib\MonetODBC.dll', r'lib\MonetODBC.pdb',
                r'lib\MonetODBCs.dll', r'lib\MonetODBCs.pdb',
                rf'bin\stream-{version}.dll', rf'lib\stream-{version}.pdb',
+               rf'bin\mutils-{version}.dll', rf'lib\mutils-{version}.pdb',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll

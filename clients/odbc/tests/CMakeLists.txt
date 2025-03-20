@@ -44,7 +44,7 @@ add_executable(odbcconnect
 
 target_link_libraries(odbcconnect
   PRIVATE
-  mutf8
+  mutils
   ODBC::ODBC)
 
 install(TARGETS

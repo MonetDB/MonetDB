@@ -295,6 +295,13 @@ class SQLLogic:
                 self.crs.execute(f'drop user "{dq(row[0])}"')
             except pymonetdb.Error:
                 pass
+        # drop custom types created in test
+        self.crs.execute("select sqlname from sys.types where systemname is null order by id")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop type "{}"'.format(row[0]))
+            except pymonetdb.Error:
+                pass
 
     def exec_statement(self, statement, expectok,
                        err_stmt=None,
@@ -740,6 +747,8 @@ class SQLLogic:
                 val = val.strip()
                 defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
                              val, key))
+                defs.append((re.compile(r'\$(Q' + key + r'\b|{Q' + key + '})'),
+                             val.replace('\\', '\\\\'), 'Q'+key))
         self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
         self.lines = []
 
