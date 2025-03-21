@@ -323,6 +323,12 @@ getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
 	ret = SQLGetDiagRec(handleType, handle, 1, state, &errnr, msg, SQL_MAX_MESSAGE_LENGTH -1, &msglen);
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 		const char format[] = "SQLSTATE %s, Error code %d, Message %s";
+		/* ignore msg when using MS Excel ODBC driver, which does not support setting connection timeout */
+		if ((strcmp("IM006", (char *)state) == 0)
+		 && (strcmp("[Microsoft][ODBC Driver Manager] Driver's SQLSetConnectAttr failed", (char *)msg) == 0)) {
+			return NULL;
+		}
+
 		if (msglen <= 0) {
 			/* e.g SQL_NTS */
 			msglen = (SQLSMALLINT) strlen((char *)msg);
