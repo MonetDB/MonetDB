@@ -104,6 +104,15 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 //			prec = scale;	/* make precision large enough to contain all decimal digits */
 //		return sql_bind_subtype(sql->sa, "decimal", prec, scale);
 	}
+	case SQL_GUID:
+	{
+		/* represents a uuid of length 36, such as: dbe7343c-1f11-4fa9-a9c8-a31cd26f92fe */
+		sql_subtype * tp = sql_bind_subtype(sql->sa, "uuid", 0, 0);	// this fails to return a valid pointer
+		if (tp != NULL)
+			return tp;
+		/* fall back to map it to a char(36) result column type */
+		return sql_bind_subtype(sql->sa, "char", (unsigned int) UUID_STRLEN, 0);
+	}
 
 	case SQL_BIT:
 		typenm = "boolean";
@@ -204,11 +213,6 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 		typenm = "sec_interval";
 		interval_type = 12;
-		break;
-
-	case SQL_GUID:
-		/* represents a uuid of length 36, such as: dbe7343c-1f11-4fa9-a9c8-a31cd26f92fe */
-		typenm = "uuid";
 		break;
 	}
 	return sql_bind_subtype(sql->sa, typenm, interval_type, 0);
@@ -579,6 +583,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		sql_subtype * sql_mtype;
 		list * typelist = sa_list(sql->sa);
 		list * nameslist = sa_list(sql->sa);
+		strcpy(tname, "");
 		for (SQLUSMALLINT col = 1; col <= (SQLUSMALLINT) nr_cols; col++) {
 			/* for each result column get name, datatype, size and decdigits */
 			// TODO use ODBC W function
@@ -591,9 +596,12 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			if (trace_enabled)
 				printf("ResCol %u, name: %s, type %d (%s), size %u, decdigits %d\n",
 					col, cname, dataType, nameofSQLtype(dataType), (unsigned int)columnSize, decimalDigits);
+			sql_mtype = map_rescol_type(dataType, columnSize, decimalDigits, sql);
+			if (sql_mtype == NULL)
+				continue;	/* skip this column */
+
 			colname = sa_strdup(sql->sa, cname);
 			list_append(nameslist, colname);
-			sql_mtype = map_rescol_type(dataType, columnSize, decimalDigits, sql);
 			list_append(typelist, sql_mtype);
 
 			if (res_exps) {
@@ -662,6 +670,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			if (dataType == SQL_HUGEINT) {
 				dataType = SQL_VARCHAR;	/* read it as string */
 				columnSize = 50;
+			} else
+			if (dataType == SQL_GUID) {
+				dataType = SQL_VARCHAR;	/* read it as string */
+				columnSize = UUID_STRLEN;
 			} else
 			if (dataType == SQL_DECIMAL || dataType == SQL_NUMERIC) {
 				/* MonetDB has limits for the precision and scale */
@@ -909,13 +921,9 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 						targetValuePtr = (SQLPOINTER *) &itv_val;
 						break;
 					case SQL_GUID:
-						/* read guid data as string data */
-//						targetType = SQL_C_CHAR;
-//						targetValuePtr = (SQLPOINTER *) str_val;
-//						bufferLength = largestStringSize;
 						targetType = SQL_C_GUID;
 						targetValuePtr = (SQLPOINTER *) &guid_val;
-						bufferLength = 16;
+						bufferLength = (SQLLEN) sizeof(SQLGUID);
 						break;
 					case SQL_BINARY:
 					case SQL_VARBINARY:
@@ -1180,23 +1188,28 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									printf("Data row %lu col %u: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n", row, col+1,
 										guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
 										guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
-								// uuid is 16 bytes, same as SQLGUID guid_val
-								memcpy((void *) &uuid_val, (void *) &guid_val, sizeof(uuid));
-								gdkret = BUNappend(b, (void *) &uuid_val, false);
+								if (colmetadata[col].battype == TYPE_uuid) {
+									// uuid is 16 bytes, same as SQLGUID guid_val
+									memcpy((void *) &uuid_val, (void *) &guid_val, sizeof(uuid));
+									gdkret = BUNappend(b, (void *) &uuid_val, false);
+								} else {
+									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+								}
 								break;
 							case SQL_BINARY:
 							case SQL_VARBINARY:
 							case SQL_LONGVARBINARY:
-							case TYPE_blob:
-							{
-								//TODO convert blob_val to blob struct which starts with length (4 bytes) and next data bytes.
 								if (trace_enabled)
 									printf("Data row %lu col %u: blob_val\n", row, col+1);
-								// TODO gdkret = BUNappend(b, (void *) blob_val, false);
-								/* for now append NULL value, as all bats need to be the correct length */
-								gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+								if (colmetadata[col].battype == TYPE_blob) {
+									//TODO convert blob_val to blob struct which starts with length (4 bytes) and next data bytes.
+									// TODO gdkret = BUNappend(b, (void *) blob_val, false);
+									/* for now append NULL value, as all bats need to be the correct length */
+									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+								} else {
+									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+								}
 								break;
-							}
 						}
 						if (gdkret != GDK_SUCCEED)
 							if (trace_enabled)
@@ -1225,6 +1238,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 					*rescol = b->batCacheid;
 					BBPkeepref(b);
 				}
+				if (trace_enabled)
+					printf("col %d pass bat %d\n", col, b->ttype);
 			}
 			/* free locally allocated memory */
 			GDKfree(colmetadata);
@@ -1236,6 +1251,9 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		GDKfree(query);
 	if (odbc_con_str)
 		GDKfree(odbc_con_str);
+
+	if (trace_enabled)
+		printf("caller %d at finish, ret %d (%s) errmsg %s\n", caller, ret, nameOfRetCode(ret), (errmsg) ? errmsg : "");
 
 	if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
 		/* an ODBC function call returned an error or warning, get the error msg from the ODBC driver */
@@ -1267,7 +1285,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		odbc_cleanup(env, dbc, stmt);
 		return retmsg;
 	}
+
 	odbc_cleanup(env, dbc, stmt);
+	if (trace_enabled)
+		printf("after odbc_cleanup(%p, %p, %p) errmsg %s\n", env, dbc, stmt, (errmsg) ? errmsg : "");
 	return (errmsg != NULL) ? (str)errmsg : MAL_SUCCEED;
 }
 
@@ -1302,14 +1323,16 @@ odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 	for (node *n = f->coltypes->h, *nn = f->colnames->h; n && nn; col++, n = n->next, nn = nn->next) {
 		const char *name = nn->data;
 		sql_subtype *tp = n->data;
-		int type = newBatType(tp->type->localtype);
-		if (col)
-			q = pushReturn(be->mb, q, newTmpVariable(be->mb, type));
-		else
-			getArg(q, 0) = newTmpVariable(be->mb, type);
-		stmt *s = stmt_blackbox_result(be, q, col, tp);
-		s = stmt_alias(be, s, col+1, f->tname, name);
-		list_append(l, s);
+		if (tp) {
+			int type = newBatType(tp->type->localtype);
+			if (col)
+				q = pushReturn(be->mb, q, newTmpVariable(be->mb, type));
+			else
+				getArg(q, 0) = newTmpVariable(be->mb, type);
+			stmt *s = stmt_blackbox_result(be, q, col, tp);
+			s = stmt_alias(be, s, col+1, f->tname, name);
+			list_append(l, s);
+		}
 	}
 	q = pushStr(be->mb, q, url);
 	q = pushPtr(be->mb, q, f);
