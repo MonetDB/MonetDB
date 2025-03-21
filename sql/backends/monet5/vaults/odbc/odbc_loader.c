@@ -417,8 +417,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		return "Incomplete ODBC URI string. Missing 'QUERY=' part to specify the SQL SELECT query to execute.";
 
 	char * query = GDKstrdup(&qry_str[6]);	// we expect that QUERY= is at the end of the connection string
-	if (query == NULL || (query && (strcmp("", query) == 0)))
+	if (query == NULL || *query == 0) {
+		GDKfree(query);
 		return "Incomplete ODBC URI string. Missing SQL SELECT query after 'QUERY='.";
+	}
 
 	// create a new ODBC connection string without the QUERY= part
 	char * odbc_con_str = GDKstrndup(con_str, qry_str - con_str);
