@@ -742,12 +742,12 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->tnonil = li.nonil & r1i.nonil;
 		bn->tsorted = li.count <= 1
 			|| (li.sorted & r1i.sorted)
-			|| (li.revsorted & r1i.revsorted)
-			|| r1i.count <= 1;
+			|| (li.revsorted & r1i.revsorted & li.nonil)
+			|| (r1i.count <= 1 && li.nonil);
 		bn->trevsorted = li.count <= 1
-			|| (li.sorted & r1i.revsorted)
+			|| (li.sorted & r1i.revsorted & li.nonil)
 			|| (li.revsorted & r1i.sorted)
-			|| r1i.count <= 1;
+			|| (r1i.count <= 1 && li.nonil);
 		bn->tkey = li.count <= 1 || (li.key & r1i.key);
 	}
 
