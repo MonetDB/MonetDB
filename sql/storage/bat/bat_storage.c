@@ -3873,12 +3873,16 @@ static BUN
 clear_table(sql_trans *tr, sql_table *t)
 {
 	node *n = ol_first_node(t->columns);
-	sql_column *c = n->data;
 	storage *d = tab_timestamp_storage(tr, t);
 	int in_transaction, clear;
 	BUN sz, clear_ok;
 
-	if (!d)
+	sql_column *c = n->data;
+	while (c && c->type.type->composite && !c->type.multiset) {
+		n = n->next;
+		c = n?n->data:NULL;
+	}
+	if (!d || !c)
 		return BUN_NONE;
 	lock_table(tr->store, t->base.id);
 	in_transaction = segments_in_transaction(tr, t);
@@ -3893,6 +3897,9 @@ clear_table(sql_trans *tr, sql_table *t)
 
 	for (; n; n = n->next) {
 		c = n->data;
+
+		if (c->type.type->composite && !c->type.multiset)
+			continue;
 
 		if ((clear_ok = clear_col(tr, c, clear)) >= BUN_NONE - 1)
 			return clear_ok;

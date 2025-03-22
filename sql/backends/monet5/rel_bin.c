@@ -7881,6 +7881,21 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
+	if (t->multiset) {
+		for (node *n = t->columns->l->h; n; n = n->next) {
+			sql_column *c = n->data;
+
+			if (c->type.multiset) {
+				sql_table *st = mvc_bind_table(sql, c->t->s, c->storage_type);
+				if (st) {
+					stmt *trunc = sql_truncate(be, st, restart_sequences, cascade);
+					if (!trunc)
+						return trunc;
+					append(l, trunc);
+				}
+			}
+		}
+	}
 	stmt *ret = NULL, *other = NULL;
 	struct tablelist *new_list = SA_NEW(sql->ta, struct tablelist);
 	stmt **deleted_cols = NULL;
