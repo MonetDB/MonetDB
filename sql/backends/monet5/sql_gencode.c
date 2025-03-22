@@ -1789,8 +1789,6 @@ _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
         (*lvls) ^= (((size_t)1)<<depth);
 }
 
-void _stmt_print_list(stmt *sl);
-
 void
 _stmt_print_list(stmt *sl)
 {
@@ -1807,10 +1805,11 @@ _stmt_print_list(stmt *sl)
 void
 _stmt_print(stmt *sl)
 {
+	size_t lvls = 1;
 	if (sl->type == st_list)
-		return _stmt_print_list(sl);
-    size_t lvls = 1;
-    _stmt_print_list_(sl, 0, &lvls, true);
+		_stmt_print_list(sl);
+	else
+		_stmt_print_list_(sl, 0, &lvls, true);
 }
 
 void
