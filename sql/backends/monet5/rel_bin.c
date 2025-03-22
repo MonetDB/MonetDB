@@ -3898,17 +3898,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 
 	int op = rel->op;
-	if (0 && (op == op_right || op == op_full || op == op_left)) {
-		if (op == op_left || op == op_full) {
-			jl = stmt_append(be, jl, ld);
-			jr = stmt_append(be, jr, stmt_const(be, ld, stmt_atom(be, atom_general(sql->sa, tail_type(ld), NULL, 0))));
-		}
-		if (op == op_right || op == op_full) {
-			jl = stmt_append(be, jl, stmt_const(be, rd, stmt_atom(be, atom_general(sql->sa, tail_type(rd), NULL, 0))));
-			jr = stmt_append(be, jr, rd);
-		}
-		op = op_join;
-	}
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_alias *rnme = table_name(sql->sa, c);
