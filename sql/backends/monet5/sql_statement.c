@@ -2618,6 +2618,116 @@ unnest_stmt(stmt *o)
 	return o->op4.lval;
 }
 
+static stmt *
+stmt_nest2(backend *be, stmt *op1, stmt *op2, fstmt call)
+{
+	list *ops1 = unnest_stmt(op1);
+	list *ops2 = unnest_stmt(op2);
+	list *nops = sa_list(be->mvc->sa);
+	sql_subtype *st = tail_type(op2);
+	bool propagate = !st->multiset && st->type->composite;
+	for(node *n = ops1->h, *m = ops2->h; n && m; n = n->next, m = m->next) {
+		stmt *i1 = n->data;
+		stmt *i2 = m->data;
+		stmt *i = i2;
+		if (propagate || (st->multiset && n == ops1->t)) {
+			stmt *oi = i;
+			i = call(be, i1, oi);
+			i->nested = oi->nested;
+			i->subtype = *tail_type(oi);
+			i->tname = oi->tname;
+			i->cname = oi->cname;
+			i->label = oi->label;
+		}
+		append(nops, i);
+	}
+	stmt *s = stmt_list(be, nops);
+	if (s == NULL)
+		return NULL;
+	s->nested = true;
+	s->subtype = *st;
+	s->tname = op2->tname;
+	s->cname = op2->cname;
+	s->label = op2->label;
+	if (op2->type == st_alias)
+		return stmt_alias(be, s, op2->label, op2->tname, op2->cname);
+	return s;
+}
+
+static stmt *
+stmt_nest1(backend *be, stmt *op1, stmt *op2, fstmt call)
+{
+	assert(op1->nested);
+	list *ops = unnest_stmt(op1);
+	list *nops = sa_list(be->mvc->sa);
+	sql_subtype *st = tail_type(op1);
+	bool propagate = !st->multiset && st->type->composite;
+	for(node *n = ops->h; n; n = n->next) {
+		stmt *i = n->data;
+		if (propagate || (st->multiset && n == ops->t)) {
+			stmt *oi = i;
+			i = call(be, oi, op2);
+			i->nested = oi->nested;
+			i->subtype = *tail_type(oi);
+			i->tname = oi->tname;
+			i->cname = oi->cname;
+			i->label = oi->label;
+		}
+		append(nops, i);
+	}
+	stmt *s = stmt_list(be, nops);
+	if (s == NULL)
+		return NULL;
+	s->nested = true;
+	s->subtype = *st;
+	s->tname = op1->tname;
+	s->cname = op1->cname;
+	s->label = op1->label;
+	if (op1->type == st_alias)
+		return stmt_alias(be, s, op1->label, op1->tname, op1->cname);
+	return s;
+}
+
+stmt *
+stmt_nest(backend *be, stmt *op1, stmt *op2, fstmt call)
+{
+	if (!op2)
+		op2 = op1;
+	if (op1->nested && op2->nested)
+		return stmt_nest2(be, op1, op2, call);
+	if (op1->nested && !op2->nested)
+		return stmt_nest1(be, op1, op2, call);
+	assert(op2->nested);
+	list *ops = unnest_stmt(op2);
+	list *nops = sa_list(be->mvc->sa);
+	sql_subtype *st = tail_type(op2);
+	bool propagate = !st->multiset && st->type->composite;
+	for(node *n = ops->h; n; n = n->next) {
+		stmt *i = n->data;
+		if (propagate || (st->multiset && n == ops->t)) {
+			stmt *oi = i;
+			i = call(be, op1, oi);
+			i->nested = oi->nested;
+			i->subtype = *tail_type(oi);
+			i->tname = oi->tname;
+			i->cname = oi->cname;
+			i->label = oi->label;
+		}
+		append(nops, i);
+	}
+	stmt *s = stmt_list(be, nops);
+	if (s == NULL)
+		return NULL;
+	s->nested = true;
+	s->subtype = *st;
+	s->tname = op2->tname;
+	s->cname = op2->cname;
+	s->label = op2->label;
+	if (op2->type == st_alias)
+		return stmt_alias(be, s, op2->label, op2->tname, op2->cname);
+	return s;
+}
+
 stmt *
 stmt_project(backend *be, stmt *op1, stmt *op2)
 {
@@ -2625,32 +2735,8 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		return NULL;
 	if (!op2->nrcols)
 		return stmt_const(be, op1, op2);
-	if (op2->nested) {
-		list *ops = unnest_stmt(op2);
-		list *nops = sa_list(be->mvc->sa);
-		sql_subtype *st = tail_type(op2);
-		bool propagate = !st->multiset && st->type->composite;
-		for(node *n = ops->h; n; n = n->next) {
-			stmt *i = n->data;
-			if (propagate || (st->multiset && n == ops->t)) {
-				stmt *oi = i;
-				i = stmt_project(be, op1, i);
-				i->tname = oi->tname;
-				i->cname = oi->cname;
-				i->label = oi->label;
-			}
-			append(nops, i);
-		}
-		stmt *s = stmt_list(be, nops);
-		if (s == NULL)
-			return NULL;
-		s->nested = true;
-		s->subtype = *st;
-		s->tname = op2->tname;
-		s->cname = op2->cname;
-		s->label = op2->label;
-		return s;
-	}
+	if (op2->nested)
+		return stmt_nest(be, op1, op2, &stmt_project);
 	InstrPtr q = stmt_project_join(be, op1, op2, false);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_join);
@@ -3485,6 +3571,8 @@ stmt_append(backend *be, stmt *c, stmt *a)
 
 	if (c == NULL || a == NULL || c->nr < 0 || a->nr < 0)
 		goto bailout;
+	if (c->nested)
+		return stmt_nest(be, c, a, &stmt_append);
 	q = newStmt(mb, batRef, appendRef);
 	if (q == NULL)
 		goto bailout;

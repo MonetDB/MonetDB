@@ -230,7 +230,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		}
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
-			if (empty[getArg(p, 1)] || empty[getArg(p, 2)]) {
+			if (empty[getArg(p, 1)] /*|| empty[getArg(p, 2)]*/) {
 				actions++;
 				emptyresult(0);
 			}

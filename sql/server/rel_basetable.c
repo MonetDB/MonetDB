@@ -167,6 +167,9 @@ rel_nested_basetable_add_ccols(mvc *sql, rel_base_t *ba, sql_column *c, node *cn
 			continue;
 		if (c->type.multiset) {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
+			prop *p = p = prop_create(sql->sa, PROP_NESTED, e->p);
+			p->value.pval = c;
+			e->p = p;
 			if (e)
 				e->f = sa_list(sql->sa);
 			if (!e || !e->f)
@@ -229,6 +232,9 @@ rel_nested_basetable_add_cols(mvc *sql, rel_base_t *pba, char *colname, sql_tabl
 			continue;
 		if (c->type.multiset) {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 1);
+			prop *p = p = prop_create(sql->sa, PROP_NESTED, e->p);
+			p->value.pval = c;
+			e->p = p;
 			if (e)
 				e->f = sa_list(sql->sa);
 			if (!e || !e->f)
@@ -300,6 +306,9 @@ rel_nested_basetable(mvc *sql, sql_table *t, sql_alias *atname)
 			continue;
 		if (c->type.multiset) {
 			e = exp_alias(sql, atname, c->base.name, atname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
+			prop *p = p = prop_create(sql->sa, PROP_NESTED, e->p);
+			p->value.pval = c;
+			e->p = p;
 			if (e)
 				e->f = sa_list(sql->sa);
 			if (!e || !e->f)

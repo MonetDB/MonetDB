@@ -113,6 +113,7 @@ propkind2string( prop *p)
 		PT(GROUPINGS);
 		PT(MIN);
 		PT(MAX);
+		PT(NESTED);
 		PT(UNNEST);
 	}
 	return "UNKNOWN";
@@ -174,8 +175,11 @@ propvalue2string(allocator *sa, prop *p)
 		}
 		return res;
 	}
-	case PROP_UNNEST: {
+	case PROP_UNNEST:
 		return sa_strdup(sa, exp_name((sql_exp*)p->value.pval));
+	case PROP_NESTED: {
+		sql_column *c = p->value.pval;
+		return sa_strdup(sa, c->storage_type);
 	}
 	default:
 		break;

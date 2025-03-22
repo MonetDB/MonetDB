@@ -1754,8 +1754,8 @@ _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
     char *node_prefix = last?tg[TG_END]:tg[TG_BIF];
     switch (s->type) {
         case st_list:
-            mnstr_printf(GDKstdout, "%s%sst_list (X_%d)\n",
-                         node_prefix, tg[TG_DOT], s->nr);
+            mnstr_printf(GDKstdout, "%s%s%sst_list (X_%d)\n",
+                         node_prefix, tg[TG_DOT], s->nested?"* ":"", s->nr);
             for (node *n = s->op4.lval->h; n; n = n->next)
                 _stmt_print_list_(n->data, depth+1, lvls, (n == s->op4.lval->t));
             break;
@@ -1764,9 +1764,21 @@ _stmt_print_list_(stmt *s, size_t depth, size_t *lvls, bool last)
                          node_prefix, tg[TG_DOT], s->nr);
             break;
         case st_alias:
-            mnstr_printf(GDKstdout, "%s%sst_alias (X_%d)\n",
-                         node_prefix, tg[TG_DOT], s->nr);
+            mnstr_printf(GDKstdout, "%s%s%sst_alias (X_%d) (%d, %s, %s)\n",
+                         node_prefix, tg[TG_DOT], s->nested?"* ":"", s->nr, s->label, s->tname?s->tname->name:"", s->cname);
             _stmt_print_list_(s->op1, depth+1, lvls, true);
+            break;
+        case st_append:
+            mnstr_printf(GDKstdout, "%s%sst_append (X_%d) label: %d\n",
+                         node_prefix, tg[TG_DOT], s->nr, s->label);
+            _stmt_print_list_(s->op1, depth+1, lvls, true);
+            _stmt_print_list_(s->op2, depth+1, lvls, true);
+            break;
+        case st_join:
+            mnstr_printf(GDKstdout, "%s%sst_%s (X_%d) label: %d\n",
+                         node_prefix, tg[TG_DOT], s->flag == cmp_project?"project":"join", s->nr, s->label);
+            _stmt_print_list_(s->op1, depth+1, lvls, true);
+            _stmt_print_list_(s->op2, depth+1, lvls, true);
             break;
         default:
             mnstr_printf(GDKstdout, "%s%sUNKNOWN stmt type=%d (X_%d)\n",
@@ -1790,6 +1802,15 @@ _stmt_print_list(stmt *sl)
     size_t lvls = 1;
     for (node *n = sl->op4.lval->h; n; n = n->next)
         _stmt_print_list_(n->data, 0, &lvls, (n == sl->op4.lval->t));
+}
+
+void
+_stmt_print(stmt *sl)
+{
+	if (sl->type == st_list)
+		return _stmt_print_list(sl);
+    size_t lvls = 1;
+    _stmt_print_list_(sl, 0, &lvls, true);
 }
 
 void

@@ -286,4 +286,8 @@ extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 
 sql_export InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
+
+typedef stmt *(*fstmt)(backend *be, stmt *op1, stmt *op2);
+extern stmt *stmt_nest(backend *be, stmt *op1, stmt *op2, fstmt call);
+
 #endif /* _SQL_STATEMENT_H_ */

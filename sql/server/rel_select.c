@@ -764,6 +764,20 @@ rel_unnest_func(sql_query *query, list *exps, char *tname)
 			sql_exp *el = exps_bind_column(e->f, MSEL_NAME, NULL, NULL, 1);
 			return rel_project(query->sql->sa, rp, append(sa_list(query->sql->sa), exp_ref(query->sql, el)));
 		}
+		prop *p = find_prop(e->p, PROP_NESTED);
+		if (p) {
+			sql_column *c = p->value.pval;
+			sql_table *st = mvc_bind_table(query->sql, c->t->s, c->storage_type);
+			if (!st)
+				return sql_error(query->sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: unnest multiset table '%s' missing", (char*)c->storage_type);
+			sql_rel *bt = rel_basetable(query->sql, st, a_create(query->sql->sa, tname?tname:NULL));
+			if (!bt)
+				return bt;
+			prop *p = prop_create(query->sql->sa, PROP_UNNEST, bt->p);
+			p->value.pval = e;
+			bt->p = p;
+			return bt;
+		}
 		sql_rel *r = query_fetch_outer(query, e->freevar-1);
 		if (r && !is_basetable(r->op)) {
 			sql_rel *rr = NULL;

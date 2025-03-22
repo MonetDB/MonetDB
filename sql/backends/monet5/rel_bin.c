@@ -301,10 +301,13 @@ column(backend *be, stmt *val)
 }
 
 static stmt *
-create_const_column(backend *be, stmt *val)
+create_const_column(backend *be, stmt *val, stmt *d1)
 {
+	(void)d1;
 	if (val->nrcols == 0)
 		val = const_column(be, val);
+	if (val->nested)
+		return stmt_nest(be, val, NULL, &create_const_column);
 	return stmt_append(be, stmt_temp(be, tail_type(val)), val);
 }
 
@@ -2160,8 +2163,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 		}
 		s = stmt_aggr(be, as, grp, ext, a, 1, need_no_nil(e) /* ignore nil*/, !zero_if_empty(e));
-		if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
-			s->flag |= OUTER_ZERO;
+		//if (find_prop(e->p, PROP_COUNT)) /* propagate count == 0 ipv NULL in outer joins */
+			//s->flag |= OUTER_ZERO;
 	}	break;
 	case e_column: {
 		if (right) /* check relation names */
@@ -3697,6 +3700,14 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 }
 
 static stmt *
+stmt_append_nil(backend *be, stmt *s, stmt *rows)
+{
+	if (s->nested)
+		return stmt_nest(be, s, rows, &stmt_append_nil);
+	return stmt_append(be, s, stmt_const(be, rows, (s->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(be->mvc->sa, tail_type(s), NULL, 0))));
+}
+
+static stmt *
 rel2bin_join(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
@@ -3886,6 +3897,18 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		list_append(l2, ld);
 	}
 
+	int op = rel->op;
+	if (0 && (op == op_right || op == op_full || op == op_left)) {
+		if (op == op_left || op == op_full) {
+			jl = stmt_append(be, jl, ld);
+			jr = stmt_append(be, jr, stmt_const(be, ld, stmt_atom(be, atom_general(sql->sa, tail_type(ld), NULL, 0))));
+		}
+		if (op == op_right || op == op_full) {
+			jl = stmt_append(be, jl, stmt_const(be, rd, stmt_atom(be, atom_general(sql->sa, tail_type(rd), NULL, 0))));
+			jr = stmt_append(be, jr, rd);
+		}
+		op = op_join;
+	}
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_alias *rnme = table_name(sql->sa, c);
@@ -3893,13 +3916,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_project(be, jl, column(be, c));
 
 		/* as append isn't save, we append to a new copy */
-		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
-			s = create_const_column(be, s);
-		if (rel->op == op_left || rel->op == op_full)
+		if (op == op_left || op == op_full || op == op_right)
+			s = create_const_column(be, s, NULL);
+		if (op == op_left || op == op_full)
 			s = stmt_append(be, s, stmt_project(be, ld, c));
-		if (rel->op == op_right || rel->op == op_full)
-			s = stmt_append(be, s, stmt_const(be, rd, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0))));
-
+		if (op == op_right || op == op_full) {
+			s->flag = c->flag; /* push OUTER_ZERO */
+			s = stmt_append_nil(be, s, rd);
+		}
 		s = stmt_alias(be, s, c->label, rnme, nme);
 		list_append(l, s);
 	}
@@ -3910,11 +3934,13 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_project(be, jr, column(be, c));
 
 		/* as append isn't save, we append to a new copy */
-		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
-			s = create_const_column(be, s);
-		if (rel->op == op_left || rel->op == op_full)
-			s = stmt_append(be, s, stmt_const(be, ld, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0))));
-		if (rel->op == op_right || rel->op == op_full)
+		if (op == op_left || op == op_full || op == op_right)
+			s = create_const_column(be, s, NULL);
+		if (op == op_left || op == op_full) {
+			s->flag = c->flag; /* push OUTER_ZERO */
+			s = stmt_append_nil(be, s, ld);
+		}
+		if (op == op_right || op == op_full)
 			s = stmt_append(be, s, stmt_project(be, rd, c));
 
 		s = stmt_alias(be, s, c->label, rnme, nme);
@@ -4801,7 +4827,7 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 		const char *nme = column_name(sql->sa, c1);
 		stmt *s;
 
-		s = stmt_append(be, create_const_column(be, c1), c2);
+		s = stmt_append(be, create_const_column(be, c1, NULL), c2);
 		if (s == NULL)
 			return NULL;
 		s = stmt_alias(be, s, c1->label, rnme, nme);
