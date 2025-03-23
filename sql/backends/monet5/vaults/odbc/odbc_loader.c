@@ -110,6 +110,17 @@ map_rescol_type(SQLSMALLINT dataType, SQLULEN columnSize, SQLSMALLINT decimalDig
 		sql_subtype * tp = sql_bind_subtype(sql->sa, "uuid", 0, 0);	// this fails to return a valid pointer
 		if (tp != NULL)
 			return tp;
+		// try a different way
+		sql_schema *syss = mvc_bind_schema(sql, "sys");
+		if (syss) {
+			tp = SA_ZNEW(sql->sa, sql_subtype);
+			if (tp != NULL) {
+				tp->digits = tp->scale = 0;
+				tp->type = schema_bind_type(sql, syss, "uuid");
+				if (tp->type != NULL)
+					return tp;
+			}
+		}
 		/* fall back to map it to a char(36) result column type */
 		return sql_bind_subtype(sql->sa, "char", (unsigned int) UUID_STRLEN, 0);
 	}
@@ -393,6 +404,35 @@ bat_create(int adt, BUN nr)
 	return b;
 }
 
+/* convert interval.day_second.fraction values to millisec fractions as needed by MonetDB interval types.
+ * we need the columns decimalDigits specification to adjust the fractions value to millisec.
+ */
+static SQLUINTEGER
+fraction2msec(SQLUINTEGER fraction, SQLSMALLINT decimaldigits) {
+	SQLUINTEGER msec = fraction;
+	if (msec == 0)
+		return 0;
+
+	switch (decimaldigits) {
+		case 6: msec = fraction / 1000; break;
+		case 3: msec = fraction; break;
+		case 0: msec = fraction * 1000; break;
+		case 1: msec = fraction * 100; break;
+		case 2: msec = fraction * 10; break;
+		case 4: msec = fraction / 10; break;
+		case 5: msec = fraction / 100; break;
+		case 7: msec = fraction / 10000; break;
+		case 8: msec = fraction / 100000; break;
+		case 9: msec = fraction / 1000000; break;
+	}
+
+	// millisec value should be no larger than 1000
+	while (msec > 1000) {
+		msec = msec / 10;
+	}
+	return msec;
+}
+
 /*
  * odbc_query() contains the logic for both odbc_relation() and ODBCloader()
  * the caller argument is ODBC_RELATION when called from odbc_relation and ODBC_LOADER when called from ODBCloader
@@ -671,10 +711,6 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				dataType = SQL_VARCHAR;	/* read it as string */
 				columnSize = 50;
 			} else
-			if (dataType == SQL_GUID) {
-				dataType = SQL_VARCHAR;	/* read it as string */
-				columnSize = UUID_STRLEN;
-			} else
 			if (dataType == SQL_DECIMAL || dataType == SQL_NUMERIC) {
 				/* MonetDB has limits for the precision and scale */
 				if (columnSize > MAX_PREC || abs(decimalDigits) > MAX_PREC) {
@@ -728,7 +764,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			}
 		}
 
-		/* allocate storage for all the fixed size atom types. */
+		/* allocate buffers for all the fixed size atom types. */
 		bit bit_val = 0;
 		bte bte_val = 0;
 		sht sht_val = 0;
@@ -744,37 +780,40 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		TIMESTAMP_STRUCT ts_val;
 		SQL_INTERVAL_STRUCT itv_val;
 		SQLGUID guid_val;
-		uuid uuid_val = uuid_nil;
+		union {
+			uuid uuid_val;
+			uint8_t u[UUID_SIZE];
+		} u_val;
 
-		/* allocate storage for all the var sized atom types. */
+		/* allocate target buffers for the variable sized atom types; TYPE_str, TYPE_blob. */
 		char * str_val = NULL;		// TODO: change to wchar
-		bte * blob_val = NULL;
+		uint8_t * bin_data = NULL;
 		if (largestStringSize == 0)	// no valid string length, use 65535 (64kB) as default
 			largestStringSize = 65535;
-		if (largestStringSize < 256)
-			largestStringSize = 256;
-		if (largestStringSize > 16777215) // string length too large, limit to 16MB
+		else if (largestStringSize < 1023)	// for very large decimals read as strings
+			largestStringSize = 1023;
+		else if (largestStringSize > 16777215)	// string length very large, limit to 16MB for now
 			largestStringSize = 16777215;
-		str_val = (char *)GDKzalloc((largestStringSize +1) * sizeof(char));	// +1 for the eos char
+		str_val = (char *)GDKmalloc((largestStringSize +1) * sizeof(char));	// +1 for the eos char
 		if (!str_val) {
-			errmsg = "Failed to alloc memory for largest rescol string.";
+			errmsg = "Failed to alloc memory for largest rescol string buffer.";
 			goto finish_fetch;
 		}
 		if (trace_enabled)
 			printf("Allocated str_val buffer of size %zu\n", (largestStringSize +1) * sizeof(char));
 
 		if (hasBlobCols) {
-			if (largestBlobSize == 0)	// no valid blob length, assume 65536 (64kB) as default
-				largestBlobSize = 65532;
-			if (largestBlobSize > 16777212) // blob length too large, limit to 16MB
-				largestBlobSize = 16777212;
-			blob_val = (bte *)GDKzalloc(sizeof(unsigned int) + (largestBlobSize * sizeof(bte)));
-			if (!blob_val) {
-				errmsg = "Failed to alloc memory for largest rescol blob.";
+			if (largestBlobSize == 0)	// no valid blob/binary data size, assume 1048576 (1MB) as default
+				largestBlobSize = 1048576;
+			if (largestBlobSize > 16777216) // blob length very large, limit to 16MB for now
+				largestBlobSize = 16777216;
+			bin_data = (uint8_t *)GDKmalloc(largestBlobSize * sizeof(uint8_t));
+			if (!bin_data) {
+				errmsg = "Failed to alloc memory for largest rescol binary data buffer.";
 				goto finish_fetch;
 			}
 			if (trace_enabled)
-				printf("Allocated blob_val buffer of size %zu\n", largestBlobSize * sizeof(bte));
+				printf("Allocated bin_data buffer of size %zu\n", largestBlobSize * sizeof(uint8_t));
 		}
 
 		gdk_return gdkret = GDK_SUCCEED;
@@ -929,7 +968,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 					case SQL_VARBINARY:
 					case SQL_LONGVARBINARY:
 						targetType = SQL_C_BINARY;
-						targetValuePtr = (SQLPOINTER *) &blob_val;
+						targetValuePtr = (SQLPOINTER *) bin_data;
 						bufferLength = largestBlobSize;
 						break;
 				}
@@ -1022,9 +1061,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								break;
 							case SQL_DECIMAL:
 							case SQL_NUMERIC:
-							{
-								int battype = colmetadata[col].battype;
-								if (battype == TYPE_str) {
+								if (colmetadata[col].battype == TYPE_str) {
 									if (strLen != SQL_NTS && strLen >= 0) {
 										/* make sure it is a Nul Terminated String */
 										if ((SQLULEN) strLen < largestStringSize) {
@@ -1038,9 +1075,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									if (trace_enabled)
 										printf("Data row %lu col %u: %s\n", row, col+1, str_val);
 									gdkret = BUNappend(b, (void *) str_val, false);
+								} else {
+									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
 								}
 								break;
-							}
 							case SQL_REAL:
 								if (trace_enabled)
 									printf("Data row %lu col %u: %f\n", row, col+1, flt_val);
@@ -1139,7 +1177,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									break;
 								case SQL_IS_SECOND:
 									lng_val = (lng) (itv_val.intval.day_second.second * 1000)
-										+ (itv_val.intval.day_second.fraction / 1000);
+										+ fraction2msec(itv_val.intval.day_second.fraction, colmetadata[col].decimalDigits);
 									break;
 								case SQL_IS_DAY_TO_HOUR:
 									lng_val = (lng) ((itv_val.intval.day_second.day *24)
@@ -1155,7 +1193,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 										+ itv_val.intval.day_second.hour) *60)
 										+ itv_val.intval.day_second.minute) *60)
 										+ itv_val.intval.day_second.second) *1000)
-										+ (itv_val.intval.day_second.fraction / 1000);
+										+ fraction2msec(itv_val.intval.day_second.fraction, colmetadata[col].decimalDigits);
 									break;
 								case SQL_IS_HOUR_TO_MINUTE:
 									lng_val = (lng) ((itv_val.intval.day_second.hour *60)
@@ -1165,15 +1203,16 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									lng_val = (lng) (((((itv_val.intval.day_second.hour *60)
 										+ itv_val.intval.day_second.minute) *60)
 										+ itv_val.intval.day_second.second) *1000)
-										+ (itv_val.intval.day_second.fraction / 1000);
+										+ fraction2msec(itv_val.intval.day_second.fraction, colmetadata[col].decimalDigits);
 									break;
 								case SQL_IS_MINUTE_TO_SECOND:
 									lng_val = (lng) (((itv_val.intval.day_second.minute *60)
 										+ itv_val.intval.day_second.second) *1000)
-										+ (itv_val.intval.day_second.fraction / 1000);
+										+ fraction2msec(itv_val.intval.day_second.fraction, colmetadata[col].decimalDigits);
 									break;
 								default:
 									lng_val = 0;
+									break;
 								}
 
 								if (itv_val.interval_sign == SQL_TRUE)
@@ -1189,9 +1228,26 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 										guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
 										guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 								if (colmetadata[col].battype == TYPE_uuid) {
+									uint8_t u;
 									// uuid is 16 bytes, same as SQLGUID guid_val
-									memcpy((void *) &uuid_val, (void *) &guid_val, sizeof(uuid));
-									gdkret = BUNappend(b, (void *) &uuid_val, false);
+									memcpy((void *) &u_val.uuid_val, (void *) &guid_val, sizeof(uuid));
+									// guid_str: beefc4f7-0264-4735-9b7a-75fd371ef803
+									// becomes
+									// uuid_str: f7c4efbe-6402-3547-9b7a-75fd371ef803
+									// have to fix the swapped bytes
+									u = u_val.u[0];
+									u_val.u[0] = u_val.u[3];
+									u_val.u[3] = u;
+									u = u_val.u[1];
+									u_val.u[1] = u_val.u[2];
+									u_val.u[2] = u;
+									u = u_val.u[4];
+									u_val.u[4] = u_val.u[5];
+									u_val.u[5] = u;
+									u = u_val.u[6];
+									u_val.u[6] = u_val.u[7];
+									u_val.u[7] = u;
+									gdkret = BUNappend(b, (void *) &u_val.uuid_val, false);
 								} else {
 									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
 								}
@@ -1200,12 +1256,22 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 							case SQL_VARBINARY:
 							case SQL_LONGVARBINARY:
 								if (trace_enabled)
-									printf("Data row %lu col %u: blob_val\n", row, col+1);
-								if (colmetadata[col].battype == TYPE_blob) {
-									//TODO convert blob_val to blob struct which starts with length (4 bytes) and next data bytes.
-									// TODO gdkret = BUNappend(b, (void *) blob_val, false);
-									/* for now append NULL value, as all bats need to be the correct length */
-									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									printf("Data row %lu col %u: binary data[%d]\n", row, col+1, (int) strLen);
+								if (colmetadata[col].battype == TYPE_blob && strLen > 0) {
+									// convert bin_data to blob struct.
+									size_t bin_size = (size_t)strLen;
+									if (bin_size > (size_t)largestBlobSize)
+										/* the data has been truncated */
+										bin_size = (size_t)largestBlobSize;
+									blob * blb = (blob *) GDKmalloc(blobsize(bin_size));
+									if (blb) {
+										blb->nitems = bin_size;
+										memcpy(blb->data, bin_data, bin_size);
+										gdkret = BUNappend(b, (void *) blb, false);
+										GDKfree(blb);
+									} else {
+										gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
+									}
 								} else {
 									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
 								}
@@ -1226,8 +1292,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
   finish_fetch:
 		if (str_val)
 			GDKfree(str_val);
-		if (blob_val)
-			GDKfree(blob_val);
+		if (bin_data)
+			GDKfree(bin_data);
 
 		/* pass bats to caller */
 		if (colmetadata) {
