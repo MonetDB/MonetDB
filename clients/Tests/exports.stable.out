@@ -1663,6 +1663,7 @@ list *sa_list(allocator *sa);
 char *sa_message(allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...) __attribute__((__format__(__printf__, 2, 3)));
 msettings *sa_msettings_create(allocator *sa);
 char *sa_msettings_to_string(const msettings *mp, allocator *sa, size_t size_hint);
+sql_type *schema_bind_type(mvc *sql, sql_schema *s, const char *name);
 str sht_dec2_bte(bte *res, const int *s1, const sht *v);
 str sht_dec2_dbl(dbl *res, const int *s1, const sht *v);
 str sht_dec2_flt(flt *res, const int *s1, const sht *v);
