@@ -8,7 +8,7 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-%global version 11.53.2
+%global version 11.53.3
 
 %bcond_with compat
 
