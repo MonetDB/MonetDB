@@ -157,8 +157,6 @@ init_unigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 				}
 			}
 			*sigs = sig;
-		} else if (!strNil(s)) {
-			*sigs = ~0LL; /* TODO */
 		} else {
 			*sigs = NGRAM_TYPENIL;
 		}
@@ -240,7 +238,8 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 						k += h[bigram];
 						h[bigram] = 0;
 					}
-					int done = (h[bigram] > 0 && rids[lists[bigram] + h[bigram] - 1] == ob - bbase);
+					int done = (h[bigram] > 0 &&
+								rids[lists[bigram] + h[bigram] - 1] == ob - bbase);
 					if (!done) {
 						rids[lists[bigram] + h[bigram]] = ob - bbase;
 						h[bigram]++;
@@ -248,8 +247,6 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 				}
 			}
 			*sigs = sig;
-		} else if (!strNil(s)) {
-			*sigs = ~0LL; /* TODO */
 		} else {
 			*sigs = NGRAM_TYPENIL;
 		}
@@ -331,7 +328,8 @@ init_trigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 						k += h[trigram];
 						h[trigram] = 0;
 					}
-					int done =  (h[trigram] > 0 && rids[lists[trigram] + h[trigram] - 1] == ob - bbase);
+					int done =  (h[trigram] > 0 &&
+								 rids[lists[trigram] + h[trigram] - 1] == ob - bbase);
 					if (!done) {
 						rids[lists[trigram] + h[trigram]] = ob - bbase;
 						h[trigram]++;
@@ -339,8 +337,6 @@ init_trigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 				}
 			}
 			*sigs = sig;
-		} else if (!strNil(s)) {
-			*sigs = ~0LL; /* TODO */
 		} else {
 			*sigs = NGRAM_TYPENIL;
 		}
@@ -366,7 +362,6 @@ select_unigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	unsigned *h = ng->histogram;
 	unsigned *lists = ng->lists;
 	unsigned *rids = ng->rids;
-	size_t new_cap;
 	oid lbase = li->b->hseqbase, ol;
 	const char *lvars = li->vh->base, *lvals = li->base;
 	const char *rs = r, *rs_iter = r;
@@ -374,12 +369,12 @@ select_unigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	if (strNil(rs))
 		return msg;
 
-	if (strlen(rs) == 0) {
+	if (strlen(rs) < 1) {
 		canditer_reset(lci);
 		TIMEOUT_LOOP(lci->ncand, qry_ctx) {
 			ol = canditer_next(lci);
 			const char *ls = VALUE(l, ol - lbase);
-			if (!strNil(ls))
+			if (!strNil(ls) && str_cmp(ls, rs, str_strlen(rs)) == 0)
 				APPEND(rl, ol);
 		}
 	}
@@ -407,16 +402,8 @@ select_unigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 			unsigned ol = rids[list];
 			if ((sigs[ol] & sig) == sig) {
 				const char *ls = VALUE(l, ol);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0)
 					APPEND(rl, ol + lbase);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED) {
-							ngrams_destroy(ng);
-							throw(MAL, "select_unigram", GDK_EXCEPTION);
-						}
-					}
-				}
 			}
 		}
 	} else {
@@ -425,16 +412,8 @@ select_unigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 			ol = canditer_next(lci);
 			if ((sigs[ol - lbase] & sig) == sig) {
 				const char *ls = VALUE(l, ol - lbase);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0)
 					APPEND(rl, ol);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED) {
-							ngrams_destroy(ng);
-							throw(MAL, "select_unigram", GDK_EXCEPTION);
-						}
-					}
-				}
 			}
 		}
 	}
@@ -458,7 +437,6 @@ select_bigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	unsigned *h = ng->histogram;
 	unsigned *lists = ng->lists;
 	unsigned *rids = ng->rids;
-	size_t new_cap;
 	oid lbase = li->b->hseqbase, ol;
 	const char *lvars = li->vh->base, *lvals = li->base;
 	const char *rs = r, *rs_iter = r;
@@ -466,12 +444,12 @@ select_bigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	if (strNil(rs))
 		return msg;
 
-	if (strlen(rs) == 0) {
+	if (strlen(rs) < 2) {
 		canditer_reset(lci);
 		TIMEOUT_LOOP(lci->ncand, qry_ctx) {
 			ol = canditer_next(lci);
 			const char *ls = VALUE(l, ol - lbase);
-			if (!strNil(ls))
+			if (!strNil(ls) && str_cmp(ls, rs, str_strlen(rs)) == 0)
 				APPEND(rl, ol);
 		}
 	}
@@ -499,16 +477,8 @@ select_bigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 			unsigned ol = rids[list];
 			if ((sigs[ol] & sig) == sig) {
 				const char *ls = VALUE(l, ol);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0)
 					APPEND(rl, ol + lbase);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED) {
-							ngrams_destroy(ng);
-							throw(MAL, "select_bigram", GDK_EXCEPTION);
-						}
-					}
-				}
 			}
 		}
 	} else {
@@ -517,16 +487,8 @@ select_bigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 			ol = canditer_next(lci);
 			if ((sigs[ol - lbase] & sig) == sig) {
 				const char *ls = VALUE(l, ol - lbase);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0)
 					APPEND(rl, ol);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED) {
-							ngrams_destroy(ng);
-							throw(MAL, "select_bigram", GDK_EXCEPTION);
-						}
-					}
-				}
 			}
 		}
 	}
@@ -550,7 +512,6 @@ select_trigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	unsigned *h = ng->histogram;
 	unsigned *lists = ng->lists;
 	unsigned *rids = ng->rids;
-	size_t new_cap;
 	oid lbase = li->b->hseqbase, ol;
 	const char *lvars = li->vh->base, *lvals = li->base;
 	const char *rs = r, *rs_iter = r;
@@ -558,12 +519,12 @@ select_trigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 	if (strNil(rs))
 		return msg;
 
-	if (strlen(rs) == 0) {
+	if (strlen(rs) < 3) {
 		canditer_reset(lci);
 		TIMEOUT_LOOP(lci->ncand, qry_ctx) {
 			ol = canditer_next(lci);
 			const char *ls = VALUE(l, ol - lbase);
-			if (!strNil(ls))
+			if (!strNil(ls) && str_cmp(ls, rs, str_strlen(rs)) == 0)
 				APPEND(rl, ol);
 		}
 	}
@@ -591,16 +552,8 @@ select_trigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 			unsigned ol = rids[list];
 			if ((sigs[ol] & sig) == sig) {
 				const char *ls = VALUE(l, ol);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0)
 					APPEND(rl, ol + lbase);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED) {
-							ngrams_destroy(ng);
-							throw(MAL, "select_trigram", GDK_EXCEPTION);
-						}
-					}
-				}
 			}
 		}
 	} else {
@@ -609,16 +562,8 @@ select_trigram(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 			ol = canditer_next(lci);
 			if ((sigs[ol - lbase] & sig) == sig) {
 				const char *ls = VALUE(l, ol - lbase);
-				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0)
 					APPEND(rl, ol);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED) {
-							ngrams_destroy(ng);
-							throw(MAL, "select_trigram", GDK_EXCEPTION);
-						}
-					}
-				}
 			}
 		}
 	}
@@ -730,7 +675,29 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	TIMEOUT_LOOP(rci->ncand, qry_ctx) {
 		or = canditer_next(rci);
 		const char *rs = VALUE(r, or - rbase), *rs_iter = rs;
-		if (!strNil(rs) && UNIGRAM(rs)) {
+		if (strNil(rs))
+			continue;
+		if (strlen(rs) < 1) {
+			canditer_reset(lci);
+			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
+				ol = canditer_next(lci);
+				const char *ls = VALUE(l, ol - lbase);
+				if (!strNil(ls)) {
+					if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						APPEND(rl, ol);
+						if (rr) APPEND(rr, or);
+						if (BATcount(rl) == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_unigram", GDK_EXCEPTION);
+							}
+						}
+					}
+				}
+			}
+		} else if (UNIGRAM(rs)) {
 			NGRAM_TYPE sig = 0;
 			unsigned min = ng->max, min_pos = 0;
 			for ( ; UNIGRAM(rs_iter); rs_iter++) {
@@ -741,7 +708,6 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					min_pos = unigram;
 				}
 			}
-			/* canditer_reset(lci); */
 			if (min <= ng->min) {
 				unsigned list = lists[min_pos], list_cnt = h[min_pos];
 				for (size_t i = 0; i < list_cnt; i++, list++) {
@@ -783,26 +749,9 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					}
 				}
 			}
-		} else if (!strNil(rs)) {
-			canditer_reset(lci);
-			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
-				ol = canditer_next(lci);
-				const char *ls = VALUE(l, ol - lbase);
-				if (!strNil(ls)) {
-					APPEND(rl, ol);
-					if (rr) APPEND(rr, or);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
-							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-							ngrams_destroy(ng);
-							throw(MAL, "join_unigram", GDK_EXCEPTION);
-						}
-					}
-				}
-			}
 		}
 	}
+
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
 	ngrams_destroy(ng);
@@ -842,7 +791,29 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	TIMEOUT_LOOP(rci->ncand, qry_ctx) {
 		or = canditer_next(rci);
 		const char *rs = VALUE(r, or - rbase), *rs_iter = rs;
-		if (!strNil(rs) && BIGRAM(rs)) {
+		if (strNil(rs))
+			continue;
+		if (strlen(rs) < 2) {
+			canditer_reset(lci);
+			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
+				ol = canditer_next(lci);
+				const char *ls = VALUE(l, ol - lbase);
+				if (!strNil(ls)) {
+					if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						APPEND(rl, ol);
+						if (rr) APPEND(rr, or);
+						if (BATcount(rl) == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_unigram", GDK_EXCEPTION);
+							}
+						}
+					}
+				}
+			}
+		} else  if (BIGRAM(rs)) {
 			NGRAM_TYPE sig = 0;
 			unsigned min = ng->max, min_pos = 0;
 			for ( ; BIGRAM(rs_iter); rs_iter++) {
@@ -894,26 +865,9 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					}
 				}
 			}
-		} else if (!strNil(rs)) {
-			canditer_reset(lci);
-			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
-				ol = canditer_next(lci);
-				const char *ls = VALUE(l, ol - lbase);
-				if (!strNil(ls)) {
-					APPEND(rl, ol);
-					if (rr) APPEND(rr, or);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
-							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-							ngrams_destroy(ng);
-							throw(MAL, "join_bigram", GDK_EXCEPTION);
-						}
-					}
-				}
-			}
 		}
 	}
+
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
 	ngrams_destroy(ng);
@@ -953,7 +907,29 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	TIMEOUT_LOOP(rci->ncand, qry_ctx) {
 		or = canditer_next(rci);
 		const char *rs = VALUE(r, or - rbase), *rs_iter = rs;
-		if (!strNil(rs) && TRIGRAM(rs)) {
+		if (strNil(rs))
+			continue;
+		if (strlen(rs) < 3) {
+			canditer_reset(lci);
+			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
+				ol = canditer_next(lci);
+				const char *ls = VALUE(l, ol - lbase);
+				if (!strNil(ls)) {
+					if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+						APPEND(rl, ol);
+						if (rr) APPEND(rr, or);
+						if (BATcount(rl) == BATcapacity(rl)) {
+							new_cap = BATgrows(rl);
+							if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+								(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+								ngrams_destroy(ng);
+								throw(MAL, "join_unigram", GDK_EXCEPTION);
+							}
+						}
+					}
+				}
+			}
+		} else  if (TRIGRAM(rs)) {
 			NGRAM_TYPE sig = 0;
 			unsigned min = ng->max, min_pos = 0;
 			for ( ; TRIGRAM(rs_iter); rs_iter++) {
@@ -1005,26 +981,9 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 					}
 				}
 			}
-		} else if (!strNil(rs)) {
-			canditer_reset(lci);
-			TIMEOUT_LOOP(lci->ncand, qry_ctx) {
-				ol = canditer_next(lci);
-				const char *ls = VALUE(l, ol - lbase);
-				if (!strNil(ls)) {
-					APPEND(rl, ol);
-					if (rr) APPEND(rr, or);
-					if (BATcount(rl) == BATcapacity(rl)) {
-						new_cap = BATgrows(rl);
-						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
-							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
-							ngrams_destroy(ng);
-							throw(MAL, "join_trigram", GDK_EXCEPTION);
-						}
-					}
-				}
-			}
 		}
 	}
+
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
 	ngrams_destroy(ng);
