@@ -1056,6 +1056,15 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Mar 24 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.3-20250324
+- Rebuilt.
+- GH#7622: In PREPARE queries with many parameters, information about
+  parameters is truncated when sent to client.
+- GH#7623: Database crashed when using UPDATE xxx SET xxx RETURNING xx
+
+* Thu Mar 20 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.53.3-20250324
+- sql: Added scalar functions: dayname(d date) and monthname(d date) returns varchar(10).
+
 * Mon Mar 17 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.1-20250317
 - Rebuilt.
 - GH#7101: Feature request: nextafter() in SQL
