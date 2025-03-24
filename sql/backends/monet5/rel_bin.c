@@ -6760,6 +6760,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	node *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
+	bool needs_returning = rel->returning;
 
 	if ((rel->flag&UPD_COMP)) {  /* special case ! */
 		idx_ups = 1;
@@ -6859,7 +6860,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 	stmt* returning = NULL;
-	if (rel->returning) {
+	if (needs_returning) {
 		sql_rel* b = rel->l;
 		int refcnt = b->ref.refcnt; // HACK: forces recalculation of base columns since they are assumed to be updated
 		b->ref.refcnt = 1;

@@ -430,3 +430,35 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99:59.999'' as interval
 0:00:00
 NULL
 
+---- UUID ----
+
+query TTT
+select cast('eda7b074-3e0f-4bef-bdec-19c61bedb18f' as uuid) as val1, cast('beefc4f7-0264-4735-9b7a-75fd371ef803' as uuid) as val2, cast(NULL as uuid) as valnil
+----
+eda7b074-3e0f-4bef-bdec-19c61bedb18f
+beefc4f7-0264-4735-9b7a-75fd371ef803
+NULL
+
+query TTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''eda7b074-3e0f-4bef-bdec-19c61bedb18f'' as uuid) as val1, cast(''beefc4f7-0264-4735-9b7a-75fd371ef803'' as uuid) as val2, cast(NULL as uuid) as valnil'
+----
+eda7b074-3e0f-4bef-bdec-19c61bedb18f
+beefc4f7-0264-4735-9b7a-75fd371ef803
+NULL
+
+---- BLOB ----
+
+query TTT
+select cast('eda7b0743e0f4befbdec19c61bedb18f' as blob) as val1, cast('beefc4f7026447359b7a75fd371ef8030001020304FCFDFEFF' as blob) as val2, cast(NULL as blob) as valnil
+----
+EDA7B0743E0F4BEFBDEC19C61BEDB18F
+BEEFC4F7026447359B7A75FD371EF8030001020304FCFDFEFF
+NULL
+
+query TTT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''eda7b0743e0f4befbdec19c61bedb18f'' as blob) as val1, cast(''beefc4f7026447359b7a75fd371ef8030001020304FCFDFEFF'' as blob) as val2, cast(NULL as blob) as valnil'
+----
+EDA7B0743E0F4BEFBDEC19C61BEDB18F
+BEEFC4F7026447359B7A75FD371EF8030001020304FCFDFEFF
+NULL
+
