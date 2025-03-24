@@ -48,6 +48,9 @@
 #define ENC_TOKEN2(t) CHARMAP(*(t + 1))		/* encoded token #two */
 #define ENC_TOKEN3(t) CHARMAP(*(t + 2))		/* encoded token #three */
 
+#define VALUE(s, x)  (s##vars + VarHeapVal(s##vals, (x), s##i->width))
+#define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
+
 typedef struct {
 	NGRAM_TYPE *idx;
 	NGRAM_TYPE *sigs;
