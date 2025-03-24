@@ -183,8 +183,9 @@ open_stream(const char *restrict filename, const char *restrict flags)
 		return NULL;
 #ifdef NATIVE_WIN32
 	{
-		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(flags);
+		wchar_t *wfname = utf8toutf16(filename);
+		wchar_t *wflags = utf8toutf16(flags);
+		static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 		if (wfname != NULL && wflags != NULL)
 			fp = _wfopen(wfname, wflags);
 		else
@@ -384,7 +385,7 @@ file_remove(const char *filename)
 	int rc = -1;
 
 #ifdef NATIVE_WIN32
-	wchar_t *wfname = utf8towchar(filename);
+	wchar_t *wfname = utf8toutf16(filename);
 	if (wfname != NULL) {
 		rc = _wremove(wfname);
 		free(wfname);

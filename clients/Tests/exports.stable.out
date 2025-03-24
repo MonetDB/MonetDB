@@ -1356,9 +1356,9 @@ char *prompt_getlogin(void);
 struct dirent *readdir(DIR *dir);
 void rewinddir(DIR *dir);
 char *simple_prompt(const char *prompt, int maxlen, int echo, const char *def);
+char *utf16toutf8(const uint16_t *src);
 const uint8_t utf8d[364];
-wchar_t *utf8towchar(const char *src);
-char *wchartoutf8(const wchar_t *src);
+uint16_t *utf8toutf16(const char *src);
 int winerror(int);
 
 # sql

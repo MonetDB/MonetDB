@@ -53,25 +53,22 @@
 #define BYTE_ORDER	LITTLE_ENDIAN
 #endif
 
-wchar_t *
-utf8towchar(const char *src)
+uint16_t *
+utf8toutf16(const char *src)
 {
-	wchar_t *dest;
+	uint16_t *dest;
 	size_t i = 0;
 	uint32_t state = 0, codepoint = 0;
 
 	if (src == NULL)
 		return NULL;
 
-	/* count how many wchar_t's we need, while also checking for
+	/* count how many uint16_t's we need, while also checking for
 	 * correctness of the input */
 	for (size_t j = 0; src[j]; j++) {
 		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
 		case UTF8_ACCEPT:
-			i++;
-#if SIZEOF_WCHAR_T == 2
-			i += (codepoint > 0xFFFF);
-#endif
+			i += 1 + (codepoint > 0xFFFF);
 			break;
 		case UTF8_REJECT:
 			return NULL;
@@ -79,7 +76,7 @@ utf8towchar(const char *src)
 			break;
 		}
 	}
-	dest = malloc((i + 1) * sizeof(wchar_t));
+	dest = malloc((i + 1) * sizeof(uint16_t));
 	if (dest == NULL)
 		return NULL;
 	/* go through the source string again, this time we can skip
@@ -88,16 +85,12 @@ utf8towchar(const char *src)
 	for (size_t j = 0; src[j]; j++) {
 		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
 		case UTF8_ACCEPT:
-#if SIZEOF_WCHAR_T == 2
 			if (codepoint <= 0xFFFF) {
-				dest[i++] = (wchar_t) codepoint;
+				dest[i++] = (uint16_t) codepoint;
 			} else {
-				dest[i++] = (wchar_t) (0xD7C0 + (codepoint >> 10));
-				dest[i++] = (wchar_t) (0xDC00 + (codepoint & 0x3FF));
+				dest[i++] = (uint16_t) (0xD7C0 + (codepoint >> 10));
+				dest[i++] = (uint16_t) (0xDC00 + (codepoint & 0x3FF));
 			}
-#else
-			dest[i++] = (wchar_t) codepoint;
-#endif
 			break;
 		case UTF8_REJECT:
 			/* cannot happen because of first loop */
@@ -118,7 +111,7 @@ utf8towchar(const char *src)
 }
 
 char *
-wchartoutf8(const wchar_t *ws)
+utf16toutf8(const uint16_t *ws)
 {
 	size_t len = 1;
 	for (size_t i = 0; ws[i]; i++) {
@@ -126,25 +119,14 @@ wchartoutf8(const wchar_t *ws)
 			len += 1;
 		else if (ws[i] <= 0x7FF)
 			len += 2;
-		else if (
-#if SIZEOF_WCHAR_T == 2
-			(ws[i] & 0xF800) != 0xD800
-#else
-			ws[i] <= 0xFFFF
-#endif
-			) {
+		else if ((ws[i] & 0xF800) != 0xD800) {
 			assert((ws[i] & 0xF800) != 0xD800);
 			len += 3;
 		} else {
-#if SIZEOF_WCHAR_T == 2
 			assert((ws[i + 0] & 0xFC00) == 0xD800); /* high surrogate */
 			assert((ws[i + 1] & 0xFC00) == 0xDC00); /* low surrogate */
 			len += 4;
 			i++;
-#else
-			assert(ws[i] <= 0x10FFFF);
-			len += 4;
-#endif
 		}
 	}
 	unsigned char *us = malloc(len);
@@ -156,24 +138,14 @@ wchartoutf8(const wchar_t *ws)
 			else if (ws[i] <= 0x7FF) {
 				us[j++] = (unsigned char) (ws[i] >> 6 | 0xC0);
 				us[j++] = (unsigned char) ((ws[i] & 0x3F) | 0x80);
-			} else if (
-#if SIZEOF_WCHAR_T == 2
-				(ws[i] & 0xF800) != 0xD800
-#else
-				ws[i] <= 0xFFFF
-#endif
-				) {
+			} else if ((ws[i] & 0xF800) != 0xD800) {
 				us[j++] = (unsigned char) (ws[i] >> 12 | 0xE0);
 				us[j++] = (unsigned char) (((ws[i] >> 6) & 0x3F) | 0x80);
 				us[j++] = (unsigned char) ((ws[i] & 0x3F) | 0x80);
 			} else {
 				uint32_t wc;
-#if SIZEOF_WCHAR_T == 2
 				wc = ((ws[i+0] & 0x03FF) + 0x40) << 10 | (ws[i+1] & 0x03FF);
 				i++;
-#else
-				wc = (uint32_t) ws[i];
-#endif
 				us[j++] = (unsigned char) (wc >> 18 | 0xF0);
 				us[j++] = (unsigned char) (((wc >> 12) & 0x3F) | 0x80);
 				us[j++] = (unsigned char) (((wc >> 6) & 0x3F) | 0x80);
@@ -283,7 +255,8 @@ opendir(const char *dirname)
 		return NULL;
 	}
 	result->find_file_data = malloc(sizeof(WIN32_FIND_DATAW));
-	result->dir_name = utf8towchar(dirname);
+	static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
+	result->dir_name = utf8toutf16(dirname);
 	if (result->find_file_data == NULL || result->dir_name == NULL) {
 		if (result->find_file_data)
 			free(result->find_file_data);
@@ -364,7 +337,7 @@ readdir(DIR *dir)
 	else if (!FindNextFileW(dir->find_file_handle,
 			       (LPWIN32_FIND_DATAW) dir->find_file_data))
 		return NULL;
-	base = wchartoutf8(basename(((LPWIN32_FIND_DATAW) dir->find_file_data)->cFileName));
+	base = utf16toutf8(basename(((LPWIN32_FIND_DATAW) dir->find_file_data)->cFileName));
 	if (base == NULL)
 		return NULL;
 	strcpy_len(dir->result.d_name, base, sizeof(dir->result.d_name));
@@ -457,7 +430,7 @@ MT_lockf(const char *filename, int mode)
 		inited = true;			/* only time this is changed */
 	}
 
-	if ((wfilename = utf8towchar(filename)) == NULL)
+	if ((wfilename = utf8toutf16(filename)) == NULL)
 		return -2;
 	ov = (OVERLAPPED) {0};
 
@@ -542,8 +515,8 @@ FILE *
 MT_fopen(const char *filename, const char *mode)
 {
 	wchar_t *wfilename, *wmode;
-	wfilename = utf8towchar(filename);
-	wmode = utf8towchar(mode);
+	wfilename = utf8toutf16(filename);
+	wmode = utf8toutf16(mode);
 	FILE *f = NULL;
 	if (wfilename != NULL && wmode != NULL && (f = _wfopen(wfilename, wmode)) != NULL && strchr(mode, 'w') != NULL)
 		SetFileAttributesW(wfilename, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED);
@@ -555,7 +528,7 @@ MT_fopen(const char *filename, const char *mode)
 int
 MT_open(const char *filename, int flags)
 {
-	wchar_t *wfilename = utf8towchar(filename);
+	wchar_t *wfilename = utf8toutf16(filename);
 	if (wfilename == NULL)
 		return -1;
 	int fd;
@@ -570,7 +543,7 @@ MT_open(const char *filename, int flags)
 int
 MT_stat(const char *pathname, struct _stat64 *st)
 {
-	wchar_t *wpathname = utf8towchar(pathname);
+	wchar_t *wpathname = utf8toutf16(pathname);
 	int ret;
 	if (wpathname == NULL)
 		return -1;
@@ -586,7 +559,7 @@ MT_stat(const char *pathname, struct _stat64 *st)
 int
 MT_rmdir(const char *pathname)
 {
-	wchar_t *wpathname = utf8towchar(pathname);
+	wchar_t *wpathname = utf8toutf16(pathname);
 	int ret;
 	if (wpathname == NULL)
 		return -1;
@@ -627,7 +600,7 @@ WMT_remove(const wchar_t *wpathname)
 int
 MT_remove(const char *pathname)
 {
-	wchar_t *wpathname = utf8towchar(pathname);
+	wchar_t *wpathname = utf8toutf16(pathname);
 	int ret;
 	if (wpathname == NULL)
 		return -1;
@@ -642,8 +615,8 @@ MT_rename(const char *old, const char *dst)
 {
 	int ret = -1;
 	wchar_t *wold, *wdst;
-	wold = utf8towchar(old);
-	wdst = utf8towchar(dst);
+	wold = utf8toutf16(old);
+	wdst = utf8toutf16(dst);
 
 	if (wold && wdst) {
 		for (int i = 0; i < RETRIES; i++) {
@@ -671,7 +644,7 @@ MT_rename(const char *old, const char *dst)
 int
 MT_mkdir(const char *pathname)
 {
-	wchar_t *wpathname = utf8towchar(pathname);
+	wchar_t *wpathname = utf8toutf16(pathname);
 	if (wpathname == NULL)
 		return -1;
 	int ret = _wmkdir(wpathname);
@@ -687,7 +660,7 @@ MT_getcwd(char *buffer, size_t size)
 	wchar_t *wcwd = _wgetcwd(NULL, 0);
 	if (wcwd == NULL)
 		return NULL;
-	char *cwd = wchartoutf8(wcwd);
+	char *cwd = utf16toutf8(wcwd);
 	free(wcwd);
 	if (cwd == NULL)
 		return NULL;
@@ -699,7 +672,7 @@ MT_getcwd(char *buffer, size_t size)
 int
 MT_access(const char *pathname, int mode)
 {
-	wchar_t *wpathname = utf8towchar(pathname);
+	wchar_t *wpathname = utf8toutf16(pathname);
 	if (wpathname == NULL)
 		return -1;
 	int ret = _waccess(wpathname, mode);
@@ -822,7 +795,7 @@ get_bin_path(void)
 #ifdef NATIVE_WIN32
 	static wchar_t wbin_path[PATH_MAX];
 	if (GetModuleFileNameW(NULL, wbin_path, PATH_MAX) != 0) {
-		char *path = wchartoutf8(wbin_path);
+		char *path = utf16toutf8(wbin_path);
 		size_t len = strcpy_len(_bin_path, path, PATH_MAX);
 		free(path);
 		if (len < PATH_MAX)

@@ -1,8 +1,0 @@
-#PREPARE SELECT id FROM tables WHERE name = LOWER(?);
-#PREPARE SELECT id FROM tables WHERE name = LOWER(?);
-% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 7,	2,	1,	0,	6,	2 # length
-[ "int",	13,	0,	"",	"tables",	"id"	]
-[ "varchar",	0,	0,	NULL,	NULL,	NULL	]

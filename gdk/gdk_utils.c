@@ -2234,7 +2234,10 @@ sa_alloc(allocator *sa, size_t sz)
 			}
 			sa->blks = tmp;
 		}
-		if (sz > SA_BLOCK) {
+		if (sz >= SA_BLOCK) {
+			// The request is large so it gets its own block.
+			// We put it 'under' the current block because
+			// there may still be plenty of usable space there.
 			sa->blks[sa->nr] = sa->blks[sa->nr-1];
 			sa->blks[sa->nr-1] = r;
 			sa->nr ++;

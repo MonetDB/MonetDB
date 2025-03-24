@@ -73,16 +73,22 @@ get_serverinfo(ODBCDbc *dbc)
 	}
 	if (mapi_error(dbc->mid))
 		goto end;
-	mapi_close_handle(hdl);
-	if ((hdl = mapi_query(dbc->mid, "select id from sys._tables where name = 'comments' and schema_id = (select id from sys.schemas where name = 'sys')")) == NULL)
-		goto end;
-	if (mapi_error(dbc->mid))
-		goto end;
-	n = NULL;
-	while (mapi_fetch_row(hdl)) {
-		n = mapi_fetch_field(hdl, 0);
+
+	/* table sys.comments should exist since Mar2018 (11.29) */
+	if (dbc->major == 11 && dbc->minor > 29) {
+		dbc->has_comment = true;
+	} else {
+		mapi_close_handle(hdl);
+		if ((hdl = mapi_query(dbc->mid, "select id from sys._tables where name = 'comments' and schema_id = (select id from sys.schemas where name = 'sys')")) == NULL)
+			goto end;
+		if (mapi_error(dbc->mid))
+			goto end;
+		n = NULL;
+		if (mapi_fetch_row(hdl)) {
+			n = mapi_fetch_field(hdl, 0);
+		}
+		dbc->has_comment = n != NULL;
 	}
-	dbc->has_comment = n != NULL;
 
 	rc = SQL_SUCCESS;
 end:
@@ -136,7 +142,6 @@ makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch
 char*
 buildConnectionString(const char *dsn, const msettings *settings)
 {
-
 	size_t pos = 0;
 	size_t cap = 1024;
 	char *buf = malloc(cap);  // reallocprintf will deal with allocation failures
@@ -493,9 +498,6 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 
 	return SQL_SUCCESS;
 }
-
-
-
 
 SQLRETURN SQL_API
 SQLConnect(SQLHDBC ConnectionHandle,

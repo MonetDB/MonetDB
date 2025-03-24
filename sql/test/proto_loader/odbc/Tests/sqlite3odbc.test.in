@@ -1,12 +1,12 @@
 -- test with 'odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;' protocol specification
 
-statement error 42000!SELECT: proto_loader function failed 'odbc_loader Could not connect. SQLDriverConnect failed. SQLstate HY000, Errnr 14, Message [SQLite]connect failed'
+statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDriverConnect failed. SQLSTATE HY000, Error code 14, Message [SQLite]connect failed'
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-statement error 42000!SELECT: proto_loader function failed 'odbc_loader Could not connect. SQLDriverConnect failed. SQLstate HY000, Errnr 14, Message [SQLite]connect failed'
+statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLDriverConnect failed. SQLSTATE HY000, Error code 14, Message [SQLite]connect failed'
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=~/Downloads/sqlite_dbs/chinook.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLExecDirect query failed. SQLstate HY000, Errnr 1, Message [SQLite]no such table: INFORMATION_SCHEMA.TABLES (1)'
+statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLExecDirect query failed. SQLSTATE HY000, Error code 1, Message [SQLite]no such table: INFORMATION_SCHEMA.TABLES (1)'
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
 query TTT

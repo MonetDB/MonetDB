@@ -800,7 +800,8 @@ thread_starter(void *arg)
 #endif
 #else
 #ifdef HAVE_SETTHREADDESCRIPTION
-	wchar_t *wname = utf8towchar(self->threadname);
+	wchar_t *wname = utf8toutf16(self->threadname);
+	static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 	if (wname != NULL) {
 		SetThreadDescription(GetCurrentThread(), wname);
 		free(wname);
