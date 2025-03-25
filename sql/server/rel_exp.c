@@ -3243,6 +3243,8 @@ exp_copy(mvc *sql, sql_exp * e)
 		ne->flag = e->flag;
 		ne->alias.label = e->alias.label;
 		ne->nid = e->nid;
+		if (e->f)
+			ne->f = exps_copy(sql, e->f);
 		break;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -3272,6 +3274,8 @@ exp_copy(mvc *sql, sql_exp * e)
 		break;
 	case e_convert:
 		ne = exp_convert(sql, exp_copy(sql, e->l), exp_fromtype(e), exp_totype(e));
+		if (e->f)
+			ne->f = exps_copy(sql, e->f);
 		break;
 	case e_aggr:
 	case e_func: {
