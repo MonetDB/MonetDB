@@ -195,24 +195,24 @@ search
 state
 title
 
-query TTTTTTTTTT
-SELECT
-    timestamp,
-    sessionid,
-    userid,
-    user_agent,
-    event,
-    ecommerce.name as ecom_name,
-    CASE WHEN l.element.key = 'pageType' THEN l.element.value END AS pagetype,
-    CASE WHEN u.element.key = 'customerType' THEN u.element.value END AS customertype,
-    CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
-    CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand
-FROM events
-    left join unnest(location.list) as l on true
-    left join unnest(ecommerce.objects.list) as eol on true
-    left join unnest(eol.element.attributes.list) as eal on true
-    cross join unnest("user".list) as u
-----
+#query TTTTTTTTTT
+#SELECT
+#    timestamp,
+#    sessionid,
+#    userid,
+#    user_agent,
+#    event,
+#    ecommerce.name as ecom_name,
+#    CASE WHEN l.element.key = 'pageType' THEN l.element.value END AS pagetype,
+#    CASE WHEN u.element.key = 'customerType' THEN u.element.value END AS customertype,
+#    CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
+#    CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand
+#FROM events
+#    left join unnest(location.list) as l on true
+#    left join unnest(ecommerce.objects.list) as eol on true
+#    left join unnest(eol.element.attributes.list) as eal on true
+#    cross join unnest("user".list) as u
+#----
 
 statement ok
 CREATE FUNCTION pcre_match(s string, pattern string) RETURNS boolean EXTERNAL NAME pcre."match"
@@ -229,7 +229,7 @@ begin
     end if;
 end
 
-query TTTTTT
+query TTTTTTTTT
 WITH base AS (
     SELECT
         timestamp,
@@ -237,11 +237,11 @@ WITH base AS (
         userid,
         user_agent,
         event,
-        ecommerce.name as ecom_name
-        --CASE WHEN l.element.key = 'pageType' THEN l.element.value END AS pagetype
-        --CASE WHEN u.element.key = 'customerType' THEN u.element.value END AS customertype,
-        --CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
-        --CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand
+        ecommerce.name as ecom_name,
+        CASE WHEN l.element.key = 'pageType' THEN l.element.value END AS pagetype,
+        CASE WHEN u.element.key = 'customerType' THEN u.element.value END AS customertype,
+        CASE WHEN u.element.key = 'customerid' THEN u.element.value END AS customerid,
+        CASE WHEN eal.element.key = 'brand' THEN eal.element.value END AS ecom_attributes_brand
     FROM events
         left join unnest(location.list) as l on true
         left join unnest(ecommerce.objects.list) as eol on true
@@ -256,12 +256,12 @@ WITH base AS (
         userid,
         timestamp,
         event,
-        --max(pagetype) as pagetype,
+        max(pagetype) as pagetype,
         max(user_agent) as user_agent,
-        max(ecom_name) as ecom_name
-        --max(customertype) as customertype,
-        --max(ecom_attributes_brand) as ecom_attributes_brand,
-        --max(customerid) as customerid
+        max(ecom_name) as ecom_name,
+        max(customertype) as customertype,
+        max(ecom_attributes_brand) as ecom_attributes_brand,
+        max(customerid) as customerid
     FROM base
     group by sessionid, userid, timestamp, event
 )
@@ -269,10 +269,10 @@ select event,
     ecom_name,
     IFNULL(REGEXP_EXTRACT(user_agent, '.*Edg.*'), 'No edge') as edge_user_agent,
     cast(timestamp as date) as date,
-    --customertype,
+    customertype,
     count(distinct(userid)) as users,
-    --count(distinct(customerid)) as customers,
-    --count(distinct(pagetype)) as pagetypes,
+    count(distinct(customerid)) as customers,
+    count(distinct(pagetype)) as pagetypes,
     count(distinct(concat(userid, sessionid))) as sessions
 from (
     SELECT *,
@@ -280,13 +280,16 @@ from (
     FROM last_datapoints
 )
 where row_num=1
-group by 1, 2, 3, 4
+group by 1, 2, 3, 4, 5
 order by 3 desc
 ----
 productDetail
 detail
 No edge
 2024-11-30
+d5d4cd07616a542891b7ec2d0257b3a24b69856e
+1
+0
 1
 1
 
