@@ -255,7 +255,7 @@ list_find_column_nid(backend *be, list *l, int label)
 
 		if (s->label == label)
 			return s;
-		if (s->nrcols > 1) {
+		if (s->nested) {
 			while(s->type == st_alias)
 				s = s->op1;
 			if (s->type == st_list) {
