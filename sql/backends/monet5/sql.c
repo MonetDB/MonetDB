@@ -5790,6 +5790,8 @@ insert_json_value(JSONterm *jt, sql_subtype *t, BAT *b)
 	} else {
 		msg = createException(SQL, "sql.insert_json_value", "jsonv2local failed");
 	}
+	if (v->vtype == TYPE_str)
+		GDKfree(v->val.sval);
 	return msg;
 }
 

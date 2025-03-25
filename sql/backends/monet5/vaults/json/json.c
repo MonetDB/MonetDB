@@ -253,7 +253,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else
 				BBPreclaim(b);
 		} else {
-			msg = jt->error;
+			msg = GDKstrdup(jt->error);
 		}
 		JSONfree(jt);
 	} else {
@@ -302,6 +302,7 @@ JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							msg = createException(SQL, "json.read_nd_json", "Invalid json object, JSONparse failed!");
 							break;
 					}
+					JSONfree(jt);
 					tail = head + skip;
 					while (tail[0] == '\n') // multiple newlines e.g. \n\n
 						tail ++;
