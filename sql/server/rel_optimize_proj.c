@@ -546,9 +546,6 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 			t = (l->op == op_project && l->l)?l->l:l;
 			l_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with old right expressions */
-			r_exps = rel_projections(v->sql, r, NULL, 1, 1);
-			if (rel->attr)
-				append(r_exps, exp_ref(v->sql, rel->attr->h->data));
 			t = (r->op == op_project && r->l)?r->l:r;
 			r_exps = rel_projections(v->sql, t, NULL, 1, 1);
 			/* conflict with new right expressions */

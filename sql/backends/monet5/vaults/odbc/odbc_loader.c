@@ -1261,25 +1261,15 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 										guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
 										guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 								if (colmetadata[col].battype == TYPE_uuid) {
-									uint8_t u;
-									// uuid is 16 bytes, same as SQLGUID guid_val
-									memcpy((void *) &u_val.uuid_val, (void *) &guid_val, sizeof(uuid));
-									// guid_str: beefc4f7-0264-4735-9b7a-75fd371ef803
-									// becomes
-									// uuid_str: f7c4efbe-6402-3547-9b7a-75fd371ef803
-									// have to fix the swapped bytes
-									u = u_val.u[0];
-									u_val.u[0] = u_val.u[3];
-									u_val.u[3] = u;
-									u = u_val.u[1];
-									u_val.u[1] = u_val.u[2];
-									u_val.u[2] = u;
-									u = u_val.u[4];
-									u_val.u[4] = u_val.u[5];
-									u_val.u[5] = u;
-									u = u_val.u[6];
-									u_val.u[6] = u_val.u[7];
-									u_val.u[7] = u;
+									u_val.u[0] = (guid_val.Data1 >> 24) & 0xFF;
+									u_val.u[1] = (guid_val.Data1 >> 16) & 0xFF;
+									u_val.u[2] = (guid_val.Data1 >> 8) & 0xFF;
+									u_val.u[3] = guid_val.Data1 & 0xFF;
+									u_val.u[4] = (guid_val.Data2 >> 8) & 0xFF;
+									u_val.u[5] = guid_val.Data2 & 0xFF;
+									u_val.u[6] = (guid_val.Data3 >> 8) & 0xFF;
+									u_val.u[7] = guid_val.Data3 & 0xFF;
+									memcpy(&u_val.u[8], &guid_val.Data4[0], 8);
 									gdkret = BUNappend(b, (void *) &u_val.uuid_val, false);
 								} else {
 									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
