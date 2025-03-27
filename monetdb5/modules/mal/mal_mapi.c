@@ -2017,8 +2017,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BBPindex(*nme) == 0)
 			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		/* reconstruct the object */
-		ht = getTypeName(TYPE_oid);
-		tt = getTypeName(getBatType(tpe));
+		ht = getTypeName(mb->ma, TYPE_oid);
+		tt = getTypeName(mb->ma, getBatType(tpe));
 		snprintf(buf, BUFSIZ, "%s:= bat.new(:%s,%s);", *nme, ht, tt);
 		len = strlen(buf);
 		snprintf(buf + len, BUFSIZ - len, "%s:= io.import(%s,tuples);", *nme,
@@ -2029,8 +2029,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			mapi_close_handle(SERVERsessions[i].hdl);
 		SERVERsessions[i].hdl = mapi_query(mid, buf);
 
-		GDKfree(ht);
-		GDKfree(tt);
+		//GDKfree(ht);
+		//GDKfree(tt);
 	} else {
 		switch (tpe) {
 		case TYPE_str:
@@ -2108,10 +2108,10 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		col = getArgReference_str(stk, pci, pci->retc + 3);
 		i = *getArgReference_int(stk, pci, pci->retc + 4);
-		tn = getTypeName(getBatType(getVarType(mb, getDestVar(pci))));
+		tn = getTypeName(mb->ma, getBatType(getVarType(mb, getDestVar(pci))));
 		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=sql.bind(\"%s\",\"%s\",\"%s\",%d);",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme, *tab, *col, i);
-		GDKfree(tn);
+		//GDKfree(tn);
 	} else if (pci->argc == 5) {
 		tab = getArgReference_str(stk, pci, pci->retc + 2);
 		i = *getArgReference_int(stk, pci, pci->retc + 3);
@@ -2119,13 +2119,14 @@ SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), *nme, *tab, i);
 	} else {
 		str hn, tn;
+		(void) hn;
 		int target = getArgType(mb, pci, 0);
-		hn = getTypeName(TYPE_oid);
-		tn = getTypeName(getBatType(target));
+		//hn = getTypeName(mb->ma, TYPE_oid);
+		tn = getTypeName(mb->ma, getBatType(target));
 		snprintf(buf, BUFSIZ, "%s:bat[:%s]:=bbp.bind(\"%s\");",
 				 getVarNameIntoBuffer(mb, getDestVar(pci), name), tn, *nme);
-		GDKfree(hn);
-		GDKfree(tn);
+		//GDKfree(hn);
+		//GDKfree(tn);
 	}
 	if (SERVERsessions[i].hdl)
 		mapi_close_handle(SERVERsessions[i].hdl);

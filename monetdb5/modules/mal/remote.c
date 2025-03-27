@@ -440,14 +440,14 @@ RMTgetId(char *buf, size_t buflen, MalBlkPtr mb, InstrPtr p, int arg)
 			  ILLEGAL_ARGUMENT "MAL instruction misses retc");
 
 	getArgNameIntoBuffer(mb, p, arg, name);
-	rt = getTypeIdentifier(getArgType(mb, p, arg));
+	rt = getTypeIdentifier(mb->ma, getArgType(mb, p, arg));
 	if (rt == NULL)
 		throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	snprintf(buf, buflen, "rmt%u_%s_%s", (unsigned) ATOMIC_ADD(&idtag, 1), name,
 			 rt);
 
-	GDKfree(rt);
+	//GDKfree(rt);
 	return (MAL_SUCCEED);
 }
 
@@ -787,27 +787,27 @@ RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (rtype == TYPE_any || isAnyExpression(rtype)) {
 		char *tpe, *msg;
-		tpe = getTypeName(rtype);
+		tpe = getTypeName(mb->ma, rtype);
 		msg = createException(MAL, "remote.get",
 							  ILLEGAL_ARGUMENT ": unsupported any type: %s",
 							  tpe);
-		GDKfree(tpe);
+		//GDKfree(tpe);
 		return msg;
 	}
 	/* check if the remote type complies with what we expect.
 	   Since the put() encodes the type as known to the remote site
 	   we can simple compare it here */
-	rt = getTypeIdentifier(rtype);
+	rt = getTypeIdentifier(mb->ma, rtype);
 	if (rt == NULL)
 		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (strcmp(ident + strlen(ident) - strlen(rt), rt)) {
 		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 							  ": remote object type %s does not match expected type %s",
 							  rt, ident);
-		GDKfree(rt);
+		//GDKfree(rt);
 		return tmp;
 	}
-	GDKfree(rt);
+	//GDKfree(rt);
 
 	if (isaBatType(rtype) && (localtype == 0177 || (localtype != c->type && localtype != (c->type | RMTT_HGE)))) {
 		int t;
@@ -1000,9 +1000,9 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (type == TYPE_any || isAnyExpression(type)) {
 		char *tpe, *msg;
 		MT_lock_unset(&c->lock);
-		tpe = getTypeName(type);
+		tpe = getTypeName(mb->ma, type);
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
-		GDKfree(tpe);
+		//GDKfree(tpe);
 		return msg;
 	} else if (isaBatType(type) && !is_bat_nil(*(bat *) value)) {
 		BATiter bi;
@@ -1014,7 +1014,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str tailv;
 		stream *sout;
 
-		tail = getTypeIdentifier(getBatType(type));
+		tail = getTypeIdentifier(mb->ma, getBatType(type));
 		if (tail == NULL) {
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1024,7 +1024,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (bid != 0) {
 			if ((b = BATdescriptor(bid)) == NULL) {
 				MT_lock_unset(&c->lock);
-				GDKfree(tail);
+				//GDKfree(tail);
 				throw(MAL, "remote.put",
 					  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
@@ -1039,7 +1039,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 "%s := remote.batload(nil:%s, " BUNFMT ");\n",
 					 ident, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
-		GDKfree(tail);
+		//GDKfree(tail);
 
 		/* b can be NULL if bid == 0 (only type given, ugh) */
 		if (b) {
@@ -1078,11 +1078,11 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mapi_close_handle(mhdl);
 	} else if (isaBatType(type) && is_bat_nil(*(bat *) value)) {
 		stream *sout;
-		str typename = getTypeName(type);
+		str typename = getTypeName(mb->ma, type);
 		sout = mapi_get_to(c->mconn);
 		mnstr_printf(sout, "%s := nil:%s;\n", ident, typename);
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
-		GDKfree(typename);
+		//GDKfree(typename);
 	} else {
 		size_t l;
 		str val;
@@ -1099,7 +1099,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", GDK_EXCEPTION);
 		}
-		tpe = getTypeIdentifier(type);
+		tpe = getTypeIdentifier(mb->ma, type);
 		if (tpe == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
@@ -1109,7 +1109,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (l > (ssize_t) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
-			GDKfree(tpe);
+			//GDKfree(tpe);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (type < TYPE_date || ATOMbasetype(type) == TYPE_str
@@ -1117,7 +1117,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
-		GDKfree(tpe);
+		//GDKfree(tpe);
 		GDKfree(val);
 		TRC_DEBUG(MAL_REMOTE, "Remote put: %s - %s\n", c->name, nbuf);
 		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
@@ -1241,7 +1241,7 @@ RMTregisterInternal(Client cntxt, char **fcn_id, const char *conn,
 	qry = mal2str(prg->def, 0, prg->def->stop);
 	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
-	GDKfree(qry);
+	//GDKfree(qry);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 

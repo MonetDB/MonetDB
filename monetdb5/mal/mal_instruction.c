@@ -119,6 +119,7 @@ newMalBlk(int elements)
 	MalBlkPtr mb;
 	VarRecord *v;
 	allocator *ma = ma_create(NULL);
+	allocator *instr_allocator = ma_create(ma);
 
 	if (!ma)
 		return NULL;
@@ -146,6 +147,7 @@ newMalBlk(int elements)
 		.maxarg = MAXARG,		/* the minimum for each instruction */
 		.workers = ATOMIC_VAR_INIT(1),
 		.ma = ma,
+		.instr_allocator = instr_allocator
 	};
 	if (newMalBlkStmt(mb, elements) < 0) {
 		ma_destroy(ma);
@@ -303,7 +305,7 @@ copyMalBlk(MalBlkPtr old)
 {
 	MalBlkPtr mb;
 	int i;
-	allocator *ma = ma_create(old->ma->pa);
+	allocator *ma = ma_create(NULL);
 
 	if (!ma)
 		return NULL;
@@ -405,7 +407,7 @@ newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme,
 		return NULL;
 	if (args <= 0)
 		args = 1;
-	p = (InstrPtr)MA_NEW_ARRAY(mb->ma, char, args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
+	p = (InstrPtr)MA_NEW_ARRAY(mb->instr_allocator, char, args * sizeof(p->argv[0]) + offsetof(InstrRecord, argv));
 	if (p == NULL) {
 		if (mb)
 			mb->errors = createMalException(mb, 0, TYPE,
@@ -479,7 +481,7 @@ void
 freeInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	assert(p && mb && mb->ma);
-	sa_free(mb->ma, p);
+	sa_free(mb->instr_allocator, p);
 }
 
 
@@ -938,8 +940,8 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		msg = convertConstant(getBatType(type), cst);
 		if (msg) {
 			str ft, tt;			/* free old value */
-			ft = getTypeName(otype);
-			tt = getTypeName(type);
+			ft = getTypeName(mb->ma, otype);
+			tt = getTypeName(mb->ma, type);
 			if (ft && tt)
 				mb->errors = createMalException(mb, 0, TYPE,
 												"constant coercion error from %s to %s",
@@ -947,8 +949,8 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 			else
 				mb->errors = createMalException(mb, 0, TYPE,
 												"constant coercion error");
-			GDKfree(ft);
-			GDKfree(tt);
+			//GDKfree(ft);
+			//GDKfree(tt);
 			freeException(msg);
 			VALclear(cst);		/* it could contain allocated space */
 			return -1;

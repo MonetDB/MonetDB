@@ -4065,7 +4065,7 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( ! t)
 		t = strchr(s, '\t');
 	*ret = GDKstrdup(t ? t + 1 : s);
-	GDKfree(s);
+	// GDKfree(s);
 	if(*ret == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

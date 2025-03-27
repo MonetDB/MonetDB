@@ -284,10 +284,10 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if ((ps = instruction2str(s->def, 0, getInstrPtr(s->def, i), 0)) == NULL)
 				goto bailout;
 			if (BUNappend(b, ps + 1, false) != GDK_SUCCEED) {
-				GDKfree(ps);
+				//GDKfree(ps);
 				goto bailout;
 			}
-			GDKfree(ps);
+			//GDKfree(ps);
 		}
 		s = s->peer;
 	}
@@ -345,7 +345,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			c = strchr(ps, '(');
 			if (c == 0) {
-				GDKfree(ps);
+				//GDKfree(ps);
 				continue;
 			}
 			tail = strstr(c, "address");
@@ -354,10 +354,10 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (tail && (w = strchr(tail, ';')))
 				*w = 0;
 			if (BUNappend(b, c, false) != GDK_SUCCEED) {
-				GDKfree(ps);
+				//GDKfree(ps);
 				goto bailout;
 			}
-			GDKfree(ps);
+			//GDKfree(ps);
 		}
 		s = s->peer;
 	}
@@ -441,7 +441,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				char *bn;
 				bn = GDKrealloc(buf, lim + BUFSIZ);
 				if (bn == NULL) {
-					GDKfree(ps);
+					//GDKfree(ps);
 					GDKfree(buf);
 					throw(MAL, "inspect.getSource",
 						  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -453,7 +453,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			len += strlen(ps);
 			buf[len++] = '\n';
 			buf[len] = 0;
-			GDKfree(ps);
+			//GDKfree(ps);
 		}
 		s = s->peer;
 	}
@@ -636,17 +636,17 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	if (pci->retc == 2) {
 		tn = getArgReference_str(stk, pci, 1);
-		*hn = getTypeName(TYPE_oid);
-		*tn = getTypeName(getBatType(getArgType(mb, pci, 2)));
+		*hn = getTypeName(mb->ma, TYPE_oid);
+		*tn = getTypeName(mb->ma, getBatType(getArgType(mb, pci, 2)));
 	} else if (isaBatType(getArgType(mb, pci, 1))) {
 		bat *bid = getArgReference_bat(stk, pci, 1);
 		BAT *b;
 		if ((b = BBPquickdesc(*bid)))
-			*hn = getTypeName(newBatType(b->ttype));
+			*hn = getTypeName(mb->ma, newBatType(b->ttype));
 		else
-			*hn = getTypeName(getArgType(mb, pci, 1));
+			*hn = getTypeName(mb->ma, getArgType(mb, pci, 1));
 	} else
-		*hn = getTypeName(getArgType(mb, pci, 1));
+		*hn = getTypeName(mb->ma, getArgType(mb, pci, 1));
 	return MAL_SUCCEED;
 }
 

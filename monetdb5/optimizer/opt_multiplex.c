@@ -70,7 +70,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		TRC_WARNING_ENDIF(MAL_OPTIMIZER,
 						  "To speedup %s.%s a bulk operator implementation is needed%s%s\n",
 						  mod, fcn, ps ? " for " : "", ps ? ps : "");
-		GDKfree(ps);
+		//GDKfree(ps);
 	}
 #endif
 

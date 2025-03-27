@@ -358,7 +358,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	len = strlen(msg);
 	buf = (char *) GDKmalloc(len + 1024);
 	if (buf == NULL) {
-		GDKfree(msg);
+		//GDKfree(msg);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -368,13 +368,13 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			 getFunctionId(getInstrPtr(m, 0)), getPC(m, p));
 	if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED) {
-		GDKfree(msg);
+		//GDKfree(msg);
 		GDKfree(buf);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	GDKfree(msg);
+	//GDKfree(msg);
 
 	for (pcup = s->pcup, s = s->up, k++; s != NULL;
 		 pcup = s->pcup, s = s->up, k++) {
@@ -390,7 +390,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			len = l;
 			buf = (char *) GDKmalloc(len + 1024);
 			if (buf == NULL) {
-				GDKfree(msg);
+				//GDKfree(msg);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -402,12 +402,12 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED) {
 			GDKfree(buf);
-			GDKfree(msg);
+			//GDKfree(msg);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(msg);
+		//GDKfree(msg);
 	}
 	GDKfree(buf);
 	*ret = b->batCacheid;
@@ -518,16 +518,16 @@ printBATproperties(stream *f, BAT *b)
 }
 
 static void
-printBATelm(stream *f, bat i, BUN cnt, BUN first)
+printBATelm(allocator *ma, stream *f, bat i, BUN cnt, BUN first)
 {
 	BAT *b, *bs = NULL;
 	str tpe;
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newBatType(b->ttype));
+		tpe = getTypeName(ma, newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
-		GDKfree(tpe);
+		//GDKfree(tpe);
 		printBATproperties(f, b);
 		/* perform property checking */
 		BATassertProps(b);
@@ -567,28 +567,28 @@ printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, B
 		BAT *b = BBPquickdesc(i);
 
 		if (b) {
-			nme = getTypeName(newBatType(b->ttype));
+			nme = getTypeName(mb->ma, newBatType(b->ttype));
 			mnstr_printf(f, " :%s rows=" BUNFMT, nme, BATcount(b));
 		} else {
-			nme = getTypeName(n->type);
+			nme = getTypeName(mb->ma, n->type);
 			mnstr_printf(f, " :%s", nme);
 		}
 	} else {
-		nme = getTypeName(n->type);
+		nme = getTypeName(mb->ma, n->type);
 		mnstr_printf(f, " :%s", nme);
 	}
-	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
+	nmeOnStk = v ? getTypeName(mb->ma, v->vtype) : MA_STRDUP(mb->ma, nme);
 	/* check for type errors */
 	if (nmeOnStk && strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
-	GDKfree(nme);
+	//GDKfree(nme);
 	mnstr_printf(f, "\n");
-	GDKfree(nmeOnStk);
+	//GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
-		printBATelm(f, v->val.bval, cnt, first);
+		printBATelm(mb->ma, f, v->val.bval, cnt, first);
 	}
 }
 
@@ -658,11 +658,11 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b, ps, false) != GDK_SUCCEED) {
-			GDKfree(ps);
+			//GDKfree(ps);
 			BBPreclaim(b);
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(ps);
+		//GDKfree(ps);
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);

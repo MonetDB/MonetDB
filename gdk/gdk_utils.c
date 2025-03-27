@@ -2493,4 +2493,6 @@ sa_free(allocator *sa, void *obj)
 	sa->frees++;
 	if (sz < SA_BLOCK_SIZE)
 		sa_free_obj(sa, ptr, sz);
+	else
+		sa_free_blk(sa, ptr);
 }

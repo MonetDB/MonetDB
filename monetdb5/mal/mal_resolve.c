@@ -557,12 +557,12 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 	str n2;
 
 	if (!silent) {
-		n1 = getTypeName(lhs);
-		n2 = getTypeName(rhs);
+		n1 = getTypeName(mb->ma, lhs);
+		n2 = getTypeName(mb->ma, rhs);
 		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1,
 										n2);
-		GDKfree(n1);
-		GDKfree(n2);
+		//GDKfree(n1);
+		//GDKfree(n2);
 	}
 	p->typeresolved = false;
 }
@@ -663,8 +663,9 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 													" in",
 													errsig ? errsig :
 													"failed instruction2str()");
-					if (free_errsig)
-						GDKfree(errsig);
+					(void) free_errsig;
+					//if (free_errsig)
+					//	GDKfree(errsig);
 				}
 			}
 			p->typeresolved = false;

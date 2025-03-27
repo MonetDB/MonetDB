@@ -383,9 +383,9 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 				if (isaBatType(tpe)) {
 					BAT *d = BATdescriptor(bid = stk->stk[getArg(pci, j)].val.bval);
-					tname = getTypeName(getBatType(tpe));
+					tname = getTypeName(mb->ma, getBatType(tpe));
 					ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
-					GDKfree(tname);
+					//GDKfree(tname);
 					if (!ok) {
 						BBPreclaim(d);
 						goto cleanup_and_exit;
@@ -490,12 +490,12 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								",\"size\":" LLFMT, bid, cnt, total))
 						goto cleanup_and_exit;
 				} else {
-					tname = getTypeName(tpe);
+					tname = getTypeName(mb->ma, tpe);
 					ok = logadd(&logbuf,
 								",\"type\":\"%s\""
 								",\"const\":%d",
 								tname, isVarConstant(mb, getArg(pci, j)));
-					GDKfree(tname);
+					//GDKfree(tname);
 					if (!ok)
 						goto cleanup_and_exit;
 					cv = format_val2json(cntxt, &stk->stk[getArg(pci, j)]);
@@ -958,7 +958,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	MT_lock_set(&mal_profileLock);
 	if (cntxt->profticks == NULL) {
 		MT_lock_unset(&mal_profileLock);
-		GDKfree(stmt);
+		//GDKfree(stmt);
 		return;
 	}
 	errors += BUNappend(cntxt->profticks, &ticks, false) != GDK_SUCCEED;
@@ -971,7 +971,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 
 	MT_lock_unset(&mal_profileLock);
-	GDKfree(stmt);
+	//GDKfree(stmt);
 	GDKfree(ev);
 }
 
