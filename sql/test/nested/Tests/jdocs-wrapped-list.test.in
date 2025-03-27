@@ -47,11 +47,20 @@ select json from '$TSTSRCDIR/jdocs-wrapped-list-list-format.json'
 statement ok
 insert into jdocs select json from '$TSTSRCDIR/jdocs-wrapped-list-list-format.json'
 
-## CRASH
-##query T nosort list-format-file
-##select json from '$TSTSRCDIR/jdocs-wrapped-list-newline-format.json'
-##----
-##TODO
+query T nosort newline-format-file
+select json from read_nd_json('$TSTSRCDIR/jdocs-wrapped-list-newline-format.json')
+----
+{"name":"test_five","id":405,"actions":{"list":[{"elem":{"key":"one","val":50}},{"elem":{"key":"two","val":51}}]}}
+{"name":"test_six","id":406,"actions":{"list":[{"elem":{"key":"hi","val":60}}, {"elem":{"key":"low","val":61}}]}}
+
+query T nosort newline-format-file
+select json from read_nd_json('$TSTSRCDIR/jdocs-wrapped-list-newline-format.json')
+----
+{"name":"test_five","id":405,"actions":{"list":[{"elem":{"key":"one","val":50}},{"elem":{"key":"two","val":51}}]}}
+{"name":"test_six","id":406,"actions":{"list":[{"elem":{"key":"hi","val":60}}, {"elem":{"key":"low","val":61}}]}}
+
+statement ok
+insert into jdocs select json from read_nd_json('$TSTSRCDIR/jdocs-wrapped-list-newline-format.json')
 
 query TIT nosort
 select jd.name, jd.id, ua.elem from jdocs, unnest(jd.actions.list) as ua
@@ -80,19 +89,18 @@ test_four
 test_four
 404
 ("bc", 41)
-
-#test_five
-#405
-#("xy", 50)
-#test_five
-#405
-#("yz", 51)
-#test_four
-#406
-#("ab", 60)
-#test_four
-#406
-#("bc", 61)
+test_five
+405
+("one", 50)
+test_five
+405
+("two", 51)
+test_six
+406
+("hi", 60)
+test_six
+406
+("low", 61)
 
 query TITI nosort
 select jd.name, jd.id, ua.elem.key, ua.elem.val from jdocs, unnest(jd.actions.list) as ua
@@ -129,21 +137,20 @@ test_four
 404
 bc
 41
-
-#test_five
-#405
-#xy
-#50
-#test_five
-#405
-#yz
-#51
-#test_four
-#406
-#ab
-#60
-#test_four
-#406
-#bc
-#61
+test_five
+405
+one
+50
+test_five
+405
+two
+51
+test_six
+406
+hi
+60
+test_six
+406
+low
+61
 
