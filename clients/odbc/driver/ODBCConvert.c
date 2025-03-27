@@ -2806,15 +2806,14 @@ ODBCFetch(ODBCStmt *stmt,
 		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
 		SQLGUID su;
+		unsigned int sudata1; /* DWORD su.Data1 either long or int */
 		sscanf(data,
-		       "%8"SCNx32
-		       "-%4"SCNx16
-		       "-%4"SCNx16
-		       "-%2"SCNx8"%2"SCNx8
-		       "-%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8,
-		       &su.Data1, &su.Data2, &su.Data3,
+		       "%8x-%4hx-%4hx-%2hhx%2hhx"
+		       "-%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
+		       &sudata1, &su.Data2, &su.Data3,
 		       &su.Data4[0], &su.Data4[1],
 		       &su.Data4[2], &su.Data4[3], &su.Data4[4], &su.Data4[5], &su.Data4[6], &su.Data4[7]);
+		su.Data1 = sudata1;
 		WriteData(ptr, su, SQLGUID);
 		if (lenp)
 			*lenp = sizeof(SQLGUID);
@@ -3348,11 +3347,9 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_GUID:
 			u = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
-				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8,
-				 u.Data1, u.Data2, u.Data3,
+				 "%08x-%04x-%04x-%02x%02x"
+				 "-%02x%02x%02x%02x%02x%02x",
+				 (unsigned int) u.Data1, u.Data2, u.Data3,
 				 u.Data4[0], u.Data4[1],
 				 u.Data4[2], u.Data4[3],
 				 u.Data4[4], u.Data4[5],
@@ -3899,12 +3896,9 @@ ODBCStore(ODBCStmt *stmt,
 			u = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
 				 "UUID '"
-				 "%08"PRIx32"-%04"PRIx16"-%04"PRIx16
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "'",
-				 u.Data1, u.Data2, u.Data3,
+				 "%08x-%04x-%04x-%02x%02x"
+				 "-%02x%02x%02x%02x%02x%02x'",
+				 (unsigned int) u.Data1, u.Data2, u.Data3,
 				 u.Data4[0], u.Data4[1],
 				 u.Data4[2], u.Data4[3],
 				 u.Data4[4], u.Data4[5],
