@@ -283,16 +283,16 @@ sql_update_hugeint(Client c, mvc *sql)
 			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"covariancep\";\n"
 			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create aggregate median(val HUGEINT) returns HUGEINT\n"
+			"create aggregate median(val HUGEINT) returns HUGEINT ORDERED\n"
 			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;\n"
-			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
+			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT ORDERED\n"
 			" external name \"aggr\".\"quantile\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
-			"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+			"create aggregate median_avg(val HUGEINT) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"median_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
-			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n"
 			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
@@ -301,16 +301,16 @@ sql_update_hugeint(Client c, mvc *sql)
 			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"corr\";\n"
 			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create aggregate median(val DECIMAL(38)) returns DECIMAL(38)\n"
+			"create aggregate median(val DECIMAL(38)) returns DECIMAL(38) ORDERED\n"
 			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;\n"
-			"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE\n"
+			"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"median_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;\n"
-			"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)\n"
+			"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38) ORDERED\n"
 			" external name \"aggr\".\"quantile\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
-			"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE\n"
+			"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;\n");
 
@@ -4478,7 +4478,7 @@ sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 
 	if ((err = SQLstatementIntern(c, "select id from sys.functions where name = 'quantile' and schema_id = 2000 and contains(func, 'ordered');\n", "update", true, false, &output)) == MAL_SUCCEED) {
 		BAT *b;
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) <= 2) {
 			sql_table *t;
 			t = mvc_bind_table(sql, s, "describe_comments");
 			t->system = 0;
@@ -4495,9 +4495,9 @@ sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 			sql_schema *is = mvc_bind_schema(sql, "information_schema");
 			t = mvc_bind_table(sql, is, "parameters");
 			t->system = 0;
-			char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
-				"update sys.functions set func = replace(func, E'\\n\\texternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
-				"update sys.functions set func = replace(func, E'\\nexternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
+			char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
+				"update sys.functions set func = replace(func, E'\\n\\texternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
+				"update sys.functions set func = replace(func, E'\\nexternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E' external', E' with order\\n external') where name = 'group_concat' and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
 				"drop function sys.dump_database(boolean) cascade;\n"
 				"drop view sys.dump_functions cascade;\n"
