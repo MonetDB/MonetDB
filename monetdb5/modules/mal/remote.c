@@ -94,7 +94,7 @@ typedef struct _connection {
 	str name;					/* the handle for this connection */
 	Mapi mconn;					/* the Mapi handle for the connection */
 	unsigned char type;			/* binary profile of the connection target */
-	int typemap[MAXTYPE];				/* map types from remote back to local types */
+	int typemap[MAXTYPE];		/* map types from remote back to local types */
 	size_t nextid;				/* id counter */
 	struct _connection *next;	/* the next connection in the list */
 } *connection;
@@ -648,7 +648,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 #endif
 					bb.Hseqbase = (oid) lv;
 				} else if (strcmp(nme, "ttype") == 0) {
-					if (lv >= GDKatomcnt)
+					if (lv < 0 || lv >= MAXTYPE)
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: GDK atom number %s doesn't exist",
 							  nme, val);
