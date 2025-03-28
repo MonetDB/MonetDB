@@ -7,7 +7,7 @@
 --create table bluesky (data event);
 --
 ---- this works
--- insert into bluesky select cast(t.json as event) from (select * from read_nd_json(r'/tmp/bluesky_nd.json')) t;
+-- insert into bluesky select cast(t.json as event) from (select * from read_ndjson(r'/tmp/bluesky_nd.json')) t;
 --
 --select count(*) from bluesky;
 --
@@ -15,7 +15,7 @@
 
 
 -- eats up first selection, only cnt column
---select e."commit"."collection" as ev, count(*) as cnt from (select cast(t.json as event) as e from (select json from read_nd_json(r'/tmp/bluesky_nd.json')) t) group by ev order by cnt desc;
+--select e."commit"."collection" as ev, count(*) as cnt from (select cast(t.json as event) as e from (select json from read_ndjson(r'/tmp/bluesky_nd.json')) t) group by ev order by cnt desc;
 
 
 -- column mapping lost

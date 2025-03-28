@@ -45,19 +45,19 @@ statement ok
 insert into jdocs select json from '$TSTSRCDIR/jdocs-direct-list-list-format.json'
 
 query T nosort newline-format-file
-select * from read_nd_json('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
+select * from read_ndjson('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
 ----
 {"name":"test_five","id":405,"actions":[{"elem":{"key":"one","val":50}},{"elem":{"key":"two","val":51}}]}
 {"name":"test_six","id":406,"actions":[{"elem":{"key":"hi","val":60}}, {"elem":{"key":"low","val":61}}]}
 
 query T nosort newline-format-file
-select json from read_nd_json('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
+select json from read_ndjson('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
 ----
 {"name":"test_five","id":405,"actions":[{"elem":{"key":"one","val":50}},{"elem":{"key":"two","val":51}}]}
 {"name":"test_six","id":406,"actions":[{"elem":{"key":"hi","val":60}}, {"elem":{"key":"low","val":61}}]}
 
 statement ok
-insert into jdocs select json from read_nd_json('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
+insert into jdocs select json from read_ndjson('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
 
 query TIT nosort
 select jd.name, jd.id, ua.elem from jdocs, unnest(jd.actions) as ua

@@ -15,12 +15,12 @@ statement ok
 create table bluesky (data event)
 
 query I
-select count(*) from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json')
+select count(*) from read_ndjson(r'$TSTSRCDIR/bluesky_nd.json')
 ----
 10
 
 statement ok
-insert into bluesky select * from read_nd_json(r'$TSTSRCDIR/bluesky_nd.json') 
+insert into bluesky select * from read_ndjson(r'$TSTSRCDIR/bluesky_nd.json') 
 
 query T
 SELECT data."commit"."collection" AS event FROM bluesky

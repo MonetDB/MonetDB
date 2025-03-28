@@ -177,7 +177,7 @@ json_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tn
 
 
 static void *
-json_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
+load_json(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 {
 	(void) topn; // TODO include topn
 	backend *be = BE;
@@ -199,6 +199,28 @@ json_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	return s;
 }
 
+static void *
+load_ndjson(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
+{
+	(void) topn; // TODO include topn
+	backend *be = BE;
+	allocator *sa = be->mvc->sa;
+	sql_subtype *tpe = f->res->h->data;
+	const char *tname = f->tname;
+	const char *cname = f->colnames->h->data;
+
+	stmt *s = stmt_none(be);
+	InstrPtr q = newStmt(be->mb, "json", "read_ndjson");
+	q = pushStr(be->mb, q, filename);
+	pushInstruction(be->mb, q);
+	s->nr = getDestVar(q);
+	s->q = q;
+	s->nrcols = 1;
+	s->subtype = *tpe;
+	// is alias essential here?
+	s = stmt_alias(be, s, 1, a_create(sa, tname), cname);
+	return s;
+}
 
 static int TYPE_json;
 
@@ -209,7 +231,8 @@ JSONprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb; (void)stk; (void)pci;
 	TYPE_json = ATOMindex("json");
 
-	fl_register("json", &json_relation, &json_load);
+	fl_register("json", &json_relation, &load_json);
+	fl_register("ndjson", &json_relation, &load_ndjson);
 	return MAL_SUCCEED;
 }
 
@@ -218,6 +241,7 @@ static str
 JSONepilogue(void *ret)
 {
 	fl_unregister("json");
+	fl_unregister("ndjson");
 	(void)ret;
 	return MAL_SUCCEED;
 }
@@ -265,7 +289,7 @@ JSONread_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt; (void) mb;
 	char *msg = MAL_SUCCEED;
@@ -274,7 +298,7 @@ JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	JSONFileHandle *jfh = json_open(fname, sa);
 	if (!jfh) {
 		sa_destroy(sa);
-		msg = createException(SQL, "json.read_nd_json", "Failed to open file %s", fname);
+		msg = createException(SQL, "json.read_ndjson", "Failed to open file %s", fname);
 		return msg;
 	}
 	char *content = read_json_file(jfh);
@@ -295,11 +319,11 @@ JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (jt) {
 						// must be valid json obj str
 						if (BUNappend(b, tail, false) != GDK_SUCCEED) {
-							msg = createException(SQL, "json.read_nd_json", "BUNappend failed!");
+							msg = createException(SQL, "json.read_ndjson", "BUNappend failed!");
 							break;
 						}
 					} else {
-							msg = createException(SQL, "json.read_nd_json", "Invalid json object, JSONparse failed!");
+							msg = createException(SQL, "json.read_ndjson", "Invalid json object, JSONparse failed!");
 							break;
 					}
 					JSONfree(jt);
@@ -312,10 +336,10 @@ JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				cnt ++;
 			}
 		} else {
-			msg = createException(SQL, "json.read_nd_json", "Failed to allocate bat");
+			msg = createException(SQL, "json.read_ndjson", "Failed to allocate bat");
 		}
 	} else {
-		msg = createException(SQL, "json.read_nd_json", "Failed to read file %s", fname);
+		msg = createException(SQL, "json.read_ndjson", "Failed to read file %s", fname);
 	}
 	if (msg == MAL_SUCCEED) {
 		bat *res = getArgReference_bat(stk, pci, 0);
@@ -332,10 +356,13 @@ JSONread_nd_json(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #include "mel.h"
 
-unsigned char _json_sql[106] = {
-"create function sys.read_nd_json(fname string)\n"
+unsigned char _json_sql[300] = {
+"create function sys.read_ndjson(fname string)\n"
 "returns table(json JSON)\n"
-"external name json.read_nd_json;\n"
+"external name json.read_ndjson;\n"
+"create function sys.read_json(fname string)\n"
+"returns table(json JSON)\n"
+"external name json.read_json;\n"
 };
 #include "monetdb_config.h"
 #include "sql_import.h"
@@ -344,7 +371,7 @@ static mel_func json_init_funcs[] = {
 	pattern("json", "prelude", JSONprelude, false, "", noargs),
 	command("json", "epilogue", JSONepilogue, false, "", noargs),
 	pattern("json", "read_json", JSONread_json, false, "Reads json file", args(1,2, batarg("", json), arg("filename", str))),
-	pattern("json", "read_nd_json", JSONread_nd_json, false, "Reads new line delimited json objects", args(1,2, batarg("", json), arg("filename", str))),
+	pattern("json", "read_ndjson", JSONread_ndjson, false, "Reads new line delimited json objects", args(1,2, batarg("", json), arg("filename", str))),
 { .imp=NULL }
 };
 
