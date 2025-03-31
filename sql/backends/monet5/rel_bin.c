@@ -2657,7 +2657,7 @@ rel2bin_subtable(backend *be, sql_table *t, stmt *dels, sql_column *c, node *cn,
 				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
 					stmt *ls = s->op4.lval->t->data;
 					stmt *ns = stmt_col(be, c, dels, dels->partition);
-					ns->subtype = ls->subtype;
+					ns->subtype = ls->subtype; // TODO find correct type of rowid/msid (don't use msnr type
 					list_append(s->op4.lval, ns);
 					s->nr = ns->nr;
 					s->subtype = *exp_subtype(exp);
@@ -2749,7 +2749,7 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				if (s && s->type == st_list && c->type.multiset) { /* keep rowid at the end */
 					stmt *ls = s->op4.lval->t->data;
 					stmt *ns = (c == fcol) ? col : stmt_col(be, c, complex?dels:NULL, dels->partition);
-					ns->subtype = ls->subtype;
+					ns->subtype = ls->subtype; // TODO find correct type of rowid/msid (don't use msnr type
 					list_append(s->op4.lval, ns);
 					s->nr = ns->nr;
 					s->subtype = *exp_subtype(exp);

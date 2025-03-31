@@ -1254,7 +1254,9 @@ output_complex_type(res_col *cols, Column *fmt, int nr_cols, bool ms, bool compo
 
 		if (c->multiset) {
 			/* c rowid */
-			j += output_complex_type(cols + j + 1, fmt + j + 1, c->composite?list_length(c->type.type->d.fields):1, true, composite);
+			j++;
+			if (c->composite)
+				j += output_complex_type(cols + j, fmt + j, list_length(c->type.type->d.fields), true, composite);
 			j++;
 			if (c->multiset == MS_ARRAY)
 				j++;
@@ -1413,7 +1415,8 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			if (c->multiset) {
 				/* c rowid */
 				i++;
-				i += output_complex_type(t->cols + i, fmt + i + 1,  c->composite?list_length(c->type.type->d.fields):1, true, false);
+				if (c->composite)
+					i += output_complex_type(t->cols + i, fmt + i + 1,  list_length(c->type.type->d.fields), true, false);
 				i++;
 				if (c->multiset == MS_ARRAY)
 					i++;
