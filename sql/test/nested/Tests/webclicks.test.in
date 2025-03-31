@@ -195,6 +195,12 @@ search
 state
 title
 
+query T
+select ecommerce from events
+----
+("detail", ({(("null", "null"))}), ({(("product", "null", ({(("brand", "b8884d21754edbf713af7000a67eac0efd5df8ea"))})))}))
+("detail", ({(("null", "null"))}), ({(("product", "null", ({(("brand", "b8884d21754edbf713af7000a67eac0efd5df8ea"))})))}))
+
 #query TTTTTTTTTT
 #SELECT
 #    timestamp,
