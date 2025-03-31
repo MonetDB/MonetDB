@@ -1,0 +1,74 @@
+
+statement ok
+create type elem_t as (key text, val int)
+
+statement ok
+create type list_obj_t as (elem elem_t)
+
+statement ok
+create type act_list as (list list_obj_t[])
+
+statement ok
+create type jdoc_t as (name text, id int, actions act_list)
+
+statement ok
+create table jdocs_arr (jda jdoc_t[])
+
+statement ok
+insert into jdocs_arr select json from '$TSTSRCDIR/array-of-jdocs-list-format.json'
+
+statement ok
+insert into jdocs_arr select json from read_ndjson('$TSTSRCDIR/array-of-jdocs-newline-format.json')
+
+query TIT nosort
+select jd.name, jd.id, ua.elem from jdocs_arr, unnest(jda) as jd, unnest(jd.actions.list) as ua
+----
+test_one
+401
+("ping", 10)
+test_one
+401
+("pong", 11)
+test_two
+402
+("tic", 20)
+test_two
+402
+("tac", 21)
+test_three
+403
+("xy", 30)
+test_three
+403
+("yz", 31)
+test_four
+404
+("ab", 40)
+test_four
+404
+("bc", 41)
+test_five
+405
+("one", 50)
+test_five
+405
+("two", 51)
+test_six
+406
+("hi", 60)
+test_six
+406
+("low", 61)
+test_seven
+407
+("laag", 70)
+test_seven
+407
+("hoog", 71)
+test_seight
+408
+("ja", 80)
+test_seight
+408
+("nee", 81)
+
