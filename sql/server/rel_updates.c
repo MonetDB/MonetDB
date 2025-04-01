@@ -577,25 +577,32 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 }
 
 static sql_subtype *
-sql_table_type(mvc *sql, sql_table *t)
+sql_table_type(mvc *sql, sql_table *t, list *collist)
 {
 	/* convert t into a type */
 	sql_subtype *tt = NULL;
-	if (t) {
-		node *n;
+	if (t && collist) {
+		node *n, *m = collist->h;
 		tt = SA_ZNEW(sql->sa, sql_subtype);
 		sql_type *it = SA_ZNEW(sql->sa, sql_type);
 		tt->type = it;
 		it->d.fields = list_create((fdestroy) &arg_destroy);
 		it->base.name = sa_strdup(sql->sa, t->base.name);
 		it->composite = true;
-		if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
+		if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n && m; ) {
 			sql_column *c = n->data;
+			sql_column *c2 = m->data;
 
+			assert(c == c2);
 			sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
 			a->name = sa_strdup(sql->sa, c->base.name);
 			a->type = c->type;
 			append(it->d.fields, a);
+			m = m->next;
+			if (!c->type.multiset && c->type.type->composite)
+				n = skip_nested_columns(sql, c, n->next);
+			else
+				n = n->next;
 		}
 	}
 	return tt;
@@ -688,12 +695,12 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) || (!r->exps && collist)) {
 		if (list_length(r->exps) == 1 && strcmp(exp_subtype(r->exps->h->data)->type->base.name, "json") == 0) {
-			sql_subtype *tt = sql_table_type(sql, t);
+			sql_subtype *tt = sql_table_type(sql, t, collist);
 			sql_exp *e = exp_check_type(sql, tt, r, r->exps->h->data, type_equal);
 			if (e && e->f) {
 				r = rel_project(sql->sa, r, append(sa_list(sql->sa), e));
 				// is not apple to apple
-				// assert(list_length(e->f) == list_length(collist));
+				assert(list_length(e->f) == list_length(collist));
 				list *exps = sa_list(sql->sa), *iexps = e->f;
 				for (node *n = iexps->h; n; n = n->next) {
 					sql_exp *e = n->data;
