@@ -419,7 +419,7 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 	int *idp = (int*)Tloc(msid->c, pos);
 	int first = 1;
 
-	if (msid->p) {
+	if (id >= 0 && msid->p) {
 		while (pos > 0 && idp[-1] >= id) {
 			idp--;
 			pos--;
@@ -431,6 +431,7 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 		(*buf)[fill++] = '\'';
 	(*buf)[fill++] = '{';
 	(*buf)[fill] = 0;
+	if (id >= 0)
 	for (; *idp == id && fill > 0; idp++, msid->p++, pos++) {
 		if (!first)
 			(*buf)[fill++] = ',';
