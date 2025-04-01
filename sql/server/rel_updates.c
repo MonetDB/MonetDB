@@ -576,6 +576,31 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	return t;
 }
 
+static sql_subtype *
+sql_table_type(mvc *sql, sql_table *t)
+{
+	/* convert t into a type */
+	sql_subtype *tt = NULL;
+	if (t) {
+		node *n;
+		tt = SA_ZNEW(sql->sa, sql_subtype);
+		sql_type *it = SA_ZNEW(sql->sa, sql_type);
+		tt->type = it;
+		it->d.fields = list_create((fdestroy) &arg_destroy);
+		it->base.name = sa_strdup(sql->sa, t->base.name);
+		it->composite = true;
+		if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
+			sql_column *c = n->data;
+
+			sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
+			a->name = sa_strdup(sql->sa, c->base.name);
+			a->type = c->type;
+			append(it->d.fields, a);
+		}
+	}
+	return tt;
+}
+
 static sql_rel *
 insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *val_or_q, const char* action)
 {
@@ -661,8 +686,25 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 	/* For the subquery case a projection is always needed */
 	if (is_subquery)
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
-	if ((r->exps && list_length(r->exps) != list_length(collist)) || (!r->exps && collist))
-		return sql_error(sql, 02, SQLSTATE(21S01) "%s: query result doesn't match number of columns in table '%s'", action, t->base.name);
+	if ((r->exps && list_length(r->exps) != list_length(collist)) || (!r->exps && collist)) {
+		if (list_length(r->exps) == 1 && strcmp(exp_subtype(r->exps->h->data)->type->base.name, "json") == 0) {
+			sql_subtype *tt = sql_table_type(sql, t);
+			sql_exp *e = exp_check_type(sql, tt, r, r->exps->h->data, type_equal);
+			if (e && e->f) {
+				r = rel_project(sql->sa, r, append(sa_list(sql->sa), e));
+				assert(list_length(e->f) == list_length(collist));
+				list *exps = sa_list(sql->sa), *iexps = e->f;
+				for (node *n = iexps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					e = exp_ref(sql, e);
+					append(exps, e);
+				}
+				r = rel_project(sql->sa, r, exps);
+			}
+		} else {
+			return sql_error(sql, 02, SQLSTATE(21S01) "%s: query result doesn't match number of columns in table '%s'", action, t->base.name);
+		}
+	}
 	if (is_subquery && !(r->exps = check_distinct_exp_names(sql, r->exps)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: duplicate column names in subquery column list", action);
 

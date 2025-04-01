@@ -1,0 +1,27 @@
+## in this test the list member of the json document is directly in the 
+## composite type e.g. "actions":[...]
+
+statement ok
+create type elem_t as (key text, val int)
+
+statement ok
+create type list_obj_t as (elem elem_t)
+
+statement ok
+create table jdocs (name text, id int, actions list_obj_t[])
+
+statement ok
+insert into jdocs select json from '$TSTSRCDIR/jdocs-direct-list-list-format.json'
+
+query TIT nosort
+select * from jdocs
+----
+test_three
+403
+{(("xy", 30)),(("yz", 31))}
+test_four
+404
+{(("ab", 40)),(("bc", 41))}
+
+#statement ok
+#insert into jdocs select json from read_ndjson('$TSTSRCDIR/jdocs-direct-list-newline-format.json')
