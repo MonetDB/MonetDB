@@ -355,7 +355,7 @@ getErrMsg(SQLSMALLINT handleType, SQLHANDLE handle) {
 		if (retmsg != NULL) {
 			if (state[SQL_SQLSTATE_SIZE] != '\0')
 				state[SQL_SQLSTATE_SIZE] = '\0';
-			sprintf(retmsg, format, (char *)state, errnr, (char *)msg);
+			sprintf(retmsg, format, (char *)state, (int)errnr, (char *)msg);
 			return retmsg;
 		}
 	}
@@ -942,7 +942,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			errmsg = "Failed to alloc memory for largest rescol string buffer.";
 			goto finish_fetch;
 		}
-		TRC_DEBUG(LOADER, "Allocated str_val buffer of size %zu\n", (largestStringSize +1) * sizeof(char));
+		TRC_DEBUG(LOADER, "Allocated str_val buffer of size %lu\n", (unsigned long) (largestStringSize +1));
 
 		if (hasBlobCols) {
 			if (largestBlobSize == 0)	// no valid blob/binary data size, assume 1048576 (1MB) as default
@@ -954,7 +954,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				errmsg = "Failed to alloc memory for largest rescol binary data buffer.";
 				goto finish_fetch;
 			}
-			TRC_DEBUG(LOADER, "Allocated bin_data buffer of size %zu\n", largestBlobSize * sizeof(uint8_t));
+			TRC_DEBUG(LOADER, "Allocated bin_data buffer of size %lu\n", (unsigned long) (largestBlobSize * sizeof(uint8_t)));
 		}
 
 		/* after allocation of var sized buffers, update targetValuePtr and bufferLength for those columns */
@@ -1154,8 +1154,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 									date mdate_val = date_create(ts_val.year, ts_val.month, ts_val.day);
 									daytime daytime_val = daytime_create(ts_val.hour, ts_val.minute, ts_val.second, ts_val.fraction);
 									timestamp timestamp_val = timestamp_create(mdate_val, daytime_val);
-									TRC_DEBUG(LOADER, "Data row %lu col %u: timestamp(%04d-%02u-%02u %02u:%02u:%02u.%06u)\n", row, col+1,
-											ts_val.year, ts_val.month, ts_val.day, ts_val.hour, ts_val.minute, ts_val.second, ts_val.fraction);
+									TRC_DEBUG(LOADER, "Data row %lu col %u: timestamp(%04d-%02u-%02u %02u:%02u:%02u.%06lu)\n", row, col+1,
+											  ts_val.year, ts_val.month, ts_val.day, ts_val.hour, ts_val.minute, ts_val.second, (unsigned long) ts_val.fraction);
 									gdkret = BUNappend(b, (void *) &timestamp_val, false);
 								} else {
 									gdkret = BUNappend(b, ATOMnilptr(b->ttype), false);
@@ -1259,7 +1259,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 								break;
 							case SQL_GUID:
 								TRC_DEBUG(LOADER, "Data row %lu col %u: %08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n", row, col+1,
-										guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
+										  (unsigned int) guid_val.Data1, guid_val.Data2, guid_val.Data3, guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2],
 										guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 								if (colmetadata[col].battype == TYPE_uuid) {
 									u_val.u[0] = (guid_val.Data1 >> 24) & 0xFF;
