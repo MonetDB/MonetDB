@@ -347,7 +347,6 @@ output_composite(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t 
 			 *	rowid column sorted
 			 *	else
 			 */
-			assert(rowid->c->tsorted);
 			if (rowid->c->tkey)
 				fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, true, *(int*)p);
 			else

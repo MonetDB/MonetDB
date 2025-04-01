@@ -1095,17 +1095,7 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 	sql_sequence *seq;
 	bat *res = getArgReference_bat(stk, pci, 0);
-	BUN card = 0;
-	if (getArgType(mb, pci,1) == TYPE_lng)
-		card = (BUN)*getArgReference_lng(stk, pci, 1);
-	else {
-		bat bid = *getArgReference_bat(stk, pci, 1);
-		BAT *b = BATdescriptor(bid);
-		if (!b)
-			return createException(SQL, "sql.next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		card = BATcount(b);
-		BBPreclaim(b);
-	}
+	BUN card = (BUN)*getArgReference_lng(stk, pci, 1);
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *seqname = *getArgReference_str(stk, pci, 3);
 	BAT *r = NULL;
@@ -1137,6 +1127,71 @@ mvc_next_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	BBPreclaim(r);
+	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
+}
+
+static str
+mvc_next_value_ms(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	backend *be = NULL;
+	str msg;
+	sql_schema *s;
+	sql_sequence *seq;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+	BAT *b = BATdescriptor(bid);
+	if (!b)
+		return createException(SQL, "sql.next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BUN card = BATcount(b);
+	const char *sname = *getArgReference_str(stk, pci, 2);
+	const char *seqname = *getArgReference_str(stk, pci, 3);
+	BAT *r = NULL;
+
+	(void)mb;
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+		return msg;
+	if (!(s = mvc_bind_schema(be->mvc, sname)))
+		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
+	if (!mvc_schema_privs(be->mvc, s))
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(be->mvc, "current_user"), s->base.name);
+	if (!(seq = find_sql_sequence(be->mvc->session->tr, s, seqname)))
+		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
+	if (!(r = COLnew(0, TYPE_int, card, TRANSIENT)))
+		throw(SQL, "sql.next_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	lng rb = 0;
+
+	if (seqbulk_claim_next_values(be->mvc->session->tr->store, seq, card, &rb)) {
+		int *ip = Tloc(b,0);
+		int *op = Tloc(r, 0);
+		int sn = (int)rb;
+		bool nil_val = false;
+		for (BUN i = 0; i < card; i++) {
+			if (ip[i] < 0) {
+				if (ip[i] == int_nil)
+					nil_val = true;
+				op[i] = ip[i];
+			} else {
+				op[i] = sn++;
+			}
+		}
+		be->last_id = sn;
+		sqlvar_set_number(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "last_id"), be->last_id);
+		BATsetcount(r, card);
+		r->tnonil = !nil_val;
+		r->tnil = nil_val;
+		r->trevsorted = false;
+		if ((sn - rb) == 0)
+			r->tsorted = r->tkey = true;
+		else
+			r->tsorted = r->tkey = false;
+		*res = r->batCacheid;
+		BBPkeepref(r);
+		BBPreclaim(b);
+		return MAL_SUCCEED;
+	}
+	BBPreclaim(r);
+	BBPreclaim(b);
 	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
@@ -5911,7 +5966,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 		*msg = "missing array start";
 		return -1;
 	}
-	int id = 0, anr = 1;
+	int id = -1, anr = 1;
 	for (; elm < tail; elm=ja->next) { /* array begin, comma, end */
 		ja = js->elm+elm;
 		if (bat_offset > nr)
@@ -5941,10 +5996,12 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 	}
 	if (bat_offset > nr)
 		return -10;
-	if (elm > 0 && anr > 1 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
+	if (id == -1)
+		bat_offset += composite_type_resultsize(t) - 1;
+	if (elm > 0 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
 		elm = -2;
 	*BO = bat_offset;
-	return elm-1;//+1;
+	return (tail == 0)?elm:elm-1;//+1;
 }
 
 static str
@@ -6112,9 +6169,9 @@ static mel_func sql_init_funcs[] = {
  pattern("batsql", "renumber", mvc_renumber_bulk, false, "return the input b renumbered using values from base", args(1,4, batarg("res",int),batarg("input",int),batarg("mapping_oid",int),batarg("mapping_nid",int))),
  pattern("sql", "renumber", mvc_renumber, false, "return the input b renumbered using values from base", args(1,4, arg("res",int),arg("input",int),arg("mapping_oid",int),arg("mapping_nid",int))),
  pattern("sql", "next_value", mvc_next_value, true, "return the next value of the sequence", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
- pattern("sql", "next_value_ms", mvc_next_value, false, "return the next value of the sequence", args(1,4, arg("",lng),argany("card",1), arg("sname",str),arg("sequence",str))),
+ pattern("sql", "next_value_ms", mvc_next_value_ms, false, "return the next value of the sequence", args(1,4, arg("",int),argany("card",1), arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
- pattern("batsql", "next_value_ms", mvc_next_value_bulk, false, "return the next value of the sequence", args(1,4, batarg("",lng),batargany("card",1), arg("sname",str),arg("sequence",str))),
+ pattern("batsql", "next_value_ms", mvc_next_value_ms, false, "return the next value of the sequence", args(1,4, batarg("",int),batargany("card",1), arg("sname",str),arg("sequence",str))),
  //pattern("batsql", "next_value_ms", mvc_next_value_bulk, false, "return the next value of the sequence", args(1,5, batarg("",lng),batargany("card",1), arg("sname",str),arg("sequence",str), batarg("cand",oid))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),

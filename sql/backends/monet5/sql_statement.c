@@ -4114,7 +4114,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	return NULL;
 }
 
-static int
+int
 composite_type_resultsize(sql_subtype *t)
 {
 	int nr = 0;

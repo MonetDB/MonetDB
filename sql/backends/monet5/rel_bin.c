@@ -6106,19 +6106,14 @@ insert_ms(backend *be, sql_table *st, sql_subtype *ct, stmt *ms)
 	stmt *msid = updates[len-1 -((ct->multiset == MS_ARRAY)?1:0)];
 
 	/* nrowids = next_value_for(rowids, "schema?", st->base.name) */
-	InstrPtr q = newStmt(be->mb, batsqlRef, "next_value_ms");
-	q = pushArgument(be->mb, q, rowids->nr);
-	q = pushStr(be->mb, q, st->s->base.name); /* sequence schema name */
-	q = pushStr(be->mb, q, st->base.name);	  /* sequence number name */
-	pushInstruction(be->mb, q);
-
-	/* nrowids = batcalc.int(nrowids) */
-	InstrPtr r = newStmt(be->mb, batcalcRef, "int");
-	r = pushArgument(be->mb, r, getArg(q, 0));
+	InstrPtr r = newStmt(be->mb, batsqlRef, "next_value_ms");
+	r = pushArgument(be->mb, r, rowids->nr);
+	r = pushStr(be->mb, r, st->s->base.name); /* sequence schema name */
+	r = pushStr(be->mb, r, st->base.name);	  /* sequence number name */
 	pushInstruction(be->mb, r);
 
 	/* msid = renumber(msid, rowids, nrowids); */
-	q = newStmt(be->mb, batsqlRef, "renumber");
+	InstrPtr q = newStmt(be->mb, batsqlRef, "renumber");
 	q = pushArgument(be->mb, q, msid->nr);
 	q = pushArgument(be->mb, q, rowids->nr);
 	q = pushArgument(be->mb, q, getArg(r, 0));

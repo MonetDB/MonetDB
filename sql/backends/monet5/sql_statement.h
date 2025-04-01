@@ -289,5 +289,6 @@ sql_export InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 
 typedef stmt *(*fstmt)(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_nest(backend *be, stmt *op1, stmt *op2, fstmt call);
+extern int composite_type_resultsize(sql_subtype *t);
 
 #endif /* _SQL_STATEMENT_H_ */

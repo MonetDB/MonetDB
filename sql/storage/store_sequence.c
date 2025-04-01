@@ -161,8 +161,8 @@ seq_restart(sql_store Store, sql_sequence *seq, lng start)
 	return 1;
 }
 
-int
-seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
+static int
+seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest, bool dest_array)
 {
 	store_sequence *s;
 	sqlstore *store = Store;
@@ -213,13 +213,14 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 				return 0;
 			}
 		}
-		for(lng i = 0; i < cnt; i++) {
-			dest[i] = cur;
-			if ((GDK_lng_max - inc < cur) || ((cur += inc) > max)) {
-				// overflow
-				cur = (seq->cycle)?min:lng_nil;
+		if (!dest_array)
+			for(lng i = 0; i < cnt; i++) {
+				dest[i] = cur;
+				if ((GDK_lng_max - inc < cur) || ((cur += inc) > max)) {
+					// overflow
+					cur = (seq->cycle)?min:lng_nil;
+				}
 			}
-		}
 	} else { // seq->increment < 0
 		lng inc = -seq->increment; // new value = old value - inc;
 
@@ -240,13 +241,14 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 				return 0;
 			}
 		}
-		for(lng i = 0; i < cnt; i++) {
-			dest[i] = cur;
-			if ((-GDK_lng_max + inc > cur) || ((cur -= inc)  < min)) {
-				// underflow
-				cur = (seq->cycle)?max:lng_nil;
+		if (!dest_array)
+			for(lng i = 0; i < cnt; i++) {
+				dest[i] = cur;
+				if ((-GDK_lng_max + inc > cur) || ((cur -= inc)  < min)) {
+					// underflow
+					cur = (seq->cycle)?max:lng_nil;
+				}
 			}
-		}
 	}
 
 	if (!store_unlocked) {
@@ -261,6 +263,18 @@ seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
 		sequences_unlock(store);
 	}
 	return 1;
+}
+
+int
+seqbulk_claim_next_values(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
+{
+	return seqbulk_next_value_intern(Store, seq, cnt, dest, true);
+}
+
+int
+seqbulk_next_value(sql_store Store, sql_sequence *seq, lng cnt, lng* dest)
+{
+	return seqbulk_next_value_intern(Store, seq, cnt, dest, false);
 }
 
 int
