@@ -213,7 +213,7 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 				return 0;
 			}
 		}
-		if (!dest_array)
+		if (!dest_array) {
 			for(lng i = 0; i < cnt; i++) {
 				dest[i] = cur;
 				if ((GDK_lng_max - inc < cur) || ((cur += inc) > max)) {
@@ -221,6 +221,9 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 					cur = (seq->cycle)?min:lng_nil;
 				}
 			}
+		} else {
+			dest[0] = cur;
+		}
 	} else { // seq->increment < 0
 		lng inc = -seq->increment; // new value = old value - inc;
 
@@ -241,7 +244,7 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 				return 0;
 			}
 		}
-		if (!dest_array)
+		if (!dest_array) {
 			for(lng i = 0; i < cnt; i++) {
 				dest[i] = cur;
 				if ((-GDK_lng_max + inc > cur) || ((cur -= inc)  < min)) {
@@ -249,6 +252,9 @@ seqbulk_next_value_intern(sql_store Store, sql_sequence *seq, lng cnt, lng* dest
 					cur = (seq->cycle)?max:lng_nil;
 				}
 			}
+		} else {
+			dest[0] = cur;
+		}
 	}
 
 	if (!store_unlocked) {
