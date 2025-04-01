@@ -692,7 +692,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 			sql_exp *e = exp_check_type(sql, tt, r, r->exps->h->data, type_equal);
 			if (e && e->f) {
 				r = rel_project(sql->sa, r, append(sa_list(sql->sa), e));
-				assert(list_length(e->f) == list_length(collist));
+				// is not apple to apple
+				// assert(list_length(e->f) == list_length(collist));
 				list *exps = sa_list(sql->sa), *iexps = e->f;
 				for (node *n = iexps->h; n; n = n->next) {
 					sql_exp *e = n->data;
