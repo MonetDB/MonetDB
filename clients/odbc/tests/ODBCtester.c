@@ -29,7 +29,7 @@
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 {
-	SQLCHAR state[6];
+	SQLCHAR state[SQL_SQLSTATE_SIZE +1];
 	SQLINTEGER errnr;
 	SQLCHAR msg[256];
 	SQLSMALLINT msglen;
@@ -207,6 +207,9 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n");
 	}
 
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+
 	/* cleanup */
 	free(outp);
 	return ret;
@@ -266,7 +269,7 @@ testGetDataGUID(SQLHANDLE stmt)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
 			pos += snprintf(outp + pos, outp_len - pos, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-				guid_val.Data1, guid_val.Data2, guid_val.Data3,
+					(unsigned int) guid_val.Data1, guid_val.Data2, guid_val.Data3,
 				guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2], guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
 	}
@@ -285,6 +288,9 @@ testGetDataGUID(SQLHANDLE stmt)
 			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
 			"SQLGetData(3, SQL_C_CHAR, 36) returns 0, vallen 36, str_val: 'beefc4f7-0264-4735-9b7a-75fd371ef803'\n"
 			"SQLGetData(3, SQL_C_GUID, 16) returns 0, vallen 16, data_val: beefc4f7-0264-4735-9b7a-75fd371ef803\n");
+
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 
 	/* cleanup */
 	free(outp);
@@ -335,18 +341,12 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
 
-	/* run tests */
+	/**** run tests ****/
 	ret = testGetDataTruncatedString(stmt, SQL_C_CHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_CHAR)");
 
-	ret = SQLCloseCursor(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
-
 	ret = testGetDataTruncatedString(stmt, SQL_C_WCHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_WCHAR)");
-
-	ret = SQLCloseCursor(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 
 	ret = testGetDataGUID(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataGUID(STMT)");
