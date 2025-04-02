@@ -582,27 +582,19 @@ sql_table_type(mvc *sql, sql_table *t, list *collist)
 	/* convert t into a type */
 	sql_subtype *tt = NULL;
 	if (t && collist) {
-		node *n, *m = collist->h;
 		tt = SA_ZNEW(sql->sa, sql_subtype);
 		sql_type *it = SA_ZNEW(sql->sa, sql_type);
 		tt->type = it;
 		it->d.fields = list_create((fdestroy) &arg_destroy);
 		it->base.name = sa_strdup(sql->sa, t->base.name);
 		it->composite = true;
-		if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n && m; ) {
+		for(node *n = collist->h; n; n = n->next) {
 			sql_column *c = n->data;
-			sql_column *c2 = m->data;
 
-			assert(c == c2);
 			sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
 			a->name = sa_strdup(sql->sa, c->base.name);
 			a->type = c->type;
 			append(it->d.fields, a);
-			m = m->next;
-			if (!c->type.multiset && c->type.type->composite)
-				n = skip_nested_columns(sql, c, n->next);
-			else
-				n = n->next;
 		}
 	}
 	return tt;
