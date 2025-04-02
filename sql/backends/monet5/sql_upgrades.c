@@ -4755,6 +4755,125 @@ sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 	return err;
 }
 
+static str
+sql_update_mar2025_sp1(Client c, mvc *sql)
+{
+	size_t bufsize = 65536, pos = 0;
+	char *err = NULL, *buf = GDKmalloc(bufsize);
+	res_table *output = NULL;
+	BAT *b;
+
+	if (buf == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* 10_sys_schema_extension.sql */
+	/* if the table types: GLOBAL TEMPORARY VIEW, LOCAL TEMPORARY VIEW are
+	 * not in the list of table_types, upgrade */
+	pos = snprintf(buf, bufsize, "select table_type_name from sys.table_types where table_type_name IN ('GLOBAL TEMPORARY VIEW','LOCAL TEMPORARY VIEW');\n");
+	assert(pos < bufsize);
+	err = SQLstatementIntern(c, buf, "update", true, false, &output);
+	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		pos = snprintf(buf, bufsize,
+				"ALTER TABLE sys.table_types SET READ WRITE;\n"
+				"INSERT INTO sys.table_types VALUES (21, 'GLOBAL TEMPORARY VIEW');\n"
+				"INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');\n");
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		fflush(stdout);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			pos = snprintf(buf, bufsize, "ALTER TABLE sys.table_types SET READ ONLY;\n");
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			fflush(stdout);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		}
+
+		/* 91_information_schema.sql */
+		/* correct definitions of views: information_schema.tables and information_schema.views */
+		if (err == MAL_SUCCEED) {
+			const char query[] =
+				"DROP VIEW information_schema.views CASCADE;\n"
+				"DROP VIEW information_schema.tables CASCADE;\n"
+
+				"CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT\n"
+				"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+				"  s.\"name\" AS TABLE_SCHEMA,\n"
+				"  t.\"name\" AS TABLE_NAME,\n"
+				"  tt.\"table_type_name\" AS TABLE_TYPE,\n"
+				"  cast(NULL AS varchar(1)) AS SELF_REFERENCING_COLUMN_NAME,\n"
+				"  cast(NULL AS varchar(1)) AS REFERENCE_GENERATION,\n"
+				"  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_CATALOG,\n"
+				"  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_SCHEMA,\n"
+				"  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_NAME,\n"
+				"  cast(sys.ifthenelse((t.\"type\" IN (0, 3, 7, 20, 30) AND t.\"access\" IN (0, 2)), 'YES', 'NO') AS varchar(3)) AS IS_INSERTABLE_INTO,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TYPED,\n"
+				"  cast((CASE t.\"commit_action\" WHEN 1 THEN 'DELETE' WHEN 2 THEN 'PRESERVE' WHEN 3 THEN 'DROP' ELSE NULL END) AS varchar(10)) AS COMMIT_ACTION,\n"
+				"  -- MonetDB column extensions\n"
+				"  t.\"schema_id\" AS schema_id,\n"
+				"  t.\"id\" AS table_id,\n"
+				"  t.\"type\" AS table_type_id,\n"
+				"  st.\"count\" AS row_count,\n"
+				"  t.\"system\" AS is_system,\n"
+				"  sys.ifthenelse(t.\"type\" IN (1, 11, 21, 31), TRUE, FALSE) AS is_view,\n"
+				"  t.\"query\" AS query_def,\n"
+				"  cm.\"remark\" AS comments\n"
+				" FROM sys.\"tables\" t\n"
+				" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+				" INNER JOIN sys.\"table_types\" tt ON t.\"type\" = tt.\"table_type_id\"\n"
+				" LEFT OUTER JOIN sys.\"comments\" cm ON t.\"id\" = cm.\"id\"\n"
+				" LEFT OUTER JOIN (SELECT DISTINCT \"schema\", \"table\", \"count\" FROM sys.\"statistics\"()) st ON (s.\"name\" = st.\"schema\" AND t.\"name\" = st.\"table\")\n"
+				" ORDER BY s.\"name\", t.\"name\";\n"
+				"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLES TO PUBLIC WITH GRANT OPTION;\n"
+
+				"CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT\n"
+				"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+				"  s.\"name\" AS TABLE_SCHEMA,\n"
+				"  t.\"name\" AS TABLE_NAME,\n"
+				"  t.\"query\" AS VIEW_DEFINITION,\n"
+				"  cast('NONE' AS varchar(10)) AS CHECK_OPTION,\n"
+				"  cast('NO' AS varchar(3)) AS IS_UPDATABLE,\n"
+				"  cast('NO' AS varchar(3)) AS INSERTABLE_INTO,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TRIGGER_UPDATABLE,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TRIGGER_DELETABLE,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TRIGGER_INSERTABLE_INTO,\n"
+				"  -- MonetDB column extensions\n"
+				"  t.\"schema_id\" AS schema_id,\n"
+				"  t.\"id\" AS table_id,\n"
+				"  t.\"type\" AS table_type_id,\n"
+				"  t.\"system\" AS is_system,\n"
+				"  cm.\"remark\" AS comments\n"
+				" FROM sys.\"tables\" t\n"
+				" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+				" LEFT OUTER JOIN sys.\"comments\" cm ON t.\"id\" = cm.\"id\"\n"
+				" WHERE t.\"type\" IN (1, 11, 21, 31)\n"
+				" ORDER BY s.\"name\", t.\"name\";\n"
+				"GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;\n"
+				"\n"
+				"UPDATE sys._tables SET system = true where system <> true\n"
+				" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
+				" and name in ('tables','views');\n";
+
+			sql_schema *infoschema = mvc_bind_schema(sql, "information_schema");
+			sql_table *t;
+			if ((t = mvc_bind_table(sql, infoschema, "tables")) != NULL)
+				t->system = 0; /* make it non-system else the drop view will fail */
+			if ((t = mvc_bind_table(sql, infoschema, "views")) != NULL)
+				t->system = 0;
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+	}
+	if (output != NULL) {
+		res_table_destroy(output);
+		output = NULL;
+	}
+
+	return err;
+}
+
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -4819,6 +4938,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_mar2025_geom(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_mar2025_sp1(c, m)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
