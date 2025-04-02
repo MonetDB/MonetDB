@@ -1909,7 +1909,6 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_table:
 		case op_basetable:
 		case op_munion:
-		case op_union:
 		case op_inter:
 		case op_except:
 		case op_project:
@@ -3890,7 +3889,6 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, int nid, const cha
 			if (rel->l)
 				res = rel_find_parameter(sql, type, rel->l, nid, nrname, nename);
 			break;
-		case op_union: /* TODO for set relations this needs further improvement */
 		case op_inter:
 		case op_except:
 		case op_munion:	{

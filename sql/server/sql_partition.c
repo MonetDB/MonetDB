@@ -134,7 +134,6 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 		case op_left:
 		case op_right:
 		case op_full:
-		case op_union:
 		case op_inter:
 		case op_except:
 		case op_merge:
