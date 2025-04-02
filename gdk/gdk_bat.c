@@ -1640,7 +1640,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 					b->tseqbase = * (oid *) t;
 				}
 			}
-		} else if (b->tnosorted >= p)
+		} else if (b->tnosorted == p || b->tnosorted == p + 1)
 			b->tnosorted = 0;
 		if (b->trevsorted) {
 			if (prv != BUN_NONE &&
@@ -1652,7 +1652,7 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 				b->trevsorted = false;
 				b->tnorevsorted = nxt;
 			}
-		} else if (b->tnorevsorted >= p)
+		} else if (b->tnorevsorted == p || b->tnorevsorted == p + 1)
 			b->tnorevsorted = 0;
 		if (((b->ttype != TYPE_void) & b->tkey) && b->batCount > 1) {
 			BATkey(b, false);

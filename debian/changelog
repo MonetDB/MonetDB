@@ -1,3 +1,18 @@
+monetdb (11.53.3) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7622: In PREPARE queries with many parameters, information about
+    parameters is truncated when sent to client.
+  * GH#7623: Database crashed when using UPDATE xxx SET xxx RETURNING xx
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 24 Mar 2025 15:03:01 +0100
+
+monetdb (11.53.3) unstable; urgency=low
+
+  * sql: Added scalar functions: dayname(d date) and monthname(d date) returns varchar(10).
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Thu, 20 Mar 2025 15:03:01 +0100
+
 monetdb (11.53.1) unstable; urgency=low
 
   * Rebuilt.

@@ -3,3 +3,5 @@
 7615_join_reordering_2
 7616_join_reordering_3
 7621_count_case_crash
+7623_update_returning
+7626_sum_max_const
