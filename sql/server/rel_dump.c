@@ -2072,8 +2072,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		return rel;
 	}
 
-	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r')
-		return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
+	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r') {
+		if (strncmp(r+*pos, "merge", 5) == 0)
+			(*pos) += 5;
+		else
+			return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
+	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'i') {
 		*pos += (int) strlen("distinct");
@@ -2229,8 +2233,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 				if (!t && !(t = mvc_bind_table(sql, s, tname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
-				if (isMergeTable(t))
-					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
 				if (isRemote(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
 				if (isReplicaTable(t))
