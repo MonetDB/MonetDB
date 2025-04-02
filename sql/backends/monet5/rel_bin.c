@@ -2882,7 +2882,6 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_merge:
@@ -4774,52 +4773,6 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 		}
 		s = stmt_alias(be, s, label, rnme, nme);
-		if (s == NULL)
-			return NULL;
-		list_append(l, s);
-	}
-	sub = stmt_list(be, l);
-
-	sub = rel_rename(be, rel, sub);
-	if (need_distinct(rel))
-		sub = rel2bin_distinct(be, sub, NULL);
-	if (is_single(rel))
-		sub = rel2bin_single(be, sub);
-	return sub;
-}
-
-static stmt *
-rel2bin_union(backend *be, sql_rel *rel, list *refs)
-{
-	mvc *sql = be->mvc;
-	list *l;
-	node *n, *m;
-	stmt *left = NULL, *right = NULL, *sub;
-
-	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(be, rel->l, refs);
-	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(be, rel->r, refs);
-	left = subrel_project(be, left, refs, rel->l);
-	right = subrel_project(be, right, refs, rel->r);
-	if (!left || !right)
-		return NULL;
-
-	/* construct relation */
-	l = sa_list(sql->sa);
-	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m;
-		 n = n->next, m = m->next) {
-		stmt *c1 = n->data;
-		assert(c1->type == st_alias);
-		stmt *c2 = m->data;
-		sql_alias *rnme = table_name(sql->sa, c1);
-		const char *nme = column_name(sql->sa, c1);
-		stmt *s;
-
-		s = stmt_append(be, create_const_column(be, c1, NULL), c2);
-		if (s == NULL)
-			return NULL;
-		s = stmt_alias(be, s, c1->label, rnme, nme);
 		if (s == NULL)
 			return NULL;
 		list_append(l, s);
@@ -8612,10 +8565,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_anti:
 		s = rel2bin_antijoin(be, rel, refs);
-		sql->type = Q_TABLE;
-		break;
-	case op_union:
-		s = rel2bin_union(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
 	case op_munion:

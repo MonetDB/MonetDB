@@ -416,7 +416,6 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
 		return merge_freevar(exps, lexps, false);
 	}
-	case op_union:
 	case op_except:
 	case op_inter:
 		exps = exps_freevar(sql, rel->exps);
@@ -1516,7 +1515,6 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
-			assert(s->op != op_union);
 			sql_rel *sl = s->l, *sr = s->r, *ns;
 
 			sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
@@ -2441,7 +2439,6 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	} break;
 	case op_inter:
 	case op_except:
-	case op_union:
 	case op_munion: {
 		e->card = CARD_MULTI;
 	} break;
@@ -2740,6 +2737,8 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 
 		rel->r = aggrs_split_args(v->sql, rel->r, exps, 1);
 		rel->exps = aggrs_split_args(v->sql, rel->exps, exps, 0);
+		if (list_empty(exps))
+			return rel;
 		rel->l = rel_project(v->sql->sa, rel->l, exps);
 		rel = aggrs_split_funcs(v->sql, rel);
 		v->changes++;
@@ -4194,7 +4193,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *nilrel = add_null_projects(v, prel, except, true);
 			if (!nilrel)
@@ -4220,7 +4219,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *nilrel = add_null_projects(v, prel, except, false);
 			if (!nilrel)
@@ -4246,7 +4245,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *lrel = add_null_projects(v, prel, except, true);
 			if (!lrel)
@@ -4255,7 +4254,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *rrel = add_null_projects(v, prel, except, false);
 			if (!rrel)

@@ -66,7 +66,6 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 	case op_topn:
 	case op_sample:
 	case op_groupby:
-	case op_union:
 	case op_except:
 	case op_inter:
 	case op_project:
@@ -1701,7 +1700,7 @@ set_dependent_( sql_rel *r)
 
 static sql_rel*
 find_union(visitor *v, sql_rel *rel) {
-	if (rel->op == op_union || rel->op == op_munion)
+	if (rel->op == op_munion)
 		v->data = rel;
 	return rel;
 }
@@ -6278,7 +6277,7 @@ rel_setquery_(sql_query *query, sql_rel *l, sql_rel *r, dlist *cols, int op, int
 		rel = rel_setquery_corresponding(query, l, r, cols, op, outer, false);
 	}
 	if (rel) {
-		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
+		rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1));
 		set_processed(rel);
 	}
 	return rel;
@@ -6365,8 +6364,6 @@ rel_setquery(sql_query *query, symbol *q)
 			t1 = rel_distinct(t1);
 		if (t2 && distinct)
 			t2 = rel_distinct(t2);
-		// TODO: this has to be fixed
-		/*res = rel_setquery_(query, t1, t2, corresponding, op_union, outer);*/
 		res = rel_setquery_n_ary_(query, t1, t2, corresponding, op_munion, outer);
 	} else if ( q->token == SQL_EXCEPT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except, 0);

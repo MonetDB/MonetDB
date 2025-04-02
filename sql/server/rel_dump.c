@@ -567,7 +567,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 		r = "join";
@@ -581,8 +580,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			r = "semijoin";
 		else if (rel->op == op_anti)
 			r = "antijoin";
-		else if (rel->op == op_union)
-			r = "union";
 		else if (rel->op == op_inter)
 			r = "intersect";
 		else if (rel->op == op_except)
@@ -778,7 +775,6 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 		if (rel->l)
@@ -2522,12 +2518,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			j = op_munion;
 		}
 		/* fall through */
-	case 'u':
-		if (j == op_basetable) {
-			*pos += (int) strlen("union");
-			j = op_union;
-		}
-		/* fall through */
 	case 'i':
 		if (j == op_basetable) {
 			*pos += (int) strlen("intersect");
@@ -2585,7 +2575,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		} else {
 			rel = rel_setop(sql->sa, lrel, rrel, j);
-			rel_setop_set_exps(sql, rel, exps, false);
+			rel_setop_set_exps(sql, rel, exps);
 			if (rel_set_types(sql, rel) < 0)
 				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		}

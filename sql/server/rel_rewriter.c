@@ -346,7 +346,6 @@ name_find_column( sql_rel *rel, sql_alias *rname, const char *name, int pnr, sql
 	case op_topn:
 	case op_sample:
 		return name_find_column( rel->l, rname, name, pnr, bt);
-	case op_union:
 	case op_inter:
 	case op_except:
 

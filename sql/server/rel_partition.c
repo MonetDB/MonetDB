@@ -69,7 +69,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -158,7 +157,6 @@ has_groupby(sql_rel *rel)
 		case op_semi:
 		case op_anti:
 
-		case op_union:
 		case op_inter:
 		case op_except:
 
@@ -216,7 +214,6 @@ rel_partition(mvc *sql, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 

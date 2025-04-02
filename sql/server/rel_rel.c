@@ -108,7 +108,6 @@ rel_destroy_(sql_rel *rel)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -236,7 +235,6 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 
@@ -526,7 +524,7 @@ rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type 
 	rel->r = r;
 	rel->op = setop;
 	rel->card = CARD_MULTI;
-	rel_setop_set_exps(sql, rel, exps, false);
+	rel_setop_set_exps(sql, rel, exps);
 	return rel;
 }
 
@@ -607,29 +605,6 @@ rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps )
 	return rel;
 }
 
-sql_rel *
-rel_inplace_munion(sql_rel *rel, list *rels)
-{
-	rel_destroy_(rel);
-	rel_inplace_reset_props(rel);
-	// TODO: what is the semantics of cardinality? is that right?
-	rel->card = CARD_MULTI;
-	rel->nrcols = 0;
-	if (rels)
-		rel->l = rels;
-	if (rels) {
-		for (node* n = rels->h; n; n = n->next) {
-			sql_rel *r = n->data;
-			// TODO: could we overflow the nrcols this way?
-			rel->nrcols += r->nrcols;
-		}
-	}
-	rel->r = NULL;
-	rel->exps = NULL;
-	rel->op = op_munion;
-	return rel;
-}
-
 /* this function is to be used with the above rel_inplace_* functions */
 sql_rel *
 rel_dup_copy(allocator *sa, sql_rel *rel)
@@ -654,7 +629,6 @@ rel_dup_copy(allocator *sa, sql_rel *rel)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -731,7 +705,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 }
 
 void
-rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
+rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 {
 	sql_rel *l = rel->l, *r = rel->r;
 	list *lexps = l->exps, *rexps = r->exps;
@@ -744,20 +718,10 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props)
 	assert(is_set(rel->op) /*&& list_length(lexps) == list_length(rexps) && list_length(exps) == list_length(lexps)*/);
 
 	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && n && o ; n = n->next, m = m->next,o = o->next) {
-		sql_exp *e = n->data, *f = m->data, *g = o->data;
+		sql_exp *e = n->data;
 
 		assert(e->alias.label);
 		e->nid = 0; /* setops are positional */
-		if (is_union(rel->op)) { /* propagate set_has_no_nil only if it's applicable to both sides of the union*/
-			if (has_nil(f) || has_nil(g))
-				set_has_nil(e);
-			else
-				set_has_no_nil(e);
-			if (!keep_props) {
-				e->p = NULL; /* remove all the properties on unions on the general case */
-				set_not_unique(e);
-			}
-		}
 		e->card = CARD_MULTI; /* multi cardinality */
 	}
 	rel->nrcols = l->nrcols;
@@ -1321,7 +1285,6 @@ _rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int int
 	case op_basetable:
 	case op_table:
 
-	case op_union:
 	case op_except:
 	case op_inter:
 	case op_munion:
@@ -1450,7 +1413,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 		break;
 	case op_basetable:
 	case op_munion:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_groupby:
@@ -1729,10 +1691,10 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	}
 	set_processed(l);
 	set_processed(r);
-	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
+	rel = rel_setop_n_ary_check_types(sql, l, r, ls, rs, op_munion);
 	if (!rel)
 		return NULL;
-	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1), false);
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
@@ -2183,7 +2145,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_except:
 	case op_inter:
 
@@ -2421,7 +2382,6 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 		if (rel->l)
@@ -2671,7 +2631,6 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 		if (rel->l)

@@ -72,7 +72,6 @@ has_remote_or_replica( sql_rel *rel )
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_merge:
@@ -405,7 +404,6 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 
