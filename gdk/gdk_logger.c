@@ -767,9 +767,11 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 					const void *t = BUNtail(vi, p);
 
 					if (q < cnt) {
-						if (b->tnosorted == q)
+						if (b->tnosorted == q ||
+						    b->tnosorted == q + 1)
 							b->tnosorted = 0;
-						if (b->tnorevsorted == q)
+						if (b->tnorevsorted == q ||
+						    b->tnorevsorted == q + 1)
 							b->tnorevsorted = 0;
 						if (b->tnokey[0] == q ||
 						    b->tnokey[1] == q) {

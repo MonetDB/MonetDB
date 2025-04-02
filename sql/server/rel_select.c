@@ -4825,12 +4825,12 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int needs_distinct,
 					if (!found) {
 						if (needs_distinct)
 							return sql_error(sql, 02, SQLSTATE(42000) "SELECT: with DISTINCT ORDER BY expressions must appear in select list");
-						if (!is_freevar(e))
+						if (!is_freevar(e) && !(is_sql_window(f) && exp_is_atom(e)))
 							append(rel->exps, e);
 					} else {
 						e = found;
 					}
-					if (!is_freevar(e))
+					if (!is_freevar(e) && !(is_sql_window(f) && exp_is_atom(e)))
 						e = exp_ref(sql, e);
 				}
 			}
