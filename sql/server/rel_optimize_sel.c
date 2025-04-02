@@ -1530,7 +1530,6 @@ subrel_uses_exp_outside_subrel(visitor *v, sql_rel *rel, list *l, sql_rel *j)
 		return exps_uses_any(rel->exps, l) || exps_uses_any(rel->r, l);
 	case op_basetable:
 	case op_table:
-	case op_union:
 	case op_except:
 	case op_inter:
 		return exps_uses_any(rel->exps, l);
@@ -1627,7 +1626,7 @@ rel_join2semijoin(visitor *v, sql_rel *rel)
 static int
 find_projection_for_join2semi(sql_rel *rel)
 {
-	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_base(rel->op) || (is_union(rel->op) && need_distinct(rel))) {
+	if (is_simple_project(rel->op) || is_groupby(rel->op) || is_inter(rel->op) || is_except(rel->op) || is_base(rel->op) || (is_munion(rel->op) && need_distinct(rel))) {
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
 			return ALL_VALUES_DISTINCT;
 		if (list_length(rel->exps) == 1) {
@@ -2655,8 +2654,15 @@ order_joins(visitor *v, list *rels, list *exps)
 static int
 rel_neg_in_size(sql_rel *r)
 {
-	if ((is_union(r->op) /*|| is_munion(r->op)*/) && r->nrcols == 0)
-		return -1 + rel_neg_in_size(r->l);
+	if (is_munion(r->op) && r->nrcols == 0) {
+		list *l = r->l;
+		int n = 0;
+		for(node *m = l->h; m; m = m->next) {
+			sql_rel *i = m->data;
+			n += rel_neg_in_size(i);
+		}
+		return -1 + n;
+	}
 	if (is_project(r->op) && r->nrcols == 0)
 		return -1;
 	return 0;
@@ -2877,7 +2883,6 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_merge:
@@ -3232,9 +3237,12 @@ rel_rewrite_antijoin(visitor *v, sql_rel *rel)
 	sql_rel *r = rel->r;
 
 	assert(rel->op == op_anti);
-	if (l && !rel_is_ref(l) && r && !rel_is_ref(r) && is_union(r->op) && !is_single(r)) {
-		sql_rel *rl = rel_dup(r->l), *nl;
-		sql_rel *rr = rel_dup(r->r);
+	if (l && !rel_is_ref(l) && r && !rel_is_ref(r) && is_munion(r->op) && !is_single(r)) {
+		list *rels = r->l;
+		if (list_length(rels) != 2)
+			return rel;
+		sql_rel *rl = rel_dup(rels->h->data), *nl;
+		sql_rel *rr = rel_dup(rels->h->next->data);
 
 		if (!is_project(rl->op))
 			rl = rel_project(v->sql->sa, rl,

@@ -20,5 +20,8 @@
 
 extern sql_rel *rel_deadcode_elimination(mvc *sql, sql_rel *rel);
 extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
+/* dead code elimination on sub relation */
+extern sql_rel * rel_deadcode_elimination(mvc *sql, sql_rel *rel);
+
 
 #endif /*_REL_OPTIMIZER_H_*/
