@@ -2289,6 +2289,17 @@ view_def:
 	  append_int(l, $1);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 	}
+  | CREATE OR REPLACE opt_temp VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+	{  dlist *l = L();
+	  append_int(l, SQL_PERSIST);
+	  append_list(l, $6);
+	  append_list(l, $7);
+	  append_symbol(l, $9);
+	  append_int(l, $10);
+	  append_int(l, TRUE);	/* persistent view */
+	  append_int(l, $4);
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
+	}
   ;
 
 opt_with_check_option:
