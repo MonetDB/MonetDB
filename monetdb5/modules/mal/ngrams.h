@@ -44,9 +44,9 @@
 #define BIGRAM(s) 	(TOKEN1(s) && TOKEN2(s))
 #define TRIGRAM(s) 	(TOKEN1(s) && TOKEN2(s) && TOKEN3(s))
 
-#define ENC_TOKEN1(t) CHARMAP(*t)			/* encoded token #one */
-#define ENC_TOKEN2(t) CHARMAP(*(t + 1))		/* encoded token #two */
-#define ENC_TOKEN3(t) CHARMAP(*(t + 2))		/* encoded token #three */
+#define ENC_TOKEN1(t) CHARMAP(*t)			/* encoded first token */
+#define ENC_TOKEN2(t) CHARMAP(*(t + 1))		/* encoded second token */
+#define ENC_TOKEN3(t) CHARMAP(*(t + 2))		/* encoded third token */
 
 #define VALUE(s, x)  (s##vars + VarHeapVal(s##vals, (x), s##i->width))
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))

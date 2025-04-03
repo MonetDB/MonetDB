@@ -643,6 +643,50 @@ NGselect(MalStkPtr stk, InstrPtr pci,
 }
 
 static str
+join_nested_loop(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
+				 struct canditer *lci, struct canditer *rci,
+				 int (*str_cmp)(const char *, const char *, int),
+				 QryCtx *qry_ctx)
+{
+	str msg = MAL_SUCCEED;
+	size_t new_cap;
+	oid lbase = li->b->hseqbase, rbase = ri->b->hseqbase, or, ol;
+	const char *lvars = li->vh->base, *rvars = ri->vh->base,
+		*lvals = li->base, *rvals = ri->base;
+
+	canditer_reset(lci);
+	TIMEOUT_LOOP(rci->ncand, qry_ctx) {
+		or = canditer_next(rci);
+		const char *rs = VALUE(r, or - rbase);
+		if (strNil(rs))
+			continue;
+		canditer_reset(lci);
+		TIMEOUT_LOOP(lci->ncand, qry_ctx) {
+			ol = canditer_next(lci);
+			const char *ls = VALUE(l, ol - lbase);
+			if (!strNil(ls)) {
+				if (str_cmp(ls, rs, str_strlen(rs)) == 0) {
+					APPEND(rl, ol);
+					if (rr) APPEND(rr, or);
+					if (BATcount(rl) == BATcapacity(rl)) {
+						new_cap = BATgrows(rl);
+						if (BATextend(rl, new_cap) != GDK_SUCCEED ||
+							(rr && BATextend(rr, new_cap) != GDK_SUCCEED)) {
+							throw(MAL, "join_unigram", GDK_EXCEPTION);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	BATsetcount(rl, BATcount(rl));
+	if (rr) BATsetcount(rr, BATcount(rr));
+
+	return msg;
+}
+
+static str
 join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 			 struct canditer *lci, struct canditer *rci,
 			 int (*str_cmp)(const char *, const char *, int),
@@ -755,7 +799,7 @@ join_unigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
 	ngrams_destroy(ng);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
@@ -871,7 +915,8 @@ join_bigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
 	ngrams_destroy(ng);
-	return MAL_SUCCEED;
+
+	return msg;
 }
 
 static str
@@ -987,7 +1032,7 @@ join_trigram(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	BATsetcount(rl, BATcount(rl));
 	if (rr) BATsetcount(rr, BATcount(rr));
 	ngrams_destroy(ng);
-	return MAL_SUCCEED;
+	return msg;
 }
 
 static str
@@ -1061,21 +1106,21 @@ NGjoin(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	switch(ngram) {
-	case 1:
-		msg = join_unigram(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
-		break;
-	case 2:
-		msg = join_bigram(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
-		break;
-	case 3:
-		msg = join_trigram(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
-		break;
-	default:
-		bat_iterator_end(&li);
-		bat_iterator_end(&ri);
-		BBPreclaim_n(6, rl, rr, l, r, cl, cr);
-		throw(MAL, fname, SQLSTATE(42000) "Only uni, bi or trigrams available.");
+	if (lci.ncand < 1000 || rci.ncand < 5)
+		join_nested_loop(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
+	else {
+		if (ngram == 1)
+			msg = join_unigram(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
+		else if (ngram == 2)
+			msg = join_bigram(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
+		else if (ngram == 3)
+			msg = join_trigram(rl, rr, &li, &ri, &lci, &rci, str_cmp, qry_ctx);
+		else {
+			bat_iterator_end(&li);
+			bat_iterator_end(&ri);
+			BBPreclaim_n(6, rl, rr, l, r, cl, cr);
+			throw(MAL, fname, SQLSTATE(42000) "Only uni, bi or trigrams available.");
+		}
 	}
 
 	bat_iterator_end(&li);
