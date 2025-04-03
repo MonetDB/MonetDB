@@ -2089,6 +2089,8 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 #define SA_BLOCK_SIZE (128*1024)
 #define SA_HEADER_SIZE 2*(sizeof(size_t))
 #define CANARY_VALUE ((size_t)0xDEADBEEFDEADBEEF)
+#define round16(sz) ((sz+15)&~15)
+#define round_block_size(sz) ((sz + (SA_BLOCK_SIZE - 1))&~(SA_BLOCK_SIZE - 1))
 
 typedef struct freed_t {
 	size_t sz;
@@ -2240,7 +2242,7 @@ allocator *sa_reset(allocator *sa)
 
 	sa->frees = 0;
 	sa->nr = 1;
-	sa->used = 0;
+	sa->used = sa->pa ? round16(sizeof(allocator)) : 0;
 	sa->freelist = NULL;
 	sa->freelist_blks = NULL;
 	sa->usedmem = SA_BLOCK_SIZE;
@@ -2274,8 +2276,6 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 	return r;
 }
 
-#define round16(sz) ((sz+15)&~15)
-#define round_block_size(sz) ((sz + (SA_BLOCK_SIZE - 1))&~(SA_BLOCK_SIZE - 1))
 static void *
 _sa_alloc_internal(allocator *sa, size_t sz)
 {
@@ -2382,7 +2382,7 @@ create_allocator(allocator *pa)
 	sa->freelist = NULL;
 	sa->freelist_blks = NULL;
 	sa->frees = 0;
-	sa->used = 0;
+	sa->used = (pa)? round16(sizeof(allocator)) : 0;
 	sa->objects = 0;
 	sa->inuse = 0;
 	sa->free_obj_hits = 0;

@@ -316,6 +316,7 @@ copyMalBlk(MalBlkPtr old)
 	}
 
 	mb->ma = ma;
+	mb->instr_allocator = ma_create(ma);
 	mb->var = MA_ZNEW_ARRAY(ma, VarRecord, old->vsize);
 	if (mb->var == NULL) {
 		ma_destroy(ma);
@@ -442,7 +443,7 @@ copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args)
 {
 	if (args < p->maxarg)
 		args = p->maxarg;
-	InstrPtr new = (InstrPtr) MA_NEW_ARRAY(mb->ma, char, offsetof(InstrRecord, argv) + args * sizeof(p->argv[0]));
+	InstrPtr new = (InstrPtr) MA_NEW_ARRAY(mb->instr_allocator, char, offsetof(InstrRecord, argv) + args * sizeof(p->argv[0]));
 	if (new == NULL)
 		return new;
 	memcpy(new, p, offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
@@ -480,7 +481,7 @@ clrInstruction(InstrPtr p)
 void
 freeInstruction(MalBlkPtr mb, InstrPtr p)
 {
-	assert(p && mb && mb->ma);
+	assert(p && mb && mb->instr_allocator);
 	sa_free(mb->instr_allocator, p);
 }
 
@@ -992,7 +993,7 @@ extendInstruction(MalBlkPtr mb, InstrPtr p)
 	InstrPtr pn = p;
 	if (p->argc == p->maxarg) {
 		int space = p->maxarg * sizeof(p->argv[0]) + offsetof(InstrRecord, argv);
-		pn = (InstrPtr) MA_RENEW_ARRAY(mb->ma, char, p, space + MAXARG * sizeof(p->argv[0]), space);
+		pn = (InstrPtr) MA_RENEW_ARRAY(mb->instr_allocator, char, p, space + MAXARG * sizeof(p->argv[0]), space);
 		if (pn == NULL) {		/* In the exceptional case we can not allocate more space * then we show an exception, mark the block as erroneous * and leave the instruction as is. */
 			mb->errors = createMalException(mb, 0, TYPE,
 											SQLSTATE(HY013) MAL_MALLOC_FAIL);
