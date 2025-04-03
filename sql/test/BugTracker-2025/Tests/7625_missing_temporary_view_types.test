@@ -139,6 +139,9 @@ create temporary view tv as select name, schema_id, query, type, system, commit_
 31
 
 
+statement error 3F000!CREATE VIEW: local temporary views should be stored in the 'tmp' schema
+CREATE LOCAL TEMPORARY VIEW sys.sysltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
 statement ok
 CREATE OR REPLACE VIEW v AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
 
