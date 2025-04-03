@@ -23,8 +23,6 @@ SYSTEM TABLE
 SYSTEM VIEW
 20
 GLOBAL TEMPORARY TABLE
-21
-GLOBAL TEMPORARY VIEW
 30
 LOCAL TEMPORARY TABLE
 31
@@ -104,7 +102,7 @@ create temporary view tv as select name, schema_id, query, type, system, commit_
 
 -- lists 3 rows, gtv has type = 1, temporary = 0 !! this is wrong !!
 -- The type should have been 21 (so commit_action set to 1) and temporary set to 1
--- Currently a GLOBAL TEMPORARY VIEW  is not distinguisable from a normal user VIEW
+-- Currently a GLOBAL TEMPORARY VIEW  is not distinguisable from a normal user VIEW and thus treated as equal
 
 
 --DROP VIEW ltv
@@ -117,11 +115,11 @@ select * from ltv order by schema_id, name
 gtv
 2000
 create global temporary view gtv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
-21
-0
-0
-0
 1
+0
+0
+0
+0
 v
 2000
 create view v as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
@@ -153,8 +151,8 @@ select table_schema, table_name, table_type, table_type_id, is_view from informa
 ----
 sys
 gtv
-GLOBAL TEMPORARY VIEW
-21
+VIEW
+1
 1
 sys
 v
@@ -179,7 +177,7 @@ select table_schema, table_name, view_definition, table_type_id from information
 sys
 gtv
 create global temporary view gtv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
-21
+1
 sys
 v
 create view v as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;

@@ -345,7 +345,6 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
 -- sys._tables.type value depending on values of temporary and
 -- commit_action).
   (20, 'GLOBAL TEMPORARY TABLE'),
-  (21, 'GLOBAL TEMPORARY VIEW'),
   (30, 'LOCAL TEMPORARY TABLE'),
   (31, 'LOCAL TEMPORARY VIEW');
 

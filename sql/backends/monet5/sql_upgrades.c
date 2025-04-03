@@ -4767,15 +4767,14 @@ sql_update_mar2025_sp1(Client c, mvc *sql)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* 10_sys_schema_extension.sql */
-	/* if the table types: GLOBAL TEMPORARY VIEW, LOCAL TEMPORARY VIEW are
+	/* if the table type LOCAL TEMPORARY VIEW is
 	 * not in the list of table_types, upgrade */
-	pos = snprintf(buf, bufsize, "select table_type_name from sys.table_types where table_type_name IN ('GLOBAL TEMPORARY VIEW','LOCAL TEMPORARY VIEW');\n");
+	pos = snprintf(buf, bufsize, "select table_type_name from sys.table_types where table_type_name = 'LOCAL TEMPORARY VIEW';\n");
 	assert(pos < bufsize);
 	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
 		pos = snprintf(buf, bufsize,
 				"ALTER TABLE sys.table_types SET READ WRITE;\n"
-				"INSERT INTO sys.table_types VALUES (21, 'GLOBAL TEMPORARY VIEW');\n"
 				"INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
