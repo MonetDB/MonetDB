@@ -1792,13 +1792,13 @@ table_def:
 	  append_int(l, $2);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | local_temp VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+  | local_temp VIEW qname opt_column_list AS SelectStmt
 	{  dlist *l = L();
 	  append_int(l, $1);
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
-	  append_int(l, $7);
+	  append_int(l, FALSE);
 	  append_int(l, TRUE);
 	  append_int(l, FALSE);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
@@ -2294,13 +2294,13 @@ view_def:
 	  append_int(l, $1);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 	}
-  | CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+  | CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
 	{  dlist *l = L();
 	  append_int(l, SQL_PERSIST);
 	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_symbol(l, $9);
-	  append_int(l, $10);
+	  append_int(l, FALSE);
 	  append_int(l, TRUE);	/* persistent view */
 	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
