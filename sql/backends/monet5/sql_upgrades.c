@@ -4758,34 +4758,27 @@ sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 static str
 sql_update_mar2025_sp1(Client c, mvc *sql)
 {
-	size_t bufsize = 65536, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
+	char *err = NULL;
 	res_table *output = NULL;
 	BAT *b;
-
-	if (buf == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* 10_sys_schema_extension.sql */
 	/* if the table type LOCAL TEMPORARY VIEW is
 	 * not in the list of table_types, upgrade */
-	pos = snprintf(buf, bufsize, "select table_type_name from sys.table_types where table_type_name = 'LOCAL TEMPORARY VIEW';\n");
-	assert(pos < bufsize);
-	err = SQLstatementIntern(c, buf, "update", true, false, &output);
+	const char query1[] = "select table_type_name from sys.table_types where table_type_name = 'LOCAL TEMPORARY VIEW';";
+	err = SQLstatementIntern(c, query1, "update", true, false, &output);
 	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
-		pos = snprintf(buf, bufsize,
-				"ALTER TABLE sys.table_types SET READ WRITE;\n"
-				"INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');\n");
-		assert(pos < bufsize);
-		printf("Running database upgrade commands:\n%s\n", buf);
+		const char stmt2[] =
+			"ALTER TABLE sys.table_types SET READ WRITE;\n"
+			"INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');\n";
+		printf("Running database upgrade commands:\n%s\n", stmt2);
 		fflush(stdout);
-		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+		err = SQLstatementIntern(c, stmt2, "update", true, false, NULL);
 		if (err == MAL_SUCCEED) {
-			pos = snprintf(buf, bufsize, "ALTER TABLE sys.table_types SET READ ONLY;\n");
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
+			const char stmt3[] = "ALTER TABLE sys.table_types SET READ ONLY;\n";
+			printf("Running database upgrade commands:\n%s\n", stmt3);
 			fflush(stdout);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
+			err = SQLstatementIntern(c, stmt3, "update", true, false, NULL);
 		}
 
 		/* 91_information_schema.sql */
@@ -4871,7 +4864,6 @@ sql_update_mar2025_sp1(Client c, mvc *sql)
 
 	return err;
 }
-
 
 int
 SQLupgrades(Client c, mvc *m)
