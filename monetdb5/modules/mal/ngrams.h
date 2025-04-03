@@ -13,7 +13,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define NGRAM_TYPE hge
 #define NGRAM_TYPENIL hge_nil
 #define NGRAM_CST(v) ((hge)LL_CONSTANT(v))
