@@ -1,0 +1,55 @@
+statement ok
+CREATE TYPE kv AS (
+    key VARCHAR,
+    value VARCHAR
+)
+
+statement ok
+CREATE TYPE oelement AS (
+    type VARCHAR,
+    id VARCHAR,
+    attributes kv[]
+)
+
+statement ok
+CREATE TYPE ecommerce_type AS (
+    actionfields kv[],
+    objects oelement[]
+)
+
+statement ok
+CREATE TABLE events(
+    eventid VARCHAR,
+    jodpsid VARCHAR,
+    jodpuid VARCHAR,
+    event VARCHAR,
+    "timestamp" TIMESTAMP WITH TIME ZONE,
+    label VARCHAR,
+    value INTEGER,
+    screen_height VARCHAR,
+    screen_width VARCHAR,
+    user_agent VARCHAR,
+    language VARCHAR,
+    browser VARCHAR,
+    ga_cid VARCHAR,        -- Google Analytics Client ID
+    category VARCHAR,
+    action VARCHAR,
+    location kv[],
+    "user" kv[],           -- Use quotes as 'user' is a reserved keyword
+    event_context kv[],
+    component kv[],
+    queries kv[],
+    ecommerce ecommerce_type,
+    timestamp_processed TIMESTAMP WITH TIME ZONE,
+    banner kv[],
+    bloomreach kv[],
+    promos kv[],
+    search kv[],
+    filters kv[],
+    message kv[],
+    device kv[]
+)
+
+statement ok
+insert into events select * from read_ndjson(r'$TSTSRCDIR/events.ndjson')
+
