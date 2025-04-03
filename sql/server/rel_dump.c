@@ -2494,6 +2494,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		set_processed(rel);
 		break;
+	case 'u':
+		if (strcmp(r+*pos, "union") == 0 && j == op_basetable) {
+			*pos += (int) strlen("union");
+			j = op_munion;
+		}
+		/* fall through */
 	case 'm':
 		if (strcmp(r+*pos, "munion") == 0 && j == op_basetable) {
 			*pos += (int) strlen("munion");
