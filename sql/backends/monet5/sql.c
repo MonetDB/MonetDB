@@ -1195,6 +1195,45 @@ mvc_next_value_ms(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next sequence value %s.%s", sname, seqname);
 }
 
+static str
+mvc_next_value_ms_cntr(bat *res, int *rcntr, bat *in, int *icntr)
+{
+	BAT *b = BATdescriptor(*in);
+	if (!b)
+		return createException(SQL, "sql.next_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BUN card = BATcount(b);
+	BAT *r = NULL;
+
+	if (!(r = COLnew(b->hseqbase, TYPE_int, card, TRANSIENT)))
+		return createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	int *ip = Tloc(b,0);
+	int *op = Tloc(r, 0);
+	int sn = *icntr, osn = sn;
+	bool nil_val = false;
+	for (BUN i = 0; i < card; i++) {
+		if (ip[i] < 0) {
+			if (ip[i] == int_nil)
+				nil_val = true;
+			op[i] = ip[i];
+		} else {
+			op[i] = sn++;
+		}
+	}
+	*rcntr = sn;
+	BATsetcount(r, card);
+	r->tnonil = !nil_val;
+	r->tnil = nil_val;
+	r->trevsorted = false;
+	if (((sn-osn) - (*icntr)) == 0)
+		r->tsorted = r->tkey = true;
+	else
+		r->tsorted = r->tkey = false;
+	*res = r->batCacheid;
+	BBPkeepref(r);
+	BBPreclaim(b);
+	return MAL_SUCCEED;
+}
+
 /* str mvc_get_value(lng *res, str *sname, str *seqname); */
 str
 mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -6172,7 +6211,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "next_value_ms", mvc_next_value_ms, false, "return the next value of the sequence", args(1,4, arg("",int),argany("card",1), arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value", mvc_next_value_bulk, true, "return the next value of the sequence", args(1,4, batarg("",lng),arg("card",lng), arg("sname",str),arg("sequence",str))),
  pattern("batsql", "next_value_ms", mvc_next_value_ms, false, "return the next value of the sequence", args(1,4, batarg("",int),batargany("card",1), arg("sname",str),arg("sequence",str))),
- //pattern("batsql", "next_value_ms", mvc_next_value_ms, false, "return the next value of the sequence", args(1,5, batarg("",lng),batargany("card",1), arg("sname",str),arg("sequence",str), batarg("cand",oid))),
+ //pattern("batsql", "next_value_ms", mvc_next_value_ms, false, "return the next value of the sequence", args(1,5, batarg("",lng),batargany("in",1), arg("sname",str),arg("sequence",str), batarg("cand",oid))),
+ command("batsql", "next_value_ms", mvc_next_value_ms_cntr, false, "return the next value", args(2,4, batarg("",int), arg("cntr", int), batargany("in",1), arg("icntr",int))),
  pattern("sql", "get_value", mvc_get_value, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, arg("",lng),arg("sname",str),arg("sequence",str))),
  pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,3, batarg("",lng),batarg("sname",str),batarg("sequence",str))),
  pattern("batsql", "get_value", mvc_get_value_bulk, false, "return the current value of the sequence (ie the next to be used value)", args(1,5, batarg("",lng),batarg("sname",str),batarg("sequence",str),batarg("s1",oid),batarg("s2",oid))),

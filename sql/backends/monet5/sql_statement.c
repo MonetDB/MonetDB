@@ -3663,21 +3663,90 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	return NULL;
 }
 
+static int
+renumber(backend *be, stmt *p, stmt *c)
+{
+	list *ms = unnest_stmt(c);
+	int len = list_length(ms) - 1;
+
+	/* next_value_ms + renumber */
+	stmt *rowids = ms->t->data;
+
+	/* call next_value_ms */
+	InstrPtr r = newStmt(be->mb, batsqlRef, "next_value_ms");
+	r = pushReturn(be->mb, r, newTmpVariable(be->mb, TYPE_int));
+	r = pushArgument(be->mb, r, rowids->nr);
+	if (p)
+		r = pushArgument(be->mb, r, p->flag);
+	else
+		r = pushInt(be->mb, r, 0); /* start from 1 */
+	pushInstruction(be->mb, r);
+
+	len--;
+	if (c->subtype.multiset == MS_ARRAY)
+		len--;
+	stmt *msid = list_fetch(ms, len);
+
+	/* call renumber */
+	InstrPtr q = newStmt(be->mb, batsqlRef, "renumber");
+	q = pushArgument(be->mb, q, msid->nr);
+	q = pushArgument(be->mb, q, rowids->nr);
+	q = pushArgument(be->mb, q, getArg(r, 0));
+	pushInstruction(be->mb, q);
+
+	/* now update msid and rowids */
+	rowids->nr = getArg(r, 0);
+	msid->nr = getArg(q, 0);
+	return getArg(r, 1);
+}
+
 static stmt *
-stmt_packn(backend *be, stmt *c, stmt *n)
+stmt_packn(backend *be, stmt *c, stmt *nr)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (c->nested)
-		return stmt_nest(be, c, n, &stmt_packn);
+	if (c->nested) {
+		int ctnr = 0;
+		if (c->subtype.multiset)
+			ctnr = renumber(be, NULL, c);
+
+		list *ops = unnest_stmt(c);
+		list *nops = sa_list(be->mvc->sa);
+		sql_subtype *st = tail_type(c);
+		for(node *n = ops->h; n; n = n->next) {
+			stmt *i = n->data, *oi = i;
+
+			i = stmt_packn(be, oi, nr);
+			i->nested = oi->nested;
+			i->subtype = *tail_type(oi);
+			i->tname = oi->tname;
+			i->cname = oi->cname;
+			i->label = oi->label;
+			append(nops, i);
+		}
+		stmt *r = stmt_list(be, nops);
+		if (r == NULL)
+			return NULL;
+		r->nested = true;
+		r->subtype = *st;
+		r->tname = c->tname;
+		r->cname = c->cname;
+		r->label = c->label;
+		if (c->type == st_alias)
+			r = stmt_alias(be, r, c->label, c->tname, c->cname);
+
+		if (r && ctnr)
+			r->flag = ctnr;
+		return r;
+	}
 	if (c == NULL || c->nr < 0)
 		goto bailout;
 	q = newStmtArgs(mb, matRef, packIncrementRef, 3);
 	if (q == NULL)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
-	q = pushArgument(mb, q, n->nr);
+	q = pushArgument(mb, q, nr->nr);
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
@@ -3687,7 +3756,7 @@ stmt_packn(backend *be, stmt *c, stmt *n)
 		goto bailout;
 	}
 	s->op1 = c;
-	s->op2 = n;
+	s->op2 = nr;
 	s->nrcols = c->nrcols;
 	s->key = c->key;
 	s->nr = getDestVar(q);
@@ -3704,8 +3773,6 @@ stmt_packn(backend *be, stmt *c, stmt *n)
 stmt *
 stmt_pack(backend *be, stmt *c, int n)
 {
-	if (c->nested)
-		return stmt_nest(be, c, stmt_atom_int(be, n), &stmt_packn);
 	return stmt_packn(be, c, stmt_atom_int(be, n));
 }
 
@@ -3715,8 +3782,39 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (c->nested)
-		return stmt_nest(be, c, a, &stmt_pack_add);
+	if (c->nested) {
+		int ctnr = 0;
+		if (c->subtype.multiset)
+			ctnr = renumber(be, c, a);
+		list *ops1 = unnest_stmt(c);
+		list *ops2 = unnest_stmt(a);
+		list *nops = sa_list(be->mvc->sa);
+		sql_subtype *st = tail_type(a);
+		for(node *n = ops1->h, *m = ops2->h; n && m; n = n->next, m = m->next) {
+			stmt *i1 = n->data, *i2 = m->data;
+			stmt *i = i2, *oi = i;
+			i = stmt_pack_add(be, i1, oi);
+			i->nested = oi->nested;
+			i->subtype = *tail_type(oi);
+			i->tname = oi->tname;
+			i->cname = oi->cname;
+			i->label = oi->label;
+			append(nops, i);
+		}
+		stmt *r = stmt_list(be, nops);
+		if (r == NULL)
+			return NULL;
+		r->nested = true;
+		r->subtype = *st;
+		r->tname = a->tname;
+		r->cname = a->cname;
+		r->label = a->label;
+		if (a->type == st_alias)
+			r = stmt_alias(be, r, a->label, a->tname, a->cname);
+		if (r && ctnr)
+			r->flag = ctnr;
+		return r;
+	}
 
 	if (c == NULL || a == NULL || c->nr < 0 || a->nr < 0)
 		goto bailout;
