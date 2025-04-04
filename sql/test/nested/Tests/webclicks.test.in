@@ -221,12 +221,12 @@ select ecommerce from events
 #----
 
 statement ok
-CREATE FUNCTION pcre_match(s string, pattern string) RETURNS boolean EXTERNAL NAME pcre."match"
+CREATE OR REPLACE FUNCTION pcre_match(s string, pattern string) RETURNS boolean EXTERNAL NAME pcre."match"
 
 # this is not exactly the functionality intended
 # in the large query to follow
 statement ok
-create function REGEXP_EXTRACT(s string, pattern string)
+create or replace function REGEXP_EXTRACT(s string, pattern string)
 returns string
 begin
     if (pcre_match(s, pattern))
