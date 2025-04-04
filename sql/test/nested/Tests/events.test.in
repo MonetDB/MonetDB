@@ -53,3 +53,61 @@ CREATE TABLE events(
 statement ok
 insert into events select * from read_ndjson(r'$TSTSRCDIR/events.ndjson')
 
+statement ok
+CREATE FUNCTION pcre_match(s string, pattern string) RETURNS boolean EXTERNAL NAME pcre."match"
+
+# this is not exactly the functionality intended
+# in the large query to follow
+statement ok
+create function REGEXP_EXTRACT(s string, pattern string)
+returns string
+begin
+    if (pcre_match(s, pattern))
+    then return s;
+    else return null;
+    end if;
+end
+
+query TTTTTT
+WITH base AS (
+    SELECT
+        timestamp,
+        user_agent,
+        event,
+        CASE WHEN l.key = 'pageType' THEN l.value END AS pagetype,
+        CASE WHEN u.key = 'customerType' THEN u.value END AS customertype,
+        CASE WHEN u.key = 'customerid' THEN u.value END AS customerid,
+        CASE WHEN eal.key = 'brand' THEN eal.value END AS ecom_attributes_brand
+    FROM events
+        left join unnest(location) as l on true
+        left join unnest(ecommerce.objects) as eol on true
+        left join unnest(eol.attributes) as eal on true
+        cross join unnest("user") as u
+    WHERE cast(timestamp as date) = date'2024-11-30')
+, last_datapoints AS (
+    SELECT
+        customerid,
+        timestamp,
+        event,
+        max(pagetype) as pagetype,
+        max(user_agent) as user_agent,
+        max(customertype) as customertype,
+        max(ecom_attributes_brand) as ecom_attributes_brand
+    FROM base
+    group by customerid, timestamp, event
+)
+select event,
+    IFNULL(REGEXP_EXTRACT(user_agent, '.*Edg.*'), 'No edge') as edge_user_agent,
+    cast(timestamp as date) as date,
+    customertype,
+    count(distinct(customerid)) as customers,
+    count(distinct(pagetype)) as pagetypes
+from (
+    SELECT *,
+    ROW_NUMBER() OVER (PARTITION BY event ORDER BY timestamp ASC) as row_num
+    FROM last_datapoints
+)
+where row_num=1
+group by 1, 2, 3, 4
+order by 3 desc
+----
