@@ -3663,19 +3663,21 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	return NULL;
 }
 
-stmt *
-stmt_pack(backend *be, stmt *c, int n)
+static stmt *
+stmt_packn(backend *be, stmt *c, stmt *n)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
+	if (c->nested)
+		return stmt_nest(be, c, n, &stmt_packn);
 	if (c == NULL || c->nr < 0)
 		goto bailout;
 	q = newStmtArgs(mb, matRef, packIncrementRef, 3);
 	if (q == NULL)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
-	q = pushInt(mb, q, n);
+	q = pushArgument(mb, q, n->nr);
 	bool enabled = be->mvc->sa->eb.enabled;
 	be->mvc->sa->eb.enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
@@ -3685,6 +3687,7 @@ stmt_pack(backend *be, stmt *c, int n)
 		goto bailout;
 	}
 	s->op1 = c;
+	s->op2 = n;
 	s->nrcols = c->nrcols;
 	s->key = c->key;
 	s->nr = getDestVar(q);
@@ -3696,7 +3699,14 @@ stmt_pack(backend *be, stmt *c, int n)
 	if (be->mvc->sa->eb.enabled)
 		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
+}
 
+stmt *
+stmt_pack(backend *be, stmt *c, int n)
+{
+	if (c->nested)
+		return stmt_nest(be, c, stmt_atom_int(be, n), &stmt_packn);
+	return stmt_packn(be, c, stmt_atom_int(be, n));
 }
 
 stmt *
@@ -3704,6 +3714,9 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
+
+	if (c->nested)
+		return stmt_nest(be, c, a, &stmt_pack_add);
 
 	if (c == NULL || a == NULL || c->nr < 0 || a->nr < 0)
 		goto bailout;

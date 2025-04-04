@@ -3835,7 +3835,6 @@ exp_check_multiset_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, ch
 
 	list *msvals = NULL;
 	if (exp_is_rel(exp)) {
-		assert(0);
 		sql_rel *valr = exp_rel_get_rel(sql->sa, exp);
 		if (!valr || !is_project(valr->op) || !valr->exps)
 			return sql_error( sql, 03, SQLSTATE(42000) "cannot convert value into composite type '%s'", t->type->base.name);

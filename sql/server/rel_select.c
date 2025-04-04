@@ -1419,6 +1419,13 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 	list *exps = values_list(query, tableref);
 	if (!exps)
 		return NULL;
+	if (tableref->token == SQL_SET) {
+		list *nexps = sa_list(query->sql->sa);
+		sql_exp *e = exp_values(query->sql->sa, exps);
+		if ((e = exp_check_multiset(query->sql, e)) == NULL)
+			return NULL;
+		exps = append(nexps, e);
+	}
 	sql_rel *r = rel_project(query->sql->sa, NULL, exps);
 	r->nrcols = list_length(exps);
 	r->card = exps_card(exps);
@@ -1430,7 +1437,7 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 }
 
 static int
-check_is_lateral(symbol *tableref)
+check_is_lateral(symbol *tableref, bool *unnest)
 {
 	if (tableref->token == SQL_NAME || tableref->token == SQL_TABLE ||
 		tableref->token == SQL_VALUES) {
@@ -1442,8 +1449,10 @@ check_is_lateral(symbol *tableref)
 			symbol *sym = tableref->data.lval->h->data.sym;
 			dlist *qname = sym->data.lval->h->data.lval;
 			/* first is the qname */
-			if (dlist_length(qname) == 1 && strcmp(qname->h->data.sval, "unnest")==0)
+			if (dlist_length(qname) == 1 && strcmp(qname->h->data.sval, "unnest")==0) {
+				*unnest = true;
 				return 1;
+			}
 		}
 		return 0;
 	} else if (tableref->token == SQL_WITH) {
@@ -6148,7 +6157,8 @@ rel_query(sql_query *query, symbol *sq, exp_kind ek)
 		list *refs = new_exp_list(sql->sa); /* Keep list of relation names in order to test for duplicates */
 
 		for (dnode *n = fl->h; n ; n = n->next) {
-			int lateral = check_is_lateral(n->data.sym);
+			bool unnest = false;
+			int lateral = check_is_lateral(n->data.sym, &unnest);
 
 			/* just used current expression */
 			if (lateral && res)
@@ -6402,7 +6412,8 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 	}
 
 	/* a dependent join cannot depend on the right side, so disable lateral check for right and full joins */
-	lateral = (op == op_join || op == op_left) && check_is_lateral(tab2);
+	bool unnest = false;
+	lateral = (op == op_join || op == op_left) && check_is_lateral(tab2, &unnest);
 	t1 = table_ref(query, tab1, 0, refs);
 	if (t1) {
 		if (!lateral) {
