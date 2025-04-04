@@ -16,8 +16,8 @@
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + offsetof(MalStack, stk))
 
-mal_export MalStkPtr newGlobalStack(int size);
-mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
+mal_export MalStkPtr newGlobalStack(MalBlkPtr mb, int size);
+mal_export MalStkPtr reallocGlobalStack(MalBlkPtr mb, MalStkPtr s, int cnt);
 mal_export void freeStack(MalStkPtr stk);
 
 #define getStkRecord(S,P,I) &(S)->stk[(P)->argv[I]]

@@ -166,6 +166,6 @@ gdk_export BAT *BATgroupcovariance_sample(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT 
 gdk_export BAT *BATgroupcovariance_population(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 gdk_export BAT *BATgroupcorrelation(BAT *b1, BAT *b2, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils);
 
-gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
-gdk_export gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
+gdk_export BAT *BATgroupstr_group_concat(allocator *alloc, BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nils, const char *restrict separator);
+gdk_export gdk_return BATstr_group_concat(allocator *alloc, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils, bool nil_if_empty, const char *restrict separator);
 gdk_export gdk_return GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type);

@@ -1103,7 +1103,7 @@ AGGRsubquantilecand_avg(bat *retval, const bat *bid, const bat *quantile,
 }
 
 static str
-AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid,
+AGGRgroup_str_concat(allocator *alloc, bat *retval1, const bat *bid, const bat *gid,
 					 const bat *eid, const bat *sid, bool skip_nils,
 					 const bat *sepid, const char *separator,
 					 const char *malfunc)
@@ -1126,7 +1126,7 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid,
 		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	bn = BATgroupstr_group_concat(b, g, e, s, sep, skip_nils, separator);
+	bn = BATgroupstr_group_concat(alloc, b, g, e, s, sep, skip_nils, separator);
 
 	BBPunfix(b->batCacheid);
 	BBPreclaim(g);
@@ -1143,53 +1143,98 @@ AGGRgroup_str_concat(bat *retval1, const bat *bid, const bat *gid,
 #define DEFAULT_SEPARATOR ","
 
 static str
-AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid,
-					 const bat *eid)
+AGGRstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, NULL,
+	(void) cntxt;
+	bat *retval = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *gid = getArgReference_bat(stk, pci, 2);
+	bat *eid = getArgReference_bat(stk, pci, 3);
+	allocator *alloc = mb->ma;
+	return AGGRgroup_str_concat(alloc, retval, bid, gid, eid, NULL, true, NULL,
 								DEFAULT_SEPARATOR, "aggr.str_group_concat");
 }
 
 static str
-AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid,
-						const bat *eid, const bit *skip_nils)
+AGGRsubstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+//(bat *retval, const bat *bid, const bat *gid,const bat *eid, const bit *skip_nils)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, NULL,
+	(void) cntxt;
+	bat *retval = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *gid = getArgReference_bat(stk, pci, 2);
+	bat *eid = getArgReference_bat(stk, pci, 3);
+	bit *skip_nils = getArgReference_bit(stk, pci, 4);
+	allocator *alloc = mb->ma;
+	return AGGRgroup_str_concat(alloc, retval, bid, gid, eid, NULL, *skip_nils, NULL,
 								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
 }
 
 static str
-AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid,
-							const bat *eid, const bat *sid,
-							const bit *skip_nils)
+AGGRsubstr_group_concatcand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+//(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid,const bit *skip_nils)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, NULL,
+	(void) cntxt;
+	bat *retval = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *gid = getArgReference_bat(stk, pci, 2);
+	bat *eid = getArgReference_bat(stk, pci, 3);
+	bat *sid = getArgReference_bat(stk, pci, 4);
+	bit *skip_nils = getArgReference_bit(stk, pci, 5);
+	allocator *alloc = mb->ma;
+	return AGGRgroup_str_concat(alloc, retval, bid, gid, eid, sid, *skip_nils, NULL,
 								DEFAULT_SEPARATOR, "aggr.substr_group_concat");
 }
 
 static str
-AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep,
-						 const bat *gid, const bat *eid)
+AGGRstr_group_concat_sep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+//(bat *retval, const bat *bid, const bat *sep, const bat *gid, const bat *eid)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, true, sep, NULL,
-								"aggr.str_group_concat_sep");;
+	(void) cntxt;
+	bat *retval = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *sep = getArgReference_bat(stk, pci, 2);
+	bat *gid = getArgReference_bat(stk, pci, 3);
+	bat *eid = getArgReference_bat(stk, pci, 4);
+	allocator *alloc = mb->ma;
+	return AGGRgroup_str_concat(alloc, retval, bid, gid, eid, NULL, true, sep, NULL,
+								"aggr.str_group_concat_sep");
 }
 
 static str
-AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sep,
-							const bat *gid, const bat *eid,
-							const bit *skip_nils)
+AGGRsubstr_group_concat_sep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+//(bat *retval, const bat *bid, const bat *sep,
+//							const bat *gid, const bat *eid,
+//							const bit *skip_nils)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, NULL, *skip_nils, sep,
+	(void) cntxt;
+	bat *retval = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *sep = getArgReference_bat(stk, pci, 2);
+	bat *gid = getArgReference_bat(stk, pci, 3);
+	bat *eid = getArgReference_bat(stk, pci, 4);
+	bit *skip_nils = getArgReference_bit(stk, pci, 5);
+	allocator *alloc = mb->ma;
+	return AGGRgroup_str_concat(alloc, retval, bid, gid, eid, NULL, *skip_nils, sep,
 								NULL, "aggr.substr_group_concat_sep");
 }
 
 static str
-AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sep,
-								const bat *gid, const bat *eid, const bat *sid,
-								const bit *skip_nils)
+AGGRsubstr_group_concatcand_sep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+//(bat *retval, const bat *bid, const bat *sep,
+//								const bat *gid, const bat *eid, const bat *sid,
+//								const bit *skip_nils)
 {
-	return AGGRgroup_str_concat(retval, bid, gid, eid, sid, *skip_nils, sep,
+	(void) cntxt;
+	bat *retval = getArgReference_bat(stk, pci, 0);
+	bat *bid = getArgReference_bat(stk, pci, 1);
+	bat *sep = getArgReference_bat(stk, pci, 2);
+	bat *gid = getArgReference_bat(stk, pci, 3);
+	bat *eid = getArgReference_bat(stk, pci, 4);
+	bat *sid = getArgReference_bat(stk, pci, 5);
+	bit *skip_nils = getArgReference_bit(stk, pci, 6);
+	allocator *alloc = mb->ma;
+	return AGGRgroup_str_concat(alloc, retval, bid, gid, eid, sid, *skip_nils, sep,
 								NULL, "aggr.substr_group_concat_sep");
 }
 
@@ -1628,12 +1673,12 @@ mel_func aggr_init_funcs[] = {
  command("aggr", "quantile_avg", AGGRquantile_avg_cst, false, "Quantile aggregate", args(1,3, arg("",dbl),batargany("b",1),arg("q",dbl))),
  command("aggr", "subquantile_avg", AGGRsubquantile_avg, false, "Grouped quantile aggregate", args(1,6, batarg("",dbl),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),arg("skip_nils",bit))),
  command("aggr", "subquantile_avg", AGGRsubquantilecand_avg, false, "Grouped quantile aggregate with candidate list", args(1,7, batarg("",dbl),batargany("b",1),batarg("q",dbl),batarg("g",oid),batargany("e",2),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "str_group_concat", AGGRstr_group_concat, false, "Grouped string tail concat", args(1,4, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1))),
- command("aggr", "substr_group_concat", AGGRsubstr_group_concat, false, "Grouped string concat", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "substr_group_concat", AGGRsubstr_group_concatcand, false, "Grouped string concat with candidates list", args(1,6, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
- command("aggr", "str_group_concat", AGGRstr_group_concat_sep, false, "Grouped string tail concat with custom separator", args(1,5, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1))),
- command("aggr", "substr_group_concat", AGGRsubstr_group_concat_sep, false, "Grouped string concat with custom separator", args(1,6, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "substr_group_concat", AGGRsubstr_group_concatcand_sep, false, "Grouped string concat with candidates list with custom separator", args(1,7, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "str_group_concat", AGGRstr_group_concat, false, "Grouped string tail concat", args(1,4, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1))),
+ pattern("aggr", "substr_group_concat", AGGRsubstr_group_concat, false, "Grouped string concat", args(1,5, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ pattern("aggr", "substr_group_concat", AGGRsubstr_group_concatcand, false, "Grouped string concat with candidates list", args(1,6, batarg("",str),batarg("b",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ pattern("aggr", "str_group_concat", AGGRstr_group_concat_sep, false, "Grouped string tail concat with custom separator", args(1,5, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1))),
+ pattern("aggr", "substr_group_concat", AGGRsubstr_group_concat_sep, false, "Grouped string concat with custom separator", args(1,6, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ pattern("aggr", "substr_group_concat", AGGRsubstr_group_concatcand_sep, false, "Grouped string concat with candidates list with custom separator", args(1,7, batarg("",str),batarg("b",str),batarg("sep",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
 
  command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",bte),batarg("",lng),batarg("",lng),batarg("b",bte),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
  command("aggr", "subavg", AGGRavg3, false, "Grouped average aggregation", args(3,8, batarg("",sht),batarg("",lng),batarg("",lng),batarg("b",sht),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),

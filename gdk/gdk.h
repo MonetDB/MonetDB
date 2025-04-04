@@ -2297,7 +2297,6 @@ gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT 
 gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *nilslast)
 	__attribute__((__warn_unused_result__));
 
-#include "gdk_calc.h"
 
 gdk_export gdk_return GDKtoupper(char **restrict buf, size_t *restrict buflen, const char *restrict s)
 	__attribute__((__access__(read_write, 1)))
@@ -2632,3 +2631,4 @@ gdk_export void sa_free( allocator *sa, void *);
 #endif
 #endif
 
+#include "gdk_calc.h"

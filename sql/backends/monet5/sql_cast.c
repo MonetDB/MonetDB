@@ -81,17 +81,17 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
 		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
-		if (!(r = GDKmalloc(rlen)))
+		if (!(r = ma_alloc(mb->ma, rlen)))
 			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
-			GDKfree(r);
+			//GDKfree(r);
 			return msg;
 		}
 	}
 
-	*res = GDKstrdup(r);
-	if (!from_str)
-		GDKfree(r);
+	*res = MA_STRDUP(mb->ma, r);
+	//if (!from_str)
+	//	GDKfree(r);
 	if (!*res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;

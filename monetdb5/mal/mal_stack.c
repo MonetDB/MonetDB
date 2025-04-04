@@ -52,11 +52,11 @@
 /* #define DEBUG_MAL_STACK*/
 
 MalStkPtr
-newGlobalStack(int size)
+newGlobalStack(MalBlkPtr mb, int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) GDKzalloc(stackSize(size));
+	s = (MalStkPtr) ma_zalloc(mb->ma, stackSize(size));
 	if (!s)
 		return NULL;
 	s->stksize = size;
@@ -64,7 +64,7 @@ newGlobalStack(int size)
 }
 
 MalStkPtr
-reallocGlobalStack(MalStkPtr old, int cnt)
+reallocGlobalStack(MalBlkPtr mb, MalStkPtr old, int cnt)
 {
 	int k;
 	MalStkPtr s;
@@ -72,13 +72,13 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	if (old->stksize > cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = newGlobalStack(k);
+	s = newGlobalStack(mb, k);
 	if (!s) {
 		return NULL;
 	}
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
-	GDKfree(old);
+	//GDKfree(old);
 	return s;
 }
 
@@ -123,6 +123,6 @@ freeStack(MalStkPtr stk)
 {
 	if (stk != NULL) {
 		clearStack(stk);
-		GDKfree(stk);
+		//GDKfree(stk);
 	}
 }

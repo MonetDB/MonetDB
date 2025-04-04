@@ -857,7 +857,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
-	if (VALcopy(NULL, dst, src) == NULL)
+	if (VALcopy(mb->ma, dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

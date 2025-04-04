@@ -129,7 +129,7 @@ MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
 	insertSymbol(cntxt->usermodule, cntxt->curprg);
 
 	if (cntxt->glb == NULL)
-		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
+		cntxt->glb = newGlobalStack(cntxt->curprg->def, MAXGLOBALS + cntxt->curprg->def->vsize);
 	if (cntxt->glb == NULL)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	assert(cntxt->curprg->def != NULL);
@@ -502,7 +502,7 @@ MSserveClient(Client c)
 	 */
 	mb = c->curprg->def;
 	if (c->glb == NULL)
-		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
+		c->glb = newGlobalStack(mb, MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		MCcloseClient(c);
 		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -747,7 +747,7 @@ MALengine_(Client c)
 		return 0;				/* empty block */
 	if (c->glb) {
 		if (prg->def && c->glb->stksize < prg->def->vsize) {
-			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
+			c->glb = reallocGlobalStack(prg->def, c->glb, prg->def->vsize);
 			if (c->glb == NULL)
 				throw(MAL, "mal.engine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}

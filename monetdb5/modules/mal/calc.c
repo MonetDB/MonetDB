@@ -917,7 +917,7 @@ CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	assert((separator && !sep) || (!separator && sep));
-	r = BATstr_group_concat(ret, b, s, sep, true, nil_if_empty, separator);
+	r = BATstr_group_concat(mb->ma, ret, b, s, sep, true, nil_if_empty, separator);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(sep);
 	BBPreclaim(s);

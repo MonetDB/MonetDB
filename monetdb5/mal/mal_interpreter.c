@@ -260,14 +260,14 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 /*
  * Copy the constant values onto the stack frame
  */
-#define initStack(S, R)								\
+#define initStack(A, S, R)								\
 	do {											\
 		for (int i = (S); i < mb->vtop; i++) {		\
 			lhs = &stk->stk[i];						\
 			if (isVarConstant(mb, i) > 0) {			\
 				if (!isVarDisabled(mb, i)) {		\
 					rhs = &getVarConstant(mb, i);	\
-					if(VALcopy(NULL, lhs, rhs) == NULL)	\
+					if(VALcopy(A, lhs, rhs) == NULL)	\
 						R = 0;						\
 				}									\
 			} else {								\
@@ -275,7 +275,6 @@ malCommandCall(MalStkPtr stk, InstrPtr pci)
 				lhs->val.pval = 0;					\
 				lhs->len = 0;						\
 				lhs->bat = isaBatType(getVarType(mb, i));		\
-				lhs->allocated = true;				\
 			}										\
 		}											\
 	} while (0)
@@ -296,13 +295,13 @@ prepareMALstack(MalBlkPtr mb, int size)
 	int res = 1;
 	ValPtr lhs, rhs;
 
-	stk = newGlobalStack(size);
+	stk = newGlobalStack(mb, size);
 	if (!stk)
 		return NULL;
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
 	stk->memory = 0;
-	initStack(0, res);
+	initStack(mb->ma, 0, res);
 	if (!res) {
 		freeStack(stk);
 		return NULL;
@@ -341,7 +340,7 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 			throw(MAL, "mal.interpreter", "misalignment of symbols");
 		if (mb->vtop > stk->stksize)
 			throw(MAL, "mal.interpreter", "stack too small");
-		initStack(env->stkbot, res);
+		initStack(mb->ma, env->stkbot, res);
 		if (!res)
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
@@ -447,14 +446,14 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
 			int res = 1;
 
 			stk = *env;
-			initStack(0, res);
+			initStack(mb->ma, 0, res);
 			if (!res)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
 		for (int i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
-			if (VALcopy(NULL, lhs, argv[i]) == NULL)
+			if (VALcopy(mb->ma, lhs, argv[i]) == NULL)
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (lhs->bat)
 				BBPretain(lhs->val.bval);
@@ -513,11 +512,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	if (startpc + 1 == stoppc) {
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
-			backup = GDKmalloc(pci->argc * sizeof(ValRecord));
-			garbage = (int *) GDKzalloc(pci->argc * sizeof(int));
+			backup = ma_alloc(mb->ma, pci->argc * sizeof(ValRecord));
+			garbage = (int *) ma_zalloc(mb->ma, pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
-				GDKfree(backup);
-				GDKfree(garbage);
+				//GDKfree(backup);
+				//GDKfree(garbage);
 				throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		} else {
@@ -526,11 +525,11 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			memset(garbages, 0, sizeof(garbages));
 		}
 	} else if (mb->maxarg > 16) {
-		backup = GDKmalloc(mb->maxarg * sizeof(ValRecord));
-		garbage = (int *) GDKzalloc(mb->maxarg * sizeof(int));
+		backup = ma_alloc(mb->ma, mb->maxarg * sizeof(ValRecord));
+		garbage = (int *) ma_zalloc(mb->ma, mb->maxarg * sizeof(int));
 		if (backup == NULL || garbage == NULL) {
-			GDKfree(backup);
-			GDKfree(garbage);
+			//GDKfree(backup);
+			//GDKfree(garbage);
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	} else {
@@ -549,10 +548,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			&& cntxt->qryctx.starttime - cntxt->session >
 			cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
-			if (backup != backups)
-				GDKfree(backup);
-			if (garbage != garbages)
-				GDKfree(garbage);
+			//if (backup != backups)
+			//	GDKfree(backup);
+			//if (garbage != garbages)
+			//	GDKfree(garbage);
 			throw(MAL, "mal.interpreter",
 				  SQLSTATE(HYT00) RUNTIME_SESSION_TIMEOUT);
 		}
@@ -688,6 +687,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				assert(lhs->bat == isaBatType(getArgType(mb, pci, k)));
 				rhs = &stk->stk[pci->argv[i]];
 				assert(rhs->bat == isaBatType(getArgType(mb, pci, i)));
+				//NOTE passing mb->ma crash server in some tests!
 				if (VALcopy(NULL, lhs, rhs) == NULL) {
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -784,14 +784,14 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			if (nstk->calldepth > 256) {
 				ret = createException(MAL, "mal.interpreter",
 									  MAL_CALLDEPTH_FAIL);
-				GDKfree(nstk);
+				// GDKfree(nstk);
 				break;
 			}
 			if ((unsigned) nstk->stkdepth >
 				THREAD_STACK_SIZE / sizeof(mb->var[0]) / 4 && THRhighwater()) {
 				/* we are running low on stack space */
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
-				GDKfree(nstk);
+				// GDKfree(nstk);
 				break;
 			}
 
@@ -801,8 +801,8 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (ii = pci->retc; ii < pci->argc; ii++, arg++) {
 				lhs = &nstk->stk[q->argv[arg]];
 				rhs = &stk->stk[pci->argv[ii]];
-				if (VALcopy(NULL, lhs, rhs) == NULL) {
-					GDKfree(nstk);
+				if (VALcopy(mb->ma, lhs, rhs) == NULL) {
+					//GDKfree(nstk);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -819,7 +819,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					if (lhs->bat)
 						BBPrelease(lhs->val.bval);
 				}
-				GDKfree(nstk);
+				// GDKfree(nstk);
 			}
 			break;
 		}
@@ -890,8 +890,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				} else if (ATOMextern(lhs->vtype) &&
 					lhs->val.pval &&
 					lhs->val.pval != ATOMnilptr(lhs->vtype) &&
-					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval)
-					GDKfree(lhs->val.pval);
+					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval) {
+					if (lhs->allocated)
+						GDKfree(lhs->val.pval);
+				}
 			}
 			if (ATOMIC_GET(&GDKdebug) & CHECKMASK && exceptionVar < 0) {
 				BAT *b;
@@ -984,7 +986,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				/* watch out for concurrent access */
 				MT_lock_set(&mal_contextLock);
 				v = &stk->stk[exceptionVar];
-				if (v->val.sval)
+				if (v->val.sval && v->allocated)
 					freeException(v->val.sval);	/* old exception */
 				VALset(v, TYPE_str, ret);
 				v->allocated = true;
@@ -1215,7 +1217,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				for (int i = 0; i < pci->retc; i++) {
 					rhs = &stk->stk[pp->argv[i]];
 					lhs = &env->stk[pci->argv[i]];
-					if (VALcopy(NULL, lhs, rhs) == NULL) {
+					if (VALcopy(mb->ma, lhs, rhs) == NULL) {
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
@@ -1276,10 +1278,10 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	}
 	if (startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
-	if (backup != backups)
-		GDKfree(backup);
-	if (garbage != garbages)
-		GDKfree(garbage);
+	//if (backup != backups)
+	//	GDKfree(backup);
+	//if (garbage != garbages)
+	//	GDKfree(garbage);
 	return ret;
 }
 
