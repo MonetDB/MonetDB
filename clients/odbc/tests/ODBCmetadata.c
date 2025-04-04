@@ -503,11 +503,12 @@ main(int argc, char **argv)
 			(SQLCHAR*)SQL_ALL_TABLE_TYPES, SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_TABLE_TYPES)",
 		"Resultset with 5 columns\n"
-		"Resultset with 10 rows\n"
+		"Resultset with 11 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(25)	WVARCHAR(1)\n"
 		"NULL	NULL	NULL	GLOBAL TEMPORARY TABLE	NULL\n"
 		"NULL	NULL	NULL	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	NULL	NULL	LOCAL TEMPORARY VIEW	NULL\n"
 		"NULL	NULL	NULL	MERGE TABLE	NULL\n"
 		"NULL	NULL	NULL	REMOTE TABLE	NULL\n"
 		"NULL	NULL	NULL	REPLICA TABLE	NULL\n"
@@ -688,8 +689,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	11	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	11	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -699,8 +700,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	11	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	11	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS);
