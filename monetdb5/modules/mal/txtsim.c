@@ -148,14 +148,16 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 }
 
 static str
-TXTSIMdameraulevenshtein1(int *result, const char *const *s, const char *const *t)
+TXTSIMdameraulevenshtein1(Client ctx, int *result, const char *const *s, const char *const *t)
 {
+	(void) ctx;
 	return dameraulevenshtein(result, *s, *t, 1, 1, 2);
 }
 
 static str
-TXTSIMdameraulevenshtein2(int *result, const char *const *s, const char *const *t)
+TXTSIMdameraulevenshtein2(Client ctx, int *result, const char *const *s, const char *const *t)
 {
+	(void) ctx;
 	return dameraulevenshtein(result, *s, *t, 1, 1, 1);
 }
 
@@ -599,8 +601,9 @@ jarowinkler(const str_item *x, const str_item *y, double lp, int *x_flags,
 }
 
 static str
-TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
+TXTSIMjarowinkler(Client ctx, dbl *res, const char *const *x, const char *const *y)
 {
+	(void) ctx;
 	int *x_flags = NULL, *y_flags = NULL;
 	str_item xi, yi;
 	str msg = MAL_SUCCEED;
@@ -645,12 +648,13 @@ TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
 }
 
 static str
-TXTSIMminjarowinkler(bit *res, const char *const *x, const char *const *y, const dbl *threshold)
+TXTSIMminjarowinkler(Client ctx, bit *res, const char *const *x, const char *const *y, const dbl *threshold)
 {
+	(void) ctx;
 	str msg = MAL_SUCCEED;
 	double s = 1;
 
-	msg = TXTSIMjarowinkler(&s, x, y);
+	msg = TXTSIMjarowinkler(ctx, &s, x, y);
 	if (msg != MAL_SUCCEED)
 		throw(MAL, "txt.minjarowinkler", OPERATION_FAILED);
 
@@ -855,11 +859,12 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 }
 
 static str
-TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
+TXTSIMmaxlevenshteinjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid,
 						 const bat *kid, const bat *slid, const bat *srid,
 						 const bit *nil_matches, const lng *estimate,
 						 const bit *anti)
 {
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
 	(void) anti;
@@ -1060,11 +1065,12 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 }
 
 static str
-TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
+TXTSIMminjarowinklerjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid,
 						 const bat *thresholdid, const bat *slid,
 						 const bat *srid, const bit *nil_matches,
 						 const lng *estimate, const bit *anti)
 {
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
 	(void) anti;
@@ -1187,8 +1193,9 @@ soundex_code(const char *Name, char *Key)
 }
 
 static str
-soundex(str *res, const char *const *Name)
+soundex(Client ctx, str *res, const char *const *Name)
 {
+	(void) ctx;
 	str msg = MAL_SUCCEED;
 
 	GDKfree(*res);
@@ -1208,20 +1215,21 @@ soundex(str *res, const char *const *Name)
 }
 
 static str
-stringdiff(int *res, const char *const *s1, const char *const *s2)
+stringdiff(Client ctx, int *res, const char *const *s1, const char *const *s2)
 {
+	(void) ctx;
 	str r = MAL_SUCCEED;
 	char *S1 = NULL, *S2 = NULL;
 
-	r = soundex(&S1, s1);
+	r = soundex(ctx, &S1, s1);
 	if (r != MAL_SUCCEED)
 		return r;
-	r = soundex(&S2, s2);
+	r = soundex(ctx, &S2, s2);
 	if (r != MAL_SUCCEED) {
 		GDKfree(S1);
 		return r;
 	}
-	r = TXTSIMdameraulevenshtein1(res, &(const char *){S1}, &(const char *){S2});
+	r = TXTSIMdameraulevenshtein1(ctx, res, &(const char *){S1}, &(const char *){S2});
 	GDKfree(S1);
 	GDKfree(S2);
 	return r;
@@ -1269,9 +1277,10 @@ qgram_normalize(str *res, const char *const *Input)
 }
 
 static str
-qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid,
+qgram_selfjoin(Client ctx, bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid,
 			   flt *c, int *k)
 {
+	(void) ctx;
 	BAT *qgram, *id, *pos, *len;
 	BUN n;
 	BUN i, j;
@@ -1463,8 +1472,9 @@ utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
 }
 
 static str
-str_2_qgrams(bat *ret, const char *const *val)
+str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 {
+	(void) ctx;
 	BAT *bn;
 	size_t i, len = strlen(*val) + 5;
 	str s = GDKmalloc(len);

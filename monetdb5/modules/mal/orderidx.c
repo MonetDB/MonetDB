@@ -320,8 +320,9 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
+OIDXorderidx(Client ctx, bat *ret, const bat *bid, const bit *stable)
 {
+	(void) ctx;
 	BAT *b;
 
 	(void) ret;

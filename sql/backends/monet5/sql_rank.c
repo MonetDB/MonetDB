@@ -1397,7 +1397,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		case TYPE_bte:
 			switch (tp1) {
 			case TYPE_bte:
-				msg = bte_dec2_bte((bte*)res, &scale, (bte*)in);
+				msg = bte_dec2_bte(cntxt, (bte*)res, &scale, (bte*)in);
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
@@ -1406,10 +1406,10 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		case TYPE_sht:
 			switch (tp1) {
 			case TYPE_bte:
-				msg = bte_dec2_sht((sht*)res, &scale, (bte*)in);
+				msg = bte_dec2_sht(cntxt, (sht*)res, &scale, (bte*)in);
 				break;
 			case TYPE_sht:
-				msg = sht_dec2_sht((sht*)res, &scale, (sht*)in);
+				msg = sht_dec2_sht(cntxt, (sht*)res, &scale, (sht*)in);
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
@@ -1418,13 +1418,13 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		case TYPE_int:
 			switch (tp1) {
 			case TYPE_bte:
-				msg = bte_dec2_int((int*)res, &scale, (bte*)in);
+				msg = bte_dec2_int(cntxt, (int*)res, &scale, (bte*)in);
 				break;
 			case TYPE_sht:
-				msg = sht_dec2_int((int*)res, &scale, (sht*)in);
+				msg = sht_dec2_int(cntxt, (int*)res, &scale, (sht*)in);
 				break;
 			case TYPE_int:
-				msg = int_dec2_int((int*)res, &scale, (int*)in);
+				msg = int_dec2_int(cntxt, (int*)res, &scale, (int*)in);
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
@@ -1433,16 +1433,16 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		case TYPE_lng:
 			switch (tp1) {
 			case TYPE_bte:
-				msg = bte_dec2_lng((lng*)res, &scale, (bte*)in);
+				msg = bte_dec2_lng(cntxt, (lng*)res, &scale, (bte*)in);
 				break;
 			case TYPE_sht:
-				msg = sht_dec2_lng((lng*)res, &scale, (sht*)in);
+				msg = sht_dec2_lng(cntxt, (lng*)res, &scale, (sht*)in);
 				break;
 			case TYPE_int:
-				msg = int_dec2_lng((lng*)res, &scale, (int*)in);
+				msg = int_dec2_lng(cntxt, (lng*)res, &scale, (int*)in);
 				break;
 			case TYPE_lng:
-				msg = lng_dec2_lng((lng*)res, &scale, (lng*)in);
+				msg = lng_dec2_lng(cntxt, (lng*)res, &scale, (lng*)in);
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
@@ -1452,19 +1452,19 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		case TYPE_hge:
 			switch (tp1) {
 			case TYPE_bte:
-				msg = bte_dec2_hge((hge*)res, &scale, (bte*)in);
+				msg = bte_dec2_hge(cntxt, (hge*)res, &scale, (bte*)in);
 				break;
 			case TYPE_sht:
-				msg = sht_dec2_hge((hge*)res, &scale, (sht*)in);
+				msg = sht_dec2_hge(cntxt, (hge*)res, &scale, (sht*)in);
 				break;
 			case TYPE_int:
-				msg = int_dec2_hge((hge*)res, &scale, (int*)in);
+				msg = int_dec2_hge(cntxt, (hge*)res, &scale, (int*)in);
 				break;
 			case TYPE_lng:
-				msg = lng_dec2_hge((hge*)res, &scale, (lng*)in);
+				msg = lng_dec2_hge(cntxt, (hge*)res, &scale, (lng*)in);
 				break;
 			case TYPE_hge:
-				msg = hge_dec2_hge((hge*)res, &scale, (hge*)in);
+				msg = hge_dec2_hge(cntxt, (hge*)res, &scale, (hge*)in);
 				break;
 			default:
 				msg = createException(SQL, op, SQLSTATE(42000) "type combination (%s(%s)->%s) not supported", op, ATOMname(tp1), ATOMname(tp2));
@@ -1542,20 +1542,20 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		switch (tpe) {
 		case TYPE_bte:
-			msg = bte_dec2_dbl((dbl*)res, &scale, (bte*)in);
+			msg = bte_dec2_dbl(cntxt, (dbl*)res, &scale, (bte*)in);
 			break;
 		case TYPE_sht:
-			msg = sht_dec2_dbl((dbl*)res, &scale, (sht*)in);
+			msg = sht_dec2_dbl(cntxt, (dbl*)res, &scale, (sht*)in);
 			break;
 		case TYPE_int:
-			msg = int_dec2_dbl((dbl*)res, &scale, (int*)in);
+			msg = int_dec2_dbl(cntxt, (dbl*)res, &scale, (int*)in);
 			break;
 		case TYPE_lng:
-			msg = lng_dec2_dbl((dbl*)res, &scale, (lng*)in);
+			msg = lng_dec2_dbl(cntxt, (dbl*)res, &scale, (lng*)in);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			msg = hge_dec2_dbl((dbl*)res, &scale, (hge*)in);
+			msg = hge_dec2_dbl(cntxt, (dbl*)res, &scale, (hge*)in);
 			break;
 #endif
 		case TYPE_flt: {

@@ -141,8 +141,9 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTLogin(bat *nme, bat *ret)
+CLTLogin(Client ctx, bat *nme, bat *ret)
 {
+	(void) ctx;
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *u = COLnew(0, TYPE_oid, 12, TRANSIENT);
 	int i;
@@ -576,8 +577,9 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * with a message from the interpreter.
  * This value should be set to minutes to avoid a lengthy log */
 static str
-CLTsetPrintTimeout(void *ret, const int *secs)
+CLTsetPrintTimeout(Client ctx, void *ret, const int *secs)
 {
+	(void) ctx;
 	(void) ret;
 	if (is_int_nil(*secs))
 		setqptimeout(0);
@@ -587,8 +589,9 @@ CLTsetPrintTimeout(void *ret, const int *secs)
 }
 
 static str
-CLTmd5sum(str *ret, const char *const *pw)
+CLTmd5sum(Client ctx, str *ret, const char *const *pw)
 {
+	(void) ctx;
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -605,8 +608,9 @@ CLTmd5sum(str *ret, const char *const *pw)
 }
 
 static str
-CLTsha1sum(str *ret, const char *const *pw)
+CLTsha1sum(Client ctx, str *ret, const char *const *pw)
 {
+	(void) ctx;
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -623,8 +627,9 @@ CLTsha1sum(str *ret, const char *const *pw)
 }
 
 static str
-CLTripemd160sum(str *ret, const char *const *pw)
+CLTripemd160sum(Client ctx, str *ret, const char *const *pw)
 {
+	(void) ctx;
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -641,8 +646,9 @@ CLTripemd160sum(str *ret, const char *const *pw)
 }
 
 static str
-CLTsha2sum(str *ret, const char *const *pw, const int *bits)
+CLTsha2sum(Client ctx, str *ret, const char *const *pw, const int *bits)
 {
+	(void) ctx;
 	if (strNil(*pw) || is_int_nil(*bits)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -676,8 +682,9 @@ CLTsha2sum(str *ret, const char *const *pw, const int *bits)
 }
 
 static str
-CLTbackendsum(str *ret, const char *const *pw)
+CLTbackendsum(Client ctx, str *ret, const char *const *pw)
 {
+	(void) ctx;
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {

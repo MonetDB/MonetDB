@@ -185,7 +185,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*grp = 0;
 	*ext = 0;
 	*hist = 0;
-	msg = GRPgroup1(grp, ext, hist, &aggr->bid[0]);
+	msg = GRPgroup1(cntxt, grp, ext, hist, &aggr->bid[0]);
 	i = 1;
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
@@ -204,7 +204,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*grp = 0;
 			*ext = 0;
 			*hist = 0;
-			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp,
+			msg = GRPsubgroup5(cntxt, grp, ext, hist, &aggr->bid[i], NULL, &oldgrp,
 							   &oldext, &oldhist);
 			BBPrelease(oldgrp);
 			BBPrelease(oldext);

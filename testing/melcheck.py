@@ -23,7 +23,7 @@ argre = re.compile(argreg)
 patre = re.compile(patreg, re.MULTILINE)
 
 fcnargreg = r'\s*,\s*(?:const\s+)?(?:(?P<type>\w+)\s*\*(?:\s*(?:const\s*)?\*)*(?:\s*restrict\s)?|ptr\s)\s*(?P<argname>\w+)'
-fcnreg = r'(?:static\s+)?(?:str|char\s*\*)\s+(?P<name>\w+)\s*\(\s*(?:(?P<pattern>Client\s+\w+\s*,\s*MalBlkPtr\s+\w+\s*,\s*MalStkPtr\s+\w+\s*,\s*InstrPtr\s+\w+)|(?P<command>(?:\w+\s*\*+|ptr\s)\s*\w+(?:'+ fcnargreg + r')*))\s*\)\s*{'
+fcnreg = r'(?:static\s+)?(?:str|char\s*\*)\s+(?P<name>\w+)\s*\(\s*(?:(?P<pattern>Client\s+\w+\s*,\s*MalBlkPtr\s+\w+\s*,\s*MalStkPtr\s+\w+\s*,\s*InstrPtr\s+\w+)|(?P<command>Client\s+\w+(?:'+ fcnargreg + r')+))\s*\)\s*{'
 
 fcnre = re.compile(fcnreg)
 fcnargre = re.compile(fcnargreg)
@@ -71,7 +71,7 @@ def checkcommand(imp, mod, fcn, decl, retc, argc, args):
     if argc < retc:
         print('bad argc < retc for command {}.{} with implementation {}'.format(mod, fcn, imp))
         return
-    decl = ',' + decl           # makes processing easier
+    decl = decl[decl.index(','):] # skip over Client arg
     pos = 0
     cpos = 0
     if retc == 0:

@@ -23,8 +23,9 @@
 #include "mal_exception.h"
 
 static str
-TRACERflush_buffer(void *ret)
+TRACERflush_buffer(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	GDKtracer_flush_buffer();
 	return MAL_SUCCEED;
@@ -32,8 +33,9 @@ TRACERflush_buffer(void *ret)
 
 
 static str
-TRACERset_component_level(void *ret, const char *const *comp_id, const char *const *lvl_id)
+TRACERset_component_level(Client ctx, void *ret, const char *const *comp_id, const char *const *lvl_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setcomplevel", ILLEGAL_ARGUMENT);
@@ -43,8 +45,9 @@ TRACERset_component_level(void *ret, const char *const *comp_id, const char *con
 
 
 static str
-TRACERreset_component_level(void *ret, const char *const *comp_id)
+TRACERreset_component_level(Client ctx, void *ret, const char *const *comp_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
 		throw(MAL, "logging.resetcomplevel", ILLEGAL_ARGUMENT "\n");
@@ -54,8 +57,9 @@ TRACERreset_component_level(void *ret, const char *const *comp_id)
 
 
 static str
-TRACERset_layer_level(void *ret, const char *const *layer_id, const char *const *lvl_id)
+TRACERset_layer_level(Client ctx, void *ret, const char *const *layer_id, const char *const *lvl_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setlayerlevel", ILLEGAL_ARGUMENT "\n");
@@ -65,8 +69,9 @@ TRACERset_layer_level(void *ret, const char *const *layer_id, const char *const 
 
 
 static str
-TRACERreset_layer_level(void *ret, const char *const *layer_id)
+TRACERreset_layer_level(Client ctx, void *ret, const char *const *layer_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
 		throw(MAL, "logging.resetlayerlevel", ILLEGAL_ARGUMENT "\n");
@@ -76,8 +81,9 @@ TRACERreset_layer_level(void *ret, const char *const *layer_id)
 
 
 static str
-TRACERset_flush_level(void *ret, const char *const *lvl_id)
+TRACERset_flush_level(Client ctx, void *ret, const char *const *lvl_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setflushlevel", ILLEGAL_ARGUMENT "\n");
@@ -87,8 +93,9 @@ TRACERset_flush_level(void *ret, const char *const *lvl_id)
 
 
 static str
-TRACERreset_flush_level(void *ret)
+TRACERreset_flush_level(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_flush_level() != GDK_SUCCEED)
 		throw(MAL, "logging.resetflushlevel", _OPERATION_FAILED "\n");
@@ -98,8 +105,9 @@ TRACERreset_flush_level(void *ret)
 
 
 static str
-TRACERset_adapter(void *ret, const char *const *adapter_id)
+TRACERset_adapter(Client ctx, void *ret, const char *const *adapter_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setadapter", ILLEGAL_ARGUMENT "\n");
@@ -109,8 +117,9 @@ TRACERset_adapter(void *ret, const char *const *adapter_id)
 
 
 static str
-TRACERreset_adapter(void *ret)
+TRACERreset_adapter(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_adapter() != GDK_SUCCEED)
 		throw(MAL, "logging.resetadapter", _OPERATION_FAILED "\n");

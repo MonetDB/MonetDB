@@ -73,8 +73,9 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 }
 
 static str
-BKCdensebat(bat *ret, const lng *size)
+BKCdensebat(Client ctx, bat *ret, const lng *size)
 {
+	(void) ctx;
 	BAT *bn;
 	lng sz = *size;
 
@@ -91,8 +92,9 @@ BKCdensebat(bat *ret, const lng *size)
 }
 
 str
-BKCmirror(bat *ret, const bat *bid)
+BKCmirror(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 
 	*ret = 0;
@@ -106,8 +108,9 @@ BKCmirror(bat *ret, const bat *bid)
 }
 
 static str
-BKCdelete(bat *r, const bat *bid, const oid *h)
+BKCdelete(Client ctx, bat *r, const bat *bid, const oid *h)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -123,8 +126,9 @@ BKCdelete(bat *r, const bat *bid, const oid *h)
 }
 
 static str
-BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
+BKCdelete_multi(Client ctx, bat *r, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b, *s;
 	gdk_return ret;
 
@@ -147,8 +151,9 @@ BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
 }
 
 static str
-BKCdelete_all(bat *r, const bat *bid)
+BKCdelete_all(Client ctx, bat *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -164,9 +169,10 @@ BKCdelete_all(bat *r, const bat *bid)
 }
 
 static str
-BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid,
+BKCappend_cand_force_wrap(Client ctx, bat *r, const bat *bid, const bat *uid,
 						  const bat *sid, const bit *force)
 {
+	(void) ctx;
 	BAT *b, *u, *s = NULL;
 	gdk_return ret;
 
@@ -213,27 +219,31 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid,
 }
 
 static str
-BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid)
+BKCappend_cand_wrap(Client ctx, bat *r, const bat *bid, const bat *uid, const bat *sid)
 {
-	return BKCappend_cand_force_wrap(r, bid, uid, sid, NULL);
+	(void) ctx;
+	return BKCappend_cand_force_wrap(ctx, r, bid, uid, sid, NULL);
 }
 
 static str
-BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
+BKCappend_wrap(Client ctx, bat *r, const bat *bid, const bat *uid)
 {
-	return BKCappend_cand_force_wrap(r, bid, uid, NULL, NULL);
+	(void) ctx;
+	return BKCappend_cand_force_wrap(ctx, r, bid, uid, NULL, NULL);
 }
 
 static str
-BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
+BKCappend_force_wrap(Client ctx, bat *r, const bat *bid, const bat *uid, const bit *force)
 {
-	return BKCappend_cand_force_wrap(r, bid, uid, NULL, force);
+	(void) ctx;
+	return BKCappend_cand_force_wrap(ctx, r, bid, uid, NULL, force);
 }
 
 static str
-BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u,
+BKCappend_val_force_wrap(Client ctx, bat *r, const bat *bid, const void *u,
 						 const bit *force)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -259,14 +269,16 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u,
 }
 
 static str
-BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
+BKCappend_val_wrap(Client ctx, bat *r, const bat *bid, const void *u)
 {
-	return BKCappend_val_force_wrap(r, bid, u, NULL);
+	(void) ctx;
+	return BKCappend_val_force_wrap(ctx, r, bid, u, NULL);
 }
 
 static str
-BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
+BKCbun_inplace(Client ctx, bat *r, const bat *bid, const oid *id, const void *t)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -283,9 +295,10 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 }
 
 static str
-BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t,
+BKCbun_inplace_force(Client ctx, bat *r, const bat *bid, const oid *id, const void *t,
 					 const bit *force)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -303,9 +316,10 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t,
 
 
 static str
-BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid,
+BKCbat_inplace_force(Client ctx, bat *r, const bat *bid, const bat *rid, const bat *uid,
 					 const bit *force)
 {
+	(void) ctx;
 	BAT *b, *p, *u;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -334,18 +348,20 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid,
 }
 
 static str
-BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid)
+BKCbat_inplace(Client ctx, bat *r, const bat *bid, const bat *rid, const bat *uid)
 {
+	(void) ctx;
 	bit F = FALSE;
 
-	return BKCbat_inplace_force(r, bid, rid, uid, &F);
+	return BKCbat_inplace_force(ctx, r, bid, rid, uid, &F);
 }
 
 /*end of SQL enhancement */
 
 static str
-BKCgetCapacity(lng *res, const bat *bid)
+BKCgetCapacity(Client ctx, lng *res, const bat *bid)
 {
+	(void) ctx;
 	*res = lng_nil;
 	BAT *b = BBPquickdesc(*bid);
 
@@ -356,8 +372,9 @@ BKCgetCapacity(lng *res, const bat *bid)
 }
 
 static str
-BKCgetColumnType(str *res, const bat *bid)
+BKCgetColumnType(Client ctx, str *res, const bat *bid)
 {
+	(void) ctx;
 	const char *ret = str_nil;
 	BAT *b = BBPquickdesc(*bid);
 
@@ -371,8 +388,9 @@ BKCgetColumnType(str *res, const bat *bid)
 }
 
 static str
-BKCisSorted(bit *res, const bat *bid)
+BKCisSorted(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -384,8 +402,9 @@ BKCisSorted(bit *res, const bat *bid)
 }
 
 static str
-BKCisSortedReverse(bit *res, const bat *bid)
+BKCisSortedReverse(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -403,8 +422,9 @@ BKCisSortedReverse(bit *res, const bat *bid)
  */
 
 static str
-BKCgetKey(bit *ret, const bat *bid)
+BKCgetKey(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -436,15 +456,17 @@ BKCpersists(void *r, const bat *bid, const bit *flg)
 }
 
 static str
-BKCsetPersistent(void *r, const bat *bid)
+BKCsetPersistent(Client ctx, void *r, const bat *bid)
 {
+	(void) ctx;
 	bit flag = TRUE;
 	return BKCpersists(r, bid, &flag);
 }
 
 static str
-BKCisPersistent(bit *res, const bat *bid)
+BKCisPersistent(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -459,15 +481,17 @@ BKCisPersistent(bit *res, const bat *bid)
 }
 
 static str
-BKCsetTransient(void *r, const bat *bid)
+BKCsetTransient(Client ctx, void *r, const bat *bid)
 {
+	(void) ctx;
 	bit flag = FALSE;
 	return BKCpersists(r, bid, &flag);
 }
 
 static str
-BKCisTransient(bit *res, const bat *bid)
+BKCisTransient(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -481,8 +505,9 @@ BKCisTransient(bit *res, const bat *bid)
 }
 
 static str
-BKCsetAccess(bat *res, const bat *bid, const char *const *param)
+BKCsetAccess(Client ctx, bat *res, const bat *bid, const char *const *param)
 {
+	(void) ctx;
 	BAT *b;
 	restrict_t m;
 
@@ -514,8 +539,9 @@ BKCsetAccess(bat *res, const bat *bid, const char *const *param)
 }
 
 static str
-BKCgetAccess(str *res, const bat *bid)
+BKCgetAccess(Client ctx, str *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -650,8 +676,9 @@ HASHinfo(BAT *bk, BAT *bv, Hash *h, const char *s)
 }
 
 static str
-BKCinfo(bat *ret1, bat *ret2, const bat *bid)
+BKCinfo(Client ctx, bat *ret1, bat *ret2, const bat *bid)
 {
+	(void) ctx;
 	const char *mode, *accessmode;
 	BAT *bk = NULL, *bv = NULL, *b;
 	char bf[oidStrlen];
@@ -801,8 +828,9 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 static str
-BKCgetSize(lng *tot, const bat *bid)
+BKCgetSize(Client ctx, lng *tot, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	lng size = 0;
 	lng blksize = (lng) MT_pagesize();
@@ -831,8 +859,9 @@ BKCgetSize(lng *tot, const bat *bid)
 }
 
 static str
-BKCgetVHeapSize(lng *tot, const bat *bid)
+BKCgetVHeapSize(Client ctx, lng *tot, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	lng size = 0;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -854,8 +883,9 @@ BKCgetVHeapSize(lng *tot, const bat *bid)
  * Synced BATs
  */
 static str
-BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
+BKCisSynced(Client ctx, bit *ret, const bat *bid1, const bat *bid2)
 {
+	(void) ctx;
 	BAT *b1, *b2;
 
 	if ((b1 = BATdescriptor(*bid1)) == NULL) {
@@ -875,8 +905,9 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
  * Role Management
  */
 static str
-BKCsetName(void *r, const bat *bid, const char *const *s)
+BKCsetName(Client ctx, void *r, const bat *bid, const char *const *s)
 {
+	(void) ctx;
 	BAT *b;
 	int ret;
 	int c;
@@ -917,8 +948,9 @@ BKCsetName(void *r, const bat *bid, const char *const *s)
 }
 
 static str
-BKCgetBBPname(str *ret, const bat *bid)
+BKCgetBBPname(Client ctx, str *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -932,8 +964,9 @@ BKCgetBBPname(str *ret, const bat *bid)
 }
 
 static str
-BKCsave(bit *res, const char *const *input)
+BKCsave(Client ctx, bit *res, const char *const *input)
 {
+	(void) ctx;
 	bat bid = BBPindex(*input);
 	BAT *b;
 
@@ -953,8 +986,9 @@ BKCsave(bit *res, const char *const *input)
 }
 
 static str
-BKCsave2(void *r, const bat *bid)
+BKCsave2(Client ctx, void *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	(void) r;
@@ -979,8 +1013,9 @@ BKCsave2(void *r, const bat *bid)
  * Accelerator Control
  */
 static str
-BKCsetHash(bit *ret, const bat *bid)
+BKCsetHash(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	(void) ret;
@@ -993,8 +1028,9 @@ BKCsetHash(bit *ret, const bat *bid)
 }
 
 static str
-BKCgetSequenceBase(oid *r, const bat *bid)
+BKCgetSequenceBase(Client ctx, oid *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1007,8 +1043,9 @@ BKCgetSequenceBase(oid *r, const bat *bid)
 }
 
 static str
-BKCmergecand(bat *ret, const bat *aid, const bat *bid)
+BKCmergecand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 {
+	(void) ctx;
 	BAT *a, *b, *bn;
 
 	if ((a = BATdescriptor(*aid)) == NULL) {
@@ -1029,8 +1066,9 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 }
 
 static str
-BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
+BKCintersectcand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 {
+	(void) ctx;
 	BAT *a, *b, *bn;
 
 	if ((a = BATdescriptor(*aid)) == NULL) {
@@ -1051,8 +1089,9 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 }
 
 static str
-BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
+BKCdiffcand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 {
+	(void) ctx;
 	BAT *a, *b, *bn;
 
 	if ((a = BATdescriptor(*aid)) == NULL) {

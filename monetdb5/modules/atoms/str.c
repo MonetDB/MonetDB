@@ -241,8 +241,9 @@ STRlike(const char *s, const char *pat, const char *esc)
 }
 
 static str
-STRlikewrap3(bit *ret, const char *const *s, const char *const *pat, const char *const *esc)
+STRlikewrap3(Client ctx, bit *ret, const char *const *s, const char *const *pat, const char *const *esc)
 {
+	(void) ctx;
 	if (strNil(*s) || strNil(*pat) || strNil(*esc))
 		*ret = bit_nil;
 	else
@@ -251,8 +252,9 @@ STRlikewrap3(bit *ret, const char *const *s, const char *const *pat, const char 
 }
 
 static str
-STRlikewrap(bit *ret, const char *const *s, const char *const *pat)
+STRlikewrap(Client ctx, bit *ret, const char *const *s, const char *const *pat)
 {
+	(void) ctx;
 	if (strNil(*s) || strNil(*pat))
 		*ret = bit_nil;
 	else
@@ -261,8 +263,9 @@ STRlikewrap(bit *ret, const char *const *s, const char *const *pat)
 }
 
 static str
-STRtostr(str *res, const char *const *src)
+STRtostr(Client ctx, str *res, const char *const *src)
 {
+	(void) ctx;
 	if (*src == 0)
 		*res = GDKstrdup(str_nil);
 	else
@@ -273,8 +276,9 @@ STRtostr(str *res, const char *const *src)
 }
 
 static str
-STRLength(int *res, const char *const *arg1)
+STRLength(Client ctx, int *res, const char *const *arg1)
 {
+	(void) ctx;
 	const char *s = *arg1;
 
 	*res = strNil(s) ? int_nil : UTF8_strlen(s);
@@ -282,8 +286,9 @@ STRLength(int *res, const char *const *arg1)
 }
 
 static str
-STRBytes(int *res, const char *const *arg1)
+STRBytes(Client ctx, int *res, const char *const *arg1)
 {
+	(void) ctx;
 	const char *s = *arg1;
 
 	*res = strNil(s) ? int_nil : str_strlen(s);
@@ -306,8 +311,9 @@ str_tail(str *buf, size_t *buflen, const char *s, int off)
 }
 
 static str
-STRTail(str *res, const char *const *arg1, const int *offset)
+STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int off = *offset;
@@ -362,8 +368,9 @@ str_Sub_String(str *buf, size_t *buflen, const char *s, int off, int l)
 }
 
 static str
-STRSubString(str *res, const char *const *arg1, const int *offset, const int *length)
+STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, const int *length)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int off = *offset, len = *length;
@@ -403,8 +410,9 @@ str_from_wchr(str *buf, size_t *buflen, int c)
 }
 
 static str
-STRFromWChr(str *res, const int *c)
+STRFromWChr(Client ctx, str *res, const int *c)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	int cc = *c;
 
@@ -456,8 +464,9 @@ str_wchr_at(int *res, const char *s, int at)
 }
 
 static str
-STRWChrAt(int *res, const char *const *arg1, const int *at)
+STRWChrAt(Client ctx, int *res, const char *const *arg1, const int *at)
 {
+	(void) ctx;
 	return str_wchr_at(res, *arg1, *at);
 }
 
@@ -489,20 +498,23 @@ doStrConvert(str *res, const char *arg1, gdk_return (*func)(char **restrict, siz
 }
 
 static inline str
-STRlower(str *res, const char *const *arg1)
+STRlower(Client ctx, str *res, const char *const *arg1)
 {
+	(void) ctx;
 	return doStrConvert(res, *arg1, GDKtolower);
 }
 
 static inline str
-STRupper(str *res, const char *const *arg1)
+STRupper(Client ctx, str *res, const char *const *arg1)
 {
+	(void) ctx;
 	return doStrConvert(res, *arg1, GDKtoupper);
 }
 
 static inline str
-STRcasefold(str *res, const char *const *arg1)
+STRcasefold(Client ctx, str *res, const char *const *arg1)
 {
+	(void) ctx;
 	return doStrConvert(res, *arg1, GDKcasefold);
 }
 
@@ -764,8 +776,9 @@ str_splitpart(str *buf, size_t *buflen, const char *s, const char *s2, int f)
 }
 
 static str
-STRsplitpart(str *res, const char *const *haystack, const char *const *needle, const int *field)
+STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *const *needle, const int *field)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *haystack, *s2 = *needle;
 	int f = *field;
@@ -888,8 +901,9 @@ str_strip(str *buf, size_t *buflen, const char *s)
 
 /* remove all whitespace from either side of arg1 */
 static str
-STRStrip(str *res, const char *const *arg1)
+STRStrip(Client ctx, str *res, const char *const *arg1)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 
@@ -929,8 +943,9 @@ str_ltrim(str *buf, size_t *buflen, const char *s)
 
 /* remove all whitespace from the start (left) of arg1 */
 static str
-STRLtrim(str *res, const char *const *arg1)
+STRLtrim(Client ctx, str *res, const char *const *arg1)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 
@@ -970,8 +985,9 @@ str_rtrim(str *buf, size_t *buflen, const char *s)
 
 /* remove all whitespace from the end (right) of arg1 */
 static str
-STRRtrim(str *res, const char *const *arg1)
+STRRtrim(Client ctx, str *res, const char *const *arg1)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 
@@ -1053,8 +1069,9 @@ str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
 /* remove the longest string containing only characters from arg2 from
  * either side of arg1 */
 static str
-STRStrip2(str *res, const char *const *arg1, const char *const *arg2)
+STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 
@@ -1107,8 +1124,9 @@ str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 /* remove the longest string containing only characters from arg2 from
  * the start (left) of arg1 */
 static str
-STRLtrim2(str *res, const char *const *arg1, const char *const *arg2)
+STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 
@@ -1161,8 +1179,9 @@ str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
 /* remove the longest string containing only characters from arg2 from
  * the end (right) of arg1 */
 static str
-STRRtrim2(str *res, const char *const *arg1, const char *const *arg2)
+STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 
@@ -1261,8 +1280,9 @@ str_lpad(str *buf, size_t *buflen, const char *s, int len)
  * Result: '   hi'
  */
 static str
-STRLpad(str *res, const char *const *arg1, const int *len)
+STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *len;
@@ -1302,8 +1322,9 @@ str_rpad(str *buf, size_t *buflen, const char *s, int len)
  * Result: 'hi   '
  */
 static str
-STRRpad(str *res, const char *const *arg1, const int *len)
+STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *len;
@@ -1343,8 +1364,9 @@ str_lpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
  * Result: xyxhi
  */
 static str
-STRLpad3(str *res, const char *const *arg1, const int *len, const char *const *arg2)
+STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const char *const *arg2)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 	int l = *len;
@@ -1385,8 +1407,9 @@ str_rpad3(str *buf, size_t *buflen, const char *s, int len, const char *s2)
  * Result: hixyx
  */
 static str
-STRRpad3(str *res, const char *const *arg1, const int *len, const char *const *arg2)
+STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const char *const *arg2)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2;
 	int l = *len;
@@ -1458,9 +1481,10 @@ str_substitute(str *buf, size_t *buflen, const char *s, const char *src,
 }
 
 static str
-STRSubstitute(str *res, const char *const *arg1, const char *const *arg2, const char *const *arg3,
+STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *arg2, const char *const *arg3,
 			  const bit *g)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1, *s2 = *arg2, *s3 = *arg3;
 
@@ -1487,8 +1511,9 @@ STRSubstitute(str *res, const char *const *arg1, const char *const *arg2, const 
 }
 
 static str
-STRascii(int *ret, const char *const *s)
+STRascii(Client ctx, int *ret, const char *const *s)
 {
+	(void) ctx;
 	return str_wchr_at(ret, *s, 0);
 }
 
@@ -1502,8 +1527,9 @@ str_substring_tail(str *buf, size_t *buflen, const char *s, int start)
 }
 
 static str
-STRsubstringTail(str *res, const char *const *arg1, const int *start)
+STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int st = *start;
@@ -1540,8 +1566,9 @@ str_sub_string(str *buf, size_t *buflen, const char *s, int start, int l)
 }
 
 static str
-STRsubstring(str *res, const char *const *arg1, const int *start, const int *ll)
+STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, const int *ll)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int st = *start, l = *ll;
@@ -1569,8 +1596,9 @@ STRsubstring(str *res, const char *const *arg1, const int *start, const int *ll)
 }
 
 static str
-STRprefix(str *res, const char *const *arg1, const int *ll)
+STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *ll;
@@ -1605,8 +1633,9 @@ str_suffix(str *buf, size_t *buflen, const char *s, int l)
 }
 
 static str
-STRsuffix(str *res, const char *const *arg1, const int *ll)
+STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int l = *ll;
@@ -1646,8 +1675,9 @@ str_locate2(const char *needle, const char *haystack, int start)
 }
 
 static str
-STRlocate3(int *ret, const char *const *needle, const char *const *haystack, const int *start)
+STRlocate3(Client ctx, int *ret, const char *const *needle, const char *const *haystack, const int *start)
 {
+	(void) ctx;
 	const char *s = *needle, *s2 = *haystack;
 	int st = *start;
 
@@ -1658,8 +1688,9 @@ STRlocate3(int *ret, const char *const *needle, const char *const *haystack, con
 }
 
 static str
-STRlocate(int *ret, const char *const *needle, const char *const *haystack)
+STRlocate(Client ctx, int *ret, const char *const *needle, const char *const *haystack)
 {
+	(void) ctx;
 	const char *s = *needle, *s2 = *haystack;
 
 	*ret = (strNil(s) || strNil(s2)) ? int_nil : str_locate2(s, s2, 1);
@@ -1699,9 +1730,10 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 }
 
 static str
-STRinsert(str *res, const char *const *input, const int *start, const int *nchars,
+STRinsert(Client ctx, str *res, const char *const *input, const int *start, const int *nchars,
 		  const char *const *input2)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *input, *s2 = *input2;
 	int st = *start, n = *nchars;
@@ -1729,10 +1761,11 @@ STRinsert(str *res, const char *const *input, const int *start, const int *nchar
 }
 
 static str
-STRreplace(str *ret, const char *const *s1, const char *const *s2, const char *const *s3)
+STRreplace(Client ctx, str *ret, const char *const *s1, const char *const *s2, const char *const *s3)
 {
+	(void) ctx;
 	bit flag = TRUE;
-	return STRSubstitute(ret, s1, s2, s3, &flag);
+	return STRSubstitute(ctx, ret, s1, s2, s3, &flag);
 }
 
 str
@@ -1753,8 +1786,9 @@ str_repeat(str *buf, size_t *buflen, const char *s, int c)
 }
 
 static str
-STRrepeat(str *res, const char *const *arg1, const int *c)
+STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	const char *s = *arg1;
 	int cc = *c;
@@ -1782,8 +1816,9 @@ STRrepeat(str *res, const char *const *arg1, const int *c)
 }
 
 static str
-STRspace(str *res, const int *ll)
+STRspace(Client ctx, str *res, const int *ll)
 {
+	(void) ctx;
 	str buf = NULL, msg = MAL_SUCCEED;
 	int l = *ll;
 
@@ -1811,8 +1846,9 @@ STRspace(str *res, const int *ll)
 }
 
 static str
-STRasciify(str *r, const char *const *s)
+STRasciify(Client ctx, str *r, const char *const *s)
 {
+	(void) ctx;
 	char *buf = NULL;
 	size_t buflen = 0;
 	if (GDKasciify(&buf, &buflen, *s) != GDK_SUCCEED)
@@ -2371,7 +2407,7 @@ batstr_strrev(BAT *b)
 }
 
 static BAT *
-batstr_strlower(BAT *b)
+batstr_strlower(Client ctx, BAT *b)
 {
 	BAT *bn = NULL;
 	BATiter bi;
@@ -2387,7 +2423,7 @@ batstr_strlower(BAT *b)
 	BATloop(b, p, q) {
 		const char *vb = BUNtail(bi, p);
 		char *vb_low = NULL;
-		if (STRlower(&vb_low, &vb)) {
+		if (STRlower(ctx, &vb_low, &vb)) {
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
 			return NULL;
@@ -2746,7 +2782,7 @@ exit:
 }
 
 static str
-STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
+STRjoin(Client ctx, bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		const bat cl_id, const bat cr_id, const bit anti, bool icase,
 		int (*str_cmp)(const char *, const char *, int), const char *fname)
 {
@@ -2804,12 +2840,12 @@ STRjoin(bat *rl_id, bat *rr_id, const bat l_id, const bat r_id,
 		} else {
 			BAT *l_low = NULL, *r_low = NULL, *l_rev = NULL, *r_rev = NULL;
 			if (icase) {
-				l_low = batstr_strlower(nl);
+				l_low = batstr_strlower(ctx, nl);
 				if (l_low == NULL) {
 					BBPnreclaim(6, rl, rr, nl, nr, cl, cr);
 					throw(MAL, fname, "Failed lowering strings of left input");
 				}
-				r_low = batstr_strlower(nr);
+				r_low = batstr_strlower(ctx, nr);
 				if (r_low == NULL) {
 					BBPnreclaim(7, rl, rr, nl, nr, cl, cr, l_low);
 					throw(MAL, fname, "Failed lowering strings of right input");
@@ -2922,7 +2958,7 @@ STRstartswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc - pci->retc == 8)
 		msg = ignorecase(ic_id, &icase, "str.startswithjoin");
 
-	return msg ? msg : STRjoin(rl_id, rr_id, *l_id, *r_id,
+	return msg ? msg : STRjoin(cntxt, rl_id, rr_id, *l_id, *r_id,
 							   cl_id ? *cl_id : 0,
 							   cr_id ? *cr_id : 0,
 							   *anti, icase, icase ? str_is_iprefix : str_is_prefix,
@@ -2956,7 +2992,7 @@ STRendswithjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc - pci->retc == 8)
 		msg = ignorecase(ic_id, &icase, "str.endswithjoin");
 
-	return msg ? msg : STRjoin(rl_id, rr_id, *l_id, *r_id,
+	return msg ? msg : STRjoin(cntxt, rl_id, rr_id, *l_id, *r_id,
 							   cl_id ? *cl_id : 0, cr_id ? *cr_id : 0,
 							   *anti, icase, icase ? str_is_isuffix : str_is_suffix,
 							   "str.endswithjoin");
@@ -2989,7 +3025,7 @@ STRcontainsjoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc - pci->retc == 8)
 		msg = ignorecase(ic_id, &icase, "str.containsjoin");
 
-	return msg ? msg : STRjoin(rl_id, rr_id, *l_id, *r_id,
+	return msg ? msg : STRjoin(cntxt, rl_id, rr_id, *l_id, *r_id,
 							   cl_id ? *cl_id : 0, cr_id ? *cr_id : 0,
 							   *anti, icase, icase ? str_icontains : str_contains,
 							   "str.containsjoin");

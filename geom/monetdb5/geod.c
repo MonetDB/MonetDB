@@ -775,8 +775,9 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 **/
 /* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
 str
-wkbDistanceGeographic(dbl *out, wkb * const *a, wkb * const *b)
+wkbDistanceGeographic(Client ctx, dbl *out, wkb * const *a, wkb * const *b)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
@@ -794,8 +795,9 @@ wkbDistanceGeographic(dbl *out, wkb * const *a, wkb * const *b)
 **/
 /* Checks if two geographic geometries are within d meters of one another */
 str
-wkbDWithinGeographic(bit *out, wkb * const *a, wkb * const *b, const dbl *d)
+wkbDWithinGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b, const dbl *d)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	double distance;
@@ -815,8 +817,9 @@ wkbDWithinGeographic(bit *out, wkb * const *a, wkb * const *b, const dbl *d)
 **/
 /* Checks if two geographic geometries intersect at any point */
 str
-wkbIntersectsGeographic(bit *out, wkb * const *a, wkb * const *b)
+wkbIntersectsGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	double distance;
@@ -919,8 +922,9 @@ geoCoversInternal(GEOSGeom a, GEOSGeom b)
 **/
 /* Checks if no point of Geometry B is outside Geometry A */
 str
-wkbCoversGeographic(bit *out, wkb * const *a, wkb * const *b)
+wkbCoversGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
@@ -1173,7 +1177,8 @@ free:
 }
 
 str
-wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+wkbDWithinGeographicJoin(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+	(void) ctx;
 	double distance_within = 0;
 	BAT *d = NULL;
 	//Get the distance BAT and get the double value
@@ -1188,17 +1193,20 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 }
 
 str
-wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const dbl *distance_within, const bit *anti) {
+wkbDWithinGeographicSelect(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const dbl *distance_within, const bit *anti) {
+	(void) ctx;
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,*distance_within,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicSelect");
 }
 
 str
-wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+wkbIntersectsGeographicJoin(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+	(void) ctx;
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicJoin");
 }
 
 str
-wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const bit *anti) {
+wkbIntersectsGeographicSelect(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const bit *anti) {
+	(void) ctx;
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,0,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicSelect");
 }
 

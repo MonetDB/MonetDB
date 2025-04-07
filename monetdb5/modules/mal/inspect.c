@@ -462,8 +462,9 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-INSPECTatom_names(bat *ret)
+INSPECTatom_names(Client ctx, bat *ret)
 {
+	(void) ctx;
 	int i;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
@@ -484,8 +485,9 @@ INSPECTatom_names(bat *ret)
 }
 
 static str
-INSPECTgetEnvironment(bat *ret, bat *ret2)
+INSPECTgetEnvironment(Client ctx, bat *ret, bat *ret2)
 {
+	(void) ctx;
 	BAT *k, *v;
 
 	if (GDKcopyenv(&k, &v, false) != GDK_SUCCEED)
@@ -499,8 +501,9 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 }
 
 static str
-INSPECTgetEnvironmentKey(str *ret, const char *const *key)
+INSPECTgetEnvironmentKey(Client ctx, str *ret, const char *const *key)
 {
+	(void) ctx;
 	const char *s;
 	*ret = 0;
 
@@ -515,15 +518,17 @@ INSPECTgetEnvironmentKey(str *ret, const char *const *key)
 }
 
 static str
-INSPECTgetDatabaseName(str *ret)
+INSPECTgetDatabaseName(Client ctx, str *ret)
 {
+	(void) ctx;
 	const char *key = "gdk_dbname";
-	return INSPECTgetEnvironmentKey(ret, &key);
+	return INSPECTgetEnvironmentKey(ctx, ret, &key);
 }
 
 static str
-INSPECTatom_sup_names(bat *ret)
+INSPECTatom_sup_names(Client ctx, bat *ret)
 {
+	(void) ctx;
 	int i, k;
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
@@ -546,8 +551,9 @@ INSPECTatom_sup_names(bat *ret)
 }
 
 static str
-INSPECTatom_sizes(bat *ret)
+INSPECTatom_sizes(Client ctx, bat *ret)
 {
+	(void) ctx;
 	int i;
 	int s;
 	BAT *b = COLnew(0, TYPE_int, 256, TRANSIENT);

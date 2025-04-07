@@ -45,22 +45,25 @@ extern char *strptime2(const char *, const char *, struct tm *, int *);
 /* interfaces callable from MAL, not used from any C code */
 
 static str
-MTIMEcurrent_date(date *ret)
+MTIMEcurrent_date(Client ctx, date *ret)
 {
+	(void) ctx;
 	*ret = timestamp_date(timestamp_current());
 	return MAL_SUCCEED;
 }
 
 static str
-MTIMEcurrent_time(daytime *ret)
+MTIMEcurrent_time(Client ctx, daytime *ret)
 {
+	(void) ctx;
 	*ret = timestamp_daytime(timestamp_current());
 	return MAL_SUCCEED;
 }
 
 static str
-MTIMEcurrent_timestamp(timestamp *ret)
+MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 {
+	(void) ctx;
 	*ret = timestamp_current();
 	return MAL_SUCCEED;
 }
@@ -125,8 +128,9 @@ bailout: \
 			  DEC_SRC, DEC_OUTPUT,										\
 			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)						\
 static str																\
-NAME(OUTTYPE *ret, const INTYPE *src)									\
+NAME(Client ctx, OUTTYPE *ret, const INTYPE *src)						\
 {																		\
+	(void) ctx;															\
 	str msg = MAL_SUCCEED;												\
 	do {																\
 		FUNC_CALL(FUNC, (*ret), *src);									\
@@ -215,8 +219,9 @@ bailout:																\
 			  GET_NEXT_SRC1, GET_NEXT_SRC2,								\
 			  APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)		\
 static str																\
-NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
+NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)	\
 {																		\
+	(void) ctx;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
@@ -488,8 +493,9 @@ bailout:																\
 			  GET_NEXT_SRC1, GET_NEXT_SRC2,								\
 			  APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)		\
 static str																\
-NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra)				\
+NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra) \
 {																		\
+	(void) ctx;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
@@ -1110,8 +1116,9 @@ local_timezone(int *isdstp)
 }
 
 static str
-MTIMElocal_timezone_msec(lng *ret)
+MTIMElocal_timezone_msec(Client ctx, lng *ret)
 {
+	(void) ctx;
 	int tzone = local_timezone(NULL);
 	*ret = (lng) tzone *1000;
 	return MAL_SUCCEED;

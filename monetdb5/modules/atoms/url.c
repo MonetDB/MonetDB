@@ -50,6 +50,7 @@
 #include "gdk.h"
 #include <ctype.h>
 #include "mal_exception.h"
+#include "mal_client.h"
 #include "str.h"
 
 typedef str url;
@@ -346,8 +347,9 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
  * SIGNATURE: getAnchor(url) : str; */
 static str
-URLgetAnchor(str *retval, const url *val)
+URLgetAnchor(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 
 	if (val == NULL || *val == NULL)
@@ -376,8 +378,9 @@ URLgetAnchor(str *retval, const url *val)
  *                        thus, excluding the file extension.
  * SIGNATURE: getBasename(str) : str; */
 static str
-URLgetBasename(str *retval, const url *val)
+URLgetBasename(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *b = NULL;
 	const char *e = NULL;
@@ -416,8 +419,9 @@ URLgetBasename(str *retval, const url *val)
 /* COMMAND "getContext": Extract the path context from the URL
  * SIGNATURE: getContext(str) : str; */
 static str
-URLgetContext(str *retval, const url *val)
+URLgetContext(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *p;
 
@@ -446,8 +450,9 @@ URLgetContext(str *retval, const url *val)
 /* COMMAND "getExtension": Extract the file extension of the URL
  * SIGNATURE: getExtension(str) : str; */
 static str
-URLgetExtension(str *retval, const url *val)
+URLgetExtension(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *e = NULL;
 
@@ -481,8 +486,9 @@ URLgetExtension(str *retval, const url *val)
 /* COMMAND "getFile": Extract the last file name of the URL
  * SIGNATURE: getFile(str) : str; */
 static str
-URLgetFile(str *retval, const url *val)
+URLgetFile(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *b = NULL;
 
@@ -516,8 +522,9 @@ URLgetFile(str *retval, const url *val)
 /* COMMAND "getHost": Extract the server identity from the URL */
 /* SIGNATURE: getHost(str) : str; */
 static str
-URLgetHost(str *retval, const url *val)
+URLgetHost(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -555,8 +562,9 @@ URLgetHost(str *retval, const url *val)
 /* COMMAND "getDomain": Extract the Internet domain from the URL
  * SIGNATURE: getDomain(str) : str; */
 static str
-URLgetDomain(str *retval, const url *val)
+URLgetDomain(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -598,8 +606,9 @@ URLgetDomain(str *retval, const url *val)
 /* COMMAND "getPort": Extract the port id from the URL
  * SIGNATURE: getPort(str) : str; */
 static str
-URLgetPort(str *retval, const url *val)
+URLgetPort(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *p = NULL;
 
@@ -631,8 +640,9 @@ URLgetPort(str *retval, const url *val)
 /* COMMAND "getProtocol": Extract the protocol from the URL
  * SIGNATURE: getProtocol(str) : str; */
 static str
-URLgetProtocol(str *retval, const url *val)
+URLgetProtocol(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 
 	if (val == NULL || *val == NULL)
@@ -658,8 +668,9 @@ URLgetProtocol(str *retval, const url *val)
 /* COMMAND "getQuery": Extract the query part from the URL
  * SIGNATURE: getQuery(str) : str; */
 static str
-URLgetQuery(str *retval, const url *val)
+URLgetQuery(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	const char *q;
 
@@ -695,8 +706,9 @@ URLgetQuery(str *retval, const url *val)
 /* COMMAND "getRobotURL": Extract the location of the robot control file
  * SIGNATURE: getRobotURL(str) : str; */
 static str
-URLgetRobotURL(str *retval, const url *val)
+URLgetRobotURL(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s;
 	size_t l;
 
@@ -724,8 +736,9 @@ URLgetRobotURL(str *retval, const url *val)
 /* COMMAND "getUser": Extract the user identity from the URL
  * SIGNATURE: getUser(str) : str; */
 static str
-URLgetUser(str *retval, const url *val)
+URLgetUser(Client ctx, str *retval, const url *val)
 {
+	(void) ctx;
 	const char *s, *h, *u, *p;
 
 	if (val == NULL || *val == NULL)
@@ -761,8 +774,9 @@ URLgetUser(str *retval, const url *val)
 /* COMMAND "isaURL": Check conformity of the URL syntax
  * SIGNATURE: isaURL(str) : bit; */
 static str
-URLisaURL(bit *retval, const char *const *val)
+URLisaURL(Client ctx, bit *retval, const char *const *val)
 {
+	(void) ctx;
 	if (val == NULL || *val == NULL)
 		throw(ILLARG, "url.isaURL", "url missing");
 	if (strNil(*val))
@@ -773,8 +787,9 @@ URLisaURL(bit *retval, const char *const *val)
 }
 
 static str
-URLnew(url *u, const char *const *val)
+URLnew(Client ctx, url *u, const char *const *val)
 {
+	(void) ctx;
 	*u = GDKstrdup(*val);
 	if (*u == NULL)
 		throw(MAL, "url.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -782,8 +797,9 @@ URLnew(url *u, const char *const *val)
 }
 
 static str
-URLnew3(url *u, const char *const *protocol, const char *const *server, const char *const *file)
+URLnew3(Client ctx, url *u, const char *const *protocol, const char *const *server, const char *const *file)
 {
+	(void) ctx;
 	const char *Protocol = *protocol;
 	const char *Server = *server;
 	const char *File = *file;
@@ -806,8 +822,9 @@ URLnew3(url *u, const char *const *protocol, const char *const *server, const ch
 }
 
 static str
-URLnew4(url *u, const char *const *protocol, const char *const *server, const int *port, const char *const *file)
+URLnew4(Client ctx, url *u, const char *const *protocol, const char *const *server, const int *port, const char *const *file)
 {
+	(void) ctx;
 	const char *Protocol = *protocol;
 	const char *Server = *server;
 	int Port = *port;
@@ -833,8 +850,9 @@ URLnew4(url *u, const char *const *protocol, const char *const *server, const in
 }
 
 static str
-URLnoop(url *u, const url *val)
+URLnoop(Client ctx, url *u, const url *val)
 {
+	(void) ctx;
 	*u = GDKstrdup(*val);
 	if (*u == NULL)
 		throw(MAL, "url.noop", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -847,8 +865,9 @@ URLnoop(url *u, const url *val)
  * and empty string is returned instead.
  * */
 static str
-extractURLHost(str *retval, const char *const *url, const bit *no_www)
+extractURLHost(Client ctx, str *retval, const char *const *url, const bit *no_www)
 {
+	(void) ctx;
 	const char *s;
 	const char *h = NULL;
 	const char *p = NULL;
@@ -907,8 +926,9 @@ str_buf_copy(str *buf, size_t *buflen, const char *s, size_t l)
 
 // bulk version
 static str
-BATextractURLHost(bat *res, const bat *bid, const bit *no_www)
+BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 {
+	(void) ctx;
 	const char *s;
 	const char *host = NULL;
 	const char *port = NULL;

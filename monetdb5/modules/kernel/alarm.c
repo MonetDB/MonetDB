@@ -32,8 +32,9 @@
 #include "mal_exception.h"
 
 static str
-ALARMusec(lng *ret)
+ALARMusec(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = GDKusec();
 	return MAL_SUCCEED;
 }
@@ -73,8 +74,9 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-ALARMctime(str *res)
+ALARMctime(Client ctx, str *res)
 {
+	(void) ctx;
 	time_t t = time(0);
 	char *base;
 	char buf[26];
@@ -96,15 +98,17 @@ ALARMctime(str *res)
 }
 
 static str
-ALARMepoch(int *res)
-{								/* XXX should be lng */
+ALARMepoch(Client ctx, int *res)
+{
+	(void) ctx;								/* XXX should be lng */
 	*res = (int) time(0);
 	return MAL_SUCCEED;
 }
 
 static str
-ALARMtime(int *res)
+ALARMtime(Client ctx, int *res)
 {
+	(void) ctx;
 	*res = GDKms();
 	return MAL_SUCCEED;
 }

@@ -67,8 +67,9 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
+CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 {
+	(void) ctx;
 	str s;
 	size_t l1;
 
@@ -89,8 +90,9 @@ CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
 
 
 static str
-CMDvarADDstrint(str *ret, const char *const *s1, const int *i)
+CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 {
+	(void) ctx;
 	str s;
 	size_t len;
 
@@ -345,8 +347,9 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDstrlength(int *ret, const char *const *v)
+CMDstrlength(Client ctx, int *ret, const char *const *v)
 {
+	(void) ctx;
 	size_t l = strlen(*v);
 
 	if (l > (size_t) GDK_int_max)
@@ -375,8 +378,9 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarCONVERTptr(ptr *ret, ptr *v)
+CMDvarCONVERTptr(Client ctx, ptr *ret, ptr *v)
 {
+	(void) ctx;
 	*ret = *v;
 	return MAL_SUCCEED;
 }

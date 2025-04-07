@@ -113,8 +113,9 @@ CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDnoopProfiler(void *res)
+CMDnoopProfiler(Client ctx, void *res)
 {
+	(void) ctx;
 	(void) res;					/* fool compiler */
 	return MAL_SUCCEED;
 }
@@ -148,15 +149,17 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDgetprofilerlimit(int *res)
+CMDgetprofilerlimit(Client ctx, int *res)
 {
+	(void) ctx;
 	*res = getprofilerlimit();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDsetprofilerlimit(void *res, const int *lim)
+CMDsetprofilerlimit(Client ctx, void *res, const int *lim)
 {
+	(void) ctx;
 	(void) res;
 	setprofilerlimit(*lim);
 	return MAL_SUCCEED;
@@ -167,52 +170,59 @@ CMDsetprofilerlimit(void *res, const int *lim)
  */
 
 static str
-CMDsetHeartbeat(void *res, const int *ev)
+CMDsetHeartbeat(Client ctx, void *res, const int *ev)
 {
+	(void) ctx;
 	(void) res;
 	setHeartbeat(*ev);
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetDiskReads(lng *ret)
+CMDgetDiskReads(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = getDiskReads();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetDiskWrites(lng *ret)
+CMDgetDiskWrites(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = getDiskWrites();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetUserTime(lng *ret)
+CMDgetUserTime(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = getUserTime();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetSystemTime(lng *ret)
+CMDgetSystemTime(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = getUserTime();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
+CMDcpustats(Client ctx, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
+	(void) ctx;
 	profilerGetCPUStat(user, nice, sys, idle, iowait);
 	return MAL_SUCCEED;
 }
 
 static str
-CMDcpuloadPercentage(int *cycles, int *io, const lng *user, const lng *nice,
+CMDcpuloadPercentage(Client ctx, int *cycles, int *io, const lng *user, const lng *nice,
 					 const lng *sys, const lng *idle, const lng *iowait)
 {
+	(void) ctx;
 	lng userN, niceN, sysN, idleN, iowaitN, N;
 	*cycles = 0;
 	*io = 0;

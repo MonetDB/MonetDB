@@ -169,8 +169,9 @@ XMLunquotestring(const char **p, char q, char *buf)
 }
 
 str
-XMLxml2str(str *s, const xml *x)
+XMLxml2str(Client ctx, str *s, const xml *x)
 {
+	(void) ctx;
 	if (strNil(*x)) {
 		*s = GDKstrdup(str_nil);
 		return MAL_SUCCEED;
@@ -181,8 +182,9 @@ XMLxml2str(str *s, const xml *x)
 }
 
 str
-XMLstr2xml(xml *x, const char *const*val)
+XMLstr2xml(Client ctx, xml *x, const char *const*val)
 {
+	(void) ctx;
 	const char *t = *val;
 	str buf;
 	size_t len;
@@ -204,8 +206,9 @@ XMLstr2xml(xml *x, const char *const*val)
 }
 
 str
-XMLxmltext(str *s, const xml *x)
+XMLxmltext(Client ctx, str *s, const xml *x)
 {
+	(void) ctx;
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	str content = NULL;
@@ -255,8 +258,9 @@ XMLxmltext(str *s, const xml *x)
 }
 
 str
-XMLxml2xml(xml *s, const xml *x)
+XMLxml2xml(Client ctx, xml *s, const xml *x)
 {
+	(void) ctx;
 	*s = GDKstrdup(*x);
 	if (*s == NULL)
 		throw(MAL, "xml.xml", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -264,8 +268,9 @@ XMLxml2xml(xml *s, const xml *x)
 }
 
 str
-XMLdocument(xml *x, const char * const *val)
+XMLdocument(Client ctx, xml *x, const char * const *val)
 {
+	(void) ctx;
 	xmlDocPtr doc;
 
 	if (strNil(*val)) {
@@ -293,8 +298,9 @@ XMLdocument(xml *x, const char * const *val)
 }
 
 str
-XMLcontent(xml *x, const char * const *val)
+XMLcontent(Client ctx, xml *x, const char * const *val)
 {
+	(void) ctx;
 	xmlDocPtr doc;
 	xmlNodePtr elem;
 	xmlParserErrors err;
@@ -331,8 +337,9 @@ XMLcontent(xml *x, const char * const *val)
 }
 
 str
-XMLisdocument(bit *x, const char * const *s)
+XMLisdocument(Client ctx, bit *x, const char * const *s)
 {
+	(void) ctx;
 	xmlDocPtr doc;
 
 	/* call the libxml2 library to perform the test */
@@ -348,8 +355,9 @@ XMLisdocument(bit *x, const char * const *s)
 }
 
 str
-XMLcomment(xml *x, const char * const *s)
+XMLcomment(Client ctx, xml *x, const char * const *s)
 {
+	(void) ctx;
 	size_t len;
 	str buf;
 
@@ -371,19 +379,21 @@ XMLcomment(xml *x, const char * const *s)
 }
 
 str
-XMLparse(xml *x, const char * const *doccont, const char * const *val, const char * const *option)
+XMLparse(Client ctx, xml *x, const char * const *doccont, const char * const *val, const char * const *option)
 {
+	(void) ctx;
 	(void) option;
 	if (strcmp(*doccont, "content") == 0)
-		return XMLcontent(x, val);
+		return XMLcontent(ctx, x, val);
 	if (strcmp(*doccont, "document") == 0)
-		return XMLdocument(x, val);
+		return XMLdocument(ctx, x, val);
 	throw(MAL, "xml.parse", "invalid parameter");
 }
 
 str
-XMLpi(xml *ret, const char * const *target, const char * const *value)
+XMLpi(Client ctx, xml *ret, const char * const *target, const char * const *value)
 {
+	(void) ctx;
 	size_t len;
 	str buf;
 	str val = NULL;
@@ -423,8 +433,9 @@ XMLpi(xml *ret, const char * const *target, const char * const *value)
 }
 
 str
-XMLroot(xml *ret, const xml *val, const char * const *version, const char * const *standalone)
+XMLroot(Client ctx, xml *ret, const xml *val, const char * const *version, const char * const *standalone)
 {
+	(void) ctx;
 	size_t len = 0, i = 0;
 	str buf;
 	bit isdoc = 0;
@@ -460,7 +471,7 @@ XMLroot(xml *ret, const xml *val, const char * const *version, const char * cons
 		i += snprintf(buf + i, len - i, " standalone=\"%s\"", *standalone);
 	snprintf(buf + i, len - i, "?>%s", *val + 1);
 	buf++;
-	XMLisdocument(&isdoc, &(const char *){buf});	/* check well-formedness */
+	XMLisdocument(ctx, &isdoc, &(const char *){buf});	/* check well-formedness */
 	buf--;
 	if (!isdoc) {
 		GDKfree(buf);
@@ -471,8 +482,9 @@ XMLroot(xml *ret, const xml *val, const char * const *version, const char * cons
 }
 
 str
-XMLattribute(xml *x, const char * const *name, const char * const *val)
+XMLattribute(Client ctx, xml *x, const char * const *name, const char * const *val)
 {
+	(void) ctx;
 	const char *t = *val;
 	str buf;
 	size_t len;
@@ -502,8 +514,9 @@ XMLattribute(xml *x, const char * const *name, const char * const *val)
 }
 
 str
-XMLelement(xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
+XMLelement(Client ctx, xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
 {
+	(void) ctx;
 	size_t len, i, namelen;
 	str buf;
 
@@ -552,14 +565,16 @@ XMLelement(xml *ret, const char * const *name, const xml *nspace, const xml *att
 }
 
 str
-XMLelementSmall(xml *ret, const char * const *name, const xml *val)
+XMLelementSmall(Client ctx, xml *ret, const char * const *name, const xml *val)
 {
-	return XMLelement(ret, name, NULL, NULL, val);
+	(void) ctx;
+	return XMLelement(ctx, ret, name, NULL, NULL, val);
 }
 
 str
-XMLconcat(xml *ret, const xml *left, const xml *right)
+XMLconcat(Client ctx, xml *ret, const xml *left, const xml *right)
 {
+	(void) ctx;
 	size_t len;
 	str buf;
 
@@ -641,8 +656,9 @@ XMLprelude(void)
 }
 
 str
-XMLepilogue(void *ret)
+XMLepilogue(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	xmlCleanupParser();
 	return MAL_SUCCEED;
@@ -667,7 +683,7 @@ XMLfromString(const char *src, size_t *len, void **X, bool external)
 			return -1;
 		return 1;
 	} else {
-		char *err = XMLstr2xml(x, &src);
+		char *err = XMLstr2xml(/*ctx*/NULL, x, &src);
 		if (err !=MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(err));
 			freeException(err);
@@ -727,40 +743,45 @@ XMLtoString(str *s, size_t *len, const void *src, bool external)
 }
 
 str
-XMLxml2str(str *s, const xml *x)
+XMLxml2str(Client ctx, str *s, const xml *x)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
 str
-XMLstr2xml(xml *x, const char *const*val)
+XMLstr2xml(Client ctx, xml *x, const char *const*val)
 {
+	(void) ctx;
 	(void) val;
 	(void) x;
 	return createException(MAL, "xml.xml2str", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
 str
-XMLxmltext(str *s, const xml *x)
+XMLxmltext(Client ctx, str *s, const xml *x)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xmltext", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
 str
-XMLxml2xml(xml *x, const xml *s)
+XMLxml2xml(Client ctx, xml *x, const xml *s)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.xml2xml", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
 str
-XMLdocument(xml *x, const char * const *s)
+XMLdocument(Client ctx, xml *x, const char * const *s)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.document",
@@ -768,16 +789,18 @@ XMLdocument(xml *x, const char * const *s)
 }
 
 str
-XMLcontent(xml *x, const char * const *s)
+XMLcontent(Client ctx, xml *x, const char * const *s)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.content", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
 str
-XMLisdocument(bit *x, const char * const *s)
+XMLisdocument(Client ctx, bit *x, const char * const *s)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.isdocument",
@@ -785,16 +808,18 @@ XMLisdocument(bit *x, const char * const *s)
 }
 
 str
-XMLcomment(xml *x, const char * const *s)
+XMLcomment(Client ctx, xml *x, const char * const *s)
 {
+	(void) ctx;
 	(void) s;
 	(void) x;
 	return createException(MAL, "xml.comment", SQLSTATE(HY005) NO_LIBXML_FATAL);
 }
 
 str
-XMLpi(xml *x, const char * const *target, const char * const *s)
+XMLpi(Client ctx, xml *x, const char * const *target, const char * const *s)
 {
+	(void) ctx;
 	(void) s;
 	(void) target;
 	(void) x;
@@ -802,8 +827,9 @@ XMLpi(xml *x, const char * const *target, const char * const *s)
 }
 
 str
-XMLroot(xml *x, const xml *v, const char * const *version, const char * const *standalone)
+XMLroot(Client ctx, xml *x, const xml *v, const char * const *version, const char * const *standalone)
 {
+	(void) ctx;
 	(void) x;
 	(void) v;
 	(void) version;
@@ -812,8 +838,9 @@ XMLroot(xml *x, const xml *v, const char * const *version, const char * const *s
 }
 
 str
-XMLparse(xml *x, const char * const *doccont, const char * const *s, const char * const *option)
+XMLparse(Client ctx, xml *x, const char * const *doccont, const char * const *s, const char * const *option)
 {
+	(void) ctx;
 	(void) x;
 	(void) doccont;
 	(void) s;
@@ -822,8 +849,9 @@ XMLparse(xml *x, const char * const *doccont, const char * const *s, const char 
 }
 
 str
-XMLattribute(xml *ret, const char * const *name, const char * const *val)
+XMLattribute(Client ctx, xml *ret, const char * const *name, const char * const *val)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) val;
@@ -832,8 +860,9 @@ XMLattribute(xml *ret, const char * const *name, const char * const *val)
 }
 
 str
-XMLelement(xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
+XMLelement(Client ctx, xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) nspace;
@@ -843,8 +872,9 @@ XMLelement(xml *ret, const char * const *name, const xml *nspace, const xml *att
 }
 
 str
-XMLelementSmall(xml *ret, const char * const *name, const xml *val)
+XMLelementSmall(Client ctx, xml *ret, const char * const *name, const xml *val)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) val;
@@ -853,8 +883,9 @@ XMLelementSmall(xml *ret, const char * const *name, const xml *val)
 }
 
 str
-XMLconcat(xml *ret, const xml *left, const xml *right)
+XMLconcat(Client ctx, xml *ret, const xml *left, const xml *right)
 {
+	(void) ctx;
 	(void) ret;
 	(void) left;
 	(void) right;
@@ -896,8 +927,9 @@ XMLprelude(void)
 }
 
 str
-XMLepilogue(void *ret)
+XMLepilogue(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	return MAL_SUCCEED;
 }

@@ -84,17 +84,19 @@ UUIDgenerateUuid_internal(uuid *u)
 }
 
 static str
-UUIDgenerateUuid(uuid *retval)
+UUIDgenerateUuid(Client ctx, uuid *retval)
 {
+	(void) ctx;
 	UUIDgenerateUuid_internal(retval);
 	return MAL_SUCCEED;
 }
 
 static str
-UUIDgenerateUuidInt(uuid *retval, const int *d)
+UUIDgenerateUuidInt(Client ctx, uuid *retval, const int *d)
 {
+	(void) ctx;
 	(void) d;
-	return UUIDgenerateUuid(retval);
+	return UUIDgenerateUuid(ctx, retval);
 }
 
 static inline bit
@@ -158,8 +160,9 @@ UUIDgenerateUuidInt_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 static str
-UUIDisaUUID(bit *retval, const char *const *s)
+UUIDisaUUID(Client ctx, bit *retval, const char *const *s)
 {
+	(void) ctx;
 	*retval = isaUUID(*s);
 	if (*retval == false)
 		GDKclrerr();
@@ -167,8 +170,9 @@ UUIDisaUUID(bit *retval, const char *const *s)
 }
 
 static str
-UUIDisaUUID_bulk(bat *ret, const bat *bid)
+UUIDisaUUID_bulk(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b = NULL, *bn = NULL;
 	BUN q;
 	bit *restrict dst;
@@ -207,15 +211,17 @@ UUIDisaUUID_bulk(bat *ret, const bat *bid)
 }
 
 static str
-UUIDuuid2uuid(uuid *retval, const uuid *i)
+UUIDuuid2uuid(Client ctx, uuid *retval, const uuid *i)
 {
+	(void) ctx;
 	*retval = *i;
 	return MAL_SUCCEED;
 }
 
 static str
-UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
+UUIDuuid2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	uuid *restrict bv, *restrict dv;
 	str msg = NULL;
@@ -289,8 +295,9 @@ UUIDuuid2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-UUIDstr2uuid(uuid *retval, const char *const *s)
+UUIDstr2uuid(Client ctx, uuid *retval, const char *const *s)
 {
+	(void) ctx;
 	size_t l = UUID_SIZE;
 
 	if (BATatoms[TYPE_uuid].atomFromStr(*s, &l, (void **) &retval, false) > 0) {
@@ -300,8 +307,9 @@ UUIDstr2uuid(uuid *retval, const char *const *s)
 }
 
 static str
-UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
+UUIDstr2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -381,8 +389,9 @@ UUIDstr2uuid_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-UUIDuuid2str(str *retval, const uuid *u)
+UUIDuuid2str(Client ctx, str *retval, const uuid *u)
 {
+	(void) ctx;
 	size_t l = 0;
 	*retval = NULL;
 	if (BATatoms[TYPE_uuid].atomToStr(retval, &l, u, false) < 0)
@@ -391,8 +400,9 @@ UUIDuuid2str(str *retval, const uuid *u)
 }
 
 static str
-UUIDuuid2str_bulk(bat *res, const bat *bid, const bat *sid)
+UUIDuuid2str_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	str msg = NULL;
 	uuid *restrict vals;

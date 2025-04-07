@@ -22,10 +22,12 @@
 #include "monetdb_config.h"
 #include "streams.h"
 #include "mal_exception.h"
+#include "mal_client.h"
 
 static str
-mnstr_open_rstreamwrap(Stream *S, const char *const *filename)
+mnstr_open_rstreamwrap(Client ctx, Stream *S, const char *const *filename)
 {
+	(void) ctx;
 	stream *s;
 
 	if ((s = open_rstream(*filename)) == NULL
@@ -42,8 +44,9 @@ mnstr_open_rstreamwrap(Stream *S, const char *const *filename)
 }
 
 static str
-mnstr_open_wstreamwrap(Stream *S, const char *const *filename)
+mnstr_open_wstreamwrap(Client ctx, Stream *S, const char *const *filename)
 {
+	(void) ctx;
 	stream *s;
 
 	if ((s = open_wstream(*filename)) == NULL
@@ -60,8 +63,9 @@ mnstr_open_wstreamwrap(Stream *S, const char *const *filename)
 }
 
 static str
-mnstr_open_rastreamwrap(Stream *S, const char *const *filename)
+mnstr_open_rastreamwrap(Client ctx, Stream *S, const char *const *filename)
 {
+	(void) ctx;
 	stream *s;
 
 	if ((s = open_rastream(*filename)) == NULL
@@ -78,8 +82,9 @@ mnstr_open_rastreamwrap(Stream *S, const char *const *filename)
 }
 
 static str
-mnstr_open_wastreamwrap(Stream *S, const char *const *filename)
+mnstr_open_wastreamwrap(Client ctx, Stream *S, const char *const *filename)
 {
+	(void) ctx;
 	stream *s;
 
 	if ((s = open_wastream(*filename)) == NULL
@@ -96,8 +101,9 @@ mnstr_open_wastreamwrap(Stream *S, const char *const *filename)
 }
 
 static str
-mnstr_write_stringwrap(void *ret, const Stream *S, const char *const *data)
+mnstr_write_stringwrap(Client ctx, void *ret, const Stream *S, const char *const *data)
 {
+	(void) ctx;
 	stream *s = *(stream **) S;
 	(void) ret;
 
@@ -108,8 +114,9 @@ mnstr_write_stringwrap(void *ret, const Stream *S, const char *const *data)
 }
 
 static str
-mnstr_writeIntwrap(void *ret, const Stream *S, const int *data)
+mnstr_writeIntwrap(Client ctx, void *ret, const Stream *S, const int *data)
 {
+	(void) ctx;
 	stream *s = *(stream **) S;
 	(void) ret;
 
@@ -120,8 +127,9 @@ mnstr_writeIntwrap(void *ret, const Stream *S, const int *data)
 }
 
 static str
-mnstr_readIntwrap(int *ret, const Stream *S)
+mnstr_readIntwrap(Client ctx, int *ret, const Stream *S)
 {
+	(void) ctx;
 	stream *s = *(stream **) S;
 
 	if (mnstr_readInt(s, ret) != 1)
@@ -132,8 +140,9 @@ mnstr_readIntwrap(int *ret, const Stream *S)
 
 #define CHUNK (64 * 1024)
 static str
-mnstr_read_stringwrap(str *res, const Stream *S)
+mnstr_read_stringwrap(Client ctx, str *res, const Stream *S)
 {
+	(void) ctx;
 	stream *s = *(stream **) S;
 	ssize_t len = 0;
 	size_t size = CHUNK +1;
@@ -164,8 +173,9 @@ mnstr_read_stringwrap(str *res, const Stream *S)
 }
 
 static str
-mnstr_flush_streamwrap(void *ret, const Stream *S)
+mnstr_flush_streamwrap(Client ctx, void *ret, const Stream *S)
 {
+	(void) ctx;
 	stream *s = *(stream **) S;
 	(void) ret;
 
@@ -176,8 +186,9 @@ mnstr_flush_streamwrap(void *ret, const Stream *S)
 }
 
 static str
-mnstr_close_streamwrap(void *ret, const Stream *S)
+mnstr_close_streamwrap(Client ctx, void *ret, const Stream *S)
 {
+	(void) ctx;
 	(void) ret;
 
 	close_stream(*(stream **) S);
@@ -186,8 +197,9 @@ mnstr_close_streamwrap(void *ret, const Stream *S)
 }
 
 static str
-open_block_streamwrap(Stream *S, const Stream *is)
+open_block_streamwrap(Client ctx, Stream *S, const Stream *is)
 {
+	(void) ctx;
 	if ((*(stream **) S = block_stream(*(stream **) is)) == NULL)
 		throw(IO, "bstreams.open", "failed to open block stream");
 
@@ -195,8 +207,9 @@ open_block_streamwrap(Stream *S, const Stream *is)
 }
 
 static str
-bstream_create_wrapwrap(Bstream *Bs, const Stream *S, const int *bufsize)
+bstream_create_wrapwrap(Client ctx, Bstream *Bs, const Stream *S, const int *bufsize)
 {
+	(void) ctx;
 	if ((*(bstream **) Bs = bstream_create(*(stream **) S,
 										   (size_t) *bufsize)) == NULL)
 		throw(IO, "bstreams.create", "failed to create block stream");
@@ -205,8 +218,9 @@ bstream_create_wrapwrap(Bstream *Bs, const Stream *S, const int *bufsize)
 }
 
 static str
-bstream_destroy_wrapwrap(void *ret, const Bstream *BS)
+bstream_destroy_wrapwrap(Client ctx, void *ret, const Bstream *BS)
 {
+	(void) ctx;
 	(void) ret;
 
 	bstream_destroy(*(bstream **) BS);
@@ -215,8 +229,9 @@ bstream_destroy_wrapwrap(void *ret, const Bstream *BS)
 }
 
 static str
-bstream_read_wrapwrap(int *res, const Bstream *BS, const int *size)
+bstream_read_wrapwrap(Client ctx, int *res, const Bstream *BS, const int *size)
 {
+	(void) ctx;
 	*res = (int) bstream_read(*(bstream **) BS, (size_t) *size);
 
 	return MAL_SUCCEED;

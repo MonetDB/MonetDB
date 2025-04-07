@@ -233,7 +233,7 @@ JSONtoStorageString(JSON *jt, int idx, json *ret, size_t *out_size)
 	return msg;
 }
 
-static str JSONstr2json(json *ret, const char *const*j);
+static str JSONstr2json(Client ctx, json *ret, const char *const*j);
 
 static ssize_t
 JSONfromString(const char *src, size_t *len, void **J, bool external)
@@ -250,7 +250,7 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		*len = 2;
 		return strNil(src) ? 1 : 3;
 	} else {
-		str msg = JSONstr2json(buf, &src);
+		str msg = JSONstr2json(/*ctx*/NULL, buf, &src);
 		if (msg != MAL_SUCCEED) {
 			GDKerror("%s", getExceptionMessageAndState(msg));
 			freeException(msg);
@@ -478,8 +478,9 @@ JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-JSONjson2str(str *ret, json *j)
+JSONjson2str(Client ctx, str *ret, json *j)
 {
+	(void) ctx;
 	char *s = *j, *c;
 
 	if (*s == '"')
@@ -494,8 +495,9 @@ JSONjson2str(str *ret, json *j)
 }
 
 static str
-JSON2json(json *ret, const json *j)
+JSON2json(Client ctx, json *ret, const json *j)
 {
+	(void) ctx;
 	*ret = GDKstrdup(*j);
 	if (*ret == NULL)
 		throw(MAL, "json.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -503,8 +505,9 @@ JSON2json(json *ret, const json *j)
 }
 
 static str
-JSONstr2json(json *ret, const char *const*j)
+JSONstr2json(Client ctx, json *ret, const char *const*j)
 {
+	(void) ctx;
 	str msg = MAL_SUCCEED;
 	json buf = NULL;
 	size_t ln = strlen(*j)+1;
@@ -541,8 +544,9 @@ JSONstr2json(json *ret, const char *const*j)
 }
 
 static str
-JSONisvalid(bit *ret, const char *const *j)
+JSONisvalid(Client ctx, bit *ret, const char *const *j)
 {
+	(void) ctx;
 	if (strNil(*j)) {
 		*ret = bit_nil;
 	} else {
@@ -556,8 +560,9 @@ JSONisvalid(bit *ret, const char *const *j)
 }
 
 static str
-JSONisobject(bit *ret, const json *js)
+JSONisobject(Client ctx, bit *ret, const json *js)
 {
+	(void) ctx;
 	if (strNil(*js)) {
 		*ret = bit_nil;
 	} else {
@@ -570,8 +575,9 @@ JSONisobject(bit *ret, const json *js)
 }
 
 static str
-JSONisarray(bit *ret, const json *js)
+JSONisarray(Client ctx, bit *ret, const json *js)
 {
+	(void) ctx;
 	if (strNil(*js)) {
 		*ret = bit_nil;
 	} else {
@@ -588,7 +594,7 @@ static gdk_return
 upgradeJSONStorage(char **out, const char **in)
 {
 	str msg;
-	if ((msg = JSONstr2json(out, in)) != MAL_SUCCEED) {
+	if ((msg = JSONstr2json(/*ctx*/NULL, out, in)) != MAL_SUCCEED) {
 		freeException(msg);
 		return GDK_FAIL;
 	}
@@ -604,7 +610,7 @@ jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 	if ((a = BATatoms[TYPE_str].atomRead(a, dstlen, s, cnt)) == NULL)
 		return NULL;
 
-	if ((msg = JSONstr2json(&out, &(const char *){a})) != MAL_SUCCEED) {
+	if ((msg = JSONstr2json(/*ctx*/NULL, &out, &(const char *){a})) != MAL_SUCCEED) {
 		freeException(msg);
 		GDKfree(a);
 		return NULL;
@@ -1490,8 +1496,9 @@ JSONparse(const char *j)
 }
 
 static str
-JSONlength(int *ret, const json *j)
+JSONlength(Client ctx, int *ret, const json *j)
 {
+	(void) ctx;
 	int i, cnt = 0;
 	JSON *jt;
 
@@ -1522,8 +1529,9 @@ JSONfilterArrayDefault(json *ret, const json *js, lng index, const char *other)
 }
 
 static str
-JSONfilterArray_bte(json *ret, const json *js, const bte *index)
+JSONfilterArray_bte(Client ctx, json *ret, const json *js, const bte *index)
 {
+	(void) ctx;
 	if (strNil(*js) || is_bte_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1533,8 +1541,9 @@ JSONfilterArray_bte(json *ret, const json *js, const bte *index)
 }
 
 static str
-JSONfilterArrayDefault_bte(json *ret, const json *js, const bte *index, const char *const *other)
+JSONfilterArrayDefault_bte(Client ctx, json *ret, const json *js, const bte *index, const char *const *other)
 {
+	(void) ctx;
 	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1544,8 +1553,9 @@ JSONfilterArrayDefault_bte(json *ret, const json *js, const bte *index, const ch
 }
 
 static str
-JSONfilterArray_sht(json *ret, const json *js, const sht *index)
+JSONfilterArray_sht(Client ctx, json *ret, const json *js, const sht *index)
 {
+	(void) ctx;
 	if (strNil(*js) || is_sht_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1555,8 +1565,9 @@ JSONfilterArray_sht(json *ret, const json *js, const sht *index)
 }
 
 static str
-JSONfilterArrayDefault_sht(json *ret, const json *js, const sht *index, const char *const *other)
+JSONfilterArrayDefault_sht(Client ctx, json *ret, const json *js, const sht *index, const char *const *other)
 {
+	(void) ctx;
 	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1566,8 +1577,9 @@ JSONfilterArrayDefault_sht(json *ret, const json *js, const sht *index, const ch
 }
 
 static str
-JSONfilterArray_int(json *ret, const json *js, const int *index)
+JSONfilterArray_int(Client ctx, json *ret, const json *js, const int *index)
 {
+	(void) ctx;
 	if (strNil(*js) || is_int_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1577,8 +1589,9 @@ JSONfilterArray_int(json *ret, const json *js, const int *index)
 }
 
 static str
-JSONfilterArrayDefault_int(json *ret, const json *js, const int *index, const char *const *other)
+JSONfilterArrayDefault_int(Client ctx, json *ret, const json *js, const int *index, const char *const *other)
 {
+	(void) ctx;
 	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1588,8 +1601,9 @@ JSONfilterArrayDefault_int(json *ret, const json *js, const int *index, const ch
 }
 
 static str
-JSONfilterArray_lng(json *ret, const json *js, const lng *index)
+JSONfilterArray_lng(Client ctx, json *ret, const json *js, const lng *index)
 {
+	(void) ctx;
 	if (strNil(*js) || is_lng_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1599,8 +1613,9 @@ JSONfilterArray_lng(json *ret, const json *js, const lng *index)
 }
 
 static str
-JSONfilterArrayDefault_lng(json *ret, const json *js, const lng *index, const char *const *other)
+JSONfilterArrayDefault_lng(Client ctx, json *ret, const json *js, const lng *index, const char *const *other)
 {
+	(void) ctx;
 	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1611,8 +1626,9 @@ JSONfilterArrayDefault_lng(json *ret, const json *js, const lng *index, const ch
 
 #ifdef HAVE_HGE
 static str
-JSONfilterArray_hge(json *ret, const json *js, const hge *index)
+JSONfilterArray_hge(Client ctx, json *ret, const json *js, const hge *index)
 {
+	(void) ctx;
 	if (strNil(*js) || is_hge_nil(*index)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1624,8 +1640,9 @@ JSONfilterArray_hge(json *ret, const json *js, const hge *index)
 }
 
 static str
-JSONfilterArrayDefault_hge(json *ret, const json *js, const hge *index, const char *const *other)
+JSONfilterArrayDefault_hge(Client ctx, json *ret, const json *js, const hge *index, const char *const *other)
 {
+	(void) ctx;
 	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1638,8 +1655,9 @@ JSONfilterArrayDefault_hge(json *ret, const json *js, const hge *index, const ch
 #endif
 
 static str
-JSONfilter(json *ret, const json *js, const char *const *expr)
+JSONfilter(Client ctx, json *ret, const json *js, const char *const *expr)
 {
+	(void) ctx;
 	if (strNil(*js) || strNil(*expr)) {
 		if (!(*ret = GDKstrdup(str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1807,8 +1825,9 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const 
 }
 
 static str
-JSONjson2textSeparator(str *ret, const json *js, const char *const *sep)
+JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *sep)
 {
+	(void) ctx;
 	size_t l, ilen, sep_len;
 	str s, msg;
 	JSON *jt;
@@ -1842,10 +1861,11 @@ JSONjson2textSeparator(str *ret, const json *js, const char *const *sep)
 }
 
 static str
-JSONjson2text(str *ret, const json *js)
+JSONjson2text(Client ctx, str *ret, const json *js)
 {
+	(void) ctx;
 	const char *sep = " ";
-	return JSONjson2textSeparator(ret, js, &sep);
+	return JSONjson2textSeparator(ctx, ret, js, &sep);
 }
 
 static str
@@ -1912,8 +1932,9 @@ strtol_wrapper(void **ret, const char *nptr, size_t len)
 }
 
 static str
-JSONjson2number(dbl *ret, const json *js)
+JSONjson2number(Client ctx, dbl *ret, const json *js)
 {
+	(void) ctx;
 	dbl val = 0;
 	dbl *val_ptr = &val;
 	str tmp;
@@ -1934,8 +1955,9 @@ JSONjson2number(dbl *ret, const json *js)
 }
 
 static str
-JSONjson2integer(lng *ret, const json *js)
+JSONjson2integer(Client ctx, lng *ret, const json *js)
 {
+	(void) ctx;
 	lng val = 0;
 	lng *val_ptr = &val;
 	str tmp;
@@ -2075,8 +2097,9 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, const json *js)
 
 
 static str
-JSONkeyTable(bat *ret, const json *js)
+JSONkeyTable(Client ctx, bat *ret, const json *js)
 {
+	(void) ctx;
 	BAT *bn;
 	char *r;
 	int i;
@@ -2107,8 +2130,9 @@ JSONkeyTable(bat *ret, const json *js)
 }
 
 static str
-JSONkeyArray(json *ret, const json *js)
+JSONkeyArray(Client ctx, json *ret, const json *js)
 {
+	(void) ctx;
 	char *result = NULL;
 	str r;
 	int i;
@@ -2172,8 +2196,9 @@ JSONkeyArray(json *ret, const json *js)
 
 
 static str
-JSONvalueTable(bat *ret, const json *js)
+JSONvalueTable(Client ctx, bat *ret, const json *js)
 {
+	(void) ctx;
 	BAT *bn;
 	char *r;
 	int i;
@@ -2207,8 +2232,9 @@ JSONvalueTable(bat *ret, const json *js)
 }
 
 static str
-JSONvalueArray(json *ret, const json *js)
+JSONvalueArray(Client ctx, json *ret, const json *js)
 {
+	(void) ctx;
 	char *result = NULL;
 	str r;
 	int i;
@@ -2753,8 +2779,9 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-JSONgroupStr(str *ret, const bat *bid)
+JSONgroupStr(Client ctx, str *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	BUN p, q;
 	size_t len, maxlen = BUFSIZ, buflen = 0;
@@ -3145,9 +3172,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 }
 
 static str
-JSONsubjsoncand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+JSONsubjsoncand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 				const bat *sid, const bit *skip_nils)
 {
+	(void) ctx;
 	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
 
@@ -3174,10 +3202,11 @@ JSONsubjsoncand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 }
 
 static str
-JSONsubjson(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+JSONsubjson(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			const bit *skip_nils)
 {
-	return JSONsubjsoncand(retval, bid, gid, eid, NULL, skip_nils);
+	(void) ctx;
+	return JSONsubjsoncand(ctx, retval, bid, gid, eid, NULL, skip_nils);
 }
 
 

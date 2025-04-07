@@ -293,7 +293,7 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	}
 	//check whether the representation is binary (hex)
 	if (geomWKT[0] == '0') {
-		str ret = wkbFromBinary(geomWKB, &geomWKT);
+		str ret = wkbFromBinary(/*ctx*/NULL, geomWKB, &geomWKT);
 
 		if (ret != MAL_SUCCEED)
 			return ret;
@@ -575,7 +575,7 @@ is_mbr_nil(const mbr *m)
 
 /* Creates the mbr for the given geom_geometry. */
 str
-wkbMBR(mbr **geomMBR, wkb **geomWKB)
+wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 {
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
@@ -589,7 +589,7 @@ wkbMBR(mbr **geomMBR, wkb **geomWKB)
 		return MAL_SUCCEED;
 	}
 	//check if the geometry is empty
-	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
+	if ((ret = wkbIsEmpty(ctx, &empty, geomWKB)) != MAL_SUCCEED) {
 		return ret;
 	}
 	if (empty) {
@@ -619,8 +619,9 @@ wkbMBR(mbr **geomMBR, wkb **geomWKB)
 }
 
 str
-wkbBox2D(mbr **box, wkb **point1, wkb **point2)
+wkbBox2D(Client ctx, mbr **box, wkb **point1, wkb **point2)
 {
+	(void) ctx;
 	GEOSGeom point1_geom, point2_geom;
 	double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
 	str err = MAL_SUCCEED;
@@ -670,7 +671,7 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 }
 
 static str
-mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr **, mbr **))
+mbrrelation_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(Client, bit *, mbr **, mbr **))
 {
 	mbr *geom1MBR = NULL, *geom2MBR = NULL;
 	str ret = MAL_SUCCEED;
@@ -680,18 +681,18 @@ mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr
 		return MAL_SUCCEED;
 	}
 
-	ret = wkbMBR(&geom1MBR, geom1WKB);
+	ret = wkbMBR(ctx, &geom1MBR, geom1WKB);
 	if (ret != MAL_SUCCEED) {
 		return ret;
 	}
 
-	ret = wkbMBR(&geom2MBR, geom2WKB);
+	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
 		GDKfree(geom1MBR);
 		return ret;
 	}
 
-	ret = (*func) (out, &geom1MBR, &geom2MBR);
+	ret = (*func) (ctx, out, &geom1MBR, &geom2MBR);
 
 	GDKfree(geom1MBR);
 	GDKfree(geom2MBR);
@@ -701,8 +702,9 @@ mbrrelation_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func)(bit *, mbr
 
 /*returns true if the two mbrs overlap */
 str
-mbrOverlaps(bit *out, mbr **b1, mbr **b2)
+mbrOverlaps(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else			//they cannot overlap if b2 is left, right, above or below b1
@@ -715,15 +717,17 @@ mbrOverlaps(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of the two geometries overlap */
 str
-mbrOverlaps_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlaps_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlaps);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlaps);
 }
 
 /* returns true if b1 is above b2 */
 str
-mbrAbove(bit *out, mbr **b1, mbr **b2)
+mbrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -733,15 +737,17 @@ mbrAbove(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is above the mbr of geom2 */
 str
-mbrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrAbove);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrAbove);
 }
 
 /* returns true if b1 is below b2 */
 str
-mbrBelow(bit *out, mbr **b1, mbr **b2)
+mbrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -751,15 +757,17 @@ mbrBelow(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is below the mbr of geom2 */
 str
-mbrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrBelow);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrBelow);
 }
 
 /* returns true if box1 is left of box2 */
 str
-mbrLeft(bit *out, mbr **b1, mbr **b2)
+mbrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -769,15 +777,17 @@ mbrLeft(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is on the left of the mbr of geom2 */
 str
-mbrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrLeft);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrLeft);
 }
 
 /* returns true if box1 is right of box2 */
 str
-mbrRight(bit *out, mbr **b1, mbr **b2)
+mbrRight(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -787,15 +797,17 @@ mbrRight(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is on the right of the mbr of geom2 */
 str
-mbrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrRight);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrRight);
 }
 
 /* returns true if box1 overlaps or is above box2 when only the Y coordinate is considered*/
 str
-mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -805,15 +817,17 @@ mbrOverlapOrAbove(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is above the mbr of geom2 */
 str
-mbrOverlapOrAbove_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrAbove);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrAbove);
 }
 
 /* returns true if box1 overlaps or is below box2 when only the Y coordinate is considered*/
 str
-mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -823,15 +837,17 @@ mbrOverlapOrBelow(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is below the mbr of geom2 */
 str
-mbrOverlapOrBelow_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrBelow);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrBelow);
 }
 
 /* returns true if box1 overlaps or is left of box2 when only the X coordinate is considered*/
 str
-mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -841,15 +857,17 @@ mbrOverlapOrLeft(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is on the left of the mbr of geom2 */
 str
-mbrOverlapOrLeft_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrLeft_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrLeft);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrLeft);
 }
 
 /* returns true if box1 overlaps or is right of box2 when only the X coordinate is considered*/
 str
-mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2)
+mbrOverlapOrRight(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -859,15 +877,17 @@ mbrOverlapOrRight(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 overlaps or is on the right of the mbr of geom2 */
 str
-mbrOverlapOrRight_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrOverlapOrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrOverlapOrRight);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrRight);
 }
 
 /* returns true if b1 is contained in b2 */
 str
-mbrContained(bit *out, mbr **b1, mbr **b2)
+mbrContained(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
 		*out = bit_nil;
 	else
@@ -877,29 +897,33 @@ mbrContained(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 is contained in the mbr of geom2 */
 str
-mbrContained_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrContained_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrContained);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrContained);
 }
 
 /*returns true if b1 contains b2 */
 str
-mbrContains(bit *out, mbr **b1, mbr **b2)
+mbrContains(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
-	return mbrContained(out, b2, b1);
+	(void) ctx;
+	return mbrContained(ctx, out, b2, b1);
 }
 
 /*returns true if the mbrs of geom1 contains the mbr of geom2 */
 str
-mbrContains_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrContains_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrContains);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrContains);
 }
 
 /* returns true if the boxes are the same */
 str
-mbrEqual(bit *out, mbr **b1, mbr **b2)
+mbrEqual(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	if (is_mbr_nil(*b1) && is_mbr_nil(*b2))
 		*out = 1;
 	else if (is_mbr_nil(*b1) || is_mbr_nil(*b2))
@@ -911,9 +935,10 @@ mbrEqual(bit *out, mbr **b1, mbr **b2)
 
 /*returns true if the mbrs of geom1 and the mbr of geom2 are the same */
 str
-mbrEqual_wkb(bit *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrEqual_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 {
-	return mbrrelation_wkb(out, geom1WKB, geom2WKB, mbrEqual);
+	(void) ctx;
+	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrEqual);
 }
 
 str
@@ -936,8 +961,9 @@ mbrDiagonal(dbl *out, mbr **b)
 
 /* returns the Euclidean distance of the centroids of the boxes */
 str
-mbrDistance(dbl *out, mbr **b1, mbr **b2)
+mbrDistance(Client ctx, dbl *out, mbr **b1, mbr **b2)
 {
+	(void) ctx;
 	double b1_Cx = 0.0, b1_Cy = 0.0, b2_Cx = 0.0, b2_Cy = 0.0;
 
 	if (is_mbr_nil(*b1) || is_mbr_nil(*b2)) {
@@ -958,8 +984,9 @@ mbrDistance(dbl *out, mbr **b1, mbr **b2)
 
 /*returns the Euclidean distance of the centroids of the mbrs of the two geometries */
 str
-mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB)
+mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 {
+	(void) ctx;
 	mbr *geom1MBR = NULL, *geom2MBR = NULL;
 	str ret = MAL_SUCCEED;
 
@@ -968,18 +995,18 @@ mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 		return MAL_SUCCEED;
 	}
 
-	ret = wkbMBR(&geom1MBR, geom1WKB);
+	ret = wkbMBR(ctx, &geom1MBR, geom1WKB);
 	if (ret != MAL_SUCCEED) {
 		return ret;
 	}
 
-	ret = wkbMBR(&geom2MBR, geom2WKB);
+	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
 		GDKfree(geom1MBR);
 		return ret;
 	}
 
-	ret = mbrDistance(out, &geom1MBR, &geom2MBR);
+	ret = mbrDistance(ctx, out, &geom1MBR, &geom2MBR);
 
 	GDKfree(geom1MBR);
 	GDKfree(geom2MBR);
@@ -989,8 +1016,9 @@ mbrDistance_wkb(dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 
 /* get Xmin, Ymin, Xmax, Ymax coordinates of mbr */
 str
-wkbCoordinateFromMBR(dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
+wkbCoordinateFromMBR(Client ctx, dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
 {
+	(void) ctx;
 	//check if the MBR is null
 	if (is_mbr_nil(*geomMBR) || is_int_nil(*coordinateIdx)) {
 		*coordinateValue = dbl_nil;
@@ -1018,8 +1046,9 @@ wkbCoordinateFromMBR(dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
 }
 
 str
-wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
+wkbCoordinateFromWKB(Client ctx, dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 {
+	(void) ctx;
 	mbr *geomMBR;
 	str ret = MAL_SUCCEED;
 	bit empty;
@@ -1030,7 +1059,7 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 	}
 
 	//check if the geometry is empty
-	if ((ret = wkbIsEmpty(&empty, geomWKB)) != MAL_SUCCEED) {
+	if ((ret = wkbIsEmpty(ctx, &empty, geomWKB)) != MAL_SUCCEED) {
 		return ret;
 	}
 
@@ -1039,10 +1068,10 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 		return MAL_SUCCEED;
 	}
 
-	if ((ret = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED)
+	if ((ret = wkbMBR(ctx, &geomMBR, geomWKB)) != MAL_SUCCEED)
 		return ret;
 
-	ret = wkbCoordinateFromMBR(coordinateValue, &geomMBR, coordinateIdx);
+	ret = wkbCoordinateFromMBR(ctx, coordinateValue, &geomMBR, coordinateIdx);
 
 	GDKfree(geomMBR);
 
@@ -1050,8 +1079,9 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 }
 
 str
-mbrFromString(mbr **w, const char **src)
+mbrFromString(Client ctx, mbr **w, const char **src)
 {
+	(void) ctx;
 	size_t len = *w ? sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
@@ -1096,7 +1126,8 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 }
 
 str
-mbrIntersects(bit *out, mbr** mbr1, mbr** mbr2) {
+mbrIntersects(Client ctx, bit *out, mbr** mbr1, mbr** mbr2) {
+	(void) ctx;
 	if (((*mbr1)->ymax < (*mbr2)->ymin) || ((*mbr1)->ymin > (*mbr2)->ymax))
 		(*out) = false;
 	else if (((*mbr1)->xmax < (*mbr2)->xmin) || ((*mbr1)->xmin > (*mbr2)->xmax))

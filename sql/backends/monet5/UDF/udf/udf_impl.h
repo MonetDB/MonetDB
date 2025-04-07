@@ -34,8 +34,9 @@
 /* fuse two (shift-byte) in values into one (2*shift-byte) out value */
 /* actual implementation */
 static char *
-UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
+UF(UDFfuse_,UI,UO,_) ( Client ctx, UO *ret , UI one , UI two )
 {
+	(void) ctx;
 	int shift = sizeof(UI) * 8;
 
 	/* assert calling sanity */
@@ -52,12 +53,13 @@ UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
 }
 /* MAL wrapper */
 char *
-UF(UDFfuse_,UI,UO,) ( UO *ret , const UI *one , const UI *two )
+UF(UDFfuse_,UI,UO,) ( Client ctx, UO *ret , const UI *one , const UI *two )
 {
+	(void) ctx;
 	/* assert calling sanity */
 	assert(ret != NULL && one != NULL && two != NULL);
 
-	return UF(UDFfuse_,UI,UO,_) ( ret, *one, *two );
+	return UF(UDFfuse_,UI,UO,_) ( ctx, ret, *one, *two );
 }
 
 /* BAT fuse */
@@ -68,8 +70,9 @@ UF(UDFfuse_,UI,UO,) ( UO *ret , const UI *one , const UI *two )
 
 /* type-specific core algorithm on arrays */
 static char *
-UF(UDFarrayfuse_,UI,UO,)  ( UO *res, const UI *one, const UI *two, BUN n )
+UF(UDFarrayfuse_,UI,UO,)  ( Client ctx, UO *res, const UI *one, const UI *two, BUN n )
 {
+	(void) ctx;
 	BUN i;
 	int shift = sizeof(UI) * 8;
 
@@ -90,10 +93,11 @@ UF(UDFarrayfuse_,UI,UO,)  ( UO *res, const UI *one, const UI *two, BUN n )
 
 /* type-specific core algorithm on BATs */
 static char *
-UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, BAT *bone, BAT *btwo, BUN n,
+UF(UDFBATfuse_,UI,UO,)  ( Client ctx, const BAT *bres, BAT *bone, BAT *btwo, BUN n,
 						  bit *two_tail_sorted_unsigned,
 						  bit *two_tail_revsorted_unsigned )
 {
+	(void) ctx;
 	UI *one = NULL, *two = NULL;
 	UO *res = NULL;
 	str msg = NULL;
@@ -113,7 +117,7 @@ UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, BAT *bone, BAT *btwo, BUN n,
 	res = (UO*) Tloc(bres, 0);
 
 	/* call core function on arrays */
-	msg = UF(UDFarrayfuse_,UI,UO,) ( res, one, two , n );
+	msg = UF(UDFarrayfuse_,UI,UO,) ( ctx, res, one, two , n );
 	if (msg == MAL_SUCCEED) {
 		*two_tail_sorted_unsigned =
 			btwoi.sorted && (two[0] >= 0 || two[n-1] < 0);

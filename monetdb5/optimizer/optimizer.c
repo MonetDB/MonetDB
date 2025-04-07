@@ -30,8 +30,9 @@
 #include "mal_session.h"
 
 str
-optimizer_epilogue(void *ret)
+optimizer_epilogue(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	opt_pipes_reset();
 	return MAL_SUCCEED;

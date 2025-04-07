@@ -165,7 +165,7 @@ struct challengedata {
 	char challenge[13];
 };
 
-static str SERVERsetAlias(void *ret, const int *key, const char *const *dbalias);
+static str SERVERsetAlias(Client ctx, void *ret, const int *key, const char *const *dbalias);
 
 static void
 doChallenge(void *data)
@@ -948,22 +948,25 @@ MAPIprelude(void)
 }
 
 static str
-SERVERlisten_default(int *ret)
+SERVERlisten_default(Client ctx, int *ret)
 {
+	(void) ctx;
 	(void) ret;
 	return MAPIprelude();
 }
 
 static str
-SERVERlisten_usock(int *ret, const char *const *usock)
+SERVERlisten_usock(Client ctx, int *ret, const char *const *usock)
 {
+	(void) ctx;
 	(void) ret;
 	return SERVERlisten(-1, usock ? *usock : NULL, SERVERMAXUSERS);
 }
 
 static str
-SERVERlisten_port(int *ret, const int *pid)
+SERVERlisten_port(Client ctx, int *ret, const int *pid)
 {
+	(void) ctx;
 	(void) ret;
 	return SERVERlisten(*pid, NULL, SERVERMAXUSERS);
 }
@@ -978,8 +981,9 @@ SERVERlisten_port(int *ret, const int *pid)
  */
 
 static str
-SERVERstop(void *ret)
+SERVERstop(Client ctx, void *ret)
 {
+	(void) ctx;
 	TRC_INFO(MAL_SERVER, "Server stop\n");
 	ATOMIC_SET(&serverexiting, 1);
 	/* wait until they all exited, but skip the wait if the whole
@@ -992,24 +996,27 @@ SERVERstop(void *ret)
 
 
 static str
-SERVERsuspend(void *res)
+SERVERsuspend(Client ctx, void *res)
 {
+	(void) ctx;
 	(void) res;
 	ATOMIC_SET(&serveractive, 0);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERresume(void *res)
+SERVERresume(Client ctx, void *res)
 {
+	(void) ctx;
 	ATOMIC_SET(&serveractive, 1);
 	(void) res;
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERclient(void *res, const Stream *In, const Stream *Out)
+SERVERclient(Client ctx, void *res, const Stream *In, const Stream *Out)
 {
+	(void) ctx;
 	struct challengedata *data;
 	MT_Id tid;
 
@@ -1170,8 +1177,9 @@ SERVERconnectAll(Client cntxt, int *key, const char *host, int port, const char 
 }
 
 static str
-SERVERdisconnectALL(int *key)
+SERVERdisconnectALL(Client ctx, int *key)
 {
+	(void) ctx;
 	int i;
 
 	MT_lock_set(&mal_contextLock);
@@ -1198,8 +1206,9 @@ SERVERdisconnectALL(int *key)
 }
 
 static str
-SERVERdisconnectWithAlias(int *key, const char *const *dbalias)
+SERVERdisconnectWithAlias(Client ctx, int *key, const char *const *dbalias)
 {
+	(void) ctx;
 	int i;
 
 	MT_lock_set(&mal_contextLock);
@@ -1269,7 +1278,7 @@ SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg = SERVERconnectAll(cntxt, key, host, port, username, password, lang);
 	if (msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(NULL, key, &dbalias);
+		msg = SERVERsetAlias(cntxt, NULL, key, &dbalias);
 	return msg;
 }
 
@@ -1297,7 +1306,7 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	msg = SERVERconnectAll(cntxt, key, host, port, username, password, lang);
 	if (msg == MAL_SUCCEED)
-		msg = SERVERsetAlias(NULL, key, &nme);
+		msg = SERVERsetAlias(cntxt, NULL, key, &nme);
 	return msg;
 }
 
@@ -1314,8 +1323,9 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} while (0)
 
 static str
-SERVERsetAlias(void *ret, const int *key, const char *const *dbalias)
+SERVERsetAlias(Client ctx, void *ret, const int *key, const char *const *dbalias)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	accessTest(*key, "setAlias");
@@ -1327,8 +1337,9 @@ SERVERsetAlias(void *ret, const int *key, const char *const *dbalias)
 }
 
 static str
-SERVERlookup(int *ret, const char *const *dbalias)
+SERVERlookup(Client ctx, int *ret, const char *const *dbalias)
 {
+	(void) ctx;
 	int i;
 	for (i = 0; i < MAXSESSIONS; i++)
 		if (SERVERsessions[i].dbalias &&
@@ -1340,16 +1351,18 @@ SERVERlookup(int *ret, const char *const *dbalias)
 }
 
 static str
-SERVERtrace(void *ret, const int *key, const int *flag)
+SERVERtrace(Client ctx, void *ret, const int *key, const int *flag)
 {
+	(void) ctx;
 	(void) ret;
 	mapi_trace(SERVERsessions[*key].mid, (bool) *flag);
 	return MAL_SUCCEED;
 }
 
 static str
-SERVERdisconnect(void *ret, const int *key)
+SERVERdisconnect(Client ctx, void *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	(void) ret;
@@ -1366,8 +1379,9 @@ SERVERdisconnect(void *ret, const int *key)
 }
 
 static str
-SERVERdestroy(void *ret, const int *key)
+SERVERdestroy(Client ctx, void *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	(void) ret;
@@ -1385,8 +1399,9 @@ SERVERdestroy(void *ret, const int *key)
 }
 
 static str
-SERVERreconnect(void *ret, const int *key)
+SERVERreconnect(Client ctx, void *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	(void) ret;
@@ -1399,8 +1414,9 @@ SERVERreconnect(void *ret, const int *key)
 }
 
 static str
-SERVERping(int *ret, const int *key)
+SERVERping(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	int i;
 	Mapi mid;
 	accessTest(*key, "destroy");
@@ -1409,8 +1425,9 @@ SERVERping(int *ret, const int *key)
 }
 
 static str
-SERVERquery(int *ret, const int *key, const char *const *qry)
+SERVERquery(Client ctx, int *ret, const int *key, const char *const *qry)
 {
+	(void) ctx;
 	Mapi mid;
 	MapiHdl hdl = 0;
 	int i;
@@ -1424,8 +1441,9 @@ SERVERquery(int *ret, const int *key, const char *const *qry)
 }
 
 static str
-SERVERquery_handle(int *ret, const int *key, const char *const *qry)
+SERVERquery_handle(Client ctx, int *ret, const int *key, const char *const *qry)
 {
+	(void) ctx;
 	Mapi mid;
 	MapiHdl hdl = 0;
 	int i;
@@ -1446,8 +1464,9 @@ SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 }
 
 static str
-SERVERprepare(int *ret, const int *key, const char *const *qry)
+SERVERprepare(Client ctx, int *ret, const int *key, const char *const *qry)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "prepare");
@@ -1462,8 +1481,9 @@ SERVERprepare(int *ret, const int *key, const char *const *qry)
 }
 
 static str
-SERVERfinish(int *ret, const int *key)
+SERVERfinish(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "finish");
@@ -1476,8 +1496,9 @@ SERVERfinish(int *ret, const int *key)
 }
 
 static str
-SERVERget_row_count(lng *ret, const int *key)
+SERVERget_row_count(Client ctx, lng *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "get_row_count");
@@ -1489,8 +1510,9 @@ SERVERget_row_count(lng *ret, const int *key)
 }
 
 static str
-SERVERget_field_count(int *ret, const int *key)
+SERVERget_field_count(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "get_field_count");
@@ -1502,8 +1524,9 @@ SERVERget_field_count(int *ret, const int *key)
 }
 
 static str
-SERVERrows_affected(lng *ret, const int *key)
+SERVERrows_affected(Client ctx, lng *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "rows_affected");
@@ -1512,8 +1535,9 @@ SERVERrows_affected(lng *ret, const int *key)
 }
 
 static str
-SERVERfetch_row(int *ret, const int *key)
+SERVERfetch_row(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_row");
@@ -1522,8 +1546,9 @@ SERVERfetch_row(int *ret, const int *key)
 }
 
 static str
-SERVERfetch_all_rows(lng *ret, const int *key)
+SERVERfetch_all_rows(Client ctx, lng *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_all_rows");
@@ -1532,8 +1557,9 @@ SERVERfetch_all_rows(lng *ret, const int *key)
 }
 
 static str
-SERVERfetch_field_str(str *ret, const int *key, const int *fnr)
+SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1549,8 +1575,9 @@ SERVERfetch_field_str(str *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_int(int *ret, const int *key, const int *fnr)
+SERVERfetch_field_int(Client ctx, int *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1564,8 +1591,9 @@ SERVERfetch_field_int(int *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_lng(lng *ret, const int *key, const int *fnr)
+SERVERfetch_field_lng(Client ctx, lng *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1580,8 +1608,9 @@ SERVERfetch_field_lng(lng *ret, const int *key, const int *fnr)
 
 #ifdef HAVE_HGE
 static str
-SERVERfetch_field_hge(hge *ret, const int *key, const int *fnr)
+SERVERfetch_field_hge(Client ctx, hge *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1596,8 +1625,9 @@ SERVERfetch_field_hge(hge *ret, const int *key, const int *fnr)
 #endif
 
 static str
-SERVERfetch_field_sht(sht *ret, const int *key, const int *fnr)
+SERVERfetch_field_sht(Client ctx, sht *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1611,8 +1641,9 @@ SERVERfetch_field_sht(sht *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_void(void *ret, const int *key, const int *fnr)
+SERVERfetch_field_void(Client ctx, void *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	(void) ret;
@@ -1622,8 +1653,9 @@ SERVERfetch_field_void(void *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_oid(oid *ret, const int *key, const int *fnr)
+SERVERfetch_field_oid(Client ctx, oid *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1640,8 +1672,9 @@ SERVERfetch_field_oid(oid *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_field_bte(bte *ret, const int *key, const int *fnr)
+SERVERfetch_field_bte(Client ctx, bte *ret, const int *key, const int *fnr)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1658,8 +1691,9 @@ SERVERfetch_field_bte(bte *ret, const int *key, const int *fnr)
 }
 
 static str
-SERVERfetch_line(str *ret, const int *key)
+SERVERfetch_line(Client ctx, str *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	str fld;
@@ -1675,8 +1709,9 @@ SERVERfetch_line(str *ret, const int *key)
 }
 
 static str
-SERVERnext_result(int *ret, const int *key)
+SERVERnext_result(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "next_result");
@@ -1689,8 +1724,9 @@ SERVERnext_result(int *ret, const int *key)
 }
 
 static str
-SERVERfetch_reset(int *ret, const int *key)
+SERVERfetch_reset(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_reset");
@@ -1703,8 +1739,9 @@ SERVERfetch_reset(int *ret, const int *key)
 }
 
 static str
-SERVERfetch_field_bat(bat *bid, const int *key)
+SERVERfetch_field_bat(Client ctx, bat *bid, const int *key)
 {
+	(void) ctx;
 	int i, j, cnt;
 	Mapi mid;
 	char *fld;
@@ -1733,8 +1770,9 @@ SERVERfetch_field_bat(bat *bid, const int *key)
 }
 
 static str
-SERVERerror(int *ret, const int *key)
+SERVERerror(Client ctx, int *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "error");
@@ -1743,8 +1781,9 @@ SERVERerror(int *ret, const int *key)
 }
 
 static str
-SERVERgetError(str *ret, const int *key)
+SERVERgetError(Client ctx, str *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 	accessTest(*key, "getError");
@@ -1755,8 +1794,9 @@ SERVERgetError(str *ret, const int *key)
 }
 
 static str
-SERVERexplain(str *ret, const int *key)
+SERVERexplain(Client ctx, str *ret, const int *key)
 {
+	(void) ctx;
 	Mapi mid;
 	int i;
 

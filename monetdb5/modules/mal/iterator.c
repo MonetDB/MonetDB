@@ -52,8 +52,9 @@
  * size.
  */
 static str
-ITRnewChunk(lng *res, bat *vid, const bat *bid, const lng *granule)
+ITRnewChunk(Client ctx, lng *res, bat *vid, const bat *bid, const lng *granule)
 {
+	(void) ctx;
 	BAT *b, *view;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -80,8 +81,9 @@ ITRnewChunk(lng *res, bat *vid, const bat *bid, const lng *granule)
  * The granule size may differ in each call.
  */
 static str
-ITRnextChunk(lng *res, bat *vid, const bat *bid, const lng *granule)
+ITRnextChunk(Client ctx, lng *res, bat *vid, const bat *bid, const lng *granule)
 {
+	(void) ctx;
 	BAT *b, *view;
 	BUN i;
 
@@ -197,8 +199,9 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-ITRnext_oid(oid *i, const oid *step, const oid *last)
+ITRnext_oid(Client ctx, oid *i, const oid *step, const oid *last)
 {
+	(void) ctx;
 	oid v = *i;
 	v = v + *step;
 	*i = v;
@@ -208,8 +211,9 @@ ITRnext_oid(oid *i, const oid *step, const oid *last)
 }
 
 static str
-ITRnext_lng(lng *i, const lng *step, const lng *last)
+ITRnext_lng(Client ctx, lng *i, const lng *step, const lng *last)
 {
+	(void) ctx;
 	lng v = *i;
 	v = v + *step;
 	*i = v;
@@ -220,8 +224,9 @@ ITRnext_lng(lng *i, const lng *step, const lng *last)
 
 #ifdef HAVE_HGE
 static str
-ITRnext_hge(hge *i, const hge *step, const hge *last)
+ITRnext_hge(Client ctx, hge *i, const hge *step, const hge *last)
 {
+	(void) ctx;
 	hge v = *i;
 	v = v + *step;
 	*i = v;
@@ -231,8 +236,9 @@ ITRnext_hge(hge *i, const hge *step, const hge *last)
 }
 #endif
 static str
-ITRnext_int(int *i, const int *step, const int *last)
+ITRnext_int(Client ctx, int *i, const int *step, const int *last)
 {
+	(void) ctx;
 	int v = *i;
 	v = v + *step;
 	*i = v;
@@ -242,8 +248,9 @@ ITRnext_int(int *i, const int *step, const int *last)
 }
 
 static str
-ITRnext_sht(sht *i, const sht *step, const sht *last)
+ITRnext_sht(Client ctx, sht *i, const sht *step, const sht *last)
 {
+	(void) ctx;
 	sht v = *i;
 	v = v + *step;
 	*i = v;
@@ -253,8 +260,9 @@ ITRnext_sht(sht *i, const sht *step, const sht *last)
 }
 
 static str
-ITRnext_flt(flt *i, const flt *step, const flt *last)
+ITRnext_flt(Client ctx, flt *i, const flt *step, const flt *last)
 {
+	(void) ctx;
 	flt v = *i;
 	v = v + *step;
 	*i = v;
@@ -264,8 +272,9 @@ ITRnext_flt(flt *i, const flt *step, const flt *last)
 }
 
 static str
-ITRnext_dbl(dbl *i, const dbl *step, const dbl *last)
+ITRnext_dbl(Client ctx, dbl *i, const dbl *step, const dbl *last)
 {
+	(void) ctx;
 	dbl v = *i;
 	v = v + *step;
 	*i = v;

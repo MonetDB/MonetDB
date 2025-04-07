@@ -979,23 +979,26 @@ pat2pcre(str *r, const char *pat)
  */
 
 static str
-PCREreplace_wrap(str *res, const char *const *or, const char *const *pat,
+PCREreplace_wrap(Client ctx, str *res, const char *const *or, const char *const *pat,
 				 const char *const *repl, const char *const *flags)
 {
+	(void) ctx;
 	return pcre_replace(res, *or, *pat, *repl, *flags, true);
 }
 
 static str
-PCREreplacefirst_wrap(str *res, const char *const *or, const char *const *pat,
+PCREreplacefirst_wrap(Client ctx, str *res, const char *const *or, const char *const *pat,
 					  const char *const *repl, const char *const *flags)
 {
+	(void) ctx;
 	return pcre_replace(res, *or, *pat, *repl, *flags, false);
 }
 
 static str
-PCREreplace_bat_wrap(bat *res, const bat *bid, const char *const *pat,
+PCREreplace_bat_wrap(Client ctx, bat *res, const bat *bid, const char *const *pat,
 					 const char *const *repl, const char *const *flags)
 {
+	(void) ctx;
 	BAT *b, *bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -1011,9 +1014,10 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const char *const *pat,
 }
 
 static str
-PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
+PCREreplacefirst_bat_wrap(Client ctx, bat *res, const bat *bid, const char *const *pat,
 						  const char *const *repl, const char *const *flags)
 {
+	(void) ctx;
 	BAT *b, *bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -1029,20 +1033,23 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
 }
 
 static str
-PCREmatch(bit *ret, const char *const *val, const char *const *pat)
+PCREmatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 {
+	(void) ctx;
 	return pcre_match_with_flags(ret, *val, *pat, "");
 }
 
 static str
-PCREimatch(bit *ret, const char *const *val, const char *const *pat)
+PCREimatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 {
+	(void) ctx;
 	return pcre_match_with_flags(ret, *val, *pat, "i");
 }
 
 static str
-PCREindex(int *res, const pcre *pattern, const char *const *s)
+PCREindex(Client ctx, int *res, const pcre *pattern, const char *const *s)
 {
+	(void) ctx;
 #ifdef HAVE_LIBPCRE
 	int v[3];
 
@@ -1061,8 +1068,9 @@ PCREindex(int *res, const pcre *pattern, const char *const *s)
 }
 
 static str
-PCREpatindex(int *ret, const char *const *pat, const char *const *val)
+PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *val)
 {
+	(void) ctx;
 #ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	char *ppat = NULL, *msg;
@@ -1079,7 +1087,7 @@ PCREpatindex(int *ret, const char *const *pat, const char *const *val)
 		return msg;
 	}
 	GDKfree(ppat);
-	msg = PCREindex(ret, re, val);
+	msg = PCREindex(ctx, ret, re, val);
 	pcre_free(re);
 	return msg;
 #else
@@ -1091,8 +1099,9 @@ PCREpatindex(int *ret, const char *const *pat, const char *const *val)
 }
 
 static str
-PCREquote(str *ret, const char *const *val)
+PCREquote(Client ctx, str *ret, const char *const *val)
 {
+	(void) ctx;
 	char *p;
 	const char *s = *val;
 
@@ -1113,8 +1122,9 @@ PCREquote(str *ret, const char *const *val)
 }
 
 static str
-PCREsql2pcre(str *ret, const char *const *pat, const char *const *esc)
+PCREsql2pcre(Client ctx, str *ret, const char *const *pat, const char *const *esc)
 {
+	(void) ctx;
 	return sql2pcre(ret, *pat, *esc);
 }
 
@@ -1183,20 +1193,22 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 }
 
 static str
-PCRElike(bit *ret, const char *const *s, const char *const *pat,
+PCRElike(Client ctx, bit *ret, const char *const *s, const char *const *pat,
 		 const char *const *esc, const bit *isens)
 {
+	(void) ctx;
 	return PCRElike_imp(ret, s, pat, esc, isens);
 }
 
 static str
-PCREnotlike(bit *ret, const char *const *s, const char *const *pat,
+PCREnotlike(Client ctx, bit *ret, const char *const *s, const char *const *pat,
 			const char *const *esc, const bit *isens)
 {
+	(void) ctx;
 	str tmp;
 	bit r;
 
-	rethrow("str.not_like", tmp, PCRElike(&r, s, pat, esc, isens));
+	rethrow("str.not_like", tmp, PCRElike(ctx, &r, s, pat, esc, isens));
 	*ret = r == bit_nil ? bit_nil : !r;
 	return MAL_SUCCEED;
 }
@@ -1493,9 +1505,10 @@ mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 }
 
 static str
-PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
+PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 			   const char *const *esc, const bit *caseignore, const bit *anti)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;
 	str msg = MAL_SUCCEED;
 	bool use_re = false,
@@ -1972,10 +1985,11 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
 }
 
 static str
-LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid,
+LIKEjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid,
 		 const bat *cid, const bat *slid, const bat *srid,
 		 const bit *nil_matches, const lng *estimate, const bit *anti)
 {
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
@@ -1983,10 +1997,11 @@ LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid,
 }
 
 static str
-LIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *elid,
+LIKEjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *elid,
 		  const bat *cid, const bat *slid, const bat *srid,
 		  const bit *nil_matches, const lng *estimate, const bit *anti)
 {
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
 	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,

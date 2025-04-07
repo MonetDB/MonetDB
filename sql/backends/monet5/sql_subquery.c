@@ -15,8 +15,9 @@
 #include "gdk_subquery.h"
 
 str
-zero_or_one_error(ptr ret, const bat *bid, const bit *err)
+zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err)
 {
+	(void) ctx;
 	BAT *b;
 	BUN c;
 	size_t _s;
@@ -69,23 +70,26 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 }
 
 str
-zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err)
+zero_or_one_error_bat(Client ctx, ptr ret, const bat *bid, const bat *err)
 {
+	(void) ctx;
 	bit t = FALSE;
 	(void)err;
-	return zero_or_one_error(ret, bid, &t);
+	return zero_or_one_error(ctx, ret, bid, &t);
 }
 
 str
-zero_or_one(ptr ret, const bat *bid)
+zero_or_one(Client ctx, ptr ret, const bat *bid)
 {
+	(void) ctx;
 	bit t = TRUE;
-	return zero_or_one_error(ret, bid, &t);
+	return zero_or_one_error(ctx, ret, bid, &t);
 }
 
 str
-SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit *no_nil)
+SQLsubzero_or_one(Client ctx, bat *ret, const bat *bid, const bat *gid, const bat *eid, bit *no_nil)
 {
+	(void) ctx;
 	gdk_return r;
 	BAT *ng = NULL, *h = NULL, *g = NULL;
 	lng max = 0;
@@ -136,8 +140,9 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 	} while (0)
 
 str
-SQLall(ptr ret, const bat *bid)
+SQLall(Client ctx, ptr ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	BUN c, q = 0;
 
@@ -268,8 +273,9 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 str
-SQLnil(bit *ret, const bat *bid)
+SQLnil(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {

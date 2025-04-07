@@ -426,8 +426,9 @@ str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_daytime(bat *res, const bat *bid, const bat *s, const int *digits)
+batstr_2time_daytime(Client ctx, bat *res, const bat *bid, const bat *s, const int *digits)
 {
+	(void) ctx;
 	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str), *digits, 0);
 }
 
@@ -926,8 +927,9 @@ str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_timestamptz(bat *res, const bat *bid, const bat *sid, const int *digits, const lng *tz)
+batstr_2time_timestamptz(Client ctx, bat *res, const bat *bid, const bat *sid, const int *digits, const lng *tz)
 {
+	(void) ctx;
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
 }
 
@@ -940,8 +942,9 @@ str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_timestamp(bat *res, const bat *bid, const bat *sid, const int *digits)
+batstr_2time_timestamp(Client ctx, bat *res, const bat *bid, const bat *sid, const int *digits)
 {
+	(void) ctx;
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, 0);
 }
 

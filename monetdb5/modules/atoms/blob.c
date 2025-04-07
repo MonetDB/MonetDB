@@ -39,8 +39,9 @@
 #include "mal_exception.h"
 
 static str
-BLOBnitems(int *ret, blob **b)
+BLOBnitems(Client ctx, int *ret, blob **b)
 {
+	(void) ctx;
 	if (is_blob_nil(*b)) {
 		*ret = int_nil;
 	} else {
@@ -130,8 +131,9 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-BLOBtoblob(blob **retval, const char *const *s)
+BLOBtoblob(Client ctx, blob **retval, const char *const *s)
 {
+	(void) ctx;
 	size_t len = strLen(*s);
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
@@ -144,8 +146,9 @@ BLOBtoblob(blob **retval, const char *const *s)
 }
 
 static str
-BLOBblob_blob(blob **d, const blob *const*s)
+BLOBblob_blob(Client ctx, blob **d, const blob *const*s)
 {
+	(void) ctx;
 	size_t len = blobsize((*s)->nitems);
 	blob *b;
 
@@ -159,8 +162,9 @@ BLOBblob_blob(blob **d, const blob *const*s)
 }
 
 static str
-BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
+BLOBblob_blob_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -238,8 +242,9 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-BLOBblob_fromstr(blob **b, const char *const*s)
+BLOBblob_fromstr(Client ctx, blob **b, const char *const*s)
 {
+	(void) ctx;
 	size_t len = 0;
 
 	if (BATatoms[TYPE_blob].atomFromStr(*s, &len, (void **) b, false) < 0)
@@ -248,8 +253,9 @@ BLOBblob_fromstr(blob **b, const char *const*s)
 }
 
 static str
-BLOBblob_fromstr_bulk(bat *res, const bat *bid, const bat *sid)
+BLOBblob_fromstr_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)

@@ -1164,8 +1164,9 @@ bailout:
 }
 
 str
-mvc_getVersion(lng *version, const int *clientid)
+mvc_getVersion(Client ctx, lng *version, const int *clientid)
 {
+	(void) ctx;
 	mvc *m = NULL;
 	Client cntxt = MCgetClient(*clientid);
 	str msg;
@@ -2083,8 +2084,9 @@ setwritable(BAT *b)
 }
 
 str
-DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
+DELTAbat(Client ctx, bat *result, const bat *col, const bat *uid, const bat *uval)
 {
+	(void) ctx;
 	BAT *c, *u_id, *u_val, *res;
 
 	if ((u_id = BBPquickdesc(*uid)) == NULL)
@@ -2131,8 +2133,9 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval)
 }
 
 str
-DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
+DELTAsub(Client ctx, bat *result, const bat *col, const bat *cid, const bat *uid, const bat *uval)
 {
+	(void) ctx;
 	BAT *c, *cminu = NULL, *u_id, *u_val, *u, *res;
 	gdk_return ret;
 
@@ -2237,8 +2240,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 }
 
 str
-DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval)
+DELTAproject(Client ctx, bat *result, const bat *sub, const bat *col, const bat *uid, const bat *uval)
 {
+	(void) ctx;
 	BAT *s, *c, *u_id, *u_val, *res, *tres;
 
 	if ((s = BATdescriptor(*sub)) == NULL)
@@ -2326,8 +2330,9 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 }
 
 str
-BATleftproject(bat *Res, const bat *Col, const bat *L, const bat *R)
+BATleftproject(Client ctx, bat *Res, const bat *Col, const bat *L, const bat *R)
 {
+	(void) ctx;
 	BAT *c, *l, *r, *res;
 	oid *p, *lp, *rp;
 	BUN cnt = 0, i;
@@ -3246,8 +3251,9 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-not_unique(bit *ret, const bat *bid)
+not_unique(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -3284,17 +3290,19 @@ not_unique(bit *ret, const bat *bid)
 
 /* row case */
 str
-SQLidentity(oid *ret, const void *i)
+SQLidentity(Client ctx, oid *ret, const void *i)
 {
+	(void) ctx;
 	(void)i;
 	*ret = 0;
 	return MAL_SUCCEED;
 }
 
 str
-BATSQLidentity(bat *ret, const bat *bid)
+BATSQLidentity(Client ctx, bat *ret, const bat *bid)
 {
-	return BKCmirror(ret, bid);
+	(void) ctx;
+	return BKCmirror(ctx, ret, bid);
 }
 
 str
@@ -3326,8 +3334,9 @@ PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
+SQLcst_alpha_cst(Client ctx, dbl *res, const dbl *decl, const dbl *theta)
 {
+	(void) ctx;
 	dbl s, c1, c2;
 	char *msg = MAL_SUCCEED;
 	if (is_dbl_nil(*decl) || is_dbl_nil(*theta)) {
@@ -3344,13 +3353,14 @@ SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 }
 
 /*
-  sql5_export str SQLcst_alpha_cst(dbl *res, dbl *decl, dbl *theta);
-  sql5_export str SQLbat_alpha_cst(bat *res, bat *decl, dbl *theta);
-  sql5_export str SQLcst_alpha_bat(bat *res, dbl *decl, bat *theta);
+  sql5_export str SQLcst_alpha_cst(Client ctx, dbl *res, dbl *decl, dbl *theta);
+  sql5_export str SQLbat_alpha_cst(Client ctx, bat *res, bat *decl, dbl *theta);
+  sql5_export str SQLcst_alpha_bat(Client ctx, bat *res, dbl *decl, bat *theta);
 */
 str
-SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
+SQLbat_alpha_cst(Client ctx, bat *res, const bat *decl, const dbl *theta)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	dbl s, c1, c2, r;
@@ -3396,8 +3406,9 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 }
 
 str
-SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *thetabid)
+SQLcst_alpha_bat(Client ctx, bat *res, const dbl *decl, const bat *thetabid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	dbl s, c1, c2, r;

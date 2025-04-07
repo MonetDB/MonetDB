@@ -671,8 +671,9 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-MDBgetExceptionVariable(str *ret, const char *const *msg)
+MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 {
+	(void) ctx;
 	str tail;
 
 	tail = strchr(*msg, ':');
@@ -689,8 +690,9 @@ MDBgetExceptionVariable(str *ret, const char *const *msg)
 }
 
 static str
-MDBgetExceptionContext(str *ret, const char *const *msg)
+MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 {
+	(void) ctx;
 	str tail, tail2;
 
 	tail = strchr(*msg, ':');
@@ -711,8 +713,9 @@ MDBgetExceptionContext(str *ret, const char *const *msg)
 }
 
 static str
-MDBgetExceptionReason(str *ret, const char *const *msg)
+MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 {
+	(void) ctx;
 	str tail;
 
 	tail = strchr(*msg, ':');
@@ -729,16 +732,18 @@ MDBgetExceptionReason(str *ret, const char *const *msg)
 }
 
 static str
-MDBdummy(void *ret)
+MDBdummy(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
 
 static str
-CMDmodules(bat *bid)
+CMDmodules(Client ctx, bat *bid)
 {
+	(void) ctx;
 	BAT *b = getModules();
 
 	if (b == NULL)

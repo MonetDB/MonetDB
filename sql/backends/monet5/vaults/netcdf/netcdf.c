@@ -61,8 +61,9 @@ fix_quote( char *n, int l)
 
 /* simple test for netcdf library */
 str
-NCDFtest(int *vars, str *fname)
+NCDFtest(Client ctx, int *vars, str *fname)
 {
+	(void) ctx;
 	int ncid;   /* dataset id */
 	int dims, ngatts, unlimdim;
 	int retval;
@@ -572,8 +573,9 @@ header: %s", nc_strerror(retval));
 /* Compose create table statement to create table representing NetCDF variable in the
  * database. Used for testing, can be removed from release. */
 str
-NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid)
+NCDFimportVarStmt(Client ctx, str *sciqlstmt, str *fname, int *varid)
 {
+	(void) ctx;
 	int ncid;   /* dataset id */
 	int vndims, vnatts, i, j, retval;
 	int vdims[NC_MAX_VAR_DIMS];

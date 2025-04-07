@@ -659,8 +659,9 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 str
-FITStest(int *res, str *fname)
+FITStest(Client ctx, int *res, str *fname)
 {
+	(void) ctx;
 	fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
 	str msg = MAL_SUCCEED;
 	int status = 0, hdutype;

@@ -118,8 +118,9 @@ static inline str RMTquery(MapiHdl *ret, const char *func, Mapi conn,
  * merovingian is not running, this function throws an error.
  */
 static str
-RMTresolve(bat *ret, const char *const *pat)
+RMTresolve(Client ctx, bat *ret, const char *const *pat)
 {
+	(void) ctx;
 #ifdef NATIVE_WIN32
 	(void) ret;
 	(void) pat;
@@ -198,9 +199,10 @@ static size_t connection_id = 0;
  * created connection.
  */
 static str
-RMTconnectScen(str *ret,
+RMTconnectScen(Client ctx, str *ret,
 			   const char *const *ouri, const char *const *user, const char *const *passwd, const char *const *scen, bit *columnar)
 {
+	(void) ctx;
 	connection c;
 	char conn[BUFSIZ];
 	char *s;
@@ -329,7 +331,7 @@ RMTconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc >= 5)
 		scen = *getArgReference_str(stk, pci, 4);
 
-	return RMTconnectScen(ret, &uri, &user, &passwd, &scen, NULL);
+	return RMTconnectScen(cntxt, ret, &uri, &user, &passwd, &scen, NULL);
 }
 
 /**
@@ -513,8 +515,9 @@ RMTprelude(void)
 }
 
 static str
-RMTepilogue(void *ret)
+RMTepilogue(Client ctx, void *ret)
 {
+	(void) ctx;
 	connection c, t;
 
 	(void) ret;
@@ -1647,8 +1650,9 @@ RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * Best effort implementation on top of mapi using a ping.
  */
 static str
-RMTisalive(int *ret, const char *const *conn)
+RMTisalive(Client ctx, int *ret, const char *const *conn)
 {
+	(void) ctx;
 	str tmp;
 	connection c;
 
@@ -1668,8 +1672,9 @@ RMTisalive(int *ret, const char *const *conn)
 
 // This is basically a no op
 static str
-RMTregisterSupervisor(int *ret, const char *const *sup_uuid, const char *const *query_uuid)
+RMTregisterSupervisor(Client ctx, int *ret, const char *const *sup_uuid, const char *const *query_uuid)
 {
+	(void) ctx;
 	(void) sup_uuid;
 	(void) query_uuid;
 
