@@ -4770,6 +4770,7 @@ sql_update_mar2025_sp1(Client c, mvc *sql)
 	/* if the table type LOCAL TEMPORARY VIEW is
 	 * not in the list of table_types, upgrade */
 	pos = snprintf(buf, bufsize, "select table_type_name from sys.table_types where table_type_name = 'LOCAL TEMPORARY VIEW';\n");
+	(void)pos;
 	assert(pos < bufsize);
 	err = SQLstatementIntern(c, buf, "update", true, false, &output);
 	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
