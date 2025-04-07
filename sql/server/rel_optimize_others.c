@@ -1299,7 +1299,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			}
 		}
 
-		if (r && is_simple_project(r->op) && need_distinct(r))
+		if (r && is_simple_project(r->op) && (need_distinct(r) || project_unsafe(r, 1)))
 			return rel;
 
 		/* push topn/sample under projections */

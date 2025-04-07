@@ -376,6 +376,16 @@ exp_disjunctive(allocator *sa, list *exps)
 	return e;
 }
 
+sql_exp *
+exp_disjunctive2(allocator *sa, sql_exp *e1, sql_exp *e2)
+{
+	if (e1->type == e_cmp && e1->flag == cmp_dis && !is_anti(e1)) {
+		append(e1->l, e2);
+		return e1;
+	}
+	return exp_disjunctive(sa, append(append(sa_list(sa), e1), e2));
+}
+
 static sql_subtype*
 dup_subtype(allocator *sa, sql_subtype *st)
 {
@@ -2067,6 +2077,34 @@ exp_or_exp_is_false(sql_exp* e)
 }
 
 static inline bool
+exp_con_exp_is_false(sql_exp* e)
+{
+    assert(e->type == e_cmp && e->flag == cmp_con);
+	if (is_anti(e))
+		return false;
+	list* exps = e->l;
+	for(node* n = exps->h; n; n=n->next) {
+		if (exp_is_false(n->data))
+			return true;
+	}
+	return false;
+}
+
+static inline bool
+exp_dis_exp_is_false(sql_exp* e)
+{
+    assert(e->type == e_cmp && e->flag == cmp_dis);
+	list* exps = e->l;
+	if (is_anti(e))
+		return false;
+	for(node* n = exps->h; n; n=n->next) {
+		if (!exp_is_false(n->data))
+			return false;
+	}
+	return true;
+}
+
+static inline bool
 exp_cmp_exp_is_false(sql_exp* e)
 {
     assert(e->type == e_cmp);
@@ -2081,6 +2119,10 @@ exp_cmp_exp_is_false(sql_exp* e)
 		return exp_regular_cmp_exp_is_false(e);
     case cmp_or:
 		return exp_or_exp_is_false(e);
+    case cmp_con:
+		return exp_con_exp_is_false(e);
+    case cmp_dis:
+		return exp_dis_exp_is_false(e);
     default:
 		return false;
 	}

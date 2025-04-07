@@ -1073,7 +1073,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 }
 
 static sql_rel *
-push_up_topn_and_sample(mvc *sql, sql_rel *rel)
+push_up_topn_and_sample(mvc *sql, sql_rel *rel, list *ad)
 {
 	/* a dependent semi/anti join with a project on the right side, could be removed */
 	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
@@ -1084,9 +1084,44 @@ push_up_topn_and_sample(mvc *sql, sql_rel *rel)
 			sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
 			rel = func(sql->sa, rel, r->exps);
+			if (r->op == op_topn && !list_empty(ad)) { /* topn per freevar */
+				/* add rel_project(), ordering on freevar */
+				sql_rel *p = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+				/* store list of freevars */
+				for(node *n = ad->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					set_partitioning(e);
+				}
+				p->r = ad;
+				rel->grouped = 1;
+			}
 			set_processed(rel);
 			rel_destroy(r);
 			return rel;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
+push_down_topn_and_sample(mvc *sql, sql_rel *rel)
+{
+	/* a dependent semi/anti join with a project on the right side, could be removed */
+	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
+		sql_rel *r = rel->r;
+
+		if (r && (is_topn(r->op) || is_sample(r->op))) {
+			sql_rel *l = r->l;
+
+			if (l && is_project(l->op) && !l->r && l->l) {
+				assert(!project_unsafe(l, 1));
+				sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
+				rel->r = rel_dup(l);
+				sql_rel *n = l->l = func(sql->sa, rel_dup(l->l), r->exps);
+				set_processed(n);
+				rel_destroy(r);
+				return rel;
+			}
 		}
 	}
 	return rel;
@@ -1878,8 +1913,14 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 			}
 
 			if (r && (is_topn(r->op) || is_sample(r->op))) {
-				rel = push_up_topn_and_sample(sql, rel);
-				return rel_unnest_dependent(sql, rel);
+				sql_rel *l = r->l;
+				if (is_left(rel->op) && l && is_project(l->op) && !l->r && !project_unsafe(l, 1)) {
+					rel = push_down_topn_and_sample(sql, rel);
+					return rel_unnest_dependent(sql, rel);
+				} else if (!is_left(rel->op)) {
+					rel = push_up_topn_and_sample(sql, rel, ad);
+					return rel_unnest_dependent(sql, rel);
+				}
 			}
 
 			if (r && is_select(r->op) && ad) {
@@ -2247,6 +2288,8 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 	}
 	if (rewrite)
 		*rewrite = d;
+	if (is_topn(inner->op))
+		inner = inner->l;
 	if (is_project(inner->op))
 		return inner->exps->t->data;
 	return NULL;

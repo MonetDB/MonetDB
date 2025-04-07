@@ -50,6 +50,7 @@ extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char 
 
 extern sql_exp *exp_conjunctive(allocator *sa, list *exps);
 extern sql_exp *exp_disjunctive(allocator *sa, list *exps);
+extern sql_exp *exp_disjunctive2(allocator *sa, sql_exp *e1, sql_exp *e2);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data

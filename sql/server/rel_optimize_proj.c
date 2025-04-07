@@ -1147,7 +1147,7 @@ rel_merge_munion(visitor *v, sql_rel *rel)
 				}
 
 				/* merge, ie. add 'or exp' */
-				curs->exps = append(new_exp_list(v->sql->sa), exp_or(v->sql->sa, cur->exps, s->exps, 0));
+				curs->exps = append(new_exp_list(v->sql->sa), exp_disjunctive(v->sql->sa, list_merge(cur->exps, s->exps, (fdup)NULL)));
 				if (!nrels) {
 					nrels = sa_list(v->sql->sa);
 					append(nrels, cur);

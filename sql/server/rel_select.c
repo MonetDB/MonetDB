@@ -2499,9 +2499,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 					return NULL;
 			}
 			append(l, rs);
-			//ls = rel_binop_(sql, rel ? *rel : NULL, ls, rs, "sys", sc->token == SQL_OR ? "or": "and", card_value, false);
-			//if (!ls)
-				//return NULL;
 		}
 		if (l) {
 			sql_subtype *bt = sql_bind_localtype("bit");
@@ -2514,17 +2511,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 				return exp_conjunctive(sql->sa, l);
 		}
 		return ls;
-		/*
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		sql_exp *ls, *rs;
-
-		if (!(ls = rel_value_exp(query, rel, lo, f|sql_farg, ek)))
-			return NULL;
-		if (!(rs = rel_value_exp(query, rel, ro, f|sql_farg, ek)))
-			return NULL;
-		return rel_binop_(sql, rel ? *rel : NULL, ls, rs, "sys", sc->token == SQL_OR ? "or": "and", card_value, false);
-		*/
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -2854,13 +2840,6 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 					return NULL;
 			}
 			append(l, rs);
-			/*
-			list *l = append(sa_list(sql->sa), ls);
-			list *r = append(sa_list(sql->sa), rs);
-			ls = exp_or(sql->sa, l, r, 0);
-			if (!ls)
-				return NULL;
-				*/
 		}
 		if (l) {
 			sql_subtype *bt = sql_bind_localtype("bit");
@@ -2877,49 +2856,6 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			append(rel->exps, ls);
 		}
 		return rel;
-
-		/*
-		list *exps = NULL, *lexps = NULL, *rexps = NULL;
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		sql_rel *lr, *rr;
-
-		if (!rel)
-			return NULL;
-
-		lr = rel;
-		rr = rel_dup(lr);
-
-		if (is_outerjoin(rel->op) && !is_processed(rel)) {
-			exps = rel->exps;
-
-			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
-			lr = rel_logical_exp(query, lr, lo, f | sql_or);
-			if (!lr)
-				return NULL;
-			query_processed(query);
-			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
-			rr = rel_logical_exp(query, rr, ro, f | sql_or);
-			if (!rr)
-				return NULL;
-			if (lr->l == rr->l) {
-				lexps = lr->exps;
-				lr = lr->l;
-				rexps = rr->exps;
-				rr = rr->l;
-			}
-			rel = NULL;
-		} else {
-			lr = rel_logical_exp(query, lr, lo, f | sql_or);
-			if (!lr)
-				return NULL;
-			rr = rel_logical_exp(query, rr, ro, f | sql_or);
-		}
-
-		if (!lr || !rr)
-			return NULL;
-		return rel_or(sql, rel, lr, rr, exps, lexps, rexps);
-		*/
 	}
 	case SQL_AND:
 	{
@@ -2930,14 +2866,6 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 				return NULL;
 		}
 		return rel;
-		/*
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		rel = rel_logical_exp(query, rel, lo, f);
-		if (!rel)
-			return NULL;
-		return rel_logical_exp(query, rel, ro, f);
-		*/
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */

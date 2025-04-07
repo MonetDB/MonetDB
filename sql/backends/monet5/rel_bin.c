@@ -829,7 +829,13 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 			s = stmt_binop(be, sel1, s, sin, f);
 		} else if (reduce && ((sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) || c->type != e_cmp)) {
 			if (s->nrcols) {
-				s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel1, anti, is_semantics(c));
+				if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
+					stmt *predicate = bin_find_smallest_column(be, left);
+
+					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+					s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
+				} else
+					s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel1, anti, is_semantics(c));
 			} else {
 				stmt *predicate = bin_find_smallest_column(be, left);
 
@@ -861,7 +867,6 @@ exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 	stmt *s = NULL, *cur = NULL;
 	int anti = is_anti(e);
 
-	assert(!anti);
 	for (n = l->h; n; n = n->next) {
 		sql_exp *c = n->data;
 
@@ -881,7 +886,10 @@ exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		}
 		if (cur) {
 			if (reduce) {
-				s = stmt_tunion(be, s, cur);
+				if (anti)
+					s = stmt_project(be, stmt_tinter(be, s, cur, false), s);
+				else
+					s = stmt_tunion(be, s, cur);
 			} else {
 				sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
 				assert(f);
@@ -4831,6 +4839,19 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				if (lpiv == NULL || lgid == NULL)
 					return NULL;
 			}
+		}
+		if (!lpiv) {
+			stmt *orderbycolstmt = pl->h->data;
+			//stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!orderbycolstmt)
+				return NULL;
+
+			orderbycolstmt = column(be, orderbycolstmt);
+			limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, 0, 0, nr_obe, 1);
+			lpiv = limit;
+			if (!lpiv)
+				return NULL;
 		}
 
 		limit = lpiv;

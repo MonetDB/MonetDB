@@ -194,8 +194,11 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 		sql_exp *le = e->l;
 		sql_exp *re = e->r;
 
+		/* handle the conjuctive lists */
+		if (e->type == e_cmp && e->flag == cmp_con && !is_anti(e)) {
+			e->l = exp_merge_range(v, rel, e->l);
 		/* handle the and's in the or lists */
-		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+		} else if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
 			e->l = exp_merge_range(v, rel, e->l);
 			e->r = exp_merge_range(v, rel, e->r);
 		/* only look for gt, gte, lte, lt */
@@ -609,12 +612,11 @@ exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **mce_ands, list
 			*gen_ands = append(*gen_ands, exps);
 	} else if (list_length(exps) == 1) {
 		sql_exp *se = exps->h->data;
-		sql_exp *le = se->l, *re = se->r;
 
 		if (se->type == e_cmp && se->flag == cmp_or && !is_anti(se)) {
 			/* for a cmp_or expression go down the tree */
-			exp_or_chain_groups(sql, (list*)le, gen_ands, mce_ands, eqs, noneq);
-			exp_or_chain_groups(sql, (list*)re, gen_ands, mce_ands, eqs, noneq);
+			exp_or_chain_groups(sql, se->l, gen_ands, mce_ands, eqs, noneq);
+			exp_or_chain_groups(sql, se->r, gen_ands, mce_ands, eqs, noneq);
 
 		} else if (eq_only) {
 			*eqs = append(*eqs, se);
@@ -678,6 +680,126 @@ merge_ors(mvc *sql, list *exps, int *changes)
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
+		if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e)) {
+			list *el = e->l;
+
+			/* NOTE: gen_ands and mce_ands are both a list of lists since the AND association
+			 *       between expressions is expressed with a list
+			 *       e.g. [[e1, e2], [e3, e4, e5]] semantically translates
+			 *         to [(e1 AND e2), (e3 AND  e4 AND e5)]
+			 *       those (internal) AND list can be then used to
+			 *       reconstructed an OR tree [[e1, e2], [e3, e4, e5]] =>
+			 *       (([e1, e2] OR [e3, e4, e5]) OR <whatever-else> )
+			 *       gen_ands includes general expressions associated with AND
+			 *       mce_ands includes only cmp_eq expressions associated with AND
+			 */
+			gen_ands = new_exp_list(sql->sa);
+			mce_ands = new_exp_list(sql->sa);
+			eqs = new_exp_list(sql->sa);
+			neq = new_exp_list(sql->sa);
+
+			for(node *n = el->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (e->type == e_cmp && e->flag == cmp_con && !is_anti(e)) {
+					exp_or_chain_groups(sql, e->l, &gen_ands, &mce_ands, &eqs, &neq);
+				} else if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e)) {
+					node *p = el->h;
+					for( ; p->next != n; p = p->next)
+						;
+					list_remove_node(el, NULL, n);
+					list_merge(el, e->l, NULL);
+					n = p;
+				} else {
+					list *l = append(sa_list(sql->sa), e);
+					exp_or_chain_groups(sql, l, &gen_ands, &mce_ands, &eqs, &neq);
+				}
+			}
+
+			/* detect col cmp_eq exps with multiple values */
+			bool col_multival = false;
+			if (list_length(eqs) > 1) {
+				eqh = hash_new(sql->sa, 32, (fkeyvalue)&exp_col_key);
+				col_multival = detect_col_cmp_eqs(sql, eqs, eqh);
+			}
+
+			/* detect mutli-col cmp_eq exps with multiple (lists of) values */
+			bool multicol_multival = false;
+			if (list_length(mce_ands) > 1) {
+				meqh = hash_new(sql->sa, 32, (fkeyvalue)&exp_multi_col_key);
+				multicol_multival = detect_multicol_cmp_eqs(sql, mce_ands, meqh);
+			}
+
+			if (!col_multival && !multicol_multival)
+				continue;
+
+			if (col_multival)
+				ins = generate_single_col_cmp_in(sql, eqh);
+
+			if (multicol_multival)
+				mins = generate_multi_col_cmp_in(sql, meqh);
+
+			/* create the new OR tree */
+			sql_exp *new = (ins) ? ins->h->data : mins->h->data;
+
+			if (ins) {
+				for (node *i = ins->h->next; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+
+					(*changes)++;
+				}
+			}
+
+			if (list_length(eqs)) {
+				for (node *i = eqs->h; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+				}
+			}
+
+			if (mins) {
+				for (node *i = ((ins) ? mins->h : mins->h->next); i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					list *r = new_exp_list(sql->sa);
+					l = append(l, new);
+					r = append(r, (sql_exp*)i->data);
+					new = exp_or(sql->sa, l, r, 0);
+
+					(*changes)++;
+				}
+			}
+
+			if (list_length(mce_ands)) {
+				for (node *i = mce_ands->h; i; i = i->next) {
+					list *l = new_exp_list(sql->sa);
+					l = append(l, new);
+					new = exp_or(sql->sa, l, i->data, 0);
+				}
+			}
+
+			for (node *a = gen_ands->h; a; a = a->next){
+				list *l = new_exp_list(sql->sa);
+				l = append(l, new);
+				new = exp_or(sql->sa, l, a->data, 0);
+			}
+
+			for (node *o = neq->h; o; o = o->next){
+				list *l = new_exp_list(sql->sa);
+				list *r = new_exp_list(sql->sa);
+				l = append(l, new);
+				r = append(r, (sql_exp*)o->data);
+				new = exp_or(sql->sa, l, r, 0);
+			}
+
+			list_remove_node(exps, NULL, n);
+			exps = append(exps, new);
+		}
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
 			/* NOTE: gen_ands and mce_ands are both a list of lists since the AND association
 			 *       between expressions is expressed with a list
@@ -1059,6 +1181,76 @@ rel_select_cse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+exp_or2in( mvc *sql, sql_exp *le, sql_exp *re)
+{
+	if (is_anti(le) || is_anti(re) || is_symmetric(re))
+		return NULL;
+	if (le->flag == cmp_equal && re->flag == cmp_equal) {
+		list *exps = new_exp_list(sql->sa);
+
+		append(exps, le->r);
+		append(exps, re->r);
+		return exp_in(sql->sa, le->l, exps, cmp_in);
+	} else if (le->flag == cmp_equal && re->flag == cmp_in){
+		list *exps = new_exp_list(sql->sa);
+
+		append(exps, le->r);
+		list_merge(exps, re->r, NULL);
+		return exp_in(sql->sa, le->l, exps, cmp_in);
+	} else if (le->flag == cmp_in && re->flag == cmp_equal){
+		list *exps = new_exp_list(sql->sa);
+
+		list_merge(exps, le->r, NULL);
+		append(exps, re->r);
+		return exp_in(sql->sa, le->l, exps, cmp_in);
+	} else if (le->flag == cmp_in && re->flag == cmp_in){
+		list *exps = new_exp_list(sql->sa);
+
+		list_merge(exps, le->r, NULL);
+		list_merge(exps, re->r, NULL);
+		return exp_in(sql->sa, le->l, exps, cmp_in);
+	}
+	return NULL;
+}
+
+static sql_exp *
+exp_merge_select_rse( mvc *sql, sql_exp *le, sql_exp *re, bool *merged)
+{
+	/* cases
+	 * 1) 2 values (cmp_equal)
+	 * 2) 1 value (cmp_equal), and cmp_in
+	 * 	(also cmp_in, cmp_equal)
+	 * 3) 2 cmp_in
+	 * 4) ranges
+	 */
+	sql_exp *res = NULL;
+	if (is_anti(le) || is_anti(re) || is_symmetric(re))
+		return NULL;
+	if ((res = exp_or2in(sql, le, re)) != NULL) {
+		*merged = true;
+		return res;
+	} else if (le->f && re->f && /* merge ranges */
+			le->flag == re->flag && le->flag <= cmp_lt) {
+		sql_exp *mine = NULL, *maxe = NULL;
+
+		if (!(mine = rel_binop_(sql, NULL, exp_copy(sql, le->r), exp_copy(sql, re->r), "sys", "sql_min", card_value, true))) {
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			return NULL;
+		}
+		if (!(maxe = rel_binop_(sql, NULL, exp_copy(sql, le->f), exp_copy(sql, re->f), "sys", "sql_max", card_value, true))) {
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			return NULL;
+		}
+		*merged = false;
+		return exp_compare2(sql->sa, exp_copy(sql, le->l), mine, maxe, le->flag, 0);
+	}
+	*merged = false;
+	return NULL;
+}
+
 static list *
 exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 {
@@ -1112,62 +1304,13 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 		}
 		if (fnd && (is_anti(fnd) || is_semantics(fnd)))
 			continue;
-		/* cases
-		 * 1) 2 values (cmp_equal)
-		 * 2) 1 value (cmp_equal), and cmp_in
-		 * 	(also cmp_in, cmp_equal)
-		 * 3) 2 cmp_in
-		 * 4) ranges
-		 */
 		if (fnd) {
 			re = fnd;
-			fnd = NULL;
-			if (is_anti(le) || is_anti(re) || is_symmetric(re))
-				continue;
-			if (le->flag == cmp_equal && re->flag == cmp_equal) {
-				list *exps = new_exp_list(sql->sa);
-
-				append(exps, le->r);
-				append(exps, re->r);
-				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
-			} else if (le->flag == cmp_equal && re->flag == cmp_in){
-				list *exps = new_exp_list(sql->sa);
-
-				append(exps, le->r);
-				list_merge(exps, re->r, NULL);
-				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
-			} else if (le->flag == cmp_in && re->flag == cmp_equal){
-				list *exps = new_exp_list(sql->sa);
-
-				append(exps, re->r);
-				list_merge(exps, le->r, NULL);
-				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
-			} else if (le->flag == cmp_in && re->flag == cmp_in){
-				list *exps = new_exp_list(sql->sa);
-
-				list_merge(exps, le->r, NULL);
-				list_merge(exps, re->r, NULL);
-				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
-			} else if (le->f && re->f && /* merge ranges */
-				   le->flag == re->flag && le->flag <= cmp_lt) {
-				sql_exp *mine = NULL, *maxe = NULL;
-
-				if (!(mine = rel_binop_(sql, NULL, exp_copy(sql, le->r), exp_copy(sql, re->r), "sys", "sql_min", card_value, true))) {
-					sql->session->status = 0;
-					sql->errstr[0] = '\0';
-					continue;
-				}
-				if (!(maxe = rel_binop_(sql, NULL, exp_copy(sql, le->f), exp_copy(sql, re->f), "sys", "sql_max", card_value, true))) {
-					sql->session->status = 0;
-					sql->errstr[0] = '\0';
-					continue;
-				}
-				fnd = exp_compare2(sql->sa, exp_copy(sql, le->l), mine, maxe, le->flag, 0);
-				lmerged = false;
-			}
+			bool imerged = false;
+			fnd = exp_merge_select_rse( sql, le, re, &imerged) ;
 			if (fnd) {
 				append(nexps, fnd);
-				*merged = (fnd && lmerged && rmerged);
+				*merged = (fnd && imerged && lmerged && rmerged);
 			}
 		}
 	}
@@ -1201,8 +1344,39 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
+			bool changed = false;
+			if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e) && !is_semantics(e)) {
+				list *exps = e->l;
+				for(node *n = exps->h; n; n = n->next) {
+					sql_exp *e1 = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
+					bool merged = false;
+					if (!is_semantics(e1) && !is_anti(e1)) {
+						/* no merges, ie don't change e, all merged into one new expression, some merged, rewrite e into new cmp_dis */
+						node *p = n;
+						for (node *m = n->next; m; p = m, m = m->next) {
+							sql_exp *e2 = m->data;
+							sql_exp *fnd = NULL;
+							if (!is_semantics(e2) && !is_anti(e2) && exps_match_col_exps(e1, e2) && (fnd = exp_or2in(v->sql, e1, e2)) != NULL) {
+								changed = merged = true;
+								e1 = fnd;
+								/* remove e2 from list */
+								p->next = m->next;
+								m = p;
+								exps->cnt--;
+							}
+						}
+						if (merged) /* replace e1 */
+							n->data = e1;
+					}
+				}
+				if (changed)
+					v->changes++;
+				if (list_length(exps) == 1)
+					append(nexps, exps->h->data);
+				else
+					append(nexps, e);
+			} else if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e) && !is_semantics(e)) {
 				/* possibly merge related expressions */
 				bool merged = false;
 

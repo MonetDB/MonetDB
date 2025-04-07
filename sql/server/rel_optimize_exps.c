@@ -527,6 +527,38 @@ simplify_not_over_equality_exp(visitor *v, sql_exp *e) {
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
 
+	if (e->flag == cmp_notequal && is_anti(e) && is_semantics(e)) {
+		reset_anti(e);
+		e->flag = cmp_equal;
+		v->changes++;
+		return e;
+	}
+	if (l->type == e_cmp && (l->flag == cmp_equal || l->flag == cmp_notequal)) {
+		/* ( (il ! * =  ir) = FALSE ) -> (il * = ir) */
+		if (is_atom(r->type) && r->l && !is_semantics(e) && !is_anti(e)) {
+			/* direct literal */
+			atom *a = r->l;
+			if (a && a->data.vtype == TYPE_bit) {
+				if ((exp_is_true(r) && e->flag == cmp_equal) ||
+				    (exp_is_false(r) && e->flag == cmp_notequal)) {
+					v->changes++;
+					return l;
+				}
+
+				if ((exp_is_false(r) && e->flag == cmp_equal) ||
+				    (exp_is_true(r) && e->flag == cmp_notequal)) {
+					if (l->flag == cmp_equal)
+						l->flag = cmp_notequal;
+					else
+						l->flag = cmp_equal;
+					v->changes++;
+					return l;
+				}
+				return e;
+			}
+		}
+	}
+
 	if (!is_func(l->type))
 		return e;
 	sql_subfunc *f = l->f;
@@ -872,6 +904,42 @@ rel_remove_alias(visitor *v, sql_rel *rel, sql_exp *e)
 static inline sql_exp *
 rel_merge_project_rse(visitor *v, sql_rel *rel, sql_exp *e)
 {
+	if (is_simple_project(rel->op) && is_compare(e->type) && e->flag == cmp_con) {
+		list *fexps = e->l;
+
+		if (list_length(fexps) == 2) {
+			sql_exp *l = list_fetch(fexps, 0), *r = list_fetch(fexps, 1);
+
+			/* check merge into single between */
+			if (is_compare(l->type) && !l->f && is_compare(r->type) && !r->f) {
+				if ((l->flag == cmp_gte || l->flag == cmp_gt) &&
+				    (r->flag == cmp_lte || r->flag == cmp_lt)) {
+					sql_exp *le = l->l, *lf = r->l;
+					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf);
+
+					if (exp_equal(c_le?le->l:le, c_lf?lf->l:lf) == 0) {
+						sql_exp *re = l->r, *rf = r->r, *ne = NULL;
+						sql_subtype super;
+
+						supertype(&super, exp_subtype(le), exp_subtype(lf)); /* le/re and lf/rf must have the same type */
+						if (!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
+							!(re = exp_check_type(v->sql, &super, rel, re, type_equal)) ||
+							!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal))) {
+								v->sql->session->status = 0;
+								v->sql->errstr[0] = 0;
+								return e;
+							}
+						if ((ne = exp_compare2(v->sql->sa, le, re, rf, compare2range(l->flag, r->flag), 0))) {
+							if (exp_name(e))
+								exp_prop_alias(v->sql->sa, ne, e);
+							e = ne;
+							v->changes++;
+						}
+					}
+				}
+			}
+		}
+	}
 	if (is_simple_project(rel->op) && is_func(e->type) && e->l) {
 		list *fexps = e->l;
 		sql_subfunc *f = e->f;

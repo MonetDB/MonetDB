@@ -59,7 +59,7 @@ where n in (1, 2)
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+| ) [ ("f"."n" NOT NULL) in (int(4) "1", int(4) "2", int(4) "3") ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 ## chained cmp_equal-atom ors with lhs in [n, m]
