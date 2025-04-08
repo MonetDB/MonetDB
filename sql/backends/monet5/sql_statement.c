@@ -4300,7 +4300,7 @@ stmt_direct_func(backend *be, InstrPtr q)
 		if(!s) {
 			return NULL;
 		}
-		s->flag = op_union;
+		s->flag = op_munion;
 		s->nrcols = 3;
 		s->nr = getDestVar(q);
 		s->q = q;

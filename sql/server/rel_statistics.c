@@ -171,7 +171,6 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		}
 		case op_table:
 		case op_basetable:
-		case op_union:
 		case op_except:
 		case op_inter:
 		case op_munion:
@@ -309,23 +308,19 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 		return true;
 
 	if (lval_max && rval_max) {
-		if (is_union(rel->op))
-			set_minmax_property(sql, e, PROP_MAX, statistics_atom_max(sql, lval_max, rval_max)); /* for union the new max will be the max of the two */
-		else if (is_inter(rel->op))
+		if (is_inter(rel->op))
 			set_minmax_property(sql, e, PROP_MAX, statistics_atom_min(sql, lval_max, rval_max)); /* for intersect the new max will be the min of the two */
 		else /* except */
 			set_minmax_property(sql, e, PROP_MAX, lval_max);
 	}
 	if (lval_min && rval_min) {
-		if (is_union(rel->op))
-			set_minmax_property(sql, e, PROP_MIN, statistics_atom_min(sql, lval_min, rval_min)); /* for union the new min will be the min of the two */
-		else if (is_inter(rel->op))
+		if (is_inter(rel->op))
 			set_minmax_property(sql, e, PROP_MIN, statistics_atom_max(sql, lval_min, rval_min)); /* for intersect the new min will be the max of the two */
 		else /* except */
 			set_minmax_property(sql, e, PROP_MIN, lval_min);
 	}
 
-	if (is_union(rel->op) || is_munion(rel->op)) {
+	if (is_munion(rel->op)) {
 		if (!has_nil(le) && !has_nil(re))
 			set_has_no_nil(e);
 		if (need_distinct(rel) && list_length(rel->exps) == 1)
@@ -343,7 +338,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 			set_unique(e);
 	}
 	/* propagate unique estimation for known cases */
-	if (!is_union(rel->op) && (est = find_prop(le->p, PROP_NUNIQUES)) && !find_prop(e->p, PROP_NUNIQUES)) {
+	if ((est = find_prop(le->p, PROP_NUNIQUES)) && !find_prop(e->p, PROP_NUNIQUES)) {
 		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 		p->value.dval = est->value.dval;
 	}
@@ -772,7 +767,6 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 10));
 		break;
 	}
-	case op_union:
 	case op_inter:
 	case op_except: {
 		bool empty_cross = false;
@@ -801,25 +795,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		}
 
 		/* propagate row count */
-		if (is_union(rel->op)) {
-			BUN lv = need_distinct(rel) ? rel_calc_nuniques(v->sql, l, l->exps) : get_rel_count(l),
-				rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
-
-			if (lv == 0 && rv == 0) { /* both sides empty */
-				if (can_be_pruned)
-					empty_cross = true;
-				else
-					set_count_prop(v->sql->sa, rel, 0);
-			} else if (can_be_pruned && lv == 0 && !rel_is_ref(rel)) { /* left side empty */
-				rel = set_setop_side(v, rel, r);
-				empty_cross = false; /* don't rewrite again */
-			} else if (can_be_pruned && rv == 0 && !rel_is_ref(rel)) { /* right side empty */
-				rel = set_setop_side(v, rel, l);
-				empty_cross = false; /* don't rewrite again */
-			} else if (lv != BUN_NONE && rv != BUN_NONE) {
-				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
-			}
-		} else if (is_inter(rel->op) || is_except(rel->op)) {
+		if (is_inter(rel->op) || is_except(rel->op)) {
 			BUN lv = need_distinct(rel) ? rel_calc_nuniques(v->sql, l, l->exps) : get_rel_count(l),
 				rv = need_distinct(rel) ? rel_calc_nuniques(v->sql, r, r->exps) : get_rel_count(r);
 

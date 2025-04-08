@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "rel_optimizer.h"
 #include "rel_optimizer_private.h"
+#include "rel_optimizer.h"
 #include "rel_exp.h"
 #include "rel_select.h"
 
@@ -258,6 +259,52 @@ exps_mark_used(sql_rel *subrel, list *l, int local_proj)
 	return nr;
 }
 
+/* mark all expression related to this nid */
+static int
+exps_mark_all_used(list *exps, int nid, int local_proj)
+{
+	if (!list_empty(exps)) {
+		int i = 0;
+		for(node *n = exps->h; n; n = n->next, i++) {
+			sql_exp *e = n->data;
+
+			if (e->alias.label == nid) {
+				if (local_proj <= -1 || i < local_proj) {
+					if (local_proj < 0 || e->nid != e->alias.label) {
+						e->used = 1;
+						return 1;
+					}
+				}
+			}
+			/*
+			if (e->f && e->type == e_column && (local_proj <= -1 || i < local_proj)) {
+				if (exps_mark_all_used(e->f, nid, -2)) {
+					e->used = 1;
+					return 1;
+				}
+			}
+			*/
+		}
+	}
+	return 0;
+}
+
+static int
+rel_mark_all_used(sql_rel *r, int nid, int local_proj)
+{
+	if (is_project(r->op) || (is_base(r->op) && r->exps))
+		return exps_mark_all_used(r->exps, nid, local_proj);
+	if (is_select(r->op) || is_semi(r->op))
+		return rel_mark_all_used(r->l, nid, local_proj);
+	if (is_join(r->op)) {
+		if (r->l && rel_mark_all_used(r->l, nid, local_proj))
+			return 1;
+		else if (r->r)
+			return rel_mark_all_used(r->r, nid, local_proj);
+	}
+	return 0;
+}
+
 static int
 exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 {
@@ -266,7 +313,10 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 
 	switch(e->type) {
 	case e_column:
-		ne = rel_find_exp(subrel, e);
+		if (e->nid && subrel && subrel->exps && rel_mark_all_used(subrel, e->nid, local_proj))
+			nr++;
+		else
+			ne = rel_find_exp(subrel, e);
 		/* if looking in the same projection, make sure 'ne' is projected before the searched column */
 		if (ne && local_proj > -1 && list_position(subrel->exps, ne) >= local_proj)
 			ne = NULL;
@@ -352,7 +402,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
 
-	if (rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
+	if (rel->l && rel->r && (is_simple_project(rel->op) || is_groupby(rel->op))) {
 		list *l = rel->r;
 		node *n;
 
@@ -360,7 +410,7 @@ rel_exps_mark_used(allocator *sa, sql_rel *rel, sql_rel *subrel)
 			sql_exp *e = n->data;
 
 			e->used = 1;
-			exp_mark_used(rel, e, -1);
+			exp_mark_used(rel->l, e, -1);
 		}
 	}
 	if (rel->attr) {
@@ -578,7 +628,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		}
 		break;
 
-	case op_union:
 	case op_inter:
 	case op_except:
 		/* For now we mark all union expression as used */
@@ -613,7 +662,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 	case op_munion:
 		assert(rel->l);
-		// TODO: here we blindly follow the same logic as op_union. RE-evaluate
 		if (proj && (need_distinct(rel) || !rel->exps)) {
 			rel_used(rel);
 			if (!rel->exps) {
@@ -652,7 +700,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	}
 }
 
-static sql_rel * rel_dce_sub(mvc *sql, sql_rel *rel);
+static sql_rel *rel_dce_sub(mvc *sql, sql_rel *rel);
 
 static sql_rel *
 rel_remove_unused(mvc *sql, sql_rel *rel)
@@ -753,7 +801,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		}
 		return rel;
 
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_munion:
@@ -814,7 +861,6 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 			rel_dce_refs(sql, rel->r, refs);
 		break;
 
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_join:
@@ -899,7 +945,6 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 			rel_dce_sub(sql, rel);
 		return rel;
 
-	case op_union:
 	case op_inter:
 	case op_except:
 		if (skip_proj) {
@@ -978,6 +1023,15 @@ rel_dce_sub(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+/*
+sql_rel *
+rel_deadcode_elimination(mvc *sql, sql_rel *rel)
+{
+	rel_used(rel);
+	return rel_dce_sub(sql, rel);
+}
+*/
+
 /* add projects under set ops */
 static sql_rel *
 rel_add_projects(mvc *sql, sql_rel *rel)
@@ -995,7 +1049,6 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 		if (rel->r)
 			rel->r = rel_add_projects(sql, rel->r);
 		return rel;
-	case op_union:
 	case op_inter:
 	case op_except:
 		/* We can only reduce the list of expressions of an set op
@@ -1258,8 +1311,8 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 		if (!topn_sample_safe_exps(rel->exps, false))
 			return rel;
 
-		/* duplicate topn/sample direct under union or crossproduct */
-		if (r && !rel_is_ref(r) && r->l && r->r && ((is_union(r->op) && r->exps) || (r->op == op_join && list_empty(r->exps)))) {
+		/* duplicate topn/sample direct under crossproduct */
+		if (r && !rel_is_ref(r) && r->l && r->r && r->op == op_join && list_empty(r->exps)) {
 			sql_rel *u = r, *x;
 			sql_rel *ul = u->l;
 			sql_rel *ur = u->r;
@@ -1290,24 +1343,46 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			return rel;
 		}
 
+		/* duplicate topn/sample direct under union */
+		if (r && !rel_is_ref(r) && r->l && r->r && is_munion(r->op) && r->exps) {
+			list *rels = r->l;
+			bool changed = false;
+			for(node *n = rels->h; n; n = n->next) {
+				sql_rel *ue = n->data, *x;
+
+				x = ue;
+				while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
+					x = x->l;
+				if (x && x->op != rel->op) { /* only push topn once */
+					ue = func(v->sql->sa, ue, sum_limit_offset(v->sql, rel));
+					set_processed(ue);
+					n->data = ue;
+					changed = true;
+				}
+			}
+			if (changed)
+				v->changes++;
+			return rel;
+		}
+
 		/* duplicate topn/sample + [ project-order ] under union */
 		if (r && !rp)
 			rp = r->l;
-		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && !list_empty(r->r) && r->l && is_union(rp->op)) {
-			sql_rel *u = rp, *ou = u, *x, *ul = u->l, *ur = u->r;
-			list *rcopy = NULL;
+		if (r && r->exps && is_simple_project(r->op) && !rel_is_ref(r) && !list_empty(r->r) && r->l && is_munion(rp->op)) {
+			list *rels = rp->l;
 
 			/* only push topn/sample once */
-			x = ul;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
-				x = x->l;
-			if (x && x->op == rel->op)
-				return rel;
-			x = ur;
-			while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
-				x = x->l;
-			if (x && x->op == rel->op)
-				return rel;
+			for(node *n = rels->h; n; n = n->next) {
+				sql_rel *ue = n->data, *x;
+				x = ue;
+				while (is_simple_project(x->op) && !need_distinct(x) && !rel_is_ref(x) && x->l && list_empty(x->r))
+					x = x->l;
+				if (x && x->op == rel->op)
+					return rel;
+			}
+
+			sql_rel *u = rp, *ou = u, *up = NULL;
+			list *rcopy = NULL;
 
 			rcopy = exps_copy(v->sql, r->r);
 			for (node *n = rcopy->h ; n ; n = n->next) {
@@ -1315,62 +1390,58 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 				set_descending(e); /* remove ordering properties for projected columns */
 				set_nulls_first(e);
 			}
-			ul = rel_dup(ul);
-			ur = rel_dup(ur);
-			if (!is_project(ul->op))
-				ul = rel_project(v->sql->sa, ul,
-					rel_projections(v->sql, ul, NULL, 1, 1));
-			if (!is_project(ur->op))
-				ur = rel_project(v->sql->sa, ur,
-					rel_projections(v->sql, ur, NULL, 1, 1));
-			rel_rename_exps(v->sql, u->exps, ul->exps);
-			rel_rename_exps(v->sql, u->exps, ur->exps);
 
-			/* introduce projects under the set */
-			ul = rel_project(v->sql->sa, ul, NULL);
-			ul->exps = exps_copy(v->sql, r->exps);
-			/* possibly add order by column */
-			ul->exps = list_distinct(list_join(ul->exps, exps_copy(v->sql, rcopy)), (fcmp) exp_equal, (fdup) NULL);
-			ul->nrcols = list_length(ul->exps);
-			ul->r = exps_copy(v->sql, r->r);
-			set_processed(ul);
-			ul = func(v->sql->sa, ul, sum_limit_offset(v->sql, rel));
-			set_processed(ul);
+			list *nrels = sa_list(v->sql->sa);
+			for(node *n = rels->h; n; n = n->next) {
+				sql_rel *ue = n->data;
 
-			ur = rel_project(v->sql->sa, ur, NULL);
-			ur->exps = exps_copy(v->sql, r->exps);
-			/* possibly add order by column */
-			ur->exps = list_distinct(list_join(ur->exps, exps_copy(v->sql, rcopy)), (fcmp) exp_equal, (fdup) NULL);
-			ur->nrcols = list_length(ur->exps);
-			ur->r = exps_copy(v->sql, r->r);
-			set_processed(ur);
-			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
-			set_processed(ur);
+				ue = rel_dup(ue);
+				if (!is_project(ue->op))
+					ue = rel_project(v->sql->sa, ue,
+						rel_projections(v->sql, ue, NULL, 1, 1));
+				rel_rename_exps(v->sql, u->exps, ue->exps);
 
-			u = rel_setop(v->sql->sa, ul, ur, op_union);
+				/* introduce projects under the set */
+				ue = rel_project(v->sql->sa, ue, NULL);
+				ue->exps = exps_copy(v->sql, r->exps);
+				/* possibly add order by column */
+				ue->exps = list_distinct(list_merge(ue->exps, exps_copy(v->sql, rcopy), NULL), (fcmp) exp_equal, (fdup) NULL);
+				ue->nrcols = list_length(ue->exps);
+				ue->r = exps_copy(v->sql, r->r);
+				set_processed(ue);
+				ue = func(v->sql->sa, ue, sum_limit_offset(v->sql, rel));
+				set_processed(ue);
+
+				append(nrels, ue);
+			}
+
+			u = rel_setop_n_ary(v->sql->sa, nrels, op_munion);
 			u->exps = exps_alias(v->sql, r->exps);
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
 			/* possibly add order by column */
-			u->exps = list_distinct(list_join(u->exps, rcopy), (fcmp) exp_equal, (fdup) NULL);
+			u->exps = list_distinct(list_merge(u->exps, rcopy, NULL), (fcmp) exp_equal, (fdup) NULL);
+
 			if (need_distinct(r)) {
-				set_distinct(ul);
-				set_distinct(ur);
+				for(node *n = nrels->h; n; n = n->next) {
+					sql_rel *ue = n->data;
+					set_distinct(ue);
+				}
 			}
 
 			/* zap names */
 			rel_no_rename_exps(u->exps);
 			rel_destroy(v->sql, ou);
 
-			ur = rel_project(v->sql->sa, u, exps_alias(v->sql, r->exps));
-			ur->r = r->r;
+			up = rel_project(v->sql->sa, u, exps_alias(v->sql, r->exps));
+			up->r = r->r;
 			r->l = NULL;
 
 			if (need_distinct(r))
-				set_distinct(ur);
+				set_distinct(up);
 
 			rel_destroy(v->sql, r);
-			rel->l = ur;
+			rel->l = up;
 			v->changes++;
 			return rel;
 		}
