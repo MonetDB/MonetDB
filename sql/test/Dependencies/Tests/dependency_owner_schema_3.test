@@ -86,9 +86,6 @@ DEP_VIEW
 _tables
 tables
 DEP_VIEW
-_tables
-views
-DEP_VIEW
 args
 dependency_args_on_types
 DEP_VIEW
@@ -763,6 +760,9 @@ storage
 DEP_VIEW
 tables
 tables
+DEP_VIEW
+tables
+views
 DEP_VIEW
 triggers
 dependency_columns_on_triggers
