@@ -533,6 +533,8 @@ int yydebug=1;
 	grantor
 	intval
 	join_type
+	local_global_temp
+	local_temp
 	non_second_datetime_field
 	nonzero
 	asymmetric
@@ -550,7 +552,6 @@ int yydebug=1;
 	opt_recursive
 	opt_ref_action
 	opt_sign
-	opt_temp
 	opt_XML_content_option
 	opt_XML_returning_clause
 	XML_returning_clause
@@ -1777,7 +1778,7 @@ table_def:
 	  append_int(l, $2);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp table_if_not_exists qname table_content_source opt_on_commit
+  | local_global_temp table_if_not_exists qname table_content_source opt_on_commit
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 	  append_int(l, $1);
@@ -1791,13 +1792,13 @@ table_def:
 	  append_int(l, $2);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+  | local_temp VIEW qname opt_column_list AS SelectStmt
 	{  dlist *l = L();
 	  append_int(l, $1);
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
-	  append_int(l, $7);
+	  append_int(l, FALSE);
 	  append_int(l, TRUE);
 	  append_int(l, FALSE);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
@@ -1909,11 +1910,15 @@ with_opt_credentials:
   }
   ;
 
-opt_temp:
+local_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
  |  TEMP		{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMP		{ $$ = SQL_LOCAL_TEMP; }
+ ;
+
+local_global_temp:
+    local_temp		{ $$ = SQL_LOCAL_TEMP; }
  |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
  |  GLOBAL TEMP		{ $$ = SQL_GLOBAL_TEMP; }
  ;
@@ -2289,13 +2294,13 @@ view_def:
 	  append_int(l, $1);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 	}
-  | CREATE OR REPLACE opt_temp VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+  | CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
 	{  dlist *l = L();
 	  append_int(l, SQL_PERSIST);
 	  append_list(l, $6);
 	  append_list(l, $7);
 	  append_symbol(l, $9);
-	  append_int(l, $10);
+	  append_int(l, FALSE);
 	  append_int(l, TRUE);	/* persistent view */
 	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );

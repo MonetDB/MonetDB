@@ -103,9 +103,10 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-programming/flow-of-control/"},
 	{"COMMENT",
 	 "Add, update or remove a comment or description for a database object",
-	 "COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE | function_type }\n"
-	 "     qname IS { 'my description text' | NULL | '' }",
-	 "function_type,qname",
+	 "COMMENT ON { SCHEMA | TABLE | VIEW | INDEX | SEQUENCE | function_type }\n"
+	 "     qname IS { 'my description text' | NULL | '' }\n"
+	 "COMMENT ON COLUMN q3name IS { 'my description text' | NULL | '' }",
+	 "function_type,qname,q3name",
 	 NULL},
 	{"COMMIT",
 	 "Commit the current transaction",
@@ -258,8 +259,10 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/"},
 	{"CREATE VIEW",
 	 "Create a new view",
-	 "CREATE [ OR REPLACE ] VIEW qname [ column_list ] AS { query_expression | '(' query_expression ')' }\n"
-	 "[ WITH CHECK OPTION ]",
+	 "CREATE [ OR REPLACE ] VIEW qname [ column_list ]\n"
+	 "    AS { query_expression | '(' query_expression ')' } [ WITH CHECK OPTION ]\n"
+	 "CREATE [ OR REPLACE ] [ LOCAL ] { TEMPORARY | TEMP } VIEW qname [ column_list ]\n"
+	 "    AS { query_expression | '(' query_expression ')' }",
 	 "qname,column_list,query_expression",
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/view-definition/"},
 	{"CREATE WINDOW",
@@ -862,7 +865,12 @@ SQLhelp sqlhelp2[] = {
 	 NULL},
 	{"qname",
 	 NULL,
-	 "ident [ '.' ident ['.' ident]]",
+	 "ident [ '.' ident ]",
+	 NULL,
+	 NULL},
+	{"q3name",
+	 NULL,
+	 "ident [ '.' ident ['.' ident] ]",
 	 NULL,
 	 NULL},
 	{"ref_action",
