@@ -59,15 +59,22 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int generator = 0, multiplex = 0, actions = 0;
+	bool generator = false, multiplex = true;
+	int actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
-		if (getModuleId(q) == generatorRef)
-			generator = 1;
-		if (getFunctionId(q) == multiplexRef)
-			multiplex = 1;
+		if (getModuleId(q) == generatorRef) {
+			generator = true;
+			if (multiplex)
+				break;
+		}
+		if (getFunctionId(q) == multiplexRef) {
+			multiplex = true;
+			if (generator)
+				break;
+		}
 	}
 
 	optcall(true, OPTinlineImplementation);
@@ -94,15 +101,22 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int generator = 0, multiplex = 0, actions = 0;
+	bool generator = false, multiplex = false;
+	int actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
-		if (getModuleId(q) == generatorRef)
-			generator = 1;
-		if (getFunctionId(q) == multiplexRef)
-			multiplex = 1;
+		if (getModuleId(q) == generatorRef) {
+			generator = true;
+			if (multiplex)
+				break;
+		}
+		if (getFunctionId(q) == multiplexRef) {
+			multiplex = true;
+			if (generator)
+				break;
+		}
 	}
 
 	optcall(true, OPTinlineImplementation);
