@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
+#define error(msg) do{fprintf(stderr, "Failure: %s\n", msg); return -1;}while(0)
 
 #define date_eq(d1, d2) (d1.year == d2.year && d1.month == d2.month && d1.day == d2.day)
 #define time_eq(t1, t2) (t1.hours == t2.hours && t1.minutes == t2.minutes && t1.seconds == t2.seconds && t1.ms == t2.ms)
@@ -29,20 +29,20 @@ main(void)
 
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if (monetdbe_open(&mdbe, NULL, NULL))
-		error("Failed to open database")
+		error("Failed to open database");
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, d date, t time, ts timestamp, y string)", NULL, NULL)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, '2020-1-1', '13:13:30', '2020-1-1 13:13:30', 'Hello'), (NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_query(mdbe, "SELECT x, d, t, ts, y FROM test; ", &result, NULL)) != NULL)
-		error(err)
+		error(err);
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
-				error(err)
+				error(err);
 			switch (rcol->type) {
 				case monetdbe_int32_t: {
 					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
@@ -103,8 +103,8 @@ main(void)
 	}
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 	if (monetdbe_close(mdbe))
-		error("Failed to close database")
+		error("Failed to close database");
 	return 0;
 }

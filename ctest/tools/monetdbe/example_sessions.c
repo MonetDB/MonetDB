@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
+#define error(msg) do{fprintf(stderr, "Failure: %s\n", msg); return -1;}while(0)
 
 int
 main(void)
@@ -26,16 +26,16 @@ main(void)
 
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if (monetdbe_open(&mdbe, NULL, NULL))
-		error("Failed to open database")
+		error("Failed to open database");
 	if ((err = monetdbe_query(mdbe, "SELECT * FROM sys.sessions", &result, NULL)) != NULL)
-		error(err)
+		error(err);
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
-				error(err)
+				error(err);
 			switch (rcol->type) {
 				case monetdbe_int32_t: {
 					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
@@ -68,8 +68,8 @@ main(void)
 	}
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 	if (monetdbe_close(mdbe))
-		error("Failed to close database")
+		error("Failed to close database");
 	return 0;
 }
