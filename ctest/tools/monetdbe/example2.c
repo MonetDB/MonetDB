@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
+#define error(msg) do{fprintf(stderr, "Failure: %s\n", msg); return -1;}while(0)
 
 int
 main(void)
@@ -27,7 +27,7 @@ main(void)
 
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if (monetdbe_open(&mdbe, NULL, &opts))
-		error("Failed to open database")
+		error("Failed to open database");
 	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bool, t tinyint, s smallint, x integer, l bigint, "
 #ifdef HAVE_HGE
 		"h hugeint, "
@@ -35,18 +35,18 @@ main(void)
 		"h bigint, "
 #endif
 		"f float, d double, y string)", NULL, NULL)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (TRUE, 42, 42, 42, 42, 42, 42.42, 42.42, 'Hello'), (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_query(mdbe, "SELECT b, t, s, x, l, h, f, d, y FROM test; ", &result, NULL)) != NULL)
-		error(err)
+		error(err);
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
-				error(err)
+				error(err);
 			switch (rcol->type) {
 				case monetdbe_bool: {
 					monetdbe_column_bool * col = (monetdbe_column_bool *) rcol;
@@ -143,79 +143,79 @@ main(void)
 		printf("\n");
 	}
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 
 	/* test empty results */
 	if ((err = monetdbe_query(mdbe, "SELECT b, t, s, x, l, h, f, d, y FROM test where t > 127; ", &result, NULL)) != NULL)
-		error(err)
+		error(err);
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		/* fetching the meta data should work */
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
-				error(err)
+				error(err);
 		}
 	}
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 
 	monetdbe_statement *stmt = NULL;
 	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt, NULL)) != NULL)
-		error(err)
+		error(err);
 	char s = 42;
 	if ((err = monetdbe_bind(stmt, &s, 0)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
-		error(err)
+		error(err);
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
-		error(err)
+		error(err);
 
 	/* NULL value version */
 	if ((err = monetdbe_prepare(mdbe, "SELECT b, t FROM test where t = ?; ", &stmt, NULL)) != NULL)
-		error(err)
+		error(err);
 	char *s2 = NULL;
 	if ((err = monetdbe_bind(stmt, s2, 0)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
-		error(err)
+		error(err);
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
-		error(err)
+		error(err);
 
 	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
-		error(err)
+		error(err);
 	char *y = "Hello";
 	if ((err = monetdbe_bind(stmt, y, 0)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
-		error(err)
+		error(err);
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
-		error(err)
+		error(err);
 
 	/* NULL value version */
 	if ((err = monetdbe_prepare(mdbe, "SELECT b, y FROM test where y = ?; ", &stmt, NULL)) != NULL)
-		error(err)
+		error(err);
 	char *y2 = NULL;
 	if ((err = monetdbe_bind(stmt, y2, 0)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
-		error(err)
+		error(err);
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_cleanup_statement(mdbe, stmt)) != NULL)
-		error(err)
+		error(err);
 
 	if (monetdbe_close(mdbe))
-		error("Failed to close database")
+		error("Failed to close database");
 	return 0;
 }
