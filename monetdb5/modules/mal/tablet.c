@@ -452,6 +452,50 @@ output_multiset_sorted(char **buf, size_t *len, ssize_t fill, char **localbuf, s
 }
 
 static ssize_t
+output_multiset(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
+				  Column *fmt, BUN nr_attrs, int multiset, int composite, bool quoted, int id)
+{
+	nr_attrs -= (multiset == MS_ARRAY)?2:1;
+	Column *msid = fmt + nr_attrs;
+	/* how to also keep prev id */
+	BUN pos = msid->p;
+	int *idp = (int*)Tloc(msid->c, pos);
+	int first = 1;
+
+	if (id >= 0 && msid->p) {
+		while (pos > 0 && idp[-1] >= id) {
+			idp--;
+			pos--;
+		}
+		msid->p = pos;
+	}
+
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill++] = '{';
+	(*buf)[fill] = 0;
+	if (id >= 0)
+	for (; *idp == id && fill > 0; idp++, msid->p++, pos++) {
+		if (!first)
+			(*buf)[fill++] = ',';
+		if (composite) {
+			fill = output_composite(buf, len, fill, localbuf, locallen, fmt, nr_attrs, composite, true);
+		} else {
+			fmt->p = pos;
+			fill = output_value(buf, len, fill, localbuf, locallen, fmt);
+		}
+		first = 0;
+	}
+	if (fill < 0)
+		return fill;
+	(*buf)[fill++] = '}';
+	if (!quoted)
+		(*buf)[fill++] = '\'';
+	(*buf)[fill] = 0;
+	return fill;
+}
+
+static ssize_t
 output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size_t *locallen,
 				  Column *fmt, BUN nr_attrs)
 {
@@ -466,11 +510,12 @@ output_line_complex(char **buf, size_t *len, ssize_t fill, char **localbuf, size
 			Column *rowid = fmt+j+nr_attrs;
 			p = BUNtail(rowid->ci, rowid->p);
 
-			assert(rowid->c->tsorted);
-			if (rowid->c->tkey)
+			if (rowid->c->tsorted && rowid->c->tkey)
 			    fill = output_multiset_dense(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
-			else
+			else if (rowid->c->tsorted)
 			    fill = output_multiset_sorted(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
+			else
+			    fill = output_multiset(buf, len, fill, localbuf, locallen, fmt + j + 1, nr_attrs-1, f->multiset, f->composite, false, *(int*)p);
 			fmt[j+nr_attrs].p++;
 			f = fmt + j + nr_attrs; /* closing bracket */
 			j += nr_attrs + 1;
