@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#define error(msg) {fprintf(stderr, "Failure: %s\n", msg); return -1;}
+#define error(msg) do{fprintf(stderr, "Failure: %s\n", msg); return -1;}while(0)
 
 int
 main(void)
@@ -26,44 +26,44 @@ main(void)
 
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if (monetdbe_open(&mdbe1, NULL, NULL))
-		error("Failed to open database")
+		error("Failed to open database");
 	if (monetdbe_open(&mdbe2, NULL, NULL))
-		error("Failed to open database")
+		error("Failed to open database");
 	if ((err = monetdbe_query(mdbe1, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_query(mdbe2, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
-		error(err)
+		error(err);
 	if ((err = monetdbe_query(mdbe1, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
-		error(err)
+		error(err);
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
 		for (size_t c = 0; c < result->ncols; c++) {
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
-				error(err)
+				error(err);
 			switch (rcol->type) {
-				case monetdbe_int32_t: {
-					monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
-					if (col->data[r] == col->null_value) {
-						printf("NULL");
-					} else {
-						printf("%d", col->data[r]);
-					}
-					break;
+			case monetdbe_int32_t: {
+				monetdbe_column_int32_t * col = (monetdbe_column_int32_t *) rcol;
+				if (col->data[r] == col->null_value) {
+					printf("NULL");
+				} else {
+					printf("%d", col->data[r]);
 				}
-				case monetdbe_str: {
-					monetdbe_column_str * col = (monetdbe_column_str *) rcol;
-					if (col->is_null(col->data+r)) {
-						printf("NULL");
-					} else {
-						printf("%s", (char*) col->data[r]);
-					}
-					break;
+				break;
+			}
+			case monetdbe_str: {
+				monetdbe_column_str * col = (monetdbe_column_str *) rcol;
+				if (col->is_null(col->data+r)) {
+					printf("NULL");
+				} else {
+					printf("%s", (char*) col->data[r]);
 				}
-				default: {
-					printf("UNKNOWN");
-				}
+				break;
+			}
+			default: {
+				printf("UNKNOWN");
+			}
 			}
 
 			if (c + 1 < result->ncols) {
@@ -74,10 +74,10 @@ main(void)
 	}
 
 	if ((err = monetdbe_cleanup_result(mdbe1, result)) != NULL)
-		error(err)
+		error(err);
 	if (monetdbe_close(mdbe2))
-		error("Failed to close database")
+		error("Failed to close database");
 	if (monetdbe_close(mdbe1))
-		error("Failed to close database")
+		error("Failed to close database");
 	return 0;
 }

@@ -51,12 +51,12 @@ static void populate_table_test(void **state) {
     char* err;
 
 	err = monetdbe_query(mdbe,
-		"INSERT INTO test VALUES "
-			"(4, 40, 400, 'aaa', x'aaaaaa', '2020-06-17', '12:00:00', '2020-06-17 12:00:00'),"
-			"(6, 60, 600, 'ccc', x'cccccc', '2022-06-17', '14:00:00', '2022-06-17 14:00:00'),"
-			"(5, 50, 500, 'bbb', x'bbbbbb', '2021-06-17', '13:00:00', '2021-06-17 13:00:00'),"
-			"(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
-		NULL, NULL);
+						 "INSERT INTO test VALUES "
+						 "(4, 40, 400, 'aaa', x'aaaaaa', '2020-06-17', '12:00:00', '2020-06-17 12:00:00'),"
+						 "(6, 60, 600, 'ccc', x'cccccc', '2022-06-17', '14:00:00', '2022-06-17 14:00:00'),"
+						 "(5, 50, 500, 'bbb', x'bbbbbb', '2021-06-17', '13:00:00', '2021-06-17 13:00:00'),"
+						 "(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)",
+						 NULL, NULL);
 
 	assert_null(err);
 }
@@ -122,9 +122,9 @@ static void query_table_test3(void **state) {
 	assert_int_equal((int) result->ncols, 3);
 
 	/* TODO: Figure out what is expected here.
-	assert_true(CHECK_COLUMN(result, 0, BIGGEST_INTEGER_TPE, {{15}}));
-	assert_true(CHECK_COLUMN(result, 1, BIGGEST_INTEGER_TPE, {{150}}));
-	assert_true(CHECK_COLUMN(result, 2, BIGGEST_INTEGER_TPE, {1500}));
+	   assert_true(CHECK_COLUMN(result, 0, BIGGEST_INTEGER_TPE, {{15}}));
+	   assert_true(CHECK_COLUMN(result, 1, BIGGEST_INTEGER_TPE, {{150}}));
+	   assert_true(CHECK_COLUMN(result, 2, BIGGEST_INTEGER_TPE, {1500}));
 	*/
 
 	err = monetdbe_cleanup_result(mdbe, result);
