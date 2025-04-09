@@ -138,6 +138,8 @@ static struct pipeline {
 		 "deadcode",
 		 "pushselect",
 		 "aliases",
+		 "for",
+		 "dict",
 		 "mergetable",
 		 "aliases",
 		 "constants",
