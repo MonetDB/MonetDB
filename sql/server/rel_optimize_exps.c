@@ -532,16 +532,21 @@ simplify_not(visitor *v, sql_exp *e)
 
 		sql_exp *i = l->h->data;
 
-		if (is_compare(i->type)) {
+		if (is_compare(i->type) && i->flag != cmp_filter) {
 			if (is_anti(i))
 				reset_anti(i);
 			else
 				set_anti(i);
 			v->changes++;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, i, e);
 			return i;
 		}
 		v->changes++;
-		return exp_compare(v->sql->sa, i, exp_atom_bool(v->sql->sa, 0), cmp_equal);
+		sql_exp *ne = exp_compare(v->sql->sa, i, exp_atom_bool(v->sql->sa, 0), cmp_equal);
+		if (exp_name(e))
+			exp_prop_alias(v->sql->sa, ne, e);
+		return ne;
 	}
 	return e;
 }
