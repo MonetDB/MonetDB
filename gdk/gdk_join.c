@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -2976,9 +2976,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		b = BATdescriptor(VIEWtparent(r));
 		if (b == NULL)
 			goto bailout;
-		TRC_DEBUG(ALGO, "%s(%s): using "
+		TRC_DEBUG(ALGO, "%s: using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
-			  __func__,
 			  BATgetId(r), ALGOBATPAR(b),
 			  swapped ? " (swapped)" : "");
 		roff = r->tbaseoff - b->tbaseoff;
@@ -3389,6 +3388,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 
 	*cnt1 = *cnt2 = 0;
 
+	BAT *pb = BATdescriptor(bi.h->parentid);
+	MT_rwlock_rdlock(&pb->thashlock);
 	if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "sorted";
@@ -3435,6 +3436,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		assert(bvars == NULL);
 		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
 		if (seen == NULL) {
+			MT_rwlock_rdunlock(&pb->thashlock);
+			BBPreclaim(pb);
 			bat_iterator_end(&bi);
 			return GDK_FAIL;
 		}
@@ -3476,6 +3479,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heapbckt.filename) ||
 		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
+			MT_rwlock_rdunlock(&pb->thashlock);
+			BBPreclaim(pb);
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3506,6 +3511,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		HEAPfree(&hs.heaplink, true);
 		HEAPfree(&hs.heapbckt, true);
 	}
+	MT_rwlock_rdunlock(&pb->thashlock);
+	BBPreclaim(pb);
 	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
@@ -3577,7 +3584,8 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 		canditer_init(&lci, b, NULL);
 		ci = &lci;
 	}
-	return (BUN) guess_uniques(b, ci);
+	double uniques = guess_uniques(b, ci);
+	return uniques < 0 ? 0 : (BUN) uniques;
 }
 
 /* estimate the cost of doing a hashjoin with a hash on r; return value
@@ -3637,7 +3645,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			MT_lock_unset(&r->theaplock);
 			if (unique_est == 0) {
 				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
-				if (unique_est < 0)
+				if (unique_est <= 0)
 					return -1;
 			}
 			/* we have an estimate of the number of unique
@@ -3668,7 +3676,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 				MT_lock_unset(&r->theaplock);
 				if (unique_est == 0) {
 					unique_est = guess_uniques(r, rci);
-					if (unique_est < 0)
+					if (unique_est <= 0)
 						return -1;
 				}
 				/* we have an estimate of the number of unique

@@ -1,9 +1,0 @@
-#create table foo (a int, b int);
-#prepare select count(b) from (select a,b from foo union all select null,null from foo) t;
-#prepare select count(b) from (select a,b from foo union all select null,null from foo) t;
-% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
-% type,	digits,	scale,	schema,	table,	column # name
-% varchar,	int,	int,	varchar,	varchar,	varchar # type
-% 6,	2,	1,	0,	2,	2 # length
-[ "bigint",	63,	0,	"",	"%3",	"%3"	]
-#drop table foo;

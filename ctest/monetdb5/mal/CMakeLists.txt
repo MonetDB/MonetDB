@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -15,8 +15,7 @@ target_link_libraries(test_malEmbeddedBoot
   PRIVATE
   monetdb_config_header
   mal
-  mcrypt
-  msabaoth
+  mutils
   stream
   bat
   ${CMAKE_DL_LIBS}
@@ -29,8 +28,7 @@ target_link_libraries(test_malInclude
   PRIVATE
   monetdb_config_header
   mal
-  mcrypt
-  msabaoth
+  mutils
   stream
   bat
   ${CMAKE_DL_LIBS}

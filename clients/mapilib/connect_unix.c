@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -91,13 +91,10 @@ scan_unix_sockets(Mapi mid)
 				return mapi_setError(mid, "malloc failed", __func__, MERROR);
 			}
 			msettings_error errmsg = msetting_set_long(mid->settings, MP_PORT, candidates[i].port);
-			char *allocated_errmsg = NULL;
-			if (!errmsg && !msettings_validate(mid->settings, &allocated_errmsg)) {
-				errmsg = allocated_errmsg;
-			}
+			if (!errmsg)
+				errmsg = msettings_validate(mid->settings);
 			if (errmsg) {
 				mapi_setError(mid, errmsg, __func__, MERROR);
-				free(allocated_errmsg);
 				free(namebuf);
 				msettings_destroy(mid->settings);
 				mid->settings = original;

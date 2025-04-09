@@ -4,7 +4,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024 MonetDB Foundation;
+-- Copyright 2024, 2025 MonetDB Foundation;
 -- Copyright August 2008 - 2023 MonetDB B.V.;
 -- Copyright 1997 - July 2008 CWI.
 
@@ -80,7 +80,7 @@ CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT
   t."type" AS table_type_id,
   st."count" AS row_count,
   t."system" AS is_system,
-  sys.ifthenelse(t."type" IN (1, 11), TRUE, FALSE) AS is_view,
+  sys.ifthenelse(t."type" IN (1, 11, 21, 31), TRUE, FALSE) AS is_view,
   t."query" AS query_def,
   cm."remark" AS comments
  FROM sys."tables" t
@@ -109,13 +109,13 @@ CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT
   -- MonetDB column extensions
   t."schema_id" AS schema_id,
   t."id" AS table_id,
-  cast(sys.ifthenelse(t."system", t."type" + 10 /* system view */, t."type") AS smallint) AS table_type_id,
+  t."type" AS table_type_id,
   t."system" AS is_system,
   cm."remark" AS comments
- FROM sys."_tables" t
+ FROM sys."tables" t
  INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
  LEFT OUTER JOIN sys."comments" cm ON t."id" = cm."id"
- WHERE t."type" = 1
+ WHERE t."type" IN (1, 11, 21, 31)
  ORDER BY s."name", t."name";
 
 GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;

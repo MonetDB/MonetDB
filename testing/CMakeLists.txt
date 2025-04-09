@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -111,10 +111,6 @@ configure_file(Mz.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
   @ONLY)
 
-configure_file(listexports.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
-  @ONLY)
-
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
@@ -131,10 +127,11 @@ if(PYTHON3_LIBDIR)
   install(FILES
     process.py
     __init__.py
-    ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
+    listexports.py
     exportutils.py
     melcheck.py
     sqllogictest.py
+    tpymonetdb.py
     explain.py
     plan.py
     floatutil.py

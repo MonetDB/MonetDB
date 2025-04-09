@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -30,6 +30,7 @@
 #include "rel_orderby.h"
 #include "sql_pp_statement.h"
 #include "rel_file_loader.h"
+#include "rel_proto_loader.h"
 #include "sql_env.h"
 #include "sql_optimizer.h"
 #include "sql_gencode.h"
@@ -121,7 +122,7 @@ sql_unop_(backend *be, const char *fname, stmt *rs)
 static stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
-	for (node *n=refs->h; n; n = n->next->next) {
+	for (node *n = refs->h; n; n = n->next->next) {
 		sql_rel *ref = n->data;
 		stmt *s = n->next->data;
 
@@ -1464,6 +1465,42 @@ exp2bin_file_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel
 	return (stmt*)fl->load(be, f, filename, topn);
 }
 
+static stmt*
+exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *sel)
+{
+	assert(left == NULL); (void)left;
+	assert(right == NULL); (void)right;
+	assert(sel == NULL); (void)sel;
+	sql_subfunc *f = fe->f;
+
+	list *arg_list = fe->l;
+	/*
+	list *type_list = f->res;
+	assert(1 + list_length(type_list) == list_length(arg_list));
+	*/
+
+	sql_exp *eexp = arg_list->h->next->data;
+	assert(is_atom(eexp->type));
+	atom *ea = eexp->l;
+	assert(ea->data.vtype == TYPE_str);
+	char *ext = ea->data.val.sval;
+
+	proto_loader_t *pl = pl_find(ext);
+	if (!pl)
+		pl = pl_find("mapi");
+	if (!pl)
+		return NULL;
+	sql_exp *fexp = arg_list->h->data;
+	assert(is_atom(fexp->type));
+	atom *fa = fexp->l;
+	assert(fa->data.vtype == TYPE_str);
+	char *filename = fa->data.val.sval;
+	sql_exp *topn = NULL;
+	if (list_length(arg_list) == 3)
+		topn = list_fetch(arg_list, 2);
+	return (stmt*)pl->load(be, f, filename, topn);
+}
+
 stmt *
 exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push)
 {
@@ -1657,6 +1694,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return exp2bin_copyfrombinary(be, e, left, right, sel);
 			if (strcmp(fname, "file_loader") == 0)
 				return exp2bin_file_loader(be, e, left, right, sel);
+			if (strcmp(fname, "proto_loader") == 0)
+				return exp2bin_proto_loader(be, e, left, right, sel);
 			if (strcmp(fname, "-1") == 0) /* map arguments to A0 .. An */
 				return exp2bin_named_placeholders(be, e);
 		}
@@ -2458,7 +2497,6 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_merge:
@@ -4237,7 +4275,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	stmt *rel_stmt = NULL, *sub = NULL;
 	int nr_unions = list_length((list*)rel->l);
 	if (nr_unions != 2)
-		return sql_error(sql, 10, SQLSTATE(27000) "UNION: recursive unions need a base and recusive part");
+		return sql_error(sql, 10, SQLSTATE(27000) "UNION: recursive unions need a base and recursive part");
 	stmt *l = stmt_limit_value(be, topn);
 
 	bool distinct = need_distinct(rel);
@@ -4341,7 +4379,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		rec = subres_assign_resultvars(be, rec, rel_stmt->op4.lval);
 		if (distinct) {
 			rec = rel2bin_distinct(be, rec, NULL);
-			/* remove values allready in the result table */
+			/* remove values already in the result table */
 			stmt *s = releqjoin(be, rec->op4.lval, result_table, NULL, 0 /* use hash */, 0, 1 /*is_semantics*/);
 			stmt *lm = stmt_result(be, s, 0);
 
@@ -4485,52 +4523,6 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 		}
 		s = stmt_alias(be, s, label, rnme, nme);
-		if (s == NULL)
-			return NULL;
-		list_append(l, s);
-	}
-	sub = stmt_list(be, l);
-
-	sub = rel_rename(be, rel, sub);
-	if (need_distinct(rel))
-		sub = rel2bin_distinct(be, sub, NULL);
-	if (is_single(rel))
-		sub = rel2bin_single(be, sub);
-	return sub;
-}
-
-static stmt *
-rel2bin_union(backend *be, sql_rel *rel, list *refs)
-{
-	mvc *sql = be->mvc;
-	list *l;
-	node *n, *m;
-	stmt *left = NULL, *right = NULL, *sub;
-
-	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(be, rel->l, refs);
-	if (rel->r) /* first construct the right sub relation */
-		right = subrel_bin(be, rel->r, refs);
-	left = subrel_project(be, left, refs, rel->l);
-	right = subrel_project(be, right, refs, rel->r);
-	if (!left || !right)
-		return NULL;
-
-	/* construct relation */
-	l = sa_list(sql->sa);
-	for (n = left->op4.lval->h, m = right->op4.lval->h; n && m;
-		 n = n->next, m = m->next) {
-		stmt *c1 = n->data;
-		assert(c1->label);
-		stmt *c2 = m->data;
-		const char *rnme = table_name(sql->sa, c1);
-		const char *nme = column_name(sql->sa, c1);
-		stmt *s;
-
-		s = stmt_append(be, create_const_column(be, c1), c2);
-		if (s == NULL)
-			return NULL;
-		s = stmt_alias(be, s, c1->label, rnme, nme);
 		if (s == NULL)
 			return NULL;
 		list_append(l, s);
@@ -7619,6 +7611,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	node *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
+	bool needs_returning = rel->returning;
 
 	if ((rel->flag&UPD_COMP)) {  /* special case ! */
 		idx_ups = 1;
@@ -7718,7 +7711,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 	stmt* returning = NULL;
-	if (rel->returning) {
+	if (needs_returning) {
 		sql_rel* b = rel->l;
 		int refcnt = b->ref.refcnt; // HACK: forces recalculation of base columns since they are assumed to be updated
 		b->ref.refcnt = 1;
@@ -8904,10 +8897,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_anti:
 		s = rel2bin_antijoin(be, rel, refs);
-		sql->type = Q_TABLE;
-		break;
-	case op_union:
-		s = rel2bin_union(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
 	case op_munion:

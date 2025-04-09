@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -130,9 +130,9 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *c = getArgReference_bat(stk, pci, 1);
 	bat *l = getArgReference_bat(stk, pci, 2);
 
-	id = COLnew(0, TYPE_int, (BUN) COMPONENTS_COUNT, TRANSIENT);
-	component = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
-	log_level = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
+	id = COLnew(0, TYPE_int, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
+	component = COLnew(0, TYPE_str, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
+	log_level = COLnew(0, TYPE_str, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
 
 	if (id == NULL || component == NULL || log_level == NULL) {
 		BBPreclaim(id);

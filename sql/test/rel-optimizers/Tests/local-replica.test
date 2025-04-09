@@ -102,7 +102,7 @@ project (
 | crossproduct (
 | | table("sys"."foo_local") [ "foo_local"."n" NOT NULL as "foo_rpl_loc"."n", "foo_local"."m" NOT NULL as "foo_rpl_loc"."m", "foo_local"."%TID%" NOT NULL UNIQUE as "foo_rpl_loc"."%TID%" ],
 | | table (
-| | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ] REMOTE mapi:monetdb://localhost:50002/node2
+| | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ] REMOTE monetdb://localhost.:50002/node2
 | | ) [ "buz_rmt"."l" ]
 | ) [  ]
 ) [ "foo_rpl_loc"."n" NOT NULL, "foo_rpl_loc"."m" NOT NULL, "buz_rmt"."l" ]

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -502,7 +502,8 @@ typedef struct sqlstore {
 	sql_hash *sequences;	/* loaded store sequence numbers */
 
 	allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
-	sqlid obj_id, prev_oid;
+	ATOMIC_TYPE obj_id;
+	sqlid prev_oid;
 
 	store_functions storage_api;
 	table_functions table_api;

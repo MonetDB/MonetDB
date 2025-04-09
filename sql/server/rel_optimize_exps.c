@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -429,6 +429,168 @@ reduce_scale(mvc *sql, atom *a)
 }
 
 static inline sql_exp *
+simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
+{
+	/* rewrite isnull/isnotnull(x) = TRUE/FALSE => x =/<> NULL */
+	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
+		return e;
+	sql_exp *l = e->l;
+	sql_exp *r = e->r;
+
+	/*if (is_atom(r->type) && r->l &&*/
+		/*strcmp(((atom*)r->l)->tpe.type->base.name, "boolean") != 0)*/
+		/*return e;*/
+
+	if (!is_func(l->type))
+		return e;
+
+	sql_subfunc *f = l->f;
+	if (f->func->s || (!is_isnull_func(f) && !is_isnotnull_func(f)))
+		return e;
+
+	list *args = l->l;
+	sql_exp *ie = args->h->data;
+
+	if (!has_nil(ie) || exp_is_not_null(ie)) {
+		if (is_isnull_func(f)) {
+			/* is null on something that is never null, is always false */
+			ie = exp_atom_bool(v->sql->sa, 0);
+		} else if (is_isnotnull_func(f)) {
+			/* is NOT null on something that is never null, is always true */
+			ie = exp_atom_bool(v->sql->sa, 1);
+		}
+		v->changes++;
+		e->l = ie;
+	} else if (exp_is_null(ie)) {
+		if (is_isnull_func(f)) {
+			/* is null on something that is always null, is always true */
+			ie = exp_atom_bool(v->sql->sa, 1);
+		} else if (is_isnotnull_func(f)) {
+			/* is NOT null on something that is always null, is always false */
+			ie = exp_atom_bool(v->sql->sa, 0);
+		}
+		v->changes++;
+		e->l = ie;
+	} else if (is_atom(r->type) && r->l) {
+		/* direct literal */
+		atom *a = r->l;
+
+		if (a->isnull) {
+			if (is_semantics(e)) {
+				/* isnull/isnotnull(x) = NULL -> false,
+				 * isnull/isnotnull(x) <> NULL -> true */
+				int flag = e->flag == cmp_notequal;
+				if (is_anti(e))
+					flag = !flag;
+				e = exp_atom_bool(v->sql->sa, flag);
+			} else {
+				/* always NULL */
+				e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
+			}
+			v->changes++;
+		} else {
+			/* case isnull(x)  = TRUE  => x  = NULL */
+			/* case isnull(x) != TRUE  => x != NULL */
+			/* case isnull(x)  = FALSE => x != NULL <-- op switch */
+			/* case isnull(x) != FALSE => x  = NULL <-- op switch */
+			/* case isnotnull(x)  = TRUE  => x != NULL <-- op switch */
+			/* case isnotnull(x) != TRUE  => x  = NULL <-- op switch */
+			/* case isnotnull(x)  = FALSE => x  = NULL */
+			/* case isnotnull(x) != FALSE => x != NULL */
+			bool bval = a->data.val.bval;
+
+			assert(list_length(args) == 1);
+
+			l = ie;
+			if (exp_subtype(l)->type) {
+				r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
+				e = exp_compare(v->sql->sa, l, r, e->flag);
+				if (e) {
+					if (bval == false && is_isnull_func(f))
+						set_anti(e);
+					if (bval == true && is_isnotnull_func(f))
+						set_anti(e);
+				}
+				if (e)
+					set_semantics(e);
+				v->changes++;
+			}
+		}
+	}
+	return e;
+}
+
+static inline sql_exp *
+simplify_not_over_equality_exp(visitor *v, sql_exp *e) {
+	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
+		return e;
+	sql_exp *l = e->l;
+	sql_exp *r = e->r;
+
+	if (!is_func(l->type))
+		return e;
+	sql_subfunc *f = l->f;
+
+	if (f->func->s || !is_not_func(f))
+		return e;
+
+	if (is_atom(r->type) && r->l) {
+		/* direct literal */
+		atom *a = r->l;
+		list *args = l->l;
+		sql_exp *inner = args->h->data;
+		sql_subfunc *inf = inner->f;
+
+		assert(list_length(args) == 1);
+
+		if (is_func(inner->type) && !inf->func->s && is_not_func(inf)) {
+			/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
+			int anti = is_anti(e), is_semantics = is_semantics(e);
+
+			args = inner->l;
+			assert(list_length(args) == 1);
+			l = args->h->data;
+			e = exp_compare(v->sql->sa, l, r, e->flag);
+			if (anti) set_anti(e);
+			if (is_semantics) set_semantics(e);
+			v->changes++;
+		} else if (is_func(inner->type) && !inf->func->s &&
+				   (!strcmp(inf->func->base.name, "=") || !strcmp(inf->func->base.name, "<>"))) {
+			/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b / a<>b */
+			int flag = a->data.val.bval;
+			sql_exp *ne;
+			args = inner->l;
+
+			if (!strcmp(inf->func->base.name, "<>"))
+				flag = !flag;
+			if (e->flag == cmp_notequal)
+				flag = !flag;
+			assert(list_length(args) == 2);
+			l = args->h->data;
+			r = args->h->next->data;
+			ne = exp_compare(v->sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
+			if (a->isnull)
+				e->l = ne;
+			else
+				e = ne;
+			v->changes++;
+		} else if (a && a->data.vtype == TYPE_bit) {
+			int anti = is_anti(e), is_semantics = is_semantics(e);
+
+			/* change atom's value on right */
+			l = args->h->data;
+			if (!a->isnull)
+				r = exp_atom_bool(v->sql->sa, !a->data.val.bval);
+			e = exp_compare(v->sql->sa, l, r, e->flag);
+			if (anti) set_anti(e);
+			if (is_semantics) set_semantics(e);
+			v->changes++;
+		}
+	}
+	return e;
+}
+
+static inline sql_exp *
 rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 {
 	if (is_func(e->type) && list_length(e->l) == 3 && is_case_func((sql_subfunc*)e->f)) {
@@ -622,109 +784,10 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 			sql_exp *l = e->l;
 			sql_exp *r = e->r;
 
-			if (is_func(l->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
-				sql_subfunc *f = l->f;
+			e = simplify_isnull_isnotnull_equals_bool(v, e);
+			e = simplify_not_over_equality_exp(v, e);
 
-				/* rewrite isnull(x) = TRUE/FALSE => x =/<> NULL */
-				if (!f->func->s && is_isnull_func(f)) {
-					list *args = l->l;
-					sql_exp *ie = args->h->data;
-
-					if (!has_nil(ie) || exp_is_not_null(ie)) { /* is null on something that is never null, is always false */
-						ie = exp_atom_bool(v->sql->sa, 0);
-						v->changes++;
-						e->l = ie;
-					} else if (exp_is_null(ie)) { /* is null on something that is always null, is always true */
-						ie = exp_atom_bool(v->sql->sa, 1);
-						v->changes++;
-						e->l = ie;
-					} else if (is_atom(r->type) && r->l) { /* direct literal */
-						atom *a = r->l;
-
-						if (a->isnull) {
-							if (is_semantics(e)) { /* isnull(x) = NULL -> false, isnull(x) <> NULL -> true */
-								int flag = e->flag == cmp_notequal;
-								if (is_anti(e))
-									flag = !flag;
-								e = exp_atom_bool(v->sql->sa, flag);
-							} else /* always NULL */
-								e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
-							v->changes++;
-						} else {
-							int flag = a->data.val.bval;
-
-							assert(list_length(args) == 1);
-							l = args->h->data;
-							if (exp_subtype(l)) {
-								r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
-								e = exp_compare(v->sql->sa, l, r, e->flag);
-								if (e && !flag)
-									set_anti(e);
-								if (e)
-									set_semantics(e);
-								v->changes++;
-							}
-						}
-					}
-				} else if (!f->func->s && is_not_func(f)) {
-					if (is_atom(r->type) && r->l) { /* direct literal */
-						atom *a = r->l;
-						list *args = l->l;
-						sql_exp *inner = args->h->data;
-						sql_subfunc *inf = inner->f;
-
-						assert(list_length(args) == 1);
-
-						/* not(not(x)) = TRUE/FALSE => x = TRUE/FALSE */
-						if (is_func(inner->type) &&
-							!inf->func->s &&
-							is_not_func(inf)) {
-							int anti = is_anti(e), is_semantics = is_semantics(e);
-
-							args = inner->l;
-							assert(list_length(args) == 1);
-							l = args->h->data;
-							e = exp_compare(v->sql->sa, l, r, e->flag);
-							if (anti) set_anti(e);
-							if (is_semantics) set_semantics(e);
-							v->changes++;
-						/* rewrite not(=/<>(a,b)) = TRUE/FALSE => a=b / a<>b */
-						} else if (is_func(inner->type) &&
-							!inf->func->s &&
-							(!strcmp(inf->func->base.name, "=") ||
-							 !strcmp(inf->func->base.name, "<>"))) {
-							int flag = a->data.val.bval;
-							sql_exp *ne;
-							args = inner->l;
-
-							if (!strcmp(inf->func->base.name, "<>"))
-								flag = !flag;
-							if (e->flag == cmp_notequal)
-								flag = !flag;
-							assert(list_length(args) == 2);
-							l = args->h->data;
-							r = args->h->next->data;
-							ne = exp_compare(v->sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
-							if (a->isnull)
-								e->l = ne;
-							else
-								e = ne;
-							v->changes++;
-						} else if (a && a->data.vtype == TYPE_bit) {
-							int anti = is_anti(e), is_semantics = is_semantics(e);
-
-							/* change atom's value on right */
-							l = args->h->data;
-							if (!a->isnull)
-								r = exp_atom_bool(v->sql->sa, !a->data.val.bval);
-							e = exp_compare(v->sql->sa, l, r, e->flag);
-							if (anti) set_anti(e);
-							if (is_semantics) set_semantics(e);
-							v->changes++;
-						}
-					}
-				}
-			} else if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !is_any(e) && !e->f) {
+			if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !is_any(e) && !e->f) {
 				/* compute comparisons on atoms */
 				if (exp_is_null(l) || exp_is_null(r)) {
 					e = exp_null(v->sql->sa, sql_bind_localtype("bit"));

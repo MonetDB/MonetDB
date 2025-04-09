@@ -1,4 +1,5 @@
-import os, sys, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys
 
 def connect():
     return pymonetdb.connect(database = os.getenv('TSTDB'),

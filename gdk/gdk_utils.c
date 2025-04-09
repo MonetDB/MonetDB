@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -859,6 +859,10 @@ GDKsetdebug(unsigned debug)
 		GDKtracer_set_component_level("io", "debug");
 	else
 		GDKtracer_reset_component_level("io");
+	if (debug & LOADMASK)
+		GDKtracer_set_component_level("mal_loader", "debug");
+	else
+		GDKtracer_reset_component_level("mal_loader");
 	if (debug & PARMASK)
 		GDKtracer_set_component_level("par", "debug");
 	else
@@ -875,6 +879,10 @@ GDKsetdebug(unsigned debug)
 		GDKtracer_set_component_level("thrd", "debug");
 	else
 		GDKtracer_reset_component_level("thrd");
+	if (debug & TMMASK)
+		GDKtracer_set_component_level("tm", "debug");
+	else
+		GDKtracer_reset_component_level("tm");
 }
 
 unsigned
@@ -906,6 +914,9 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("io");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= IOMASK;
+	lvl = GDKtracer_get_component_level("mal_loader");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= LOADMASK;
 	lvl = GDKtracer_get_component_level("par");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= PARMASK;
@@ -918,6 +929,9 @@ GDKgetdebug(void)
 	lvl = GDKtracer_get_component_level("thrd");
 	if (lvl && strcmp(lvl, "debug") == 0)
 		debug |= THRDMASK;
+	lvl = GDKtracer_get_component_level("tm");
+	if (lvl && strcmp(lvl, "debug") == 0)
+		debug |= TMMASK;
 	return (unsigned) debug;
 }
 
@@ -1002,6 +1016,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			char name[MT_NAME_LEN];
 			snprintf(name, sizeof(name), "GDKswapLock%d", i);
 			MT_lock_init(&GDKbatLock[i].swap, name);
+			snprintf(name, sizeof(name), "GDKswapCond%d", i);
+			MT_cond_init(&GDKbatLock[i].cond, name);
 		}
 		if (mnstr_init() < 0) {
 			TRC_CRITICAL(GDK, "mnstr_init failed\n");
@@ -2218,7 +2234,10 @@ sa_alloc(allocator *sa, size_t sz)
 			}
 			sa->blks = tmp;
 		}
-		if (sz > SA_BLOCK) {
+		if (sz >= SA_BLOCK) {
+			// The request is large so it gets its own block.
+			// We put it 'under' the current block because
+			// there may still be plenty of usable space there.
 			sa->blks[sa->nr] = sa->blks[sa->nr-1];
 			sa->blks[sa->nr-1] = r;
 			sa->nr ++;

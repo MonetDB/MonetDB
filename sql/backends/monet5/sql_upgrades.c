@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -283,16 +283,16 @@ sql_update_hugeint(Client c, mvc *sql)
 			"create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"covariancep\";\n"
 			"GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create aggregate median(val HUGEINT) returns HUGEINT\n"
+			"create aggregate median(val HUGEINT) returns HUGEINT ORDERED\n"
 			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;\n"
-			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
+			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT ORDERED\n"
 			" external name \"aggr\".\"quantile\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;\n"
-			"create aggregate median_avg(val HUGEINT) returns DOUBLE\n"
+			"create aggregate median_avg(val HUGEINT) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"median_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;\n"
-			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE\n"
+			"create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;\n"
 			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
@@ -301,16 +301,16 @@ sql_update_hugeint(Client c, mvc *sql)
 			"create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			" external name \"sql\".\"corr\";\n"
 			"GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;\n"
-			"create aggregate median(val DECIMAL(38)) returns DECIMAL(38)\n"
+			"create aggregate median(val DECIMAL(38)) returns DECIMAL(38) ORDERED\n"
 			" external name \"aggr\".\"median\";\n"
 			"GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;\n"
-			"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE\n"
+			"create aggregate median_avg(val DECIMAL(38)) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"median_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;\n"
-			"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)\n"
+			"create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38) ORDERED\n"
 			" external name \"aggr\".\"quantile\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;\n"
-			"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE\n"
+			"create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE ORDERED\n"
 			" external name \"aggr\".\"quantile_avg\";\n"
 			"GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;\n");
 
@@ -4369,7 +4369,7 @@ sql_update_aug2024(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
+sql_update_mar2025_geom(Client c, mvc *sql, sql_schema *s)
 {
 	str err;
 	res_table *output = NULL;
@@ -4407,7 +4407,7 @@ sql_update_default_geom(Client c, mvc *sql, sql_schema *s)
 }
 
 static str
-sql_update_default(Client c, mvc *sql, sql_schema *s)
+sql_update_mar2025(Client c, mvc *sql, sql_schema *s)
 {
 	char *err = MAL_SUCCEED;
 	sql_subtype tp;
@@ -4478,7 +4478,7 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 
 	if ((err = SQLstatementIntern(c, "select id from sys.functions where name = 'quantile' and schema_id = 2000 and contains(func, 'ordered');\n", "update", true, false, &output)) == MAL_SUCCEED) {
 		BAT *b;
-		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		if ((b = BBPquickdesc(output->cols[0].b)) && BATcount(b) <= 2) {
 			sql_table *t;
 			t = mvc_bind_table(sql, s, "describe_comments");
 			t->system = 0;
@@ -4495,9 +4495,9 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			sql_schema *is = mvc_bind_schema(sql, "information_schema");
 			t = mvc_bind_table(sql, is, "parameters");
 			t->system = 0;
-			char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
-				"update sys.functions set func = replace(func, E'\\n\\texternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
-				"update sys.functions set func = replace(func, E'\\nexternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
+			char query[] = "update sys.functions set func = replace(func, E'\\n external', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
+				"update sys.functions set func = replace(func, E'\\n\\texternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
+				"update sys.functions set func = replace(func, E'\\nexternal', E' ordered\\n external') where name in ('quantile','quantile_avg','median','median_avg') and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE') and not contains(func, 'ordered');\n"
 				"update sys.functions set func = replace(func, E' external', E' with order\\n external') where name = 'group_concat' and schema_id = 2000 and language = (select language_id from sys.function_languages where language_name = 'MAL') and type = (select function_type_id from sys.function_types where function_type_keyword = 'AGGREGATE');\n"
 				"drop function sys.dump_database(boolean) cascade;\n"
 				"drop view sys.dump_functions cascade;\n"
@@ -4735,6 +4735,133 @@ sql_update_default(Client c, mvc *sql, sql_schema *s)
 			return err;
 	}
 
+	sql_find_subtype(&tp, "varchar", 0, 0);
+	if (!sql_bind_func(sql, s->base.name, "normalize_monetdb_url", &tp, NULL, F_FUNC, true, true)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+		const char query[] =
+			"create function sys.normalize_monetdb_url(u string)\n"
+			"returns string external name sql.normalize_monetdb_url;\n"
+			"grant execute on function sys.normalize_monetdb_url(string) to public;\n"
+			"update sys.functions set system = true where system <> true and name = 'normalize_monetdb_url' and schema_id = 2000;\n"
+			"update sys._tables set query = sys.normalize_monetdb_url(query) where type in (5,6);";
+		printf("Running database upgrade commands:\n%s\n", query);
+		fflush(stdout);
+		err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		if (err)
+			return err;
+	}
+
+	return err;
+}
+
+static str
+sql_update_mar2025_sp1(Client c, mvc *sql)
+{
+	char *err = NULL;
+	res_table *output = NULL;
+	BAT *b;
+
+	/* 10_sys_schema_extension.sql */
+	/* if the table type LOCAL TEMPORARY VIEW is
+	 * not in the list of table_types, upgrade */
+	const char query1[] = "select table_type_name from sys.table_types where table_type_name = 'LOCAL TEMPORARY VIEW';";
+	err = SQLstatementIntern(c, query1, "update", true, false, &output);
+	if (err == MAL_SUCCEED && (b = BBPquickdesc(output->cols[0].b)) && BATcount(b) == 0) {
+		const char stmt2[] =
+			"ALTER TABLE sys.table_types SET READ WRITE;\n"
+			"INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');\n";
+		printf("Running database upgrade commands:\n%s\n", stmt2);
+		fflush(stdout);
+		err = SQLstatementIntern(c, stmt2, "update", true, false, NULL);
+		if (err == MAL_SUCCEED) {
+			const char stmt3[] = "ALTER TABLE sys.table_types SET READ ONLY;\n";
+			printf("Running database upgrade commands:\n%s\n", stmt3);
+			fflush(stdout);
+			err = SQLstatementIntern(c, stmt3, "update", true, false, NULL);
+		}
+
+		/* 91_information_schema.sql */
+		/* correct definitions of views: information_schema.tables and information_schema.views */
+		if (err == MAL_SUCCEED) {
+			const char query[] =
+				"DROP VIEW information_schema.views CASCADE;\n"
+				"DROP VIEW information_schema.tables CASCADE;\n"
+
+				"CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT\n"
+				"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+				"  s.\"name\" AS TABLE_SCHEMA,\n"
+				"  t.\"name\" AS TABLE_NAME,\n"
+				"  tt.\"table_type_name\" AS TABLE_TYPE,\n"
+				"  cast(NULL AS varchar(1)) AS SELF_REFERENCING_COLUMN_NAME,\n"
+				"  cast(NULL AS varchar(1)) AS REFERENCE_GENERATION,\n"
+				"  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_CATALOG,\n"
+				"  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_SCHEMA,\n"
+				"  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_NAME,\n"
+				"  cast(sys.ifthenelse((t.\"type\" IN (0, 3, 7, 20, 30) AND t.\"access\" IN (0, 2)), 'YES', 'NO') AS varchar(3)) AS IS_INSERTABLE_INTO,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TYPED,\n"
+				"  cast((CASE t.\"commit_action\" WHEN 1 THEN 'DELETE' WHEN 2 THEN 'PRESERVE' WHEN 3 THEN 'DROP' ELSE NULL END) AS varchar(10)) AS COMMIT_ACTION,\n"
+				"  -- MonetDB column extensions\n"
+				"  t.\"schema_id\" AS schema_id,\n"
+				"  t.\"id\" AS table_id,\n"
+				"  t.\"type\" AS table_type_id,\n"
+				"  st.\"count\" AS row_count,\n"
+				"  t.\"system\" AS is_system,\n"
+				"  sys.ifthenelse(t.\"type\" IN (1, 11, 21, 31), TRUE, FALSE) AS is_view,\n"
+				"  t.\"query\" AS query_def,\n"
+				"  cm.\"remark\" AS comments\n"
+				" FROM sys.\"tables\" t\n"
+				" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+				" INNER JOIN sys.\"table_types\" tt ON t.\"type\" = tt.\"table_type_id\"\n"
+				" LEFT OUTER JOIN sys.\"comments\" cm ON t.\"id\" = cm.\"id\"\n"
+				" LEFT OUTER JOIN (SELECT DISTINCT \"schema\", \"table\", \"count\" FROM sys.\"statistics\"()) st ON (s.\"name\" = st.\"schema\" AND t.\"name\" = st.\"table\")\n"
+				" ORDER BY s.\"name\", t.\"name\";\n"
+				"GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLES TO PUBLIC WITH GRANT OPTION;\n"
+
+				"CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT\n"
+				"  cast(NULL AS varchar(1)) AS TABLE_CATALOG,\n"
+				"  s.\"name\" AS TABLE_SCHEMA,\n"
+				"  t.\"name\" AS TABLE_NAME,\n"
+				"  t.\"query\" AS VIEW_DEFINITION,\n"
+				"  cast('NONE' AS varchar(10)) AS CHECK_OPTION,\n"
+				"  cast('NO' AS varchar(3)) AS IS_UPDATABLE,\n"
+				"  cast('NO' AS varchar(3)) AS INSERTABLE_INTO,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TRIGGER_UPDATABLE,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TRIGGER_DELETABLE,\n"
+				"  cast('NO' AS varchar(3)) AS IS_TRIGGER_INSERTABLE_INTO,\n"
+				"  -- MonetDB column extensions\n"
+				"  t.\"schema_id\" AS schema_id,\n"
+				"  t.\"id\" AS table_id,\n"
+				"  t.\"type\" AS table_type_id,\n"
+				"  t.\"system\" AS is_system,\n"
+				"  cm.\"remark\" AS comments\n"
+				" FROM sys.\"tables\" t\n"
+				" INNER JOIN sys.\"schemas\" s ON t.\"schema_id\" = s.\"id\"\n"
+				" LEFT OUTER JOIN sys.\"comments\" cm ON t.\"id\" = cm.\"id\"\n"
+				" WHERE t.\"type\" IN (1, 11, 21, 31)\n"
+				" ORDER BY s.\"name\", t.\"name\";\n"
+				"GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;\n"
+				"\n"
+				"UPDATE sys._tables SET system = true where system <> true\n"
+				" and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')\n"
+				" and name in ('tables','views');\n";
+
+			sql_schema *infoschema = mvc_bind_schema(sql, "information_schema");
+			sql_table *t;
+			if ((t = mvc_bind_table(sql, infoschema, "tables")) != NULL)
+				t->system = 0; /* make it non-system else the drop view will fail */
+			if ((t = mvc_bind_table(sql, infoschema, "views")) != NULL)
+				t->system = 0;
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+	}
+	if (output != NULL) {
+		res_table_destroy(output);
+		output = NULL;
+	}
+
 	return err;
 }
 
@@ -4796,12 +4923,17 @@ SQLupgrades(Client c, mvc *m)
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default(c, m, s)) != NULL) {
+	if ((err = sql_update_mar2025(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
 
-	if ((err = sql_update_default_geom(c, m, s)) != NULL) {
+	if ((err = sql_update_mar2025_geom(c, m, s)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_mar2025_sp1(c, m)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}

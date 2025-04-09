@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -243,8 +243,10 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 
 	if (need_nulls) {
 		rel_destroy(ins);
-		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
+		rt = inserts->r = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), _nlls), nnlls), op_munion );
+
+		rel_setop_n_ary_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
+
 		set_processed(rt);
 	} else {
 		inserts->r = nnlls;
@@ -411,8 +413,9 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				append(p->exps, list_fetch(vals, (int) j));
 			}
 			if (c) {
-				c = rel_setop(sql->sa, c, p, op_union);
-				rel_setop_set_exps(sql, c, rel_projections(sql, c->l, NULL, 1, 1), false);
+				sql_rel *ci = c;
+				c = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), c), p), op_munion );
+				rel_setop_n_ary_set_exps(sql, c, rel_projections(sql, ci, NULL, 1, 1), false);
 				set_processed(c);
 			} else
 				c = p;
@@ -919,8 +922,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 	if (need_nulls) {
 		rel_destroy(ups);
-		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
+		rt = updates->r = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), _nlls), nnlls), op_munion );
+		rel_setop_n_ary_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
 		set_processed(rt);
 	} else {
 		updates->r = nnlls;
@@ -1777,8 +1780,9 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			if (!rel)
 				rel = nrel;
 			else {
-				rel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), rel), nrel), op_munion);
-				rel_setop_n_ary_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
+				sql_rel *orel = rel;
+				rel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), rel), nrel), op_munion );
+				rel_setop_n_ary_set_exps(sql, rel, rel_projections(sql, orel, NULL, 0, 1), false);
 				set_processed(rel);
 			}
 			if (!rel)

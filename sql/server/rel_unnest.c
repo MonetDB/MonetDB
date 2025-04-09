@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -415,7 +415,6 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
 		return merge_freevar(exps, lexps, false);
 	}
-	case op_union:
 	case op_except:
 	case op_inter:
 		exps = exps_freevar(sql, rel->exps);
@@ -1511,7 +1510,6 @@ push_up_set(mvc *sql, sql_rel *rel, list *ad)
 
 		/* left of rel should be a set */
 		if (d && is_distinct_set(sql, d, ad) && s && is_set(s->op)) {
-			assert(s->op != op_union);
 			sql_rel *sl = s->l, *sr = s->r, *ns;
 
 			sl = rel_project(sql->sa, rel_dup(sl), rel_projections(sql, sl, NULL, 1, 1));
@@ -1597,8 +1595,9 @@ push_up_munion(mvc *sql, sql_rel *rel, list *ad)
 		int len = 0, need_length_reduction = 0;
 		int rec = is_recursive(s);
 
-		/* Incase of recursive push up the project of the base side (inplace) */
-		/* push normaly into right side, but stop when we hit this base again */
+		/* In case of recursive push up the project of the base side
+		 * (inplace) push normally into right side, but stop when we hit
+		 * this base again */
 
 		/* left of rel should be a set */
 		list *rlist = sa_list(sql->sa);
@@ -2290,15 +2289,15 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void)depth;
 	sql_exp *ne = e;
 
-	if (!e || (e->type != e_func && e->type != e_convert) || !e->l)
+	if (!e || e->type != e_func || !e->l)
 		return e;
 
-	if (e->type != e_convert) {
-		list *args = e->l;
-		sql_subfunc *f = e->f;
+	list *args = e->l;
+	sql_subfunc *f = e->f;
 
+	if (list_length(args) == 2) {
 		/* multiplication and division on decimals */
-		if (is_multiplication(f) && list_length(args) == 2) {
+		if (is_multiplication(f)) {
 			sql_exp *le = args->h->data;
 			sql_subtype *lt = exp_subtype(le);
 
@@ -2324,7 +2323,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 				}
 			}
-		} else if (is_division(f) && list_length(args) == 2) {
+		} else if (is_division(f)) {
 			sql_exp *le = args->h->data;
 			sql_subtype *lt = exp_subtype(le);
 
@@ -2435,7 +2434,6 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 	} break;
 	case op_inter:
 	case op_except:
-	case op_union:
 	case op_munion: {
 		e->card = CARD_MULTI;
 	} break;
@@ -2487,6 +2485,8 @@ exp_set_type(mvc *sql, sql_exp *te, sql_exp *e)
 static sql_rel *
 rel_set_type(visitor *v, sql_rel *rel)
 {
+	if (!rel)
+		return rel;
 	if (is_project(rel->op) && rel->l) {
 		if (is_set(rel->op)) {
 			sql_rel *l = rel->l, *r = rel->r;
@@ -2732,6 +2732,8 @@ rewrite_aggregates(visitor *v, sql_rel *rel)
 
 		rel->r = aggrs_split_args(v->sql, rel->r, exps, 1);
 		rel->exps = aggrs_split_args(v->sql, rel->exps, exps, 0);
+		if (list_empty(exps))
+			return rel;
 		rel->l = rel_project(v->sql->sa, rel->l, exps);
 		rel = aggrs_split_funcs(v->sql, rel);
 		v->changes++;
@@ -3732,7 +3734,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 	sf = e->f;
 	/* TODO also handle ifthenelse with more than 3 arguments */
-	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3 && rel_has_freevar(v->sql, rel)) {
+	if (is_case_func(sf) && !list_empty(e->l) && list_length(e->l) == 3) {
 		list *l = e->l;
 
 		/* remove unnecessary = true expressions under ifthenelse */
@@ -3749,6 +3751,8 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_exp *not_cond;
 
 		if (!exp_has_rel(cond) && (exp_has_rel(then_exp) || exp_has_rel(else_exp))) {
+			if (!rel_has_freevar(v->sql, rel))
+				return e;
 			bool single = false;
 			/* return sql_error(v->sql, 10, SQLSTATE(42000) "time to rewrite into union\n");
 			   union(
@@ -4184,7 +4188,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *nilrel = add_null_projects(v, prel, except, true);
 			if (!nilrel)
@@ -4210,7 +4214,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *nilrel = add_null_projects(v, prel, except, false);
 			if (!nilrel)
@@ -4236,7 +4240,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *lrel = add_null_projects(v, prel, except, true);
 			if (!lrel)
@@ -4245,7 +4249,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
 					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
-			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1), false);
+			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
 			set_processed(except);
 			sql_rel *rrel = add_null_projects(v, prel, except, false);
 			if (!rrel)
@@ -4477,11 +4481,12 @@ rel_inline_table_func(visitor *v, sql_rel *rel)
 								append(r->exps, e);
 							}
 							sql_args a;
+							visitor vv = *v;
 							if (f->func->ops) {
 								a.args = f->func->ops;
 								a.exps = opf->l;
-								v->data = &a;
-								r = rel_exp_visitor_topdown(v, r, &exp_inline_arg, true);
+								vv.data = &a;
+								r = rel_exp_visitor_topdown(&vv, r, &exp_inline_arg, true);
 								v->data = NULL;
 							}
 							r = rel_unnest(v->sql, r);
@@ -4559,6 +4564,7 @@ static inline sql_rel *
 run_exp_rewriter(visitor *v, sql_rel *rel, exp_rewrite_fptr rewriter, bool direction, const char *name)
 {
 	(void)name;
+	v->changes = 0;
 	/*
 #ifndef NDEBUG
 	int changes = v->changes;
@@ -4576,6 +4582,7 @@ static inline sql_rel *
 run_rel_rewriter(visitor *v, sql_rel *rel, rel_rewrite_fptr rewriter, const char *name)
 {
 	(void)name;
+	v->changes = 0;
 	/*
 #ifndef NDEBUG
 	int changes = v->changes;

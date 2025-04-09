@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -123,6 +123,24 @@ size_unit(const char *suffix)
 		return 1024L * 1024L * 1024L;
 	else
 		return -1;
+}
+
+static bool
+looks_like_url(const char *text)
+{
+	if (text == NULL)
+		return false;
+	for (const char *p = text; *p != '\0'; p++) {
+		if (*p == ':') {
+			// Exclude :bla and c:\temp
+			return p - text > 1;
+		}
+		if (*p < 'a' || *p > 'z') {
+			return false;
+		}
+	}
+	// we ran out of string looking for the colon
+	return false;
 }
 
 %}
@@ -253,6 +271,7 @@ int yydebug=1;
 	opt_when
 	opt_where_clause
 	opt_window_clause
+	opt_qualify_clause
 	opt_XML_namespace_declaration_and_comma
 	ordering_spec
 	ordinary_grouping_element
@@ -514,6 +533,8 @@ int yydebug=1;
 	grantor
 	intval
 	join_type
+	local_global_temp
+	local_temp
 	non_second_datetime_field
 	nonzero
 	asymmetric
@@ -531,7 +552,6 @@ int yydebug=1;
 	opt_recursive
 	opt_ref_action
 	opt_sign
-	opt_temp
 	opt_XML_content_option
 	opt_XML_returning_clause
 	XML_returning_clause
@@ -627,7 +647,7 @@ int yydebug=1;
 %token MAXVALUE MINVALUE CYCLE
 %token NEXT VALUE CACHE
 %token GENERATED ALWAYS IDENTITY
-%token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL immitators */
+%token SERIAL BIGSERIAL AUTO_INCREMENT /* PostgreSQL and MySQL imitators */
 
 /* SQL's terminator, the semi-colon */
 %token SCOLON AT
@@ -671,7 +691,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token <sval> INDEX REPLACE
 
 %token <sval> AS TRIGGER OF BEFORE AFTER ROW STATEMENT sqlNEW OLD EACH REFERENCING
-%token <sval> OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW
+%token <sval> OVER PARTITION CURRENT EXCLUDE FOLLOWING PRECEDING OTHERS TIES RANGE UNBOUNDED GROUPS WINDOW QUALIFY
 
 %token X_BODY
 %token MAX_MEMORY MAX_WORKERS OPTIMIZER
@@ -1154,7 +1174,7 @@ opt_with_grant:
  ;
 
 opt_with_admin:
-	/* emtpy */		    { $$ = 0; }
+	/* empty */		    { $$ = 0; }
  |	WITH ADMIN OPTION	{ $$ = 1; }
  ;
 
@@ -1758,7 +1778,7 @@ table_def:
 	  append_int(l, $2);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp table_if_not_exists qname table_content_source opt_on_commit
+  | local_global_temp table_if_not_exists qname table_content_source opt_on_commit
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 	  append_int(l, $1);
@@ -1772,13 +1792,13 @@ table_def:
 	  append_int(l, $2);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
-  | opt_temp VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+  | local_temp VIEW qname opt_column_list AS SelectStmt
 	{  dlist *l = L();
 	  append_int(l, $1);
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
-	  append_int(l, $7);
+	  append_int(l, FALSE);
 	  append_int(l, TRUE);
 	  append_int(l, FALSE);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
@@ -1890,11 +1910,15 @@ with_opt_credentials:
   }
   ;
 
-opt_temp:
+local_temp:
     TEMPORARY		{ $$ = SQL_LOCAL_TEMP; }
  |  TEMP		{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMPORARY	{ $$ = SQL_LOCAL_TEMP; }
  |  LOCAL TEMP		{ $$ = SQL_LOCAL_TEMP; }
+ ;
+
+local_global_temp:
+    local_temp		{ $$ = SQL_LOCAL_TEMP; }
  |  GLOBAL TEMPORARY	{ $$ = SQL_GLOBAL_TEMP; }
  |  GLOBAL TEMP		{ $$ = SQL_GLOBAL_TEMP; }
  ;
@@ -2268,6 +2292,17 @@ view_def:
 	  append_int(l, $7);
 	  append_int(l, TRUE);	/* persistent view */
 	  append_int(l, $1);
+	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
+	}
+  | CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
+	{  dlist *l = L();
+	  append_int(l, SQL_PERSIST);
+	  append_list(l, $6);
+	  append_list(l, $7);
+	  append_symbol(l, $9);
+	  append_int(l, FALSE);
+	  append_int(l, TRUE);	/* persistent view */
+	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 	}
   ;
@@ -3582,7 +3617,8 @@ simple_select:
 		$5->h->next->next->data.sym,
 		$5->h->next->next->next->data.sym,
 		NULL, NULL, NULL, NULL, NULL, NULL,
-		$5->h->next->next->next->next->data.sym);
+		$5->h->next->next->next->next->data.sym,
+		$5->h->next->next->next->next->next->data.sym);
 	}
   |  values_clause 		{ $$ = $1; }
   |  select_clause UNION set_distinct opt_corresponding select_clause
@@ -3635,7 +3671,7 @@ select_no_parens:
 				$$ = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3663,7 +3699,7 @@ select_no_parens:
 				$$ = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3?$3->h->data.sym:NULL, $3?$3->h->next->data.sym:NULL, $4, $5, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $3?$3->h->data.sym:NULL, $3?$3->h->next->data.sym:NULL, $4, $5, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3689,7 +3725,7 @@ select_no_parens:
 				$$ = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $3, $4, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $1)), NULL, NULL, NULL, $2, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $3, $4, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3718,7 +3754,7 @@ select_no_parens:
 				$2 = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, NULL, NULL, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3747,7 +3783,7 @@ select_no_parens:
 				$2 = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $4?$4->h->data.sym:NULL, $4?$4->h->next->data.sym:NULL, $5, $6, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), $4?$4->h->data.sym:NULL, $4?$4->h->next->data.sym:NULL, $5, $6, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3774,7 +3810,7 @@ select_no_parens:
 				$2 = newSelectNode(
 					SA, 0,
 					append_symbol(L(), _symbol_create_list(SQL_TABLE, append_string(append_string(L(),NULL),NULL))), NULL,
-					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $4, $5, NULL);
+					_symbol_create_list( SQL_FROM, append_symbol(L(), $2)), NULL, NULL, NULL, $3, _symbol_create_list(SQL_NAME, append_list(append_string(L(),"inner"),NULL)), NULL, NULL, $4, $5, NULL, NULL);
 			}
 		} else {
 			yyerror(m, "missing SELECT operator");
@@ -3810,13 +3846,15 @@ selection:
  ;
 
 table_exp:
-    opt_from_clause opt_window_clause opt_where_clause opt_group_by_clause opt_having_clause
+    opt_from_clause opt_where_clause opt_group_by_clause opt_having_clause opt_window_clause opt_qualify_clause
 	{ $$ = L();
 	  append_symbol($$, $1);
+	  append_symbol($$, $2);
 	  append_symbol($$, $3);
 	  append_symbol($$, $4);
 	  append_symbol($$, $5);
-	  append_symbol($$, $2); }
+	  append_symbol($$, $6);
+}
  ;
 
 window_definition:
@@ -3832,6 +3870,11 @@ window_definition_list:
 opt_window_clause:
     /* empty */                   { $$ = NULL; }
  |  WINDOW window_definition_list { $$ = _symbol_create_list( SQL_WINDOW, $2); }
+ ;
+
+opt_qualify_clause:
+    QUALIFY scalar_exp		{ $$ = $2; }
+ |  /* empty */			{ $$ = NULL; }
  ;
 
 opt_from_clause:
@@ -3851,11 +3894,12 @@ table_ref:
 				  append_int(l, 0);
 				  append_symbol(l, $2);
 				  $$ = _symbol_create_list(SQL_NAME, l); }
- |  string opt_table_name	{ 
+ |  string opt_table_name	{
 				  dlist *f = L();
-				  append_list(f, append_string(L(), "file_loader"));
-				  append_int(f, FALSE); /* ignore distinct */
 				  const char *s = $1;
+				  const char *loader = looks_like_url(s) ? "proto_loader" : "file_loader";
+				  append_list(f, append_string(L(), loader));
+				  append_int(f, FALSE); /* ignore distinct */
 				  int len = UTF8_strlen(s);
 				  sql_subtype t;
 				  sql_find_subtype(&t, "char", len, 0);
@@ -3919,13 +3963,6 @@ table_ref:
 					append_symbol($$->data.lval, $3);
 				  }
 				}
-/*
- |  select_with_parens
-				{ $$ = NULL;
-				  yyerror(m, "subquery table reference needs alias, use AS xxx");
-				  YYABORT;
-				}
-*/
  |  joined_table		{ $$ = $1;
 				  append_symbol($1->data.lval, NULL); }
  |  '(' joined_table ')' table_name	{ $$ = $2;
@@ -5010,13 +5047,6 @@ column_exp:
 		  append_symbol(l, $1);
 		  append_string(l, NULL);
 		  $$ = _symbol_create_list( SQL_COLUMN, l ); }
-/*
- |  ident '.' '*'
-		{ dlist *l = L();
-		  append_string(l, $1);
-		  append_string(l, NULL);
-		  $$ = _symbol_create_list( SQL_TABLE, l ); }
-*/
  |  '*'
 		{ dlist *l = L();
 		  append_string(l, NULL);
@@ -5760,8 +5790,7 @@ qname:
  ;
 
 column_ref:
-    column_id	{ $$ = append_string(
-				L(), $1); }
+    column_id	{ $$ = append_string(L(), $1); }
 
  |  column_id '.' column_id	{ $$ = append_string(
 				append_string(

@@ -1,0 +1,38 @@
+statement ok
+create table "test2831994" (
+        "id" bigint,
+        "value" DECIMAL(5,5),
+        "value2" DECIMAL (5, 5)
+)
+
+query TIITTT nosort
+prepare insert into "test2831994"("id","value","value2") values (?, ?, ?)
+----
+bigint
+63
+0
+NULL
+NULL
+NULL
+decimal
+5
+5
+NULL
+NULL
+NULL
+decimal
+5
+5
+NULL
+NULL
+NULL
+
+statement error
+exec <LAST_PREPARE_ID> (3,0.0,2.34)
+
+statement ok
+select * from test2831994
+
+statement ok
+drop table test2831994
+

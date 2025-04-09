@@ -216,7 +216,7 @@ copy_report_error(struct error_handling *restrict admin, int rel_row, int column
 			return GDK_FAIL;
 		BAT *b = admin->rows;
 		BUN cnt = BATcount(b);
-		if (cnt && !admin->rows->T.vheap) {
+		if (cnt && !admin->rows->tvheap) {
 			Heap *mask;
 			if ((mask = GDKmalloc(sizeof(Heap))) == NULL){
 				return GDK_FAIL;

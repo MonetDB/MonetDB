@@ -7,6 +7,16 @@ CREATE TABLE und2 (i1 int, i2 int, UNIQUE NULLS DISTINCT (i1, i2))
 statement ok
 CREATE TABLE unnd1 (i1 int, i2 int, UNIQUE NULLS NOT DISTINCT (i1, i2))
 
+query IT rowsort
+SELECT type, name FROM sys.keys WHERE table_id IN (SELECT id FROM sys.tables WHERE NOT system)
+----
+1
+und1_i1_i2_unique
+1
+und2_i1_i2_unique
+3
+unnd1_i1_i2_nndunique
+
 statement ok
 INSERT INTO und1 VALUES (NULL, 10)
 
@@ -56,6 +66,15 @@ statement error
 INSERT INTO unnd1 VALUES (30, 10), (30, 10)
 
 statement ok
+DROP TABLE und1
+
+statement ok
+DROP TABLE und2
+
+statement ok
+DROP TABLE unnd1
+
+statement ok
 CREATE TABLE und3 (i1 int UNIQUE)
 
 statement ok
@@ -63,6 +82,16 @@ CREATE TABLE und4 (i1 int UNIQUE NULLS DISTINCT )
 
 statement ok
 CREATE TABLE unnd2 (i1 int UNIQUE NULLS NOT DISTINCT)
+
+query IT rowsort
+SELECT type, name FROM sys.keys WHERE table_id IN (SELECT id FROM sys.tables WHERE NOT system)
+----
+1
+und3_i1_unique
+1
+und4_i1_unique
+3
+unnd2_i1_nndunique
 
 statement ok
 INSERT INTO und3 VALUES (NULL)
@@ -121,3 +150,29 @@ INSERT INTO unnd2 VALUES (10), (20)
 statement error
 INSERT INTO unnd2 VALUES (30), (30)
 
+statement ok
+DROP TABLE und3
+
+statement ok
+DROP TABLE und4
+
+statement ok
+DROP TABLE unnd2
+
+statement ok
+create table abc(c1 int, c2 varchar(9), c3 dec(10,2), c4 double, primary key (c1, c2), unique (c3, c2), unique nulls not distinct (c4, c2), unique nulls not distinct (c3, c4))
+
+query IT rowsort
+SELECT type, name FROM sys.keys WHERE table_id IN (SELECT id FROM sys.tables WHERE NOT system)
+----
+0
+abc_c1_c2_pkey
+1
+abc_c3_c2_unique
+3
+abc_c3_c4_nndunique
+3
+abc_c4_c2_nndunique
+
+statement ok
+DROP TABLE abc

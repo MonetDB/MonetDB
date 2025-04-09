@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1727,6 +1727,10 @@ sqltypeinit( allocator *sa)
 
 	/* file_loader */
 	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
+	f->varres = 1;
+
+	/* generic proto_loader which expects an URI starting with the protocol like: 'odbc:' or 'monetdb:' or 'file:' */
+	f = sql_create_union(sa, "proto_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
 	f->varres = 1;
 
 	/* sys_update_schemas, sys_update_tables */

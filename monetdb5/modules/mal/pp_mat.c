@@ -29,7 +29,7 @@ typedef struct part_t {
 BAT *
 pack_mat(BAT *b)
 {
-	mat_t *mp = (mat_t*)b->T.sink;
+	mat_t *mp = (mat_t*)b->tsink;
 	BUN cap = 0;
 
 	for (int i = 0; i<mp->nr; i++)
@@ -104,7 +104,7 @@ MATnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPunfix(matb->batCacheid);
 		throw(MAL, "mat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	matb->T.sink = (Sink*)mat;
+	matb->tsink = (Sink*)mat;
 	*mid = matb->batCacheid;
 	BBPkeepref(matb);
 	return MAL_SUCCEED;
@@ -138,7 +138,7 @@ PARTnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "part.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	partb->T.sink = (Sink*)part;
+	partb->tsink = (Sink*)part;
 	*pid = partb->batCacheid;
 	BBPkeepref(partb);
 	return MAL_SUCCEED;
@@ -190,7 +190,7 @@ PARTpartition( bat *pos, const bat *part, const bat *glen )
 		BBPreclaim(g);
 		throw(MAL, "part.partition", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	part_t *pt = (part_t*)p->T.sink;
+	part_t *pt = (part_t*)p->tsink;
 	assert(pt->s.type == PART_SINK);
 	assert(pt->nr == (int)BATcount(g));
 	BAT *posb = COLnew(0, TYPE_lng, pt->nr, TRANSIENT);
@@ -265,7 +265,7 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 		curpos[i] = *(lng*)Tloc(p, i);
 	lng *lp = (lng*)Tloc(l, 0);
 	lng *grp = (lng*)Tloc(g, 0);
-	mat_t *mt = (mat_t*)m->T.sink;
+	mat_t *mt = (mat_t*)m->tsink;
 	assert(mt->s.type == MAT_SINK);
 	assert(mt->nr == (int)BATcount(p));
 	assert(mt->nr == (int)BATcount(l));
@@ -315,7 +315,7 @@ MATfetch( bat *res, const bat *mat, const int *i )
 	BAT *m = BATdescriptor(*mat);
 	if (!m)
 		throw(MAL, "mat.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	mat_t *mt = (mat_t*)m->T.sink;
+	mat_t *mt = (mat_t*)m->tsink;
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
 	BAT *b = mt->bat[*i];
@@ -333,7 +333,7 @@ MATadd( bat *mat, const bat *bid, const int *i )
 		if (b) BBPunfix(b->batCacheid);
 		throw(MAL, "mat.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	mat_t *mt = (mat_t*)m->T.sink;
+	mat_t *mt = (mat_t*)m->tsink;
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
 	if (mt->bat[*i])

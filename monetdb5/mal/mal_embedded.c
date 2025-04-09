@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -122,7 +122,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
-	char *modules[6] = { "embedded", "sql", "generator", "udf", "csv" };
+	char *modules[7] = { "embedded", "sql", "generator", "udf", "csv", "monetdb_loader" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		MT_thread_set_qry_ctx(qc_old);

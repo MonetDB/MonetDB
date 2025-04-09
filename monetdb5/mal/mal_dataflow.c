@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -494,7 +494,6 @@ DFLOWinitialize(void)
 		MT_sema_init(&t->s, 0, "DFLOWsema"); /* placeholder name */
 		if (MT_create_thread(&t->id, DFLOWworker, t,
 							 MT_THR_JOINABLE, "DFLOWworkerXXXX") < 0) {
-			ATOMIC_PTR_DESTROY(&t->cntxt);
 			MT_sema_destroy(&t->s);
 			GDKfree(t);
 		} else {
@@ -756,7 +755,6 @@ finish_worker(struct worker *t)
 	MT_lock_unset(&dataflowLock);
 	MT_join_thread(t->id);
 	MT_sema_destroy(&t->s);
-	ATOMIC_PTR_DESTROY(&t->cntxt);
 	GDKfree(t);
 	MT_lock_set(&dataflowLock);
 }
@@ -835,7 +833,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 			MT_sema_init(&t->s, 0, "DFLOWsema"); /* placeholder name */
 			if (MT_create_thread(&t->id, DFLOWworker, t,
 								 MT_THR_JOINABLE, "DFLOWworkerXXXX") < 0) {
-				ATOMIC_PTR_DESTROY(&t->cntxt);
 				MT_sema_destroy(&t->s);
 				GDKfree(t);
 				t = NULL;
@@ -905,7 +902,6 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc,
 	GDKfree(flow->nodes);
 	q_destroy(flow->done);
 	MT_lock_destroy(&flow->flowlock);
-	ATOMIC_PTR_DESTROY(&flow->error);
 	GDKfree(flow);
 
 	/* we created one worker, now tell one worker to exit again */

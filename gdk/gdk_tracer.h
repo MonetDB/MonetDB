@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -39,7 +39,9 @@
 #ifndef _GDK_TRACER_H_
 #define _GDK_TRACER_H_
 
-#define GENERATE_ENUM(ENUM) ENUM,
+#define TRC_NAME(TOKEN)		TRC_##TOKEN
+
+#define GENERATE_ENUM(ENUM) TRC_NAME(ENUM),
 
 
 // ADAPTERS
@@ -87,32 +89,29 @@ typedef enum {
 
 
 
-/*
- *
- * NOTE: Adding/Removing components will affect the test tracer00.mal
- * See the test file for more details.
- *
- */
 // COMPONENTS
 #define FOREACH_COMP(COMP)			\
 	COMP( ACCELERATOR )			\
 	COMP( ALGO )				\
 	COMP( ALLOC )				\
-	COMP( BAT_ )				\
-	COMP( CHECK_ )				\
+	COMP( BAT )				\
+	COMP( CHECK )				\
 	COMP( DELTA )				\
 	COMP( HEAP )				\
-	COMP( IO_ )				\
+	COMP( IO )				\
 	COMP( WAL )				\
 	COMP( PAR )				\
 	COMP( PERF )				\
 	COMP( TEM )				\
 	COMP( THRD )				\
+	COMP( TM )				\
 						\
 	COMP( GEOM )				\
 	COMP( FITS )				\
 	COMP( SHP )				\
 	COMP( PARQUET )				\
+						\
+	COMP( LOADER )				\
 						\
 	COMP( SQL_PARSER )			\
 	COMP( SQL_TRANS )			\
@@ -123,6 +122,7 @@ typedef enum {
 	COMP( MAL_REMOTE )			\
 	COMP( MAL_MAPI )			\
 	COMP( MAL_SERVER )			\
+	COMP( MAL_LOADER )			\
 						\
 	COMP( MAL_OPTIMIZER )			\
 						\
@@ -144,14 +144,14 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 // If the LOG_LEVEL of the message is one of the following: CRITICAL,
 // ERROR or WARNING it is logged no matter the component. In any other
 // case the component is taken into account
-#define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
-	(LOG_LEVEL <= M_WARNING  ||		\
-	 (log_level_t) ATOMIC_GET(&lvl_per_component[COMP]) >= LOG_LEVEL)
+#define GDK_TRACER_TEST(LOG_LEVEL, COMP)				\
+	(TRC_NAME(LOG_LEVEL) <= TRC_NAME(M_WARNING)  ||			\
+	 (log_level_t) ATOMIC_GET(&lvl_per_component[TRC_NAME(COMP)]) >= TRC_NAME(LOG_LEVEL))
 
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, ...)			\
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
-		      LOG_LEVEL, COMP, NULL, __VA_ARGS__)
+		      TRC_NAME(LOG_LEVEL), TRC_NAME(COMP), NULL, __VA_ARGS__)
 
 #ifdef __COVERITY__
 /* hide this for static code analysis: too many false positives */
@@ -186,15 +186,15 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 
 // Conditional logging - Example usage
 // NOTE: When using the macro with *_IF always use the macro with
-// *_ENDIF for logging. Avoiding to do that will result into checking
-// the LOG_LEVEL of the the COMPONENT 2 times. Also NEVER use the
+// *_ENDIF for logging. Not doing that will result in checking
+// the LOG_LEVEL of the the COMPONENT twice. Also NEVER use the
 // *_ENDIF macro without before performing a check with *_IF
 // macro. Such an action will have as a consequence logging everything
 // without taking into account the LOG_LEVEL of the COMPONENT.
 /*
-    TRC_CRITICAL_IF(SQL_STORE)
+    TRC_INFO_IF(SQL_STORE)
     {
-	TRC_CRITICAL_ENDIF(SQL_STORE, "Test\n")
+	TRC_INFO_ENDIF(SQL_STORE, "Test\n")
     }
 */
 #define TRC_CRITICAL_IF(COMP)			\

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,12 +18,8 @@
  */
 
 #include "monetdb_config.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 #include "stream.h"
 #include "mapi.h"
@@ -40,7 +36,6 @@
 #include "ReadlineTools.h"
 #endif
 #include "msqldump.h"
-#define LIBMUTILS 1
 #include "mprompt.h"
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
@@ -1386,7 +1381,8 @@ SQLrenderer(MapiHdl hdl)
 			     strcmp(s, "clob") != 0 &&
 			     strcmp(s, "char") != 0 &&
 			     strcmp(s, "str") != 0 &&
-			     strcmp(s, "json") != 0)) {
+			     strcmp(s, "json") != 0 &&
+			     strcmp(s, "uuid") != 0)) {
 				/* no table width known, use maximum,
 				 * rely on squeezing later on to fix
 				 * it to whatever is available; note
@@ -2756,7 +2752,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					for (line += 2; *line && my_isspace(*line); line++)
 						;
 					if (*line == 0) {
-						/* turn of logging */
+						/* turn off logging */
 						mapi_log(mid, NULL);
 					} else {
 						logfile = strdup(line);
@@ -3050,11 +3046,11 @@ cvfilename(const char *filename)
 		}
 	}
 #endif
-	/* couldn't use iconv for whatever reason; alternative is to
-	 * use utf8towchar above to convert to a wide character string
-	 * (wcs) and convert that to the locale-specific encoding
-	 * using wcstombs or wcsrtombs (but preferably only if the
-	 * locale's encoding is not UTF-8) */
+	/* if encoding is set, we couldn't use iconv for whatever reason;
+	 * alternative is to convert to a wide character string (wcs) and
+	 * convert that to the locale-specific encoding using wcstombs or
+	 * wcsrtombs (but preferably only if the locale's encoding is not
+	 * UTF-8) */
 	return strdup(filename);
 }
 
@@ -3409,7 +3405,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+		if ((argv[i] = utf16toutf8(wargv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}

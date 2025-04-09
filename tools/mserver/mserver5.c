@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -24,12 +24,8 @@
 #include "msabaoth.h"
 #include "mutils.h"
 
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 
 #ifdef _MSC_VER
@@ -89,6 +85,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
 	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
+	fprintf(stderr, "    --without-geom            Do not enable geom module\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
@@ -168,7 +165,7 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 2024 MonetDB Foundation, all rights reserved\n");
+	printf("# Copyright (c) 2024, 2025 MonetDB Foundation, all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -292,7 +289,7 @@ main(int argc, char **av)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((av[i] = wchartoutf8(argv[i])) == NULL) {
+		if ((av[i] = utf16toutf8(argv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}
@@ -373,6 +370,7 @@ main(int argc, char **av)
 	modules[mods++] = "netcdf";
 #endif
 	modules[mods++] = "csv";
+	modules[mods++] = "monetdb_loader";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif

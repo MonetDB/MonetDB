@@ -1,4 +1,5 @@
-import pymonetdb, time, threading, os
+from MonetDBtesting import tpymonetdb as pymonetdb
+import time, threading, os
 
 def monetSchema(tbl, host = os.getenv('MAPIHOST', 'localhost'),
                 port = int(os.getenv('MAPIPORT', '50000')),

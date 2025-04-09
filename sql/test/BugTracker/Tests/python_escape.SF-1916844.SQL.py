@@ -1,4 +1,5 @@
-import os, sys, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys
 
 dbh = pymonetdb.connect(database = os.environ['TSTDB'],
                         port = int(os.environ['MAPIPORT']),

@@ -502,13 +502,13 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 		BATsetcount(res, cnt);
 		return MAL_SUCCEED;
 	} else if (tt == TYPE_str && res->tvheap->parentid == lcol->tvheap->parentid) {
-		if(lcol->T.width == 1) {
+		if(lcol->twidth == 1) {
 			zzl_project(bte, res, zzl, lcol, rcol);
-		} else if(lcol->T.width == 2) {
+		} else if(lcol->twidth == 2) {
 			zzl_project(sht, res, zzl, lcol, rcol);
-		} else if(lcol->T.width == 4) {
+		} else if(lcol->twidth == 4) {
 			zzl_project(int, res, zzl, lcol, rcol);
-		} else if(lcol->T.width == 8) {
+		} else if(lcol->twidth == 8) {
 			zzl_project(lng, res, zzl, lcol, rcol);
 		}
 		/* zap props */
@@ -692,7 +692,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(q);
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	qb->T.sink = (Sink*)q;
+	qb->tsink = (Sink*)q;
 	*sop = qb->batCacheid;
 	BBPkeepref(qb);
 	return MAL_SUCCEED;
@@ -711,7 +711,7 @@ SOPadd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
 		throw(MAL, "sop.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	sop_t *q = (sop_t*)qb->T.sink;
+	sop_t *q = (sop_t*)qb->tsink;
 	assert(q->s.type == SOP_SINK);
 
 	part_t *e = (part_t*)GDKmalloc(sizeof(part_t) + sizeof(bat) * nr);
@@ -755,7 +755,7 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
 		throw(MAL, "sop.dequeue", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	sop_t *q = (sop_t*)qb->T.sink;
+	sop_t *q = (sop_t*)qb->tsink;
 	assert(q->s.type == SOP_SINK);
 
 	part_t *e = q->workers[wid];

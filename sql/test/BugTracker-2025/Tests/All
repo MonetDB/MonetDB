@@ -1,0 +1,8 @@
+7611_multiple_unnd_constraints
+7614_join_reordering
+7615_join_reordering_2
+7616_join_reordering_3
+7621_count_case_crash
+7623_update_returning
+7625_missing_temporary_view_types
+7626_sum_max_const

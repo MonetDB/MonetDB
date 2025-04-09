@@ -1,0 +1,42 @@
+statement ok
+CREATE OR REPLACE FILTER FUNCTION maxlevhelper(a1 INTEGER, a2 INTEGER, a3 INTEGER, a4 INTEGER, a5 DOUBLE) EXTERNAL NAME txtsim.maxlevenshtein
+
+statement ok
+CREATE TABLE x1 (a1 INTEGER, a2 INTEGER, p DOUBLE)
+
+statement ok
+CREATE TABLE x2 (a1 INTEGER, a2 INTEGER, p DOUBLE)
+
+statement ok
+CREATE TABLE x3 (a1 INTEGER, a2 INTEGER, p DOUBLE)
+
+statement ok
+CREATE TABLE x4 (a1 INTEGER, a2 INTEGER, a3 DOUBLE, p DOUBLE)
+
+statement ok
+CREATE VIEW x5 AS SELECT x4.a1 AS a1, x4.a2 as a2, x4.a3 as a3, x4.p as p from x4, (select case when a1 = a2 then 1 else 0 end as a1, 1.0e0 as p from (select foox0.a1 as a1, foox1.a1 as a2, foox0.p * foox1.p as p from (select count(a1) as a1, max(p) as p from x3) as foox0, (select count(a1) as a1, max(p) as p from x4) as foox1) as foox2) as foox3 where foox3.a1 = 1
+
+statement ok
+CREATE VIEW result AS SELECT x1.a1 AS a1, x1.a2 AS a2, x5.a1 AS a3, x5.a2 AS a4, x5.a3 AS a5, x1.p * x5.p as p from x1, x5 where [x1.a1,x1.a2] maxlevhelper [x5.a1,x5.a2,x5.a3]
+
+query T nosort
+plan select * from result;
+----
+project (
+| project (
+| | crossproduct (
+| | | join (
+| | | | table("sys"."x1") [ "x1"."a1" NOT NULL UNIQUE, "x1"."a2" NOT NULL UNIQUE, "x1"."p" NOT NULL UNIQUE ],
+| | | | table("sys"."x4") [ "x4"."a1" NOT NULL UNIQUE, "x4"."a2" NOT NULL UNIQUE, "x4"."a3" NOT NULL UNIQUE, "x4"."p" NOT NULL UNIQUE ]
+| | | ) [ ("x1"."a1" NOT NULL UNIQUE, "x1"."a2" NOT NULL UNIQUE) FILTER "sys"."maxlevhelper"("x4"."a1" NOT NULL UNIQUE, "x4"."a2" NOT NULL UNIQUE, "x4"."a3" NOT NULL UNIQUE) ],
+| | | select (
+| | | | project (
+| | | | | crossproduct (
+| | | | | |  [ "sys"."cnt"(varchar "sys", varchar "x3") NOT NULL as "%1"."%1" ],
+| | | | | |  [ "sys"."cnt"(varchar "sys", varchar "x4") NOT NULL as "%3"."%3" ]
+| | | | | ) [  ]
+| | | | ) [ "sys"."case"("sys"."="("%1"."%1" NOT NULL, "%3"."%3" NOT NULL) NOT NULL, tinyint(1) "1", tinyint(1) "0") as "foox3"."a1" ]
+| | | ) [ ("foox3"."a1") = (tinyint(1) "1") ]
+| | ) [  ]
+| ) [ "x1"."a1" NOT NULL as "a1", "x1"."a2" NOT NULL as "a2", "x4"."a1" NOT NULL as "a3", "x4"."a2" NOT NULL as "a4", "x4"."a3" NOT NULL as "a5", "sys"."sql_mul"("x1"."p" NOT NULL, "x4"."p" NOT NULL) NOT NULL as "p" ]
+) [ "a1" NOT NULL as "result"."a1", "a2" NOT NULL as "result"."a2", "a3" NOT NULL as "result"."a3", "a4" NOT NULL as "result"."a4", "a5" NOT NULL as "result"."a5", "p" NOT NULL as "result"."p" ]

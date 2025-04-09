@@ -533,7 +533,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((block_bat = BATdescriptor(block_bat_id)) == NULL)
 		bailout("copy.splitlines", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	r = (reader*)block_bat->T.sink;
+	r = (reader*)block_bat->tsink;
 	errors.r = r;
 
 	while(!r->bs) {
@@ -774,12 +774,12 @@ COPYnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	b->T.sink = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
-	if (!b->T.sink) {
+	b->tsink = (Sink*)reader_new(s, offset, maxcount, sz, col_sep_str, line_sep_str, quote_str, null_repr, escape_enabled, best_effort);
+	if (!b->tsink) {
 		BBPreclaim(b);
 		throw(SQL, "copy.new",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	reader *r = (reader*)b->T.sink;
+	reader *r = (reader*)b->tsink;
 	r->col_sep = col_sep;
 	r->line_sep = line_sep;
 	r->quote_char = quote_char;

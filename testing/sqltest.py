@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -19,6 +19,7 @@ import inspect
 
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
+TIMEOUT=int(os.getenv("TIMEOUT", "0"))
 
 from pathlib import Path
 from typing import Optional
@@ -137,8 +138,9 @@ def diff(stable_file, test_file, ratio=0.95):
 
 class PyMonetDBConnectionContext(object):
     def __init__(self,
-            username='monetdb', password='monetdb',
-            hostname='localhost', port=MAPIPORT, database=TSTDB, language='sql'):
+                 username='monetdb', password='monetdb',
+                 hostname='localhost', port=MAPIPORT, database=TSTDB,
+                 language='sql', timeout=TIMEOUT):
         self.username = username
         self.password = password
         self.hostname = hostname
@@ -147,6 +149,7 @@ class PyMonetDBConnectionContext(object):
         self.language = language
         self.dbh = None
         self.language = language
+        self.timeout = timeout
 
     def connect(self):
         if self.dbh is None:
@@ -157,10 +160,16 @@ class PyMonetDBConnectionContext(object):
                                          hostname=self.hostname,
                                          port=self.port,
                                          database=self.database,
-                                         autocommit=True)
+                                         autocommit=True,
+                                         connect_timeout=1.0 if self.timeout > 0 else None)
+                if self.timeout > 0:
+                    self.dbh.settimeout(self.timeout)
+                    with self.dbh.cursor() as crs:
+                        crs.execute(f'call sys.setsessiontimeout({self.timeout})')
                 self.dbh.set_uploader(transfer_handler)
                 self.dbh.set_downloader(transfer_handler)
             else:
+                import malmapi
                 self.dbh = malmapi.Connection()
                 self.dbh.connect(
                                  username=self.username,
@@ -168,7 +177,10 @@ class PyMonetDBConnectionContext(object):
                                  hostname=self.hostname,
                                  port=self.port,
                                  database=self.database,
-                                 language=self.language)
+                                 language=self.language,
+                                 connect_timeout=1.0 if self.timeout > 0 else None)
+                if self.timeout > 0:
+                    self.dbh.settimeout(self.timeout)
         return self.dbh
 
     def __enter__(self):
@@ -632,7 +644,8 @@ class SQLTestCase():
 
     def connect(self,
             username='monetdb', password='monetdb', port=MAPIPORT,
-            hostname='localhost', database=TSTDB, language='sql'):
+            hostname='localhost', database=TSTDB, language='sql',
+            timeout=TIMEOUT):
         old = self._conn_ctx
         if old:
             self._conn_trash.append(old)
@@ -650,7 +663,8 @@ class SQLTestCase():
                                  hostname=hostname,
                                  port=port,
                                  database=database or 'in-memory',
-                                 language=language)
+                                 language=language,
+                                 timeout=timeout)
 
     @property
     def conn_ctx(self):
@@ -724,6 +738,11 @@ class SQLTestCase():
                 crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
                 for row in crs.fetchall():
                     crs.execute('drop user "{}"'.format(row[0]))
+
+                # drop custom types created in test
+                crs.execute("select sqlname from sys.types where systemname is null order by id")
+                for row in crs.fetchall():
+                    crs.execute('drop type "{}"'.format(row[0]))
 
         except (pymonetdb.Error, ValueError) as e:
             pass

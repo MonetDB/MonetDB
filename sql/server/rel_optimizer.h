@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -20,5 +20,8 @@
 
 extern sql_rel *rel_deadcode_elimination(mvc *sql, sql_rel *rel);
 extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
+/* dead code elimination on sub relation */
+extern sql_rel * rel_deadcode_elimination(mvc *sql, sql_rel *rel);
+
 
 #endif /*_REL_OPTIMIZER_H_*/

@@ -5,7 +5,7 @@
 # Need multiprocessing for the long-running queries
 ###
 
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import os
 import multiprocessing as mp
 

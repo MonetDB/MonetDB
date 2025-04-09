@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4338,7 +4338,7 @@ stmt_direct_func(backend *be, InstrPtr q)
 		if(!s) {
 			return NULL;
 		}
-		s->flag = op_union;
+		s->flag = op_munion;
 		s->nrcols = 3;
 		s->nr = getDestVar(q);
 		s->q = q;
@@ -4361,6 +4361,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	if ((p = find_prop(rel->p, PROP_REMOTE)))
 		rel->p = prop_remove(rel->p, p);
 	/* sql_processrelation may split projections, so make sure the topmost relation only contains references */
+	int opt = rel->opt;
 	rel = rel_project(be->mvc->sa, rel, rel_projections(be->mvc, rel, NULL, 1, 1));
 	if (!(rel = sql_processrelation(be->mvc, rel, 0, 0, 1, 1)))
 		goto bailout;
@@ -4368,6 +4369,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		p->p = rel->p;
 		rel->p = p;
 	}
+	rel->opt = opt;
 
 	if (monet5_create_relational_function(be->mvc, sql_private_module_name, name, rel, ops, NULL, 1) < 0)
 		goto bailout;

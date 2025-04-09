@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -493,8 +493,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	}
 
 	if (BATcount(l) == 0 || ngrp == 0) {
-		bit T = TRUE;
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &(bit){TRUE}, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
@@ -759,8 +758,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	}
 
 	if (BATcount(l) == 0 || ngrp == 0) {
-		bit T = TRUE;
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &(bit){TRUE}, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
@@ -955,8 +953,7 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 	}
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		bit T = TRUE;
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &(bit){TRUE}, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
 		bit *restrict exists;

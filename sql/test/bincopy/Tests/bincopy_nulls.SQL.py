@@ -6,7 +6,7 @@ from io import StringIO
 import os
 import sys
 from typing import Any, List, Optional
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 
 class BitsUploader(pymonetdb.Uploader):

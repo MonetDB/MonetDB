@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -235,7 +235,6 @@ gdk_export char *GDKgetbuf(void);
 /*
  * @- MT Lock API
  */
-#include "matomic.h"
 
 /* define this to keep lock statistics (can be expensive) */
 /* #define LOCK_STATS 1 */
@@ -844,7 +843,7 @@ typedef struct MT_Cond {
 #  define MT_COND_INITIALIZER(N) { .cv = PTHREAD_COND_INITIALIZER, .name = #N }
 #endif
 
-gdk_export void MT_cond_init(MT_Cond *cond);
+gdk_export void MT_cond_init(MT_Cond *cond, const char *name);
 gdk_export void MT_cond_destroy(MT_Cond *cond);
 gdk_export void MT_cond_wait(MT_Cond *cond, MT_Lock *lock);
 gdk_export void MT_cond_signal(MT_Cond *cond);

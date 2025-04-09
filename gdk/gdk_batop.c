@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -357,23 +357,24 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		if (BATextend(b, grows) != GDK_SUCCEED)
 			return GDK_FAIL;
 	}
-	if (mayshare &&
-	    BATcount(b) == 0 &&
-	    b->batRole == TRANSIENT &&
-	    ni->restricted == BAT_READ &&
-	    b->tvheap != ni->vh) {
-		/* if b is still empty, in the transient farm, and n
-		 * is read-only, we replace b's vheap with a reference
-		 * to n's */
+	if (mayshare) {
 		MT_lock_set(&b->theaplock);
-		bat bid = b->tvheap->parentid;
-		HEAPdecref(b->tvheap, true);
-		HEAPincref(ni->vh);
-		b->tvheap = ni->vh;
+		if (BATcount(b) == 0 &&
+		    b->batRole == TRANSIENT &&
+		    ni->restricted == BAT_READ &&
+		    b->tvheap != ni->vh) {
+			/* if b is still empty, in the transient farm,
+			 * and n is read-only, we replace b's vheap with
+			 * a reference to n's */
+			bat bid = b->tvheap->parentid;
+			HEAPdecref(b->tvheap, true);
+			HEAPincref(ni->vh);
+			b->tvheap = ni->vh;
+			BBPretain(ni->vh->parentid);
+			if (bid != b->batCacheid)
+				BBPrelease(bid);
+		}
 		MT_lock_unset(&b->theaplock);
-		BBPretain(ni->vh->parentid);
-		if (bid != b->batCacheid)
-			BBPrelease(bid);
 	}
 	if (b->tvheap == ni->vh) {
 		/* if b and n use the same vheap, we only need to copy
@@ -511,8 +512,6 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 	uint32_t boff = b->batCount % 32;
 	uint32_t *bp = (uint32_t *) b->theap->base + b->batCount / 32;
 	b->batCount += ci->ncand;
-	b->theap->dirty = true;
-	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	if (ci->tpe == cand_dense) {
 		const uint32_t *np;
 		uint32_t noff, mask;
@@ -664,6 +663,8 @@ append_msk_bat(BAT *b, BATiter *ni, struct canditer *ci)
 			boff = 0;
 		} while (!is_oid_nil(o));
 	}
+	b->theap->dirty = true;
+	b->theap->free = ((b->batCount + 31) / 32) * 4;
 	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
 }
@@ -704,7 +705,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	if (BATttype(b) != BATttype(n) &&
 	    ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
-		TRC_DEBUG(CHECK_, "Interpreting %s as %s.\n",
+		TRC_DEBUG(CHECK, "Interpreting %s as %s.\n",
 			  ATOMname(BATttype(n)), ATOMname(BATttype(b)));
 	}
 
@@ -2008,13 +2009,16 @@ BATordered(BAT *b)
 	lng t0 = GDKusec();
 	bool sorted;
 
+	MT_rwlock_rdlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	if (b->ttype == TYPE_void || b->tsorted || BATcount(b) == 0) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return true;
 	}
 	if (b->tnosorted > 0 || !ATOMlinear(b->ttype)) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return false;
 	}
 
@@ -2125,6 +2129,7 @@ BATordered(BAT *b)
 		}
 	}
   doreturn:
+	MT_rwlock_rdunlock(&b->thashlock);
 	sorted = b->tsorted;
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);
@@ -2189,17 +2194,21 @@ BATordered_rev(BAT *b)
 
 	if (b == NULL || !ATOMlinear(b->ttype))
 		return false;
+	MT_rwlock_rdlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
 	if (BATcount(b) <= 1 || b->trevsorted) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return true;
 	}
 	if (b->ttype == TYPE_void) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return is_oid_nil(b->tseqbase);
 	}
 	if (BATtdense(b) || b->tnorevsorted > 0) {
 		MT_lock_unset(&b->theaplock);
+		MT_rwlock_rdunlock(&b->thashlock);
 		return false;
 	}
 	BATiter bi = bat_iterator_nolock(b);
@@ -2244,6 +2253,7 @@ BATordered_rev(BAT *b)
 		TRC_DEBUG(ALGO, "Fixed revsorted for " ALGOBATFMT " (" LLFMT " usec)\n", ALGOBATPAR(b), GDKusec() - t0);
 	}
   doreturn:
+	MT_rwlock_rdunlock(&b->thashlock);
 	revsorted = b->trevsorted;
 	bat pbid = VIEWtparent(b);
 	MT_lock_unset(&b->theaplock);

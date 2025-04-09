@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1074,6 +1074,33 @@ atom_is_zero(atom *a)
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
+	default:
+		return 0;
+	}
+}
+
+int
+atom_is_one(atom *a)
+{
+	if (a->isnull || !ATOMlinear(a->tpe.type->localtype))
+		return 0;
+	switch (ATOMstorage(a->tpe.type->localtype)) {
+	case TYPE_bte:
+		return a->data.val.btval == 1;
+	case TYPE_sht:
+		return a->data.val.shval == 1;
+	case TYPE_int:
+		return a->data.val.ival == 1;
+	case TYPE_lng:
+		return a->data.val.lval == 1;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return a->data.val.hval == 1;
+#endif
+	case TYPE_flt:
+		return a->data.val.fval == 1;
+	case TYPE_dbl:
+		return a->data.val.dval == 1;
 	default:
 		return 0;
 	}

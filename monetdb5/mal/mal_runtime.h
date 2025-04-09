@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -67,8 +67,6 @@ extern void runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 								InstrPtr pci, RuntimeProfile prof);
 extern void runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							   InstrPtr pci, RuntimeProfile prof);
-extern lng getVolume(MalStkPtr stk, InstrPtr pci, int rd);
-extern lng getBatSpace(BAT *b);
 extern void sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci, lng clk, lng ticks);
 

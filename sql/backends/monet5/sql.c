@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -32,6 +32,7 @@
 #include "rel_dump.h"
 #include "rel_select.h"
 #include "rel_physical.h"
+#include "rel_remote.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
@@ -5272,18 +5273,18 @@ str_vacuum_callback(int argc, void *argv[])
 	(void) argc;
 
 	if ((sa = sa_create(NULL)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to create allocator!");
+		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create allocator!");
 		return GDK_FAIL;
 	}
 
 	if ((session = sql_session_create(store, sa, 0)) == NULL) {
-		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to create session!");
+		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to create session!");
 		sa_destroy(sa);
 		return GDK_FAIL;
 	}
 
 	if (sql_trans_begin(session) < 0) {
-		TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Failed to begin transaction!");
+		TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Failed to begin transaction!");
 		sql_session_destroy(session);
 		sa_destroy(sa);
 		return GDK_FAIL;
@@ -5291,30 +5292,30 @@ str_vacuum_callback(int argc, void *argv[])
 
 	do {
 		if((s = find_sql_schema(session->tr, sname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing schema %s!",sname);
+			TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Invalid or missing schema %s!",sname);
 			res = GDK_FAIL;
 			break;
 		}
 
 		if((t = find_sql_table(session->tr, s, tname)) == NULL) {
-			TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing table %s!", tname);
+			TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Invalid or missing table %s!", tname);
 			res = GDK_FAIL;
 			break;
 		}
 		if (cname) {
 			if ((c = find_sql_column(t, cname)) == NULL) {
-				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- Invalid or missing column %s!", cname);
+				TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- Invalid or missing column %s!", cname);
 				res = GDK_FAIL;
 				break;
 			}
 
 			if((msg=do_str_column_vacuum(session->tr, c, false)) != MAL_SUCCEED) {
-				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
+				TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- %s", msg);
 				res = GDK_FAIL;
 			}
 		} else {
 			if((msg=do_str_table_vacuum(session->tr, t, false)) != MAL_SUCCEED) {
-				TRC_ERROR((component_t) SQL, "[str_vacuum_callback] -- %s", msg);
+				TRC_ERROR(SQL_EXECUTION, "[str_vacuum_callback] -- %s", msg);
 				res = GDK_FAIL;
 			}
 		}
@@ -5324,11 +5325,11 @@ str_vacuum_callback(int argc, void *argv[])
 	if (res == GDK_SUCCEED) { /* everything is ok, do the commit route */
 		switch (sql_trans_end(session, SQL_OK)) {
 			case SQL_ERR:
-				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
+				TRC_ERROR(SQL_EXECUTION, "[str_column_vacuum_callback] -- transaction commit failed (kernel error: %s)", GDKerrbuf);
 				res = GDK_FAIL;
 				break;
 			case SQL_CONFLICT:
-				TRC_ERROR((component_t) SQL, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+				TRC_ERROR(SQL_EXECUTION, "[str_column_vacuum_callback] -- transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 				res = GDK_FAIL;
 				break;
 			default:
@@ -5616,6 +5617,44 @@ bailout:
 		buffer_destroy(b);
 	throw(SQL, "SQLread_dump_rel", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
+
+static str
+SQLnormalize_monetdb_url(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+	str *ret = getArgReference_str(stk, pci, 0);
+	str url = *getArgReference_str(stk, pci, 1);
+	allocator *sa;
+	backend *be = NULL;
+	str msg;
+	msettings_error err;
+	str normalized;
+
+	if (strNil(url))
+		throw(MAL, "SQLnormalize_monetdb_url", SQLSTATE(42000) "url cannot be nil");
+
+	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+		return msg;
+	sa = be->mvc->sa;
+
+	msettings *mp = sa_msettings_create(sa);
+	if (mp == NULL)
+		throw(SQL, "SQLnormalize_monetdb_url", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	err = msettings_parse_url(mp, url);
+	if (err != NULL)
+		throw(SQL, "SQLnormalize_monetdb_url", SQLSTATE(42000) "Invalid URL: %s", err);
+
+	normalized = sa_msettings_to_string(mp, sa, strlen(url));
+	if (normalized == NULL)
+		throw(SQL, "SQLnormalize_monetdb_url", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	*ret = _STRDUP(normalized);
+
+	return MAL_SUCCEED;
+}
+
+
 
 
 static mel_func sql_init_funcs[] = {
@@ -6551,6 +6590,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "stop_vacuum", SQLstr_stop_vacuum, true, "stop auto vacuum", args(0,2, arg("sname",str),arg("tname",str))),
  pattern("sql", "check", SQLcheck, false, "Return sql string of check constraint.", args(1,3, arg("sql",str), arg("sname", str), arg("name", str))),
  pattern("sql", "read_dump_rel", SQLread_dump_rel, false, "Reads sql_rel string into sql_rel object and then writes it to the return value", args(1,2, arg("sql",str), arg("sql_rel", str))),
+ pattern("sql", "normalize_monetdb_url", SQLnormalize_monetdb_url, false, "Normalize mapi:monetdb://, monetdb:// or monetdbs:// URL", args(1,2, arg("",str),arg("u",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

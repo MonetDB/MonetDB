@@ -1,12 +1,25 @@
+/*
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 2024, 2025 MonetDB Foundation;
+ * Copyright August 2008 - 2023 MonetDB B.V.;
+ * Copyright 1997 - July 2008 CWI.
+ */
 
 #include "monetdb_config.h"
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
+#endif
 #include "stream.h"
 #include "sql_mvc.h"
 #include "sql_parser.tab.h"
 #include "rel_sequence.h"
 #include "sql_semantic.h"
 #include <stdio.h>
-
 
 extern void bat_storage_init(void *b);
 extern void bat_table_init(void *b);
@@ -156,11 +169,11 @@ qname_schema_object(dlist *qname)
 }
 
 
-static char * sp_symbol2string(mvc *sql, symbol *se, int expression, char **err);
-static char * dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err);
+static char * sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bool indent);
+static char * dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err, int depth, bool indent);
 
 static char *
-dnode2string(mvc *sql, dnode *n, int expression, char **err)
+dnode2string(mvc *sql, dnode *n, int expression, char **err, int depth, bool indent)
 {
 	char *s = NULL;
 	if (n->type == type_string) {
@@ -177,9 +190,9 @@ dnode2string(mvc *sql, dnode *n, int expression, char **err)
 		snprintf(buf, sizeof(buf), LLFMT, n->data.l_val);
 		s = sa_strdup(sql->ta, buf);
 	} else if (n->type == type_symbol) {
-		s = sp_symbol2string(sql, n->data.sym, expression, err);
+		s = sp_symbol2string(sql, n->data.sym, expression, err, depth, indent);
 	} else if (n->type == type_list) {
-		s = dlist2string(sql, n->data.lval, ", ", "( ", " )", expression, err);
+		s = dlist2string(sql, n->data.lval, ", ", "( ", " )", expression, err, depth, indent);
 	} else if (n->type == type_type) {
 		s = sql_subtype_string(sql->ta, &n->data.typeval);
 	}
@@ -187,7 +200,7 @@ dnode2string(mvc *sql, dnode *n, int expression, char **err)
 }
 
 static char *
-dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err)
+dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, char **err, int depth, bool indent)
 {
 	if (!l)
 		return " EMPTY_LIST";
@@ -195,20 +208,29 @@ dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, 
 	dnode *n;
 
 	size_t seplen = strlen(sep);
-	bool skipsep = lb;
+
+	bool first_el = lb;
 	for (n=l->h; n; n = n->next) {
-		char *s = dnode2string(sql, n, expression, err);
+		char *s = dnode2string(sql, n, expression, err, depth, indent);
 
 		if (!s)
 			return NULL;
 		if (b) {
-			char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(s) + seplen + 1);
+			size_t depth_chars = indent ? depth + 1 : 0;
+			char *o = SA_NEW_ARRAY(sql->ta, char, depth_chars + strlen(b) + strlen(s) + seplen + 1);
 			if (o) {
-				if (skipsep)
-					stpcpy(stpcpy(o, b), s);
-				else
-					stpcpy(stpcpy(stpcpy(o, b), sep), s);
-				skipsep = false;
+				char *tmp;
+				tmp = stpcpy(o, b);
+				if (!first_el)
+					tmp = stpcpy(tmp, sep);
+				if (indent) {
+					tmp = stpcpy(tmp, "\n");
+					for (int i=0; i < depth; i++)
+						tmp = stpcpy(tmp, "\t");
+				}
+				tmp = stpcpy(tmp, s);
+
+				first_el = false;
 			}
 			b = o;
 			if (b == NULL)
@@ -218,9 +240,20 @@ dlist2string(mvc *sql, dlist *l, char *sep, char *lb, char *rb, int expression, 
 		}
 	}
 	if (rb) {
-		char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(rb) + 1);
-		if (o)
-			stpcpy(stpcpy(o, b), rb);
+		/* here we do (depth - 1) * tab + 1 * newline to align with the parent op */
+		size_t depth_chars = indent ? (depth > 0 ? depth : 1) : 0;
+
+		char *o = SA_NEW_ARRAY(sql->ta, char, depth_chars + strlen(b) + strlen(rb) + 1);
+		if (o) {
+			char *tmp;
+			tmp = stpcpy(o, b);
+			if (indent) {
+				tmp = stpcpy(tmp, "\n");
+				for (int i=0; i < (depth - 1); i++)
+					tmp = stpcpy(tmp, "\t");
+			}
+			stpcpy(tmp, rb);
+		}
 		b = o;
 	}
 	return b;
@@ -265,7 +298,7 @@ sa_concat(allocator *sa, char *prefix, char *a, char *infix, char *b, char *post
 }
 
 static char *
-sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
+sp_symbol2string(mvc *sql, symbol *se, int expression, char **err, int depth, bool indent)
 {
 	if (!se)
 		return "EMPTY SYMBOL";
@@ -275,17 +308,17 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		SelectNode *s = (SelectNode*)se;
 		char *res = s->distinct?"SELECT DISTINCT (\n":"SELECT (\n";
 		if (s->from)
-			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->from, expression, err), "\n");
+			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->from, expression, err, depth, indent), "\n");
 		if (s->where)
-			res = sa_concat(sql->ta, " ", res, "WHERE ", sp_symbol2string(sql, s->where, expression, err), "\n");
+			res = sa_concat(sql->ta, "", res, "WHERE ", sp_symbol2string(sql, s->where, expression, err, depth + 1, indent), "\n");
 		if (s->groupby)
-			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->groupby, expression, err), "\n");
+			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->groupby, expression, err, depth, indent), "\n");
 		if (s->having)
-			res = sa_concat(sql->ta, " ", res, "HAVING ", sp_symbol2string(sql, s->having, expression, err), "\n");
+			res = sa_concat(sql->ta, "", res, "HAVING ", sp_symbol2string(sql, s->having, expression, err, depth, indent), "\n");
 		if (s->orderby)
-			res = sa_concat(sql->ta, " ", res, NULL, sp_symbol2string(sql, s->orderby, expression, err), "\n");
+			res = sa_concat(sql->ta, "", res, NULL, sp_symbol2string(sql, s->orderby, expression, err, depth, indent), "\n");
 		if (s->selection)
-			res = sa_concat(sql->ta, " ", res, "SELECTION ", dlist2string(sql, s->selection, ", ", "( ", " )", expression, err), "\n");
+			res = sa_concat(sql->ta, "", res, "SELECTION ", dlist2string(sql, s->selection, ", ", "(", ")", expression, err, depth, indent), "\n");
 		return res;
 	}
 	case SQL_NOP: {
@@ -305,7 +338,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
-			if (!(inputs[i] = sp_symbol2string(sql, aux->data.sym, expression, err))) {
+			if (!(inputs[i] = sp_symbol2string(sql, aux->data.sym, expression, err, depth, false))) {
 				return NULL;
 			}
 			inputs_length += strlen(inputs[i]);
@@ -379,14 +412,15 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
-			return dlist2string(sql, l, ".", NULL, NULL, expression, err);
+			return dlist2string(sql, l, ".", NULL, NULL, expression, err, depth, false);
 		}
 	}
 	case SQL_CAST: {
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = sp_symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval)))
+		if (!(val = sp_symbol2string(sql, dl->h->data.sym, expression, err, depth, false), 0) ||
+			!(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval)))
 			return NULL;
 		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(val) + strlen(tpe) + 11)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
@@ -394,19 +428,31 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	}
 	case SQL_SET: { /* dlist(ident-list, expression) */
 					  dlist *set = se->data.lval;
-					  char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err);
-					  char *exp = dnode2string(sql, set->h->next, expression, err);
+					  char *ident = dlist2string(sql, set->h->data.lval, ".", NULL, NULL, expression, err, depth, false);
+					  char *exp = dnode2string(sql, set->h->next, expression, err, depth, indent);
 					  size_t len = strlen(ident) + strlen(exp);
 					  char *res;
 					  if ((res = SA_NEW_ARRAY(sql->ta, char, len + 6)))
 							stpcpy(stpcpy(stpcpy(stpcpy(res, "SET "), ident), " "), exp);
 					  return res;
 				}
+	case SQL_AND:
+	case SQL_OR: {
+		char *tok_str = token2string(se->token);
+		char *args = dlist2string(sql, se->data.lval, ", ", " (", " )", expression, err, depth + 1, indent);
+		char *res;
+
+		if (!args)
+			args = "";
+		 if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(args) + 1)))
+			 stpcpy(stpcpy(res, tok_str), args);
+		return res;
+	}
 	default:
 		/* generic */
 		if (se->type == type_list) {
 			char *tok_str = token2string(se->token);
-			char *args = dlist2string(sql, se->data.lval, ", ", "( ", " )", expression, err);
+			char *args = dlist2string(sql, se->data.lval, ", ", " (", " )", expression, err, depth, false);
 			char *res;
 
 			if (!args)
@@ -416,7 +462,7 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			return res;
 		} else if (se->type == type_symbol) {
 			char *tok_str = token2string(se->token);
-			char *sym = sp_symbol2string(sql, se->data.sym,  expression, err);
+			char *sym = sp_symbol2string(sql, se->data.sym, expression, err, depth, false);
 			char *res;
 
 			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(tok_str) + strlen(sym) + 5)))
@@ -460,18 +506,38 @@ sp_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	return NULL;
 }
 
+static void
+usage_error(char *selfname)
+{
+	printf("Usage: %s [-b] file.sql\n", selfname);
+}
+
 int
 main(int argc, char *argv[])
 {
-	if (argc > 2) {
-		printf("usage: %s file.sql\n", argv[0]);
+	if (argc != 2 && argc != 3) {
+		usage_error(argv[0]);
 		return -1;
 	}
+
+	int opt;
+	bool beautify = false;
+	while ((opt = getopt(argc, argv, "b")) != -1) {
+		switch (opt) {
+		case 'b':
+			beautify = true;
+			break;
+		default: /* '?' */
+			usage_error(argv[0]);
+			return -1;
+		}
+	}
+
 	mnstr_init();
 
-	stream *f = open_rstream(argv[1]);
+	stream *f = open_rstream(argv[optind]);
 	if (!f) {
-		printf("ERROR: Failed to open file '%s'\n", argv[1]);
+		printf("ERROR: Failed to open file '%s'\n", argv[optind]);
 		return -2;
 	}
 	bstream *rs = bstream_create(f, 8192);
@@ -489,15 +555,15 @@ main(int argc, char *argv[])
 	while ((err = sqlparse(m)) == 0 && m->scanner.rs->pos < m->scanner.rs->len) {
 		if (m->sym) {
 			char *err = NULL;
-			char *res = sp_symbol2string(m, m->sym, 1, &err);
+			char *res = sp_symbol2string(m, m->sym, 1, &err, 0, beautify);
 
 			if (err)
-				printf("ERROR: %s\n", err);
+				printf("ERROR:\n%s\n", err);
 			else
-				printf("SYM: %s\n", res);
+				printf("SYM:\n%s\n", res);
 	 	} else {
 			if (m->session->status)
-				printf("ERROR: %s\n", m->errstr);
+				printf("ERROR:\n%s\n", m->errstr);
 		}
 		scanner_query_processed(&m->scanner);
 		m->sym = NULL;

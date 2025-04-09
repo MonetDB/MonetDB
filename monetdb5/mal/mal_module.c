@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -169,12 +169,9 @@ addModuleToIndex(Module cur)
 Module
 getModule(const char *name)
 {
-	int index = getModuleIndex(name);
-	Module m = moduleIndex[index];
-	while (m) {
+	for (Module m = moduleIndex[getModuleIndex(name)]; m; m = m->link) {
 		if (name == m->name)
 			return m;
-		m = m->link;
 	}
 	return NULL;
 }
@@ -298,8 +295,9 @@ freeModule(Module m)
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		if (s->kind == COMMANDsymbol && s->func->argc <= 1 /* zero or one arg */) {
 			int status = 0;
-			str ret = MAL_SUCCEED;
+			str ret;
 
+			TRC_INFO(MAL_LOADER, "Unloading module %s\n", m->name);
 			ret = (*(str (*)(int *)) s->func->imp) (&status);
 			freeException(ret);
 			(void) status;

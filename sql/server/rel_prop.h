@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -43,7 +43,7 @@ typedef struct tid_uri {
 	const char* uri;
 } tid_uri;
 
-extern prop * prop_create( allocator *sa, rel_prop kind, prop *pre );
+sql_export prop * prop_create( allocator *sa, rel_prop kind, prop *pre );
 extern prop * prop_copy( allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, rel_prop kind);

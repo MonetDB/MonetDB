@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -254,8 +254,6 @@ gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 gdk_return TMcommit(void)
 	__attribute__((__visibility__("hidden")));
-void VIEWdestroy(BAT *b)
-	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
 
@@ -396,6 +394,7 @@ struct Strimps {
 
 typedef struct {
 	MT_Lock swap;
+	MT_Cond cond;
 } batlock_t;
 
 typedef char long_str[IDLENGTH];	/* standard GDK static string */
@@ -429,6 +428,7 @@ extern size_t GDK_mmap_pagesize; /* mmap granularity */
 	} while (0)
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
+#define GDKswapCond(x)  GDKbatLock[(x)&BBP_BATMASK].cond
 
 #define HEAPREMOVE	((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 1))
 #define DELAYEDREMOVE	((ATOMIC_BASE_TYPE) 1 << (sizeof(ATOMIC_BASE_TYPE) * 8 - 2))

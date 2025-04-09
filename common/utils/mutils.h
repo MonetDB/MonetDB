@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,14 +13,16 @@
 #ifndef _MUTILS_H_
 #define _MUTILS_H_
 
-#ifdef WIN32
-#if !defined(LIBMUTILS) && !defined(LIBGDK) && !defined(LIBMEROUTIL) && !defined(LIBMAPI)
+#ifndef mutils_export
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__)
+#ifndef LIBMUTILS
 #define mutils_export extern __declspec(dllimport)
 #else
 #define mutils_export extern __declspec(dllexport)
 #endif
 #else
 #define mutils_export extern
+#endif
 #endif
 
 #ifdef NATIVE_WIN32
@@ -47,9 +49,6 @@ mutils_export void rewinddir(DIR *dir);
 mutils_export int closedir(DIR *dir);
 
 mutils_export char *dirname(char *path);
-
-mutils_export wchar_t *utf8towchar(const char *src);
-mutils_export char *wchartoutf8(const wchar_t *src);
 
 mutils_export FILE *MT_fopen(const char *filename, const char *mode);
 mutils_export int MT_open(const char *filename, int flags);
@@ -126,6 +125,9 @@ MT_access(const char *pathname, int mode)
 }
 
 #endif
+
+mutils_export uint16_t *utf8toutf16(const char *src);
+mutils_export char *utf16toutf8(const uint16_t *src);
 
 mutils_export int MT_lockf(const char *filename, int mode);
 

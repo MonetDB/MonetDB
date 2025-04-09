@@ -176,7 +176,7 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		bat pid = *getArgReference_bat(s, p, 3);
 		if ((pht = BATdescriptor(pid)) == NULL)
 			return createException(MAL, "hash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		parent = (hash_table*)pht->T.sink;
+		parent = (hash_table*)pht->tsink;
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
@@ -184,9 +184,9 @@ UHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
+	b->tsink = (Sink*)ht_create(tt, size*1.2*2.1, parent);
 	BBPreclaim(pht);
-	if (b->T.sink == NULL) {
+	if (b->tsink == NULL) {
 		BBPunfix(b->batCacheid);
 		return createException(MAL, "hash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -207,7 +207,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *i = BATdescriptor(*in);
 	if (!i)
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	hash_table *h = (hash_table*)i->T.sink;
+	hash_table *h = (hash_table*)i->tsink;
 	if (!h || h->s.type != HASH_SINK) {
 		BBPreclaim(i);
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) "Missing hash table");

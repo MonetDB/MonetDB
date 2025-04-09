@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
-import os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os
 
 nr_clients = 16
 

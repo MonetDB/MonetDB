@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -194,7 +194,7 @@ sql_export str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_
 extern str mvc_release(mvc *c, const char *name);
 
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
-extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
+sql_export sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
 
 sql_export sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 sql_export sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);

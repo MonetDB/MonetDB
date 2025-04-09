@@ -1,0 +1,27 @@
+query II
+select cast('99' as interval day) as val1, cast('-99' as interval day) as val2
+----
+99
+-99
+
+query II
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99'' as interval day) as val1, cast(''-99'' as interval day) as val2'
+----
+99
+-99
+
+query II
+select cast('101' as interval day) as val1, cast('-102' as interval day) as val2
+----
+101
+-102
+
+-- when number of interval days >= 100 the MonetDB ODBC driver returns error: Interval field overflow
+-- Failed to get C_type 103 data for col 1 of row 1. ODBCmsg: SQLSTATE 22015, Error code 0, Message [MonetDB][ODBC Driver 11.53.0][MonetDB-Test]Interval field overflow
+-- Failed to get C_type 103 data for col 2 of row 1. ODBCmsg: SQLSTATE 22015, Error code 0, Message [MonetDB][ODBC Driver 11.53.0][MonetDB-Test]Interval field overflow
+query II
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''101'' as interval day) as val1, cast(''-102'' as interval day) as val2'
+----
+101
+-102
+

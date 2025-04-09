@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -164,7 +164,6 @@ typedef enum operator_type {
 	op_full,
 	op_semi,
 	op_anti,
-	op_union,
 	op_munion,
 	op_inter,
 	op_except,
@@ -203,9 +202,8 @@ typedef enum operator_type {
 #define is_semi(op) 		(op == op_semi || op == op_anti)
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
 #define is_select(op) 		(op == op_select)
-#define is_set(op) 			(op == op_union || op == op_inter || op == op_except)
+#define is_set(op) 			(op == op_inter || op == op_except)
 #define is_mset(op) 		(op == op_munion || op == op_inter || op == op_except)
-#define is_union(op) 		(op == op_union)
 #define is_inter(op) 		(op == op_inter)
 #define is_except(op) 		(op == op_except)
 #define is_munion(op) 		(op == op_munion)
@@ -329,6 +327,7 @@ typedef struct relation {
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
 	uint8_t used;
+	int opt;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

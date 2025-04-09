@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1794,10 +1794,16 @@ mapi_new(msettings *settings)
 	}
 	if (settings == NULL) {
 		settings = msettings_create();
-		if (settings == NULL) {
-			mapi_destroy(mid);
-			return NULL;
-		}
+	} else if (msettings_get_allocator(settings, NULL) != NULL) {
+		// it uses a custom allocator, reallocate using regular
+		msettings *old = settings;
+		settings = msettings_clone(old);
+		if (settings)
+			msettings_destroy(old);
+	}
+	if (settings == NULL) {
+		mapi_destroy(mid);
+		return NULL;
 	}
 	mid->settings = settings;
 	mid->blk.buf[0] = 0;
@@ -1923,11 +1929,9 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		return mid;
 	}
 
-	char *error_message = NULL;
-	if (!msettings_parse_url(mid->settings, url, &error_message)) {
-		char *msg = error_message ? error_message : "malloc failed";
-		mapi_setError(mid, msg, __func__, MERROR);
-		free(error_message);
+	const char *error_message = msettings_parse_url(mid->settings, url);
+	if (error_message) {
+		mapi_setError(mid, error_message, __func__, MERROR);
 		return mid;
 	}
 
@@ -3908,11 +3912,11 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->mid->active = hdl;
 		hdl->active = result;
 		mapi_log_record(hdl->mid, "W", "X" "export %d %" PRId64 "\n",
-				     result->tableid,
-				     result->cache.first + result->cache.tuplecount);
+				result->tableid,
+				result->cache.first + result->cache.tuplecount);
 		int e;
 		if ((e = mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
-				 result->tableid,
+				      result->tableid,
 				      result->cache.first + result->cache.tuplecount)) < 0 ||
 		    (e = mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA)) < 0)
 			check_stream(hdl->mid, hdl->mid->to, e, "sending export command", NULL);
@@ -4432,7 +4436,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			mid->active = hdl;
 			hdl->active = result;
 			mapi_log_record(mid, "SEND", "X" "export %d %" PRId64 "\n",
-					     result->tableid, result->cache.first + result->cache.tuplecount);
+					result->tableid, result->cache.first + result->cache.tuplecount);
 			int e;
 			if ((e = mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
 					      result->tableid, result->cache.first + result->cache.tuplecount)) < 0 ||

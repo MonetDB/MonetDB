@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -2012,12 +2012,10 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* generate a tuple batch */
 		/* and reload it into the proper format */
 		str ht, tt;
-		BAT *b = BBPquickdesc(BBPindex(*nme));
 		size_t len;
 
-		if (!b)
+		if (BBPindex(*nme) == 0)
 			throw(MAL, "mapi.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
 		/* reconstruct the object */
 		ht = getTypeName(TYPE_oid);
 		tt = getTypeName(getBatType(tpe));

@@ -1,5 +1,5 @@
 import os, sys, tempfile
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 hdl = pymonetdb.connect(database=os.getenv('TSTDB'), port=os.getenv('MAPIPORT'), autocommit=True)
 cur = hdl.cursor()

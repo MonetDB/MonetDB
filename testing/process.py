@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -20,12 +20,12 @@ import threading
 import signal
 import queue
 
-from subprocess import PIPE
+from subprocess import PIPE, TimeoutExpired
 try:
     from subprocess import DEVNULL
 except ImportError:
     DEVNULL = os.open(os.devnull, os.O_RDWR)
-__all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server']
+__all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server', 'TimeoutExpired']
 
 try:
     # on Windows, also make this available
@@ -79,9 +79,16 @@ def _delfiles():
 
 atexit.register(_delfiles)
 
+def _remainingtime(endtime):
+    if endtime is None:
+        return None
+    curtime = time.time()
+    if curtime >= endtime:
+        raise queue.Empty
+    return endtime - curtime
+
 class _BufferedPipe:
     def __init__(self, fd):
-        self._pipe = fd
         self._queue = queue.Queue()
         self._cur = None
         self._curidx = 0
@@ -91,34 +98,48 @@ class _BufferedPipe:
         self._cr = '\r'
         self._thread = threading.Thread(target=self._readerthread,
                                         args=(fd, self._queue))
-        self._thread.setDaemon(True)
+        # self._thread.daemon = True
+        self._continue = True
         self._thread.start()
 
-    def _readerthread(self, fh, queue):
+    def _readerthread(self, fh, q):
         s = 0
         w = 0
         first = True
-        while True:
+        while self._continue:
+            if verbose:
+                print('fh.readline', flush=True)
             c = fh.readline()
+            if verbose:
+                print(f'read {len(c)} bytes', flush=True)
             if first:
                 if type(c) is type(b''):
                     self._empty = b''
                     self._nl = b'\n'
                     self._cr = b'\r'
                     first = False
+            if not self._continue:
+                break
             if not c:
-                queue.put(c)    # put '' if at EOF
+                q.put(c)    # put '' if at EOF
                 break
             c = c.replace(self._cr, self._empty)
             if c:
-                queue.put(c)
+                q.put(c)
 
     def close(self):
+        if verbose:
+            print('close _BufferedPipe', flush=True)
+        self._continue = False
         if self._thread:
+            if verbose:
+                print('close: joining', flush=True)
             self._thread.join()
+            if verbose:
+                print('close: joined', flush=True)
         self._thread = None
 
-    def read(self, size=-1):
+    def _read(self, size=-1, endtime=None):
         ret = []
         if self._cur:
             if size < 0:
@@ -138,10 +159,14 @@ class _BufferedPipe:
             if ret:
                 return self._empty.join(ret)
             return self._empty
-        if size < 0:
-            self.close()
         while size != 0:
-            c = self._queue.get()
+            if verbose:
+                print('queue.get', flush=True)
+            try:
+                c = self._queue.get(timeout=_remainingtime(endtime))
+            except queue.Empty:
+                print('queue.empty', flush=True)
+                break
             if len(c) > size > 0:
                 ret.append(c[:size])
                 self._cur = c[size:]
@@ -156,10 +181,21 @@ class _BufferedPipe:
                 break                   # EOF
         return self._empty.join(ret)
 
-    def readline(self, size=-1):
+    def read(self, size=-1, timeout=None):
+        if timeout is None:
+            endtime = None
+        else:
+            endtime = time.time() + timeout
+        return self._read(size=size, endtime=endtime)
+
+    def readline(self, size=-1, timeout=None):
+        if timeout is None:
+            endtime = None
+        else:
+            endtime = time.time() + timeout
         ret = []
         while size != 0:
-            c = self.read(1)
+            c = self._read(1, endtime=endtime)
             ret.append(c)
             if size > 0:
                 size -= 1
@@ -229,13 +265,23 @@ class Popen(subprocess.Popen):
 
     def __exit__(self, exc_type, value, traceback):
         self.terminate()
+        try:
+            self.wait(timeout=10)
+        except TimeoutExpired:
+            self.kill()
+            self.wait()
         self._clean_dotmonetdbfile()
         super().__exit__(exc_type, value, traceback)
         if self.returncode and self.returncode < 0 and -self.returncode in _coresigs:
             raise RuntimeError('process exited with coredump generating signal %r' % signal.Signals(-self.returncode))
 
     def __del__(self):
-        if self._child_created:
+        if self._child_created and self.returncode is None:
+            # this may well fail in Python 3.13.2 ("TypeError:
+            # 'NoneType' object is not callable" in import signal), but
+            # it is very unlikely we actually get here since the above
+            # __exit__ will normally have been executed first and so
+            # returncode will have been set
             self.terminate()
         self._clean_dotmonetdbfile()
         super().__del__()
@@ -252,18 +298,24 @@ class Popen(subprocess.Popen):
                 pass
             self.dotmonetdbfile = None
 
-    def wait(self):
-        ret = super().wait()
+    def wait(self, timeout=None):
+        ret = super().wait(timeout=timeout)
         self._clean_dotmonetdbfile()
         return ret
 
-    def communicate(self, input=None):
+    def communicate(self, input=None, timeout=None):
         # since we always use threads for stdout/stderr, we can just read()
+        if not isinstance(self.stdout, _BufferedPipe) and not isinstance(self.stderr, _BufferedPipe):
+            if verbose:
+                print('relegating communicate to super()', flush=True)
+            return super().communicate(input=input, timeout=timeout)
         stdout = None
         stderr = None
         if self.stdin:
             if input:
                 try:
+                    if verbose:
+                        print('communicate: writing input', flush=True)
                     self.stdin.write(input)
                 except IOError:
                     pass
@@ -277,11 +329,17 @@ class Popen(subprocess.Popen):
             except OSError:
                 pass
         if self.stdout:
+            if verbose:
+                print('communicate: reading stdout', flush=True)
             stdout = self.stdout.read()
             self.stdout.close()
         if self.stderr:
+            if verbose:
+                print('communicate: reading stderr', flush=True)
             stderr = self.stderr.read()
             self.stderr.close()
+        if verbose:
+            print('communicate: waiting', flush=True)
         self.wait()
         return stdout, stderr
 
@@ -299,7 +357,7 @@ class client(Popen):
         elif lang == 'sqldump':
             cmd = _sql_dump[:]
         if verbose:
-            sys.stdout.write('Default client: ' + ' '.join(cmd +  args) + '\n')
+            print('Default client: ' + ' '.join(cmd +  args))
 
         if (encoding is None or encoding.lower() == 'utf-8') and text is None:
             text = True
@@ -383,8 +441,7 @@ class client(Popen):
             if host:
                 cmd.append('--host=%s' % host)
         if verbose:
-            sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
-            sys.stdout.flush()
+            print('Executing: ' + ' '.join(cmd +  args), flush=True)
         if stdin is None:
             # if no input provided, use /dev/null as input
             stdin = open(os.devnull)
@@ -403,8 +460,12 @@ class client(Popen):
                          encoding=encoding,
                          text=text)
         if stdout == PIPE:
+            if verbose:
+                print('create _BufferedPipe for stdout', flush=True)
             self.stdout = _BufferedPipe(self.stdout)
         if stderr == PIPE:
+            if verbose:
+                print('create _BufferedPipe for stderr', flush=True)
             self.stderr = _BufferedPipe(self.stderr)
         if input is not None:
             self.stdin.write(input)
@@ -412,12 +473,14 @@ class client(Popen):
             out, err = self.communicate()
             sys.stdout.write(out)
             sys.stderr.write(err)
+        if verbose:
+            print('client created', flush=True)
 
 class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
                  dbextra=None, bufsize=0,
-                 notrace=False, notimeout=False, ipv6=False):
+                 notrace=False, ipv6=False):
         '''Start a server process.'''
         cmd = _server[:]
         if not cmd:
@@ -427,7 +490,7 @@ class server(Popen):
         if os.getenv('NOWAL'):
             cmd.extend(['--set', 'sql_debug=128'])
         if verbose:
-            sys.stdout.write('Default server: ' + ' '.join(cmd +  args) + '\n')
+            print('Default server: ' + ' '.join(cmd +  args))
         if notrace and '--trace' in cmd:
             cmd.remove('--trace')
         if mapiport is not None:
@@ -497,8 +560,7 @@ class server(Popen):
             cmd.append('--dbextra=%s' % dbextra_path)
 
         if verbose:
-            sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
-            sys.stdout.flush()
+            print('Executing: ' + ' '.join(cmd +  args), flush=True)
         for i in range(len(args)):
             if args[i] == '--set' and i+1 < len(args):
                 s = args[i+1].partition('=')[0]
@@ -515,6 +577,7 @@ class server(Popen):
             kw = {'creationflags': CREATE_NEW_PROCESS_GROUP}
         else:
             kw = {}
+        starttime = time.time()
         super().__init__(cmd + args,
                          stdin=stdin,
                          stdout=stdout,
@@ -562,4 +625,9 @@ class server(Popen):
                                 self.dbport = c[1]
                                 break
                 break
-            time.sleep(0.001)
+            # wait at most 30 seconds for the server to start
+            if time.time() > starttime + 30:
+                self.kill()
+                self.wait()
+                raise TimeoutExpired
+            time.sleep(0.1)

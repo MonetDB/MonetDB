@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -33,8 +33,9 @@ static const char *FunctionBasePath(char *buf, size_t len)
 #ifdef NATIVE_WIN32
 	if (basepath == NULL) {
 		const wchar_t *home = _wgetenv(L"HOME");
+		static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 		if (home) {
-			char *path = wchartoutf8(home);
+			char *path = utf16toutf8(home);
 			if (path) {
 				strcpy_len(buf, path, len);
 				free(path);

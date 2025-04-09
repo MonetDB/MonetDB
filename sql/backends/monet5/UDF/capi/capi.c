@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -671,12 +671,12 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we have to compile it
 
 		// first generate the names	of the files
-		// we place the temporary files in the DELDIR directory
+		// we place the temporary files in the TEMPDIR directory
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
 		const char prefix[] = TEMPDIR_NAME DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
-		char deldirpath[MAXPATH];
+		char tempdirpath[MAXPATH];
 
 		memcpy(buf, prefix, sizeof(char) * strlen(prefix));
 		// generate a random 32-character name for the temporary files
@@ -705,14 +705,14 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			goto wrapup;
 		}
 
-		// if DELDIR directory does not exist, create it
-		if (GDKfilepath(deldirpath, sizeof(deldirpath), 0, NULL, TEMPDIR, NULL) != GDK_SUCCEED) {
+		// if TEMPDIR directory does not exist, create it
+		if (GDKfilepath(tempdirpath, sizeof(tempdirpath), 0, NULL, TEMPDIR, NULL) != GDK_SUCCEED) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (MT_mkdir(deldirpath) < 0 && errno != EEXIST) {
+		if (MT_mkdir(tempdirpath) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
-								  "cannot create directory %s\n", deldirpath);
+								  "cannot create directory %s\n", tempdirpath);
 			goto wrapup;
 		}
 

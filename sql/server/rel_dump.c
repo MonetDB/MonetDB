@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_unnest.h"
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
@@ -486,6 +487,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 
 	print_indent(sql, fout, depth, decorate);
 
+	if (mvc_debug_on(sql, 4) && rel->opt)
+		mnstr_printf(fout, "opt %d ", rel->opt);
 	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->spb)
 			mnstr_printf(fout, " start ");
 	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->parallel)
@@ -552,7 +555,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 		r = "join";
@@ -566,8 +568,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			r = "semijoin";
 		else if (rel->op == op_anti)
 			r = "antijoin";
-		else if (rel->op == op_union)
-			r = "union";
 		else if (rel->op == op_inter)
 			r = "intersect";
 		else if (rel->op == op_except)
@@ -765,7 +765,6 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 		if (rel->l)
@@ -2061,8 +2060,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		return rel;
 	}
 
-	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r')
-		return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
+	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r') {
+		if (strncmp(r+*pos, "merge", 5) == 0)
+			(*pos) += 5;
+		else
+			return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
+	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'i') {
 		*pos += (int) strlen("distinct");
@@ -2218,21 +2221,49 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 				if (!t && !(t = mvc_bind_table(sql, s, tname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
-				if (isMergeTable(t))
-					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
 				if (isRemote(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
 				if (isReplicaTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
-				rel = rel_basetable(sql, t, tname);
-				if (!table_privs(sql, t, PRIV_SELECT))  {
-					rel_base_disallow(rel);
-					if (rel_base_has_column_privileges(sql, rel) == 0)
-						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
+				bool allowed = true;
+				if (!table_privs(sql, t, PRIV_SELECT))
+					allowed = false;
+				if (isView(t)) {
+					rel = rel_parse(sql, t->s, t->query, m_instantiate);
+					rel = rel_unnest(sql, rel);
+
+					if (!rel)
+						return NULL;
+		            /* Rename columns of the rel_parse relation */
+					set_processed(rel);
+					if (is_mset(rel->op) || is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r))) {
+						/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
+						rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 0, 0));
+						set_processed(rel);
+					}
+					for (node *n = ol_first_node(t->columns), *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+						sql_column *c = n->data;
+						sql_exp *e = m->data;
+
+						m->data = e = exp_check_type(sql, &c->type, NULL, e, type_equal);
+						exp_setname(sql, e, tname, c->base.name);
+						set_basecol(e);
+					}
+					list_hash_clear(rel->exps);
+					if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
+					rel = rel_project(sql->sa, rel, NULL);
+				} else {
+					rel = rel_basetable(sql, t, tname);
+					if (!allowed) {
+						rel_base_disallow(rel);
+						if (rel_base_has_column_privileges(sql, rel) == 0)
+							return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
+					}
+					rel_base_use_all(sql, rel);
+					rel = rewrite_basetable(sql, rel);
 				}
-				rel_base_use_all(sql, rel);
-				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
 					return rel;
@@ -2469,16 +2500,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		set_processed(rel);
 		break;
+	case 'u':
+		if (strcmp(r+*pos, "union") == 0 && j == op_basetable) {
+			*pos += (int) strlen("union");
+			j = op_munion;
+		}
+		/* fall through */
 	case 'm':
 		if (strcmp(r+*pos, "munion") == 0 && j == op_basetable) {
 			*pos += (int) strlen("munion");
 			j = op_munion;
-		}
-		/* fall through */
-	case 'u':
-		if (j == op_basetable) {
-			*pos += (int) strlen("union");
-			j = op_union;
 		}
 		/* fall through */
 	case 'i':
@@ -2538,7 +2569,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		} else {
 			rel = rel_setop(sql->sa, lrel, rrel, j);
-			rel_setop_set_exps(sql, rel, exps, false);
+			rel_setop_set_exps(sql, rel, exps);
 			if (rel_set_types(sql, rel) < 0)
 				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		}

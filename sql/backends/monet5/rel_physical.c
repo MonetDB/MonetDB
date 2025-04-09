@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -79,7 +79,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 				find_basetables(sql, rel->l, tables);
 		break;
 	case op_join:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -158,7 +157,6 @@ rel_mark_partition(mvc *sql, sql_rel *rel)
 	case op_left:
 	case op_right:
 	case op_full:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -286,7 +284,6 @@ has_groupby(sql_rel *rel)
 		case op_semi:
 		case op_anti:
 
-		case op_union:
 		case op_inter:
 		case op_except:
 

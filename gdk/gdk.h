@@ -310,14 +310,9 @@
 #define _GDK_H_
 
 /* standard includes upon which all configure tests depend */
-#ifdef HAVE_SYS_TYPES_H
-# include <sys/types.h>
-#endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#include <stddef.h>
-#include <string.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -385,8 +380,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define THRDMASK	(1U)
 #define CHECKMASK	(1U<<1)
 #define CHECKDEBUG	if (ATOMIC_GET(&GDKdebug) & CHECKMASK)
-#define PROPMASK	(1U<<3)	/* unused */
-#define PROPDEBUG	if (ATOMIC_GET(&GDKdebug) & PROPMASK) /* unused */
 #define IOMASK		(1U<<4)
 #define BATMASK		(1U<<5)
 #define PARMASK		(1U<<7)
@@ -407,11 +400,6 @@ gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *for
 #define DEADBEEFCHK	if (!(ATOMIC_GET(&GDKdebug) & DEADBEEFMASK))
 
 #define ALLOCMASK	(1U<<26)
-
-/* M5, only; cf.,
- * monetdb5/mal/mal.h
- */
-#define OPTMASK		(1U<<27)
 
 #define HEAPMASK	(1U<<28)
 
@@ -718,41 +706,8 @@ typedef struct Sink {
 	sink_done done;
 	int type;		/* sink/source type */
 } Sink;
-
-/* see also comment near BATassertProps() for more information about
- * the properties */
-typedef struct {
-	uint16_t width;		/* byte-width of the atom array */
-	int8_t type;		/* type id. */
-	uint8_t shift;		/* log2 of bun width */
-	bool key:1,		/* no duplicate values present */
-		nonil:1,	/* there are no nils in the column */
-		nil:1,		/* there is a nil in the column */
-		sorted:1,	/* column is sorted in ascending order */
-		revsorted:1,	/* column is sorted in descending order */
-		ascii:1;	/* string column is fully ASCII (7 bit) */
-	bool private_bat;	/* used by single worker thread only */
-	BUN nokey[2];		/* positions that prove key==FALSE */
-	BUN nosorted;		/* position that proves sorted==FALSE */
-	BUN norevsorted;	/* position that proves revsorted==FALSE */
-	BUN minpos, maxpos;	/* location of min/max value */
-	oid maxval;
-	double unique_est;	/* estimated number of unique values */
-	oid seq;		/* start of dense sequence */
-
-	Heap *heap;		/* space for the column. */
-	BUN baseoff;		/* offset in heap->base (in whole items) */
-	Heap *vheap;		/* space for the varsized data. */
-	Hash *hash;		/* hash table */
-#ifdef HAVE_RTREE
-	RTree *rtree;		/* rtree geometric index */
-#endif
-	Heap *orderidx;		/* order oid index */
-	Strimps *strimps;	/* string imprint index  */
-	Sink *sink;
-
-	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
-} COLrec;
+#define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
+#define TSKfree(b)    TSKdestroy(b)
 
 #define ORDERIDXOFF		3
 
@@ -799,9 +754,8 @@ typedef struct BAT {
 
 	/* dynamic bat properties */
 	restrict_t batRestricted:2; /* access privileges */
-	bool
-	 batTransient:1,	/* should the BAT persist on disk? */
-	 batCopiedtodisk:1;	/* once written */
+	bool batTransient:1;	/* should the BAT persist on disk? */
+	bool batCopiedtodisk:1;	/* once written */
 	uint16_t selcnt;	/* how often used in equi select without hash */
 	uint16_t unused;	/* value=0 for now (sneakily used by mat.c) */
 
@@ -811,44 +765,43 @@ typedef struct BAT {
 	BUN batCapacity;	/* tuple capacity */
 
 	/* dynamic column properties */
-	COLrec T;		/* column info */
+	uint16_t twidth;	/* byte-width of the atom array */
+	int8_t ttype;		/* type id. */
+	uint8_t tshift;		/* log2 of bun width */
+	/* see also comment near BATassertProps() for more information
+	 * about the properties */
+	bool tkey:1;		/* no duplicate values present */
+	bool tnonil:1;		/* there are no nils in the column */
+	bool tnil:1;		/* there is a nil in the column */
+	bool tsorted:1;		/* column is sorted in ascending order */
+	bool trevsorted:1;	/* column is sorted in descending order */
+	bool tascii:1;		/* string column is fully ASCII (7 bit) */
+	BUN tnokey[2];		/* positions that prove key==FALSE */
+	BUN tnosorted;		/* position that proves sorted==FALSE */
+	BUN tnorevsorted;	/* position that proves revsorted==FALSE */
+	BUN tminpos, tmaxpos;	/* location of min/max value */
+	oid tmaxval;
+	double tunique_est;	/* estimated number of unique values */
+	oid tseqbase;		/* start of dense sequence */
+	bool tprivate_bat;	/* used by single worker thread only */
+
+	Heap *theap;		/* space for the column. */
+	BUN tbaseoff;		/* offset in heap->base (in whole items) */
+	Heap *tvheap;		/* space for the varsized data. */
+	Hash *thash;		/* hash table */
+#ifdef HAVE_RTREE
+	RTree *trtree;		/* rtree geometric index */
+#endif
+	Heap *torderidx;	/* order oid index */
+	Strimps *tstrimps;	/* string imprint index  */
+	Sink *tsink;
+	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
 	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
 	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
 } BAT;
-
-/* macros to hide complexity of the BAT structure */
-#define ttype		T.type
-#define tkey		T.key
-#define tseqbase	T.seq
-#define tsorted		T.sorted
-#define trevsorted	T.revsorted
-#define tascii		T.ascii
-#define torderidx	T.orderidx
-#define twidth		T.width
-#define tshift		T.shift
-#define tnonil		T.nonil
-#define tnil		T.nil
-#define tnokey		T.nokey
-#define tnosorted	T.nosorted
-#define tnorevsorted	T.norevsorted
-#define tminpos		T.minpos
-#define tmaxpos		T.maxpos
-#define tunique_est	T.unique_est
-#define theap		T.heap
-#define tbaseoff	T.baseoff
-#define tvheap		T.vheap
-#define thash		T.hash
-#define tsink		T.sink
-#define tprops		T.props
-#define tstrimps	T.strimps
-#ifdef HAVE_RTREE
-#define trtree		T.rtree
-#endif
-
-#define TSKdestroy(b) if (b->tsink && b->tsink->destroy) { b->tsink->destroy(b->tsink); b->tsink = NULL; }
-#define TSKfree(b)    TSKdestroy(b)
 
 /* some access functions for the bitmask type */
 static inline void
@@ -1740,12 +1693,10 @@ BATnegateprops(BAT *b)
 
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
-#define GDKerror(...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,	\
-		      GDK, NULL, __VA_ARGS__)
+#define GDKerror(...)		TRC_ERROR(GDK, __VA_ARGS__)
 #define GDKsyserr(errno, ...)						\
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,		\
-		      GDK, GDKstrerror(errno, (char[64]){0}, 64),	\
+	GDKtracer_log(__FILE__, __func__, __LINE__, TRC_NAME(M_ERROR),	\
+		      TRC_NAME(GDK), GDKstrerror(errno, (char[64]){0}, 64), \
 		      __VA_ARGS__)
 #define GDKsyserror(...)	GDKsyserr(errno, __VA_ARGS__)
 
@@ -1956,7 +1907,8 @@ gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 gdk_export bool BATcheckorderidx(BAT *b);
 
-#include "gdk_delta.h"
+#define DELTAdirty(b)	((b)->batInserted < BATcount(b))
+
 #include "gdk_hash.h"
 #include "gdk_bbp.h"
 #include "gdk_utils.h"
@@ -1964,7 +1916,6 @@ gdk_export bool BATcheckorderidx(BAT *b);
 /* functions defined in gdk_bat.c */
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__((__warn_unused_result__));
-gdk_export BAT *BATattach(int tt, const char *heapfile, role_t role);
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER
@@ -2013,7 +1964,7 @@ BBPcheck(bat x)
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
-			TRC_DEBUG(CHECK_, "range error %d\n", (int) x);
+			TRC_DEBUG(CHECK, "range error %d\n", (int) x);
 		} else {
 			/* No longer guaranteed in pipeline, hence disable it.
 			 * TODO: find a proper way for this check
@@ -2353,6 +2304,8 @@ gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl,
 	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, bool anti, bool symmetric, BUN estimate)
+	__attribute__((__access__(write_only, 1)))
+	__attribute__((__access__(write_only, 2)))
 	__attribute__((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *restrict l, BAT *restrict r);
 gdk_export BAT *BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2);
@@ -2446,8 +2399,8 @@ TIMEOUT_ERROR(const QryCtx *qc, const char *file, const char *func, int lineno)
 {
 	const char *e = TIMEOUT_MESSAGE(qc);
 	if (e) {
-		GDKtracer_log(file, func, lineno, M_ERROR, GDK, NULL,
-			      "%s\n", e);
+		GDKtracer_log(file, func, lineno, TRC_NAME(M_ERROR),
+			      TRC_NAME(GDK), NULL, "%s\n", e);
 	}
 }
 
@@ -2555,16 +2508,6 @@ TIMEOUT_TEST(QryCtx *qc)
 			CALLBACK;					\
 	} while (0)
 
-typedef struct gdk_callback {
-	const char *name;
-	int argc;
-	int interval;  // units sec
-	lng last_called; // timestamp GDKusec
-	gdk_return (*func)(int argc, void *argv[]);
-	struct gdk_callback *next;
-	void *argv[];
-} gdk_callback;
-
 typedef gdk_return gdk_callback_func(int argc, void *argv[]);
 
 gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
@@ -2628,8 +2571,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-				"sa_alloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);		\
+			  "sa_alloc(%p,%zu) -> %p\n",		\
+			  _sa, _sz, _res);			\
 		_res;						\
 	})
 #define sa_zalloc(sa, sz)					\
@@ -2638,8 +2581,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
-				"sa_zalloc(%p,%zu) -> %p\n",	\
-				_sa, _sz, _res);		\
+			  "sa_zalloc(%p,%zu) -> %p\n",		\
+			  _sa, _sz, _res);			\
 		_res;						\
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
@@ -2650,8 +2593,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _osz = (osz);					\
 		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
 		TRC_DEBUG(ALLOC,					\
-				"sa_realloc(%p,%p,%zu,%zu) -> %p\n",	\
-				_sa, _ptr, _sz, _osz, _res);		\
+			  "sa_realloc(%p,%p,%zu,%zu) -> %p\n",		\
+			  _sa, _ptr, _sz, _osz, _res);			\
 		_res;							\
 	})
 #define sa_strdup(sa, s)						\
@@ -2660,8 +2603,8 @@ gdk_export size_t sa_size( allocator *sa );
 		const char *_s = (s);					\
 		char *_res = sa_strdup(_sa, _s);			\
 		TRC_DEBUG(ALLOC,					\
-				"sa_strdup(%p,len=%zu) -> %p\n",	\
-				_sa, strlen(_s), _res);			\
+			  "sa_strdup(%p,len=%zu) -> %p\n",		\
+			  _sa, strlen(_s), _res);			\
 		_res;							\
 	})
 #define sa_strndup(sa, s, l)						\
@@ -2671,8 +2614,8 @@ gdk_export size_t sa_size( allocator *sa );
 		size_t _l = (l);					\
 		char *_res = sa_strndup(_sa, _s, _l);			\
 		TRC_DEBUG(ALLOC,					\
-				"sa_strndup(%p,len=%zu) -> %p\n", 	\
-				_sa, _l, _res);				\
+			  "sa_strndup(%p,len=%zu) -> %p\n",		\
+			  _sa, _l, _res);				\
 		_res;							\
 	})
 #endif

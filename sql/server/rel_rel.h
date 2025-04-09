@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -36,6 +36,7 @@
 #define sql_or           (1 << 16) //ORed
 #define sql_merge        (1 << 17) //ORed
 #define sql_no_subquery  (1 << 18) //ORed
+#define sql_qualify      (1 << 19) //ORed
 
 #define is_sql_from(X)         ((X & sql_from) == sql_from)
 #define is_sql_where(X)        ((X & sql_where) == sql_where)
@@ -56,6 +57,7 @@
 #define is_sql_or(X)           ((X & sql_or) == sql_or)
 #define is_sql_merge(X)        ((X & sql_merge) == sql_merge)
 #define is_sql_no_subquery(X)  ((X & sql_no_subquery) == sql_no_subquery)
+#define is_sql_qualify(X)      ((X & sql_qualify) == sql_qualify)
 
 #define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
@@ -85,13 +87,12 @@ extern sql_rel *rel_inplace_setop_n_ary(mvc *sql, sql_rel *rel, list *rl, operat
 extern sql_rel *rel_inplace_project(allocator *sa, sql_rel *rel, sql_rel *l, list *e);
 extern sql_rel *rel_inplace_select(sql_rel *rel, sql_rel *l, list *exps);
 extern sql_rel *rel_inplace_groupby(sql_rel *rel, sql_rel *l, list *groupbyexps, list *exps );
-extern sql_rel *rel_inplace_munion(sql_rel *rel, list *rels);
 extern sql_rel *rel_dup_copy(allocator *sa, sql_rel *rel);
 
 extern int rel_convert_types(mvc *sql, sql_rel *ll, sql_rel *rr, sql_exp **L, sql_exp **R, int scale_fixing, check_type tpe);
 extern sql_rel *rel_setop(allocator *sa, sql_rel *l, sql_rel *r, operator_type setop);
 extern sql_rel *rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
-extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
+extern void rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps);
 extern sql_rel *rel_setop_n_ary(allocator *sa, list *rels, operator_type setop);
 extern sql_rel *rel_setop_n_ary_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, operator_type op);
 extern void rel_setop_n_ary_set_exps(mvc *sql, sql_rel *rel, list *exps, bool keep_props);
@@ -121,7 +122,7 @@ extern sql_rel *rel_relational_func(allocator *sa, sql_rel *l, list *exps);
 extern sql_rel *rel_table_func(allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
-extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
+sql_export list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f);
 extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f);
@@ -142,6 +143,7 @@ extern list *rel_dependencies(mvc *sql, sql_rel *r);
 typedef struct visitor {
 	int changes;
 	int depth;		/* depth of the current relation */
+	int opt;
 	sql_rel *parent;
 	mvc *sql;
 	void *data;
