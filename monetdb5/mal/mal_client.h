@@ -68,7 +68,7 @@ typedef struct CLIENT {
 	init_client initClient;
 	exit_client exitClient;
 	/* if set to 'S' it will put the process to sleep */
-	bit sqlprofiler;			/* control off-line sql performance monitoring */
+	bool sqlprofiler;			/* control off-line sql performance monitoring */
 	/*
 	 * Each session comes with resource limitations and predefined settings.
 	 */
