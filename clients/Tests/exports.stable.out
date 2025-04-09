@@ -899,6 +899,7 @@ const char dblRef[];
 void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int size);
 const char decompressRef[];
 int defConstant(MalBlkPtr mb, int type, ValPtr cst);
+const char defaultfastRef[];
 const char defineRef[];
 void delArgument(InstrPtr p, int varid);
 const char deleteRef[];

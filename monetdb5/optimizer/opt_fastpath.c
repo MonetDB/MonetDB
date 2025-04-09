@@ -44,14 +44,12 @@
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
 
-#define optcall(TEST, OPT)												\
+#define optcall(OPT)													\
 	do {																\
-		if (TEST) {														\
-			if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED)		\
-				goto bailout;											\
-			actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1)); \
-			delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
-		}																\
+		if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED)			\
+			goto bailout;												\
+		actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1));	\
+		delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
 	} while (0)
 
 str
@@ -77,16 +75,19 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 
-	optcall(true, OPTinlineImplementation);
-	optcall(true, OPTremapImplementation);
-	optcall(true, OPTemptybindImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTforImplementation);
-	optcall(true, OPTdictImplementation);
-	optcall(multiplex, OPTmultiplexImplementation);
-	optcall(generator, OPTgeneratorImplementation);
-	optcall(profilerStatus, OPTprofilerImplementation);
-	optcall(true, OPTgarbageCollectorImplementation);
+	optcall(OPTinlineImplementation);
+	optcall(OPTremapImplementation);
+	optcall(OPTemptybindImplementation);
+	optcall(OPTdeadcodeImplementation);
+	optcall(OPTforImplementation);
+	optcall(OPTdictImplementation);
+	if (multiplex)
+		optcall(OPTmultiplexImplementation);
+	if (generator)
+		optcall(OPTgeneratorImplementation);
+	if (profilerStatus)
+		optcall(OPTprofilerImplementation);
+	optcall(OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
 	/* keep actions taken as a fake argument */
@@ -118,36 +119,44 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 
-	optcall(true, OPTinlineImplementation);
-	optcall(true, OPTremapImplementation);
-	optcall(true, OPTcostModelImplementation);
-	optcall(true, OPTcoercionImplementation);
-	optcall(true, OPTaliasesImplementation);
-	optcall(true, OPTevaluateImplementation);
-	optcall(true, OPTemptybindImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTpushselectImplementation);
-	optcall(true, OPTaliasesImplementation);
-	optcall(true, OPTforImplementation);
-	optcall(true, OPTdictImplementation);
-	optcall(true, OPTmitosisImplementation);
-	optcall(true, OPTmergetableImplementation);
-	optcall(true, OPTaliasesImplementation);
-	optcall(true, OPTconstantsImplementation);
-	optcall(true, OPTcommonTermsImplementation);
-	optcall(true, OPTprojectionpathImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTmatpackImplementation);
-	optcall(true, OPTreorderImplementation);
-	optcall(true, OPTdataflowImplementation);
-	optcall(true, OPTquerylogImplementation);
-	optcall(multiplex, OPTmultiplexImplementation);
-	optcall(generator, OPTgeneratorImplementation);
-	optcall(profilerStatus, OPTcandidatesImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTpostfixImplementation);
-	optcall(profilerStatus, OPTprofilerImplementation);
-	optcall(true, OPTgarbageCollectorImplementation);
+	optcall(OPTinlineImplementation);
+	optcall(OPTremapImplementation);
+	optcall(OPTcostModelImplementation);
+	optcall(OPTcoercionImplementation);
+	optcall(OPTaliasesImplementation);
+	optcall(OPTevaluateImplementation);
+	optcall(OPTemptybindImplementation);
+	optcall(OPTdeadcodeImplementation);
+	optcall(OPTpushselectImplementation);
+	optcall(OPTaliasesImplementation);
+	optcall(OPTforImplementation);
+	optcall(OPTdictImplementation);
+	if (!cntxt->no_mitosis) {
+		optcall(OPTmitosisImplementation);
+		optcall(OPTmergetableImplementation); /* depends on mitosis */
+	}
+	optcall(OPTaliasesImplementation);
+	optcall(OPTconstantsImplementation);
+	optcall(OPTcommonTermsImplementation);
+	optcall(OPTprojectionpathImplementation);
+	optcall(OPTdeadcodeImplementation);
+	if (!cntxt->no_mitosis) {
+		optcall(OPTmatpackImplementation); /* depends on mergetable */
+		optcall(OPTreorderImplementation); /* depends on mitosis */
+	}
+	optcall(OPTdataflowImplementation);
+	optcall(OPTquerylogImplementation);
+	if (multiplex)
+		optcall(OPTmultiplexImplementation);
+	if (generator)
+		optcall(OPTgeneratorImplementation);
+	if (profilerStatus)
+		optcall(OPTcandidatesImplementation);
+	optcall(OPTdeadcodeImplementation);
+	optcall(OPTpostfixImplementation);
+	if (profilerStatus)
+		optcall(OPTprofilerImplementation);
+	optcall(OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
 	/* keep actions taken as a fake argument */

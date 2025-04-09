@@ -74,6 +74,10 @@ static struct pipeline {
  * tools/mserver/mserver5.1) accordingly!
  */
 	{"default_pipe",
+	 /* NOTE: this pipeline is automatically replaced by the
+	  * default_fast pipeline by the SQL layer, i.e. this list of
+	  * optimizers isn't actually used (look in opt_fastpath.c
+	  * instead) */
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -127,6 +131,10 @@ static struct pipeline {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"no_mitosis_pipe",
+	 /* NOTE: this pipeline is automatically replaced by the
+	  * default_fast pipeline by the SQL layer with the no_mitosis
+	  * option set, i.e. this list of optimizers isn't actually used
+	  * (look in opt_fastpath.c instead) */
 	 (char *[]) {
 		 "inline",
 		 "remap",
