@@ -644,8 +644,9 @@ create or replace view v102(vc0) as (select 1 from v101)
 statement ok
 commit
 
-statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
+query I
 SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.vc0 = vx.vc0 AND (SELECT TRUE FROM v102)))
+----
 
 statement error 42000!COUNT: aggregate functions not allowed in WHERE clause
 SELECT 1 FROM v100 WHERE (SELECT 1 HAVING count(v100.vc0 + (SELECT 1 FROM v104)))

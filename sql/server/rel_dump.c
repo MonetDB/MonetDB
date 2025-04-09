@@ -115,6 +115,39 @@ static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs
 
 static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
 
+static void
+exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, int decorate)
+{
+	assert(n->next);
+	sql_exp *l = n->data;
+	sql_exp *r = n->next->data;
+
+	if (l->type == e_cmp && l->flag == cmp_con) {
+		exps_print(sql, fout, l->l, depth, refs, 0, 1, decorate, 0);
+	} else {
+		mnstr_printf(fout, "(");
+		exp_print(sql, fout, l, depth+1, refs, 0, 0, decorate);
+		mnstr_printf(fout, ")");
+	}
+	if (anti)
+		mnstr_printf(fout, " !");
+	mnstr_printf(fout, " or ");
+
+	if (n->next->next) {
+		mnstr_printf(fout, "(");
+		exp_or_print(sql, fout, n->next, anti, depth, refs, decorate);
+		mnstr_printf(fout, ")");
+	} else {
+		if (r->type == e_cmp && r->flag == cmp_con) {
+			exps_print(sql, fout, r->l, depth, refs, 0, 1, decorate, 0);
+		} else {
+			mnstr_printf(fout, "(");
+			exp_print(sql, fout, r, depth+1, refs, 0, 0, decorate);
+			mnstr_printf(fout, ")");
+		}
+	}
+}
+
 void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate)
 {
@@ -279,6 +312,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
+		} else if (e->flag == cmp_dis && (!is_anti(e) || list_length(e->l) == 2)) { /* output as old cmp_or right nested tree */
+			list *l = e->l;
+			exp_or_print(sql, fout, l->h, is_anti(e), depth, refs, decorate);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if (is_anti(e))
 				mnstr_printf(fout, " !");

@@ -41,8 +41,7 @@ exps_simplify_exp(visitor *v, list *exps)
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			/* TRUE and X -> X */
-			/* FALSE and X -> FALSE */
+			/* TRUE and X -> X, FALSE and X -> FALSE, X and X -> X */
 			if (is_compare(e->type) && e->flag == cmp_con) {
 				sql_exp *te = NULL;
 				list *l = e->l;
@@ -64,6 +63,10 @@ exps_simplify_exp(visitor *v, list *exps)
 						e = ie;
 						nexps = NULL;
 						break;
+					} else if (m->next) {
+						sql_exp *ie2 = m->next->data;
+						if (exp_equal(ie, ie2) == 0)
+							continue; /* skip */
 					}
 					append(nexps, ie);
 				}
@@ -80,8 +83,7 @@ exps_simplify_exp(visitor *v, list *exps)
 					}
 				}
 			} else
-			/* TRUE or X -> TRUE
-		 	* FALSE or X -> X */
+			/* TRUE or X -> TRUE, FALSE or X -> X, X OR X -> X */
 			if (is_compare(e->type) && e->flag == cmp_dis) {
 				sql_exp *fe = NULL;
 				list *l = e->l;
@@ -103,6 +105,10 @@ exps_simplify_exp(visitor *v, list *exps)
 					} else if (exp_is_false(ie)) { /* x or false -> x */
 						fe = ie;
 						continue;
+					} else if (m->next) {
+						sql_exp *ie2 = m->next->data;
+						if (exp_equal(ie, ie2) == 0)
+							continue; /* skip */
 					}
 					append(nexps, ie);
 				}
