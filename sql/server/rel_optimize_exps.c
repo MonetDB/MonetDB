@@ -521,7 +521,34 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 }
 
 static inline sql_exp *
-simplify_not_over_equality_exp(visitor *v, sql_exp *e) {
+simplify_not(visitor *v, sql_exp *e)
+{
+	if (is_func(e->type)) {
+		sql_subfunc *f = e->f;
+		list *l = e->l;
+
+		if (f->func->s || !is_not_func(f) || list_length(l) != 1)
+			return e;
+
+		sql_exp *i = l->h->data;
+
+		if (is_compare(i->type)) {
+			if (is_anti(i))
+				reset_anti(i);
+			else
+				set_anti(i);
+			v->changes++;
+			return i;
+		}
+		v->changes++;
+		return exp_compare(v->sql->sa, i, exp_atom_bool(v->sql->sa, 0), cmp_equal);
+	}
+	return e;
+}
+
+static inline sql_exp *
+simplify_not_over_equality_exp(visitor *v, sql_exp *e)
+{
 	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
 		return e;
 	sql_exp *l = e->l;
@@ -643,6 +670,8 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 			return res;
 		}
 	}
+	if (is_func(e->type) && list_length(e->l) == 1 && is_not_func((sql_subfunc*)e->f))
+		return simplify_not(v, e);
 	if (is_func(e->type) && list_length(e->l) == 4 && is_casewhen_func((sql_subfunc*)e->f)) {
 		/* case x when y then a else b */
 		list *args = e->l;
