@@ -59,15 +59,22 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int generator = 0, multiplex = 0, actions = 0;
+	bool generator = false, multiplex = true;
+	int actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
-		if (getModuleId(q) == generatorRef)
-			generator = 1;
-		if (getFunctionId(q) == multiplexRef)
-			multiplex = 1;
+		if (getModuleId(q) == generatorRef) {
+			generator = true;
+			if (multiplex)
+				break;
+		}
+		if (getFunctionId(q) == multiplexRef) {
+			multiplex = true;
+			if (generator)
+				break;
+		}
 	}
 
 	optcall(true, OPTinlineImplementation);
@@ -79,7 +86,6 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
 	optcall(profilerStatus, OPTprofilerImplementation);
-	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
@@ -94,15 +100,22 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int generator = 0, multiplex = 0, actions = 0;
+	bool generator = false, multiplex = false;
+	int actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
-		if (getModuleId(q) == generatorRef)
-			generator = 1;
-		if (getFunctionId(q) == multiplexRef)
-			multiplex = 1;
+		if (getModuleId(q) == generatorRef) {
+			generator = true;
+			if (multiplex)
+				break;
+		}
+		if (getFunctionId(q) == multiplexRef) {
+			multiplex = true;
+			if (generator)
+				break;
+		}
 	}
 
 	optcall(true, OPTinlineImplementation);
@@ -124,16 +137,16 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	optcall(true, OPTcommonTermsImplementation);
 	optcall(true, OPTprojectionpathImplementation);
 	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTreorderImplementation);
 	optcall(true, OPTmatpackImplementation);
+	optcall(true, OPTreorderImplementation);
 	optcall(true, OPTdataflowImplementation);
 	optcall(true, OPTquerylogImplementation);
 	optcall(multiplex, OPTmultiplexImplementation);
 	optcall(generator, OPTgeneratorImplementation);
-	optcall(profilerStatus, OPTprofilerImplementation);
 	optcall(profilerStatus, OPTcandidatesImplementation);
 	optcall(true, OPTdeadcodeImplementation);
 	optcall(true, OPTpostfixImplementation);
+	optcall(profilerStatus, OPTprofilerImplementation);
 	optcall(true, OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
