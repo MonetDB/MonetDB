@@ -68,6 +68,82 @@ begin
     end if;
 end
 
+query I
+SELECT count(*) from events
+----
+10
+
+query I
+SELECT count(*)
+FROM
+    (SELECT
+           event,
+           CASE WHEN eal.key = 'brand' THEN eal.value END AS ecom_attributes_brand
+       FROM events
+           left join unnest(ecommerce.objects) as eol on true
+           left join unnest(eol.attributes) as eal on true)t
+----
+10
+
+query I
+SELECT count(*)
+FROM
+    (SELECT
+           event,
+           CASE WHEN l.key = 'pageType' THEN l.value END AS pagetype
+       FROM events
+           left join unnest(location) as l on true)t
+----
+50
+
+query I
+SELECT count(*)
+FROM
+    (SELECT
+           event,
+           CASE WHEN u.key = 'customerType' THEN u.value END AS customertype,
+           CASE WHEN u.key = 'customerid' THEN u.value END AS customerid
+       FROM events
+           left join unnest("user") as u on true)t
+----
+
+
+query I
+SELECT count(*)
+FROM
+    (SELECT
+           timestamp,
+           user_agent,
+           event,
+           CASE WHEN l.key = 'pageType' THEN l.value END AS pagetype,
+           CASE WHEN u.key = 'customerType' THEN u.value END AS customertype,
+           CASE WHEN u.key = 'customerid' THEN u.value END AS customerid,
+           CASE WHEN eal.key = 'brand' THEN eal.value END AS ecom_attributes_brand
+       FROM events
+           left join unnest(location) as l on true
+           left join unnest(ecommerce.objects) as eol on true
+           left join unnest(eol.attributes) as eal on true
+           left join unnest("user") as u on true)t
+----
+
+query I
+SELECT count(*)
+FROM
+    (SELECT
+           timestamp,
+           user_agent,
+           event,
+           CASE WHEN l.key = 'pageType' THEN l.value END AS pagetype,
+           CASE WHEN u.key = 'customerType' THEN u.value END AS customertype,
+           CASE WHEN u.key = 'customerid' THEN u.value END AS customerid,
+           CASE WHEN eal.key = 'brand' THEN eal.value END AS ecom_attributes_brand
+       FROM events
+           left join unnest(location) as l on true
+           left join unnest(ecommerce.objects) as eol on true
+           left join unnest(eol.attributes) as eal on true
+           cross join unnest("user") as u)t
+----
+
 query TTTTTT
 WITH base AS (
     SELECT
