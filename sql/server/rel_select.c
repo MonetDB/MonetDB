@@ -2826,12 +2826,12 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		sql_exp *ls = NULL, *rs;
 		list *l = NULL;
 
-		if (!(ls = rel_logical_value_exp(query, &rel, lo, f|sql_farg, ek)))
+		if (!(ls = rel_logical_value_exp(query, &rel, lo, f, ek)))
 			return NULL;
 
 		for(n = n->next; n; n = n->next) {
 			symbol *ro = n->data.sym;
-			if (!(rs = rel_logical_value_exp(query, &rel, ro, f|sql_farg, ek)))
+			if (!(rs = rel_logical_value_exp(query, &rel, ro, f, ek)))
 				return NULL;
 			if (!l) {
 				l = sa_list(sql->sa);
