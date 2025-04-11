@@ -795,7 +795,7 @@ startProfiler(Client cntxt)
 str
 startTrace(Client cntxt)
 {
-	cntxt->sqlprofiler = TRUE;
+	cntxt->sqlprofiler = true;
 	clearTrace(cntxt);
 	return MAL_SUCCEED;
 }
@@ -803,7 +803,7 @@ startTrace(Client cntxt)
 str
 stopTrace(Client cntxt)
 {
-	cntxt->sqlprofiler = FALSE;
+	cntxt->sqlprofiler = false;
 	return MAL_SUCCEED;
 }
 
@@ -965,7 +965,7 @@ sqlProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
-		cntxt->sqlprofiler = FALSE;
+		cntxt->sqlprofiler = false;
 	}
 
 	MT_lock_unset(&mal_profileLock);

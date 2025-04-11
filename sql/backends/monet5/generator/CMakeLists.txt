@@ -31,7 +31,7 @@ create_include_object(
 
 target_sources(generator
   PRIVATE
-  generator.c generator.h
+  generator.c
   ${MONETDB_CURRENT_SQL_SOURCES})
 
 target_include_directories(generator
