@@ -337,8 +337,93 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 	return exps;
 }
 
+#define TRIVIAL_NOT_EQUAL_CMP(e) \
+	((e)->type == e_cmp && (e)->flag == cmp_notequal && !is_anti((e)) && !is_semantics((e)) && ((sql_exp*)(e)->l)->card != CARD_ATOM && ((sql_exp*)(e)->r)->card == CARD_ATOM)
+
+static list *
+merge_notequal(mvc *sql, list *exps, int *changes)
+{
+	list *inequality_groups = NULL, *nexps = NULL;
+	int needed = 0;
+
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (TRIVIAL_NOT_EQUAL_CMP(e)) {
+			bool appended = false;
+
+			if (inequality_groups) {
+				for (node *m = inequality_groups->h; m && !appended; m = m->next) {
+					list *next = m->data;
+					sql_exp *first = (sql_exp*) next->h->data;
+
+					if (exp_match(first->l, e->l)) {
+						list_append(next, e);
+						appended = true;
+					}
+				}
+			}
+			if (!appended) {
+				if (!inequality_groups)
+					inequality_groups = new_exp_list(sql->sa);
+				list_append(inequality_groups, list_append(new_exp_list(sql->sa), e));
+			}
+		}
+	}
+
+	if (inequality_groups) { /* if one list of inequalities has more than one entry, then the re-write is needed */
+		for (node *n = inequality_groups->h; n; n = n->next) {
+			list *next = n->data;
+
+			if (list_length(next) > 1)
+				needed = 1;
+		}
+	}
+
+	if (needed) {
+		nexps = new_exp_list(sql->sa);
+		for (node *n = inequality_groups->h; n; n = n->next) {
+			list *next = n->data;
+			sql_exp *first = (sql_exp*) next->h->data;
+
+			if (list_length(next) > 1) {
+				list *notin = new_exp_list(sql->sa);
+
+				for (node *m = next->h; m; m = m->next) {
+					sql_exp *e = m->data;
+					list_append(notin, e->r);
+				}
+				list_append(nexps, exp_in(sql->sa, first->l, notin, cmp_notin));
+			} else {
+				list_append(nexps, first);
+			}
+		}
+
+		for (node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (!TRIVIAL_NOT_EQUAL_CMP(e))
+				list_append(nexps, e);
+		}
+		(*changes)++;
+	} else {
+		nexps = exps;
+	}
+
+	for (node *n = nexps->h; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp && e->flag == cmp_or) {
+			e->l = merge_notequal(sql, e->l, changes);
+			e->r = merge_notequal(sql, e->r, changes);
+		}
+	}
+
+	return nexps;
+}
+
 static int
-exps_cse_dis( mvc *sql, list *oexps, sql_exp *de)
+exps_cse_dis( visitor *v, list *oexps, sql_exp *de)
 {
 	node *n, *m, *o;
 	list *dis = de->l;
@@ -347,9 +432,14 @@ exps_cse_dis( mvc *sql, list *oexps, sql_exp *de)
 		append(oexps, de);
 		return 0;
 	}
+	for (n = dis->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type == e_cmp && e->flag == cmp_con)
+			e->l = merge_notequal(v->sql, e->l, &v->changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
+	}
 
 	int matches = 0, lpos = 0, rc = 1, rpos = 0, changes = 0;
-	int *matchedpos = SA_ZNEW_ARRAY(sql->ta, int, list_length(dis));
+	int *matchedpos = SA_ZNEW_ARRAY(v->sql->ta, int, list_length(dis));
 	sql_exp *fe = dis->h->data;
 	if (fe->type != e_cmp || fe->flag != cmp_con) {
 		append(oexps, de);
@@ -970,91 +1060,6 @@ merge_ors(mvc *sql, list *exps, int *changes)
 	return exps;
 }
 
-#define TRIVIAL_NOT_EQUAL_CMP(e) \
-	((e)->type == e_cmp && (e)->flag == cmp_notequal && !is_anti((e)) && !is_semantics((e)) && ((sql_exp*)(e)->l)->card != CARD_ATOM && ((sql_exp*)(e)->r)->card == CARD_ATOM)
-
-static list *
-merge_notequal(mvc *sql, list *exps, int *changes)
-{
-	list *inequality_groups = NULL, *nexps = NULL;
-	int needed = 0;
-
-	for (node *n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (TRIVIAL_NOT_EQUAL_CMP(e)) {
-			bool appended = false;
-
-			if (inequality_groups) {
-				for (node *m = inequality_groups->h; m && !appended; m = m->next) {
-					list *next = m->data;
-					sql_exp *first = (sql_exp*) next->h->data;
-
-					if (exp_match(first->l, e->l)) {
-						list_append(next, e);
-						appended = true;
-					}
-				}
-			}
-			if (!appended) {
-				if (!inequality_groups)
-					inequality_groups = new_exp_list(sql->sa);
-				list_append(inequality_groups, list_append(new_exp_list(sql->sa), e));
-			}
-		}
-	}
-
-	if (inequality_groups) { /* if one list of inequalities has more than one entry, then the re-write is needed */
-		for (node *n = inequality_groups->h; n; n = n->next) {
-			list *next = n->data;
-
-			if (list_length(next) > 1)
-				needed = 1;
-		}
-	}
-
-	if (needed) {
-		nexps = new_exp_list(sql->sa);
-		for (node *n = inequality_groups->h; n; n = n->next) {
-			list *next = n->data;
-			sql_exp *first = (sql_exp*) next->h->data;
-
-			if (list_length(next) > 1) {
-				list *notin = new_exp_list(sql->sa);
-
-				for (node *m = next->h; m; m = m->next) {
-					sql_exp *e = m->data;
-					list_append(notin, e->r);
-				}
-				list_append(nexps, exp_in(sql->sa, first->l, notin, cmp_notin));
-			} else {
-				list_append(nexps, first);
-			}
-		}
-
-		for (node *n = exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (!TRIVIAL_NOT_EQUAL_CMP(e))
-				list_append(nexps, e);
-		}
-		(*changes)++;
-	} else {
-		nexps = exps;
-	}
-
-	for (node *n = nexps->h; n ; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e->type == e_cmp && e->flag == cmp_or) {
-			e->l = merge_notequal(sql, e->l, changes);
-			e->r = merge_notequal(sql, e->r, changes);
-		}
-	}
-
-	return nexps;
-}
-
 int
 is_numeric_upcast(sql_exp *e)
 {
@@ -1068,6 +1073,58 @@ is_numeric_upcast(sql_exp *e)
 		}
 	}
 	return 0;
+}
+
+/* optimize (a = b) or (a is null and b is null) -> a = b with null semantics */
+static sql_exp *
+try_rewrite_equal_or_is_null1(mvc *sql, sql_rel *rel, sql_exp *or, sql_exp *cmp, list *l2)
+{
+	bool valid = true, first_is_null_found = false, second_is_null_found = false;
+	sql_exp *first = cmp->l, *second = cmp->r;
+
+	if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
+		int fupcast = is_numeric_upcast(first), supcast = is_numeric_upcast(second);
+		for(node *n = l2->h ; n && valid; n = n->next) {
+			sql_exp *e = n->data, *l = e->l, *r = e->r;
+
+			if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
+					!is_anti(e) && is_semantics(e)) {
+				int lupcast = is_numeric_upcast(l);
+				int rupcast = is_numeric_upcast(r);
+				sql_exp *rr = rupcast ? r->l : r;
+
+				if (rr->type == e_atom && rr->l && atom_null(rr->l)) {
+					if (exp_match_exp(fupcast?first->l:first, lupcast?l->l:l))
+						first_is_null_found = true;
+					else if (exp_match_exp(supcast?second->l:second, lupcast?l->l:l))
+						second_is_null_found = true;
+					else
+						valid = false;
+				} else {
+					valid = false;
+				}
+			} else {
+				valid = false;
+			}
+		}
+		if (valid && first_is_null_found && second_is_null_found) {
+			sql_subtype super;
+
+			cmp_supertype(&super, exp_subtype(first), exp_subtype(second)); /* first and second must have the same type */
+			if (!(first = exp_check_type(sql, &super, rel, first, type_equal)) ||
+					!(second = exp_check_type(sql, &super, rel, second, type_equal))) {
+				sql->session->status = 0;
+				sql->errstr[0] = 0;
+				return or;
+			}
+			sql_exp *res = exp_compare(sql->sa, first, second, cmp->flag);
+			set_semantics(res);
+			if (exp_name(or))
+				exp_prop_alias(sql->sa, res, or);
+			return res;
+		}
+	}
+	return or;
 }
 
 /* optimize (a = b) or (a is null and b is null) -> a = b with null semantics */
@@ -1131,7 +1188,28 @@ merge_cmp_or_null(mvc *sql, sql_rel *rel, list *exps, int *changes)
 	for (node *n = exps->h; n ; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
+		if (is_compare(e->type) && e->flag == cmp_dis && !is_anti(e)) {
+			list *l = e->l;
+			if (list_length(l) == 2) {
+				sql_exp *h = l->h->data;
+				sql_exp *t = l->h->next->data;
+				if(is_compare(h->type) && h->flag == cmp_equal &&
+				   is_compare(t->type) && t->flag == cmp_con) {
+					sql_exp *ne = try_rewrite_equal_or_is_null1(sql, rel, e, h, t->l);
+					if (ne != e) {
+						(*changes)++;
+						n->data = ne;
+					}
+				} else if(is_compare(t->type) && t->flag == cmp_equal &&
+				   is_compare(h->type) && h->flag == cmp_con) {
+					sql_exp *ne = try_rewrite_equal_or_is_null1(sql, rel, e, t, h->l);
+					if (ne != e) {
+						(*changes)++;
+						n->data = ne;
+					}
+				}
+			}
+		} else if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
 			sql_exp *ne = try_rewrite_equal_or_is_null(sql, rel, e, e->l, e->r);
 			if (ne != e) {
 				(*changes)++;
@@ -1233,7 +1311,7 @@ rel_select_cse(visitor *v, sql_rel *rel)
 
 			if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e)) {
 				/* split the common expressions */
-				v->changes += exps_cse_dis(v->sql, nexps, e);
+				v->changes += exps_cse_dis(v, nexps, e);
 			} else if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
 				/* split the common expressions */
 				v->changes += exps_cse(v->sql, nexps, e->l, e->r);
