@@ -1411,13 +1411,10 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 			bool changed = false;
 			if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e) && !is_semantics(e)) {
-				int nr_conj = 0;
 				list *exps = e->l;
 				for(node *n = exps->h; n; n = n->next) {
 					sql_exp *e1 = n->data;
 
-					if (e1->type == e_cmp && e1->flag == cmp_con)
-						nr_conj++;
 					bool merged = false;
 					if (!is_semantics(e1) && !is_anti(e1)) {
 						/* no merges, ie don't change e, all merged into one new expression, some merged, rewrite e into new cmp_dis */
