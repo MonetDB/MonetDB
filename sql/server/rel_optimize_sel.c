@@ -338,6 +338,67 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 }
 
 static int
+exps_cse_dis( mvc *sql, list *oexps, sql_exp *de)
+{
+	node *n, *m, *o;
+	list *dis = de->l;
+
+	if (list_length(dis) <= 1) {
+		append(oexps, de);
+		return 0;
+	}
+
+	int matches = 0, lpos = 0, rc = 1, rpos = 0, changes = 0;
+	int *matchedpos = SA_ZNEW_ARRAY(sql->ta, int, list_length(dis));
+	sql_exp *fe = dis->h->data;
+	if (fe->type != e_cmp || fe->flag != cmp_con) {
+		append(oexps, de);
+		return 0;
+	}
+	list *ll = fe->l;
+	for (m = ll->h; m; ) {
+		sql_exp *le = m->data;
+		for (n = dis->h->next, matches = 0, rc = 1; n; n = n->next, rc++) {
+			sql_exp *me = n->data;
+
+			if (me->type != e_cmp || me->flag != cmp_con) {
+			   append(oexps, de);
+			   return 0;
+			}
+			list *rl = me->l;
+			for (o = rl->h, rpos = 0; o; o = o->next, rpos++) {
+				sql_exp *re = o->data;
+				if (exp_match_exp(le,re)) {
+					matchedpos[rc] = rpos;
+					matches++;
+					break;
+				}
+			}
+		}
+		if ((matches+1) == rc) {
+			append(oexps, le);
+			matchedpos[0] = lpos;
+			int pos = 0;
+			for (node *n = dis->h; n; n = n->next, pos++) {
+				sql_exp *e = n->data;
+				list *l = e->l;
+				node *r = list_fetch_node(l, matchedpos[pos]);
+				list_remove_node(l, NULL, r);
+				changes++;
+				m = ll->h;
+				lpos = 0;
+			}
+		}
+		m = m->next;
+	   	lpos++;
+	}
+	//if (changes) {
+		/* todo check for empty lists */
+	append(oexps, de);
+	return changes;
+}
+
+static int
 exps_cse( mvc *sql, list *oexps, list *l, list *r )
 {
 	list *nexps;
@@ -1160,7 +1221,8 @@ rel_select_cse(visitor *v, sql_rel *rel)
 		for (n=rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e))
+			if ((e->type == e_cmp && e->flag == cmp_dis && !is_anti(e)) ||
+			    (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)))
 				needed = 1;
 		}
 		if (!needed)
@@ -1169,7 +1231,10 @@ rel_select_cse(visitor *v, sql_rel *rel)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
+			if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e)) {
+				/* split the common expressions */
+				v->changes += exps_cse_dis(v->sql, nexps, e);
+			} else if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
 				/* split the common expressions */
 				v->changes += exps_cse(v->sql, nexps, e->l, e->r);
 			} else {
@@ -1346,10 +1411,13 @@ rel_merge_select_rse(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 			bool changed = false;
 			if (e->type == e_cmp && e->flag == cmp_dis && !is_anti(e) && !is_semantics(e)) {
+				int nr_conj = 0;
 				list *exps = e->l;
 				for(node *n = exps->h; n; n = n->next) {
 					sql_exp *e1 = n->data;
 
+					if (e1->type == e_cmp && e1->flag == cmp_con)
+						nr_conj++;
 					bool merged = false;
 					if (!is_semantics(e1) && !is_anti(e1)) {
 						/* no merges, ie don't change e, all merged into one new expression, some merged, rewrite e into new cmp_dis */
