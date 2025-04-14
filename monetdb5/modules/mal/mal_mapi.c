@@ -986,7 +986,7 @@ SERVERstop(void *ret)
 	 * system is going down */
 	while (ATOMIC_GET(&nlistener) > 0 && !GDKexiting())
 		MT_sleep_ms(100);
-	(void) ret;					/* fool compiler */
+	(void) ret;
 	return MAL_SUCCEED;
 }
 

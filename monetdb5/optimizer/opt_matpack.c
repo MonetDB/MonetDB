@@ -32,7 +32,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 	for (i = 1; i < mb->stop; i++)
 		if (getModuleId(getInstrPtr(mb, i)) == matRef
 			&& getFunctionId(getInstrPtr(mb, i)) == packRef
