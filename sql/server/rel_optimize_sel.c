@@ -739,7 +739,7 @@ detect_multicol_cmp_eqs(mvc *sql, list *mce_ands, sql_hash *meqh)
 static void
 exp_or_chain_groups(mvc *sql, list *exps, list **gen_ands, list **mce_ands, list **eqs, list **noneq)
 {
-	/* identify three different groups
+	/* identify the groups
 	 * 1. gen_ands: lists of generic expressions (their inner association is AND)
 	 * 2. mce_ands: lists of multi_colum cmp_eq ONLY expressions (same^^^)
 	 * 3. eqs: equality expressions
@@ -889,67 +889,34 @@ merge_ors(mvc *sql, list *exps, int *changes)
 			if (multicol_multival)
 				mins = generate_multi_col_cmp_in(sql, meqh);
 
-			/* create the new OR tree */
-			sql_exp *new = (ins) ? ins->h->data : mins->h->data;
+			/* create the new OR (disjunctive) expression */
+			list *new = sa_list(sql->sa);
 
-			if (ins) {
-				for (node *i = ins->h->next; i; i = i->next) {
-					list *l = new_exp_list(sql->sa);
-					list *r = new_exp_list(sql->sa);
-					l = append(l, new);
-					r = append(r, (sql_exp*)i->data);
-					new = exp_or(sql->sa, l, r, 0);
+			if (ins)
+				list_merge(new, ins, NULL);
+			if (mins)
+				list_merge(new, mins, NULL);
 
-					(*changes)++;
-				}
-			}
-
-			if (list_length(eqs)) {
-				for (node *i = eqs->h; i; i = i->next) {
-					list *l = new_exp_list(sql->sa);
-					list *r = new_exp_list(sql->sa);
-					l = append(l, new);
-					r = append(r, (sql_exp*)i->data);
-					new = exp_or(sql->sa, l, r, 0);
-				}
-			}
-
-			if (mins) {
-				for (node *i = ((ins) ? mins->h : mins->h->next); i; i = i->next) {
-					list *l = new_exp_list(sql->sa);
-					list *r = new_exp_list(sql->sa);
-					l = append(l, new);
-					r = append(r, (sql_exp*)i->data);
-					new = exp_or(sql->sa, l, r, 0);
-
-					(*changes)++;
-				}
-			}
+			if (list_length(eqs))
+				list_merge(new, eqs, NULL);
+			if (list_length(neq))
+				list_merge(new, neq, NULL);
 
 			if (list_length(mce_ands)) {
-				for (node *i = mce_ands->h; i; i = i->next) {
-					list *l = new_exp_list(sql->sa);
-					l = append(l, new);
-					new = exp_or(sql->sa, l, i->data, 0);
+				for (node *i = mce_ands->h; i; i = i->next, (*changes)++) {
+					list *cl = append(sa_list(sql->sa), exp_conjunctive(sql->sa, i->data));
+					list_merge(new, cl, NULL);
 				}
 			}
-
-			for (node *a = gen_ands->h; a; a = a->next){
-				list *l = new_exp_list(sql->sa);
-				l = append(l, new);
-				new = exp_or(sql->sa, l, a->data, 0);
-			}
-
-			for (node *o = neq->h; o; o = o->next){
-				list *l = new_exp_list(sql->sa);
-				list *r = new_exp_list(sql->sa);
-				l = append(l, new);
-				r = append(r, (sql_exp*)o->data);
-				new = exp_or(sql->sa, l, r, 0);
+			if (list_length(gen_ands)) {
+				for (node *a = gen_ands->h; a; a = a->next, (*changes)++) {
+					list *gl = append(sa_list(sql->sa), exp_conjunctive(sql->sa, a->data));
+					list_merge(new, gl, NULL);
+				}
 			}
 
 			list_remove_node(exps, NULL, n);
-			exps = append(exps, new);
+			exps = append(exps, exp_disjunctive(sql->sa, new));
 		}
 		if (e->type == e_cmp && e->flag == cmp_or && !is_anti(e)) {
 			/* NOTE: gen_ands and mce_ands are both a list of lists since the AND association
