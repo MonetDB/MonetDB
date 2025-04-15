@@ -111,7 +111,7 @@ where (n = 3 and m = 60)
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "1", int(4) "2", int(4) "3") ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
@@ -123,7 +123,7 @@ where n = 1
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "1", int(4) "2", int(4) "3") ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 query T nosort
@@ -135,6 +135,6 @@ where n = 1
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "1", int(4) "2", int(4) "3") ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
