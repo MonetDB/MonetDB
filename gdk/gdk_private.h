@@ -340,7 +340,7 @@ ilog2(BUN x)
 	ATOMname(b->ttype),						\
 	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
 	!b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
-	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
+	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
 	b->tkey ? "K" : b->tnokey[1] ? "!k" : "",			\
