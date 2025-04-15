@@ -2855,23 +2855,24 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr) :
     return rc
 ### RunIt(cmd, onechild, TestIn, TestOut, TestErr) #
 
-def mapi_ping(port) :
+def mapi_ping(port, host='localhost', tries=3):
     retry = 0
     wait = 1
-    host = 'localhost'
-    while retry < 3:
+    while True:
         retry += 1
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((host, port))
-            flag = sock.recv(2)
-            unpacked = struct.unpack( '<H', flag )[0]  # little endian short
-            len = ( unpacked >> 1 )     # get length
-            data = sock.recv(len)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((host, port))
+                flag = sock.recv(2)
+                unpacked = struct.unpack( '<H', flag )[0]  # little endian short
+                len = ( unpacked >> 1 )     # get length
+                data = sock.recv(len)
             # we don't send
             return True
         except OSError:
             pass
+        if retry >= tries:
+            break
         time.sleep(wait)
     return False
 ### mapi_ping() #
@@ -3374,11 +3375,13 @@ else:
 
 # see if we can use UNIX sockets
 try:
-    server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as server:
+        pass
 except (OSError, AttributeError):
     # apparently not
     SOCK = False
 else:
+    server.close()
     SOCK = True
 
 if SYST == 'Linux':
