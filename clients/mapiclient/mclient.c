@@ -3280,6 +3280,7 @@ usage(const char *prog, int xit)
 	mnstr_printf(stderr_stream, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
 	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
+	mnstr_printf(stderr_stream, " -q          | --quiet            don't print welcome message\n");
 	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
 
 	mnstr_printf(stderr_stream, "\nSQL specific options \n");
