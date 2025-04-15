@@ -3543,6 +3543,7 @@ def main(argv) :
     parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % '@QXprefix@')
     parser.add_argument('--verbose', '-v', action='count', dest='verbosity', default=0, help='more verbose test output (can be used twice)')
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
+    parser.add_argument('--urlprefix', action='store', help='URL prefix to the MonetDB Mercurial repository')
 
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help='timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)')
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
@@ -3904,6 +3905,12 @@ def main(argv) :
 
     global REV
     global URLPREFIX
+    if opts.urlprefix:
+        URLPREFIX = opts.urlprefix
+        if not URLPREFIX.endswith('/'):
+            URLPREFIX += '/'
+        if not URLPREFIX.endswith('/file/'):
+            URLPREFIX += 'file/'
     REV = opts.revision
     if produce_html and CONDITIONALS['MERCURIAL']:
         if REV is None:             # no --revision option: try to find out
