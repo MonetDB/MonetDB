@@ -1663,9 +1663,7 @@ BATnegateprops(BAT *b)
  * this is a NULL pointer.
  */
 #define GDKMAXERRLEN	10240
-#define GDKWARNING	"!WARNING: "
 #define GDKERROR	"!ERROR: "
-#define GDKMESSAGE	"!OS: "
 #define GDKFATAL	"!FATAL: "
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
