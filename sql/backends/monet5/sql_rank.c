@@ -198,7 +198,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		BUN cnt;
 		int j, *rp, *end;
-		bit *np;
+		const bit *np;
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
@@ -209,9 +209,11 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.row_number", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		r->tsorted = r->trevsorted = r->tkey = BATcount(b) <= 1;
-
 		cnt = BATcount(b);
+		r->trevsorted = cnt <= 1;
+		r->tsorted = true;
+		r->tkey = true;
+
 		rp = (int*)Tloc(r, 0);
 		if (isaBatType(getArgType(mb, pci, 2))) {
 			/* order info not used */
@@ -220,20 +222,21 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			}
 			BATiter pi = bat_iterator(p);
-			np = (bit*)pi.base;
+			np = (const bit*)pi.base;
 			end = rp + cnt;
-			for(j=1; rp<end; j++, np++, rp++) {
-				if (*np)
-					j=1;
+			for (j = 1; rp < end; j++, np++, rp++) {
+				if (*np) {
+					j = 1;
+					r->tkey = false;
+					r->tsorted = false;
+				}
 				*rp = j;
 			}
 			bat_iterator_end(&pi);
 		} else { /* single value, ie no partitions, order info not used */
 			int icnt = (int) cnt;
-			for(j=1; j<=icnt; j++, rp++)
+			for (j = 1; j <= icnt; j++, rp++)
 				*rp = j;
-			r->tsorted = true;
-			r->tkey = true;
 		}
 		BATsetcount(r, cnt);
 		r->tnonil = true;
