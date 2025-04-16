@@ -237,6 +237,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int icnt = (int) cnt;
 			for (j = 1; j <= icnt; j++, rp++)
 				*rp = j;
+			r->tunique_est = (double) cnt;
 		}
 		BATsetcount(r, cnt);
 		r->tnonil = true;
