@@ -644,7 +644,9 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 				// TODO use ODBC W function
 				ret = SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, (SQLPOINTER) tname, (SQLSMALLINT) MAX_TBL_NAME_LEN, NULL, NULL);
 				if (ret != SQL_SUCCESS && ret != SQL_SUCCESS_WITH_INFO) {
+					// DuckDB does not support SQLColAttribute(stmt, col, SQL_DESC_TABLE_NAME, ...), it returns SQL_ERROR, SQLSTATE HYC00 Driver not capable
 					strcpy(tname, "");
+					ret = SQL_SUCCESS;	// needed to continue processing without reporting this error
 				}
 				tblname = sa_strdup(sql->sa, tname);
 				sql_exp *ne = exp_column(sql->sa, tblname, colname, sql_mtype, CARD_MULTI, 1, 0, 0);

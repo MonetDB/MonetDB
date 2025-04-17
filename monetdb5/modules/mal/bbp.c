@@ -39,7 +39,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 
 	(void) cntxt;
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	lhs = &stk->stk[pci->argv[0]];
 	name = *getArgReference_str(stk, pci, 1);
 	if (name == NULL || isIdentifier(name) < 0)

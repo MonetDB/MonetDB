@@ -27,7 +27,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (!(ATOMIC_GET(&GDKdebug) & TESTINGMASK))
 		goto wrapup;
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 	for (int i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (p->token == ASSIGNsymbol) {

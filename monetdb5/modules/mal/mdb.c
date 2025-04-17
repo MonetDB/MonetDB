@@ -231,7 +231,7 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	int *ret = getArgReference_int(s, p, 0);
 
 	(void) cntxt;
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	*ret = getStkDepth(s);
 	return MAL_SUCCEED;
 }
@@ -449,7 +449,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		throw(MAL, "mdb.list", "Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_NAME);
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	return MAL_SUCCEED;
 }
 
@@ -473,7 +473,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		throw(MAL, "mdb.list", "Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_DEBUG);
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	return NULL;
 }
 

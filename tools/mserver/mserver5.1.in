@@ -472,7 +472,7 @@ It is used mainly to make some tests work deterministically, and to
 check/debug whether ``unexpected'' problems are related to mitosis
 (and/or mergetable).
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipeline is identical to the default pipeline, except

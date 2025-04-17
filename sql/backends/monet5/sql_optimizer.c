@@ -141,10 +141,17 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	str msg= MAL_SUCCEED;
 
 	be = (backend *) c->sqlcontext;
+	c->no_mitosis = be->no_mitosis;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
 	pipe = pipe? pipe: "default_pipe";
+	if (strcmp(pipe, "default_pipe") == 0) {
+		pipe = "default_fast";
+	} else if (strcmp(pipe, "no_mitosis_pipe") == 0) {
+		pipe = "default_fast";
+		c->no_mitosis = true;
+	}
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;

@@ -2810,7 +2810,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						break;			\
 					}				\
 					HASHLOOPBODY();			\
-					if (semi && !max_one)		\
+					if (semi)			\
 						break;			\
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
@@ -2825,7 +2825,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;		\
 						}			\
 						HASHLOOPBODY();		\
-						if (semi && !max_one)	\
+						if (semi)		\
 							break;		\
 					}				\
 				}					\
@@ -2841,7 +2841,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						}			\
 						ro = (oid) (rb - roff + rseq); \
 						HASHLOOPBODY();		\
-						if (semi && !max_one)	\
+						if (semi)		\
 							break;		\
 					}				\
 				}					\
@@ -3083,6 +3083,16 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		goto bailout;
 	}
 
+	/* from here on, semi is used to bail out early from the
+	 * collision lists; if right is key, it's effectively a
+	 * semi-join, and max_one is automatically satisfied; otherwise,
+	 * we need to continue looking if max_one is specified to make
+	 * sure there is only one match */
+	if (r->tkey)
+		semi = true;
+	else if (max_one)
+		semi = false;
+
 	r1 = *r1p;
 	r2 = r2p ? *r2p : NULL;
 	r3 = r3p ? *r3p : NULL;
@@ -3143,7 +3153,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						break;
 					}
 					HASHLOOPBODY();
-					if (semi && !max_one)
+					if (semi)
 						break;
 				}
 			} else if (hsh == NULL) {
@@ -3159,7 +3169,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3175,7 +3185,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3191,7 +3201,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						}
 						ro = (oid) (rb - roff + rseq);
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}

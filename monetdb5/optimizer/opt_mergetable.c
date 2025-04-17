@@ -2292,7 +2292,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	char *group_input;
 	str msg = MAL_SUCCEED;
 
-	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0)
+	if (!isOptimizerUsed(mb, pci, mitosisRef))
 		goto cleanup2;
 	old = mb->stmt;
 	oldtop = mb->stop;

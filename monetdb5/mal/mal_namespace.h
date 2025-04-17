@@ -77,6 +77,7 @@ mal_export const char cume_distRef[];
 mal_export const char dataflowRef[];
 mal_export const char dblRef[];
 mal_export const char decompressRef[];
+mal_export const char defaultfastRef[];
 mal_export const char defineRef[];
 mal_export const char deleteRef[];
 mal_export const char deltaRef[];

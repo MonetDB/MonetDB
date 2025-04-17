@@ -577,30 +577,28 @@ oidtostr(oid i, char *p, size_t len)
 static gdk_return
 infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 {
-	char buf[1024], *p = buf;
+	char kbuf[32], vbuf[32];
 
 	if (!hp)
 		return GDK_SUCCEED;
-	while (*nme)
-		*p++ = *nme++;
-	strcpy(p, "free");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(hp->free, buf), false) != GDK_SUCCEED)
+	strconcat_len(kbuf, sizeof(kbuf), nme, "free", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(hp->free, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "size");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(hp->size, buf), false) != GDK_SUCCEED)
+	strconcat_len(kbuf, sizeof(kbuf), nme, "size", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(hp->size, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "storage");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strconcat_len(kbuf, sizeof(kbuf), nme, "storage", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->base == NULL || hp->base == (char *) 1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp-> filename [0] ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "newstorage");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strconcat_len(kbuf, sizeof(kbuf), nme, "newstorage", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage == STORE_PRIV) ? "private map" : "memory mapped", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "filename");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strconcat_len(kbuf, sizeof(kbuf), nme, "filename", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, hp->filename[0] ? hp->filename : "no file",
 				  false) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -764,12 +762,13 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		|| BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) bi.copiedtodisk, buf),
 					 false) != GDK_SUCCEED
-		|| BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED
+		|| BUNappend(bk, "tail.dirty", false) != GDK_SUCCEED
 		|| BUNappend(bv, bi.hdirty ? "dirty" : "clean", false) != GDK_SUCCEED
 		|| infoHeap(bk, bv, bi.h, "tail.") != GDK_SUCCEED
-		|| BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED
-		|| BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED
-		|| infoHeap(bk, bv, bi.vh, "theap.") != GDK_SUCCEED) {
+		|| (bi.vh
+			&& (BUNappend(bk, "tvheap.dirty", false) != GDK_SUCCEED
+				|| BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED
+				|| infoHeap(bk, bv, bi.vh, "tvheap.") != GDK_SUCCEED))) {
 		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
