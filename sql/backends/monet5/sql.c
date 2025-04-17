@@ -6140,7 +6140,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 		int crs = composite_type_resultsize(t) - 1;
 		bat_offset += crs;
 	}
-	if (elm > 0 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
+	if (elm >= 0 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
 		elm = -2;
 	*BO = bat_offset;
 	return (tail == 0)?elm:elm-1;//+1;
