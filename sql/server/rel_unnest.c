@@ -24,7 +24,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 {
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_set_freevar(sql, e->l, r);
 			exps_set_freevar(sql, e->r, r);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
@@ -97,7 +97,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 		return is_freevar(e);
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			return (exps_have_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			return exps_have_freevar(sql, e->l);
@@ -208,7 +208,7 @@ exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool 
 	}
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 			exps_only_freevar(query, e->r, arguments_correlated, found_one_freevar, ungrouped_cols);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
@@ -338,7 +338,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 			return exps_freevar(sql, e->l);
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			list *l = exps_freevar(sql, e->l);
 			list *r = exps_freevar(sql, e->r);
 			return merge_freevar(l, r, all);
@@ -547,7 +547,7 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			e->l = push_up_project_exps(sql, rel, e->l);
 			e->r = push_up_project_exps(sql, rel, e->r);
 			return e;
@@ -1994,7 +1994,7 @@ add_missing_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = add_missing_project_exp(sql, rel, e->l);
 			e->r = add_missing_project_exps(sql, rel, e->r);
-		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_filter) {
 			e->l = add_missing_project_exps(sql, rel, e->l);
 			e->r = add_missing_project_exps(sql, rel, e->r);
 		} else {
@@ -2203,7 +2203,7 @@ exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil)
 			set_has_nil(e);
 	} break;
 	case e_cmp: {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_reset_props(rel, e->l, setnil);
 			exps_reset_props(rel, e->r, setnil);
 			if (setnil && (have_nil(e->l) || have_nil(e->r)))
@@ -2477,7 +2477,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 			e->card = exp_card(e->l);
 		} break;
 		case e_cmp: {
-			if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (e->flag == cmp_filter) {
 				e->card = MAX(exps_card(e->l), exps_card(e->r));
 			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 				e->card = exps_card(e->l);
@@ -3897,11 +3897,14 @@ rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 			n->data = e = exp_compare(v->sql->sa, e, exp_atom_bool(v->sql->sa, 1), cmp_equal);
 			v->changes++;
 		}
-		if (is_compare(e->type) && e->flag == cmp_or) {
-			if (!(e->l = rewrite_compare_exps(v, rel, e->l)))
-				return NULL;
-			if (!(e->r = rewrite_compare_exps(v, rel, e->r)))
-				return NULL;
+		if (is_compare(e->type) && e->flag == cmp_dis) {
+			list *l = e->l;
+			for (node *m = l->h; m; m = m->next) {
+				sql_exp *ae = m->data;
+				if (is_compare(ae->type) && !is_anti(ae) && ae->flag == cmp_con)
+					if (!(ae->l = rewrite_compare_exps(v, rel, ae->l)))
+						return NULL;
+			}
 		}
 	}
 	return exps;

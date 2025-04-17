@@ -141,7 +141,7 @@ e_cmp
 			cmp_notequal = 5,
 
 			cmp_filter = 6,		filters			->l/r are both lists
-			cmp_or = 7,			or handling  		->l/r are both lists
+
 			cmp_in = 8,			in list handling 	->r is a list of values
 			cmp_notin = 9,		not in list handling	->r is a list of values
 

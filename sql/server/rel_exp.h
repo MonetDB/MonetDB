@@ -42,7 +42,6 @@ extern int compare_funcs2range(const char *l, const char *r);
 extern sql_exp *exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int symmetric);
 extern sql_exp *exp_filter(allocator *sa, list *l, list *r, sql_subfunc *f, int anti);
-extern sql_exp *exp_or(allocator *sa, list *l, list *r, int anti);
 extern sql_exp *exp_in(allocator *sa, sql_exp *l, list *r, int cmptype);
 extern sql_exp *exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);

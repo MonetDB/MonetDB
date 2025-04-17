@@ -65,7 +65,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_notequal: 	r = "!="; break;
 
 	case cmp_filter: 	r = "filter"; break;
-	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
 
@@ -323,12 +322,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			else
 				mnstr_printf(fout, ".OR");
 			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
-		} else if (e->flag == cmp_or) {
-			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
-			if (is_anti(e))
-				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, e->flag);
-			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
@@ -1347,7 +1340,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			case 'o':
 				if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
 					(*pos)+= (int) strlen("or");
-					ctype = cmp_or;
+					ctype = cmp_dis;
 				}
 				break;
 			case '!':
@@ -1472,8 +1465,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
 					exp = exp_filter(sql->sa, lexps, rexps, f, anti);
 				} break;
-				case cmp_or:
-					exp = exp_or(sql->sa, lexps, rexps, anti);
+				case cmp_dis:
+					exp = exp_disjunctive2(sql->sa,
+							exp_conjunctive(sql->sa, lexps),
+							exp_conjunctive(sql->sa, rexps));
+					if (anti)
+						set_anti(exp);
 					break;
 				default:
 					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing comparison type\n");

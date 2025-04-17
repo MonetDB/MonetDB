@@ -498,7 +498,10 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 				e->l = exp_change_column_table(sql, e->l, oldt, newt);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
-			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			} else if (e->flag == cmp_dis || e->flag == cmp_con) {
+				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else if (e->flag == cmp_filter) {
 				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)

@@ -2019,7 +2019,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		cond_append(l, &a->func->base);
 	} break;
 	case e_cmp: {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if (e->flag == cmp_filter) {
 				sql_subfunc *f = e->f;
 				cond_append(l, &f->func->base);
@@ -2210,7 +2210,7 @@ exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr ex
 				return NULL;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if ((e->l = exps_exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
 				return NULL;
 			if ((e->r = exps_exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
@@ -2423,7 +2423,7 @@ exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topd
 				return NULL;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if ((e->l = exps_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
 				return NULL;
 			if ((e->r = exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
@@ -2699,7 +2699,7 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 			return exps_rebind_exp(sql, rel, e->l);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return rel_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
 		return rel_rebind_exp(sql, rel, e->l) && rel_rebind_exp(sql, rel, e->r) && (!e->f || rel_rebind_exp(sql, rel, e->f));
 	case e_column:

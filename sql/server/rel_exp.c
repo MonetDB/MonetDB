@@ -217,24 +217,6 @@ exp_filter(allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 }
 
 sql_exp *
-exp_or(allocator *sa, list *l, list *r, int anti)
-{
-	sql_exp *e = exp_create(sa, e_cmp);
-
-	if (e == NULL)
-		return NULL;
-	e->card = MAX(exps_card(l),exps_card(r));
-	e->l = l;
-	e->r = r;
-	e->flag = cmp_or;
-	if (anti)
-		set_anti(e);
-	if (!have_nil(l) && !have_nil(r))
-		set_has_no_nil(e);
-	return e;
-}
-
-sql_exp *
 exp_in(allocator *sa, sql_exp *l, list *r, int cmptype)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
@@ -1344,10 +1326,7 @@ exp_match_col_exps( sql_exp *e, list *l)
 		sql_exp *re = n->data;
 		sql_exp *re_r = re->r;
 
-		if (re->type == e_cmp && re->flag == cmp_or)
-			return exp_match_col_exps(e, re->l) &&
-			       exp_match_col_exps(e, re->r);
-
+		/* TODO handle nested conjunctive/disjunctive */
 		if (re->type != e_cmp || !re_r || re_r->card != 1 || !exp_match_exp(e, re->l))
 			return 0;
 	}
@@ -1377,26 +1356,6 @@ exps_match_col_exps( sql_exp *e1, sql_exp *e2)
 	if ((e1->flag == cmp_in || e1->flag == cmp_notin) &&
 	    (e2->flag == cmp_in || e2->flag == cmp_notin))
 		return exp_match_exp(e1->l, e2->l);
-
-	if (!is_complex_exp(e1->flag) && e1_r && e1_r->card == CARD_ATOM &&
-	    e2->flag == cmp_or)
-		return exp_match_col_exps(e1->l, e2->l) &&
-		       exp_match_col_exps(e1->l, e2->r);
-
-	if (e1->flag == cmp_or &&
-	    !is_complex_exp(e2->flag) && e2_r && e2_r->card == CARD_ATOM)
-		return exp_match_col_exps(e2->l, e1->l) &&
-		       exp_match_col_exps(e2->l, e1->r);
-
-	if (e1->flag == cmp_or && e2->flag == cmp_or) {
-		list *l = e1->l, *r = e1->r;
-		sql_exp *el = l->h->data;
-		sql_exp *er = r->h->data;
-
-		return list_length(l) == 1 && list_length(r) == 1 &&
-		       exps_match_col_exps(el, e2) &&
-		       exps_match_col_exps(er, e2);
-	}
 	return 0;
 }
 
@@ -1488,9 +1447,6 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 			    exp_match_exp(e1->l, e2->l) && exp_match_exp(e1->r, e2->r) &&
 			    ((!e1->f && !e2->f) || (e1->f && e2->f && exp_match_exp(e1->f, e2->f))))
 				return 1;
-			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
-			    exp_match_list(e1->l, e2->l) && exp_match_list(e1->r, e2->r))
-				return 1;
 			else if (e1->flag == e2->flag &&
 				(e1->flag == cmp_con || e1->flag == cmp_dis) &&
 			    exp_match_list(e1->l, e2->l))
@@ -1566,27 +1522,11 @@ exps_any_match(list *l, sql_exp *e)
 	return NULL;
 }
 
-static int
-exps_are_joins( list *l )
-{
-	if (l)
-		for (node *n = l->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (exp_is_join_exp(e))
-				return -1;
-		}
-	return 0;
-}
-
 int
 exp_is_join_exp(sql_exp *e)
 {
 	if (exp_is_join(e, NULL) == 0)
 		return 0;
-	if (e->type == e_cmp && e->flag == cmp_or && e->card >= CARD_AGGR)
-		if (exps_are_joins(e->l) == 0 && exps_are_joins(e->r) == 0)
-			return 0;
 	return -1;
 }
 
@@ -1857,7 +1797,7 @@ rel_find_exp_and_corresponding_rel_(sql_rel *rel, sql_exp *e, bool subexp, sql_r
 		if (!subexp)
 			return NULL;
 
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if (rel_find_exps_and_corresponding_rel_(rel, e->l, subexp, res) ||
 				rel_find_exps_and_corresponding_rel_(rel, e->r, subexp, res))
 				return e;
@@ -2048,35 +1988,6 @@ exp_regular_cmp_exp_is_false(sql_exp* e)
 }
 
 static inline bool
-exp_or_exp_is_false(sql_exp* e)
-{
-    assert(e->type == e_cmp && e->flag == cmp_or);
-
-	list* left = e->l;
-	list* right = e->r;
-
-	bool left_is_false = false;
-	for(node* n = left->h; n; n=n->next) {
-		if (exp_is_false(n->data)) {
-			left_is_false=true;
-			break;
-		}
-	}
-
-	if (!left_is_false) {
-		return false;
-	}
-
-	for(node* n = right->h; n; n=n->next) {
-		if (exp_is_false(n->data)) {
-			return true;
-		}
-	}
-
-    return false;
-}
-
-static inline bool
 exp_con_exp_is_false(sql_exp* e)
 {
     assert(e->type == e_cmp && e->flag == cmp_con);
@@ -2117,8 +2028,6 @@ exp_cmp_exp_is_false(sql_exp* e)
     case cmp_equal:
     case cmp_notequal:
 		return exp_regular_cmp_exp_is_false(e);
-    case cmp_or:
-		return exp_or_exp_is_false(e);
     case cmp_con:
 		return exp_con_exp_is_false(e);
     case cmp_dis:
@@ -2223,7 +2132,7 @@ exp_is_null(sql_exp *e )
 		return 0;
 	case e_cmp:
 		if (!is_semantics(e)) {
-			if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (e->flag == cmp_filter) {
 				return (exps_have_null(e->l) && exps_have_null(e->r));
 			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 				return false;
@@ -2288,7 +2197,7 @@ exp_is_atom( sql_exp *e )
 	case e_cmp:
 		if (e->card != CARD_ATOM)
 			return 0;
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_are_atoms(e->l) && exps_are_atoms(e->r);
 		if (e->flag == cmp_con || e->flag == cmp_dis)
 			return exps_are_atoms(e->l);
@@ -2330,7 +2239,7 @@ exp_is_aggr(sql_rel *r, sql_exp *e)
 	case e_cmp:
 		if (e->card != CARD_ATOM)
 			return false;
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_are_aggr(r, e->l) && exps_are_aggr(r, e->r);
 		if (e->flag == cmp_con || e->flag == cmp_dis)
 			return exps_are_aggr(r, e->l);
@@ -2378,7 +2287,7 @@ exp_has_aggr(sql_rel *r, sql_exp *e )
 	case e_cmp:
 		if (e->card != CARD_ATOM)
 			return false;
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_have_aggr(r, e->l) && exps_have_aggr(r, e->r);
 		if (e->flag == cmp_con || e->flag == cmp_dis)
 			return exps_have_aggr(r, e->l);
@@ -2409,7 +2318,7 @@ exp_has_rel( sql_exp *e )
 	case e_aggr:
 		return exps_have_rel_exp(e->l);
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			return (exps_have_rel_exp(e->l) || exps_have_rel_exp(e->r));
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			return exps_have_rel_exp(e->l);
@@ -2504,7 +2413,7 @@ exp_rel_get_rel(allocator *sa, sql_exp *e)
 	case e_cmp: {
 		sql_rel *r = NULL, *xp = NULL;
 
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if (exps_have_rel_exp(e->l))
 				xp = exps_rel_get_rel(sa, e->l);
 			if (exps_have_rel_exp(e->r)) {
@@ -2605,7 +2514,7 @@ exp_rel_update_set_freevar(sql_exp *e)
 		exps_rel_update_set_freevar(e->l);
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_rel_update_set_freevar(e->l);
 			exps_rel_update_set_freevar(e->r);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
@@ -2674,7 +2583,7 @@ exp_rel_update_exp(mvc *sql, sql_exp *e, bool up)
 			e->l = exp_rel_update_exps(sql, e->l, up);
 		return e;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if (exps_have_rel_exp(e->l))
 				e->l = exp_rel_update_exps(sql, e->l, up);
 			if (exps_have_rel_exp(e->r))
@@ -2802,7 +2711,7 @@ exp_has_func_or_cmp(sql_exp *e, bool cmp)
 	case e_cmp:
 		if (cmp)
 			return 1;
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			return (exps_have_func_or_cmp(e->l, true) || exps_have_func_or_cmp(e->r, true));
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			return exps_have_func_or_cmp(e->l, true);
@@ -2905,7 +2814,7 @@ exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 			return exps_have_unsafe(e->l, allow_identity, card);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return exp_unsafe(e->l, allow_identity, card) || exps_have_unsafe(e->r, allow_identity, card);
-		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_filter) {
 			return exps_have_unsafe(e->l, allow_identity, card) || exps_have_unsafe(e->r, allow_identity, card);
 		} else {
 			return exp_unsafe(e->l, allow_identity, card) || exp_unsafe(e->r, allow_identity, card) || (e->f && exp_unsafe(e->f, allow_identity, card));
@@ -3281,14 +3190,11 @@ exp_copy(mvc *sql, sql_exp * e)
 		ne->nid = e->nid;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			list *l = exps_copy(sql, e->l);
 			list *r = exps_copy(sql, e->r);
 
-			if (e->flag == cmp_filter)
-				ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			else
-				ne = exp_or(sql->sa, l, r, is_anti(e));
+			ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			list *l = exps_copy(sql, e->l);
 

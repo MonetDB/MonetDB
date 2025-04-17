@@ -5331,7 +5331,7 @@ exp_has_rank(sql_exp *e)
 	case e_aggr:
 		return exps_has_rank(e->l);
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_has_rank(e->l) || exps_has_rank(e->r);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return exp_has_rank(e->l) || exps_has_rank(e->r);

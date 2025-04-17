@@ -692,113 +692,6 @@ exp_count_no_nil_arg(sql_exp *e, stmt *ext, sql_exp *ae, stmt *as)
 }
 
 static stmt *
-exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
-{
-	sql_subtype *bt = sql_bind_localtype("bit");
-	list *l = e->l;
-	node *n;
-	stmt *sel1 = NULL, *sel2 = NULL, *s = NULL;
-	int anti = is_anti(e);
-
-	sel1 = sel;
-	sel2 = sel;
-	for (n = l->h; n; n = n->next) {
-		sql_exp *c = n->data;
-		stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
-
-		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
-		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
-		if (!s)
-			return s;
-
-		if (!reduce && sin) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sel1, s, sin, f);
-		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_find_smallest_column(be, left);
-
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			if (s->nrcols == 0)
-				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
-			else
-				s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
-		}
-		sel1 = s;
-	}
-	l = e->r;
-	for (n = l->h; n; n = n->next) {
-		sql_exp *c = n->data;
-		stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
-
-		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
-		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
-		if (!s)
-			return s;
-
-		if (!reduce && sin) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sel2, s, sin, f);
-		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_find_smallest_column(be, left);
-
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			if (s->nrcols == 0)
-				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
-			else
-				s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti, 0);
-		}
-		sel2 = s;
-	}
-	if (sel1->nrcols == 0 && sel2->nrcols == 0) {
-		sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
-		assert(f);
-		return stmt_binop(be, sel1, sel2, NULL, f);
-	}
-	if (sel1->nrcols == 0) {
-		stmt *predicate = bin_find_smallest_column(be, left);
-
-		if (!reduce) {
-			predicate = stmt_const(be, predicate, sel1);
-		} else {
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
-		}
-	}
-	if (sel2->nrcols == 0) {
-		stmt *predicate = bin_find_smallest_column(be, left);
-
-		if (!reduce) {
-			predicate = stmt_const(be, predicate, sel2);
-		} else {
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
-		}
-	}
-	if (!reduce) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
-			assert(f);
-			return stmt_binop(be, sel1, sel2, NULL, f);
-	}
-	if (anti)
-		return stmt_project(be, stmt_tinter(be, sel1, sel2, false), sel1);
-	return stmt_tunion(be, sel1, sel2);
-}
-
-static stmt *
 exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
 {
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -2055,11 +1948,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return exp_bin_conjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
 		if (e->flag == cmp_dis)
 			return exp_bin_disjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
-		if (e->flag == cmp_or && (!right || right->nrcols == 1))
-			return exp_bin_or(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
-		if (e->flag == cmp_or && right) {  /* join */
-			assert(0);
-		}
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
@@ -2481,7 +2369,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	case e_psm:
 		return args;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -3369,7 +3257,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
+		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin);
 		if (is_equi_exp_(e))
 			list_append(new_exps, e);
 		else
@@ -3860,7 +3748,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				stmt *s = NULL;
 
 				/* only handle simple joins here */
-				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && is_anti(e))) {
+				if ((exp_has_func(e) && e->flag != cmp_filter) || (e->f && is_anti(e))) {
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_find_smallest_column(be, left);
 						stmt *r = bin_find_smallest_column(be, right);
