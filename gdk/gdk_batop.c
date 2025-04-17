@@ -788,7 +788,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			b->tminpos = BUN_NONE;
 		}
 	}
-	if (ci.ncand > BATcount(b) / gdk_unique_estimate_keep_fraction) {
+	if (BATcount(b) == 0 && ci.ncand == ni.count)
+		b->tunique_est = ni.unique_est;
+	else if (ci.ncand > BATcount(b) / gdk_unique_estimate_keep_fraction) {
 		b->tunique_est = 0;
 	}
 	MT_lock_unset(&b->theaplock);

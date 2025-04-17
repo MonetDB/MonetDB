@@ -648,9 +648,8 @@ def CreateHtmlIndex (env, ssout, sserr, *body) :
                                Element('title', {}, Text(HTMLTITLE)),
                                stylesheet),
                        hbody)
-        f = openutf8('%s.head.html' % INDEX,'w')
-        html.write(f, True)
-        f.close()
+        with openutf8('%s.head.html' % INDEX,'w') as f:
+            html.write(f, True)
 
         if TSTDIR:
             layout = 'rows'
@@ -685,9 +684,8 @@ def CreateHtmlIndex (env, ssout, sserr, *body) :
                                         'bordercolor': white,
                                         'marginwidth': '0',
                                         'marginheight': '0'})))
-        f = openutf8('%s.html' % INDEX, 'w')
-        html.write(f, True)
-        f.close()
+        with openutf8('%s.html' % INDEX, 'w') as f:
+            html.write(f, True)
         os.chdir(BACK)
 ### CreateHtmlIndex (env, ssout, sserr, *body) #
 
@@ -752,9 +750,8 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
                                     'bordercolor': white,
                                     'marginwidth': '0',
                                     'marginheight': '0'})))
-    f = openutf8('.%s%s.html' % (TST, WHAT), 'w')
-    html.write(f, True)
-    f.close()
+    with openutf8('.%s%s.html' % (TST, WHAT), 'w') as f:
+        html.write(f, True)
     f = openutf8('.%s%s.head.html' % (TST, WHAT),'w')
     target = '%s_%s_%s_%s_body' % (DISTVER, TSTDIR, TST, WHAT[1:])
     if REV:                     # implies URLPREFIX is not None
@@ -865,7 +862,6 @@ def CreateSrcIndex (env, TST, EXT) :
     if REV:
         framesrc = '%s%s/%s/%s%s' % (URLPREFIX, url(TSTDIR), TSTSUFF, TST, EXT)
     else:
-        f = openutf8('.%s.nosrc.index.html' % TST, 'w')
         html = Element('html', {},
                        Element('head', {},
                                Element('title', {},
@@ -880,6 +876,8 @@ def CreateSrcIndex (env, TST, EXT) :
                                Element('center', {},
                                        Text('no source available'))))
         framesrc = '.%s.nosrc.index.html' % TST
+        with openutf8('.%s.nosrc.index.html' % TST, 'w') as f:
+            html.write(f, True)
     html = Element('html', {},
                    Element('head', {},
                            Element('title', {}, Text(HTMLTITLE))),
@@ -906,9 +904,8 @@ def CreateSrcIndex (env, TST, EXT) :
                                     'bordercolor': white,
                                     'marginwidth': '0',
                                     'marginheight': '0'})))
-    f = openutf8('.%s.src.index.html' % TST,'w')
-    html.write(f, True)
-    f.close()
+    with openutf8('.%s.src.index.html' % TST,'w') as f:
+        html.write(f, True)
 
     tr = Element('tr', {},
                  Element('th', {'class': 'header'},
@@ -941,9 +938,8 @@ def CreateSrcIndex (env, TST, EXT) :
                                             'cellspacing': '0',
                                             'cellpadding': '3'},
                                            tr))))
-    f = openutf8('.%s.src.index.head.html' % TST, 'w')
-    html.write(f, True)
-    f.close()
+    with openutf8('.%s.src.index.head.html' % TST, 'w') as f:
+        html.write(f, True)
 ### CreateSrcIndex (env, TST, EXT) #
 
 def AddHref (href, target, linktext, diff) :
@@ -1060,12 +1056,11 @@ def SkipTest(env, TST, EXT, REASON, length) :
     if testweb or not produce_html:
         return None
 
-    f = openutf8('.%s.SKIPPED.html' % TST, 'w')
-    Element('html', {},
-            Element('body', {},
-                    Element('p', {},
-                            Text('%s Warning: %s' % (THISFILE, TEXT))))).write(f, newline=True)
-    f.close()
+    with openutf8('.%s.SKIPPED.html' % TST, 'w') as f:
+        Element('html', {},
+                Element('body', {},
+                        Element('p', {},
+                                Text('%s Warning: %s' % (THISFILE, TEXT))))).write(f, newline=True)
     target = '%s_%s_body' % (DISTVER, TSTDIR)
     td = Element('td', {'class': 'header'},
                  Element('a', {'href': '.%s.src.index.html' % TST,
@@ -1106,6 +1101,7 @@ def find_test_dirs(thisdir, recursive=True) :
             if cnt > 0:
                 testdirs.append(os.path.dirname(thisdir))
                 tstcnt += cnt
+            allf.close()
     if recursive:
         for d in dirlst:
             d = os.path.join(thisdir,d)
@@ -2148,9 +2144,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
                         raise
 
         if os.path.isfile(TST+EXT+'.src')  and not os.path.isfile(TST+EXT):
-            f = openutf8(TST+EXT+'.src','r')
-            TSTSRC = expandvars(path(f.readline().strip()), env)
-            f.close()
+            with openutf8(TST+EXT+'.src','r') as f:
+                TSTSRC = expandvars(path(f.readline().strip()), env)
             if os.path.isfile(TSTSRC):
                 try:
                     SymlinkOrCopy(TSTSRC, TST + EXT)
@@ -2165,9 +2160,8 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         test = re.compile('^'+TST+r'((_[sp][0-9][0-9])?\..*)?\.src$', re.MULTILINE)
         for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(ff[:-4]):
-                f = openutf8(ff,'r')
-                TSTSRC = expandvars(path(f.readline().strip()), env)
-                f.close()
+                with openutf8(ff,'r') as f:
+                    TSTSRC = expandvars(path(f.readline().strip()), env)
                 if os.path.isfile(TSTSRC):
                     try:
                         SymlinkOrCopy(TSTSRC, ff[:-4])
@@ -2181,10 +2175,9 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, 
         for ff in listdir(TSTTRGDIR):
             fff = ff[:-3]
             if test.match(ff) and not os.path.isfile(fff) and not ff.endswith('.test.in'):
-                f = openutf8(fff,'w')
-                for l in openutf8(ff):
-                    f.write(expandvars(l, env))
-                f.close()
+                with openutf8(fff,'w') as f:
+                    for l in openutf8(ff):
+                        f.write(expandvars(l, env))
 
         if odbc:
             with openutf8('odbcinst.ini', 'w') as f:
@@ -2364,40 +2357,38 @@ Password = {passwd or "monetdb"}-Wrong
         else:
             FailedErr = F_OK
         if produce_html:
-            diff_html = openutf8('%s.out.diff.html' % TST,'w')
-            Element('html', None,
-#                     Element('head', None,
-#                             Element('style', None,
-#                                     Text('''
+            with openutf8('%s.out.diff.html' % TST,'w') as diff_html:
+                Element('html', None,
+#                         Element('head', None,
+#                                 Element('style', None,
+#                                         Text('''
 # .neutral { color: black; }
 # .deleted { color: red; }
 # .added   { color: green; }
 # '''))),
-                    Element('body', None,
-                            Element('pre', None,
-                                    Text(out)))).write(diff_html, True)
-            if FailedOut == F_ERROR:
-                diff_html.write('<!--MajorDiffs-->\n')
-            else:
-                diff_html.write('<!--NoDiffs-->\n')
-            diff_html.close()
-            diff_html = openutf8('%s.err.diff.html' % TST,'w')
-            Element('html', None,
-#                     Element('head', None,
-#                             Element('style', None,
-#                                     Text('''
+                        Element('body', None,
+                                Element('pre', None,
+                                        Text(out)))).write(diff_html, True)
+                if FailedOut == F_ERROR:
+                    diff_html.write('<!--MajorDiffs-->\n')
+                else:
+                    diff_html.write('<!--NoDiffs-->\n')
+            with openutf8('%s.err.diff.html' % TST,'w') as diff_html:
+                Element('html', None,
+#                         Element('head', None,
+#                                 Element('style', None,
+#                                         Text('''
 # .neutral { color: black; }
 # .deleted { color: red; }
 # .added   { color: green; }
 # '''))),
-                    Element('body', None,
-                            Element('pre', None,
-                                    Text(err)))).write(diff_html, True)
-            if FailedErr == F_ERROR:
-                diff_html.write('<!--MajorDiffs-->\n')
-            else:
-                diff_html.write('<!--NoDiffs-->\n')
-            diff_html.close()
+                        Element('body', None,
+                                Element('pre', None,
+                                        Text(err)))).write(diff_html, True)
+                if FailedErr == F_ERROR:
+                    diff_html.write('<!--MajorDiffs-->\n')
+                else:
+                    diff_html.write('<!--NoDiffs-->\n')
 
             if verbosity <= 1:
                 if verbosity == 0 and (FailedOut > F_WARN or FailedErr > F_WARN):
@@ -2855,23 +2846,24 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr) :
     return rc
 ### RunIt(cmd, onechild, TestIn, TestOut, TestErr) #
 
-def mapi_ping(port) :
+def mapi_ping(port, host='localhost', tries=3):
     retry = 0
     wait = 1
-    host = 'localhost'
-    while retry < 3:
+    while True:
         retry += 1
         try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((host, port))
-            flag = sock.recv(2)
-            unpacked = struct.unpack( '<H', flag )[0]  # little endian short
-            len = ( unpacked >> 1 )     # get length
-            data = sock.recv(len)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.connect((host, port))
+                flag = sock.recv(2)
+                unpacked = struct.unpack( '<H', flag )[0]  # little endian short
+                len = ( unpacked >> 1 )     # get length
+                data = sock.recv(len)
             # we don't send
             return True
         except OSError:
             pass
+        if retry >= tries:
+            break
         time.sleep(wait)
     return False
 ### mapi_ping() #
@@ -3374,11 +3366,13 @@ else:
 
 # see if we can use UNIX sockets
 try:
-    server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as server:
+        pass
 except (OSError, AttributeError):
     # apparently not
     SOCK = False
 else:
+    server.close()
     SOCK = True
 
 if SYST == 'Linux':
@@ -3549,6 +3543,7 @@ def main(argv) :
     parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % '@QXprefix@')
     parser.add_argument('--verbose', '-v', action='count', dest='verbosity', default=0, help='more verbose test output (can be used twice)')
     parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
+    parser.add_argument('--urlprefix', action='store', help='URL prefix to the MonetDB Mercurial repository')
 
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help='timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)')
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
@@ -3910,6 +3905,12 @@ def main(argv) :
 
     global REV
     global URLPREFIX
+    if opts.urlprefix:
+        URLPREFIX = opts.urlprefix
+        if not URLPREFIX.endswith('/'):
+            URLPREFIX += '/'
+        if not URLPREFIX.endswith('/file/'):
+            URLPREFIX += 'file/'
     REV = opts.revision
     if produce_html and CONDITIONALS['MERCURIAL']:
         if REV is None:             # no --revision option: try to find out
@@ -4108,10 +4109,9 @@ def main(argv) :
 
         # write .monetdb file for mclient to do authentication with
         dotmonetdbfile = os.path.join(TSTTRGBASE, '.monetdb')
-        dotmonetdb = openutf8(dotmonetdbfile, 'w')
-        dotmonetdb.write('user=monetdb\n')
-        dotmonetdb.write('password=monetdb\n')
-        dotmonetdb.close()
+        with openutf8(dotmonetdbfile, 'w') as dotmonetdb:
+            dotmonetdb.write('user=monetdb\n')
+            dotmonetdb.write('password=monetdb\n')
         # and make mclient find it
         os.environ['DOTMONETDBFILE'] = dotmonetdbfile
 
@@ -4201,18 +4201,17 @@ def main(argv) :
         if not os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             os.mkdir(os.path.join(TSTTRGBASE, TSTPREF))
         fn = os.path.join(TSTTRGBASE, TSTPREF, 'times.')
-        fl = openutf8(fn+'lst','w')
-        Failure = [[] for i in FAILURES]
-        for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-            fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
-                                                tt,
-                                                FAILURES[FtOut][0],
-                                                FAILURES[FtErr][0],
-                                                reason or ''))
-            if TST != '':
-                Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
-        fl.write(':\t%7.3f\t\n' % t_)
-        fl.close()
+        with openutf8(fn+'lst','w') as fl:
+            Failure = [[] for i in FAILURES]
+            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
+                fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
+                                                    tt,
+                                                    FAILURES[FtOut][0],
+                                                    FAILURES[FtErr][0],
+                                                    reason or ''))
+                if TST != '':
+                    Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
+            fl.write(':\t%7.3f\t\n' % t_)
 
         fl = openutf8(fn+'sql','w')
         host = socket.gethostname()
