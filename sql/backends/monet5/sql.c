@@ -5867,30 +5867,35 @@ static str
 insert_json_value(JSONterm *jt, sql_subtype *t, BAT *b)
 {
 	char *msg = MAL_SUCCEED;
-	size_t vsize = jt->valuelen;
-	char *val = (char *)jt->value;
+	if (jt) {
+		size_t vsize = jt->valuelen;
+		char *val = (char *)jt->value;
 
-	ValPtr v = NULL;
-	ValRecord vr = (ValRecord) {.bat=false, .vtype=t->type->localtype};
-	if (t->type->localtype == ATOMindex("json"))
-		vr.vtype = TYPE_str;
-	char eos = val[vsize];
-	val[vsize] = '\0';
-	v = jsonv2local(&vr, val);
-	val[vsize] = eos;
-	if (v) {
-		if (BUNappend(b, VALget(v), false) != GDK_SUCCEED)
-			msg = createException(SQL, "sql.insert_json_value", "BUNappend failed");
+		ValPtr v = NULL;
+		ValRecord vr = (ValRecord) {.bat=false, .vtype=t->type->localtype};
+		if (t->type->localtype == ATOMindex("json"))
+			vr.vtype = TYPE_str;
+		char eos = val[vsize];
+		val[vsize] = '\0';
+		v = jsonv2local(&vr, val);
+		val[vsize] = eos;
+		if (v) {
+			if (BUNappend(b, VALget(v), false) != GDK_SUCCEED)
+				msg = createException(SQL, "sql.insert_json_value", "Error appending value for type %d", v->vtype);
+		} else {
+			msg = createException(SQL, "sql.insert_json_value", "jsonv2local failed");
+		}
+		if (v->vtype == TYPE_str)
+			GDKfree(v->val.sval);
 	} else {
-		msg = createException(SQL, "sql.insert_json_value", "jsonv2local failed");
+		if (BUNappend(b, ATOMnilptr(t->type->localtype), false) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.insert_json_value", "Error appending NULL for  %d", t->type->localtype);
 	}
-	if (v->vtype == TYPE_str)
-		GDKfree(v->val.sval);
 	return msg;
 }
 
 static sql_subtype*
-find_subtype_field(sql_subtype *t, const char *kname, size_t klen)
+find_subtype_field(sql_subtype *t, const char *kname, size_t klen, size_t *offset, size_t *index)
 {
 	sql_subtype *nt = NULL;
 	for(node *n = t->type->d.fields->h; n; n = n->next) {
@@ -5899,22 +5904,78 @@ find_subtype_field(sql_subtype *t, const char *kname, size_t klen)
 		if (klen == alen && strncmp(kname, a->name, klen) == 0) {
 			nt = &a->type;
 			break;
+		} else {
+			*offset += composite_type_resultsize(&a->type);
+			*index += 1;
 		}
 	}
 	return nt;
 }
 
+static sql_subtype*
+find_subtype_field_by_index(sql_subtype *t, size_t index, size_t *offset)
+{
+	size_t indx = 0;
+	sql_subtype *nt = NULL;
+	for(node *n = t->type->d.fields->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		nt = &a->type;
+		if(indx == index)
+			break;
+		*offset += composite_type_resultsize(nt);
+		indx++;
+	}
+	return nt;
+}
+
+static int
+fill_null(char **msg, sql_subtype *t, BAT **bats, int offset)
+{
+	if (t->multiset) {
+		offset += composite_type_resultsize(t) - 1;
+		BAT *b = bats[offset];
+		if (BUNappend(b, ATOMnilptr(TYPE_int), false) != GDK_SUCCEED) {
+			*msg = createException(SQL, "sql.fill_null", "Append NULL for multiset failed!");
+			return -1;
+		}
+		offset +=1;
+	} else if (t->type->composite) {
+		for (node *n = t->type->d.fields->h; n; n = n->next) {
+			sql_arg *a = n->data;
+			offset = fill_null(msg, &a->type, bats, offset);
+			if (offset < 0)
+				return -1;
+		}
+	} else {
+		BAT *b = bats[offset];
+		if ((*msg = insert_json_value(NULL, t, b)) != MAL_SUCCEED)
+			return -1;
+		offset += 1;
+	}
+	return offset;
+}
+
+#define MAX_ATTR_SIZE 256
+#define ERROR_UNKNOWN_FIELD "unknown field"
+
 static int
 insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sql_subtype *t)
 {
 	int bat_offset = *BO;
+	int start_offset = *BO;
 	JSONterm *ja = js->elm+elm;
 	if (ja->kind != JSON_OBJECT || !t->type->composite) {
-		*msg = "missing object start";
+		*msg = createException(SQL, "sql.insert_json_object", "missing object start");
 		return -1;
 	}
 	const char *name = NULL;
 	int nlen = 0;
+	size_t alen = list_length(t->type->d.fields); // num attributes
+	if (alen > MAX_ATTR_SIZE) {
+		*msg = createException(SQL, "sql.insert_json_object", "max attribute size exceeded");
+		return -1;
+	}
+	int used_mask[MAX_ATTR_SIZE] = {0}; // assume up to that many attributes
 	/* TODO check if full object is there */
 	for (elm++; elm > 0 && elm <= ja->tail+1; elm++) {
 		JSONterm *jt = js->elm+elm;
@@ -5922,46 +5983,56 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 		if (bat_offset > nr)
 			return -10;
 		switch (jt->kind) {
-		case JSON_OBJECT:
-			if (name && nlen) {
-				sql_subtype *nt = find_subtype_field(t, name, nlen);
-				if (nt && nt->type->composite)
-					elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt);
-				else if (nt && nt->type->localtype == ATOMindex("json")){
-					// json string value
-					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
-						return -1;
-					// set term offset
-					elm = ((jt - 1)->next) - 1; // ? is this right
-					bat_offset ++;
+		case JSON_OBJECT: {
+				assert(name && nlen);
+				size_t offset = 0;
+				size_t index = 0;
+				sql_subtype *nt = find_subtype_field(t, name, nlen, &offset, &index);
+				if (nt) {
+					bat_offset = start_offset + offset;
+					if (nt->type->composite) {
+						if ((elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
+								return elm;
+					} else if (nt->type->localtype == ATOMindex("json")){
+						// json string value
+						if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+							return -1;
+						// set term offset
+						elm = ((jt - 1)->next) - 1; // ? is this right
+						//bat_offset++;
+					}
+					used_mask[index] = 1;
 				} else {
-					assert(0);
+					*msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+					return -1;
 				}
-			} else {
-				assert(0);
+				break;
 			}
-			break;
-		case JSON_ARRAY:
-			/* TODO get id for nested array from the a global struct */
-			if (name && nlen) {
-				// find subtype matching field
-				sql_subtype *nt = find_subtype_field(t, name, nlen);
-				if(nt && nt->multiset)
-					elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, nt);
-				else if (nt && nt->type->localtype == ATOMindex("json")) {
-					// json string value
-					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
-						return -1;
-					// set term offset
-					elm = ((jt - 1)->next) - 1; // ? is this right
-					bat_offset ++;
+		case JSON_ARRAY: {
+				assert(name && nlen);
+				size_t offset = 0;
+				size_t index = 0;
+				sql_subtype *nt = find_subtype_field(t, name, nlen, &offset, &index);
+				if (nt) {
+					bat_offset = start_offset + offset;
+					if(nt->multiset) {
+						if ((elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
+							return elm;
+					} else if (nt->type->localtype == ATOMindex("json")) {
+						// json string value
+						if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+							return -1;
+						// set term offset
+						elm = ((jt - 1)->next) - 1; // ? is this right
+						//bat_offset++;
+					}
+					used_mask[index] = 1;
 				} else {
-					assert(0);
+					*msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+					return -1;
 				}
-			} else {
-				assert(0);
+				break;
 			}
-			break;
 		case JSON_ELEMENT: // field
 			name = jt->value;
 			nlen = (int)jt->valuelen;
@@ -5976,14 +6047,19 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 		case JSON_NUMBER:
 		case JSON_BOOL:
 		case JSON_NULL:
+			assert(name && nlen);
 			if (name && nlen) {
-				sql_subtype *nt = find_subtype_field(t, name, nlen);
+				size_t offset = 0;
+				size_t index = 0;
+				sql_subtype *nt = find_subtype_field(t, name, nlen, &offset, &index);
 				if (nt) {
+					bat_offset = start_offset + offset;
 					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
 						return -1;
-					bat_offset ++;
+					//bat_offset++;
+					used_mask[index] = 1;
 				} else {
-					*msg = "field name missing";
+					*msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
 					return -1;
 				}
 			}
@@ -5991,6 +6067,31 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 	}
 	if (bat_offset > nr)
 		return -10;
+	// append null for all unused fields
+	for (size_t i=0; i < alen; i++) {
+		if (used_mask[i] == 0) {
+			size_t offset = 0;
+			sql_subtype *nt = find_subtype_field_by_index(t, i, &offset);
+			if (nt) {
+				int index = start_offset + offset;
+				if((index = fill_null(msg, nt, bats, index)) < 0) {
+					TRC_ERROR(SQL_EXECUTION, "fill_null failed");
+					return -1;
+				}
+				//if (index > bat_offset)
+				//	bat_offset = index;
+			} else {
+				*msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+				return -1;
+			}
+		}
+	}
+	// fix offset
+	bat_offset = start_offset;
+	for(node *n = t->type->d.fields->h; n; n = n->next) {
+		sql_arg *a = n->data;
+		bat_offset += composite_type_resultsize(&a->type);
+	}
 	*BO = bat_offset;
 	return elm;
 }
@@ -6002,7 +6103,7 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 	JSONterm *ja = js->elm+elm;
 	int tail = ja->tail;
 	if (ja->kind != JSON_ARRAY) {
-		*msg = "missing array start";
+		*msg = createException(SQL, "sql.insert_json_array", "missing array start");
 		return -1;
 	}
 	int id = -1, anr = 1;
@@ -6035,8 +6136,10 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 	}
 	if (bat_offset > nr)
 		return -10;
-	if (id == -1)
-		bat_offset += composite_type_resultsize(t) - 1;
+	if (id == -1) {
+		int crs = composite_type_resultsize(t) - 1;
+		bat_offset += crs;
+	}
 	if (elm > 0 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
 		elm = -2;
 	*BO = bat_offset;
@@ -6051,10 +6154,14 @@ insert_json_str(const char *jstr, BAT **bats, int cnt, sql_subtype *t)
 	if (!js)
 		throw(SQL, "insert_json_str", "JSONparse error");
 	int bat_offset = 0;
+	int elm = 0;
 	if (t->multiset)
-		(void)insert_json_array(&res, js, bats, &bat_offset, cnt, 0, t);
+		elm = insert_json_array(&res, js, bats, &bat_offset, cnt, elm, t);
 	else
-		(void)insert_json_object(&res, js, bats, &bat_offset, cnt, 0, t);
+		elm = insert_json_object(&res, js, bats, &bat_offset, cnt, elm, t);
+	if (elm < 0)
+		throw(SQL, "insert_json_str", SQLSTATE(HY013) "%s", res);
+	assert(bat_offset == cnt);
 	JSONfree(js);
 	return res;
 }

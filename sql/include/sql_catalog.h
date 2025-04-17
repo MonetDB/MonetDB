@@ -947,6 +947,7 @@ typedef int msid_t;
 typedef int msindex_t;
 #define MSEL_NAME "elements"
 #define MSID_NAME "ms_id"
+#define MSROWID_NAME "ms_row_id"
 #define MSNR_NAME "ms_nr"
 #define MSID_TYPENAME "int"
 #define MSNR_TYPENAME "int"
