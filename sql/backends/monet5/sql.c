@@ -6071,8 +6071,8 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 	for (elm++; elm >= 0 && elm <= ja->tail; ) {
 		JSONterm *jt = js->elm+elm;
 		if (jt->kind != JSON_ELEMENT) {
-		*msg = createException(SQL, "sql.insert_json_object", "max attribute size exceeded");
-			return -10;
+			*msg = createException(SQL, "sql.insert_json_object", "json token is not JSON_ELEMENT");
+				return -10;
 		}
 		name = jt->value;
 		nlen = (int)jt->valuelen;
@@ -6092,8 +6092,6 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 					TRC_ERROR(SQL_EXECUTION, "fill_null failed");
 					return -1;
 				}
-				//if (index > bat_offset)
-				//	bat_offset = index;
 			} else {
 				*msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
 				return -1;
@@ -6161,10 +6159,8 @@ insert_json_array(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sq
 		elm++;
 	if (bat_offset > nr)
 		return -10;
-	if (id == -1) {
-		int crs = composite_type_resultsize(t) - 1;
-		bat_offset += crs;
-	}
+	if (id == -1)
+		bat_offset += composite_type_resultsize(t) - 1;
 	if (elm >= 0 && BUNappend(bats[bat_offset++], &id, false) != GDK_SUCCEED)
 		elm = -2;
 	*BO = bat_offset;
