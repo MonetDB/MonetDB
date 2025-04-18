@@ -104,9 +104,9 @@ FROM
            CASE WHEN u.key = 'customerType' THEN u.value END AS customertype,
            CASE WHEN u.key = 'customerid' THEN u.value END AS customerid
        FROM events
-           left join unnest("user") as u on true) t
+           left join unnest("user") as u on true where u.key='customerId') t
 ----
-10
+7
 
 query I
 SELECT count(*)
@@ -125,7 +125,7 @@ FROM
            left join unnest(eol.attributes) as eal on true
            left join unnest("user") as u on true) t
 ----
-50
+155
 
 query I
 SELECT count(*)
@@ -144,6 +144,7 @@ FROM
            left join unnest(eol.attributes) as eal on true
            cross join unnest("user") as u) t
 ----
+140
 
 query TTTTTT
 WITH base AS (
