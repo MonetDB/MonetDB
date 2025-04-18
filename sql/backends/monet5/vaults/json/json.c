@@ -310,7 +310,7 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			char *head = content;
 			char *tail = content;
 			while (cnt < (jfh->size + 1)) {
-				if (head[0] == '\n' || (head[0] == '\r' && head[1] == '\n')) {
+				if (head[0] == '\n' || ((strlen(head) > 2) && (head[0] == '\r' && head[1] == '\n'))) {
 					int skip = 1;
 					if (head[0] == '\r' && head[1] == '\n')
 						skip = 2;
