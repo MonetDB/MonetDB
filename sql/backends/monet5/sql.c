@@ -5966,7 +5966,7 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 	JSONterm *jt = js->elm+elm;
 
 	if (!name || !nlen) {
-		*msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+		*msg = createException(SQL, "sql.insert_json_element", "missing field name argument");
 		return -1;
 	}
 	if (bat_offset > nr)
@@ -5990,7 +5990,7 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 								  }
 								  used_mask[index] = 1;
 							  } else {
-								  *msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+								  *msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
 								  return -1;
 							  }
 							  break;
@@ -6013,7 +6013,7 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 								 }
 								 used_mask[index] = 1;
 							 } else {
-								 *msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+								 *msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
 								 return -1;
 							 }
 							 break;
@@ -6038,13 +6038,13 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 							 used_mask[index] = 1;
 							 elm++;
 						 } else {
-							 *msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
+							 *msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
 							 return -1;
 						 }
 						 break;
 		case JSON_ELEMENT:
-						 *msg = createException(SQL, "sql.insert_json_object", ERROR_UNKNOWN_FIELD);
-						 return -1;
+						*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+						return -1;
 	}
 	return elm;
 }
@@ -6071,7 +6071,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 	for (elm++; elm >= 0 && elm <= ja->tail; ) {
 		JSONterm *jt = js->elm+elm;
 		if (jt->kind != JSON_ELEMENT) {
-			*msg = createException(SQL, "sql.insert_json_object", "json token is not JSON_ELEMENT");
+			*msg = createException(SQL, "sql.insert_json_object", "term not a json field!");
 				return -10;
 		}
 		name = jt->value;
