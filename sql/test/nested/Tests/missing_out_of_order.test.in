@@ -1,0 +1,36 @@
+statement ok
+CREATE TYPE kv AS (
+    key VARCHAR,
+    value VARCHAR
+)
+
+
+statement ok
+CREATE TABLE events(
+    eventid VARCHAR,
+    "timestamp" TIMESTAMP WITH TIME ZONE,
+    location kv[],
+    "user" kv[])
+
+statement ok
+insert into events select * from read_json(r'$TSTSRCDIR/missing_out_of_order.json')
+
+query I
+select count(*) from events
+----
+3
+
+query I
+select count(timestamp) from events
+----
+2
+
+query I
+select count(location) from events
+----
+2
+
+query I
+select count("user") from events
+----
+1
