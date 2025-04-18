@@ -5961,6 +5961,9 @@ fill_null(char **msg, sql_subtype *t, BAT **bats, int offset)
 static int
 insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, sql_subtype *t, const char * const name, int nlen, int *used_mask)
 {
+	size_t index = 0;
+	size_t offset = 0;
+	sql_subtype *nt;
 	int bat_offset = *BO;
 	int start_offset = *BO;
 	JSONterm *jt = js->elm+elm;
@@ -5972,79 +5975,71 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 	if (bat_offset > nr)
 		return -10;
 	switch (jt->kind) {
-		case JSON_OBJECT: {
-							  size_t offset = 0;
-							  size_t index = 0;
-							  sql_subtype *nt = find_subtype_field(t, name, nlen, &offset, &index);
-							  if (nt) {
-								  bat_offset = start_offset + offset;
-								  if (nt->type->composite) {
-									  if ((elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
-										  return elm;
-								  } else if (nt->type->localtype == ATOMindex("json")){
-									  // json string value
-									  if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
-										  return -1;
-									  // set term offset
-									  elm = ((jt - 1)->next);
-								  }
-								  used_mask[index] = 1;
-							  } else {
-								  *msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-								  return -1;
-							  }
-							  break;
-						  }
-		case JSON_ARRAY: {
-							 size_t offset = 0;
-							 size_t index = 0;
-							 sql_subtype *nt = find_subtype_field(t, name, nlen, &offset, &index);
-							 if (nt) {
-								 bat_offset = start_offset + offset;
-								 if(nt->multiset) {
-									 if ((elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
-										 return elm;
-								 } else if (nt->type->localtype == ATOMindex("json")) {
-									 // json string value
-									 if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
-										 return -1;
-									 // set term offset
-									 elm = ((jt - 1)->next);
-								 }
-								 used_mask[index] = 1;
-							 } else {
-								 *msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-								 return -1;
-							 }
-							 break;
-						 }
+		case JSON_OBJECT:
+			nt = find_subtype_field(t, name, nlen, &offset, &index);
+			if (nt) {
+				bat_offset = start_offset + offset;
+				if (nt->type->composite) {
+					if ((elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
+						return elm;
+				} else if (nt->type->localtype == ATOMindex("json")){
+					// json string value
+					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+						return -1;
+					// set term offset
+					elm = ((jt - 1)->next);
+				}
+				used_mask[index] = 1;
+			} else {
+				*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+				return -1;
+			}
+			break;
+		case JSON_ARRAY:
+			nt = find_subtype_field(t, name, nlen, &offset, &index);
+			if (nt) {
+				bat_offset = start_offset + offset;
+				if(nt->multiset) {
+					if ((elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
+						return elm;
+				} else if (nt->type->localtype == ATOMindex("json")) {
+					// json string value
+					if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+						return -1;
+					// set term offset
+					elm = ((jt - 1)->next);
+				}
+				used_mask[index] = 1;
+			} else {
+				*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+				return -1;
+			}
+			break;
 		case JSON_VALUE:
-						 break;
+			break;
 		case JSON_STRING:
-						 jt->value ++;
-						 jt->valuelen --;
-						 jt->valuelen --;
-						 /* fall through */
+			jt->value ++;
+			jt->valuelen --;
+			jt->valuelen --;
+			/* fall through */
 		case JSON_NUMBER:
 		case JSON_BOOL:
 		case JSON_NULL:
-						 size_t offset = 0;
-						 size_t index = 0;
-						 sql_subtype *nt = find_subtype_field(t, name, nlen, &offset, &index);
-						 if (nt) {
-							 bat_offset = start_offset + offset;
-							 if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
-								 return -1;
-							 used_mask[index] = 1;
-							 elm++;
-						 } else {
-							 *msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-							 return -1;
-						 }
-						 break;
+			nt = find_subtype_field(t, name, nlen, &offset, &index);
+			if (nt) {
+				bat_offset = start_offset + offset;
+				if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
+					return -1;
+				used_mask[index] = 1;
+				elm++;
+			} else {
+				*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+				return -1;
+			}
+			break;
 		case JSON_ELEMENT:
-						*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-						return -1;
+			*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+			return -1;
 	}
 	return elm;
 }
