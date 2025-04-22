@@ -52,6 +52,8 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	bool private = (!tid || is_bat_nil(*tid));
 	topn_t *n = NULL;
 
+	if (*start < 0 || (*end < 0 && !is_lng_nil(*end)))
+		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 

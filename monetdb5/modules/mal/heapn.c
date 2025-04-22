@@ -674,6 +674,10 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	if (private) {
 		lng n = *getArgReference_lng(s, p, 4);
+		if (n < 0) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "heap.topn", ILLEGAL_ARGUMENT);
+		}
 		heapn *hp = heapn_create(n, 0);
 		hps = HEAPnew_topn(s, p, hp, n, b, min, nulls_last);
 		if (!hps) {
