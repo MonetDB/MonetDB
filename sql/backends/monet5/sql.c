@@ -5991,8 +5991,18 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 				}
 				used_mask[index] = 1;
 			} else {
-				*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-				return -1;
+				// skip to tail of the missing field
+				while (jt->tail) {
+					elm = jt->tail + 1;
+					jt = js->elm + elm;
+				}
+				// advance to the next JSON_ELEMENT
+				while(jt->kind != JSON_ELEMENT && elm<js->size) {
+					elm++;
+					jt = js->elm + elm;
+				}
+				//*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+				//return -1;
 			}
 			break;
 		case JSON_ARRAY:
@@ -6011,8 +6021,18 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 				}
 				used_mask[index] = 1;
 			} else {
-				*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-				return -1;
+				// skip to tail of the missing field
+				while (jt->tail) {
+					elm = jt->tail + 1;
+					jt = js->elm + elm;
+				}
+				// advance to the next JSON_ELEMENT
+				while(jt->kind != JSON_ELEMENT && elm<js->size) {
+					elm++;
+					jt = js->elm + elm;
+				}
+				//*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+				//return -1;
 			}
 			break;
 		case JSON_VALUE:
@@ -6033,8 +6053,10 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 				used_mask[index] = 1;
 				elm++;
 			} else {
-				*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
-				return -1;
+				// ignore missing field
+				elm++;
+				//*msg = createException(SQL, "sql.insert_json_element", "%s %s",ERROR_UNKNOWN_FIELD, name);
+				//return -1;
 			}
 			break;
 		case JSON_ELEMENT:

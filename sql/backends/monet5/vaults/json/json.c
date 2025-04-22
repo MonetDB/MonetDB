@@ -310,29 +310,31 @@ JSONread_ndjson(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			char *head = content;
 			char *tail = content;
 			while (cnt < (jfh->size + 1)) {
-				if (head[0] == '\n' || ((strlen(head) > 2) && (head[0] == '\r' && head[1] == '\n'))) {
-					int skip = 1;
-					if (head[0] == '\r' && head[1] == '\n')
-						skip = 2;
-					head[0] = '\0';
-					JSON *jt = JSONparse(tail);
-					if (jt) {
-						// must be valid json obj str
-						if (BUNappend(b, tail, false) != GDK_SUCCEED) {
-							msg = createException(SQL, "json.read_ndjson", "BUNappend failed!");
-							break;
+				if (head && *head != '\0') {
+					if (head[0] == '\n' || ((head[0] == '\r' && head[1] == '\n'))) {
+						int skip = 1;
+						if (head[0] == '\r' && head[1] == '\n')
+							skip = 2;
+						head[0] = '\0';
+						JSON *jt = JSONparse(tail);
+						if (jt) {
+							// must be valid json obj str
+							if (BUNappend(b, tail, false) != GDK_SUCCEED) {
+								msg = createException(SQL, "json.read_ndjson", "BUNappend failed!");
+								break;
+							}
+						} else {
+								msg = createException(SQL, "json.read_ndjson", "Invalid json object, JSONparse failed!");
+								break;
 						}
-					} else {
-							msg = createException(SQL, "json.read_ndjson", "Invalid json object, JSONparse failed!");
-							break;
+						JSONfree(jt);
+						tail = head + skip;
+						while (tail[0] == '\n') // multiple newlines e.g. \n\n
+							tail ++;
+						head = tail;
 					}
-					JSONfree(jt);
-					tail = head + skip;
-					while (tail[0] == '\n') // multiple newlines e.g. \n\n
-						tail ++;
-					head = tail;
+					head ++;
 				}
-				head ++;
 				cnt ++;
 			}
 		} else {
