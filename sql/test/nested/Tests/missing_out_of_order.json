@@ -7,10 +7,12 @@
 {
     "eventid": "2",
     "location":[{"key":"hostname", "value": "localhost"}],
+    "non_exitsing_list":[],
     "timestamp": "2023-03-31T12:20:30.372+00:00"
 },
 {
     "eventid": "3",
-    "location":[{"key":"hostname", "value": "localhost"}]
+    "location":[{"key":"hostname", "value": "localhost"}],
+    "bam": "non existing field"
 }
 ]
