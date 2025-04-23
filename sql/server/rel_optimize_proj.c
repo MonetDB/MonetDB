@@ -2824,6 +2824,8 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 			if (need_distinct(e)) {
 				distinct = n->data;
 				nr++;
+				if (e->r) /* distinct and order by */
+					nr++;
 			}
 			anr += is_aggr(e->type);
 		}
