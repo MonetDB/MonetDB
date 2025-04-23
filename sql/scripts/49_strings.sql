@@ -70,11 +70,3 @@ GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
 create function sys.normalize_monetdb_url(u string)
 returns string external name sql.normalize_monetdb_url;
 grant execute on function sys.normalize_monetdb_url(string) to public;
-
--- NGRAMS
-create filter function c(h varchar, n varchar) external name ngrams.contains;
-create filter function c(h varchar, n varchar, ng tinyint) external name ngrams.contains;
-create filter function s(h varchar, n varchar) external name ngrams.startswith;
-create filter function s(h varchar, n varchar, ng tinyint) external name ngrams.startswith;
-create filter function e(h varchar, n varchar) external name ngrams.endswith;
-create filter function e(h varchar, n varchar, ng tinyint) external name ngrams.endswith;

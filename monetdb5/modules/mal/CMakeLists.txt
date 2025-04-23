@@ -40,8 +40,7 @@ target_sources(malmodules
   tracer.c
   projectionpath.c
   tablet.c tablet.h
-  batcalc.c calc.c
-  ngrams.c ngrams.h)
+  batcalc.c calc.c)
 
 target_include_directories(malmodules
   PRIVATE
