@@ -141,9 +141,9 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 		 * explicitly mentioned as arguments (and certainly not as the
 		 * first argument), but that can still be available to the MAL
 		 * program (see bugs.monetdb.org/6641) */
-		if (getModuleId(p) == sqlRef)
+//		if (getModuleId(p) == sqlRef)
 			return 1;
-		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
+//		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
 	}
 
 	for (j = p->retc; j < p->argc; j++) {
@@ -320,8 +320,7 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states,
 		// names like 'append', 'update', 'delete', 'grow', etc., are expected
 		// to express their side effects as data dependencies, for example,
 		//       X5 := bat.append(X_5, ...)
-		//state->type = dataflow_region;
-		state->type = singleton_region;
+		state->type = dataflow_region;
 	} else if (hasSideEffects(mb, p, false)) {
 		state->type = singleton_region;
 	} else if (isMultiplex(p)) {

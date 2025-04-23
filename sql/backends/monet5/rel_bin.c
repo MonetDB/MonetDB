@@ -4444,7 +4444,6 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 
 	int neededpp = get_need_pipeline(be) && rel->spb;
 
-	/* todo move into pipeline version of rel2bin_munion */
 	if (neededpp) { /* Simply concat the sources */
 		/* sink for the pipeline concat sink/source */
 		InstrPtr q = newStmt(be->mb, "pipeline", "concat"); /* multi - relation pipeline */
@@ -4483,8 +4482,9 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 			p = b;
 			assert (be->concatcnt == (i+1));
 		}
-		/* todo distinct and single */
-		return rel_rename(be, rel, rel_stmt);
+		/* todo (optimized) distinct and single */
+		sub = rel_rename(be, rel, rel_stmt);
+		return sub;
 	} else {
 		/* convert to stmt and store the munion operands in rstmts list */
 		rstmts = sa_list(sql->sa);
@@ -5109,6 +5109,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		set_pipeline(be, stmt_pp_start_generator(be, source, true));
 		(void)pp_counter_get(be, source);
 		sub = rel2bin_slicer(be, sub, 1);
+		pp = get_pipeline(be);
 	}
 
 	if (sub && sub->type == st_list && sub->op4.lval->h && !((stmt*)sub->op4.lval->h->data)->nrcols) {

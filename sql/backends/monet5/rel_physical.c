@@ -222,6 +222,8 @@ rel_mark_partition(mvc *sql, sql_rel *rel)
 		}
 		break;
     case op_munion:
+		if (need_distinct(rel) || is_single(rel))
+				break;
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 			int lres = rel_mark_partition(sql, n->data);
 			if (lres) {
@@ -479,7 +481,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		}
 	} else if (rel->op == op_munion) {
 		list *rels = rel->l;
-		if (is_recursive(rel))
+		if (is_recursive(rel) || need_distinct(rel) || is_single(rel))
 			return 0;
 		for(node *n = rels->h; n; n = n->next) {
 			int lres = rel_partition_(sql, n->data, pb);
