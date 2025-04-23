@@ -104,7 +104,7 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (coerce == NULL)
 		throw(MAL, "optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);

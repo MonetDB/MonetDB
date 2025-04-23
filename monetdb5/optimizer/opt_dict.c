@@ -43,7 +43,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 
 	if (mb->inlineProp)
 		goto wrapup;
