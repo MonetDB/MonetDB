@@ -43,7 +43,7 @@ TRUNCATE TABLE foo
 statement ok
 TRUNCATE TABLE bar
 
--- TRIGGERS SORT BASED JOIN
+-- TRIGGERS BIGRAM JOIN
 statement ok
 INSERT INTO foo VALUES ('Καλή'),('Frühlingsrauschen'),('Das grüne Monokel'),('Καλή Χρονιά'),('Olá, bom dia'),('Risør'),('Wenn der Ölhahn versiegt'),('Punch-Out!! WITH LYRICS'),('Super Mario Bros. 3 WITH LYRICS'),('Δεν καταλαβαίνω'),('Adeus, boa tarde')
 
@@ -97,4 +97,3 @@ DROP TABLE foo
 
 statement ok
 DROP TABLE bar
-

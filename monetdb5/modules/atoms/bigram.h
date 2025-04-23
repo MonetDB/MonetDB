@@ -159,7 +159,7 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 					int done = (h[bigram] > 0 &&
 								rids[lists[bigram] + h[bigram] - 1] == ob - bbase);
 					if (!done) {
-						rids[lists[bigram] + h[bigram]] = ob - bbase;
+						rids[lists[bigram] + h[bigram]] = (unsigned)(ob - bbase);
 						h[bigram]++;
 					}
 				}
