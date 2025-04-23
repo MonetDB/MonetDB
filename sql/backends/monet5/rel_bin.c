@@ -6650,7 +6650,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 
-	if (pp) {
+	if (!rel->returning && pp) {
 		(void)stmt_pp_jump(be, pp, be->nrparts);
 	}
 
@@ -6663,7 +6663,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	} else {
 		/* combine counts using locked.sum */
 		ret = cnt;
-		if (pp) {
+		if (pp && !rel->returning) {
 			ret = stmt_pp_aggr(be, sum, NULL, NULL, sql_bind_func(sql, "sys", "sum", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
 			/* shared result */
 			ret->nr = getArg(ret->q, 0) = cc->nr;
