@@ -41,11 +41,6 @@
 #define ENC_TOKEN1(t) CHARMAP(*t)
 #define ENC_TOKEN2(t) CHARMAP(*(t + 1))
 
-#undef VALUE
-#undef APPEND
-#define VALUE(s, x)  (s##vars + VarHeapVal(s##vals, (x), s##i->width))
-#define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
-
 typedef struct {
 	NGRAM_TYPE *idx;
 	NGRAM_TYPE *sigs;
@@ -106,7 +101,7 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 	}
 
 	oid bbase = bi->b->hseqbase, ob;
-	const char *bvars = bi->vh->base, *bvals = bi->base;
+	const char *b_vars = bi->vh->base, *b_vals = bi->base;
 
 	canditer_reset(bci);
 	TIMEOUT_LOOP(bci->ncand, qry_ctx) {
@@ -117,7 +112,7 @@ init_bigram_idx(Ngrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 				h_tmp[ENC_TOKEN1(s)][ENC_TOKEN2(s)]++;
 	}
 
-	for (size_t i = 0; i < BIGRAM_SZ; i++) {
+	for (unsigned i = 0; i < BIGRAM_SZ; i++) {
 		map[i] = i;
 		idx[i] = lists[i] = 0;
 		h[i] = h_tmp_ptr[i];
@@ -277,8 +272,8 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	}
 
 	oid lbase = li->b->hseqbase, rbase = ri->b->hseqbase, or, ol;
-	const char *lvars = li->vh->base, *rvars = ri->vh->base,
-		*lvals = li->base, *rvals = ri->base;
+	const char *l_vars = li->vh->base, *r_vars = ri->vh->base,
+		*l_vals = li->base, *r_vals = ri->base;
 
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -374,7 +369,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 
 	ngrams_destroy(ng);
 
-	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time=%ld)\n",
+	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
 			  fname, "bigram_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),

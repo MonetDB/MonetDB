@@ -140,6 +140,9 @@
 		} \
 	} while (0)
 
+#define VALUE(s, x)  (s##_vars + VarHeapVal(s##_vals, (x), s##i->width))
+#define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
+
 mal_export bool batstr_func_has_candidates(const char *func);
 mal_export int UTF8_strwidth(const char *s);
 mal_export int UTF8_strlen(const char *s);

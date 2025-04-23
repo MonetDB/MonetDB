@@ -2008,11 +2008,6 @@ STRcontainsselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					 str_icontains, str_contains, "str.containsselect");
 }
 
-#undef VALUE
-#undef APPEND
-#define VALUE(s, x)  (s##_vars + VarHeapVal(s##_vals, (x), s##i->width))
-#define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
-
 static void
 do_strrev(char *dst, const char *src, size_t len)
 {
@@ -2278,7 +2273,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 	}
 
 	oid sorted_l_base = sorted_l->hseqbase, sorted_r_base = sorted_r->hseqbase,
-		ol, or, ly = 0, rx = 0, n;
+		ol = 0, or = 0, ly = 0, rx = 0, n;
 	const char *sorted_l_vars = sorted_li->vh->base, *sorted_r_vars = sorted_ri->vh->base,
 		*sorted_l_vals = sorted_li->base, *sorted_r_vals = sorted_ri->base;
 	size_t new_cap;
