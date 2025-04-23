@@ -837,7 +837,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tnil = bi.nil;
 		bn->tminpos = bi.minpos;
 		bn->tmaxpos = bi.maxpos;
-		bn->tunique_est = bi.unique_est;
+		if (!bi.key)
+			bn->tunique_est = bi.unique_est;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = bi.count;
@@ -864,7 +865,8 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		}
 		bn->tminpos = bi.minpos;
 		bn->tmaxpos = bi.maxpos;
-		bn->tunique_est = bi.unique_est;
+		if (!bi.key)
+			bn->tunique_est = bi.unique_est;
 	} else {
 		bn->tsorted = bn->trevsorted = false; /* set based on count later */
 		bn->tnonil = bn->tnil = false;
@@ -876,6 +878,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 		bn->tsorted = ATOMlinear(b->ttype);
 		bn->trevsorted = ATOMlinear(b->ttype);
 		bn->tkey = true;
+		bn->tunique_est = (double) bn->batCount;
 	}
 	bat_iterator_end(&bi);
 	if (!writable)
@@ -1668,8 +1671,12 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	BUN nunique = b->thash ? b->thash->nunique : 0;
 	MT_rwlock_wrunlock(&b->thashlock);
 	MT_lock_set(&b->theaplock);
-	if (nunique != 0)
+	if (nunique != 0) {
 		b->tunique_est = (double) nunique;
+		if (nunique == b->batCount && !b->tkey)
+			BATkey(b, true);
+	} else if (b->tkey)
+		b->tunique_est = (double) b->batCount;
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
 	b->theap->dirty = true;
@@ -1957,8 +1964,10 @@ BATkey(BAT *b, bool flag)
 	b->tkey = flag;
 	if (!flag) {
 		b->tseqbase = oid_nil;
-	} else
+	} else {
 		b->tnokey[0] = b->tnokey[1] = 0;
+		b->tunique_est = (double) b->batCount;
+	}
 	gdk_return rc = GDK_SUCCEED;
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
@@ -2024,6 +2033,7 @@ BATtseqbase(BAT *b, oid o)
 				b->trevsorted = b->batCount <= 1;
 				if (!b->trevsorted)
 					b->tnorevsorted = 1;
+				b->tunique_est = (double) b->batCount;
 			}
 		}
 	} else {

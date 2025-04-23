@@ -572,8 +572,8 @@ project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
 	bn->tnonil = r1i->nonil & r2i->nonil;
 	bn->tkey = false;
 	bn->tunique_est =
-		MIN(li->b->tunique_est?li->b->tunique_est:BATcount(li->b),
-		   r1i->b->tunique_est?r1i->b->tunique_est:BATcount(r1i->b));
+		MIN(li->unique_est ? li->unique_est : BATcount(li->b),
+		    r1i->unique_est ? r1i->unique_est : BATcount(r1i->b));
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOBATFMT
 		  " -> " ALGOBATFMT "%s " LLFMT "us\n",
 		  ALGOBATPAR(li->b), ALGOBATPAR(r1i->b), ALGOBATPAR(r2i->b),
@@ -824,8 +824,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	bn->tunique_est =
-		MIN(li.b->tunique_est?li.b->tunique_est:BATcount(li.b),
-		   r1i.b->tunique_est?r1i.b->tunique_est:BATcount(r1i.b));
+		MIN(li.unique_est ? li.unique_est : BATcount(li.b),
+		    r1i.unique_est ? r1i.unique_est : BATcount(r1i.b));
 	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
 		BATtseqbase(bn, oid_nil);
 
