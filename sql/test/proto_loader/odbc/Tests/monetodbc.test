@@ -26,3 +26,14 @@ select id from 'odbc:DSN=MonetDB-Test;QUERY=select id from sys._tables where nam
 2067
 2115
 
+-- test with unicode characters (see https://en.wikipedia.org/wiki/List_of_Unicode_characters) both as value and as result column name
+query T
+select '\u019CM\u0238\u1E9E\u02AC\u0376\u0398\u03A9\u03C0\u0488\u069E\u0BF5\u1402\u2021\u2030\u2042\u213C\u221C\u2329\u250C\u251C\u252C\u253C' as "M\u0238"
+----
+ƜMȸẞʬͶΘΩπ҈ڞ௵ᐂ‡‰⁂ℼ∜〈┌├┬┼
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select ''\u019CM\u0238\u1E9E\u02AC\u0376\u0398\u03A9\u03C0\u0488\u069E\u0BF5\u1402\u2021\u2030\u2042\u213C\u221C\u2329\u250C\u251C\u252C\u253C'' as "M\u0238"'
+----
+ƜMȸẞʬͶΘΩπ҈ڞ௵ᐂ‡‰⁂ℼ∜〈┌├┬┼
+
