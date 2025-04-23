@@ -2203,7 +2203,7 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 		}
 	}
 
-	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time=%ld)\n",
+	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
 			  fname, "nested_loop_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),
@@ -2433,7 +2433,7 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
 	canditer_init(&rci, r, cr);
 	size_t l_cnt = lci.ncand, r_cnt = rci.ncand;
 	size_t nested_cost = lci.ncand * rci.ncand,
-		sorted_cost = floor(0.8 * (l_cnt * log2(l_cnt) + r_cnt * log2(r_cnt)));
+		sorted_cost = (size_t)floor(0.8 * (l_cnt * log2((double)l_cnt) + r_cnt * log2((double)r_cnt)));
 
 	rl = COLnew(0, TYPE_oid, l_cnt, TRANSIENT);
 	if (RR)
