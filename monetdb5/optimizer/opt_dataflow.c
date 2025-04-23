@@ -320,7 +320,8 @@ decideRegionType(Client cntxt, MalBlkPtr mb, InstrPtr p, States states,
 		// names like 'append', 'update', 'delete', 'grow', etc., are expected
 		// to express their side effects as data dependencies, for example,
 		//       X5 := bat.append(X_5, ...)
-		state->type = dataflow_region;
+		//state->type = dataflow_region;
+		state->type = singleton_region;
 	} else if (hasSideEffects(mb, p, false)) {
 		state->type = singleton_region;
 	} else if (isMultiplex(p)) {

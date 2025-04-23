@@ -62,12 +62,23 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	InstrPtr *old = NULL;
 
+	old = mb->stmt;
+	limit = mb->stop;
+	slimit = mb->ssize;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (isUpdateInstruction(p)) {
+			old = NULL;
+			goto wrapup;
+		}
+	}
+
 	/* catch simple insert operations */
 	if (isSimpleSQL(mb)) {
+		old = NULL;
 		goto wrapup;
 	}
 
-	(void) cntxt;
 	(void) stk;
 	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int *) GDKzalloc(sizeof(int) * mb->stop);
@@ -78,9 +89,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		goto wrapup;
 	}
 
-	old = mb->stmt;
-	limit = mb->stop;
-	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);

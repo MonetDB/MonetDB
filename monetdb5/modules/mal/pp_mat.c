@@ -18,6 +18,7 @@
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
 #include "pp_mat.h"
+#include "pipeline.h"
 
 typedef struct part_t {
 	Sink s;
@@ -171,8 +172,10 @@ PARTprefixsum( bat *pos, const bat *gid, lng *max )
 
 	n = BATcount(g);
 	lng *id = (lng*)Tloc(g, 0);
-	for(i=0; i<n; i++)
+	for(i=0; i<n; i++) {
+		assert(id[i] >= 0 && id[i] < (lng)BATcount(g));
 		cnts[id[i]]++;
+	}
 	*pos = p->batCacheid;
 	BBPunfix(g->batCacheid);
 	BATnegateprops(p);
@@ -272,6 +275,17 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	assert(BATcount(g) == BATcount(d));
 
 	MT_lock_set(&m->theaplock);
+	if (d->ttype == TYPE_str && BATcount(mt->bat[0]) == 0) {
+		for (int i = 0; i < mt->nr; i++) {
+            if (mt->bat[i]->twidth < d->twidth) {
+                int m = d->twidth / mt->bat[i]->twidth;
+                mt->bat[i]->twidth = d->twidth;
+                mt->bat[i]->tshift = d->tshift;
+                mt->bat[i]->batCapacity /= m;
+            }
+			BATswap_heaps(mt->bat[i], d, NULL);
+		}
+	}
 	if (BATcount(d)) {
 		switch(d->twidth) {
 		case 1:

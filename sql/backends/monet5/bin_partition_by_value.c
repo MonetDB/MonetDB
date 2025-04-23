@@ -126,7 +126,7 @@ partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 
 /* partition (in pp) */
 /* h := mkey.hash(gbc);
- * g := calc.%(h);
+ * g := calc.and(h); // and as module can be negative
  * l := prefixsum(g, max);
  * p := claim(part, l);
  * ? := mat.project(m, p, b)
@@ -163,7 +163,7 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 			assert(0);
 		}
 	}
-	sql_subfunc *hf = sql_bind_func_result(be->mvc, "sys", "mod", F_FUNC, true, lng, 2, lng, lng);
+	sql_subfunc *hf = sql_bind_func_result(be->mvc, "sys", "bit_and", F_FUNC, true, lng, 2, lng, lng);
 	stmt *g = stmt_binop(be, h, stmt_atom_lng(be, 256-1), NULL, hf);
 	InstrPtr l = newStmt(be->mb, "part", "prefixsum");
 	l = pushArgument(be->mb, l, g->nr);

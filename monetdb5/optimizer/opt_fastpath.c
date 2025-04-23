@@ -142,7 +142,7 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	optcall(OPTdeadcodeImplementation);
 	if (!cntxt->no_mitosis) {
 		optcall(OPTmatpackImplementation); /* depends on mergetable */
-		optcall(OPTreorderImplementation); /* depends on mitosis */
+		//optcall(OPTreorderImplementation); /* depends on mitosis */
 	}
 	optcall(OPTdataflowImplementation);
 	optcall(OPTquerylogImplementation);
