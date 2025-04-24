@@ -37,9 +37,13 @@
 #define ODBC_RELATION 1
 #define ODBC_LOADER   2
 
+/* some generic limitations on ODBC query result and buffer sizes for getting variable length data values */
 #define QUERY_MAX_COLUMNS 4096
 #define MAX_COL_NAME_LEN  1023
 #define MAX_TBL_NAME_LEN  1023
+/* limit data size for one field value to 16 MB */
+#define MAX_CHAR_STR_SIZE 16777215
+#define MAX_BIN_DATA_SIZE 16777216
 
 #ifdef HAVE_HGE
 #define MAX_PREC  38
@@ -937,8 +941,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			largestStringSize = 65535;
 		else if (largestStringSize < 1023)	// for very large decimals read as strings
 			largestStringSize = 1023;
-		else if (largestStringSize > 16777215)	// string length very large, limit to 16MB for now
-			largestStringSize = 16777215;
+		else if (largestStringSize > MAX_CHAR_STR_SIZE)	// string length very large, limit it.
+			largestStringSize = MAX_CHAR_STR_SIZE;
 		str_val = (char *)GDKmalloc((largestStringSize +1) * sizeof(char));	// +1 for the eos char
 		if (!str_val) {
 			errmsg = "Failed to alloc memory for largest rescol string buffer.";
@@ -949,8 +953,8 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		if (hasBlobCols) {
 			if (largestBlobSize == 0)	// no valid blob/binary data size, assume 1048576 (1MB) as default
 				largestBlobSize = 1048576;
-			if (largestBlobSize > 16777216) // blob length very large, limit to 16MB for now
-				largestBlobSize = 16777216;
+			if (largestBlobSize > MAX_BIN_DATA_SIZE) // blob length very large, limit it.
+				largestBlobSize = MAX_BIN_DATA_SIZE;
 			bin_data = (uint8_t *)GDKmalloc(largestBlobSize * sizeof(uint8_t));
 			if (!bin_data) {
 				errmsg = "Failed to alloc memory for largest rescol binary data buffer.";
