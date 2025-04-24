@@ -472,13 +472,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 				return res;
 			}
 		}
-		// TODO: the following block code should probably be removed.
-		//       Instead of force returning a 0, the code above should
-		//       assign 'res' the proper value
-		sql_rel *r = rel->r;
-		if (!is_basetable(r->op)) {
-			return 0;
-		}
 	} else if (rel->op == op_munion) {
 		list *rels = rel->l;
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel))
