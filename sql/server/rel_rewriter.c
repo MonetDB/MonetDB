@@ -197,6 +197,24 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			return ie;
 		}
 	}
+	if (is_func(e->type) && list_length(e->l) == 1 && is_neg_func(sf)) {
+		list *args = e->l;
+		sql_exp *ie = args->h->data;
+
+		if (!ie)
+			return e;
+
+		sql_subfunc *sf = ie->f;
+		if (is_func(ie->type) && list_length(ie->l) == 1 && is_neg_func(sf)) {
+			args = ie->l;
+
+			ie = args->h->data;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, ie, e);
+			v->changes++;
+			return ie;
+		}
+	}
 	if (is_compare(e->type) && e->flag == cmp_equal && !is_semantics(e)) { /* predicate_func = TRUE */
 		sql_exp *l = e->l, *r = e->r;
 		if (is_func(l->type) && exp_is_true(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f))))
