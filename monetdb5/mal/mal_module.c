@@ -298,7 +298,7 @@ freeModule(Module m)
 			str ret;
 
 			TRC_INFO(MAL_LOADER, "Unloading module %s\n", m->name);
-			ret = (*(str (*)(int *)) s->func->imp) (&status);
+			ret = (*(str (*)(Client, int *)) s->func->imp) (NULL, &status);
 			freeException(ret);
 			(void) status;
 		}

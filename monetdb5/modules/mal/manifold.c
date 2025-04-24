@@ -57,16 +57,16 @@ typedef struct {
 
 // Loop through the first BAT
 // keep the last error message received
-#define MALfcn1(Type) (str (*) (Type *, void *))
-#define MALfcn2(Type) (str (*) (Type *, void *, void *))
-#define MALfcn3(Type) (str (*) (Type *, void *, void *, void *))
-#define MALfcn4(Type) (str (*) (Type *, void *, void *, void *, void *))
-#define MALfcn5(Type) (str (*) (Type *, void *, void *, void *, void *, void *))
+#define MALfcn1(Type) (str (*) (Client, Type *, void *))
+#define MALfcn2(Type) (str (*) (Client, Type *, void *, void *))
+#define MALfcn3(Type) (str (*) (Client, Type *, void *, void *, void *))
+#define MALfcn4(Type) (str (*) (Client, Type *, void *, void *, void *, void *))
+#define MALfcn5(Type) (str (*) (Client, Type *, void *, void *, void *, void *, void *))
 #define ManifoldLoop(N, Type, ...)										\
 	do {																\
 		Type *v = (Type *) mut->args[0].first;							\
 		for (;;) {														\
-			msg = (*(MALfcn##N(Type) mut->pci->fcn))(v, __VA_ARGS__);	\
+			msg = (*(MALfcn##N(Type) mut->pci->fcn))(mut->cntxt, v, __VA_ARGS__); \
 			if (msg)													\
 				break;													\
 			if (++oo == olimit)											\
@@ -115,7 +115,7 @@ typedef struct {
 		case TYPE_str:													\
 		default: {														\
 			for (;;) {													\
-			    msg = (*(MALfcn##N(str) mut->pci->fcn))(&y, __VA_ARGS__); \
+			    msg = (*(MALfcn##N(str) mut->pci->fcn))(mut->cntxt, &y, __VA_ARGS__); \
 				if (msg)												\
 					break;												\
 				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
