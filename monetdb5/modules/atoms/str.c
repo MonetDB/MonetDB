@@ -2435,9 +2435,6 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 		return msg;
 	}
 
-	BATprint(GDKstdout, li->b);
-	printf("%s\n", MT_thread_getname());
-
 	oid lbase = li->b->hseqbase, rbase = ri->b->hseqbase, or, ol;
 	const char *l_vars = li->vh->base, *r_vars = ri->vh->base,
 		*l_vals = li->base, *r_vals = ri->base;
