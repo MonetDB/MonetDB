@@ -1449,8 +1449,9 @@ ODBCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-ODBCepilogue(void *ret)
+ODBCepilogue(Client cntxt, void *ret)
 {
+	(void) cntxt;
 	(void)ret;
 	pl_unregister("odbc");
 	return MAL_SUCCEED;

@@ -556,8 +556,9 @@ CSVprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CSVepilogue(void *ret)
+CSVepilogue(Client cntxt, void *ret)
 {
+	(void) cntxt;
 	fl_unregister("csv");
 	fl_unregister("tsv");
 	fl_unregister("psv");

@@ -887,8 +887,9 @@ PyAPI3prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-PyAPI3epilogue(void *ret)
+PyAPI3epilogue(Client cntxt, void *ret)
 {
+	(void)cntxt;
     (void)ret;
 	MT_lock_set(&pyapiLock);
 	if (pyapiInitialized) {

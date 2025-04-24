@@ -273,8 +273,9 @@ MONETDBprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-MONETDBepilogue(void *ret)
+MONETDBepilogue(Client cntxt, void *ret)
 {
+	(void) cntxt;
 	pl_unregister("monetdb");
 	pl_unregister("monetdbs");
 	pl_unregister("mapi");
