@@ -2810,7 +2810,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						break;			\
 					}				\
 					HASHLOOPBODY();			\
-					if (semi && !max_one)		\
+					if (semi)			\
 						break;			\
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
@@ -2825,7 +2825,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;		\
 						}			\
 						HASHLOOPBODY();		\
-						if (semi && !max_one)	\
+						if (semi)		\
 							break;		\
 					}				\
 				}					\
@@ -2841,7 +2841,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						}			\
 						ro = (oid) (rb - roff + rseq); \
 						HASHLOOPBODY();		\
-						if (semi && !max_one)	\
+						if (semi)		\
 							break;		\
 					}				\
 				}					\
@@ -3083,6 +3083,16 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		goto bailout;
 	}
 
+	/* from here on, semi is used to bail out early from the
+	 * collision lists; if right is key, it's effectively a
+	 * semi-join, and max_one is automatically satisfied; otherwise,
+	 * we need to continue looking if max_one is specified to make
+	 * sure there is only one match */
+	if (r->tkey)
+		semi = true;
+	else if (max_one)
+		semi = false;
+
 	r1 = *r1p;
 	r2 = r2p ? *r2p : NULL;
 	r3 = r3p ? *r3p : NULL;
@@ -3143,7 +3153,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						break;
 					}
 					HASHLOOPBODY();
-					if (semi && !max_one)
+					if (semi)
 						break;
 				}
 			} else if (hsh == NULL) {
@@ -3159,7 +3169,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3175,7 +3185,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3191,7 +3201,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						}
 						ro = (oid) (rb - roff + rseq);
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3249,8 +3259,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		locked = false;
 		MT_rwlock_rdunlock(&r->thashlock);
 	}
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
 
 	if (hash_cand) {
 		HEAPfree(&hsh->heaplink, true);
@@ -3259,7 +3267,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	}
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
-	r1->tunique_est = MIN(l->tunique_est, r->tunique_est);
+	r1->tunique_est = MIN(li.unique_est, ri.unique_est);
 	if (BATcount(r1) <= 1) {
 		r1->tsorted = true;
 		r1->trevsorted = true;
@@ -3275,14 +3283,16 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			r2->tkey = true;
 			r2->tseqbase = 0;
 		}
-		r2->tunique_est = MIN(l->tunique_est, r->tunique_est);
+		r2->tunique_est = MIN(li.unique_est, ri.unique_est);
 	}
 	if (r3) {
 		r3->tnonil = !r3->tnil;
 		BATsetcount(r3, BATcount(r3));
 		assert(BATcount(r1) == BATcount(r3));
-		r3->tunique_est = MIN(l->tunique_est, r->tunique_est);
+		r3->tunique_est = MIN(li.unique_est, ri.unique_est);
 	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
 			r1->tseqbase = ((oid *) r1->theap->base)[0];

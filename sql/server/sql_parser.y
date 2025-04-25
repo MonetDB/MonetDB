@@ -594,6 +594,7 @@ int yydebug=1;
 	opt_best_effort
 	opt_brackets
 	opt_chain
+	all_distinct
 	opt_distinct
 	opt_escape
 	opt_grant_for
@@ -3424,6 +3425,12 @@ opt_distinct:
  |  DISTINCT		{ $$ = TRUE; }
  ;
 
+all_distinct:
+    ALL			{ $$ = FALSE; }
+ |  DISTINCT		{ $$ = TRUE; }
+ ;
+
+
 assignment_commalist:
     assignment		{ $$ = append_symbol(L(), $1 ); }
  |  assignment_commalist ',' assignment
@@ -5106,20 +5113,20 @@ aggr_or_window_ref:
 		  else
 		  	append_symbol(l, $6);
 		  $$ = _symbol_create_list( SQL_NOP, l ); }
- |  qfunc '(' DISTINCT expr_list ')'
+ |  qfunc '(' all_distinct expr_list opt_order_by_clause ')' opt_within_group
 		{ dlist *l = L();
 		  append_list(l, $1);
-		  append_int(l, TRUE);
+		  append_int(l, $3);
+		  if ($5 && $7) {
+			yyerror(m, "Cannot have both order by clause and within group clause");
+			YYABORT;
+		  }
 		  append_list(l, $4);
-		  $$ = _symbol_create_list( SQL_NOP, l );
-		}
- |  qfunc '(' ALL expr_list ')'
-		{ dlist *l = L();
-		  append_list(l, $1);
-		  append_int(l, FALSE);
-		  append_list(l, $4);
-		  $$ = _symbol_create_list( SQL_NOP, l );
-		}
+		  if ($5)
+		  	append_symbol(l, $5);
+		  else
+		  	append_symbol(l, $7);
+		  $$ = _symbol_create_list( SQL_NOP, l ); }
  |  XML_aggregate
  ;
 

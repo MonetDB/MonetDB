@@ -529,6 +529,7 @@ query II nosort
 SELECT duration_seconds,
        cast(SUM(duration_seconds) OVER (ORDER BY start_time) as int) AS running_total
   FROM tutorial.dc_bikeshare_q1_2012
+  ORDER BY running_total, duration_seconds
 ----
 155
 320
@@ -551,6 +552,7 @@ SELECT start_terminal,
          AS running_total
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal
 ----
 AMS
 55
@@ -691,7 +693,7 @@ query TTII nosort
 SELECT start_terminal,
        start_time,
        duration_seconds,
-       ROW_NUMBER() OVER (ORDER BY start_time)
+       ROW_NUMBER() OVER (ORDER BY start_time, duration_seconds)
                     AS row_number
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
@@ -726,7 +728,7 @@ SELECT start_terminal,
        start_time,
        duration_seconds,
        ROW_NUMBER() OVER (PARTITION BY start_terminal
-                          ORDER BY start_time)
+                          ORDER BY start_terminal, start_time, duration_seconds)
                     AS row_number
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
@@ -760,10 +762,11 @@ query TII nosort
 SELECT start_terminal,
        duration_seconds,
        RANK() OVER (PARTITION BY start_terminal
-                    ORDER BY start_time)
+                    ORDER BY start_terminal, start_time)
               AS rank
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
+ ORDER BY start_terminal, rank, duration_seconds
 ----
 AMS
 55

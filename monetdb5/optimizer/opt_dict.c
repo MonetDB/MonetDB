@@ -42,7 +42,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bit *dictunique = NULL;
 	str msg = MAL_SUCCEED;
 
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 
 	if (mb->inlineProp || MB_LARGE(mb))
 		goto wrapup1;

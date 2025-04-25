@@ -116,7 +116,7 @@ static str
 CMDnoopProfiler(Client ctx, void *res)
 {
 	(void) ctx;
-	(void) res;					/* fool compiler */
+	(void) res;
 	return MAL_SUCCEED;
 }
 
@@ -137,7 +137,7 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *res = getArgReference_bat(stk, pci, 0);
 	BAT *bn;
 
-	(void) cntxt;				/* fool compiler */
+	(void) cntxt;
 	(void) mb;
 	bn = getTrace(cntxt, path);
 	if (bn) {

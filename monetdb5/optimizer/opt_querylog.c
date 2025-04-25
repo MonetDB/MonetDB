@@ -30,7 +30,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (!QLOGisset())
 		goto wrapup;
 
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 	(void) cntxt;
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {

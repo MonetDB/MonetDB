@@ -43,7 +43,7 @@ OPTforImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *varisfor = NULL, *varforvalue = NULL;
 	str msg = MAL_SUCCEED;
 
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 
 	if (mb->inlineProp)
 		goto wrapup1;

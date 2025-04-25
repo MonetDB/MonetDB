@@ -3280,6 +3280,7 @@ usage(const char *prog, int xit)
 	mnstr_printf(stderr_stream, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
 	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
+	mnstr_printf(stderr_stream, " -q          | --quiet            don't print welcome message\n");
 	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
 
 	mnstr_printf(stderr_stream, "\nSQL specific options \n");
@@ -3355,6 +3356,7 @@ main(int argc, char **argv)
 	bool trace = false;
 	bool dump = false;
 	bool useinserts = false;
+	bool quiet = false;
 	int c = 0;
 	Mapi mid;
 	bool save_history = false;
@@ -3387,6 +3389,7 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
+		{"quiet", 0, 0, 'q'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 		{"user", 1, 0, 'u'},
@@ -3469,7 +3472,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:Hil:L:n:Np:P:r:Rs:t:u:vw:Xz"
+				"f:h:Hil:L:n:Np:P:qr:Rs:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -3552,6 +3555,9 @@ main(int argc, char **argv)
 			assert(optarg);
 			passwd = optarg;
 			passwd_set_as_flag = true;
+			break;
+		case 'q':
+			quiet = true;
 			break;
 		case 'r':
 			assert(optarg);
@@ -3764,11 +3770,12 @@ main(int argc, char **argv)
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	mapi_trace(mid, trace);
-	/* give the user a welcome message with some general info */
-	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
-		char *lang;
-
+	if (!has_fileargs && command == NULL && isatty(fileno(stdin)))
 		catch_interrupts(mid);
+
+	/* give the user a welcome message with some general info */
+	if (!quiet && !has_fileargs && command == NULL && isatty(fileno(stdin))) {
+		char *lang;
 
 		if (mode == SQL) {
 			lang = "/SQL";

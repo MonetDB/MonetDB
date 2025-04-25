@@ -16,7 +16,9 @@
  */
 
 #include "monetdb_config.h"
-#include "generator.h"
+#include "mal.h"
+#include "mal_interpreter.h"
+#include "mal_function.h"
 #include "gdk_time.h"
 
 
@@ -33,7 +35,7 @@
 		nullerr = is_##TPE##_nil(s);								\
 	} while (0)
 
-str
+static str
 VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int nullerr= 0, zeroerror=0, tpe;
@@ -350,7 +352,7 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	return MAL_SUCCEED;
 }
 
-str
+static str
 VLTgenerator_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg;
@@ -464,7 +466,7 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 		}																\
 	} while (0)
 
-str
+static str
 VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bit li, hi, anti;
@@ -886,7 +888,8 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 
-str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool anti = false;
 	int tpe;
@@ -1206,7 +1209,8 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		}																\
 	} while (0)
 
-str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int tpe;
 	bat *ret;
@@ -1435,7 +1439,8 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}																\
 	} while (0)
 
-str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT  *b, *bl = NULL, *br = NULL, *bln = NULL, *brn= NULL;
 	BUN cnt,c =0;
@@ -1626,7 +1631,8 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}																\
 	} while (0)
 
-str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT  *blow = NULL, *bhgh = NULL, *bln = NULL, *brn= NULL;
 	bit li,ri;

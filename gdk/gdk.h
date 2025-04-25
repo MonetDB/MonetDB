@@ -1515,11 +1515,13 @@ BATsettrivprop(BAT *b)
 			b->tnil = !b->tnonil;
 			b->trevsorted = true;
 			b->tkey = b->batCount <= 1;
+			b->tunique_est = b->batCount == 0 ? 0.0 : 1.0;
 		} else {
 			b->tnonil = true;
 			b->tnil = false;
 			b->tkey = true;
 			b->trevsorted = b->batCount <= 1;
+			b->tunique_est = (double) b->batCount;
 		}
 		b->tsorted = true;
 	} else if (b->batCount <= 1) {
@@ -1588,11 +1590,15 @@ BATsettrivprop(BAT *b)
 		b->tnokey[0] = 0;
 		b->tnokey[1] = !b->tkey;
 		b->tunique_est = (double) (1 + b->tkey);
-	} else if (!ATOMlinear(b->ttype)) {
-		b->tsorted = false;
-		b->trevsorted = false;
-		b->tminpos = BUN_NONE;
-		b->tmaxpos = BUN_NONE;
+	} else {
+		if (!ATOMlinear(b->ttype)) {
+			b->tsorted = false;
+			b->trevsorted = false;
+			b->tminpos = BUN_NONE;
+			b->tmaxpos = BUN_NONE;
+		}
+		if (b->tkey)
+			b->tunique_est = (double) b->batCount;
 	}
 }
 
@@ -1660,9 +1666,7 @@ BATnegateprops(BAT *b)
  * this is a NULL pointer.
  */
 #define GDKMAXERRLEN	10240
-#define GDKWARNING	"!WARNING: "
 #define GDKERROR	"!ERROR: "
-#define GDKMESSAGE	"!OS: "
 #define GDKFATAL	"!FATAL: "
 
 /* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
