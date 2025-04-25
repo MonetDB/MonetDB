@@ -3770,11 +3770,12 @@ main(int argc, char **argv)
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	mapi_trace(mid, trace);
+	if (!has_fileargs && command == NULL && isatty(fileno(stdin)))
+		catch_interrupts(mid);
+
 	/* give the user a welcome message with some general info */
 	if (!quiet && !has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
-
-		catch_interrupts(mid);
 
 		if (mode == SQL) {
 			lang = "/SQL";
