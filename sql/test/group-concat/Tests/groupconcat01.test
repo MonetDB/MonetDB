@@ -111,6 +111,14 @@ get,harder,lets,more,more
 even,even
 
 query IT
+SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a HAVING COUNT(*) > 2 ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+
+query IT
 SELECT a, GROUP_CONCAT(b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
@@ -338,7 +346,7 @@ create table testme (a int, b clob)
 #statement ok
 #INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
 
-statement error 42000!Cannot have both order by clause and within group clause... 
+statement error 42000!Cannot have both order by clause and within group clause...
 SELECT a, GROUP_CONCAT(b ORDER BY b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 
 statement ok
