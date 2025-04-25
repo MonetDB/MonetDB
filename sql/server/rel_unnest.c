@@ -2638,6 +2638,8 @@ aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 							e1 = exp_label(sql->sa, e1, ++sql->label);
 						append(exps, e1);
 					} else {
+						found->ascending = e1->ascending;
+						found->nulls_last = e1->nulls_last;
 						e1 = found;
 					}
 					if (!e1->alias.label)
