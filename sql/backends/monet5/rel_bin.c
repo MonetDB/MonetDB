@@ -1813,8 +1813,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
 					/* depending on type of aggr project input or ordered column */
-					stmt *h = l->h->data;
-					l->h->data = h = stmt_project(be, orderby_ids, h);
+					for (node *n = l->h; n; n = n->next)
+						n->data = stmt_project(be, orderby_ids, n->data);
 					if (grp)
 						grp = stmt_project(be, orderby_ids, grp);
 					(void)orderby_vals;
