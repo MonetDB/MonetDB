@@ -3402,9 +3402,8 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 
 		sql_alias *tname = table_name(sql->sa, c);
 		const char *_empty = "";
-		const char *tn = (tname) ? tname->name : _empty;
-		//const char *sn = (sname) ? sname : _empty;
-		const char *sn = (tname && tname->parent) ? tname->parent->name : _empty;
+		const char *tn = (tname && tname->name) ? tname->name : _empty;
+		const char *sn = (tname && tname->parent && tname->parent->name) ? tname->parent->name : _empty;
 		const char *cn = column_name(sql->sa, c);
 		const char *ntn = sql_escape_ident(sql->ta, tn);
 		const char *nsn = sql_escape_ident(sql->ta, sn);
