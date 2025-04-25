@@ -1247,8 +1247,9 @@ stringdiff(Client ctx, int *res, const char *const *s1, const char *const *s2)
  *
  *****************************/
 static str
-qgram_normalize(str *res, const char *const *Input)
+qgram_normalize(Client ctx, str *res, const char *const *Input)
 {
+	(void) ctx;
 	const char *input = *Input;
 	int i, j = 0;
 	char c, last = ' ';
