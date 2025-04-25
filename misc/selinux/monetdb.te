@@ -8,7 +8,7 @@
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
-policy_module(monetdb, 1.4)
+policy_module(monetdb, 1.5)
 # The above line declares that this file is a SELinux policy file. Its
 # name is monetdb, so the file should be saved as monetdb.te
 
@@ -28,7 +28,7 @@ require {
 	class fifo_file { getattr read write };
 	class file { entrypoint execute getattr manage_file_perms map open read };
 	class netlink_selinux_socket create_socket_perms;
-	class process { rlimitinh siginh signal sigchld sigkill transition };
+	class process { rlimitinh siginh signal sigchld sigkill signull transition };
 	class tcp_socket create_stream_socket_perms;
 	class udp_socket create_stream_socket_perms;
 	class unix_dgram_socket create_socket_perms;
@@ -58,7 +58,7 @@ type_transition monetdbd_t mserver5_exec_t:process mserver5_t;
 allow monetdbd_t mserver5_t:process sigkill;
 # on EPEL 7 we need these as well
 allow mserver5_t monetdbd_t:process sigchld;
-allow monetdbd_t unconfined_service_t:process signal;
+allow monetdbd_t unconfined_service_t:process { signal signull };
 allow mserver5_t proc_t:file { open read getattr };      # read /proc/meminfo
 
 # declare a type for the systemd unit file (monetdbd.service)

@@ -2067,6 +2067,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (attr && attr->h) {
 			node *en;
 			list *l = sa_list(sql->sa);
+			stmt *next = NULL;
 
 			for (en = attr->h; en; en = en->next) {
 				sql_exp *at = en->data;
@@ -2088,7 +2089,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (need_distinct(e) && (grp || list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
 				stmt *ngrp = grp;
-				stmt *next = ext;
+				next = ext;
 				stmt *ncnt = cnt;
 				if (nl == NULL)
 					return NULL;
@@ -2131,6 +2132,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					for (node *n = obe->h; n; n = n->next) {
 						sql_exp *oe = n->data;
 						stmt *os = exp_bin(be, oe, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
+						if (!os)
+							return NULL;
+						if (next)
+							os = stmt_project(be, next, os);
 						if (orderby)
 							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
 						else
@@ -2140,8 +2145,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
 					/* depending on type of aggr project input or ordered column */
-					stmt *h = l->h->data;
-					l->h->data = h = stmt_project(be, orderby_ids, h);
+					for (node *n = l->h; n; n = n->next)
+						n->data = stmt_project(be, orderby_ids, n->data);
 					if (grp)
 						grp = stmt_project(be, orderby_ids, grp);
 					(void)orderby_vals;
