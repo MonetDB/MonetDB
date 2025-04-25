@@ -8,7 +8,7 @@ statement ok
 insert into testme values (1, 'another', 1), (5, '', 20), (5, 'if', 20), (2, 'two', 2), (4, 'a singleton', 10), (5, 'else', 20)
 
 query IT
-select a, group_concat(b order by b) from testme where c > 3 group by a order by a
+select a, listagg(b order by b) from testme where c > 3 group by a order by a
 ----
 4
 a singleton
@@ -16,7 +16,7 @@ a singleton
 ,else,if
 
 query IT
-select a, group_concat(b, E'XyZ\n' order by b) from testme where c > 3 group by a order by a
+select a, listagg(b, E'XyZ\n' order by b) from testme where c > 3 group by a order by a
 ----
 4
 a singleton
@@ -24,43 +24,43 @@ a singleton
 XyZ@elseXyZ@if
 
 query T
-select '[' || group_concat(a order by a) || ']' from testme
+select '[' || listagg(a order by a) || ']' from testme
 ----
 [1,2,4,5,5,5]
 
 query T
-select '[' || group_concat(a order by a desc) || ']' from testme
+select '[' || listagg(a order by a desc) || ']' from testme
 ----
 [5,5,5,4,2,1]
 
 query T
-select '[' || group_concat(a, '' order by a desc) || ']' from testme
+select '[' || listagg(a, '' order by a desc) || ']' from testme
 ----
 [555421]
 
 query T
-select '[' || group_concat(a, 'XyZ\n' order by a desc) || ']' from testme
+select '[' || listagg(a, 'XyZ\n' order by a desc) || ']' from testme
 ----
 [5XyZ@5XyZ@5XyZ@4XyZ@2XyZ@1]
 
 query T
-select group_concat(a, a order by a) from testme
+select listagg(a, a order by a) from testme
 ----
 12244555555
 
 query T
-select group_concat(a, 8 order by a) from testme
+select listagg(a, 8 order by a) from testme
 ----
 18284858585
 
 query TT
-select group_concat(a, NULL order by a),  group_concat(b, NULL order by b) from testme
+select listagg(a, NULL order by a),  listagg(b, NULL order by b) from testme
 ----
 124555
 a singletonanotherelseiftwo
 
 query T rowsort
-select group_concat(c order by c desc) from testme where c < 3
+select listagg(c order by c desc) from testme where c < 3
 ----
 2,1
 
@@ -68,7 +68,7 @@ statement ok
 insert into testme values (6, '', 12), (7, '', 323), (4, 'not a singleton anymore', 7), (7, NULL, 323)
 
 query IT
-select a, group_concat(b order by b) from testme where c > 3 group by a order by a
+select a, listagg(b order by b) from testme where c > 3 group by a order by a
 ----
 4
 a singleton,not a singleton anymore
@@ -86,13 +86,13 @@ statement ok
 insert into othertest values (1, E'\\t a\t'), (1, E'\n\\n,'), (1, ',,,')
 
 query IT
-select a, group_concat(b order by b) from othertest group by a
+select a, listagg(b order by b) from othertest group by a
 ----
 1
 @\n,,,,,,\t a@
 
 query T
-select group_concat(b order by b) from othertest
+select listagg(b order by b) from othertest
 ----
 @\n,,,,,,\t a@
 
@@ -100,7 +100,7 @@ statement ok
 insert into othertest values (2, E'\n'), (2, E'\n'), (1, '')
 
 query IT rowsort
-select a, group_concat(b order by b) from othertest group by a order by a
+select a, listagg(b order by b) from othertest group by a order by a
 ----
 1
 ,@\n,,,,,,\t a@
@@ -108,7 +108,7 @@ select a, group_concat(b order by b) from othertest group by a order by a
 @,@
 
 query T rowsort
-select group_concat(b order by b) from othertest
+select listagg(b order by b) from othertest
 ----
 ,@,@,@\n,,,,,,\t a@
 

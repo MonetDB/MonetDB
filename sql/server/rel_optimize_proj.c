@@ -2592,6 +2592,8 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 
 						n->data = w;
 						v->changes++;
+					} else {
+						break;
 					}
 				}
 			}

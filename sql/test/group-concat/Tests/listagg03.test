@@ -1,0 +1,116 @@
+statement ok
+start transaction
+
+statement ok
+create table testmore (a int, b clob)
+
+statement ok
+insert into testmore values (1, 'another'), (1, 'testing'), (1, 'todo')
+
+statement ok
+insert into testmore values (2, 'lets'), (3, 'get'), (2, 'harder')
+
+statement ok
+insert into testmore values (3, 'even'), (2, 'more'), (1, '')
+
+statement ok
+insert into testmore values (3, 'even'), (2, NULL), (1, '')
+
+query T
+select listagg('😀', '😁') as "😃" from (values (1),(2),(3), (NULL)) v
+----
+😀😁😀😁😀😁😀
+
+query T rowsort
+select listagg('😀', '😁') over () as "😃" from (values (1),(2),(3), (NULL)) v
+----
+😀😁😀😁😀😁😀
+😀😁😀😁😀😁😀
+😀😁😀😁😀😁😀
+😀😁😀😁😀😁😀
+
+query T
+select listagg(null) || 'a'
+----
+NULL
+
+query T
+select listagg(null) || 'a' from testmore
+----
+NULL
+
+query T
+select listagg(null) over () || 'a'
+----
+NULL
+
+query T
+select listagg(null) over () || 'a' from testmore
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query T
+select listagg('') || 'a' where false
+----
+NULL
+
+query T
+select listagg('') over () || 'a' where false
+----
+
+query T
+select listagg('')
+----
+(empty)
+
+query T
+select listagg('') from testmore
+----
+,,,,,,,,,,,
+
+query T
+select listagg('') over () from testmore
+----
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+,,,,,,,,,,,
+
+query T
+select listagg('', '') over () from testmore
+----
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+
+statement ok
+rollback
+
