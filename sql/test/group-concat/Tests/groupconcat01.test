@@ -74,15 +74,23 @@ foo#@#foo#@#foo
 2
 bar#@#bar#@#bar
 
-query T
-SELECT GROUP_CONCAT(DISTINCT b, ';') FROM (SELECT b FROM testme ORDER BY b) t;
+# the second column is the separator
+query IT
+SELECT a, GROUP_CONCAT(a, b) FROM testme GROUP BY a ORDER BY a
 ----
-bar;foo
+1
+1foo1foo1
+2
+2bar2bar2
 
-query T
-SELECT GROUP_CONCAT(DISTINCT (b), '#@#') FROM (SELECT b FROM testme ORDER BY b) t;
+# Distinct is applied on (a, b)
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT a, b) FROM testme GROUP BY a ORDER BY a
 ----
-bar#@#foo
+1
+1
+2
+2
 
 # test the syntax for ordering _within_ a group_concat,
 # also use it to get deterministic query results
@@ -277,7 +285,31 @@ get,harder,lets,more
 4
 , 
 
-# To test that group_concat also works on a numerical column
+query IT
+SELECT a, GROUP_CONCAT(a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+1serious1serious1testing1todo1
+2
+2harder2lets2more2more2
+3
+333even3even3more3nothing3stress3
+4
+444444 4 4
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+1serious1testing1todo1
+2
+2harder2lets2more2
+3
+33even3more3nothing3stress3
+4
+44 4
+
+# Test that group_concat also works on a numerical column
 query IT
 SELECT a, GROUP_CONCAT(a) FROM testme GROUP BY a ORDER BY a
 ----
@@ -290,6 +322,24 @@ SELECT a, GROUP_CONCAT(a) FROM testme GROUP BY a ORDER BY a
 4
 4,4,4,4,4,4,4,4
 
+# group_concat does not concatenate multiple columns
+statement error 42000!SELECT: cannot use non GROUP BY column 'b' in query results without an aggregate function
+SELECT a, GROUP_CONCAT(a, b, b) FROM testme GROUP BY a ORDER BY a
+
 statement ok
 rollback
 
+statement ok
+start transaction
+
+statement ok
+create table testme (a int, b clob)
+
+#statement ok
+#INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
+
+statement error 42000!Cannot have both order by clause and within group clause... 
+SELECT a, GROUP_CONCAT(b ORDER BY b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+
+statement ok
+rollback
