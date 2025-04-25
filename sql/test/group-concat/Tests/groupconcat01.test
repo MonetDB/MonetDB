@@ -4,99 +4,291 @@ start transaction
 statement ok
 create table testme (a int, b clob)
 
+# test supported syntax _without_ ordering _in_ group_concat
+# use the same string for `b` per `a` group to make the query output
+#  independent of the row-order of `testme`
 statement ok
-insert into testme values (1, 'another'), (1, 'testing'), (1, 'todo')
+INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
 
-query IT rowsort
-select a, group_concat(b) from testme group by a
+query IT
+SELECT a, GROUP_CONCAT(b) FROM testme GROUP BY a ORDER BY a
 ----
 1
-another,testing,todo
-
-statement ok
-insert into testme values (2, 'lets'), (2, 'get'), (2, 'harder')
-
-query IT rowsort
-select a, group_concat(b) from testme group by a
-----
-1
-another,testing,todo
+foo,foo,foo
 2
-lets,get,harder
+bar,bar,bar
 
-statement ok
-insert into testme values (3, 'even'), (2, 'more'), (1, 'serious')
-
-query IT rowsort
-select a, group_concat(b) from testme group by a
+query IT
+SELECT a, GROUP_CONCAT(ALL b) FROM testme GROUP BY a ORDER BY a
 ----
 1
-another,testing,todo,serious
+foo,foo,foo
 2
-lets,get,harder,more
+bar,bar,bar
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b) FROM testme GROUP BY a ORDER BY a
+----
+1
+foo
+2
+bar
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT (b)) FROM testme GROUP BY a ORDER BY a
+----
+1
+foo
+2
+bar
+
+query IT
+SELECT a, GROUP_CONCAT(b, ';') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo;foo;foo
+2
+bar;bar;bar
+
+query IT
+SELECT a, GROUP_CONCAT(b, '#@#') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo#@#foo#@#foo
+2
+bar#@#bar#@#bar
+
+query IT
+SELECT a, GROUP_CONCAT(ALL b, ';') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo;foo;foo
+2
+bar;bar;bar
+
+query IT
+SELECT a, GROUP_CONCAT(ALL b, '#@#') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo#@#foo#@#foo
+2
+bar#@#bar#@#bar
+
+query T
+SELECT GROUP_CONCAT(DISTINCT b, ';') FROM (SELECT b FROM testme ORDER BY b) t;
+----
+bar;foo
+
+query T
+SELECT GROUP_CONCAT(DISTINCT (b), '#@#') FROM (SELECT b FROM testme ORDER BY b) t;
+----
+bar#@#foo
+
+# test the syntax for ordering _within_ a group_concat,
+# also use it to get deterministic query results
+statement ok
+DELETE FROM testme
+
+statement ok
+INSERT INTO testme VALUES (1, 'another'), (1, 'testing'), (1, 'todo'), (2, 'lets'), (2, 'get'), (2, 'harder'), (3, 'even'), (2, 'more'), (1, 'serious'), (3, 'even'), (2, 'more'), (1, 'serious')
+
+query IT
+SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, GROUP_CONCAT(b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, GROUP_CONCAT(ALL b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, GROUP_CONCAT(ALL b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,testing,todo
+2
+get,harder,lets,more
 3
 even
 
-statement ok
-insert into testme values (3, ''), (3, 'more'), (3, ''), (3, 'stress'), (4, NULL)
-
-query IT rowsort
-select a, group_concat(b) from testme group by a
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
-another,testing,todo,serious
+another,serious,testing,todo
 2
-lets,get,harder,more
+get,harder,lets,more
 3
-even,,more,,stress
+even
+
+query IT
+SELECT a, GROUP_CONCAT(b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, GROUP_CONCAT(b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, GROUP_CONCAT(ALL b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, GROUP_CONCAT(ALL b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;testing;todo
+2
+get;harder;lets;more
+3
+even
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;testing;todo
+2
+get;harder;lets;more
+3
+even
+
+# Test that groun_concat ignores NULLs but not empty strings
+statement ok
+DELETE FROM testme
+
+statement ok
+INSERT INTO testme VALUES (1, 'another'), (1, 'testing'), (1, 'todo'),
+ (2, 'lets'), (2, 'get'), (2, 'harder'),
+ (3, 'even'), (2, 'more'), (1, 'serious'),
+ (3, 'even'), (2, 'more'), (1, 'serious'),
+ (3, ''), (3, ''), (3, 'more'), (3, 'stress'),
+ (4, NULL)
+
+query IT
+SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+,,even,even,more,stress
 4
 NULL
 
-statement ok
-insert into testme values (3, NULL), (4, NULL)
-
-query IT rowsort
-select a, group_concat(b) from testme group by a
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
-another,testing,todo,serious
+another,serious,testing,todo
 2
-lets,get,harder,more
+get,harder,lets,more
 3
-even,,more,,stress
+,even,more,stress
 4
 NULL
 
+
 statement ok
-insert into testme values (5, ''), (4, 'nothing'), (5, ''), (3, '')
+INSERT INTO testme VALUES (3, NULL), (4, ''), (4, NULL), (4, ''), (4, NULL), (4, ''), (3, 'nothing'), (4, ' '), (4, ' ')
 
-query IT rowsort
-select a, group_concat(b) from testme group by a
+query IT
+SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
-another,testing,todo,serious
+another,serious,serious,testing,todo
 2
-lets,get,harder,more
+get,harder,lets,more,more
 3
-even,,more,,stress,
+,,even,even,more,nothing,stress
 4
-nothing
-5
-,
+,,, , 
 
-query IT rowsort
-select a, group_concat(a) from testme group by a
+
+query IT
+SELECT a, GROUP_CONCAT(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
-1,1,1,1
+another,serious,testing,todo
 2
-2,2,2,2
+get,harder,lets,more
 3
-3,3,3,3,3,3,3
+,even,more,nothing,stress
 4
-4,4,4
-5
-5,5
+, 
+
+# To test that group_concat also works on a numerical column
+query IT
+SELECT a, GROUP_CONCAT(a) FROM testme GROUP BY a ORDER BY a
+----
+1
+1,1,1,1,1
+2
+2,2,2,2,2
+3
+3,3,3,3,3,3,3,3
+4
+4,4,4,4,4,4,4,4
 
 statement ok
 rollback
