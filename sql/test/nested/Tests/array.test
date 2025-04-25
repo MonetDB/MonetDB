@@ -15,6 +15,71 @@ select * from flent_arr
 ----
 {10,11}
 
+query III nosort
+select u.* from flent_arr fa, unnest(fa.n) u
+----
+10
+1
+1
+11
+1
+2
+
+query IIIT nosort
+select u.*, fa.* from flent_arr fa, unnest(fa.n) u
+----
+10
+1
+1
+{10,11}
+11
+1
+2
+{10,11}
+
+query TIII nosort unnest_all
+select fa.*, u.* from flent_arr fa, unnest(fa.n) u
+----
+{10,11}
+10
+1
+1
+{10,11}
+11
+1
+2
+
+query T nosort
+select fa.* from flent_arr fa, unnest(fa.n) u
+----
+{10,11}
+{10,11}
+
+query TIII nosort unnest_all
+select * from flent_arr fa, unnest(fa.n) u
+----
+{10,11}
+10
+1
+1
+{10,11}
+11
+1
+2
+
+-- no aliases
+query TIII nosort unnest_all
+select * from flent_arr, unnest(flent_arr.n)
+----
+{10,11}
+10
+1
+1
+{10,11}
+11
+1
+2
+
 statement ok
 insert into flent_arr values (array[20, 21])
 
