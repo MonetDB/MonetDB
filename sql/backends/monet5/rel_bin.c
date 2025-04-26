@@ -1812,12 +1812,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (r) { /* check new ordered aggregation */
 				list *obe = r->h->data;
 				if (obe && obe->h) {
-					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
+					stmt *orderby = NULL, *orderby_ids, *orderby_grp;
 					/* order by */
 					if (grp) {
 						orderby = stmt_order(be, grp, true, true);
 
-						orderby_vals = stmt_result(be, orderby, 0);
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
@@ -1832,7 +1831,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
 						else
 							orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
-						orderby_vals = stmt_result(be, orderby, 0);
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
@@ -1841,7 +1839,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						n->data = stmt_project(be, orderby_ids, n->data);
 					if (grp)
 						grp = stmt_project(be, orderby_ids, grp);
-					(void)orderby_vals;
 				}
 			}
 			as = stmt_list(be, l);
@@ -5070,7 +5067,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (value_partition)
 		return rel2bin_groupby_partition(be, rel, refs, neededpp);
 
-	int claimed = 0, prs = 0, serialized_grpids = 0;
+	int claimed = 0, prs = 0;
+	stmt *serialized_grpids = NULL;
 	if (need_serialize) {
 		InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
 		pushInstruction(be->mb, q);
@@ -5209,12 +5207,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				q = newStmt(be->mb, batRef, appendRef);
 				if (q == NULL)
 					return NULL;
-				q = pushArgument(be->mb, q, *(int*)sn->data);
+				serialized_grpids = sn->data;
+				q = pushArgument(be->mb, q, serialized_grpids->nr);
 				q = pushArgument(be->mb, q, claimed);
 				q = pushArgument(be->mb, q, grp->nr);
 				q = pushBit(be->mb, q, TRUE);
 				q = pushArgument(be->mb, q, prs);
-				serialized_grpids = q->argv[1];
 				pushInstruction(be->mb, q);
 
 				sn = sn->next;
@@ -5234,16 +5232,19 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	stmt *pgrp = grp;
 	for (n = aggrs->h; n; n = n->next) {
+		int iclaimed = claimed;
 		sql_exp *aggrexp = n->data;
 		stmt *aggrstmt = NULL;
 		int oldvtop, oldstop;
 
-		/* TODO lookup already serialized cols */
+		/* TODO lookup already serialized cols (becarefull with distinct!) */
 		if (need_serialize && exp_need_serialize(aggrexp)) {
+			node *n, *m;
 			/* keep data */
 			list *input = aggrexp->l, *l = sa_list(sql->sa);
+			list *r = aggrexp->r;
 
-			for (node *n = input->h; n; n = n->next) {
+			for (n = input->h; n; n = n->next) {
 				sql_exp *e = n->data;
 				if (!exp_is_scalar(e)) {
 					stmt *i = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -5252,9 +5253,21 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					append(l, i);
 				}
 			}
+			if (r) {
+				list *obe = r->h->data;
+				if (obe && obe->h) {
+					for (n = obe->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						stmt *i = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+						if (!i)
+							return NULL;
+						append(l, i);
+					}
+				}
+			}
 			if (need_distinct(aggrexp)) {
 				sql_exp *prev = NULL;
-				for (node *n = input->h, *m = l->h; n && m; n = n->next) {
+				for (n = input->h, m = l->h; n && m; n = n->next) {
 					sql_exp *e = n->data;
 					if (!exp_is_scalar(e)) {
 						if (!prev) {
@@ -5274,48 +5287,89 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 						ext = stmt_result(be, groupby, 1);
 						prev = e;
 					}
-					if (prev) {
-						assert(m);
-						stmt *u = stmt_unique_sharedout(be, m->data, prev->shared);
-						if (u == NULL)
-							return NULL;
-						if (grp)
-							u->q = pushArgument(be->mb, u->q, grp->nr);
-						grp = u;
-					}
 				}
+				if (prev) {
+					assert(m);
+					stmt *u = stmt_unique_sharedout(be, m->data, prev->shared);
+					if (u == NULL)
+						return NULL;
+					if (pgrp)
+						u->q = pushArgument(be->mb, u->q, grp->nr);
+					grp = stmt_result(be, u, 0);
+				}
+
+				/* reset claim */
+				if (grp) {
+					sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+					int pipeline = be->pipeline;
+					be->pipeline = 0;
+					stmt *nrrows = stmt_aggr(be, grp, NULL, NULL, cnt, 1, 0, 1);
+					be->pipeline = pipeline;
+					InstrPtr q = newStmt(be->mb, "pipeline", "claim");
+					if (q == NULL)
+						return NULL;
+					q = pushArgument(be->mb, q, prs);
+					q = pushArgument(be->mb, q, nrrows->nr);
+					pushInstruction(be->mb, q);
+					iclaimed = getDestVar(q);
+				}
+
+				list *nl = sa_list(be->mvc->sa);
+				/* project the unique grp ids */
+				if (pgrp && pgrp != grp) {
+					stmt *g = stmt_project(be, grp, pgrp);
+					append(nl, g);
+				}
+				/* project the unique rows */
 				for (node *m = l->h; m; m = m->next) {
 					stmt *a = stmt_project(be, grp, m->data);
-					m->data = a;
+					append(nl, a);
 				}
-				if (pgrp) {
-					stmt *g = stmt_project(be, grp, pgrp);
-					append(l, g);
+				l = nl;
+			}
+			m = l->h;
+			if (pgrp && need_distinct(aggrexp) && m) {
+				stmt *i = m->data;
+				m = m->next;
+				/* append */
+				if (i && sn) {
+					InstrPtr q = newStmt(be->mb, batRef, appendRef);
+					if (q == NULL)
+						return NULL;
+					stmt *oi = sn->data;
+					q = pushArgument(be->mb, q, oi->nr);
+					q = pushArgument(be->mb, q, iclaimed);
+					q = pushArgument(be->mb, q, i->nr);
+					q = pushBit(be->mb, q, TRUE);
+					q = pushArgument(be->mb, q, prs);
+					pushInstruction(be->mb, q);
+
+					sn = sn->next;
 				}
 			}
-			node *m = l->h;
-			for (node *n = input->h; n && m; n = n->next) {
+			for (n = input->h; n && m; n = n->next) {
 				sql_exp *e = n->data;
 				if (!exp_is_scalar(e)) {
 					stmt *i = m->data;
 					m = m->next;
-					if (!claimed) {
+					if (!iclaimed) {
+						assert(0);
 						sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 						stmt *nrrows = stmt_aggr(be, i, NULL, NULL, cnt, 1, 0, 1);
 						InstrPtr q = newStmt(be->mb, "pipeline", "claim");
 						q = pushArgument(be->mb, q, prs);
 						q = pushArgument(be->mb, q, nrrows->nr);
 						pushInstruction(be->mb, q);
-						claimed = getDestVar(q);
+						iclaimed = getDestVar(q);
 					}
 					/* append */
 					if (i && sn) {
-						/* use claimed offset */
 						InstrPtr q = newStmt(be->mb, batRef, appendRef);
 						if (q == NULL)
 							return NULL;
-						q = pushArgument(be->mb, q, *(int*)sn->data);
-						q = pushArgument(be->mb, q, claimed);
+						stmt *oi = sn->data;
+						q = pushArgument(be->mb, q, oi->nr);
+						q = pushArgument(be->mb, q, iclaimed);
 						q = pushArgument(be->mb, q, i->nr);
 						q = pushBit(be->mb, q, TRUE);
 						q = pushArgument(be->mb, q, prs);
@@ -5325,23 +5379,27 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					}
 				}
 			}
-			if (pgrp && need_distinct(aggrexp) && m) {
-				stmt *i = m->data;
-				m = m->next;
-				/* append */
-				if (i && sn) {
-					/* use claimed offset */
-					InstrPtr q = newStmt(be->mb, batRef, appendRef);
-					if (q == NULL)
-						return NULL;
-					q = pushArgument(be->mb, q, *(int*)sn->data);
-					q = pushArgument(be->mb, q, claimed);
-					q = pushArgument(be->mb, q, i->nr);
-					q = pushBit(be->mb, q, TRUE);
-					q = pushArgument(be->mb, q, prs);
-					pushInstruction(be->mb, q);
+			if (r) {
+				list *obe = r->h->data;
+				if (obe && obe->h) {
+					for (n = obe->h; n && m; n = n->next, m = m->next) {
+						stmt *i = m->data;
+						/* append */
+						if (i && sn) {
+							InstrPtr q = newStmt(be->mb, batRef, appendRef);
+							if (q == NULL)
+								return NULL;
+							stmt *oi = sn->data;
+							q = pushArgument(be->mb, q, oi->nr);
+							q = pushArgument(be->mb, q, iclaimed);
+							q = pushArgument(be->mb, q, i->nr);
+							q = pushBit(be->mb, q, TRUE);
+							q = pushArgument(be->mb, q, prs);
+							pushInstruction(be->mb, q);
 
-					sn = sn->next;
+							sn = sn->next;
+						}
+					}
 				}
 			}
 			grp = pgrp;
@@ -5438,6 +5496,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		for (n = aggrs->h; n; n = n->next) {
 			sql_exp *aggrexp = n->data;
 			if (exp_need_serialize(aggrexp)) {
+				list *r = aggrexp->r;
 				sql_subfunc *af = aggrexp->f;
 				if (backend_create_subfunc(be, af, NULL) < 0)
 					return NULL;
@@ -5446,6 +5505,14 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					return NULL;
 				if (grp)
 					stpcpy(stpcpy(aggrF, "sub"), af->func->imp);
+
+				/* get correct group ids */
+				stmt *ogrp = serialized_grpids;
+				if (need_distinct(aggrexp)) {
+					ogrp = sn->data;
+					sn = sn->next;
+				}
+
 				/* first dump scalars */
 				list *scalars = sa_list(be->mvc->sa);
 				list *inputs = aggrexp->l;
@@ -5453,10 +5520,9 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					sql_exp *e = z->data;
 					if (exp_is_scalar(e)) {
 						stmt *s = exp_bin(be, e, NULL, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
-						if (z == inputs->h || serialized_grpids) {
-							s = stmt_project(be, grp, s);
-							s->q->argv[1] = serialized_grpids;
-						} else
+						if (z == inputs->h || ogrp)
+							s = stmt_project(be, ogrp, s);
+						else
 							s = const_column(be, s);
 						append(scalars, s);
 					}
@@ -5484,21 +5550,57 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 					}
 					q = pushStr(be->mb, q, af->func->query);
 				}
+
+				node *osn = sn;
+				if (r) { /* check new ordered aggregation */
+					/* first move to the order by serialized results */
+					for(node *z = inputs->h; z; z = z->next) {
+						sql_exp *e = z->data;
+						if (!exp_is_scalar(e))
+							sn = sn->next;
+					}
+					list *obe = r->h->data;
+					if (obe && obe->h) {
+						stmt *orderby = NULL, *orderby_ids, *orderby_grp;
+						/* order by */
+						if (grp) {
+							orderby = stmt_order(be, ogrp, true, true);
+
+							orderby_ids = stmt_result(be, orderby, 1);
+							orderby_grp = stmt_result(be, orderby, 2);
+						}
+						for (node *n = obe->h; n; n = n->next, sn = sn->next) {
+							sql_exp *oe = n->data;
+							stmt *os = sn->data;
+							if (orderby)
+								orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
+							else
+								orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
+							orderby_ids = stmt_result(be, orderby, 1);
+							orderby_grp = stmt_result(be, orderby, 2);
+						}
+						/* depending on type of aggr project input or ordered column */
+						for (node *n = osn; n != sn; n = n->next)
+							n->data = stmt_project(be, orderby_ids, n->data);
+						if (grp)
+							ogrp = stmt_project(be, orderby_ids, ogrp);
+					}
+				}
+				sn = osn;
 				for(node *z = inputs->h, *cn = scalars->h; z; z = z->next) {
 					sql_exp *e = z->data;
 					if (!exp_is_scalar(e)) {
-						(void) pushArgument(be->mb, q, *(int*)sn->data);
+						stmt *i = sn->data;
+						(void) pushArgument(be->mb, q, i->nr);
 						sn = sn->next;
 					} else {
-						(void) pushArgument(be->mb, q, ((stmt*)cn->data)->nr);
+						stmt *i = cn->data;
+						(void) pushArgument(be->mb, q, i->nr);
 						cn = cn->next;
 					}
 				}
-				if (need_distinct(aggrexp)) {
-					(void) pushArgument(be->mb, q, *(int*)sn->data);
-					sn = sn->next;
-				} else if (serialized_grpids)
-					(void) pushArgument(be->mb, q, serialized_grpids);
+				if (ogrp)
+					(void) pushArgument(be->mb, q, ogrp->nr);
 				if (sext)
 					(void) pushArgument(be->mb, q, sext);
 				if (grp && LANG_INT_OR_MAL(af->func->lang))

@@ -283,6 +283,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			}
 		}
 		if (getModuleId(p) == batRef && isUpdateInstruction(p)) {
+			if (p->argc >= 4)
+				empty[getArg(p, 1)] = 0;
 			if (empty[getArg(p, 1)] && empty[getArg(p, 2)]) {
 				emptyresult(0);
 			} else if (empty[getArg(p, 2)]) {

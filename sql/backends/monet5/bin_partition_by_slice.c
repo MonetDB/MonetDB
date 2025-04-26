@@ -186,6 +186,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (serialize) {
 				int curhash = 0;
 				list *inputs = e->l; /* for each input create bat */
+				list *r = e->r;
 				int need_distinct = need_distinct(e);
 				for(node *n = inputs->h; n; n = n->next) {
 					sql_exp *e = n->data;
@@ -194,7 +195,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 						stmt *s = stmt_bat_new(be, t, estimate*1.1);
 						if (!s)
 							return NULL;
-						append(*serializedresults, &s->nr);
+						append(*serializedresults, s);
 						if (need_distinct) { /* create shared bat, for hash table */
 							sql_subtype *t = exp_subtype(e);
 							int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
@@ -209,6 +210,17 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							assert(!e->shared);
 							curhash = e->shared = q->argv[0];
 						}
+					}
+				}
+				if (r) {
+					list *obe = r->h->data;
+					for(node *n = obe->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						sql_subtype *t = exp_subtype(e);
+						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						if (!s)
+							return NULL;
+						append(*serializedresults, s);
 					}
 				}
 				continue;
@@ -267,7 +279,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
 			if (!s)
 				return NULL;
-			append(*serializedresults, &s->nr);
+			append(*serializedresults, s);
 		}
 		for(node *n = gbexps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -302,7 +314,15 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 
 			if (serialize) {
 				list *inputs = e->l; /* for each input create bat */
+				list *r = e->r;
 				int need_distinct = need_distinct(e);
+
+				if (need_distinct) { /* need reduced group (ids) result */
+					stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
+					if (!s)
+						return NULL;
+					append(*serializedresults, s);
+				}
 				for(node *n = inputs->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					if (!exp_is_scalar(e)) {
@@ -310,7 +330,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 						stmt *s = stmt_bat_new(be, t, estimate*1.1);
 						if (!s)
 							return NULL;
-						append(*serializedresults, &s->nr);
+						append(*serializedresults, s);
 						if (need_distinct) { /* create shared bat, for hash table */
 							sql_subtype *t = exp_subtype(e);
 							BUN est = get_rel_count(rel->l);
@@ -322,21 +342,25 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 								estimate = (lng) est;
 							}
 
-							InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, curhash);
+							InstrPtr q = stmt_hash_new(be, t->type->localtype, estimate, grphash);
 							if (q == NULL)
 								return NULL;
 							assert(!e->shared);
-							curhash = e->shared = q->argv[0];
+							grphash = e->shared = q->argv[0];
 						}
 					}
 				}
-				if (need_distinct) { /* need reduced group (ids) result */
-					stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
-					if (!s)
-						return NULL;
-					append(*serializedresults, &s->nr);
+				if (r) {
+					list *obe = r->h->data;
+					for(node *n = obe->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						sql_subtype *t = exp_subtype(e);
+						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						if (!s)
+							return NULL;
+						append(*serializedresults, s);
+					}
 				}
-				curhash = grphash;
 				continue;
 			}
 
