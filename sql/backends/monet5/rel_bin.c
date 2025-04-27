@@ -5053,6 +5053,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	if (list_empty(rel->exps)) /* empty */
 		return stmt_list(be, append(sa_list(be->mvc->sa), stmt_bool(be, 1)));
 
+	bool withinpp = be->pipeline != 0;
 	mvc *sql = be->mvc;
 	list *l, *aggrs, *gbexps = sa_list(sql->sa), *aggrresults = NULL, *serializedresults = NULL, *shared = NULL;
 	node *n, *en, *m = NULL, *sn = NULL;
@@ -5229,8 +5230,10 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 	if (aggrs && !aggrs->h && ext)
 		list_append(l, ext);
-
 	stmt *pgrp = grp;
+	int pipeline = be->pipeline;
+	if (withinpp)
+		be->pipeline = 0;
 	for (n = aggrs->h; n; n = n->next) {
 		int iclaimed = claimed;
 		sql_exp *aggrexp = n->data;
@@ -5467,6 +5470,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		aggrstmt = stmt_rename(be, aggrexp, aggrstmt);
 		list_append(l, aggrstmt);
 	}
+	if (withinpp)
+		be->pipeline = pipeline;
 	stmt_set_nrcols(cursub);
 	if (pp) {
 		(void)stmt_pp_jump(be, pp, be->nrparts);

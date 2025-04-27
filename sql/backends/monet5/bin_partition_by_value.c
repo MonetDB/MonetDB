@@ -112,6 +112,10 @@ partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 	if (!*part || !mats)
 		return NULL;
 	sql_rel *p = rel->l;
+	if (!is_project(p->op) && !is_basetable(p->op)) {
+		rel->l = p = rel_project(be->mvc->sa, p,
+			rel_projections(be->mvc, p, NULL, 1, 1));
+	}
 	assert(is_project(p->op) || is_basetable(p->op));
 	for(node *n = p->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;

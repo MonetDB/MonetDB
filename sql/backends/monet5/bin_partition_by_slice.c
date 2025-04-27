@@ -584,7 +584,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 	list *shared = cursub->op4.lval;
 
 	if (shared) { /* for avg(integers) compute (dbl)avg + ((dbl)rest)/count) */
-		for(node *n = shared->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+		for(node *n = shared->h, *m = rel->exps->h; n && m; m = m->next) {
 			sql_exp *e = m->data;
 			if (is_aggr(e->type)) {
 				if (exp_need_serialize(e))
@@ -632,6 +632,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 					n->data = s;
 				}
 			}
+			n = n->next;
 		}
 	}
 	/* we combined into a bat, ie lets fetch results */

@@ -1789,11 +1789,11 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		BATsetcount(g, cnt);
 		pipeline_lock2(g);
 		BATnegateprops(g);
-		pipeline_unlock2(g);
 		/* props */
 		gid last = ATOMIC_GET(&h->last);
 		/* pass max id */
 		g->tmaxval = last;
+		pipeline_unlock2(g);
 		*uid = u->batCacheid;
 		*rid = g->batCacheid;
 		BBPkeepref(u);
@@ -2186,11 +2186,11 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		BATsetcount(g, cnt);
 		pipeline_lock2(g);
 		BATnegateprops(g);
-		pipeline_unlock2(g);
 		/* props */
 		gid last = ATOMIC_GET(&h->last);
 		/* pass max id */
 		g->tmaxval = last;
+		pipeline_unlock2(g);
 		*uid = u->batCacheid;
 		*rid = g->batCacheid;
 		BBPkeepref(u);
@@ -2765,7 +2765,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!r) {
 		int tt = getBatType(getArgType(mb, pci, 0));
-		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
+		r = COLnew(b->hseqbase, tt, max+1, TRANSIENT);
 		if (r == NULL) {
 			err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
