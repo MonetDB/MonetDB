@@ -333,6 +333,7 @@ MATfetch( bat *res, const bat *mat, const int *i )
 	assert(mt->s.type == MAT_SINK);
 	assert(*i < mt->nr);
 	BAT *b = mt->bat[*i];
+	BATnegateprops(b);
 	BBPunfix(m->batCacheid);
 	BBPretain(*res = b->batCacheid);
 	return MAL_SUCCEED;

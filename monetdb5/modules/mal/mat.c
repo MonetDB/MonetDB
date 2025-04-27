@@ -140,11 +140,22 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	size_t newsize;
 
 	(void) cntxt;
-	b = BATdescriptor(stk->stk[getArg(p, 1)].val.ival);
+	b = BATdescriptor(stk->stk[getArg(p, 1)].val.bval);
 	if (b == NULL)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (getArgType(mb, p, 2) == TYPE_int) {
+		mat_t *mp = (mat_t *) b->tsink;
+		if (mp && mp->s.type == MAT_SINK) {
+			bn = pack_mat(b);
+			if (bn == NULL)
+				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			*ret = bn->batCacheid;
+			BBPunfix(b->batCacheid);
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		}
+
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p, 2)].val.ival;
 		int tt = ATOMtype(b->ttype);

@@ -131,10 +131,10 @@ OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	optcall(OPTaliasesImplementation);
 	optcall(OPTforImplementation);
 	optcall(OPTdictImplementation);
-	if (!cntxt->no_mitosis) {
-		optcall(OPTmitosisImplementation);
-		optcall(OPTmergetableImplementation); /* depends on mitosis */
-	}
+	//if (!cntxt->no_mitosis) {
+		//optcall(OPTmitosisImplementation);
+		//optcall(OPTmergetableImplementation); /* depends on mitosis */
+	//}
 	optcall(OPTaliasesImplementation);
 	optcall(OPTconstantsImplementation);
 	optcall(OPTcommonTermsImplementation);
