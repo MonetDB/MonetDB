@@ -276,7 +276,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
-	c->sqlprofiler = 0;
+	c->sqlprofiler = false;
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -444,7 +444,7 @@ MCcloseClient(Client c)
 		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
-	c->sqlprofiler = 0;
+	c->sqlprofiler = false;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);

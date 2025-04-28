@@ -57,7 +57,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	for (i = 0; i < MAXSLICES; i++)
 		top[i] = 0;
-	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0 || MB_LARGE(mb)) {
+	if (!isOptimizerUsed(mb, pci, mitosisRef) || MB_LARGE(mb)) {
 		goto wrapup;
 	}
 	(void) stk;

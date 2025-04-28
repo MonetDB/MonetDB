@@ -1469,6 +1469,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		GDKfree(msks);
 	}
 	BATsetcount(bn, cnt);
+	bn->tunique_est = (double) cnt;
 	TRC_DEBUG(ALGO, "hseq=" OIDFMT ", masked=" ALGOBATFMT ", selected=%s"
 		  " -> " ALGOBATFMT "\n",
 		  hseq, ALGOBATPAR(masked),
