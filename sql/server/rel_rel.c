@@ -1659,74 +1659,6 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 	return rel;
 }
 
-sql_rel *
-rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
-{
-	sql_rel *ll = l->l, *rl = r->l;
-	list *ls, *rs;
-
-	assert(!lexps || l == r);
-	if (l == r && lexps) { /* merge both lists */
-		sql_exp *e = exp_or(sql->sa, lexps, rexps, 0);
-		list *nl = oexps?oexps:new_exp_list(sql->sa);
-
-		rel_destroy(r);
-		append(nl, e);
-		if (is_outerjoin(l->op) && is_processed(l))
-			l = rel_select(sql->sa, l, NULL);
-		l->exps = nl;
-		return l;
-	}
-
-	/* favor or expressions over union */
-	if (l->op == r->op && is_select(l->op) &&
-	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
-		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
-		list *nl = new_exp_list(sql->sa);
-
-		rel_destroy(r);
-		append(nl, e);
-		l->exps = nl;
-
-		/* merge and expressions */
-		ll = l->l;
-		while (ll && is_select(ll->op) && !rel_is_ref(ll)) {
-			list_merge(l->exps, ll->exps, (fdup)NULL);
-			l->l = ll->l;
-			ll->l = NULL;
-			rel_destroy(ll);
-			ll = l->l;
-		}
-		return l;
-	}
-
-	if (rel) {
-		ls = rel_projections(sql, rel, NULL, 1, 1);
-		rs = rel_projections(sql, rel, NULL, 1, 1);
-	} else {
-		ls = rel_projections(sql, l, NULL, 1, 1);
-		rs = rel_projections(sql, r, NULL, 1, 1);
-	}
-	set_processed(l);
-	set_processed(r);
-	rel = rel_setop_n_ary_check_types(sql, l, r, ls, rs, op_munion);
-	if (!rel)
-		return NULL;
-	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
-	set_processed(rel);
-	rel->nrcols = list_length(rel->exps);
-	rel = rel_distinct(rel);
-	if (!rel)
-		return NULL;
-	if (exps_card(l->exps) <= CARD_AGGR &&
-	    exps_card(r->exps) <= CARD_AGGR)
-	{
-		rel->card = exps_card(l->exps);
-		exps_fix_card( rel->exps, rel->card);
-	}
-	return rel;
-}
-
 sql_table *
 rel_ddl_table_get(sql_rel *r)
 {
@@ -2087,7 +2019,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		cond_append(l, &a->func->base);
 	} break;
 	case e_cmp: {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if (e->flag == cmp_filter) {
 				sql_subfunc *f = e->f;
 				cond_append(l, &f->func->base);
@@ -2095,6 +2027,9 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			if (exps_deps(sql, e->l, refs, l) != 0 ||
 				exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+				if (exps_deps(sql, e->l, refs, l) != 0)
+					return -1;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_deps(sql, e->l, refs, l) != 0 ||
 				exps_deps(sql, e->r, refs, l) != 0)
@@ -2275,10 +2210,13 @@ exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr ex
 				return NULL;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if ((e->l = exps_exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
 				return NULL;
 			if ((e->r = exps_exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
+				return NULL;
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if ((e->l = exps_exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once, changed)) == NULL)
@@ -2485,10 +2423,13 @@ exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topd
 				return NULL;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			if ((e->l = exps_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
 				return NULL;
 			if ((e->r = exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
+				return NULL;
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			if ((e->l = exps_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if ((e->l = exp_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
@@ -2754,9 +2695,11 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	case e_func:
 		return exps_rebind_exp(sql, rel, e->l);
 	case e_cmp:
+		if (e->flag == cmp_con || e->flag == cmp_dis)
+			return exps_rebind_exp(sql, rel, e->l);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return rel_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
 		return rel_rebind_exp(sql, rel, e->l) && rel_rebind_exp(sql, rel, e->r) && (!e->f || rel_rebind_exp(sql, rel, e->f));
 	case e_column:

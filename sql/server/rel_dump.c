@@ -65,7 +65,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_notequal: 	r = "!="; break;
 
 	case cmp_filter: 	r = "filter"; break;
-	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
 
@@ -114,6 +113,39 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate, int expbrk);
 
 static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
+
+static void
+exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, int decorate)
+{
+	assert(n->next);
+	sql_exp *l = n->data;
+	sql_exp *r = n->next->data;
+
+	if (l->type == e_cmp && l->flag == cmp_con) {
+		exps_print(sql, fout, l->l, depth, refs, 0, 1, decorate, 0);
+	} else {
+		mnstr_printf(fout, "(");
+		exp_print(sql, fout, l, depth+1, refs, 0, 0, decorate);
+		mnstr_printf(fout, ")");
+	}
+	if (anti)
+		mnstr_printf(fout, " !");
+	mnstr_printf(fout, " or ");
+
+	if (n->next->next) {
+		mnstr_printf(fout, "(");
+		exp_or_print(sql, fout, n->next, anti, depth, refs, decorate);
+		mnstr_printf(fout, ")");
+	} else {
+		if (r->type == e_cmp && r->flag == cmp_con) {
+			exps_print(sql, fout, r->l, depth, refs, 0, 1, decorate, 0);
+		} else {
+			mnstr_printf(fout, "(");
+			exp_print(sql, fout, r, depth+1, refs, 0, 0, decorate);
+			mnstr_printf(fout, ")");
+		}
+	}
+}
 
 void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate)
@@ -279,12 +311,17 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
-		} else if (e->flag == cmp_or) {
-			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
+		} else if (e->flag == cmp_dis && (!is_anti(e) || list_length(e->l) == 2)) { /* output as old cmp_or right nested tree */
+			list *l = e->l;
+			exp_or_print(sql, fout, l->h, is_anti(e), depth, refs, decorate);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, e->flag);
-			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
+			if (e->flag == cmp_con)
+				mnstr_printf(fout, ".AND");
+			else
+				mnstr_printf(fout, ".OR");
+			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
@@ -1303,7 +1340,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			case 'o':
 				if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
 					(*pos)+= (int) strlen("or");
-					ctype = cmp_or;
+					ctype = cmp_dis;
 				}
 				break;
 			case '!':
@@ -1428,8 +1465,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
 					exp = exp_filter(sql->sa, lexps, rexps, f, anti);
 				} break;
-				case cmp_or:
-					exp = exp_or(sql->sa, lexps, rexps, anti);
+				case cmp_dis:
+					exp = exp_disjunctive2(sql->sa,
+							exp_conjunctive(sql->sa, lexps),
+							exp_conjunctive(sql->sa, rexps));
+					if (anti)
+						set_anti(exp);
 					break;
 				default:
 					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing comparison type\n");
@@ -1531,9 +1572,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		tname = b;
 		*e = 0;
 		convertIdent(tname);
-		if (tname && !mvc_bind_schema(sql, tname))
+		if (!tname[0]) {
+			if (strcmp(cname, "AND") == 0) {
+				exp = exp_conjunctive(sql->sa, exps);
+			} else if (strcmp(cname, "OR") == 0) {
+				exp = exp_disjunctive(sql->sa, exps);
+			}
+		} else if (tname && !mvc_bind_schema(sql, tname)) {
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", tname);
-		if (grp) {
+		} else if (grp) {
 			if (exps && exps->h) {
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)
