@@ -35,7 +35,7 @@ project (
 | | | | | |  [ "sys"."cnt"(varchar "sys", varchar "x3") NOT NULL as "%1"."%1" ],
 | | | | | |  [ "sys"."cnt"(varchar "sys", varchar "x4") NOT NULL as "%3"."%3" ]
 | | | | | ) [  ]
-| | | | ) [ "sys"."case"("sys"."="("%1"."%1" NOT NULL, "%3"."%3" NOT NULL) NOT NULL, tinyint(1) "1", tinyint(1) "0") as "foox3"."a1" ]
+| | | | ) [ "sys"."case"(("%1"."%1" NOT NULL) = ("%3"."%3" NOT NULL), tinyint(1) "1", tinyint(1) "0") as "foox3"."a1" ]
 | | | ) [ ("foox3"."a1") = (tinyint(1) "1") ]
 | | ) [  ]
 | ) [ "x1"."a1" NOT NULL as "a1", "x1"."a2" NOT NULL as "a2", "x4"."a1" NOT NULL as "a3", "x4"."a2" NOT NULL as "a4", "x4"."a3" NOT NULL as "a5", "sys"."sql_mul"("x1"."p" NOT NULL, "x4"."p" NOT NULL) NOT NULL as "p" ]

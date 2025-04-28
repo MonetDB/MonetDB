@@ -1,3 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Mon Apr 28 2025 Niels Nes <niels@cwi.nl>
+- Changed the way complex AND and OR expressions are handled. The new
+  expression tree uses 2 new cmp flag (cmp_con/cmp_dis), both expressions
+  hold lists of expressions. This structure reduces the need for stack
+  space, allowing way larger expressions trees to be handled.
+

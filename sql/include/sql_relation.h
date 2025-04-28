@@ -251,6 +251,7 @@ typedef enum operator_type {
 #define set_not_unique(e)	(e)->unique = 0
 #define is_anti(e) 			((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
+#define reset_anti(e)  		(e)->anti = 0
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
 #define is_any(e)			((e)->any)

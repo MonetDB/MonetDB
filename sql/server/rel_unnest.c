@@ -25,9 +25,11 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 {
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_set_freevar(sql, e->l, r);
 			exps_set_freevar(sql, e->r, r);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			exps_set_freevar(sql, e->l, r);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_set_freevar(sql, e->l, r);
 			exps_set_freevar(sql, e->r, r);
@@ -96,8 +98,10 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 		return is_freevar(e);
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			return (exps_have_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_have_freevar(sql, e->l);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return (exp_has_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else {
@@ -205,9 +209,11 @@ exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool 
 	}
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 			exps_only_freevar(query, e->r, arguments_correlated, found_one_freevar, ungrouped_cols);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			exps_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 			exps_only_freevar(query, e->r, arguments_correlated, found_one_freevar, ungrouped_cols);
@@ -333,10 +339,12 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 			return exps_freevar(sql, e->l);
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			list *l = exps_freevar(sql, e->l);
 			list *r = exps_freevar(sql, e->r);
 			return merge_freevar(l, r, all);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return exps_freevar(sql, e->l);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *l = exp_freevar(sql, e->l, all);
 			list *r = exps_freevar(sql, e->r);
@@ -544,9 +552,12 @@ push_up_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			e->l = push_up_project_exps(sql, rel, e->l);
 			e->r = push_up_project_exps(sql, rel, e->r);
+			return e;
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			e->l = push_up_project_exps(sql, rel, e->l);
 			return e;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = push_up_project_exp(sql, rel, e->l);
@@ -1067,7 +1078,7 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 }
 
 static sql_rel *
-push_up_topn_and_sample(mvc *sql, sql_rel *rel)
+push_up_topn_and_sample(mvc *sql, sql_rel *rel, list *ad)
 {
 	/* a dependent semi/anti join with a project on the right side, could be removed */
 	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
@@ -1078,9 +1089,44 @@ push_up_topn_and_sample(mvc *sql, sql_rel *rel)
 			sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
 			rel->r = rel_dup(r->l);
 			rel = func(sql->sa, rel, r->exps);
+			if (r->op == op_topn && !list_empty(ad)) { /* topn per freevar */
+				/* add rel_project(), ordering on freevar */
+				sql_rel *p = rel->l = rel_project(sql->sa, rel->l, rel_projections(sql, rel->l, NULL, 1, 1));
+				/* store list of freevars */
+				for(node *n = ad->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					set_partitioning(e);
+				}
+				p->r = ad;
+				rel->grouped = 1;
+			}
 			set_processed(rel);
 			rel_destroy(r);
 			return rel;
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
+push_down_topn_and_sample(mvc *sql, sql_rel *rel)
+{
+	/* a dependent semi/anti join with a project on the right side, could be removed */
+	if (rel && (is_semi(rel->op) || is_join(rel->op)) && is_dependent(rel)) {
+		sql_rel *r = rel->r;
+
+		if (r && (is_topn(r->op) || is_sample(r->op))) {
+			sql_rel *l = r->l;
+
+			if (l && is_project(l->op) && !l->r && l->l) {
+				assert(!project_unsafe(l, 1));
+				sql_rel *(*func) (allocator *, sql_rel *, list *) = is_topn(r->op) ? rel_topn : rel_sample;
+				rel->r = rel_dup(l);
+				sql_rel *n = l->l = func(sql->sa, rel_dup(l->l), r->exps);
+				set_processed(n);
+				rel_destroy(r);
+				return rel;
+			}
 		}
 	}
 	return rel;
@@ -1872,8 +1918,14 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 			}
 
 			if (r && (is_topn(r->op) || is_sample(r->op))) {
-				rel = push_up_topn_and_sample(sql, rel);
-				return rel_unnest_dependent(sql, rel);
+				sql_rel *l = r->l;
+				if (is_left(rel->op) && l && is_project(l->op) && !l->r && !project_unsafe(l, 1)) {
+					rel = push_down_topn_and_sample(sql, rel);
+					return rel_unnest_dependent(sql, rel);
+				} else if (!is_left(rel->op)) {
+					rel = push_up_topn_and_sample(sql, rel, ad);
+					return rel_unnest_dependent(sql, rel);
+				}
 			}
 
 			if (r && is_select(r->op) && ad) {
@@ -1942,10 +1994,12 @@ add_missing_project_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	if (is_convert(e->type)) {
 		e->l = add_missing_project_exp(sql, rel, e->l);
 	} else if (is_compare(e->type)) {
-		if (e->flag == cmp_in || e->flag == cmp_notin) {
+		if (e->flag == cmp_con || e->flag == cmp_dis) {
+			e->l = add_missing_project_exps(sql, rel, e->l);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = add_missing_project_exp(sql, rel, e->l);
 			e->r = add_missing_project_exps(sql, rel, e->r);
-		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+		} else if (e->flag == cmp_filter) {
 			e->l = add_missing_project_exps(sql, rel, e->l);
 			e->r = add_missing_project_exps(sql, rel, e->r);
 		} else {
@@ -2154,10 +2208,14 @@ exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil)
 			set_has_nil(e);
 	} break;
 	case e_cmp: {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			exps_reset_props(rel, e->l, setnil);
 			exps_reset_props(rel, e->r, setnil);
 			if (setnil && (have_nil(e->l) || have_nil(e->r)))
+				set_has_nil(e);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			exps_reset_props(rel, e->l, setnil);
+			if (setnil && have_nil(e->l))
 				set_has_nil(e);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			exp_reset_props(rel, e->l, setnil);
@@ -2235,6 +2293,8 @@ rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type op, sql_rel 
 	}
 	if (rewrite)
 		*rewrite = d;
+	if (is_topn(inner->op))
+		inner = inner->l;
 	if (is_project(inner->op))
 		return inner->exps->t->data;
 	return NULL;
@@ -2422,8 +2482,10 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 			e->card = exp_card(e->l);
 		} break;
 		case e_cmp: {
-			if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (e->flag == cmp_filter) {
 				e->card = MAX(exps_card(e->l), exps_card(e->r));
+			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+				e->card = exps_card(e->l);
 			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 				e->card = MAX(exp_card(e->l), exps_card(e->r));
 			} else {
@@ -3680,16 +3742,18 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 			if (is_project(rel->op) || depth > 0 || is_outerjoin(rel->op)) {
 				sql_rel *join = NULL, *rewrite = NULL;
+				sql_rel *bl = rel->l;
 
 				(void)rewrite_inner(v->sql, rel, sq, op_left, &rewrite);
 				exp_reset_props(rewrite, le, is_left(rewrite->op));
-				join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
+				join = (rel->l == bl)?rel->r:rel->l;//(is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
 				if (!join)
 					return NULL;
 				if (join && !join->exps)
 					join->exps = sa_list(v->sql->sa);
 				v->changes++;
 				if (join) {
+					assert(is_join(join->op));
 					if (!join->attr)
 						join->attr = sa_list(v->sql->sa);
 					sql_exp *a = exp_atom_bool(v->sql->sa, is_exists(sf));
@@ -3748,8 +3812,11 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		for (node *n = l->h ; n ; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(e) && exp_is_true(e->r))
-				n->data = e->l;
+			if (e->type == e_cmp && e->flag == cmp_equal && exp_is_true(e) && exp_is_true(e->r)) {
+				sql_subtype *t = exp_subtype(e->r);
+				if (t->type->localtype == TYPE_bit)
+					n->data = e->l;
+			}
 		}
 
 		sql_exp *cond = l->h->data;
@@ -3837,11 +3904,14 @@ rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 			n->data = e = exp_compare(v->sql->sa, e, exp_atom_bool(v->sql->sa, 1), cmp_equal);
 			v->changes++;
 		}
-		if (is_compare(e->type) && e->flag == cmp_or) {
-			if (!(e->l = rewrite_compare_exps(v, rel, e->l)))
-				return NULL;
-			if (!(e->r = rewrite_compare_exps(v, rel, e->r)))
-				return NULL;
+		if (is_compare(e->type) && e->flag == cmp_dis) {
+			list *l = e->l;
+			for (node *m = l->h; m; m = m->next) {
+				sql_exp *ae = m->data;
+				if (is_compare(ae->type) && !is_anti(ae) && ae->flag == cmp_con)
+					if (!(ae->l = rewrite_compare_exps(v, rel, ae->l)))
+						return NULL;
+			}
 		}
 	}
 	return exps;

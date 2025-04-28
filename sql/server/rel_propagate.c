@@ -187,15 +187,13 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 
 				range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 				range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
-				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
-								list_append(new_exp_list(sql->sa), range2), 0);
+				anti_exp = exp_disjunctive2(sql->sa, range1, range2);
 			}
 		}
 		if (!with_nills) {
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			if (anti_exp)
-				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
-								  list_append(new_exp_list(sql->sa), anti_nils), 0);
+				anti_exp = exp_disjunctive2(sql->sa, anti_exp, anti_nils);
 			else
 				anti_exp = anti_nils;
 		}
@@ -238,8 +236,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
 		if (!with_nills) {
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-			anti_exp = exp_or(sql->sa, append(new_exp_list(sql->sa), anti_exp),
-							  append(new_exp_list(sql->sa), anti_nils), 0);
+			anti_exp = exp_disjunctive2(sql->sa, anti_exp, anti_nils);
 		}
 	} else {
 		assert(with_nills);
@@ -503,7 +500,10 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 				e->l = exp_change_column_table(sql, e->l, oldt, newt);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
-			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			} else if (e->flag == cmp_dis || e->flag == cmp_con) {
+				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else if (e->flag == cmp_filter) {
 				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
@@ -777,16 +777,14 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				set_has_no_nil(nils);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 				if (full_range) {
-					full_range = exp_or(sql->sa, list_append(new_exp_list(sql->sa), full_range),
-										list_append(new_exp_list(sql->sa), nils), 0);
+					full_range = exp_disjunctive2(sql->sa, full_range, nils);
 				} else {
 					full_range = nils;
 				}
 				found_nils = 1;
 			}
 			if (accum && range) {
-				accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), accum),
-							   list_append(new_exp_list(sql->sa), exp_copy(sql, range)), 0);
+				accum = exp_disjunctive2(sql->sa, accum, exp_copy(sql, range));
 			} else if (range) {
 				accum = exp_copy(sql, range);
 			}
@@ -815,8 +813,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				set_has_no_nil(nils);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 				if (ein) {
-					ein = exp_or(sql->sa, list_append(new_exp_list(sql->sa), ein),
-								 list_append(new_exp_list(sql->sa), nils), 0);
+					ein = exp_disjunctive2(sql->sa, ein, nils);
 				} else {
 					ein = nils;
 				}
@@ -868,8 +865,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			anti_nils = rel_unop_(sql, NULL, anti_le, "sys", "isnull", card_value);
 			set_has_no_nil(anti_nils);
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
-							list_append(new_exp_list(sql->sa), anti_nils), 0);
+			anti_exp = exp_disjunctive2(sql->sa, anti_exp, anti_nils);
 		} else if (!anti_exp) {
 			anti_nils = rel_unop_(sql, NULL, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 			set_has_no_nil(anti_nils);
@@ -1009,8 +1005,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 						*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
 						*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 
-					anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
-							list_append(new_exp_list(sql->sa), range2), 0);
+					anti_exp = exp_disjunctive2(sql->sa, range1, range2);
 				}
 			}
 		}
@@ -1019,8 +1014,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 			set_has_no_nil(anti_nils);
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			if (anti_exp)
-				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
-					 	 list_append(new_exp_list(sql->sa), anti_nils), 0);
+				anti_exp = exp_disjunctive2(sql->sa, anti_exp, anti_nils);
 			else
 				anti_exp = anti_nils;
 		}
@@ -1037,8 +1031,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 				anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 				set_has_no_nil(anti_nils);
 				anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
-								  list_append(new_exp_list(sql->sa), anti_nils), 0);
+				anti_exp = exp_disjunctive2(sql->sa, anti_exp, anti_nils);
 			}
 		} else {
 			assert(pt->with_nills);

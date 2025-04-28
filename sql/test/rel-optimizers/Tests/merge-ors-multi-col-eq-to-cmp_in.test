@@ -20,6 +20,28 @@ project (
 | ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+query III nosort
+select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
+----
+1
+20
+200
+3
+60
+600
+9
+180
+1800
+
+query T nosort
+plan select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3"), .AND(("b"."m" NOT NULL) = (int(8) "180"), ("b"."k" NOT NULL) = (int(11) "1800"))) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
 query T nosort non-eq-two-col-2-value
 plan select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
 ----

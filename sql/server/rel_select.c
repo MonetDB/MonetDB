@@ -2638,7 +2638,9 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 		if (!e) {
 			if (add_select && rel && *rel && !is_project((*rel)->op) && !is_select((*rel)->op) && !is_base((*rel)->op))
 				*rel = rel_select(sql->sa, *rel, NULL);
-			if ((rel && *rel) || exp_has_rel(le) || exp_has_rel(values))
+			if (!exp_has_rel(le) && !exp_has_rel(values))
+				e = exp_in(sql->sa, le, values->f, (sc->token == SQL_IN) ? cmp_in : cmp_notin);
+			else if ((rel && *rel) || exp_has_rel(le) || exp_has_rel(values))
 				e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 			else
 				e = exp_in_aggr(sql, le, values, (sc->token == SQL_IN), is_tuple);
@@ -2734,15 +2736,37 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_OR:
 	case SQL_AND:
 	{
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		sql_exp *ls, *rs;
+		dnode *n = sc->data.lval->h;
+		symbol *lo = n->data.sym;
+		sql_exp *ls = NULL, *rs;
+		list *l = NULL;
 
 		if (!(ls = rel_value_exp(query, rel, lo, f|sql_farg, ek)))
 			return NULL;
-		if (!(rs = rel_value_exp(query, rel, ro, f|sql_farg, ek)))
-			return NULL;
-		return rel_binop_(sql, rel ? *rel : NULL, ls, rs, "sys", sc->token == SQL_OR ? "or": "and", card_value, false);
+
+		for(n = n->next; n; n = n->next) {
+			symbol *ro = n->data.sym;
+			if (!(rs = rel_value_exp(query, rel, ro, f|sql_farg, ek)))
+				return NULL;
+			if (!l) {
+				l = sa_list(sql->sa);
+				l = append(l, ls);
+				if (!l)
+					return NULL;
+			}
+			append(l, rs);
+		}
+		if (l) {
+			sql_subtype *bt = sql_bind_localtype("bit");
+			l = exps_check_type(sql, bt, l);
+			if (!l)
+				return NULL;
+			if (sc->token == SQL_OR)
+				return exp_disjunctive(sql->sa, l);
+			else
+				return exp_conjunctive(sql->sa, l);
+		}
+		return ls;
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -2865,6 +2889,9 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (exp_is_null_no_value_opt(ls) && exp_is_null_no_value_opt(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL, 0));
 
+		if (!quantifier)
+			return exp_compare(sql->sa, ls, rs, cmp_type);
+
 		return exp_compare_func(sql, ls, rs, compare_func(cmp_type, need_not), quantifier);
 	}
 	/* Set Member ship */
@@ -2946,6 +2973,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
+		/*
 		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
 
 		if (!le)
@@ -2954,6 +2982,20 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!le)
 			return NULL;
 		set_has_no_nil(le);
+		return le;
+		*/
+		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
+		sql_subtype *t;
+
+		if (!le)
+			return NULL;
+		if (!(t = exp_subtype(le)))
+			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for IS%s NULL operator", sc->token == SQL_IS_NOT_NULL ? " NOT" : "");
+		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL, 0)), cmp_equal);
+		if (sc->token == SQL_IS_NOT_NULL)
+			set_anti(le);
+		set_has_no_nil(le);
+		set_semantics(le);
 		return le;
 	}
 	case SQL_NOT: {
@@ -3034,55 +3076,52 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	switch (sc->token) {
 	case SQL_OR:
 	{
-		list *exps = NULL, *lexps = NULL, *rexps = NULL;
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		sql_rel *lr, *rr;
+		assert(rel);
+		dnode *n = sc->data.lval->h;
+		symbol *lo = n->data.sym;
+		sql_exp *ls = NULL, *rs;
+		list *l = NULL;
 
-		if (!rel)
+		if (!(ls = rel_logical_value_exp(query, &rel, lo, f, ek)))
 			return NULL;
 
-		lr = rel;
-		rr = rel_dup(lr);
-
-		if (is_outerjoin(rel->op) && !is_processed(rel)) {
-			exps = rel->exps;
-
-			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
-			lr = rel_logical_exp(query, lr, lo, f | sql_or);
-			if (!lr)
+		for(n = n->next; n; n = n->next) {
+			symbol *ro = n->data.sym;
+			if (!(rs = rel_logical_value_exp(query, &rel, ro, f, ek)))
 				return NULL;
-			query_processed(query);
-			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
-			rr = rel_logical_exp(query, rr, ro, f | sql_or);
-			if (!rr)
-				return NULL;
-			if (lr->l == rr->l) {
-				lexps = lr->exps;
-				lr = lr->l;
-				rexps = rr->exps;
-				rr = rr->l;
+			if (!l) {
+				l = sa_list(sql->sa);
+				l = append(l, ls);
+				if (!l)
+					return NULL;
 			}
-			rel = NULL;
-		} else {
-			lr = rel_logical_exp(query, lr, lo, f | sql_or);
-			if (!lr)
-				return NULL;
-			rr = rel_logical_exp(query, rr, ro, f | sql_or);
+			append(l, rs);
 		}
-
-		if (!lr || !rr)
-			return NULL;
-		return rel_or(sql, rel, lr, rr, exps, lexps, rexps);
+		if (l) {
+			sql_subtype *bt = sql_bind_localtype("bit");
+			l = exps_check_type(sql, bt, l);
+			if (!l)
+				return NULL;
+			ls = exp_disjunctive(sql->sa, l);
+		}
+		if (!is_select(rel->op) && !is_join(rel->op)) {
+			rel = rel_select(sql->sa, rel, ls);
+		} else {
+			if (!rel->exps)
+				rel->exps = sa_list(sql->sa);
+			append(rel->exps, ls);
+		}
+		return rel;
 	}
 	case SQL_AND:
 	{
-		symbol *lo = sc->data.lval->h->data.sym;
-		symbol *ro = sc->data.lval->h->next->data.sym;
-		rel = rel_logical_exp(query, rel, lo, f);
-		if (!rel)
-			return NULL;
-		return rel_logical_exp(query, rel, ro, f);
+		for(dnode *n = sc->data.lval->h; n; n = n->next) {
+			symbol *lo = n->data.sym;
+			rel = rel_logical_exp(query, rel, lo, f);
+			if (!rel)
+				return NULL;
+		}
+		return rel;
 	}
 	case SQL_FILTER:
 		/* [ x,..] filter [ y,..] */
@@ -5556,7 +5595,7 @@ exp_has_rank(sql_exp *e)
 	case e_aggr:
 		return exps_has_rank(e->l);
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_has_rank(e->l) || exps_has_rank(e->r);
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return exp_has_rank(e->l) || exps_has_rank(e->r);

@@ -11,7 +11,7 @@ statement ok
 INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
 
 query IT
-SELECT a, GROUP_CONCAT(b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo,foo,foo
@@ -19,7 +19,7 @@ foo,foo,foo
 bar,bar,bar
 
 query IT
-SELECT a, GROUP_CONCAT(ALL b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo,foo,foo
@@ -27,7 +27,7 @@ foo,foo,foo
 bar,bar,bar
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo
@@ -35,7 +35,7 @@ foo
 bar
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT (b)) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT (b)) FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo
@@ -43,7 +43,7 @@ foo
 bar
 
 query IT
-SELECT a, GROUP_CONCAT(b, ';') FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b, ';') FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo;foo;foo
@@ -51,7 +51,7 @@ foo;foo;foo
 bar;bar;bar
 
 query IT
-SELECT a, GROUP_CONCAT(b, '#@#') FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b, '#@#') FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo#@#foo#@#foo
@@ -59,7 +59,7 @@ foo#@#foo#@#foo
 bar#@#bar#@#bar
 
 query IT
-SELECT a, GROUP_CONCAT(ALL b, ';') FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b, ';') FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo;foo;foo
@@ -67,7 +67,7 @@ foo;foo;foo
 bar;bar;bar
 
 query IT
-SELECT a, GROUP_CONCAT(ALL b, '#@#') FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b, '#@#') FROM testme GROUP BY a ORDER BY a
 ----
 1
 foo#@#foo#@#foo
@@ -76,7 +76,7 @@ bar#@#bar#@#bar
 
 # the second column is the separator
 query IT
-SELECT a, GROUP_CONCAT(a, b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(a, b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 1foo1foo1
@@ -85,7 +85,7 @@ SELECT a, GROUP_CONCAT(a, b) FROM testme GROUP BY a ORDER BY a
 
 # Distinct is applied on (a, b)
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT a, b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT a, b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 1
@@ -101,7 +101,7 @@ statement ok
 INSERT INTO testme VALUES (1, 'another'), (1, 'testing'), (1, 'todo'), (2, 'lets'), (2, 'get'), (2, 'harder'), (3, 'even'), (2, 'more'), (1, 'serious'), (3, 'even'), (2, 'more'), (1, 'serious')
 
 query IT
-SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,serious,testing,todo
@@ -111,7 +111,7 @@ get,harder,lets,more,more
 even,even
 
 query IT
-SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a HAVING COUNT(*) > 2 ORDER BY a
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a HAVING COUNT(*) > 2 ORDER BY a
 ----
 1
 another,serious,serious,testing,todo
@@ -119,17 +119,7 @@ another,serious,serious,testing,todo
 get,harder,lets,more,more
 
 query IT
-SELECT a, GROUP_CONCAT(b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
-----
-1
-another,serious,serious,testing,todo
-2
-get,harder,lets,more,more
-3
-even,even
-
-query IT
-SELECT a, GROUP_CONCAT(ALL b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,serious,testing,todo
@@ -139,7 +129,7 @@ get,harder,lets,more,more
 even,even
 
 query IT
-SELECT a, GROUP_CONCAT(ALL b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,serious,testing,todo
@@ -149,7 +139,17 @@ get,harder,lets,more,more
 even,even
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, LISTAGG(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,testing,todo
@@ -159,7 +159,7 @@ get,harder,lets,more
 even
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,testing,todo
@@ -169,7 +169,7 @@ get,harder,lets,more
 even
 
 query IT
-SELECT a, GROUP_CONCAT(b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another;serious;serious;testing;todo
@@ -179,7 +179,7 @@ get;harder;lets;more;more
 even;even
 
 query IT
-SELECT a, GROUP_CONCAT(b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another;serious;serious;testing;todo
@@ -189,7 +189,7 @@ get;harder;lets;more;more
 even;even
 
 query IT
-SELECT a, GROUP_CONCAT(ALL b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another;serious;serious;testing;todo
@@ -199,7 +199,7 @@ get;harder;lets;more;more
 even;even
 
 query IT
-SELECT a, GROUP_CONCAT(ALL b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(ALL b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another;serious;serious;testing;todo
@@ -209,7 +209,7 @@ get;harder;lets;more;more
 even;even
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another;serious;testing;todo
@@ -219,7 +219,7 @@ get;harder;lets;more
 even
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another;serious;testing;todo
@@ -241,7 +241,7 @@ INSERT INTO testme VALUES (1, 'another'), (1, 'testing'), (1, 'todo'),
  (4, NULL)
 
 query IT
-SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,serious,testing,todo
@@ -253,7 +253,7 @@ get,harder,lets,more,more
 NULL
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,testing,todo
@@ -269,7 +269,7 @@ statement ok
 INSERT INTO testme VALUES (3, NULL), (4, ''), (4, NULL), (4, ''), (4, NULL), (4, ''), (3, 'nothing'), (4, ' '), (4, ' ')
 
 query IT
-SELECT a, GROUP_CONCAT(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,serious,testing,todo
@@ -282,7 +282,7 @@ get,harder,lets,more,more
 
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 another,serious,testing,todo
@@ -294,7 +294,7 @@ get,harder,lets,more
 , 
 
 query IT
-SELECT a, GROUP_CONCAT(a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 1serious1serious1testing1todo1
@@ -306,7 +306,7 @@ SELECT a, GROUP_CONCAT(a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 444444 4 4
 
 query IT
-SELECT a, GROUP_CONCAT(DISTINCT a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(DISTINCT a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
 ----
 1
 1serious1testing1todo1
@@ -319,7 +319,7 @@ SELECT a, GROUP_CONCAT(DISTINCT a, b ORDER BY b) FROM testme GROUP BY a ORDER BY
 
 # Test that group_concat also works on a numerical column
 query IT
-SELECT a, GROUP_CONCAT(a) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(a) FROM testme GROUP BY a ORDER BY a
 ----
 1
 1,1,1,1,1
@@ -332,7 +332,7 @@ SELECT a, GROUP_CONCAT(a) FROM testme GROUP BY a ORDER BY a
 
 # group_concat does not concatenate multiple columns
 statement error 42000!SELECT: cannot use non GROUP BY column 'b' in query results without an aggregate function
-SELECT a, GROUP_CONCAT(a, b, b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(a, b, b) FROM testme GROUP BY a ORDER BY a
 
 statement ok
 rollback
@@ -347,7 +347,7 @@ create table testme (a int, b clob)
 #INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
 
 statement error 42000!Cannot have both order by clause and within group clause...
-SELECT a, GROUP_CONCAT(b ORDER BY b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+SELECT a, LISTAGG(b ORDER BY b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
 
 statement ok
 rollback

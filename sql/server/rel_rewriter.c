@@ -31,7 +31,7 @@ exps_simplify_exp(visitor *v, list *exps)
 	for (node *n=exps->h; n && !needed; n = n->next) {
 		sql_exp *e = n->data;
 
-		needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && e->flag == cmp_or));
+		needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && (e->flag == cmp_con || e->flag == cmp_dis)));
 	}
 	if (needed) {
 		/* if there's only one expression and it is false, we have to keep it */
@@ -41,41 +41,87 @@ exps_simplify_exp(visitor *v, list *exps)
 		for (node *n=exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			/* TRUE or X -> TRUE
-		 	* FALSE or X -> X */
-			if (is_compare(e->type) && e->flag == cmp_or) {
-				list *l = e->l = exps_simplify_exp(v, e->l);
-				list *r = e->r = exps_simplify_exp(v, e->r);
+			/* TRUE and X -> X, FALSE and X -> FALSE, X and X -> X */
+			if (is_compare(e->type) && e->flag == cmp_con) {
+				sql_exp *te = NULL;
+				list *l = e->l;
+				needed = 0;
+				for (node *m = l->h; m && !needed; m = m->next) {
+					sql_exp *e = m->data;
 
-				if (list_length(l) == 1) {
-					sql_exp *ie = l->h->data;
-
-					if (exp_is_true(ie)) {
-						v->changes++;
-						continue;
-					} else if (exp_is_false(ie)) {
-						v->changes++;
-						nexps = list_merge(nexps, r, (fdup)NULL);
-						continue;
-					}
-				} else if (list_length(l) == 0) { /* left is true */
-					v->changes++;
-					continue;
+					needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && (e->flag == cmp_con || e->flag == cmp_dis)));
 				}
-				if (list_length(r) == 1) {
-					sql_exp *ie = r->h->data;
+				list *nexps = sa_list(v->sql->sa);
+				for (node *m = l->h; m; m = m->next) {
+					sql_exp *ie = m->data;
 
-					if (exp_is_true(ie)) {
-						v->changes++;
+					if (exp_is_true(ie)) { /* X and True -> X */
+						te = ie;
 						continue;
-					} else if (exp_is_false(ie)) {
-						nexps = list_merge(nexps, l, (fdup)NULL);
-						v->changes++;
-						continue;
+					} else if (exp_is_false(ie)) { /* X and false -> false */
+						m->data = NULL;
+						e = ie;
+						nexps = NULL;
+						break;
+					} else if (m->next) {
+						sql_exp *ie2 = m->next->data;
+						if (exp_equal(ie, ie2) == 0)
+							continue; /* skip */
 					}
-				} else if (list_length(r) == 0) { /* right is true */
-					v->changes++;
-					continue;
+					append(nexps, ie);
+				}
+				if (nexps) {
+					if (list_empty(nexps)) {
+						v->changes++;
+						e = te;
+						assert(e);
+					} else if (list_length(nexps) == 1) {
+						v->changes++;
+						e = nexps->h->data;
+					} else {
+						e->l = nexps;
+					}
+				}
+			} else
+			/* TRUE or X -> TRUE, FALSE or X -> X, X OR X -> X */
+			if (is_compare(e->type) && e->flag == cmp_dis) {
+				sql_exp *fe = NULL;
+				list *l = e->l;
+				needed = 0;
+				for (node *m = l->h; m && !needed; m = m->next) {
+					sql_exp *e = m->data;
+
+					needed = (exp_is_true(e) || exp_is_false(e) || (is_compare(e->type) && (e->flag == cmp_con || e->flag == cmp_dis)));
+				}
+				list *nexps = sa_list(v->sql->sa);
+				for (node *m = l->h; m; m = m->next) {
+					sql_exp *ie = m->data;
+
+					if (exp_is_true(ie)) { /* x or True -> True */
+						m->data = NULL;
+						e = ie;
+						nexps = NULL;
+						break;
+					} else if (exp_is_false(ie)) { /* x or false -> x */
+						fe = ie;
+						continue;
+					} else if (m->next) {
+						sql_exp *ie2 = m->next->data;
+						if (exp_equal(ie, ie2) == 0)
+							continue; /* skip */
+					}
+					append(nexps, ie);
+				}
+				if (nexps) {
+					if (list_empty(nexps)) {
+						v->changes++;
+						e = fe;
+					} else if (list_length(nexps) == 1) {
+						v->changes++;
+						e = nexps->h->data;
+					} else {
+						e->l = nexps;
+					}
 				}
 			}
 			/* TRUE and X -> X */
@@ -86,6 +132,9 @@ exps_simplify_exp(visitor *v, list *exps)
 			} else if (exp_is_false(e)) {
 				v->changes++;
 				return append(sa_list(v->sql->sa), e);
+			} else if (e->type == e_cmp && e->flag == cmp_con) {
+				v->changes++;
+				nexps = list_merge(nexps, e->l, (fdup)NULL);
 			} else {
 				append(nexps, e);
 			}
@@ -147,40 +196,23 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			v->changes++;
 			return ie;
 		}
-		/* TRUE or X -> TRUE
-		 * FALSE or X -> X */
-		if (is_compare(e->type) && e->flag == cmp_or) {
-			list *l = e->l = exps_simplify_exp(v, e->l);
-			list *r = e->r = exps_simplify_exp(v, e->r);
+	}
+	if (is_func(e->type) && list_length(e->l) == 1 && is_neg_func(sf)) {
+		list *args = e->l;
+		sql_exp *ie = args->h->data;
 
-			if (list_length(l) == 1) {
-				sql_exp *ie = l->h->data;
+		if (!ie)
+			return e;
 
-				if (exp_is_true(ie)) {
-					v->changes++;
-					return ie;
-				} else if (exp_is_false(ie) && list_length(r) == 1) {
-					v->changes++;
-					return r->h->data;
-				}
-			} else if (list_length(l) == 0) { /* left is true */
-				v->changes++;
-				return exp_atom_bool(v->sql->sa, 1);
-			}
-			if (list_length(r) == 1) {
-				sql_exp *ie = r->h->data;
+		sql_subfunc *sf = ie->f;
+		if (is_func(ie->type) && list_length(ie->l) == 1 && is_neg_func(sf)) {
+			args = ie->l;
 
-				if (exp_is_true(ie)) {
-					v->changes++;
-					return ie;
-				} else if (exp_is_false(ie) && list_length(l) == 1) {
-					v->changes++;
-					return l->h->data;
-				}
-			} else if (list_length(r) == 0) { /* right is true */
-				v->changes++;
-				return exp_atom_bool(v->sql->sa, 1);
-			}
+			ie = args->h->data;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, ie, e);
+			v->changes++;
+			return ie;
 		}
 	}
 	if (is_compare(e->type) && e->flag == cmp_equal && !is_semantics(e)) { /* predicate_func = TRUE */
@@ -416,9 +448,7 @@ exp_joins_rels(sql_exp *e, list *rels)
 
 	assert (e->type == e_cmp);
 
-	if (e->flag == cmp_or) {
-		l = NULL;
-	} else if (e->flag == cmp_filter) {
+	if (e->flag == cmp_filter) {
 		list *ll = e->l;
 		list *lr = e->r;
 

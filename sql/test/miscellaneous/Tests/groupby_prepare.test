@@ -323,21 +323,8 @@ NULL
 statement error
 prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0
 
-query TIITTT nosort
+statement error 42000!Cannot have a parameter (?) for IS NULL operator
 prepare select ? is null from tab0
-----
-boolean
-1
-0
-(empty)
-%1
-%1
-varchar
-0
-0
-NULL
-NULL
-NULL
 
 statement error
 prepare select max(?)

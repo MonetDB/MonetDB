@@ -169,9 +169,11 @@ typedef enum comp_type {
 	cmp_notequal = 5,
 
 	cmp_filter = 6,
-	cmp_or = 7,
+
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
+	cmp_con = 10,			/* conjunctive (and) list */
+	cmp_dis = 11,			/* disjunctive (or) list */
 
 	/* The following cmp_* are only used within stmt (not sql_exp) */
 	cmp_all = 12,			/* special case for crossproducts */
@@ -183,7 +185,7 @@ typedef enum comp_type {
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
+#define is_complex_exp(et) ((et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter || (et) == cmp_con || (et) == cmp_dis)
 
 #define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || (et) == cmp_notin)
 
