@@ -59,7 +59,7 @@ newSymbol(const char *nme, int kind)
 		return NULL;
 	}
 	if (kind == FUNCTIONsymbol) {
-		cur->def = newMalBlk(STMT_INCREMENT);
+		cur->def = newMalBlk(STMT_INCREMENT, NULL);
 		if (cur->def == NULL) {
 			GDKfree(cur);
 			return NULL;
@@ -114,11 +114,11 @@ newMalBlkStmt(MalBlkPtr mb, int maxstmts)
 }
 
 MalBlkPtr
-newMalBlk(int elements)
+newMalBlk(int elements, allocator *pa)
 {
 	MalBlkPtr mb;
 	VarRecord *v;
-	allocator *ma = ma_create(NULL);
+	allocator *ma = ma_create(pa);
 	allocator *instr_allocator = ma_create(ma);
 
 	if (!ma)

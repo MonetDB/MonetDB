@@ -234,7 +234,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	if (pci->retc > 1 || pci->argc > 8 || getModuleId(pci) == NULL)	// limitation on MANIFOLDjob
 		return NULL;
 	// We need a private MAL context to resolve the function call
-	nmb = newMalBlk(2);
+	nmb = newMalBlk(2, mb->ma);
 	if (nmb == NULL) {
 		mb->errors = createException(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
@@ -320,7 +320,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 	}
 
-	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
+	mat = (MULTIarg *) ma_zalloc(mb->ma, sizeof(MULTIarg) * pci->argc);
 	if (mat == NULL)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -422,7 +422,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_bat(stk, pci, 0) = mat[0].b->batCacheid;
 		BBPkeepref(mat[0].b);
 	}
-	GDKfree(mat);
+	//GDKfree(mat);
 	return msg;
 }
 
