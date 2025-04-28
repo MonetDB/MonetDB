@@ -406,7 +406,7 @@ NULL
 statement ok
 ALTER TABLE t0 ADD COLUMN c2 UUID
 
-statement error GDK reported error: BATsubcross: more than one match
+statement ok
 UPDATE t2 SET c0 = 1 FROM t0 WHERE (least(TRUE, FALSE) AND 0.63 = t2.c0) OR (0.23 <= 0.1)
 
 statement ok

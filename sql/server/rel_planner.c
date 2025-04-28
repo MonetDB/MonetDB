@@ -327,7 +327,8 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 			sel = (dbl) list_length(l) / dcount;
 			break;
 		}
-		case cmp_or:
+		case cmp_dis:
+		case cmp_con:
 			sel = 0.5;
 			break;
 		default:
@@ -382,7 +383,8 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 			sel = (dbl) list_length(l) / cnt;
 			break;
 		}
-		case cmp_or:
+		case cmp_dis:
+		case cmp_con:
 			sel = 0.5;
 			break;
 		default:

@@ -259,9 +259,8 @@ query I nosort
 WITH v0 (v1) AS (SELECT 127 FROM v0 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
 ----
 
-statement error 42000!
+statement ok
 UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
--- sql/server/rel_select.c:3104: rel_binop_: Assertion `t1 && t2' failed.
 
 statement ok
 DROP TABLE v0
@@ -401,7 +400,7 @@ INSERT INTO v0 VALUES (-1),(127),(4),(-128),(11),(-1),(-128),(-128),(-1)
 statement error 42000!SELECT: identifier 'v1' ambiguous
 WITH v0 AS (SELECT -1, * FROM v0) INSERT INTO v0 SELECT v1 * 29 FROM v0 AS v3, v0, v0 AS v2, v0 AS v4, v0 ORDER BY v1 * 0 ^ 83
 
-statement error 42000!row frame bound must be non negative and non null.
+statement ok
 UPDATE v0 SET v1 = -1 WHERE CASE WHEN v1 > -1 THEN (SELECT STDDEV_SAMP((18 * v1 + (v1 IN (21 , -1)))) OVER (ROWS BETWEEN CURRENT ROW AND v1 - NULL FOLLOWING) * 17) > v1 / (SELECT -1 WHERE (88 IN (96))) ELSE 82 END ^ -128 ^ v1
 
 statement ok
@@ -458,8 +457,12 @@ statement ok
 DROP TABLE v0
 
 -- 31.sql
-statement error 22003!overflow ...
+onlyif has-hugeint
+query I
 SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
+----
+15
+15
 
 -- 32.sql
 statement ok

@@ -240,7 +240,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 				exp_find_table_columns(sql, e->l, t, cols);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			} else if (e->flag == cmp_filter) {
 				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)

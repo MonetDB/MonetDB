@@ -1,17 +1,17 @@
 statement ok
-create table foo (n int, m text);
+create table foo (n int, m text)
 
 statement ok
-insert into foo values (1, 'one'), (NULL, 'mighty null'), (2, 'two');
+insert into foo values (1, 'one'), (NULL, 'mighty null'), (2, 'two')
 
 query IT rowsort
-select * from foo where n is null;
+select * from foo where n is null
 ----
 NULL
 mighty null
 
-query T
-plan select * from foo where n is null;
+query T nosort
+plan select * from foo where n is null
 ----
 project (
 | select (
@@ -20,15 +20,32 @@ project (
 ) [ "foo"."n", "foo"."m" NOT NULL ]
 
 query IT rowsort
-select * from foo where not n is null;
+select * from foo where not n is null
 ----
 1
 one
 2
 two
 
-query T
-plan select * from foo where not n is null;
+query T nosort
+plan select * from foo where not n is null
+----
+project (
+| select (
+| | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
+| ) [ ("foo"."n") * != (int(2) NULL) ]
+) [ "foo"."n", "foo"."m" NOT NULL ]
+
+query IT rowsort
+select * from foo where n is not null
+----
+1
+one
+2
+two
+
+query T nosort
+plan select * from foo where n is not null
 ----
 project (
 | select (
@@ -37,30 +54,13 @@ project (
 ) [ "foo"."n" NOT NULL, "foo"."m" NOT NULL ]
 
 query IT rowsort
-select * from foo where n is not null;
-----
-1
-one
-2
-two
-
-query T
-plan select * from foo where n is not null;
-----
-project (
-| select (
-| | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
-| ) [ ("foo"."n") ! * = (int(2) NULL) ]
-) [ "foo"."n" NOT NULL, "foo"."m" NOT NULL ]
-
-query IT rowsort
-select * from foo where not n is not null;
+select * from foo where not n is not null
 ----
 NULL
 mighty null
 
-query T
-plan select * from foo where not n is not null;
+query T nosort
+plan select * from foo where not n is not null
 ----
 project (
 | select (
@@ -74,7 +74,7 @@ select * from foo where sys.isnull(n) = true
 NULL
 mighty null
 
-query T
+query T nosort
 plan select * from foo where sys.isnull(n) = true
 ----
 project (
@@ -91,7 +91,7 @@ one
 2
 two
 
-query T
+query T nosort
 plan select * from foo where sys.isnull(n) = false
 ----
 project (
@@ -108,7 +108,7 @@ one
 2
 two
 
-query T
+query T nosort
 plan select * from foo where sys.isnull(n) != true
 ----
 project (
@@ -123,13 +123,13 @@ select * from foo where sys.isnull(n) != false
 NULL
 mighty null
 
-query T
+query T nosort
 plan select * from foo where sys.isnull(n) != false
 ----
 project (
 | select (
 | | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
-| ) [ ("foo"."n") ! * != (int(2) NULL) ]
+| ) [ ("foo"."n") * = (int(2) NULL) ]
 ) [ "foo"."n", "foo"."m" NOT NULL ]
 
 query IT rowsort
@@ -140,7 +140,7 @@ one
 2
 two
 
-query T
+query T nosort
 plan select * from foo where sys.isnotnull(n) = true
 ----
 project (
@@ -155,7 +155,7 @@ select * from foo where sys.isnotnull(n) = false
 NULL
 mighty null
 
-query T
+query T nosort
 plan select * from foo where sys.isnotnull(n) = false
 ----
 project (
@@ -170,13 +170,13 @@ select * from foo where sys.isnotnull(n) != true
 NULL
 mighty null
 
-query T
+query T nosort
 plan select * from foo where sys.isnotnull(n) != true
 ----
 project (
 | select (
 | | table("sys"."foo") [ "foo"."n", "foo"."m" NOT NULL ]
-| ) [ ("foo"."n") ! * != (int(2) NULL) ]
+| ) [ ("foo"."n") * = (int(2) NULL) ]
 ) [ "foo"."n", "foo"."m" NOT NULL ]
 
 query IT rowsort
@@ -187,7 +187,7 @@ one
 2
 two
 
-query T
+query T nosort
 plan select * from foo where sys.isnotnull(n) != false
 ----
 project (
