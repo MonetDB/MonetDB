@@ -33,7 +33,7 @@ select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200)
 180
 1800
 
-query T python .plan.filter non-eq-two-col-2-value
+query T python .plan.filter non-eq-two-col-3-value
 plan select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
