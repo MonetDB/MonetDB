@@ -1,5 +1,26 @@
 ## fixed-length type array
 
+query T nosort array_literal_single
+select array[10, 11]
+----
+{10,11}
+
+query T nosort array_literal_single
+select (values (array[10, 11]))
+----
+{10,11}
+
+query T nosort array_literal_single
+select * from (values (array[10, 11]))
+----
+{10,11}
+
+query T nosort
+select * from (values (array[10, 11]), (array[20, 21]))
+----
+{10,11}
+{20,21}
+
 statement ok
 create table flent_arr (n int[])
 
