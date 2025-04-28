@@ -862,7 +862,9 @@ exp_ref_by_label(mvc *sql, sql_exp *o)
 		set_intern(e);
 	if (o->virt)
 		e->virt = 1;
-	if ((o->type == e_column || o->type == e_convert) && o->f)
+	if ((o->type == e_column || o->type == e_convert ||
+		(o->type == e_psm && ((t->multiset == MS_ARRAY) || (t->multiset == MS_SETOF))))
+		&& o->f)
 		e->f = o->f;
 	return exp_propagate(sa, e, o);
 }
@@ -1026,6 +1028,8 @@ exp_rel(mvc *sql, sql_rel *rel)
 		sql_exp *last = rel->exps->t->data;
 		sql_subtype *t = exp_subtype(last);
 		e->tpe = t ? *t : (sql_subtype) {0};
+		if (t->multiset == MS_ARRAY || t->multiset == MS_SETOF)
+			e->f = last->f;
 	}
 	return e;
 }
