@@ -125,7 +125,6 @@ sql_export list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int 
 
 extern sql_rel *rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f);
 extern sql_rel *rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sql_exp *e, int f);
-extern sql_rel *rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps);
 
 extern sql_rel *rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp);
 extern sql_rel *rel_add_identity2(mvc *sql, sql_rel *rel, sql_exp **exp);

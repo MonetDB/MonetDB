@@ -692,16 +692,15 @@ exp_count_no_nil_arg(sql_exp *e, stmt *ext, sql_exp *ae, stmt *as)
 }
 
 static stmt *
-exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
+exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
 {
 	sql_subtype *bt = sql_bind_localtype("bit");
 	list *l = e->l;
 	node *n;
-	stmt *sel1 = NULL, *sel2 = NULL, *s = NULL;
+	stmt *sel1 = NULL, *s = NULL;
 	int anti = is_anti(e);
 
 	sel1 = sel;
-	sel2 = sel;
 	for (n = l->h; n; n = n->next) {
 		sql_exp *c = n->data;
 		stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
@@ -713,62 +712,33 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 		if (!s)
 			return s;
 
-		if (!reduce && sin) {
+		if (!reduce && sin && sin != sel) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
-		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_find_smallest_column(be, left);
+		} else if (reduce && ((sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) || c->type != e_cmp)) {
+			if (s->nrcols) {
+				if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
+					stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			if (s->nrcols == 0)
+					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+					s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
+				} else
+					s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel1, anti, is_semantics(c));
+			} else {
+				stmt *predicate = bin_find_smallest_column(be, left);
+
+				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
-			else
-				s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
+			}
 		}
 		sel1 = s;
 	}
-	l = e->r;
-	for (n = l->h; n; n = n->next) {
-		sql_exp *c = n->data;
-		stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
-
-		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
-		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
-		if (!s)
-			return s;
-
-		if (!reduce && sin) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sel2, s, sin, f);
-		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_find_smallest_column(be, left);
-
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			if (s->nrcols == 0)
-				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
-			else
-				s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti, 0);
-		}
-		sel2 = s;
-	}
-	if (sel1->nrcols == 0 && sel2->nrcols == 0) {
-		sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
-		assert(f);
-		return stmt_binop(be, sel1, sel2, NULL, f);
-	}
-	if (sel1->nrcols == 0) {
+	if (sel1->nrcols == 0 && left) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
 		if (!reduce) {
@@ -778,25 +748,54 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 			sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
 		}
 	}
-	if (sel2->nrcols == 0) {
-		stmt *predicate = bin_find_smallest_column(be, left);
-
-		if (!reduce) {
-			predicate = stmt_const(be, predicate, sel2);
-		} else {
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
-		}
-	}
-	if (!reduce) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
-			assert(f);
-			return stmt_binop(be, sel1, sel2, NULL, f);
-	}
-	if (anti)
-		return stmt_project(be, stmt_tinter(be, sel1, sel2, false), sel1);
-	return stmt_tunion(be, sel1, sel2);
+	return sel1;
 }
+
+static stmt *
+exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
+{
+	sql_subtype *bt = sql_bind_localtype("bit");
+	list *l = e->l;
+	node *n;
+	stmt *s = NULL, *cur = NULL;
+	int anti = is_anti(e);
+
+	for (n = l->h; n; n = n->next) {
+		sql_exp *c = n->data;
+
+		/* propagate the anti flag */
+		if (anti)
+			set_anti(c);
+		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sel:NULL, depth, reduce, push);
+		if (!s)
+			return s;
+
+		if (reduce && s->nrcols == 0 && left) {
+			stmt *predicate = bin_find_smallest_column(be, left);
+			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+			s = stmt_uselect(be, predicate, s, cmp_equal, sel, anti, is_semantics(c));
+		} else if (reduce && c->type != e_cmp) {
+			s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+		}
+		if (cur) {
+			if (reduce) {
+				if (anti)
+					s = stmt_project(be, stmt_tinter(be, s, cur, false), s);
+				else
+					s = stmt_tunion(be, s, cur);
+			} else {
+				sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
+				assert(f);
+				s = stmt_binop(be, cur, s, NULL, f);
+			}
+		}
+		cur = s;
+	}
+	//if (reduce)
+	//	return stmt_uselect(be, cur, stmt_bool(be, 1), cmp_equal, sel, 0/*anti*/, 0);
+	return cur;
+}
+
 
 static stmt *
 exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
@@ -1735,6 +1734,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (attr && attr->h) {
 			node *en;
 			list *l = sa_list(sql->sa);
+			stmt *next = NULL;
 
 			for (en = attr->h; en; en = en->next) {
 				sql_exp *at = en->data;
@@ -1756,7 +1756,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (need_distinct(e) && (grp || list_length(l) > 1)){
 				list *nl = sa_list(sql->sa);
 				stmt *ngrp = grp;
-				stmt *next = ext;
+				next = ext;
 				stmt *ncnt = cnt;
 				if (nl == NULL)
 					return NULL;
@@ -1799,6 +1799,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					for (node *n = obe->h; n; n = n->next) {
 						sql_exp *oe = n->data;
 						stmt *os = exp_bin(be, oe, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
+						if (!os)
+							return NULL;
+						if (next)
+							os = stmt_project(be, next, os);
 						if (orderby)
 							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
 						else
@@ -1808,8 +1812,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
 					/* depending on type of aggr project input or ordered column */
-					stmt *h = l->h->data;
-					l->h->data = h = stmt_project(be, orderby_ids, h);
+					for (node *n = l->h; n; n = n->next)
+						n->data = stmt_project(be, orderby_ids, n->data);
 					if (grp)
 						grp = stmt_project(be, orderby_ids, grp);
 					(void)orderby_vals;
@@ -1945,11 +1949,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), depth, reduce, push);
-		if (e->flag == cmp_or && (!right || right->nrcols == 1))
-			return exp_bin_or(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
-		if (e->flag == cmp_or && right) {  /* join */
-			assert(0);
-		}
+		if (e->flag == cmp_con)
+			return exp_bin_conjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
+		if (e->flag == cmp_dis)
+			return exp_bin_disjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
@@ -2028,7 +2031,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							list_append(args, l);
 							list_append(args, r);
 							list_append(args, stmt_bool(be, 1));
-							s = stmt_Nop(be, stmt_list(be, args), sel, f, NULL);
+							s = stmt_Nop(be, stmt_list(be, args), NULL, f, NULL);
+							/* TODO cleanup once candidates api has been stabalized */
+							if (sel)
+								list_append(args, sel);
 						}
 					} else {
 						s = stmt_binop(be, l, r, sel, f);
@@ -2368,7 +2374,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	case e_psm:
 		return args;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -3256,7 +3262,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
+		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin);
 		if (is_equi_exp_(e))
 			list_append(new_exps, e);
 		else
@@ -3747,7 +3753,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				stmt *s = NULL;
 
 				/* only handle simple joins here */
-				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && is_anti(e))) {
+				if ((exp_has_func(e) && e->flag != cmp_filter) || (e->f && is_anti(e))) {
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_find_smallest_column(be, left);
 						stmt *r = bin_find_smallest_column(be, right);
@@ -4726,6 +4732,19 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 				if (lpiv == NULL || lgid == NULL)
 					return NULL;
 			}
+		}
+		if (!lpiv) {
+			stmt *orderbycolstmt = pl->h->data;
+			//stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!orderbycolstmt)
+				return NULL;
+
+			orderbycolstmt = column(be, orderbycolstmt);
+			limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, 0, 0, nr_obe, 1);
+			lpiv = limit;
+			if (!lpiv)
+				return NULL;
 		}
 
 		limit = lpiv;
