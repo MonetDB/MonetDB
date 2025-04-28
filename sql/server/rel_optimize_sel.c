@@ -3779,7 +3779,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 					if (e->type == e_cmp) {
 						/* simple comparison filter */
 						if (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_lte || e->flag == cmp_lt
-							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_con || e->flag == cmp_dis
+							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin
 							|| (e->flag == cmp_filter && ((list*)e->l)->cnt == 1)) {
 							sql_exp* column;
 							/* the column in 'like' filters is stored inside a list */
