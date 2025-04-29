@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -276,7 +276,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
-	c->sqlprofiler = 0;
+	c->sqlprofiler = false;
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
@@ -447,7 +447,7 @@ MCcloseClient(Client c)
 		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
-	c->sqlprofiler = 0;
+	c->sqlprofiler = false;
 	free(c->handshake_options);
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);

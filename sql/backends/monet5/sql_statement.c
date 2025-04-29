@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -22,7 +22,6 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 
 static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
@@ -307,10 +306,33 @@ stmt_none(backend *be)
 	return stmt_create(be->mvc->sa, st_none);
 }
 
-InstrPtr
-stmt_bat_new(backend *be, int tt, lng estimate)
+stmt *
+stmt_bat_declare(backend *be, sql_subtype *tpe)
+{
+	InstrPtr q = newAssignment(be->mb);
+	int tt = tpe->type->localtype;
+
+	if (q == NULL)
+		return NULL;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushNil(be->mb, q, newBatType(tt));
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
+}
+
+stmt *
+stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
 {
 	InstrPtr q = newStmt(be->mb, batRef, newRef);
+	int tt = tpe->type->localtype;
 
 	if (q == NULL)
 		return NULL;
@@ -321,22 +343,13 @@ stmt_bat_new(backend *be, int tt, lng estimate)
 	if (estimate > 0)
 		q = pushInt(be->mb, q, (int)estimate);
 	pushInstruction(be->mb, q);
-	return q;
-}
 
-InstrPtr
-stmt_bat_declare(backend *be, int tt)
-{
-	InstrPtr q = newAssignment(be->mb);
-
-	if (q == NULL)
-		return NULL;
-	if (tt == TYPE_void)
-		tt = TYPE_bte;
-	setVarType(be->mb, getArg(q, 0), newBatType(tt));
-	q = pushNil(be->mb, q, newBatType(tt));
-	pushInstruction(be->mb, q);
-	return q;
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
 }
 
 static int *
@@ -350,13 +363,15 @@ dump_table(allocator *sa, backend *be, sql_table *t)
 		return NULL;
 
 	/* tid column */
-	if ((l[i++] = getDestVar(stmt_bat_new(be, TYPE_oid, -1))) < 0)
+	stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), -1);
+	if (!s || (l[i++] = s->nr) < 0)
 		return NULL;
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
-		if ((l[i++] = getDestVar(stmt_bat_new(be, c->type.type->localtype, -1))) < 0)
+		s = stmt_bat_new(be, &c->type, -1);
+		if (!s || (l[i++] = s->nr) < 0)
 			return NULL;
 	}
 	return l;
@@ -856,10 +871,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = newStmt(mb, batRef, appendRef);
 		if (q == NULL)
 			goto bailout;
+		getArg(q,0) = l[c->colnr+1];
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, b->nr);
 		q = pushBit(mb, q, TRUE);
-		getArg(q,0) = l[c->colnr+1];
 	} else if (!fake) {	/* fake append */
 		if (offset == NULL || offset->nr < 0)
 			goto bailout;
@@ -969,6 +984,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		q = newStmt(mb, batRef, replaceRef);
 		if (q == NULL)
 			goto bailout;
+		q->argv[0] = l[c->colnr+1];
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, tids->nr);
 		q = pushArgument(mb, q, upd->nr);
@@ -1249,19 +1265,18 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order)
+stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int nr_obe, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	int l, p, g, c;
+	int l, g, c;
 
 	if (col == NULL || offset == NULL || limit == NULL || col->nr < 0 || offset->nr < 0 || limit->nr < 0)
 		goto bailout;
-	if (piv && (piv->nr < 0 || gid->nr < 0))
+	if (piv && (piv->nr < 0 || (gid && gid->nr < 0)))
 		goto bailout;
 
 	c = (col) ? col->nr : 0;
-	p = (piv) ? piv->nr : 0;
 	g = (gid) ? gid->nr : 0;
 
 	/* first insert single value into a bat */
@@ -1285,38 +1300,67 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		c = k;
 	}
 	if (order) {
-		int topn = 0;
+		if (piv && piv->q) {
+			q = piv->q;
+			q = pushArgument(mb, q, c);
+			q = pushBit(mb, q, dir);
+			q = pushBit(mb, q, nullslast);
+			return piv;
+		} else {
+			int topn = 0;
 
-		q = newStmt(mb, calcRef, plusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, limit->nr);
-		topn = getDestVar(q);
-		pushInstruction(mb, q);
+			q = newStmt(mb, calcRef, plusRef);
+			if (q == NULL)
+				goto bailout;
+			q = pushArgument(mb, q, offset->nr);
+			q = pushArgument(mb, q, limit->nr);
+			topn = getDestVar(q);
+			pushInstruction(mb, q);
 
-		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
-		if (q == NULL)
-			goto bailout;
-		if (!last) /* we need the groups for the next firstn */
-			q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, c);
-		if (p)
-			q = pushArgument(mb, q, p);
-		else
-			q = pushNilBat(mb, q);
-		if (g)
-			q = pushArgument(mb, q, g);
-		else
-			q = pushNilBat(mb, q);
-		q = pushArgument(mb, q, topn);
-		q = pushBit(mb, q, dir);
-		q = pushBit(mb, q, nullslast);
-		q = pushBit(mb, q, distinct != 0);
+			if (!gid || (piv && !piv->q)) { /* use algebra.firstn (possibly concurrently) */
+				int p = (piv) ? piv->nr : 0;
+				q = newStmtArgs(mb, algebraRef, firstnRef, 9);
+				if (q == NULL)
+					goto bailout;
+				if (nr_obe > 1) /* we need the groups for the next firstn */
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
+				q = pushArgument(mb, q, c);
+				if (p)
+					q = pushArgument(mb, q, p);
+				else
+					q = pushNilBat(mb, q);
+				if (g)
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+				q = pushArgument(mb, q, topn);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+				q = pushBit(mb, q, distinct != 0);
 
-		l = getArg(q, 0);
-		l = getDestVar(q);
-		pushInstruction(mb, q);
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			} else {
+				q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
+				if (q == NULL)
+					goto bailout;
+				q = pushArgument(mb, q, topn);
+				q = pushNilBat(mb, q);	/* candidates */
+				if (g)					/* grouped case */
+					q = pushArgument(mb, q, g);
+				else
+					q = pushNilBat(mb, q);
+
+				q = pushArgument(mb, q, c);
+				q = pushBit(mb, q, dir);
+				q = pushBit(mb, q, nullslast);
+
+				l = getArg(q, 0);
+				l = getDestVar(q);
+				pushInstruction(mb, q);
+			}
+		}
 	} else {
 		int len;
 
@@ -3685,6 +3729,7 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 			q = newStmt(mb, batRef, deleteRef);
 			if (q == NULL)
 				goto bailout;
+			q->argv[0] = l[i];
 			q = pushArgument(mb, q, l[i]);
 			pushInstruction(mb, q);
 		}
@@ -4293,7 +4338,7 @@ stmt_direct_func(backend *be, InstrPtr q)
 		if(!s) {
 			return NULL;
 		}
-		s->flag = op_union;
+		s->flag = op_munion;
 		s->nrcols = 3;
 		s->nr = getDestVar(q);
 		s->q = q;
@@ -4316,6 +4361,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	if ((p = find_prop(rel->p, PROP_REMOTE)))
 		rel->p = prop_remove(rel->p, p);
 	/* sql_processrelation may split projections, so make sure the topmost relation only contains references */
+	int opt = rel->opt;
 	rel = rel_project(be->mvc->sa, rel, rel_projections(be->mvc, rel, NULL, 1, 1));
 	if (!(rel = sql_processrelation(be->mvc, rel, 0, 0, 1, 1)))
 		goto bailout;
@@ -4323,6 +4369,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		p->p = rel->p;
 		rel->p = p;
 	}
+	rel->opt = opt;
 
 	if (monet5_create_relational_function(be->mvc, sql_private_module_name, name, rel, ops, NULL, 1) < 0)
 		goto bailout;
@@ -4621,10 +4668,13 @@ tail_type(stmt *st)
 			if (!st->reduce)
 				return sql_bind_localtype("bit");
 			return sql_bind_localtype("oid");
+		case st_alias:
+			if (!st->op1)
+				return &st->op4.typeval;
+			/* fall through */
 		case st_append:
 		case st_append_bulk:
 		case st_replace:
-		case st_alias:
 		case st_gen_group:
 		case st_order:
 			st = st->op1;
@@ -4855,6 +4905,8 @@ schema_name(allocator *sa, stmt *st)
 			return schema_name(sa, st->op1);
 		return NULL;
 	case st_alias:
+		if (!st->op1)
+			return NULL;
 		return schema_name(sa, st->op1);
 	case st_bat:
 		return st->op4.cval->t->s->base.name;

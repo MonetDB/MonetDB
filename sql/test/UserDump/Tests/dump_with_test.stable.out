@@ -14,7 +14,7 @@ create function b(i int) returns int begin return select v from bar where id = i
 ;
 create trigger a after insert on foo insert into a values (1)
 ;
-create trigger test.x after insert on foo insert into a values (1)
+create trigger x after insert on foo insert into a values (1)
 ;
 create trigger "z" after insert on "foo" insert into a values (1)
 ;

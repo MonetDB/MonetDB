@@ -1,8 +1,8 @@
 statement ok
-create table foo (i int , j int);
+create table foo (i int , j int)
 
 statement ok
-insert into foo values (1, 10), (2, 20), (3, 30);
+insert into foo values (1, 10), (2, 20), (3, 30)
 
 query II nosort
 delete from foo where i > 1 returning i*2, j*j as k
@@ -21,7 +21,7 @@ statement ok
 truncate foo
 
 statement ok
-insert into foo values (1, 10), (2, 20), (3, 30);
+insert into foo values (1, 10), (2, 20), (3, 30)
 
 query II nosort
 update foo set j = -j where i < 3 returning j+5 as bla, i+i
@@ -35,8 +35,7 @@ statement ok
 truncate foo
 
 statement ok
-insert into foo values (1, 10), (2, 20), (3, 30);
-
+insert into foo values (1, 10), (2, 20), (3, 30)
 
 query I nosort
 update foo set j = -j returning j+5
@@ -81,7 +80,6 @@ insert into foo select * from foo returning sum(j), i
 statement error 42000!SELECT: cannot use non GROUP BY column 'foo.i' in query results without an aggregate function
 insert into foo select * from foo returning i, sum(j)
 
-
 statement error 42000!SELECT: identifier 'k' unknown
 update foo set i = -i returning k
 
@@ -102,7 +100,7 @@ delete from foo returning i*i
 9
 
 statement ok
-insert into foo values (1, 10), (2, 20), (3, 30);
+insert into foo values (1, 10), (2, 20), (3, 30)
 
 query I nosort
 delete from foo returning sum(j)
@@ -110,8 +108,7 @@ delete from foo returning sum(j)
 60
 
 statement ok
-insert into foo values (1, 10), (2, 20), (3, 30);
-
+insert into foo values (1, 10), (2, 20), (3, 30)
 
 query I nosort
 delete from foo where i > 0 returning sum(j)
@@ -133,7 +130,6 @@ insert into foo values (1,10), (-1,-10) returning i+2*j
 21
 -21
 
-
 query I nosort
 insert into foo(j) values (10), (-10) returning i IS NOT DISTINCT FROM NULL
 ----
@@ -144,7 +140,6 @@ query I nosort
 select count(*) from foo
 ----
 6
-
 
 query I nosort
 insert into foo values (1,10), (-1,10) returning sum(j)
@@ -163,10 +158,10 @@ statement ok
 create function read_dump_rel(rel STRING) RETURNS STRING external name sql.read_dump_rel
 
 statement ok
-truncate table foo;
+truncate table foo
 
 statement ok
-insert into foo values (1, 10), (2, 10), (3, 10);
+insert into foo values (1, 10), (2, 10), (3, 10)
 
 # insert into foo(j) values (40), (50) returning sum(i)
 query T nosort
@@ -190,10 +185,10 @@ table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000
 project (
 group by (
 update(
-& REF 1 
+& REF 1
 project (
 select (
-& REF 1 
+& REF 1
 ) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
 ) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) NOT NULL NUNIQUES 3.000000 MIN "-30" MAX "-10" as "foo"."j" ] COUNT 3
 ) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ]
@@ -210,10 +205,10 @@ table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000
 project (
 group by (
 delete(
-& REF 1 
+& REF 1
 project (
 select (
-& REF 1 
+& REF 1
 ) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
 ) [ "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
 )
@@ -266,6 +261,7 @@ select (
 ) [ ("foo"."j" NOT NULL UNIQUE MIN "10" MAX "30" NUNIQUES 3.000000) > (int(5) "10") ] COUNT 3
 ) [ "foo"."%TID%" NOT NULL UNIQUE ] COUNT 3
 )
-) [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000 ]');
+) [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000 ]')
 ----
 @ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@delete(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE ]@)@) [ "foo"."i" NOT NULL UNIQUE ]
+

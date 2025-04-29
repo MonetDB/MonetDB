@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -608,8 +608,8 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
-		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL; \
-	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);						\
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
+	lng *extra = getArgReference_lng(stk, pci, 3);						\
 	const INTYPE1 src1 = *(INTYPE1*)getArgReference(stk, pci, 1);		\
 	BATiter b2i;														\
 	DEC_SRC2(INTYPE2, 2);												\
@@ -685,8 +685,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	bool nils = false;													\
 	bat *ret = getArgReference_bat(stk, pci, 0),						\
 		*bid1 = getArgReference_bat(stk, pci, 1),						\
-		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL; \
-	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);						\
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
+	lng *extra = getArgReference_lng(stk, pci, 3);						\
 	BATiter b1i;														\
 	DEC_SRC1(INTYPE1, 1);												\
 	const INTYPE2 src2 = *(INTYPE2*)getArgReference(stk, pci, 2);		\
@@ -1785,8 +1785,8 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,4, batarg("",date),arg("s",str),batarg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,4, batarg("",date),batarg("s",str),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk, false, "", args(1,6, batarg("",date),batarg("s",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,5, batarg("",date),arg("s",str),batarg("format",str),batarg("s",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,5, batarg("",date),batarg("s",str),arg("format",str),batarg("s",oid),arg("tz_msec",lng))),
+ pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p1, false, "", args(1,5, batarg("",date),arg("s",str),batarg("format",str),arg("tz_msec",lng),batarg("s",oid))),
+ pattern("batmtime", "str_to_date", MTIMEstr_to_date_bulk_p2, false, "", args(1,5, batarg("",date),batarg("s",str),arg("format",str),arg("tz_msec",lng),batarg("s",oid))),
  command("mtime", "date_to_str", MTIMEdate_to_str, false, "create a string from the date, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",date),arg("format",str))),
  pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",date),batarg("format",str))),
  pattern("batmtime", "date_to_str", MTIMEdate_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",date),batarg("format",str))),
@@ -1799,8 +1799,8 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p1, false, "", args(1,4, batarg("",daytime),arg("s",str),batarg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p2, false, "", args(1,4, batarg("",daytime),batarg("s",str),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk, false, "", args(1,6, batarg("",daytime),batarg("s",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p1, false, "", args(1,5, batarg("",daytime),arg("s",str),batarg("format",str),batarg("s",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p2, false, "", args(1,5, batarg("",daytime),batarg("s",str),arg("format",str),batarg("s",oid),arg("tz_msec",lng))),
+ pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p1, false, "", args(1,5, batarg("",daytime),arg("s",str),batarg("format",str),arg("tz_msec",lng),batarg("s",oid))),
+ pattern("batmtime", "str_to_time", MTIMEstr_to_time_bulk_p2, false, "", args(1,5, batarg("",daytime),batarg("s",str),arg("format",str),arg("tz_msec",lng),batarg("s",oid))),
  command("mtime", "time_to_str", MTIMEtime_to_str, false, "create a string from the time, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",daytime),arg("format",str))),
  pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",daytime),batarg("format",str))),
  pattern("batmtime", "time_to_str", MTIMEtime_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",daytime),batarg("format",str))),
@@ -1813,15 +1813,15 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk_p1, false, "", args(1,4, batarg("",str),arg("d",daytime),batarg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk_p2, false, "", args(1,4, batarg("",str),batarg("d",daytime),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk, false, "", args(1,6, batarg("",str),batarg("d",daytime),batarg("format",str),batarg("s1",oid),batarg("s2",oid),arg("tz_msec",lng))),
- pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk_p1, false, "", args(1,5, batarg("",str),arg("d",daytime),batarg("format",str),batarg("s",oid),arg("tz_msec",lng))),
- pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk_p2, false, "", args(1,5, batarg("",str),batarg("d",daytime),arg("format",str),batarg("s",oid),arg("tz_msec",lng))),
+ pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk_p1, false, "", args(1,5, batarg("",str),arg("d",daytime),batarg("format",str),arg("tz_msec",lng),batarg("s",oid))),
+ pattern("batmtime", "timetz_to_str", MTIMEtimetz_to_str_bulk_p2, false, "", args(1,5, batarg("",str),batarg("d",daytime),arg("format",str),arg("tz_msec",lng),batarg("s",oid))),
  command("mtime", "str_to_timestamp", MTIMEstr_to_timestamp, false, "create a timestamp from the string, using the specified format (see man strptime)", args(1,4, arg("",timestamp),arg("s",str),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk, false, "", args(1,4, batarg("",timestamp),batarg("d",str),batarg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p1, false, "", args(1,4, batarg("",timestamp),arg("s",str),batarg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p2, false, "", args(1,4, batarg("",timestamp),batarg("s",str),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk, false, "", args(1,6, batarg("",timestamp),batarg("d",str),batarg("format",str),batarg("s1",oid),batarg("s2",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p1, false, "", args(1,5, batarg("",timestamp),arg("s",str),batarg("format",str),batarg("s",oid),arg("tz_msec",lng))),
- pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p2, false, "", args(1,5, batarg("",timestamp),batarg("s",str),arg("format",str),batarg("s",oid),arg("tz_msec",lng))),
+ pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p1, false, "", args(1,5, batarg("",timestamp),arg("s",str),batarg("format",str),arg("tz_msec",lng),batarg("s",oid))),
+ pattern("batmtime", "str_to_timestamp", MTIMEstr_to_timestamp_bulk_p2, false, "", args(1,5, batarg("",timestamp),batarg("s",str),arg("format",str),arg("tz_msec",lng),batarg("s",oid))),
  command("mtime", "timestamp_to_str", MTIMEtimestamp_to_str, false, "create a string from the time, using the specified format (see man strftime)", args(1,3, arg("",str),arg("d",timestamp),arg("format",str))),
  pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk, false, "", args(1,3, batarg("",str),batarg("d",timestamp),batarg("format",str))),
  pattern("batmtime", "timestamp_to_str", MTIMEtimestamp_to_str_bulk_p1, false, "", args(1,3, batarg("",str),arg("d",timestamp),batarg("format",str))),
@@ -1834,8 +1834,8 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk_p1, false, "", args(1,4, batarg("",str),arg("d",timestamp),batarg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk_p2, false, "", args(1,4, batarg("",str),batarg("d",timestamp),arg("format",str),arg("tz_msec",lng))),
  pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk, false, "", args(1,6, batarg("",str),batarg("d",timestamp),batarg("format",str),batarg("s1",oid),batarg("s2",oid),arg("tz_msec",lng))),
- pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk_p1, false, "", args(1,5, batarg("",str),arg("d",timestamp),batarg("format",str),batarg("s",oid),arg("tz_msec",lng))),
- pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk_p2, false, "", args(1,5, batarg("",str),batarg("d",timestamp),arg("format",str),batarg("s",oid),arg("tz_msec",lng))),
+ pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk_p1, false, "", args(1,5, batarg("",str),arg("d",timestamp),batarg("format",str),arg("tz_msec",lng),batarg("s",oid))),
+ pattern("batmtime", "timestamptz_to_str", MTIMEtimestamptz_to_str_bulk_p2, false, "", args(1,5, batarg("",str),batarg("d",timestamp),arg("format",str),arg("tz_msec",lng),batarg("s",oid))),
  command("mtime", "current_timestamp", MTIMEcurrent_timestamp, false, "", args(1,1, arg("",timestamp))),
  command("mtime", "current_date", MTIMEcurrent_date, false, "", args(1,1, arg("",date))),
  command("mtime", "current_time", MTIMEcurrent_time, false, "", args(1,1, arg("",daytime))),

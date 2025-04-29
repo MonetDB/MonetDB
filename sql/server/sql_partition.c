@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -134,7 +134,6 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 		case op_left:
 		case op_right:
 		case op_full:
-		case op_union:
 		case op_inter:
 		case op_except:
 		case op_merge:
@@ -241,7 +240,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 				exp_find_table_columns(sql, e->l, t, cols);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
-			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			} else if (e->flag == cmp_filter) {
 				for (node *n = ((list*)e->l)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)

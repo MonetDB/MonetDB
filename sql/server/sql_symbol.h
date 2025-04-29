@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -29,6 +29,7 @@ typedef enum symtype {
 typedef union symbdata {
 	int i_val;
 	lng l_val;
+	lng lpair[2];
 	char *sval;
 	struct dlist *lval;
 	struct symbol *sym;
@@ -81,6 +82,7 @@ typedef struct SelectNode {
 	symbol *orderby;
 	symbol *name;
 	symbol *window;
+	symbol *qualify;
 } SelectNode;
 
 typedef struct AtomNode {
@@ -94,7 +96,7 @@ extern symbol *symbol_create_int(allocator *sa, tokens token, int data);
 extern symbol *symbol_create_lng(allocator *sa, tokens token, lng data);
 extern symbol *symbol_create_symbol(allocator *sa, tokens token, symbol *data);
 
-extern symbol *newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window);
+extern symbol *newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window, symbol *qualify);
 
 extern symbol *newAtomNode(allocator *sa, atom *a);
 

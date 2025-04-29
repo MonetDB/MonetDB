@@ -20,7 +20,6 @@ CREATE FUNCTION _dbl2dec(inp DOUBLE) RETURNS DECIMAL LANGUAGE C {
     }
 }
 
-
 statement ok
 START TRANSACTION
 
@@ -36,7 +35,6 @@ CREATE FUNCTION capi11(inp DECIMAL(18,3)) RETURNS DECIMAL(11,1) LANGUAGE C {
         }
     }
 }
-
 
 statement ok
 CREATE TABLE decimals(d DECIMAL(18,3))

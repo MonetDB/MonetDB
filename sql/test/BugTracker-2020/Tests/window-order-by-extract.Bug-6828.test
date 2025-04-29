@@ -18,7 +18,7 @@ insert into employees values
     ('mgmt', 'Johnson',100,str_to_date('12-07-2019', '%d-%m-%Y'))
 
 query TTRR nosort
-SELECT dep, name, salary, SUM(salary) OVER (ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees
+SELECT dep, name, salary, SUM(salary) OVER (ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees order by name
 ----
 dev
 Brown
@@ -29,61 +29,57 @@ Davies
 84.000
 218.000
 sls
-Thomas
-72.000
-218.000
-sls
-Williams
-55.000
-373.000
+Evans
+87.000
+730.000
 mgmt
 Johnson
 100.000
 373.000
-mgmt
-Smith
-81.000
-571.000
 dev
 Jones
 55.000
+571.000
+mgmt
+Smith
+81.000
 571.000
 sls
 Taylor
 62.000
 571.000
 sls
-Evans
-87.000
-730.000
+Thomas
+72.000
+218.000
+sls
+Williams
+55.000
+373.000
 sls
 Wilson
 72.000
 730.000
 
 query TTRR nosort
-SELECT dep, name, salary, SUM(salary) OVER (ORDER BY hire_date) salary_sum FROM employees
+SELECT dep, name, salary, SUM(salary) OVER (ORDER BY hire_date) salary_sum FROM employees order by name
 ----
-mgmt
-Davies
-84.000
-84.000
 dev
 Brown
 62.000
 146.000
+mgmt
+Davies
+84.000
+84.000
 sls
-Thomas
-72.000
-218.000
+Evans
+87.000
+658.000
 mgmt
 Johnson
 100.000
 318.000
-sls
-Williams
-55.000
-373.000
 dev
 Jones
 55.000
@@ -97,37 +93,49 @@ Taylor
 62.000
 571.000
 sls
-Evans
-87.000
-658.000
+Thomas
+72.000
+218.000
+sls
+Williams
+55.000
+373.000
 sls
 Wilson
 72.000
 730.000
 
 query TTRR nosort
-SELECT dep, name, salary, SUM(salary) OVER (PARTITION BY dep ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees
+SELECT dep, name, salary, SUM(salary) OVER (PARTITION BY dep ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees order by name
 ----
 dev
 Brown
 62.000
 62.000
+mgmt
+Davies
+84.000
+84.000
+sls
+Evans
+87.000
+348.000
+mgmt
+Johnson
+100.000
+184.000
 dev
 Jones
 55.000
 117.000
 mgmt
-Davies
-84.000
-84.000
-mgmt
-Johnson
-100.000
-184.000
-mgmt
 Smith
 81.000
 265.000
+sls
+Taylor
+62.000
+189.000
 sls
 Thomas
 72.000
@@ -136,14 +144,6 @@ sls
 Williams
 55.000
 127.000
-sls
-Taylor
-62.000
-189.000
-sls
-Evans
-87.000
-348.000
 sls
 Wilson
 72.000

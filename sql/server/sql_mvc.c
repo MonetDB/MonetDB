@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 #include "sql_mvc.h"
 #include "sql_qc.h"
 #include "sql_types.h"
+#include "sql_storage.h"
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_partition.h"
@@ -29,6 +30,7 @@
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_statistics.h"
+#include "rel_remote.h"
 
 #include "mal_authorize.h"
 #include "mal_profiler.h"
@@ -476,6 +478,12 @@ void
 mvc_cancel_session(mvc *m)
 {
 	(void)sql_trans_end(m->session, SQL_ERR);
+}
+
+void
+mvc_query_processed(mvc *m)
+{
+	scanner_query_processed(&(m->scanner));
 }
 
 int
@@ -1071,16 +1079,16 @@ mvc_drop_type(mvc *m, sql_schema *s, sql_type *t, int drop_action)
 
 int
 mvc_create_func(sql_func **f, mvc *m, allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang,
-				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect)
+				const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order)
 {
 	int lres = LOG_OK;
 
 	TRC_DEBUG(SQL_TRANS, "Create function: %s\n", name);
 	if (sa) {
-		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		*f = create_sql_func(m->store, sa, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect, order_required, opt_order);
 		(*f)->s = s;
 	} else
-		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect);
+		lres = sql_trans_create_func(f, m->session->tr, s, name, args, res, type, lang, mod, impl, query, varres, vararg, system, side_effect, order_required, opt_order);
 	return lres;
 }
 
@@ -1294,13 +1302,26 @@ mvc_create_remote(sql_table **t, mvc *m, sql_schema *s, const char *name, int pe
 {
 	int res = LOG_OK;
 
-	TRC_DEBUG(SQL_TRANS, "Create remote: %s %s %s\n", s->base.name, name, loc);
+	// verify and normalize url
+	msettings *mp = sa_msettings_create(m->sa);
+	if (mp == NULL) {
+		(void) sql_error(m, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return LOG_ERR;
+	}
+	msettings_error err = msettings_parse_url(mp, loc);
+	if (err != NULL) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "invalid remote table url: %s", err);
+		return LOG_ERR;
+	}
+	char *url = sa_msettings_to_string(mp, m->sa, strlen(loc));
+
+	TRC_DEBUG(SQL_TRANS, "Create remote: %s %s %s\n", s->base.name, name, url);
 	if (persistence == SQL_DECLARED_TABLE) {
 		*t = create_sql_table(m->store, m->sa, name, tt_remote, 0, persistence, 0, 0);
 		(*t)->s = s;
-		(*t)->query = sa_strdup(m->sa, loc);
+		(*t)->query = url;
 	} else {
-		res = sql_trans_create_table(t, m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
+		res = sql_trans_create_table(t, m->session->tr, s, name, url, tt_remote, 0, SQL_REMOTE, 0, 0, 0);
 	}
 	return res;
 }

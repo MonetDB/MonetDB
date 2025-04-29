@@ -15,7 +15,7 @@
 #include "pipeline.h"
 
 static int
-var_atom_cmp(int type, void *l, void *r)
+var_atom_cmp(int type, void *l, void *r, bool desc)
 {
 	void *nil = ATOMnil(type);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);
@@ -26,9 +26,9 @@ var_atom_cmp(int type, void *l, void *r)
 	if (lnil && rnil)
 		return 0;
 	if (lnil)
-		return 1;
+		return desc?-1:1;
 	if (rnil)
-		return -1;
+		return desc?1:-1;
 	return cmp(l, r);
 }
 
@@ -65,6 +65,8 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 
 	if (desc && nlast)
 		nlast = false;
+	if (desc && !nlast)
+		nlast = true;
 	if (nlast && ri.nonil && li.nonil)
 		nlast = false;
 
@@ -101,7 +103,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			for(;p < e; ) {
 				void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 				void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-				int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc);
+				int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, desc);
 				if (desc)
 					c = -c;
 				if (c <= 0) {
@@ -292,6 +294,8 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 
 	if (desc && nlast)
 		nlast = false;
+	if (desc && !nlast)
+		nlast = true;
 	if (nlast && ri.nonil && li.nonil)
 		nlast = false;
 
@@ -299,7 +303,7 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	for(; p<e; ) {
 		void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 		void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-		int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc);
+		int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, desc);
 		if (desc)
 			c = -c;
 		if (c <= 0) {
@@ -498,13 +502,13 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 		BATsetcount(res, cnt);
 		return MAL_SUCCEED;
 	} else if (tt == TYPE_str && res->tvheap->parentid == lcol->tvheap->parentid) {
-		if(lcol->T.width == 1) {
+		if(lcol->twidth == 1) {
 			zzl_project(bte, res, zzl, lcol, rcol);
-		} else if(lcol->T.width == 2) {
+		} else if(lcol->twidth == 2) {
 			zzl_project(sht, res, zzl, lcol, rcol);
-		} else if(lcol->T.width == 4) {
+		} else if(lcol->twidth == 4) {
 			zzl_project(int, res, zzl, lcol, rcol);
-		} else if(lcol->T.width == 8) {
+		} else if(lcol->twidth == 8) {
 			zzl_project(lng, res, zzl, lcol, rcol);
 		}
 		/* zap props */
@@ -688,7 +692,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		GDKfree(q);
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	qb->T.sink = (Sink*)q;
+	qb->tsink = (Sink*)q;
 	*sop = qb->batCacheid;
 	BBPkeepref(qb);
 	return MAL_SUCCEED;
@@ -707,7 +711,7 @@ SOPadd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
 		throw(MAL, "sop.add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	sop_t *q = (sop_t*)qb->T.sink;
+	sop_t *q = (sop_t*)qb->tsink;
 	assert(q->s.type == SOP_SINK);
 
 	part_t *e = (part_t*)GDKmalloc(sizeof(part_t) + sizeof(bat) * nr);
@@ -751,7 +755,7 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	BAT *qb = BATdescriptor(*qbat);
 	if (!qb)
 		throw(MAL, "sop.dequeue", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	sop_t *q = (sop_t*)qb->T.sink;
+	sop_t *q = (sop_t*)qb->tsink;
 	assert(q->s.type == SOP_SINK);
 
 	part_t *e = q->workers[wid];

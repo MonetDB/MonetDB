@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -269,11 +269,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	if (nmb->errors)
 		goto bailout;
 
-/*
-	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
-	traceInstruction(MAL_SERVER, mb, 0, pci, LIST_MAL_ALL);
-	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
-*/
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors)
@@ -287,11 +282,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		if (!isVarFixed(mb, getArg(pci, 0)))
 			setVarType(mb, getArg(pci, 0), newBatType(getArgType(nmb, q, 0)));
 	}
-
-/*
-	TRC_DEBUG(MAL_SERVER, "Success? %s\n", (fcn == NULL? "no":"yes"));
-	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
-*/
 
 	freeMalBlk(nmb);
 	return fcn;
@@ -335,12 +325,13 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	// mr-job structure preparation
-	mut.fvar = mut.lvar = 0;
-	mut.cntxt = cntxt;
-	mut.mb = mb;
-	mut.stk = stk;
-	mut.args = mat;
-	mut.pci = pci;
+	mut = (MULTItask) {
+		.cntxt = cntxt,
+		.mb = mb,
+		.stk = stk,
+		.args = mat,
+		.pci = pci,
+	};
 
 	// prepare iterators
 	for (i = pci->retc + 2; i < pci->argc; i++) {

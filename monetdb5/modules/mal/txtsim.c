@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -824,13 +824,13 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 			/* The match test succeeded */
 			lsi[n].matches++;
 			rsi[rstart].matches++;
-			if (bunfastappTYPE(oid, r1t, &(lsi[n].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r1t, lsi[n].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
-			if (bunfastappTYPE(oid, r2t, &(rsi[rstart].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r2t, rsi[rstart].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
@@ -1026,13 +1026,13 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* The match test succeeded */
 			ssl[n].matches++;
 			ssr[rstart].matches++;
-			if (bunfastappTYPE(oid, r1t, &(ssl[n].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r1t, ssl[n].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");
 				goto exit;
 			}
-			if (bunfastappTYPE(oid, r2t, &(ssr[rstart].o)) != GDK_SUCCEED) {
+			if (bunfastappOID(r2t, ssr[rstart].o) != GDK_SUCCEED) {
 				reclaim_bats(2, r1t, r2t);
 				msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 									  OPERATION_FAILED "Failed bun append");

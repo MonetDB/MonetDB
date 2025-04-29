@@ -1,0 +1,170 @@
+query TITIIIII nosort
+select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+----
+
+query IT
+select * from sys.table_types order by 1
+----
+0
+TABLE
+1
+VIEW
+3
+MERGE TABLE
+5
+REMOTE TABLE
+6
+REPLICA TABLE
+7
+UNLOGGED TABLE
+10
+SYSTEM TABLE
+11
+SYSTEM VIEW
+20
+GLOBAL TEMPORARY TABLE
+30
+LOCAL TEMPORARY TABLE
+31
+LOCAL TEMPORARY VIEW
+
+statement ok
+CREATE VIEW v AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+query TITIIIII nosort
+select * from v order by schema_id, name
+----
+v
+2000
+create view v as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+1
+0
+0
+0
+0
+
+statement ok
+CREATE TEMPORARY VIEW tv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+query TITIIIII nosort
+select * from tv order by schema_id, name
+----
+v
+2000
+create view v as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+1
+0
+0
+0
+0
+tv
+2114
+create temporary view tv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+31
+0
+0
+0
+1
+
+statement error 42000!syntax error, unexpected VIEW, expecting TABLE in: "create global temporary view"
+CREATE GLOBAL TEMPORARY VIEW gtv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+
+statement ok
+CREATE LOCAL TEMPORARY VIEW ltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+query TITIIIII nosort
+select * from ltv order by schema_id, name
+----
+v
+2000
+create view v as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+1
+0
+0
+0
+0
+ltv
+2114
+create local temporary view ltv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+31
+0
+0
+0
+1
+tv
+2114
+create temporary view tv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+31
+0
+0
+0
+1
+
+-- information_schema.tables is also affected
+query TTTII nosort
+select table_schema, table_name, table_type, table_type_id, is_view from information_schema.tables where not is_system order by 1,2
+----
+sys
+v
+VIEW
+1
+1
+tmp
+ltv
+LOCAL TEMPORARY VIEW
+31
+1
+tmp
+tv
+LOCAL TEMPORARY VIEW
+31
+1
+
+-- information_schema.views is also affected
+query TTTI nosort
+select table_schema, table_name, view_definition, table_type_id from information_schema.views where not is_system order by 1,2
+----
+sys
+v
+create view v as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+1
+tmp
+ltv
+create local temporary view ltv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+31
+tmp
+tv
+create temporary view tv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
+31
+
+
+statement error 3F000!CREATE VIEW: local temporary views should be stored in the 'tmp' schema
+CREATE LOCAL TEMPORARY VIEW sys.sysltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+statement ok
+CREATE OR REPLACE VIEW v AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+statement ok
+CREATE OR REPLACE TEMPORARY VIEW tv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+statement error 42000!syntax error, unexpected GLOBAL in: "create or replace global"
+CREATE OR REPLACE GLOBAL TEMPORARY VIEW gtv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+statement ok
+CREATE OR REPLACE LOCAL TEMPORARY VIEW ltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
+
+
+-- cleanup
+statement ok
+DROP VIEW v
+
+statement ok
+DROP VIEW tmp.tv
+
+statement ok
+DROP VIEW IF EXISTS sys.gtv
+
+statement ok
+DROP VIEW tmp.ltv
+

@@ -1,0 +1,18 @@
+statement ok
+CREATE USER "psm" WITH PASSWORD 'psm' NAME 'PSM' SCHEMA "sys"
+
+@connection(id=psm, username=psm, password=psm)
+statement error
+explain select * from storagemodel()
+
+@connection(id=psm)
+statement error
+select * from storagemodel()
+
+@connection(id=psm)
+statement error
+select * from storagemodel()
+
+statement ok
+DROP USER "psm"
+

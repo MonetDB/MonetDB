@@ -1,11 +1,11 @@
 statement ok
-START TRANSACTION;
+START TRANSACTION
 
 statement ok
-CALL sys.clearrejects();
+CALL sys.clearrejects()
 
 statement ok
-CREATE TABLE foo(i INT, t TEXT, j INT);
+CREATE TABLE foo(i INT, t TEXT, j INT)
 
 -- The file rejectmismatch.csv contains lines of the form
 -- 16,"bananabananabananabananabananabananabananabananabananabananabananabananabananabananabananabanana16",16
@@ -23,7 +23,7 @@ BEST EFFORT
 
 -- 111 rejected lines, to be precise
 
-query I
+query I nosort
 SELECT COUNT(*) FROM sys.rejects
 ----
 111
@@ -44,7 +44,6 @@ ORDER BY n
 LIMIT 1
 ----
 
-
-
 statement ok
 ROLLBACK
+

@@ -1,0 +1,78 @@
+statement ok
+start transaction
+
+statement ok
+create function mylength1(s string) returns int begin return length(s); end
+
+statement ok
+create function mylength2(s string, i int) returns int begin return length(s) + i; end
+
+query TIITTT nosort
+prepare select mylength1(?)
+----
+int
+31
+0
+(empty)
+%2
+%2
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query I nosort
+exec <LAST_PREPARE_ID>('abc')
+----
+3
+
+query TIITTT nosort
+prepare select mylength2(?, 2)
+----
+int
+31
+0
+(empty)
+%2
+%2
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query I nosort
+exec <LAST_PREPARE_ID>('abc')
+----
+5
+
+statement ok
+rollback
+
+query TIITTT nosort
+prepare select coalesce(cast(? as int), 23)
+----
+int
+31
+0
+(empty)
+%3
+%3
+int
+31
+0
+NULL
+NULL
+NULL
+
+query I nosort
+exec <LAST_PREPARE_ID>(1)
+----
+1
+
+statement error 42000!EXEC called with wrong number of arguments: expected 1, got 0
+exec <LAST_PREPARE_ID>()
+

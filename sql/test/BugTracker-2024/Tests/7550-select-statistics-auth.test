@@ -8,7 +8,7 @@ create table abc(col1 int)
 
 @connection(id=c2, username=test, password=test)
 query TTT nosort
-SELECT schema, table, column FROM sys.statistics where schema = 'test'
+SELECT schema, "table", "column" FROM sys.statistics where schema = 'test'
 ----
 test
 abc
@@ -16,7 +16,7 @@ col1
 
 @connection(id=c2, username=test, password=test)
 query TTT nosort
-SELECT schema, table, column FROM sys.statistics() where schema = 'test'
+SELECT schema, "table", "column" FROM sys.statistics() where schema = 'test'
 ----
 test
 abc

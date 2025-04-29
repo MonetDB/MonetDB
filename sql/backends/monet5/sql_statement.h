@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -150,8 +150,8 @@ typedef struct stmt {
 extern int stmt_key(stmt *s);
 
 extern InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
-extern InstrPtr stmt_bat_new(backend *be, int tt, lng estimate);
-extern InstrPtr stmt_bat_declare(backend *be, int tt);
+extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
+extern stmt *stmt_bat_declare(backend *be, sql_subtype *tpe);
 
 extern stmt *stmt_none(backend *be);
 
@@ -228,7 +228,7 @@ extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 extern stmt *stmt_dict(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_for(backend *be, stmt *op1, stmt *minval);
 
-extern stmt *stmt_list(backend *be, list *l);
+sql_export stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
@@ -244,12 +244,11 @@ extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
 
 /*
- * distinct: compute topn on unique groups
  * dir:      direction of the ordering, ie 1 Ascending, 0 descending
- * last:     intermediate step or last step
+ * nr_obe:   total number of order by expression
  * order:    is order important or not (firstn vs slice)
  */
-extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int last, int order);
+extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int nullslast, int nr_obe, int order);
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed);
 extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
@@ -258,13 +257,13 @@ extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sq
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* rows);
-extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+sql_export stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
-extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
+sql_export stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
-extern stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
+sql_export stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
 extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
 
 extern int stmt_output(backend *be, stmt *l);
@@ -289,4 +288,5 @@ extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
 extern stmt *stmt_instruction(backend *ba, InstrPtr p, stmt *s);
 extern stmt *stmt_create(allocator *sa, st_type type);
 
+sql_export InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 #endif /* _SQL_STATEMENT_H_ */

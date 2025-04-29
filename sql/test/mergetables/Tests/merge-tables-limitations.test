@@ -172,7 +172,7 @@ select * from tst.my_tables where name = 'rmtbl'
 ----
 tst
 rmtbl
-mapi:monetdb://localhost:50000/demo
+monetdb://localhost./demo
 5
 0
 0

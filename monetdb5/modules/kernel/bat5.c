@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -69,19 +69,6 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 	*res = bn->batCacheid;
 	BBPretain(bn->batCacheid);
 	BBPunfix(bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-static str
-BKCattach(bat *ret, const int *tt, const char *const *heapfile)
-{
-	BAT *bn;
-
-	bn = BATattach(*tt, *heapfile, TRANSIENT);
-	if (bn == NULL)
-		throw(MAL, "bat.attach", GDK_EXCEPTION);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
 	return MAL_SUCCEED;
 }
 
@@ -590,30 +577,28 @@ oidtostr(oid i, char *p, size_t len)
 static gdk_return
 infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 {
-	char buf[1024], *p = buf;
+	char kbuf[32], vbuf[32];
 
 	if (!hp)
 		return GDK_SUCCEED;
-	while (*nme)
-		*p++ = *nme++;
-	strcpy(p, "free");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(hp->free, buf), false) != GDK_SUCCEED)
+	strconcat_len(kbuf, sizeof(kbuf), nme, "free", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(hp->free, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "size");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(hp->size, buf), false) != GDK_SUCCEED)
+	strconcat_len(kbuf, sizeof(kbuf), nme, "size", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(hp->size, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "storage");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strconcat_len(kbuf, sizeof(kbuf), nme, "storage", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->base == NULL || hp->base == (char *) 1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp-> filename [0] ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "newstorage");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strconcat_len(kbuf, sizeof(kbuf), nme, "newstorage", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage == STORE_PRIV) ? "private map" : "memory mapped", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "filename");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strconcat_len(kbuf, sizeof(kbuf), nme, "filename", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, hp->filename[0] ? hp->filename : "no file",
 				  false) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -777,12 +762,13 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		|| BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) bi.copiedtodisk, buf),
 					 false) != GDK_SUCCEED
-		|| BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED
+		|| BUNappend(bk, "tail.dirty", false) != GDK_SUCCEED
 		|| BUNappend(bv, bi.hdirty ? "dirty" : "clean", false) != GDK_SUCCEED
 		|| infoHeap(bk, bv, bi.h, "tail.") != GDK_SUCCEED
-		|| BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED
-		|| BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED
-		|| infoHeap(bk, bv, bi.vh, "theap.") != GDK_SUCCEED) {
+		|| (bi.vh
+			&& (BUNappend(bk, "tvheap.dirty", false) != GDK_SUCCEED
+				|| BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED
+				|| infoHeap(bk, bv, bi.vh, "tvheap.") != GDK_SUCCEED))) {
 		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
@@ -1100,7 +1086,6 @@ mel_func bat5_init_funcs[] = {
  command("bat", "append", BKCappend_cand_wrap, false, "append the content of u with candidate list s to i", args(1,4, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid))),
  command("bat", "append", BKCappend_cand_force_wrap, false, "append the content of u with candidate list s to i", args(1,5, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid),arg("force",bit))),
  command("bat", "append", BKCappend_val_force_wrap, false, "append the value u to i", args(1,4, batargany("",1),batargany("i",1),argany("u",1),arg("force",bit))),
- command("bat", "attach", BKCattach, false, "Returns a new BAT with dense head and tail of the given type and uses\nthe given file to initialize the tail. The file will be owned by the\nserver.", args(1,3, batargany("",1),arg("tt",int),arg("heapfile",str))),
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
  command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
  command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes in bytes\nrounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),

@@ -1,10 +1,3 @@
-stdout of test 'blobs` in directory 'sql/test/sql_dump` itself:
-
-
-# 10:39:12 >  
-# 10:39:12 >  "/usr/bin/python3" "blobs.SQL.py" "blobs"
-# 10:39:12 >  
-
 START TRANSACTION;
 SET SCHEMA "sys";
 CREATE TABLE "sys"."myt" (
@@ -20,8 +13,3 @@ NULL	NULL
 NULL	1
 ""	NULL
 COMMIT;
-
-# 10:39:14 >  
-# 10:39:14 >  "Done."
-# 10:39:14 >  
-

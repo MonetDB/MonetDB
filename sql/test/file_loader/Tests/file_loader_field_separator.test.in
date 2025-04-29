@@ -132,3 +132,11 @@ Lightyear
 0
 2022
 
+# tests to load incomplete cars (4 columns, 5 rows) data files with missing field separators or empty lines
+
+statement error 42000!Row 5: too few fields, expected 4 but found 2
+select * from file_loader(r'$TSTSRCDIR/cars_missing_separators.csv') as cars(id, brand, model, "year")
+
+statement error
+select * from file_loader(r'$TSTSRCDIR/cars_empty_line.csv') as cars(id, brand, model, "year")
+

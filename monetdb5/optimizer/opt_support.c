@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,7 +13,6 @@
  /* (c) M. Kersten
   */
 #include "monetdb_config.h"
-#include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_interpreter.h"
 #include "mal_listing.h"
@@ -63,22 +62,24 @@ isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 /*
  * Find if an optimizer 'opt' has run before the instruction 'p'.
  */
-int
+bool
 isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt)
 {
 	bool p_found = false;
 
+	if (getModuleId(p) == optimizerRef && getFunctionId(p) == defaultfastRef)
+		return true;
 	for (int i = mb->stop - 1; i > 0; i--) {
 		InstrPtr q = getInstrPtr(mb, i);
 
 		p_found |= q == p;		/* the optimizer to find must come before p */
 		if (q && q->token == ENDsymbol)
-			return 0;
+			return false;
 		if (p_found && q && q != p && getModuleId(q) == optimizerRef
 			&& getFunctionId(q) == opt)
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 /* Simple insertion statements do not require complex optimizer steps */
@@ -576,14 +577,14 @@ isSubJoin(InstrPtr p)
 inline int
 isMultiplex(InstrPtr p)
 {
-	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef)
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef)
 			&& getFunctionId(p) == multiplexRef);
 }
 
 inline int
 isUnion(InstrPtr p)
 {
-	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef)
+	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef)
 			&& getFunctionId(p) == multiplexRef) ||
 		   (getModuleId(p) == sqlRef && getFunctionId(p) == unionfuncRef);
 }

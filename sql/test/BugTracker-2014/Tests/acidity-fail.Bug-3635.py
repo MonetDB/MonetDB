@@ -3,7 +3,8 @@ try:
 except ImportError:
     import process
 
-import sys, time, pymonetdb, os
+from MonetDBtesting import tpymonetdb as pymonetdb
+import sys, time, os
 
 def connect(autocommit):
     return pymonetdb.connect(database = os.getenv('TSTDB'),

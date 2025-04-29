@@ -707,8 +707,8 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 static str
 PARQUETread_multi(BAT **R, BAT *b, int colno, Pipeline *p)
 {
-	assert(b->T.sink->type == MPARQUET_SINK);
-	pqc_mcreader *r = (pqc_mcreader*)b->T.sink;
+	assert(b->tsink->type == MPARQUET_SINK);
+	pqc_mcreader *r = (pqc_mcreader*)b->tsink;
 	assert(r);
 
 	int wnr = p->wid;
@@ -776,9 +776,9 @@ PARQUETread(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(pqb), *rb = NULL;
 	if (!b)
 		throw (SQL, "parquet.read", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (b->T.sink->type == PARQUET_SINK) {
-		assert(b->T.sink->type == PARQUET_SINK);
-		pqc_creader *r = (pqc_creader*)b->T.sink;
+	if (b->tsink->type == PARQUET_SINK) {
+		assert(b->tsink->type == PARQUET_SINK);
+		pqc_creader *r = (pqc_creader*)b->tsink;
 		assert(r);
 
 		msg = PARQUETread_large(&rb, r, colno, p, p->wid);
@@ -824,7 +824,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPreclaim(b);
 			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
 		}
-		b->T.sink = (Sink*)pqcmc_create(&pglob, nrows);
+		b->tsink = (Sink*)pqcmc_create(&pglob, nrows);
 	} else {
 		if (pqc_open(&pq, f) < 0) {
 			BBPreclaim(b);
@@ -843,10 +843,10 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (fmd->nrows > nrows)
 			fmd->nrows = nrows;
 
-		b->T.sink = (Sink*)pqcc_create(pq, fmd, nrows);
+		b->tsink = (Sink*)pqcc_create(pq, fmd, nrows);
 	}
 
-	if (!b->T.sink) {
+	if (!b->tsink) {
 		BBPreclaim(b);
 		throw(SQL, "parquet.open",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}

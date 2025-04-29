@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -16,6 +16,7 @@
 #include "rel_rewriter.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
+#include "sql_storage.h"
 #include "rel_bin.h"
 
 static int rel_partition_(mvc *sql, sql_rel *rel, int pb);
@@ -78,7 +79,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 				find_basetables(sql, rel->l, tables);
 		break;
 	case op_join:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -159,7 +159,6 @@ rel_mark_partition(mvc *sql, sql_rel *rel)
 		do_oahash_join(rel);
 		// fall through
 	case op_full:
-	case op_union:
 	case op_inter:
 	case op_except:
 	case op_insert:
@@ -227,6 +226,8 @@ rel_mark_partition(mvc *sql, sql_rel *rel)
 		}
 		break;
     case op_munion:
+		if (need_distinct(rel) || is_single(rel))
+				break;
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 			int lres = rel_mark_partition(sql, n->data);
 			if (lres) {
@@ -289,7 +290,6 @@ has_groupby(sql_rel *rel)
 		case op_semi:
 		case op_anti:
 
-		case op_union:
 		case op_inter:
 		case op_except:
 
@@ -448,7 +448,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		bool pp_useful = (get_rel_count(rel->l) > 1) && !(list_length(rel->exps) > 1) /* no offset */;
 		/* op_topn always has rel->l */
 		res = rel_partition_(sql, rel->l, pp_useful?SPB:pb);
-		if (pp_useful) { /* topn is blocking */
+		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
 				/* partition via bind (still) needed in the subtree,
@@ -524,15 +524,10 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 				return res;
 			}
 		}
-		// TODO: the following block code should probably be removed.
-		//       Instead of force returning a 0, the code above should
-		//       assign 'res' the proper value
-		sql_rel *r = rel->r;
-		if (!is_basetable(r->op)) {
-			return 0;
-		}
 	} else if (rel->op == op_munion) {
 		list *rels = rel->l;
+		if (is_recursive(rel) || need_distinct(rel) || is_single(rel))
+			return 0;
 		for(node *n = rels->h; n; n = n->next) {
 			int lres = rel_partition_(sql, n->data, pb);
 			if (lres == EPB) {
@@ -938,8 +933,9 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define IS_ORDER_BASED_AGGR(name) (strcmp((name), "quantile") == 0 || strcmp((name), "quantile_avg") == 0 || \
-                                   strcmp((name), "median") == 0 || strcmp((name), "median_avg") == 0)
+#define IS_ORDER_BASED_AGGR(fname, argc) (\
+				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
+				(argc == 1 && (strcmp((fname), "median") == 0 || strcmp((fname), "median_avg") == 0)))
 
 static sql_rel *
 rel_add_orderby(visitor *v, sql_rel *rel)
@@ -957,7 +953,7 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 					list *aa = e->l;
 
 					/* for now we only handle one sort order */
-					if (IS_ORDER_BASED_AGGR(af->func->base.name) && aa && list_length(aa) == 2) {
+					if (aa && IS_ORDER_BASED_AGGR(af->func->base.name, list_length(aa))) {
 						sql_exp *nobe = aa->h->data;
 						if (nobe && !obe) {
 							sql_rel *l = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
@@ -1087,6 +1083,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
 	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
 
+	if (!sql->recursive)
 	(void)rel_partition_(sql, rel, 0);
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);

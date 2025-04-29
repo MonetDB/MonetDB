@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -16,6 +16,7 @@
 #include "rel_exp.h"
 #include "rel_prop.h"
 #include "rel_rewriter.h"
+#include "sql_storage.h"
 
 typedef struct memoitem {
 	const char *name;
@@ -326,7 +327,8 @@ rel_exp_selectivity(mvc *sql, sql_rel *r, sql_exp *e, lng count)
 			sel = (dbl) list_length(l) / dcount;
 			break;
 		}
-		case cmp_or:
+		case cmp_dis:
+		case cmp_con:
 			sel = 0.5;
 			break;
 		default:
@@ -381,7 +383,8 @@ rel_join_exp_selectivity(mvc *sql, sql_rel *l, sql_rel *r, sql_exp *e, lng lcoun
 			sel = (dbl) list_length(l) / cnt;
 			break;
 		}
-		case cmp_or:
+		case cmp_dis:
+		case cmp_con:
 			sel = 0.5;
 			break;
 		default:

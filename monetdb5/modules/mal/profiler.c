@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -115,7 +115,7 @@ CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CMDnoopProfiler(void *res)
 {
-	(void) res;					/* fool compiler */
+	(void) res;
 	return MAL_SUCCEED;
 }
 
@@ -136,7 +136,7 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *res = getArgReference_bat(stk, pci, 0);
 	BAT *bn;
 
-	(void) cntxt;				/* fool compiler */
+	(void) cntxt;
 	(void) mb;
 	bn = getTrace(cntxt, path);
 	if (bn) {

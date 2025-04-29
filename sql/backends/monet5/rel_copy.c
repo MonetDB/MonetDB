@@ -11,7 +11,6 @@
 #include "rel_bin.h"
 #include "rel_copy.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "sql_pp_statement.h"
 #include "bin_partition.h"
 #include "sql_scenario.h"

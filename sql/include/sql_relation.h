@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -55,6 +55,7 @@ typedef struct expression {
 	 intern:1,
 	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
+	 partitioning:1,	/* partitioning */
 	 ascending:1,	/* order direction */
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
@@ -163,7 +164,6 @@ typedef enum operator_type {
 	op_full,
 	op_semi,
 	op_anti,
-	op_union,
 	op_munion,
 	op_inter,
 	op_except,
@@ -202,9 +202,8 @@ typedef enum operator_type {
 #define is_semi(op) 		(op == op_semi || op == op_anti)
 #define is_joinop(op) 		(is_join(op) || is_semi(op))
 #define is_select(op) 		(op == op_select)
-#define is_set(op) 			(op == op_union || op == op_inter || op == op_except)
+#define is_set(op) 			(op == op_inter || op == op_except)
 #define is_mset(op) 		(op == op_munion || op == op_inter || op == op_except)
-#define is_union(op) 		(op == op_union)
 #define is_inter(op) 		(op == op_inter)
 #define is_except(op) 		(op == op_except)
 #define is_munion(op) 		(op == op_munion)
@@ -233,6 +232,8 @@ typedef enum operator_type {
 #define set_has_no_nil(e) 	(e)->has_no_nil = 1
 #define set_has_nil(e) 		(e)->has_no_nil = 0
 
+#define is_partitioning(e) 	((e)->partitioning)
+#define set_partitioning(e) ((e)->partitioning = 1)
 #define is_ascending(e) 	((e)->ascending)
 #define set_ascending(e) 	((e)->ascending = 1)
 #define set_descending(e) 	((e)->ascending = 0)
@@ -246,6 +247,7 @@ typedef enum operator_type {
 #define set_not_unique(e)	(e)->unique = 0
 #define is_anti(e) 			((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
+#define reset_anti(e)  		(e)->anti = 0
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
 #define is_any(e)			((e)->any)
@@ -282,6 +284,8 @@ typedef enum operator_type {
 #define is_single(rel) 		((rel)->single)
 #define set_single(rel) 	(rel)->single = 1
 #define reset_single(rel) 	(rel)->single = 0
+#define set_recursive(rel) 	(rel)->recursive = 1
+#define is_recursive(rel) 	((rel)->recursive)
 
 #define is_freevar(e) 		((e)->freevar)
 #define set_freevar(e,level) 	(e)->freevar = level+1
@@ -314,7 +318,7 @@ typedef struct relation {
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
 	 returning:1, /*update|delete|insert relations return modified records*/
-
+	 recursive:1,	/* recursive unions */
 	 parallel:1,	/* suitable for parallel pipeline? */
 	 partition:2,	/* partition input relation?
 					 * 0 (no), 1 (left relation), 2 (right relation) */
@@ -327,6 +331,7 @@ typedef struct relation {
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
 	uint8_t used;
+	int opt;
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 

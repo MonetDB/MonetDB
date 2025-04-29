@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
+#include "rel_unnest.h"
 #include "rel_updates.h"
 #include "rel_select.h"
 #include "rel_remote.h"
@@ -64,7 +65,6 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	case cmp_notequal: 	r = "!="; break;
 
 	case cmp_filter: 	r = "filter"; break;
-	case cmp_or: 		r = "or"; break;
 	case cmp_in: 		r = "in"; break;
 	case cmp_notin: 	r = "notin"; break;
 
@@ -113,6 +113,39 @@ dump_sql_subtype(allocator *sa, sql_subtype *t)
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets, int decorate, int expbrk);
 
 static void rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int decorate);
+
+static void
+exp_or_print(mvc *sql, stream *fout, node *n, int anti, int depth, list *refs, int decorate)
+{
+	assert(n->next);
+	sql_exp *l = n->data;
+	sql_exp *r = n->next->data;
+
+	if (l->type == e_cmp && l->flag == cmp_con) {
+		exps_print(sql, fout, l->l, depth, refs, 0, 1, decorate, 0);
+	} else {
+		mnstr_printf(fout, "(");
+		exp_print(sql, fout, l, depth+1, refs, 0, 0, decorate);
+		mnstr_printf(fout, ")");
+	}
+	if (anti)
+		mnstr_printf(fout, " !");
+	mnstr_printf(fout, " or ");
+
+	if (n->next->next) {
+		mnstr_printf(fout, "(");
+		exp_or_print(sql, fout, n->next, anti, depth, refs, decorate);
+		mnstr_printf(fout, ")");
+	} else {
+		if (r->type == e_cmp && r->flag == cmp_con) {
+			exps_print(sql, fout, r->l, depth, refs, 0, 1, decorate, 0);
+		} else {
+			mnstr_printf(fout, "(");
+			exp_print(sql, fout, r, depth+1, refs, 0, 0, decorate);
+			mnstr_printf(fout, ")");
+		}
+	}
+}
 
 void
 exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, int alias, int decorate)
@@ -244,6 +277,15 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		else
 			mnstr_printf(fout, "()");
+		if (e->r) { /* order by exps */
+			list *r = e->r;
+			list *obes = r->h->data;
+			exps_print(sql, fout, obes, depth, refs, 0, 1, decorate, 0);
+			if (r->h->next) {
+				list *exps = r->h->next->data;
+				exps_print(sql, fout, exps, depth, refs, 0, 1, decorate, 0);
+			}
+		}
 	} break;
 	case e_column: {
 		if (is_freevar(e))
@@ -269,12 +311,17 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 				mnstr_printf(fout, " !");
 			cmp_print(sql, fout, e->flag);
 			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
-		} else if (e->flag == cmp_or) {
-			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
+		} else if (e->flag == cmp_dis && (!is_anti(e) || list_length(e->l) == 2)) { /* output as old cmp_or right nested tree */
+			list *l = e->l;
+			exp_or_print(sql, fout, l->h, is_anti(e), depth, refs, decorate);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, e->flag);
-			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
+			if (e->flag == cmp_con)
+				mnstr_printf(fout, ".AND");
+			else
+				mnstr_printf(fout, ".OR");
+			exps_print(sql, fout, e->l, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_filter) {
 			sql_subfunc *f = e->f;
 
@@ -323,6 +370,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	default:
 		;
 	}
+	if (e->type != e_atom && e->type != e_cmp && is_partitioning(e))
+		mnstr_printf(fout, " PART");
 	if (e->type != e_atom && e->type != e_cmp && is_ascending(e))
 		mnstr_printf(fout, " ASC");
 	if (e->type != e_atom && e->type != e_cmp && nulls_last(e))
@@ -475,6 +524,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 
 	print_indent(sql, fout, depth, decorate);
 
+	if (mvc_debug_on(sql, 4) && rel->opt)
+		mnstr_printf(fout, "opt %d ", rel->opt);
 	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->spb)
 			mnstr_printf(fout, " start ");
 	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->parallel)
@@ -541,7 +592,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 		r = "join";
@@ -555,8 +605,6 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			r = "semijoin";
 		else if (rel->op == op_anti)
 			r = "antijoin";
-		else if (rel->op == op_union)
-			r = "union";
 		else if (rel->op == op_inter)
 			r = "intersect";
 		else if (rel->op == op_except)
@@ -602,6 +650,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, "dependent ");
 		if (need_distinct(rel))
 			mnstr_printf(fout, "distinct ");
+		if (is_recursive(rel))
+			mnstr_printf(fout, "recursive ");
 		mnstr_printf(fout, "%s (", r);
 		assert(rel->l);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
@@ -752,7 +802,6 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_union:
 	case op_inter:
 	case op_except:
 		if (rel->l)
@@ -1297,7 +1346,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			case 'o':
 				if (strncmp(r+*pos, "or",  strlen("or")) == 0) {
 					(*pos)+= (int) strlen("or");
-					ctype = cmp_or;
+					ctype = cmp_dis;
 				}
 				break;
 			case '!':
@@ -1422,8 +1471,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'.'%s'\n", sname, fname);
 					exp = exp_filter(sql->sa, lexps, rexps, f, anti);
 				} break;
-				case cmp_or:
-					exp = exp_or(sql->sa, lexps, rexps, anti);
+				case cmp_dis:
+					exp = exp_disjunctive2(sql->sa,
+							exp_conjunctive(sql->sa, lexps),
+							exp_conjunctive(sql->sa, rexps));
+					if (anti)
+						set_anti(exp);
 					break;
 				default:
 					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing comparison type\n");
@@ -1525,9 +1578,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		tname = b;
 		*e = 0;
 		convertIdent(tname);
-		if (tname && !mvc_bind_schema(sql, tname))
+		if (!tname[0]) {
+			if (strcmp(cname, "AND") == 0) {
+				exp = exp_conjunctive(sql->sa, exps);
+			} else if (strcmp(cname, "OR") == 0) {
+				exp = exp_disjunctive(sql->sa, exps);
+			}
+		} else if (tname && !mvc_bind_schema(sql, tname)) {
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "No such schema '%s'\n", tname);
-		if (grp) {
+		} else if (grp) {
 			if (exps && exps->h) {
 				list *ops = sa_list(sql->sa);
 				for( node *n = exps->h; n; n = n->next)
@@ -1719,6 +1778,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		return NULL;
 	}
 
+	/* [ PART ] */
+	if (strncmp(r+*pos, "PART",  strlen("PART")) == 0) {
+		(*pos)+= (int) strlen("PART");
+		skipWS(r, pos);
+		set_partitioning(exp);
+	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("ASC");
@@ -1889,7 +1954,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel = NULL;
 	list *exps, *gexps, *rels = NULL;
-	int distinct = 0, dependent = 0, single = 0;
+	int distinct = 0, dependent = 0, single = 0, recursive = 0;
 	operator_type j = op_basetable;
 	bool groupjoin = false;
 
@@ -2042,8 +2107,12 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		return rel;
 	}
 
-	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r')
-		return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
+	if (r[*pos] == 'm' && r[*pos+1] == 'e' && r[*pos+2] == 'r') {
+		if (strncmp(r+*pos, "merge", 5) == 0)
+			(*pos) += 5;
+		else
+			return sql_error(sql, -1, SQLSTATE(42000) "Merge statements not supported in remote plans\n");
+	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'i') {
 		*pos += (int) strlen("distinct");
@@ -2059,6 +2128,11 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		*pos += (int) strlen("dependent");
 		skipWS(r, pos);
 		dependent = 1;
+	}
+	if (r[*pos] == 'r' && r[*pos+1] == 'e' && r[*pos+2] == 'c') {
+		*pos += (int) strlen("recursive");
+		skipWS(r, pos);
+		recursive = 1;
 	}
 
 	switch(r[*pos]) {
@@ -2194,21 +2268,49 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
 				if (!t && !(t = mvc_bind_table(sql, s, tname)))
 					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "Table missing '%s.%s'\n", sname, tname);
-				if (isMergeTable(t))
-					return sql_error(sql, -1, SQLSTATE(42000) "Merge tables not supported under remote connections\n");
 				if (isRemote(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Remote tables not supported under remote connections\n");
 				if (isReplicaTable(t))
 					return sql_error(sql, -1, SQLSTATE(42000) "Replica tables not supported under remote connections\n");
-				rel = rel_basetable(sql, t, tname);
-				if (!table_privs(sql, t, PRIV_SELECT))  {
-					rel_base_disallow(rel);
-					if (rel_base_has_column_privileges(sql, rel) == 0)
-						return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
+				bool allowed = true;
+				if (!table_privs(sql, t, PRIV_SELECT))
+					allowed = false;
+				if (isView(t)) {
+					rel = rel_parse(sql, t->s, t->query, m_instantiate);
+					rel = rel_unnest(sql, rel);
+
+					if (!rel)
+						return NULL;
+		            /* Rename columns of the rel_parse relation */
+					set_processed(rel);
+					if (is_mset(rel->op) || is_simple_project(rel->op) || (is_groupby(rel->op) && !list_empty(rel->r))) {
+						/* it's unsafe to set the projection names because of possible dependent sorting/grouping columns */
+						rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 0, 0));
+						set_processed(rel);
+					}
+					for (node *n = ol_first_node(t->columns), *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+						sql_column *c = n->data;
+						sql_exp *e = m->data;
+
+						m->data = e = exp_check_type(sql, &c->type, NULL, e, type_equal);
+						exp_setname(sql, e, tname, c->base.name);
+						set_basecol(e);
+					}
+					list_hash_clear(rel->exps);
+					if (rel && !allowed && t->query && (rel = rel_reduce_on_column_privileges(sql, rel, t)) == NULL)
+						return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
+					rel = rel_project(sql->sa, rel, NULL);
+				} else {
+					rel = rel_basetable(sql, t, tname);
+					if (!allowed) {
+						rel_base_disallow(rel);
+						if (rel_base_has_column_privileges(sql, rel) == 0)
+							return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
+					}
+					rel_base_use_all(sql, rel);
+					rel = rewrite_basetable(sql, rel);
 				}
-				rel_base_use_all(sql, rel);
-				rel = rewrite_basetable(sql, rel);
 
 				if (!r[*pos])
 					return rel;
@@ -2445,16 +2547,16 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		}
 		set_processed(rel);
 		break;
+	case 'u':
+		if (strcmp(r+*pos, "union") == 0 && j == op_basetable) {
+			*pos += (int) strlen("union");
+			j = op_munion;
+		}
+		/* fall through */
 	case 'm':
 		if (strcmp(r+*pos, "munion") == 0 && j == op_basetable) {
 			*pos += (int) strlen("munion");
 			j = op_munion;
-		}
-		/* fall through */
-	case 'u':
-		if (j == op_basetable) {
-			*pos += (int) strlen("union");
-			j = op_union;
 		}
 		/* fall through */
 	case 'i':
@@ -2514,7 +2616,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		} else {
 			rel = rel_setop(sql->sa, lrel, rrel, j);
-			rel_setop_set_exps(sql, rel, exps, false);
+			rel_setop_set_exps(sql, rel, exps);
 			if (rel_set_types(sql, rel) < 0)
 				return sql_error(sql, -1, SQLSTATE(42000) "Setop: number of expressions don't match\n");
 		}
@@ -2543,6 +2645,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		set_single(rel);
 	if (dependent)
 		set_dependent(rel);
+	if (recursive)
+		set_recursive(rel);
 
 	/* sometimes, properties are sent */
 	if (!(rel = read_rel_properties(sql, rel, r, pos)))

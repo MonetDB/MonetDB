@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,12 +18,8 @@
  */
 
 #include "monetdb_config.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 #include "stream.h"
 #include "mapi.h"
@@ -40,7 +36,6 @@
 #include "ReadlineTools.h"
 #endif
 #include "msqldump.h"
-#define LIBMUTILS 1
 #include "mprompt.h"
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
@@ -1177,10 +1172,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtod(s, NULL);
-				for (j = 4; j < 11; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtod(buf, NULL))
-						break;
+				if (v > (double) 999999999999999 ||
+					v < (double) -999999999999999 ||
+					(double) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtod(buf, NULL) != v) {
+					for (j = 4; j < 11; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtod(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else if (strcmp(tp, "real") == 0) {
@@ -1190,10 +1191,16 @@ TESTrenderer(MapiHdl hdl)
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
 				v = strtof(s, NULL);
-				for (j = 4; j < 6; j++) {
-					snprintf(buf, sizeof(buf), "%.*g", j, v);
-					if (v == strtof(buf, NULL))
-						break;
+				if (v > (float) 9999999 ||
+					v < (float) -9999999 ||
+					(float) (int) v != v ||
+					snprintf(buf, sizeof(buf), "%.0f", v) <= 0 ||
+					strtof(buf, NULL) != v) {
+					for (j = 4; j < 6; j++) {
+						snprintf(buf, sizeof(buf), "%.*g", j, v);
+						if (v == strtof(buf, NULL))
+							break;
+					}
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else
@@ -1374,7 +1381,8 @@ SQLrenderer(MapiHdl hdl)
 			     strcmp(s, "clob") != 0 &&
 			     strcmp(s, "char") != 0 &&
 			     strcmp(s, "str") != 0 &&
-			     strcmp(s, "json") != 0)) {
+			     strcmp(s, "json") != 0 &&
+			     strcmp(s, "uuid") != 0)) {
 				/* no table width known, use maximum,
 				 * rely on squeezing later on to fix
 				 * it to whatever is available; note
@@ -2744,7 +2752,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					for (line += 2; *line && my_isspace(*line); line++)
 						;
 					if (*line == 0) {
-						/* turn of logging */
+						/* turn off logging */
 						mapi_log(mid, NULL);
 					} else {
 						logfile = strdup(line);
@@ -3038,11 +3046,11 @@ cvfilename(const char *filename)
 		}
 	}
 #endif
-	/* couldn't use iconv for whatever reason; alternative is to
-	 * use utf8towchar above to convert to a wide character string
-	 * (wcs) and convert that to the locale-specific encoding
-	 * using wcstombs or wcsrtombs (but preferably only if the
-	 * locale's encoding is not UTF-8) */
+	/* if encoding is set, we couldn't use iconv for whatever reason;
+	 * alternative is to convert to a wide character string (wcs) and
+	 * convert that to the locale-specific encoding using wcstombs or
+	 * wcsrtombs (but preferably only if the locale's encoding is not
+	 * UTF-8) */
 	return strdup(filename);
 }
 
@@ -3272,6 +3280,7 @@ usage(const char *prog, int xit)
 	mnstr_printf(stderr_stream, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
 	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
+	mnstr_printf(stderr_stream, " -q          | --quiet            don't print welcome message\n");
 	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
 
 	mnstr_printf(stderr_stream, "\nSQL specific options \n");
@@ -3347,6 +3356,7 @@ main(int argc, char **argv)
 	bool trace = false;
 	bool dump = false;
 	bool useinserts = false;
+	bool quiet = false;
 	int c = 0;
 	Mapi mid;
 	bool save_history = false;
@@ -3379,6 +3389,7 @@ main(int argc, char **argv)
 		{"pager", 1, 0, '|'},
 #endif
 		{"port", 1, 0, 'p'},
+		{"quiet", 0, 0, 'q'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
 		{"user", 1, 0, 'u'},
@@ -3397,7 +3408,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+		if ((argv[i] = utf16toutf8(wargv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}
@@ -3461,7 +3472,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:Hil:L:n:Np:P:r:Rs:t:u:vw:Xz"
+				"f:h:Hil:L:n:Np:P:qr:Rs:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -3544,6 +3555,9 @@ main(int argc, char **argv)
 			assert(optarg);
 			passwd = optarg;
 			passwd_set_as_flag = true;
+			break;
+		case 'q':
+			quiet = true;
 			break;
 		case 'r':
 			assert(optarg);
@@ -3756,11 +3770,12 @@ main(int argc, char **argv)
 	mapi_setfilecallback2(mid, getfile, putfile, &priv);
 
 	mapi_trace(mid, trace);
-	/* give the user a welcome message with some general info */
-	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
-		char *lang;
-
+	if (!has_fileargs && command == NULL && isatty(fileno(stdin)))
 		catch_interrupts(mid);
+
+	/* give the user a welcome message with some general info */
+	if (!quiet && !has_fileargs && command == NULL && isatty(fileno(stdin))) {
+		char *lang;
 
 		if (mode == SQL) {
 			lang = "/SQL";

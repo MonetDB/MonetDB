@@ -216,7 +216,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		bat pid = *getArgReference_bat(s, p, 4);
 		if ((pht = BATdescriptor(pid)) == NULL)
 			return createException(MAL, "oahash.new", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		parent = (hash_table*)pht->T.sink;
+		parent = (hash_table*)pht->tsink;
 	}
 
 	BAT *b = COLnew(0, tt, 0, TRANSIENT);
@@ -224,9 +224,9 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->T.sink = (Sink*)ht_create(tt, size*1.2*2.1, freq, parent);
+	b->tsink = (Sink*)ht_create(tt, size*1.2*2.1, freq, parent);
 	BBPreclaim(pht);
-	if (b->T.sink == NULL) {
+	if (b->tsink == NULL) {
 		BBPunfix(b->batCacheid);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -247,7 +247,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	BAT *i = BATdescriptor(*in);
 	if (!i)
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	hash_table *h = (hash_table*)i->T.sink;
+	hash_table *h = (hash_table*)i->tsink;
 	if (!h || h->s.type != OA_HASH_TABLE_SINK) {
 		BBPreclaim(i);
 		return createException(MAL, "hash.ext", SQLSTATE(HY002) "Missing hash table");
@@ -366,10 +366,10 @@ OAHASHnew_pld(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		err = createException(MAL, "oahash.new_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *parent = (hash_table*)prnt->T.sink;
+	hash_table *parent = (hash_table*)prnt->tsink;
 
-	b->T.sink = (Sink *)hp_create(tt, nplds*1.2*2.1, parent);
-	if (!b->T.sink) {
+	b->tsink = (Sink *)hp_create(tt, nplds*1.2*2.1, parent);
+	if (!b->tsink) {
 		err = createException(MAL, "oahash.new_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
@@ -557,7 +557,7 @@ OAHASHbuild_tbl(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	*slot_id = oid_nil;
@@ -873,7 +873,7 @@ BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, const bat *key, const ptr *H)
 		err = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(b);
@@ -1238,7 +1238,7 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, const bat *key, const bat *pare
 		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(b);
@@ -1365,7 +1365,7 @@ OAHASHcmpt_freq(bat *ht_sink, const bat *slot_id, const ptr *H)
 		err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *ht = (hash_table*)hts->T.sink;
+	hash_table *ht = (hash_table*)hts->tsink;
 	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(slt);
@@ -1410,7 +1410,7 @@ OAHASHcmpt_freq_pos(bat *payload_pos, bat *ht_sink, const bat *slot_id, const pt
 		err = createException(MAL, "oahash.compute_frequencies", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *ht = (hash_table*)hts->T.sink;
+	hash_table *ht = (hash_table*)hts->tsink;
 	assert(ht && ht->s.type == OA_HASH_TABLE_SINK);
 
 	BUN cnt = BATcount(slt);
@@ -1543,7 +1543,7 @@ OAHASHadd_pld(bat *hp_sink, const bat *payload, const bat *payload_pos, const pt
 		err = createException(MAL, "oahash.add_payload", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_payload *hp = (hash_payload*)res->T.sink;
+	hash_payload *hp = (hash_payload*)res->tsink;
 	assert(hp && hp->s.type == OA_HASH_PAYLOAD_SINK);
 
 	BUN cnt = BATcount(pld);
@@ -2134,7 +2134,7 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
-	hash_table *ht = (hash_table*)t->T.sink;
+	hash_table *ht = (hash_table*)t->tsink;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
@@ -2321,7 +2321,7 @@ BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat
 	}
 
 	if (keycnt) {
-		hash_table *ht = (hash_table*)t->T.sink;
+		hash_table *ht = (hash_table*)t->tsink;
 
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2430,7 +2430,7 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!t) {
 			return createException(SQL, "oahash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		hash_table *ht = (hash_table*)t->T.sink;
+		hash_table *ht = (hash_table*)t->tsink;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
@@ -2622,7 +2622,7 @@ BAT_OAHASHprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, cons
 	}
 
 	if (mtdcnt) {
-		hash_table *ht = (hash_table*)t->T.sink;
+		hash_table *ht = (hash_table*)t->tsink;
 
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2891,7 +2891,7 @@ OAHASHexpand(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *h = BATdescriptor(*freq_sink);
 		if (!h)
 			return createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		ttlcnt = ((hash_table*)h->T.sink)->frequency[*slotid];
+		ttlcnt = ((hash_table*)h->tsink)->frequency[*slotid];
 		BBPunfix(h->batCacheid);
 	} else {
 		ttlcnt = (*outer == true);
@@ -3101,7 +3101,7 @@ BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *
 	assert(BATcount(s) <= BATcount(k));
 
 	gid *sid = Tloc(l, 0);
-	hash_table *ht = (hash_table*)h->T.sink;
+	hash_table *ht = (hash_table*)h->tsink;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	keycnt = BATcount(k);
@@ -3415,8 +3415,8 @@ OAHASHfetch_pld(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto error;
 	}
 
-	hash_payload *hp = (hash_payload*)hps->T.sink;
-	hash_table *ht = (hash_table*)hts->T.sink;
+	hash_payload *hp = (hash_payload*)hps->tsink;
+	hash_table *ht = (hash_table*)hts->tsink;
 	if (slotid != oid_nil) {
 		ttlcnt = ht->frequency[slotid];
 	} else {
@@ -3577,8 +3577,8 @@ BAT_OAHASHfetch_pld(bat *fetched, const bat *hp_sink, const bat *slotid, const b
 	}
 
 	gid *sid = Tloc(l, 0);
-	hash_payload *hp = (hash_payload*)hps->T.sink;
-	hash_table *ht = (hash_table*)hts->T.sink;
+	hash_payload *hp = (hash_payload*)hps->tsink;
+	hash_table *ht = (hash_table*)hts->tsink;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	selcnt = BATcount(l);

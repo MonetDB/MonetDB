@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -268,8 +268,6 @@ stream_export stream *callback_stream(
 	void (*close)(void *priv),
 	void (*destroy)(void *priv),
 	const char *restrict name); // used in mclient.c, for readline
-
-stream_export stream *stream_blackhole_create(void); // never used
 
 stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler); // sql.c
 

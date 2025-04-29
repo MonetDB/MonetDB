@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -92,7 +92,5 @@ struct logger {
 	MT_Lock flush_lock; /* so only one transaction can flush to disk at any given time */
 	MT_Cond excl_flush_cv;
 };
-
-gdk_return log_create_types_file(logger *lg, const char *filename);
 
 #endif /* _LOGGER_INTERNALS_H_ */

@@ -1,0 +1,353 @@
+statement ok
+start transaction
+
+statement ok
+create table testme (a int, b clob)
+
+# test supported syntax _without_ ordering _in_ group_concat
+# use the same string for `b` per `a` group to make the query output
+#  independent of the row-order of `testme`
+statement ok
+INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
+
+query IT
+SELECT a, LISTAGG(b) FROM testme GROUP BY a ORDER BY a
+----
+1
+foo,foo,foo
+2
+bar,bar,bar
+
+query IT
+SELECT a, LISTAGG(ALL b) FROM testme GROUP BY a ORDER BY a
+----
+1
+foo,foo,foo
+2
+bar,bar,bar
+
+query IT
+SELECT a, LISTAGG(DISTINCT b) FROM testme GROUP BY a ORDER BY a
+----
+1
+foo
+2
+bar
+
+query IT
+SELECT a, LISTAGG(DISTINCT (b)) FROM testme GROUP BY a ORDER BY a
+----
+1
+foo
+2
+bar
+
+query IT
+SELECT a, LISTAGG(b, ';') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo;foo;foo
+2
+bar;bar;bar
+
+query IT
+SELECT a, LISTAGG(b, '#@#') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo#@#foo#@#foo
+2
+bar#@#bar#@#bar
+
+query IT
+SELECT a, LISTAGG(ALL b, ';') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo;foo;foo
+2
+bar;bar;bar
+
+query IT
+SELECT a, LISTAGG(ALL b, '#@#') FROM testme GROUP BY a ORDER BY a
+----
+1
+foo#@#foo#@#foo
+2
+bar#@#bar#@#bar
+
+# the second column is the separator
+query IT
+SELECT a, LISTAGG(a, b) FROM testme GROUP BY a ORDER BY a
+----
+1
+1foo1foo1
+2
+2bar2bar2
+
+# Distinct is applied on (a, b)
+query IT
+SELECT a, LISTAGG(DISTINCT a, b) FROM testme GROUP BY a ORDER BY a
+----
+1
+1
+2
+2
+
+# test the syntax for ordering _within_ a group_concat,
+# also use it to get deterministic query results
+statement ok
+DELETE FROM testme
+
+statement ok
+INSERT INTO testme VALUES (1, 'another'), (1, 'testing'), (1, 'todo'), (2, 'lets'), (2, 'get'), (2, 'harder'), (3, 'even'), (2, 'more'), (1, 'serious'), (3, 'even'), (2, 'more'), (1, 'serious')
+
+query IT
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a HAVING COUNT(*) > 2 ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+
+query IT
+SELECT a, LISTAGG(b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, LISTAGG(ALL b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, LISTAGG(ALL b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+even,even
+
+query IT
+SELECT a, LISTAGG(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,testing,todo
+2
+get,harder,lets,more
+3
+even
+
+query IT
+SELECT a, LISTAGG(DISTINCT b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,testing,todo
+2
+get,harder,lets,more
+3
+even
+
+query IT
+SELECT a, LISTAGG(b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, LISTAGG(b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, LISTAGG(ALL b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, LISTAGG(ALL b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;serious;testing;todo
+2
+get;harder;lets;more;more
+3
+even;even
+
+query IT
+SELECT a, LISTAGG(DISTINCT b, ';' ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;testing;todo
+2
+get;harder;lets;more
+3
+even
+
+query IT
+SELECT a, LISTAGG(DISTINCT b, ';') WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another;serious;testing;todo
+2
+get;harder;lets;more
+3
+even
+
+# Test that groun_concat ignores NULLs but not empty strings
+statement ok
+DELETE FROM testme
+
+statement ok
+INSERT INTO testme VALUES (1, 'another'), (1, 'testing'), (1, 'todo'),
+ (2, 'lets'), (2, 'get'), (2, 'harder'),
+ (3, 'even'), (2, 'more'), (1, 'serious'),
+ (3, 'even'), (2, 'more'), (1, 'serious'),
+ (3, ''), (3, ''), (3, 'more'), (3, 'stress'),
+ (4, NULL)
+
+query IT
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+,,even,even,more,stress
+4
+NULL
+
+query IT
+SELECT a, LISTAGG(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,testing,todo
+2
+get,harder,lets,more
+3
+,even,more,stress
+4
+NULL
+
+
+statement ok
+INSERT INTO testme VALUES (3, NULL), (4, ''), (4, NULL), (4, ''), (4, NULL), (4, ''), (3, 'nothing'), (4, ' '), (4, ' ')
+
+query IT
+SELECT a, LISTAGG(b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,serious,testing,todo
+2
+get,harder,lets,more,more
+3
+,,even,even,more,nothing,stress
+4
+,,, , 
+
+
+query IT
+SELECT a, LISTAGG(DISTINCT b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+another,serious,testing,todo
+2
+get,harder,lets,more
+3
+,even,more,nothing,stress
+4
+, 
+
+query IT
+SELECT a, LISTAGG(a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+1serious1serious1testing1todo1
+2
+2harder2lets2more2more2
+3
+333even3even3more3nothing3stress3
+4
+444444 4 4
+
+query IT
+SELECT a, LISTAGG(DISTINCT a, b ORDER BY b) FROM testme GROUP BY a ORDER BY a
+----
+1
+1serious1testing1todo1
+2
+2harder2lets2more2
+3
+33even3more3nothing3stress3
+4
+44 4
+
+# Test that group_concat also works on a numerical column
+query IT
+SELECT a, LISTAGG(a) FROM testme GROUP BY a ORDER BY a
+----
+1
+1,1,1,1,1
+2
+2,2,2,2,2
+3
+3,3,3,3,3,3,3,3
+4
+4,4,4,4,4,4,4,4
+
+# group_concat does not concatenate multiple columns
+statement error 42000!SELECT: cannot use non GROUP BY column 'b' in query results without an aggregate function
+SELECT a, LISTAGG(a, b, b) FROM testme GROUP BY a ORDER BY a
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+create table testme (a int, b clob)
+
+#statement ok
+#INSERT INTO testme VALUES (1, 'foo'), (1, 'foo'), (1, 'foo'), (2, 'bar'), (2, 'bar'), (2, 'bar')
+
+statement error 42000!Cannot have both order by clause and within group clause...
+SELECT a, LISTAGG(b ORDER BY b) WITHIN GROUP (ORDER BY b) FROM testme GROUP BY a ORDER BY a
+
+statement ok
+rollback

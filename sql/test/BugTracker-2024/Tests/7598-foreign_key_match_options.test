@@ -1,0 +1,56 @@
+statement ok
+create table authors(lastname varchar(20), firstname varchar(20), primary key (lastname, firstname))
+
+statement ok
+insert into authors values ('doe', 'john');
+
+statement ok
+create table books_simple (authlast varchar (20), authfirst varchar(20), foreign key(authlast, authfirst) references authors(lastname, firstname))
+
+statement ok
+insert into books_simple values (null, null)
+
+statement ok
+insert into books_simple values ('doe', null)
+
+statement ok
+insert into books_simple values ('smith', null)
+
+statement ok
+create table books_partial (authlast varchar (20), authfirst varchar(20), foreign key(authlast, authfirst) references authors(lastname, firstname) MATCH PARTIAL)
+
+statement ok
+insert into books_partial values (null, null)
+
+statement ok
+insert into books_partial values ('doe', null)
+
+statement error
+insert into books_partial values ('smith', null)
+
+statement ok
+create table books_full (authlast varchar (20), authfirst varchar(20))
+
+statement ok
+alter table books_full add foreign key (authlast, authfirst) references authors(lastname, firstname) MATCH FULL
+
+statement ok
+insert into books_full values (null, null)
+
+statement error
+insert into books_full values ('doe', null)
+
+statement error
+insert into books_full values ('smith', null)
+
+statement ok
+drop table books_full
+
+statement ok
+drop table books_partial
+
+statement ok
+drop table books_simple
+
+statement ok
+drop table authors

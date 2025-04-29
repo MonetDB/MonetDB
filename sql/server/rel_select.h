@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -35,5 +35,6 @@ extern sql_rel *table_ref(sql_query *query, symbol *tableref, int lateral, list 
 extern sql_exp *find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type);
 extern sql_rel *rel_loader_function(sql_query* query, symbol* s, list *fexps, sql_subfunc **loader_function);
 extern list *check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one, bool internal /*or second compile */);
+extern sql_rel *rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t);
 
 #endif /*_REL_SELECT_H_*/

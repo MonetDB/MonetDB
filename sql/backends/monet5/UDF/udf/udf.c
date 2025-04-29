@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -366,7 +366,7 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 			bres->trevsorted = true;
 		else
 			bres->trevsorted = (BATcount(bres) <= 1);
-		/* result tail is key (unique), iff both input tails are */
+		/* result tail is key (unique), if both input tails are */
 		BATkey(bres, BATtkey(bone) || BATtkey(btwo));
 
 		*ret = bres;

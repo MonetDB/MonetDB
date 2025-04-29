@@ -1871,8 +1871,8 @@ project (
 | | | project (
 | | | | table("sys"."myorders") [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "myorders"."o_orderdate" NOT NULL UNIQUE ]
 | | | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "sys"."month"("myorders"."o_orderdate" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
-| | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL UNIQUE, "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" NOT NULL UNIQUE) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(1) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(1) "0", int(1) "0", bigint(63) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(3) "5", int(1) "0", bigint(63) "0")) as "%4"."%4" ]
+| | ) [ "myorders"."o_custkey" NOT NULL UNIQUE, "myorders"."o_totalprice" NOT NULL UNIQUE, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" PART ASC NOT NULL UNIQUE, "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" PART NOT NULL UNIQUE) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(1) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(1) "0", int(1) "0", bigint(63) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(3) "5", int(1) "0", bigint(63) "0")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
 query R nosort

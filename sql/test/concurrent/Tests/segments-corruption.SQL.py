@@ -1,4 +1,5 @@
-import os, random, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, random
 from concurrent.futures import ThreadPoolExecutor
 
 init    =   '''

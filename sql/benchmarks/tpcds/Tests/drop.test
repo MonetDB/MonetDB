@@ -1,0 +1,81 @@
+statement ok
+start transaction
+
+statement ok
+drop table if exists dbgen_version cascade
+
+statement ok
+drop table if exists customer_address cascade
+
+statement ok
+drop table if exists customer_demographics cascade
+
+statement ok
+drop table if exists date_dim cascade
+
+statement ok
+drop table if exists warehouse cascade
+
+statement ok
+drop table if exists ship_mode cascade
+
+statement ok
+drop table if exists time_dim cascade
+
+statement ok
+drop table if exists reason cascade
+
+statement ok
+drop table if exists income_band cascade
+
+statement ok
+drop table if exists item cascade
+
+statement ok
+drop table if exists store cascade
+
+statement ok
+drop table if exists call_center cascade
+
+statement ok
+drop table if exists customer cascade
+
+statement ok
+drop table if exists web_site cascade
+
+statement ok
+drop table if exists store_returns cascade
+
+statement ok
+drop table if exists household_demographics cascade
+
+statement ok
+drop table if exists web_page cascade
+
+statement ok
+drop table if exists promotion cascade
+
+statement ok
+drop table if exists catalog_page cascade
+
+statement ok
+drop table if exists inventory cascade
+
+statement ok
+drop table if exists catalog_returns cascade
+
+statement ok
+drop table if exists web_returns cascade
+
+statement ok
+drop table if exists web_sales cascade
+
+statement ok
+drop table if exists catalog_sales cascade
+
+statement ok
+drop table if exists store_sales cascade
+
+statement ok
+commit
+

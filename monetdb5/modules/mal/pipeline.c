@@ -148,7 +148,7 @@ PPcounter_get(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(cb);
 	if (!b)
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	pp_counter *c = (pp_counter*)b->T.sink;
+	pp_counter *c = (pp_counter*)b->tsink;
 	if (c->s.type != COUNTER_SINK) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.counter_get", SQLSTATE(HY002) "Invalid source %d", c->s.type);
@@ -175,7 +175,7 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "pipeline.counter",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	b->T.sink = (Sink*)c;
+	b->tsink = (Sink*)c;
 	c->s.type = COUNTER_SINK;
 	c->s.destroy = (sink_destroy)&counter_free;
 	c->s.done = (sink_done)&counter_done;
@@ -199,7 +199,7 @@ PPdone(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)cntxt; (void)mb;
 	BAT *b = BATdescriptor(B);
 	if (b) {
-		*res = b->T.sink->done(b->T.sink, p->wid, p->p->nr_workers, redo);
+		*res = b->tsink->done(b->tsink, p->wid, p->p->nr_workers, redo);
 		BBPreclaim(b);
 	}
 	return MAL_SUCCEED;
@@ -425,7 +425,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(cb);
 	if (!b)
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	pp_concat *pcat = (pp_concat*)b->T.sink;
+	pp_concat *pcat = (pp_concat*)b->tsink;
 	if (pcat->s.type != CONCAT_SINK) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
@@ -453,7 +453,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	pp_concat *pcat = (pp_concat*)b->T.sink;
+	pp_concat *pcat = (pp_concat*)b->tsink;
 	if (pcat->s.type != CONCAT_SINK) {
 		BBPreclaim(b);
 		BBPreclaim(i);
@@ -464,7 +464,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat to many sources (%d)", pcat->current);
 	}
-	pcat->srcs[pcat->current++] = i->T.sink;
+	pcat->srcs[pcat->current++] = i->tsink;
 	BBPreclaim(i);
 	*rb = b->batCacheid;
 	BBPkeepref(b);
@@ -488,7 +488,7 @@ PPconcat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(pcat);
 		throw(SQL, "pipeline.concat",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->T.sink = (Sink*)pcat;
+	b->tsink = (Sink*)pcat;
 	pcat->s.type = CONCAT_SINK;
 	pcat->s.destroy = (sink_destroy)&concat_free;
 	pcat->s.done = (sink_done)&concat_done;
@@ -525,7 +525,7 @@ PPresultset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(prs);
 		throw(SQL, "pipeline.resultset",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->T.sink = (Sink*)prs;
+	b->tsink = (Sink*)prs;
 	prs->s.destroy = (sink_destroy)&GDKfree;
 	MT_lock_init(&prs->l, "resultset");
 	*rb = b->batCacheid;
@@ -543,7 +543,7 @@ PPclaim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	BAT *b = BATdescriptor(rb);
 	if (b) {
-		pp_resultset *rs = (pp_resultset*)b->T.sink;
+		pp_resultset *rs = (pp_resultset*)b->tsink;
 		*res = ATOMIC_ADD(&rs->claimed, cnt);
 		BBPreclaim(b);
 	}
@@ -592,7 +592,7 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(r);
 		throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	pp_resultset *pp_rs = (pp_resultset*)r->T.sink;
+	pp_resultset *pp_rs = (pp_resultset*)r->tsink;
 	(void)pp_rs;
 
 	if (BATcount(i)) {

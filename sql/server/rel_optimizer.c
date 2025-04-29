@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -19,6 +19,7 @@
 #include "rel_propagate.h"
 #include "rel_statistics.h"
 #include "sql_privileges.h"
+#include "sql_storage.h"
 
 static sql_rel *
 rel_properties(visitor *v, sql_rel *rel)
@@ -28,6 +29,7 @@ rel_properties(visitor *v, sql_rel *rel)
 	/* Don't flag any changes here! */
 	gp->cnt[(int)rel->op]++;
 	gp->needs_distinct |= need_distinct(rel);
+	gp->recursive |= is_recursive(rel);
 	if (gp->instantiate && is_basetable(rel->op)) {
 		mvc *sql = v->sql;
 		sql_table *t = (sql_table *) rel->l;
@@ -76,37 +78,6 @@ rel_wrap_select_around_mt_child(visitor *v, sql_rel *t, merge_table_prune_info *
 	}
 	return t;
 }
-
-#if 0
-static sql_rel *
-rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_table_prune_info *info)
-{
-	/* This function is creating the union tree in the tables list calling
-	 * itself recursively until the tables list has a single entry (the union tree)
-	 */
-
-	/* base case */
-	if (tables->cnt == 1) // XXX: or/and h->next == NULL
-		return tables->h->data;
-	/* merge (via union) every *two* consecutive nodes of the list */
-	for (node *n = tables->h; n && n->next; n = n->next->next) {
-		/* first (left) node */
-		sql_rel *tl = rel_wrap_select_around_mt_child(v, n->data, info);
-		/* second (right) node */
-		sql_rel *tr = rel_wrap_select_around_mt_child(v, n->next->data, info);
-		/* create the union */
-		sql_rel *tu = rel_setop(v->sql->sa, tl, tr, op_union);
-		rel_setop_set_exps(v->sql, tu, rel_projections(v->sql, mt, NULL, 1, 1), true);
-		set_processed(tu);
-		/* replace the two nodes with the new relation */
-		list_append_before(tables, n, tu);
-		list_remove_node(tables, NULL, n);
-		list_remove_node(tables, NULL, n->next);
-		// TODO: do i need to rebuild the hash of the list?
-	}
-	return rel_unionize_mt_tables_balanced(v, mt, tables, info);
-}
-#endif
 
 static sql_rel *
 rel_unionize_mt_tables_munion(visitor *v, sql_rel* mt, list* tables, merge_table_prune_info *info)
@@ -444,8 +415,8 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 				}
 
 				if (nrel) {
-					nrel = rel_setop(v->sql->sa, nrel, next, op_union);
-					rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
+					nrel = rel_setop_n_ary(v->sql->sa, append(append(sa_list(v->sql->sa), nrel), next), op_munion);
+					rel_setop_n_ary_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
 					set_processed(nrel);
 				} else {
 					nrel = next;
@@ -545,9 +516,7 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 			if (!(nrel = merge_table_prune_and_unionize(v, bt, info)))
 				return NULL;
 			/* Always do relation inplace. If the mt relation has more than 1 reference, this is required */
-			if (is_union(nrel->op)) {
-				rel = rel_inplace_setop(v->sql, rel, nrel->l, nrel->r, op_union, nrel->exps);
-			} else if (is_munion(nrel->op)) {
+			if (is_munion(nrel->op)) {
 				rel = rel_inplace_setop_n_ary(v->sql, rel, nrel->l, op_munion, nrel->exps);
 			} else if (is_select(nrel->op)) {
 				rel = rel_inplace_select(rel, nrel->l, nrel->exps);
@@ -677,6 +646,7 @@ rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int valu
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
+		sql->recursive = gp.recursive;
 		rel = run_optimizer_set(&v, sql->runs, rel, &gp, pre_sql_optimizers);
 	}
 #ifndef NDEBUG
@@ -708,7 +678,7 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 			visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = instantiate };
 			for(node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
+				n->data = exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
 			}
 		}
 		return rel;

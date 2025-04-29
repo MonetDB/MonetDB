@@ -1,4 +1,5 @@
-import os, sys, tempfile, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, tempfile
 
 try:
     from MonetDBtesting import process

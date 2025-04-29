@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -4937,9 +4937,9 @@ BATcalccorrelation(BAT *b1, BAT *b2)
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\
 					cnts[gid]++;			\
-					delta[gid] = (dbl) vals[i] - mean[gid]; \
-					mean[gid] += delta[gid] / cnts[gid]; \
-					m2[gid] += delta[gid] * ((dbl) vals[i] - mean[gid]); \
+					delta = (dbl) vals[i] - mean[gid]; \
+					mean[gid] += delta / cnts[gid]; \
+					m2[gid] += delta * ((dbl) vals[i] - mean[gid]); \
 				}					\
 			}						\
 		}							\
@@ -4981,7 +4981,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	BUN i, ngrp;
 	BUN nils = 0, nils2 = 0;
 	BUN *restrict cnts = NULL;
-	dbl *restrict dbls, *restrict mean, *restrict delta, *restrict m2;
+	dbl *restrict dbls, *restrict mean, *restrict m2, delta;
 	BAT *bn = NULL, *an = NULL;
 	struct canditer ci;
 	const char *err;
@@ -5023,7 +5023,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 		goto doreturn;
 	}
 
-	delta = GDKmalloc(ngrp * sizeof(dbl));
 	m2 = GDKmalloc(ngrp * sizeof(dbl));
 	cnts = GDKzalloc(ngrp * sizeof(BUN));
 	if (avgb) {
@@ -5037,7 +5036,7 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	} else {
 		mean = GDKmalloc(ngrp * sizeof(dbl));
 	}
-	if (mean == NULL || delta == NULL || m2 == NULL || cnts == NULL)
+	if (mean == NULL || m2 == NULL || cnts == NULL)
 		goto alloc_fail;
 
 	bn = COLnew(min, TYPE_dbl, ngrp, TRANSIENT);
@@ -5047,7 +5046,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 
 	TIMEOUT_LOOP_IDX(i, ngrp, qry_ctx) {
 		mean[i] = 0;
-		delta[i] = 0;
 		m2[i] = 0;
 	}
 
@@ -5099,7 +5097,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	}
 	if (issample)
 		nils += nils2;
-	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
 	BATsetcount(bn, ngrp);
@@ -5131,7 +5128,6 @@ dogroupstdev(BAT **avgb, BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 	else
 		GDKfree(mean);
 	BBPreclaim(bn);
-	GDKfree(delta);
 	GDKfree(m2);
 	GDKfree(cnts);
 	return NULL;

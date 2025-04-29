@@ -3,7 +3,7 @@ import tempfile
 import threading
 import sys
 
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 try:
     from MonetDBtesting import process

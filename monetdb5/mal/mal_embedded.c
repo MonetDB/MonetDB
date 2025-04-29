@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -117,12 +117,12 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
-	if ((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
-	char *modules[6] = { "embedded", "sql", "generator", "udf", "csv" };
+	char *modules[7] = { "embedded", "sql", "generator", "udf", "csv", "monetdb_loader" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		MT_thread_set_qry_ctx(qc_old);
@@ -191,8 +191,6 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
 	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
-	/* No need to clean up the namespace, it will simply be extended
-	 * upon restart mal_namespace_reset(); */
 	GDKreset(0);				// terminate all other threads
 	embeddedinitialized = false;
 }

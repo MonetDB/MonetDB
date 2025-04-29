@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -87,23 +87,27 @@ gdk_export gdk_return GDKmunmap(void *addr, int mode, size_t len);
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
 gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
 
+gdk_export void GDKfree(void *blk);
 gdk_export void *GDKmalloc(size_t size)
 	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__alloc_size__(1)))
 	__attribute__((__warn_unused_result__));
 gdk_export void *GDKzalloc(size_t size)
 	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__alloc_size__(1)))
 	__attribute__((__warn_unused_result__));
 gdk_export void *GDKrealloc(void *pold, size_t size)
 	__attribute__((__alloc_size__(2)))
 	__attribute__((__warn_unused_result__));
-gdk_export void GDKfree(void *blk);
 gdk_export str GDKstrdup(const char *s)
 	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__warn_unused_result__));
 gdk_export str GDKstrndup(const char *s, size_t n)
 	__attribute__((__malloc__))
+	__attribute__((__malloc__(GDKfree, 1)))
 	__attribute__((__warn_unused_result__));
 gdk_export size_t GDKmallocated(const void *s);
 

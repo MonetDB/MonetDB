@@ -5,7 +5,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 #]]
@@ -37,7 +37,6 @@ target_sources(optimizer
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
   opt_pipes.c
-  opt_prelude.c opt_prelude.h
   opt_reduce.c opt_reduce.h
   opt_remap.c opt_remap.h
   opt_remoteQueries.c opt_remoteQueries.h

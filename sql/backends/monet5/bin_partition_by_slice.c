@@ -19,7 +19,6 @@
 #include "rel_exp.h"
 #include "rel_rewriter.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "sql_pp_statement.h"
 
 /*
@@ -187,15 +186,16 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (serialize) {
 				int curhash = 0;
 				list *inputs = e->l; /* for each input create bat */
+				list *r = e->r;
 				int need_distinct = need_distinct(e);
 				for(node *n = inputs->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					if (!exp_is_scalar(e)) {
 						sql_subtype *t = exp_subtype(e);
-						InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate*1.1);
-						if (!q)
+						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						if (!s)
 							return NULL;
-						append(*serializedresults, q->argv);
+						append(*serializedresults, s);
 						if (need_distinct) { /* create shared bat, for hash table */
 							sql_subtype *t = exp_subtype(e);
 							int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, e);
@@ -210,6 +210,17 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							assert(!e->shared);
 							curhash = e->shared = q->argv[0];
 						}
+					}
+				}
+				if (r) {
+					list *obe = r->h->data;
+					for(node *n = obe->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						sql_subtype *t = exp_subtype(e);
+						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						if (!s)
+							return NULL;
+						append(*serializedresults, s);
 					}
 				}
 				continue;
@@ -265,10 +276,10 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 
 		list *gbexps = rel->r;
 		if (need_serialize) {
-			InstrPtr q = stmt_bat_new(be, TYPE_oid, estimate*1.1);
-			if (!q)
+			stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
+			if (!s)
 				return NULL;
-			append(*serializedresults, q->argv);
+			append(*serializedresults, s);
 		}
 		for(node *n = gbexps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
@@ -293,7 +304,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 		if (card < estimate)
 			estimate = card;
 		for( node *n = rel->exps->h; n; n = n->next ) {
-			int grphash = grphash;
+			int grphash = curhash;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 			sql_subtype *t = exp_subtype(e), *it = NULL;
@@ -303,15 +314,23 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 
 			if (serialize) {
 				list *inputs = e->l; /* for each input create bat */
+				list *r = e->r;
 				int need_distinct = need_distinct(e);
+
+				if (need_distinct) { /* need reduced group (ids) result */
+					stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
+					if (!s)
+						return NULL;
+					append(*serializedresults, s);
+				}
 				for(node *n = inputs->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					if (!exp_is_scalar(e)) {
 						sql_subtype *t = exp_subtype(e);
-						InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate*1.1);
-						if (!q)
+						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						if (!s)
 							return NULL;
-						append(*serializedresults, q->argv);
+						append(*serializedresults, s);
 						if (need_distinct) { /* create shared bat, for hash table */
 							sql_subtype *t = exp_subtype(e);
 							BUN est = get_rel_count(rel->l);
@@ -327,17 +346,21 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							if (q == NULL)
 								return NULL;
 							assert(!e->shared);
-							curhash = e->shared = q->argv[0];
+							grphash = e->shared = q->argv[0];
 						}
 					}
 				}
-				if (need_distinct) { /* need reduced group (ids) result */
-					InstrPtr q = stmt_bat_new(be, TYPE_oid, estimate*1.1);
-					if (!q)
-						return NULL;
-					append(*serializedresults, q->argv);
+				if (r) {
+					list *obe = r->h->data;
+					for(node *n = obe->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						sql_subtype *t = exp_subtype(e);
+						stmt *s = stmt_bat_new(be, t, estimate*1.1);
+						if (!s)
+							return NULL;
+						append(*serializedresults, s);
+					}
 				}
-				curhash = grphash;
 				continue;
 			}
 
@@ -346,24 +369,24 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (avg && EC_APPNUM(t->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				t = it;
 
-			InstrPtr q = stmt_bat_new(be, t->type->localtype, estimate*1.1);
-			if (q == NULL)
+			stmt *s = stmt_bat_new(be, t, estimate*1.1);
+			if (s == NULL)
 				return NULL;
-			append(shared, q->argv);
-			append(*aggrresults, q->argv);
+			append(shared, &s->nr);
+			append(*aggrresults, &s->nr);
 
 			if (avg || sum) { /* remainder (or compensation) and count */
-				q = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t->type->localtype : TYPE_lng, estimate*1.1);
-				if (q == NULL)
+				s = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_bind_localtype("lng"), estimate*1.1);
+				if (s == NULL)
 					return NULL;
-				append(shared, q->argv);
-				append(*aggrresults, q->argv);
+				append(shared, &s->nr);
+				append(*aggrresults, &s->nr);
 
-				q = stmt_bat_new(be, TYPE_lng, estimate*1.1);
-				if (q == NULL)
+				s = stmt_bat_new(be, sql_bind_localtype("lng"), estimate*1.1);
+				if (s == NULL)
 					return NULL;
-				append(shared, q->argv);
-				append(*aggrresults, q->argv);
+				append(shared, &s->nr);
+				append(*aggrresults, &s->nr);
 			}
 
 			if (need_distinct(e)) { /* create shared bat, for hash table */
@@ -561,7 +584,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 	list *shared = cursub->op4.lval;
 
 	if (shared) { /* for avg(integers) compute (dbl)avg + ((dbl)rest)/count) */
-		for(node *n = shared->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+		for(node *n = shared->h, *m = rel->exps->h; n && m; m = m->next) {
 			sql_exp *e = m->data;
 			if (is_aggr(e->type)) {
 				if (exp_need_serialize(e))
@@ -609,6 +632,7 @@ rel_groupby_finish_pp(backend *be, sql_rel *rel, stmt *cursub, bool _2phases)
 					n->data = s;
 				}
 			}
+			n = n->next;
 		}
 	}
 	/* we combined into a bat, ie lets fetch results */

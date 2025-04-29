@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -55,7 +55,7 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 
 	if (mb->inlineProp || findPipelines(mb))
 		goto wrapup;
@@ -328,7 +328,8 @@ OPTdictImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					old[i] = NULL;
 					done = true;
 					break;
-				} else if (getModuleId(p) == groupRef
+				} else if (p->retc == 3 && /* for now keep pipeline group intact TODO */
+						   getModuleId(p) == groupRef
 						   && (getFunctionId(p) == subgroupRef
 							   || getFunctionId(p) == subgroupdoneRef
 							   || getFunctionId(p) == groupRef

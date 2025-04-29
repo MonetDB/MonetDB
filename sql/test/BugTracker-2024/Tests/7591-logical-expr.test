@@ -33,3 +33,4 @@ SELECT * FROM t7591 WHERE (t7591.c0 = '') AND ((0.23314537804241876) IS NULL)
 
 statement ok
 drop table t7591
+

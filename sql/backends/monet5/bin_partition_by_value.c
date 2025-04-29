@@ -19,7 +19,6 @@
 #include "rel_exp.h"
 #include "rel_rewriter.h"
 #include "mal_builder.h"
-#include "opt_prelude.h"
 #include "sql_pp_statement.h"
 
 /* Generate the stmt to compute the number of dynamic slices, e.g.
@@ -113,6 +112,10 @@ partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 	if (!*part || !mats)
 		return NULL;
 	sql_rel *p = rel->l;
+	if (!is_project(p->op) && !is_basetable(p->op)) {
+		rel->l = p = rel_project(be->mvc->sa, p,
+			rel_projections(be->mvc, p, NULL, 1, 1));
+	}
 	assert(is_project(p->op) || is_basetable(p->op));
 	for(node *n = p->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
@@ -127,7 +130,7 @@ partition_groupby_prepare(backend *be, sql_rel *rel, InstrPtr *part)
 
 /* partition (in pp) */
 /* h := mkey.hash(gbc);
- * g := calc.%(h);
+ * g := calc.and(h); // and as module can be negative
  * l := prefixsum(g, max);
  * p := claim(part, l);
  * ? := mat.project(m, p, b)
@@ -164,7 +167,7 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 			assert(0);
 		}
 	}
-	sql_subfunc *hf = sql_bind_func_result(be->mvc, "sys", "mod", F_FUNC, true, lng, 2, lng, lng);
+	sql_subfunc *hf = sql_bind_func_result(be->mvc, "sys", "bit_and", F_FUNC, true, lng, 2, lng, lng);
 	stmt *g = stmt_binop(be, h, stmt_atom_lng(be, 256-1), NULL, hf);
 	InstrPtr l = newStmt(be->mb, "part", "prefixsum");
 	l = pushArgument(be->mb, l, g->nr);

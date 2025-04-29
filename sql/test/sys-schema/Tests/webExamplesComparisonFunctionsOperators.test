@@ -871,7 +871,7 @@ plan select CASE WHEN 'ac' = 'ac' THEN NULL ELSE 'ac' END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(varchar(2) "ac", varchar(2) "ac") NOT NULL, varchar NULL, varchar "ac") ]
+) [ "sys"."case"((varchar(2) "ac") = (varchar(2) "ac"), varchar NULL, varchar "ac") ]
 
 query T nosort
 plan select nullif(9, 9)
@@ -885,7 +885,7 @@ plan select CASE WHEN 9 = 9 THEN NULL ELSE 9 END
 ----
 project (
 |  [ boolean(1) "true" as "%1"."%1" ]
-) [ "sys"."case"("sys"."="(tinyint(4) "9", tinyint(4) "9") NOT NULL, tinyint(7) NULL, tinyint(7) "9") ]
+) [ "sys"."case"((tinyint(4) "9") = (tinyint(4) "9"), tinyint(7) NULL, tinyint(7) "9") ]
 
 query I rowsort
 select 'db' between 'abc' and 'db' as tru

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -231,7 +231,7 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	int *ret = getArgReference_int(s, p, 0);
 
 	(void) cntxt;
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	*ret = getStkDepth(s);
 	return MAL_SUCCEED;
 }
@@ -449,7 +449,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		throw(MAL, "mdb.list", "Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_NAME);
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	return MAL_SUCCEED;
 }
 
@@ -473,7 +473,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		throw(MAL, "mdb.list", "Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_DEBUG);
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	return NULL;
 }
 
@@ -490,7 +490,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 static void
 printStackHdr(stream *f, MalBlkPtr mb, const ValRecord *v, int index)
 {
-	char name[IDLENGTH] = { 0 };
+	char name[IDLENGTH];
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
 	mnstr_printf(f, "#[%2d] %5s", index, getVarNameIntoBuffer(mb, index, name));

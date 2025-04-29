@@ -982,7 +982,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		goto error;
 	}
 
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
@@ -1273,7 +1273,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		goto error;
 	}
 
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
@@ -1681,12 +1681,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, NULL);
-		if (u->T.sink == NULL) {
+		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, NULL);
+		if (u->tsink == NULL) {
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->T.private_bat = 1;
+		u->tprivate_bat = 1;
 	} else {
 		u = BATdescriptor(*uid);
 		if (!u) {
@@ -1694,12 +1694,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			goto error;
 		}
 	}
-	private = u->T.private_bat;
+	private = u->tprivate_bat;
 
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
@@ -1789,11 +1789,11 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		BATsetcount(g, cnt);
 		pipeline_lock2(g);
 		BATnegateprops(g);
-		pipeline_unlock2(g);
 		/* props */
 		gid last = ATOMIC_GET(&h->last);
 		/* pass max id */
-		g->T.maxval = last;
+		g->tmaxval = last;
+		pipeline_unlock2(g);
 		*uid = u->batCacheid;
 		*rid = g->batCacheid;
 		BBPkeepref(u);
@@ -2074,13 +2074,13 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			goto error;
 		}
 		/* Lookup parent hash */
-		u->T.sink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, (hash_table*)H->T.sink);
-		if (u->T.sink == NULL) {
+		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, (hash_table*)H->tsink);
+		if (u->tsink == NULL) {
 			BBPunfix(H->batCacheid);
 			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->T.private_bat = 1;
+		u->tprivate_bat = 1;
 		BBPunfix(H->batCacheid);
 	} else {
 		u = BATdescriptor(*uid);
@@ -2089,11 +2089,11 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			goto error;
 		}
 	}
-	private = u->T.private_bat;
+	private = u->tprivate_bat;
 	//assert(is_bat_nil(*sid)); /* no cands jet */
 	//(void)sid;
 
-	hash_table *h = (hash_table*)u->T.sink;
+	hash_table *h = (hash_table*)u->tsink;
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
@@ -2186,11 +2186,11 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 		BATsetcount(g, cnt);
 		pipeline_lock2(g);
 		BATnegateprops(g);
-		pipeline_unlock2(g);
 		/* props */
 		gid last = ATOMIC_GET(&h->last);
 		/* pass max id */
-		g->T.maxval = last;
+		g->tmaxval = last;
+		pipeline_unlock2(g);
 		*uid = u->batCacheid;
 		*rid = g->batCacheid;
 		BBPkeepref(u);
@@ -2337,9 +2337,9 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 	}
 
 	int tt = b->ttype;
-	oid max = BATcount(g)?g->T.maxval:0;
+	oid max = BATcount(g)?g->tmaxval:0;
 	/* probably need bat resize and create hash */
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 
 	if (!tt)
 		tt = TYPE_oid;
@@ -2406,7 +2406,7 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 			}
 		}
 		assert(private);
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 
 	BUN cnt = BATcount(r);
@@ -2498,7 +2498,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 
 	if (!private) {
 		pipeline_lock1(r);
@@ -2510,7 +2510,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg)?pg->T.maxval:0;
+	oid max = BATcount(pg)?pg->tmaxval:0;
 	BBPunfix(pg->batCacheid);
 
 	if (!r) {
@@ -2519,7 +2519,7 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 			err = createException(MAL, "pp aggr.count(star)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -2618,7 +2618,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 			goto error;
 		}
 	}
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 
 	if (!private) {
 		pipeline_lock1(r);
@@ -2630,7 +2630,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg)?pg->T.maxval:0;
+	oid max = BATcount(pg)?pg->tmaxval:0;
 	BBPunfix(pg->batCacheid);
 
 	if (!r) {
@@ -2639,7 +2639,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 			err = createException(MAL, "pp aggr.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -2748,7 +2748,7 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 	}
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 
 	if (!private) {
 		pipeline_lock1(r);
@@ -2760,17 +2760,17 @@ LALGsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg)?pg->T.maxval:0;
+	oid max = BATcount(pg)?pg->tmaxval:0;
 	BBPunfix(pg->batCacheid);
 
 	if (!r) {
 		int tt = getBatType(getArgType(mb, pci, 0));
-		r = COLnew(b->hseqbase, tt, max, TRANSIENT);
+		r = COLnew(b->hseqbase, tt, max+1, TRANSIENT);
 		if (r == NULL) {
 			err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -2880,7 +2880,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 	}
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 
 	if (!private) {
 		pipeline_lock1(r);
@@ -2892,7 +2892,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		err = createException(MAL, "pp aggr.prod", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg)?pg->T.maxval:0;
+	oid max = BATcount(pg)?pg->tmaxval:0;
 	BBPunfix(pg->batCacheid);
 
 	if (!r) {
@@ -2902,7 +2902,7 @@ LALGprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			err = createException(MAL, "pp aggr.prod", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -2992,7 +2992,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = (*rid && !is_bat_nil(*rid)) ? BATdescriptor(*rid) : NULL;
 	BAT *cn = bn ? BATdescriptor(*rcid) : NULL;
 	BAT *rn = bn ? BATdescriptor(*rrem) : NULL;
-	bool private = (bn == NULL || bn->T.private_bat), locked = false;
+	bool private = (bn == NULL || bn->tprivate_bat), locked = false;
 	str err = NULL;
 
 	if (!private) {
@@ -3016,7 +3016,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		err = createException(MAL, "pp aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg) ? pg->T.maxval : 0;
+	oid max = BATcount(pg) ? pg->tmaxval : 0;
 	BBPunfix(pg->batCacheid);
 
 	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 7) {
@@ -3029,9 +3029,9 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				err = createException(MAL, "pp aggr.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
-			bn->T.private_bat = 1;
-			cn->T.private_bat = 1;
-			rn->T.private_bat = 1;
+			bn->tprivate_bat = 1;
+			cn->tprivate_bat = 1;
+			rn->tprivate_bat = 1;
 		}
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
@@ -3285,7 +3285,7 @@ LALGavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!private)
 		pipeline_unlock1(bn);
 	else
-		bn->T.private_bat = true; /* in case it's a new one, set the bit */
+		bn->tprivate_bat = true; /* in case it's a new one, set the bit */
 
 	(void)p;
 
@@ -3402,7 +3402,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = (*rid && !is_bat_nil(*rid)) ? BATdescriptor(*rid) : NULL;
 	BAT *cn = bn ? BATdescriptor(*rcid) : NULL;
 	BAT *rn = bn ? BATdescriptor(*rrem) : NULL;
-	bool private = (bn == NULL || bn->T.private_bat), locked = false;
+	bool private = (bn == NULL || bn->tprivate_bat), locked = false;
 	str err = NULL;
 
 	if (!private) {
@@ -3426,7 +3426,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		err = createException(MAL, "pp aggr.sum", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg) ? pg->T.maxval : 0;
+	oid max = BATcount(pg) ? pg->tmaxval : 0;
 	BBPunfix(pg->batCacheid);
 
 	if ((b->ttype == TYPE_flt || b->ttype == TYPE_dbl) && pci->argc == 7) {
@@ -3439,9 +3439,9 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				err = createException(MAL, "pp aggr.sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
-			bn->T.private_bat = 1;
-			cn->T.private_bat = 1;
-			rn->T.private_bat = 1;
+			bn->tprivate_bat = 1;
+			cn->tprivate_bat = 1;
+			rn->tprivate_bat = 1;
 		}
 		if (bn->batCount < max &&
 			(BATextend(bn, max) != GDK_SUCCEED ||
@@ -3586,7 +3586,7 @@ LALGsum_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!private)
 		pipeline_unlock1(bn);
 	else
-		bn->T.private_bat = true; /* in case it's a new one, set the bit */
+		bn->tprivate_bat = true; /* in case it's a new one, set the bit */
 
 	(void)p;
 
@@ -3825,7 +3825,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	}
 
 	int tt = b->ttype;
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 	if (!private) {
 		pipeline_lock1(r);
 		locked = true;
@@ -3836,7 +3836,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg)?pg->T.maxval:0;
+	oid max = BATcount(pg)?pg->tmaxval:0;
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
@@ -3885,7 +3885,7 @@ LALGmin(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				goto error;
 			}
 		}
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -3982,7 +3982,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	}
 
 	int tt = b->ttype;
-	private = (!r || r->T.private_bat);
+	private = (!r || r->tprivate_bat);
 	if (!private) {
 		pipeline_lock1(r);
 		locked = true;
@@ -3993,7 +3993,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 		err = createException(MAL, "pp aggr.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	oid max = BATcount(pg)?pg->T.maxval:0;
+	oid max = BATcount(pg)?pg->tmaxval:0;
 	BBPunfix(pg->batCacheid);
 
 	if (r && BATcount(b)) {
@@ -4040,7 +4040,7 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 				ATOMheap(r->ttype, r->tvheap, r->batCapacity) != GDK_SUCCEED)
 				err = "ERROR";
 		}
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	BUN cnt = BATcount(r);
 	if (BATcapacity(r) < max) {
@@ -4171,7 +4171,7 @@ LALGquantile(bat *rid, bat *gid, bat *bid, bte *perc)
 	}
 
 	/* ToDo make sure ordering set this */
-	oid max = BATcount(g)?g->T.maxval:0;
+	oid max = BATcount(g)?g->tmaxval:0;
 
 	if (!r) {
 		r = COLnew(0, tt, max, TRANSIENT);

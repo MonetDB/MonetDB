@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -1935,7 +1935,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
  * If max_one is set, only a single match is allowed.  This is like
  * semi, but enforces the single match.
  *
- * t0 and swapped are only for debugging (ALGOMASK set in GDKdebug).
+ * t0, swapped, and reason are only for debugging (ALGOMASK set in
+ * GDKdebug).
  */
 static gdk_return
 mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
@@ -2809,7 +2810,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						break;			\
 					}				\
 					HASHLOOPBODY();			\
-					if (semi && !max_one)		\
+					if (semi)			\
 						break;			\
 				}					\
 			} else if (rci->tpe != cand_dense) {		\
@@ -2824,7 +2825,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;		\
 						}			\
 						HASHLOOPBODY();		\
-						if (semi && !max_one)	\
+						if (semi)		\
 							break;		\
 					}				\
 				}					\
@@ -2840,7 +2841,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						}			\
 						ro = (oid) (rb - roff + rseq); \
 						HASHLOOPBODY();		\
-						if (semi && !max_one)	\
+						if (semi)		\
 							break;		\
 					}				\
 				}					\
@@ -2975,9 +2976,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		b = BATdescriptor(VIEWtparent(r));
 		if (b == NULL)
 			goto bailout;
-		TRC_DEBUG(ALGO, "%s(%s): using "
+		TRC_DEBUG(ALGO, "%s: using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
-			  __func__,
 			  BATgetId(r), ALGOBATPAR(b),
 			  swapped ? " (swapped)" : "");
 		roff = r->tbaseoff - b->tbaseoff;
@@ -3083,6 +3083,16 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		goto bailout;
 	}
 
+	/* from here on, semi is used to bail out early from the
+	 * collision lists; if right is key, it's effectively a
+	 * semi-join, and max_one is automatically satisfied; otherwise,
+	 * we need to continue looking if max_one is specified to make
+	 * sure there is only one match */
+	if (r->tkey)
+		semi = true;
+	else if (max_one)
+		semi = false;
+
 	r1 = *r1p;
 	r2 = r2p ? *r2p : NULL;
 	r3 = r3p ? *r3p : NULL;
@@ -3143,7 +3153,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						break;
 					}
 					HASHLOOPBODY();
-					if (semi && !max_one)
+					if (semi)
 						break;
 				}
 			} else if (hsh == NULL) {
@@ -3159,7 +3169,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3175,7 +3185,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 							break;
 						}
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3191,7 +3201,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 						}
 						ro = (oid) (rb - roff + rseq);
 						HASHLOOPBODY();
-						if (semi && !max_one)
+						if (semi)
 							break;
 					}
 				}
@@ -3249,8 +3259,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 		locked = false;
 		MT_rwlock_rdunlock(&r->thashlock);
 	}
-	bat_iterator_end(&li);
-	bat_iterator_end(&ri);
 
 	if (hash_cand) {
 		HEAPfree(&hsh->heaplink, true);
@@ -3259,7 +3267,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	}
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
-	r1->tunique_est = MIN(l->tunique_est, r->tunique_est);
+	r1->tunique_est = MIN(li.unique_est, ri.unique_est);
 	if (BATcount(r1) <= 1) {
 		r1->tsorted = true;
 		r1->trevsorted = true;
@@ -3275,14 +3283,16 @@ hashjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 			r2->tkey = true;
 			r2->tseqbase = 0;
 		}
-		r2->tunique_est = MIN(l->tunique_est, r->tunique_est);
+		r2->tunique_est = MIN(li.unique_est, ri.unique_est);
 	}
 	if (r3) {
 		r3->tnonil = !r3->tnil;
 		BATsetcount(r3, BATcount(r3));
 		assert(BATcount(r1) == BATcount(r3));
-		r3->tunique_est = MIN(l->tunique_est, r->tunique_est);
+		r3->tunique_est = MIN(li.unique_est, ri.unique_est);
 	}
+	bat_iterator_end(&li);
+	bat_iterator_end(&ri);
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
 			r1->tseqbase = ((oid *) r1->theap->base)[0];
@@ -3388,6 +3398,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 
 	*cnt1 = *cnt2 = 0;
 
+	BAT *pb = BATdescriptor(bi.h->parentid);
+	MT_rwlock_rdlock(&pb->thashlock);
 	if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
 		algomsg = "sorted";
@@ -3434,6 +3446,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		assert(bvars == NULL);
 		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
 		if (seen == NULL) {
+			MT_rwlock_rdunlock(&pb->thashlock);
+			BBPreclaim(pb);
 			bat_iterator_end(&bi);
 			return GDK_FAIL;
 		}
@@ -3475,6 +3489,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshjnl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshjnb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs.heapbckt.filename) ||
 		    HASHnew(&hs, bi.type, ci.ncand, mask, BUN_NONE, false) != GDK_SUCCEED) {
+			MT_rwlock_rdunlock(&pb->thashlock);
+			BBPreclaim(pb);
 			GDKerror("cannot allocate hash table\n");
 			HEAPfree(&hs.heaplink, true);
 			HEAPfree(&hs.heapbckt, true);
@@ -3505,6 +3521,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		HEAPfree(&hs.heaplink, true);
 		HEAPfree(&hs.heapbckt, true);
 	}
+	MT_rwlock_rdunlock(&pb->thashlock);
+	BBPreclaim(pb);
 	bat_iterator_end(&bi);
 
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
@@ -3576,7 +3594,8 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 		canditer_init(&lci, b, NULL);
 		ci = &lci;
 	}
-	return (BUN) guess_uniques(b, ci);
+	double uniques = guess_uniques(b, ci);
+	return uniques < 0 ? 0 : (BUN) uniques;
 }
 
 /* estimate the cost of doing a hashjoin with a hash on r; return value
@@ -3636,7 +3655,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 			MT_lock_unset(&r->theaplock);
 			if (unique_est == 0) {
 				unique_est = guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)});
-				if (unique_est < 0)
+				if (unique_est <= 0)
 					return -1;
 			}
 			/* we have an estimate of the number of unique
@@ -3667,7 +3686,7 @@ joincost(BAT *r, BUN lcount, struct canditer *rci,
 				MT_lock_unset(&r->theaplock);
 				if (unique_est == 0) {
 					unique_est = guess_uniques(r, rci);
-					if (unique_est < 0)
+					if (unique_est <= 0)
 						return -1;
 				}
 				/* we have an estimate of the number of unique

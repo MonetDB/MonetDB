@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -503,11 +503,12 @@ main(int argc, char **argv)
 			(SQLCHAR*)SQL_ALL_TABLE_TYPES, SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_TABLE_TYPES)",
 		"Resultset with 5 columns\n"
-		"Resultset with 10 rows\n"
+		"Resultset with 11 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(25)	WVARCHAR(1)\n"
 		"NULL	NULL	NULL	GLOBAL TEMPORARY TABLE	NULL\n"
 		"NULL	NULL	NULL	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	NULL	NULL	LOCAL TEMPORARY VIEW	NULL\n"
 		"NULL	NULL	NULL	MERGE TABLE	NULL\n"
 		"NULL	NULL	NULL	REMOTE TABLE	NULL\n"
 		"NULL	NULL	NULL	REPLICA TABLE	NULL\n"
@@ -688,8 +689,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	11	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	11	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -699,8 +700,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	11	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	11	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS);
@@ -1534,7 +1535,7 @@ main(int argc, char **argv)
 	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
 	    nrServerThreads > 1 ?
 		"Resultset with 1 columns\n"
-		"Resultset with 43 rows\n"
+		"Resultset with 17 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1552,13 +1553,10 @@ main(int argc, char **argv)
 		"\n"
 		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
 		"end user.main;\n"
-		"\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n"
-		"\n"
+		"\n\n"
 	    :
 		"Resultset with 1 columns\n"
-		"Resultset with 44 rows\n"
+		"Resultset with 15 rows\n"
 		"mal\n"
 		"WLONGVARCHAR(174)\n"
 		"function user.main():void;\n"
@@ -1574,10 +1572,7 @@ main(int argc, char **argv)
 		"    X_42:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
 		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
 		"end user.main;\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n");
+		"\n\n");
 
 	// test TRACE SELECT query.
 	// This will return two resultsets: first with the query results and next with the trace results

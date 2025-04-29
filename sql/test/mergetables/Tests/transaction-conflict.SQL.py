@@ -1,4 +1,5 @@
-import os, sys, threading, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, threading
 
 """
 Attempt to modify a merge table in a conflicting transaction. After the rollback, the table's contents must be cleaned

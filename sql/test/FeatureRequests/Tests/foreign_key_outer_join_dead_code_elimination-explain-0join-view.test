@@ -10,6 +10,8 @@ explain select count(*) from v0
 ----
 algebra.fetch
 1
+algebra.projection
+1
 bat.single
 1
 calc.not
@@ -27,6 +29,8 @@ pipeline.counter_get
 pipeline.done
 2
 querylog.define
+1
+sql.bind
 1
 sql.mvc
 1

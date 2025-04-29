@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -679,14 +679,21 @@ list_position(list *l, void *val)
 	return -1;
 }
 
-void *
-list_fetch(list *l, int pos)
+node *
+list_fetch_node(list *l, int pos)
 {
 	node *n = NULL;
 	int i;
 
 	for (n = l->h, i=0; n && i<pos; n = n->next, i++)
 		;
+	return n;
+}
+
+void *
+list_fetch(list *l, int pos)
+{
+	node *n = list_fetch_node(l, pos);
 	if (n)
 		return n->data;
 	return NULL;

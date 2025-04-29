@@ -602,7 +602,7 @@ HEAPnew_topn( MalStkPtr s, InstrPtr p, heapn *hp, lng n, BAT *b, bit min, bit nu
 	heapn_done(hp);
 	b = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (b)
-		b->T.sink = (Sink*)hp;
+		b->tsink = (Sink*)hp;
 	else
 		heap_destroy(hp);
 	return b;
@@ -672,19 +672,23 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	if (private) {
 		lng n = *getArgReference_lng(s, p, 4);
+		if (n < 0) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "heap.topn", ILLEGAL_ARGUMENT);
+		}
 		heapn *hp = heapn_create(n, 0);
 		hps = HEAPnew_topn(s, p, hp, n, b, min, nulls_last);
 		if (!hps) {
 			BBPunfix(b->batCacheid);
 			return createException(SQL, "heapn.topn",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		hps->T.private_bat = 1;
+		hps->tprivate_bat = 1;
 		*HP = hps->batCacheid;
 	} else {
 		hps = BATdescriptor(*HP);
 	}
-	private = hps->T.private_bat;
-	heapn *hp = (heapn*)hps->T.sink;
+	private = hps->tprivate_bat;
+	heapn *hp = (heapn*)hps->tsink;
 	assert(hp && hp->s.type == HEAP_SINK);
 	HEAP_INIT(hp);
 	subheap *sh = hp->sub;
@@ -987,7 +991,7 @@ HEAPnew_new( MalBlkPtr m, MalStkPtr s, InstrPtr p, heapn *hp, lng n, int tt,  bi
 	heapn_done(hp);
 	BAT *b = COLnew(0, TYPE_oid, n, TRANSIENT);
 	if (b)
-		b->T.sink = (Sink*)hp;
+		b->tsink = (Sink*)hp;
 	else
 		heap_destroy(hp);
 	return b;
@@ -1208,7 +1212,7 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 	}
 
 	int tt = b->ttype;
-	bool private = (!r || r->T.private_bat), local_storage = false;
+	bool private = (!r || r->tprivate_bat), local_storage = false;
 
 	if (!private) {
 		while(r->unused != s->unused && !ATOMIC_PTR_GET(&p->p->error)) MT_sleep_ms(10);
@@ -1264,7 +1268,7 @@ HEAPproject(bat *rid, bat *cand, bat *del, bat *ins, bat *in, lng *n, const ptr 
 				err = 1;
 		}
 		assert(private);
-		r->T.private_bat = 1;
+		r->tprivate_bat = 1;
 	}
 	if (!private)
 		pipeline_lock1(r);

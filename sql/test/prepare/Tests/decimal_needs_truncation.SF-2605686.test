@@ -1,0 +1,39 @@
+statement ok
+create table testdec(testdec decimal(4,4))
+
+statement ok
+drop table testdec
+
+statement ok
+create table testdec(testdec decimal(5,4))
+
+statement ok
+insert into testdec values (0.12345)
+
+query R nosort
+select * from testdec
+----
+0.123
+
+query TIITTT nosort
+PREPARE INSERT INTO testdec (testdec) values (?)
+----
+decimal
+5
+4
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(0.12345)
+
+query R nosort
+select * from testdec
+----
+0.123
+0.123
+
+statement ok
+drop table testdec
+

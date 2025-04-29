@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -572,8 +572,8 @@ project_str(BATiter *restrict li, struct canditer *restrict ci, int tpe,
 	bn->tnonil = r1i->nonil & r2i->nonil;
 	bn->tkey = false;
 	bn->tunique_est =
-		MIN(li->b->tunique_est?li->b->tunique_est:BATcount(li->b),
-		   r1i->b->tunique_est?r1i->b->tunique_est:BATcount(r1i->b));
+		MIN(li->unique_est ? li->unique_est : BATcount(li->b),
+		    r1i->unique_est ? r1i->unique_est : BATcount(r1i->b));
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOBATFMT
 		  " -> " ALGOBATFMT "%s " LLFMT "us\n",
 		  ALGOBATPAR(li->b), ALGOBATPAR(r1i->b), ALGOBATPAR(r2i->b),
@@ -745,12 +745,12 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->tnonil = li.nonil & r1i.nonil;
 		bn->tsorted = li.count <= 1
 			|| (li.sorted & r1i.sorted)
-			|| (li.revsorted & r1i.revsorted)
-			|| r1i.count <= 1;
+			|| (li.revsorted & r1i.revsorted & li.nonil)
+			|| (r1i.count <= 1 && li.nonil);
 		bn->trevsorted = li.count <= 1
-			|| (li.sorted & r1i.revsorted)
+			|| (li.sorted & r1i.revsorted & li.nonil)
 			|| (li.revsorted & r1i.sorted)
-			|| r1i.count <= 1;
+			|| (r1i.count <= 1 && li.nonil);
 		bn->tkey = li.count <= 1 || (li.key & r1i.key);
 	}
 
@@ -824,8 +824,8 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	bn->tunique_est =
-		MIN(li.b->tunique_est?li.b->tunique_est:BATcount(li.b),
-		   r1i.b->tunique_est?r1i.b->tunique_est:BATcount(r1i.b));
+		MIN(li.unique_est ? li.unique_est : BATcount(li.b),
+		    r1i.unique_est ? r1i.unique_est : BATcount(r1i.b));
 	if (!BATtdensebi(&r1i) || (r2 && !BATtdensebi(&r2i)))
 		BATtseqbase(bn, oid_nil);
 

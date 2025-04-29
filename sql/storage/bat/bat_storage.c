@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -14,8 +14,6 @@
 #include "bat_storage.h"
 #include "bat_utils.h"
 #include "sql_string.h"
-#include "gdk_atoms.h"
-#include "gdk_atoms.h"
 #include "matomic.h"
 
 #define FATAL_MERGE_FAILURE "Out Of Memory during critical merge operation: %s"
@@ -143,7 +141,6 @@ tc_gc_seg( sql_store Store, sql_change *change, ulng oldest)
 	if (s->ts <= oldest) {
 		while(s) {
 			segment *n = s->prev;
-			ATOMIC_PTR_DESTROY(&s->next);
 			_DELETE(s);
 			s = n;
 		}
@@ -331,7 +328,6 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	b->tkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
-	b->theap->dirty = true;
 	BUN cnt = BATcount(b);
 
 	uint32_t *restrict dst;
@@ -404,6 +400,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	if (nr > BATcount(b)) {
 		BATsetcount(b, nr);
 	}
+	b->theap->dirty = true;
 	MT_lock_unset(&b->theaplock);
 
 	bat_destroy(b);
@@ -455,7 +452,6 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 					if (cur == s->segs->t)
 						s->segs->t = seg;
 					if (commit_ts == oldest) {
-						ATOMIC_PTR_DESTROY(&cur->next);
 						_DELETE(cur);
 					} else
 						mark4destroy(cur, change, commit_ts);
@@ -2396,9 +2392,10 @@ deletes_conflict_updates(sql_trans *tr, sql_table *t, oid rid, size_t cnt)
 static int
 storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
+	lock_table(tr->store, t->base.id);
+
 	int in_transaction = segments_in_transaction(tr, t);
 
-	lock_table(tr->store, t->base.id);
 	/* find segment of rid, split, mark new segment deleted (for tr->tid) */
 	segment *seg = s->segs->h, *p = NULL;
 	for (; seg; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
@@ -2551,7 +2548,6 @@ destroy_segments(segments *s)
 	segment *seg = s->h;
 	while(seg) {
 		segment *n = ATOMIC_PTR_GET(&seg->next);
-		ATOMIC_PTR_DESTROY(&seg->next);
 		_DELETE(seg);
 		seg = n;
 	}
@@ -3868,7 +3864,9 @@ clear_table(sql_trans *tr, sql_table *t)
 
 	if (!d)
 		return BUN_NONE;
+	lock_table(tr->store, t->base.id);
 	in_transaction = segments_in_transaction(tr, t);
+	unlock_table(tr->store, t->base.id);
 	clear = !in_transaction;
 	sz = count_col(tr, c, CNT_ACTIVE);
 	if ((clear_ok = clear_del(tr, t, in_transaction)) >= BUN_NONE - 1)
@@ -4624,7 +4622,6 @@ add_offsets(BUN slot, size_t nr, size_t total, BUN *offset, BAT **offsets)
 static int
 claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset, BAT **offsets, bool locked)
 {
-	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store, NULL);
 	BUN slot = 0;
@@ -4632,6 +4629,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 
 	if (!locked)
 		lock_table(tr->store, t->base.id);
+	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
@@ -4715,7 +4713,6 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 {
 	if (cnt > 1 && offsets)
 		return claim_segmentsV2(tr, t, s, cnt, offset, offsets, locked);
-	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store, NULL);
 	BUN slot = 0;
@@ -4723,6 +4720,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 
 	if (!locked)
 		lock_table(tr->store, t->base.id);
+	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {

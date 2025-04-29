@@ -1,4 +1,5 @@
-import sys, os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import sys, os
 
 # Using schema path to find a function
 db = os.getenv("TSTDB")

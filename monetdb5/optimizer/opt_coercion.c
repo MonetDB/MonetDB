@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -98,14 +98,13 @@ OPTcoercionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int i, k, t;
 	InstrPtr p;
 	int actions = 0;
-	const char *calcRef = putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
 	str msg = MAL_SUCCEED;
 
 	if (coerce == NULL)
 		throw(MAL, "optimizer.coercion", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);

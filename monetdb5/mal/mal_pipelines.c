@@ -168,6 +168,7 @@ stack_copy(MalStkPtr stk, int start)
 	return n;
 }
 
+#ifdef CPU_ZERO
 static void
 thread_runoncpu(int cpu)
 {
@@ -178,6 +179,7 @@ thread_runoncpu(int cpu)
         CPU_SET(cpu , &cpuset);
         sched_setaffinity(0, sizeof(cpuset), &cpuset);
 }
+#endif
 
 static void
 PIPELINEworker(void *T)
@@ -192,7 +194,9 @@ PIPELINEworker(void *T)
 	t->errbuf = NULL;
 
 	Pipeline *p = (Pipeline*)GDKmalloc(sizeof(Pipeline));
+#ifdef CPU_ZERO
 	thread_runoncpu(t->self);
+#endif
 	if (p != NULL) {
 		for (;;) {
 			/* wait until we are allowed to start working */
@@ -314,7 +318,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_lock_init(&s->l, name);
 	for (size_t i = 0; i < sizeof(s->counters) / sizeof(s->counters[0]); i++)
 		s->counters[i] = -1;
-	MT_cond_init(&s->cond);
+	MT_cond_init(&s->cond, "pipeline-workers");
 	/* somehow get number of workers from statement/barrier */
 	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
@@ -325,7 +329,6 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	str err = ATOMIC_PTR_GET(&s->error);
-	ATOMIC_PTR_DESTROY(&s->error);
 	MT_cond_destroy(&s->cond);
 	restart = (!err && s->status);
 	if (!restart && profiler && s->nr_workers > 1) {

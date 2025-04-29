@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -141,9 +141,9 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 		 * explicitly mentioned as arguments (and certainly not as the
 		 * first argument), but that can still be available to the MAL
 		 * program (see bugs.monetdb.org/6641) */
-		if (getModuleId(p) == sqlRef)
+//		if (getModuleId(p) == sqlRef)
 			return 1;
-		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
+//		return getState(states, p, p->retc) & (VARREAD | VARBLOCK);
 	}
 
 	for (j = p->retc; j < p->argc; j++) {

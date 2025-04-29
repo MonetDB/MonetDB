@@ -1,5 +1,5 @@
 #Q16
-query TTII nosort
+query TTII rowsort
 select
 	p_brand,
 	p_type,
@@ -31,5 +31,5 @@ order by
 	p_type,
 	p_size
 ----
-1184 values hashing to 1e585ffe3f051923b3da374f4832653d
+1184 values hashing to 019c7871f6a5ef57e4e5e84c596d7120
 

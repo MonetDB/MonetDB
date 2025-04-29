@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -94,12 +94,13 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 {
 	InstrPtr p, q, *old, *series;
 	int i, k, limit, slimit, actions = 0;
+	/* intRef, lngRef and dblRef are globally defined */
 	const char *bteRef = getName("bte");
 	const char *shtRef = getName("sht");
-	const char *intRef = getName("int");
-	const char *lngRef = getName("lng");
+	//const char *intRef = getName("int");
+	//const char *lngRef = getName("lng");
 	const char *fltRef = getName("flt");
-	const char *dblRef = getName("dbl");
+	//const char *dblRef = getName("dbl");
 	str msg = MAL_SUCCEED;
 	int needed = 0;
 

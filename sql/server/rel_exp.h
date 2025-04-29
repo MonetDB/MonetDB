@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -42,11 +42,14 @@ extern int compare_funcs2range(const char *l, const char *r);
 extern sql_exp *exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int symmetric);
 extern sql_exp *exp_filter(allocator *sa, list *l, list *r, sql_subfunc *f, int anti);
-extern sql_exp *exp_or(allocator *sa, list *l, list *r, int anti);
 extern sql_exp *exp_in(allocator *sa, sql_exp *l, list *r, int cmptype);
 extern sql_exp *exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier);
+
+extern sql_exp *exp_conjunctive(allocator *sa, list *exps);
+extern sql_exp *exp_disjunctive(allocator *sa, list *exps);
+extern sql_exp *exp_disjunctive2(allocator *sa, sql_exp *e1, sql_exp *e2);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
 #define exp_totype(e)	((list*)e->r)->h->next->data
@@ -144,6 +147,7 @@ extern bool rel_find_nid(sql_rel *rel, int nid);
 
 extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
+extern int is_conflict( sql_exp *e1, sql_exp *e2);
 extern int exp_refers( sql_exp *p, sql_exp *c);
 extern sql_exp *exps_refers( sql_exp *p, list *exps);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
@@ -226,6 +230,7 @@ extern int exp_aggr_is_countstar(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
+extern list *exps_check_type(mvc *sql, sql_subtype *t, list *exps);
 extern int rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *rel_exp, int upcast);
 extern sql_exp *exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp);
 extern sql_exp *exp_numeric_supertype(mvc *sql, sql_exp *e);

@@ -54,19 +54,19 @@ query ITTIIITIIT rowsort
 SELECT * FROM tmp._columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.function_types)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE language NOT IN (SELECT language_id FROM sys.function_languages)
 ----
 
-query ITTTIIIIIIII rowsort
+query ITTTIIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE system AND schema_id NOT IN (SELECT id FROM sys.schemas WHERE system)
 ----
 
@@ -299,15 +299,15 @@ SELECT * FROM sys.storage() WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
-SELECT * FROM sys.storage() WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
+SELECT * FROM sys.storage() WHERE "table" NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
-SELECT * FROM sys.storage() WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
+SELECT * FROM sys.storage() WHERE (schema, "table") NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
-SELECT * FROM sys.storage() WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
+SELECT * FROM sys.storage() WHERE "column" NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
@@ -319,15 +319,15 @@ SELECT * FROM sys.storage WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
-SELECT * FROM sys.storage WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
+SELECT * FROM sys.storage WHERE "table" NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
-SELECT * FROM sys.storage WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
+SELECT * FROM sys.storage WHERE (schema, "table") NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
-SELECT * FROM sys.storage WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
+SELECT * FROM sys.storage WHERE "column" NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
 query TTTTTTIIIIIIIIIII rowsort
@@ -339,11 +339,11 @@ SELECT * FROM sys.tablestorage WHERE schema NOT IN (SELECT name FROM sys.schemas
 ----
 
 query TTIIIIIII rowsort
-SELECT * FROM sys.tablestorage WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
+SELECT * FROM sys.tablestorage WHERE "table" NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
 query TTIIIIIII rowsort
-SELECT * FROM sys.tablestorage WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
+SELECT * FROM sys.tablestorage WHERE (schema, "table") NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
 query TIIIIII rowsort
@@ -355,15 +355,15 @@ SELECT * FROM sys.storagemodel WHERE schema NOT IN (SELECT name FROM sys.schemas
 ----
 
 query TTTTIIIIIIIII rowsort
-SELECT * FROM sys.storagemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
+SELECT * FROM sys.storagemodel WHERE "table" NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
 query TTTTIIIIIIIII rowsort
-SELECT * FROM sys.storagemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
+SELECT * FROM sys.storagemodel WHERE (schema, "table") NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
 query TTTTIIIIIIIII rowsort
-SELECT * FROM sys.storagemodel WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
+SELECT * FROM sys.storagemodel WHERE "column" NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
 query TTTTIIIIIIIII rowsort
@@ -375,15 +375,15 @@ SELECT * FROM sys.storagemodelinput WHERE schema NOT IN (SELECT name FROM sys.sc
 ----
 
 query TTTTIIIIIIII rowsort
-SELECT * FROM sys.storagemodelinput WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
+SELECT * FROM sys.storagemodelinput WHERE "table" NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
 query TTTTIIIIIIII rowsort
-SELECT * FROM sys.storagemodelinput WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
+SELECT * FROM sys.storagemodelinput WHERE (schema, "table") NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
 query TTTTIIIIIIII rowsort
-SELECT * FROM sys.storagemodelinput WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
+SELECT * FROM sys.storagemodelinput WHERE "column" NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
 query TTTTIIIIIIII rowsort
@@ -391,15 +391,15 @@ SELECT * FROM sys.storagemodelinput WHERE type NOT IN (SELECT sqlname FROM sys.t
 ----
 
 query TTIIIIII rowsort
-SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas)
+SELECT schema, "table", rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
 query TTIIIIII rowsort
-SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
+SELECT schema, "table", rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE "table" NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
 query TTIIIIII rowsort
-SELECT schema, table, rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
+SELECT schema, "table", rowcount, columnsize, heapsize, hashsize, imprintsize, orderidxsize FROM sys.tablestoragemodel WHERE (schema, "table") NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
 query IIITI rowsort

@@ -1,25 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Oct  8 2024 Yunus Koning <yunus.koning@monetdbsolutions.com>
-- Introduce the RETURNING clause for INSERT, UPDATE and DELETE statements.
-  Specifying a RETURNING clause causes the SQL statement to return the
-  modified records which can be queried using SELECT like expressions
-  in the RETURNING clause. Aggregate functions are allowed.
-  This is a common non-standard SQL extension.
-  
-  Examples:
-  
-  INSERT INTO foo values (1,10), (-1,-10) RETURNING i+2*j AS bar
-  ----
-  21
-  -21
-  
-  UPDATE foo SET i = -i WHERE i >0 RETURNING sum(j), count(j)
-  ----
-  -60|3
-
-* Tue Sep 10 2024 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
-- Introduce division_min_scale SQL environment variable for specifying
-  minimum scale of the division result. The default value is 3.
-

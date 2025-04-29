@@ -5,7 +5,7 @@
 # If everything went well, this test produces no output
 ###
 
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import os, sys
 import multiprocessing as mp
 import traceback

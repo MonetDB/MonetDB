@@ -4,7 +4,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024 MonetDB Foundation;
+# Copyright 2024, 2025 MonetDB Foundation;
 # Copyright August 2008 - 2023 MonetDB B.V.;
 # Copyright 1997 - July 2008 CWI.
 
@@ -166,10 +166,7 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # indicates that the implementation successfully negotiated ALPN protocol
 # "mapi/9".
 
-####### Temporarily disable the ALPN header.
-####### TODO re-enable it when test systemcertificates.py no longer relies
-####### on connecting to an HTTPS server. (Which is an ugly hack in the first place!)
-# attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
+attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
 
 # connect_right_hash
 #

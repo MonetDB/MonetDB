@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -26,13 +26,15 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-static inline bool __attribute__((__pure__))
+__attribute__((__pure__))
+static inline bool
 isProjectConst(const InstrRecord *p)
 {
 	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
 }
 
-static int __attribute__((__pure__))
+__attribute__((__pure__))
+static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
 	int i;
@@ -60,12 +62,23 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	InstrPtr *old = NULL;
 
+	old = mb->stmt;
+	limit = mb->stop;
+	slimit = mb->ssize;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (isUpdateInstruction(p)) {
+			old = NULL;
+			goto wrapup;
+		}
+	}
+
 	/* catch simple insert operations */
 	if (isSimpleSQL(mb)) {
+		old = NULL;
 		goto wrapup;
 	}
 
-	(void) cntxt;
 	(void) stk;
 	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
 	list = (int *) GDKzalloc(sizeof(int) * mb->stop);
@@ -76,9 +89,6 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		goto wrapup;
 	}
 
-	old = mb->stmt;
-	limit = mb->stop;
-	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -118,7 +128,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
 			old[i] = NULL;
-			continue;
+			break;
 		}
 
 		/* when we enter a barrier block, we should ditch all previous instructions from consideration */
@@ -156,7 +166,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h,
 				  hash[h]);
-		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 		if (h < 0) {
 			pushInstruction(mb, p);
@@ -178,7 +188,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 																			 q),
 						  !isUnsafeFunction(q), !isUpdateInstruction(q),
 						  isLinearFlow(q));
-				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -207,7 +217,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ",
 							  getArg(p, 0), getArg(p, 1));
-					traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+					traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 					actions++;
 					break;		/* end of search */
@@ -216,7 +226,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n",
 						  mayhaveSideEffects(cntxt, mb, q, TRUE),
 						  isUpdateInstruction(p));
-				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 			}
 		}
 
@@ -229,7 +239,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		TRC_DEBUG(MAL_OPTIMIZER,
 				  "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i,
 				  getArg(p, p->argc - 1), h, hash[h]);
-		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 		if (!mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc
 			&& isLinearFlow(p) && !isUnsafeFunction(p)

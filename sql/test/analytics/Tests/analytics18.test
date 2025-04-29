@@ -43,6 +43,11 @@ RANK() OVER mywindow as rnk1
 FROM tab2
 JOIN tab1
 ON tab2.col4 = tab1.col4
+where
+((col5<>0 and col3 >= 20190101) or col3 < 20190101)
+and tab2.col10 = 5
+and tab1.col6 is null
+and col2 <> 'HEHEHEHE'
 WINDOW mywindow as (
 PARTITION BY
 tab2.col10,
@@ -58,11 +63,6 @@ when col5=6 and tab2.col8 in (1,3,5,7,9,11,13,15,17,21) and col3 >= 20190101 the
 else 1 END DESC,
 tab2.col4 DESC
 )
-where
-((col5<>0 and col3 >= 20190101) or col3 < 20190101)
-and tab2.col10 = 5
-and tab1.col6 is null
-and col2 <> 'HEHEHEHE'
 ----
 
 statement ok

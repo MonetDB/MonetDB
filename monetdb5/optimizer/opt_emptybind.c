@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -283,6 +283,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			}
 		}
 		if (getModuleId(p) == batRef && isUpdateInstruction(p)) {
+			if (p->argc >= 4)
+				empty[getArg(p, 1)] = 0;
 			if (empty[getArg(p, 1)] && empty[getArg(p, 2)]) {
 				emptyresult(0);
 			} else if (empty[getArg(p, 2)]) {

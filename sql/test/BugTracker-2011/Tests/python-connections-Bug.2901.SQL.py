@@ -1,4 +1,4 @@
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import os
 
 c = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),

@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "gdk_cand.h"
 
 /* how much to extend the extent and histo bats when we run out of space */
 #define GROUPBATINCR	8192
@@ -454,7 +453,8 @@ rev(oid x)
 }
 
 /* count trailing zeros, also see candmask_lobit in gdk_cand.h */
-static inline int __attribute__((__const__))
+__attribute__((__const__))
+static inline int
 ctz(oid x)
 {
 #ifdef __has_builtin

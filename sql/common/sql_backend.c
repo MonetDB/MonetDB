@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -108,7 +108,7 @@ backend_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect
 {
 	if (be_funcs.fresolve_function != NULL)
 		return be_funcs.fresolve_function(M, f, fimp, side_effect);
-	return 0;
+	return 1;
 }
 
 int
@@ -116,7 +116,7 @@ backend_has_module(ptr M, char *name)
 {
 	if (be_funcs.fhas_module_function != NULL)
 		return be_funcs.fhas_module_function(M, name);
-	return 0;
+	return 1;
 }
 
 int

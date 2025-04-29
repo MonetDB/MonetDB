@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -62,7 +62,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p, i)].val.bval;
 		b = BBPquickdesc(bid);
-		mat_t *mp = (mat_t *) b->T.sink;
+		mat_t *mp = (mat_t *) b->tsink;
 		if (mp && mp->s.type == MAT_SINK) {
 			bn = pack_mat(b);
 			if (bn == NULL)
@@ -142,11 +142,22 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	size_t newsize;
 
 	(void) cntxt;
-	b = BATdescriptor(stk->stk[getArg(p, 1)].val.ival);
+	b = BATdescriptor(stk->stk[getArg(p, 1)].val.bval);
 	if (b == NULL)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (getArgType(mb, p, 2) == TYPE_int) {
+		mat_t *mp = (mat_t *) b->tsink;
+		if (mp && mp->s.type == MAT_SINK) {
+			bn = pack_mat(b);
+			if (bn == NULL)
+				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			*ret = bn->batCacheid;
+			BBPunfix(b->batCacheid);
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		}
+
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p, 2)].val.ival;
 		int tt = ATOMtype(b->ttype);

@@ -27,14 +27,14 @@ COPY 1 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 3	0.800	""
 
-statement error 21000!Cardinality violation, scalar value expected
+statement error GDK reported error: BATsubcross: more than one match
 select ((((select 1.75) union all (select 4))) between ((select 3 from t1)) and 2) = true
 
-statement error 21000!Cardinality violation, scalar value expected
+statement error GDK reported error: BATsubcross: more than one match
 select cast(sum(count) as bigint) from (select all cast(((((select all -1.75501356E8 from t0 as l3t0 where l3t0.c1) union all (select 1699564541 from t0 as l3t0 where l3t0.c1)))
 not between symmetric ((select -1732113123 from t2 as l3t2, t1 as l3t1 where l3t1.c5)) and (((0)%(6)))) = true as int) as count from t2) as res
 
-statement error 21000!Cardinality violation, scalar value expected
+statement error GDK reported error: BATsubcross: more than one match
 select substr(((select 'i') union all (select 'am')),(select 3 where false), 2) = 'wrong'
 
 statement ok

@@ -1,0 +1,59 @@
+statement ok
+CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 INT, col7 INT, col8 INT)
+
+statement ok
+INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888)
+
+statement ok
+CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input); END
+
+statement ok
+CREATE FUNCTION evilfunction(input1 INT, input2 INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input1 + input2); END
+
+statement error 42000!Could not determine type for argument number 1
+PREPARE SELECT
+	(SELECT ? FROM evilfunction((SELECT 1)))
+FROM another_T
+
+query TIITTT nosort
+PREPARE SELECT
+	(SELECT 1 FROM evilfunction((SELECT ?)))
+FROM another_T
+----
+tinyint
+1
+0
+(empty)
+%4
+%4
+int
+31
+0
+NULL
+NULL
+NULL
+
+query TIITTT nosort
+PREPARE SELECT
+	(SELECT 1 FROM evilfunction((SELECT ?, ?)))
+FROM another_T
+----
+tinyint
+1
+0
+(empty)
+%5
+%5
+int
+31
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+

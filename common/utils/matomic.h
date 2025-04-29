@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -36,7 +36,6 @@
  *
  * Some of these are also available for pointers:
  * ATOMIC_PTR_INIT
- * ATOMIC_PTR_DESTROY
  * ATOMIC_PTR_GET
  * ATOMIC_PTR_SET
  * ATOMIC_PTR_XCG
@@ -87,7 +86,7 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 #error "we need a 64 bit atomic type"
 #endif
 
-#else
+#else  /* not C++ */
 
 #include <stdatomic.h>
 
@@ -130,7 +129,6 @@ typedef volatile atomic_address ATOMIC_PTR_TYPE;
 typedef void *_Atomic volatile ATOMIC_PTR_TYPE;
 #endif
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
-#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	ATOMIC_VAR_INIT(val)
 #define ATOMIC_PTR_GET(var)			(*(var))
 #define ATOMIC_PTR_SET(var, val)	(*(var) = (void *) (val))
@@ -239,7 +237,6 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 
 typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	(val)
 #define ATOMIC_PTR_GET(var)		(*(var))
 #define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
@@ -288,7 +285,6 @@ typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE __attribute__((__aligned__ (8)));
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_PTR_VAR_INIT(val)	(val)
-#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_SET(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_XCG(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)

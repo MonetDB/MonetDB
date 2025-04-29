@@ -1,0 +1,40 @@
+-- origin: Anders Blaagaard
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table P1655818 (
+	time timestamp not null,
+	x numeric(5,2) not null,
+	y numeric(5,2) not null
+)
+
+query TIITTT nosort
+PREPARE insert into P1655818 (time,x,y) values (?,?,?)
+----
+timestamp
+7
+0
+NULL
+NULL
+NULL
+decimal
+5
+2
+NULL
+NULL
+NULL
+decimal
+5
+2
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(timestamp '2003-01-30 18:03:35.0', 71.91, 71.98)
+
+statement ok
+ROLLBACK
+

@@ -1,6 +1,6 @@
 create
 load
-compress
+#compress
 q1
 q2
 q3

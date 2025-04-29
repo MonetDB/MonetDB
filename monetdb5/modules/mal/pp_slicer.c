@@ -51,6 +51,8 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 	bool private = (!tid || is_bat_nil(*tid));
 	topn_t *n = NULL;
 
+	if (*start < 0 || (*end < 0 && !is_lng_nil(*end)))
+		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		return createException(SQL, "algebra.subslice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
@@ -61,8 +63,8 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->T.sink = (Sink*)n;
-		t->T.private_bat = 1;
+		t->tsink = (Sink*)n;
+		t->tprivate_bat = 1;
 	} else {
 		if ((t = BATdescriptor(*tid)) == NULL) {
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -74,13 +76,13 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 		pipeline_lock1(t);
 		locked = 1;
 	}
-	n = (topn_t*)t->T.sink;
+	n = (topn_t*)t->tsink;
 	if (!n) {
 		if ((n = topn_create()) == NULL) {
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		t->T.sink = (Sink*)n;
+		t->tsink = (Sink*)n;
 	}
 	assert(n && n->s.type == TOPN_SINK);
 
@@ -114,7 +116,7 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 				goto error;
 			}
 			re += rest;
-			g->T.maxval = re;
+			g->tmaxval = re;
 			fb = 0;
 		}
 		n->start = rs;
@@ -128,7 +130,7 @@ LALGsubslice(bat *gid, bat *rid, bat *tid, bat *bid, /*bat *sid,*/ lng *start, l
 			msg = createException(SQL, "algebra.subslice", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		g->T.maxval = re;
+		g->tmaxval = re;
 	}
 	BBPunfix(b->batCacheid);
 	if (!private) {

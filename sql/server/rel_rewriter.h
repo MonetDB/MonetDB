@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -18,6 +18,7 @@
 
 #define is_ifthenelse_func(sf) (strcmp((sf)->func->base.name, "ifthenelse") == 0)
 #define is_isnull_func(sf) (strcmp((sf)->func->base.name, "isnull") == 0)
+#define is_isnotnull_func(sf) (strcmp((sf)->func->base.name, "isnotnull") == 0)
 #define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0)
 #define is_caselike_func(sf) (strcmp((sf)->func->base.name, "case") == 0 || \
 							  strcmp((sf)->func->base.name, "casewhen") == 0 || \
@@ -25,6 +26,7 @@
 							  strcmp((sf)->func->base.name, "nullif") == 0)
 #define is_case_func(sf) (strcmp((sf)->func->base.name, "case") == 0)
 #define is_casewhen_func(sf) (strcmp((sf)->func->base.name, "casewhen") == 0)
+#define is_neg_func(sf) (!(sf)->func->s && strcmp((sf)->func->base.name, "sql_neg") == 0)
 
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 extern sql_rel *rewrite_simplify(visitor *v, uint8_t cycle, bool value_based_opt, sql_rel *rel);

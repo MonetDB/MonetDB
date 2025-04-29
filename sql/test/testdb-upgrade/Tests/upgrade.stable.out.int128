@@ -45,16 +45,16 @@ GRANT EXECUTE ON AGGREGATE covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
  external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
-create aggregate median(val HUGEINT) returns HUGEINT
+create aggregate median(val HUGEINT) returns HUGEINT ORDERED
  external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
-create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
+create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT ORDERED
  external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
-create aggregate median_avg(val HUGEINT) returns DOUBLE
+create aggregate median_avg(val HUGEINT) returns DOUBLE ORDERED
  external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(HUGEINT) TO PUBLIC;
-create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE ORDERED
  external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
@@ -63,16 +63,16 @@ GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
 create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
  external name "sql"."corr";
 GRANT EXECUTE ON WINDOW corr(HUGEINT, HUGEINT) TO PUBLIC;
-create aggregate median(val DECIMAL(38)) returns DECIMAL(38)
+create aggregate median(val DECIMAL(38)) returns DECIMAL(38) ORDERED
  external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(DECIMAL(38)) TO PUBLIC;
-create aggregate median_avg(val DECIMAL(38)) returns DOUBLE
+create aggregate median_avg(val DECIMAL(38)) returns DOUBLE ORDERED
  external name "aggr"."median_avg";
 GRANT EXECUTE ON AGGREGATE median_avg(DECIMAL(38)) TO PUBLIC;
-create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38)
+create aggregate quantile(val DECIMAL(38), q DOUBLE) returns DECIMAL(38) ORDERED
  external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(DECIMAL(38), DOUBLE) TO PUBLIC;
-create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE
+create aggregate quantile_avg(val DECIMAL(38), q DOUBLE) returns DOUBLE ORDERED
  external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(DECIMAL(38), DOUBLE) TO PUBLIC;
 create function json.filter(js json, name hugeint)
@@ -84,50 +84,69 @@ update sys.functions set system = true where system <> true and name in ('stddev
 update sys.functions set system = true where system <> true and name = 'filter' and schema_id = (select id from sys.schemas where name = 'json') and type = 1;
 
 Running database upgrade commands:
-create procedure sys.vacuum(sname string, tname string)
-external name sql.vacuum;
-create procedure sys.vacuum(sname string, tname string, interval int)
-external name sql.vacuum;
-create procedure sys.stop_vacuum(sname string, tname string)
-external name sql.stop_vacuum;
-create function sys.unclosed_result_sets()
-returns table(
-	"query_id" oid,
-	"res_id" int
-)
-external name sql.unclosed_result_sets;
-grant execute on function sys.unclosed_result_sets() to public;
-update sys.functions set system = true where system <> true and schema_id = 2000 and name in ('vacuum', 'stop_vacuum', 'unclosed_result_sets');
-drop view sys.dependencies_vw cascade;
-drop view sys.ids cascade;
-CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) AS
-SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) AS system FROM sys.auths UNION ALL
-SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system FROM sys.schemas UNION ALL
-SELECT t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system FROM sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id UNION ALL
-SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL
-SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL
-SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL
-SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL
-SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL
-SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL
-SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL
-SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL
-SELECT f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system FROM sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL
-SELECT a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system FROM sys.args a JOIN sys.functions f ON a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id UNION ALL
-SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false FROM sys.sequences UNION ALL
-SELECT o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false FROM sys.objects o JOIN sys._tables pt ON o.sub = pt.id JOIN sys._tables mt ON o.nr = mt.id WHERE mt.type = 3 UNION ALL
-SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid')) FROM sys.types
- ORDER BY id;
-GRANT SELECT ON sys.ids TO PUBLIC;
-CREATE VIEW sys.dependencies_vw AS
-SELECT d.id, i1.obj_type, i1.name,
-       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,
-       d.depend_type, dt.dependency_type_name
-  FROM sys.dependencies d
-  JOIN sys.ids i1 ON d.id = i1.id
-  JOIN sys.ids i2 ON d.depend_id = i2.id
-  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id
- ORDER BY id, depend_id;
-GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
-update sys._tables set system = true where system <> true and schema_id = 2000 and name in ('ids', 'dependencies_vw');
+ALTER TABLE sys.table_types SET READ WRITE;
+INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');
+
+Running database upgrade commands:
+ALTER TABLE sys.table_types SET READ ONLY;
+
+Running database upgrade commands:
+DROP VIEW information_schema.views CASCADE;
+DROP VIEW information_schema.tables CASCADE;
+CREATE VIEW INFORMATION_SCHEMA.TABLES AS SELECT
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  tt."table_type_name" AS TABLE_TYPE,
+  cast(NULL AS varchar(1)) AS SELF_REFERENCING_COLUMN_NAME,
+  cast(NULL AS varchar(1)) AS REFERENCE_GENERATION,
+  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_CATALOG,
+  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_SCHEMA,
+  cast(NULL AS varchar(1)) AS USER_DEFINED_TYPE_NAME,
+  cast(sys.ifthenelse((t."type" IN (0, 3, 7, 20, 30) AND t."access" IN (0, 2)), 'YES', 'NO') AS varchar(3)) AS IS_INSERTABLE_INTO,
+  cast('NO' AS varchar(3)) AS IS_TYPED,
+  cast((CASE t."commit_action" WHEN 1 THEN 'DELETE' WHEN 2 THEN 'PRESERVE' WHEN 3 THEN 'DROP' ELSE NULL END) AS varchar(10)) AS COMMIT_ACTION,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  t."type" AS table_type_id,
+  st."count" AS row_count,
+  t."system" AS is_system,
+  sys.ifthenelse(t."type" IN (1, 11, 21, 31), TRUE, FALSE) AS is_view,
+  t."query" AS query_def,
+  cm."remark" AS comments
+ FROM sys."tables" t
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ INNER JOIN sys."table_types" tt ON t."type" = tt."table_type_id"
+ LEFT OUTER JOIN sys."comments" cm ON t."id" = cm."id"
+ LEFT OUTER JOIN (SELECT DISTINCT "schema", "table", "count" FROM sys."statistics"()) st ON (s."name" = st."schema" AND t."name" = st."table")
+ ORDER BY s."name", t."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.TABLES TO PUBLIC WITH GRANT OPTION;
+CREATE VIEW INFORMATION_SCHEMA.VIEWS AS SELECT
+  cast(NULL AS varchar(1)) AS TABLE_CATALOG,
+  s."name" AS TABLE_SCHEMA,
+  t."name" AS TABLE_NAME,
+  t."query" AS VIEW_DEFINITION,
+  cast('NONE' AS varchar(10)) AS CHECK_OPTION,
+  cast('NO' AS varchar(3)) AS IS_UPDATABLE,
+  cast('NO' AS varchar(3)) AS INSERTABLE_INTO,
+  cast('NO' AS varchar(3)) AS IS_TRIGGER_UPDATABLE,
+  cast('NO' AS varchar(3)) AS IS_TRIGGER_DELETABLE,
+  cast('NO' AS varchar(3)) AS IS_TRIGGER_INSERTABLE_INTO,
+  -- MonetDB column extensions
+  t."schema_id" AS schema_id,
+  t."id" AS table_id,
+  t."type" AS table_type_id,
+  t."system" AS is_system,
+  cm."remark" AS comments
+ FROM sys."tables" t
+ INNER JOIN sys."schemas" s ON t."schema_id" = s."id"
+ LEFT OUTER JOIN sys."comments" cm ON t."id" = cm."id"
+ WHERE t."type" IN (1, 11, 21, 31)
+ ORDER BY s."name", t."name";
+GRANT SELECT ON TABLE INFORMATION_SCHEMA.VIEWS TO PUBLIC WITH GRANT OPTION;
+
+UPDATE sys._tables SET system = true where system <> true
+ and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
+ and name in ('tables','views');
 

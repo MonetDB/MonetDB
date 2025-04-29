@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -436,9 +436,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t i = 0, j = 0;
 	char argbuf[64];
 	char buf[8192];
-	char *fname = NULL;
 	char *oname = NULL;
-	char *libname = NULL;
 	char error_buf[BUFSIZ];
 	char total_error_buf[8192];
 	size_t error_buffer_position = 0;
@@ -668,16 +666,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	MT_lock_unset(&cache_lock);
 
 	if (!func) {
+		char fname[MAXPATH];
 		// function was not found in the cache
 		// we have to compile it
 
 		// first generate the names	of the files
-		// we place the temporary files in the DELDIR directory
+		// we place the temporary files in the TEMPDIR directory
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
 		const char prefix[] = TEMPDIR_NAME DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
-		char *deldirpath;
+		char tempdirpath[MAXPATH];
 
 		memcpy(buf, prefix, sizeof(char) * strlen(prefix));
 		// generate a random 32-character name for the temporary files
@@ -686,8 +685,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 										   (sizeof(valid_path_characters) - 1)];
 		}
 		buf[i] = '\0';
-		fname = GDKfilepath(0, BATDIR, buf, "c");
-		if (fname == NULL) {
+		if (GDKfilepath(fname, sizeof(fname), 0, BATDIR, buf, "c") != GDK_SUCCEED) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
@@ -701,25 +699,22 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		memmove(buf + strlen(SO_PREFIX) + prefix_size, buf + prefix_size,
 				i + 1 - prefix_size);
 		memcpy(buf + prefix_size, SO_PREFIX, sizeof(char) * strlen(SO_PREFIX));
-		libname =
-			GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? &SO_EXT[1] : SO_EXT);
-		if (libname == NULL) {
+		char libname[MAXPATH];
+		if (GDKfilepath(libname, sizeof(libname), 0, BATDIR, buf, SO_EXT[0] == '.' ? &SO_EXT[1] : SO_EXT) != GDK_SUCCEED) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
 
-		// if DELDIR directory does not exist, create it
-		deldirpath = GDKfilepath(0, NULL, TEMPDIR, NULL);
-		if (deldirpath == NULL) {
+		// if TEMPDIR directory does not exist, create it
+		if (GDKfilepath(tempdirpath, sizeof(tempdirpath), 0, NULL, TEMPDIR, NULL) != GDK_SUCCEED) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (MT_mkdir(deldirpath) < 0 && errno != EEXIST) {
+		if (MT_mkdir(tempdirpath) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
-								  "cannot create directory %s\n", deldirpath);
+								  "cannot create directory %s\n", tempdirpath);
 			goto wrapup;
 		}
-		GDKfree(deldirpath);
 
 		// now generate the source file
 		f = MT_fopen(fname, "w+");
@@ -872,8 +867,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we use popen to capture any error output
 		snprintf(buf, sizeof(buf), "%s %s -c -fPIC %s %s -o %s 2>&1 >/dev/null",
 				 c_compiler, extra_cflags ? extra_cflags : "", compilation_flags, fname, oname);
-		GDKfree(fname);
-		fname = NULL;
 		compiler = popen(buf, "r");
 		if (!compiler) {
 			msg = createException(MAL, "cudf.eval", "Failed popen");
@@ -934,8 +927,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 
 		handle = dlopen(libname, RTLD_LAZY);
-		GDKfree(libname);
-		libname = NULL;
 		if (!handle) {
 			msg = createException(MAL, "cudf.eval",
 								  "Failed to open shared library: %s.",
@@ -1598,9 +1589,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 wrapup:
 	// cleanup
 	// remove the signal handler, if any was set
-	GDKfree(fname);
 	GDKfree(oname);
-	GDKfree(libname);
 	MT_tls_set(capi_tls_key, NULL);
 	if (option_enable_mprotect) {
 		if (sa.sa_sigaction) {

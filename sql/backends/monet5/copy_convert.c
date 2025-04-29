@@ -52,7 +52,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_generic", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	n = BATcount(indices);
-	reader *r = (reader*)block->T.sink;
+	reader *r = (reader*)block->tsink;
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
@@ -190,7 +190,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (block == NULL || indices == NULL)
 		bailout("copy.parse_float", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	n = BATcount(indices);
-	reader *r = (reader*)block->T.sink;
+	reader *r = (reader*)block->tsink;
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
@@ -349,7 +349,7 @@ string_sharing_bat(BUN cnt, const char *base)
 	strconcat_len(hp->filename, sizeof(hp->filename), nme, ".theap", NULL);
 	hp->base = (char*)base;
 	b->tvheap = hp;
-	b->T.type = TYPE_str;
+	b->ttype = TYPE_str;
 	/* upgrade filename */
 	strconcat_len(b->theap->filename, sizeof(b->theap->filename), nme, ".tail4", NULL);
 	return b;
@@ -382,7 +382,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	reader *r = (reader*)block_bat->T.sink;
+	reader *r = (reader*)block_bat->tsink;
 	copy_init_error_handling(&errors, cntxt, r->line_count[p->wid], col_no, col_name, rows);
 	errors.r = r;
 
@@ -484,7 +484,7 @@ parse_fixed_width_column(
 	if (!block_bat || !offsets_bat)
 		bailout(fname, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	reader *r = (reader*)block_bat->T.sink;
+	reader *r = (reader*)block_bat->tsink;
 	errors->r = r;
 	errors->starting_row = r->line_count[p->wid];
 	parsed_bat = COLnew(0, tpe, BATcount(offsets_bat), TRANSIENT);

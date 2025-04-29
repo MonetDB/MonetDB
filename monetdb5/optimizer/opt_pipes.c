@@ -5,7 +5,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024 MonetDB Foundation;
+ * Copyright 2024, 2025 MonetDB Foundation;
  * Copyright August 2008 - 2023 MonetDB B.V.;
  * Copyright 1997 - July 2008 CWI.
  */
@@ -74,6 +74,10 @@ static struct pipeline {
  * tools/mserver/mserver5.1) accordingly!
  */
 	{"default_pipe",
+	 /* NOTE: this pipeline is automatically replaced by the
+	  * default_fast pipeline by the SQL layer, i.e. this list of
+	  * optimizers isn't actually used (look in opt_fastpath.c
+	  * instead) */
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -127,6 +131,10 @@ static struct pipeline {
  * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"no_mitosis_pipe",
+	 /* NOTE: this pipeline is automatically replaced by the
+	  * default_fast pipeline by the SQL layer with the no_mitosis
+	  * option set, i.e. this list of optimizers isn't actually used
+	  * (look in opt_fastpath.c instead) */
 	 (char *[]) {
 		 "inline",
 		 "remap",
@@ -138,6 +146,8 @@ static struct pipeline {
 		 "deadcode",
 		 "pushselect",
 		 "aliases",
+		 "for",
+		 "dict",
 		 "mergetable",
 		 "aliases",
 		 "constants",
@@ -191,6 +201,37 @@ static struct pipeline {
 		 "deadcode",
 		 "matpack",
 		 "reorder",
+		 "querylog",
+		 "multiplex",
+		 "generator",
+		 "candidates",
+		 "deadcode",
+		 "postfix",
+		 "profiler",
+		 "garbageCollector",
+		 NULL,
+	 },
+	 true,
+	},
+	{"recursive_pipe",
+	 (char *[]) {
+		 "inline",
+		 "remap",
+		 "costModel",
+		 "coercions",
+		 "aliases",
+		 "evaluate",
+		 "deadcode",
+		 "pushselect",
+		 "aliases",
+		 "for",
+		 "dict",
+		 "mergetable",
+		 "aliases",
+		 "constants",
+		 "projectionpath",
+		 "deadcode",
+		 "matpack",
 		 "querylog",
 		 "multiplex",
 		 "generator",
