@@ -169,6 +169,9 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int nr = *getArgReference_int(stk, pci, 1);
 
 	pp_counter *c = (pp_counter*)GDKzalloc(sizeof(pp_counter));
+	if (!c) {
+		throw(SQL, "pipeline.counter",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	BAT *b = COLnew(0, TYPE_bte, 0, TRANSIENT);
 	if (!b) {
 		GDKfree(c);
