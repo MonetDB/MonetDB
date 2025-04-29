@@ -195,34 +195,34 @@ select elements from amb, unnest(elements) u
 ## variable-length type array
 
 statement ok
-create table vlent_arr (s text[])
+create table vlt_arr (s text[])
 
 query I nosort
-select * from vlent_arr
+select * from vlt_arr
 ----
 
 statement ok
-insert into vlent_arr values ('{"left", "right"}')
+insert into vlt_arr values ('{"left", "right"}')
 
 query T nosort
-select * from vlent_arr
+select * from vlt_arr
 ----
 {"left","right"}
 
 statement ok
-insert into vlent_arr values ('{"l2", "r2"}')
+insert into vlt_arr values ('{"l2", "r2"}')
 
 query T nosort
-select * from vlent_arr
+select * from vlt_arr
 ----
 {"left","right"}
 {"l2","r2"}
 
 statement ok
-insert into vlent_arr values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
+insert into vlt_arr values ('{"single"}'), ('{"a", "b", "c"}'), ('{"one", "two"}');
 
 query T nosort
-select * from vlent_arr
+select * from vlt_arr
 ----
 {"left","right"}
 {"l2","r2"}
