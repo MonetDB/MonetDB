@@ -62,22 +62,22 @@ select sq.* from (select array[10, 11] a) sq, unnest(sq.a) u
 {10,11}
 
 statement ok
-create table flent_arr (n int[])
+create table flt_arr (n int[])
 
 query I nosort
-select * from flent_arr
+select * from flt_arr
 ----
 
 statement ok
-insert into flent_arr values ('{10, 11}')
+insert into flt_arr values ('{10, 11}')
 
 query T nosort
-select * from flent_arr
+select * from flt_arr
 ----
 {10,11}
 
 query TI nosort table_unnest_all
-select * from flent_arr, unnest(flent_arr.n)
+select * from flt_arr, unnest(flt_arr.n)
 ----
 {10,11}
 10
@@ -85,25 +85,25 @@ select * from flent_arr, unnest(flent_arr.n)
 11
 
 query I nosort
-select elements from flent_arr, unnest(flent_arr.n)
+select elements from flt_arr, unnest(flt_arr.n)
 ----
 10
 11
 
 query I nosort
-select u.* from flent_arr, unnest(flent_arr.n) u
+select u.* from flt_arr, unnest(flt_arr.n) u
 ----
 10
 11
 
 query I nosort
-select u.elements from flent_arr, unnest(flent_arr.n) u
+select u.elements from flt_arr, unnest(flt_arr.n) u
 ----
 10
 11
 
 query IT nosort
-select u.*, fa.* from flent_arr fa, unnest(fa.n) u
+select u.*, fa.* from flt_arr fa, unnest(fa.n) u
 ----
 10
 {10,11}
@@ -111,7 +111,7 @@ select u.*, fa.* from flent_arr fa, unnest(fa.n) u
 {10,11}
 
 query TIII nosort unnest_all
-select fa.*, u.* from flent_arr fa, unnest(fa.n) u
+select fa.*, u.* from flt_arr fa, unnest(fa.n) u
 ----
 {10,11}
 10
@@ -119,13 +119,13 @@ select fa.*, u.* from flent_arr fa, unnest(fa.n) u
 11
 
 query T nosort
-select fa.* from flent_arr fa, unnest(fa.n) u
+select fa.* from flt_arr fa, unnest(fa.n) u
 ----
 {10,11}
 {10,11}
 
 query TI nosort unnest_all
-select * from flent_arr fa, unnest(fa.n) u
+select * from flt_arr fa, unnest(fa.n) u
 ----
 {10,11}
 10
@@ -133,7 +133,7 @@ select * from flent_arr fa, unnest(fa.n) u
 11
 
 query TI nosort unnest_all
-select * from flent_arr, unnest(flent_arr.n)
+select * from flt_arr, unnest(flt_arr.n)
 ----
 {10,11}
 10
@@ -141,19 +141,19 @@ select * from flent_arr, unnest(flent_arr.n)
 11
 
 statement ok
-insert into flent_arr values (array[20, 21])
+insert into flt_arr values (array[20, 21])
 
 query T nosort
-select * from flent_arr
+select * from flt_arr
 ----
 {10,11}
 {20,21}
 
 statement ok
-insert into flent_arr values ('{30, 31}'), ('{40}'), ('{50, 51, 52}')
+insert into flt_arr values ('{30, 31}'), ('{40}'), ('{50, 51, 52}')
 
 query T nosort
-select * from flent_arr
+select * from flt_arr
 ----
 {10,11}
 {20,21}
@@ -162,10 +162,10 @@ select * from flent_arr
 {50,51,52}
 
 statement ok
-insert into flent_arr values (array[60]), (array[70, 71])
+insert into flt_arr values (array[60]), (array[70, 71])
 
 query T nosort
-select * from flent_arr
+select * from flt_arr
 ----
 {10,11}
 {20,21}
