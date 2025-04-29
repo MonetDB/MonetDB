@@ -1181,12 +1181,14 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		goto done;
 	}
 
-	if (BATtdense(g) || (g->tkey && g->tnonil)) {
+	if (ci.ncand == ngrp && (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
-		goto done;
-	}
+		if (bn)
+			bn->hseqbase = min;
+ 		goto done;
+ 	}
 
 	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
