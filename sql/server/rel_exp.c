@@ -1028,7 +1028,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 		sql_exp *last = rel->exps->t->data;
 		sql_subtype *t = exp_subtype(last);
 		e->tpe = t ? *t : (sql_subtype) {0};
-		if (t->multiset == MS_ARRAY || t->multiset == MS_SETOF)
+		if (t && (t->multiset == MS_ARRAY || t->multiset == MS_SETOF))
 			e->f = last->f;
 	}
 	return e;
