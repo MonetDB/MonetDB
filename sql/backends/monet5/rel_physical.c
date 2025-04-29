@@ -1001,7 +1001,6 @@ rel_add_project(mvc *sql, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 		rel->l = rel_add_project(sql, rel->l);

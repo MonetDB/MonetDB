@@ -964,7 +964,7 @@ BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, const bat *key, const ptr *H)
 	/* props */
 	gid last = ATOMIC_GET(&h->last);
 	/* pass max id */
-	g->T.maxval = last;
+	g->tmaxval = last;
 	g->tkey = FALSE;
 	/* ht_sink is an in&out var, so it should already have the correct bat(Cache)id */
 	//*ht_sink = u->batCacheid;
@@ -1331,7 +1331,7 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, const bat *key, const bat *pare
 	/* props */
 	gid last = ATOMIC_GET(&h->last);
 	/* pass max id */
-	g->T.maxval = last;
+	g->tmaxval = last;
 	g->tkey = FALSE;
 	/* ht_sink is an in&out var, so it should already have the correct bat(Cache)id */
 	//*ht_sink = u->batCacheid;
@@ -3850,13 +3850,13 @@ OAHASHget_pos(bat *pos, bat *res, bat *ht_sink, const ptr *H)
 	 * If we want to reuse the hash, we need to reset the position info.
 	 */
 	BUN ttlcnt = BATcount(r);
-	oid tseq = ATOMIC_ADD(&h->T.maxval, ttlcnt);
+	oid tseq = ATOMIC_ADD(&h->tmaxval, ttlcnt);
 	p = BATdense(0, tseq, ttlcnt);
 	if (!p) {
 		err = createException(SQL, "oahash.get_positions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
-	p->T.maxval = tseq + ttlcnt;
+	p->tmaxval = tseq + ttlcnt;
 
 	BATsetcount(p, ttlcnt);
 	*pos = p->batCacheid;

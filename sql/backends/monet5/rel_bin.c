@@ -2938,7 +2938,7 @@ releqjoin(backend *be, list *l1, list *l2, list *exps, int used_hash, int need_l
 	return res;
 }
 
-static bool
+bool
 can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 {
 	bool can_join = 0;
@@ -8899,7 +8899,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	return s;
 }
 
-static stmt *
+stmt *
 rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *r = rel;

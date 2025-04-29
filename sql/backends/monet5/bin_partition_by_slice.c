@@ -342,7 +342,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 								estimate = (lng) est;
 							}
 
-							InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, false, curhash);
+							InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, false, grphash);
 							if (q == NULL)
 								return NULL;
 							assert(!e->shared);

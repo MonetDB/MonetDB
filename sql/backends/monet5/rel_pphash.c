@@ -16,7 +16,7 @@
 #include "sql_pp_statement.h"
 #include "bin_partition.h"
 #include "bin_partition_by_value.h"
-#include "opt_prelude.h"
+#include "mal_builder.h"
 
 #if 0
 static lng
