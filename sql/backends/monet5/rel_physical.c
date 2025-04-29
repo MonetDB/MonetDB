@@ -19,7 +19,10 @@
 #include "sql_storage.h"
 #include "rel_bin.h"
 
-static int rel_partition_(mvc *sql, sql_rel *rel, int pb);
+#define IS_ORDER_BASED_AGGR(fname, argc) (\
+				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
+				(argc == 1 && (strcmp((fname), "median") == 0 || strcmp((fname), "median_avg") == 0)))
+
 static int do_oahash_join(sql_rel *rel);
 
 /* Returns the row count of a base table or any count info we can get fom the
@@ -365,7 +368,8 @@ rel_groupby_partition_safe(sql_rel *rel)
 	return true;
 }
 
-static bool only_equi_joins(sql_rel *rel)
+static bool
+only_equi_joins(sql_rel *rel)
 {
 	assert(!list_empty(rel->exps));
 
@@ -502,12 +506,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->oahash = 2;
 		}
 
-		/* NB old code to handle oahash case
-		if (rel->l)
-			res = rel_partition_(sql, rel->l, rel->oahash?SPB:pb);
-		if (rel->r)
-			res = rel_partition_(sql, rel->r, rel->oahash?SPB:0);
-		*/
 		if (rel->l && rel->op != op_anti)
 			res = rel_partition_(sql, rel->l, pb);
 		if (!res)
@@ -587,20 +585,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->parallel = 1;
 		}
 
-		//if (pb && is_outerjoin(rel->op))
-		if (pb && rel->op == op_full)
+		if (pb && is_outerjoin(rel->op))
 			return 0;
-
-#if 0 // NB this is old code
-		/* For now we only try to partition in case of a equi-join.
-		 * The other joins are too complex to handle. */
-		if (pb) /* and rel->op == op_join */
-			res = _rel_partition(sql, rel);
-		if (is_left(rel->op)) /* and pb == 0 */
-			return rel_partition_(sql, rel->l, pb);
-		if (is_right(rel->op)) /* and pb == 0 */
-			return rel_partition_(sql, rel->r, pb);
-#endif
 		if (is_left(rel->op)) /* and pb == 0 */
 			return rel_partition_(sql, rel->l, pb);
 		/* For now we only try to partition in case of a equi-join.
@@ -933,10 +919,6 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-#define IS_ORDER_BASED_AGGR(fname, argc) (\
-				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
-				(argc == 1 && (strcmp((fname), "median") == 0 || strcmp((fname), "median_avg") == 0)))
-
 static sql_rel *
 rel_add_orderby(visitor *v, sql_rel *rel)
 {
@@ -983,71 +965,6 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_add_project(mvc *sql, sql_rel *rel)
-{
-	if (!rel)
-		return rel;
-
-	switch (rel->op) {
-	case op_basetable:
-	case op_table:
-		break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-
-	case op_semi:
-	case op_anti:
-
-	case op_inter:
-	case op_except:
-		rel->l = rel_add_project(sql, rel->l);
-		rel->r = rel_add_project(sql, rel->r);
-		if (is_join(rel->op) && !rel_is_ref(rel))
-			rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-		break;
-	case op_project:
-	case op_select:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-		rel->l = rel_add_project(sql, rel->l);
-		if (is_select(rel->op) && !rel_is_ref(rel))
-			rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-		break;
-	case op_ddl:
-		rel->l = rel_add_project(sql, rel->l);
-		if (rel->r)
-			rel->r = rel_add_project(sql, rel->r);
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_merge:
-		rel->r = rel_add_project(sql, rel->r);
-		break;
-	case op_munion:
-		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			n->data = rel_add_project(sql, n->data);
-	}
-
-	if (0 && rel_is_ref(rel) && !is_project(rel->op)) {
-		/* ughly inplace */
-		sql_rel *n = rel_create(sql->sa);
-
-		*n = *rel;
-		n->ref.refcnt = 1;
-		rel->op = op_project;
-		rel->l = n;
-		rel->r = NULL;
-		rel->exps = rel_projections(sql, n, NULL, 1, 1);
-	}
-	return rel;
-}
-
 static sql_exp *
 exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -1086,8 +1003,6 @@ rel_physical(mvc *sql, sql_rel *rel)
 	(void)rel_partition_(sql, rel, 0);
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
-	rel = rel_add_project(sql, rel);
-	rel = rel_dce(&v, NULL, rel);
 	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
 
 #ifdef HAVE_HGE
