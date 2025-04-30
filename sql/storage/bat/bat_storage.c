@@ -2959,6 +2959,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 static int
 col_set_range(sql_trans *tr, sql_column *col, sql_part *pt, bool add_range)
 {
+	if (isTable(col->t))
+		return LOG_OK;
 	assert(tr->active);
 	if (!isTable(col->t) || !col->t->s)
 		return LOG_OK;

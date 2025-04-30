@@ -117,7 +117,9 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 		if (!be->need_pipeline)
 			set_need_pipeline(be);
 	} else {
-		set_pipeline(be, stmt_pp_start_nrparts(be, pp_nr_slices(rel)));
+		int nr_parts = pp_nr_slices(rel);
+		int source = pp_counter(be, nr_parts, -1);
+		set_pipeline(be, stmt_pp_start_generator(be, source, true));
 	}
 
 	/* first construct the sub-relation */
@@ -126,7 +128,8 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 	if (sub) {
 		pp = get_pipeline(be);
 		if (!pp) {
-			pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub));
+			int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
+			pp = stmt_pp_start_generator(be, source, true);
 			set_pipeline(be, pp);
 			sub = rel2bin_slicer(be, sub, 1);
 		}
