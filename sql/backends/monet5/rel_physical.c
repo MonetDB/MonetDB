@@ -136,14 +136,14 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
  * REL_PARTITION: partition the table via bind (needed)
  * SPB: Start Parallel Block
  * EPB: End Parallel Block
- * NPB: currently not used
+ * CPB: continue Parallel block (ie streaming, internal can't be blocking)
  * A nested parallel blocks is lifted by an extra reference, making sure the inner
  * block is executed before the outer block.
  */
 #define REL_PARTITION 1
 #define SPB 2
 #define EPB 3
-#define NPB 4
+#define CPB 4
 
 static int
 rel_mark_partition(mvc *sql, sql_rel *rel)
@@ -274,61 +274,6 @@ _rel_partition(mvc *sql, sql_rel *rel)
 	 * knowledge. */
 	return rel_mark_partition(sql, rel);
 }
-
-#if 0
-static int
-has_groupby(sql_rel *rel)
-{
-	if (!rel)
-		return 0;
-
-	switch (rel->op) {
-		case op_groupby:
-			return 1;
-		case op_join:
-		case op_left:
-		case op_right:
-		case op_full:
-
-		case op_semi:
-		case op_anti:
-
-		case op_inter:
-		case op_except:
-
-		case op_merge:
-			return has_groupby(rel->l) || has_groupby(rel->r);
-		case op_munion:
-			for (node *n = ((list*)rel->l)->h; n; n = n->next)
-				if (has_groupby(n->data))
-					return 1;
-			return 0;
-		case op_project:
-		case op_select:
-		case op_topn:
-		case op_sample:
-			return has_groupby(rel->l);
-		case op_insert:
-		case op_update:
-		case op_delete:
-		case op_truncate:
-			return has_groupby(rel->r);
-		case op_ddl:
-			if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view)
-				return has_groupby(rel->l);
-			if (rel->flag == ddl_list || rel->flag == ddl_exception)
-				return has_groupby(rel->l) || has_groupby(rel->r);
-			return 0;
-		case op_table:
-			if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
-				return has_groupby(rel->l);
-			return 0;
-		case op_basetable:
-			return 0;
-	}
-	return 0;
-}
-#endif
 
 static bool
 rel_groupby_partition_safe(sql_rel *rel)
@@ -504,6 +449,11 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 	} else if (is_semi(rel->op)) {
 		if (do_oahash_join(rel)) {
 			rel->oahash = 2;
+			rel->parallel = 1;
+			if (pb == CPB)
+				rel_dup(rel);
+			if (pb)
+				rel->spb = 1;
 		}
 
 		if (rel->l && rel->op != op_anti)
@@ -527,7 +477,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel))
 			return 0;
 		for(node *n = rels->h; n; n = n->next) {
-			int lres = rel_partition_(sql, n->data, pb);
+			int lres = rel_partition_(sql, n->data, pb?CPB:0);
 			if (lres == EPB) {
 				rel->partition = 1;
 				if (pb)
@@ -583,6 +533,11 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			if(is_basetable(r->op))
 				r->partition = 1;
 			rel->parallel = 1;
+			if (pb == CPB)
+				rel_dup(rel);
+			if (pb)
+				rel->spb = 1;
+			return SPB;
 		}
 
 		if (pb && is_outerjoin(rel->op))

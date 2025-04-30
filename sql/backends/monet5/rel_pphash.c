@@ -105,7 +105,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 }
 
 static stmt *
-_start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
+_start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
 {
 	stmt *sub = NULL, *pp = NULL;
 
@@ -113,9 +113,9 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
 	}
-	if (pp_can_not_start(be->mvc, rel)) {
-		if (!be->need_pipeline)
-			set_need_pipeline(be);
+	if (1 || !spb || pp_can_not_start(be->mvc, rel)) {
+		assert (!be->need_pipeline);
+		set_need_pipeline(be);
 	} else {
 		int nr_parts = pp_nr_slices(rel);
 		int source = pp_counter(be, nr_parts, -1);
@@ -442,6 +442,9 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_ht = NULL, *stmts_hp = NULL;
 	stmt *sub = NULL, *pp = NULL;
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	(void)neededpp;
+
 	/* find the hash- vs probe-side */
 	if (rel->op == op_full) {
         sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
@@ -478,7 +481,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
 
 	/*** HASH PHASE ***/
-	sub = _start_pp(be, rel_hsh, 1, refs);
+	sub = _start_pp(be, rel_hsh, 1, refs, rel->spb);
 	if (!sub) return NULL;
 
 	pp = get_pipeline(be);
@@ -490,7 +493,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	(void)stmt_pp_end(be, pp);
 
 	/*** PROBE PHASE ***/
-	sub = _start_pp(be, rel_prb, 0, refs);
+	sub = _start_pp(be, rel_prb, 0, refs, false);
 	if (!sub) return NULL;
 
 	pp = get_pipeline(be);
@@ -521,6 +524,9 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	(void)neededpp;
+
 	assert(rel->l && rel->r);
 	if (rel->oahash == 1) {
 		rel_hsh = rel->l;
@@ -542,7 +548,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh, refs);
 
 	/*** (pseudo) PROBE PHASE ***/
-	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs);
+	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs, false);
 	if (!stmts_prb_res) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -575,6 +581,9 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
 	stmt *sub = NULL, *pp = NULL;
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	(void)neededpp;
+
 	if (!rel->exps) { /* the always-true case. just return the LHS */
 		// TODO we should already optimise-away this case of semi-join in PLAN
 		sub = subrel_bin(be, rel_prb, refs);
@@ -598,7 +607,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, sz);
 
 		/*** HASH PHASE ***/
-		sub = _start_pp(be, rel_hsh, 1, refs);
+		sub = _start_pp(be, rel_hsh, 1, refs, rel->spb);
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);
@@ -608,7 +617,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		(void)stmt_pp_end(be, pp);
 
 		/*** PROBE PHASE ***/
-		sub = _start_pp(be, rel_prb, 0, refs);
+		sub = _start_pp(be, rel_prb, 0, refs, false);
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);

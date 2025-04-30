@@ -4457,7 +4457,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 	stmt *rel_stmt = NULL, *sub;
 	int i, len = 0, nr_unions = list_length((list*)rel->l);
 
-	int neededpp = get_need_pipeline(be) && rel->spb;
+	int neededpp = get_need_pipeline(be) && rel->spb && rel->parallel;
 
 	if (neededpp) { /* Simply concat the sources */
 		/* sink for the pipeline concat sink/source */
@@ -8918,6 +8918,8 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
+	if (!s)
+		return s;
 	stmt *pp = get_pipeline(be);
 	int pipeline = be->pipeline;
 	be->pipeline = 0;

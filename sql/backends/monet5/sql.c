@@ -192,6 +192,9 @@ sqlcleanup(backend *be, int err)
 	be->mvc->label = 0;
 	be->mvc->nid = 1;
 	be->no_mitosis = 0;
+	be->need_pipeline = 0;
+	be->pipeline = be->pp = be->nrparts = be->pp_pc = be->concatcnt = be->source = be->cleanup = 0;
+	be->ppstmt = NULL;
 	mvc_query_processed(be->mvc);
 	return err;
 }
