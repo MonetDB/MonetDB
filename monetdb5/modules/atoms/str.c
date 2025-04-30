@@ -2105,39 +2105,39 @@ strbat_reverse(BAT *b)
 	return bn;
 }
 
-static BAT *
-strbat_lower(BAT *b)
-{
-	BAT *bn = NULL;
-	BATiter bi;
-	BUN p, q;
+/* static BAT * */
+/* strbat_lower(BAT *b) */
+/* { */
+/* 	BAT *bn = NULL; */
+/* 	BATiter bi; */
+/* 	BUN p, q; */
 
-	assert(b->ttype == TYPE_str);
+/* 	assert(b->ttype == TYPE_str); */
 
-	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
-	if (bn == NULL)
-		return NULL;
+/* 	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT); */
+/* 	if (bn == NULL) */
+/* 		return NULL; */
 
-	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *vb = BUNtail(bi, p);
-		char *vb_low = NULL;
-		if (STRlower(&vb_low, &vb)) {
-			bat_iterator_end(&bi);
-			BBPreclaim(bn);
-			return NULL;
-		}
-		if (BUNappend(bn, vb_low, false) != GDK_SUCCEED) {
-			GDKfree(vb_low);
-			bat_iterator_end(&bi);
-			BBPreclaim(bn);
-			return NULL;
-		}
-		GDKfree(vb_low);
-	}
-	bat_iterator_end(&bi);
-	return bn;
-}
+/* 	bi = bat_iterator(b); */
+/* 	BATloop(b, p, q) { */
+/* 		const char *vb = BUNtail(bi, p); */
+/* 		char *vb_low = NULL; */
+/* 		if (STRlower(&vb_low, &vb)) { */
+/* 			bat_iterator_end(&bi); */
+/* 			BBPreclaim(bn); */
+/* 			return NULL; */
+/* 		} */
+/* 		if (BUNappend(bn, vb_low, false) != GDK_SUCCEED) { */
+/* 			GDKfree(vb_low); */
+/* 			bat_iterator_end(&bi); */
+/* 			BBPreclaim(bn); */
+/* 			return NULL; */
+/* 		} */
+/* 		GDKfree(vb_low); */
+/* 	} */
+/* 	bat_iterator_end(&bi); */
+/* 	return bn; */
+/* } */
 
 #define NESTED_LOOP_STRJOIN(STR_CMP)									\
 	do {																\
@@ -2790,7 +2790,7 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const str fname,
 	} else {
 		if (icase) {
 			BAT *l_low = NULL, *r_low = NULL;
-			if (!(l_low = strbat_lower(l)) || !(r_low = strbat_lower(r))) {
+			if (!(l_low = BATcasefold(l, NULL)) || !(r_low = BATcasefold(r, NULL))) {
 				BBPreclaim_n(5, l, r, cl, cr, l_low);
 				throw(MAL, fname, "Failed string lowering input bats");
 			}

@@ -24,14 +24,8 @@ SELECT STARTSWITH(t0.c0, 'a', t1.c1) FROM t0, t1
 1
 1
 
--- GDK reported error: BATproject2: does not match always
-query TI nosort
+statement error HY009!Invalid case ignore. Single value expected
 SELECT * FROM t0, t1 WHERE STARTSWITH(t0.c0, 'a', t1.c1)
-----
-a
-1
-a
-1
 
 query I nosort
 SELECT ENDSWITH(t0.c0, 'a', t1.c1) FROM t0, t1
@@ -39,14 +33,9 @@ SELECT ENDSWITH(t0.c0, 'a', t1.c1) FROM t0, t1
 1
 1
 
--- GDK reported error: BATproject2: does not match always
-query TI nosort
+statement error HY009!Invalid case ignore. Single value expected
 SELECT * FROM t0, t1 WHERE ENDSWITH(t0.c0, 'a', t1.c1)
 ----
-a
-1
-a
-1
 
 query I nosort
 SELECT CONTAINS(t0.c0, 'a', t1.c1) FROM t0, t1
@@ -54,14 +43,8 @@ SELECT CONTAINS(t0.c0, 'a', t1.c1) FROM t0, t1
 1
 1
 
--- GDK reported error: BATproject2: does not match always
-query TI nosort
+statement error HY009!Invalid case ignore. Single value expected
 SELECT * FROM t0, t1 WHERE CONTAINS(t0.c0, 'a', t1.c1)
-----
-a
-1
-a
-1
 
 statement ok
 DROP TABLE t0
