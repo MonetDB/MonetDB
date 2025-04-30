@@ -484,6 +484,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 					rel_dup(n->data); // nested
 			}
 		}
+		rel->parallel = 1;
 		if (pb)
 			rel->spb = 1;
 		res = pb;
