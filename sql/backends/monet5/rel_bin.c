@@ -4351,7 +4351,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		r = pushLng(be->mb, r, 0);
 		if (l) {
 			r = pushArgument(be->mb, r, l->nr);
-			r = pushBit(be->mb, r, FALSE); /* not symetrical */
+			r = pushBit(be->mb, r, FALSE); /* not symmetrical */
 			r = pushBit(be->mb, r, TRUE);  /* including lower bound */
 			r = pushBit(be->mb, r, FALSE); /* excluding upper bound */
 			r = pushBit(be->mb, r, FALSE); /* nils_false */
@@ -9110,10 +9110,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	}
 	if (s && rel_is_ref(rel)) {
 		s = subrel_project(be, s, refs, rel);
-		/*
 		list_append(refs, rel);
 		list_append(refs, s);
-		*/
 	} else if (rel->spb && neededpp) {
 		if (be->pp) {
 			printf("# needed pipeline allready started below subrel\n");
@@ -9210,9 +9208,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 				//stmt *s = subrel_bin(be, n->data, nrefs);
 				sql_rel *rel = n->data;
 				stmt *s = rel2bin_materialize(be, rel, nrefs);
-				list_append(nrefs, rel);
-				list_append(nrefs, s);
-				assert(refs_find_rel(nrefs, n->data) == s);
+				refs_update_stmt(nrefs, rel, s);
 			}
 			refs = nrefs;
 		}
