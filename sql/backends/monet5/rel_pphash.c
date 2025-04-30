@@ -514,7 +514,10 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_hp, rhs_slts, stmts_ht->op4.lval->t->data, norows_prb, outer, pp);
 	assert(lh->cnt || lp->cnt);
 
-	list_merge(lh, lp, NULL);
+	if (rel->oahash == 1)
+		lh = list_merge(lh, lp, NULL);
+	else
+		lh = list_merge(lp, lh, NULL);
 	return stmt_list(be, lh);
 }
 

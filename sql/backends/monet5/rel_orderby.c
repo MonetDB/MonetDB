@@ -19,6 +19,7 @@
 list*
 rel2bin_project_prepare(backend *be, sql_rel *rel)
 {
+	assert(is_project(rel->op));
 	list *shared = sa_list(be->mvc->sa);
 	if (shared && !list_empty(rel->exps)) {
 		BUN est = get_rel_count(rel);

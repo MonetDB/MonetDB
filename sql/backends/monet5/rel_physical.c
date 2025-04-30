@@ -447,6 +447,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			}
 		}
 	} else if (is_semi(rel->op)) {
+		/*
 		if (do_oahash_join(rel)) {
 			rel->oahash = 2;
 			rel->parallel = 1;
@@ -455,9 +456,32 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			if (pb)
 				rel->spb = 1;
 		}
+		*/
+		if (do_oahash_join(rel)) {
+			sql_rel *l = rel->l, *r = rel->r;
+			(void) rel_partition_(sql, l, 1);
+			(void) rel_partition_(sql, r, 1);
+
+			rel->oahash = 2;
+
+			/*
+			if(is_basetable(l->op))
+				l->partition = 1;
+			if(is_basetable(r->op))
+				r->partition = 1;
+			*/
+			rel->parallel = 1;
+			if (pb == CPB)
+				rel_dup(rel);
+			if (pb)
+				rel->spb = 1;
+			return SPB;
+		}
 
 		if (rel->l && rel->op != op_anti)
 			res = rel_partition_(sql, rel->l, pb);
+		if (rel->parallel)
+			(void) rel_partition_(sql, rel->r, pb);
 		if (!res)
 			return 0;
 		/* We always use a 'pb' for rel->l of a semijoin. But, if this
@@ -529,10 +553,12 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			else
 				rel->oahash = 2;
 
+			/*
 			if(is_basetable(l->op))
 				l->partition = 1;
 			if(is_basetable(r->op))
 				r->partition = 1;
+				*/
 			rel->parallel = 1;
 			if (pb == CPB)
 				rel_dup(rel);

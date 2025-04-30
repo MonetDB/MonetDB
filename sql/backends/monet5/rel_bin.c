@@ -8909,8 +8909,13 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 		r = r->l;
 
 	list *shared = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op)))
-		shared = rel2bin_project_prepare(be, r);
+	sql_rel *sharedproject = NULL;
+	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op) || rel_is_ref(rel))) {
+		sharedproject = r;
+		if (!is_project(r->op))
+			sharedproject = rel_project(be->mvc->sa, r, rel_projections(be->mvc, r, 0, 1, 1));
+		shared = rel2bin_project_prepare(be, sharedproject);
+	}
 
 	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
 	pushInstruction(be->mb, q);
@@ -8923,7 +8928,7 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 	stmt *pp = get_pipeline(be);
 	int pipeline = be->pipeline;
 	be->pipeline = 0;
-	if (pp && shared && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))) {
+	if (pp && shared /*&& (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))*/) {
 		/* append results (later first claim position, then append)*/
 		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
 
@@ -8938,7 +8943,7 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 		pushInstruction(be->mb, q);
 		int claimed = getDestVar(q);
 
-		for(node *n = shared->h, *m = sub->h, *o = r->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
+		for(node *n = shared->h, *m = sub->h, *o = sharedproject->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
 			stmt *r = n->data;
 			stmt *i = m->data;
 			sql_exp *e = o->data;
@@ -9007,12 +9012,14 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 			}
 			return s;
 		}
+		/*
 		if (neededpp) {
 			s = rel2bin_materialize(be, rel, refs);
 			list_append(refs, rel);
 			list_append(refs, s);
 			return s;
 		}
+		*/
 	} else if (rel->spb && !is_groupby(rel->op) && !is_join(rel->op) && !is_semi(rel->op) && !is_munion(rel->op))
 		neededpp = get_need_pipeline(be);
 
@@ -9103,8 +9110,10 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	}
 	if (s && rel_is_ref(rel)) {
 		s = subrel_project(be, s, refs, rel);
+		/*
 		list_append(refs, rel);
 		list_append(refs, s);
+		*/
 	} else if (rel->spb && neededpp) {
 		if (be->pp) {
 			printf("# needed pipeline allready started below subrel\n");
@@ -9198,7 +9207,11 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 		if (!list_empty(refs)) {
 			list *nrefs = sa_list(sql->sa);
 			for (node *n = refs->h; n; n = n->next) {
-				stmt *s = subrel_bin(be, n->data, nrefs);
+				//stmt *s = subrel_bin(be, n->data, nrefs);
+				sql_rel *rel = n->data;
+				stmt *s = rel2bin_materialize(be, rel, nrefs);
+				list_append(nrefs, rel);
+				list_append(nrefs, s);
 				assert(refs_find_rel(nrefs, n->data) == s);
 			}
 			refs = nrefs;
