@@ -101,6 +101,7 @@ CLIENTprintinfo(void)
 	char clbuf[64];
 	char crbuf[64];
 	char cpbuf[64];
+	char qybuf[200];
 	struct tm tm;
 
 	if (!MT_lock_trytime(&mal_contextLock, 1000)) {
@@ -125,6 +126,10 @@ CLIENTprintinfo(void)
 				strftime(tmbuf, sizeof(tmbuf), ", busy since %F %H:%M:%S%z", &tm);
 			} else
 				tmbuf[0] = 0;
+			if (c->query)
+				strconcat_len(qybuf, sizeof(qybuf), ", query: ", c->query, NULL);
+			else
+				qybuf[0] = 0;
 			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc &&
 				((backend *) c->sqlcontext)->mvc->session &&
 				((backend *) c->sqlcontext)->mvc->session->tr) {
@@ -155,7 +160,7 @@ CLIENTprintinfo(void)
 				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
 			else
 				cpbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf);
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
