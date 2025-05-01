@@ -2105,40 +2105,6 @@ strbat_reverse(BAT *b)
 	return bn;
 }
 
-/* static BAT * */
-/* strbat_lower(BAT *b) */
-/* { */
-/* 	BAT *bn = NULL; */
-/* 	BATiter bi; */
-/* 	BUN p, q; */
-
-/* 	assert(b->ttype == TYPE_str); */
-
-/* 	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT); */
-/* 	if (bn == NULL) */
-/* 		return NULL; */
-
-/* 	bi = bat_iterator(b); */
-/* 	BATloop(b, p, q) { */
-/* 		const char *vb = BUNtail(bi, p); */
-/* 		char *vb_low = NULL; */
-/* 		if (STRlower(&vb_low, &vb)) { */
-/* 			bat_iterator_end(&bi); */
-/* 			BBPreclaim(bn); */
-/* 			return NULL; */
-/* 		} */
-/* 		if (BUNappend(bn, vb_low, false) != GDK_SUCCEED) { */
-/* 			GDKfree(vb_low); */
-/* 			bat_iterator_end(&bi); */
-/* 			BBPreclaim(bn); */
-/* 			return NULL; */
-/* 		} */
-/* 		GDKfree(vb_low); */
-/* 	} */
-/* 	bat_iterator_end(&bi); */
-/* 	return bn; */
-/* } */
-
 #define NESTED_LOOP_STRJOIN(STR_CMP)									\
 	do {																\
 		canditer_reset(lci);											\
