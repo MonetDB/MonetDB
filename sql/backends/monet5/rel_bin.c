@@ -4781,6 +4781,8 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 
 		limit = lpiv;
+		if (!limit) /* partition/order by cols fully overlap */
+			limit = stmt_limit(be, pl->h->data, NULL, grp, stmt_atom_lng(be, 0), l, 0,0,0,0,1);
 		if (limit && grp)
 			limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
 		stmt *s;
