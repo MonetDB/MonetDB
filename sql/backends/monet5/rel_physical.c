@@ -22,6 +22,7 @@
 				(argc == 2 && (strcmp((fname), "quantile") == 0 || strcmp((fname), "quantile_avg") == 0)) || \
 				(argc == 1 && (strcmp((fname), "median") == 0 || strcmp((fname), "median_avg") == 0)))
 
+
 /* Returns the row count of a base table or any count info we can get fom the
  * PROP_COUNT of this 'rel' (i.e.  get_rel_count()). */
 static lng
@@ -34,9 +35,9 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (t && isTable(t)) {
+		if (t && isTable(t) && t->persistence != SQL_DECLARED_TABLE) {
 			sqlstore *store = sql->session->tr->store;
-			lng nr =  (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			lng nr = (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
 			assert(nr >= 0);
 			return nr;
 		}
@@ -929,7 +930,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
 
 	if (!sql->recursive)
-	(void)rel_partition_(sql, rel, 0);
+		(void)rel_partition_(sql, rel, 0);
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
 	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);

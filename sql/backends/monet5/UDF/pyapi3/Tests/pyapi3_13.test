@@ -11,6 +11,7 @@ language P
 }
 
 statement ok
+# "normal" indentation
 CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
 language PYTHON_MAP
 {
@@ -26,6 +27,7 @@ statement ok
 DROP FUNCTION pyapi13_mult
 
 statement ok
+# weird indentation
 CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
 language PYTHON_MAP { return(i*j)
 }
@@ -39,6 +41,7 @@ statement ok
 DROP FUNCTION pyapi13_mult
 
 statement ok
+# no new line
 CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer language PYTHON_MAP { return(i*j) }
 
 query I rowsort
@@ -50,6 +53,7 @@ statement ok
 DROP FUNCTION pyapi13_mult
 
 statement ok
+# \n in string
 CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
 language PYTHON_MAP
 {
@@ -67,6 +71,7 @@ statement ok
 DROP FUNCTION pyapi13_mult
 
 statement ok
+# multiline statement
 CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
 language PYTHON_MAP
 {
@@ -91,6 +96,7 @@ statement ok
 DROP FUNCTION pyapi13_mult
 
 statement ok
+# inconsistent indentation (mix spaces and tabs, weird indentation)
 CREATE FUNCTION pyapi13_mult(i integer,j integer) returns integer
 language PYTHON_MAP
 {

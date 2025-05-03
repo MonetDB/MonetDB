@@ -1187,8 +1187,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
 		if (bn)
 			bn->hseqbase = min;
- 		goto done;
- 	}
+		goto done;
+	}
 
 	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
