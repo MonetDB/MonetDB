@@ -754,7 +754,11 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 	if (decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
+			if (p->kind == PROP_HSH_EXPS || p->kind == PROP_HSH_PAYLOAD ||
+			    p->kind == PROP_PRB_EXPS || p->kind == PROP_PRB_RESULT) {
+				mnstr_printf(fout, " %s ", propkind2string(p));
+				exps_print(sql, fout, p->value.l, depth, refs, 1, 0, decorate, 0);
+			} else if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}

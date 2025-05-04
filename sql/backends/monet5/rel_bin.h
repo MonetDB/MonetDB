@@ -31,7 +31,7 @@ extern stmt * rel2bin_materialize(backend *be, sql_rel *rel, list *refs);
 extern stmt* bin_find_smallest_column(backend *be, stmt *sub);
 extern stmt* list_find_column(backend *be, list *l, const char *rname, const char *name);
 
-extern stmt *subrel_bin(backend *be, sql_rel *rel, list *refs);
+extern stmt *subrel_bin(backend *be, sql_rel *rel, list *refs, bool in_materialize);
 extern stmt *subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel);
 
 extern bool can_join_exp(sql_rel *rel, sql_exp *e, bool anti);

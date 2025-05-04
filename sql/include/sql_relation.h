@@ -293,6 +293,9 @@ typedef enum operator_type {
 
 #define rel_is_ref(rel)		(((sql_rel*)(rel))->ref.refcnt > 1)
 
+#define is_blocking(rel)   (rel->parallel && \
+		(is_join(rel->op) || is_groupby(rel->op) || (is_simple_project(rel->op) && rel->r)))
+
 typedef struct relation {
 	sql_ref ref;
 

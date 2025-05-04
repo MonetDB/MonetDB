@@ -410,7 +410,7 @@ rel2bin_groupby_partition(backend *be, sql_rel *rel, list *refs, bool neededpp)
 		set_pipeline(be, pp);
 	}
 	if (rel->l) { /* first construct the sub relation */
-		sub = subrel_bin(be, rel->l, refs);
+		sub = subrel_bin(be, rel->l, refs, false);
 		sub = subrel_project(be, sub, refs, rel->l);
 		if (!sub)
 			return NULL;

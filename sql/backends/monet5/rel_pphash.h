@@ -13,5 +13,7 @@
 #include "mal_backend.h"
 
 extern stmt *rel2bin_oahash(backend *be, sql_rel *rel, list *refs);
+extern stmt *rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs);
+extern void find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb);
 
 #endif /*_REL_PP_HASH_H_*/
