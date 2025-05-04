@@ -123,7 +123,7 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
 	}
 
 	/* first construct the sub-relation */
-	sub = subrel_bin(be, rel, refs, false);
+	sub = subrel_bin(be, rel, refs);
 	sub = subrel_project(be, sub, refs, rel);
 	if (sub) {
 		pp = get_pipeline(be);
@@ -504,7 +504,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	list *exps_prj_hsh = p->value.l;
 
 	/* build-phase res: hash-table and hash-payload stmts */
-	ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs, false);
+	ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
 	stmt *stmts_ht = ht->stmts_ht;
 	stmt *stmts_hp = ht->stmts_hp;
 
@@ -602,7 +602,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 
 	if (!rel->exps) { /* the always-true case. just return the LHS */
 		// TODO we should already optimise-away this case of semi-join in PLAN
-		sub = subrel_bin(be, rel_prb, refs, false);
+		sub = subrel_bin(be, rel_prb, refs);
 		sub = subrel_project(be, sub, refs, rel_prb);
 	} else {
 		/* compare columns of hash- and probe-side */
