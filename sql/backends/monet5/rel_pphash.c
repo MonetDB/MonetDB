@@ -445,6 +445,9 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
 	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
+	list *shared_hp = NULL;
+	if (exps_prj_hsh)
+		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
 
 	stmt *sub = _start_pp(be, rel, 1, refs, rel->spb);
 	if (!sub) return NULL;
@@ -456,7 +459,6 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	/* freq/payload not needed for semi */
 	if (exps_prj_hsh) {
 		InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh->cnt, pp);
-		list *shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
 		stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, getArg(stmt_freq,0), sub, pp);
 	}
 	(void)stmt_pp_jump(be, pp, be->nrparts);
