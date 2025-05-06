@@ -1181,10 +1181,12 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		goto done;
 	}
 
-	if (BATtdense(g) || (g->tkey && g->tnonil)) {
+	if (ci.ncand == ngrp && (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
+		if (bn)
+			bn->hseqbase = min;
 		goto done;
 	}
 

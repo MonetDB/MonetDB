@@ -21,15 +21,16 @@
 #include "sql.h"
 #include "mapi_prompt.h"
 #include "sql_result.h"
+#include "sql_query.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
 #include "store_sequence.h"
 #include "sql_partition.h"
-#include "rel_partition.h"
 #include "rel_basetable.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_dump.h"
+#include "rel_select.h"
 #include "rel_physical.h"
 #include "rel_remote.h"
 #include "mal.h"
@@ -153,11 +154,9 @@ sql_symbol2relation(backend *be, symbol *sym)
 	Tbegin = Tend;
 	if (rel)
 		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
-	if (rel)
-		rel = rel_partition(be->mvc, rel);
 	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
-	if (rel /*&& (be->mvc->emode != m_plan || (ATOMIC_GET(&GDKdebug) & FORCEMITOMASK) == 0)*/)
+	if (rel)
 		rel = rel_physical(be->mvc, rel);
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
@@ -5506,6 +5505,8 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
 		sql_key *k = mvc_bind_key(m, s, kname);
+		uintptr_t sp = m->sp;
+		m->sp = (uintptr_t)&m; /* local var ie top of stack */
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
@@ -5516,8 +5517,10 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*r = GDKstrdup(exp2sql(m, exp));
 			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			m->sp = sp;
 			return MAL_SUCCEED;
 		}
+		m->sp = sp;
 	}
 	if (!(*r = GDKstrdup(str_nil)))
 		throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);

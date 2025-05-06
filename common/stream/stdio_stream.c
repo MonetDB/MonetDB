@@ -142,7 +142,7 @@ file_fsync(stream *s)
 #endif
 #endif
 		    )) {
-		mnstr_set_error(s, MNSTR_WRITE_ERROR, "fsync failed");
+		mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "fsync failed");
 		return -1;
 	}
 	return 0;
