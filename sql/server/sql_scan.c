@@ -86,7 +86,7 @@ uescape_xform(char *restrict s, const char *restrict esc)
 	return s;
 }
 
-/**
+Simplify./**
  * Removes all comments before the query. In query comments are kept.
  */
 char *
