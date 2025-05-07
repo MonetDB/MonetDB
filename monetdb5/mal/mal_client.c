@@ -256,7 +256,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
-	c->idle = c->login = c->lastcmd = time(0);
+	c->idle = 0;
+	c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;

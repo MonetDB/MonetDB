@@ -698,6 +698,15 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 	return A;
 }
 
+static void
+SQLsetIdle(int clientid, time_t t)
+{
+	Client c = mal_clients + clientid;
+	MT_lock_set(&mal_contextLock);
+	c->idle = t;
+	MT_lock_unset(&mal_contextLock);
+}
+
 void
 monet5_user_init(backend_functions *be_funcs)
 {
@@ -710,6 +719,7 @@ monet5_user_init(backend_functions *be_funcs)
 	be_funcs->fauser = &monet5_alter_user;
 	be_funcs->fruser = &monet5_rename_user;
 	be_funcs->fschuserdep = &monet5_schema_user_dependencies;
+	be_funcs->setIdle = SQLsetIdle;
 }
 
 int
