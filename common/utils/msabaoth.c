@@ -374,7 +374,6 @@ msab_retreatScenario(const char *lang)
 						 strerror(errno), pathbuf);
 				return strdup(buf);
 			}
-			(void)fclose(f);
 			(void) MT_remove(pathbuf);
 			return(NULL);
 		} else {
