@@ -271,7 +271,6 @@ SQLrun(Client c, mvc *m)
 			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
 				setVariableScope(mb);
 				MT_lock_set(&mal_contextLock);
-				c->idle = 0;
 				c->lastcmd = time(0);
 				MT_lock_unset(&mal_contextLock);
 				msg = runMAL(c, mb, 0, 0);
@@ -280,7 +279,6 @@ SQLrun(Client c, mvc *m)
 		} else {
 			setVariableScope(mb);
 			MT_lock_set(&mal_contextLock);
-			c->idle = 0;
 			c->lastcmd = time(0);
 			MT_lock_unset(&mal_contextLock);
 			msg = runMAL(c, mb, 0, 0);
@@ -289,7 +287,6 @@ SQLrun(Client c, mvc *m)
 	}
 	/* after the query has been finished we enter the idle state */
 	MT_lock_set(&mal_contextLock);
-	c->idle = time(0);
 	c->lastcmd = 0;
 	MT_lock_unset(&mal_contextLock);
 	MT_thread_setworking(NULL);

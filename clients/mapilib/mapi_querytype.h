@@ -13,7 +13,7 @@
 #ifndef _MAPI_QUERYTYPE_H_INCLUDED
 #define _MAPI_QUERYTYPE_H_INCLUDED 1
 
-/* this definition is a straight copy from sql/include/sql_query.h */
+/* this definition is also used by the SQL layer */
 typedef enum {
 	Q_PARSE = 0,
 	Q_TABLE = 1,
