@@ -46,6 +46,7 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"vmmaxsize",   NULL, 0, INT},
 	{"raw_strings", NULL, 0, BOOLEAN},
 	{"loadmodules", NULL, 0, MODS},
+	{"idletimeout", NULL, 0, INT},
 	{ NULL,         NULL, 0, INVALID}
 };
 
