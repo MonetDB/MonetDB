@@ -29,7 +29,7 @@
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 {
-	SQLCHAR state[6];
+	SQLCHAR state[SQL_SQLSTATE_SIZE +1];
 	SQLINTEGER errnr;
 	SQLCHAR msg[256];
 	SQLSMALLINT msglen;
@@ -207,6 +207,9 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n");
 	}
 
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+
 	/* cleanup */
 	free(outp);
 	return ret;
@@ -266,7 +269,7 @@ testGetDataGUID(SQLHANDLE stmt)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
 			pos += snprintf(outp + pos, outp_len - pos, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-					(unsigned int) guid_val.Data1, guid_val.Data2, guid_val.Data3,
+				guid_val.Data1, guid_val.Data2, guid_val.Data3,
 				guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2], guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
 	}
@@ -285,6 +288,121 @@ testGetDataGUID(SQLHANDLE stmt)
 			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
 			"SQLGetData(3, SQL_C_CHAR, 36) returns 0, vallen 36, str_val: 'beefc4f7-0264-4735-9b7a-75fd371ef803'\n"
 			"SQLGetData(3, SQL_C_GUID, 16) returns 0, vallen 16, data_val: beefc4f7-0264-4735-9b7a-75fd371ef803\n");
+
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
+
+	/* cleanup */
+	free(outp);
+	return ret;
+}
+
+static SQLRETURN
+testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
+{
+	SQLRETURN ret;
+	SQLLEN RowCount = 0;
+	SWORD NumResultCols = 0;
+
+	size_t outp_len = 1800;
+	char * outp = malloc(outp_len);
+	size_t pos = 0;
+
+	char * sql1 = "select cast(NULL as interval day) as valnil, cast('99' as interval day) as val1, cast('-99' as interval day) as val2;";
+	char * sql2 = "select cast(NULL as interval day) as valnil, cast('101' as interval day) as val1, cast('-102' as interval day) as val2;";	/* Interval field overflow */
+	ret = SQLExecDirect(stmt, (sqlquery == 1) ? (SQLCHAR *) sql1 : (SQLCHAR *) sql2, SQL_NTS);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLExecDirect query %d\n", sqlquery);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLExecDirect");
+
+	ret = SQLRowCount(stmt, &RowCount);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLRowCount is " LLFMT "\n", (int64_t) RowCount);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLRowCount");
+
+	ret = SQLNumResultCols(stmt, &NumResultCols);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLNumResultCols is %d\n", NumResultCols);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLNumResultCols");
+
+	ret = SQLFetch(stmt);
+	pos += snprintf(outp + pos, outp_len - pos, "SQLFetch\n");
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch");
+
+	for (SWORD col = 1; col <= NumResultCols; col++) {
+		char buf[99];
+		char str_val[42];
+		int int_val;
+		SQL_INTERVAL_STRUCT itv_val;
+		SQLLEN vallen = 0;
+		SQLLEN NumAttr = 0;
+
+		/* retrieve query result column metadata */
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_CONCISE_TYPE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_CONCISE_TYPE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_DISPLAY_SIZE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_DISPLAY_SIZE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+
+		/* test SQLGetData(SQL_C_CHAR) */
+		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_CHAR, (PTR)&str_val, (SQLLEN)41, &vallen);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, SQL_C_CHAR, 41) returns %d, vallen " LLFMT ", str_val: '%s'\n",
+			col, ret, (int64_t) vallen, (vallen == SQL_NULL_DATA) ? "NULL" : str_val);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col) as str");
+
+		/* test SQLGetData(SQL_C_SLONG) */
+		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_SLONG, (PTR)&int_val, (SQLLEN)4, &vallen);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, SQL_C_SLONG) returns %d, vallen " LLFMT ", int_val: ", col, ret, (int64_t) vallen);
+		if (vallen == SQL_NULL_DATA)
+			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
+		else
+			pos += snprintf(outp + pos, outp_len - pos, "%d\n", int_val);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col) as int");	/* SQLstate 07006 Restricted data type attribute violation */
+
+		/* test SQLGetData(SQL_C_INTERVAL_DAY) */
+		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_INTERVAL_DAY, (PTR)&itv_val, (SQLLEN)sizeof(SQL_INTERVAL_STRUCT), &vallen);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLGetData(%d, SQL_C_INTERVAL_DAY) returns %d, vallen " LLFMT ", itv_day_val: ", col, ret, (int64_t) vallen);
+		if (vallen == SQL_NULL_DATA)
+			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
+		else
+			pos += snprintf(outp + pos, outp_len - pos, "%d (type %d, sign %d)\n", itv_val.intval.day_second.day, itv_val.interval_type, itv_val.interval_sign);
+		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col) as int");
+	}
+
+	compareResult("testGetDataIntervalDay()", outp,
+		(sqlquery == 1)
+		?	"SQLExecDirect query 1\nSQLRowCount is 1\nSQLNumResultCols is 3\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLGetData(1, SQL_C_CHAR, 41) returns 0, vallen -1, str_val: 'NULL'\n"
+			"SQLGetData(1, SQL_C_SLONG) returns 0, vallen -1, int_val: NULL\n"
+			"SQLGetData(1, SQL_C_INTERVAL_DAY) returns 0, vallen -1, itv_day_val: NULL\n"
+			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
+			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLGetData(2, SQL_C_CHAR, 41) returns 0, vallen 17, str_val: 'INTERVAL '99' DAY'\n"
+			"SQLGetData(2, SQL_C_SLONG) returns 0, vallen 4, int_val: 99\n"	/* SQLstate 07006 Restricted data type attribute violation */
+			"SQLGetData(2, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 99 (type 3, sign 0)\n"
+			"SQLColAttribute(3, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
+			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLGetData(3, SQL_C_CHAR, 41) returns 0, vallen 18, str_val: 'INTERVAL -'99' DAY'\n"
+			"SQLGetData(3, SQL_C_SLONG) returns 0, vallen 4, int_val: -99\n"	/* SQLstate 07006 Restricted data type attribute violation */
+			"SQLGetData(3, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 99 (type 3, sign 1)\n"
+		:	"SQLExecDirect query 2\nSQLRowCount is 1\nSQLNumResultCols is 3\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLGetData(1, SQL_C_CHAR, 41) returns 0, vallen -1, str_val: 'NULL'\n"
+			"SQLGetData(1, SQL_C_SLONG) returns 0, vallen -1, int_val: NULL\n"
+			"SQLGetData(1, SQL_C_INTERVAL_DAY) returns 0, vallen -1, itv_day_val: NULL\n"
+			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
+			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLGetData(2, SQL_C_CHAR, 41) returns 0, vallen 18, str_val: 'INTERVAL '101' DAY'\n"
+			"SQLGetData(2, SQL_C_SLONG) returns 0, vallen 4, int_val: 101\n"	/* SQLstate 07006 Restricted data type attribute violation */
+			"SQLGetData(2, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 101 (type 3, sign 0)\n"	/* SQLstate 22015 Interval field overflow */
+			"SQLColAttribute(3, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
+			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLGetData(3, SQL_C_CHAR, 41) returns 0, vallen 19, str_val: 'INTERVAL -'102' DAY'\n"
+			"SQLGetData(3, SQL_C_SLONG) returns 0, vallen 4, int_val: -102\n"	/* SQLstate 07006 Restricted data type attribute violation */
+			"SQLGetData(3, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 102 (type 3, sign 1)\n"	/* SQLstate 22015 Interval field overflow */
+		);
+
+	ret = SQLCloseCursor(stmt);
+	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 
 	/* cleanup */
 	free(outp);
@@ -335,21 +453,21 @@ main(int argc, char **argv)
 	ret = SQLAllocHandle(SQL_HANDLE_STMT, dbc, &stmt);
 	check(ret, SQL_HANDLE_DBC, dbc, "SQLAllocHandle (STMT)");
 
-	/* run tests */
+	/**** run tests ****/
 	ret = testGetDataTruncatedString(stmt, SQL_C_CHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_CHAR)");
-
-	ret = SQLCloseCursor(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 
 	ret = testGetDataTruncatedString(stmt, SQL_C_WCHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_WCHAR)");
 
-	ret = SQLCloseCursor(stmt);
-	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
-
 	ret = testGetDataGUID(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataGUID(STMT)");
+
+	ret = testGetDataIntervalDay(stmt, 1);
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataIntervalDay(STMT, 99, -99)");
+
+	ret = testGetDataIntervalDay(stmt, 2);
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataIntervalDay(STMT, 101, -102)");
 
 	/* cleanup */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
