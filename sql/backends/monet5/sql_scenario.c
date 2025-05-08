@@ -936,11 +936,37 @@ SQLtrans(mvc *m)
 	return MAL_SUCCEED;
 }
 
+static bool
+shouldStop(void *data)
+{
+	if (GDKexiting())
+		return true;
+	Client c = data;
+	if (c) {
+		if (c->idletimeout &&
+			c->idle &&
+			c->sqlcontext &&
+			((backend *) c->sqlcontext)->mvc &&
+			((backend *) c->sqlcontext)->mvc->session &&
+			((backend *) c->sqlcontext)->mvc->session->tr &&
+			((backend *) c->sqlcontext)->mvc->session->tr->active &&
+			time(NULL)- c->idle > c->idletimeout)
+			return true;
+		if (c->sessiontimeout &&
+			c->session &&
+			(GDKusec() - c->session) > c->sessiontimeout)
+			return true;
+	}
+	return false;
+}
+
 str
 SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 
+	mnstr_settimeout(c->fdin->s, 50, shouldStop, c);
+	c->idletimeout = GDKgetenv_int("idle_timeout", 0);
 	MT_lock_set(&sql_contextLock);
 	if (!SQLstore) {
 		MT_lock_unset(&sql_contextLock);
@@ -1191,6 +1217,21 @@ SQLreader(Client c, backend *be)
 		c->mode = FINISHCLIENT;
 		MT_lock_unset(&mal_contextLock);
 		return msg;
+	}
+	if (msg == MAL_SUCCEED &&
+		c->idletimeout &&
+		c->idle &&
+		c->sqlcontext &&
+		((backend *) c->sqlcontext)->mvc &&
+		((backend *) c->sqlcontext)->mvc->session &&
+		((backend *) c->sqlcontext)->mvc->session->tr &&
+		((backend *) c->sqlcontext)->mvc->session->tr->active &&
+		GDKusec() - c->idle > c->idletimeout) {
+		in->pos = in->len;	/* skip rest of the input */
+		MT_lock_set(&mal_contextLock);
+		c->mode = FINISHCLIENT;
+		MT_lock_unset(&mal_contextLock);
+		throw(SQL, "SQLreader", "Session aborted due to idle timeout");
 	}
 	MT_lock_set(&mal_contextLock);
 	c->idle = 0;

@@ -510,6 +510,13 @@ therefore able to read and modify all data that the server process has
 access to.  In addition, if the C code causes a crash, all bets are
 off.
 .TP
+\fBidle_timeout=\fP\fIseconds\fP
+Set the idle timeout.
+If there is an active transaction, and the client has not provided any
+input to the server for the specified amount of time, the server will
+close the connection and abort (rollback) the transaction.
+The default is \fB0\fP which means no timeout.
+.TP
 .B raw_strings=true
 The boolean option raw_strings controls how the sql scanner interprets string
 literals. If the value is
