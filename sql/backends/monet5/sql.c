@@ -5506,18 +5506,38 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s = mvc_bind_schema(m, sname);
 	if (s) {
 		sql_key *k = mvc_bind_key(m, s, kname);
+		uintptr_t sp = m->sp;
+#ifdef __has_builtin
+#if __has_builtin(__builtin_frame_address)
+		m->sp = (uintptr_t) __builtin_frame_address(0);
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+		m->sp = (uintptr_t)(&m);
+#endif
+#undef BUILTIN_USED
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
-			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+			sql_exp *exp = NULL;
+			if (rel) {
+				rel_base_use_all(m, rel);
+				exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+			}
+			assert(exp);
+			if (!exp)
+				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (exp->comment)
 				*r = GDKstrdup(exp->comment);
 			else
 				*r = GDKstrdup(exp2sql(m, exp));
 			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			m->sp = sp;
 			return MAL_SUCCEED;
 		}
+		m->sp = sp;
 	}
 	if (!(*r = GDKstrdup(str_nil)))
 		throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
