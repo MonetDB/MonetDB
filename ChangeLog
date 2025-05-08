@@ -1,12 +1,6 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
-* Thu May  8 2025 Sjoerd Mullender <sjoerd@acm.org>
-- It is now possible to specify an idle timeout using --set
-  idle_timeout=<seconds> (see mserver5 manual page) which gets triggered
-  if a connection to the server is idle (i.e. does not send any queries
-  to the server) while there is a SQL transaction active.
-
 * Mon Apr 28 2025 Niels Nes <niels@cwi.nl>
 - Changed the way complex AND and OR expressions are handled. The new
   expression tree uses 2 new cmp flag (cmp_con/cmp_dis), both expressions
