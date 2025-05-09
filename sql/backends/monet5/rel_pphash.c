@@ -67,43 +67,6 @@ _estimate(mvc *sql, sql_rel *rel)
 	return est;
 }
 
-void
-find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
-{
-	assert(exps);
-
-	/* Find out if a sub-expression of the (compare) exps belong to rel_hsh or
-	 * rel_prb or is a constant. */
-	for (node *n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		assert(e->type == e_cmp && e->flag == cmp_equal);
-
-		/* search first for the not-atom exp, otherwise rel_find_exp()
-		 * incorrectly returns TRUE for an atom-typed exp */
-		if (exp_is_atom(e->l)) {
-			if (rel_find_exp(rel_hsh, e->r)) {
-				append(*exps_hsh, e->r);
-				append(*exps_prb, e->l);
-			} else {
-				assert(rel_find_exp(rel_prb, e->r));
-				append(*exps_hsh, e->l);
-				append(*exps_prb, e->r);
-			}
-		} else {
-			if (rel_find_exp(rel_prb, e->l)) {
-				append(*exps_hsh, e->r);
-				append(*exps_prb, e->l);
-			} else {
-				assert(rel_find_exp(rel_hsh, e->l));
-				append(*exps_hsh, e->l);
-				append(*exps_prb, e->r);
-			}
-		}
-
-	}
-}
-
 static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
 {
@@ -607,32 +570,20 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		sub = subrel_bin(be, rel_prb, refs);
 		sub = subrel_project(be, sub, refs, rel_prb);
 	} else {
-		/* compare columns of hash- and probe-side */
-		list *exps_cmp_hsh = sa_list(sql->sa), *exps_cmp_prb = sa_list(sql->sa);
-		find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
-
-		/* projection columns of the probe-side */
-		list *exps_prj_prb = rel_projections(sql, rel_prb, 0, 1, 1);
-		assert(exps_prj_prb->cnt); /* at least one column should be projected */
-
 		if (rel->op == op_anti) {
 			sql_error(sql, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
 			return NULL;
 		}
 
-		/*** PREPARE PHASE ***/
-		lng sz = _estimate(sql, rel_hsh);
-		list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, sz);
+		prop *p;
+		p = find_prop(rel_prb->p, PROP_PRB_EXPS);
+		list *exps_cmp_prb = p->value.l;
+		p = find_prop(rel_prb->p, PROP_PRB_RESULT);
+		list *exps_prj_prb = p->value.l;
 
-		/*** HASH PHASE ***/
-		sub = _start_pp(be, rel_hsh, 1, refs, rel->spb);
-		if (!sub) return NULL;
-
-		pp = get_pipeline(be);
-		int slt_ids = 0;
-		stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
-		(void)stmt_pp_jump(be, pp, be->nrparts);
-		(void)stmt_pp_end(be, pp);
+		/* build-phase res: hash-table and hash-payload stmts */
+		ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
+		stmt *stmts_ht = ht->stmts_ht;
 
 		/*** PROBE PHASE ***/
 		sub = _start_pp(be, rel_prb, 0, refs, false);

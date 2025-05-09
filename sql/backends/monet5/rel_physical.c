@@ -348,6 +348,7 @@ do_oahash_join(sql_rel *rel)
 	if (list_empty(rel->exps))
 		return 0;
 
+	// TODO we can do hash based with one or more, rest can be handled via a filter step
 	if (!only_equi_joins(rel))
 			return 0;
 
@@ -621,10 +622,47 @@ find_payload_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *r
 
 		if (rel_find_exp(rel_prb, e)) {
 			append(*exps_prb, e);
-		} else {
+		} else if (exps_hsh) {
 			assert(rel_find_exp(rel_hsh, e));
 			append(*exps_hsh, e);
 		}
+	}
+}
+
+static void
+find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
+{
+	assert(exps);
+
+	/* Find out if a sub-expression of the (compare) exps belong to rel_hsh or
+	 * rel_prb or is a constant. */
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		assert(e->type == e_cmp && e->flag == cmp_equal);
+
+		/* search first for the not-atom exp, otherwise rel_find_exp()
+		 * incorrectly returns TRUE for an atom-typed exp */
+		if (exp_is_atom(e->l)) {
+			if (rel_find_exp(rel_hsh, e->r)) {
+				append(*exps_hsh, e->r);
+				append(*exps_prb, e->l);
+			} else {
+				assert(rel_find_exp(rel_prb, e->r));
+				append(*exps_hsh, e->l);
+				append(*exps_prb, e->r);
+			}
+		} else {
+			if (rel_find_exp(rel_prb, e->l)) {
+				append(*exps_hsh, e->r);
+				append(*exps_prb, e->l);
+			} else {
+				assert(rel_find_exp(rel_hsh, e->l));
+				append(*exps_hsh, e->l);
+				append(*exps_prb, e->r);
+			}
+		}
+
 	}
 }
 
@@ -727,12 +765,31 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_semi(rel->op)) {
 		if (do_oahash_join(rel)) {
-			sql_rel *l = rel->l, *r = rel->r;
-			(void) rel_pipeline(v, l, false, 1);
-			rel_dup(rel->r);
-			(void) rel_pipeline(v, r, true, 1);
-
 			rel->oahash = 2;
+
+			sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
+
+			/* get full projection list from parent */
+			assert(p);
+			list *exps_cmp_hsh = sa_list(v->sql->sa), *exps_cmp_prb = sa_list(v->sql->sa);
+			find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
+
+			prop *rp;
+			rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
+			rp->value.l = exps_cmp_hsh;
+
+			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel_prb->p);
+			rp->value.l = exps_cmp_prb;
+
+			list *exps_prb = sa_list(v->sql->sa);
+			find_payload_exps(NULL, &exps_prb, p->exps, rel_hsh, rel_prb);
+
+			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel_prb->p);
+			rp->value.l = exps_prb;
+
+			rel_hsh = rel_dup(rel_hsh);
+			(void) rel_pipeline(v, rel_prb, false, 1);
+			(void) rel_pipeline(v, rel_hsh, true, 1);
 
 			rel->parallel = 1;
 			if (pb == CPB)
@@ -831,6 +888,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				assert(0);
 			}
 
+			/* get full projection list from parent */
+			assert(p);
 			list *exps_cmp_hsh = sa_list(v->sql->sa), *exps_cmp_prb = sa_list(v->sql->sa);
 			find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
 
@@ -849,15 +908,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 
 			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel_prb->p);
 			rp->value.l = exps_prb;
-
-			/* get full projection list from parent */
-			assert(p);
-			for(node *n = p->exps->h; n; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (e)
-					printf("e");
-			}
 
 			if (rel->oahash == 1)
 				l = rel_dup(l);
