@@ -561,6 +561,8 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->data = pr->buffer+pos;
 			pr->datasize = uncompressed_size;
 			pos += uncompressed_size;
+			if (!uncompressed_size)
+				pos += compressed_size;
 		}
 		assert(!uncompressed_size || pr->datasize);
 	}
@@ -642,6 +644,8 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->dict = pr->buffer+pos;
 			pr->dictsize = uncompressed_size;
 			pos += uncompressed_size;
+			if (!uncompressed_size)
+				pos += compressed_size;
 		}
 		if (r->pse->precision)
 			pr->dict_num_values = pr->dictsize / (r->pse->size/8);
@@ -1582,7 +1586,8 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, u_int
 			pos -= w*len;
 			memcpy(output+w*i, data+pos, len*w);
 		} else {
-			memcpy(output+w*i, r->nil, len*w);
+			for(int j = 0; j<len; j++)
+				memcpy(output+w*(i+j), r->nil, w);
 		}
 		def = !def;
 	}
@@ -1726,7 +1731,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			else
 				nrows = pqc_nrows(cr, nrows);
 			if (cr->dict) {
-				nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
+				if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
+					nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
 				if (cr->definition)
 					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
 			} else {
@@ -1809,7 +1815,8 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			else
 				nrows = pqc_nrows(cr, nrows);
 			if (cr->dict) {
-				nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
+				if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls)
+					nrows = pqc_dict_lookup(r, cr, output, voutput, nrows, pos, ssize, dict);
 				if (cr->definition)
 					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, r->pse->size/8);
 			} else {
