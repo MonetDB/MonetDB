@@ -6494,6 +6494,45 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 }
 
 int
+sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t)
+{
+	int res = LOG_OK;
+	sqlstore *store = tr->store;
+
+	if (subtype_cmp(&col->type, t) != 0) {
+		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
+		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
+		sql_column *col_ids = find_sql_column(syscolumn, "id");
+		sql_column *col_type = find_sql_column(syscolumn, "type");
+		sql_column *col_digits = find_sql_column(syscolumn, "type_digits");
+		sql_column *col_scale = find_sql_column(syscolumn, "type_scale");
+		oid rid = store->table_api.column_find_row(tr, col_ids, &col->base.id, NULL);
+		sql_column *dup = NULL;
+		int digits = type_digits(t);
+		int scale = t->type->scale;
+
+		if (is_oid_nil(rid))
+			return -1;
+		if ((res = store->table_api.column_update_value(tr, col_type, rid, t->type->base.name)))
+			return res;
+		if ((res = store->table_api.column_update_value(tr, col_digits, rid, &digits)))
+			return res;
+		if ((res = store->table_api.column_update_value(tr, col_scale, rid, &scale)))
+			return res;
+
+		if ((res = new_column(tr, col, &dup)))
+			return res;
+		if (!isNew(col) && isGlobal(col->t) && !isGlobalTemp(col->t) && (res = sql_trans_add_dependency(tr, col->t->base.id, dml)))
+			return res;
+		if ((res = store_reset_sql_functions(tr, col->t->base.id))) /* reset sql functions depending on the table */
+			return res;
+		store->storage_api.col_subtype(tr, dup, t);
+		dup->type = *t;
+	}
+	return res;
+}
+
+int
 sql_trans_is_sorted( sql_trans *tr, sql_column *col )
 {
 	sqlstore *store = tr->store;
