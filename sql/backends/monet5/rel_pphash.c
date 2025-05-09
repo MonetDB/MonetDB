@@ -437,6 +437,9 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
 
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	(void)neededpp;
+
 	/* find the hash- vs probe-side */
 	if (rel->op == op_full) {
         sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
@@ -506,6 +509,9 @@ static stmt *
 rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
+
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
+	(void)neededpp;
 
 	assert(rel->l && rel->r);
 	if (rel->oahash == 1) {

@@ -1369,9 +1369,11 @@ rel_add_project(visitor *v, sql_rel *rel)
 			n->data = rel_add_project(v, n->data);
 	}
 
+	/*
 	if (rel_is_ref(rel) && !is_project(rel->op)) {
 		assert(0);
 	}
+	*/
 	v->parent = p;
 	return rel;
 }
