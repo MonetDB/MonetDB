@@ -484,7 +484,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 		return pos;
 	assert(page_type == DATA_PAGE || page_type == DICTIONARY_PAGE || page_type == DATA_PAGE_V2);
 	if (page_type == DATA_PAGE || page_type == DATA_PAGE_V2) {
-		if (pos >= 0 && pr->cc->codec && (page_type != DATA_PAGE_V2 || pr->cc->cur_page.is_compressed)) {
+		if (uncompressed_size && pos >= 0 && pr->cc->codec && (page_type != DATA_PAGE_V2 || pr->cc->cur_page.is_compressed)) {
 			assert(pr->data == NULL);
 			pr->data = NEW_ARRAY(char, uncompressed_size);
 			if (!pr->data)
@@ -562,10 +562,10 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			pr->datasize = uncompressed_size;
 			pos += uncompressed_size;
 		}
-		assert(pr->datasize);
+		assert(!uncompressed_size || pr->datasize);
 	}
 	if (page_type == DICTIONARY_PAGE) {
-		if (pos >= 0 && pr->cc->codec) {
+		if (uncompressed_size && pos >= 0 && pr->cc->codec) {
 			assert(pr->dict == NULL);
 			pr->dict = NEW_ARRAY(char, uncompressed_size);
 			if (!pr->dict)

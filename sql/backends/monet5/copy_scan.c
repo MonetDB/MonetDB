@@ -453,7 +453,6 @@ check_row_end(
 		if (!sep) {
 			return GDK_SUCCEED;
 		} else if (sep == state->col_sep) {
-			assert(state->pos > state->start && state->pos[-1] == '\0');
 			if (state->pos < state->end && !state->pos[0]) {
 				state->pos += state->line_sep_len;
 				return GDK_SUCCEED;
