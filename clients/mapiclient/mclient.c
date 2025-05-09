@@ -38,6 +38,7 @@
 #include "msqldump.h"
 #include "mprompt.h"
 #include "mutils.h"		/* mercurial_revision */
+#include "mstring.h"
 #include "dotmonetdb.h"
 
 #include <locale.h>
@@ -2151,6 +2152,7 @@ showCommands(void)
 #define MD_SEQ      4
 #define MD_FUNC     8
 #define MD_SCHEMA  16
+#define MD_MERGE   32
 
 #define READBLOCK 8192
 
@@ -2438,7 +2440,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					continue;
 				case 'd': {
 					bool hasWildcard = false;
-					bool hasSchema = false;
 					bool wantsSystem = false;
 					unsigned int x = 0;
 					char *p, *q;
@@ -2466,6 +2467,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						case 'n':
 							x |= MD_SCHEMA;
 							break;
+						case 'm':
+							x |= MD_MERGE;
+							break;
 						case 'S':
 							wantsSystem = true;
 							break;
@@ -2484,6 +2488,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						;
 
 					/* lowercase the object, except for quoted parts */
+					char *tname = NULL;
+					char *sname = NULL;
 					q = line;
 					for (p = line; *p != '\0'; p++) {
 						if (*p == '"') {
@@ -2498,6 +2504,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 								escaped = true;
 							}
 						} else {
+							if (tname == NULL)
+								tname = p;
 							if (!escaped) {
 								*q++ = tolower((int) *p);
 								if (*p == '*') {
@@ -2507,7 +2515,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 									*p = '_';
 									hasWildcard = true;
 								} else if (*p == '.') {
-									hasSchema = true;
+									*p = '\0';
+									sname = tname;
+									tname = NULL;
 								}
 							} else {
 								*q++ = *p;
@@ -2521,26 +2531,172 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						continue;
 					}
 
-					if (*line && !hasWildcard) {
+					if (x & MD_MERGE) {
+						const char mquery[] = "select s1.name as s1name,"
+							" t1.name as t1name,"
+							" c1.name as c1name,"
+							" s2.name as s2name,"
+							" t2.name as t2name,"
+							" tp.expression,"
+							" tp.type,"
+							" ''''||replace(rp.minimum, '''', '''''')||'''' as minimum,"
+							" ''''||replace(rp.maximum, '''', '''''')||'''' as maximum,"
+							" rp.with_nulls,"
+							" '('||group_concat(''''||replace(vp.value, '''', '''''')||'''', ',' order by vp.value)||')' as values,"
+							" count(vp.value) <> count(*) as has_nulls"
+							" from sys.schemas as s1,"
+							" sys._tables as t1 left outer join sys.table_partitions as tp on t1.id = tp.table_id left outer join sys._columns as c1 on tp.column_id = c1.id,"
+							" sys.schemas as s2,"
+							" sys._tables as t2 left outer join sys.range_partitions as rp on t2.id = rp.table_id left outer join sys.value_partitions as vp on t2.id = vp.table_id,"
+							" sys.dependencies as d"
+							" where%s%s"
+							" t1.type = 3 and"
+							" s1.id = t1.schema_id and"
+							" s2.id = t2.schema_id and"
+							" t1.id = d.depend_id and"
+							" d.id = t2.id"
+							" group by s1.name, t1.name, s2.name, t2.name, c1.name, tp.expression, tp.type, rp.minimum, rp.maximum, rp.with_nulls"
+							" order by s1.name, t1.name, s2.name, t2.name";
+						char *squery = NULL;
+						size_t squerylen = 0;
+						char *tquery = NULL;
+						size_t tquerylen = 0;
+						if (sname) {
+							sname = sescape(sname);
+							squerylen = strlen(sname) + 21;
+							squery = malloc(squerylen);
+							if (hasWildcard)
+								snprintf(squery, squerylen, " s1.name like '%s' and", sname);
+							else
+								snprintf(squery, squerylen, " s1.name = '%s' and", sname);
+							free(sname);
+							sname = NULL;
+						}
+						if (tname) {
+							if (squery == NULL) {
+								squery = strdup(" s1.name = current_schema and");
+								squerylen = strlen(squery);
+							}
+							tname = sescape(tname);
+							tquerylen = strlen(tname) + 21;
+							tquery = malloc(tquerylen);
+							if (hasWildcard)
+								snprintf(tquery, tquerylen, " t1.name like '%s' and", tname);
+							else
+								snprintf(tquery, tquerylen, " t1.name = '%s' and", tname);
+							free(tname);
+							tname = NULL;
+						}
+						size_t qlen = sizeof(mquery) + squerylen + tquerylen;
+						char *query = malloc(qlen);
+						snprintf(query, qlen, mquery, squery ? squery : "", tquery ? tquery : "");
+						free(squery);
+						free(tquery);
+						hdl = mapi_query(mid, query);
+						free(query);
+						CHECK_RESULT(mid, hdl, buf, fp);
+						char *prevs1name = NULL, *prevt1name = NULL;
+						while (fetch_row(hdl) > 0) {
+							const char *s1name = mapi_fetch_field(hdl, 0);
+							const char *t1name = mapi_fetch_field(hdl, 1);
+							const char *c1name = mapi_fetch_field(hdl, 2);
+							const char *s2name = mapi_fetch_field(hdl, 3);
+							const char *t2name = mapi_fetch_field(hdl, 4);
+							const char *expression = mapi_fetch_field(hdl, 5);
+							const char *type = mapi_fetch_field(hdl, 6);
+							int itype = type ? atoi(type) : 0;
+							const char *minimum = mapi_fetch_field(hdl, 7);
+							const char *maximum = mapi_fetch_field(hdl, 8);
+							const char *with_nulls = mapi_fetch_field(hdl, 9);
+							const char *values = mapi_fetch_field(hdl, 10);
+							const char *has_nulls = mapi_fetch_field(hdl, 11);
+							if (sname && strcmp(sname, s1name) != 0)
+								continue;
+							if (tname && strcmp(tname, t1name) != 0)
+								continue;
+							if (prevs1name == NULL ||
+								prevt1name == NULL ||
+								strcmp(prevs1name, s1name) != 0 ||
+								strcmp(prevt1name, t1name) != 0) {
+								free(prevs1name);
+								free(prevt1name);
+								prevs1name = strdup(s1name);
+								prevt1name = strdup(t1name);
+								mnstr_printf(toConsole, "MERGE TABLE %s.%s",
+											 s1name, t1name);
+								const char *how;
+								if (itype & 1) /* PARTITION_RANGE */
+									how = " BY RANGE";
+								else if (itype & 2) /* PARTITION_LIST */
+									how = " BY VALUES";
+								else
+									how = "";
+								if (itype & 4) /* PARTITION_COLUMN */
+									mnstr_printf(toConsole,
+												 " PARTITION%s ON (%s)",
+												 how,
+												 c1name);
+								else if (itype & 8) /* PARTITION_EXPRESSION */
+									mnstr_printf(toConsole,
+												 " PARTITION%s USING (%s)",
+												 how,
+												 expression);
+								mnstr_printf(toConsole, "\n");
+							}
+							mnstr_printf(toConsole, "  ADD TABLE %s.%s",
+										 s2name, t2name);
+							if (itype & 3) {
+								mnstr_printf(toConsole, " AS PARTITION");
+								if (values) {
+									mnstr_printf(toConsole, " IN %s", values);
+									if (has_nulls && strcmp(has_nulls, "true") == 0)
+										mnstr_printf(toConsole,
+													 " WITH NULL VALUES");
+								} else if (itype & 2 && has_nulls && strcmp(has_nulls, "true") == 0) {
+									mnstr_printf(toConsole,
+												 " FOR NULL VALUES");
+								} else {
+									if (minimum)
+										mnstr_printf(toConsole, " FROM %s", minimum);
+									else
+										mnstr_printf(toConsole, " FROM RANGE MINVALUE");
+									if (maximum)
+										mnstr_printf(toConsole, " TO %s", maximum);
+									else
+										mnstr_printf(toConsole, " TO RANGE MAXVALUE");
+									if (with_nulls && strcmp(with_nulls, "true") == 0)
+										mnstr_printf(toConsole, " WITH NULL VALUES");
+								}
+							}
+							mnstr_printf(toConsole, "\n");
+						}
+						free(prevs1name);
+						free(prevt1name);
+						mapi_close_handle(hdl);
+						hdl = NULL;
+					}
+					if ((sname || tname) && !hasWildcard) {
 #ifdef HAVE_POPEN
 						stream *saveFD;
 
 						start_pager(&saveFD);
 #endif
 						if (x & (MD_TABLE | MD_VIEW))
-							dump_table(mid, NULL, line, toConsole, NULL, NULL, true, true, false, false, false, false);
+							dump_table(mid, sname, tname, toConsole, NULL, NULL, true, true, false, false, false, false);
 						if (x & MD_SEQ)
-							describe_sequence(mid, NULL, line, toConsole);
+							describe_sequence(mid, sname, tname, toConsole);
 						if (x & MD_FUNC)
-							dump_functions(mid, toConsole, 0, NULL, line, NULL);
+							dump_functions(mid, toConsole, 0, sname, tname, NULL);
 						if (x & MD_SCHEMA)
-							describe_schema(mid, line, toConsole);
+							describe_schema(mid, sname ? sname : tname, toConsole);
 #ifdef HAVE_POPEN
 						end_pager(saveFD);
 #endif
-					} else {
+						continue;
+					}
+					if (x & (MD_TABLE|MD_VIEW|MD_SEQ|MD_FUNC|MD_SCHEMA)) {
 						/* get all object names in current schema */
-						const char *with_clause =
+						const char with_clause[] =
 							"with describe_all_objects AS (\n"
 							"  SELECT s.name AS sname,\n"
 							"      t.name,\n"
@@ -2591,7 +2747,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
 							"  ORDER BY system, name, sname, ntype)\n"
 							;
-						size_t len = strlen(with_clause) + 400 + strlen(line);
+						size_t len = strlen(with_clause) + 400 + (sname?strlen(sname):0) + (tname?strlen(tname):0);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 
@@ -2615,11 +2771,14 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, " AND NOT system");
 						}
-						if (!hasSchema) {
+						if (sname == NULL) {
 							q += snprintf(q, endq - q, " AND (sname IS NULL OR sname = current_schema)");
 						}
-						if (*line) {
-							q += snprintf(q, endq - q, " AND (%s LIKE '%s')", (hasSchema ? "fullname" : "name"), line);
+						if (sname) {
+							q += snprintf(q, endq - q, " AND sname LIKE '%s'", sname);
+						}
+						if (tname) {
+							q += snprintf(q, endq - q, " AND name LIKE '%s'", tname);
 						}
 						q += snprintf(q, endq - q, " ORDER BY fullname, type, remark");
 
@@ -2632,9 +2791,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						free(query);
 						CHECK_RESULT(mid, hdl, buf, fp);
 						while (fetch_row(hdl) == 3) {
-							char *type = mapi_fetch_field(hdl, 0);
-							char *name = mapi_fetch_field(hdl, 1);
-							char *remark = mapi_fetch_field(hdl, 2);
+							const char *type = mapi_fetch_field(hdl, 0);
+							const char *name = mapi_fetch_field(hdl, 1);
+							const char *remark = mapi_fetch_field(hdl, 2);
 							int type_width = mapi_get_len(hdl, 0);
 							int name_width = mapi_get_len(hdl, 1);
 							mnstr_printf(toConsole,
@@ -2642,7 +2801,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 								     type_width, type,
 								     name_width * (remark != NULL), name);
 							if (remark) {
-								char *c;
+								const char *c;
 								mnstr_printf(toConsole, "  '");
 								for (c = remark; *c; c++) {
 									switch (*c) {
