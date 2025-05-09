@@ -1226,7 +1226,7 @@ SQLreader(Client c, backend *be)
 		((backend *) c->sqlcontext)->mvc->session &&
 		((backend *) c->sqlcontext)->mvc->session->tr &&
 		((backend *) c->sqlcontext)->mvc->session->tr->active &&
-		GDKusec() - c->idle > c->idletimeout) {
+		time(NULL) - c->idle > c->idletimeout) {
 		in->pos = in->len;	/* skip rest of the input */
 		MT_lock_set(&mal_contextLock);
 		c->mode = FINISHCLIENT;

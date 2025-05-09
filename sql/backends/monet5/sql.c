@@ -5506,11 +5506,27 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s) {
 		sql_key *k = mvc_bind_key(m, s, kname);
 		uintptr_t sp = m->sp;
-		m->sp = (uintptr_t)&m; /* local var ie top of stack */
+#ifdef __has_builtin
+#if __has_builtin(__builtin_frame_address)
+		m->sp = (uintptr_t) __builtin_frame_address(0);
+#define BUILTIN_USED
+#endif
+#endif
+#ifndef BUILTIN_USED
+		m->sp = (uintptr_t)(&m);
+#endif
+#undef BUILTIN_USED
 		if (k && k->check) {
 			int pos = 0;
 			sql_rel *rel = rel_basetable(m, k->t, k->t->base.name);
-			sql_exp *exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+			sql_exp *exp = NULL;
+			if (rel) {
+				rel_base_use_all(m, rel);
+				exp = exp_read(m, rel, NULL, NULL, sa_strdup(m->sa, k->check), &pos, 0);
+			}
+			assert(exp);
+			if (!exp)
+				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (exp->comment)
 				*r = GDKstrdup(exp->comment);
 			else
