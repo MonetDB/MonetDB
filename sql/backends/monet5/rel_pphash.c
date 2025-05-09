@@ -506,7 +506,6 @@ static stmt *
 rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
-	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
 
 	assert(rel->l && rel->r);
 	if (rel->oahash == 1) {
@@ -518,15 +517,18 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 		rel_prb = rel->l;
 	}
 
-	/*** PREPARE PHASE ***/
-	/* find projection columns */
-	exps_prj_hsh = rel_projections(be->mvc, rel_hsh, 0, 1, 1);
-	exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
+	prop *p;
+	p = find_prop(rel_prb->p, PROP_PRB_RESULT);
+	list *exps_prj_prb = p->value.l;
+
+	p = find_prop(rel_hsh->p, PROP_HSH_PAYLOAD);
+	list *exps_prj_hsh = p->value.l;
+
 	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
 
 	/*** (pseudo) HASH PHASE ***/
 	/* nothing to hash, we just want to have a materialised table for this side */
-	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh, refs);
+	stmt *stmts_ht = subrel_bin(be, rel_hsh, refs);
 
 	/*** (pseudo) PROBE PHASE ***/
 	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs, false);
@@ -608,7 +610,7 @@ rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 	case op_left:
 	case op_right:
 	case op_full:
-		if (rel->exps)
+		if (!list_empty(rel->exps))
 			return rel2bin_oahash_equi(be, rel, refs);
 		else
 			return rel2bin_oahash_cart(be, rel, refs);

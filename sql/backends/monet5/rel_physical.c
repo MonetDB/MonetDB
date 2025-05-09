@@ -346,7 +346,7 @@ do_oahash_join(sql_rel *rel)
 	// TODO the always-true case, i.e. no retrictions, which can happen in
 	//      inner-, outer-, semi-, anti- and cross-joins
 	if (list_empty(rel->exps))
-		return 0;
+		return 1;
 
 	// TODO we can do hash based with one or more, rest can be handled via a filter step
 	if (!only_equi_joins(rel))
@@ -764,6 +764,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 		}
 	} else if (is_semi(rel->op)) {
+		assert(list_length(rel->exps)); // else optimizer should have cleaned up
 		if (do_oahash_join(rel)) {
 			rel->oahash = 2;
 
@@ -890,15 +891,19 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 
 			/* get full projection list from parent */
 			assert(p);
-			list *exps_cmp_hsh = sa_list(v->sql->sa), *exps_cmp_prb = sa_list(v->sql->sa);
-			find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
-
 			prop *rp;
-			rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
-			rp->value.l = exps_cmp_hsh;
+			list *exps_cmp_hsh = NULL, *exps_cmp_prb = NULL;
+			if (!list_empty(rel->exps)) {
+				exps_cmp_hsh = sa_list(v->sql->sa);
+				exps_cmp_prb = sa_list(v->sql->sa);
+				find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
 
-			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel_prb->p);
-			rp->value.l = exps_cmp_prb;
+				rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
+				rp->value.l = exps_cmp_hsh;
+
+				rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel_prb->p);
+				rp->value.l = exps_cmp_prb;
+			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
 			find_payload_exps(&exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
