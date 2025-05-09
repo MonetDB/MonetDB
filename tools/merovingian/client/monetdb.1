@@ -451,6 +451,14 @@ Defines how the server interprets literal strings. See the
 .IR mserver5 (1)
 manpage for more details.
 .TP
+\fBidletimeout=\fP\fIseconds\fP
+Set the idle timeout of the server.
+If a connection is idle for longer than the specified timeout, and it
+has a transaction open, the connection will be closed.
+See the
+.IR mserver5 (1)
+manpage for more details.
+.TP
 \fBloadmodules=\fP\fImodule-list\fP
 Enable the modules in
 .I module-list

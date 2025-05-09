@@ -936,11 +936,37 @@ SQLtrans(mvc *m)
 	return MAL_SUCCEED;
 }
 
+static bool
+shouldStop(void *data)
+{
+	if (GDKexiting())
+		return true;
+	Client c = data;
+	if (c) {
+		if (c->idletimeout &&
+			c->idle &&
+			c->sqlcontext &&
+			((backend *) c->sqlcontext)->mvc &&
+			((backend *) c->sqlcontext)->mvc->session &&
+			((backend *) c->sqlcontext)->mvc->session->tr &&
+			((backend *) c->sqlcontext)->mvc->session->tr->active &&
+			time(NULL)- c->idle > c->idletimeout)
+			return true;
+		if (c->sessiontimeout &&
+			c->session &&
+			(GDKusec() - c->session) > c->sessiontimeout)
+			return true;
+	}
+	return false;
+}
+
 str
 SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 
+	mnstr_settimeout(c->fdin->s, 50, shouldStop, c);
+	c->idletimeout = GDKgetenv_int("idle_timeout", 0);
 	MT_lock_set(&sql_contextLock);
 	if (!SQLstore) {
 		MT_lock_unset(&sql_contextLock);
@@ -1100,6 +1126,7 @@ SQLreader(Client c, backend *be)
 		MT_lock_unset(&mal_contextLock);
 		return MAL_SUCCEED;
 	}
+	c->idle = time(0);
 	MT_lock_unset(&mal_contextLock);
 	language = be->language;	/* 'S', 's' or 'X' */
 	m = be->mvc;
@@ -1125,11 +1152,6 @@ SQLreader(Client c, backend *be)
 				break;
 			commit_done = true;
 		}
-		if (m->session->tr && m->session->tr->active) {
-			MT_lock_set(&mal_contextLock);
-			c->idle = 0;
-			MT_lock_unset(&mal_contextLock);
-		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -1151,12 +1173,6 @@ SQLreader(Client c, backend *be)
 					if (msg)
 						break;
 					commit_done = true;
-					MT_lock_set(&mal_contextLock);
-					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
-						/* now the session is idle */
-						c->idle = time(0);
-					}
-					MT_lock_unset(&mal_contextLock);
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
@@ -1202,6 +1218,24 @@ SQLreader(Client c, backend *be)
 		MT_lock_unset(&mal_contextLock);
 		return msg;
 	}
+	if (msg == MAL_SUCCEED &&
+		c->idletimeout &&
+		c->idle &&
+		c->sqlcontext &&
+		((backend *) c->sqlcontext)->mvc &&
+		((backend *) c->sqlcontext)->mvc->session &&
+		((backend *) c->sqlcontext)->mvc->session->tr &&
+		((backend *) c->sqlcontext)->mvc->session->tr->active &&
+		time(NULL) - c->idle > c->idletimeout) {
+		in->pos = in->len;	/* skip rest of the input */
+		MT_lock_set(&mal_contextLock);
+		c->mode = FINISHCLIENT;
+		MT_lock_unset(&mal_contextLock);
+		throw(SQL, "SQLreader", "Session aborted due to idle timeout");
+	}
+	MT_lock_set(&mal_contextLock);
+	c->idle = 0;
+	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
 

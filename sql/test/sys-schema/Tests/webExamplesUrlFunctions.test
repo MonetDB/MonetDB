@@ -5,12 +5,12 @@ statement ok
 create table urlt (c url)
 
 statement ok
-insert into urlt values ('https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example')
+insert into urlt values ('https://me:pw@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example')
 
 query T nosort
 select c from urlt
 ----
-https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example
+https://me:pw@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example
 
 query T nosort
 select sys.getanchor(c) from urlt
@@ -65,7 +65,7 @@ lang=nl&sort=asc
 query T nosort
 select sys.getroboturl(c) from urlt
 ----
-https://me@www.monetdb.org:458/robots.txt
+https://me:pw@www.monetdb.org:458/robots.txt
 
 query T nosort
 select sys.getuser(c) from urlt
@@ -78,9 +78,9 @@ select sys.isaurl(c) from urlt
 1
 
 query T nosort
-select sys.newurl('https', 'usr@www.a.com:123', 'docs/index.html')
+select sys.newurl('https', 'usr:pw@www.a.com:123', 'docs/index.html')
 ----
-https://usr@www.a.com:123/docs/index.html
+https://usr:pw@www.a.com:123/docs/index.html
 
 query T nosort
 select sys.newurl('https', 'www.a.com', 5567, 'docs/index.html')

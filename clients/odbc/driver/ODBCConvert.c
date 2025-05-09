@@ -1019,23 +1019,39 @@ ODBCFetch(ODBCStmt *stmt,
 	if (type == SQL_C_DEFAULT)
 		type = ODBCDefaultType(irdrec);
 
-	if (precision == UNAFFECTED ||
-	    scale == UNAFFECTED ||
-	    datetime_interval_precision == UNAFFECTED) {
+	if (precision == UNAFFECTED) {
+		precision = (ardrec) ? ardrec->sql_desc_precision : (type == SQL_C_NUMERIC) ? 10 : 6;
+	}
+	if (scale == UNAFFECTED) {
+		scale = (ardrec) ? ardrec->sql_desc_scale : 0;
+	}
+	if (datetime_interval_precision == UNAFFECTED) {
 		if (ardrec) {
-			if (precision == UNAFFECTED)
-				precision = ardrec->sql_desc_precision;
-			if (scale == UNAFFECTED)
-				scale = ardrec->sql_desc_scale;
-			if (datetime_interval_precision == UNAFFECTED)
-				datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
+			datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
 		} else {
-			if (precision == UNAFFECTED)
-				precision = type == SQL_C_NUMERIC ? 10 : 6;
-			if (scale == UNAFFECTED)
-				scale = 0;
-			if (datetime_interval_precision == UNAFFECTED)
+			switch (type) {
+			case SQL_C_INTERVAL_YEAR:
+				datetime_interval_precision = 4;
+				break;
+			case SQL_C_INTERVAL_YEAR_TO_MONTH:
+			case SQL_C_INTERVAL_MONTH:
+				datetime_interval_precision = 6;
+				break;
+			case SQL_C_INTERVAL_DAY:
+			case SQL_C_INTERVAL_DAY_TO_HOUR:
+			case SQL_C_INTERVAL_DAY_TO_MINUTE:
+			case SQL_C_INTERVAL_DAY_TO_SECOND:
+			case SQL_C_INTERVAL_HOUR:
+			case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+			case SQL_C_INTERVAL_HOUR_TO_SECOND:
+			case SQL_C_INTERVAL_MINUTE:
+			case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+			case SQL_C_INTERVAL_SECOND:
+				datetime_interval_precision = 9;
+				break;
+			default:
 				datetime_interval_precision = 2;
+			}
 		}
 	}
 	i = datetime_interval_precision;

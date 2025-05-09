@@ -256,7 +256,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
-	c->idle = c->login = c->lastcmd = time(0);
+	c->idle = 0;
+	c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
 	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
@@ -264,6 +265,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
+	c->idletimeout = 0;
 	c->qryctx.starttime = 0;
 	c->qryctx.endtime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
@@ -398,6 +400,7 @@ MCcloseClient(Client c)
 	c->qryctx.endtime = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
+	c->idletimeout = 0;
 	c->user = oid_nil;
 	if (c->username) {
 		GDKfree(c->username);
