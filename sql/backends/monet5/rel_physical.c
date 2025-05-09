@@ -450,21 +450,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			}
 		}
 	} else if (is_semi(rel->op)) {
-		if (0 && do_oahash_join(rel)) {
-			sql_rel *l = rel->l, *r = rel->r;
-			(void) rel_partition_(sql, l, 1);
-			(void) rel_partition_(sql, r, 1);
-
-			rel->oahash = 2;
-
-			rel->parallel = 1;
-			if (pb == CPB)
-				rel_dup(rel);
-			if (pb)
-				rel->spb = 1;
-			return SPB;
-		}
-
 		if (rel->l && rel->op != op_anti)
 			res = rel_partition_(sql, rel->l, pb);
 		if (rel->parallel)
@@ -527,34 +512,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			res = pb;
 		}
 	} else if (is_join(rel->op)) {
-		if (0 && do_oahash_join(rel)) {
-			sql_rel *l = rel->l, *r = rel->r;
-			(void) rel_partition_(sql, l, 1);
-			(void) rel_partition_(sql, r, 1);
-
-			if (rel->op == op_left)
-				rel->oahash = 2;
-			else if (rel->op == op_right)
-				rel->oahash = 1;
-			else if (rel_getcount(sql, l) < rel_getcount(sql, r))
-				rel->oahash = 1;
-			else
-				rel->oahash = 2;
-
-			/*
-			if(is_basetable(l->op))
-				l->partition = 1;
-			if(is_basetable(r->op))
-				r->partition = 1;
-				*/
-			rel->parallel = 1;
-			if (pb == CPB)
-				rel_dup(rel);
-			if (pb)
-				rel->spb = 1;
-			return SPB;
-		}
-
 		if (pb && is_outerjoin(rel->op))
 			return 0;
 		if (is_left(rel->op)) /* and pb == 0 */
@@ -611,20 +568,21 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 }
 
 static void
-find_payload_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
+find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
 {
 	assert(exps);
 
 	/* Find out if an expression of the exps belong to rel_hsh or
 	 * rel_prb or is a constant. */
 	for (node *n = exps->h; n; n = n->next) { /* TODO handle consts seperate */
-		sql_exp *e = n->data;
+		sql_exp *e = n->data, *ne = NULL;
 
-		if (rel_find_exp(rel_prb, e)) {
-			append(*exps_prb, e);
+		if ((ne = rel_find_exp(rel_prb, e)) != NULL) {
+			append(*exps_prb, exp_ref(sql, ne));
 		} else if (exps_hsh) {
-			assert(rel_find_exp(rel_hsh, e));
-			append(*exps_hsh, e);
+			ne = rel_find_exp(rel_hsh, e);
+			assert(ne);
+			append(*exps_hsh, exp_ref(sql, ne));
 		}
 	}
 }
@@ -783,7 +741,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			rp->value.l = exps_cmp_prb;
 
 			list *exps_prb = sa_list(v->sql->sa);
-			find_payload_exps(NULL, &exps_prb, p->exps, rel_hsh, rel_prb);
+			find_payload_exps(v->sql, NULL, &exps_prb, p->exps, rel_hsh, rel_prb);
 
 			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel_prb->p);
 			rp->value.l = exps_prb;
@@ -865,52 +823,79 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_join(rel->op)) {
 		if (do_oahash_join(rel)) {
 			sql_rel *l = rel->l, *r = rel->r;
-
-			/* TODO remove oahash: need for oahash will be gone */
-			if (rel->op == op_left)
-				rel->oahash = 2;
-			else if (rel->op == op_right)
-				rel->oahash = 1;
-			else if (rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
-				rel->oahash = 1;
-			else
-				rel->oahash = 2;
-
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL;
-			if (rel->op == op_left || (rel->op == op_join && rel->oahash == 2)) {
-				rel_hsh = rel->r;
-				rel_prb = rel->l;
-			} else if (rel->op == op_right || (rel->op == op_join && rel->oahash == 1)) {
-				rel_hsh = rel->l;
-				rel_prb = rel->r;
-			} else if (rel->op == op_full) {
-				sql_error(v->sql, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
+			prop *rp;
+
+			list *found_exps_cmp_hsh = NULL, *found_exps_prj_hsh = NULL;
+
+			rp = find_prop(l->p, PROP_HSH_EXPS);
+			if (rp) {
+				rel_hsh = l;
+				rel_prb = r;
+				rel->oahash = 1;
+			} else if ((rp = find_prop(r->p, PROP_HSH_EXPS)) != NULL) {
+				rel_hsh = r;
+				rel_prb = l;
+				rel->oahash = 2;
+			}
+
+			if (!rp) {
+				if (rel->op == op_left)
+					rel->oahash = 2;
+				else if (rel->op == op_right)
+					rel->oahash = 1;
+				else if (rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
+					rel->oahash = 1;
+				else
+					rel->oahash = 2;
+
+				if (rel->op == op_left || (rel->op == op_join && rel->oahash == 2)) {
+					rel_hsh = rel->r;
+					rel_prb = rel->l;
+				} else if (rel->op == op_right || (rel->op == op_join && rel->oahash == 1)) {
+					rel_hsh = rel->l;
+					rel_prb = rel->r;
+				} else if (rel->op == op_full) {
+					sql_error(v->sql, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
+				} else {
+					assert(0);
+				}
 			} else {
-				assert(0);
+				/* TODO valide if hash exps are what we need */
+				found_exps_cmp_hsh = rp->value.l;
+				rp = find_prop(l->p, PROP_HSH_PAYLOAD);
+				if (rp)
+					found_exps_prj_hsh = rp->value.l;
 			}
 
 			/* get full projection list from parent */
 			assert(p);
-			prop *rp;
 			list *exps_cmp_hsh = NULL, *exps_cmp_prb = NULL;
 			if (!list_empty(rel->exps)) {
 				exps_cmp_hsh = sa_list(v->sql->sa);
 				exps_cmp_prb = sa_list(v->sql->sa);
 				find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
 
-				rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
-				rp->value.l = exps_cmp_hsh;
+				if (found_exps_cmp_hsh) { /* if not the same ?? */
+					printf("need to check \n");
+				} else {
+					rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
+					rp->value.l = exps_cmp_hsh;
+				}
 
 				rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel_prb->p);
 				rp->value.l = exps_cmp_prb;
 			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
-			find_payload_exps(&exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
+			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
 
-			rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_PAYLOAD, rel_hsh->p);
-			rp->value.l = exps_hsh;
-
+			if (found_exps_prj_hsh) {
+					printf("need to check \n");
+			} else {
+				rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_PAYLOAD, rel_hsh->p);
+				rp->value.l = exps_hsh;
+			}
 			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel_prb->p);
 			rp->value.l = exps_prb;
 
