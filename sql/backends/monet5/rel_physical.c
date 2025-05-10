@@ -1346,7 +1346,7 @@ rel_add_project(visitor *v, sql_rel *rel)
 	case op_except:
 		rel->l = rel_add_project(v, rel->l);
 		rel->r = rel_add_project(v, rel->r);
-		if (is_join(rel->op) /*&& (!p || !is_simple_project(p->op)) */) {
+		if (is_join(rel->op) || is_semi(rel->op) /*&& (!p || !is_simple_project(p->op)) */) {
 		   	if (!rel_is_ref(rel))
 				rel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 			else
