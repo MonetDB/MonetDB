@@ -2672,7 +2672,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 										else
 											mnstr_printf(toConsole, " TO RANGE MAXVALUE");
 									}
-									if (with_nulls && strcmp(with_nulls, "true") == 0)
+									if (with_nulls == NULL ||
+										strcmp(with_nulls, "true") == 0)
 										mnstr_printf(toConsole, " WITH NULL VALUES");
 								}
 							}
