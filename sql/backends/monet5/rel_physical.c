@@ -580,9 +580,13 @@ find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, 
 		if (exp_is_atom(e))
 			continue;
 		if ((ne = rel_find_exp(rel_prb, e)) != NULL) {
+			if (exp_is_atom(ne))
+				ne = e;
 			append(*exps_prb, exp_ref(sql, ne));
 		} else if (exps_hsh) {
 			ne = rel_find_exp(rel_hsh, e);
+			if (exp_is_atom(ne))
+				ne = e;
 			assert(ne);
 			append(*exps_hsh, exp_ref(sql, ne));
 		}
