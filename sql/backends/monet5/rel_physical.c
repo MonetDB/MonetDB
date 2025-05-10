@@ -577,6 +577,8 @@ find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, 
 	for (node *n = exps->h; n; n = n->next) { /* TODO handle consts seperate */
 		sql_exp *e = n->data, *ne = NULL;
 
+		if (exp_is_atom(e))
+			continue;
 		if ((ne = rel_find_exp(rel_prb, e)) != NULL) {
 			append(*exps_prb, exp_ref(sql, ne));
 		} else if (exps_hsh) {
@@ -1044,6 +1046,7 @@ find_aggr_exp(mvc *sql, list *exps, char *name)
 static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
+	sql_rel *orel = rel;
 	mvc *sql = v->sql;
 	if (is_groupby(rel->op) && rel->parallel) {
 		list *exps, *gbe;
@@ -1074,6 +1077,30 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 		rel = rel_project(sql->sa, rel, exps);
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
+		if (rel_is_ref(orel)) {
+			prop *rp, *np;
+
+			rp = find_prop(orel->p, PROP_HSH_EXPS);
+			if (rp) {
+				np = rel->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel->p);
+				np->value.l = rp->value.l;
+			}
+			rp = find_prop(orel->p, PROP_PRB_EXPS);
+			if (rp) {
+				np = rel->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel->p);
+				np->value.l = rp->value.l;
+			}
+			rp = find_prop(orel->p, PROP_HSH_PAYLOAD);
+			if (rp) {
+				np = rel->p = prop_create(v->sql->sa, PROP_HSH_PAYLOAD, rel->p);
+				np->value.l = rp->value.l;
+			}
+			rp = find_prop(orel->p, PROP_PRB_RESULT);
+			if (rp) {
+				np = rel->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel->p);
+				np->value.l = rp->value.l;
+			}
+		}
 	}
 	return rel;
 }
