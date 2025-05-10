@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Fri May  9 2025 Sjoerd Mullender <sjoerd@acm.org>
+- There is now a \dm command in the interactive mclient to show
+  information about merge tables.
+
