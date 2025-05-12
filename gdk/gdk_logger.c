@@ -2418,6 +2418,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 
 	lng max_dropped = GDKgetenv_int("wal_max_dropped", 100000);
 	lng max_file_age = GDKgetenv_int("wal_max_file_age", 600);
+	lng max_pending = GDKgetenv_int("wal_max_pending", 5);
 	lng max_file_size = 0;
 
 	if (GDKdebug & TESTINGMASK) {
@@ -2455,6 +2456,8 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 		.file_age = 0,
 		.max_file_age = max_file_age >= 0 ? max_file_age * 1000000 : 600000000,
 		.max_file_size = max_file_size >= 0 ? max_file_size : 2147483648,
+		.max_pending = max_pending,
+		.cur_max_pending = max_pending,
 
 		.id = 0,
 		.saved_id = getBBPlogno(),	/* get saved log number from bbp */
@@ -2722,8 +2725,17 @@ log_flush(logger *lg, ulng ts)
 			TRC_ERROR(GDK, "failed to commit");
 		return GDK_SUCCEED;
 	}
-	if (lg->saved_id >= lid)
+	if (lg->saved_id >= lid) {
+		/* if too many pending */
+		if (lg->saved_id + lg->cur_max_pending > lg->id) {
+			lg->cur_max_pending *= 2; /* when too warn again */
+			TRC_WARNING(GDK, "Too many pending log files " LLFMT "\n", (lg->id - lg->saved_id));
+		}
+		/* log files went down, reduce cur_max_pending */
+		if (lg->cur_max_pending > lg->max_pending && (int)(lg->id - lg->saved_id) < (lg->cur_max_pending/2))
+			lg->cur_max_pending /= 2;
 		return GDK_SUCCEED;
+	}
 	rotation_lock(lg);
 	ulng lgid = lg->id;
 	rotation_unlock(lg);
