@@ -2239,12 +2239,12 @@ OAHASHprobe(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			if (!(*semantics) && ky[i] == Type##_nil) \
+			if (!(*semantics) && is_##Type##_nil(ky[i])) \
 				continue; \
 			\
 			gid k = hs[i]&ht->mask; \
 			gid slot = ht->gids[k]; \
-			while (slot && vals[slot] != ky[i]) { \
+			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
 				k++; \
 				k &= ht->mask; \
 				slot = ht->gids[k]; \
@@ -2540,10 +2540,10 @@ OAHASHprobe_cmbd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			gid hsh = hs[mt[i]]&ht->mask; \
 			gid slot = ht->gids[hsh]; \
 			Type val = ky[mt[i]]; \
-			if (!(*semantics) && val == Type##_nil) \
+			if (!(*semantics) && is_##Type##_nil(val)) \
 				continue; \
 			\
-			while (slot && vals[slot] != val) { \
+			while (slot && (!(is_##Type##_nil(vals[slot]) && is_##Type##_nil(val)) && vals[slot] != val)) { \
 				hsh++; \
 				hsh &= ht->mask; \
 				slot = ht->gids[hsh]; \

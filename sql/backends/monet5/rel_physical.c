@@ -39,7 +39,7 @@ rel_getcount(mvc *sql, sql_rel *rel)
 
 		if (t && isTable(t) && t->persistence != SQL_DECLARED_TABLE) {
 			sqlstore *store = sql->session->tr->store;
-			lng nr =  (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			lng nr = (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
 			assert(nr >= 0);
 			return nr;
 		}
@@ -447,16 +447,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			}
 		}
 	} else if (is_semi(rel->op)) {
-		/*
-		if (do_oahash_join(rel)) {
-			rel->oahash = 2;
-			rel->parallel = 1;
-			if (pb == CPB)
-				rel_dup(rel);
-			if (pb)
-				rel->spb = 1;
-		}
-		*/
 		if (do_oahash_join(rel)) {
 			sql_rel *l = rel->l, *r = rel->r;
 			(void) rel_partition_(sql, l, 1);
@@ -464,12 +454,6 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 
 			rel->oahash = 2;
 
-			/*
-			if(is_basetable(l->op))
-				l->partition = 1;
-			if(is_basetable(r->op))
-				r->partition = 1;
-			*/
 			rel->parallel = 1;
 			if (pb == CPB)
 				rel_dup(rel);
