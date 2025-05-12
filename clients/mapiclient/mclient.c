@@ -2656,15 +2656,24 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 									mnstr_printf(toConsole,
 												 " FOR NULL VALUES");
 								} else {
-									if (minimum)
-										mnstr_printf(toConsole, " FROM %s", minimum);
-									else
-										mnstr_printf(toConsole, " FROM RANGE MINVALUE");
-									if (maximum)
-										mnstr_printf(toConsole, " TO %s", maximum);
-									else
-										mnstr_printf(toConsole, " TO RANGE MAXVALUE");
-									if (with_nulls && strcmp(with_nulls, "true") == 0)
+									if (minimum ||
+										maximum ||
+										with_nulls == NULL ||
+										(minimum == NULL &&
+										 maximum == NULL &&
+										 with_nulls != NULL &&
+										 strcmp(with_nulls, "false") == 0)) {
+										if (minimum)
+											mnstr_printf(toConsole, " FROM %s", minimum);
+										else
+											mnstr_printf(toConsole, " FROM RANGE MINVALUE");
+										if (maximum)
+											mnstr_printf(toConsole, " TO %s", maximum);
+										else
+											mnstr_printf(toConsole, " TO RANGE MAXVALUE");
+									}
+									if (with_nulls == NULL ||
+										strcmp(with_nulls, "true") == 0)
 										mnstr_printf(toConsole, " WITH NULL VALUES");
 								}
 							}
