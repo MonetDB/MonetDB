@@ -195,10 +195,10 @@ SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 statement error 21000!Cardinality violation, scalar value expected
 SELECT 1 FROM (SELECT DISTINCT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (VALUES (2), (vx.vx))
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT 1 FROM (SELECT 3) vx(vx) WHERE 1 <> (SELECT 2 UNION ALL SELECT vx.vx)
 
 query I nosort
@@ -206,7 +206,7 @@ SELECT 1 FROM (SELECT 2) x(x) JOIN (SELECT 3) y(y) ON (SELECT max((SELECT x.x)))
 ----
 1
 
-statement error GDK reported error: selectjoin: more than one match
+statement error /more than one match/
 SELECT 1 FROM (SELECT 2) x(x) JOIN (SELECT 3) y(y) ON ((SELECT max((SELECT x.x))) UNION (SELECT 4))
 
 statement error 42000!MAX: aggregate functions not allowed in JOIN conditions
