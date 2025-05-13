@@ -322,6 +322,8 @@ main(int argc, char **av)
 		{"single-user", no_argument, NULL, 0},
 		{"version", no_argument, NULL, 0},
 
+		{"logging", required_argument, NULL, 0},
+
 		{"algorithms", no_argument, NULL, 0},
 		{"forcemito", no_argument, NULL, 0},
 		{"heaps", no_argument, NULL, 0},
@@ -473,6 +475,19 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "version") == 0) {
 				monet_version();
 				exit(0);
+			}
+			if (strcmp(long_options[option_index].name, "logging") == 0) {
+				char *tmp = strchr(optarg, '=');
+				if (tmp) {
+					*tmp = 0;
+					if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
+						fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
+								optarg, tmp + 1);
+					}
+				} else {
+					fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
+				}
+				break;
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
