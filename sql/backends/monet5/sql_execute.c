@@ -536,6 +536,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			if (!output)
 				sql->out = NULL;	/* no output stream */
 			be->depth++;
+			c->query = (char *) expr;
 			msg = SQLrun(c, m);
 			be->depth--;
 			assert (c->curprg->def->stop <= 1);

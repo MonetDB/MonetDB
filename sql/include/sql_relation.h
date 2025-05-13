@@ -61,8 +61,8 @@ typedef struct expression {
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,
 
-	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
-	 any:1,			/* = vs any semantics (keep nil results) */
+	 semantics:1,	/* 1: use the SQL 'IS NULL' semantics (i.e. nil == nil); 0: use the SQL '= NULL' semantics (i.e. unknown != unknown). Also indicates ranges and aggregations with (i.e. 1) or without (i.e. 0) nil */
+	 any:1,			/* SQL '= NULL' vs SQL ANY semantics (i.e. 1: keep nil results) */
 	 need_no_nil:1,
 	 has_no_nil:1,
 	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
