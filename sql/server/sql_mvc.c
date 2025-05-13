@@ -1529,6 +1529,18 @@ mvc_storage(mvc *m, sql_column *col, char *storage)
 }
 
 int
+mvc_subtype(mvc *m, sql_column *col, sql_subtype *t)
+{
+	TRC_DEBUG(SQL_TRANS, "Type: %s %s\n", col->base.name, t->type->base.name);
+	if (col->t->persistence == SQL_DECLARED_TABLE) {
+		col->type = *t;
+		return 0;
+	} else {
+		return sql_trans_alter_type(m->session->tr, col, t);
+	}
+}
+
+int
 mvc_access(mvc *m, sql_table *t, sht access)
 {
 	TRC_DEBUG(SQL_TRANS, "Access: %s %d\n", t->base.name, access);
