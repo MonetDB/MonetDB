@@ -452,7 +452,10 @@ main(int argc, char **av)
 					   && (optarg[optarglen - 1] == '/'
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
-				dbtrace = absolute_path(optarg);
+				if (strcmp(optarg, "stdout") == 0)
+					dbtrace = optarg;
+				else
+					dbtrace = absolute_path(optarg);
 				if (dbtrace == NULL)
 					fprintf(stderr,
 							"#error: can not allocate memory for dbtrace\n");
@@ -642,7 +645,7 @@ main(int argc, char **av)
 		GDKfree(dbpath);
 	}
 
-	if (dbtrace) {
+	if (dbtrace && strcmp(dbtrace, "stdout") != 0) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
 		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n",

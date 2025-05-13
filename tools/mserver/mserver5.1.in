@@ -95,6 +95,14 @@ file
 inside the directory specified with the
 .B \-\-dbpath
 option.
+If
+.I path
+is equal to
+.BR stdout ,
+the trace will be written to the standard output which is normally
+captured by
+.IR monetdbd (1)
+and written to its log file.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
