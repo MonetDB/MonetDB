@@ -1032,13 +1032,29 @@ tr_abort(logger *lg, trans *tr)
 }
 
 static trans *
-tr_commit(logger *lg, trans *tr)
+tr_commit(logger *lg, trans *tr, time_t *t)
 {
 	int i;
 
-	TRC_DEBUG(WAL, "commit");
+	TRC_INFO(WAL, "apply %d changes\n", tr->nr);
+	time_t t0 = *t;
 
 	for (i = 0; i < tr->nr; i++) {
+		if (t0) {
+			TRC_INFO_IF(WAL) {
+				time_t t1 = time(NULL);
+				/* not more than once every 10 seconds */
+				if (t1 - t0 > 10) {
+					t0 = t1;
+					lng fpos = (lng) getfilepos(getFile(lg->input_log));
+					if (fpos >= 0) {
+						TRC_INFO_ENDIF(WAL, "still applying changes (%d%% done)\n",
+							       i * 100 / tr->nr);
+						GDKtracer_flush_buffer();
+					}
+				}
+			}
+		}
 		if (la_apply(lg, &tr->changes[i], tr->tid) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "aborting transaction\n");
 			do {
@@ -1048,6 +1064,7 @@ tr_commit(logger *lg, trans *tr)
 		}
 		la_destroy(&tr->changes[i]);
 	}
+	*t = t0;
 	lg->saved_tid = tr->tid;
 	return tr_destroy(tr);
 }
@@ -1208,7 +1225,7 @@ static inline void
 log_close_input(logger *lg)
 {
 	if (!lg->inmemory && lg->input_log) {
-		TRC_INFO(WAL, "closing input log %s", mnstr_name(lg->input_log));
+		TRC_DEBUG(WAL, "closing input log %s", mnstr_name(lg->input_log));
 		close_stream(lg->input_log);
 	}
 	lg->input_log = NULL;
@@ -1227,7 +1244,7 @@ log_close_output(logger *lg)
 static gdk_return
 log_open_input(logger *lg, const char *filename, bool *filemissing)
 {
-	TRC_INFO(WAL, "opening input log %s", filename);
+	TRC_DEBUG(WAL, "opening input log %s", filename);
 	lg->input_log = open_rstream(filename);
 
 	/* if the file doesn't exist, there is nothing to be read back */
@@ -1259,13 +1276,15 @@ log_open_input(logger *lg, const char *filename, bool *filemissing)
 }
 
 static log_return
-log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
+log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated, time_t *t)
 {
 	logformat l;
 	trans *tr = NULL;
 	log_return err = LOG_OK;
 	bool ok = true;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
+	time_t t0 = 0;
+	size_t fs = 0;
 
 	(void) maxupdated;	/* only used inside assert() */
 
@@ -1274,7 +1293,27 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 
 	BAT *cands = NULL;	/* used in case of LOG_BAT_GROUP */
 
+	if (t) {
+		t0 = *t;
+		fs = getFileSize(lg->input_log);
+	}
+
 	while (err == LOG_OK && (ok = log_read_format(lg, &l))) {
+		if (t) {
+			TRC_INFO_IF(WAL) {
+				time_t t1 = time(NULL);
+				/* not more than once every 10 seconds */
+				if (t1 - t0 > 10) {
+					t0 = t1;
+					lng fpos = (lng) getfilepos(getFile(lg->input_log));
+					if (fpos >= 0) {
+						TRC_INFO_ENDIF(WAL, "still reading write-ahead log \"%s\" (%d%% done)\n",
+							       mnstr_name(lg->input_log), (int) ((fpos * 100 + 50) / fs));
+						GDKtracer_flush_buffer();
+					}
+				}
+			}
+		}
 		if (l.flag == 0 && l.id == 0) {
 			err = LOG_EOF;
 			break;
@@ -1362,7 +1401,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 			else if (tr->tid != l.id)	/* abort record */
 				tr = tr_abort(lg, tr);
 			else
-				tr = tr_commit(lg, tr);
+				tr = tr_commit(lg, tr, &t0);
 			break;
 		case LOG_SEQ:
 			err = log_read_seq(lg, &l);
@@ -1430,6 +1469,8 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated)
 		ATOMIC_SET(&GDKdebug, dbg);
 
 	BBPreclaim(cands);
+	if (t)
+		*t = t0;
 	if (!ok)
 		return LOG_EOF;
 	return err;
@@ -1439,45 +1480,20 @@ static gdk_return
 log_readlog(logger *lg, const char *filename, bool *filemissing)
 {
 	log_return err = LOG_OK;
-	time_t t0, t1;
-	struct stat sb;
+	time_t t0;
 
 	assert(!lg->inmemory);
-
-	TRC_INFO(WAL, "opening %s\n", filename);
 
 	gdk_return res = log_open_input(lg, filename, filemissing);
 	if (!lg->input_log || res != GDK_SUCCEED)
 		return res;
-	int fd;
-	if ((fd = getFileNo(lg->input_log)) < 0 || fstat(fd, &sb) < 0) {
-		GDKsyserror("fstat on opened file %s failed\n", filename);
-		log_close_input(lg);
-		/* If the file could be opened, but fstat fails,
-		 * something weird is going on */
-		return GDK_FAIL;
-	}
 	t0 = time(NULL);
 	TRC_INFO_IF(WAL) {
 		TRC_INFO_ENDIF(WAL, "Start reading the write-ahead log '%s'\n", filename);
 		GDKtracer_flush_buffer();
 	}
 	while (err != LOG_EOF && err != LOG_ERR) {
-		t1 = time(NULL);
-		if (t1 - t0 > 10) {
-			lng fpos;
-			t0 = t1;
-			/* not more than once every 10 seconds */
-			fpos = (lng) getfilepos(getFile(lg->input_log));
-			TRC_INFO_IF(WAL) {
-				if (fpos >= 0) {
-					TRC_INFO_ENDIF(WAL, "still reading write-ahead log \"%s\" (%d%% done)\n",
-						       filename, (int) ((fpos * 100 + 50) / sb.st_size));
-					GDKtracer_flush_buffer();
-				}
-			}
-		}
-		err = log_read_transaction(lg, NULL, 0);
+		err = log_read_transaction(lg, NULL, 0, &t0);
 	}
 	log_close_input(lg);
 	lg->input_log = NULL;
@@ -2789,7 +2805,7 @@ log_flush(logger *lg, ulng ts)
 			nupdated = n;
 		}
 		lg->flushing = true;
-		res = log_read_transaction(lg, updated, nupdated);
+		res = log_read_transaction(lg, updated, nupdated, NULL);
 		lg->flushing = false;
 		log_unlock(lg);
 		if (res == LOG_EOF) {
