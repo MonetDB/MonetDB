@@ -3461,7 +3461,8 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 	lock_table(tr->store, id);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, id);
-		if (seg->ts == tr->tid && seg->end-seg->start) {
+		if (seg->ts == tr->tid && seg->end-seg->start &&
+			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts)) {
 			if (log_segment(tr, seg, id) != LOG_OK) {
 				return LOG_ERR;
 			}
