@@ -2224,12 +2224,14 @@ ODBCFetch(ODBCStmt *stmt,
 				WriteData(ptr, (unsigned short) val, unsigned short);
 				break;
 			case SQL_C_SLONG:
-				if (val < -2147483648 || val > 2147483647)
+				if (val < (SQLBIGINT) INT64_C(-2147483648) ||
+				    val > (SQLBIGINT) INT64_C(2147483647))
 					goto overflow;
 				WriteData(ptr, (int) val, int);
 				break;
 			case SQL_C_LONG:
-				if (val < 0 || val > 4294967295L)
+				if (val < 0 ||
+				    val > (SQLBIGINT) INT64_C(4294967295))
 					goto overflow;
 				WriteData(ptr, (unsigned int) val, unsigned int);
 				break;

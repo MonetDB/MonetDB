@@ -322,6 +322,8 @@ main(int argc, char **av)
 		{"single-user", no_argument, NULL, 0},
 		{"version", no_argument, NULL, 0},
 
+		{"logging", required_argument, NULL, 0},
+
 		{"algorithms", no_argument, NULL, 0},
 		{"forcemito", no_argument, NULL, 0},
 		{"heaps", no_argument, NULL, 0},
@@ -408,7 +410,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 							long_options, &option_index);
 
 		if (c == -1)
@@ -452,7 +454,10 @@ main(int argc, char **av)
 					   && (optarg[optarglen - 1] == '/'
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
-				dbtrace = absolute_path(optarg);
+				if (strcmp(optarg, "stdout") == 0)
+					dbtrace = optarg;
+				else
+					dbtrace = absolute_path(optarg);
 				if (dbtrace == NULL)
 					fprintf(stderr,
 							"#error: can not allocate memory for dbtrace\n");
@@ -470,6 +475,19 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "version") == 0) {
 				monet_version();
 				exit(0);
+			}
+			if (strcmp(long_options[option_index].name, "logging") == 0) {
+				char *tmp = strchr(optarg, '=');
+				if (tmp) {
+					*tmp = 0;
+					if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
+						fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
+								optarg, tmp + 1);
+					}
+				} else {
+					fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
+				}
+				break;
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
@@ -581,8 +599,8 @@ main(int argc, char **av)
 									   tmp + 1);
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
-		}
 			break;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -642,7 +660,7 @@ main(int argc, char **av)
 		GDKfree(dbpath);
 	}
 
-	if (dbtrace) {
+	if (dbtrace && strcmp(dbtrace, "stdout") != 0) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
 		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n",

@@ -95,10 +95,18 @@ file
 inside the directory specified with the
 .B \-\-dbpath
 option.
+If
+.I path
+is equal to
+.BR stdout ,
+the trace will be written to the standard output which is normally
+captured by
+.IR monetdbd (1)
+and written to its log file.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
-This file can contain all options as can be set with the
+This file can contain all options that can be set with the
 .B \-\-set
 flag.
 See
@@ -172,6 +180,11 @@ Clean up junk BATs from the BBP (i.e. the database).  These are BATs
 that were accidentally left around by older versions of the software
 (the current version is not known to do this) and so this option should
 not normally be used.
+.TP
+\fB\-\-logging\fP \fIcomponent\fP\fB=\fP\fIlevel\fP
+Set the specified logging component to the specified level as if the SQL
+query \fBcall logging.setcomplevel(\fP\fIcomponent\fP\fB,\fP\fIlevel\fP\fB)\fP
+had been executed, except this is done before SQL is initialized.
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
