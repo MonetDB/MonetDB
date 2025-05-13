@@ -98,7 +98,7 @@ option.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
-This file can contain all options as can be set with the
+This file can contain all options that can be set with the
 .B \-\-set
 flag.
 See

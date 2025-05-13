@@ -408,7 +408,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 							long_options, &option_index);
 
 		if (c == -1)
@@ -581,8 +581,8 @@ main(int argc, char **av)
 									   tmp + 1);
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
-		}
 			break;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
