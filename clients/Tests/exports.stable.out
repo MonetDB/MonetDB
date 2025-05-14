@@ -345,6 +345,7 @@ gdk_return GDKtracer_set_tracefile(const char *tracefile);
 gdk_return GDKtracer_stop(void);
 gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy) __attribute__((__warn_unused_result__));
 lng GDKusec(void);
+void GDKusr1triggerCB(void (*func)(void));
 const char *GDKversion(void) __attribute__((__const__));
 size_t GDKvm_cursize(void);
 void *GDKzalloc(size_t size) __attribute__((__malloc__)) __attribute__((__malloc__(GDKfree, 1))) __attribute__((__alloc_size__(1))) __attribute__((__warn_unused_result__));

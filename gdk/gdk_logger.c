@@ -2746,6 +2746,8 @@ log_flush(logger *lg, ulng ts)
 		if (lg->saved_id + lg->cur_max_pending > lg->id) {
 			lg->cur_max_pending *= 2; /* when too warn again */
 			TRC_WARNING(GDK, "Too many pending log files " LLFMT "\n", (lg->id - lg->saved_id));
+			if (GDKtriggerusr1)
+				(*GDKtriggerusr1)();
 		}
 		/* log files went down, reduce cur_max_pending */
 		if (lg->cur_max_pending > lg->max_pending && (int)(lg->id - lg->saved_id) < (lg->cur_max_pending/2))

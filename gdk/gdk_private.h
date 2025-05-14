@@ -457,6 +457,8 @@ extern dbl no_hash_select_fraction;           /* same here */
 #define HASH_DESTROY_CHAIN_LENGTH		1000
 extern BUN hash_destroy_chain_length;
 
+extern void (*GDKtriggerusr1)(void);
+
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */
 #ifdef __GNUC__

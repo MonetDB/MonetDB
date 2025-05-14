@@ -2061,6 +2061,13 @@ GDKprintinfo(void)
 	printf("SIGUSR1 info end\n");
 }
 
+void (*GDKtriggerusr1)(void);
+void
+GDKusr1triggerCB(void (*func)(void))
+{
+	GDKtriggerusr1 = func;
+}
+
 exception_buffer *
 eb_init(exception_buffer *eb)
 {

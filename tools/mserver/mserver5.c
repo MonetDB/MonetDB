@@ -247,6 +247,12 @@ emergencyBreakpoint(void)
 static volatile sig_atomic_t interrupted = 0;
 static volatile sig_atomic_t usr1_interrupted = 0;
 
+static void
+usr1trigger(void)
+{
+	usr1_interrupted = 1;
+}
+
 #ifdef _MSC_VER
 static BOOL WINAPI
 winhandler(DWORD type)
@@ -266,7 +272,7 @@ static void
 handler_usr1(int sig)
 {
 	(void) sig;
-	usr1_interrupted = 1;
+	usr1trigger();
 }
 #endif
 
@@ -899,6 +905,8 @@ main(int argc, char **av)
 
 	/* return all our free bats to global pool */
 	BBPrelinquishbats();
+
+	GDKusr1triggerCB(usr1trigger);
 
 #ifdef _MSC_VER
 	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");
