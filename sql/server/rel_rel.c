@@ -132,6 +132,8 @@ rel_destroy_(sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		if (rel->l)
 			rel_destroy(rel->l);
 		break;
@@ -226,6 +228,8 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		break;
@@ -672,6 +676,8 @@ rel_dup_copy(allocator *sa, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		if (nrel->l)
 			rel_dup(nrel->l);
 		break;
@@ -1451,6 +1457,8 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_select:
 	case op_topn:
 	case op_sample:
+	case op_buildhash:
+	case op_probehash:
 		found = rel_bind_path_(sql, rel->l, e, path);
 		break;
 	case op_basetable:
@@ -2139,6 +2147,8 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_topn:
 	case op_sample:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		if (rel_deps(sql, r->l, refs, l) != 0)
 			return -1;
 		break;
@@ -2377,6 +2387,8 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	case op_project:
 	case op_groupby:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		if (rel->l)
 			if ((rel->l = rel_exp_visitor(v, rel->l, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
@@ -2629,6 +2641,8 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 	case op_project:
 	case op_groupby:
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		if (rel->l)
 			if ((rel->l = func(v, rel->l, rel_rewriter)) == NULL)
 				return NULL;

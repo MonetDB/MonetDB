@@ -282,6 +282,8 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 {
 	list *l = sa_list(be->mvc->sa);
 
+	if (list_empty(exps_prj_hsh))
+		return l;
 	for (node *o = exps_prj_hsh->h; o; o = o->next) {
 		stmt *hp_sink = exp_bin(be, o->data, stmts_hp, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(hp_sink); /* must find */
@@ -363,6 +365,8 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 	list *l = sa_list(be->mvc->sa);
 	int tt;
 
+	if (list_empty(exps_prj))
+		return l;
 	for (node *o = exps_prj->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
@@ -400,11 +404,11 @@ stmt *
 rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 {
 	/*** HASH PHASE ***/
-	prop *p;
-	p = find_prop(rel->p, PROP_HSH_EXPS);
-	list *exps_cmp_hsh = p->value.l;
-	p = find_prop(rel->p, PROP_HSH_PAYLOAD);
-	list *exps_prj_hsh = p ? p->value.l : NULL;
+	list *exps_cmp_hsh = rel->attr;
+	list *exps_prj_hsh = rel->exps;
+
+	if (!exps_cmp_hsh) /* dummy case for cartisian product */
+		return rel2bin_materialize(be, rel->l, refs);
 
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
 	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
@@ -412,7 +416,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	if (exps_prj_hsh)
 		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
 
-	stmt *sub = _start_pp(be, rel, 1, refs, rel->spb);
+	stmt *sub = _start_pp(be, rel->l, 1, refs, rel->spb);
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -420,9 +424,10 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
 	stmt *stmts_hp = NULL;
 	/* freq/payload not needed for semi */
-	if (exps_prj_hsh) {
-		InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh->cnt, pp);
-		stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, getArg(stmt_freq,0), sub, pp);
+	if (rel->flag != (int)op_semi) {
+		InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh?exps_prj_hsh->cnt:0, pp);
+		if (exps_prj_hsh)
+			stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, getArg(stmt_freq,0), sub, pp);
 	}
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
@@ -462,14 +467,9 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	prop *p;
-	p = find_prop(rel_prb->p, PROP_PRB_EXPS);
-	list *exps_cmp_prb = p->value.l;
-	p = find_prop(rel_prb->p, PROP_PRB_RESULT);
-	list *exps_prj_prb = p->value.l;
-
-	p = find_prop(rel_hsh->p, PROP_HSH_PAYLOAD);
-	list *exps_prj_hsh = p->value.l;
+	list *exps_cmp_prb = rel_prb->attr;
+	list *exps_prj_prb = rel_prb->exps;
+	list *exps_prj_hsh = rel_hsh->exps;
 
 	/* build-phase res: hash-table and hash-payload stmts */
 	ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
@@ -477,7 +477,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_hp = ht->stmts_hp;
 
 	/*** PROBE PHASE ***/
-	stmt *sub = _start_pp(be, rel_prb, 0, refs, false);
+	stmt *sub = _start_pp(be, rel_prb->l, 0, refs, false);
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -523,24 +523,20 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 		rel_prb = rel->l;
 	}
 
-	prop *p;
-	p = find_prop(rel_prb->p, PROP_PRB_RESULT);
-	list *exps_prj_prb = p->value.l;
-
-	p = find_prop(rel_hsh->p, PROP_HSH_PAYLOAD);
-	list *exps_prj_hsh = p->value.l;
-
-	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
+	list *exps_prj_prb = rel_prb->exps;
+	list *exps_prj_hsh = rel_hsh->exps;
 
 	/*** (pseudo) HASH PHASE ***/
 	/* nothing to hash, we just want to have a materialised table for this side */
 	stmt *stmts_ht = subrel_bin(be, rel_hsh, refs);
 
 	/*** (pseudo) PROBE PHASE ***/
-	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs, false);
+	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, 0, refs, false);
 	if (!stmts_prb_res) return NULL;
 
 	stmt *pp = get_pipeline(be);
+
+	assert(list_length(stmts_ht->op4.lval)||list_length(stmts_prb_res->op4.lval)); /* at least one column will be projected */
 
 	/*** PROJECT RESULT PHASE ***/
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
@@ -583,18 +579,15 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 
-		prop *p;
-		p = find_prop(rel_prb->p, PROP_PRB_EXPS);
-		list *exps_cmp_prb = p->value.l;
-		p = find_prop(rel_prb->p, PROP_PRB_RESULT);
-		list *exps_prj_prb = p->value.l;
+		list *exps_cmp_prb = rel_prb->attr;
+		list *exps_prj_prb = rel_prb->exps;
 
 		/* build-phase res: hash-table and hash-payload stmts */
 		ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
 		stmt *stmts_ht = ht->stmts_ht;
 
 		/*** PROBE PHASE ***/
-		sub = _start_pp(be, rel_prb, 0, refs, false);
+		sub = _start_pp(be, rel_prb->l, 0, refs, false);
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);

@@ -110,6 +110,19 @@ MERGE (card ATOM, AGGR or MULTI (max card of updates))
 	-> flag		(0) no flags
 	->exps 		empty list, ie not used
 
+physical implementation operators.
+
+BUILDHASH
+PROBEHASH
+	-> l 		relation
+	-> attr		hash-expressions
+	-> exps		payload
+
+PARTITION 	
+	-> l 		relation
+	-> attr		hash-expressions
+	-> exps		payload
+
 Expressions
 
 e_atom 	(card ATOM)

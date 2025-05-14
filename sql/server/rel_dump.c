@@ -747,6 +747,23 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 	} 	break;
+	case op_buildhash:
+    case op_probehash:
+		if (rel->op == op_buildhash)
+			mnstr_printf(fout, "buildhash(");
+		else
+			mnstr_printf(fout, "probe(");
+		if (rel_is_ref(rel->l)) {
+			int nr = find_ref(refs, rel->l);
+			print_indent(sql, fout, depth+1, decorate);
+			mnstr_printf(fout, "& REF %d ", nr);
+		} else
+			rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
+		exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
+		break;
 	default:
 		assert(0);
 	}
@@ -754,11 +771,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 	if (decorate && rel->p) {
 		for (prop *p = rel->p; p; p = p->p) {
-			if (p->kind == PROP_HSH_EXPS || p->kind == PROP_HSH_PAYLOAD ||
-			    p->kind == PROP_PRB_EXPS || p->kind == PROP_PRB_RESULT) {
-				mnstr_printf(fout, " %s ", propkind2string(p));
-				exps_print(sql, fout, p->value.l, depth, refs, 1, 0, decorate, 0);
-			} else if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
+			if (p->kind != PROP_COUNT || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(sql->ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -823,6 +836,8 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		break;
 	case op_project:
 	case op_select:
+    case op_buildhash:
+    case op_probehash:
 	case op_groupby:
 	case op_topn:
 	case op_sample:

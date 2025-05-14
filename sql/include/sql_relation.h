@@ -174,7 +174,9 @@ typedef enum operator_type {
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
 	op_truncate, /* truncate(l=table) */
-	op_merge 	 /* IMPORTANT: keep op_merge last */
+	op_merge, 	 /* IMPORTANT: keep op_merge last */
+	op_buildhash,
+	op_probehash
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -218,6 +220,7 @@ typedef enum operator_type {
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
 #define is_merge(op) 		(op == op_merge)
+#define is_physical(op) 	((op) == op_buildhash || (op) == op_probehash)
 
 /* ZERO on empty sets, needed for sum (of counts)). */
 #define zero_if_empty(e) 	((e)->zero_if_empty)

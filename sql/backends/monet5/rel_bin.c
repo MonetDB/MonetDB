@@ -2519,6 +2519,8 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 		/* fall through */
 	case op_project:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
 	case op_topn:
 	case op_sample:
 		if (rel->exps)
@@ -8909,8 +8911,15 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 stmt *
 rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 {
-	if (find_prop(rel->p, PROP_HSH_EXPS))
-		return rel2bin_oahash_build(be, rel, refs);
+	if (rel->op == op_buildhash) {
+		stmt *s = rel2bin_oahash_build(be, rel, refs);
+		if (rel_is_ref(rel)) {
+			append(refs, rel);
+			append(refs, s);
+		}
+		return s;
+	}
+
 	sql_rel *r = rel;
 	stmt *s = NULL;
 
@@ -9077,6 +9086,12 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		s = rel2bin_select(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
+	case op_buildhash:
+		s = rel2bin_oahash_build(be, rel, refs);
+		sql->type = Q_TABLE;
+		break;
+	case op_probehash:
+		assert(0);
 	case op_groupby:
 		s = rel2bin_groupby(be, rel, refs);
 		sql->type = Q_TABLE;

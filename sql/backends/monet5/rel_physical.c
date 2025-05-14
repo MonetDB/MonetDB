@@ -112,6 +112,8 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 		return ;
 	case op_project:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
 	case op_topn:
 	case op_sample:
 	case op_truncate:
@@ -196,6 +198,8 @@ rel_mark_partition(mvc *sql, sql_rel *rel)
 	case op_groupby:
 	case op_project:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
 	case op_topn:
 	case op_sample:
 	case op_truncate:
@@ -340,7 +344,7 @@ do_oahash_join(sql_rel *rel)
 		return 0;
 
 	// TODO groupjoin
-	if (rel->attr && list_length(rel->attr) > 0)
+	if (!list_empty(rel->attr))
 		return 0;
 
 	// TODO the always-true case, i.e. no retrictions, which can happen in
@@ -473,7 +477,8 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel))
 			return 0;
 		for(node *n = rels->h; n; n = n->next) {
-			int lres = rel_partition_(sql, n->data, pb?CPB:0);
+			//int lres = rel_partition_(sql, n->data, pb?CPB:0);
+			int lres = rel_partition_(sql, n->data, pb?SPB:0);
 			if (lres == EPB) {
 				rel->partition = 1;
 				if (pb)
@@ -579,7 +584,7 @@ find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, 
 
 		if (exp_is_atom(e))
 			continue;
-		if ((ne = rel_find_exp(rel_prb, e)) != NULL) {
+		if ((ne = rel_find_exp(rel_prb->l, e)) != NULL) {
 			if (exp_is_atom(ne))
 				ne = e;
 			append(*exps_prb, exp_ref(sql, ne));
@@ -630,11 +635,99 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 	}
 }
 
+static sql_rel *
+rel_probehash(visitor *v, sql_rel *rel, sql_rel **iprj)
+{
+	/* todo inplace for hash sharing */
+	sql_rel *r = rel_create(v->sql->sa);
+	if (0 && rel_is_ref(rel)) {
+		sql_rel *l = r;
+		*l = *rel;
+		l->ref.refcnt = 1;
+		if (is_select(rel->op)) {
+			list *exps = rel_projections(v->sql, l, NULL, 1, 1);
+			assert(!list_empty(exps));
+			l = rel_project(v->sql->sa, l, exps);
+			if (iprj)
+				*iprj = l;
+		}
+		r = rel;
+		*r = (sql_rel){ .ref.refcnt = r->ref.refcnt, .op = op_probehash, .l = l };
+	} else {
+		if (is_select(rel->op)) {
+			list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+			assert(!list_empty(exps));
+			rel = rel_project(v->sql->sa, rel, exps);
+			if (iprj)
+				*iprj = rel;
+		}
+		r->op = op_probehash;
+		r->l = rel;
+	}
+	return r;
+}
+
+static sql_rel *
+rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
+{
+	if (crossproduct && rel->op == op_basetable) {
+		return rel;
+	}
+	/* todo inplace for hash sharing */
+	sql_rel *r = rel_create(v->sql->sa);
+	if (rel_is_ref(rel)) {
+		sql_rel *l = r;
+		*l = *rel;
+		l->ref.refcnt = 1;
+		if (is_select(rel->op)) {
+			list *exps = rel_projections(v->sql, l, NULL, 1, 1);
+			assert(!list_empty(exps));
+			l = rel_project(v->sql->sa, l, exps);
+			if (iprj)
+				*iprj = l;
+		}
+		r = rel;
+		*r = (sql_rel){ .ref.refcnt = r->ref.refcnt, .op = op_buildhash, .l = l };
+	} else {
+		if (is_select(rel->op)) {
+			list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+			assert(!list_empty(exps));
+			rel = rel_project(v->sql->sa, rel, exps);
+			if (iprj)
+				*iprj = rel;
+		}
+		r->op = op_buildhash;
+		r->l = rel;
+	}
+	r = rel_dup(r);
+	return r;
+}
+
+static list *
+clean_exp_list(list *exps, list *nl)
+{
+	if (list_empty(exps))
+		return nl;
+	for(node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		if (e->type == e_convert)
+			append(nl, e->l);
+		if (e->type == e_column)
+			append(nl, e);
+		if (e->type == e_func)
+			(void)clean_exp_list(exps, e->l);
+	}
+	return nl;
+}
+
 static int
 rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 {
 	sql_rel *p = v->parent;
 	int res = 0, lres = 0, rres = 0;
+
+	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
+        return 0;
 
 	if (mvc_highwater(v->sql)) {
 		sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -700,6 +793,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
 			rel_dup(rel); // inc-ref unsafe exps (ie order dependent)
+			if (rel->l)
+				res = rel_pipeline(v, rel->l, materialize, /*pb?pb:!list_empty(rel->r)?SPB:*/0);
 			rel->spb = 1; // ? after ?
 			res = 0;
 		} else {
@@ -733,32 +828,37 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			rel->oahash = 2;
 
 			sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
+			list *found_exps_cmp_hsh = NULL;
 
 			/* get full projection list from parent */
 			assert(p);
+			if (rel_hsh->op == op_buildhash)
+				found_exps_cmp_hsh = rel_hsh->attr;
 			list *exps_cmp_hsh = sa_list(v->sql->sa), *exps_cmp_prb = sa_list(v->sql->sa);
 			find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
 
-			prop *rp;
-			rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
-			rp->value.l = exps_cmp_hsh;
+			if (found_exps_cmp_hsh) {
+				printf("# todo needs check\n");
+			} else {
+				rel->r = rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(rel->exps));
+				rel_hsh->flag = (int)op_semi;
 
-			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel_prb->p);
-			rp->value.l = exps_cmp_prb;
+			}
+			rel->l = rel_prb = rel_probehash(v, rel_prb, NULL);
+			rel_hsh->attr = exps_cmp_hsh;
+			rel_prb->attr = exps_cmp_prb;
 
-			list *exps_prb = sa_list(v->sql->sa);
+			list *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
 			find_payload_exps(v->sql, NULL, &exps_prb, p->exps, rel_hsh, rel_prb);
 
-			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel_prb->p);
-			rp->value.l = exps_prb;
-
-			rel_hsh = rel_dup(rel_hsh);
 			(void) rel_pipeline(v, rel_prb, false, 1);
 			(void) rel_pipeline(v, rel_hsh, true, 1);
 
 			rel->parallel = 1;
-			if (pb == CPB)
+			if (pb == CPB) {
+				assert(0);
 				rel_dup(rel);
+			}
 			if (pb)
 				rel->spb = 1;
 			res = SPB;
@@ -785,7 +885,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			res = 0;
 		} else {
 			for(node *n = rels->h; n; n = n->next) {
-				int lres = rel_pipeline(v, n->data, false, pb?CPB:0);
+				//int lres = rel_pipeline(v, n->data, false, pb?CPB:0);
+				int lres = rel_pipeline(v, n->data, false, pb?SPB:0);
 				if (lres == EPB) {
 					rel->partition = 1;
 					if (pb)
@@ -827,25 +928,24 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			res = pb;
 		}
 	} else if (is_join(rel->op)) {
+		//assert (do_oahash_join(rel));
 		if (do_oahash_join(rel)) {
 			sql_rel *l = rel->l, *r = rel->r;
-			sql_rel *rel_hsh = NULL, *rel_prb = NULL;
-			prop *rp;
+			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
 
 			list *found_exps_cmp_hsh = NULL, *found_exps_prj_hsh = NULL;
 
-			rp = find_prop(l->p, PROP_HSH_EXPS);
-			if (rp) {
+			if (l->op == op_buildhash) {
 				rel_hsh = l;
 				rel_prb = r;
 				rel->oahash = 1;
-			} else if ((rp = find_prop(r->p, PROP_HSH_EXPS)) != NULL) {
+			} else if (r->op == op_buildhash) {
 				rel_hsh = r;
 				rel_prb = l;
 				rel->oahash = 2;
 			}
 
-			if (!rp) {
+			if (!rel_hsh) {
 				if (rel->op == op_left)
 					rel->oahash = 2;
 				else if (rel->op == op_right)
@@ -855,23 +955,28 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				else
 					rel->oahash = 2;
 
-				if (rel->op == op_left || (rel->op == op_join && rel->oahash == 2)) {
+				if (rel->op == op_full) {
+					sql_error(v->sql, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
+				} else if (rel->oahash == 2) {
 					rel_hsh = rel->r;
 					rel_prb = rel->l;
-				} else if (rel->op == op_right || (rel->op == op_join && rel->oahash == 1)) {
+				} else {
+				   	assert (rel->oahash == 1);
 					rel_hsh = rel->l;
 					rel_prb = rel->r;
-				} else if (rel->op == op_full) {
-					sql_error(v->sql, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
-				} else {
-					assert(0);
 				}
+				rel_hsh = rel_buildhash(v, rel_hsh, &iprj, list_empty(rel->exps));
 			} else {
-				/* TODO valide if hash exps are what we need */
-				found_exps_cmp_hsh = rp->value.l;
-				rp = find_prop(l->p, PROP_HSH_PAYLOAD);
-				if (rp)
-					found_exps_prj_hsh = rp->value.l;
+				found_exps_cmp_hsh = rel_hsh->attr;
+				found_exps_prj_hsh = rel_hsh->exps;
+			}
+			rel_prb = rel_probehash(v, rel_prb, &pprj);
+			if (rel->oahash == 2) {
+				rel->l = rel_prb;
+				rel->r = rel_hsh;
+			} else {
+				rel->l = rel_hsh;
+				rel->r = rel_prb;
 			}
 
 			/* get full projection list from parent */
@@ -883,65 +988,66 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
 
 				if (found_exps_cmp_hsh) { /* if not the same ?? */
-					printf("need to check \n");
+					printf("# todo need to check \n");
 				} else {
-					rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel_hsh->p);
-					rp->value.l = exps_cmp_hsh;
+					rel_hsh->attr = exps_cmp_hsh;
 				}
-
-				rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel_prb->p);
-				rp->value.l = exps_cmp_prb;
+				rel_prb->attr = exps_cmp_prb;
 			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
 			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
 
 			if (found_exps_prj_hsh) {
-					printf("need to check \n");
+				printf("# todo need to check \n");
 			} else {
-				rp = rel_hsh->p = prop_create(v->sql->sa, PROP_HSH_PAYLOAD, rel_hsh->p);
-				rp->value.l = exps_hsh;
+				if (!list_empty(exps_hsh))
+					rel_hsh->exps = exps_hsh;
+				if (iprj) {
+					list *n = clean_exp_list(exps_cmp_hsh, sa_list(v->sql->sa));
+					n = list_merge(n, exps_hsh, NULL);
+					if (!list_empty(n))
+						iprj->exps = n;
+				}
 			}
-			rp = rel_prb->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel_prb->p);
-			rp->value.l = exps_prb;
+			rel_prb->exps = exps_prb;
 
-			if (rel->oahash == 1)
-				l = rel_dup(l);
-			if (rel->oahash == 2)
-				r = rel_dup(r);
-			(void) rel_pipeline(v, l, rel->oahash == 1, 1);
-			(void) rel_pipeline(v, r, rel->oahash == 2, 1);
+			(void) rel_pipeline(v, rel_prb, false, 1);
+			if (rel_hsh->op == op_buildhash)
+				(void) rel_pipeline(v, rel_hsh, true, 1);
 
 			rel->parallel = 1;
-			if (pb == CPB)
+			if (pb == CPB) {
+				assert(0);
 				rel_dup(rel);
+			}
 			if (pb)
 				rel->spb = 1;
-			return SPB;
-		}
-
-		if (pb && is_outerjoin(rel->op))
-			return 0;
-		if (is_left(rel->op)) /* and pb == 0 */
-			return rel_partition_(v->sql, rel->l, pb);
-		/* For now we only try to partition in case of a equi-join.
-		 * The other joins are too complex to handle. */
-		if (pb) { /* and rel->op == op_join */
-			if (!rel->partition)
-				res = _rel_partition(v->sql, rel);
-			if (res) {
-				int lres = rel_pipeline(v, rel->l, false, (rel->partition==1 && rel->spb)?pb:0);
-				if (lres == EPB && pb)
-					rel_dup(rel->l);
-				int rres = rel_pipeline(v, rel->r, false, (rel->partition==2 && rel->spb)?pb:0);
-				if (rres == EPB && pb)
-					rel_dup(rel->r);
-				if (pb)
-					res = 0;
-			}
-			if (!res) {
-				rel->spb = 1;
-				res = SPB;
+			res = SPB;
+		} else {
+			if (pb && is_outerjoin(rel->op))
+				res = 0;
+			else if (is_left(rel->op)) /* and pb == 0 */
+				res = rel_partition_(v->sql, rel->l, pb);
+			/* For now we only try to partition in case of a equi-join.
+			 * The other joins are too complex to handle. */
+			else if (pb) { /* and rel->op == op_join */
+				if (!rel->partition)
+					res = _rel_partition(v->sql, rel);
+				if (res) {
+					int lres = rel_pipeline(v, rel->l, false, (rel->partition==1 && rel->spb)?pb:0);
+					if (lres == EPB && pb)
+						rel_dup(rel->l);
+					int rres = rel_pipeline(v, rel->r, false, (rel->partition==2 && rel->spb)?pb:0);
+					if (rres == EPB && pb)
+						rel_dup(rel->r);
+					if (pb)
+						res = 0;
+				}
+				if (!res) {
+					rel->spb = 1;
+					res = SPB;
+				}
 			}
 		}
 	} else if (is_ddl(rel->op)) {
@@ -966,10 +1072,14 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				res = pb;
             }
 		}
+	} else if (is_physical(rel->op)) {
+		res = rel_pipeline(v, rel->l, false, pb);
 	} else {
 		assert(0);
 	}
 	v->parent = p;
+	if (rel && v->opt >= 0)
+        rel->opt = v->opt;
 	if (rel_is_ref(rel))
 		return 0;
 	return res;
@@ -1050,9 +1160,9 @@ find_aggr_exp(mvc *sql, list *exps, char *name)
 static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
-	sql_rel *orel = rel;
+	sql_rel *orel = rel, *irel = NULL;
 	mvc *sql = v->sql;
-	if (is_groupby(rel->op) && rel->parallel) {
+	if (is_groupby(rel->op) /*&& rel->parallel*/) {
 		list *exps, *gbe;
 
 		gbe = rel->r;
@@ -1060,7 +1170,12 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
-		if (list_empty(rel->exps)) /* no result expressions, just project the extends */
+		if (rel->op == op_buildhash || rel->op == op_probehash) {
+			assert(0);
+			irel = rel;
+			rel = rel->l;
+		}
+		else if (list_empty(rel->exps)) /* no result expressions, just project the extends */
 			rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
@@ -1080,33 +1195,13 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		rel = rel_select(sql->sa, rel, e);
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 		rel = rel_project(sql->sa, rel, exps);
+		if (irel)
+			irel->l = rel;
+		else
+			orel = rel;
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
-		if (rel_is_ref(orel)) {
-			prop *rp, *np;
-
-			rp = find_prop(orel->p, PROP_HSH_EXPS);
-			if (rp) {
-				np = rel->p = prop_create(v->sql->sa, PROP_HSH_EXPS, rel->p);
-				np->value.l = rp->value.l;
-			}
-			rp = find_prop(orel->p, PROP_PRB_EXPS);
-			if (rp) {
-				np = rel->p = prop_create(v->sql->sa, PROP_PRB_EXPS, rel->p);
-				np->value.l = rp->value.l;
-			}
-			rp = find_prop(orel->p, PROP_HSH_PAYLOAD);
-			if (rp) {
-				np = rel->p = prop_create(v->sql->sa, PROP_HSH_PAYLOAD, rel->p);
-				np->value.l = rp->value.l;
-			}
-			rp = find_prop(orel->p, PROP_PRB_RESULT);
-			if (rp) {
-				np = rel->p = prop_create(v->sql->sa, PROP_PRB_RESULT, rel->p);
-				np->value.l = rp->value.l;
-			}
-		}
 	}
-	return rel;
+	return orel;
 }
 
 
@@ -1326,6 +1421,42 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static void
+split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
+{
+	if (rel->op == op_join && !list_empty(rel->exps)) {
+		for (node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			/* we can handle thetajoins, rangejoins and filter joins (like) */
+			/* ToDo how about atom expressions? */
+			if (can_join_exp(rel, e, anti)) {
+				append(joinable, e);
+			} else {
+				append(not_joinable, e);
+			}
+		}
+	}
+}
+
+
+static sql_rel *
+rel_split_join(visitor *v, sql_rel *rel)
+{
+	if (rel->op == op_join && !rel->attr && !rel_is_ref(rel)) {
+		list *eq_exps = sa_list(v->sql->sa);
+		list *other = sa_list(v->sql->sa);
+		split_join_exps(rel, eq_exps, other, true);
+
+		rel->exps = eq_exps;
+		if (!list_empty(other)) {
+			rel = rel_select(v->sql->sa, rel, NULL);
+			rel->exps = other;
+		}
+	}
+	return rel;
+}
+
 static sql_rel *
 rel_add_project(visitor *v, sql_rel *rel)
 {
@@ -1334,62 +1465,13 @@ rel_add_project(visitor *v, sql_rel *rel)
 		return rel;
 
 	v->parent = rel;
-	switch (rel->op) {
-	case op_basetable:
-	case op_table:
-		break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-
-	case op_semi:
-	case op_anti:
-
-	case op_inter:
-	case op_except:
-		rel->l = rel_add_project(v, rel->l);
-		rel->r = rel_add_project(v, rel->r);
-		if (is_join(rel->op) || is_semi(rel->op) /*&& (!p || !is_simple_project(p->op)) */) {
-		   	if (!rel_is_ref(rel))
-				rel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
-			else
-				rel = rel_inplace_project(v->sql->sa, rel, NULL, rel_projections(v->sql, rel, NULL, 1, 1));
-		}
-		break;
-	case op_project:
-	case op_select:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-		rel->l = rel_add_project(v, rel->l);
-		/*
-		if (is_select(rel->op) && !rel_is_ref(rel))
-			rel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
-			*/
-		break;
-	case op_ddl:
-		rel->l = rel_add_project(v, rel->l);
-		if (rel->r)
-			rel->r = rel_add_project(v, rel->r);
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_merge:
-		rel->r = rel_add_project(v, rel->r);
-		break;
-	case op_munion:
-		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			n->data = rel_add_project(v, n->data);
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
+	   	if (!rel_is_ref(rel))
+			rel = rel_project(v->sql->sa, rel, exps);
+		else
+			rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
 	}
-
-	/*
-	if (rel_is_ref(rel) && !is_project(rel->op)) {
-		assert(0);
-	}
-	*/
 	v->parent = p;
 	return rel;
 }
@@ -1420,27 +1502,43 @@ exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+static sql_rel *
+rel_rewrite_physical(visitor *v, sql_rel *rel)
+{
+	if (rel)
+		rel = rel_add_orderby(v, rel);
+	if (rel)
+		rel = rel_avg_rewrite(v, rel);
+	if (rel) { /* split equi-join/select */
+		ATOMIC_TYPE oahash_enabled = (1U<<19);
+		if (SQLrunning && (GDKdebug & oahash_enabled)) {
+			rel = rel_count_gt_zero(v, rel);
+			if (rel)
+				rel = rel_split_join(v, rel);
+			if (rel)	/* After a projection after each join, needed for limited number of columns in hash tables */
+				rel = rel_add_project(v, rel);
+		}
+	}
+	return rel;
+}
+
 sql_rel *
 rel_physical(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_add_orderby);
-	rel = rel_visitor_bottomup(&v, rel, &rel_avg_rewrite);
+	rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_physical);
 
 	if (!sql->recursive) {
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
 		if (!SQLrunning || !(GDKdebug & oahash_enabled))
 			(void)rel_partition_(sql, rel, 0);
 		else {
-			/* After a projection after each join, needed for limited number of columns in hash tables */
-			rel = rel_add_project(&v, rel);
 			rel = rel_dce(&v, NULL, rel);
 			(void)rel_pipeline(&v, rel, true, 0);
 		}
 	}
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_count_gt_zero);
 	rel = rel_exp_visitor_topdown(&v, rel, &exp_timezone, true);
 
 #ifdef HAVE_HGE

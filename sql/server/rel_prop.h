@@ -24,11 +24,6 @@ typedef enum rel_prop {
 	PROP_REMOTE,    /* uri for remote execution */
 	PROP_USED,      /* number of times exp is used */
 	PROP_GROUPINGS,  /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
-
-	PROP_HSH_EXPS,   /* keeps list of hash table expressions */
-	PROP_HSH_PAYLOAD,   /*  keeps list of payload expressions */
-	PROP_PRB_EXPS,   /* keeps list of probe expressions */
-	PROP_PRB_RESULT,   /*  keeps list of probe result expressions */
 } rel_prop;
 
 typedef struct prop {
@@ -38,7 +33,6 @@ typedef struct prop {
 		BUN lval; /* property with simple counts */
 		dbl dval; /* property with estimate */
 		void *pval; /* property value */
-		list *l;
 	} value;
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;

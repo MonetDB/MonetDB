@@ -112,11 +112,6 @@ propkind2string( prop *p)
 		PT(GROUPINGS);
 		PT(MIN);
 		PT(MAX);
-
-		PT(HSH_EXPS);
-		PT(HSH_PAYLOAD);
-		PT(PRB_EXPS);
-		PT(PRB_RESULT);
 	}
 	return "UNKNOWN";
 }
