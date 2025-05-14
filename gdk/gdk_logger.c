@@ -2434,7 +2434,7 @@ log_new(int debug, const char *fn, const char *logdir, int version, preversionfi
 
 	lng max_dropped = GDKgetenv_int("wal_max_dropped", 100000);
 	lng max_file_age = GDKgetenv_int("wal_max_file_age", 600);
-	lng max_pending = GDKgetenv_int("wal_max_pending", 5);
+	int max_pending = GDKgetenv_int("wal_max_pending", 5);
 	lng max_file_size = 0;
 
 	if (GDKdebug & TESTINGMASK) {
