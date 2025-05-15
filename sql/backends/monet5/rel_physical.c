@@ -1428,24 +1428,6 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 	}
 }
 
-
-static sql_rel *
-rel_split_join(visitor *v, sql_rel *rel)
-{
-	if (rel->op == op_join && !rel->attr && !rel_is_ref(rel)) {
-		list *eq_exps = sa_list(v->sql->sa);
-		list *other = sa_list(v->sql->sa);
-		split_join_exps(rel, eq_exps, other, true);
-
-		rel->exps = eq_exps;
-		if (!list_empty(other)) {
-			rel = rel_select(v->sql->sa, rel, NULL);
-			rel->exps = other;
-		}
-	}
-	return rel;
-}
-
 static sql_rel *
 rel_add_project(visitor *v, sql_rel *rel)
 {
@@ -1462,6 +1444,26 @@ rel_add_project(visitor *v, sql_rel *rel)
 			rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
 	}
 	v->parent = p;
+	return rel;
+}
+
+static sql_rel *
+rel_split_join(visitor *v, sql_rel *rel)
+{
+	if (rel->op == op_join && !rel->attr && !rel_is_ref(rel)) {
+		list *eq_exps = sa_list(v->sql->sa);
+		list *other = sa_list(v->sql->sa);
+		split_join_exps(rel, eq_exps, other, true);
+
+		rel->exps = eq_exps;
+		if (!list_empty(other)) {
+			rel = rel_select(v->sql->sa, rel, NULL);
+			rel->exps = other;
+			v->parent = rel;
+			rel->l = rel_add_project(v, rel->l);
+			v->changes++;
+		}
+	}
 	return rel;
 }
 
