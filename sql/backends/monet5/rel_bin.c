@@ -2519,6 +2519,8 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 		/* fall through */
 	case op_project:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
 	case op_topn:
 	case op_sample:
 		if (rel->exps)
@@ -4210,6 +4212,8 @@ subres_assign_newresultvars(backend *be, stmt *rel_stmt)
 static stmt*
 subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 {
+	if (!rel_stmt)
+		return NULL;
 	list *stmts = rel_stmt->op4.lval;
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
@@ -8899,9 +8903,23 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	return s;
 }
 
+/* 2 cases
+ * *) return output
+ * *) build hash
+ */
+
 stmt *
 rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 {
+	if (rel->op == op_buildhash) {
+		stmt *s = rel2bin_oahash_build(be, rel, refs);
+		if (rel_is_ref(rel)) {
+			append(refs, rel);
+			append(refs, s);
+		}
+		return s;
+	}
+
 	sql_rel *r = rel;
 	stmt *s = NULL;
 
@@ -8992,6 +9010,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 
 	if (!rel)
 		return s;
+
 	if (rel_is_ref(rel)) {
 		s = refs_find_rel(refs, rel);
 		neededpp = get_need_pipeline(be);
@@ -9067,6 +9086,12 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		s = rel2bin_select(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;
+	case op_buildhash:
+		s = rel2bin_oahash_build(be, rel, refs);
+		sql->type = Q_TABLE;
+		break;
+	case op_probehash:
+		assert(0);
 	case op_groupby:
 		s = rel2bin_groupby(be, rel, refs);
 		sql->type = Q_TABLE;
@@ -9205,7 +9230,6 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 		if (!list_empty(refs)) {
 			list *nrefs = sa_list(sql->sa);
 			for (node *n = refs->h; n; n = n->next) {
-				//stmt *s = subrel_bin(be, n->data, nrefs);
 				sql_rel *rel = n->data;
 				stmt *s = rel2bin_materialize(be, rel, nrefs);
 				refs_update_stmt(nrefs, rel, s);

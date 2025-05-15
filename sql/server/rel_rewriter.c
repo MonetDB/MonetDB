@@ -375,6 +375,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 		}
 		return c;
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
 	case op_topn:
 	case op_sample:
 		return name_find_column( rel->l, rname, name, pnr, bt);

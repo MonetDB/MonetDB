@@ -747,6 +747,23 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->op != op_truncate && rel->op != op_merge && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
 	} 	break;
+	case op_buildhash:
+    case op_probehash:
+		if (rel->op == op_buildhash)
+			mnstr_printf(fout, "buildhash(");
+		else
+			mnstr_printf(fout, "probe(");
+		if (rel_is_ref(rel->l)) {
+			int nr = find_ref(refs, rel->l);
+			print_indent(sql, fout, depth+1, decorate);
+			mnstr_printf(fout, "& REF %d ", nr);
+		} else
+			rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
+		exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
+		break;
 	default:
 		assert(0);
 	}
@@ -819,6 +836,8 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		break;
 	case op_project:
 	case op_select:
+    case op_buildhash:
+    case op_probehash:
 	case op_groupby:
 	case op_topn:
 	case op_sample:

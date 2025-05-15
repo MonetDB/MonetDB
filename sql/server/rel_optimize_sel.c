@@ -2796,6 +2796,8 @@ rel_join_order_(visitor *v, sql_rel *rel)
 		rel->r = rel_join_order_(v, rel->r);
 		break;
 	case op_truncate:
+	case op_buildhash:
+	case op_probehash:
 		break;
 	}
 	if (is_join(rel->op))
@@ -2847,6 +2849,8 @@ is_identity_of(sql_exp *e, sql_rel *l)
 static inline sql_rel *
 rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 {
+	if (rel && rel->op == op_semi && list_empty(rel->exps))
+		return rel->l;
 	assert(is_semi(rel->op));
 	{
 		sql_rel *l = rel->l;

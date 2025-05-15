@@ -67,43 +67,6 @@ _estimate(mvc *sql, sql_rel *rel)
 	return est;
 }
 
-static void
-find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
-{
-	assert(exps);
-
-	/* Find out if a sub-expression of the (compare) exps belong to rel_hsh or
-	 * rel_prb or is a constant. */
-	for (node *n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		assert(e->type == e_cmp && e->flag == cmp_equal);
-
-		/* search first for the not-atom exp, otherwise rel_find_exp()
-		 * incorrectly returns TRUE for an atom-typed exp */
-		if (exp_is_atom(e->l)) {
-			if (rel_find_exp(rel_hsh, e->r)) {
-				append(*exps_hsh, e->r);
-				append(*exps_prb, e->l);
-			} else {
-				assert(rel_find_exp(rel_prb, e->r));
-				append(*exps_hsh, e->l);
-				append(*exps_prb, e->r);
-			}
-		} else {
-			if (rel_find_exp(rel_prb, e->l)) {
-				append(*exps_hsh, e->r);
-				append(*exps_prb, e->l);
-			} else {
-				assert(rel_find_exp(rel_hsh, e->l));
-				append(*exps_hsh, e->l);
-				append(*exps_prb, e->r);
-			}
-		}
-
-	}
-}
-
 static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
 {
@@ -319,6 +282,8 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 {
 	list *l = sa_list(be->mvc->sa);
 
+	if (list_empty(exps_prj_hsh))
+		return l;
 	for (node *o = exps_prj_hsh->h; o; o = o->next) {
 		stmt *hp_sink = exp_bin(be, o->data, stmts_hp, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(hp_sink); /* must find */
@@ -400,6 +365,8 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 	list *l = sa_list(be->mvc->sa);
 	int tt;
 
+	if (list_empty(exps_prj))
+		return l;
 	for (node *o = exps_prj->h; o; o = o->next) {
 		stmt *key = exp_bin(be, o->data, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(key); /* must find */
@@ -428,19 +395,52 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 	return l;
 }
 
+typedef struct ht_stmts {
+	stmt *stmts_ht;
+	stmt *stmts_hp;
+} ht_stmts;
+
+stmt *
+rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
+{
+	/*** HASH PHASE ***/
+	list *exps_cmp_hsh = rel->attr;
+	list *exps_prj_hsh = rel->exps;
+
+	if (!exps_cmp_hsh) /* dummy case for cartisian product */
+		return rel2bin_materialize(be, rel->l, refs);
+
+	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
+	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
+	list *shared_hp = NULL;
+	if (exps_prj_hsh)
+		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
+
+	stmt *sub = _start_pp(be, rel->l, 1, refs, rel->spb);
+	if (!sub) return NULL;
+
+	stmt *pp = get_pipeline(be);
+	int slt_ids = 0;
+	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
+	stmt *stmts_hp = NULL;
+	/* freq/payload not needed for semi */
+	if (rel->flag != (int)op_semi) {
+		InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh?exps_prj_hsh->cnt:0, pp);
+		if (exps_prj_hsh)
+			stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, getArg(stmt_freq,0), sub, pp);
+	}
+	(void)stmt_pp_jump(be, pp, be->nrparts);
+	(void)stmt_pp_end(be, pp);
+	ht_stmts *ht = SA_NEW(be->mvc->sa, ht_stmts);
+	ht->stmts_ht = stmts_ht;
+	ht->stmts_hp = stmts_hp;
+	return (stmt*)ht;
+}
+
 static stmt *
 rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 {
-	mvc *sql = be->mvc;
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
-	/* compare and projection columns of hash- and probe-side */
-	list *exps_cmp_hsh = sa_list(sql->sa), *exps_cmp_prb = sa_list(sql->sa);
-	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
-	/* For the declaration of shared vars at the beginning */
-	list *shared_ht = NULL, *shared_hp = NULL;
-	/* build-phase res: hash-table and hash-payload stmts */
-	stmt *stmts_ht = NULL, *stmts_hp = NULL;
-	stmt *sub = NULL, *pp = NULL;
 
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
 	(void)neededpp;
@@ -467,36 +467,20 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
+	list *exps_cmp_prb = rel_prb->attr;
+	list *exps_prj_prb = rel_prb->exps;
+	list *exps_prj_hsh = rel_hsh->exps;
 
-	/*** PREPARE PHASE ***/
-	/* find projection columns */
-	// TODO remove join-only columns from these lists
-	exps_prj_hsh = rel_projections(be->mvc, rel_hsh, 0, 1, 1);
-	exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
-	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
-
-	lng bld_sz = _estimate(be->mvc, rel_hsh);
-	shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
-	shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
-
-	/*** HASH PHASE ***/
-	sub = _start_pp(be, rel_hsh, 1, refs, rel->spb);
-	if (!sub) return NULL;
-
-	pp = get_pipeline(be);
-	int slt_ids = 0;
-	stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
-	InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh->cnt, pp);
-	stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, getArg(stmt_freq,0), sub, pp);
-	(void)stmt_pp_jump(be, pp, be->nrparts);
-	(void)stmt_pp_end(be, pp);
+	/* build-phase res: hash-table and hash-payload stmts */
+	ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
+	stmt *stmts_ht = ht->stmts_ht;
+	stmt *stmts_hp = ht->stmts_hp;
 
 	/*** PROBE PHASE ***/
-	sub = _start_pp(be, rel_prb, 0, refs, false);
+	stmt *sub = _start_pp(be, rel_prb->l, 0, refs, false);
 	if (!sub) return NULL;
 
-	pp = get_pipeline(be);
+	stmt *pp = get_pipeline(be);
 	stmt *prb_res = oahash_probe(be, rel, exps_cmp_prb, stmts_ht, sub, pp);
 	if (prb_res == NULL) return NULL;
 
@@ -525,7 +509,6 @@ static stmt *
 rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 {
 	sql_rel *rel_hsh = NULL, *rel_prb = NULL;
-	list *exps_prj_hsh = NULL, *exps_prj_prb = NULL;
 
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
 	(void)neededpp;
@@ -540,21 +523,20 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 		rel_prb = rel->l;
 	}
 
-	/*** PREPARE PHASE ***/
-	/* find projection columns */
-	exps_prj_hsh = rel_projections(be->mvc, rel_hsh, 0, 1, 1);
-	exps_prj_prb = rel_projections(be->mvc, rel_prb, 0, 1, 1);
-	assert(exps_prj_hsh->cnt||exps_prj_prb->cnt); /* at least one column will be projected */
+	list *exps_prj_prb = rel_prb->exps;
+	list *exps_prj_hsh = rel_hsh->exps;
 
 	/*** (pseudo) HASH PHASE ***/
 	/* nothing to hash, we just want to have a materialised table for this side */
-	stmt *stmts_ht = rel2bin_materialize(be, rel_hsh, refs);
+	stmt *stmts_ht = subrel_bin(be, rel_hsh, refs);
 
 	/*** (pseudo) PROBE PHASE ***/
-	stmt *stmts_prb_res = _start_pp(be, rel_prb, 0, refs, false);
+	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, 0, refs, false);
 	if (!stmts_prb_res) return NULL;
 
 	stmt *pp = get_pipeline(be);
+
+	assert(list_length(stmts_ht->op4.lval)||list_length(stmts_prb_res->op4.lval)); /* at least one column will be projected */
 
 	/*** PROJECT RESULT PHASE ***/
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
@@ -592,35 +574,20 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		sub = subrel_bin(be, rel_prb, refs);
 		sub = subrel_project(be, sub, refs, rel_prb);
 	} else {
-		/* compare columns of hash- and probe-side */
-		list *exps_cmp_hsh = sa_list(sql->sa), *exps_cmp_prb = sa_list(sql->sa);
-		find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
-
-		/* projection columns of the probe-side */
-		list *exps_prj_prb = rel_projections(sql, rel_prb, 0, 1, 1);
-		assert(exps_prj_prb->cnt); /* at least one column should be projected */
-
 		if (rel->op == op_anti) {
 			sql_error(sql, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
 			return NULL;
 		}
 
-		/*** PREPARE PHASE ***/
-		lng sz = _estimate(sql, rel_hsh);
-		list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, sz);
+		list *exps_cmp_prb = rel_prb->attr;
+		list *exps_prj_prb = rel_prb->exps;
 
-		/*** HASH PHASE ***/
-		sub = _start_pp(be, rel_hsh, 1, refs, rel->spb);
-		if (!sub) return NULL;
-
-		pp = get_pipeline(be);
-		int slt_ids = 0;
-		stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
-		(void)stmt_pp_jump(be, pp, be->nrparts);
-		(void)stmt_pp_end(be, pp);
+		/* build-phase res: hash-table and hash-payload stmts */
+		ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
+		stmt *stmts_ht = ht->stmts_ht;
 
 		/*** PROBE PHASE ***/
-		sub = _start_pp(be, rel_prb, 0, refs, false);
+		sub = _start_pp(be, rel_prb->l, 0, refs, false);
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);
@@ -642,7 +609,7 @@ rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 	case op_left:
 	case op_right:
 	case op_full:
-		if (rel->exps)
+		if (!list_empty(rel->exps))
 			return rel2bin_oahash_equi(be, rel, refs);
 		else
 			return rel2bin_oahash_cart(be, rel, refs);

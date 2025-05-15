@@ -1929,8 +1929,9 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_delete:
 		case op_truncate:
 		case op_merge:
+		case op_buildhash:
+		case op_probehash:
 			return false;
-
 		}
 	}
 	return false;
