@@ -1524,6 +1524,8 @@ rel_physical(mvc *sql, sql_rel *rel)
 			(void)rel_partition_(sql, rel, 0);
 		else {
 			rel = rel_dce(&v, NULL, rel);
+			if (v.opt >= 0)
+				v.opt = rel->opt+1;
 			(void)rel_pipeline(&v, rel, true, 0);
 		}
 	}
