@@ -477,8 +477,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel))
 			return 0;
 		for(node *n = rels->h; n; n = n->next) {
-			//int lres = rel_partition_(sql, n->data, pb?CPB:0);
-			int lres = rel_partition_(sql, n->data, pb?SPB:0);
+			int lres = rel_partition_(sql, n->data, pb?CPB:0);
 			if (lres == EPB) {
 				rel->partition = 1;
 				if (pb)
@@ -1160,9 +1159,8 @@ find_aggr_exp(mvc *sql, list *exps, char *name)
 static sql_rel *
 rel_count_gt_zero(visitor *v, sql_rel *rel)
 {
-	sql_rel *orel = rel, *irel = NULL;
 	mvc *sql = v->sql;
-	if (is_groupby(rel->op) /*&& rel->parallel*/) {
+	if (is_groupby(rel->op)) {
 		list *exps, *gbe;
 
 		gbe = rel->r;
@@ -1170,12 +1168,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
-		if (rel->op == op_buildhash || rel->op == op_probehash) {
-			assert(0);
-			irel = rel;
-			rel = rel->l;
-		}
-		else if (list_empty(rel->exps)) /* no result expressions, just project the extends */
+		if (list_empty(rel->exps)) /* no result expressions, just project the extends */
 			rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
@@ -1195,13 +1188,9 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		rel = rel_select(sql->sa, rel, e);
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 		rel = rel_project(sql->sa, rel, exps);
-		if (irel)
-			irel->l = rel;
-		else
-			orel = rel;
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 	}
-	return orel;
+	return rel;
 }
 
 
