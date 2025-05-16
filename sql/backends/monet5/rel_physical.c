@@ -89,7 +89,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (rel->l)
 			find_basetables(sql, rel->l, tables);
 		if (rel->r)
@@ -171,7 +170,6 @@ rel_mark_partition(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (rel->l) {
 			res = rel_mark_partition(sql, rel->l);
 			if (res == REL_PARTITION)
@@ -489,7 +487,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 			rel->spb = 1;
 		}
 		res = pb;
-	} else if (is_set(rel->op) || is_merge(rel->op)) {
+	} else if (is_set(rel->op)) {
 		if (pb) { /* somewhat simplified */
 			rel->spb = 1;
 			return SPB;
@@ -898,7 +896,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 			res = pb;
 		}
-	} else if (is_set(rel->op) || is_merge(rel->op)) {
+	} else if (is_set(rel->op)) {
 		if (pb) { /* somewhat simplified */
 			rel->spb = 1;
 			res = SPB;

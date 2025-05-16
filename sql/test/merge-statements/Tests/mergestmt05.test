@@ -1,0 +1,67 @@
+
+statement ok
+CREATE TABLE food_store (id INT, "name" TEXT, new_item BOOL)
+
+statement ok rowcount 5
+INSERT INTO food_store VALUES (1, 'bread', false), (2, 'coffee', false), (3, 'tea', false), (4, 'butter', false), (5, 'chocolate', false)
+
+statement ok
+CREATE TABLE releases (id INT, reason CLOB)
+
+statement ok rowcount 2
+INSERT INTO releases VALUES (5, 'too warm to eat chocolate'), (6, 'end of chestnuts season')
+
+statement ok
+CREATE TABLE incoming (id INT, "name" CLOB)
+
+statement ok rowcount 1
+INSERT INTO incoming VALUES (6, 'ice cream')
+
+statement ok rowcount 0
+MERGE INTO food_store AS to_update USING releases AS food_updates
+  ON to_update.id = food_updates.id
+  WHEN MATCHED AND new_item = true THEN DELETE
+
+statement ok rowcount 1
+MERGE INTO food_store AS to_update USING releases AS food_updates
+  ON to_update.id = food_updates.id
+  WHEN MATCHED AND new_item = false THEN DELETE
+
+statement ok rowcount 0
+MERGE INTO food_store USING (SELECT id, "name" FROM incoming) AS new_food
+  ON food_store.id = new_food.id
+  WHEN NOT MATCHED AND new_food.id = 5 THEN INSERT VALUES (new_food.id, new_food."name", true)
+
+statement ok rowcount 1
+MERGE INTO food_store USING (SELECT id, "name" FROM incoming) AS new_food
+  ON food_store.id = new_food.id
+  WHEN NOT MATCHED AND new_food.id = 6 THEN INSERT VALUES (new_food.id, new_food."name", true)
+
+query ITI rowsort
+SELECT id, "name", new_item FROM food_store
+----
+1
+bread
+0
+2
+coffee
+0
+3
+tea
+0
+4
+butter
+0
+6
+ice cream
+1
+
+statement ok
+DROP TABLE food_store
+
+statement ok
+DROP TABLE releases
+
+statement ok
+DROP TABLE incoming
+

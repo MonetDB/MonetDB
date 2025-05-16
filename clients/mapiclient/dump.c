@@ -157,7 +157,7 @@ descape(const char *s)
 	return d;
 }
 
-static char *
+char *
 sescape(const char *s)
 {
 	const char *p;

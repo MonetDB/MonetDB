@@ -5,6 +5,7 @@ asciify
 startswith_join
 endswith_join
 contains_join
+HAVE_DATA_PATH?contains_join_2
 
 ts_and_tstz_to_str_bug
 
