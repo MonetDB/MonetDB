@@ -1081,7 +1081,11 @@ if __name__ == '__main__':
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
-    sql = SQLLogic(report=opts.report)
+    if args:
+        srcdir = Path(args[0]).parent
+    else:
+        srcdir = '.'
+    sql = SQLLogic(srcdir=srcdir, report=opts.report)
     sql.res = opts.results
     sql.connect(hostname=opts.host, port=opts.port, database=opts.database,
                 language=opts.language, username=opts.user,

@@ -1195,7 +1195,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	}
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
-		/* null or default value changes */
+		/* null, default value or type changes */
 		sql_column *c = n->data;
 
 		if (c->base.new)
@@ -1269,6 +1269,17 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				case -2:
 				case -3:
 					throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE transaction conflict detected");
+				default:
+					break;
+			}
+		}
+		if (subtype_cmp(&c->type, &nc->type) != 0) {
+			switch (mvc_subtype(sql, nc, &c->type)) {
+				case -1:
+					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				case -2:
+				case -3:
+					throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TYPE: transaction conflict detected");
 				default:
 					break;
 			}

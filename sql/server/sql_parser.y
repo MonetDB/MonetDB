@@ -1464,6 +1464,11 @@ alter_table_element:
 	  append_string(l, $1);
 	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_STORAGE, l); }
+ |	column data_type
+	{ dlist *l = L();
+	  append_string(l, $1);
+	  append_type(l, &$2);
+	  $$ = _symbol_create_list( SQL_TYPE, l); }
  ;
 
 drop_table_element:

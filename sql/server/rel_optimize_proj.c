@@ -3578,7 +3578,6 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 	case op_join:
 	case op_left:
 	case op_right:

@@ -292,7 +292,7 @@ msab_marchScenario(const char *lang)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
 
-	if ((f = MT_fopen(pathbuf, "a+")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "r")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
 
@@ -308,6 +308,9 @@ msab_marchScenario(const char *lang)
 				tmp = p;
 			}
 		}
+		fclose(f);
+	}
+	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "%s\n", lang);
 		(void)fflush(f);
@@ -336,10 +339,10 @@ msab_retreatScenario(const char *lang)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
 
-	if ((f = MT_fopen(pathbuf, "a+")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "r")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
-			char written = 0;
+			bool written = false;
 
 			buf[len] = '\0';
 			tmp = buf;
@@ -348,14 +351,14 @@ msab_retreatScenario(const char *lang)
 				*p = '\0';
 				if (strcmp(tmp, lang) == 0) {
 					memmove(tmp, p + 1, strlen(p + 1) + 1);
-					written = 1;
+					written = true;
 				} else {
 					*p = '\n';
 					tmp = p+1;
 				}
 			}
-			if (written != 0) {
-				rewind(f);
+			fclose(f);
+			if (written && (f = fopen(pathbuf, "w")) != NULL) {
 				len = strlen(buf) + 1;
 				if (fwrite(buf, 1, len, f) < len) {
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
@@ -366,8 +369,11 @@ msab_retreatScenario(const char *lang)
 				fflush(f);
 				fclose(f);
 				return(NULL);
+			} else if (written) {
+				snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
+						 strerror(errno), pathbuf);
+				return strdup(buf);
 			}
-			(void)fclose(f);
 			(void) MT_remove(pathbuf);
 			return(NULL);
 		} else {
@@ -383,9 +389,7 @@ msab_retreatScenario(const char *lang)
 			return(NULL);
 		}
 	}
-	snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-			 strerror(errno), pathbuf);
-	return(strdup(buf));
+	return(NULL);
 }
 
 #define CONNECTIONFILE ".conn"

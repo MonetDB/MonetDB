@@ -194,3 +194,14 @@ res_tables_find(res_table *results, int res_id)
 	}
 	return NULL;
 }
+
+int
+res_tables_count(res_table *results)
+{
+	int i = 0;
+	while (results) {
+		i++;
+		results = results->next;
+	}
+	return i;
+}

@@ -1182,6 +1182,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		case SQL_DROP_CONSTRAINT:
 			msg = "drop constraint from";
 			break;
+		case SQL_TYPE:
+			msg = "alter column type";
+			break;
 		default:
 			sql_error(sql, 02, SQLSTATE(M0M03) "%s: Unknown table element (%p)->token = %s\n", action, s, token2string(s->token));
 			return SQL_ERR;
@@ -1444,6 +1447,39 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;
 		break;
+	case SQL_TYPE:
+	{
+		dlist *l = s->data.lval;
+		char *cname = l->h->data.sval;
+		sql_subtype *tv = &l->h->next->data.typeval;
+		sql_column *col = mvc_bind_column(sql, t, cname);
+
+		assert(l->h->next->type == type_type);
+		(void)tv;
+		if (col == NULL) {
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "ALTER TYPE: no such column '%s'\n", cname);
+			return SQL_ERR;
+		}
+		if (t->system) {
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TYPE: cannot alter type of column '%s': table is a system table\n", cname);
+			return SQL_ERR;
+		}
+		if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
+			sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TYPE: cannot alter type of column '%s': there are database objects which depend on it\n", cname);
+			return SQL_ERR;
+		}
+		switch (mvc_subtype(sql, col, tv)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
+	} break;
 	default:
 		res = SQL_ERR;
 	}

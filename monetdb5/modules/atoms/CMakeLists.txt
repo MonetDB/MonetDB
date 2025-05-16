@@ -16,7 +16,7 @@ target_sources(atoms
   PRIVATE
   streams.c streams.h
   blob.c
-  str.c str.h
+  str.c str.h bigram.h
   strptime.c
   url.c
   uuid.c

@@ -95,10 +95,18 @@ file
 inside the directory specified with the
 .B \-\-dbpath
 option.
+If
+.I path
+is equal to
+.BR stdout ,
+the trace will be written to the standard output which is normally
+captured by
+.IR monetdbd (1)
+and written to its log file.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
-This file can contain all options as can be set with the
+This file can contain all options that can be set with the
 .B \-\-set
 flag.
 See
@@ -172,6 +180,11 @@ Clean up junk BATs from the BBP (i.e. the database).  These are BATs
 that were accidentally left around by older versions of the software
 (the current version is not known to do this) and so this option should
 not normally be used.
+.TP
+\fB\-\-logging\fP \fIcomponent\fP\fB=\fP\fIlevel\fP
+Set the specified logging component to the specified level as if the SQL
+query \fBcall logging.setcomplevel(\fP\fIcomponent\fP\fB,\fP\fIlevel\fP\fB)\fP
+had been executed, except this is done before SQL is initialized.
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
@@ -509,6 +522,13 @@ users of the server are allowed to execute arbitrary C code, and are
 therefore able to read and modify all data that the server process has
 access to.  In addition, if the C code causes a crash, all bets are
 off.
+.TP
+\fBidle_timeout=\fP\fIseconds\fP
+Set the idle timeout.
+If there is an active transaction, and the client has not provided any
+input to the server for the specified amount of time, the server will
+close the connection and abort (rollback) the transaction.
+The default is \fB0\fP which means no timeout.
 .TP
 .B raw_strings=true
 The boolean option raw_strings controls how the sql scanner interprets string

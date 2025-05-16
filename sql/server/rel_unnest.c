@@ -2916,17 +2916,18 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (gbe || obe) {
 		int gbeoffset = list_length(gbe), i = 0, added = 0;
 		int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
-		if (gbe)
+		if (gbe) {
 			for (i = 0 ; i < gbeoffset ; i++)
 				pos[i] = i;
-
-		if (gbe && obe) {
-			gbe = list_merge(sa_list(v->sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
-			i = 0;
 			for(node *n = gbe->h ; n ; n = n->next) {
 				sql_exp *e = n->data;
 				set_partitioning(e);
 			}
+		}
+
+		if (gbe && obe) {
+			gbe = list_merge(sa_list(v->sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
+			i = 0;
 			for(node *n = obe->h ; n ; n = n->next, i++) {
 				sql_exp *e1 = n->data;
 				bool found = false;

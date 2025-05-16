@@ -422,7 +422,6 @@ name_find_column( sql_rel *rel, sql_alias *rname, const char *name, int pnr, sql
 	case op_update:
 	case op_delete:
 	case op_truncate:
-	case op_merge:
 		break;
 	}
 	if (alias && !is_join(rel->op)) { /* we found an expression with the correct name, but

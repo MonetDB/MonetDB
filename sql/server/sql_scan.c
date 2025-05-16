@@ -754,8 +754,9 @@ utf8_putchar(struct scanner *lc, int ch)
 }
 
 static inline int
-scanner_read_more(struct scanner *lc, size_t n)
+scanner_read_more(mvc *c, size_t n)
 {
+	struct scanner *lc = &c->scanner;
 	bstream *b = lc->rs;
 	bool more = false;
 
@@ -773,13 +774,16 @@ scanner_read_more(struct scanner *lc, size_t n)
 				lc->aborted = true;
 				return EOF;
 			}
+			backend_set_idle(c->clientid, time(NULL));
 			if (mnstr_write(lc->ws, PROMPT2, sizeof(PROMPT2) - 1, 1) == 1)
 				mnstr_flush(lc->ws, MNSTR_FLUSH_DATA);
 			b->eof = false;
 			more = true;
 		}
 		/* we need more query text */
-		if (bstream_next(b) < 0) {
+		ssize_t s = bstream_next(b);
+		backend_set_idle(c->clientid, 0);
+		if (s < 0) {
 			if (mnstr_errnr(b->s) == MNSTR_INTERRUPT) {
 				// now what?
 				lc->errstr = "Query aborted";
@@ -801,13 +805,14 @@ scanner_read_more(struct scanner *lc, size_t n)
 }
 
 static inline int
-scanner_getc(struct scanner *lc)
+scanner_getc(mvc *sql)
 {
+	struct scanner *lc = &sql->scanner;
 	bstream *b = lc->rs;
 	unsigned char *s = NULL;
 	int c, m, n, mask;
 
-	if (scanner_read_more(lc, 1) == EOF) {
+	if (scanner_read_more(sql, 1) == EOF) {
 		//lc->errstr = SQLSTATE(42000) "end of input stream";
 		return EOF;
 	}
@@ -829,7 +834,7 @@ scanner_getc(struct scanner *lc)
 		goto error;
 	}
 
-	if (scanner_read_more(lc, (size_t) n) == EOF)
+	if (scanner_read_more(sql, (size_t) n) == EOF)
 		return EOF;
 	s = (unsigned char *) b->buf + b->pos + lc->yycur;
 
@@ -915,9 +920,9 @@ scanner_string(mvc *c, int quote, bool escapes)
 				(void) sql_error(c, 2, SQLSTATE(42000) "NULL byte in string");
 				return LEX_ERROR;
 			}
-			cur = scanner_read_more(lc, 1);
+			cur = scanner_read_more(c, 1);
 		} else {
-			cur = scanner_getc(lc);
+			cur = scanner_getc(c);
 		}
 	}
 	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "Unexpected end of input");
@@ -962,9 +967,9 @@ scanner_body(mvc *c)
 				(void) sql_error(c, 2, SQLSTATE(42000) "NULL byte in string");
 				return LEX_ERROR;
 			}
-			cur = scanner_read_more(lc, 1);
+			cur = scanner_read_more(c, 1);
 		} else {
-			cur = scanner_getc(lc);
+			cur = scanner_getc(c);
 		}
 	}
 	(void) sql_error(c, 2, SQLSTATE(42000) "Unexpected end of input");
@@ -982,7 +987,7 @@ keyword_or_ident(mvc * c, int cur)
 	utf8_putchar(lc, cur);
 	s = lc->yycur;
 	lc->yyval = IDENT;
-	while ((cur = scanner_getc(lc)) != EOF) {
+	while ((cur = scanner_getc(c)) != EOF) {
 		if (!iswalnum(cur) && cur != '_') {
 			utf8_putchar(lc, cur);
 			(void)scanner_token(lc, IDENT);
@@ -1000,26 +1005,28 @@ keyword_or_ident(mvc * c, int cur)
 }
 
 static int
-skip_white_space(struct scanner * lc)
+skip_white_space(mvc * c)
 {
+	struct scanner *lc = &c->scanner;
 	int cur;
 
 	do {
 		lc->yysval = lc->yycur;
-	} while ((cur = scanner_getc(lc)) != EOF && iswspace(cur));
+	} while ((cur = scanner_getc(c)) != EOF && iswspace(cur));
 	return cur;
 }
 
 static int
-skip_c_comment(struct scanner * lc)
+skip_c_comment(mvc *c)
 {
+	struct scanner *lc = &c->scanner;
 	int cur;
 	int prev = 0;
 	int started = lc->started;
 	int depth = 1;
 
 	lc->started = 1;
-	while (depth > 0 && (cur = scanner_getc(lc)) != EOF) {
+	while (depth > 0 && (cur = scanner_getc(c)) != EOF) {
 		if (prev == '*' && cur == '/')
 			depth--;
 		else if (prev == '/' && cur == '*') {
@@ -1036,13 +1043,14 @@ skip_c_comment(struct scanner * lc)
 }
 
 static int
-skip_sql_comment(struct scanner * lc)
+skip_sql_comment(mvc *c)
 {
+	struct scanner *lc = &c->scanner;
 	int cur;
 	int started = lc->started;
 
 	lc->started = 1;
-	while ((cur = scanner_getc(lc)) != EOF && (cur != '\n'))
+	while ((cur = scanner_getc(c)) != EOF && (cur != '\n'))
 		;
 	lc->yysval = lc->yycur;
 	lc->started = started;
@@ -1058,7 +1066,6 @@ static inline bool is_valid_octal_digit(int cur) { return (iswdigit(cur) && cur 
 static inline bool is_valid_hexadecimal_digit(int cur) { return iswxdigit(cur); }
 
 static inline int check_validity_number(mvc* c, int pcur, bool initial_underscore_allowed, int *token, int type) {
-	struct scanner *lc = &c->scanner;
 	bool (*is_valid_n_ary_digit)(int);
 
 	if (pcur == '_' && !initial_underscore_allowed)  /* ERROR: initial underscore not allowed */  {
@@ -1086,7 +1093,7 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 		return pcur;
 	}
 
-	int cur = scanner_getc(lc);
+	int cur = scanner_getc(c);
 	*token = type;
 	while (cur != EOF) {
 		if (cur == '_') {
@@ -1098,7 +1105,7 @@ static inline int check_validity_number(mvc* c, int pcur, bool initial_underscor
 		else if (!is_valid_n_ary_digit(cur))
 			break;
 		pcur = cur;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 	}
 
 	if (pcur == '_')  {
@@ -1129,17 +1136,17 @@ number(mvc * c, int cur)
 	 */
 	lc->started = 1;
 	if (cur == '0') {
-		switch ((cur = scanner_getc(lc))) {
+		switch ((cur = scanner_getc(c))) {
 		case 'b':
-			cur = scanner_getc(lc);
+			cur = scanner_getc(c);
 			if ((cur = check_validity_number(c, cur, true, &token, BINARYNUM)) == EOF) return cur;
 			break;
 		case 'o':
-			cur = scanner_getc(lc);
+			cur = scanner_getc(c);
 			if ((cur = check_validity_number(c,  cur, true, &token, OCTALNUM)) == EOF) return cur;
 			break;
 		case 'x':
-			cur = scanner_getc(lc);
+			cur = scanner_getc(c);
 			if ((cur = check_validity_number(c,  cur, true, &token, HEXADECIMALNUM)) == EOF) return cur;
 			break;
 		default:
@@ -1151,11 +1158,11 @@ number(mvc * c, int cur)
 		if ((cur = check_validity_number(c, cur, false, &token, sqlINT)) == EOF) return cur;
 		if (cur == '@') {
 			if (token == sqlINT) {
-				cur = scanner_getc(lc);
+				cur = scanner_getc(c);
 				if (cur == EOF)
 					return cur;
 				if (cur == '0') {
-					cur = scanner_getc(lc);
+					cur = scanner_getc(c);
 					if (cur == EOF)
 						return cur;
 					token = OIDNUM;
@@ -1168,15 +1175,15 @@ number(mvc * c, int cur)
 			}
 		} else {
 			if (cur == '.') {
-				cur = scanner_getc(lc);
+				cur = scanner_getc(c);
 				if (iswalnum(cur)) /* early exit for numerical forms with final . e.g. 10. */
 				if ((cur = check_validity_number(c, cur, false, &token, INTNUM)) == EOF) return cur;
 			}
 			if (token != 0)
 			if (cur == 'e' || cur == 'E') {
-				cur = scanner_getc(lc);
+				cur = scanner_getc(c);
 				if (cur == '+' || cur == '-')
-					cur = scanner_getc(lc);
+					cur = scanner_getc(c);
 				if ((cur = check_validity_number(c, cur, false, &token, APPROXNUM)) == EOF) return cur;
 			}
 		}
@@ -1207,12 +1214,12 @@ int scanner_symbol(mvc * c, int cur)
 	switch (cur) {
 	case '/':
 		lc->started = 1;
-		next = scanner_getc(lc);
+		next = scanner_getc(c);
 		if (next < 0)
 			return EOF;
 		if (next == '*') {
 			lc->started = started;
-			cur = skip_c_comment(lc);
+			cur = skip_c_comment(c);
 			if (cur < 0)
 				return EOF;
 			return tokenize(c, cur);
@@ -1232,7 +1239,7 @@ int scanner_symbol(mvc * c, int cur)
 	case '9':
 		return number(c, cur);
 	case '#':
-		if ((cur = skip_sql_comment(lc)) == EOF)
+		if ((cur = skip_sql_comment(c)) == EOF)
 			return cur;
 		return tokenize(c, cur);
 	case '\'':
@@ -1253,12 +1260,12 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, cur);
 	case '-':
 		lc->started = 1;
-		next = scanner_getc(lc);
+		next = scanner_getc(c);
 		if (next < 0)
 			return EOF;
 		if (next == '-') {
 			lc->started = started;
-			if ((cur = skip_sql_comment(lc)) == EOF)
+			if ((cur = skip_sql_comment(c)) == EOF)
 				return cur;
 			return tokenize(c, cur);
 		}
@@ -1267,7 +1274,7 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, cur);
 	case '~': /* binary not */
 		lc->started = 1;
-		next = scanner_getc(lc);
+		next = scanner_getc(c);
 		if (next < 0)
 			return EOF;
 		if (next == '=')
@@ -1292,13 +1299,13 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, PARAM);
 	case '&':
 		lc->started = 1;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 		if (cur < 0)
 			return EOF;
 		if (cur < 0)
 			return EOF;
 		if(cur == '<') {
-			next = scanner_getc(lc);
+			next = scanner_getc(c);
 			if (next < 0)
 				return EOF;
 			if(next == '|') {
@@ -1323,7 +1330,7 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, SCOLON);
 	case '!':
 		lc->started = 1;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 		if (cur < 0)
 			return EOF;
 		else if (cur == '=') {
@@ -1336,7 +1343,7 @@ int scanner_symbol(mvc * c, int cur)
 		return scanner_token(lc, '!');
 	case '<':
 		lc->started = 1;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 		if (cur < 0)
 			return EOF;
 		if (cur == '=') {
@@ -1344,7 +1351,7 @@ int scanner_symbol(mvc * c, int cur)
 		} else if (cur == '>') {
 			return scanner_token( lc, COMPARISON);
 		} else if (cur == '<') {
-			next = scanner_getc(lc);
+			next = scanner_getc(c);
 			if (next < 0)
 				return EOF;
 			if (next == '=') {
@@ -1356,7 +1363,7 @@ int scanner_symbol(mvc * c, int cur)
 				return scanner_token( lc, LEFT_SHIFT);
 			}
 		} else if(cur == '-') {
-			next = scanner_getc(lc);
+			next = scanner_getc(c);
 			if (next < 0)
 				return EOF;
 			if(next == '>') {
@@ -1373,11 +1380,11 @@ int scanner_symbol(mvc * c, int cur)
 		}
 	case '>':
 		lc->started = 1;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 		if (cur < 0)
 			return EOF;
 		if (cur == '>') {
-			cur = scanner_getc(lc);
+			cur = scanner_getc(c);
 			if (cur < 0)
 				return EOF;
 			if (cur == '=')
@@ -1392,7 +1399,7 @@ int scanner_symbol(mvc * c, int cur)
 		}
 	case '.':
 		lc->started = 1;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 		if (cur < 0)
 			return EOF;
 		if (!iswdigit(cur)) {
@@ -1405,13 +1412,13 @@ int scanner_symbol(mvc * c, int cur)
 		}
 	case '|': /* binary or or string concat */
 		lc->started = 1;
-		cur = scanner_getc(lc);
+		cur = scanner_getc(c);
 		if (cur < 0)
 			return EOF;
 		if (cur == '|') {
 			return scanner_token(lc, CONCATSTRING);
 		} else if (cur == '&') {
-			next = scanner_getc(lc);
+			next = scanner_getc(c);
 			if (next < 0)
 				return EOF;
 			if(next == '>') {
@@ -1422,7 +1429,7 @@ int scanner_symbol(mvc * c, int cur)
 				return scanner_token(lc, '|');
 			}
 		} else if (cur == '>') {
-			next = scanner_getc(lc);
+			next = scanner_getc(c);
 			if (next < 0)
 				return EOF;
 			if(next == '>') {
@@ -1453,7 +1460,7 @@ tokenize(mvc * c, int cur)
 			 * below */
 			;
 		} else if (iswspace(cur)) {
-			if ((cur = skip_white_space(lc)) == EOF)
+			if ((cur = skip_white_space(c)) == EOF)
 				return cur;
 			continue;  /* try again */
 		} else if (iswdigit(cur)) {
@@ -1462,29 +1469,29 @@ tokenize(mvc * c, int cur)
 			switch (cur) {
 			case 'e': /* string with escapes */
 			case 'E':
-				if (scanner_read_more(lc, 1) != EOF &&
+				if (scanner_read_more(c, 1) != EOF &&
 				    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-					return scanner_string(c, scanner_getc(lc), true);
+					return scanner_string(c, scanner_getc(c), true);
 				}
 				break;
 			case 'x': /* blob */
 			case 'X':
 			case 'r': /* raw string */
 			case 'R':
-				if (scanner_read_more(lc, 1) != EOF &&
+				if (scanner_read_more(c, 1) != EOF &&
 				    lc->rs->buf[lc->rs->pos + lc->yycur] == '\'') {
-					return scanner_string(c, scanner_getc(lc), false);
+					return scanner_string(c, scanner_getc(c), false);
 				}
 				break;
 			case 'u': /* unicode string */
 			case 'U':
-				if (scanner_read_more(lc, 1) != EOF &&
+				if (scanner_read_more(c, 1) != EOF &&
 				    lc->rs->buf[lc->rs->pos + lc->yycur] == '&' &&
-				    scanner_read_more(lc, 2) != EOF &&
+				    scanner_read_more(c, 2) != EOF &&
 				    (lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '\'' ||
 				     lc->rs->buf[lc->rs->pos + lc->yycur + 1] == '"')) {
-					cur = scanner_getc(lc); /* '&' */
-					return scanner_string(c, scanner_getc(lc), false);
+					cur = scanner_getc(c); /* '&' */
+					return scanner_string(c, scanner_getc(c), false);
 				}
 				break;
 			default:
@@ -1556,7 +1563,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 
 	lc->yysval = lc->yycur;
 	lc->yylast = lc->yyval;
-	cur = scanner_getc(lc);
+	cur = scanner_getc(c);
 	if (cur < 0)
 		return EOF;
 	token = tokenize(c, cur);
