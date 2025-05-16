@@ -114,7 +114,6 @@ rel_destroy_(sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (rel->l)
 			rel_destroy(rel->l);
 		if (rel->r)
@@ -242,7 +241,6 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (i->l)
 			rel->l = rel_copy(sql, i->l, deep);
 		if (i->r)
@@ -660,7 +658,6 @@ rel_dup_copy(allocator *sa, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (nrel->l)
 			rel_dup(nrel->l);
 		if (nrel->r)
@@ -1456,7 +1453,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_update:
 	case op_delete:
 	case op_truncate:
-	case op_merge:
 	case op_ddl:
 		break;
 	}
@@ -2104,7 +2100,6 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (rel_deps(sql, r->l, refs, l) != 0 ||
 			rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
@@ -2329,7 +2324,6 @@ rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool to
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 
 	case op_join:
 	case op_left:
@@ -2581,7 +2575,6 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 
 	case op_join:
 	case op_left:

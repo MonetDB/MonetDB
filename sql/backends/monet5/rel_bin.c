@@ -2465,7 +2465,6 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 
 	case op_inter:
 	case op_except:
-	case op_merge:
 		args = rel2bin_args(be, rel->l, args);
 		args = rel2bin_args(be, rel->r, args);
 		break;
@@ -7273,133 +7272,6 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	return res;
 }
 
-static list *
-merge_stmt_join_projections(backend *be, stmt *left, stmt *right, stmt *jl, stmt *jr, stmt *diff)
-{
-	mvc *sql = be->mvc;
-	list *l = sa_list(sql->sa);
-
-	if (left)
-		for (node *n = left->op4.lval->h; n; n = n->next) {
-			stmt *c = n->data;
-			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
-			const char *nme = column_name(sql->sa, c);
-			stmt *s = stmt_project(be, jl ? jl : diff, column(be, c));
-
-			s = stmt_alias(be, s, c->label, rnme, nme);
-			list_append(l, s);
-		}
-	if (right)
-		for (node *n = right->op4.lval->h; n; n = n->next) {
-			stmt *c = n->data;
-			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
-			const char *nme = column_name(sql->sa, c);
-			stmt *s = stmt_project(be, jr ? jr : diff, column(be, c));
-
-			s = stmt_alias(be, s, c->label, rnme, nme);
-			list_append(l, s);
-		}
-	return l;
-}
-
-static void
-validate_merge_delete_update(backend *be, bool delete, stmt *bt_stmt, sql_rel *bt, stmt *jl, stmt *ld)
-{
-	mvc *sql = be->mvc;
-	str msg;
-	sql_table *t = bt->l;
-	char *alias = (char *) rel_name(bt);
-	stmt *cnt1 = stmt_aggr(be, jl, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-	stmt *cnt2 = stmt_aggr(be, ld, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-	sql_subfunc *add = sql_bind_func(sql, "sys", "sql_add", tail_type(cnt1), tail_type(cnt2), F_FUNC, true, true);
-	stmt *s1 = stmt_binop(be, cnt1, cnt2, NULL, add);
-	stmt *cnt3 = stmt_aggr(be, bin_find_smallest_column(be, bt_stmt), NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-	sql_subfunc *bf = sql_bind_func(sql, "sys", ">", tail_type(s1), tail_type(cnt3), F_FUNC, true, true);
-	stmt *s2 = stmt_binop(be, s1, cnt3, NULL, bf);
-
-	if (alias && strcmp(alias, t->base.name) == 0) /* detect if alias is present */
-		alias = NULL;
-	msg = sa_message(sql->sa, SQLSTATE(40002) "MERGE %s: Multiple rows in the input relation match the same row in the target %s '%s%s%s'",
-					 delete ? "DELETE" : "UPDATE",
-					 alias ? "relation" : "table",
-					 alias ? alias : t->s ? t->s->base.name : "", alias ? "" : ".", alias ? "" : t->base.name);
-	(void)stmt_exception(be, s2, msg, 00001);
-}
-
-static stmt *
-rel2bin_merge_apply_update(backend *be, sql_rel *join, sql_rel *upd, list *refs, stmt *bt_stmt, stmt *target_stmt, stmt *jl, stmt *jr, stmt *ld, stmt **rd)
-{
-	if (is_insert(upd->op)) {
-		if (!*rd) {
-			*rd = stmt_tdiff(be, stmt_mirror(be, bin_find_smallest_column(be, target_stmt)), jr, NULL);
-		}
-		stmt *s = stmt_list(be, merge_stmt_join_projections(be, NULL, target_stmt, NULL, NULL, *rd));
-		refs_update_stmt(refs, join, s); /* project the differences on the target side for inserts */
-
-		return rel2bin_insert(be, upd, refs);
-	} else {
-		stmt *s = stmt_list(be, merge_stmt_join_projections(be, bt_stmt, is_update(upd->op) ? target_stmt : NULL, jl, is_update(upd->op) ? jr : NULL, NULL));
-		refs_update_stmt(refs, join, s); /* project the matched values on both sides for updates and deletes */
-
-		assert(is_update(upd->op) || is_delete(upd->op));
-		/* the left joined values + left difference must be smaller than the table count */
-		validate_merge_delete_update(be, is_update(upd->op), bt_stmt, join->l, jl, ld);
-
-		return is_update(upd->op) ? rel2bin_update(be, upd, refs) : rel2bin_delete(be, upd, refs);
-	}
-}
-
-static stmt *
-rel2bin_merge(backend *be, sql_rel *rel, list *refs)
-{
-	mvc *sql = be->mvc;
-	sql_rel *join;
-
-	if (is_project(((sql_rel*)rel->l)->op)) {
-		join = ((sql_rel*)rel->l)->l;
-	} else {
-		join = rel->l;
-	}
-
-	sql_rel *r = rel->r;
-	stmt *join_st, *bt_stmt, *target_stmt, *jl, *jr, *ld, *rd = NULL, *ns;
-	list *slist = sa_list(sql->sa);
-
-	assert(rel_is_ref(join) && is_left(join->op));
-	join_st = subrel_bin(be, join, refs);
-	if (!join_st)
-		return NULL;
-
-	/* grab generated left join outputs and generate updates accordingly to matched and not matched values */
-	assert(join_st->type == st_list && list_length(join_st->extra) == 5);
-	bt_stmt = join_st->extra->h->data;
-	target_stmt = join_st->extra->h->next->data;
-	jl = join_st->extra->h->next->next->data;
-	jr = join_st->extra->h->next->next->next->data;
-	ld = join_st->extra->h->next->next->next->next->data;
-
-	if (is_ddl(r->op)) {
-		assert(r->flag == ddl_list);
-		if (r->l) {
-			if ((ns = rel2bin_merge_apply_update(be, join, r->l, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)) == NULL)
-				return NULL;
-			list_append(slist, ns);
-		}
-		if (r->r) {
-			if ((ns = rel2bin_merge_apply_update(be, join, r->r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)) == NULL)
-				return NULL;
-			list_append(slist, ns);
-		}
-	} else {
-		if (!(ns = rel2bin_merge_apply_update(be, join, r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)))
-			return NULL;
-		list_append(slist, ns);
-	}
-	return stmt_list(be, slist);
-}
-
 static stmt *
 rel2bin_list(backend *be, sql_rel *rel, list *refs)
 {
@@ -7868,11 +7740,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_truncate:
 		s = rel2bin_truncate(be, rel);
-		if (sql->type == Q_TABLE)
-			sql->type = Q_UPDATE;
-		break;
-	case op_merge:
-		s = rel2bin_merge(be, rel, refs);
 		if (sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;

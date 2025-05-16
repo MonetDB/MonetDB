@@ -1915,7 +1915,6 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_update:
 		case op_delete:
 		case op_truncate:
-		case op_merge:
 			return false;
 
 		}

@@ -2766,7 +2766,6 @@ rel_join_order_(visitor *v, sql_rel *rel)
 
 	case op_inter:
 	case op_except:
-	case op_merge:
 		rel->l = rel_join_order_(v, rel->l);
 		rel->r = rel_join_order_(v, rel->r);
 		break;

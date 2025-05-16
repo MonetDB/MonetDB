@@ -89,7 +89,6 @@ find_basetables(mvc *sql, sql_rel *rel, list *tables )
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 		if (rel->l)
 			find_basetables(sql, rel->l, tables);
 		if (rel->r)
@@ -174,8 +173,6 @@ has_groupby(sql_rel *rel)
 
 		case op_inter:
 		case op_except:
-
-		case op_merge:
 			return has_groupby(rel->l) || has_groupby(rel->r);
 		case op_munion:
 			for (node *n = ((list*)rel->l)->h; n; n = n->next)
@@ -231,8 +228,6 @@ rel_partition(mvc *sql, sql_rel *rel)
 
 	case op_inter:
 	case op_except:
-
-	case op_merge:
 		if (rel->l)
 			rel_partition(sql, rel->l);
 		if (rel->r)
