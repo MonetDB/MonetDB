@@ -484,7 +484,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 		if (pb)
 			rel->spb = 1;
 		res = pb;
-	} else if (is_set(rel->op) || is_merge(rel->op)) {
+	} else if (is_set(rel->op)) {
 		if (pb) { /* somewhat simplified */
 			rel->spb = 1;
 			return SPB;
