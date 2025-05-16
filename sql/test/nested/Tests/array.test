@@ -230,3 +230,30 @@ select * from vlt_arr
 {"a","b","c"}
 {"one","two"}
 
+## unnest with select
+
+statement ok
+create type kv as (k text, v text)
+
+statement ok
+create table data (n int, kva kv[])
+
+statement ok
+insert into data values (1, array[('one', 'alice'), ('two', 'bob')]), (2, array[('one', 'jane'), ('two', 'john')])
+
+query IT nosort select_key_one
+select n, kv_pair.v from data, unnest(kva) kv_pair where kv_pair.k = 'one';
+----
+1
+alice
+2
+jane
+
+query IT nosort select_key_one
+select n, kv_pair.v from data cross join unnest(kva) kv_pair where kv_pair.k = 'one';
+----
+1
+alice
+2
+jane
+
