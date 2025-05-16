@@ -425,7 +425,8 @@ COMMIT
 statement ok
 CALL "dict_compress"('sys','t1','c0',false)
 
-statement error MERGE DELETE: Multiple rows in the input relation match the same row in the target table 'sys.t1'
+#statement error MERGE DELETE: Multiple rows in the input relation match the same row in the target table 'sys.t1'
+statement error GDK reported error: BATsubcross: more than one match
 MERGE INTO t1 USING (SELECT DISTINCT 0.3, sys."network"(t1.c0) FROM t1) AS mergejoined(c0,c1) ON TRUE WHEN MATCHED THEN UPDATE SET c0 = INET '56.157.166.36'
 
 statement ok

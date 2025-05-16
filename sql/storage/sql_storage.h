@@ -152,6 +152,7 @@ typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 typedef int (*col_set_range_fptr) (sql_trans *tr, sql_column *c, sql_part *pt, bool add_range);
 typedef int (*col_not_null_fptr) (sql_trans *tr, sql_column *c, bool not_null);
+typedef int (*col_subtype_fptr) (sql_trans *tr, sql_column *c, sql_subtype *t);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -242,6 +243,7 @@ typedef struct store_functions {
 	proprec_col_fptr col_stats;
     col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
 	col_not_null_fptr col_not_null;	/* switch not null property */
+	col_subtype_fptr col_subtype;	/* switch types */
 
 	col_dup_fptr col_dup;
 	idx_dup_fptr idx_dup;
@@ -400,6 +402,7 @@ extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop
 extern int sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
+extern int sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t);
 extern int sql_trans_alter_check(sql_trans *tr, sql_column *col, char *check);
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);

@@ -700,7 +700,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 		rel_exps_mark_used(sql->sa, rel, rel->l);
 		rel_exps_mark_used(sql->sa, rel, rel->r);
 		rel_mark_used(sql, rel->l, 0);
@@ -818,7 +817,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_update:
 	case op_delete:
 	case op_truncate:
-	case op_merge:
 
 	case op_select:
 
@@ -878,7 +876,6 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 
 		if (rel->l)
 			rel_dce_refs(sql, rel->l, refs);
@@ -985,7 +982,6 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 		if (rel->l)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (rel->r)
@@ -1103,7 +1099,6 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 		if (rel->l)
 			rel->l = rel_add_projects(sql, rel->l);
 		if (rel->r)

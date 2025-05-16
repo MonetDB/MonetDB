@@ -217,6 +217,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char pipeline[512];
 	char memmaxsize[64];
 	char vmmaxsize[64];
+	char idletout[64];
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	char *mserver5_extra = NULL;
@@ -619,6 +620,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	kv = findConfKey(ckv, "raw_strings");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 		argv[c++] = "--set=raw_strings=true";
+	}
+
+	kv = findConfKey(ckv, "idletimeout");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "idletimeout");
+	if (kv->val != NULL) {
+		snprintf(idletout, sizeof(tabthreads), "--set=idle_timeout=%s", kv->val);
+		argv[c++] = idletout;
 	}
 
 	/* get the rest (non-default) mserver props set in the conf file */

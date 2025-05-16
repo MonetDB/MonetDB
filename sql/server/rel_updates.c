@@ -1396,16 +1396,63 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 }
 
 static sql_rel *
-rel_merge(allocator *sa, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
+rel_merge(mvc *sql, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 {
-	sql_rel *r = rel_create(sa);
+	if (!upd2) { /* just insert or just update/delete ie just not match or match */
+		if (upd1->op == op_insert) {
+			sql_rel *oj = upd1->l, *r = upd1->r;
+			sql_exp *le = NULL;
+			join->op = op_right;
+			oj = rel_add_identity(sql, oj, &le);
+			assert(oj == upd1->l);
+			if (!le)
+				return NULL;
+			le = exp_ref(sql, le);
+			set_has_nil(le);	/* full outer so possibly nulls */
+			sql_exp *ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal );
+			set_semantics(ce);
+			while (r->l != join)
+				r = r->l;
+			r->l = join = rel_select( sql->sa, join, ce);
+			return upd1;
+		} else if (upd1->op == op_delete || upd1->op == op_update) { /* 2 cases (one for now, ie matched) ? */
+			join->op = op_join;
+			set_single(join);
+			return upd1;
+		}
+	} else {
+		sql_rel *oj = upd2->l, *r;
+		sql_exp *le = NULL, *ce;
+		join->op = op_right;
+		oj = rel_add_identity(sql, oj, &le);
+		assert(oj == upd2->l);
+		if (!le)
+			return NULL;
+		le = exp_ref(sql, le);
+		set_has_nil(le);
+		ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal );
+		set_semantics(ce);
+		r = upd2->r;
+		while (r->l != join)
+			r = r->l;
+		r->l = rel_select( sql->sa, join, ce);
 
-	r->exps = new_exp_list(sa);
-	r->op = op_merge;
-	r->l = join;
-	r->r = rel_list(sa, upd1, upd2);
-	r->card = MAX(upd1 ? upd1->card : 0, upd2 ? upd2->card : 0);
-	return r;
+		set_single(join);
+
+		le = exp_ref(sql, le); /* matches ie select not null */
+		set_has_nil(le);
+		ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_notequal );
+		set_semantics(ce);
+		r = upd1->r;
+		if (r->op == op_update) /* nested update */
+			r = upd1->l;
+		while (r->l != join)
+			r = r->l;
+		r->l = rel_select( sql->sa, join, ce);
+		return rel_list(sql->sa, upd1, upd2);
+	}
+	assert (0);
+	return NULL;
 }
 
 #define MERGE_UPDATE_DELETE 1
@@ -1450,9 +1497,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		opt_search = dl->h->data.sym;
 		action = dl->h->next->data.sym;
 		sts = action->data.lval;
-
-		if (opt_search)
-			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: search condition not supported");
+		sql_rel *sel_rel = NULL;
 
 		if (token == SQL_MERGE_MATCH) {
 			tokens uptdel = action->token;
@@ -1474,7 +1519,10 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					set_processed(join_rel);
 				}
 
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, join_rel, NULL, 1, 1));
+				sel_rel = join_rel;
+				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
+					return NULL;
+				extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, join_rel, NULL, 1, 1));
 				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
@@ -1491,7 +1539,10 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				sql_exp *ne = exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
 				ne->nid = rel_base_nid(bt, NULL);
 				ne->alias.label = ne->nid;
-				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), ne));
+				sel_rel = join_rel;
+				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
+					return NULL;
+				extra_project = rel_project(sql->sa, sel_rel, list_append(new_exp_list(sql->sa), ne));
 				upd_del = rel_delete(sql->sa, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, extra_project);
 			} else {
 				assert(0);
@@ -1515,7 +1566,10 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				set_processed(join_rel);
 			}
 
-			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
+			sel_rel = join_rel;
+			if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
+				return NULL;
+			extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, joined, NULL, 1, 0));
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
 
@@ -1533,11 +1587,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: an insert or update or delete clause is required");
 	join_rel->flag |= MERGE_LEFT;
 	if (processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
-		res = rel_merge(sql->sa, rel_dup(join_rel), upd_del, insert);
+		res = rel_merge(sql, rel_dup(join_rel), upd_del, insert);
 	} else if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
-		res = rel_merge(sql->sa, rel_dup(join_rel), upd_del, NULL);
+		res = rel_merge(sql, rel_dup(join_rel), upd_del, NULL);
 	} else if ((processed & MERGE_INSERT) == MERGE_INSERT) {
-		res = rel_merge(sql->sa, rel_dup(join_rel), insert, NULL);
+		res = rel_merge(sql, rel_dup(join_rel), insert, NULL);
 	} else {
 		assert(0);
 	}

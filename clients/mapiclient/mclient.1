@@ -452,16 +452,16 @@ Dump the given
 \fB\[rs]d\fP
 Alias for \[rs]dvt.
 .TP
-\fB\[rs]d[Stvsfn]+\fP
+\fB\[rs]d[Stvmsfn]+\fP
 List database objects of the given type.
 Multiple type specifiers can be used at the same time.
-The specifiers \fIS\fP, \fIt\fP, \fIv\fP, \fIs\fP, \fIf\fP and \fIn\fP
-stand for System, table, view, sequence, function and schema
+The specifiers \fBS\fP, \fBt\fP, \fBv\fP, \fBm\fP, \fBs\fP, \fBf\fP and \fBn\fP
+stand for System, table, view, merge table, sequence, function and schema
 respectively.
-Note that \fIS\fP simply switches on viewing system catalog objects,
+Note that \fBS\fP simply switches on viewing system catalog objects,
 which is orthogonal to the other specifiers.
 .TP
-\fB\[rs]d[Stvsfn]+\fP \fIobject\fP
+\fB\[rs]d[Stvsfnm]+\fP \fIobject\fP
 Describe the given
 .I object
 in the database using SQL statements that reconstruct the object.

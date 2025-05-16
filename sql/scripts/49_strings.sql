@@ -70,4 +70,3 @@ GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
 create function sys.normalize_monetdb_url(u string)
 returns string external name sql.normalize_monetdb_url;
 grant execute on function sys.normalize_monetdb_url(string) to public;
-

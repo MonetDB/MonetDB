@@ -4,7 +4,6 @@ CREATE TABLE foo(f string)
 statement ok
 CREATE TABLE bar(b string)
 
--- TRIGGERS NESTED LOOP JOIN
 statement ok
 INSERT INTO foo VALUES ('LEFTJOHN'),('TRASH1'),('TRASH2'),(NULL),(NULL),('TRASH3'),('TRASH4'),('RIGHTJANE'),('rightrobert'),('uptim'),(NULL),('leftlex'),('LEFTJOE'),(NULL),('TRASH5'),('TRASH6'),('TRASH7'),('TRASH8'),('TRASH9'),('TRASH10')
 
@@ -43,7 +42,6 @@ TRUNCATE TABLE foo
 statement ok
 TRUNCATE TABLE bar
 
--- TRIGGERS SORT BASED JOIN
 statement ok
 INSERT INTO foo VALUES ('Καλή'),('Frühlingsrauschen'),('Das grüne Monokel'),('Καλή Χρονιά'),('Olá, bom dia'),('Risør'),('Wenn der Ölhahn versiegt'),('Punch-Out!! WITH LYRICS'),('Super Mario Bros. 3 WITH LYRICS'),('Δεν καταλαβαίνω'),('Adeus, boa tarde')
 
@@ -97,4 +95,3 @@ DROP TABLE foo
 
 statement ok
 DROP TABLE bar
-

@@ -1928,7 +1928,6 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_update:
 		case op_delete:
 		case op_truncate:
-		case op_merge:
 			return false;
 
 		}
@@ -3138,7 +3137,7 @@ is_identity( sql_exp *e, sql_rel *r)
 {
 	switch(e->type) {
 	case e_column:
-		if (r && is_project(r->op) && !is_set(r->op)) {
+		if (r && is_project(r->op) && !is_set(r->op) && !is_munion(r->op)) {
 			sql_exp *re = NULL;
 			assert(e->nid);
 			re = exps_bind_nid(r->exps, e->nid);

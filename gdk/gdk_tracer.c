@@ -135,14 +135,14 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 	if (dbtrace == NULL) {
 		write_to_tracer = false;
 		if (dbpath == NULL) {
-			active_tracer = stderr;
+			active_tracer = stdout;
 			return GDK_SUCCEED;
 		}
 		size_t fnl = strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(FILE_NAME) + 1;
 		fn = malloc(fnl);
 		if (fn == NULL) {
 			GDK_TRACER_EXCEPTION("malloc failure\n");
-			active_tracer = stderr;
+			active_tracer = stdout;
 			return GDK_FAIL;
 		}
 		if (strconcat_len(fn, fnl, dbpath, DIR_SEP_STR, FILE_NAME, NULL)
@@ -150,13 +150,17 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 			/* cannot happen */
 			goto too_long;
 		}
+	} else if (strcmp(dbtrace, "stdout") == 0) {
+		write_to_tracer = false;
+		active_tracer = stdout;
+		return GDK_SUCCEED;
 	} else {
 		write_to_tracer = true;
 		size_t fnl = strlen(dbtrace) + 1;
 		fn = malloc(fnl);
 		if (fn == NULL) {
 			GDK_TRACER_EXCEPTION("malloc failure\n");
-			active_tracer = stderr;
+			active_tracer = stdout;
 			return GDK_FAIL;
 		}
 		if (strcpy_len(fn, dbtrace, fnl)
@@ -176,7 +180,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 		/* uninitialize */
 		free(file_name);
 		file_name = NULL;
-		active_tracer = stderr;
+		active_tracer = stdout;
 		return GDK_FAIL;
 	}
 
@@ -188,7 +192,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 	free(fn);
 	free(file_name);
 	file_name = NULL;
-	active_tracer = stderr;
+	active_tracer = stdout;
 	return GDK_FAIL;
 }
 
@@ -325,7 +329,7 @@ reinit(void)
 		return;
 
 	if (active_tracer) {
-		if (active_tracer != stderr)
+		if (active_tracer != stdout)
 			fclose(active_tracer);
 		else
 			fflush(active_tracer);
@@ -340,7 +344,7 @@ GDKtracer_stop(void)
 {
 	set_level_for_layer(TRC_NAME(MDB_ALL), DEFAULT_LOG_LEVEL);
 	if (active_tracer) {
-		if (active_tracer != stderr)
+		if (active_tracer != stdout)
 			fclose(active_tracer);
 		else
 			fflush(active_tracer);
@@ -490,7 +494,7 @@ GDKtracer_reset_adapter(void)
 	return GDK_SUCCEED;
 }
 
-static bool add_ts;		/* add timestamp to error message to stderr */
+static bool add_ts;		/* add timestamp to error message to stdout */
 
 gdk_return
 GDKtracer_init(const char *dbpath, const char *dbtrace)
@@ -598,7 +602,9 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if (interrupted)
 		reinit();
 
-	if (level <= TRC_NAME(M_WARNING) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK)) {
+	if (level <= TRC_NAME(M_WARNING) ||
+	    active_tracer == stdout ||
+	    (ATOMIC_GET(&GDKdebug) & TESTINGMASK)) {
 		fprintf(level <= TRC_NAME(M_ERROR) && !isexit ? stderr : stdout,
 			"#%s%s%s: %s: %s: %s%s%s\n",
 			add_ts ? ts : "",
@@ -606,7 +612,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 			MT_thread_getname(), func, level_str[level] + 2,
 			msg, syserr ? ": " : "",
 			syserr ? syserr : "");
-		if (active_tracer == NULL || active_tracer == stderr || !write_to_tracer) {
+		if (active_tracer == NULL || active_tracer == stdout || !write_to_tracer) {
 			MT_lock_unset(&GDKtracer_lock);
 			return;
 		}

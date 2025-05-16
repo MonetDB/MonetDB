@@ -48,6 +48,7 @@ typedef struct _backend_functions {
 	resolve_function fresolve_function;
 	has_module_function fhas_module_function;
 	create_sub_backend sub_backend;
+	void (*setIdle)(int, time_t);
 } backend_functions;
 
 extern void backend_freecode(const char *mod, int clientid, const char *name);
@@ -63,6 +64,7 @@ extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f, const char *fimp, bool *side_effect);
 extern int	backend_has_module(ptr M, char *name);
 extern int  backend_find_role(ptr mp, char *role, sqlid *role_id);
+extern void backend_set_idle(int clientid, time_t t);
 
 extern backend_functions be_funcs;
 

@@ -1019,23 +1019,39 @@ ODBCFetch(ODBCStmt *stmt,
 	if (type == SQL_C_DEFAULT)
 		type = ODBCDefaultType(irdrec);
 
-	if (precision == UNAFFECTED ||
-	    scale == UNAFFECTED ||
-	    datetime_interval_precision == UNAFFECTED) {
+	if (precision == UNAFFECTED) {
+		precision = (ardrec) ? ardrec->sql_desc_precision : (type == SQL_C_NUMERIC) ? 10 : 6;
+	}
+	if (scale == UNAFFECTED) {
+		scale = (ardrec) ? ardrec->sql_desc_scale : 0;
+	}
+	if (datetime_interval_precision == UNAFFECTED) {
 		if (ardrec) {
-			if (precision == UNAFFECTED)
-				precision = ardrec->sql_desc_precision;
-			if (scale == UNAFFECTED)
-				scale = ardrec->sql_desc_scale;
-			if (datetime_interval_precision == UNAFFECTED)
-				datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
+			datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
 		} else {
-			if (precision == UNAFFECTED)
-				precision = type == SQL_C_NUMERIC ? 10 : 6;
-			if (scale == UNAFFECTED)
-				scale = 0;
-			if (datetime_interval_precision == UNAFFECTED)
+			switch (type) {
+			case SQL_C_INTERVAL_YEAR:
+				datetime_interval_precision = 4;
+				break;
+			case SQL_C_INTERVAL_YEAR_TO_MONTH:
+			case SQL_C_INTERVAL_MONTH:
+				datetime_interval_precision = 6;
+				break;
+			case SQL_C_INTERVAL_DAY:
+			case SQL_C_INTERVAL_DAY_TO_HOUR:
+			case SQL_C_INTERVAL_DAY_TO_MINUTE:
+			case SQL_C_INTERVAL_DAY_TO_SECOND:
+			case SQL_C_INTERVAL_HOUR:
+			case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+			case SQL_C_INTERVAL_HOUR_TO_SECOND:
+			case SQL_C_INTERVAL_MINUTE:
+			case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+			case SQL_C_INTERVAL_SECOND:
+				datetime_interval_precision = 9;
+				break;
+			default:
 				datetime_interval_precision = 2;
+			}
 		}
 	}
 	i = datetime_interval_precision;
@@ -2131,6 +2147,105 @@ ODBCFetch(ODBCStmt *stmt,
 			case SQL_C_SBIGINT:
 				WriteData(ptr, nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val, SQLBIGINT);
 				break;
+			}
+			break;
+		}
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+		case SQL_INTERVAL_MONTH:
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+		case SQL_INTERVAL_SECOND: {
+			SQLBIGINT val;
+			/* only single field intervals can be converted */
+			switch (mapi_get_digits(stmt->hdl, col - 1)) {
+			case 1:	/* interval year */
+				val = ival.intval.year_month.year;
+				break;
+			case 3:	/* interval month */
+				val = ival.intval.year_month.year * 12
+					+ ival.intval.year_month.month;
+				break;
+			case 4:	/* interval day */
+				val = ival.intval.day_second.day;
+				break;
+			case 8:	/* interval hour */
+				val = ival.intval.day_second.day * 24
+					+ ival.intval.day_second.hour;
+				break;
+			case 11: /* interval minute */
+				val = ival.intval.day_second.day * 24 * 60
+					+ ival.intval.day_second.hour * 60
+					+ ival.intval.day_second.minute;
+				break;
+			case 13: /* interval second */
+				val = ival.intval.day_second.day * 24 * 60 * 60
+					+ ival.intval.day_second.hour * 60 * 60
+					+ ival.intval.day_second.minute * 60
+					+ ival.intval.day_second.second;
+				if (ival.intval.day_second.fraction) {
+					/* Fractional truncation */
+					addStmtError(stmt, "01S07", NULL, 0);
+				}
+				break;
+			default:
+				/* Interval field overflow */
+				addStmtError(stmt, "22015", NULL, 0);
+				return SQL_ERROR;
+			}
+			if (ival.interval_sign)
+				val = -val;
+			switch (type) {
+			case SQL_C_STINYINT:
+				if (val < -128 || val > 127)
+					goto overflow;
+				WriteData(ptr, (signed char) val, signed char);
+				break;
+			case SQL_C_TINYINT:
+				if (val < 0 || val > 255)
+					goto overflow;
+				WriteData(ptr, (unsigned char) val, unsigned char);
+				break;
+			case SQL_C_SSHORT:
+				if (val < -32768 || val > 32767)
+					goto overflow;
+				WriteData(ptr, (short) val, short);
+				break;
+			case SQL_C_SHORT:
+				if (val < 0 || val > 65535)
+					goto overflow;
+				WriteData(ptr, (unsigned short) val, unsigned short);
+				break;
+			case SQL_C_SLONG:
+				if (val < (SQLBIGINT) INT64_C(-2147483648) ||
+				    val > (SQLBIGINT) INT64_C(2147483647))
+					goto overflow;
+				WriteData(ptr, (int) val, int);
+				break;
+			case SQL_C_LONG:
+				if (val < 0 ||
+				    val > (SQLBIGINT) INT64_C(4294967295))
+					goto overflow;
+				WriteData(ptr, (unsigned int) val, unsigned int);
+				break;
+			case SQL_C_SBIGINT:
+				WriteData(ptr, (SQLBIGINT) val, SQLBIGINT);
+				break;
+			default:
+				/* Restricted data type attribute violation */
+				addStmtError(stmt, "07006", NULL, 0);
+				return SQL_ERROR;
+			overflow:
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+				return SQL_ERROR;
 			}
 			break;
 		}
