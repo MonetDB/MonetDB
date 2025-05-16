@@ -88,7 +88,7 @@ persistRtree(BAT *b)
 			const char * filename = BBP_physical(b->batCacheid);
 			int farmid = b->theap->farmid;
 
-			FILE *file_stream = GDKfilelocate(farmid, filename, "w", "bsrt");
+			FILE *file_stream = GDKfilelocate(farmid, filename, "wb", "bsrt");
 
 			if (file_stream != NULL) {
 				int err;
@@ -130,7 +130,7 @@ BATcheckrtree(BAT *b)
 	int farmid = b->theap->farmid;
 
 	//Do we have the rtree on file?
-	FILE *file_stream = GDKfilelocate(farmid, filename, "r", "bsrt");
+	FILE *file_stream = GDKfilelocate(farmid, filename, "rb", "bsrt");
 	if (file_stream != NULL) {
 		rtree_t* rtree = rtree_bsrt_read(file_stream);
 		if (!rtree) {
