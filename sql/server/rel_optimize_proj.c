@@ -3785,25 +3785,26 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		list *obe = rel->r; /* we need to read the ordering later */
 
 		if (obe) {
-			int fnd = 0;
+			bool fnd = true;
 
-			for(n = obe->h; n && !fnd; n = n->next) {
+			for(n = obe->h; n && fnd; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (e->type != e_column)
-					fnd = 1;
+					fnd = false;
 				else if (exps_bind_nid(rel->exps, e->nid) == NULL)
-					fnd = 1;
+					fnd = false;
 			}
-			if (fnd)
+			if (!fnd)
 				return rel;
 		}
-		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
-
+		bool need_project = obe != NULL;
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data, *ne;
 
 			set_nodistinct(e);
+			if (e->type != e_column || e->alias.label != e->nid)
+				need_project = true;
 			ne = exp_ref(v->sql, e);
 			if (e->card > CARD_ATOM && !list_find_exp(gbe, ne)) { /* no need to group by on constants, or the same column multiple times */
 				append(gbe, ne);
@@ -3811,6 +3812,11 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 			}
 			append(exps, ne);
 		}
+		if (need_project) {
+			sql_rel *p = rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
+			reset_single(p);
+		}
+
 		rel->op = op_groupby;
 		rel->exps = exps;
 		rel->r = gbe;

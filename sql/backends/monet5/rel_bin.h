@@ -33,6 +33,7 @@ extern stmt* list_find_column(backend *be, list *l, const char *rname, const cha
 
 extern stmt *subrel_bin(backend *be, sql_rel *rel, list *refs);
 extern stmt *subrel_project( backend *be, stmt *s, list *refs, sql_rel *rel);
+extern stmt *refs_find_rel(list *refs, sql_rel *rel);
 
 extern bool can_join_exp(sql_rel *rel, sql_exp *e, bool anti);
 #endif /*_REL_BIN_H_*/

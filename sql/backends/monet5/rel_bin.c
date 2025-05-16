@@ -120,7 +120,7 @@ sql_unop_(backend *be, const char *fname, stmt *rs)
 	return NULL;
 }
 
-static stmt *
+stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
 	for (node *n = refs->h; n; n = n->next->next) {
@@ -8901,7 +8901,10 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 					set_pipeline(be, stmt_pp_start_generator(be, source, true));
 				}
 				(void)pp_counter_get(be, source);
-				s = rel2bin_slicer(be, s, 1);
+				if (rel->op == op_buildhash)
+					s = oahash_slicer(be, s);
+				else
+					s = rel2bin_slicer(be, s, 1);
 			}
 			return s;
 		}
@@ -8961,6 +8964,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 		break;
 	case op_buildhash:
+		assert(0);
 		s = rel2bin_oahash_build(be, rel, refs);
 		sql->type = Q_TABLE;
 		break;

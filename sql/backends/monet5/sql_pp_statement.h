@@ -24,7 +24,7 @@ extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int 
 
 extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);
 extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq_sink, bit append_vals, const stmt *pp);
-extern InstrPtr stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp);
+extern stmt *stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp, sql_subtype *st);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);
@@ -40,8 +40,8 @@ extern stmt *stmt_limit_partitioned(backend *sa, stmt *c, stmt *piv, stmt *gid, 
 extern stmt *stmt_unique_sharedout(backend *be, stmt *op1, int output);
 
 extern stmt *stmt_slice(backend *be, stmt *col, stmt *limit);
-extern stmt *stmt_nth_slice(backend *be, stmt *col, int slicer);
-extern stmt *stmt_no_slices(backend *be, stmt *col); /* call mal nr of slices */
+extern stmt *stmt_nth_slice(backend *be, stmt *col, int slicer, bool hash);
+extern stmt *stmt_no_slices(backend *be, stmt *col, bool hash); /* call mal nr of slices */
 
 extern stmt *stmt_pp_start_nrparts(backend *ba, int nrparts); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */
 extern stmt *stmt_pp_start_dynamic(backend *ba, int input); /* create barrier label := true; part := part_nr(); leave: label:= part >= nrparts; */

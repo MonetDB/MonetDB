@@ -30,11 +30,11 @@ pp_dynamic_slices(backend *be, stmt *sub)
 {
 	if (sub && sub->cand)
 		sub  = subrel_project(be, sub, NULL, NULL);
-	node *n = sub->op4.lval->h;
+	node *n = sub->op1 ? sub->op4.lval->t : sub->op4.lval->h; /* for hash get last */
 	stmt *sc = n->data;
 
 	sc = column(be, sc);
-	sc = stmt_no_slices(be, sc);
+	sc = stmt_no_slices(be, sc, sub->op1?true:false /* hash table on op1 */);
 	return sc->nr;
 }
 
@@ -55,7 +55,7 @@ rel2bin_slicer(backend *be, stmt *sub, int slicer)
 			int label = sc->label;
 
 			sc = column(be, sc);
-			sc = stmt_nth_slice(be, sc, slicer);
+			sc = stmt_nth_slice(be, sc, slicer, false);
 			list_append(newl, stmt_alias(be, sc, label, tname, cname));
 		}
 		sub = stmt_list(be, newl);

@@ -3040,6 +3040,70 @@ error:
 	return err;
 }
 
+#define SLICE_SIZE 100000
+
+static str
+OAHASHno_slices(int *no_slices, bat *ht_sink)
+{
+	/* return nr of slices */
+	assert(*ht_sink && !is_bat_nil(*ht_sink));
+	BAT *b = BATdescriptor(*ht_sink);
+	if (!b)
+		return createException(SQL, "oahash.no_slices",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	hash_table *h = (hash_table*)b->tsink;
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+
+	if (h->size < SLICE_SIZE )
+		*no_slices = 1;
+	else
+		*no_slices = (h->size+SLICE_SIZE-1)/SLICE_SIZE;
+	FORCEMITODEBUG
+	if (*no_slices < GDKnr_threads)
+		*no_slices = GDKnr_threads;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
+OAHASHnth_slice(bat *slice, bat *ht_sink, int *slice_nr)
+{
+	/* return the nth slice */
+	assert(*ht_sink && !is_bat_nil(*ht_sink));
+	BAT *b = BATdescriptor(*ht_sink);
+	if (!b)
+		return createException(SQL, "oahash.nth_slice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	hash_table *h = (hash_table*)b->tsink;
+	assert(h && h->s.type == OA_HASH_TABLE_SINK);
+	BUN s = *slice_nr * SLICE_SIZE, e = s + SLICE_SIZE;
+	BAT *r = NULL;
+
+	if (h->size < s) {
+		r = COLnew(b->hseqbase, TYPE_oid, 0, TRANSIENT);
+	} else {
+		r = COLnew(b->hseqbase, TYPE_oid, SLICE_SIZE, TRANSIENT);
+	}
+	if (e > h->size)
+		e = h->size;
+	if (!r) {
+		BBPunfix(b->batCacheid);
+		return createException(SQL, "slicer.nth_slice",	SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	oid *o = Tloc(r, 0);
+	BUN j = 0;
+	for (BUN i = s; i<e; i++) {
+		if (h->gids[i])
+			o[j++] = h->gids[i]-1;
+	}
+	BATsetcount(r, j);
+	BATnegateprops(r);
+
+	*ht_sink = b->batCacheid;
+	*slice = r->batCacheid;
+	BBPkeepref(b);
+	BBPkeepref(r);
+	return MAL_SUCCEED;
+}
+
 #include "mel.h"
 static mel_func oa_hash_init_funcs[] = {
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
@@ -3074,6 +3138,9 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "fetch_payload", BAT_OAHASHfetch_pld, false, "Fetch the hash-payloads correspond to the slot IDs and expand them according to their frequencies in the hash table. If 'outer' is true, append NULLs for the unmatched keys", args(1,7, batargany("fetched",1),batargany("hp_sink",1),batarg("slotid",oid),batargany("freq_sink",2),arg("norows_prb",lng),arg("outer",bit),arg("pipeline",ptr))),
 
  command("oahash", "fetch_payload_cartesian", BAT_OAHASHfetch_pld_cart, false, "Duplicate all values in 'col' 'norepeats'-number of times.", args(1,4, batargany("fetched",1),batargany("col",1),arg("norepeats",lng),arg("pipeline",ptr))),
+
+ command("oahash", "no_slices", OAHASHno_slices, false, "Get the number of slices for this hashtable.", args(1,2, arg("slices", int), batargany("ht_sink", 1))),
+ command("oahash", "nth_slice", OAHASHnth_slice, false, "Get the nth slice of this hashtable.", args(2,3, batarg("slice", oid), batargany("ht_sink", 1), arg("slice_nr", int))),
 
  { .imp=NULL }
 };

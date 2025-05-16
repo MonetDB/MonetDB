@@ -670,7 +670,7 @@ rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 	if (crossproduct && rel->op == op_basetable) {
 		return rel;
 	}
-	/* todo inplace for hash sharing */
+	/* Inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
 	if (rel_is_ref(rel)) {
 		sql_rel *l = r;
@@ -839,7 +839,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			} else {
 				rel->r = rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(rel->exps));
 				rel_hsh->flag = (int)op_semi;
-
 			}
 			rel->l = rel_prb = rel_probehash(v, rel_prb, NULL);
 			rel_hsh->attr = exps_cmp_hsh;
@@ -929,6 +928,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (do_oahash_join(rel)) {
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
+			bool need_all = false;
 
 			list *found_exps_cmp_hsh = NULL, *found_exps_prj_hsh = NULL;
 
@@ -962,6 +962,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel_hsh = rel->l;
 					rel_prb = rel->r;
 				}
+				if (rel_is_ref(rel_hsh))
+					need_all = true;
 				rel_hsh = rel_buildhash(v, rel_hsh, &iprj, list_empty(rel->exps));
 			} else {
 				found_exps_cmp_hsh = rel_hsh->attr;
@@ -1008,6 +1010,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				}
 			}
 			rel_prb->exps = exps_prb;
+			if (need_all) /* add all missing rel_hsh->attr to rel_hsh->exps */
+				rel_hsh->exps = list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
 
 			(void) rel_pipeline(v, rel_prb, false, 1);
 			if (rel_hsh->op == op_buildhash)
@@ -1448,7 +1452,7 @@ rel_add_project(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_split_join(visitor *v, sql_rel *rel)
 {
-	if (rel->op == op_join && !rel->attr && !rel_is_ref(rel)) {
+	if (rel->op == op_join && !rel->attr && !is_single(rel) && !rel_is_ref(rel)) {
 		list *eq_exps = sa_list(v->sql->sa);
 		list *other = sa_list(v->sql->sa);
 		split_join_exps(rel, eq_exps, other, true);

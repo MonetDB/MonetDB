@@ -234,6 +234,32 @@ oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, s
 	return stmt_list(be, l);
 }
 
+/* Generate for every projection column, eg.:
+ *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);
+ */
+stmt *
+oahash_slicer(backend *be, stmt *sub)
+{
+	assert(sub->op1 && !sub->cand);
+	list *newl = sa_list(be->mvc->sa);
+	stmt *ht = sub->op4.lval->t->data;
+	stmt *slice = stmt_nth_slice(be, ht, 1, true);
+	sub = sub->op1; /* need the payload */
+	stmt *pp = get_pipeline(be);
+	for (node *n = sub->op4.lval->h; n; n = n->next) {
+		stmt *sc = n->data;
+		const char *cname = column_name(be->mvc->sa, sc);
+		const char *tname = table_name(be->mvc->sa, sc);
+		int label = sc->label;
+
+		sc = column(be, sc);
+		sc = stmt_oahash_fetch_payload(be, sc, slice->nr, ht, NULL, false, pp, tail_type(sc));
+		list_append(newl, stmt_alias(be, sc, label, tname, cname));
+	}
+	sub = stmt_list(be, newl);
+	return sub;
+}
+
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
@@ -288,16 +314,10 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 		stmt *hp_sink = exp_bin(be, o->data, stmts_hp, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		assert(hp_sink); /* must find */
 
-		InstrPtr q = stmt_oahash_fetch_payload(be, hp_sink, rhs_slts, freq_sink, norows_prb, outer, pp);
-		if (q == NULL) return NULL;
-
 		sql_exp *e = o->data;
-		stmt *s = stmt_none(be);
+		stmt *s = stmt_oahash_fetch_payload(be, hp_sink, rhs_slts, freq_sink, norows_prb, outer, pp, exp_subtype(e));
 		if (s == NULL) return NULL;
-		s->op4.typeval = *exp_subtype(e);
-		s->nr = getArg(q, 0);
-		s->nrcols = 1;
-		s->q = q;
+
 		if (e->alias.label)
 			s = stmt_alias(be, s, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, s);
@@ -395,11 +415,6 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *noro
 	return l;
 }
 
-typedef struct ht_stmts {
-	stmt *stmts_ht;
-	stmt *stmts_hp;
-} ht_stmts;
-
 stmt *
 rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 {
@@ -431,10 +446,8 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	}
 	(void)stmt_pp_jump(be, pp, be->nrparts);
 	(void)stmt_pp_end(be, pp);
-	ht_stmts *ht = SA_NEW(be->mvc->sa, ht_stmts);
-	ht->stmts_ht = stmts_ht;
-	ht->stmts_hp = stmts_hp;
-	return (stmt*)ht;
+	stmts_ht->op1 = stmts_hp;
+	return stmts_ht;
 }
 
 static stmt *
@@ -472,9 +485,10 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	list *exps_prj_hsh = rel_hsh->exps;
 
 	/* build-phase res: hash-table and hash-payload stmts */
-	ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
-	stmt *stmts_ht = ht->stmts_ht;
-	stmt *stmts_hp = ht->stmts_hp;
+	stmt *ht = refs_find_rel(refs, rel_hsh);
+	assert(ht);
+	stmt *stmts_ht = ht;
+	stmt *stmts_hp = ht->op1;
 
 	/*** PROBE PHASE ***/
 	stmt *sub = _start_pp(be, rel_prb->l, 0, refs, false);
@@ -583,8 +597,8 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		list *exps_prj_prb = rel_prb->exps;
 
 		/* build-phase res: hash-table and hash-payload stmts */
-		ht_stmts *ht = (ht_stmts*)subrel_bin(be, rel_hsh, refs);
-		stmt *stmts_ht = ht->stmts_ht;
+		stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
+		assert(stmts_ht);
 
 		/*** PROBE PHASE ***/
 		sub = _start_pp(be, rel_prb->l, 0, refs, false);

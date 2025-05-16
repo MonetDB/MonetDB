@@ -604,8 +604,8 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq
 	return q;
 }
 
-InstrPtr
-stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp)
+stmt *
+stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp, sql_subtype *st)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
@@ -616,11 +616,21 @@ stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *fr
 	q = pushArgument(be->mb, q, hp_sink->nr);
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
-	q = pushArgument(be->mb, q, norows_prb->nr);
+	if (outer)
+		q = pushArgument(be->mb, q, norows_prb->nr);
+	else
+		q = pushLng(be->mb, q, 0);
 	q = pushBit(be->mb, q, outer);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);
-	return q;
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *st;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
 }
 
 InstrPtr
@@ -707,7 +717,7 @@ stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all
  *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);
  */
 stmt *
-stmt_nth_slice(backend *be, stmt *col, int slicer)
+stmt_nth_slice(backend *be, stmt *col, int slicer, bool hash)
 {
 	sql_subtype *tp = tail_type(col);
 	int tt = tp->type->localtype;
@@ -715,8 +725,11 @@ stmt_nth_slice(backend *be, stmt *col, int slicer)
 		return col;
 
 	InstrPtr q = NULL;
-	q = newStmt(be->mb, slicerRef, nth_sliceRef);
-	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = newStmt(be->mb, hash?putName("oahash") : slicerRef, nth_sliceRef);
+	if (hash)
+		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	else
+		setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	//q = pushArgument(be->mb, q, col->nr);
 	q = pushReturn(be->mb, q, col->nr);
 	q->inout = 1;
@@ -743,9 +756,9 @@ stmt_nth_slice(backend *be, stmt *col, int slicer)
  *   X_42:int := slicer.no_slices(X_24:bat[:...]);
  */
 stmt *
-stmt_no_slices(backend *be, stmt *col)
+stmt_no_slices(backend *be, stmt *col, bool hash)
 {
-	InstrPtr q = newStmt(be->mb, slicerRef, no_slicesRef);
+	InstrPtr q = newStmt(be->mb, hash?putName("oahash") : slicerRef, no_slicesRef);
 	q = pushArgument(be->mb, q, col->nr);
 
 	pushInstruction(be->mb, q);
