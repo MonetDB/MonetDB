@@ -2502,7 +2502,6 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 
 	case op_inter:
 	case op_except:
-	case op_merge:
 		args = rel2bin_args(be, rel->l, args);
 		args = rel2bin_args(be, rel->r, args);
 		break;
