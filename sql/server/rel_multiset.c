@@ -31,6 +31,8 @@ ms_add_join_exps(visitor *v, sql_rel *rel, list *exps)
 	if (list_empty(exps))
 		return rel;
 	sql_rel *r = rel->r;
+	while (is_select(r->op))
+		r = r->l;
 	prop *p = r->p;
 	if (!p || p->kind != PROP_UNNEST)
 		return NULL;
