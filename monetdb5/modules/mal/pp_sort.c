@@ -446,6 +446,48 @@ PPmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 }
 
+#define zzl_vvproject(T, res, zzl, lcol, rcol) { \
+	oid *o = (oid*)Tloc(res, 0); \
+	oid l = lcol->tseqbase; \
+	oid r = rcol->tseqbase; \
+	oid v = side?r:l; \
+	BUN p = side?rp:lp; \
+	for (BUN k = 0; k<sz; k++) { \
+		int nr = z[k]; \
+		for (int j = 0; j<nr; j++, p++, op++) \
+			o[op] = v+p; \
+		if (side) { \
+			rp = p; \
+			p = lp; \
+		} else { \
+			lp = p; \
+			p = rp; \
+		} \
+		side = !side; \
+		v = side?r:l; \
+	} \
+}
+
+#define zzl_vproject(T, res, zzl, lcol, rcol) { \
+	oid *o = (oid*)Tloc(res, 0); \
+	oid l = lcol->tseqbase; \
+	oid *r = Tloc(rcol, 0); \
+	BUN p = side?rp:lp; \
+	for (BUN k = 0; k<sz; k++) { \
+		int nr = z[k]; \
+		for (int j = 0; j<nr; j++, p++, op++) \
+			o[op] = side?r[p]:l+p; \
+		if (side) { \
+			rp = p; \
+			p = lp; \
+		} else { \
+			lp = p; \
+			p = rp; \
+		} \
+		side = !side; \
+	} \
+}
+
 #define zzl_project(T, res, zzl, lcol, rcol) { \
 	T *o = Tloc(res, 0); \
 	T *l = Tloc(lcol, 0); \
@@ -481,7 +523,13 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 
 	if(!ATOMvarsized(tt)) {
 		int width = lcol->twidth;
-		if(width == sizeof(bte)) {
+		if(width == 0) {
+			if (lcol->ttype == TYPE_void && rcol->ttype == TYPE_void) {
+				zzl_vvproject(bte, res, zzl, lcol, rcol);
+			} else {
+				zzl_vproject(bte, res, zzl, lcol, rcol);
+			}
+		} else if(width == sizeof(bte)) {
 			zzl_project(bte, res, zzl, lcol, rcol);
 		} else if(width == sizeof(sht)) {
 			zzl_project(sht, res, zzl, lcol, rcol);
@@ -591,6 +639,8 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(MAL, "sort.mproject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
+	} else if (cl->ttype == TYPE_void) {
+		res = COLnew(0, TYPE_oid, sz, TRANSIENT);
 	} else
 		res = COLnew(0, cl->ttype, sz, TRANSIENT);
 

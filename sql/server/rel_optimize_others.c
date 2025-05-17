@@ -1052,6 +1052,11 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	if (!rel)
 		return rel;
 
+	if (rel_is_ref(rel)) {
+		if (!is_project(rel->op) && !is_basetable(rel->op) && !is_ddl(rel->op))
+			rel = rel_inplace_project(sql->sa, rel, NULL, rel_projections(sql, rel, NULL, 1, 1));
+	}
+
 	switch(rel->op) {
 	case op_basetable:
 	case op_truncate:

@@ -287,7 +287,7 @@ oahash_probe(backend *be, sql_rel *rel, list *exps_cmp_prb, const stmt *stmts_ht
 		} else {
 			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, pp);
 			if (q == NULL) return NULL;
-			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rht, single, e2->semantics, pp);
+			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rhs_slts, rht, single, e2->semantics, pp);
 		}
 		if (q == NULL) return NULL;
 		matched = getArg(q, 0);
