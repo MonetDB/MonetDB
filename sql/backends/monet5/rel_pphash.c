@@ -422,8 +422,12 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	list *exps_cmp_hsh = rel->attr;
 	list *exps_prj_hsh = rel->exps;
 
-	if (!exps_cmp_hsh) /* dummy case for cartisian product */
-		return rel2bin_materialize(be, rel->l, refs);
+	if (!exps_cmp_hsh) { /* dummy case for cartisian product */
+		sql_rel *l = rel->l;
+		if (is_topn(l->op))
+			l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
+		return rel2bin_materialize(be, l, refs);
+	}
 
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
 	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);

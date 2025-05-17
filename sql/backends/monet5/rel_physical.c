@@ -765,8 +765,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
 		bool pp_useful = (get_rel_count(rel->l) > 1) && !(list_length(rel->exps) > 1) /* no offset */;
+		pp_useful &= !rel->grouped; /* grouped topn isn't pipelined yet */
 		/* op_topn always has rel->l */
-		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:pb);
+		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:rel->grouped?0:pb);
 		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
 			if (res == REL_PARTITION)

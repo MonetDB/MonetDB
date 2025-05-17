@@ -3081,24 +3081,6 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
-	// TODO replacing subrel_bin with rel2bin_materialize is only a temporary
-	//      workaround for the "nested dataflow blocks not allowed" problem
-	//      when an (oahash) JOIN is in the sub relations. The real solution is
-	//      to add the groupjoin to the OAHASH join.
-#if 0
-	if (rel->l) /* first construct the left sub relation */
-		//left = subrel_bin(be, rel->l, refs);
-		left = rel2bin_materialize(be, rel->l, refs);
-	if (rel->r) /* first construct the right sub relation */
-		//right = subrel_bin(be, rel->r, refs);
-		right = rel2bin_materialize(be, rel->r, refs);
-	left = subrel_project(be, left, refs, rel->l);
-	right = subrel_project(be, right, refs, rel->r);
-	if (!left || !right)
-		return NULL;
-	left = row2cols(be, left);
-	right = row2cols(be, right);
-#endif
 	if (rel->partition == 1) {
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
@@ -3403,7 +3385,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 	left = row2cols(be, left);
 	right = row2cols(be, right);
-
 	/*
 	 * split in 2 steps,
 	 *	first cheap join(s) (equality or idx)
@@ -3488,7 +3469,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);
-
 	if (en || (sexps && list_length(sexps))) {
 		stmt *sub, *sel = NULL;
 		list *nl;
@@ -3832,8 +3812,6 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	if (rel->oahash > 0)
 		return rel2bin_oahash(be, rel, refs);
 
-	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
-
 	if (rel->partition == 1 || rel->op == op_anti) {
 		if (rel->r) { /* first construct the right sub relation */
 			right = subrel_bin(be, rel->r, refs);
@@ -3859,12 +3837,10 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	}
 	if (pp)
 		be->pipeline = pp;
-
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
 	right = row2cols(be, right);
-
 	/*
 	 * split in 2 steps,
 	 *	first cheap join(s) (equality or idx)
@@ -4075,14 +4051,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		s = stmt_alias(be, s, c->label, rnme, nme);
 		list_append(l, s);
 	}
-	stmt *res = stmt_list(be, l);
-	if (neededpp && !rel->partition) {
-		assert(0);
-		stmt *pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, res));
-		set_pipeline(be, pp);
-		res = rel2bin_slicer(be, res, 1);
-	}
-	return res;
+	return stmt_list(be, l);
 }
 
 static stmt *
@@ -6162,7 +6131,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 			glimit = stmt_result(be, limit, 0);
 			limit = stmt_result(be, limit, 1);
 		} else {
-			limit = stmt_limit(be, sc /*stmt_alias(be, sc, tname, cname)*/, NULL, NULL, io, il, 0,0,0,0,0);
+			limit = stmt_limit(be, sc, NULL, NULL, io, il, 0,0,0,0,0);
 		}
 
 		for ( ; n; n = n->next) {
@@ -6456,9 +6425,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-    /* we want to make sure that the data column(s) has the same number
-     * of (nonil) rows as the index column. if that is **not** the case
-     * then we are obviously dealing with an invalid foreign key */
+	/* we want to make sure that the data column(s) has the same number
+	 * of (nonil) rows as the index column. if that is **not** the case
+	 * then we are obviously dealing with an invalid foreign key */
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
