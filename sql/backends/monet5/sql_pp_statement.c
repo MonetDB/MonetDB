@@ -518,9 +518,9 @@ stmt_oahash_hash(backend *be, stmt *key, const stmt *pp)
 }
 
 InstrPtr
-stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, const stmt *pp)
+stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, bit eq, const stmt *pp)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("probe"), 6);
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), eq?putName("probe"):putName("nprobe"), 6);
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));

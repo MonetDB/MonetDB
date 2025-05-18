@@ -324,6 +324,8 @@ only_equi_joins(sql_rel *rel)
 
 	for(node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
+	//	if (!is_any(e) && !is_semantics(e) && e->type == e_cmp && e->flag == cmp_notequal && list_length(rel->exps) == 1)
+	//		return true;
 		if (!is_equi_exp_(e) || !can_join_exp(rel, e, false) || is_any(e))
 			return false;
 	}
@@ -336,6 +338,12 @@ do_oahash_join(sql_rel *rel)
 	ATOMIC_TYPE oahash_enabled = (1U<<19);
 	if (!(GDKdebug & oahash_enabled))
 		return 0;
+
+	if (rel->op == op_anti && list_length(rel->exps) == 1) {
+		sql_exp *e = rel->exps->h->data;
+		if (!is_any(e) && !is_semantics(e) && e->type == e_cmp && e->flag == cmp_equal)
+			return 1;
+	}
 
 	// TODO full outer and anti-join
 	if (rel->op == op_full || rel->op == op_anti)
@@ -605,7 +613,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		assert(e->type == e_cmp && e->flag == cmp_equal);
+		assert(e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal));
 
 		/* search first for the not-atom exp, otherwise rel_find_exp()
 		 * incorrectly returns TRUE for an atom-typed exp */

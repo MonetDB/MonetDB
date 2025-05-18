@@ -1651,15 +1651,67 @@ rel_has_exps(sql_rel *rel, list *exps, bool subexp)
 	return -1;
 }
 
-int
-rel_has_all_exps(sql_rel *rel, list *exps)
+static bool
+rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
+{
+	sql_exp *ne = NULL;
+
+	if (!rel)
+		return NULL;
+	switch(e->type) {
+	case e_column:
+		if (is_basetable(rel->op) && !rel->exps) {
+			assert(e->nid);
+			return (rel_base_has_nid(rel, e->nid));
+		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
+					(!list_empty(rel->attr) && is_join(rel->op))) {
+			list *l = rel->attr ? rel->attr : rel->exps;
+			assert(e->nid);
+			ne = exps_bind_nid(l, e->nid);
+		}
+		return ne;
+	case e_convert:
+		return rel_has_complete_exp(rel, e->l, subexp);
+	case e_aggr:
+	case e_func:
+		return (rel_has_all_exps(rel, e->l, subexp));
+	case e_cmp:
+		if (!subexp)
+			return false;
+
+		if (e->flag == cmp_filter) {
+			if (rel_has_all_exps(rel, e->l, subexp))
+			    return rel_has_all_exps(rel, e->r, subexp);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			return rel_has_all_exps(rel, e->l, subexp);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (rel_has_complete_exp(rel, e->l, subexp))
+			    return rel_has_all_exps(rel, e->r, subexp);
+		} else if (rel_has_complete_exp(rel, e->l, subexp) &&
+				   rel_has_complete_exp(rel, e->r, subexp) &&
+			       (!e->f || rel_has_complete_exp(rel, e->f, subexp))) {
+			return true;
+		}
+		return false;
+	case e_psm:
+		return false;
+	case e_atom:
+		if (e->f) /* values */
+			return rel_has_all_exps(rel, e->f, subexp);
+		return true;
+	}
+	return true;
+}
+
+bool
+rel_has_all_exps(sql_rel *rel, list *exps, bool subexp)
 {
 	if (list_empty(exps))
-		return 1;
+		return true;
 	for (node *n = exps->h; n; n = n->next)
-		if (rel_has_exp(rel, n->data, false) < 0)
-			return 0;
-	return 1;
+		if (!rel_has_complete_exp(rel, n->data, subexp))
+			return false;
+	return true;
 }
 
 static int
@@ -1941,6 +1993,8 @@ exp_is_true(sql_exp *e)
 {
 	if (e->type == e_atom && e->l)
 		return atom_is_true(e->l);
+	if (e->type == e_cmp && e->flag == cmp_equal && exp_match(e->l, e->r) && exp_is_not_null(e->l))
+		return true;
 	if (e->type == e_cmp && e->flag == cmp_equal)
 		return (exp_is_true(e->l) && exp_is_true(e->r) && exp_match_exp(e->l, e->r));
 	return 0;

@@ -1789,7 +1789,7 @@ error:
 				k &= ht->mask; \
 				slot = ht->gids[k]; \
 			} \
-			if (slot) { \
+			if ((slot?1:0) == match) { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
@@ -1819,7 +1819,7 @@ error:
 				k &= ht->mask; \
 				slot = ht->gids[k]; \
 			} \
-			if (slot) { \
+			if ((slot?1:0) == match) { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
@@ -1852,7 +1852,7 @@ error:
 				k &= ht->mask; \
 				slot = ht->gids[k]; \
 			} \
-			if (slot) { \
+			if ((slot?1:0) == match) { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = slot - 1; \
 				mtdcnt++; \
@@ -1866,7 +1866,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHprobe1(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H, bit match)
 {
 	BAT *m = NULL, *s = NULL, *k = NULL, *h = NULL, *t = NULL;
 	BUN keycnt, mtdcnt = 0;
@@ -1976,6 +1976,19 @@ error:
 	BBPreclaim(t);
 	return err;
 }
+
+static str
+BAT_OAHASHprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, single, semantics, H, true);
+}
+
+static str
+BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, single, semantics, H, false);
+}
+
 
 #define BATvprobe_cmbd() \
 	do { \
@@ -3137,6 +3150,8 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "hash", BAT_OAHASHhash, false, "Compute the hashs for the keys", args(1,3, batarg("hsh",lng),batargany("key",1),arg("pipeline",ptr))),
 
  command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+
+ command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 

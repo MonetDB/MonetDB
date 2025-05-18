@@ -3626,6 +3626,9 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *sel = NULL, *sub = NULL;
 
+	if (rel->oahash > 0)
+		return rel2bin_oahash(be, rel, refs);
+
 	int neededpp = get_need_pipeline(be);
 
 	if (rel->l) /* first construct the left sub relation */

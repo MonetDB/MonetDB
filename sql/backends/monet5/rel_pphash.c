@@ -269,6 +269,7 @@ oahash_probe(backend *be, sql_rel *rel, list *exps_cmp_prb, const stmt *stmts_ht
 	InstrPtr q = NULL;
 	int matched = 0, rhs_slts = 0;
 	bit single = false;
+	bit anti = rel->op == op_anti;
 
 	/* stmts_ht is in the same order as the join columns */
 	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = rel->exps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
@@ -283,7 +284,7 @@ oahash_probe(backend *be, sql_rel *rel, list *exps_cmp_prb, const stmt *stmts_ht
 		if (!matched) {
 			q = stmt_oahash_hash(be, key, pp);
 			if (q == NULL) return NULL;
-			q = stmt_oahash_probe(be, key, getDestVar(q), rht, single, e2->semantics, pp);
+			q = stmt_oahash_probe(be, key, getDestVar(q), rht, single, e2->semantics, e2->flag == cmp_equal && !anti, pp);
 		} else {
 			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, pp);
 			if (q == NULL) return NULL;
@@ -580,7 +581,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 {
-	mvc *sql = be->mvc;
+	//mvc *sql = be->mvc;
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
 	stmt *sub = NULL, *pp = NULL;
 
@@ -592,10 +593,12 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		sub = subrel_bin(be, rel_prb, refs);
 		sub = subrel_project(be, sub, refs, rel_prb);
 	} else {
+		/*
 		if (rel->op == op_anti) {
 			sql_error(sql, 10, SQLSTATE(42000) "rel2bin_oahash(): anti-join not supported yet");
 			return NULL;
 		}
+		*/
 
 		list *exps_cmp_prb = rel_prb->attr;
 		list *exps_prj_prb = rel_prb->exps;
