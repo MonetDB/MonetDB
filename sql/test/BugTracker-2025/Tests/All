@@ -7,3 +7,4 @@
 7625_missing_temporary_view_types
 7626_sum_max_const
 7632-crash-leftjoin-exists
+7633-crash-leftjoin-any

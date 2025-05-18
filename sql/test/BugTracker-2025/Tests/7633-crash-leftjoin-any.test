@@ -20,3 +20,9 @@ NULL
 query II
 SELECT * FROM t1 INNER JOIN t0 on ((0 = ANY( SELECT (t1.c0) FROM t0)) IS NULL)
 ----
+
+statement ok
+drop table t0
+
+statement ok
+drop table t1
