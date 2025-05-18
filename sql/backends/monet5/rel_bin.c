@@ -3016,14 +3016,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl = NULL, *jr = NULL, *m = NULL, *ls = NULL, *res;
 	bool need_project = false, exist = true, mark = false;
 
-	if (rel->op == op_left) { /* left outer group join */
-		if (list_length(rel->attr) == 1) {
-			sql_exp *e = rel->attr->h->data;
-			if (exp_is_atom(e))
-				mark = true;
-			if (exp_is_atom(e) && exp_is_false(e))
-				exist = false;
-		}
+	if (list_length(rel->attr) == 1) {
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e))
+			mark = true;
+		if (exp_is_atom(e) && exp_is_false(e))
+			exist = false;
 	}
 
 	if (rel->l) /* first construct the left sub relation */

@@ -1,0 +1,22 @@
+
+statement ok
+CREATE TABLE t0(c0 INT)
+
+statement ok
+CREATE TABLE t1(LIKE t0)
+
+statement ok
+INSERT INTO t0 VALUES(1)
+
+statement ok
+INSERT INTO t1 VALUES(1)
+
+query II
+SELECT * FROM t1 LEFT JOIN t0 on ((0 = ANY( SELECT (t1.c0) FROM t0)) IS NULL)
+----
+1
+NULL
+
+query II
+SELECT * FROM t1 INNER JOIN t0 on ((0 = ANY( SELECT (t1.c0) FROM t0)) IS NULL)
+----
