@@ -8,3 +8,4 @@
 7626_sum_max_const
 7632-crash-leftjoin-exists
 7633-crash-leftjoin-any
+7634_join_with_subquery_crash

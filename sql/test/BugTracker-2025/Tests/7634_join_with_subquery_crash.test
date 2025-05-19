@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE t0(c0 INT)
+
+statement ok
+INSERT INTO t0 VALUES (1)
+
+statement ok
+SELECT * FROM t0,(SELECT 1)
+
+statement ok
+SELECT * FROM t0 CROSS JOIN (SELECT 1)
+
+statement ok
+SELECT * FROM t0 CROSS JOIN (SELECT 1) a
