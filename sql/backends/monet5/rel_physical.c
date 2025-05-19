@@ -1430,7 +1430,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
 			/* ToDo how about atom expressions? */
-			if (can_join_exp(rel, e, anti)) {
+			if (can_join_exp(rel, e, anti) && is_equi_exp_(e)) {
 				append(joinable, e);
 			} else {
 				append(not_joinable, e);

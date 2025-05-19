@@ -68,7 +68,7 @@ _estimate(mvc *sql, sql_rel *rel)
 }
 
 static stmt *
-_start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
+_start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 {
 	stmt *sub = NULL, *pp = NULL;
 
@@ -76,14 +76,8 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
         sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
 	}
-	if (1 || !spb || pp_can_not_start(be->mvc, rel)) {
-		assert (!be->need_pipeline);
+	if (!be->pp)
 		set_need_pipeline(be);
-	} else {
-		int nr_parts = pp_nr_slices(rel);
-		int source = pp_counter(be, nr_parts, -1);
-		set_pipeline(be, stmt_pp_start_generator(be, source, true));
-	}
 
 	/* first construct the sub-relation */
 	sub = subrel_bin(be, rel, refs);
@@ -91,6 +85,7 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, bool spb)
 	if (sub) {
 		pp = get_pipeline(be);
 		if (!pp) {
+		assert(0);
 			int source = pp_counter(be, -1, pp_dynamic_slices(be, sub));
 			pp = stmt_pp_start_generator(be, source, true);
 			set_pipeline(be, pp);
@@ -436,7 +431,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	if (exps_prj_hsh)
 		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, getArg((InstrPtr)shared_ht->t->data,0), bld_sz);
 
-	stmt *sub = _start_pp(be, rel->l, 1, refs, rel->spb);
+	stmt *sub = _start_pp(be, rel->l, true, refs);
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -496,7 +491,7 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_hp = ht->op1;
 
 	/*** PROBE PHASE ***/
-	stmt *sub = _start_pp(be, rel_prb->l, 0, refs, false);
+	stmt *sub = _start_pp(be, rel_prb->l, false, refs);
 	if (!sub) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -550,7 +545,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_ht = subrel_bin(be, rel_hsh, refs);
 
 	/*** (pseudo) PROBE PHASE ***/
-	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, 0, refs, false);
+	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, false, refs);
 	if (!stmts_prb_res) return NULL;
 
 	stmt *pp = get_pipeline(be);
@@ -608,7 +603,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		assert(stmts_ht);
 
 		/*** PROBE PHASE ***/
-		sub = _start_pp(be, rel_prb->l, 0, refs, false);
+		sub = _start_pp(be, rel_prb->l, false, refs);
 		if (!sub) return NULL;
 
 		pp = get_pipeline(be);
