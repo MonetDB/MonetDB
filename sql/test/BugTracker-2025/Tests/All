@@ -9,3 +9,4 @@
 HAVE_HGE?7637_str_to_decimal
 7632-crash-leftjoin-exists
 7633-crash-leftjoin-any
+7634_join_with_subquery_crash

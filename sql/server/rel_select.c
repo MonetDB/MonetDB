@@ -6160,9 +6160,11 @@ rel_joinquery_(sql_query *query, symbol *tab1, int natural, jt jointype, symbol 
 		return NULL;
 
 	query_processed(query);
-	if (strcmp(rel_name(t1), rel_name(t2)) == 0) {
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: ERROR:  table name '%s' specified more than once", rel_name(t1));
-	}
+
+	const char *t1_name = rel_name(t1), *t2_name = rel_name(t2);
+	if (t1_name && t2_name && strcmp(t1_name, t2_name) == 0)
+		return sql_error(sql, 02, "SELECT: ERROR: table name '%s' specified more than once", rel_name(t1));
+
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op);
 	if (!rel)
 		return NULL;
