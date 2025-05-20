@@ -115,6 +115,8 @@ typedef struct pp_counter_t {
 static void
 counter_free(pp_counter *c)
 {
+	if (c->cur)
+		GDKfree(c->cur);
 	MT_lock_destroy(&c->l);
 	GDKfree(c);
 }

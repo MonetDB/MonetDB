@@ -17,7 +17,7 @@
 static int
 var_atom_cmp(int type, void *l, void *r, bool desc)
 {
-	void *nil = ATOMnil(type);
+	void *nil = (void*)ATOMnilptr(type);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);
 
 	bool lnil = cmp(l, nil) == 0;

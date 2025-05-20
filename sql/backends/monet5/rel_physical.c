@@ -889,6 +889,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel)) {
 			res = 0;
 		} else {
+			pb |= materialize;
 			for(node *n = rels->h; n; n = n->next) {
 				//int lres = rel_pipeline(v, n->data, false, pb?CPB:0);
 				int lres = rel_pipeline(v, n->data, false, pb?SPB:0);

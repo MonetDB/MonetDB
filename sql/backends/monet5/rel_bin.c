@@ -8779,6 +8779,9 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 		if (!is_project(r->op))
 			sharedproject = rel_project(be->mvc->sa, r, rel_projections(be->mvc, r, 0, 1, 1));
 		shared = rel2bin_project_prepare(be, sharedproject);
+
+		if (is_mset(r->op) && !be->pipeline)
+			set_need_pipeline(be);
 	}
 
 	InstrPtr q = newStmt(be->mb, "pipeline", "resultset");

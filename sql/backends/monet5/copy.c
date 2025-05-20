@@ -166,8 +166,10 @@ static void
 reader_destroy(reader *r)
 {
 	assert(r->sink.type == COPY_SINK);
-	if (r->s)
+	if (r->s) {
 		mnstr_close(r->s);
+		mnstr_destroy(r->s);
+	}
 	if (r->bs)
 		bufferstream_destroy(r->bs);
 	if (r->line_count)

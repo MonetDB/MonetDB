@@ -117,7 +117,7 @@ ht_destroy(hash_table *ht)
 		GDKfree((void*)ht->gids);
 	if (ht->pgids)
 		GDKfree(ht->pgids);
-	if (ht->pinned_nr && ht->pinned) {
+	if (ht->pinned) {
 		for(int i=0; i < ht->pinned_nr; i++) {
 			HEAPdecref(ht->pinned[i], false);
 			BBPunfix(ht->pinned[i]->parentid);
@@ -268,7 +268,7 @@ hp_destroy(hash_payload *hp)
 {
 	if (hp->payload)
 		GDKfree(hp->payload);
-	if (hp->pinned_nr && hp->pinned) {
+	if (hp->pinned) {
 		for(int i=0; i < hp->pinned_nr; i++)
 			HEAPdecref(hp->pinned[i], false);
 		GDKfree(hp->pinned);
@@ -475,6 +475,7 @@ error:
 			\
 			while (!fnd) { \
 				g = ATOMIC_GET(h->gids+k); \
+				assert(g<h->size); \
 				while (g && vals[g] != bp[i]) { \
 					k++; \
 					k &= h->mask; \
