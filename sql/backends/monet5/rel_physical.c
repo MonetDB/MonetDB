@@ -1513,9 +1513,9 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rel_avg_rewrite(v, rel);
 	if (rel) { /* split equi-join/select */
+		rel = rel_count_gt_zero(v, rel);
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
 		if (SQLrunning && (GDKdebug & oahash_enabled)) {
-			rel = rel_count_gt_zero(v, rel);
 			if (rel)
 				rel = rel_split_join(v, rel);
 			if (rel)	/* After a projection after each join, needed for limited number of columns in hash tables */
