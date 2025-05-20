@@ -8874,7 +8874,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 					set_pipeline(be, stmt_pp_start_generator(be, source, true));
 				}
 				(void)pp_counter_get(be, source);
-				if (rel->op == op_buildhash)
+				if (rel->op == op_buildhash && !list_empty(rel->attr))
 					s = oahash_slicer(be, s);
 				else
 					s = rel2bin_slicer(be, s, 1);
