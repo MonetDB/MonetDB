@@ -398,7 +398,7 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *sub, cons
 }
 
 static list *
-oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repeat, bit LRouter, const stmt *pp)
+oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repeat, bit LRouter, bit single, const stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
 	int tt;
@@ -419,6 +419,7 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repe
 		q = pushArgument(be->mb, q, key->nr);
 		q = pushArgument(be->mb, q, rpt->nr);
 		q = pushBit(be->mb, q, LRouter);
+		q = pushBit(be->mb, q, single);
 		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 		pushInstruction(be->mb, q);
 
@@ -550,29 +551,18 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 
 	stmt *pp = get_pipeline(be);
 
-	assert(list_length(stmts_ht->op4.lval)||list_length(stmts_prb_res->op4.lval)); /* at least one column will be projected */
+	/* at least one column should be projected */
+	assert(list_length(stmts_ht->op4.lval)||list_length(stmts_prb_res->op4.lval));
 
 	/*** PROJECT RESULT PHASE ***/
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
 
-	/*
-	stmt *col = NULL;
-	int ppln = be->pipeline;
-	be->pipeline = 0;
-	sql_subfunc *cnt = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-	col = stmts_prb_res->op4.lval->h->data;
-	stmt *norows_prb = col->nrcols == 0? stmt_atom_lng(be,1) : stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
-	col = stmts_ht->op4.lval->h->data;
-	stmt *norows_hsh = col->nrcols == 0? stmt_atom_lng(be,1) : stmt_aggr(be, col, NULL, NULL, cnt, 1, 0, 1);
-	be->pipeline = ppln;
-	*/
-
 	bit LRouter = (is_left(rel->op) || is_right(rel->op));
 
 	stmt *rowrepeat = stmts_ht->op4.lval->h->data;
-	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, rowrepeat, LRouter, pp);
+	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, rowrepeat, LRouter, rel->single, pp);
 	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
-	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, setrepeat, LRouter, pp);
+	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, setrepeat, LRouter, rel->single, pp);
 	assert(lh->cnt || lp->cnt);
 
 	list_merge(lh, lp, NULL);

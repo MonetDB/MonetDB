@@ -1123,12 +1123,10 @@ query TTT nosort
 statement ok
 ROLLBACK
 
-# GDK reported error: hashjoin: more than one match
-statement error
+statement error GDK reported error: hashjoin: more than one match
 SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3
 
-# GDK reported error: hashjoin: more than one match
-statement error
+statement error GDK reported error: hashjoin: more than one match
 SELECT CASE 1 WHEN 5 THEN ((SELECT rt3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (rt3.c0), (1)) END FROM rt3
 
 statement ok

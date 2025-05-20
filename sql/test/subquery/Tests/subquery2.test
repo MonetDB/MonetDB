@@ -111,7 +111,7 @@ FROM another_T GROUP BY col1, col2, col5, col8
 0
 1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1),
 	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))

@@ -145,7 +145,7 @@ nullif(case (select interval '1807439388' month from t1 as tt1l4n0, t2 as tt2l4n
 when sql_add(interval '323468641' month, interval '484732283' month) then cast(interval '340353783' second as string(241)) when sql_min(null, interval '351381849' month)
 then "right"('0.6603113972580116', 1409573249) when abs(interval '41293241' month) then cast(1654332323 as string(452)) else nullif('', 'i') end, 'EI')))
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 UPDATE t1 SET c2 = 1 FROM v4 WHERE ((((((((INTERVAL '1' MONTH NOT IN ((SELECT INTERVAL '3' MONTH FROM v4)))AND(sys.md5(t1.c2) <> ANY(SELECT '1'))))
 AND (CASE WHEN ('1810575798') BETWEEN '1' AND ((SELECT '' WHERE TRUE)) THEN false ELSE true END))))))
 

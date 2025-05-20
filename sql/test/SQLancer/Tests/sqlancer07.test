@@ -48,10 +48,10 @@ INSERT INTO "t1" VALUES (0.39517295223772886)
 statement ok rowcount 1
 INSERT INTO "t1" VALUES (NULL)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT t0.c0 BETWEEN SYMMETRIC (SELECT t0.c0 FROM t0) AND t0.c0 FROM t0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT CAST(NOT ((t0.c0) NOT BETWEEN SYMMETRIC ((SELECT DISTINCT t0.c0 FROM t0, t1)) AND (t0.c0)) AS INT) FROM t0
 
 statement ok
@@ -284,13 +284,13 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((((t0.c0)%((SELECT DIST
 ----
 NULL
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 FROM t2, t0 WHERE (SELECT 1 UNION SELECT 2) > 0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 FROM t2, t0, t1 WHERE (SELECT 1 UNION SELECT 2) > 0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE (SELECT 1 UNION SELECT 2) > 0
 
 statement ok

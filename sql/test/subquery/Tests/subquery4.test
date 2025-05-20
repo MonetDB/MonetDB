@@ -44,10 +44,10 @@ SELECT
 	(SELECT 1,1 UNION ALL SELECT 2,2)
 FROM integers i1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT i FROM integers i1 ORDER BY (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT 1 UNION ALL SELECT 2)
 FROM integers i1
@@ -83,7 +83,7 @@ SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1))
 1
 1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT
 	(SELECT 1 FROM evilfunction((SELECT MAX(1) OVER () UNION ALL SELECT 1)))
 FROM integers i1
@@ -103,10 +103,10 @@ FROM integers i1
 3
 NULL
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT i FROM integers WHERE (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT i FROM integers WHERE (SELECT true UNION ALL SELECT false)
 
 statement error 42000!SELECT: subquery must return only one column
@@ -291,13 +291,13 @@ query I rowsort
 SELECT 1 FROM another_t WHERE (1,col1) IN ((SELECT MIN(i1.i), SUM(i1.i) FROM integers i1))
 ----
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT (SELECT 1 UNION ALL SELECT 2), (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 HAVING (SELECT 1 UNION SELECT 2)
 
 statement ok
@@ -409,13 +409,13 @@ SELECT col3 FROM another_T
 555
 5555
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 UPDATE another_T SET col4 = (SELECT MIN(col4 + ColID) OVER () FROM tbl_ProductSales)
 
 statement ok rowcount 0
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT MAX(col2) OVER ())
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 UPDATE another_T SET col6 = 1 WHERE col6 = (SELECT MIN(col3 + ColID) OVER () FROM tbl_ProductSales)
 
 statement error 42000!AVG: window function 'avg' not allowed in WHERE clause
@@ -424,19 +424,19 @@ DELETE FROM another_T WHERE col1 = AVG(col2) OVER ()
 statement ok rowcount 0
 DELETE FROM another_T WHERE col7 = (SELECT SUM(col3) OVER ())
 
-statement error GDK reported error: mergejoin: more than one match
+statement error /more than one match/
 DELETE FROM another_T WHERE col8 = (SELECT MAX(col6 + ColID) OVER () FROM tbl_ProductSales)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 UPDATE another_T SET col5 = (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 UPDATE another_T SET col5 = 1 WHERE col5 = (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 DELETE FROM another_T WHERE col1 = (SELECT 1 UNION ALL SELECT 2)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 INSERT INTO another_T VALUES ((SELECT 1 UNION ALL SELECT 2),2,3,4,5,6,7,8)
 
 statement ok rowcount 4
