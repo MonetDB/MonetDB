@@ -88,7 +88,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				size = SQLgetColumnSize(tr, c, access);
 				space += size;	// accumulate once per table
 				//lasttable = tname;	 invalidate this attempt
-				if (!prepare && size == 0)
+				if (!prepare && size == 0 && !t->system)
 					setFunctionId(p, emptybindRef);
 			}
 		}
@@ -105,7 +105,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				if (i && isTable(i->t)) {
 					size = SQLgetIdxSize(tr, i, access);
 
-					if (!prepare && size == 0)
+					if (!prepare && size == 0 && !i->t->system)
 						setFunctionId(p, emptybindidxRef);
 				}
 			}

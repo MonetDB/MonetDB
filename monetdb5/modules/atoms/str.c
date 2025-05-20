@@ -2155,7 +2155,7 @@ ngrams_create(size_t cnt, size_t ng_sz)
 		ng->sigs = GDKmalloc(cnt * sizeof(NGRAM_TYPE));
 		ng->histogram = GDKmalloc(ng_sz * sizeof(unsigned));
 		ng->lists = GDKmalloc(ng_sz * sizeof(unsigned));
-		ng->rids = GDKmalloc(NGRAM_MULTIPLE * cnt * sizeof(unsigned));
+		ng->rids = GDKmalloc(2 * NGRAM_MULTIPLE * cnt * sizeof(unsigned));
 	}
 	if (!ng || !ng->idx || !ng->sigs || !ng->histogram || !ng->lists || !ng->rids) {
 		ngrams_destroy(ng);
