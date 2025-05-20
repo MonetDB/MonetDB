@@ -475,7 +475,7 @@ error:
 			\
 			while (!fnd) { \
 				g = ATOMIC_GET(h->gids+k); \
-				assert(g<h->size); \
+				assert(g<(gid)h->size); \
 				while (g && vals[g] != bp[i]) { \
 					k++; \
 					k &= h->mask; \
