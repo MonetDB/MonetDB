@@ -19,7 +19,7 @@ WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS a WHERE x IN
 1
 1
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT ( WITH x AS ( SELECT 1 x UNION SELECT - '199419' ) SELECT 1 FROM x AS a WHERE x IN ( SELECT x FROM x , ( SELECT min ( x ) OVER ( PARTITION BY x ) ) AS b) )
 ----
 
