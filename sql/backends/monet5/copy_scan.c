@@ -623,8 +623,9 @@ scan_fields1(
 		}
 
 		// An error has occurred. BEST EFFORT determines if we want to stop right now
-		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		char *err = copy_check_too_many_errors(errors, "copy.splitlines");
 		if (err) {
+			GDKfree(err);
 			// Bail out now
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}
@@ -707,8 +708,9 @@ scan_fieldsN( /* ie use col_sep_str */
 		}
 
 		// An error has occurred. BEST EFFORT determines if we want to stop right now
-		const char *err = copy_check_too_many_errors(errors, "copy.splitlines");
+		char *err = copy_check_too_many_errors(errors, "copy.splitlines");
 		if (err) {
+			GDKfree(err);
 			// Bail out now
 			throw(MAL, "copy.splitlines", "%s", copy_error_message(errors));
 		}

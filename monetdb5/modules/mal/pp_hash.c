@@ -119,8 +119,8 @@ ht_destroy(hash_table *ht)
 		GDKfree(ht->pgids);
 	if (ht->pinned) {
 		for(int i=0; i < ht->pinned_nr; i++) {
-			HEAPdecref(ht->pinned[i], false);
 			BBPunfix(ht->pinned[i]->parentid);
+			HEAPdecref(ht->pinned[i], false);
 		}
 		GDKfree(ht->pinned);
 	}
@@ -1859,6 +1859,7 @@ error:
 				mtdcnt++; \
 				if (*single && ht->frequency[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
+					bat_iterator_end(&bi); \
 					goto error; \
 				} \
 			} \
@@ -2096,6 +2097,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 				mtdcnt2++; \
 				if (*single && ht->frequency[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					bat_iterator_end(&bi); \
 					goto error; \
 				} \
 			} \
