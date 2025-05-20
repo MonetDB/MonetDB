@@ -3069,14 +3069,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 
 	int neededpp = (rel->spb || rel->partition || is_outerjoin(rel->op)) && get_need_pipeline(be); /* start new parallel block after join */
 
-	if (rel->op == op_left) { /* left outer group join */
-		if (list_length(rel->attr) == 1) {
-			sql_exp *e = rel->attr->h->data;
-			if (exp_is_atom(e))
-				mark = true;
-			if (exp_is_atom(e) && exp_is_false(e))
-				exist = false;
-		}
+	if (list_length(rel->attr) == 1) {
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e))
+			mark = true;
+		if (exp_is_atom(e) && exp_is_false(e))
+			exist = false;
 	}
 
 #if 0
@@ -3392,7 +3390,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 	left = row2cols(be, left);
 	right = row2cols(be, right);
-
 	/*
 	 * split in 2 steps,
 	 *	first cheap join(s) (equality or idx)
@@ -3477,7 +3474,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);
-
 	if (en || (sexps && list_length(sexps))) {
 		stmt *sub, *sel = NULL;
 		list *nl;
@@ -4197,6 +4193,8 @@ subres_assign_newresultvars(backend *be, stmt *rel_stmt)
 static stmt*
 subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 {
+	if (!rel_stmt)
+		return NULL;
 	list *stmts = rel_stmt->op4.lval;
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
@@ -4338,7 +4336,7 @@ rel2bin_recursive_munion(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		r = pushLng(be->mb, r, 0);
 		if (l) {
 			r = pushArgument(be->mb, r, l->nr);
-			r = pushBit(be->mb, r, FALSE); /* not symetrical */
+			r = pushBit(be->mb, r, FALSE); /* not symmetrical */
 			r = pushBit(be->mb, r, TRUE);  /* including lower bound */
 			r = pushBit(be->mb, r, FALSE); /* excluding upper bound */
 			r = pushBit(be->mb, r, FALSE); /* nils_false */
@@ -6440,9 +6438,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-    /* we want to make sure that the data column(s) has the same number
-     * of (nonil) rows as the index column. if that is **not** the case
-     * then we are obviously dealing with an invalid foreign key */
+	/* we want to make sure that the data column(s) has the same number
+	 * of (nonil) rows as the index column. if that is **not** the case
+	 * then we are obviously dealing with an invalid foreign key */
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
