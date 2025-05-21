@@ -8772,7 +8772,9 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 
 	list *shared = NULL;
 	sql_rel *sharedproject = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op) || rel_is_ref(rel))) {
+	if (r && r->l && (is_simple_project(r->op) || /*is_set(r->op) || is_mset(r->op)*/ is_munion(r->op) ||
+				(rel_is_ref(rel) && !is_groupby(r->op))
+				)) {
 		sharedproject = r;
 		if (!is_project(r->op))
 			sharedproject = rel_project(be->mvc->sa, r, rel_projections(be->mvc, r, 0, 1, 1));
@@ -8789,6 +8791,8 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 	s = subrel_bin(be, rel, refs);
 	s = subrel_project(be, s, refs, rel);
 	if (!s)
+		return s;
+	if (rel_is_ref(rel) && (is_groupby(r->op) || is_set(r->op)))
 		return s;
 	stmt *pp = get_pipeline(be);
 	int pipeline = be->pipeline;

@@ -750,7 +750,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			res = SPB;
 		}
 	} else if (is_groupby(rel->op)) {
-		bool safe = rel_groupby_partition_safe(rel) && !rel_is_ref(rel);
+		bool safe = rel_groupby_partition_safe(rel);
 		if (rel->l)
 			/* if `safe`, process this GROUP BY + subtree in a `pb`. */
 			res = rel_pipeline(v, rel->l, safe, safe?SPB:0);
@@ -1179,7 +1179,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
-		if (list_empty(rel->exps)) /* no result expressions, just project the extends */
+		if (list_empty(rel->exps)) /* no result expressions, just project the groupby expressions */
 			rel->exps = rel_projections(sql, rel, NULL, 1, 1);
 		exps = rel_projections(sql, rel, NULL, 1, 1);
 		sql_exp *e = find_aggr_exp(sql, rel->exps, "count"), *ea = e;
@@ -1196,9 +1196,17 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		}
 		rel->used |= rewrite_gt_zero_used;
 		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
-		rel = rel_select(sql->sa, rel, e);
-		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
-		rel = rel_project(sql->sa, rel, exps);
+		if (rel_is_ref(rel)) {
+			sql_rel *i = rel_create(v->sql->sa);
+			*i = *rel;
+			i = rel_select(sql->sa, i, e);
+			set_count_prop(v->sql->sa, i, get_rel_count(i->l));
+			rel = rel_inplace_project(v->sql->sa, rel, i, exps);
+		} else {
+			rel = rel_select(sql->sa, rel, e);
+			set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
+			rel = rel_project(sql->sa, rel, exps);
+		}
 		set_count_prop(v->sql->sa, rel, get_rel_count(rel->l));
 	}
 	return rel;
