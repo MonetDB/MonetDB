@@ -2137,49 +2137,66 @@ sa_use_freed(allocator *pa, size_t sz)
 	return f;
 }
 
+#define round16(sz) ((sz+15)&~15)
+
 allocator *
 sa_create(allocator *pa)
 {
-	allocator *sa = (pa)?(allocator*)sa_alloc(pa, sizeof(allocator)):(allocator*)GDKmalloc(sizeof(allocator));
-	if (sa == NULL)
+	const size_t initial_blks_size = 64;
+
+	char *first_block = pa?(char*)sa_alloc(pa, SA_BLOCK):(char*)GDKmalloc(SA_BLOCK);
+	if (first_block == NULL)
 		return NULL;
+
+	// The start of the first block holds our bookkeeping.
+	// First our blks array, until that needs to be reallocated.
+	// Then the allocator struct itself.
+	//
+	// It's important that the blks come first so we can easily
+	// check if the blks have been reallocated by comparing pointers.
+	size_t reserved = 0;
+	char **blks = (char**)first_block;
+	reserved += round16(sizeof(*blks) * initial_blks_size);
+	allocator *sa = (allocator*)(first_block + reserved);
+	reserved += round16(sizeof(allocator));
+
 	eb_init(&sa->eb);
 	sa->pa = pa;
-	sa->size = 64;
+	sa->size = initial_blks_size;
 	sa->nr = 1;
-	sa->blks = pa?(char**)sa_alloc(pa, sizeof(char*) * sa->size):(char**)GDKmalloc(sizeof(char*) * sa->size);
+	sa->blks = blks;
+	sa->blks[0] = first_block;
+	sa->first_block = first_block;
+	sa->used = reserved;
+	sa->reserved = sa->used;
 	sa->freelist = NULL;
-	if (sa->blks == NULL) {
-		if (!pa)
-			GDKfree(sa);
-		return NULL;
-	}
-	sa->blks[0] = pa?(char*)sa_alloc(pa, SA_BLOCK):(char*)GDKmalloc(SA_BLOCK);
 	sa->usedmem = SA_BLOCK;
-	if (sa->blks[0] == NULL) {
-		if (!pa)
-			GDKfree(sa->blks);
-		if (!pa)
-			GDKfree(sa);
-		return NULL;
-	}
-	sa->used = 0;
+
 	return sa;
 }
 
 allocator *
 sa_reset(allocator *sa)
 {
-	size_t i ;
-
-	for (i = 1; i<sa->nr; i++) {
-		if (!sa->pa)
-			GDKfree(sa->blks[i]);
-		else
-			sa_free(sa->pa, sa->blks[i]);
+	for (size_t i = 0; i < sa->nr; i++) {
+		char *blk = sa->blks[i];
+		if (blk == sa->first_block) {
+			// sa_alloc sometimes shuffles the blocks around,
+			// move first_block back to the start and don't deallocate it
+			// because it holds our bookkeeping.
+			sa->blks[i] = sa->blks[0];
+			sa->blks[0] = sa->first_block;
+		}
+		else {
+			// Discard all other blocks.
+			if (!sa->pa)
+				GDKfree(blk);
+			else
+				sa_free(sa->pa, blk);
+		}
 	}
 	sa->nr = 1;
-	sa->used = 0;
+	sa->used = sa->reserved;
 	sa->usedmem = SA_BLOCK;
 	return sa;
 }
@@ -2196,7 +2213,6 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 	return r;
 }
 
-#define round16(sz) ((sz+15)&~15)
 void *
 sa_alloc(allocator *sa, size_t sz)
 {
@@ -2218,10 +2234,16 @@ sa_alloc(allocator *sa, size_t sz)
 			char **tmp;
 			size_t osz = sa->size;
 			sa->size *=2;
-			if (sa->pa)
+			// Here we rely on the initial blks being at the start of the first block
+			if ((char*)sa->blks == sa->first_block) {
+			        tmp = sa->pa?(char**)sa_alloc(sa->pa, sizeof(char*) * sa->size):(char**)GDKmalloc(sizeof(char*) * sa->size);
+				if (tmp != NULL)
+					memcpy(tmp, sa->blks, osz * sizeof(char*));
+			} else if (sa->pa) {
 				tmp = (char**)sa_realloc(sa->pa, sa->blks, sizeof(char*) * sa->size, sizeof(char*) * osz);
-			else
+			} else {
 				tmp = GDKrealloc(sa->blks, sizeof(char*) * sa->size);
+			}
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
 				if (sa->eb.enabled)
@@ -2267,18 +2289,21 @@ sa_zalloc(allocator *sa, size_t sz)
 void
 sa_destroy(allocator *sa)
 {
-	if (sa->pa) {
-		sa_reset(sa);
-		sa_free(sa->pa, sa->blks[0]);
-		return;
+	sa_reset(sa);
+	sa_destroy_freelist(sa->freelist);
+
+	// Here we rely on the initial blks being at the start of the first block
+	if ((char*)sa->blks != sa->first_block) {
+		if (sa->pa == NULL)
+			GDKfree(sa->blks);
 	}
 
-	sa_destroy_freelist(sa->freelist);
-	for (size_t i = 0; i<sa->nr; i++) {
-		GDKfree(sa->blks[i]);
-	}
-	GDKfree(sa->blks);
-	GDKfree(sa);
+
+	// now we know first_block is all that's left.
+	if (sa->pa)
+		sa_free(sa->pa, sa->first_block);
+	else
+		GDKfree(sa->first_block);
 }
 
 #undef sa_strndup
