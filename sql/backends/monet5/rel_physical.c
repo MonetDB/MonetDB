@@ -295,8 +295,7 @@ rel_groupby_partition_safe(sql_rel *rel)
 				sql_subfunc *sf = e->f;
 				int sum = 0;
 
-				if ((e->l && exps_are_atoms(e->l)) || /* e.g. SUM(42) */
-					!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
+				if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 					strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
 					(sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
 					return false;
