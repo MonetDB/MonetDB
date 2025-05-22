@@ -1308,6 +1308,8 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_HUGEINT:
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 			sz = snprintf((char *) ptr, buflen, "%s", data);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
@@ -1320,8 +1322,6 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sz;
 			break;
-		case SQL_DECIMAL:
-		case SQL_NUMERIC:
 		case SQL_BIT: {
 			uint64_t f;
 			int n;
