@@ -297,7 +297,10 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 				return NULL;
 			}
 			VALset(&a->data, a->data.vtype, p);
-			SA_VALcopy(sa, &a->data, &a->data);
+			atom *na = atom_create(sa);
+			*na = *a;
+			SA_VALcopy(sa, &na->data, &a->data);
+			a = na;
 			if (tpe->type->eclass == EC_TIME && tpe->digits <= 7) {
 				unsigned int diff = 6-(tpe->digits-1);
 

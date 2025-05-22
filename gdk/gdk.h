@@ -2539,6 +2539,8 @@ typedef struct allocator {
 	size_t tmp_used; /* keeps total of tmp allocated bytes */
 	bool tmp_active; /* currently only one level of temp usage */
 	exception_buffer eb;
+	MT_Lock lock;    /* lock for thread-safe allocations */
+	bool locked;
 } allocator;
 
 gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
@@ -2565,6 +2567,7 @@ gdk_export void sa_free( allocator *sa, void *);
 #define ma_destroy(ma)		sa_destroy(ma)
 #define ma_alloc(ma, sz)	(void*)sa_alloc(ma, sz)
 #define ma_zalloc(ma, sz)	(void*)sa_zalloc(ma, sz)
+#define ma_realloc(ma, obj, sz, osz) (void *) sa_realloc(ma, obj, sz, osz)
 #define ma_open(ma)		sa_open(ma)
 #define ma_close(ma)		sa_close(ma)
 #define ma_free(ma, obj)	sa_free(ma, obj)

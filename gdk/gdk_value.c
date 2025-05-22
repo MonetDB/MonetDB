@@ -158,12 +158,13 @@ VALempty(ValPtr v)
 ValPtr
 VALcopy(allocator *va, ValPtr d, const ValRecord *s)
 {
-	if (d == s && !va)
+	if (d == s) {
 		return d;
-	d->bat = false;
+	}
+	*d = *s;
 	d->allocated = !va;
 	if (s->bat || !ATOMextern(s->vtype)) {
-		*d = *s;
+		//*d = *s;
 	} else if (s->val.pval == NULL) {
 		return VALinit(va, d, s->vtype, ATOMnilptr(s->vtype));
 	} else if (s->vtype == TYPE_str) {

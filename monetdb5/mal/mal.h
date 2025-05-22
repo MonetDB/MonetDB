@@ -199,6 +199,7 @@ typedef struct MALBLK {
 typedef int (*DFhook)(void *, void *, void *, void *);
 
 typedef struct MALSTK {
+	bool allocated;
 	int stksize;
 	int stktop;
 	int stkbot;					/* the first variable to be initialized */

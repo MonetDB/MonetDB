@@ -2389,6 +2389,8 @@ create_allocator(allocator *pa)
 	sa->free_blk_hits = 0;
 	sa->tmp_active = 0;
 	sa->tmp_used = 0;
+	MT_lock_init(&sa->lock, "allocator_lock");
+	sa->locked = false;
 	return sa;
 }
 
@@ -2407,6 +2409,7 @@ void
 sa_destroy(allocator *sa)
 {
 	if (sa) {
+		MT_lock_destroy(&sa->lock);
 		bool root_allocator = sa->pa == NULL;
 		for (size_t i = 0; i < sa->nr; i++) {
 			char *next = sa->blks[i];

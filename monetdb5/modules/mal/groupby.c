@@ -75,14 +75,18 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) cntxt;
 	allocator *ma = mb->ma;
+	MT_lock_set(&ma->lock);
 	a = (AGGRtask *) ma_alloc(ma, sizeof(*a));
-	if (a == NULL)
+	if (a == NULL) {
+		MT_lock_unset(&ma->lock);
 		return NULL;
+	}
 	*a = (AGGRtask) {
 		.bid = ma_zalloc(ma, pci->argc * sizeof(bat)),
 		.cols = ma_zalloc(ma, pci->argc * sizeof(BAT *)),
 		.unique = ma_zalloc(ma, pci->argc * sizeof(BUN)),
 	};
+	MT_lock_unset(&ma->lock);
 	if (a->cols == NULL || a->bid == NULL || a->unique == NULL) {
 		//GDKfree(a->cols);
 		//GDKfree(a->bid);

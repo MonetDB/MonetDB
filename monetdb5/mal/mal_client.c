@@ -428,7 +428,7 @@ MCcloseClient(Client c)
 	c->client_pid = 0;
 	c->mythread = NULL;
 	if (c->glb) {
-		//freeStack(c->glb);
+		freeStack(c->glb);
 		c->glb = NULL;
 	}
 	if (c->profticks) {

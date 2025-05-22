@@ -179,7 +179,7 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			barrier = p->barrier;
 			p->barrier = 0;
 			if (env == NULL) {
-				env = prepareMALstack(mb, 2 * mb->vsize);
+				env = prepareMALstack(mb->ma, mb, 2 * mb->vsize);
 				if (!env) {
 					msg = createException(MAL, "optimizer.evaluate",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);

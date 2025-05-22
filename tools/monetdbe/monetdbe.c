@@ -460,7 +460,7 @@ monetdbe_close_remote(monetdbe_database_internal *mdbe)
 		clear_error(mdbe);
 	}
 
-	if ( (mdbe->msg = RMTdisconnect(NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
+	if ( (mdbe->msg = RMTdisconnect(mdbe->c, NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
 		err = 1;
 		clear_error(mdbe);
 	}
@@ -870,7 +870,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		c->curprg= NULL;
 		return -2;
 	}
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	MalStkPtr stk = prepareMALstack(mb->ma, mb, mb->vsize);
 	if (!stk) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
@@ -880,7 +880,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
+	if ( (mdbe->msg = runMALsequence(mb->ma, c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
 		c->curprg= NULL;

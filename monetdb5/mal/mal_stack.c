@@ -52,19 +52,20 @@
 /* #define DEBUG_MAL_STACK*/
 
 MalStkPtr
-newGlobalStack(MalBlkPtr mb, int size)
+newGlobalStack(allocator *alloc, int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) ma_zalloc(mb->ma, stackSize(size));
+	s = (MalStkPtr) alloc? ma_zalloc(alloc, stackSize(size)) : GDKzalloc(stackSize(size));
 	if (!s)
 		return NULL;
+	s->allocated = !alloc;
 	s->stksize = size;
 	return s;
 }
 
 MalStkPtr
-reallocGlobalStack(MalBlkPtr mb, MalStkPtr old, int cnt)
+reallocGlobalStack(allocator *alloc, MalStkPtr old, int cnt)
 {
 	int k;
 	MalStkPtr s;
@@ -72,13 +73,14 @@ reallocGlobalStack(MalBlkPtr mb, MalStkPtr old, int cnt)
 	if (old->stksize > cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = newGlobalStack(mb, k);
+	s = newGlobalStack(alloc, k);
 	if (!s) {
 		return NULL;
 	}
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
-	//GDKfree(old);
+	if (old->allocated)
+		GDKfree(old);
 	return s;
 }
 
@@ -89,7 +91,7 @@ reallocGlobalStack(MalBlkPtr mb, MalStkPtr old, int cnt)
  * it may happen that entries are never set to a real value.
  * This can be recognized by the vtype component
  */
-static void
+void
 clearStack(MalStkPtr s)
 {
 	ValPtr v;
@@ -123,6 +125,7 @@ freeStack(MalStkPtr stk)
 {
 	if (stk != NULL) {
 		clearStack(stk);
-		//GDKfree(stk);
+		if (stk->allocated)
+			GDKfree(stk);
 	}
 }

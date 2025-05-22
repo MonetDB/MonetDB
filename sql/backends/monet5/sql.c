@@ -857,7 +857,8 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.getVariable", SQLSTATE(42100) "Variable '%s.%s' unknown", sname, varname);
 	src = &(var->var.data);
 	dst = &stk->stk[getArg(pci, 0)];
-	if (VALcopy(mb->ma, dst, src) == NULL)
+	// which alloc to use?
+	if (VALcopy(cntxt->alloc, dst, src) == NULL)
 		throw(MAL, "sql.getVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -5044,7 +5045,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto finalize;
 			}
 		}
-		if (!(env = prepareMALstack(nmb, nmb->vsize))) { /* needed for result */
+		if (!(env = prepareMALstack(cntxt->alloc, nmb, nmb->vsize))) { /* needed for result */
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5062,7 +5063,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			start = 2;
 		}
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
-			MalStkPtr nstk = prepareMALstack(nmb, nmb->vsize);
+			MalStkPtr nstk = prepareMALstack(cntxt->alloc, nmb, nmb->vsize);
 			int i,ii;
 
 			if (!nstk) { /* needed for result */
@@ -5081,7 +5082,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (!omb && npci->fcn && npci->token == PATcall) /* pattern */
 						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
-						ret = runMALsequence(cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+						ret = runMALsequence(cntxt->alloc, cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */
