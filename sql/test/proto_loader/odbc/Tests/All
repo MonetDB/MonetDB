@@ -3,4 +3,4 @@ HAVE_ODBC?monetodbc
 !NOT_WIN32?monetodbc-Windows
 HAVE_SQLITE3ODBC&HAVE_DATA_PATH?sqlite3odbc
 HAVE_ODBC?monetodbc_datatypes
-KNOWNFAIL&HAVE_ODBC?monetodbc_bigdec_failure
+HAVE_HGE&HAVE_ODBC?monetodbc_bigdec
