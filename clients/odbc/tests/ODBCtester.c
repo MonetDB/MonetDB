@@ -420,10 +420,12 @@ testGetDataDecimal(SQLHANDLE stmt, int sqlquery)
 	char * outp = malloc(outp_len);
 	size_t pos = 0;
 
-	char * sql1 = "select cast(92345678901234567890.123456789 as decimal(29,9)) as val1, cast(-92345678901234567890.123456789 as decimal(29,9)) as val2;";
-	char * sql2 = "select cast(92345678901234567890.123456789012345678 as decimal(38,18)) as val1, cast(-9234567890123456789.1234567890123456789 as decimal(38,19)) as val2;";
-	char * sql3 = "select cast(987654321.12345678901234567890123456789 as decimal(38,29)) as val1, cast(-987654321.12345678901234567890123456789 as decimal(38,29)) as val2;";
-	char * sql = (sqlquery == 1) ? sql1 : (sqlquery == 2) ? sql2 : sql3;
+	char * sql1 = "select cast(99999999909999999990999999999012345678. as decimal(38,0)) as val1, cast(-99999999909999999990999999999012345678. as decimal(38,0)) as val2;";
+	char * sql2 = "select cast(92345678901234567890.123456789 as decimal(29,9)) as val1, cast(-92345678901234567890.123456789 as decimal(29,9)) as val2;";
+	char * sql3 = "select cast(92345678901234567890.123456789012345678 as decimal(38,18)) as val1, cast(-9234567890123456789.1234567890123456789 as decimal(38,19)) as val2;";
+	char * sql4 = "select cast(987654321.12345678901234567890123456789 as decimal(38,29)) as val1, cast(-987654321.12345678901234567890123456789 as decimal(38,29)) as val2;";
+	char * sql5 = "select cast(.99999999909999999990999999999012345678 as decimal(38,38)) as val1, cast(-.99999999909999999990999999999012345678 as decimal(38,38)) as val2;";
+	char * sql = (sqlquery == 1) ? sql1 : (sqlquery == 2) ? sql2 : (sqlquery == 3) ? sql3 : (sqlquery == 4) ? sql4 : sql5;
 
 	ret = SQLExecDirect(stmt, (SQLCHAR *) sql, SQL_NTS);
 	pos += snprintf(outp + pos, outp_len - pos, "SQLExecDirect query %d: %s\n", sqlquery, sql);
@@ -479,37 +481,60 @@ testGetDataDecimal(SQLHANDLE stmt, int sqlquery)
 
 	compareResult("testGetDataDecimal()", outp,
 		(sqlquery == 1)
-		?	"SQLExecDirect query 1: select cast(92345678901234567890.123456789 as decimal(29,9)) as val1, cast(-92345678901234567890.123456789 as decimal(29,9)) as val2;\n"
-			"SQLRowCount is 1\nSQLNumResultCols is 2\nSQLFetch\n"
-			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
-			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 31\n"
-			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 30, str_val: '92345678901234567890.123456789'\n" /* SQLGetData(col): Error: SQLstate 22003, Numeric value out of range */
-			"SQLGetData(1, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 8 201 240 176 193 141 1 5 0 0 0 0 0 0 0\n"
-			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
-			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 31\n"
-			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 31, str_val: '-92345678901234567890.123456789'\n" /* SQLGetData(col): Error: SQLstate 22003, Numeric value out of range */
-			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 8 201 240 176 193 141 1 5 0 0 0 0 0 0 0\n"
-		: (sqlquery == 2)
-		?	"SQLExecDirect query 2: select cast(92345678901234567890.123456789012345678 as decimal(38,18)) as val1, cast(-9234567890123456789.1234567890123456789 as decimal(38,19)) as val2;\n"
+		?	"SQLExecDirect query 1: select cast(99999999909999999990999999999012345678. as decimal(38,0)) as val1, cast(-99999999909999999990999999999012345678. as decimal(38,0)) as val2;\n"
 			"SQLRowCount is 1\nSQLNumResultCols is 2\nSQLFetch\n"
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
-			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 39, str_val: '92345678901234567890.123456789012345678'\n" /* SQLGetData(col): Error: SQLstate 22003, Numeric value out of range */
+			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 38, str_val: '99999999909999999990999999999012345678'\n"
+			"SQLGetData(1, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 0 0 96 117 10 24 156 203 180 104 23 167 76 59 75\n"
+			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
+			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
+			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 39, str_val: '-99999999909999999990999999999012345678'\n"
+			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 0 0 96 117 10 24 156 203 180 104 23 167 76 59 75\n"
+		: (sqlquery == 2)
+		?	"SQLExecDirect query 2: select cast(92345678901234567890.123456789 as decimal(29,9)) as val1, cast(-92345678901234567890.123456789 as decimal(29,9)) as val2;\n"
+			"SQLRowCount is 1\nSQLNumResultCols is 2\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 31\n"
+			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 30, str_val: '92345678901234567890.123456789'\n"
+			"SQLGetData(1, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 8 201 240 176 193 141 1 5 0 0 0 0 0 0 0\n"
+			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
+			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 31\n"
+			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 31, str_val: '-92345678901234567890.123456789'\n"
+			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 8 201 240 176 193 141 1 5 0 0 0 0 0 0 0\n"
+		: (sqlquery == 3)
+		?	"SQLExecDirect query 3: select cast(92345678901234567890.123456789012345678 as decimal(38,18)) as val1, cast(-9234567890123456789.1234567890123456789 as decimal(38,19)) as val2;\n"
+			"SQLRowCount is 1\nSQLNumResultCols is 2\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
+			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 39, str_val: '92345678901234567890.123456789012345678'\n"
 			"SQLGetData(1, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 8 201 240 176 193 141 1 5 0 0 0 0 0 0 0\n"
 			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
 			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
 			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 40, str_val: '-9234567890123456789.1234567890123456789'\n"
 			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 180 173 177 145 198 39 128 0 0 0 0 0 0 0 0\n"
-		:	"SQLExecDirect query 3: select cast(987654321.12345678901234567890123456789 as decimal(38,29)) as val1, cast(-987654321.12345678901234567890123456789 as decimal(38,29)) as val2;\n"
+		: (sqlquery == 4)
+		?	"SQLExecDirect query 4: select cast(987654321.12345678901234567890123456789 as decimal(38,29)) as val1, cast(-987654321.12345678901234567890123456789 as decimal(38,29)) as val2;\n"
 			"SQLRowCount is 1\nSQLNumResultCols is 2\nSQLFetch\n"
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
-			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 39, str_val: '987654321.12345678901234567890123456789'\n" /* SQLGetData(col): Info: SQLstate 01004, String data, right truncated */
+			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 39, str_val: '987654321.12345678901234567890123456789'\n"
 			"SQLGetData(1, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 177 104 222 58 0 0 0 0 0 0 0 0 0 0 0 0\n"
 			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
 			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
-			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 40, str_val: '-987654321.12345678901234567890123456789'\n" /* SQLGetData(col): Info: SQLstate 01004, String data, right truncated */
-			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 177 104 222 58 0 0 0 0 0 0 0 0 0 0 0 0\n");
+			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 40, str_val: '-987654321.12345678901234567890123456789'\n"
+			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 177 104 222 58 0 0 0 0 0 0 0 0 0 0 0 0\n"
+		:	"SQLExecDirect query 5: select cast(.99999999909999999990999999999012345678 as decimal(38,38)) as val1, cast(-.99999999909999999990999999999012345678 as decimal(38,38)) as val2;\n"
+			"SQLRowCount is 1\nSQLNumResultCols is 2\nSQLFetch\n"
+			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
+			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
+			"SQLGetData(1, SQL_C_CHAR, 42) returns 0, vallen 40, str_val: '0.99999999909999999990999999999012345678'\n"
+			"SQLGetData(1, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 3\n"
+			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 40\n"
+			"SQLGetData(2, SQL_C_CHAR, 42) returns 0, vallen 41, str_val: '-0.99999999909999999990999999999012345678'\n"
+			"SQLGetData(2, SQL_C_NUMERIC, 19) returns 0, vallen 19, data_val: 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0\n"
+		);
 
 	ret = SQLCloseCursor(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
@@ -566,7 +591,6 @@ main(int argc, char **argv)
 	/**** run tests ****/
 	ret = testGetDataTruncatedString(stmt, SQL_C_CHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_CHAR)");
-
 	ret = testGetDataTruncatedString(stmt, SQL_C_WCHAR);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataTruncatedString(STMT, SQL_C_WCHAR)");
 
@@ -575,18 +599,19 @@ main(int argc, char **argv)
 
 	ret = testGetDataIntervalDay(stmt, 1);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataIntervalDay(STMT, 99, -99)");
-
 	ret = testGetDataIntervalDay(stmt, 2);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataIntervalDay(STMT, 101, -102)");
 
-	ret = testGetDataDecimal(stmt, 1); /* SQLGetData(col): Error: SQLstate 22003, Numeric value out of range */
+	ret = testGetDataDecimal(stmt, 1);
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,0))");
+	ret = testGetDataDecimal(stmt, 2);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(29,9))");
-
-	ret = testGetDataDecimal(stmt, 2); /* SQLGetData(col): Error: SQLstate 22003, Numeric value out of range */
+	ret = testGetDataDecimal(stmt, 3);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,19))");
-
-	ret = testGetDataDecimal(stmt, 3); /* SQLGetData(col): Info: SQLstate 01004, String data, right truncated */
+	ret = testGetDataDecimal(stmt, 4);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,29))");
+	ret = testGetDataDecimal(stmt, 5);
+	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,38))");
 
 	/* cleanup */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
