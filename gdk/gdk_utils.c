@@ -2083,7 +2083,7 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 #endif
 }
 
-#define SA_BLOCK (64*1024)
+#define SA_BLOCK (128*1024)
 
 typedef struct freed_t {
 	struct freed_t *n;
@@ -2142,7 +2142,12 @@ sa_use_freed(allocator *pa, size_t sz)
 allocator *
 sa_create(allocator *pa)
 {
-	const size_t initial_blks_size = 64;
+	const size_t initial_blks_size = 1024;
+	// The above choice only consumes only 8 of the 128 kB of the first
+	// block but allows for up to 128 MB of memory to be allocated before a
+	// blks reallocation is needed. This is useful because blks reallocations
+	// consume memory from the parent allocator that currently will not be reused
+	// until the parent allocator itself is destroyed.
 
 	char *first_block = pa?(char*)sa_alloc(pa, SA_BLOCK):(char*)GDKmalloc(SA_BLOCK);
 	if (first_block == NULL)
