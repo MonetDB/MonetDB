@@ -409,6 +409,7 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 	return ret;
 }
 
+#ifdef HAVE_HGE
 static SQLRETURN
 testGetDataDecimal(SQLHANDLE stmt, int sqlquery)
 {
@@ -543,6 +544,7 @@ testGetDataDecimal(SQLHANDLE stmt, int sqlquery)
 	free(outp);
 	return ret;
 }
+#endif
 
 int
 main(int argc, char **argv)
@@ -602,6 +604,7 @@ main(int argc, char **argv)
 	ret = testGetDataIntervalDay(stmt, 2);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataIntervalDay(STMT, 101, -102)");
 
+#ifdef HAVE_HGE
 	ret = testGetDataDecimal(stmt, 1);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,0))");
 	ret = testGetDataDecimal(stmt, 2);
@@ -612,6 +615,7 @@ main(int argc, char **argv)
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,29))");
 	ret = testGetDataDecimal(stmt, 5);
 	check(ret, SQL_HANDLE_STMT, stmt, "testGetDataDecimal(STMT, dec(38,38))");
+#endif
 
 	/* cleanup */
 	ret = SQLFreeHandle(SQL_HANDLE_STMT, stmt);
