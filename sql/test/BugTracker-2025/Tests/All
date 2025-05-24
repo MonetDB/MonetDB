@@ -7,3 +7,4 @@
 7625_missing_temporary_view_types
 7626_sum_max_const
 HAVE_HGE?7637_str_to_decimal
+7632-crash-leftjoin-exists
