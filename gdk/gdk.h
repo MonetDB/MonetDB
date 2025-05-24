@@ -2530,7 +2530,9 @@ typedef struct allocator {
 	size_t size;
 	size_t nr;
 	char **blks;
+	char *first_block; /* the special block in blks that also holds our bookkeeping */
 	size_t used; 	/* memory used in last block */
+	size_t reserved;  /* space in first_block is reserved up to here  */
 	size_t usedmem;	/* used memory */
 	void *freelist;	/* list of freed blocks */
 	exception_buffer eb;

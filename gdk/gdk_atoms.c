@@ -649,11 +649,12 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	int sign = 1;
 
 	/* a valid number has the following syntax:
-	 * [-+]?[0-9]+([eE][0-9]+)?(LL)? -- PCRE syntax, or in other words
+	 * [-+]?[0-9]+(_[0-9]+)*([eE][0-9]+(_[0-9]+)*)?(LL)? -- PCRE syntax, or in other words
 	 * optional sign, one or more digits, optional exponent, optional LL
 	 * the exponent has the following syntax:
 	 * lower or upper case letter E, one or more digits
-	 * embedded spaces are not allowed
+	 * embedded spaces are not allowed but embedded underscores are
+	 * (but not more than one consecutively)
 	 * the optional LL at the end are only allowed for lng and hge
 	 * values */
 	atommem(sz);
@@ -699,6 +700,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 		}
 		base = 10 * base + dig;
 		p++;
+		if (*p == '_' && GDKisdigit(p[1]))
+			p++;
 	} while (GDKisdigit(*p));
 	if ((*p == 'e' || *p == 'E') && GDKisdigit(p[1])) {
 		p++;
@@ -717,6 +720,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 					goto overflow;
 				}
 				p++;
+				if (*p == '_' && GDKisdigit(p[1]))
+					p++;
 			} while (GDKisdigit(*p));
 			if (base > maxdiv[exp].maxval) {
 				/* overflow */
