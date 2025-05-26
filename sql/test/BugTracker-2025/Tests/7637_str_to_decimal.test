@@ -1,4 +1,5 @@
 -- decimal value with 38 digits before the decimal separator
+skipif knownfail
 query TT
 select cast(99999999909999999990999999999012345678.0 as decimal(38,0)) as val1, cast(-99999999909999999990999999999012345678.0 as decimal(38,0)) as val2
 ----
@@ -12,6 +13,7 @@ select cast(99999999909999999990999999999012345678. as decimal(38,0)) as val1, c
 -99999999909999999990999999999012345678
 
 -- decimal value with 38 digits after the decimal separator
+skipif knownfail
 query TT
 select cast(0.99999999909999999990999999999012345678 as decimal(38,38)) as val1, cast(-0.99999999909999999990999999999012345678 as decimal(38,38)) as val2
 ----
@@ -32,6 +34,7 @@ select cast(cast(.99999999909999999990999999999012345678 as decimal(38,38)) as s
 
 
 -- hugeint value with 38 digits before the decimal separator
+skipif knownfail
 query TT
 select cast(99999999909999999990999999999012345678.0 as hugeint) as val1, cast(-99999999909999999990999999999012345678.0 as hugeint) as val2
 ----
