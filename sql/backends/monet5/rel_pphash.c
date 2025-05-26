@@ -42,28 +42,6 @@ get_max_bt_count(mvc *sql, sql_rel *rel, lng max)
 }
 #endif
 
-static void
-find_hsh_vs_prb_side(sql_rel **rel_hsh, sql_rel **rel_prb, sql_rel *rel)
-{
-	assert(rel->l && rel->r);
-	if (rel->op == op_left) {
-		*rel_hsh = rel->r;
-		*rel_prb = rel->l;
-	} else if (rel->op == op_right) {
-		*rel_hsh = rel->l;
-		*rel_prb = rel->r;
-	} else {
-		if (rel->oahash == 1) {
-			*rel_hsh = rel->l;
-			*rel_prb = rel->r;
-		} else {
-			assert(rel->oahash == 2);
-			*rel_hsh = rel->r;
-			*rel_prb = rel->l;
-		}
-	}
-}
-
 static lng
 _estimate(mvc *sql, sql_rel *rel)
 {
@@ -398,7 +376,7 @@ oahash_project_single(backend *be, list *exps_prj, int selected, stmt *sub, cons
 }
 
 static list *
-oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repeat, bit LRouter, bit single, const stmt *pp)
+oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repeat, bit LRouter, const stmt *pp)
 {
 	list *l = sa_list(be->mvc->sa);
 	int tt;
@@ -419,7 +397,6 @@ oahash_project_cart(backend *be, str func, list *exps_prj, stmt *sub, stmt *repe
 		q = pushArgument(be->mb, q, key->nr);
 		q = pushArgument(be->mb, q, rpt->nr);
 		q = pushBit(be->mb, q, LRouter);
-		q = pushBit(be->mb, q, single);
 		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 		pushInstruction(be->mb, q);
 
@@ -484,12 +461,14 @@ rel2bin_oahash_equi(backend *be, sql_rel *rel, list *refs)
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
 	(void)neededpp;
 
-	/* find the hash- vs probe-side */
-	if (rel->op == op_full) {
-        sql_error(be->mvc, 10, SQLSTATE(42000) "rel2bin_oahash(): full outer-join not supported yet");
-		return NULL;
+	assert(rel->oahash == 1 || rel->oahash == 2);
+	if (rel->oahash == 1) {
+		rel_hsh = rel->l;
+		rel_prb = rel->r;
+	} else { /* rel->oahash == 2 */
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
 	}
-	find_hsh_vs_prb_side(&rel_hsh, &rel_prb, rel);
 	list *exps_cmp_prb = rel_prb->attr;
 	list *exps_prj_prb = rel_prb->exps;
 	list *exps_prj_hsh = rel_hsh->exps;
@@ -537,7 +516,15 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
 	(void)neededpp;
 
-	find_hsh_vs_prb_side(&rel_hsh, &rel_prb, rel);
+	//find_hsh_vs_prb_side(&rel_hsh, &rel_prb, rel);
+	assert(rel->oahash == 1 || rel->oahash == 2);
+	if (rel->oahash == 1) {
+		rel_hsh = rel->l;
+		rel_prb = rel->r;
+	} else { /* rel->oahash == 2 */
+		rel_hsh = rel->r;
+		rel_prb = rel->l;
+	}
 	list *exps_prj_prb = rel_prb->exps;
 	list *exps_prj_hsh = rel_hsh->exps;
 
@@ -557,12 +544,33 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs)
 	/*** PROJECT RESULT PHASE ***/
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
 
-	bit LRouter = (is_left(rel->op) || is_right(rel->op));
+	/* Check that for single left/right outer join and crossproduct, rel->r returns no more than 1 value. */
+	if (rel->single) {
+		stmt *rhs_col = exp_bin(be, rel_hsh->exps->h->data, stmts_ht, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(rhs_col); /* must find */
+		if (rhs_col->nrcols > 0) {
+			int ppln = be->pipeline;
+			be->pipeline = 0;
+			sql_subfunc *cnt_fnc = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+			stmt *cnt = stmt_aggr(be, rhs_col, NULL, NULL, cnt_fnc, 1, 0, 1);
+			be->pipeline = ppln;
+			InstrPtr q = newStmtArgs(be->mb, calcRef, ">", 3);
+			q = pushArgument(be->mb, q, cnt->nr);
+			q = pushInt(be->mb, q, 1);
+			pushInstruction(be->mb, q);
+			stmt *s = stmt_none(be);
+			s->nr = q->argv[0];
+			s->q = q;
+			s->nrcols = 0;
+			(void)stmt_exception(be, s, SQLSTATE(42000) "more than one match", 00001);
+		}
+	}
 
+	bit LRouter = (is_left(rel->op) || is_right(rel->op));
 	stmt *rowrepeat = stmts_ht->op4.lval->h->data;
-	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, rowrepeat, LRouter, rel->single, pp);
+	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, rowrepeat, LRouter, pp);
 	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
-	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, setrepeat, LRouter, rel->single, pp);
+	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, setrepeat, LRouter, pp);
 	assert(lh->cnt || lp->cnt);
 
 	list_merge(lh, lp, NULL);
