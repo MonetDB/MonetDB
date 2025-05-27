@@ -14,13 +14,13 @@
 #include "gdk.h"
 
 #ifdef HAVE_HGE
-#define NG_TYPE		hge
+#define NG_TYPE		uhge
 #define NG_TYPEID	TYPE_hge
 #define NG_TYPENIL	hge_nil
 #define NG_BITS		128
 #define NG_MASK(s)	(s & (NG_BITS - 1))
 #else
-#define NG_TYPE		lng
+#define NG_TYPE		ulng
 #define NG_TYPEID	TYPE_lng
 #define NG_TYPENIL	lng_nil
 #define NG_BITS		64
@@ -41,6 +41,6 @@ typedef struct {
 	NG_TYPE *sigs;
 	unsigned *histogram;
 	unsigned min, max;
-	oid *lists;
+	unsigned *lists;
 	oid *rids;
 } NGrams;

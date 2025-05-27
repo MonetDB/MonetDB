@@ -2173,9 +2173,9 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 	unsigned (*h_tmp)[NG_BITS] = GDKzalloc(BIGRAM_SZ * sizeof(unsigned));
 	unsigned *h_tmp_ptr = (unsigned *) h_tmp;
 	unsigned *map = GDKmalloc(BIGRAM_SZ * sizeof(unsigned));
-	oid *lists = ng->lists;
+	unsigned *lists = ng->lists;
 	oid *rids = ng->rids;
-	oid k = 1;
+	unsigned k = 1;
 
 	if (!h_tmp || !map) {
 		GDKfree(h_tmp);
@@ -2195,7 +2195,7 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 				h_tmp[ENC_TOKEN1(s)][ENC_TOKEN2(s)]++;
 	}
 
-	for (size_t i = 0; i < BIGRAM_SZ; i++) {
+	for (unsigned i = 0; i < BIGRAM_SZ; i++) {
 		map[i] = i;
 		idx[i] = lists[i] = 0;
 		h[i] = h_tmp_ptr[i];
@@ -2232,6 +2232,7 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 					if (lists[enc_bigram] == 0) {
 						lists[enc_bigram] = k;
 						k += h[enc_bigram];
+						assert(k <= UINT32_MAX);
 						h[enc_bigram] = 0;
 					}
 					int done = (h[enc_bigram] > 0 &&
@@ -2269,7 +2270,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	NG_TYPE *idx = ng->idx;
 	NG_TYPE *sigs = ng->sigs;
 	unsigned *h = ng->histogram;
-	oid *lists = ng->lists;
+	unsigned *lists = ng->lists;
 	oid *rids = ng->rids;
 	size_t new_cap;
 
