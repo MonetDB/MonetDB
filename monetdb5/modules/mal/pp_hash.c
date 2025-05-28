@@ -1822,7 +1822,7 @@ error:
 			} \
 			if ((slot?1:0) == match) { \
 				mtd[mtdcnt] = i; \
-				slt[mtdcnt] = slot - 1; \
+				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
 				if (*single && ht->frequency[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
@@ -1855,7 +1855,7 @@ error:
 			} \
 			if ((slot?1:0) == match) { \
 				mtd[mtdcnt] = i; \
-				slt[mtdcnt] = slot - 1; \
+				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
 				if (*single && ht->frequency[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \

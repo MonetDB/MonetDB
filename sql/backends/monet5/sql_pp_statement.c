@@ -674,45 +674,6 @@ stmt_sop_new(backend *be, int nr_workers)
 	return q;
 }
 
-stmt *
-stmt_heapn_projection(backend *be, int sel, int del, int ins, stmt *c, stmt *all)
-{
-
-	InstrPtr q = newStmt(be->mb, getName("heapn"), getName("projection"));
-	sql_subtype *t = tail_type(c);
-	int tt = newBatType(t->type->localtype);
-	getArg(q, 0) = newTmpVariable(be->mb, tt);
-
-	q->inout = 0;
-	q = pushArgument(be->mb, q, sel);
-	q = pushArgument(be->mb, q, del);
-	q = pushArgument(be->mb, q, ins);
-	q = pushArgument(be->mb, q, c->nr);
-	q = pushArgument(be->mb, q, all->nr);
-	q = pushArgument(be->mb, q, be->pipeline);
-	pushInstruction(be->mb, q);
-
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_join);
-		if (s == NULL) {
-			freeInstruction(q);
-			return NULL;
-		}
-
-		s->op1 = c;
-		s->op2 = c;
-		s->flag = cmp_project;
-		s->key = 0;
-		s->nrcols = c->nrcols;
-		s->nr = getDestVar(q);
-		s->q = q;
-		s->tname = c->tname;
-		s->cname = c->cname;
-		return s;
-	}
-	return NULL;
-}
-
 /* Generate the stmt to return the n-th (i.e. X_&&) slice of the input BAT
  * (i.e. X_19):
  *   (X_80:bat[:str], !X_19:bat[:str]) := slicer.nth_slice(X_77:int);

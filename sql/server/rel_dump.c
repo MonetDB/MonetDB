@@ -680,7 +680,7 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->op == op_groupby)
 			r = "group by";
 		if (rel->op == op_topn)
-			r = "top N";
+			r = rel->grouped?"grouped top N":"top N";
 		if (rel->op == op_sample)
 			r = "sample";
 

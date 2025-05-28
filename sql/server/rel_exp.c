@@ -4027,3 +4027,16 @@ list_find_exp( list *exps, sql_exp *e)
 		return NULL;
 	return exps_bind_nid(exps, e->nid);
 }
+
+sql_exp*
+topn_limit(sql_rel *rel)
+{
+    if (rel->exps) {
+        sql_exp *limit = rel->exps->h->data;
+        if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
+            return NULL;
+        return limit;
+    }
+    return NULL;
+}
+

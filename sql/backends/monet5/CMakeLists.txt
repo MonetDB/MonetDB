@@ -145,6 +145,7 @@ target_sources(sql
   rel_bin.c rel_bin.h
   rel_copy.c rel_copy.h
   rel_pphash.c rel_pphash.h
+  rel_pptopn.c rel_pptopn.h
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
   bin_partition.c bin_partition.h

@@ -31,7 +31,7 @@
  *			complicating expressions such as distinct
  */
 
-static lng
+lng
 exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	BUN est = get_rel_count(rel);
@@ -208,7 +208,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 							if (q == NULL)
 								return NULL;
 							assert(!e->shared);
-							curhash = e->shared = q->argv[0];
+							curhash = e->shared = q->argv[0]; /* pass hash table statment via expression */
 						}
 					}
 				}

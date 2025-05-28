@@ -62,6 +62,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define optbatargany(n,a)	{ /*.name=n,*/ .nr=a, .opt=1, }
 #define batvarargany(n,a)	{ /*.name=n,*/ .isbat=true, .vargs=true, .nr=a, }
 
+#define sharedbatvararg(n,t){ /*.name=n,*/ .type=# t, .isbat=true, .vargs=true, .shared=true, .inout=true }
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
 #define sharedbatarg(n,t)   { /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
 

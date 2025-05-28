@@ -238,4 +238,6 @@ extern sql_exp *exp_values_set_supertype(mvc *sql, sql_exp *values, sql_subtype 
 
 extern sql_subtype* first_arg_subtype(sql_exp *e);
 
+extern sql_exp* topn_limit(sql_rel *rel);
+
 #endif /* _REL_EXP_H_ */

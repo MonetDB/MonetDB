@@ -771,10 +771,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
-		bool pp_useful = (get_rel_count(rel->l) > 1) && !(list_length(rel->exps) > 1) /* no offset */;
-		pp_useful &= !rel->grouped; /* grouped topn isn't pipelined yet */
+		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) /*&& !(list_length(rel->exps) > 1)*/ /* no offset */;
+		//pp_useful &= !rel->grouped; /* grouped topn isn't pipelined yet */
 		/* op_topn always has rel->l */
-		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:rel->grouped?0:pb);
+		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB/*:rel->grouped?0*/:0);
 		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
@@ -797,7 +797,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
-			rel_dup(rel); // inc-ref unsafe exps (ie order dependent)
+			if (p && (p->op != op_topn || !topn_limit(p)))
+				rel_dup(rel); // inc-ref unsafe exps (ie order dependent)
 			if (rel->l)
 				res = rel_pipeline(v, rel->l, materialize, /*pb?pb:!list_empty(rel->r)?SPB:*/0);
 			rel->spb = 1; // ? after ?
@@ -806,7 +807,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			if (rel->l)
 				res = rel_pipeline(v, rel->l, materialize, pb?pb:!list_empty(rel->r)?SPB:0);
 			/* handle streaming projections and blocking order by */
-			if (list_empty(rel->r)) {
+			if (list_empty(rel->r) || (p && p->op == op_topn && topn_limit(p))) {
 				if (pb) {
 					rel->spb = (res == REL_PARTITION);
 					if (rel->spb)
@@ -818,7 +819,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			} else {
 				rel->parallel = 1;
 				rel->spb = (res == REL_PARTITION);
-				if (pb) { /* nested */
+				if (pb || (p && p->op == op_topn && !topn_limit(p))) { /* nested */
 					rel_dup(rel);
 					res = 0;
 					rel->partition = 1; // ??

@@ -8,7 +8,7 @@ io.print(r1)
 42
 
 statement ok
-r2:bat[:str] := rapi.eval(nil:ptr,"loopback_query(\"select 'a' as str union all select 'b' as str;\")$str");
+r2:bat[:str] := rapi.eval(nil:ptr,"loopback_query(\"select 'a' as str union all select 'b' as str order by str;\")$str");
 
 query IT nosort
 io.print(r2)

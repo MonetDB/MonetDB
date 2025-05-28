@@ -15,6 +15,7 @@
 #include "rel_bin.h"
 #include "rel_copy.h"
 #include "rel_pphash.h"
+#include "rel_pptopn.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_exp.h"
@@ -2221,7 +2222,7 @@ parse_value(backend *be, sql_schema *s, char *query, sql_subtype *tpe, char emod
 	return exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 }
 
-static stmt *
+stmt *
 rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 {
 	mvc *sql = be->mvc;
@@ -4208,18 +4209,6 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 }
 
 static sql_exp*
-topn_limit(sql_rel *rel)
-{
-	if (rel->exps) {
-		sql_exp *limit = rel->exps->h->data;
-		if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
-			return NULL;
-		return limit;
-	}
-	return NULL;
-}
-
-static sql_exp*
 topn_offset(sql_rel *rel)
 {
 	if (rel->exps && list_length(rel->exps) > 1) {
@@ -5676,368 +5665,14 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	return cursub;
 }
 
-static bool
-has_partitioning( list *exps )
-{
-	for(node *n = exps->h; n; n = n->next){
-		sql_exp *gbe = n->data;
-		if (is_partitioning(gbe))
-			return true;
-	}
-	return false;
-}
-
-static bool
-rel_topn_2_phases(sql_rel *rel)
-{
-	(void)rel;
-#if 0
-	if (rel->l) {
-		sql_rel *l = rel->l;
-		/* for now no support for concurrent heap based topn */
-		if (is_simple_project(l->op) && !list_empty(l->r))
-			return false;
-	}
-#endif
-	return true;
-}
-
-static list *
-rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
-{
-	sql_rel *l = rel->l;
-
-	/* subslice vs firstn and heapn.topn cases */
-	/* (g,c, topn (bat+sink)) := subslice (b, offset, limit); # ro/rl are inout
-	 *
-	 * b1 := project(c,b); # for each attribute
-	 * r1 := projection(g, b1); # r1 is inout
-	 *
-	 * or
-	 * (s,d,i,hp) := (heapn.new ()/heapn.topn(n, attr, min,..)
-	 * b1 := heapn.projection(s,d,i,v)
-	 * (2phases)
-	 * and do the steps for order by after the pipeline
-	 */
-	if (!is_simple_project(l->op)) {
-		/*
-		while (l && is_select(l->op))
-			l = l->l;
-			*/
-		if (l && (!is_project(l->op) && !is_base(l->op)))
-			rel->l = l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
-	}
-	if (l && ((is_simple_project(l->op) && list_empty(l->r)) || (!is_simple_project(l->op) && is_project(l->op)) || is_base(l->op)) && !list_empty(l->exps)) {
-		list *projectresults = sa_list(be->mvc->sa);
-
-		/* bat for topn sink */
-		InstrPtr q = newStmt(be->mb, batRef, newRef);
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushType(be->mb, q, TYPE_oid);
-		append(projectresults, q->argv);
-		pushInstruction(be->mb, q);
-
-		for( node *n = l->exps->h; n; n = n->next ) {
-			sql_exp *e = n->data;
-			sql_subtype *t = exp_subtype(e);
-			int tt = t->type->localtype;
-			InstrPtr q = newStmt(be->mb, batRef, newRef);
-
-			if (q == NULL)
-				return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushType(be->mb, q, tt);
-			pushInstruction(be->mb, q);
-			append(projectresults, q->argv);
-		}
-		return projectresults;
-	} else if (l && is_simple_project(l->op) && !list_empty(l->r)) {
-		list *projectresults = sa_list(be->mvc->sa);
-		/* heap for topn sink */
-		list *obexps = l->r;
-		InstrPtr q = newStmt(be->mb, getName("heapn"), newRef);
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushArgument(be->mb, q, all->nr);
-
-		for( node *n = obexps->h; n; n = n->next ) {
-			sql_exp *e = n->data;
-			sql_subtype *t = exp_subtype(e);
-			int tt = t->type->localtype;
-			q = pushNil(be->mb, q, tt);
-			q = pushBit(be->mb, q, !is_ascending(e));
-			q = pushBit(be->mb, q, nulls_last(e));
-
-			if (q == NULL)
-				return NULL;
-		}
-		pushInstruction(be->mb, q);
-		append(projectresults, q->argv);
-		for( node *n = l->exps->h; n; n = n->next ) {
-			sql_exp *e = n->data;
-			sql_subtype *t = exp_subtype(e);
-			int tt = t->type->localtype;
-			InstrPtr q = newStmt(be->mb, batRef, newRef);
-
-			if (q == NULL)
-				return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushType(be->mb, q, tt);
-			q = pushArgument(be->mb, q, all->nr);
-			pushInstruction(be->mb, q);
-			append(projectresults, q->argv);
-		}
-		for( node *n = obexps->h; n; n = n->next ) {
-			sql_exp *e = n->data;
-			sql_subtype *t = exp_subtype(e);
-			int tt = t->type->localtype;
-			InstrPtr q = newStmt(be->mb, batRef, newRef);
-
-			if (q == NULL)
-				return NULL;
-			setVarType(be->mb, getArg(q, 0), newBatType(tt));
-			q = pushType(be->mb, q, tt);
-			q = pushArgument(be->mb, q, all->nr);
-			pushInstruction(be->mb, q);
-			append(projectresults, q->argv);
-		}
-		return projectresults;
-	}
-	return NULL;
-}
-
-static stmt *
-rel_pp_topn(backend *be, list *projectresults, stmt *sub, stmt *pp, stmt *o, stmt *l)
-{
-	node *n, *m = projectresults->h;
-	(void)stmt_pp_jump(be, pp, be->nrparts);
-
-	assert(pp);
-	list *newl = sa_list(be->mvc->sa);
-	list *cols = sub->op4.lval;
-	if (list_length(cols) != list_length(projectresults)-1)
-		return NULL;
-	stmt *sc = cols->h->data;
-	stmt *limit = stmt_limit_partitioned(be, sc, NULL, NULL, o, l);
-	int resid = *(int*)m->data;
-	limit->q->argv[2] = resid; /* shared topn */
-	stmt *glimit = stmt_result(be, limit, 0);
-	limit = stmt_result(be, limit, 1);
-
-	for (n = cols->h, m = m->next; n && m; n = n->next, m = m->next) {
-		stmt *sc = n->data;
-		resid = *(int*)m->data;
-		const char *cname = column_name(be->mvc->sa, sc);
-		const char *tname = table_name(be->mvc->sa, sc);
-		int label = sc->label;
-
-		sc = column(be, sc);
-		sc = stmt_project(be, limit, sc);
-		sc = stmt_project(be, glimit, sc);
-		sc->q->inout = 0;
-		sc->q = pushArgument(be->mb, sc->q, be->pipeline);
-		sc->nr = sc->q->argv[0] = resid; /* use shared result */
-		list_append(newl, stmt_alias(be, sc, label, tname, cname));
-	}
-	sub = stmt_list(be, newl);
-
-	(void)stmt_pp_end(be, pp);
-	return sub;
-}
-
-static stmt *
-rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt *all, stmt *offset, stmt *lim, list *projectresults)
-{
-	mvc *sql = be->mvc;
-	stmt *sub = NULL, *psub = NULL;
-	list *pl, *oexps = rel->r, *osl = NULL;
-	node *en, *n, *prl = projectresults->h;
-
-	if (rel->l) { /* first construct the sub relation */
-		sql_rel *l = rel->l;
-		if (l->op == op_ddl) {
-			sql_table *t = rel_ddl_table_get(l);
-
-			if (t)
-				sub = rel2bin_sql_table(be, t, rel->exps);
-		} else {
-			sub = subrel_bin(be, rel->l, refs);
-		}
-		sub = subrel_project(be, sub, refs, rel->l);
-		if (!sub)
-			return NULL;
-	}
-
-	stmt *pp = get_pipeline(be);
-	if (!pp) {
-		assert(0);
-		(void)get_need_pipeline(be);
-		set_pipeline(be, pp = stmt_pp_start_dynamic(be, pp_dynamic_slices(be, sub)));
-		sub = rel2bin_slicer(be, sub, 1);
-	}
-
-	pl = sa_list(sql->sa);
-	if (sub)
-		pl->expected_cnt = list_length(sub->op4.lval);
-	psub = stmt_list(be, pl);
-	for( en = rel->exps->h; en; en = en->next ) {
-		sql_exp *exp = en->data;
-		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
-
-		if (!s) /* try with own projection as well, but first clean leftover statements */
-			s = exp_bin(be, exp, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
-		if (!s) /* error */
-			return NULL;
-		/* single value with limit */
-		if (topn && rel->r && sub && sub->nrcols == 0 && s->nrcols == 0)
-			s = const_column(be, s);
-		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
-			s = stmt_const(be, bin_find_smallest_column(be, sub), s);
-
-		if (!exp_name(exp))
-			exp_label(sql->sa, exp, ++sql->label);
-		s = stmt_rename(be, exp, s);
-		column_name(sql->sa, s); /* save column name */
-		list_append(pl, s);
-	}
-	stmt_set_nrcols(psub);
-
-	if (topn && rel->r) {
-		list *npl = sa_list(sql->sa);
-		/* distinct, topn returns atleast N (unique groups) */
-
-		InstrPtr q = newStmt(be->mb, getName("heapn"), getName("topn"));
-		int oidbat = newBatType(TYPE_oid);
-		getArg(q, 0) = newTmpVariable(be->mb, oidbat);
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, oidbat));
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, oidbat));
-		/* possibly push the shared heap */
-		q = pushReturn(be->mb, q, newTmpVariable(be->mb, oidbat));
-		q->inout = 3;
-		q = pushArgument(be->mb, q, all->nr);
-		q = pushArgument(be->mb, q, getArg(pp->q, 2));
-
-		osl = sa_list(sql->sa);
-		for (n=oexps->h; n; n = n->next) {
-			sql_exp *orderbycole = n->data;
- 			int last = (n->next == NULL);
-
-			stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
-
-			if (!orderbycolstmt)
-				return NULL;
-
-			/* handle constants */
-			if (orderbycolstmt->nrcols == 0 && !last) /* no need to sort on constant */
-				continue;
-			orderbycolstmt = column(be, orderbycolstmt);
-			q = pushArgument(be->mb, q, orderbycolstmt->nr);
-			q = pushBit(be->mb, q, !is_ascending(orderbycole));
-			q = pushBit(be->mb, q, nulls_last(orderbycole));
-			// TODO handle distinct
-			append(osl, orderbycolstmt);
-			append(osl, orderbycole);
-		}
-		pushInstruction(be->mb, q);
-		int sel = getArg(q, 0);
-		int del = getArg(q, 1);
-		int ins = getArg(q, 2);
-
-		/* heapn.projections */
-		for ( n=pl->h ; n; n = n->next)
-			list_append(npl, stmt_heapn_projection(be, sel, del, ins, column(be, n->data), all));
-		psub = stmt_list(be, npl);
-
-		list *nosl = sa_list(sql->sa);
-		for ( n=osl->h ; n; n = n->next->next) {
-			append(nosl, stmt_heapn_projection(be, sel, del, ins, n->data, all));
-			append(nosl, n->next->data);
-		}
-		osl = nosl;
-	}
-	/* now phase 2 */
-	pp = get_pipeline(be);
-	(void)stmt_pp_jump(be, pp, be->nrparts);
-
-	InstrPtr q = newStmt(be->mb, getName("heapn"), getName("topn"));
-	int oidbat = newBatType(TYPE_oid);
-	getArg(q, 0) = newTmpVariable(be->mb, oidbat);
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, oidbat));
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, oidbat));
-	q = pushReturn(be->mb, q, *(int*)(prl->data));
-	q->inout = 3;
-	q = pushArgument(be->mb, q, all->nr);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2));
-	for ( n=osl->h ; n; n = n->next->next) {
-		stmt *s = n->data;
-		sql_exp *e = n->next->data;
-		q = pushArgument(be->mb, q, s->nr);
-		q = pushBit(be->mb, q, !is_ascending(e));
-		q = pushBit(be->mb, q, nulls_last(e));
-	}
-	pushInstruction(be->mb, q);
-	int sel = getArg(q, 0);
-	int del = getArg(q, 1);
-	int ins = getArg(q, 2);
-
-	/* heapn.projections */
-	pl = psub->op4.lval;
-	list *npl = sa_list(sql->sa);
-	prl = prl->next; /* skip heap */
-	for (n=pl->h ; n; n = n->next, prl = prl->next) {
-		stmt *s = stmt_heapn_projection(be, sel, del, ins, n->data, all);
-		s->nr = getArg(s->q, 0) = *(int*)prl->data;
-		list_append(npl, s);
-	}
-	list *nosl = sa_list(sql->sa);
-	for (n=osl->h ; n; n = n->next->next, prl = prl->next) {
-		stmt *s = stmt_heapn_projection(be, sel, del, ins, n->data, all);
-		s->nr = getArg(s->q, 0) = *(int*)prl->data;
-		append(nosl, s);
-		append(nosl, n->next->data);
-	}
-	osl = nosl;
-	psub = stmt_list(be, npl);
-
-	(void)stmt_pp_end(be, pp);
-
-	/* now order by and slice */
-	stmt *orderby_ids = NULL, *orderby_grp = NULL;
-
-	for (en = osl->h; en; en = en->next->next) {
-		stmt *orderbycolstmt = en->data, *orderby;
-		sql_exp *orderbycole = en->next->data;
-
-		if (orderby_ids)
-			orderby = stmt_reorder(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole), orderby_ids, orderby_grp);
-		else
-			orderby = stmt_order(be, orderbycolstmt, is_ascending(orderbycole), nulls_last(orderbycole));
-		orderby_ids = stmt_result(be, orderby, 1);
-		orderby_grp = stmt_result(be, orderby, 2);
-	}
-	if (orderby_ids) {
-		if (offset != 0) {
-			stmt *limit = stmt_limit(be, orderby_ids, NULL, NULL, offset, lim, 0, 0, 0, 0, 0);
-			orderby_ids = stmt_project(be, limit, orderby_ids);
-		}
-		/* FIXME: construct an ordered list of ostmts.  Only then, we
-		 *        can pass bot oexps and ostmts to sql_reorder.  For
-		 *        now, we pass NULLs to disable the recently introduced
-		 *        code in sql_reorder.
-		 */
-		psub = sql_reorder(be, orderby_ids, rel->exps, psub, NULL, NULL);
-	}
-	return psub;
-}
-
 static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
-	int _2phases = rel_topn_2_phases(rel);
 	list *projectresults = NULL;
-	bool df2 = (SQLrunning && rel->parallel && _2phases);
+	bool df2 = (SQLrunning && rel->parallel);
 	int neededpp = rel->partition && get_need_pipeline(be);
 
 	sql_exp *le = topn_limit(rel);
@@ -6046,14 +5681,16 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 
-	if (le)
+	if (le) {
 		l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	else
+		l = stmt_convert(be, l, NULL, exp_subtype(le), lng);
+	} else
 		l = stmt_atom_lng_nil(be);
 
-	if (oe)
+	if (oe) {
 		o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	else
+		o = stmt_convert(be, o, NULL, exp_subtype(oe), lng);
+	} else
 		o = stmt_atom_lng(be, 0);
 	if (!l || !o)
 		return NULL;
@@ -6095,8 +5732,10 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = rel2bin_project(be, rl, refs, rel);
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
+			/*
 			if (rel->grouped && rl->r && has_partitioning(rl->r))
 				return sub;
+				*/
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}
