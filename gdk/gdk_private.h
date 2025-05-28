@@ -79,8 +79,7 @@ gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPcacheit(BAT *bn, bool lock)
-	__attribute__((__warn_unused_result__))
+void BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPchkfarms(void)
 	__attribute__((__warn_unused_result__))

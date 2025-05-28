@@ -2590,7 +2590,7 @@ BBPallocbat(int tt)
 	return i;
 }
 
-gdk_return
+void
 BBPcacheit(BAT *bn, bool lock)
 {
 	bat i = bn->batCacheid;
@@ -2610,7 +2610,6 @@ BBPcacheit(BAT *bn, bool lock)
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
-	return GDK_SUCCEED;
 }
 
 /*

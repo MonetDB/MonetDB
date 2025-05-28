@@ -840,12 +840,7 @@ BATload_intern(bat bid, bool lock)
 	b->theap->parentid = b->batCacheid;
 
 	/* load succeeded; register it in BBP */
-	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
-		HEAPfree(b->theap, false);
-		if (b->tvheap)
-			HEAPfree(b->tvheap, false);
-		return NULL;
-	}
+	BBPcacheit(b, lock);
 	return b;
 }
 
