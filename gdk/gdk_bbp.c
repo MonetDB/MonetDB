@@ -3785,7 +3785,7 @@ BBPcheckBBPdir(void)
  * The BBP.dir is also moved into the BAKDIR.
  */
 gdk_return
-BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
+BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng logno)
 {
 	gdk_return ret = GDK_SUCCEED;
 	lng t0 = 0, t1 = 0;

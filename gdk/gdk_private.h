@@ -100,8 +100,10 @@ void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
-	__attribute__((__visibility__("hidden")));
+gdk_return BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng logno)
+	__attribute__((__visibility__("hidden")))
+	__attribute__((__access__(read_only, 2, 1)))
+	__attribute__((__access__(read_only, 3, 1)));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
