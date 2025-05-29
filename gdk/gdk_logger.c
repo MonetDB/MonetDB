@@ -1193,7 +1193,6 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 		if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "allocation failure\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
 		}
@@ -1998,7 +1997,6 @@ static gdk_return
 log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 {
 	if (GDKfilepath(filename, FILENAME_MAX, 0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED) {
-		GDKerror("Logger filename path is too large\n");
 		return GDK_FAIL;
 	}
 	if (bak) {
