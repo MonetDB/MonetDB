@@ -63,8 +63,10 @@ GDKfilepath(char *path, size_t pathlen, int farmid, const char *dir, const char 
 	const char *sep;
 
 	if (GDKinmemory(farmid)) {
-		if (strcpy_len(path, ":memory:", pathlen) >= pathlen)
+		if (strcpy_len(path, ":memory:", pathlen) >= pathlen) {
+			GDKerror("buffer too small\n");
 			return GDK_FAIL;
+		}
 		return GDK_SUCCEED;
 	}
 
