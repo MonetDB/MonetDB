@@ -38,7 +38,8 @@ rel_getcount(mvc *sql, sql_rel *rel)
 
 		if (t && isTable(t) && t->persistence != SQL_DECLARED_TABLE) {
 			sqlstore *store = sql->session->tr->store;
-			lng nr = (lng)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 0);
+			node *ln = t->columns->l->t;
+			lng nr = (lng)store->storage_api.count_col(sql->session->tr, ln->data, 0);
 			assert(nr >= 0);
 			return nr;
 		}
