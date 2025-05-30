@@ -576,6 +576,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			for (; res == LOG_OK && nr > 0; nr--) {
 				size_t hlen = sizeof(oid);
 				void *h = rh(hv, &hlen, lg->input_log, 1);
+				if (h == NULL) {
+					res = LOG_EOF;
+					TRC_CRITICAL(GDK, "read failed\n");
+					break;
+				}
 				assert(hlen == sizeof(oid));
 				assert(h == hv);
 				if ((uid && BUNappend(uid, h, true) != GDK_SUCCEED)) {
@@ -583,52 +588,54 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 					res = LOG_ERR;
 				}
 			}
-			nr = pnr;
-			if (tpe == TYPE_msk) {
-				if (r) {
-					if (mnstr_readIntArray(lg->input_log, Tloc(r, 0), (size_t) ((nr + 31) / 32)))
-						BATsetcount(r, (BUN) nr);
-					else {
-						TRC_CRITICAL(GDK, "read failed\n");
-						res = LOG_EOF;
-					}
-				} else {
-					for (lng i = 0; i < nr; i += 32) {
-						int v;
-						switch (mnstr_readInt(lg->input_log, &v)) {
-						case 1:
-							continue;
-						case 0:
+			if (res == LOG_OK) {
+				nr = pnr;
+				if (tpe == TYPE_msk) {
+					if (r) {
+						if (mnstr_readIntArray(lg->input_log, Tloc(r, 0), (size_t) ((nr + 31) / 32)))
+							BATsetcount(r, (BUN) nr);
+						else {
+							TRC_CRITICAL(GDK, "read failed\n");
 							res = LOG_EOF;
-							break;
-						default:
-							res = LOG_ERR;
+						}
+					} else {
+						for (lng i = 0; i < nr; i += 32) {
+							int v;
+							switch (mnstr_readInt(lg->input_log, &v)) {
+							case 1:
+								continue;
+							case 0:
+								res = LOG_EOF;
+								break;
+							default:
+								res = LOG_ERR;
+								break;
+							}
+							TRC_CRITICAL(GDK, "read failed\n");
 							break;
 						}
-						TRC_CRITICAL(GDK, "read failed\n");
-						break;
 					}
-				}
-			} else if (tpe == TYPE_str) {
-				/* efficient string */
-				res = string_reader(lg, r, nr);
-			} else {
-				for (; res == LOG_OK && nr > 0; nr--) {
-					size_t tlen = lg->rbufsize;
-					void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+				} else if (tpe == TYPE_str) {
+					/* efficient string */
+					res = string_reader(lg, r, nr);
+				} else {
+					for (; res == LOG_OK && nr > 0; nr--) {
+						size_t tlen = lg->rbufsize;
+						void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
 
-					if (t == NULL) {
-						if (strstr(GDKerrbuf, "malloc") == NULL)
-							res = LOG_EOF;
-						else
-							res = LOG_ERR;
-						TRC_CRITICAL(GDK, "read failed\n");
-					} else {
-						lg->rbuf = t;
-						lg->rbufsize = tlen;
-						if ((r && BUNappend(r, t, true) != GDK_SUCCEED)) {
-							TRC_CRITICAL(GDK, "append to bat failed\n");
-							res = LOG_ERR;
+						if (t == NULL) {
+							if (strstr(GDKerrbuf, "malloc") == NULL)
+								res = LOG_EOF;
+							else
+								res = LOG_ERR;
+							TRC_CRITICAL(GDK, "read failed\n");
+						} else {
+							lg->rbuf = t;
+							lg->rbufsize = tlen;
+							if ((r && BUNappend(r, t, true) != GDK_SUCCEED)) {
+								TRC_CRITICAL(GDK, "append to bat failed\n");
+								res = LOG_ERR;
+							}
 						}
 					}
 				}
@@ -1186,7 +1193,6 @@ log_open_output(logger *lg)
 			return GDK_FAIL;
 		}
 		if (GDKfilepath(filename, sizeof(filename), BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id) != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "allocation failure\n");
 			GDKfree(new_range);
 			return GDK_FAIL;
 		}
@@ -1991,7 +1997,6 @@ static gdk_return
 log_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 {
 	if (GDKfilepath(filename, FILENAME_MAX, 0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED) {
-		GDKerror("Logger filename path is too large\n");
 		return GDK_FAIL;
 	}
 	if (bak) {

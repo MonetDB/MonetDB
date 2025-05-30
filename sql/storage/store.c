@@ -322,14 +322,18 @@ sql_trans_add_predicate(sql_trans* tr, sql_column *c, unsigned int cmp, atom *r,
 	p->semantics = semantics;
 	p->r = r;
 	p->f = f;
+	MT_lock_set(&tr->lock);
 	if (!tr->predicates && !(tr->predicates = list_create((fdestroy) &predicate_destroy))) {
 		predicate_destroy(tr->store, p);
+		MT_lock_unset(&tr->lock);
 		return LOG_ERR;
 	}
 	if (!list_append(tr->predicates, p)) {
 		predicate_destroy(tr->store, p);
+		MT_lock_unset(&tr->lock);
 		return LOG_ERR;
 	}
+	MT_lock_unset(&tr->lock);
 	return LOG_OK;
 }
 
@@ -4135,6 +4139,8 @@ sql_trans_destroy(sql_trans *tr)
 	MT_lock_destroy(&tr->lock);
 	if (!list_empty(tr->dropped))
 		list_destroy(tr->dropped);
+	if (!list_empty(tr->predicates))
+		list_destroy(tr->predicates);
 	_DELETE(tr);
 	return res;
 }

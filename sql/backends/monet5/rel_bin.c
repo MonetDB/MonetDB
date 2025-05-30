@@ -386,7 +386,7 @@ row2cols(backend *be, stmt *sub)
 
 		for (n = sub->op4.lval->h; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
+			assert(sc->label);
 			const char *cname = column_name(be->mvc->sa, sc);
 			sql_alias *tname = table_name(be->mvc->sa, sc);
 			int label = sc->label;
@@ -462,7 +462,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 		if (c->type != st_alias || c->flag) {
 			c = stmt_project(be, cand, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
-			//c = stmt_alias(be, cand, 0, c->tname, c->cname);
 			c = stmt_as(be, cand, c);
 		} else { /* st_alias */
 			stmt *s = c->op1;
@@ -470,7 +469,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 				s = stmt_const(be, cand, s);
 			else
 				s = stmt_project(be, cand, s);
-			//c = stmt_alias(be, s, c->flag, c->tname, c->cname);
 			c = stmt_as(be, s, c);
 		}
 		append(l, c);
@@ -1534,7 +1532,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	return res;
 }
 
-// This is the per-column portion of exp2bin_copyfrombinary
+/* This is the per-column portion of exp2bin_copyfrombinary */
 static stmt *
 emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_var, node *file_node, node *type_node)
 {
@@ -1546,11 +1544,11 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	int data_type = subtype->type->localtype;
 	int bat_type = newBatType(data_type);
 
-	// The sql.importColumn operator takes a 'method' string to determine how to
-	// load the data. This leaves the door open to have multiple loaders for the
-	// same backend type, for example nul- and newline terminated strings.
-	// For the time being we just use the name of the storage type as the method
-	// name.
+	/* The sql.importColumn operator takes a 'method' string to determine how to
+	 * load the data. This leaves the door open to have multiple loaders for the
+	 * same backend type, for example nul- and newline terminated strings.
+	 * For the time being we just use the name of the storage type as the method
+	 * name. */
 	const char *method = ATOMname(data_type);
 
 	int width;
@@ -1570,7 +1568,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	if (p != NULL) {
 		setArgType(mb, p, 0, bat_type);
 		p = pushReturn(mb, p, new_count_var);
-		//
+
 		p = pushStr(mb, p, method);
 		p = pushInt(mb, p, width);
 		p = pushArgument(mb, p, bswap_stmt->nr);
@@ -1594,7 +1592,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	return s;
 }
 
-// Try to predict which column will be quickest to load first
+/* Try to predict which column will be quickest to load first */
 static int
 node_type_score(node *n)
 {
@@ -1623,7 +1621,7 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	sql_exp *bswap_exp = arg_list->h->next->next->next->data;
 	stmt *bswap_stmt = exp_bin(be, bswap_exp, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
-	// If it's ON SERVER we can optimize by running the imports in parallel
+	/* If it's ON SERVER we can optimize by running the imports in parallel */
 	bool onserver = false;
 	if (onclient_exp->type == e_atom) {
 		atom *onclient_atom = onclient_exp->l;
@@ -1635,10 +1633,10 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	node *const first_type = type_list->h;
 	node *file, *type;
 
-	// The first column we load determines the number of rows.
-	// We pass it on to the other columns.
-	// The first column to load should therefore be an 'easy' one.
-	// We identify the columns by the address of their type node.
+	/* The first column we load determines the number of rows.
+	 * We pass it on to the other columns.
+	 * The first column to load should therefore be an 'easy' one.
+	 * We identify the columns by the address of their type node. */
 	node *prototype_file = first_file;
 	node *prototype_type = first_type;
 	int score = node_type_score(prototype_type);
@@ -1651,7 +1649,7 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 		}
 	}
 
-	// Emit the columns
+	/* Emit the columns */
 	int count_var = -1;
 	list *columns = sa_list(sql->sa);
 	if (columns == NULL)
@@ -1671,8 +1669,8 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 		}
 		list_append(columns, s);
 		if (onserver) {
-			// Not threading the count variable from one importColumn to the next
-			// makes it possible to run them in parallel in a dataflow region.
+			/* Not threading the count variable from one importColumn to the next
+			 * makes it possible to run them in parallel in a dataflow region. */
 			count_var = orig_count_var;
 		}
 	}
@@ -1961,7 +1959,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (!l)
 			return NULL;
 		if (from->type->eclass == EC_SEC && to->type->eclass == EC_SEC) {
-			// trivial conversion because EC_SEC is always in milliseconds
+			/* trivial conversion because EC_SEC is always in milliseconds */
 			s = l;
 		} else if (depth && sel && l->nrcols == 0 && left && left->nrcols && exp_unsafe(e, false, true)) {
 			stmt *rows = bin_find_smallest_column(be, left);
@@ -2116,15 +2114,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				append(l, stmt_project(be, u, a));
 			}
-			if (r) {
+			if (r) { /* check new ordered aggregation */
 				list *obe = r->h->data;
 				if (obe && obe->h) {
-					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
+					stmt *orderby = NULL, *orderby_ids, *orderby_grp;
 					/* order by */
 					if (grp) {
 						orderby = stmt_order(be, grp, true, true);
 
-						orderby_vals = stmt_result(be, orderby, 0);
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
@@ -2139,7 +2136,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
 						else
 							orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
-						orderby_vals = stmt_result(be, orderby, 0);
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
@@ -2148,7 +2144,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						n->data = stmt_project(be, orderby_ids, n->data);
 					if (grp)
 						grp = stmt_project(be, orderby_ids, grp);
-					(void)orderby_vals;
 				}
 			}
 			as = stmt_list(be, l);
@@ -2172,10 +2167,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_column: {
 		if (right) /* check relation names */
-			//s = bin_find_column(be, right, e->l, e->r);
 			s = bin_find_column_nid(be, right, e->nid);
 		if (!s && left)
-			//s = bin_find_column(be, left, e->l, e->r);
 			s = bin_find_column_nid(be, left, e->nid);
 		if (s && grp)
 			s = stmt_project(be, ext, s);
@@ -3457,14 +3450,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl = NULL, *jr = NULL, *m = NULL, *ls = NULL, *res;
 	bool need_project = false, exist = true, mark = false;
 
-	if (rel->op == op_left) { /* left outer group join */
-		if (list_length(rel->attr) == 1) {
-			sql_exp *e = rel->attr->h->data;
-			if (exp_is_atom(e))
-				mark = true;
-			if (exp_is_atom(e) && exp_is_false(e))
-				exist = false;
-		}
+	if (list_length(rel->attr) == 1) {
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e))
+			mark = true;
+		if (exp_is_atom(e) && exp_is_false(e))
+			exist = false;
 	}
 
 	if (rel->l) /* first construct the left sub relation */
@@ -3549,7 +3540,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		/* first project using equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3559,7 +3550,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3616,7 +3607,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		assert(c->type == st_alias);
+		assert(c->label);
 		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, jl, column(be, c));
@@ -3627,7 +3618,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (!mark && jr) {
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3827,7 +3818,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		/* first project using equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3837,7 +3828,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -4031,7 +4022,6 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			li = ls;
 
 		if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
-			assert(e->flag == cmp_equal);
 			join = stmt_tdiff2(be, ls, rs, NULL);
 			jexps = NULL;
 		} else {
@@ -4052,7 +4042,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		/* first project after equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -4062,7 +4052,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -4123,7 +4113,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	/* project all the left columns */
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		assert(c->type == st_alias);
+		assert(c->label);
 		sql_alias *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, join, column(be, c));
@@ -4290,7 +4280,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		/* first project after equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -4300,7 +4290,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			sql_alias *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -4429,7 +4419,7 @@ rel2bin_single(backend *be, stmt *s)
 
 	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *t = n->data;
-		assert(t->type == st_alias);
+		assert(t->label);
 		sql_alias *rnme = table_name(sql->sa, t);
 		const char *nme = column_name(sql->sa, t);
 		int label = t->label;
@@ -4495,6 +4485,8 @@ subres_assign_newresultvars(backend *be, stmt *rel_stmt)
 static stmt*
 subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 {
+	if (!rel_stmt)
+		return NULL;
 	list *stmts = rel_stmt->op4.lval;
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
@@ -4890,7 +4882,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		sql_alias *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
@@ -4990,7 +4982,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		sql_alias *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
@@ -5105,7 +5097,6 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			exp_label(sql->sa, exp, ++sql->label);
 		if (exp_name(exp)) {
 			s = stmt_rename(be, exp, s);
-			//column_name(sql->sa, s); /* save column name */
 			s->label = exp->alias.label;
 		}
 		list_append(pl, s);
@@ -5368,7 +5359,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		for (n=sub->op4.lval->h; n; n = n->next) {
 			stmt *s = n->data;
-			assert(s->type == st_alias);
+			assert(s->label);
 			const char *cname = column_name(sql->sa, s);
 			sql_alias *tname = table_name(sql->sa, s);
 			int label = s->label;
@@ -5385,7 +5376,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	/* Keep groupby columns, so that they can be looked up in the aggr list */
 	if (rel->r) {
 		list *exps = rel->r;
-
 		for (en = exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 			stmt *gbcol = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -5421,10 +5411,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		/* first look in the current aggr list (l) and group by column list */
 		if (l && !aggrstmt && aggrexp->type == e_column)
-			//aggrstmt = list_find_column(be, l, aggrexp->l, aggrexp->r);
 			aggrstmt = list_find_column_nid(be, l, aggrexp->nid);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
-			//aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			aggrstmt = list_find_column_nid(be, gbexps, aggrexp->nid);
 			if (aggrstmt && groupby) {
 				aggrstmt = stmt_project(be, ext, aggrstmt);
@@ -5474,7 +5462,6 @@ static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	sql_exp *oe = NULL, *le = NULL;
 	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
 
@@ -5505,8 +5492,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 
-	le = topn_limit(rel);
-	oe = topn_offset(rel);
+	sql_exp *le = topn_limit(rel);
+	sql_exp *oe = topn_offset(rel);
 
 	n = sub->op4.lval->h;
 	if (n) {
@@ -5538,7 +5525,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
 			const char *cname = column_name(sql->sa, sc);
 			sql_alias *tname = table_name(sql->sa, sc);
 			int label = sc->label;
@@ -5571,8 +5557,6 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *sc = n->data;
-		//const char *cname = column_name(sql->sa, sc);
-		//sql_alias *tname = table_name(sql->sa, sc);
 
 		 if (!(sample_size = exp_bin(be, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0)))
 			return NULL;
@@ -5588,7 +5572,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
+			assert(sc->label);
 			const char *cname = column_name(sql->sa, sc);
 			sql_alias *tname = table_name(sql->sa, sc);
 			int label = sc->label;
@@ -5807,9 +5791,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		/* foreach column add predicate */
 		stmt_add_column_predicate(be, c->c);
 
-		// foreach column aggregate the nonil (literally 'null') values.
-		// mind that null values are valid fkeys with undefined value so
-		// we won't have an entry for them in the idx_inserts col
+		/* foreach column aggregate the nonil (literally 'null') values.
+		 * mind that null values are valid fkeys with undefined value so
+		 * we won't have an entry for them in the idx_inserts col */
 		s = list_fetch(inserts, c->c->colnr);
 		nonil_rows = stmt_selectnonil(be, s, nonil_rows);
 	}
@@ -5817,9 +5801,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-	// we want to make sure that the data column(s) has the same number
-	// of (nonil) rows as the index column. if that is **not** the case
-	// then we are obviously dealing with an invalid foreign key
+	/* we want to make sure that the data column(s) has the same number
+	 * of (nonil) rows as the index column. if that is **not** the case
+	 * then we are obviously dealing with an invalid foreign key */
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
@@ -7990,8 +7974,8 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	atom *a = ((sql_exp*)argnode->data)->l;
 	int tpe = a->tpe.type->localtype;
 
-	// With regular COPY INTO <file>, the first argument is a string.
-	// With COPY INTO BINARY, it is an int.
+	/* With regular COPY INTO <file>, the first argument is a string.
+	 * With COPY INTO BINARY, it is an int. */
 	if (tpe == TYPE_str) {
 		atom *tatom = ((sql_exp*) argnode->data)->l;
 		const char *tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);

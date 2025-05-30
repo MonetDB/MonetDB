@@ -600,7 +600,7 @@ JSONprelude(void)
 	char jsonupgrade[MAXPATH];
 	struct stat st;
 	if (GDKfilepath(jsonupgrade, sizeof(jsonupgrade), 0, BATDIR, "jsonupgradeneeded", NULL) != GDK_SUCCEED)
-		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
+		throw(MAL, "json.prelude", GDK_EXCEPTION);
 	int r = stat(jsonupgrade, &st);
 	if (r == 0) {
 		/* The file exists so we need to run the upgrade code */

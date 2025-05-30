@@ -5566,18 +5566,7 @@ literal:
 		}
  |  sqlINT
 		{ 
-			char filtered[50] = {0};
-			int j = 0;
-			for (int i = 0; i < 50; i++) {
-				char d = $1[i];
-				if (!d)
-					break;
-				else if (d == '_')
-					continue;
-				filtered[j] = d;
-				++j;
-			}
-			int err = 0;
+		  int err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  size_t len = sizeof(hge);
@@ -5588,10 +5577,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr(filtered, &len, &p, false) < 0 || is_hge_nil(value))
+		  if (hgeFromStr($1, &len, &p, false) < 0 || is_hge_nil(value))
 			err = 2;
 #else
-		  if (lngFromStr(filtered, &len, &p, false) < 0 || is_lng_nil(value))
+		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
 			err = 2;
 #endif
 
@@ -5625,19 +5614,7 @@ literal:
 		}
  |  INTNUM
 		{
-			char filtered[51] = {0};
-			int j = 0;
-			for (int i = 0; i < 50; i++) {
-				char d = $1[i];
-				if (!d)
-					break;
-				else if (d == '_')
-					continue;
-				filtered[j] = d;
-				++j;
-			}
-			filtered[j] = 0;
-			char *s = filtered;
+			char *s = $1;
 
 			int digits;
 			int scale;
@@ -5673,23 +5650,27 @@ literal:
 		}
  |  APPROXNUM
 		{
-		  char filtered[50] = {0};
-		  int j = 0;
-		  for (int i = 0; i < 50; i++) {
-				char d = $1[i];
-				if (!d)
-					break;
-				else if (d == '_')
-			continue;
-			filtered[j] = d;
-			++j;
+		  char *filtered = strdup($1);
+		  if (filtered == NULL) {
+			  sqlformaterror(m, SQLSTATE(HY013) "Malloc failed");
+			  $$ = NULL;
+			  YYABORT;
 		  }
+		  int j = 0;
+		  for (int i = 0; $1[i]; i++) {
+			  char d = $1[i];
+			  if (d == '_')
+				  continue;
+			  filtered[j++] = d;
+		  }
+		  filtered[j] = 0;
 		  sql_subtype t;
 		  char *p = filtered;
 		  double val;
 
 		  errno = 0;
 		  val = strtod(filtered,&p);
+		  free(filtered);
 		  if (p == filtered || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 			$$ = NULL;

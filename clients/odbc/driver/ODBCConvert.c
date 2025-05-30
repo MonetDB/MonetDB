@@ -49,7 +49,7 @@ typedef struct {
  * 0 is returned if the string is not a number, or if scale doesn't fit.
  */
 static int
-parseint(const char *data, bignum_t *nval)
+parsebignum(const char *data, bignum_t *nval)
 {
 	int fraction = 0;	/* inside the fractional part */
 	int scale = 0;
@@ -57,7 +57,7 @@ parseint(const char *data, bignum_t *nval)
 
 	nval->val = 0;
 	nval->precision = 0;
-	scale = 0;
+
 	while (space(*data))
 		data++;
 	if (*data == '-') {
@@ -1103,7 +1103,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_INTERVAL_MINUTE:
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 	case SQL_INTERVAL_SECOND:
-		switch (parseint(data, &nval)) {
+		switch (parsebignum(data, &nval)) {
 		case 0:
 			/* shouldn't happen: getting here means SQL
 			 * server told us a value was of a certain
@@ -1308,6 +1308,8 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_HUGEINT:
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 			sz = snprintf((char *) ptr, buflen, "%s", data);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
@@ -1320,8 +1322,6 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sz;
 			break;
-		case SQL_DECIMAL:
-		case SQL_NUMERIC:
 		case SQL_BIT: {
 			uint64_t f;
 			int n;
@@ -2098,7 +2098,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
-			if (!parseint(data, &nval)) {
+			if (!parsebignum(data, &nval)) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2301,7 +2301,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
-			if (!parseint(data, &nval)) {
+			if (!parsebignum(data, &nval)) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2370,7 +2370,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
-			if (!(i = parseint(data, &nval))) {
+			if (!(i = parsebignum(data, &nval))) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -3779,7 +3779,7 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_BINARY:
 			/* parse character data, reparse floating
 			 * point number */
-			if (!parseint(sval, &nval)) {
+			if (!parsebignum(sval, &nval)) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);

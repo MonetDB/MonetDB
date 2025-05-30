@@ -3766,7 +3766,6 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					le = exp_ref(v->sql, a);
 					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
 					append(join->attr, a);
-					assert(is_project(rel->op) || depth);
 					if ((is_project(rel->op) || depth))
 						return le;
 				}

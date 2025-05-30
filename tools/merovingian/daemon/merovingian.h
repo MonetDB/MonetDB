@@ -51,6 +51,7 @@ typedef struct _dpair {
 	} input[2];
 	mtype type;       /* type of process */
 	short flag;		  /* flag internal to logListener */
+	short crashcount; /* number of crashes during startup */
 	pid_t pid;        /* this process' id */
 	char *dbname;     /* the database that this server serves */
 	pthread_mutex_t fork_lock;

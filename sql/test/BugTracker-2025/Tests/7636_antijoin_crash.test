@@ -1,0 +1,14 @@
+statement ok
+CREATE TABLE t0(c0 INT)
+
+statement ok
+CREATE TABLE t1(c0 INT)
+
+statement ok
+INSERT INTO t0 VALUES(0)
+
+statement ok
+INSERT INTO t1 VALUES(1)
+
+statement ok
+SELECT * FROM t0 WHERE NOT EXISTS (SELECT 1 FROM t1 WHERE t0.c0 != t1.c0)

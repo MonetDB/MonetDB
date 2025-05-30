@@ -95,7 +95,7 @@ rel_table_projections( mvc *sql, sql_rel *rel, char *tname, int level )
 					sql_exp *e = en->data;;
 
 					if ((is_basecol(e) && exp_relname(e) && a_cmp_obj_name(exp_relname(e), tname)) ||
-					    (is_basecol(e) && !exp_relname(e) && e->l && a_cmp_obj_name(e->l, tname))) {
+                    (is_basecol(e) && !exp_relname(e) && e->l && a_cmp_obj_name(e->l, tname))) {
 						if (exp_name(e) && exps_bind_column2(exps, exp_relname(e)?exp_relname(e):e->l, exp_name(e), NULL))
 							rename = 1;
 						else
