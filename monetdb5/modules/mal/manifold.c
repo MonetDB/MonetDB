@@ -320,9 +320,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 	}
 
-	MT_lock_set(&mb->ma->lock);
 	mat = (MULTIarg *) ma_zalloc(mb->ma, sizeof(MULTIarg) * pci->argc);
-	MT_lock_unset(&mb->ma->lock);
 	if (mat == NULL)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 

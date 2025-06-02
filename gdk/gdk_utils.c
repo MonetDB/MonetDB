@@ -2092,6 +2092,19 @@ eb_error(exception_buffer *eb, const char *msg, int val)
 #define round16(sz) ((sz+15)&~15)
 #define round_block_size(sz) ((sz + (SA_BLOCK_SIZE - 1))&~(SA_BLOCK_SIZE - 1))
 
+#define COND_LOCK_ALLOCATOR(a)    \
+    bool __alloc_locked = false;  \
+    if ((a)->pa == NULL && a->use_lock) { \
+        MT_lock_set(&(a)->lock);         \
+        __alloc_locked = true;           \
+    }
+
+#define COND_UNLOCK_ALLOCATOR(a) \
+    if (__alloc_locked) {        \
+        MT_lock_unset(&(a)->lock); \
+    }
+
+
 typedef struct freed_t {
 	size_t sz;
 	struct freed_t *n;
@@ -2113,13 +2126,14 @@ sa_free_obj(allocator *sa, void *obj, size_t sz)
 	//		break;
 	//}
 	//assert (i < pa->nr);
-	// put on the freelist
+	COND_LOCK_ALLOCATOR(sa);
 	freed_t *f = obj;
 	f->sz = sz;
 	f->n = sa->freelist;
 	sa->freelist = f;
 	if (sa->inuse > 0)
 		sa->inuse -= 1;
+	COND_UNLOCK_ALLOCATOR(sa);
 }
 
 
@@ -2134,6 +2148,7 @@ sa_free_blk(allocator *sa, void *blk)
 	if (sa->pa) {
 		sa_free_blk(sa->pa, blk);
 	} else {
+		COND_LOCK_ALLOCATOR(sa);
 		size_t i;
 
 		for(i = 0; i < sa->nr; i++) {
@@ -2157,6 +2172,7 @@ sa_free_blk(allocator *sa, void *blk)
 				sa->blks[i] = sa->blks[i+1];
 			sa->nr--;
 		}
+		COND_UNLOCK_ALLOCATOR(sa);
 	}
 }
 
@@ -2165,21 +2181,23 @@ sa_free_blk(allocator *sa, void *blk)
  * Return first slot that will fit the size
  */
 static void *
-sa_use_freed_obj(allocator *pa, size_t sz)
+sa_use_freed_obj(allocator *sa, size_t sz)
 {
 	freed_t *prev = NULL;
-	freed_t *curr = pa->freelist;
-	int MAX_ITERATIONS = 100;
 	int cntr = 0;
+	int MAX_ITERATIONS = 100;
+	COND_LOCK_ALLOCATOR(sa);
+	freed_t *curr = sa->freelist;
 	while(curr && (cntr < MAX_ITERATIONS)) {
 		if (sz <= curr->sz) {
 			if (prev) {
 				prev->n = curr->n;
 			} else {
-				pa->freelist = curr->n;
+				sa->freelist = curr->n;
 			}
-			pa->free_obj_hits += 1;
-			pa->inuse += 1;
+			sa->free_obj_hits += 1;
+			sa->inuse += 1;
+			COND_UNLOCK_ALLOCATOR(sa);
 			return curr;
 		} else {
 			prev = curr;
@@ -2187,6 +2205,7 @@ sa_use_freed_obj(allocator *pa, size_t sz)
 		}
 		cntr += 1;
 	}
+	COND_UNLOCK_ALLOCATOR(sa);
 	return NULL;
 }
 
@@ -2194,16 +2213,19 @@ sa_use_freed_obj(allocator *pa, size_t sz)
  * Free blocks are maintain at top level
  */
 static void *
-sa_use_freed_blk(allocator *pa, size_t sz)
+sa_use_freed_blk(allocator *sa, size_t sz)
 {
-	if (pa->pa)
-		return sa_use_freed_blk(pa->pa, sz);
-	if (pa->freelist_blks && (sz == SA_BLOCK_SIZE)) {
-		freed_t *f = pa->freelist_blks;
-		pa->freelist_blks = f->n;
-		pa->free_blk_hits += 1;
+	if (sa->pa)
+		return sa_use_freed_blk(sa->pa, sz);
+	COND_LOCK_ALLOCATOR(sa);
+	if (sa->freelist_blks && (sz == SA_BLOCK_SIZE)) {
+		freed_t *f = sa->freelist_blks;
+		sa->freelist_blks = f->n;
+		sa->free_blk_hits += 1;
+		MT_lock_unset(&sa->lock);
 		return f;
 	}
+	COND_UNLOCK_ALLOCATOR(sa);
 	return NULL;
 }
 
@@ -2211,7 +2233,7 @@ sa_use_freed_blk(allocator *pa, size_t sz)
 static void *
 sa_use_freed(allocator *sa, size_t sz)
 {
-	if ((sz < SA_BLOCK_SIZE) && sa->freelist) {
+	if (sz < SA_BLOCK_SIZE) {
 		return sa_use_freed_obj(sa, sz);
 	}
 	if (sz == SA_BLOCK_SIZE) {
@@ -2222,15 +2244,19 @@ sa_use_freed(allocator *sa, size_t sz)
 
 
 /*
- * Reset allocator to initial state
+ * Reset child allocator to initial state
  * free all but 1st blk
  */
 allocator *sa_reset(allocator *sa)
 {
 	size_t i;
+	size_t n_blks = sa->nr;
+	char **blks = sa->blks;
 
-	for (i = 1; i < sa->nr; i++) {
-		char *next = sa->blks[i];
+	assert(sa->pa);
+
+	for (i = 1; i < n_blks; i++) {
+		char *next = blks[i];
 		sa_free_blk(sa, next);
 		//if (sa->pa == NULL) {
 		//	GDKfree(next);
@@ -2284,6 +2310,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 	char *r = sa_use_freed(sa, sz);
 	if (r)
 		return r;
+	COND_LOCK_ALLOCATOR(sa);
 	if (sz > (sa->blk_size - sa->used)) {
 		// out of space need new blk
 		size_t nsize = SA_BLOCK_SIZE;
@@ -2299,6 +2326,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 		if (r == NULL) {
 			if (sa->eb.enabled)
 				eb_error(&sa->eb, "out of memory", 1000);
+			COND_UNLOCK_ALLOCATOR(sa);
 			return NULL;
 		}
 		if (sa->nr >= sa->size) {
@@ -2311,6 +2339,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 				tmp = GDKrealloc(sa->blks, sizeof(char*) * sa->size);
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
+				COND_UNLOCK_ALLOCATOR(sa);
 				if (sa->eb.enabled)
 					eb_error(&sa->eb, "out of memory", 1000);
 				if (!sa->pa)
@@ -2330,6 +2359,7 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 	}
 	sa->objects += 1;
 	sa->inuse += 1;
+	COND_UNLOCK_ALLOCATOR(sa);
 	return r;
 }
 
@@ -2351,7 +2381,7 @@ sa_alloc(allocator *sa, size_t sz)
 
 
 allocator *
-create_allocator(allocator *pa)
+create_allocator(allocator *pa, bool use_lock)
 {
 	// ask blk first so subsequent allocations are
 	// within that blk if there is pa
@@ -2389,8 +2419,8 @@ create_allocator(allocator *pa)
 	sa->free_blk_hits = 0;
 	sa->tmp_active = 0;
 	sa->tmp_used = 0;
+	sa->use_lock = use_lock;
 	MT_lock_init(&sa->lock, "allocator_lock");
-	sa->locked = false;
 	return sa;
 }
 
@@ -2409,7 +2439,6 @@ void
 sa_destroy(allocator *sa)
 {
 	if (sa) {
-		MT_lock_destroy(&sa->lock);
 		bool root_allocator = sa->pa == NULL;
 		for (size_t i = 0; i < sa->nr; i++) {
 			char *next = sa->blks[i];
@@ -2420,6 +2449,7 @@ sa_destroy(allocator *sa)
 			}
 			sa->blks[i] = NULL;
 		}
+		MT_lock_destroy(&sa->lock);
 		if (root_allocator) {
 			GDKfree(sa->blks);
 			GDKfree(sa);

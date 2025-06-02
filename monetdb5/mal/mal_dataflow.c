@@ -336,16 +336,11 @@ DFLOWworker(void *T)
 					break;
 			}
 
-			allocator *pa = flow->cntxt->alloc;
-			MT_lock_set(&pa->lock);
-			// TODO perhaps use tiny size allocator!
+			allocator *pa = flow->mb->ma;
 			allocator *ta = ma_create(pa);
-			MT_lock_unset(&pa->lock);
 			error = runMALsequence(ta, flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
 								   flow->stk, 0, 0);
-			MT_lock_set(&pa->lock);
 			ma_destroy(ta);
-			MT_lock_unset(&pa->lock);
 
 			ATOMIC_DEC(&flow->cntxt->workers);
 			/* release the memory claim */
