@@ -257,3 +257,53 @@ alice
 2
 jane
 
+## unnest in multijoin
+
+statement ok
+create table foo (n int)
+
+statement ok
+insert into foo values (100), (101)
+
+query IT rowsort multijoin_unnest 
+select foo.n, kv_pair.v from foo, data, unnest(kva) kv_pair
+----
+100
+alice
+100
+bob
+100
+jane
+100
+john
+101
+alice
+101
+bob
+101
+jane
+101
+john
+
+statement error !UNNEST: joining of array column without an UNNEST
+select foo.n, kv_pair.v from data, foo, unnest(kva) kv_pair
+
+query IT rowsort multijoin_unnest 
+select foo.n, kv_pair.v from data, unnest(kva) kv_pair, foo
+----
+100
+alice
+100
+bob
+100
+jane
+100
+john
+101
+alice
+101
+bob
+101
+jane
+101
+john
