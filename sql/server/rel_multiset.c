@@ -35,7 +35,8 @@ ms_add_join_exps(visitor *v, sql_rel *rel, list *exps)
 		r = r->l;
 	prop *p = r->p;
 	if (!p || p->kind != PROP_UNNEST)
-		return NULL;
+		return sql_error(v->sql, 02, SQLSTATE(42000) "UNNEST: joining of "
+				"array column without an UNNEST");
 	sql_exp *re = p->value.pval;
 
 	for(node *n = exps->h; n; n = n->next) {
