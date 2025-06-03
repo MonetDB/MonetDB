@@ -2017,10 +2017,10 @@ Tpos(BATiter *bi, BUN p)
 
 __attribute__((__pure__))
 static inline bool
-Tmskval(BATiter *bi, BUN p)
+Tmskval(const BATiter *bi, BUN p)
 {
 	assert(ATOMstorage(bi->type) == TYPE_msk);
-	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
+	return ((const uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 
 static inline void *
