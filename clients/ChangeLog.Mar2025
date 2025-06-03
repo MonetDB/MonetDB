@@ -1,6 +1,19 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Tue Jun  3 2025 Sjoerd Mullender <sjoerd@acm.org>
+- When connecting to a database, if there are multiple monetdbd servers
+  running, mclient will try them all, and also both UNIX domain sockets
+  and then TCP, in order to find a server that accepts the connection.
+  However, when a server that handles the requested database does
+  exist but refuses the connection for some other reason, mclient would
+  continue searching.  This has now been changed.  If monetdbd reports
+  an error other than database unknown, mclient will now stop looking
+  and report the error.
+- There is a new option --quiet (or just -q) in mclient.  If used, the
+  welcome message that is normally printed in an interactive invocation
+  is suppressed.
+
 * Fri May  9 2025 Sjoerd Mullender <sjoerd@acm.org>
 - There is now a \dm command in the interactive mclient to show
   information about merge tables.

@@ -436,20 +436,41 @@ main(int argc, char **av)
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
-				if (dbpath == NULL)
+				if (dbpath == NULL) {
 					fprintf(stderr,
 							"#error: can not allocate memory for dbpath\n");
-				else
-					setlen = mo_add_option(&set, setlen, opt_cmdline,
-										   "gdk_dbpath", dbpath);
+					exit(1);
+				}
+				if (strlen(dbpath) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbpath name too long\n");
+					exit(1);
+				}
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "gdk_dbpath", dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
-				if (dbextra)
+				if (dbextra) {
 					fprintf(stderr,
 							"#warning: ignoring multiple --dbextra arguments\n");
-				else
-					dbextra = optarg;
+					break;
+				}
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0
+					   && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbextra = absolute_path(optarg);
+				if (dbextra == NULL) {
+					fprintf(stderr,
+							"#error: can not allocate memory for dbextra\n");
+					exit(1);
+				}
+				if (strlen(dbextra) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbextra name too long\n");
+					exit(1);
+				}
 				break;
 			}
 
