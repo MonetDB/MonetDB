@@ -2525,29 +2525,20 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #endif
 gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
-typedef struct allocator {
-	struct allocator *pa;
-	size_t size;
-	size_t nr;
-	char **blks;
-	size_t used; 	/* memory used in last block */
-	size_t usedmem;	/* used memory */
-	void *freelist;	/* list of freed blocks */
-	exception_buffer eb;
-	char *first_block; /* the special block in blks that also holds our bookkeeping */
-	size_t reserved;  /* space in first_block is reserved up to here  */
-} allocator;
+typedef struct allocator allocator;
 
-gdk_export allocator *sa_create( allocator *pa );
-gdk_export allocator *sa_reset( allocator *sa );
-gdk_export void *sa_alloc( allocator *sa,  size_t sz );
-gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
-gdk_export void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
-gdk_export void sa_destroy( allocator *sa );
-gdk_export char *sa_strndup( allocator *sa, const char *s, size_t l);
-gdk_export char *sa_strdup( allocator *sa, const char *s);
-gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
-gdk_export size_t sa_size( allocator *sa );
+gdk_export allocator *sa_create(allocator *pa );
+gdk_export allocator *sa_reset(allocator *sa );
+gdk_export void *sa_alloc(allocator *sa,  size_t sz );
+gdk_export void *sa_zalloc(allocator *sa,  size_t sz );
+gdk_export void *sa_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz );
+gdk_export void sa_destroy(allocator *sa );
+gdk_export char *sa_strndup(allocator *sa, const char *s, size_t l);
+gdk_export char *sa_strdup(allocator *sa, const char *s);
+gdk_export char *sa_strconcat(allocator *sa, const char *s1, const char *s2);
+gdk_export size_t sa_size(allocator *sa );
+gdk_export exception_buffer *sa_get_eb(allocator *sa)
+	__attribute__((__pure__));
 
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
 #define sa_alloc(sa, sz)					\

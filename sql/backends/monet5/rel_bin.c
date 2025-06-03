@@ -56,8 +56,8 @@ add_to_rowcount_accumulator(backend *be, int nr)
 
 	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
 	if (q == NULL) {
-		if (be->mvc->sa->eb.enabled)
-			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+		if (sa_get_eb(be->mvc->sa)->enabled)
+			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return -1;
 	}
 	q = pushArgument(be->mb, q, be->rowcount);
@@ -1311,8 +1311,8 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 		pushInstruction(mb, p);
 	}
 	if (p == NULL || mb->errors) {
-		if (be->mvc->sa->eb.enabled)
-			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+		if (sa_get_eb(be->mvc->sa)->enabled)
+			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return sql_error(be->mvc, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -2614,8 +2614,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
 					if (q == NULL) {
-						if (be->mvc->sa->eb.enabled)
-							eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+						if (sa_get_eb(be->mvc->sa)->enabled)
+							eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 						return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					/* Generate output rowid column and output of function f */
@@ -7744,8 +7744,8 @@ rel_bin(backend *be, sql_rel *rel)
 		sql->type = sqltype;  /* reset */
 
 	if (be->mb->errors) {
-		if (be->mvc->sa->eb.enabled)
-			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
+		if (sa_get_eb(be->mvc->sa)->enabled)
+			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
 		return NULL;
 	}
 	return s;

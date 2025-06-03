@@ -275,7 +275,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	backend *be = (backend *) c->sqlcontext;
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
-	exception_buffer ebsave = m->sa->eb;
+	exception_buffer ebsave = *sa_get_eb(m->sa);
 
 	if (strlen(mod) >= IDLENGTH) {
 		(void) sql_error(m, 10, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
@@ -296,8 +296,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
-	} else if (eb_savepoint(&m->sa->eb)) {
-		sql_error(m, 10, "%s", m->sa->eb.msg);
+	} else if (eb_savepoint(sa_get_eb(m->sa))) {
+		sql_error(m, 10, "%s", sa_get_eb(m->sa)->msg);
 		freeSymbol(c->curprg);
 		goto bailout;
 	} else if (_create_relational_function_body(m, nr, call, rel_ops, inline_func) < 0) {
@@ -305,14 +305,14 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	}
 	*be = bebackup;
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
+	*sa_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
 	*be = bebackup;
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
-	if (m->sa->eb.enabled)
-		eb_error(&m->sa->eb, m->errstr[0] ? m->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	*sa_get_eb(m->sa) = ebsave;
+	if (sa_get_eb(m->sa)->enabled)
+		eb_error(sa_get_eb(m->sa), m->errstr[0] ? m->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return -1;
 }
 
@@ -925,7 +925,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	Client c = MCgetClient(m->clientid);
 	backend *be = (backend *) c->sqlcontext;
 	Symbol symbackup = c->curprg;
-	exception_buffer ebsave = m->sa->eb;
+	exception_buffer ebsave = *sa_get_eb(m->sa);
 
 	if (list_empty(prp->value.pval)) {
 		sql_error(m, 003, SQLSTATE(42000) "Missing REMOTE property on the input relation");
@@ -953,8 +953,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
-	} else if (eb_savepoint(&m->sa->eb)) {
-		sql_error(m, 10, "%s", m->sa->eb.msg);
+	} else if (eb_savepoint(sa_get_eb(m->sa))) {
+		sql_error(m, 10, "%s", sa_get_eb(m->sa)->msg);
 		freeSymbol(c->curprg);
 		goto bailout;
 	} else if (_create_relational_remote_body(m, mod, name, rel, rel2, call, prp) < 0) {
@@ -962,14 +962,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	sa_reset(m->ta);
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
+	*sa_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
 	sa_reset(m->ta);
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
-	if (m->sa->eb.enabled)
-		eb_error(&m->sa->eb, m->errstr[0] ? m->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	*sa_get_eb(m->sa) = ebsave;
+	if (sa_get_eb(m->sa)->enabled)
+		eb_error(sa_get_eb(m->sa), m->errstr[0] ? m->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return -1;
 }
 
@@ -1077,20 +1077,20 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 	exception_buffer ebsave = {.enabled = 0};
 
 	if (m->sa) {
-		ebsave = m->sa->eb;
-		if (eb_savepoint(&m->sa->eb)) {
-			(void) sql_error(m, 10, "%s", m->sa->eb.msg);
+		ebsave = *sa_get_eb(m->sa);
+		if (eb_savepoint(sa_get_eb(m->sa))) {
+			(void) sql_error(m, 10, "%s", sa_get_eb(m->sa)->msg);
 			goto bailout;
 		}
 	}
 	if (backend_dumpstmt_body(be, mb, r, top, add_end, query) < 0)
 		goto bailout;
 	if (m->sa)
-		m->sa->eb = ebsave;
+		*sa_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
 	if (m->sa)
-		m->sa->eb = ebsave;
+		*sa_get_eb(m->sa) = ebsave;
 	return -1;
 }
 
@@ -1171,7 +1171,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	mvc *m = be->mvc;
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
-	exception_buffer ebsave = m->sa->eb;
+	exception_buffer ebsave = *sa_get_eb(m->sa);
 	int argc = 1;
 	const char *sql_private_module = putName(sql_private_module_name);
 
@@ -1184,8 +1184,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
-	} else if (eb_savepoint(&m->sa->eb)) {
-		sql_error(m, 10, "%s", m->sa->eb.msg);
+	} else if (eb_savepoint(sa_get_eb(m->sa))) {
+		sql_error(m, 10, "%s", sa_get_eb(m->sa)->msg);
 		freeSymbol(c->curprg);
 		goto bailout;
 	} else if (backend_dumpproc_body(be, c, r) < 0) {
@@ -1193,12 +1193,12 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	}
 	*be = bebackup;
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
+	*sa_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
 	*be = bebackup;
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
+	*sa_get_eb(m->sa) = ebsave;
 	return -1;
 }
 
@@ -1637,7 +1637,7 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	const char *sql_shared_module = putName(sql_shared_module_name);
 	const char *sql_private_module = putName(sql_private_module_name);
 	const char *modname = prepare?sql_private_module:sql_shared_module;
-	exception_buffer ebsave = m->sa->eb;
+	exception_buffer ebsave = *sa_get_eb(m->sa);
 	char befname[IDLENGTH];
 	int nargs;
 	char *fimp;
@@ -1657,8 +1657,8 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	} else if (c->curprg == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
-	} else if (eb_savepoint(&m->sa->eb)) {
-		sql_error(m, 10, "%s", m->sa->eb.msg);
+	} else if (eb_savepoint(sa_get_eb(m->sa))) {
+		sql_error(m, 10, "%s", sa_get_eb(m->sa)->msg);
 		freeSymbol(c->curprg);
 		goto bailout;
 	} else if (backend_create_sql_func_body(be, f, restypes, ops, prepare ? c->usermodule : getModule(modname), fimp, prepare) < 0) {
@@ -1666,13 +1666,13 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	}
 	*be = bebackup;
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
+	*sa_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
 	_DELETE(fimp);
 	*be = bebackup;
 	c->curprg = symbackup;
-	m->sa->eb = ebsave;
+	*sa_get_eb(m->sa) = ebsave;
 	return -1;
 }
 

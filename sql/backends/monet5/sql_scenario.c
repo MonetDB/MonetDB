@@ -1638,7 +1638,7 @@ SQLparser_body(Client c, backend *be)
 	}
 finalize:
 	if (m->sa)
-		eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
+		eb_init(sa_get_eb(m->sa)); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;
@@ -1667,9 +1667,9 @@ SQLparser(Client c, backend *be)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 	}
-	if (eb_savepoint(&m->sa->eb)) {
-		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-		eb_init(&m->sa->eb);
+	if (eb_savepoint(sa_get_eb(m->sa))) {
+		msg = createException(SQL, "SQLparser", "%s", sa_get_eb(m->sa)->msg);
+		eb_init(sa_get_eb(m->sa));
 		sa_reset(m->sa);
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
 			freeException(c->curprg->def->errors);
