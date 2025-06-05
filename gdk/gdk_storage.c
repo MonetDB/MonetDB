@@ -586,12 +586,10 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			nme = path;
 		}
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL;
+			int mod = MMAP_READ | MMAP_WRITE;
 
 			if (mode == STORE_PRIV)
 				mod |= MMAP_COPY;
-			else
-				mod |= MMAP_SYNC;
 			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */
