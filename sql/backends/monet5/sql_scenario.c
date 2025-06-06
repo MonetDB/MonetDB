@@ -92,7 +92,7 @@ static str master_password = NULL;
 static void
 CLIENTprintinfo(void)
 {
-	int nrun = 0, nfinish = 0, nblock = 0, i = 0;
+	int nrun = 0, nfinish = 0, nblock = 0;
 	char mmbuf[64];
 	char tmbuf[64];
 	char trbuf[128];
@@ -133,10 +133,13 @@ CLIENTprintinfo(void)
 			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc &&
 				((backend *) c->sqlcontext)->mvc->session &&
 				((backend *) c->sqlcontext)->mvc->session->tr) {
+				int i = 0;
 				if (((backend *) c->sqlcontext)->mvc->session->tr->active)
 					i = snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
-				i += snprintf(trbuf + i, sizeof(trbuf) - i, ", prepared queries: %d", qc_size(((backend *) c->sqlcontext)->mvc->qc));
-				snprintf(trbuf + i, sizeof(trbuf) - i, ", open resultsets: %d", res_tables_count(((backend *) c->sqlcontext)->results));
+				if (i < (int) sizeof(trbuf))
+					i += snprintf(trbuf + i, sizeof(trbuf) - i, ", prepared queries: %d", qc_size(((backend *) c->sqlcontext)->mvc->qc));
+				if (i < (int) sizeof(trbuf))
+					snprintf(trbuf + i, sizeof(trbuf) - i, ", open resultsets: %d", res_tables_count(((backend *) c->sqlcontext)->results));
 			}
 			else
 				trbuf[0] = 0;
