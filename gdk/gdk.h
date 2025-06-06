@@ -2525,6 +2525,7 @@ typedef struct allocator {
 	size_t size;	 /* size of the allocator in terms of blocks */
 	size_t nr;	 /* number of blocks allocated */
 	char **blks;
+	char *first_blk;
 	size_t used; 	 /* memory used in last block */
 	size_t usedmem;	 /* total used memory */
 	size_t blk_size; /* size of the last allocated block */
