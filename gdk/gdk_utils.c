@@ -2344,8 +2344,13 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 			else {
 				tmp = GDKmalloc(sizeof(char*) * sa->size);
 			}
-			if (tmp && sa->blks)
+			if (tmp && sa->blks) {
+				bool reallocated = sa->blks != (char **)sa->first_blk;
 				memcpy(tmp, sa->blks, sizeof(char*) * osz);
+				if (!sa->pa && reallocated) {
+					GDKfree(sa->blks);
+				}
+			}
 			if (tmp == NULL) {
 				sa->size /= 2; /* undo */
 				COND_UNLOCK_ALLOCATOR(sa);
@@ -2446,7 +2451,7 @@ sa_destroy(allocator *sa)
 {
 	if (sa) {
 		bool root_allocator = sa->pa == NULL;
-		bool blks_relocated = sa->blks[0] != sa->first_blk;
+		bool blks_relocated = sa->blks != (char**)sa->first_blk;
 		// free all but 1st initially
 		// 1st blk holds metadata
 		for (size_t i = 1; i < sa->nr; i++) {
