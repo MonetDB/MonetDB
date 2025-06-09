@@ -2442,7 +2442,7 @@ exps_rel_get_rel(allocator *sa, list *exps )
 			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
 			if (xp) {
-				xp = rel_crossproduct(sa, xp, r, op_full);
+				xp = rel_crossproduct(sa, xp, r, op_join/* op_full */);
 				set_processed(xp);
 			} else {
 				xp = r;

@@ -608,7 +608,6 @@ stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
 	return s;
 }
 
-
 stmt *
 stmt_tid(backend *be, sql_table *t, int partition)
 {
@@ -2118,7 +2117,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 }
 
 stmt *
-stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
+stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
@@ -2129,6 +2128,7 @@ stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 	q = pushArgument(mb, q, m->nr); /* mark flag */
 	q = pushArgument(mb, q, p->nr); /* predicate */
 	q = pushBit(mb, q, (any)?TRUE:FALSE);
+	q = pushBit(mb, q, (single)?TRUE:FALSE);
 	pushInstruction(mb, q);
 
 	if (!q)

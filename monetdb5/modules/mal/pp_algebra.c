@@ -691,7 +691,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			type != TYPE_hge &&
 #endif
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
-		type != TYPE_flt && type != TYPE_dbl &&
+		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
 
@@ -709,6 +709,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			aggr(hge,min);
 #endif
 			aggr(lng,min);
+			aggr(oid,min);
 			aggr(int,min);
 			aggr(sht,min);
 			aggr(bte,min);
@@ -750,7 +751,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			type != TYPE_hge &&
 #endif
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
-		type != TYPE_flt && type != TYPE_dbl &&
+		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str)
 			return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
 
@@ -768,6 +769,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			aggr(hge,max);
 #endif
 			aggr(lng,max);
+			aggr(oid,max);
 			aggr(int,max);
 			aggr(sht,max);
 			aggr(bte,max);
@@ -1662,6 +1664,43 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		bat_iterator_end(&bi); \
 	}
 
+#define afgroup() \
+	    assert(h->hsh && h->cmp); \
+		int slots = 0, w = b->twidth; \
+		gid slot = 0; \
+		char *vals = h->vals; \
+		char *ivals = Tloc(b, 0); \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			bool fnd = 0; \
+			gid k = (gid)h->hsh(ivals+(i*w))&h->mask; \
+			gid g = 0; \
+			\
+			for(; !fnd; ) { \
+				g = ATOMIC_GET(h->gids+k); \
+				for(;g && h->cmp(vals+(g*w), ivals+(i*w)) != 0;) { \
+					k++; \
+					k &= h->mask; \
+					g = ATOMIC_GET(h->gids+k); \
+				} \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = private?1:PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) \
+							hash_rehash(h, p, err); \
+					} \
+					slots--; \
+					g = ++slot; \
+				   	memcpy(vals+(g*w), ivals+(i*w), w); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						continue; \
+				} \
+				fnd = 1; \
+			} \
+			gp[i] = g-1; \
+		} \
+
 static str
 LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 {
@@ -1773,7 +1812,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 					agroup(str)
 				}
 			} else {
-				err = createException(MAL, "pp group.group", "Type (%s) not handled yet\n", ATOMname(tt));
+				afgroup()
 			}
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group", RUNTIME_QRY_TIMEOUT));
 		}

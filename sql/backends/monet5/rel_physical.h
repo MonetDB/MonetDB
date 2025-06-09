@@ -17,5 +17,6 @@
 #include "sql_mvc.h"
 
 extern sql_rel *rel_physical(mvc *sql, sql_rel *rel);
+extern void split_join_exps_pp(sql_rel *rel, list *joinable, list *not_joinable, bool anti);
 
 #endif /*_REL_PHYSICAL_H_*/

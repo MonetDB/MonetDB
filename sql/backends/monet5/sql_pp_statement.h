@@ -24,7 +24,8 @@ extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int 
 
 extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);
 extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq_sink, bit append_vals, const stmt *pp);
-extern stmt *stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp, sql_subtype *st);
+extern stmt *stmt_oahash_explode(backend *be, int slotid, const stmt *freq_sink, const stmt *norows_prb, int selected, bit outer, const stmt *pp, sql_subtype *st);
+extern stmt *stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, int selected, bit outer, const stmt *pp, sql_subtype *st);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);

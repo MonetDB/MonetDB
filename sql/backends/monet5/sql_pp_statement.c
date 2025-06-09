@@ -606,21 +606,53 @@ stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq
 }
 
 stmt *
-stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, bit outer, const stmt *pp, sql_subtype *st)
+stmt_oahash_explode(backend *be, int slotid, const stmt *freq_sink, const stmt *norows_prb, int selected, bit outer, const stmt *pp, sql_subtype *st)
+{
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("explode"), 7);
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushArgument(be->mb, q, slotid);
+	q = pushArgument(be->mb, q, freq_sink->nr);
+	if (outer) {
+		q = pushArgument(be->mb, q, norows_prb->nr);
+		q = pushArgument(be->mb, q, selected);
+	} else {
+		q = pushLng(be->mb, q, 0);
+		q = pushNilBat(be->mb, q);
+	}
+	q = pushBit(be->mb, q, outer);
+	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *st;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
+}
+
+stmt *
+stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, int selected, bit outer, const stmt *pp, sql_subtype *st)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("fetch_payload"), 6);
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("fetch_payload"), 8);
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* fetched */
 	q = pushArgument(be->mb, q, hp_sink->nr);
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
-	if (outer)
+	if (outer) {
 		q = pushArgument(be->mb, q, norows_prb->nr);
-	else
+		q = pushArgument(be->mb, q, selected);
+	} else {
 		q = pushLng(be->mb, q, 0);
+		q = pushNilBat(be->mb, q);
+	}
 	q = pushBit(be->mb, q, outer);
 	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 	pushInstruction(be->mb, q);

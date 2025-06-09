@@ -77,14 +77,17 @@ add_to_rowcount_accumulator(backend *be, int nr)
 	return 0;
 }
 
-static stmt *
-stmt_selectnil(backend *be, stmt *col)
+stmt *
+stmt_selectnil(backend *be, stmt *col, stmt *sel)
 {
 	sql_subtype *t = tail_type(col);
-	return stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)), cmp_equal, NULL, 0, 1);
+	stmt *nsel = stmt_uselect(be, col, stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)), cmp_equal, NULL, 0, 1);
+	if (sel)
+		nsel = stmt_tunion(be, nsel, sel);
+	return nsel;
 }
 
-static stmt *
+stmt *
 sql_unop_(backend *be, const char *fname, stmt *rs)
 {
 	mvc *sql = be->mvc;
@@ -2186,7 +2189,7 @@ check_types(backend *be, sql_subtype *t, stmt *s, check_type tpe)
 	return s;
 }
 
-static stmt *
+stmt *
 sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 {
 	mvc *sql = be->mvc;
@@ -3229,7 +3232,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				li = stmt_project(be, sel, li);
 			osel = sel;
 			if (en->next) {
-				join = stmt_outerselect(be, li, m, p, is_any(e));
+				join = stmt_outerselect(be, li, m, p, is_any(e), false);
 			} else {
 				join = stmt_markselect(be, li, m, p, is_any(e));
 			}
@@ -3704,7 +3707,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		stmt *nulls = NULL;
 
 		if (li && stmt_has_null(li)) {
-			nulls = stmt_selectnil(be, li);
+			nulls = stmt_selectnil(be, li, NULL);
 		}
 		/* construct relation */
 		list *nl = sa_list(sql->sa);
@@ -6216,7 +6219,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_selectnil(be, column(be, i));
+				s = stmt_selectnil(be, column(be, i), NULL);
 				if (!cnt)
 					cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
@@ -6745,7 +6748,7 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			} else { /* created idx/key using alter */
 				upd = stmt_col(be, c->c, tids, tids->partition);
 			}
-			nn = stmt_selectnil(be, upd);
+			nn = stmt_selectnil(be, upd, NULL);
 			if (null)
 				null = stmt_tunion(be, null, nn);
 			else
@@ -6758,7 +6761,7 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		cntnulls = stmt_atom_lng(be, 0);
 	}
 	s = stmt_binop(be, s,
-		stmt_binop(be, stmt_aggr(be, stmt_selectnil(be, idx_updates), NULL, NULL, cnt, 1, 0, 1), cntnulls, NULL, ne), NULL, or);
+		stmt_binop(be, stmt_aggr(be, stmt_selectnil(be, idx_updates, NULL), NULL, NULL, cnt, 1, 0, 1), cntnulls, NULL, ne), NULL, or);
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);
@@ -6800,7 +6803,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 			upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
-			stmt *nn = stmt_selectnil(be, upd);
+			stmt *nn = stmt_selectnil(be, upd, NULL);
 			if (null)
 				null = stmt_tunion(be, null, nn);
 			else
@@ -7292,7 +7295,7 @@ sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 			char *msg = NULL;
 
 			if (!(s->key && s->nrcols == 0)) {
-				s = stmt_selectnil(be, updates[c->colnr]);
+				s = stmt_selectnil(be, updates[c->colnr], NULL);
 				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true, true);

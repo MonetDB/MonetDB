@@ -316,21 +316,6 @@ rel_groupby_partition_safe(sql_rel *rel)
 	return true;
 }
 
-static bool
-only_equi_joins(sql_rel *rel)
-{
-	assert(!list_empty(rel->exps));
-
-	for(node *n = rel->exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-	//	if (!is_any(e) && !is_semantics(e) && e->type == e_cmp && e->flag == cmp_notequal && list_length(rel->exps) == 1)
-	//		return true;
-		if (!is_equi_exp_(e) || !can_join_exp(rel, e, false) || is_any(e))
-			return false;
-	}
-	return true;
-}
-
 static int
 do_oahash_join(sql_rel *rel)
 {
@@ -338,28 +323,13 @@ do_oahash_join(sql_rel *rel)
 	if (!(GDKdebug & oahash_enabled))
 		return 0;
 
-	if (rel->op == op_anti && list_length(rel->exps) == 1) {
-		sql_exp *e = rel->exps->h->data;
-		if (!is_any(e) && !is_semantics(e) && e->type == e_cmp && e->flag == cmp_equal)
-			return 1;
-	}
-
-	// TODO full outer and anti-join
-	if (rel->op == op_full || rel->op == op_anti)
+	// TODO full outer join
+	if (rel->op == op_full)
 		return 0;
 
 	// TODO groupjoin
 	if (!list_empty(rel->attr))
 		return 0;
-
-	// TODO the always-true case, i.e. no retrictions, which can happen in
-	//      inner-, outer-, semi-, anti- and cross-joins
-	if (list_empty(rel->exps))
-		return 1;
-
-	// TODO we can do hash based with one or more, rest can be handled via a filter step
-	if (!only_equi_joins(rel))
-			return 0;
 
 	return 1;
 }
@@ -612,11 +582,14 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		assert(e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal));
+		assert(e->type == e_cmp);
+		//assert(e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal));
 
 		/* search first for the not-atom exp, otherwise rel_find_exp()
 		 * incorrectly returns TRUE for an atom-typed exp */
-		if (exp_is_atom(e->l)) {
+		if (exp_is_atom(e->l) || e->flag != cmp_equal || exp_is_atom(e->r)) {
+			assert(0);
+		} else {
 			if (rel_find_exp(rel_hsh, e->r)) {
 				append(*exps_hsh, e->r);
 				append(*exps_prb, e->l);
@@ -625,17 +598,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 				append(*exps_hsh, e->l);
 				append(*exps_prb, e->r);
 			}
-		} else {
-			if (rel_find_exp(rel_prb, e->l)) {
-				append(*exps_hsh, e->r);
-				append(*exps_prb, e->l);
-			} else {
-				assert(rel_find_exp(rel_hsh, e->l));
-				append(*exps_hsh, e->l);
-				append(*exps_prb, e->r);
-			}
 		}
-
 	}
 }
 
@@ -830,60 +793,78 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_semi(rel->op)) {
 		assert(list_length(rel->exps)); // else optimizer should have cleaned up
-		if (do_oahash_join(rel)) {
-			rel->oahash = 2;
 
-			sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
-			list *found_exps_cmp_hsh = NULL;
+		list *eq_exps = sa_list(v->sql->sa);
+		list *other = sa_list(v->sql->sa);
+		split_join_exps_pp(rel, eq_exps, other, true);
+		bool needs_payload = (!list_empty(other));
+		bool need_all = false;
+		bool cross = list_empty(eq_exps);
 
-			/* get full projection list from parent */
-			assert(p);
-			if (rel_hsh->op == op_buildhash)
-				found_exps_cmp_hsh = rel_hsh->attr;
-			list *exps_cmp_hsh = sa_list(v->sql->sa), *exps_cmp_prb = sa_list(v->sql->sa);
-			find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
+		rel->oahash = 2;
 
-			if (found_exps_cmp_hsh) {
-				printf("# todo needs check\n");
-			} else {
-				rel->r = rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(rel->exps));
-				rel_hsh->flag = (int)op_semi;
-			}
-			rel->l = rel_prb = rel_probehash(v, rel_prb, NULL);
-			rel_hsh->attr = exps_cmp_hsh;
-			rel_prb->attr = exps_cmp_prb;
+		sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
+		list *found_exps_cmp_hsh = NULL;
 
-			list *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
-			find_payload_exps(v->sql, NULL, &exps_prb, p->exps, rel_hsh, rel_prb);
+		/* get full projection list from parent */
+		assert(p);
+		if (rel_hsh->op == op_buildhash)
+			found_exps_cmp_hsh = rel_hsh->attr;
+		list *exps_cmp_hsh = sa_list(v->sql->sa), *exps_cmp_prb = sa_list(v->sql->sa);
+		find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, eq_exps, rel_hsh, rel_prb);
 
-			(void) rel_pipeline(v, rel_prb, false, 1);
-			(void) rel_pipeline(v, rel_hsh, true, 1);
-
-			rel->parallel = 1;
-			if (pb == CPB) {
-				assert(0);
-				rel_dup(rel);
-			}
-			if (pb)
-				rel->spb = 1;
-			res = SPB;
+		if (found_exps_cmp_hsh) {
+			printf("# todo needs check\n");
 		} else {
-			if (rel->l && rel->op != op_anti)
-				res = rel_pipeline(v, rel->l, false, pb);
-			if (rel->parallel)
-				(void) rel_pipeline(v, rel->r, false, pb);
-			/* We always use a 'pb' for rel->l of a semijoin. But, if this
-			 * semijoin is not inside an active 'pb' (EPB: 'pb' ended by
-			 * subtree, REL_PARTITION: 'pb' hasn't started), it needs to
-			 * start a 'pb' itself. */
-			if (res == EPB || res == REL_PARTITION) {
-				rel->partition = 1;
-				if (pb && res == REL_PARTITION) {
-					rel->spb = 1;
-					res = SPB;
-				}
+			if (rel_is_ref(rel_hsh))
+				need_all = true;
+			rel->r = rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(eq_exps));
+			rel_hsh->flag = (int)(needs_payload?op_join:op_semi);
+		}
+		rel->l = rel_prb = rel_probehash(v, rel_prb, NULL);
+		rel_hsh->attr = cross?NULL:exps_cmp_hsh;
+		rel_prb->attr = exps_cmp_prb;
+
+		list *exps_hsh = NULL, *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
+		if (needs_payload)
+			exps_hsh = sa_list(v->sql->sa);
+		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
+
+		if (need_all && !is_base(rel_hsh->op))
+			rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
+		if (needs_payload) { /* TODO improve ie only keep attributes needed for 'other' exps */
+			if (!is_base(rel_hsh->op)) {
+				sql_rel *l = rel_hsh->l;
+				if (!is_project(l->op) && !is_base(l->op))
+					l = rel_hsh->l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+				list *nl = sa_list(v->sql->sa);
+				for(node *n = l->exps->h; n; n = n->next)
+					append(nl, exp_ref(v->sql, n->data));
+				rel_hsh->exps = !rel_hsh->exps?nl:list_distinct(list_merge(rel_hsh->exps, nl, NULL), (fcmp) exp_equal, NULL);
+			}
+			if (!is_base(rel_prb->op)) {
+				sql_rel *l = rel_prb->l;
+				if (!is_project(l->op) && !is_base(l->op))
+					l = rel_prb->l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+				list *nl = sa_list(v->sql->sa);
+				for(node *n = l->exps->h; n; n = n->next)
+					append(nl, exp_ref(v->sql, n->data));
+				rel_prb->exps = !rel_prb->exps?nl:list_distinct(list_merge(rel_prb->exps, nl, NULL), (fcmp) exp_equal, NULL);
 			}
 		}
+
+		(void) rel_pipeline(v, rel_prb, false, 1);
+		if (rel_hsh && rel_hsh->op == op_buildhash)
+			(void) rel_pipeline(v, rel_hsh, true, 1);
+
+		rel->parallel = 1;
+		if (pb == CPB) {
+			assert(0);
+			rel_dup(rel);
+		}
+		if (pb)
+			rel->spb = 1;
+		res = SPB;
 	} else if (rel->op == op_munion) {
 		list *rels = rel->l;
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel)) {
@@ -909,21 +890,25 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (pb) { /* somewhat simplified */
 			rel->spb = 1;
 			res = SPB;
-		} else {
+		//} else {
 			if (rel->l)
 				lres = rel_pipeline(v, rel->l, true, 0);
 			if (rel->r)
 				rres = rel_pipeline(v, rel->r, true, 0);
+			/*
 			if (lres == EPB)
 				rel->partition = 1;
 			if (rres == EPB)
 				rel->partition = 1;
+				*/
 			if (pb)
 				rel->spb = 1;
+			else {
 			if (!lres || !rres)
 				res = 0;
 			else
 				res = pb;
+			}
 		}
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r /*&& rel->card <= CARD_AGGR*/)
@@ -934,11 +919,15 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			res = pb;
 		}
 	} else if (is_join(rel->op)) {
-		//assert (do_oahash_join(rel));
 		if (do_oahash_join(rel)) {
+			list *eq_exps = sa_list(v->sql->sa);
+			list *other = sa_list(v->sql->sa);
+			split_join_exps_pp(rel, eq_exps, other, true);
+
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
 			bool need_all = false;
+			bool cross = list_empty(eq_exps);
 
 			list *found_exps_cmp_hsh = NULL, *found_exps_prj_hsh = NULL;
 
@@ -969,13 +958,13 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel_hsh = rel->r;
 					rel_prb = rel->l;
 				} else {
-				   	assert (rel->oahash == 1);
+					assert (rel->oahash == 1);
 					rel_hsh = rel->l;
 					rel_prb = rel->r;
 				}
 				if (rel_is_ref(rel_hsh))
 					need_all = true;
-				rel_hsh = rel_buildhash(v, rel_hsh, &iprj, list_empty(rel->exps));
+				rel_hsh = rel_buildhash(v, rel_hsh, &iprj, list_empty(eq_exps));
 			} else {
 				found_exps_cmp_hsh = rel_hsh->attr;
 				found_exps_prj_hsh = rel_hsh->exps;
@@ -992,17 +981,17 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			/* get full projection list from parent */
 			assert(p);
 			list *exps_cmp_hsh = NULL, *exps_cmp_prb = NULL;
-			if (!list_empty(rel->exps)) {
+			if (!list_empty(eq_exps)) {
 				exps_cmp_hsh = sa_list(v->sql->sa);
 				exps_cmp_prb = sa_list(v->sql->sa);
-				find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, rel->exps, rel_hsh, rel_prb);
+				find_cmp_exps(&exps_cmp_hsh, &exps_cmp_prb, eq_exps, rel_hsh, rel_prb);
 
 				if (found_exps_cmp_hsh) { /* if not the same ?? */
 					printf("# todo need to check \n");
 				} else {
-					rel_hsh->attr = exps_cmp_hsh;
+					rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 				}
-				rel_prb->attr = exps_cmp_prb;
+				rel_prb->attr = cross?NULL:exps_cmp_prb;
 			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
@@ -1010,19 +999,39 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 
 			if (found_exps_prj_hsh) {
 				printf("# todo need to check \n");
-			} else {
-				if (!list_empty(exps_hsh))
-					rel_hsh->exps = exps_hsh;
-				if (iprj) {
-					list *n = clean_exp_list(exps_cmp_hsh, sa_list(v->sql->sa));
-					n = list_merge(n, exps_hsh, NULL);
-					if (!list_empty(n))
-						iprj->exps = n;
-				}
+			} else if (!list_empty(exps_hsh) && !is_base(rel_hsh->op)) {
+				rel_hsh->exps = exps_hsh;
 			}
 			rel_prb->exps = exps_prb;
-			if (need_all) /* add all missing rel_hsh->attr to rel_hsh->exps */
-				rel_hsh->exps = list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
+			if (need_all && !is_base(rel_hsh->op)) /* add all missing rel_hsh->attr to rel_hsh->exps */
+				rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
+			if (!list_empty(other)) {
+				if (!is_base(rel_hsh->op)) {
+					sql_rel *l = rel_hsh->l;
+					if (!is_project(l->op) && !is_base(l->op))
+						l = rel_hsh->l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+					list *nl = sa_list(v->sql->sa);
+					for(node *n = l->exps->h; n; n = n->next)
+						append(nl, exp_ref(v->sql, n->data));
+					rel_hsh->exps = !rel_hsh->exps?nl:list_distinct(list_merge(rel_hsh->exps, nl, NULL), (fcmp) exp_equal, NULL);
+				}
+
+				if (!is_base(rel_prb->op)) {
+					sql_rel *l = rel_prb->l;
+					if (!is_project(l->op) && !is_base(l->op))
+						l = rel_prb->l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
+					list *nl = sa_list(v->sql->sa);
+					for(node *n = l->exps->h; n; n = n->next)
+						append(nl, exp_ref(v->sql, n->data));
+					rel_prb->exps = !rel_prb->exps?nl:list_distinct(list_merge(rel_prb->exps, nl, NULL), (fcmp) exp_equal, NULL);
+				}
+			}
+			if (iprj) {
+				list *n = clean_exp_list(rel_hsh->attr, sa_list(v->sql->sa));
+				n = list_merge(n, rel_hsh->exps, NULL);
+				if (!list_empty(n))
+					iprj->exps = n;
+			}
 
 			(void) rel_pipeline(v, rel_prb, false, 1);
 			if (rel_hsh->op == op_buildhash)
@@ -1431,16 +1440,16 @@ rel_add_orderby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static void
-split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
+void
+split_join_exps_pp(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 {
-	if (rel->op == op_join && !list_empty(rel->exps)) {
+	if (!list_empty(rel->exps)) {
 		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
 			/* we can handle thetajoins, rangejoins and filter joins (like) */
 			/* ToDo how about atom expressions? */
-			if (can_join_exp(rel, e, anti) && is_equi_exp_(e)) {
+			if (can_join_exp(rel, e, anti) && is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l)) {
 				append(joinable, e);
 			} else {
 				append(not_joinable, e);
@@ -1465,26 +1474,6 @@ rel_add_project(visitor *v, sql_rel *rel)
 			rel = rel_inplace_project(v->sql->sa, rel, NULL, exps);
 	}
 	v->parent = p;
-	return rel;
-}
-
-static sql_rel *
-rel_split_join(visitor *v, sql_rel *rel)
-{
-	if (rel->op == op_join && !rel->attr && !is_single(rel) && !rel_is_ref(rel)) {
-		list *eq_exps = sa_list(v->sql->sa);
-		list *other = sa_list(v->sql->sa);
-		split_join_exps(rel, eq_exps, other, true);
-
-		rel->exps = eq_exps;
-		if (!list_empty(other)) {
-			rel = rel_select(v->sql->sa, rel, NULL);
-			rel->exps = other;
-			v->parent = rel;
-			rel->l = rel_add_project(v, rel->l);
-			v->changes++;
-		}
-	}
 	return rel;
 }
 
@@ -1525,8 +1514,6 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 		rel = rel_count_gt_zero(v, rel);
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
 		if (SQLrunning && (GDKdebug & oahash_enabled)) {
-			if (rel)
-				rel = rel_split_join(v, rel);
 			if (rel)	/* After a projection after each join, needed for limited number of columns in hash tables */
 				rel = rel_add_project(v, rel);
 		}

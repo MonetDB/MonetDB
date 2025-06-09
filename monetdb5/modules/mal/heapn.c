@@ -715,13 +715,13 @@ gheap_up_##T( heapn *hp, gid g, size_t p)		\
 		q = p;							\
 										\
 	if (p != q) {						\
-		oid vpos = pos[p];			\
+		oid vpos = pos[p];				\
 										\
-		hp->pos[p] = pos[q];		\
-		hp->pos[q] = vpos;				\
+		pos[p] = pos[q];				\
+		pos[q] = vpos;					\
 		if (q == 0)						\
 			return q+1;					\
-		return gheap_up_##T(hp, g, q);		\
+		return gheap_up_##T(hp, g, q);	\
 	}									\
 	p++;								\
 	return p;							\
@@ -730,11 +730,11 @@ gheap_up_##T( heapn *hp, gid g, size_t p)		\
 static gid								\
 gheap_del_##T( heapn *hp, gid g) 		\
 {										\
-	hp->useda[g]--;							\
+	hp->useda[g]--;						\
 	oid *pos = hp->pos + g * hp->size;	\
 	oid vpos = pos[0];					\
 										\
-	pos[0] = pos[hp->useda[g]];		\
+	pos[0] = pos[hp->useda[g]];			\
 	pos[hp->useda[g]] = vpos;			\
 	(void) gheap_down_##T( hp, g, 0);	\
 	return vpos;						\
@@ -849,67 +849,83 @@ topn_grouped_##T( size_t n, oid *pos, oid *sl, heapn *hp, int *err)			\
 		return j;			\
 	}						\
 	T *hpvals = sh->vals;	\
-							\
 	T *vals = sh->ivals;	\
-	if (hp->used < hp->size) {						\
-		for(i=0; i<n; i++) {			\
-			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
-				pos[i] = gheap_ins_##T(hp, i, err);		\
-				sl[i] = i;	\
-			}				\
-		}					\
-		j = i;				\
-	}						\
+	\
 	if (sh->nlarge) {		\
 		if (sh->min) {		\
 			for(; i<n; i++) {						\
-				oid *hppos = hp->pos + hp->gi[i] * hp->size; \
-				int c = type_cmp(T, hpvals[hppos[0]], vals[i]);	\
-				if (c < 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
-					pos[j] = gheap_del_##T(hp, hp->gi[i]);			\
+				if (hp->useda[hp->gi[i]] < (int)hp->size) { \
 					pos[j] = gheap_ins_##T(hp, i, err);		\
-					sl[j] = i;		\
+					sl[j] = i;	\
 					j++;	\
+				} else { \
+					oid *hppos = hp->pos + hp->gi[i] * hp->size; \
+					int c = type_cmp(T, hpvals[hppos[0]], vals[i]);	\
+					if (c < 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
+						pos[j] = gheap_del_##T(hp, hp->gi[i]);			\
+						pos[j] = gheap_ins_##T(hp, i, err);		\
+						sl[j] = i;		\
+						j++;	\
+					}			\
 				}			\
 			}				\
 		} else {			\
 			for(; i<n; i++) {						\
-				oid *hppos = hp->pos + hp->gi[i] * hp->size; \
-				int c = type_cmp(T, hpvals[hppos[0]], vals[i]);	\
-				if (c > 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
-					pos[j] = gheap_del_##T(hp, hp->gi[i]);			\
+				if (hp->useda[hp->gi[i]] < (int)hp->size) { \
 					pos[j] = gheap_ins_##T(hp, i, err);		\
-					sl[j] = i;		\
+					sl[j] = i;	\
 					j++;	\
+				} else { \
+					oid *hppos = hp->pos + hp->gi[i] * hp->size; \
+					int c = type_cmp(T, hpvals[hppos[0]], vals[i]);	\
+					if (c > 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
+						pos[j] = gheap_del_##T(hp, hp->gi[i]);			\
+						pos[j] = gheap_ins_##T(hp, i, err);		\
+						sl[j] = i;		\
+						j++;	\
+					}			\
 				}			\
 			}				\
 		}					\
 	} else if (sh->min) {	\
 		for(; i<n; i++) {	\
-			oid *hppos = hp->pos + hp->gi[i] * hp->size; \
-			int c = type_cmp_nsmall(T, hpvals[hppos[0]], vals[i]);	\
-			if (c < 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
-				pos[j] = gheap_del_##T(hp, hp->gi[i]);			\
+			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
 				pos[j] = gheap_ins_##T(hp, i, err);		\
-				sl[j] = i;		\
+				sl[j] = i;	\
 				j++;		\
+			} else { \
+				oid *hppos = hp->pos + hp->gi[i] * hp->size; \
+				int c = type_cmp_nsmall(T, hpvals[hppos[0]], vals[i]);	\
+				if (c < 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
+					pos[j] = gheap_del_##T(hp, hp->gi[i]);			\
+					pos[j] = gheap_ins_##T(hp, i, err);		\
+					sl[j] = i;		\
+					j++;		\
+				}				\
 			}				\
 		}					\
 	} else {				\
 		for(; i<n; i++) {	\
-			oid *hppos = hp->pos + hp->gi[i] * hp->size; \
-			int c = type_cmp_nsmall(T, hpvals[hppos[0]], vals[i]);	\
-			if (c > 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
-				pos[j] = gheap_del_##T(hp, hp->gi[i]);		\
-				pos[j] = gheap_ins_##T(hp, i, err);	\
-				sl[j] = i;		\
+			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
+				pos[j] = gheap_ins_##T(hp, i, err);		\
+				sl[j] = i;	\
 				j++;		\
+			} else { \
+				oid *hppos = hp->pos + hp->gi[i] * hp->size; \
+				int c = type_cmp_nsmall(T, hpvals[hppos[0]], vals[i]);	\
+				if (c > 0 || (sh->sub && c == 0 && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {	\
+					pos[j] = gheap_del_##T(hp, hp->gi[i]);		\
+					pos[j] = gheap_ins_##T(hp, i, err);	\
+					sl[j] = i;		\
+					j++;		\
+				}				\
 			}				\
 		}					\
 	}						\
 	return j;				\
 }							\
 							\
+
 
 
 /* create functions */
@@ -983,11 +999,10 @@ topn_grouped( size_t n, oid *pos, oid *sl, heapn *hp, int *err) \
 	if (hp->used < hp->size) {	\
 		for(i=0; i<n; i++) {\
 			if (hp->useda[hp->gi[i]] < (int)hp->size) { \
-				pos[i] = gheap_ins_lng(hp, i, err);	\
-				sl[i] = i;	\
+				pos[j] = gheap_ins_lng(hp, i, err);	\
+				sl[j++] = i;	\
 			}				\
 		}					\
-		j = i;				\
 	}						\
 	return j;				\
 }							\
@@ -1670,35 +1685,38 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	/* TODO add date, daytime and timestamp */
 	} else {
 		if (hp->grouped) {
-			if (hp->used < hp->size) {
-				for(i=0; i<cnt; i++) {
-					if (hp->useda[hp->gi[i]] < (int)hp->size) {
-						p[i] = gheap_ins_any(hp, i, &err);
-						sl[i] = i;
-					}
-				}
-				j = i;
-			}
 			if (sh->min) {
 				for(; i<cnt; i++) {
-					oid *hppos = hp->pos + hp->gi[i] * hp->size;
-					int cmp = sh->cmp(BUNtvar(sh->vbi, hppos[0]), BUNtvar(sh->bi, i), sh);
-					if (cmp < 0 || (sh->sub && !cmp && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {
-						p[j] = gheap_del_any(hp, hp->gi[i]);
+					if (hp->useda[hp->gi[i]] < (int)hp->size) {
 						p[j] = gheap_ins_any(hp, i, &err);
 						sl[j] = i;
 						j++;
+					} else {
+						oid *hppos = hp->pos + hp->gi[i] * hp->size;
+						int cmp = sh->cmp(BUNtvar(sh->vbi, hppos[0]), BUNtvar(sh->bi, i), sh);
+						if (cmp < 0 || (sh->sub && !cmp && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {
+							p[j] = gheap_del_any(hp, hp->gi[i]);
+							p[j] = gheap_ins_any(hp, i, &err);
+							sl[j] = i;
+							j++;
+						}
 					}
 				}
 			} else {
 				for(; i<cnt; i++) {
-					oid *hppos = hp->pos + hp->gi[i] * hp->size;
-					int cmp = sh->cmp(BUNtvar(sh->vbi, hppos[0]), BUNtvar(sh->bi, i), sh);
-					if (cmp > 0 || (sh->sub && !cmp && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {
-						p[j] = gheap_del_any(hp, hp->gi[i]);
+					if (hp->useda[hp->gi[i]] < (int)hp->size) {
 						p[j] = gheap_ins_any(hp, i, &err);
 						sl[j] = i;
 						j++;
+					} else {
+						oid *hppos = hp->pos + hp->gi[i] * hp->size;
+						int cmp = sh->cmp(BUNtvar(sh->vbi, hppos[0]), BUNtvar(sh->bi, i), sh);
+						if (cmp > 0 || (sh->sub && !cmp && gsubheap_newroot(hp, sh->sub, hp->gi[i], i))) {
+							p[j] = gheap_del_any(hp, hp->gi[i]);
+							p[j] = gheap_ins_any(hp, i, &err);
+							sl[j] = i;
+							j++;
+						}
 					}
 				}
 			}
