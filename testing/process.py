@@ -629,5 +629,5 @@ class server(Popen):
             if time.time() > starttime + 30:
                 self.kill()
                 self.wait()
-                raise TimeoutExpired
+                raise TimeoutExpired(cmd, 30)
             time.sleep(0.1)
