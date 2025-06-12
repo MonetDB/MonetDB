@@ -489,7 +489,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[])
  * instruction, we take the wall-clock time for resource management.
  */
 str
-runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
+runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 			   int stoppc, MalStkPtr stk, MalStkPtr env, InstrPtr pcicaller)
 {
 	ValPtr lhs, rhs, v;
@@ -513,8 +513,8 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 	if (startpc + 1 == stoppc) {
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
-			backup = ma_alloc(alloc, pci->argc * sizeof(ValRecord));
-			garbage = (int *) ma_zalloc(alloc, pci->argc * sizeof(int));
+			backup = ma_alloc(tmp_alloc, pci->argc * sizeof(ValRecord));
+			garbage = (int *) ma_zalloc(tmp_alloc, pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
 				//GDKfree(backup);
 				//GDKfree(garbage);
@@ -526,8 +526,8 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 			memset(garbages, 0, sizeof(garbages));
 		}
 	} else if (mb->maxarg > 16) {
-		backup = ma_alloc(alloc, mb->maxarg * sizeof(ValRecord));
-		garbage = (int *) ma_zalloc(alloc, mb->maxarg * sizeof(int));
+		backup = ma_alloc(tmp_alloc, mb->maxarg * sizeof(ValRecord));
+		garbage = (int *) ma_zalloc(tmp_alloc, mb->maxarg * sizeof(int));
 		if (backup == NULL || garbage == NULL) {
 			//GDKfree(backup);
 			//GDKfree(garbage);
@@ -689,7 +689,9 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 				assert(lhs->bat == isaBatType(getArgType(mb, pci, k)));
 				rhs = &stk->stk[pci->argv[i]];
 				assert(rhs->bat == isaBatType(getArgType(mb, pci, i)));
-				if (VALcopy(alloc, lhs, rhs) == NULL) {
+				// Note: We use cntxt->alloc here
+				// some variables need to outlive tmp_alloc
+				if (VALcopy(cntxt->alloc, lhs, rhs) == NULL) {
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -772,7 +774,7 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 			InstrPtr q;
 			int ii, arg;
 
-			nstk = prepareMALstack(alloc, pci->blk, pci->blk->vsize);
+			nstk = prepareMALstack(tmp_alloc, pci->blk, pci->blk->vsize);
 			if (nstk == 0) {
 				ret = createException(MAL, "mal.interpreter", MAL_STACK_FAIL);
 				break;
@@ -803,7 +805,7 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 			for (ii = pci->retc; ii < pci->argc; ii++, arg++) {
 				lhs = &nstk->stk[q->argv[arg]];
 				rhs = &stk->stk[pci->argv[ii]];
-				if (VALcopy(alloc, lhs, rhs) == NULL) {
+				if (VALcopy(tmp_alloc, lhs, rhs) == NULL) {
 					//GDKfree(nstk);
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -813,7 +815,7 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 					BBPretain(lhs->val.bval);
 			}
 			if (ret == MAL_SUCCEED && ii == pci->argc) {
-				ret = runMALsequence(alloc, cntxt, pci->blk, 1, pci->blk->stop, nstk,
+				ret = runMALsequence(tmp_alloc, cntxt, pci->blk, 1, pci->blk->stop, nstk,
 									 stk, pci);
 				garbageCollector(cntxt, pci->blk, nstk, 0);
 				arg = q->retc;
@@ -1220,7 +1222,7 @@ runMALsequence(allocator *alloc, Client cntxt, MalBlkPtr mb, int startpc,
 				for (int i = 0; i < pci->retc; i++) {
 					rhs = &stk->stk[pp->argv[i]];
 					lhs = &env->stk[pci->argv[i]];
-					if (VALcopy(alloc, lhs, rhs) == NULL) {
+					if (VALcopy(tmp_alloc, lhs, rhs) == NULL) {
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
