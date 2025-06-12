@@ -3352,11 +3352,11 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 	int need_left = (rel->flag & LEFT_JOIN);
 
-	if (rel->attr && list_length(rel->attr) > 0)
-		return rel2bin_groupjoin(be, rel, refs);
-
 	if (rel->oahash > 0)
 		return rel2bin_oahash(be, rel, refs);
+
+	if (rel->attr && list_length(rel->attr) > 0)
+		return rel2bin_groupjoin(be, rel, refs);
 
 	int neededpp = (rel->spb || rel->partition || is_outerjoin(rel->op)) && get_need_pipeline(be); /* start new parallel block after join */
 

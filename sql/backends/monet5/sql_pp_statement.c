@@ -518,13 +518,15 @@ stmt_oahash_hash(backend *be, stmt *key, const stmt *pp)
 }
 
 InstrPtr
-stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, bit eq, const stmt *pp)
+stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), eq?putName("probe"):putName("nprobe"), 6);
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), groupedjoin?putName("mprobe"):outer?putName("oprobe"):eq?putName("probe"):putName("nprobe"), 9);
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
+	if (outer || groupedjoin)
+		q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_bit)));
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, hsh);
 	q = pushArgument(be->mb, q, rhs_ht);
@@ -551,13 +553,17 @@ stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, const
 }
 
 InstrPtr
-stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sltid, int rhs_ht, bit single, bit semantics, const stmt *pp)
+stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sltid, int rhs_ht, bit single, bit semantics, stmt *outer, bool groupedjoin, const stmt *pp)
 {
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_probe"), 7);
+	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), groupedjoin?putName("combined_mprobe"):outer?putName("combined_oprobe"):putName("combined_probe"), 11);
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
+	if (outer || groupedjoin) {
+		q = pushReturn(be->mb, q, outer->nr);
+		q->inout = 2;
+	}
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, hsh);
 	q = pushArgument(be->mb, q, sel);
@@ -635,7 +641,7 @@ stmt_oahash_explode(backend *be, int slotid, const stmt *freq_sink, const stmt *
 }
 
 stmt *
-stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, const stmt *norows_prb, int selected, bit outer, const stmt *pp, sql_subtype *st)
+stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, int selected, bit outer, const stmt *pp, sql_subtype *st)
 {
 	int tt = tail_type(hp_sink)->type->localtype;
 
@@ -647,10 +653,8 @@ stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *fr
 	q = pushArgument(be->mb, q, slotid);
 	q = pushArgument(be->mb, q, freq_sink->nr);
 	if (outer) {
-		q = pushArgument(be->mb, q, norows_prb->nr);
 		q = pushArgument(be->mb, q, selected);
 	} else {
-		q = pushLng(be->mb, q, 0);
 		q = pushNilBat(be->mb, q);
 	}
 	q = pushBit(be->mb, q, outer);

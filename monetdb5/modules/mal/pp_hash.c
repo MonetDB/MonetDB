@@ -2013,6 +2013,270 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 	return BAT_OAHASHprobe1(LHS_matched, RHS_slotid, LHS_key, LHS_hash, RHS_ht, single, semantics, H, false);
 }
 
+#define BATvoprobe() \
+	do { \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		keycnt = ci.ncand; \
+		\
+		gid *hs = Tloc(h, 0); \
+		oid *vals = ht->vals; \
+		oid *mtd = Tloc(m, 0); \
+		oid *slt = Tloc(s, 0); \
+		bit *mark = Tloc(o, 0); \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			oid ky = canditer_next(&ci); \
+			assert(ky != oid_nil); \
+			if (!(*semantics) && ky == oid_nil) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = oid_nil; \
+				mark[i] = any?bit_nil:false; \
+				mtdcnt++; \
+				continue; \
+			} \
+			gid k = hs[i]&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && vals[slot] != ky) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = slot - 1; \
+				mark[i] = true; \
+				mtdcnt++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.probe", "more than one match"); \
+					goto error; \
+				} \
+			} else { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt++; \
+			} \
+		} \
+	} while (0)
+
+#define BAToprobe(Type) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		gid *hs = Tloc(h, 0); \
+		Type *vals = ht->vals; \
+		oid *mtd = Tloc(m, 0); \
+		oid *slt = Tloc(s, 0); \
+		bit *mark = Tloc(o, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = oid_nil; \
+				mark[i] = any?bit_nil:false; \
+				mtdcnt++; \
+				continue; \
+			} \
+			gid k = hs[i]&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = (oid)(slot - 1); \
+				mark[i] = true; \
+				mtdcnt++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.probe", "more than one match"); \
+					goto error; \
+				} \
+			} else { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt++; \
+			} \
+		} \
+	} while (0)
+
+#define BATaoprobe() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		gid *hs = Tloc(h, 0); \
+		char **vals = ht->vals; \
+		oid *mtd = Tloc(m, 0); \
+		oid *slt = Tloc(s, 0); \
+		bit *mark = Tloc(o, 0); \
+		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		const void *nil = ATOMnilptr(tt); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
+			if (!(*semantics) && atomcmp(val, nil) == 0) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = oid_nil; \
+				mark[i] = any?bit_nil:false; \
+				mtdcnt++; \
+				continue; \
+			} \
+			gid k = hs[i]&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && atomcmp(vals[slot], val) != 0) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = (oid)(slot - 1); \
+				mark[i] = true; \
+				mtdcnt++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.oprobe", "more than one match"); \
+					bat_iterator_end(&bi); \
+					goto error; \
+				} \
+			} else { \
+				mtd[mtdcnt] = i; \
+				slt[mtdcnt] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt++; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
+static str
+BAT_OAHASHomprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H, bool any)
+{
+	BAT *m = NULL, *s = NULL, *o = NULL, *k = NULL, *h = NULL, *t = NULL;
+	BUN keycnt, mtdcnt = 0;
+	str err = NULL;
+
+	(void) H;
+
+	k = BATdescriptor(*LHS_key);
+	h = BATdescriptor(*LHS_hash);
+	t = BATdescriptor(*RHS_ht);
+	if (!k || !h || !t) {
+		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	keycnt = BATcount(k);
+	m = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
+	s = COLnew(k->hseqbase, TYPE_oid, keycnt, TRANSIENT);
+	o = COLnew(k->hseqbase, TYPE_bit, keycnt, TRANSIENT);
+	if (!m || !s || !o) {
+		err = createException(SQL, "oahash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (keycnt) {
+		hash_table *ht = (hash_table*)t->tsink;
+
+		int tt = k->ttype;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+		switch(tt) {
+			case TYPE_void:
+				BATvoprobe();
+				break;
+			case TYPE_bit:
+				BAToprobe(bit);
+				break;
+			case TYPE_bte:
+				BAToprobe(bte);
+				break;
+			case TYPE_sht:
+				BAToprobe(sht);
+				break;
+			case TYPE_int:
+				BAToprobe(int);
+				break;
+			case TYPE_date:
+				BAToprobe(date);
+				break;
+			case TYPE_lng:
+				BAToprobe(lng);
+				break;
+			case TYPE_oid:
+				BAToprobe(oid);
+				break;
+			case TYPE_daytime:
+				BAToprobe(daytime);
+				break;
+			case TYPE_timestamp:
+				BAToprobe(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+			case TYPE_uuid:
+				BAToprobe(hge);
+				break;
+#endif
+			case TYPE_flt:
+				BAToprobe(flt);
+				break;
+			case TYPE_dbl:
+				BAToprobe(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					BATaoprobe();
+				} else {
+					err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	BBPunfix(k->batCacheid);
+	BBPunfix(h->batCacheid);
+	BBPunfix(t->batCacheid);
+	BATsetcount(m, mtdcnt);
+	BATsetcount(s, mtdcnt);
+	BATsetcount(o, keycnt); /* aligned with input key */
+	BATnegateprops(m);
+	BATnegateprops(s);
+	BATnegateprops(o);
+	m->tnonil = true;
+	s->tnonil = false;
+	m->tsorted = true;
+	BATkey(m, true);
+	*LHS_matched = m->batCacheid;
+	*RHS_slotid = s->batCacheid;
+	*outer = o->batCacheid;
+	BBPkeepref(m);
+	BBPkeepref(s);
+	BBPkeepref(o);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(m);
+	BBPreclaim(s);
+	BBPreclaim(o);
+	BBPreclaim(k);
+	BBPreclaim(h);
+	BBPreclaim(t);
+	return err;
+}
+
+static str
+BAT_OAHASHoprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, single, semantics, H, false);
+}
+
+static str
+BAT_OAHASHmprobe(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	return BAT_OAHASHomprobe(LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, RHS_ht, single, semantics, H, true);
+}
 
 #define BATvprobe_cmbd() \
 	do { \
@@ -2249,6 +2513,278 @@ error:
 	return err;
 }
 
+#define BATvoprobe_cmbd() \
+	do { \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		\
+		gid *hs = Tloc(h, 0); \
+		oid *mt = Tloc(m, 0); \
+		oid *vals = ht->vals; \
+		oid *mtd = Tloc(res_m, 0); \
+		oid *slt = Tloc(res_s, 0); \
+		lng *gi = Tloc(p, 0); \
+		lng *pgids = ht->pgids; \
+		bit *mark = Tloc(res_o, 0); \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+			oid ky = canditer_idx(&ci, mt[i]); \
+			assert(ky != oid_nil); \
+			if (!mark[i] || (!(*semantics) && ky == oid_nil)) { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt2++; \
+				continue; \
+			} \
+			gid hsh = hs[i]&ht->mask; \
+			gid slot = 0; \
+			slot = ATOMIC_GET(ht->gids+hsh); \
+			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
+				hsh++; \
+				hsh &= ht->mask; \
+				slot = ATOMIC_GET(ht->gids+hsh); \
+			} \
+			if (slot) { \
+				mtd[mtdcnt2] = mt[i]; \
+				slt[mtdcnt2] = slot - 1; \
+				mark[i] = true; \
+				mtdcnt2++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					goto error; \
+				} \
+			} else { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt2++; \
+			} \
+		} \
+	} while (0)
+
+#define BAToprobe_cmbd(Type) \
+	do { \
+		Type *ky = Tloc(k, 0); \
+		gid *hs = Tloc(h, 0); \
+		oid *mt = Tloc(m, 0); \
+		Type *vals = ht->vals; \
+		oid *mtd = Tloc(res_m, 0); \
+		oid *slt = Tloc(res_s, 0); \
+		lng *gi = Tloc(p, 0); \
+		lng *pgids = ht->pgids; \
+		bit *mark = Tloc(res_o, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+			gid hsh = hs[i]&ht->mask; \
+			gid slot = 0; \
+			Type val = ky[mt[i]]; \
+			if (!mark[i] || (!(*semantics) && is_##Type##_nil(val))) { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt2++; \
+				continue; \
+			} \
+			slot = ATOMIC_GET(ht->gids+hsh); \
+			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || vals[slot] != val)) { \
+				hsh++; \
+				hsh &= ht->mask; \
+				slot = ATOMIC_GET(ht->gids+hsh); \
+			} \
+			if (slot) { \
+				mtd[mtdcnt2] = mt[i]; \
+				slt[mtdcnt2] = slot - 1; \
+				mark[i] = true; \
+				mtdcnt2++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					goto error; \
+				} \
+			} else { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt2++; \
+			} \
+		} \
+	} while (0)
+
+#define BATaoprobe_cmbd() \
+	do { \
+		BATiter bi = bat_iterator(k); \
+		gid *hs = Tloc(h, 0); \
+		oid *mt = Tloc(m, 0); \
+		char **vals = ht->vals; \
+		oid *mtd = Tloc(res_m, 0); \
+		oid *slt = Tloc(res_s, 0); \
+		lng *gi = Tloc(p, 0); \
+		lng *pgids = ht->pgids; \
+		bit *mark = Tloc(res_o, 0); \
+		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
+		const void *nil = ATOMnilptr(tt); \
+		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+			gid hsh = hs[i]&ht->mask; \
+			gid slot = 0; \
+			char *val = (bi).vh->base+BUNtvaroff(bi,mt[i]); \
+			if (!mark[i] || (!(*semantics) && atomcmp(val, nil) == 0)) { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt2++; \
+				continue; \
+			} \
+			slot = ATOMIC_GET(ht->gids+hsh); \
+			while (slot && (pgids[slot] != gi[i] || atomcmp(vals[slot], val) != 0)) { \
+				hsh++; \
+				hsh &= ht->mask; \
+				slot = ATOMIC_GET(ht->gids+hsh); \
+			} \
+			if (slot) { \
+				mtd[mtdcnt2] = mt[i]; \
+				slt[mtdcnt2] = slot - 1; \
+				mark[i] = true; \
+				mtdcnt2++; \
+				if (*single && ht->frequency[slot - 1] > 1) { \
+					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+					bat_iterator_end(&bi); \
+					goto error; \
+				} \
+			} else { \
+				mtd[mtdcnt2] = i; \
+				slt[mtdcnt2] = oid_nil; \
+				mark[i] = false; \
+				mtdcnt2++; \
+			} \
+		} \
+		bat_iterator_end(&bi); \
+	} while (0)
+
+static str
+BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	BAT *res_m = NULL, *res_s = NULL, *res_o = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL, *p = NULL;
+	BUN mtdcnt, mtdcnt2 = 0;
+	str err = NULL;
+
+	(void) H;
+
+	k = BATdescriptor(*LHS_key);
+	h = BATdescriptor(*LHS_hash);
+	m = BATdescriptor(*LHS_selected);
+	p = BATdescriptor(*RHS_gid);
+	t = BATdescriptor(*RHS_ht);
+	res_o = BATdescriptor(*outer);
+	if (!k || !h || !m || !t || !p || !res_o) {
+		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	mtdcnt = BATcount(m);
+	res_m = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
+	res_s = COLnew(k->hseqbase, TYPE_oid, mtdcnt, TRANSIENT);
+	if (!res_m || !res_s) {
+		err = createException(SQL, "oahash.combined_probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (mtdcnt) {
+		hash_table *ht = (hash_table*)t->tsink;
+
+		int tt = k->ttype;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+		switch(tt) {
+			case TYPE_void:
+				BATvoprobe_cmbd();
+				break;
+			case TYPE_bit:
+				BAToprobe_cmbd(bit);
+				break;
+			case TYPE_bte:
+				BAToprobe_cmbd(bte);
+				break;
+			case TYPE_sht:
+				BAToprobe_cmbd(sht);
+				break;
+			case TYPE_int:
+				BAToprobe_cmbd(int);
+				break;
+			case TYPE_date:
+				BAToprobe_cmbd(date);
+				break;
+			case TYPE_lng:
+				BAToprobe_cmbd(lng);
+				break;
+			case TYPE_oid:
+				if (BATtdense(k))
+					BATvoprobe_cmbd();
+				else
+					BAToprobe_cmbd(oid);
+				break;
+			case TYPE_daytime:
+				BAToprobe_cmbd(daytime);
+				break;
+			case TYPE_timestamp:
+				BAToprobe_cmbd(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+			case TYPE_uuid:
+				BAToprobe_cmbd(hge);
+				break;
+#endif
+			case TYPE_flt:
+				BAToprobe_cmbd(flt);
+				break;
+			case TYPE_dbl:
+				BAToprobe_cmbd(dbl);
+				break;
+			default:
+				if (ATOMvarsized(tt)) {
+					BATaoprobe_cmbd();
+				} else {
+					err = createException(MAL, "oahash.combined_probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					goto error;
+				}
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.combined_probe", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	assert(BATcount(res_o) == BATcount(k));
+	BBPunfix(k->batCacheid);
+	BBPunfix(h->batCacheid);
+	BBPunfix(m->batCacheid);
+	BBPunfix(t->batCacheid);
+	BBPunfix(p->batCacheid);
+	BATsetcount(res_m, mtdcnt2);
+	BATsetcount(res_s, mtdcnt2);
+	BATnegateprops(res_m);
+	BATnegateprops(res_s);
+	res_m->tnonil = true;
+	res_s->tnonil = true;
+	res_m->tsorted = true;
+	BATkey(res_m, true);
+	*LHS_matched = res_m->batCacheid;
+	*RHS_slotid = res_s->batCacheid;
+	BBPkeepref(res_m);
+	BBPkeepref(res_s);
+	BBPkeepref(res_o);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(res_m);
+	BBPreclaim(res_s);
+	BBPreclaim(res_o);
+	BBPreclaim(k);
+	BBPreclaim(h);
+	BBPreclaim(m);
+	BBPreclaim(t);
+	BBPreclaim(p);
+	return err;
+}
+
 #define vproject() \
 	do { \
 		struct canditer ci; \
@@ -2398,14 +2934,12 @@ error:
 		\
 		oid *res = Tloc(e, 0); \
 		if (*outer) { \
-			BUN j = 0; \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-				oid s = sel[j]; \
+				oid s = sid[i]; \
 				oid val = canditer_idx(&ci, i); \
 				assert(val != oid_nil); \
-				if (i == s) {\
-					gid freq = (gid)ht->frequency[sid[j]]; \
-					j++; \
+				if (s != oid_nil) {\
+					gid freq = (gid)ht->frequency[s]; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						res[idx++] = val; \
 					} \
@@ -2429,13 +2963,11 @@ error:
 		Type *val = Tloc(k, 0); \
 		Type *res = Tloc(e, 0); \
 		if (*outer) { \
-			BUN j = 0; \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-				oid s = sel[j]; \
+				oid s = sid[i]; \
 				Type v = val[i]; \
-				if (i == s) {\
-					gid freq = (gid)ht->frequency[sid[j]]; \
-					j++; \
+				if (s != oid_nil) {\
+					gid freq = (gid)ht->frequency[s]; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						res[idx++] = v; \
 					} \
@@ -2458,13 +2990,11 @@ error:
 	do { \
 		BATiter bi = bat_iterator(k); \
 		if (*outer) { \
-			BUN j = 0; \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-				oid s = sel[j]; \
+				oid s = sid[i]; \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-				if (i == s) {\
-					gid freq = (gid)ht->frequency[sid[j]]; \
-					j++; \
+				if (s != oid_nil) {\
+					gid freq = (gid)ht->frequency[s]; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						if (BUNappend(e, v, false) != GDK_SUCCEED) { \
 							err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -2523,15 +3053,16 @@ BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *
 	selcnt = BATcount(s);
 	if (selcnt) {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			xpdcnt += ht->frequency[sid[i]];
+			if (sid[i] != lng_nil)
+				xpdcnt += ht->frequency[sid[i]];
+			else
+				xpdcnt++;
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
 	ttlcnt = xpdcnt;
-	if (*outer)
-		ttlcnt += (keycnt - selcnt);
 
 	int tt = k->ttype;
 	e = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
@@ -2794,16 +3325,14 @@ error:
 		Type *vals = hp->payload; \
 		Type *res = Tloc(f, 0); \
 		if (*outer) { \
-			BUN j = 0; \
-			TIMEOUT_LOOP_IDX_DECL(i, tcnt, qry_ctx) { \
-				oid s = sel[j]; \
-				if (i == s) { \
-					gid freq = (gid)ht->frequency[sid[j]]; \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+				oid s = sid[i]; \
+				if (s != oid_nil) { \
+					gid freq = (gid)ht->frequency[s]; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
-						gid hsh = (gid)combine(f, _hash_lng(sid[j]), prime)&ht->mask; \
+						gid hsh = (gid)combine(f, _hash_lng(s), prime)&ht->mask; \
 						res[idx++] = vals[hsh]; \
 					} \
-					j++; \
 				} else {\
 					res[idx++] = Type##_nil; \
 				} \
@@ -2824,20 +3353,18 @@ error:
 		int prime = hash_prime_nr[ht->bits-5]; \
 		char **vals = hp->payload; \
 		if (*outer) { \
-			BUN j = 0; \
-			TIMEOUT_LOOP_IDX_DECL(i, tcnt, qry_ctx) { \
-				oid s = sel[j]; \
-				if (i == s) { \
-					gid freq = (gid)ht->frequency[sid[j]]; \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+				oid s = sid[i]; \
+				if (s != oid_nil) { \
+					gid freq = (gid)ht->frequency[s]; \
 					TIMEOUT_LOOP_IDX_DECL(ff, freq, qry_ctx) { \
-						gid hsh = (gid)combine(ff, _hash_lng(sid[j]), prime)&ht->mask; \
+						gid hsh = (gid)combine(ff, _hash_lng(s), prime)&ht->mask; \
 						if (BUNappend(f, vals[hsh], false) != GDK_SUCCEED) { \
 							err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 							break; \
 						} \
 						idx++; \
 					} \
-					j++; \
 				} else { \
 					if (BUNappend(f, ATOMnilptr(tt), false) != GDK_SUCCEED) { \
 						err = createException(SQL, "oahash.fetch_payload", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -2862,10 +3389,10 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHfetch_pld(bat *fetched, const bat *hp_sink, const bat *slotid, const bat *freq_sink, const lng *norows_prb, const bat *selected, const bit *outer, const ptr *H)
+BAT_OAHASHfetch_pld(bat *fetched, const bat *hp_sink, const bat *slotid, const bat *freq_sink, const bat *selected, const bit *outer, const ptr *H)
 {
 	BAT *f = NULL, *l = NULL, *hps = NULL, *hts = NULL, *s = NULL;
-	BUN nllcnt, selcnt, ttlcnt = 0, fchcnt =  0, tcnt;
+	BUN selcnt, ttlcnt = 0, fchcnt =  0;
 	str err = NULL;
 
 	l = BATdescriptor(*slotid);
@@ -2885,19 +3412,16 @@ BAT_OAHASHfetch_pld(bat *fetched, const bat *hp_sink, const bat *slotid, const b
 	selcnt = BATcount(l);
 	if (selcnt) {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			fchcnt += ht->frequency[sid[i]];
+			if (sid[i] != lng_nil)
+				fchcnt += ht->frequency[sid[i]];
+			else
+				fchcnt++;
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
 	ttlcnt = fchcnt;
-	tcnt = selcnt;
-	if (*outer) {
-		nllcnt = (*norows_prb) - selcnt;
-		ttlcnt += nllcnt;
-		tcnt += nllcnt;
-	}
 
 	int tt = hp->type;
 	f = COLnew(0, tt?tt:TYPE_oid, ttlcnt, TRANSIENT);
@@ -2910,6 +3434,7 @@ BAT_OAHASHfetch_pld(bat *fetched, const bat *hp_sink, const bat *slotid, const b
 		BUN idx = 0;
 		oid *sel = (*outer)?Tloc(s, 0):NULL;
 
+		(void)sel;
 		switch(tt) {
 			case TYPE_void:
 				BATfetch(oid);
@@ -3359,11 +3884,19 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "probe", BAT_OAHASHprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
 
- command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "nprobe", BAT_OAHASHnprobe, false, "Probe the (key, hash) pairs in the hash table. For a not-matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,8, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batargany("LHS_key",1), batarg("LHS_hash",lng), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
+
+ command("oahash", "oprobe", BAT_OAHASHoprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("outer", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
+
+ command("oahash", "mprobe", BAT_OAHASHmprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("mark", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
 
  command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
 
- command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,10, batarg("LHS_matched",oid),batarg("RHS_slotid",oid),batargany("LHS_key",1),batarg("LHS_hash",lng),batarg("LHS_selected",oid),batarg("RHS_pgids", oid), batargany("RHS_ht",2),arg("single",bit),arg("semantics",bit),arg("pipeline",ptr))),
+ command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,10, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
+
+ command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("outer", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
+
+ command("oahash", "combined_mprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("mark", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 
@@ -3371,7 +3904,7 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "expand_cartesian", BAT_OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,5, batargany("expanded",1),batargany("col",1),batargany("rowrepeat",2),arg("LRouter",bit),arg("pipeline",ptr))),
 
  command("oahash", "explode", BAT_OAHASHexplode, false, "Explode the result vector 'frequency' times and return payload heap slot ids.", args(1,7, batargany("fetched",1), batarg("slotid",oid), batargany("freq_sink",2), arg("norows_prb",lng), batarg("selected", oid), arg("outer",bit), arg("pipeline",ptr))),
- command("oahash", "fetch_payload", BAT_OAHASHfetch_pld, false, "Fetch the hash-payloads correspond to the slot IDs and expand them according to their frequencies in the hash table. If 'outer' is true, append NULLs for the unmatched keys", args(1,8, batargany("fetched",1), batargany("hp_sink",1), batarg("slotid",oid), batargany("freq_sink",2), arg("norows_prb",lng), batarg("selected", oid), arg("outer",bit), arg("pipeline",ptr))),
+ command("oahash", "fetch_payload", BAT_OAHASHfetch_pld, false, "Fetch the hash-payloads correspond to the slot IDs and expand them according to their frequencies in the hash table. If 'outer' is true, append NULLs for the unmatched keys", args(1,7, batargany("fetched",1), batargany("hp_sink",1), batarg("slotid",oid), batargany("freq_sink",2), batarg("selected", oid), arg("outer",bit), arg("pipeline",ptr))),
 
  command("oahash", "fetch_payload_cartesian", BAT_OAHASHfetch_pld_cart, false, "Duplicate the whole 'col' the number of times as the count of 'setrepeat'.  For a left/right-ourter join, if 'col' is empty, output NULLs.", args(1,5, batargany("fetched",1),batargany("col",1),batarg("setrepeat",2),arg("LRouter",bit),arg("pipeline",ptr))),
 

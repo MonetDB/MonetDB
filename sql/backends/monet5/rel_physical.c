@@ -327,10 +327,13 @@ do_oahash_join(sql_rel *rel)
 	if (rel->op == op_full)
 		return 0;
 
-	// TODO groupjoin
-	if (!list_empty(rel->attr))
+	// TODO groupjoin other then mark/exist
+    if (list_length(rel->attr) == 1) {
+        sql_exp *e = rel->attr->h->data;
+        if (exp_is_atom(e))
+			return 1;
 		return 0;
-
+    }
 	return 1;
 }
 
@@ -547,7 +550,7 @@ rel_partition_(mvc *sql, sql_rel *rel, int pb)
 }
 
 static void
-find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb)
+find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_hsh, sql_rel *rel_prb, const list *attr)
 {
 	assert(exps);
 
@@ -556,6 +559,8 @@ find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, const list *exps, 
 	for (node *n = exps->h; n; n = n->next) { /* TODO handle consts seperate */
 		sql_exp *e = n->data, *ne = NULL;
 
+		if (list_find_exp(attr, e))
+			continue;
 		if (exp_is_atom(e))
 			continue;
 		if ((ne = rel_find_exp(rel_prb->l, e)) != NULL) {
@@ -828,7 +833,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		list *exps_hsh = NULL, *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
 		if (needs_payload)
 			exps_hsh = sa_list(v->sql->sa);
-		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
+		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb, rel->attr);
 
 		if (need_all && !is_base(rel_hsh->op))
 			rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
@@ -995,7 +1000,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 
 			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
-			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb);
+			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p->exps, rel_hsh, rel_prb, rel->attr);
 
 			if (found_exps_prj_hsh) {
 				printf("# todo need to check \n");

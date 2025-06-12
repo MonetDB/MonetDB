@@ -2930,7 +2930,7 @@ exps_uses_nid(list *exps, int nid)
 }
 
 sql_exp *
-exps_bind_nid(list *exps, int nid)
+exps_bind_nid(const list *exps, int nid)
 {
 	if (exps) {
 		for (node *en = exps->h; en; en = en->next ) {
@@ -4021,7 +4021,7 @@ rel_find_parameter(mvc *sql, sql_subtype *type, sql_rel *rel, int nid, const cha
 }
 
 sql_exp *
-list_find_exp( list *exps, sql_exp *e)
+list_find_exp(const list *exps, sql_exp *e)
 {
 	if (e->type != e_column)
 		return NULL;
