@@ -2577,8 +2577,14 @@ LALGcountstar(bat *rid, bat *gid, const ptr *H, bat *pid)
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *v = Tloc(g, 0);
 	lng *o = Tloc(r, 0);
-	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
-		o[v[i]]++;
+	if (!BATtdense(g)) {
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
+			o[v[i]]++;
+	} else {
+		oid b = g->tseqbase;
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
+			o[b+i]++;
+	}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.count(star)", RUNTIME_QRY_TIMEOUT));
 	if (err) {
 		goto error;

@@ -2811,7 +2811,7 @@ BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *
 	BATnegateprops(res_m);
 	BATnegateprops(res_s);
 	res_m->tnonil = true;
-	res_s->tnonil = true;
+	res_s->tnil = true;
 	res_m->tsorted = true;
 	BATkey(res_m, true);
 	*LHS_matched = res_m->batCacheid;

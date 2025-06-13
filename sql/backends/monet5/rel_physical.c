@@ -1216,8 +1216,10 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		if (rel_is_ref(rel)) {
 			sql_rel *i = rel_create(v->sql->sa);
 			*i = *rel;
+			i->ref.refcnt = 1;
 			i = rel_select(sql->sa, i, e);
 			set_count_prop(v->sql->sa, i, get_rel_count(i->l));
+			rel_dup(rel->l);
 			rel = rel_inplace_project(v->sql->sa, rel, i, exps);
 		} else {
 			rel = rel_select(sql->sa, rel, e);

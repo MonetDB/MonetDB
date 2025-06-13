@@ -796,7 +796,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 static stmt *
 rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 {
-	/* ToDo other results than exist/in */
+	/* current code only handles markjoins here, no general groupjoin */
 	/* todo start with normal join exps?? */
 	assert(!list_empty(rel->attr));
 	stmt *sub = NULL, *probe_sub = NULL;
