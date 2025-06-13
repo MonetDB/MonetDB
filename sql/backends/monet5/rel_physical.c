@@ -970,6 +970,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (rel_is_ref(rel_hsh))
 					need_all = true;
 				rel_hsh = rel_buildhash(v, rel_hsh, &iprj, list_empty(eq_exps));
+			   	rel_hsh->flag = (!list_empty(other) || list_empty(rel->attr))?op_join:op_semi;
 			} else {
 				found_exps_cmp_hsh = rel_hsh->attr;
 				found_exps_prj_hsh = rel_hsh->exps;

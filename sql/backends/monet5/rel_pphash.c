@@ -543,7 +543,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	int slt_ids = 0;
 	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
 	stmt *stmts_hp = NULL;
-	/* freq/payload not needed for semi */
+	/* freq/payload not needed for semi (TODO we also pass op_semi for (all!!) groupjoins (ugh)) */
 	if (rel->flag != (int)op_semi) {
 		InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh?exps_prj_hsh->cnt:0, pp);
 		if (exps_prj_hsh)
@@ -553,6 +553,18 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	(void)stmt_pp_end(be, pp);
 	stmts_ht->op1 = stmts_hp;
 	return stmts_ht;
+}
+
+static bool
+groupjoin_mark( list *attr )
+{
+	bool mark = false;
+	if (!list_empty(attr) && list_length(attr) == 1) {
+        sql_exp *e = attr->h->data;
+        if (exp_is_atom(e))
+            mark = true;
+	}
+	return mark;
 }
 
 static stmt *
@@ -581,13 +593,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, Ins
 	assert(ht);
 	stmt *stmts_ht = ht;
 	stmt *stmts_hp = ht->op1;
-	bool groupedjoin = (!list_empty(rel->attr)), mark = false;
-
-	if (groupedjoin && list_length(rel->attr) == 1) {
-        sql_exp *e = rel->attr->h->data;
-        if (exp_is_atom(e))
-            mark = true;
-	}
+	bool groupedjoin = (!list_empty(rel->attr)), mark = groupjoin_mark(rel->attr);
 
 	/*** PROBE PHASE ***/
 	stmt *sub = _start_pp(be, rel_prb->l, false, refs);

@@ -111,7 +111,8 @@ typedef struct hash_table {
 	fcmp cmp;
 	fhsh hsh;
 	flen len;
-	int rehash;
+	bool rehash;
+	bool empty;
 
 	void *vals;			/* hash(ed) values */
 	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
@@ -139,7 +140,7 @@ typedef struct hash_payload {
 	fcmp cmp;
 	fhsh hsh;
 	flen len;
-	int rehash;
+	bool rehash;
 
 	void *payload;		/* hash(ed) payload values */
 

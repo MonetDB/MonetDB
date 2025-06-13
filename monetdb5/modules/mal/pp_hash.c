@@ -158,7 +158,8 @@ _ht_create( int type, size_t size, bool freq, hash_table *p)
 	h->type = type;
 	h->width = ATOMsize(type);
 	h->last = 0;
-	h->rehash = 0;
+	h->rehash = false;
+	h->empty = true;
 	h->p = p;
 	h->pinned = NULL;
 	h->pinned_nr = 0; /* no more than 1024 */
@@ -192,7 +193,7 @@ ht_create(int type, int size, bool freq, hash_table *p)
 void
 ht_rehash(hash_table *ht)
 {
-	ht->rehash = 1;
+	ht->rehash = true;
 	if (ht->p)
 		ht_rehash(ht->p);
 }
@@ -302,7 +303,7 @@ _hp_create(int type, size_t nplds, hash_table *parent)
 	hp->type = type;
 
 	hp->width = ATOMsize(atype);
-	hp->rehash = 0;
+	hp->rehash = false;
 	hp->pinned = NULL;
 	hp->pinned_nr = 0; /* no more than 1024 */
 	if (atype == TYPE_str) {
@@ -728,6 +729,7 @@ BAT_OAHASHbuild_tbl(bat *slot_id, bat *ht_sink, const bat *key, const ptr *H)
 		int tt = b->ttype;
 		gid *gp = Tloc(g, 0);
 
+		h->empty = false;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
@@ -1097,6 +1099,7 @@ OAHASHbuild_tbl_cmbd(bat *slot_id, bat *ht_sink, const bat *key, const bat *pare
 		gid *pgids = h->pgids;
 		int prime = hash_prime_nr[h->bits-5];
 
+		h->empty = false;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
@@ -2024,14 +2027,28 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
 		bit *mark = Tloc(o, 0); \
+		bit has_nil = false, empty = bit_nil; \
 		\
+		if (ht->empty) \
+			empty = false; \
+		if (any) { \
+			gid k = (gid)_hash_oid(oid_nil)&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && vals[slot] != oid_nil) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) \
+				has_nil = bit_nil; \
+		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			oid ky = canditer_next(&ci); \
 			assert(ky != oid_nil); \
 			if (!(*semantics) && ky == oid_nil) { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?bit_nil:false; \
+				mark[i] = any?empty:false; \
 				mtdcnt++; \
 				continue; \
 			} \
@@ -2054,7 +2071,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 			} else { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = false; \
+				mark[i] = (any)?has_nil:false; \
 				mtdcnt++; \
 			} \
 		} \
@@ -2068,11 +2085,26 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		oid *mtd = Tloc(m, 0); \
 		oid *slt = Tloc(s, 0); \
 		bit *mark = Tloc(o, 0); \
+		bit has_nil = false, empty = bit_nil; \
+		\
+		if (ht->empty) \
+			empty = false; \
+		if (any) { \
+			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && !is_##Type##_nil(vals[slot])) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) \
+				has_nil = bit_nil; \
+		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?bit_nil:false; \
+				mark[i] = any?empty:false; \
 				mtdcnt++; \
 				continue; \
 			} \
@@ -2095,7 +2127,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 			} else { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = false; \
+				mark[i] = (any)?has_nil:false; \
 				mtdcnt++; \
 			} \
 		} \
@@ -2111,12 +2143,27 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 		bit *mark = Tloc(o, 0); \
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
 		const void *nil = ATOMnilptr(tt); \
+		bit has_nil = false, empty = bit_nil; \
+		\
+		if (ht->empty) \
+			empty = false; \
+		if (any) { \
+			gid k = (gid)ht->hsh((void*)nil)&ht->mask; \
+			gid slot = ht->gids[k]; \
+			while (slot && atomcmp(vals[slot], nil) != 0) { \
+				k++; \
+				k &= ht->mask; \
+				slot = ht->gids[k]; \
+			} \
+			if (slot) \
+				has_nil = bit_nil; \
+		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			char *val = (bi).vh->base+BUNtvaroff(bi,i); \
 			if (!(*semantics) && atomcmp(val, nil) == 0) { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?bit_nil:false; \
+				mark[i] = any?empty:false; \
 				mtdcnt++; \
 				continue; \
 			} \
@@ -2140,7 +2187,7 @@ BAT_OAHASHnprobe(bat *LHS_matched, bat *RHS_slotid, const bat *LHS_key, const ba
 			} else { \
 				mtd[mtdcnt] = i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = false; \
+				mark[i] = (any)?has_nil:false; \
 				mtdcnt++; \
 			} \
 		} \
@@ -2940,6 +2987,7 @@ error:
 				assert(val != oid_nil); \
 				if (s != oid_nil) {\
 					gid freq = (gid)ht->frequency[s]; \
+					freq = freq?freq:1; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						res[idx++] = val; \
 					} \
@@ -2951,6 +2999,7 @@ error:
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				oid val = canditer_idx(&ci, sel[i]); \
 				gid freq = (gid)ht->frequency[sid[i]]; \
+				freq = freq?freq:1; \
 				TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 					res[idx++] = val; \
 				} \
@@ -2968,6 +3017,7 @@ error:
 				Type v = val[i]; \
 				if (s != oid_nil) {\
 					gid freq = (gid)ht->frequency[s]; \
+					freq = freq?freq:1; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						res[idx++] = v; \
 					} \
@@ -2979,6 +3029,7 @@ error:
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				Type v = val[sel[i]]; \
 				gid freq = (gid)ht->frequency[sid[i]]; \
+				freq = freq?freq:1; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 					res[idx++] = v; \
 				} \
@@ -2995,6 +3046,7 @@ error:
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				if (s != oid_nil) {\
 					gid freq = (gid)ht->frequency[s]; \
+					freq = freq?freq:1; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						if (BUNappend(e, v, false) != GDK_SUCCEED) { \
 							err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -3014,6 +3066,7 @@ error:
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
 				gid freq = (gid)ht->frequency[sid[i]]; \
+				freq = freq?freq:1; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 					if (BUNappend(e, v, false) != GDK_SUCCEED) { \
 						err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -3053,7 +3106,7 @@ BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *
 	selcnt = BATcount(s);
 	if (selcnt) {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			if (sid[i] != lng_nil)
+			if (sid[i] != lng_nil && ht->frequency[sid[i]])
 				xpdcnt += ht->frequency[sid[i]];
 			else
 				xpdcnt++;
@@ -3329,6 +3382,7 @@ error:
 				oid s = sid[i]; \
 				if (s != oid_nil) { \
 					gid freq = (gid)ht->frequency[s]; \
+					freq = freq?freq:1; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						gid hsh = (gid)combine(f, _hash_lng(s), prime)&ht->mask; \
 						res[idx++] = vals[hsh]; \
@@ -3340,6 +3394,7 @@ error:
 		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				gid freq = (gid)ht->frequency[sid[i]]; \
+				freq = freq?freq:1; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 					gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
 					res[idx++] = vals[hsh]; \
@@ -3357,6 +3412,7 @@ error:
 				oid s = sid[i]; \
 				if (s != oid_nil) { \
 					gid freq = (gid)ht->frequency[s]; \
+					freq = freq?freq:1; \
 					TIMEOUT_LOOP_IDX_DECL(ff, freq, qry_ctx) { \
 						gid hsh = (gid)combine(ff, _hash_lng(s), prime)&ht->mask; \
 						if (BUNappend(f, vals[hsh], false) != GDK_SUCCEED) { \
@@ -3376,6 +3432,7 @@ error:
 		} else { \
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				gid freq = (gid)ht->frequency[sid[i]]; \
+				freq = freq?freq:1; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 					gid hsh = (gid)combine(j, _hash_lng(sid[i]), prime)&ht->mask; \
 					if (BUNappend(f, vals[hsh], false) != GDK_SUCCEED) { \
