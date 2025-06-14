@@ -2848,28 +2848,6 @@ is_identity_of(sql_exp *e, sql_rel *l)
 static inline sql_rel *
 rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 {
-	if (rel && rel->op == op_semi) {
-		if (list_empty(rel->exps))
-			return rel->l;
-		/* all expression only from left hand side */
-		if (rel_has_all_exps(rel->l, rel->exps, true)) {
-			list *exps = rel->exps;
-			rel = rel_select(v->sql->sa, rel->l, NULL);
-			rel->exps = exps;
-			return rel;
-		}
-	}
-	if (rel && rel->op == op_anti) {
-		if (list_empty(rel->exps))
-			return rel_select(v->sql->sa, rel->l, exp_atom_bool(v->sql->sa, false));
-		/* all expression only from left hand side */
-		if (rel_has_all_exps(rel->l, rel->exps, true)) {
-			list *exps = rel->exps;
-			rel = rel_select(v->sql->sa, rel->l, NULL);
-			rel->exps = exps;
-			return rel; /* todo anti */
-		}
-	}
 	assert(is_semi(rel->op));
 	{
 		sql_rel *l = rel->l;

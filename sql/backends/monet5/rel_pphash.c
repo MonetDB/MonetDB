@@ -280,13 +280,13 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		if (!matched) {
 			q = stmt_oahash_hash(be, key, pp);
 			if (q == NULL) return NULL;
-			q = stmt_oahash_probe(be, key, getDestVar(q), rht, single, e2->semantics, e2->flag == cmp_equal && !anti, outer, groupjoin, pp);
+			q = stmt_oahash_probe(be, key, getDestVar(q), rht, single, e2->semantics, e2->flag == cmp_equal && !anti, outer, groupjoin && is_any(e2), pp);
 			if (nulls && stmt_has_null(key))
 				*nulls = stmt_selectnil(be, key, NULL);
 		} else {
 			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, pp);
 			if (q == NULL) return NULL;
-			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rhs_slts, rht, single, e2->semantics, outerm, groupjoin, pp);
+			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rhs_slts, rht, single, e2->semantics, outerm, groupjoin && is_any(e2), pp);
 			if (nulls && stmt_has_null(key))
 				*nulls = stmt_selectnil(be, key, *nulls);
 		}
@@ -727,7 +727,6 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
 	(void)neededpp;
 
-	//find_hsh_vs_prb_side(&rel_hsh, &rel_prb, rel);
 	assert(rel->oahash == 1 || rel->oahash == 2);
 	if (rel->oahash == 1) {
 		rel_hsh = rel->l;
@@ -779,7 +778,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 		}
 	}
 
-	bit LRouter = (is_left(rel->op) || is_right(rel->op));
+	bit LRouter = (is_left(rel->op) || is_right(rel->op) || (rel->op == op_anti && list_empty(rel->exps)));
 	stmt *rowrepeat = stmts_ht->op4.lval->h->data;
 	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, rowrepeat, LRouter, pp, probed_rowids);
 	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
@@ -815,7 +814,6 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
         if (exp_is_atom(e) && exp_is_false(e))
             exist = false;
     }
-	(void)mark;
 
 	if (list_empty(jexps)) { /* cartesian */
 		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids);
@@ -971,66 +969,63 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be); /* start new parallel block after join */
 	(void)neededpp;
 
-	if (!rel->exps) { /* the always-true case. just return the LHS */
-		assert(0);
-		// TODO we should already optimise-away this case of semi-join in PLAN
-		sub = subrel_bin(be, rel_prb, refs);
-		sub = subrel_project(be, sub, refs, rel_prb);
+	list *exps_cmp_prb = rel_prb->attr;
+	list *exps_prj_prb = rel_prb->exps;
+	list *probe_side = NULL, *hash_side = NULL;
+
+	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa);
+	split_join_exps_pp(rel, jexps, sexps, false);
+
+	bool anti = (list_length(jexps) == 1 && rel->op == op_anti);
+	if (list_empty(jexps)) { /* cartesian */
+		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, NULL);
+	} else if (!list_empty(sexps)) {
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, &nulls, NULL, &probe_side, &hash_side);
 	} else {
-		list *exps_cmp_prb = rel_prb->attr;
-		list *exps_prj_prb = rel_prb->exps;
-		list *probe_side = NULL, *hash_side = NULL;
+		assert(!list_empty(jexps) && list_length(jexps) == list_length(exps_cmp_prb));
+		/* build-phase res: hash-table and hash-payload stmts */
+		stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
+		assert(stmts_ht);
 
-		list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa);
-		split_join_exps_pp(rel, jexps, sexps, false);
+		/*** PROBE PHASE ***/
+		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs);
+		if (!sub) return NULL;
 
-		bool anti = (list_length(jexps) == 1 && rel->op == op_anti);
-		if (list_empty(jexps)) { /* cartesian */
-			sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, NULL);
-		} else if (!list_empty(sexps)) {
-			sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, &nulls, NULL, &probe_side, &hash_side);
+		pp = get_pipeline(be);
+		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, pp, anti, false, false, &nulls, NULL);
+		if (prb_res == NULL) return NULL;
+
+		/*** PROJECT RESULT PHASE ***/
+		list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), sub, pp, &probed_ids);
+
+		sub = stmt_list(be, lp);
+	}
+	if (!sub)
+		return NULL;
+	if (list_empty(jexps) && list_empty(sexps)) {
+		sql_exp *e = exp_atom_bool(be->mvc->sa, true);
+		append(sexps,e);
+	}
+	/* continue with non equi-joins */
+	if (!list_empty(sexps) || (rel->op == op_anti && !anti)) {
+		stmt *rids = stmt_blackbox_result(be, probed_ids, 0, sql_bind_localtype("oid"));
+		if (!list_empty(sexps)) {
+			stmt *sel = rel2bin_oahash_select(be, sub, sexps, rel);
+			rids = stmt_project(be, sel, rids);
+		}
+		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, probe_sub));
+		if (rel->op == op_anti && nulls) {
+			stmt *nonilcand = stmt_tdiff(be, c, nulls, NULL);
+			c = stmt_project(be, nonilcand, c);
+		}
+		if (rel->op == op_anti) {
+			probe_sub->cand = stmt_tdiff(be, c, rids, NULL);
 		} else {
-			assert(!list_empty(jexps) && list_length(jexps) == list_length(exps_cmp_prb));
-			/* build-phase res: hash-table and hash-payload stmts */
-			stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
-			assert(stmts_ht);
-
-			/*** PROBE PHASE ***/
-			probe_sub = sub = _start_pp(be, rel_prb->l, false, refs);
-			if (!sub) return NULL;
-
-			pp = get_pipeline(be);
-			stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, pp, anti, false, false, &nulls, NULL);
-			if (prb_res == NULL) return NULL;
-
-			/*** PROJECT RESULT PHASE ***/
-			list *lp = oahash_project_single(be, exps_prj_prb, getArg(prb_res->q, 0), sub, pp, &probed_ids);
-
-			sub = stmt_list(be, lp);
+			probe_sub->cand = stmt_tinter(be, c, rids, false);
 		}
-		if (!sub)
-			return NULL;
-		/* continue with non equi-joins */
-		if (!list_empty(sexps) || (rel->op == op_anti && !anti)) {
-			stmt *rids = stmt_blackbox_result(be, probed_ids, 0, sql_bind_localtype("oid"));
-			if (!list_empty(sexps)) {
-				stmt *sel = rel2bin_oahash_select(be, sub, sexps, rel);
-				rids = stmt_project(be, sel, rids);
-			}
-			stmt *c = stmt_mirror(be, bin_find_smallest_column(be, probe_sub));
-			if (rel->op == op_anti && nulls) {
-				stmt *nonilcand = stmt_tdiff(be, c, nulls, NULL);
-				c = stmt_project(be, nonilcand, c);
-			}
-			if (rel->op == op_anti) {
-				probe_sub->cand = stmt_tdiff(be, c, rids, NULL);
-			} else {
-				probe_sub->cand = stmt_tinter(be, c, rids, false);
-			}
-			if (rel->op == op_anti && nulls)
-				probe_sub->cand = stmt_project(be, probe_sub->cand, c);
-			sub = subrel_project(be, probe_sub, refs, rel);
-		}
+		if (rel->op == op_anti && nulls)
+			probe_sub->cand = stmt_project(be, probe_sub->cand, c);
+		sub = subrel_project(be, probe_sub, refs, rel);
 	}
 	return sub;
 }

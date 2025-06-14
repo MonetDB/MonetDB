@@ -5668,6 +5668,17 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	return cursub;
 }
 
+static bool
+has_partitioning( list *exps )
+{
+	for(node *n = exps->h; n; n = n->next){
+		sql_exp *gbe = n->data;
+		if (is_partitioning(gbe))
+			return true;
+	}
+	return false;
+}
+
 static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
@@ -5676,7 +5687,7 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	node *n;
 	list *projectresults = NULL;
 	bool df2 = (SQLrunning && rel->parallel);
-	int neededpp = rel->partition && get_need_pipeline(be);
+	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 
 	sql_exp *le = topn_limit(rel);
 	sql_exp *oe = topn_offset(rel);
@@ -5735,10 +5746,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 					sub = rel2bin_project(be, rl, refs, rel);
 			} else
 				sub = rel2bin_project(be, rl, refs, rel);
-			/*
 			if (rel->grouped && rl->r && has_partitioning(rl->r))
 				return sub;
-				*/
 		} else {
 			sub = subrel_bin(be, rl, refs);
 		}
