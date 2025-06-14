@@ -521,8 +521,10 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		int cnt = rel->ref.refcnt;
 		mnstr_printf(fout, "\n%cREF %d (%d)", decorate?'=':' ', nr, cnt);
 	}
+	/*
 	if (!rel->ref.refcnt)
 		mnstr_printf(fout, "norefs ");
+		*/
 
 	print_indent(sql, fout, depth, decorate);
 

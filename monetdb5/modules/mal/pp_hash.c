@@ -3749,7 +3749,7 @@ BAT_OAHASHfetch_pld_cart(bat *fetched, const bat *col, const bat *setrepeat, con
 
 	BAT *f = NULL, *k = NULL, *d = NULL;
 	BUN ttlcnt, keycnt, repcnt;
-	bit append_nulls = false;
+	bool append_nulls = false;
 	str err = NULL;
 
 	k = BATdescriptor(*col);

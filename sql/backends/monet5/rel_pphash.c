@@ -544,7 +544,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
 	stmt *stmts_hp = NULL;
 	/* freq/payload not needed for semi (TODO we also pass op_semi for (all!!) groupjoins (ugh)) */
-	if (rel->flag != (int)op_semi) {
+	if (rel->flag != (int)op_semi || rel->ref.refcnt > 2) {
 		InstrPtr stmt_freq = oahash_build_freq(be, stmts_ht->op4.lval->t->data, slt_ids, exps_prj_hsh?exps_prj_hsh->cnt:0, pp);
 		if (exps_prj_hsh)
 			stmts_hp = oahash_build_hp(be, exps_prj_hsh, shared_hp, getArg(stmt_freq,0), sub, pp);
@@ -671,20 +671,22 @@ rel2bin_oahash_select(backend *be, stmt *sub, list *sexps, sql_rel *rel)
 }
 
 static stmt *
-rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, InstrPtr probed_ids, stmt **M, bool cart, bool mark)
+rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, InstrPtr probed_ids, InstrPtr hash_ids, stmt **M, bool cart, bool mark)
 {
 	assert (rel->op == op_left || rel->op == op_right || !list_empty(rel->attr));
-	stmt *sel = NULL, *gids = NULL, *m = NULL;
+	stmt *sel = NULL, *gids = NULL, *m = M?*M:NULL;
 
-	if (probed_ids) {
-		gids = stmt_blackbox_result(be, probed_ids, 0, sql_bind_localtype("oid"));
-		stmt *jr = rel->op == op_left?sub->op4.lval->t->data:sub->op4.lval->h->data; /* random last column, to be changed in right hand join result ! */
+	if (hash_ids) {
+		//stmt *rids = rel->op == op_left?sub->op4.lval->t->data:sub->op4.lval->h->data; /* random last column, to be changed in right hand join result ! */
 		/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
-		if (cart)
-			m = stmt_const(be, jr, stmt_bool(be, 1));
-		else
-			m = *M;
+		if (cart) {
+			stmt *rids = stmt_blackbox_result(be, hash_ids, 0, sql_bind_localtype("oid"));
+			m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", rids), stmt_bool(be, false), stmt_bool(be, true), NULL);
+			//m = stmt_const(be, rids, stmt_bool(be, 1));
+		}
 	}
+	if (probed_ids)
+		gids = stmt_blackbox_result(be, probed_ids, 0, sql_bind_localtype("oid"));
 	for (node *en = sexps->h ; en; en = en->next) {
 		stmt *s = NULL;
 		sql_exp *e = en->data;
@@ -820,8 +822,13 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	} else {
 		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL, &m, &probe_side, &hash_side);
 	}
+	if (list_empty(jexps) && list_empty(sexps) && mark) {
+		sql_exp *e = exp_atom_bool(be->mvc->sa, true);
+		set_any(e);
+		append(sexps,e);
+	}
 	if (!list_empty(sexps)) {
-		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, &m, list_empty(jexps), mark);
+		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &m, list_empty(jexps), mark);
 		list *res = sa_list(be->mvc->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);
@@ -900,17 +907,17 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
 	split_join_exps_pp(rel, jexps, sexps, false);
-	InstrPtr probed_ids = NULL;
+	InstrPtr probed_ids = NULL, hash_ids = NULL;
 	stmt *m = NULL;
 
 	assert(rel->op == op_left || rel->op == op_right);
 	if (list_empty(jexps)) { /* cartesian */
-		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, NULL);
+		sub = rel2bin_oahash_cart(be, rel, refs, &probed_ids, &probe_sub, &probe_side, &hash_side, &hash_ids);
 	} else {
 		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL, &m, &probe_side, &hash_side);
 	}
 	if (!list_empty(sexps)) {
-		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, &m, list_empty(jexps), false);
+		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &m, list_empty(jexps), false);
 		list *res = sa_list(be->mvc->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);

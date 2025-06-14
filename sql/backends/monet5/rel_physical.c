@@ -1536,11 +1536,17 @@ rel_physical(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_physical);
 
+	v.changes = 0;
+	global_props gp = (global_props) {.cnt = {0} };
+	v.data = &gp;
+	rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
+	v.data = NULL;
+
 	if (!sql->recursive) {
 		ATOMIC_TYPE oahash_enabled = (1U<<19);
-		if (!SQLrunning || !(GDKdebug & oahash_enabled))
+		if (!SQLrunning || !(GDKdebug & oahash_enabled) || gp.cnt[op_except] || gp.cnt[op_inter] /*|| gp.cnt[op_full]*/) {
 			(void)rel_partition_(sql, rel, 0);
-		else {
+		} else {
 			rel = rel_dce(&v, NULL, rel);
 			if (v.opt >= 0)
 				v.opt = rel->opt+1;

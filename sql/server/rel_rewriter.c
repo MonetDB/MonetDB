@@ -546,6 +546,10 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 BUN
 get_rel_count(sql_rel *rel)
 {
+	if (rel && rel->op == op_buildhash && rel->l)
+		return get_rel_count(rel->l);
+	if (rel && rel->op == op_probehash && rel->l)
+		return get_rel_count(rel->l);
 	prop *found = find_prop(rel->p, PROP_COUNT);
 	if (!found && rel && is_simple_project(rel->op) && rel->l)
 		return get_rel_count(rel->l);

@@ -124,3 +124,4 @@ extern sql_exp *list_exps_uses_exp(list *exps, const char *rname, const char *na
 extern sql_exp *exps_uses_exp(list *exps, sql_exp *e) __attribute__((__visibility__("hidden")));
 extern int exp_keyvalue(sql_exp *e) __attribute__((__visibility__("hidden")));
 extern sql_rel *rel_dce(visitor *v, global_props *gp, sql_rel *rel);
+extern sql_rel *rel_properties(visitor *v, sql_rel *rel);

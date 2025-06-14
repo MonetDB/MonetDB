@@ -21,7 +21,7 @@
 #include "sql_privileges.h"
 #include "sql_storage.h"
 
-static sql_rel *
+sql_rel *
 rel_properties(visitor *v, sql_rel *rel)
 {
 	global_props *gp = (global_props*)v->data;

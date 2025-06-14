@@ -15,6 +15,7 @@
 
 #include "sql_mvc.h"
 #include "sql_relation.h"
+#include "rel_rel.h"
 
 #define NSQLREWRITERS 29
 
