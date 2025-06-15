@@ -2580,7 +2580,7 @@ error:
 			if (!mark[i] || (!(*semantics) && ky == oid_nil)) { \
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
-				mark[i] = false; \
+				mark[i] = (any && mark[i])?bit_nil:false; \
 				mtdcnt2++; \
 				continue; \
 			} \
@@ -2628,7 +2628,7 @@ error:
 			if (!mark[i] || (!(*semantics) && is_##Type##_nil(val))) { \
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
-				mark[i] = false; \
+				mark[i] = (any && mark[i])?bit_nil:false; \
 				mtdcnt2++; \
 				continue; \
 			} \
@@ -2676,7 +2676,7 @@ error:
 			if (!mark[i] || (!(*semantics) && atomcmp(val, nil) == 0)) { \
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
-				mark[i] = false; \
+				mark[i] = (any && mark[i])?bit_nil:false; \
 				mtdcnt2++; \
 				continue; \
 			} \
@@ -2707,7 +2707,7 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+BAT_OAHASHomprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H, bool any)
 {
 	BAT *res_m = NULL, *res_s = NULL, *res_o = NULL, *k = NULL, *h = NULL, *m = NULL, *t = NULL, *p = NULL;
 	BUN mtdcnt, mtdcnt2 = 0;
@@ -2830,6 +2830,18 @@ error:
 	BBPreclaim(t);
 	BBPreclaim(p);
 	return err;
+}
+
+static str
+BAT_OAHASHoprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, single, semantics, H, false);
+}
+
+static str
+BAT_OAHASHmprobe_cmbd(bat *LHS_matched, bat *RHS_slotid, bat *outer, const bat *LHS_key, const bat *LHS_hash, const bat *LHS_selected, const bat *RHS_gid, const bat *RHS_ht, const bit *single, const bit *semantics, const ptr *H)
+{
+	return BAT_OAHASHomprobe_cmbd( LHS_matched, RHS_slotid, outer, LHS_key, LHS_hash, LHS_selected, RHS_gid, RHS_ht, single, semantics, H, true);
 }
 
 #define vproject() \
@@ -3953,7 +3965,7 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "combined_oprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("outer", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
 
- command("oahash", "combined_mprobe", BAT_OAHASHoprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("mark", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
+ command("oahash", "combined_mprobe", BAT_OAHASHmprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,11, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("mark", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
 
  command("oahash", "project", OAHASHproject, false, "Project the selected OIDs onto the keys", args(1,4, batargany("res",1),batargany("key",1),batarg("selected",oid),arg("pipeline",ptr))),
 

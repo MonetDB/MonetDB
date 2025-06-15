@@ -812,6 +812,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
+			if (!list_empty(rel->attr))
+				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
 			split_join_exps_pp(rel, eq_exps, other, true);
 
 			sql_rel *l = rel->l, *r = rel->r;

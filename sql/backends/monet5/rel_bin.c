@@ -3038,11 +3038,10 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
 
 #define is_equi_exp_(e) ((e)->flag == cmp_equal)
 
-static list *
-get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps, bool *equality_only)
+list *
+get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps)
 {
 	list *new_exps = sa_list(sql->sa);
-	*equality_only = true;
 
 	if (!exps)
 		return new_exps;
@@ -3052,8 +3051,6 @@ get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps, bool *equality_o
 
 		if (can_join_exp(rel, e, false) && is_equi_exp_(e) && !is_any(e))
 			list_append(new_exps, e);
-		else
-			*equality_only = false;
 	}
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
@@ -3111,8 +3108,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	left = row2cols(be, left);
 	right = row2cols(be, right);
 
-	bool equality_only = true;
-	list *jexps = get_simple_equi_joins_first(sql, rel, rel->exps, &equality_only);
+	list *jexps = get_simple_equi_joins_first(sql, rel, rel->exps);
 
 	en = jexps?jexps->h:NULL;
 	if (list_empty(jexps) || !(is_equi_exp_((sql_exp*)en->data) && can_join_exp(rel, en->data, false))) {
@@ -6268,7 +6264,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
-	/* if run with pp */
+	/* if run with pp, result count bat */
 	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
 
 	if (tr->op == op_basetable) {
@@ -7384,6 +7380,10 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
+
+	/* if run with pp, result count bat */
+	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
+
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
@@ -7408,6 +7408,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the update relation */
 		update = subrel_bin(be, rel->r, refs);
 	update = subrel_project(be, update, refs, rel->r);
+	stmt *pp = NULL;
+	pp = get_pipeline(be);
 
 	if (!update)
 		return NULL;
@@ -7504,7 +7506,42 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		list_prepend(l, ddl);
 		cnt = stmt_list(be, l);
 	} else {
-		cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+		int pp = be->pipeline;
+
+		if (!pp)
+			cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+		else /* incremental sum */
+			cnt = stmt_pp_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
+	}
+
+	if (!rel->returning && pp) {
+		(void)stmt_pp_jump(be, pp, be->nrparts);
+	}
+	if (ddl) {
+		if (pp)
+			(void)stmt_pp_end(be, pp);
+	} else {
+		/* combine counts using locked.sum */
+		if (pp && !rel->returning) {
+			stmt *ret = stmt_pp_aggr(be, cnt, NULL, NULL, sql_bind_func(sql, "sys", "sum", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
+			/* shared result */
+			ret->nr = getArg(ret->q, 0) = cc->nr;
+			ret->q->inout = 0;
+			int nr = getDestVar(ret->q);
+			/* change into bat */
+			getModuleId(ret->q) = getName("lockedaggr");
+			be->mb->var[nr].type = newBatType(TYPE_lng);
+			ret->q = pushArgument(be->mb, ret->q, be->pipeline);
+			/* swap value and pipeline */
+			int arg = getArg(ret->q, 1);
+			getArg(ret->q, 1) = getArg(ret->q, 2);
+			getArg(ret->q, 2) = arg;
+
+			(void)stmt_pp_end(be, pp);
+			ret = stmt_fetch(be, ret); /* fetch rowcount result */
+			cnt = ret;
+		}
+
 		if (add_to_rowcount_accumulator(be, cnt->nr) < 0)
 			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
