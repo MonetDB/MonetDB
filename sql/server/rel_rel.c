@@ -1326,6 +1326,8 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 			return exps;
 		}
 		/* fall through */
+	case op_buildhash:
+	case op_probehash:
 	case op_project:
 	case op_basetable:
 	case op_table:
