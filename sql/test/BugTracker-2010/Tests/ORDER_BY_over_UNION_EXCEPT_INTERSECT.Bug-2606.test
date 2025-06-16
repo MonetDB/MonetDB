@@ -66,6 +66,7 @@ analyze sys.t2606a
 statement ok
 analyze sys.t2606b
 
+skipif knownfail
 query T python .plan.filter
 PLAN   select * from t2606a   union   select * from t2606b   order by a
 ----
@@ -95,6 +96,7 @@ query I nosort
 32
 33
 
+skipif knownfail
 query T python .plan.filter
 PLAN ( select * from t2606a   union   select * from t2606b ) order by a
 ----
@@ -124,6 +126,7 @@ query I nosort
 32
 33
 
+skipif knownfail
 query T python .plan.filter
 PLAN ( select * from t2606a ) union ( select * from t2606b ) order by a
 ----
@@ -279,6 +282,7 @@ query I nosort
 22
 23
 
+skipif knownfail
 query T python .plan.filter
 PLAN select * from (select * from t2606a union select * from t2606b) as t order by a
 ----

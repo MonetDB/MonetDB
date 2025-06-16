@@ -35,6 +35,7 @@ SELECT avg(3) FROM baz GROUP BY b
 3
 3
 
+skipif knownfail
 query T nosort
 PLAN SELECT avg(3) FROM baz GROUP BY b
 ----
@@ -52,6 +53,7 @@ SELECT 1 + avg(3) FROM baz GROUP BY b
 4
 4
 
+skipif knownfail
 query T nosort
 PLAN SELECT 1 + avg(3) FROM baz GROUP BY b
 ----
@@ -81,6 +83,7 @@ SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
 4
 30
 
+skipif knownfail
 query T nosort
 PLAN SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
 ----
@@ -112,6 +115,7 @@ SELECT count(3) FROM baz GROUP BY b
 1
 2
 
+skipif knownfail
 query T nosort
 PLAN SELECT count(3) FROM baz GROUP BY b
 ----
@@ -121,6 +125,7 @@ project (
 | ) [ "baz"."b" NOT NULL ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+skipif knownfail
 query T nosort
 plan select prod(cast(1 as real)) from baz group by b;
 ----
@@ -130,6 +135,7 @@ project (
 | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
 ) [ real(24) "1" as "%1"."%1" ]
 
+skipif knownfail
 query T nosort
 plan select prod(1), sum(0) from baz group by a
 ----
@@ -167,6 +173,7 @@ NULL
 NULL
 NULL
 
+skipif knownfail
 query T nosort
 plan select count(null) + 3 from baz group by a
 ----

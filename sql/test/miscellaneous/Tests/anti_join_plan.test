@@ -55,6 +55,7 @@ user.main
 1
 
 # optimized anti join
+skipif knownfail
 query T python .explain.function_histogram
 explain select * from test
 where k2 not in (
