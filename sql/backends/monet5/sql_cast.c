@@ -92,7 +92,7 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	*res = GDKstrdup(r);
+	*res = SA_STRDUP(cntxt->alloc, r);
 	if (!from_str)
 		GDKfree(r);
 	if (!*res)

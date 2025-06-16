@@ -310,7 +310,7 @@ RMTconnectScen(Client ctx, str *ret,
 #endif
 	MT_lock_unset(&mal_remoteLock);
 
-	*ret = GDKstrdup(conn);
+	*ret = MA_STRDUP(ctx->alloc, conn);
 	if (*ret == NULL)
 		throw(MAL, "remote.connect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return (MAL_SUCCEED);

@@ -120,7 +120,7 @@ typedef struct {
 					break;												\
 				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
 					goto bunins_failed;									\
-				GDKfree(y);												\
+				/*GDKfree(y);*/												\
 				y = NULL;												\
 				if (++oo == olimit)										\
 					break;												\
@@ -153,7 +153,7 @@ typedef struct {
 // Only the last error message is returned, the value of
 // an erroneous call depends on the operator itself.
 static str
-MANIFOLDjob(MULTItask *mut)
+MANIFOLDjob(allocator *ma, MULTItask *mut)
 {
 	int i;
 	char **args;
@@ -163,7 +163,7 @@ MANIFOLDjob(MULTItask *mut)
 	if (olimit == 0)
 		return msg;				/* nothing to do */
 
-	args = (char **) GDKzalloc(sizeof(char *) * mut->pci->argc);
+	args = (char **) ma_zalloc(ma, sizeof(char *) * mut->pci->argc);
 	if (args == NULL)
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -209,7 +209,7 @@ MANIFOLDjob(MULTItask *mut)
 	if (ATOMextern(mut->args[0].type) && y)
 		GDKfree(y);
   bunins_failed:
-	GDKfree(args);
+	//GDKfree(args);
 	return msg;
 }
 
@@ -401,7 +401,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*/
 	mut.pci->fcn = fcn;
-	msg = MANIFOLDjob(&mut);
+	msg = MANIFOLDjob(cntxt->alloc, &mut);
 	//freeInstruction(mut.pci);
 
   wrapup:

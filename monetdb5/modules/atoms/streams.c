@@ -146,15 +146,16 @@ mnstr_read_stringwrap(Client ctx, str *res, const Stream *S)
 	stream *s = *(stream **) S;
 	ssize_t len = 0;
 	size_t size = CHUNK +1;
-	char *buf = GDKmalloc(size), *start = buf, *tmp;
+	char *buf = ma_alloc(ctx->alloc, size), *start = buf, *tmp;
 
 	if (buf == NULL)
 		throw(MAL, "mnstr_read_stringwrap", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
+		size_t osz = size;
 		size += len;
-		tmp = GDKrealloc(buf, size);
+		tmp = ma_realloc(ctx->alloc, buf, size, osz);
 		if (tmp == NULL) {
-			GDKfree(buf);
+			// GDKfree(buf);
 			throw(MAL, "mnstr_read_stringwrap",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}

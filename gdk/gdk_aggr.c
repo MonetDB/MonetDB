@@ -3567,7 +3567,7 @@ BATgroupmin(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 /* return pointer to smallest non-nil value in b, or pointer to nil if
  * there is no such value (no values at all, or only nil) */
 void *
-BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmin_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3698,7 +3698,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
-		aggr = GDKmalloc(s);
+		aggr = alloc? sa_alloc(alloc, s) : GDKmalloc(s);
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
@@ -3713,7 +3713,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 void *
 BATmin(BAT *b, void *aggr)
 {
-	return BATmin_skipnil(b, aggr, 1);
+	return BATmin_skipnil(NULL, b, aggr, 1);
 }
 
 BAT *
@@ -3724,7 +3724,7 @@ BATgroupmax(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils)
 }
 
 void *
-BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
+BATmax_skipnil(allocator *alloc, BAT *b, void *aggr, bit skipnil)
 {
 	const void *res = NULL;
 	size_t s;
@@ -3828,7 +3828,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 	}
 	if (aggr == NULL) {
 		s = ATOMlen(bi.type, res);
-		aggr = GDKmalloc(s);
+		aggr = alloc? sa_alloc(alloc, s) : GDKmalloc(s);
 	} else {
 		s = ATOMsize(ATOMtype(bi.type));
 	}
@@ -3843,7 +3843,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 void *
 BATmax(BAT *b, void *aggr)
 {
-	return BATmax_skipnil(b, aggr, 1);
+	return BATmax_skipnil(NULL, b, aggr, 1);
 }
 
 

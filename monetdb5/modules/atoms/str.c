@@ -267,9 +267,9 @@ STRtostr(Client ctx, str *res, const char *const *src)
 {
 	(void) ctx;
 	if (*src == 0)
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	else
-		*res = GDKstrdup(*src);
+		*res = MA_STRDUP(ctx->alloc, *src);
 	if (*res == NULL)
 		throw(MAL, "str.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -319,7 +319,7 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 	int off = *offset;
 
 	if (strNil(s) || is_int_nil(off)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -330,7 +330,7 @@ STRTail(Client ctx, str *res, const char *const *arg1, const int *offset)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -376,7 +376,7 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 	int off = *offset, len = *length;
 
 	if (strNil(s) || is_int_nil(off) || is_int_nil(len)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -387,7 +387,7 @@ STRSubString(Client ctx, str *res, const char *const *arg1, const int *offset, c
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -417,7 +417,7 @@ STRFromWChr(Client ctx, str *res, const int *c)
 	int cc = *c;
 
 	if (is_int_nil(cc)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = MAX(strlen(str_nil) + 1, 8);
 
@@ -428,7 +428,7 @@ STRFromWChr(Client ctx, str *res, const int *c)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -471,12 +471,12 @@ STRWChrAt(Client ctx, int *res, const char *const *arg1, const int *at)
 }
 
 static inline str
-doStrConvert(str *res, const char *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
+doStrConvert(allocator *alloc, str *res, const char *arg1, gdk_return (*func)(char **restrict, size_t *restrict, const char *restrict))
 {
 	str buf = NULL, msg = MAL_SUCCEED;
 
 	if (strNil(arg1)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -487,7 +487,7 @@ doStrConvert(str *res, const char *arg1, gdk_return (*func)(char **restrict, siz
 			GDKfree(buf);
 			throw(MAL, "str.lower", GDK_EXCEPTION);
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -501,21 +501,21 @@ static inline str
 STRlower(Client ctx, str *res, const char *const *arg1)
 {
 	(void) ctx;
-	return doStrConvert(res, *arg1, GDKtolower);
+	return doStrConvert(ctx->alloc, res, *arg1, GDKtolower);
 }
 
 static inline str
 STRupper(Client ctx, str *res, const char *const *arg1)
 {
 	(void) ctx;
-	return doStrConvert(res, *arg1, GDKtoupper);
+	return doStrConvert(ctx->alloc, res, *arg1, GDKtoupper);
 }
 
 static inline str
 STRcasefold(Client ctx, str *res, const char *const *arg1)
 {
 	(void) ctx;
-	return doStrConvert(res, *arg1, GDKcasefold);
+	return doStrConvert(ctx->alloc, res, *arg1, GDKcasefold);
 }
 
 /* returns whether arg1 starts with arg2 */
@@ -784,7 +784,7 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 	int f = *field;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(f)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -795,7 +795,7 @@ STRsplitpart(Client ctx, str *res, const char *const *haystack, const char *cons
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -908,7 +908,7 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 	const char *s = *arg1;
 
 	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -919,7 +919,7 @@ STRStrip(Client ctx, str *res, const char *const *arg1)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -950,7 +950,7 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 	const char *s = *arg1;
 
 	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -961,7 +961,7 @@ STRLtrim(Client ctx, str *res, const char *const *arg1)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -992,7 +992,7 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 	const char *s = *arg1;
 
 	if (strNil(s)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1003,7 +1003,7 @@ STRRtrim(Client ctx, str *res, const char *const *arg1)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1076,7 +1076,7 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 
@@ -1087,7 +1087,7 @@ STRStrip2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1131,7 +1131,7 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 
@@ -1142,7 +1142,7 @@ STRLtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1186,7 +1186,7 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 	const char *s = *arg1, *s2 = *arg2;
 
 	if (strNil(s) || strNil(s2)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH * sizeof(int);
 
@@ -1197,7 +1197,7 @@ STRRtrim2(Client ctx, str *res, const char *const *arg1, const char *const *arg2
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1288,7 +1288,7 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 	int l = *len;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1299,7 +1299,7 @@ STRLpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1330,7 +1330,7 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 	int l = *len;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1341,7 +1341,7 @@ STRRpad(Client ctx, str *res, const char *const *arg1, const int *len)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1372,7 +1372,7 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 	int l = *len;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1383,7 +1383,7 @@ STRLpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1415,7 +1415,7 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 	int l = *len;
 
 	if (strNil(s) || strNil(s2) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1426,7 +1426,7 @@ STRRpad3(Client ctx, str *res, const char *const *arg1, const int *len, const ch
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1489,7 +1489,7 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 	const char *s = *arg1, *s2 = *arg2, *s3 = *arg3;
 
 	if (strNil(s) || strNil(s2) || strNil(s3)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1500,7 +1500,7 @@ STRSubstitute(Client ctx, str *res, const char *const *arg1, const char *const *
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1535,7 +1535,7 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 	int st = *start;
 
 	if (strNil(s) || is_int_nil(st)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1546,7 +1546,7 @@ STRsubstringTail(Client ctx, str *res, const char *const *arg1, const int *start
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1574,7 +1574,7 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 	int st = *start, l = *ll;
 
 	if (strNil(s) || is_int_nil(st) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1585,7 +1585,7 @@ STRsubstring(Client ctx, str *res, const char *const *arg1, const int *start, co
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1604,7 +1604,7 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 	int l = *ll;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1615,7 +1615,7 @@ STRprefix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1641,7 +1641,7 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 	int l = *ll;
 
 	if (strNil(s) || is_int_nil(l)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1652,7 +1652,7 @@ STRsuffix(Client ctx, str *res, const char *const *arg1, const int *ll)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1739,7 +1739,7 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 	int st = *start, n = *nchars;
 
 	if (strNil(s) || is_int_nil(st) || is_int_nil(n) || strNil(s2)) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1750,7 +1750,7 @@ STRinsert(Client ctx, str *res, const char *const *input, const int *start, cons
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1794,7 +1794,7 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 	int cc = *c;
 
 	if (strNil(s) || is_int_nil(cc) || cc < 0) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 
@@ -1805,7 +1805,7 @@ STRrepeat(Client ctx, str *res, const char *const *arg1, const int *c)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1823,7 +1823,7 @@ STRspace(Client ctx, str *res, const int *ll)
 	int l = *ll;
 
 	if (is_int_nil(l) || l < 0) {
-		*res = GDKstrdup(str_nil);
+		*res = MA_STRDUP(ctx->alloc, str_nil);
 	} else {
 		const char space[] = " ", *s = space;
 		size_t buflen = INITIAL_STR_BUFFER_LENGTH;
@@ -1835,7 +1835,7 @@ STRspace(Client ctx, str *res, const int *ll)
 			GDKfree(buf);
 			return msg;
 		}
-		*res = GDKstrdup(buf);
+		*res = MA_STRDUP(ctx->alloc, buf);
 	}
 
 	GDKfree(buf);
@@ -1853,7 +1853,8 @@ STRasciify(Client ctx, str *r, const char *const *s)
 	size_t buflen = 0;
 	if (GDKasciify(&buf, &buflen, *s) != GDK_SUCCEED)
 		throw(MAL, "str.asciify", GDK_EXCEPTION);
-	*r = buf;
+	*r = MA_STRDUP(ctx->alloc, buf);
+	GDKfree(buf);
 	return MAL_SUCCEED;
 }
 
@@ -2429,12 +2430,12 @@ batstr_strlower(Client ctx, BAT *b)
 			return NULL;
 		}
 		if (BUNappend(bn, vb_low, false) != GDK_SUCCEED) {
-			GDKfree(vb_low);
+			// GDKfree(vb_low);
 			bat_iterator_end(&bi);
 			BBPreclaim(bn);
 			return NULL;
 		}
-		GDKfree(vb_low);
+		// GDKfree(vb_low);
 	}
 	bat_iterator_end(&bi);
 	return bn;

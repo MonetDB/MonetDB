@@ -153,9 +153,9 @@ ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
+			*(ptr *) result = p = BATmin_skipnil(ctx->alloc, b, NULL, *skipnil);
 		} else {
-			p = BATmin_skipnil(b, result, *skipnil);
+			p = BATmin_skipnil(ctx->alloc, b, result, *skipnil);
 			if (p != result)
 				msg = createException(MAL, "algebra.min",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -192,9 +192,9 @@ ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
+			*(ptr *) result = p = BATmax_skipnil(ctx->alloc, b, NULL, *skipnil);
 		} else {
-			p = BATmax_skipnil(b, result, *skipnil);
+			p = BATmax_skipnil(ctx->alloc, b, result, *skipnil);
 			if (p != result)
 				msg = createException(MAL, "algebra.max",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -1567,14 +1567,14 @@ ALGsubslice_lng(Client ctx, bat *ret, const bat *bid, const lng *start, const ln
  */
 
 static str
-doALGfetch(ptr ret, BAT *b, BUN pos)
+doALGfetch(allocator *alloc, ptr ret, BAT *b, BUN pos)
 {
 	assert(pos <= BUN_MAX);
 	BATiter bi = bat_iterator(b);
 	if (ATOMextern(b->ttype)) {
 		ptr _src = BUNtail(bi, pos);
 		size_t _len = ATOMlen(b->ttype, _src);
-		ptr _dst = GDKmalloc(_len);
+		ptr _dst = ma_alloc(alloc, _len);
 		if (_dst == NULL) {
 			bat_iterator_end(&bi);
 			throw(MAL, "doAlgFetch", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1608,7 +1608,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 }
 
 static str
-ALGfetch(ptr ret, const bat *bid, const lng *pos)
+ALGfetch(allocator *alloc, ptr ret, const bat *bid, const lng *pos)
 {
 	BAT *b;
 	str msg;
@@ -1632,7 +1632,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 		throw(MAL, "algebra.fetch",
 			  ILLEGAL_ARGUMENT ": row index to fetch is out of range\n");
 	}
-	msg = doALGfetch(ret, b, (BUN) *pos);
+	msg = doALGfetch(alloc, ret, b, (BUN) *pos);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
@@ -1643,7 +1643,7 @@ ALGfetchoid(Client ctx, ptr ret, const bat *bid, const oid *pos)
 	(void) ctx;
 	lng o = *pos;
 
-	return ALGfetch(ret, bid, &o);
+	return ALGfetch(ctx->alloc, ret, bid, &o);
 }
 
 static str
