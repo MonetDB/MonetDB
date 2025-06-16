@@ -467,7 +467,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pcat->current >= pcat->max) {
 		BBPreclaim(b);
 		BBPreclaim(i);
-		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat to many sources (%d)", pcat->current);
+		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat too many sources (%d)", pcat->current);
 	}
 	pcat->srcs[pcat->current++] = i->tsink;
 	BBPreclaim(i);
