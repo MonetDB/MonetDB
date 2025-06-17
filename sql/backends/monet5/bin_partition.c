@@ -17,35 +17,6 @@
 #include "rel_rel.h"
 #include "rel_rewriter.h"
 
-void
-set_need_pipeline(backend *be)
-{
-	if(be->need_pipeline)
-		assert(0);
-	be->need_pipeline = true;
-}
-
-bool
-get_need_pipeline(backend *be)
-{
-	/* get and reset */
-	bool r = be->need_pipeline;
-	be->need_pipeline = false;
-	return r;
-}
-
-void
-set_pipeline(backend *be, stmt *pp)
-{
-	be->ppstmt = pp;
-}
-
-stmt *
-get_pipeline(backend *be)
-{
-	return be->ppstmt;
-}
-
 static sql_rel*
 rel_is_not_pp_safe(visitor *v, sql_rel *rel)
 {

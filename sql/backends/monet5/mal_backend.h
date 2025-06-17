@@ -64,7 +64,7 @@ typedef struct backend {
 	int pp;			/* pipeline counter of the language.pipeline barrier */
 	int nrparts;	/* nrparts of the .. */
 	int pipeline;	/* pipeline ptr argument of the language.pipeline barrier */
-	int pp_pc;		/* pc of pipeline statement, any prepare statements need to go before this one */
+	int pp_pc;		/* pc of pipeline statement, any pp prepare statements need to go before this one */
 	int concatcnt;	/* number of concat blocks with sources */
 	int source;		/* use source.done instead of pipeline.counter */
 	int cleanup;	/* variable which needs cleanup at end of block */

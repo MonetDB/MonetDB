@@ -11,6 +11,12 @@
 #ifndef _SQL_PP_STATEMENT_H_
 #define _SQL_PP_STATEMENT_H_
 
+extern void set_need_pipeline(backend *be);
+extern bool get_need_pipeline(backend *be);
+
+extern void set_pipeline(backend *be, stmt *pp);
+extern stmt * get_pipeline(backend *be);
+
 extern InstrPtr stmt_oahash_new(backend *be, int tt, int estimate, bit freq, int parent);
 extern InstrPtr stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previous);
 extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, const stmt *key, const stmt *pp);
@@ -55,9 +61,11 @@ extern stmt *stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeli
 
 extern stmt *stmt_pp_alias(backend *be, InstrPtr q, sql_exp *e, int colnr);
 
+extern int stmt_concat(backend *be, int parent_block, int nr);
 extern int stmt_concat_barrier(backend *be, int concat, int blockid, int prev);
 extern int stmt_concat_barrier_end(backend *be, int barrier);
 extern int stmt_concat_add_source(backend *be);
+extern int stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt );
 
 extern int pp_counter(backend *be, int nr_slices, int var_nr_slices);
 extern int pp_counter_get(backend *be, int counter);

@@ -367,6 +367,7 @@ bailout:
 }
 
 #define CONCAT_SINK 99
+#define SUBCONCAT_SINK 100
 typedef struct pp_concat_t {
 	Sink s;
 
@@ -391,7 +392,7 @@ static int
 concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 {
 	int res = 1;
-	assert(c->s.type == CONCAT_SINK);
+	assert(c->s.type == CONCAT_SINK || c->s.type == SUBCONCAT_SINK);
 	MT_lock_set(&c->l);
 	if (!c->started) {
 		c->cur = (int*)GDKzalloc(sizeof(int) * nr_workers);
@@ -399,12 +400,18 @@ concat_done( pp_concat *c, int wid, int nr_workers, bool redo )
 	}
 	Sink *s = c->srcs[c->cur[wid]];
 	if (s) {
-		res = s->done(s, wid, nr_workers, redo);
+		if (s->type == SUBCONCAT_SINK)
+			res = concat_done( (pp_concat*)s, wid, nr_workers, redo);
+		else
+			res = s->done(s, wid, nr_workers, redo);
 		while(res && ++c->cur[wid] < c->max) {
 			s = c->srcs[c->cur[wid]];
 			if (!s)
 				break;
-			res = s->done(s, wid, nr_workers, false);
+			if (s->type == SUBCONCAT_SINK)
+				res = concat_done( (pp_concat*)s, wid, nr_workers, false);
+			else
+				res = s->done(s, wid, nr_workers, false);
 		}
 	}
 	MT_lock_unset(&c->l);
@@ -431,7 +438,7 @@ PPconcat_block(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!b)
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	pp_concat *pcat = (pp_concat*)b->tsink;
-	if (pcat->s.type != CONCAT_SINK) {
+	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
 		BBPreclaim(b);
 		throw(MAL, "pipeline.concat_block", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
 	}
@@ -459,7 +466,7 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	pp_concat *pcat = (pp_concat*)b->tsink;
-	if (pcat->s.type != CONCAT_SINK) {
+	if (pcat->s.type != CONCAT_SINK && pcat->s.type != SUBCONCAT_SINK) {
 		BBPreclaim(b);
 		BBPreclaim(i);
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Invalid source %d", pcat->s.type);
@@ -470,6 +477,8 @@ PPconcat_add(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "pipeline.concat_add", SQLSTATE(HY002) "Concat too many sources (%d)", pcat->current);
 	}
 	pcat->srcs[pcat->current++] = i->tsink;
+	if (i->tsink->type == CONCAT_SINK)
+		i->tsink->type = SUBCONCAT_SINK;
 	BBPreclaim(i);
 	*rb = b->batCacheid;
 	BBPkeepref(b);

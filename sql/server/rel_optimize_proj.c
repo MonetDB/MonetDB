@@ -3381,7 +3381,7 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down_munion(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
+	if (0 && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;

@@ -16,6 +16,35 @@
 
 #include "mal_builder.h"
 
+void
+set_need_pipeline(backend *be)
+{
+	if(be->need_pipeline)
+		assert(0);
+	be->need_pipeline = true;
+}
+
+bool
+get_need_pipeline(backend *be)
+{
+	/* get and reset */
+	bool r = be->need_pipeline;
+	be->need_pipeline = false;
+	return r;
+}
+
+void
+set_pipeline(backend *be, stmt *pp)
+{
+	be->ppstmt = pp;
+}
+
+stmt *
+get_pipeline(backend *be)
+{
+	return be->ppstmt;
+}
+
 /* Generate incremental or partitioned aggr statements */
 stmt *
 stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
@@ -1131,6 +1160,24 @@ stmt_pp_alias(backend *be, InstrPtr q, sql_exp *e, int resultargnr)
 }
 
 
+int
+stmt_concat(backend *be, int p_block, int nr)
+{
+		InstrPtr q = newStmt(be->mb, "pipeline", "concat"); /* multi - relation pipeline */
+		//if (p_block > 0)
+		//	pushArgument(be->mb, q, p_block);
+		q = pushInt(be->mb, q, nr);
+		pushInstruction(be->mb, q);
+		int source = getDestVar(q);
+		if (p_block <= 0)
+			set_pipeline(be, stmt_pp_start_generator(be, source, true));
+		else
+			moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+		be->source = source;
+		be->concatcnt = 0;
+		return source;
+}
+
 /* concat.blockid (concat, blockid, nothingdonesofar) := bit
  * if blockid matches the active blockid and nothingelse was done return true */
 int
@@ -1181,6 +1228,21 @@ stmt_concat_add_source(backend *be)
 	return 0;
 }
 
+int
+stmt_concat_add_subconcat(backend *be, int p_source, int p_concatcnt)
+{
+    InstrPtr q = newStmt(be->mb, "pipeline", "concat_add");
+	q->argv[0] = p_source;
+    q = pushArgument(be->mb, q, p_source);
+    q = pushArgument(be->mb, q, be->source);
+	pushInstruction(be->mb, q);
+	/* statement at top of stack need to be moved and added to the concat iterator */
+	moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
+	be->source = p_source;
+	be->concatcnt = p_concatcnt;
+	be->concatcnt++;
+	return 0;
+}
 
 int
 pp_counter(backend *be, int nr_slices, int var_nr_slices)

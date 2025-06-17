@@ -4420,17 +4420,13 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 
 	int neededpp = get_need_pipeline(be) && rel->spb && rel->parallel;
 
-	if (neededpp) { /* Simply concat the sources */
+	stmt *pp = get_pipeline(be);
+	if (neededpp || pp) { /* Simply concat the sources */
 		/* sink for the pipeline concat sink/source */
-		InstrPtr q = newStmt(be->mb, "pipeline", "concat"); /* multi - relation pipeline */
-		q = pushInt(be->mb, q, list_length(rel->l));
-		pushInstruction(be->mb, q);
-		int f = getDestVar(q);
-
-		set_pipeline(be, stmt_pp_start_generator(be, f, true));
+		int p_source = be->source, p_concatcnt = be->concatcnt;
+		(void)stmt_concat(be, be->source, list_length(rel->l));
 
 		list *vars = sa_list(sql->sa); /* create all results variables */
-
 		for (n = rel->exps->h; n; n = n->next) {
 			sql_subtype *st = exp_subtype(n->data);
 			stmt *s = stmt_bat_declare(be, st);
@@ -4440,7 +4436,7 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		int i = 0, p = 0;
 		for (n = ((list*)rel->l)->h; n; n = n->next, i++) {
 			/* if (neededpp) add if barrier */
-			int b = stmt_concat_barrier(be, f, i, p);
+			int b = stmt_concat_barrier(be, be->source, i, p);
 			rel_stmt = subrel_bin(be, n->data, refs);
 			rel_stmt = subrel_project(be, rel_stmt, refs, n->data);
 			rel_stmt = subres_assign_resultvars(be, rel_stmt, vars);
@@ -4460,6 +4456,8 @@ rel2bin_munion(backend *be, sql_rel *rel, list *refs)
 		}
 		/* todo (optimized) distinct and single */
 		sub = rel_rename(be, rel, rel_stmt);
+		if (p_source)
+			stmt_concat_add_subconcat(be, p_source, p_concatcnt);
 		return sub;
 	} else {
 		/* convert to stmt and store the munion operands in rstmts list */
@@ -6267,6 +6265,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	/* if run with pp, result count bat */
 	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
 
+	if (tr->op == op_buildhash || tr->op == op_probehash)
+		tr = tr->l;
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {

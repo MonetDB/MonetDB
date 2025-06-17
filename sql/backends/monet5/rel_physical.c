@@ -649,6 +649,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		 * the upper tree to end it, and this topN might be computed
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
+		if (rel->card <= CARD_ATOM)
+			return 0;
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
 			if (p && (p->op != op_topn || !topn_limit(p)))
 				rel_dup(rel); // inc-ref unsafe exps (ie order dependent)

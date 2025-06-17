@@ -12,13 +12,6 @@
 #include "sql_statement.h"
 #include "mal_backend.h"
 
-extern void set_need_pipeline(backend *be);
-extern bool get_need_pipeline(backend *be);
-
-/* TODO inline part of .h */
-extern void set_pipeline(backend *be, stmt *pp);
-extern stmt * get_pipeline(backend *be);
-
 extern bool pp_can_not_start(mvc *sql, sql_rel *rel);
 
 extern int pp_nr_slices(sql_rel *rel);
