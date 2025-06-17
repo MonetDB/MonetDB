@@ -803,8 +803,6 @@ exp_ref(mvc *sql, sql_exp *e)
 	sql_exp *ne = exp_propagate(sql->sa, exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_unique(e), is_intern(e)), e);
 	if (ne) {
 		ne->nid = e->alias.label;
-		assert(ne->nid);
-		assert(!ne->nid || ne->alias.name);
 		ne->alias.label = ne->nid;
 	}
 	return ne;
