@@ -39,7 +39,7 @@ enum range_comp_t {
 	range_inside,		/* search range inside bat range */
 };
 
-typedef struct allocator {
+struct allocator {
 	struct allocator *pa;
 	size_t size;	 /* size of the allocator in terms of blocks */
 	size_t nr;	 /* number of blocks allocated */
@@ -61,7 +61,7 @@ typedef struct allocator {
 	exception_buffer eb;
 	MT_Lock lock;    /* lock for thread-safe allocations */
 	bool use_lock;
-} allocator;
+};
 
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
