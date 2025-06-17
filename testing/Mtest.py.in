@@ -2725,7 +2725,11 @@ class ServerClass:
                 pass
             if self.dbg:
                 stdin = stdout = stderr = None
-                cmd = splitcommand(self.dbg) + cmd
+                if 'gdb' in self.dbg:
+                    cmd = splitcommand(self.dbg) + ['--args'] + cmd
+                else:
+                    cmd = splitcommand(self.dbg) + cmd
+
         else:
             stdout = process.PIPE
         if os.name == 'nt':

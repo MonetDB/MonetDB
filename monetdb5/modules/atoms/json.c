@@ -84,19 +84,19 @@ int TYPE_json;
 
 /* Internal constructors. */
 static int jsonhint = 8;
-static JSON *JSONparse(const char *j);
+static JSON *JSONparse(Client ctx, const char *j);
 
 static JSON *
-JSONnewtree(void)
+JSONnewtree(allocator *alloc)
 {
 	JSON *js;
 
-	js = GDKzalloc(sizeof(JSON));
+	js = ma_zalloc(alloc, sizeof(JSON));
 	if (js == NULL)
 		return NULL;
-	js->elm = GDKzalloc(sizeof(JSONterm) * jsonhint);
+	js->elm = ma_zalloc(alloc, sizeof(JSONterm) * jsonhint);
 	if (js->elm == NULL) {
-		GDKfree(js);
+		//GDKfree(js);
 		return NULL;
 	}
 	js->size = jsonhint;
@@ -104,12 +104,14 @@ JSONnewtree(void)
 }
 
 static int
-JSONnew(JSON *js)
+JSONnew(Client ctx, JSON *js)
 {
 	JSONterm *term;
 
+	size_t osz = sizeof(JSONterm) * js->size;
 	if (js->free == js->size) {
-		term = GDKrealloc(js->elm, sizeof(JSONterm) * (js->size + 8));
+		size_t nsz = sizeof(JSONterm) * (js->size + 8);
+		term = ma_realloc(ctx->alloc, js->elm, nsz, osz);
 		if (term == NULL) {
 			js->error = createException(MAL, "json.new",
 										SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -131,8 +133,8 @@ JSONfree(JSON *c)
 	if (c == 0)
 		return;
 	freeException(c->error);
-	GDKfree(c->elm);
-	GDKfree(c);
+	//GDKfree(c->elm);
+	//GDKfree(c);
 }
 
 static str
@@ -240,7 +242,7 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
 	json *buf = (json *) J;
 	if(*buf) {
-		GDKfree(*buf);
+		//GDKfree(*buf);
 		*buf = NULL;
 	}
 	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
@@ -338,16 +340,16 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 }
 
 static BAT *
-JSONdumpInternal(const JSON *jt, int depth)
+JSONdumpInternal(Client ctx, const JSON *jt, int depth)
 {
 	int i, idx;
 	JSONterm *je;
 	size_t buflen = 1024;
-	char *buffer = GDKmalloc(buflen);
+	char *buffer = ma_alloc(ctx->alloc, buflen);
 	BAT *bn = COLnew(0, TYPE_str, 0, TRANSIENT);
 
 	if (!buffer || !bn) {
-		GDKfree(buffer);
+		//GDKfree(buffer);
 		BBPreclaim(bn);
 		return NULL;
 	}
@@ -357,12 +359,13 @@ JSONdumpInternal(const JSON *jt, int depth)
 		je = jt->elm + idx;
 
 		if (datlen + depth * 4 + 512 > buflen) {
+			size_t osz = buflen;
 			do {
 				buflen += 1024;
 			} while (datlen + depth * 4 + 512 > buflen);
-			char *newbuf = GDKrealloc(buffer, buflen);
+			char *newbuf = ma_realloc(ctx->alloc, buffer, buflen, osz);
 			if (newbuf == NULL) {
-				GDKfree(buffer);
+				//GDKfree(buffer);
 				BBPreclaim(bn);
 				return NULL;
 			}
@@ -403,11 +406,12 @@ JSONdumpInternal(const JSON *jt, int depth)
 		datlen += snprintf(buffer + datlen, buflen - datlen, "child %d list ",
 						   je->child);
 		for (i = je->next; i; i = jt->elm[i].next) {
+			size_t osz = buflen;
 			if (datlen + 10 > buflen) {
 				buflen += 1024;
-				char *newbuf = GDKrealloc(buffer, buflen);
+				char *newbuf = ma_realloc(ctx->alloc, buffer, buflen, osz);
 				if (newbuf == NULL) {
-					GDKfree(buffer);
+					//GDKfree(buffer);
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -417,12 +421,13 @@ JSONdumpInternal(const JSON *jt, int depth)
 		}
 		if (je->name) {
 			if (datlen + 10 + je->namelen > buflen) {
+				size_t osz = buflen;
 				do {
 					buflen += 1024;
 				} while (datlen + 10 + je->namelen > buflen);
-				char *newbuf = GDKrealloc(buffer, buflen);
+				char *newbuf = ma_realloc(ctx->alloc, buffer, buflen, osz);
 				if (newbuf == NULL) {
-					GDKfree(buffer);
+					//GDKfree(buffer);
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -433,12 +438,13 @@ JSONdumpInternal(const JSON *jt, int depth)
 		}
 		if (je->value) {
 			if (datlen + 10 + je->valuelen > buflen) {
+				size_t osz = buflen;
 				do {
 					buflen += 1024;
 				} while (datlen + 10 + je->valuelen > buflen);
-				char *newbuf = GDKrealloc(buffer, buflen);
+				char *newbuf = ma_realloc(ctx->alloc, buffer, buflen, osz);
 				if (newbuf == NULL) {
-					GDKfree(buffer);
+					//GDKfree(buffer);
 					BBPreclaim(bn);
 					return NULL;
 				}
@@ -449,26 +455,26 @@ JSONdumpInternal(const JSON *jt, int depth)
 		}
 		if (BUNappend(bn, buffer, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			GDKfree(buffer);
+			//GDKfree(buffer);
 			return NULL;
 		}
 	}
-	GDKfree(buffer);
+	//GDKfree(buffer);
 	return bn;
 }
 
 static str
-JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+JSONdump(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	(void) cntxt;
+	(void) ctx;
 
 	bat *ret = getArgReference_bat(stk, pci, 0);
 	const json *val = (json *) getArgReference(stk, pci, 1);
-	JSON *jt = JSONparse(*val);
+	JSON *jt = JSONparse(ctx, *val);
 
 	CHECK_JSON(jt);
-	BAT *bn = JSONdumpInternal(jt, 0);
+	BAT *bn = JSONdumpInternal(ctx, jt, 0);
 	JSONfree(jt);
 	if (bn == NULL)
 		throw(MAL, "json.dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -485,7 +491,7 @@ JSONjson2str(Client ctx, str *ret, json *j)
 
 	if (*s == '"')
 		s++;
-	if ((s = GDKstrdup(s)) == NULL)
+	if ((s = MA_STRDUP(ctx->alloc, s)) == NULL)
 		throw(MAL, "json.str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	c = s + strlen(s) - 1;
 	if (*c == '"')
@@ -498,7 +504,7 @@ static str
 JSON2json(Client ctx, json *ret, const json *j)
 {
 	(void) ctx;
-	*ret = GDKstrdup(*j);
+	*ret = MA_STRDUP(ctx->alloc, *j);
 	if (*ret == NULL)
 		throw(MAL, "json.json", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -516,12 +522,12 @@ JSONstr2json(Client ctx, json *ret, const char *const*j)
 	JSON *jt = NULL;
 
 	if (strNil(*j)) {
-		buf = GDKstrdup(*j);
+		buf = MA_STRDUP(ctx->alloc, *j);
 	} else {
-		jt = JSONparse(*j);
+		jt = JSONparse(ctx, *j);
 		CHECK_JSON(jt);
 
-		buf = (json)GDKmalloc(ln);
+		buf = (json)ma_alloc(ctx->alloc, ln);
 	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -531,7 +537,7 @@ JSONstr2json(Client ctx, json *ret, const char *const*j)
 	if (jt != NULL) {
 		msg = JSONtoStorageString(jt, 0, &buf, &out_size);
 		if (msg != MAL_SUCCEED) {
-			GDKfree(buf);
+			//GDKfree(buf);
 			goto bailout;
 		}
 	}
@@ -550,7 +556,7 @@ JSONisvalid(Client ctx, bit *ret, const char *const *j)
 	if (strNil(*j)) {
 		*ret = bit_nil;
 	} else {
-		JSON *jt = JSONparse(*j);
+		JSON *jt = JSONparse(ctx, *j);
 		if (jt == NULL)
 			throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*ret = jt->error == MAL_SUCCEED;
@@ -612,11 +618,11 @@ jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 
 	if ((msg = JSONstr2json(/*ctx*/NULL, &out, &(const char *){a})) != MAL_SUCCEED) {
 		freeException(msg);
-		GDKfree(a);
+		//GDKfree(a);
 		return NULL;
 	}
 	*dstlen = strlen(out) + 1;
-	GDKfree(a);
+	//GDKfree(a);
 
 	return out;
 }
@@ -635,7 +641,7 @@ JSONprelude(void)
 	char jsonupgrade[MAXPATH];
 	struct stat st;
 	if (GDKfilepath(jsonupgrade, sizeof(jsonupgrade), 0, BATDIR, "jsonupgradeneeded", NULL) != GDK_SUCCEED)
-		throw(MAL, "json.prelude", GDK_EXCEPTION);
+		throw(MAL, "json.prelude", "cannot allocate filename for json upgrade signal file");
 	int r = stat(jsonupgrade, &st);
 	if (r == 0) {
 		/* The file exists so we need to run the upgrade code */
@@ -652,12 +658,12 @@ JSONprelude(void)
 }
 
 static void
-JSONappend(JSON *jt, int idx, int nxt)
+JSONappend(Client ctx, JSON *jt, int idx, int nxt)
 {
 	int chld;
 
 	if (jt->elm[nxt].kind == JSON_OBJECT || jt->elm[nxt].kind == JSON_ARRAY) {
-		chld = JSONnew(jt);
+		chld = JSONnew(ctx, jt);
 		if (jt->error)
 			return;
 		jt->elm[chld].kind = jt->elm[nxt].kind;
@@ -716,7 +722,7 @@ typedef struct {
 } pattern;
 
 static str
-JSONcompile(const char *expr, pattern terms[])
+JSONcompile(Client ctx, const char *expr, pattern terms[])
 {
 	int t = 0;
 	const char *s, *beg;
@@ -748,7 +754,7 @@ JSONcompile(const char *expr, pattern terms[])
 			for (beg = s; *s; s++)
 				if (*s == '.' || *s == '[' || *s == ',')
 					break;
-			terms[t].name = GDKzalloc(s - beg + 1);
+			terms[t].name = ma_zalloc(ctx->alloc, s - beg + 1);
 			if (terms[t].name == NULL)
 				throw(MAL, "json.compile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			terms[t].namelen = s - beg;
@@ -803,13 +809,13 @@ JSONcompile(const char *expr, pattern terms[])
 }
 
 static str
-JSONgetValue(const JSON *jt, int idx)
+JSONgetValue(Client ctx, const JSON *jt, int idx)
 {
 	str s;
 
 	if (jt->elm[idx].valuelen == 0)
-		return GDKstrdup(str_nil);
-	s = GDKmalloc(jt->elm[idx].valuelen + 1);
+		return MA_STRDUP(ctx->alloc, str_nil);
+	s = ma_alloc(ctx->alloc, jt->elm[idx].valuelen + 1);
 	if (s)
 		strcpy_len(s, jt->elm[idx].value, jt->elm[idx].valuelen + 1);
 	return s;
@@ -817,34 +823,34 @@ JSONgetValue(const JSON *jt, int idx)
 
 /* eats res and r */
 static str
-JSONglue(str res, str r, char sep)
+JSONglue(Client ctx, str res, str r, char sep)
 {
 	size_t len, l;
 	str n;
 
 	if (r == 0 || *r == 0) {
-		GDKfree(r);
+		//GDKfree(r);
 		return res;
 	}
 	len = strlen(r);
 	if (res == 0)
 		return r;
 	l = strlen(res);
-	n = GDKmalloc(l + len + 3);
+	n = ma_alloc(ctx->alloc, l + len + 3);
 	if (n == NULL) {
-		GDKfree(res);
-		GDKfree(r);
+		//GDKfree(res);
+		//GDKfree(r);
 		return NULL;
 	}
 	snprintf(n, l + len + 3, "%s%s%s", res, sep ? "," : "", r);
-	GDKfree(res);
-	GDKfree(r);
+	//GDKfree(res);
+	//GDKfree(r);
 	return n;
 }
 
 /* return NULL on no match, return (str) -1 on (malloc) failure, (str) -2 on stack overflow */
 static str
-JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
+JSONmatch(Client ctx, JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 {
 	str r = NULL, res = NULL;
 	int i;
@@ -859,7 +865,7 @@ JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 		if (ti + 1 == MAXTERMS)
 			return NULL;
 		if (terms[ti + 1].token == END_STEP) {
-			res = JSONgetValue(jt, 0);
+			res = JSONgetValue(ctx, jt, 0);
 			if (res == NULL)
 				res = (str) -1;
 			return res;
@@ -871,7 +877,7 @@ JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 	case JSON_ARRAY:
 		if (terms[ti].name != 0 && terms[ti].token != ANY_STEP) {
 			if (terms[ti].token == END_STEP) {
-				res = JSONgetValue(jt, ji);
+				res = JSONgetValue(ctx, jt, ji);
 				if (res == NULL)
 					res = (str) -1;
 			}
@@ -883,26 +889,26 @@ JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 				|| (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
 				if (terms[ti].token == ANY_STEP) {
 					if (jt->elm[i].child)
-						r = JSONmatch(jt, jt->elm[i].child, terms, ti, true);
+						r = JSONmatch(ctx, jt, jt->elm[i].child, terms, ti, true);
 					else
 						r = 0;
 				} else if (ti + 1 == MAXTERMS) {
 					return NULL;
 				} else if (terms[ti + 1].token == END_STEP) {
 					if (jt->elm[i].kind == JSON_VALUE)
-						r = JSONgetValue(jt, jt->elm[i].child);
+						r = JSONgetValue(ctx, jt, jt->elm[i].child);
 					else
-						r = JSONgetValue(jt, i);
+						r = JSONgetValue(ctx, jt, i);
 					if (r == NULL)
 						r = (str) -1;
 				} else {
-					r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+					r = JSONmatch(ctx, jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
 				}
 				if (r == (str) -1 || r == (str) -2) {
-					GDKfree(res);
+					//GDKfree(res);
 					return r;
 				}
-				res = JSONglue(res, r, ',');
+				res = JSONglue(ctx, res, r, ',');
 			}
 		}
 		break;
@@ -919,32 +925,32 @@ JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 					if (ti + 1 == MAXTERMS)
 						return NULL;
 					if (terms[ti + 1].token == END_STEP) {
-						r = JSONgetValue(jt, jt->elm[i].child);
+						r = JSONgetValue(ctx, jt, jt->elm[i].child);
 						if (r == NULL)
 							r = (str) -1;
 					} else {
-						r = JSONmatch(jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+						r = JSONmatch(ctx, jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
 					}
 					if (r == (str) -1 || r == (str) -2) {
-						GDKfree(res);
+						//GDKfree(res);
 						return r;
 					}
 					if (accumulate) {
-						res = JSONglue(res, r, ',');
+						res = JSONglue(ctx, res, r, ',');
 					} else {  // Keep the last matching value
-						if (res)
-							GDKfree(res);
+						//if (res)
+						//	GDKfree(res);
 						res = r;
 					}
 				}
 				cnt++;
 			} else if (terms[ti].token == ANY_STEP && jt->elm[i].child) {
-				r = JSONmatch(jt, jt->elm[i].child, terms, ti, true);
+				r = JSONmatch(ctx, jt, jt->elm[i].child, terms, ti, true);
 				if (r == (str) -1 || r == (str) -2) {
-					GDKfree(res);
+					//GDKfree(res);
 					return r;
 				}
-				res = JSONglue(res, r, ',');
+				res = JSONglue(ctx, res, r, ',');
 				cnt++;
 			}
 		}
@@ -956,7 +962,7 @@ JSONmatch(JSON *jt, int ji, const pattern *terms, int ti, bool accumulate)
 }
 
 static str
-JSONfilterInternal(json *ret, const json *js, const char *const *expr, const char *other)
+JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *expr, const char *other)
 {
 	pattern terms[MAXTERMS];
 	int tidx = 0;
@@ -967,20 +973,20 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 
 	(void) other;
 	if (strNil(j)) {
-		*ret = GDKstrdup(j);
+		*ret = MA_STRDUP(ctx->alloc, j);
 		if (*ret == NULL)
 			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	jt = JSONparse(j);
+	jt = JSONparse(ctx, j);
 	CHECK_JSON(jt);
 	memset(terms, 0, sizeof(terms));
-	msg = JSONcompile(*expr, terms);
+	msg = JSONcompile(ctx, *expr, terms);
 	if (msg)
 		goto bailout;
 
 	bool accumulate = terms[tidx].token == ANY_STEP || (terms[tidx].name && terms[tidx].name[0] == '*');
-	s = JSONmatch(jt, 0, terms, tidx, accumulate);
+	s = JSONmatch(ctx, jt, 0, terms, tidx, accumulate);
 	if (s == (char *) -1) {
 		msg = createException(MAL, "JSONfilterInternal",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1000,7 +1006,7 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 			&& terms[tidx + 1].token) {
 			tidx += 1;
 			accumulate = terms[tidx].token == ANY_STEP || (terms[tidx].name && terms[tidx].name[0] == '*');
-			s = JSONmatch(jt, 0, terms, tidx, accumulate);
+			s = JSONmatch(ctx, jt, 0, terms, tidx, accumulate);
 			if (s == (char *) -1) {
 				msg = createException(MAL, "JSONfilterInternal",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1013,7 +1019,7 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 				goto bailout;
 			}
 			return_array = true;
-			result = JSONglue(result, s, ',');
+			result = JSONglue(ctx, result, s, ',');
 		}
 	if (result) {
 		l = strlen(result);
@@ -1034,15 +1040,15 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 		}
 	}
 	if (return_array || accumulate) {
-		s = GDKmalloc(l + 3);
+		s = ma_alloc(ctx->alloc, l + 3);
 		if (s)
 			snprintf(s, l + 3, "[%s]", (result ? result : ""));
 	}
 	else if (result == NULL || *result == 0) {
-		s = GDKstrdup("[]");
+		s = MA_STRDUP(ctx->alloc, "[]");
 	}
 	else {
-		s = GDKmalloc(l + 1);
+		s = ma_alloc(ctx->alloc, l + 1);
 		if (s)
 			snprintf(s, l + 1, "%s", (result ? result : ""));
 	}
@@ -1053,10 +1059,10 @@ JSONfilterInternal(json *ret, const json *js, const char *const *expr, const cha
 	*ret = s;
 
   bailout:
-	GDKfree(result);
-	for (l = 0; l < MAXTERMS; l++)
-		if (terms[l].name)
-			GDKfree(terms[l].name);
+	//GDKfree(result);
+	//for (l = 0; l < MAXTERMS; l++)
+	//	if (terms[l].name)
+	//		GDKfree(terms[l].name);
 	JSONfree(jt);
 	return msg;
 }
@@ -1236,10 +1242,10 @@ JSONnumberParser(const char *j, const char **next)
 }
 
 static int
-JSONtoken(JSON *jt, const char *j, const char **next)
+JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 {
 	str msg;
-	int nxt, idx = JSONnew(jt);
+	int nxt, idx = JSONnew(ctx, jt);
 	const char *string_start = j;
 	int pidx;
 
@@ -1261,7 +1267,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			if (*j == '}')
 				break;
-			nxt = JSONtoken(jt, j, next);
+			nxt = JSONtoken(ctx, jt, j, next);
 			if (jt->error)
 				return idx;
 			j = *next;
@@ -1276,7 +1282,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			jt->elm[nxt].kind = JSON_ELEMENT;
 			/* do in two steps since JSONtoken may realloc jt->elm */
-			int chld = JSONtoken(jt, j, next);
+			int chld = JSONtoken(ctx, jt, j, next);
 			if (jt->error)
 				return idx;
 
@@ -1305,7 +1311,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				jt->elm[nxt].child = chld;
 				jt->elm[nxt].value++;
 				jt->elm[nxt].valuelen -= 2;
-				JSONappend(jt, idx, nxt);
+				JSONappend(ctx, jt, idx, nxt);
 				if (jt->error)
 					return idx;
 			}
@@ -1346,12 +1352,12 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			if (*j == ']')
 				break;
-			nxt = JSONtoken(jt, j, next);
+			nxt = JSONtoken(ctx, jt, j, next);
 			if (jt->error)
 				return idx;
 			switch (jt->elm[nxt].kind) {
 			case JSON_ELEMENT:{
-				int k = JSONnew(jt);
+				int k = JSONnew(ctx, jt);
 				if (jt->error)
 					return idx;
 				jt->elm[k].kind = JSON_OBJECT;
@@ -1363,10 +1369,10 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 			case JSON_ARRAY:
 				if (jt->elm[nxt].kind == JSON_OBJECT
 					|| jt->elm[nxt].kind == JSON_ARRAY) {
-					int k = JSONnew(jt);
+					int k = JSONnew(ctx, jt);
 					if (jt->error)
 						return idx;
-					JSONappend(jt, idx, k);
+					JSONappend(ctx, jt, idx, k);
 					if (jt->error)
 						return idx;
 					jt->elm[k].kind = JSON_VALUE;
@@ -1374,7 +1380,7 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 				}
 				break;
 			default:
-				JSONappend(jt, idx, nxt);
+				JSONappend(ctx, jt, idx, nxt);
 				if (jt->error)
 					return idx;
 			}
@@ -1478,14 +1484,14 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 
 
 static JSON *
-JSONparse(const char *j)
+JSONparse(Client ctx, const char *j)
 {
-	JSON *jt = JSONnewtree();
+	JSON *jt = JSONnewtree(ctx->alloc);
 
 	if (jt == NULL)
 		return NULL;
 	skipblancs(j);
-	JSONtoken(jt, j, &j);
+	JSONtoken(ctx, jt, j, &j);
 	if (jt->error)
 		return jt;
 	skipblancs(j);
@@ -1507,7 +1513,7 @@ JSONlength(Client ctx, int *ret, const json *j)
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(*j);
+	jt = JSONparse(ctx, *j);
 	CHECK_JSON(jt);
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
@@ -1517,7 +1523,7 @@ JSONlength(Client ctx, int *ret, const json *j)
 }
 
 static str
-JSONfilterArrayDefault(json *ret, const json *js, lng index, const char *other)
+JSONfilterArrayDefault(Client ctx, json *ret, const json *js, lng index, const char *other)
 {
 	char expr[BUFSIZ], *s = expr;
 
@@ -1525,7 +1531,7 @@ JSONfilterArrayDefault(json *ret, const json *js, lng index, const char *other)
 		throw(MAL, "json.filter",
 			  SQLSTATE(42000) "Filter index cannot be negative");
 	snprintf(expr, BUFSIZ, "[" LLFMT "]", index);
-	return JSONfilterInternal(ret, js, &(const char *){s}, other);
+	return JSONfilterInternal(ctx, ret, js, &(const char *){s}, other);
 }
 
 static str
@@ -1533,11 +1539,11 @@ JSONfilterArray_bte(Client ctx, json *ret, const json *js, const bte *index)
 {
 	(void) ctx;
 	if (strNil(*js) || is_bte_nil(*index)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
 }
 
 static str
@@ -1545,11 +1551,11 @@ JSONfilterArrayDefault_bte(Client ctx, json *ret, const json *js, const bte *ind
 {
 	(void) ctx;
 	if (strNil(*js) || is_bte_nil(*index) || strNil(*other)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
 }
 
 static str
@@ -1557,11 +1563,11 @@ JSONfilterArray_sht(Client ctx, json *ret, const json *js, const sht *index)
 {
 	(void) ctx;
 	if (strNil(*js) || is_sht_nil(*index)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
 }
 
 static str
@@ -1569,11 +1575,11 @@ JSONfilterArrayDefault_sht(Client ctx, json *ret, const json *js, const sht *ind
 {
 	(void) ctx;
 	if (strNil(*js) || is_sht_nil(*index) || strNil(*other)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
 }
 
 static str
@@ -1581,11 +1587,11 @@ JSONfilterArray_int(Client ctx, json *ret, const json *js, const int *index)
 {
 	(void) ctx;
 	if (strNil(*js) || is_int_nil(*index)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
 }
 
 static str
@@ -1593,11 +1599,11 @@ JSONfilterArrayDefault_int(Client ctx, json *ret, const json *js, const int *ind
 {
 	(void) ctx;
 	if (strNil(*js) || is_int_nil(*index) || strNil(*other)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
 }
 
 static str
@@ -1605,11 +1611,11 @@ JSONfilterArray_lng(Client ctx, json *ret, const json *js, const lng *index)
 {
 	(void) ctx;
 	if (strNil(*js) || is_lng_nil(*index)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
 }
 
 static str
@@ -1617,11 +1623,11 @@ JSONfilterArrayDefault_lng(Client ctx, json *ret, const json *js, const lng *ind
 {
 	(void) ctx;
 	if (strNil(*js) || is_lng_nil(*index) || strNil(*other)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
 }
 
 #ifdef HAVE_HGE
@@ -1630,13 +1636,13 @@ JSONfilterArray_hge(Client ctx, json *ret, const json *js, const hge *index)
 {
 	(void) ctx;
 	if (strNil(*js) || is_hge_nil(*index)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
 		throw(MAL, "json.filter", "index out of range");
-	return JSONfilterArrayDefault(ret, js, (lng) *index, 0);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, 0);
 }
 
 static str
@@ -1644,13 +1650,13 @@ JSONfilterArrayDefault_hge(Client ctx, json *ret, const json *js, const hge *ind
 {
 	(void) ctx;
 	if (strNil(*js) || is_hge_nil(*index) || strNil(*other)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (*index < (hge) GDK_lng_min || *index > (hge) GDK_lng_max)
 		throw(MAL, "json.filter", "index out of range");
-	return JSONfilterArrayDefault(ret, js, (lng) *index, *other);
+	return JSONfilterArrayDefault(ctx, ret, js, (lng) *index, *other);
 }
 #endif
 
@@ -1659,18 +1665,18 @@ JSONfilter(Client ctx, json *ret, const json *js, const char *const *expr)
 {
 	(void) ctx;
 	if (strNil(*js) || strNil(*expr)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.filter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	return JSONfilterInternal(ret, js, expr, 0);
+	return JSONfilterInternal(ctx, ret, js, expr, 0);
 }
 
 // glue all values together with an optional separator
 // The json string should be valid
 
 static str
-JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const char *sep,
+JSONplaintext(Client ctx, char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const char *sep,
 			  size_t sep_len)
 {
 	int i;
@@ -1688,19 +1694,19 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const 
 	case JSON_OBJECT:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
 			if (jt->elm[i].child
-				&& (msg = JSONplaintext(r, l, ilen, jt, jt->elm[i].child, sep,
+				&& (msg = JSONplaintext(ctx, r, l, ilen, jt, jt->elm[i].child, sep,
 										sep_len)))
 				return msg;
 		break;
 	case JSON_ARRAY:
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next)
-			if ((msg = JSONplaintext(r, l, ilen, jt, i, sep, sep_len)))
+			if ((msg = JSONplaintext(ctx, r, l, ilen, jt, i, sep, sep_len)))
 				return msg;
 		break;
 	case JSON_ELEMENT:
 	case JSON_VALUE:
 		if (jt->elm[idx].child
-			&& (msg = JSONplaintext(r, l, ilen, jt, jt->elm[idx].child, sep,
+			&& (msg = JSONplaintext(ctx, r, l, ilen, jt, jt->elm[idx].child, sep,
 									sep_len)))
 			return msg;
 		break;
@@ -1713,7 +1719,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const 
 			char *p = *r - (prev_ilen - prev_l), *nr;
 
 			*ilen = (prev_ilen * 2) + next_concat_len;	/* make sure sep_len + 1 is always included */
-			if (!(nr = GDKrealloc(p, *ilen))) {
+			if (!(nr = ma_realloc(ctx->alloc, p, *ilen, prev_ilen))) {
 				*r = p;
 				throw(MAL, "JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -1805,7 +1811,7 @@ JSONplaintext(char **r, size_t *l, size_t *ilen, const JSON *jt, int idx, const 
 			char *p = *r - (prev_ilen - prev_l), *nr;
 
 			*ilen = (prev_ilen * 2) + next_concat_len;	/* make sure sep_len + 1 is always included */
-			if (!(nr = GDKrealloc(p, *ilen))) {
+			if (!(nr = ma_realloc(ctx->alloc, p, *ilen, prev_ilen))) {
 				*r = p;
 				throw(MAL, "JSONplaintext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -1833,23 +1839,23 @@ JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *
 	JSON *jt;
 
 	if (strNil(*js) || strNil(*sep)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(*js);
+	jt = JSONparse(ctx, *js);
 	CHECK_JSON(jt);
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
-	if (!(s = GDKmalloc(l))) {
+	if (!(s = ma_alloc(ctx->alloc, l))) {
 		JSONfree(jt);
 		throw(MAL, "json2txt", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	msg = JSONplaintext(&s, &l, &ilen, jt, 0, *sep, sep_len);
+	msg = JSONplaintext(ctx, &s, &l, &ilen, jt, 0, *sep, sep_len);
 	JSONfree(jt);
 	if (msg) {
-		GDKfree(s);
+		//GDKfree(s);
 		return msg;
 	}
 	s -= ilen - l;
@@ -1869,13 +1875,13 @@ JSONjson2text(Client ctx, str *ret, const json *js)
 }
 
 static str
-JSONjson2numberInternal(void **ret, const json *js,
+JSONjson2numberInternal(Client ctx, void **ret, const json *js,
 						void (*str2num)(void **ret, const char *nptr,
 										size_t len))
 {
 	JSON *jt;
 
-	jt = JSONparse(*js);
+	jt = JSONparse(ctx, *js);
 	CHECK_JSON(jt);
 	switch (jt->elm[0].kind) {
 	case JSON_NUMBER:
@@ -1945,7 +1951,7 @@ JSONjson2number(Client ctx, dbl *ret, const json *js)
 	}
 
 	rethrow(__func__, tmp,
-			JSONjson2numberInternal((void **) &val_ptr, js, strtod_wrapper));
+			JSONjson2numberInternal(ctx, (void **) &val_ptr, js, strtod_wrapper));
 	if (val_ptr == NULL)
 		*ret = dbl_nil;
 	else
@@ -1968,7 +1974,7 @@ JSONjson2integer(Client ctx, lng *ret, const json *js)
 	}
 
 	rethrow(__func__, tmp,
-			JSONjson2numberInternal((void **) &val_ptr, js, strtol_wrapper));
+			JSONjson2numberInternal(ctx, (void **) &val_ptr, js, strtol_wrapper));
 	if (val_ptr == NULL)
 		*ret = lng_nil;
 	else
@@ -1978,7 +1984,7 @@ JSONjson2integer(Client ctx, lng *ret, const json *js)
 }
 
 static str
-JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
+JSONunfoldContainer(Client ctx, JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 {
 	int i, last;
 	char *r;
@@ -1986,20 +1992,20 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 	last = jt->elm[idx].tail;
 	if (jt->elm[idx].kind == JSON_OBJECT) {
 		for (i = jt->elm[idx].next; i; i = jt->elm[i].next) {
-			if ((r = JSONgetValue(jt, i)) == NULL)
+			if ((r = JSONgetValue(ctx, jt, i)) == NULL)
 				goto memfail;
 			if (BUNappend(bk, r, false) != GDK_SUCCEED) {
-				GDKfree(r);
+				//GDKfree(r);
 				goto memfail;
 			}
-			GDKfree(r);
-			if ((r = JSONgetValue(jt, jt->elm[i].child)) == NULL)
+			//GDKfree(r);
+			if ((r = JSONgetValue(ctx, jt, jt->elm[i].child)) == NULL)
 				goto memfail;
 			if (BUNappend(bv, r, false) != GDK_SUCCEED) {
-				GDKfree(r);
+				//GDKfree(r);
 				goto memfail;
 			}
-			GDKfree(r);
+			//GDKfree(r);
 			if (bo) {
 				if (BUNappend(bo, o, false) != GDK_SUCCEED)
 					goto memfail;
@@ -2013,16 +2019,16 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 			if (BUNappend(bk, str_nil, false) != GDK_SUCCEED)
 				goto memfail;
 			if (jt->elm[i].kind == JSON_VALUE)
-				r = JSONgetValue(jt, jt->elm[i].child);
+				r = JSONgetValue(ctx, jt, jt->elm[i].child);
 			else
-				r = JSONgetValue(jt, i);
+				r = JSONgetValue(ctx, jt, i);
 			if (r == NULL)
 				goto memfail;
 			if (BUNappend(bv, r, false) != GDK_SUCCEED) {
-				GDKfree(r);
+				//GDKfree(r);
 				goto memfail;
 			}
-			GDKfree(r);
+			//GDKfree(r);
 			if (bo) {
 				if (BUNappend(bo, o, false) != GDK_SUCCEED)
 					goto memfail;
@@ -2039,13 +2045,13 @@ JSONunfoldContainer(JSON *jt, int idx, BAT *bo, BAT *bk, BAT *bv, oid *o)
 }
 
 static str
-JSONunfoldInternal(bat *od, bat *key, bat *val, const json *js)
+JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 {
 	BAT *bo = NULL, *bk, *bv;
 	oid o = 0;
 	str msg = MAL_SUCCEED;
 
-	JSON *jt = JSONparse(*js);
+	JSON *jt = JSONparse(ctx, *js);
 
 	CHECK_JSON(jt);
 	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
@@ -2072,7 +2078,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, const json *js)
 	}
 
 	if (jt->elm[0].kind == JSON_ARRAY || jt->elm[0].kind == JSON_OBJECT)
-		msg = JSONunfoldContainer(jt, 0, (od ? bo : 0), bk, bv, &o);
+		msg = JSONunfoldContainer(ctx, jt, 0, (od ? bo : 0), bk, bv, &o);
 	else
 		msg = createException(MAL, "json.unfold",
 							  "JSON object or array expected");
@@ -2105,7 +2111,7 @@ JSONkeyTable(Client ctx, bat *ret, const json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(*js);		// already validated
+	jt = JSONparse(ctx, *js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL) {
@@ -2114,14 +2120,14 @@ JSONkeyTable(Client ctx, bat *ret, const json *js)
 	}
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
-		r = JSONgetValue(jt, i);
+		r = JSONgetValue(ctx, jt, i);
 		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
-			GDKfree(r);
+			//GDKfree(r);
 			JSONfree(jt);
 			BBPreclaim(bn);
 			throw(MAL, "json.keys", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(r);
+		//GDKfree(r);
 	}
 	JSONfree(jt);
 	*ret = bn->batCacheid;
@@ -2139,31 +2145,31 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 	JSON *jt;
 
 	if (strNil(*js)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(*js);		// already validated
+	jt = JSONparse(ctx, *js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 			if (jt->elm[i].valuelen) {
-				r = GDKmalloc(jt->elm[i].valuelen + 3);
+				r = ma_alloc(ctx->alloc, jt->elm[i].valuelen + 3);
 				if (r == NULL) {
 					JSONfree(jt);
 					goto memfail;
 				}
 				strcpy_len(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 3);
 			} else {
-				r = GDKstrdup("\"\"");
+				r = MA_STRDUP(ctx->alloc, "\"\"");
 				if (r == NULL) {
 					JSONfree(jt);
 					goto memfail;
 				}
 			}
-			result = JSONglue(result, r, ',');
+			result = JSONglue(ctx, result, r, ',');
 			if (result == NULL) {
 				JSONfree(jt);
 				goto memfail;
@@ -2174,23 +2180,23 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 		JSONfree(jt);
 		throw(MAL, "json.keyarray", "Object expected");
 	}
-	r = GDKstrdup("[");
+	r = MA_STRDUP(ctx->alloc, "[");
 	if (r == NULL)
 		goto memfail;
-	result = JSONglue(r, result, 0);
+	result = JSONglue(ctx, r, result, 0);
 	if (result == NULL)
 		goto memfail;
-	r = GDKstrdup("]");
+	r = MA_STRDUP(ctx->alloc, "]");
 	if (r == NULL)
 		goto memfail;
-	result = JSONglue(result, r, 0);
+	result = JSONglue(ctx, result, r, 0);
 	if (result == NULL)
 		goto memfail;
 	*ret = result;
 	return MAL_SUCCEED;
 
   memfail:
-	GDKfree(result);
+	//GDKfree(result);
 	throw(MAL, "json.keyarray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -2204,7 +2210,7 @@ JSONvalueTable(Client ctx, bat *ret, const json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(*js);		// already validated
+	jt = JSONparse(ctx, *js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL) {
@@ -2214,16 +2220,16 @@ JSONvalueTable(Client ctx, bat *ret, const json *js)
 
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
 		if (jt->elm[i].kind == JSON_ELEMENT)
-			r = JSONgetValue(jt, jt->elm[i].child);
+			r = JSONgetValue(ctx, jt, jt->elm[i].child);
 		else
-			r = JSONgetValue(jt, i);
+			r = JSONgetValue(ctx, jt, i);
 		if (r == NULL || BUNappend(bn, r, false) != GDK_SUCCEED) {
-			GDKfree(r);
+			//GDKfree(r);
 			BBPreclaim(bn);
 			JSONfree(jt);
 			throw(MAL, "json.values", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(r);
+		//GDKfree(r);
 	}
 	JSONfree(jt);
 	*ret = bn->batCacheid;
@@ -2241,22 +2247,22 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 	JSON *jt;
 
 	if (strNil(*js)) {
-		if (!(*ret = GDKstrdup(str_nil)))
+		if (!(*ret = MA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(*js);		// already validated
+	jt = JSONparse(ctx, *js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
-			r = JSONgetValue(jt, jt->elm[i].child);
+			r = JSONgetValue(ctx, jt, jt->elm[i].child);
 			if (r == NULL) {
 				JSONfree(jt);
 				goto memfail;
 			}
-			result = JSONglue(result, r, ',');
+			result = JSONglue(ctx, result, r, ',');
 			if (result == NULL) {
 				JSONfree(jt);
 				goto memfail;
@@ -2267,23 +2273,23 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 		JSONfree(jt);
 		throw(MAL, "json.valuearray", "Object expected");
 	}
-	r = GDKstrdup("[");
+	r = MA_STRDUP(ctx->alloc, "[");
 	if (r == NULL)
 		goto memfail;
-	result = JSONglue(r, result, 0);
+	result = JSONglue(ctx, r, result, 0);
 	if (result == NULL)
 		goto memfail;
-	r = GDKstrdup("]");
+	r = MA_STRDUP(ctx->alloc, "]");
 	if (r == NULL)
 		goto memfail;
-	result = JSONglue(result, r, 0);
+	result = JSONglue(ctx, result, r, 0);
 	if (result == NULL)
 		goto memfail;
 	*ret = result;
 	return MAL_SUCCEED;
 
   memfail:
-	GDKfree(result);
+	//GDKfree(result);
 	throw(MAL, "json.valuearray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
@@ -2294,7 +2300,7 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN cnt = 0;
 	BAT **bl;
 
-	bl = GDKzalloc(sizeof(*bl) * pci->argc);
+	bl = ma_zalloc(mb->ma, sizeof(*bl) * pci->argc);
 	if (bl == NULL)
 		return NULL;
 	for (i = pci->retc; i < pci->argc; i++)
@@ -2310,7 +2316,7 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (error || bats == 0) {
 		for (i = pci->retc; i < pci->argc; i++)
 			BBPreclaim(bl[i]);
-		GDKfree(bl);
+		//GDKfree(bl);
 		return NULL;
 	}
 	return bl;
@@ -2323,11 +2329,11 @@ JSONfreeArgumentlist(BAT **bl, InstrPtr pci)
 
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPreclaim(bl[i]);
-	GDKfree(bl);
+	//GDKfree(bl);
 }
 
 static str
-JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+JSONrenderRowObject(Client ctx, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					BUN idx)
 {
 	int i, tpe;
@@ -2336,7 +2342,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	void *p;
 	BATiter bi;
 
-	row = GDKmalloc(lim = BUFSIZ);
+	row = ma_alloc(ctx->alloc, lim = BUFSIZ);
 	if (row == NULL)
 		return NULL;
 	row[0] = '{';
@@ -2350,29 +2356,30 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		val = ATOMformat(tpe, p);
 		bat_iterator_end(&bi);
 		if (val == NULL) {
-			GDKfree(row);
+			//GDKfree(row);
 			return NULL;
 		}
 		if (strncmp(val, "nil", 3) == 0) {
-			GDKfree(val);
+			//GDKfree(val);
 			val = NULL;
 			l = 4;
 		} else {
 			l = strlen(val);
 		}
 		l += strlen(name) + 4;
+		size_t osz = lim;
 		while (l > lim - len)
 			lim += BUFSIZ;
-		row2 = GDKrealloc(row, lim);
+		row2 = ma_realloc(ctx->alloc, row, lim, osz);
 		if (row2 == NULL) {
-			GDKfree(row);
-			GDKfree(val);
+			//GDKfree(row);
+			//GDKfree(val);
 			return NULL;
 		}
 		row = row2;
 		snprintf(row + len, lim - len, "\"%s\":%s,", name, val ? val : "null");
 		len += l;
-		GDKfree(val);
+		//GDKfree(val);
 	}
 	if (row[1])
 		row[len - 1] = '}';
@@ -2384,7 +2391,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 }
 
 static str
-JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+JSONrenderobject(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
 	char *result, *row;
@@ -2393,7 +2400,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	json *ret;
 	BUN j, cnt;
 
-	(void) cntxt;
+	(void) ctx;
 	bl = JSONargumentlist(mb, stk, pci);
 	if (bl == 0)
 		throw(MAL, "json.renderobject", "Non-aligned BAT sizes");
@@ -2405,7 +2412,7 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	cnt = BATcount(bl[pci->retc + 1]);
-	result = GDKmalloc(lim = BUFSIZ);
+	result = ma_alloc(ctx->alloc, lim = BUFSIZ);
 	if (result == NULL) {
 		JSONfreeArgumentlist(bl, pci);
 		throw(MAL, "json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2416,18 +2423,19 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (j = 0; j < cnt; j++) {
 		char *result2;
-		row = JSONrenderRowObject(bl, mb, stk, pci, j);
+		row = JSONrenderRowObject(ctx, bl, mb, stk, pci, j);
 		if (row == NULL)
 			goto memfail;
 		l = strlen(row);
+		size_t osz = lim;
 		while (l + 2 > lim - len)
 			lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ;
-		result2 = GDKrealloc(result, lim);
+		result2 = ma_realloc(ctx->alloc, result, lim, osz);
 		if (result2 == NULL)
 			goto memfail;
 		result = result2;
 		strcpy(result + len, row);
-		GDKfree(row);
+		//GDKfree(row);
 		len += l;
 		result[len++] = ',';
 		result[len] = 0;
@@ -2439,14 +2447,14 @@ JSONrenderobject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   memfail:
-	GDKfree(result);
-	GDKfree(row);
+	//GDKfree(result);
+	//GDKfree(row);
 	JSONfreeArgumentlist(bl, pci);
 	throw(MAL, "json.renderobject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
-JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
+JSONrenderRowArray(Client ctx, BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 {
 	int i, tpe;
 	char *row, *row2, *val = 0;
@@ -2454,7 +2462,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	void *p;
 	BATiter bi;
 
-	row = GDKmalloc(lim = BUFSIZ);
+	row = ma_alloc(mb->ma, lim = BUFSIZ);
 	if (row == NULL)
 		return NULL;
 	row[0] = '[';
@@ -2469,21 +2477,22 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		if (val == NULL)
 			goto memfail;
 		if (strcmp(val, "nil") == 0) {
-			GDKfree(val);
+			//GDKfree(val);
 			val = NULL;
 			l = 4;
 		} else {
 			l = strlen(val);
 		}
+		size_t osz = lim;
 		while (len + l > lim)
 			lim += BUFSIZ;
-		row2 = GDKrealloc(row, lim);
+		row2 = ma_realloc(ctx->alloc, row, lim, osz);
 		if (row2 == NULL)
 			goto memfail;
 		row = row2;
 		snprintf(row + len, lim - len, "%s,", val ? val : "null");
 		len += l + 1;
-		GDKfree(val);
+		//GDKfree(val);
 		val = NULL;
 	}
 	if (row[1])
@@ -2495,13 +2504,13 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 	return row;
 
   memfail:
-	GDKfree(row);
-	GDKfree(val);
+	//GDKfree(row);
+	//GDKfree(val);
 	return NULL;
 }
 
 static str
-JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+JSONrenderarray(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT **bl;
 	char *result, *row;
@@ -2509,13 +2518,13 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *ret;
 	BUN j, cnt;
 
-	(void) cntxt;
+	(void) ctx;
 	bl = JSONargumentlist(mb, stk, pci);
 	if (bl == 0)
 		throw(MAL, "json.renderrray", "Non-aligned BAT sizes");
 
 	cnt = BATcount(bl[pci->retc + 1]);
-	result = GDKmalloc(lim = BUFSIZ);
+	result = ma_alloc(ctx->alloc, lim = BUFSIZ);
 	if (result == NULL) {
 		goto memfail;
 	}
@@ -2525,21 +2534,22 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (j = 0; j < cnt; j++) {
 		char *result2;
-		row = JSONrenderRowArray(bl, mb, pci, j);
+		row = JSONrenderRowArray(ctx, bl, mb, pci, j);
 		if (row == NULL) {
 			goto memfail;
 		}
 		l = strlen(row);
+		size_t osz = lim;
 		while (l + 2 > lim - len)
 			lim = cnt * l <= lim ? cnt * l : lim + BUFSIZ;
-		result2 = GDKrealloc(result, lim);
+		result2 = ma_realloc(ctx->alloc, result, lim, osz);
 		if (result2 == NULL) {
-			GDKfree(row);
+			//GDKfree(row);
 			goto memfail;
 		}
 		result = result2;
 		strcpy(result + len, row);
-		GDKfree(row);
+		//GDKfree(row);
 		len += l;
 		result[len++] = ',';
 		result[len] = 0;
@@ -2551,13 +2561,13 @@ JSONrenderarray(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   memfail:
-	GDKfree(result);
+	//GDKfree(result);
 	JSONfreeArgumentlist(bl, pci);
 	throw(MAL, "json.renderArray", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
 static str
-JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
+JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat *values)
 {
 	BAT *bo = 0, *bk = 0, *bv;
 	BATiter bki, bvi;
@@ -2591,7 +2601,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		}
 	}
 
-	row = GDKmalloc(lim = BUFSIZ);
+	row = ma_alloc(ctx->alloc, lim = BUFSIZ);
 	if (row == NULL) {
 		goto memfail;
 	}
@@ -2616,9 +2626,10 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		if (bk) {
 			nme = (str) BUNtvar(bki, i);
 			l = strlen(nme);
+			size_t osz = lim;
 			while (l + 3 > lim - len)
 				lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
-			p = GDKrealloc(row, lim);
+			p = ma_realloc(ctx->alloc, row, lim, osz);
 			if (p == NULL) {
 				bat_iterator_end(&bki);
 				bat_iterator_end(&bvi);
@@ -2641,17 +2652,18 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 				goto memfail;
 			}
 			if (strcmp(val, "nil") == 0) {
-				GDKfree(val);
+				//GDKfree(val);
 				val = NULL;
 			}
 		}
 		l = val ? strlen(val) : 4;
+		size_t osz = lim;
 		while (l > lim - len)
 			lim = (lim / (i + 1)) * cnt + BUFSIZ + l + 3;
-		p = GDKrealloc(row, lim);
+		p = ma_realloc(ctx->alloc, row, lim, osz);
 		if (p == NULL) {
-			if (tpe != TYPE_json)
-				GDKfree(val);
+			//if (tpe != TYPE_json)
+				//GDKfree(val);
 			bat_iterator_end(&bki);
 			bat_iterator_end(&bvi);
 			goto memfail;
@@ -2661,8 +2673,8 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		len += l;
 		row[len++] = ',';
 		row[len] = 0;
-		if (tpe != TYPE_json)
-			GDKfree(val);
+		//if (tpe != TYPE_json)
+			//GDKfree(val);
 	}
 	bat_iterator_end(&bki);
 	bat_iterator_end(&bvi);
@@ -2680,7 +2692,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	return MAL_SUCCEED;
 
   memfail:
-	GDKfree(row);
+	//GDKfree(row);
 	BBPreclaim(bo);
 	BBPreclaim(bk);
 	BBPunfix(bv->batCacheid);
@@ -2688,12 +2700,12 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 }
 
 static str
-JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+JSONunfold(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *id = 0, *key = 0, *val = 0;
 	json *js;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 
 	switch (pci->retc) {
@@ -2711,16 +2723,16 @@ JSONunfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "json.unfold", ILLEGAL_ARGUMENT);
 	}
 	js = getArgReference_TYPE(stk, pci, pci->retc, json);
-	return JSONunfoldInternal(id, key, val, js);
+	return JSONunfoldInternal(ctx, id, key, val, js);
 }
 
 static str
-JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+JSONfold(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *id = 0, *key = 0, *val = 0;
 	str *ret;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 
 	assert(pci->retc == 1);
@@ -2742,7 +2754,7 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "json.fold", ILLEGAL_ARGUMENT);
 	}
 	ret = getArgReference_TYPE(stk, pci, 0, json);
-	return JSONfoldKeyValue(ret, id, key, val);
+	return JSONfoldKeyValue(ctx, ret, id, key, val);
 }
 
 #define JSON_STR_CPY	\
@@ -2767,9 +2779,10 @@ JSONfold(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #define JSON_AGGR_CHECK_NEXT_LENGTH(CALC)	\
 	do {	\
 		len = CALC;	\
+		size_t osz = maxlen; \
 		if (len >= maxlen - buflen) {	\
 			maxlen = maxlen + len + BUFSIZ;	\
-			buf2 = GDKrealloc(buf, maxlen);	\
+			buf2 = ma_realloc(ctx->alloc, buf, maxlen, osz);	\
 			if (buf2 == NULL) {	\
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;	\
 				goto bunins_failed;	\
@@ -2785,7 +2798,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	BAT *b;
 	BUN p, q;
 	size_t len, maxlen = BUFSIZ, buflen = 0;
-	char *buf = GDKmalloc(maxlen), *buf2;
+	char *buf = ma_alloc(ctx->alloc, maxlen), *buf2;
 	BATiter bi;
 	const char *err = NULL;
 	dbl *restrict vals;
@@ -2793,7 +2806,7 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 	if (buf == NULL)
 		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(buf);
+		//GDKfree(buf);
 		throw(MAL, "json.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	assert(maxlen > 256);		/* make sure every floating point fits on the dense case */
@@ -2849,20 +2862,20 @@ JSONgroupStr(Client ctx, str *ret, const bat *bid)
 		strcpy(buf + buflen, " ]");
 	else
 		strcpy(buf, str_nil);
-	*ret = GDKstrdup(buf);
-	GDKfree(buf);
+	*ret = MA_STRDUP(ctx->alloc, buf);
+	//GDKfree(buf);
 	if (!*ret)					/* Don't return a too large string */
 		throw(MAL, "json.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
   bunins_failed:
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
-	GDKfree(buf);
+	//GDKfree(buf);
 	throw(MAL, "json.group", "%s", err);
 }
 
 static const char *
-JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
+JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 {
 	BAT *bn = NULL, *t1, *t2 = NULL;
 	BATiter bi;
@@ -2906,7 +2919,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		}
 	}
 
-	if ((buf = GDKmalloc(maxlen)) == NULL) {
+	if ((buf = ma_alloc(ctx->alloc, maxlen)) == NULL) {
 		err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 		goto out;
 	}
@@ -3156,7 +3169,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(b->batCacheid);
 	if (freeg)
 		BBPunfix(g->batCacheid);
-	GDKfree(buf);
+	//GDKfree(buf);
 	if (err && bn) {
 		BBPreclaim(bn);
 		bn = NULL;
@@ -3187,7 +3200,7 @@ JSONsubjsoncand(Client ctx, bat *retval, const bat *bid, const bat *gid, const b
 		|| (sid != NULL && s == NULL)) {
 		err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 	} else {
-		err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
+		err = JSONjsonaggr(ctx, &bn, b, g, e, s, *skip_nils);
 	}
 	BBPreclaim(b);
 	BBPreclaim(g);
