@@ -943,12 +943,12 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (!(b = BATdescriptor(*bid))) {
-		GDKfree(buf);
+		// GDKfree(buf);
 		throw(MAL, "baturl.extractURLHost",
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT)) == NULL) {
-		GDKfree(buf);
+		// GDKfree(buf);
 		BBPunfix(b->batCacheid);
 		throw(MAL, "baturl.extractURLHost", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1015,7 +1015,7 @@ BATextractURLHost(Client ctx, bat *res, const bat *bid, const bit *no_www)
 	}
 	bat_iterator_end(&bi);
 
-	GDKfree(buf);
+	// GDKfree(buf);
 	if (msg == MAL_SUCCEED) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;
