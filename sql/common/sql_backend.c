@@ -126,3 +126,10 @@ backend_find_role(ptr mvc, char *name, sqlid *role_id)
 		return be_funcs.ffrole(mvc, name, role_id);
 	return 0;
 }
+
+void
+backend_set_idle(int clientid, time_t t)
+{
+	if (be_funcs.setIdle != NULL)
+		be_funcs.setIdle(clientid, t);
+}

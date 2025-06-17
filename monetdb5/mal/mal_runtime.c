@@ -267,9 +267,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
-	MT_lock_set(&mal_contextLock);
-	cntxt->idle = 0;
-	MT_lock_unset(&mal_contextLock);
 }
 
 /*
@@ -306,9 +303,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 							QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
 			MT_lock_unset(&mal_delayLock);
-			MT_lock_set(&mal_contextLock);
-			cntxt->idle = time(0);
-			MT_lock_unset(&mal_contextLock);
 			found = true;
 			break;
 		}

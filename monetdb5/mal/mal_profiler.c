@@ -267,7 +267,7 @@ format_val2json(const Client c, const ValPtr res)
 
 	ValRecord val;
 	/* NOTE c->ta maybe active from caller */
-	allocator *ta = (c->ta && c->ta->tmp_active) ? c->ta : NULL;
+	allocator *ta = (allocator_tmp_active(c->ta)) ? c->ta : NULL;
 	if (VALinit(ta, &val, TYPE_str, buf) == NULL) {
 		GDKfree(buf);
 		return NULL;

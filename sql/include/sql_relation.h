@@ -61,8 +61,8 @@ typedef struct expression {
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,
 
-	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
-	 any:1,			/* = vs any semantics (keep nil results) */
+	 semantics:1,	/* 1: use the SQL 'IS NULL' semantics (i.e. nil == nil); 0: use the SQL '= NULL' semantics (i.e. unknown != unknown). Also indicates ranges and aggregations with (i.e. 1) or without (i.e. 0) nil */
+	 any:1,			/* SQL '= NULL' vs SQL ANY semantics (i.e. 1: keep nil results) */
 	 need_no_nil:1,
 	 has_no_nil:1,
 	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
@@ -174,7 +174,6 @@ typedef enum operator_type {
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
 	op_truncate, /* truncate(l=table) */
-	op_merge 	 /* IMPORTANT: keep op_merge last */
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -211,13 +210,12 @@ typedef enum operator_type {
 #define is_project(op) 		(op == op_project || op == op_groupby || is_set(op) || is_munion(op))
 #define is_groupby(op) 		(op == op_groupby)
 #define is_topn(op) 		(op == op_topn)
-#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate || op == op_merge)
+#define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) 		(op == op_sample)
 #define is_insert(op) 		(op == op_insert)
 #define is_update(op) 		(op == op_update)
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
-#define is_merge(op) 		(op == op_merge)
 
 /* ZERO on empty sets, needed for sum (of counts)). */
 #define zero_if_empty(e) 	((e)->zero_if_empty)
@@ -247,6 +245,7 @@ typedef enum operator_type {
 #define set_not_unique(e)	(e)->unique = 0
 #define is_anti(e) 			((e)->anti)
 #define set_anti(e)  		(e)->anti = 1
+#define reset_anti(e)  		(e)->anti = 0
 #define is_semantics(e) 	((e)->semantics)
 #define set_semantics(e) 	(e)->semantics = 1
 #define is_any(e)			((e)->any)

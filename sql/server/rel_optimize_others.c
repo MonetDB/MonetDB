@@ -126,16 +126,21 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		return exp_copy(sql, ne);
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			list *l = NULL, *r = NULL;
 
 			if (!(l = exps_push_down_prj(sql, e->l, f, t, true)) || !(r = exps_push_down_prj(sql, e->r, f, t, true)))
 				return NULL;
-			if (e->flag == cmp_filter) {
-				ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			} else {
-				ne = exp_or(sql->sa, l, r, is_anti(e));
-			}
+			ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			list *l = NULL;
+
+			if (!(l = exps_push_down_prj(sql, e->l, f, t, true)))
+				return NULL;
+			if (e->flag == cmp_con)
+				ne = exp_conjunctive(sql->sa, l);
+			else
+				ne = exp_disjunctive(sql->sa, l);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *r = NULL;
 
@@ -339,9 +344,11 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 		break;
 	}
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			nr += exps_mark_used(subrel, e->l, local_proj);
 			nr += exps_mark_used(subrel, e->r, local_proj);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			nr += exps_mark_used(subrel, e->l, local_proj);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			nr += exp_mark_used(subrel, e->l, local_proj);
 			nr += exps_mark_used(subrel, e->r, local_proj);
@@ -484,9 +491,11 @@ exp_used(sql_exp *e)
 			exps_used(e->l);
 			break;
 		case e_cmp:
-			if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (e->flag == cmp_filter) {
 				exps_used(e->l);
 				exps_used(e->r);
+			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+				exps_used(e->l);
 			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 				exp_used(e->l);
 				exps_used(e->r);
@@ -691,7 +700,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 		rel_exps_mark_used(sql->sa, rel, rel->l);
 		rel_exps_mark_used(sql->sa, rel, rel->r);
 		rel_mark_used(sql, rel->l, 0);
@@ -809,7 +817,6 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_update:
 	case op_delete:
 	case op_truncate:
-	case op_merge:
 
 	case op_select:
 
@@ -869,7 +876,6 @@ rel_dce_refs(mvc *sql, sql_rel *rel, list *refs)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 
 		if (rel->l)
 			rel_dce_refs(sql, rel->l, refs);
@@ -976,7 +982,6 @@ rel_dce_down(mvc *sql, sql_rel *rel, int skip_proj)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 		if (rel->l)
 			rel->l = rel_dce_down(sql, rel->l, 0);
 		if (rel->r)
@@ -1094,7 +1099,6 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	case op_full:
 	case op_semi:
 	case op_anti:
-	case op_merge:
 		if (rel->l)
 			rel->l = rel_add_projects(sql, rel->l);
 		if (rel->r)
@@ -1286,7 +1290,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 			}
 		}
 
-		if (r && is_simple_project(r->op) && need_distinct(r))
+		if (r && is_simple_project(r->op) && (need_distinct(r) || project_unsafe(r, 1)))
 			return rel;
 
 		/* push topn/sample under projections */

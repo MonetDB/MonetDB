@@ -39,6 +39,30 @@ enum range_comp_t {
 	range_inside,		/* search range inside bat range */
 };
 
+typedef struct allocator {
+	struct allocator *pa;
+	size_t size;	 /* size of the allocator in terms of blocks */
+	size_t nr;	 /* number of blocks allocated */
+	char **blks;
+	char *first_blk;
+	size_t used; 	 /* memory used in last block */
+	size_t usedmem;	 /* total used memory */
+	size_t blk_size; /* size of the last allocated block */
+	size_t objects;  /* number of objects */
+	size_t inuse;    /* number of objects in use*/
+	size_t free_obj_hits; /* number of object reuse*/
+	void *freelist;	/* list of freed objects */
+	void *freelist_blks;	/* list of freed blks */
+	size_t frees;
+	size_t free_blk_hits;
+
+	size_t tmp_used; /* keeps total of tmp allocated bytes */
+	bool tmp_active; /* currently only one level of temp usage */
+	exception_buffer eb;
+	MT_Lock lock;    /* lock for thread-safe allocations */
+	bool use_lock;
+} allocator;
+
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)
@@ -79,8 +103,7 @@ gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b, uint16_t width)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPcacheit(BAT *bn, bool lock)
-	__attribute__((__warn_unused_result__))
+void BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPchkfarms(void)
 	__attribute__((__warn_unused_result__))
@@ -100,8 +123,10 @@ void BBPprintinfo(void)
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
-gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
-	__attribute__((__visibility__("hidden")));
+gdk_return BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng logno)
+	__attribute__((__visibility__("hidden")))
+	__attribute__((__access__(read_only, 2, 1)))
+	__attribute__((__access__(read_only, 3, 1)));
 BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
@@ -456,6 +481,8 @@ extern dbl no_hash_select_fraction;           /* same here */
  * rather than maintaining it in HASHdelete */
 #define HASH_DESTROY_CHAIN_LENGTH		1000
 extern BUN hash_destroy_chain_length;
+
+extern void (*GDKtriggerusr1)(void);
 
 #if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */

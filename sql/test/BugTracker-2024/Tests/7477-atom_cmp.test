@@ -1,6 +1,7 @@
 -- trying first without function "abs ( x )"
-statement error 22018!conversion of string to type bte failed.
+query I nosort
 SELECT - 66 x GROUP BY x HAVING ( x IN ( SELECT '' x WHERE ( x = ( x = 1 ) ) UNION SELECT 1 ) )
+----
 
 -- changing '' into 1, so a string into int
 query I nosort

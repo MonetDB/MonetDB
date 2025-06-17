@@ -361,6 +361,7 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
+	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	if (c->initClient) {
 		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
 			mnstr_printf(fout, "!%s\n", msg);
@@ -373,7 +374,6 @@ MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fou
 	}
 	GDKfree(command);
 
-	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
 	if (msg != MAL_SUCCEED) {
 		freeException(msg);

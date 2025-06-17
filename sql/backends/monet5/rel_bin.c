@@ -56,8 +56,8 @@ add_to_rowcount_accumulator(backend *be, int nr)
 
 	InstrPtr q = newStmt(be->mb, calcRef, plusRef);
 	if (q == NULL) {
-		if (be->mvc->sa->eb.enabled)
-			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+		if (sa_get_eb(be->mvc->sa)->enabled)
+			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return -1;
 	}
 	q = pushArgument(be->mb, q, be->rowcount);
@@ -373,7 +373,7 @@ row2cols(backend *be, stmt *sub)
 
 		for (n = sub->op4.lval->h; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
+			assert(sc->label);
 			const char *cname = column_name(be->mvc->sa, sc);
 			const char *tname = table_name(be->mvc->sa, sc);
 			int label = sc->label;
@@ -449,7 +449,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 		if (c->type != st_alias || c->flag) {
 			c = stmt_project(be, cand, c);
 		} else if (c->op1->type == st_mirror && is_tid_chain(cand)) { /* alias with mirror (ie full row ids) */
-			//c = stmt_alias(be, cand, 0, c->tname, c->cname);
 			c = stmt_as(be, cand, c);
 		} else { /* st_alias */
 			stmt *s = c->op1;
@@ -457,7 +456,6 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 				s = stmt_const(be, cand, s);
 			else
 				s = stmt_project(be, cand, s);
-			//c = stmt_alias(be, s, c->flag, c->tname, c->cname);
 			c = stmt_as(be, s, c);
 		}
 		append(l, c);
@@ -692,16 +690,15 @@ exp_count_no_nil_arg(sql_exp *e, stmt *ext, sql_exp *ae, stmt *as)
 }
 
 static stmt *
-exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
+exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
 {
 	sql_subtype *bt = sql_bind_localtype("bit");
 	list *l = e->l;
 	node *n;
-	stmt *sel1 = NULL, *sel2 = NULL, *s = NULL;
+	stmt *sel1 = NULL, *s = NULL;
 	int anti = is_anti(e);
 
 	sel1 = sel;
-	sel2 = sel;
 	for (n = l->h; n; n = n->next) {
 		sql_exp *c = n->data;
 		stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
@@ -713,62 +710,33 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 		if (!s)
 			return s;
 
-		if (!reduce && sin) {
+		if (!reduce && sin && sin != sel) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
+		} else if (!reduce && !sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
 			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
-		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_find_smallest_column(be, left);
+		} else if (reduce && ((sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) || c->type != e_cmp)) {
+			if (s->nrcols) {
+				if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
+					stmt *predicate = bin_find_smallest_column(be, left);
 
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			if (s->nrcols == 0)
+					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+					s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
+				} else
+					s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel1, anti, is_semantics(c));
+			} else {
+				stmt *predicate = bin_find_smallest_column(be, left);
+
+				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
-			else
-				s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti, is_semantics(c));
+			}
 		}
 		sel1 = s;
 	}
-	l = e->r;
-	for (n = l->h; n; n = n->next) {
-		sql_exp *c = n->data;
-		stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
-
-		/* propagate the anti flag */
-		if (anti)
-			set_anti(c);
-		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sin:NULL, depth, reduce, push);
-		if (!s)
-			return s;
-
-		if (!reduce && sin) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sin, s, NULL, f);
-		} else if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"or":"and", bt, bt, F_FUNC, true, true);
-			assert(f);
-			s = stmt_binop(be, sel2, s, sin, f);
-		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_find_smallest_column(be, left);
-
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			if (s->nrcols == 0)
-				s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti, 0);
-			else
-				s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti, 0);
-		}
-		sel2 = s;
-	}
-	if (sel1->nrcols == 0 && sel2->nrcols == 0) {
-		sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
-		assert(f);
-		return stmt_binop(be, sel1, sel2, NULL, f);
-	}
-	if (sel1->nrcols == 0) {
+	if (sel1->nrcols == 0 && left) {
 		stmt *predicate = bin_find_smallest_column(be, left);
 
 		if (!reduce) {
@@ -778,25 +746,54 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 			sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
 		}
 	}
-	if (sel2->nrcols == 0) {
-		stmt *predicate = bin_find_smallest_column(be, left);
-
-		if (!reduce) {
-			predicate = stmt_const(be, predicate, sel2);
-		} else {
-			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-			sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
-		}
-	}
-	if (!reduce) {
-			sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
-			assert(f);
-			return stmt_binop(be, sel1, sel2, NULL, f);
-	}
-	if (anti)
-		return stmt_project(be, stmt_tinter(be, sel1, sel2, false), sel1);
-	return stmt_tunion(be, sel1, sel2);
+	return sel1;
 }
+
+static stmt *
+exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, bool reduce, int push)
+{
+	sql_subtype *bt = sql_bind_localtype("bit");
+	list *l = e->l;
+	node *n;
+	stmt *s = NULL, *cur = NULL;
+	int anti = is_anti(e);
+
+	for (n = l->h; n; n = n->next) {
+		sql_exp *c = n->data;
+
+		/* propagate the anti flag */
+		if (anti)
+			set_anti(c);
+		s = exp_bin(be, c, left, right, grp, ext, cnt, reduce?sel:NULL, depth, reduce, push);
+		if (!s)
+			return s;
+
+		if (reduce && s->nrcols == 0 && left) {
+			stmt *predicate = bin_find_smallest_column(be, left);
+			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
+			s = stmt_uselect(be, predicate, s, cmp_equal, sel, anti, is_semantics(c));
+		} else if (reduce && c->type != e_cmp) {
+			s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+		}
+		if (cur) {
+			if (reduce) {
+				if (anti)
+					s = stmt_project(be, stmt_tinter(be, s, cur, false), s);
+				else
+					s = stmt_tunion(be, s, cur);
+			} else {
+				sql_subfunc *f = sql_bind_func(be->mvc, "sys", anti?"and":"or", bt, bt, F_FUNC, true, true);
+				assert(f);
+				s = stmt_binop(be, cur, s, NULL, f);
+			}
+		}
+		cur = s;
+	}
+	//if (reduce)
+	//	return stmt_uselect(be, cur, stmt_bool(be, 1), cmp_equal, sel, 0/*anti*/, 0);
+	return cur;
+}
+
 
 static stmt *
 exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
@@ -1265,7 +1262,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	return res;
 }
 
-// This is the per-column portion of exp2bin_copyfrombinary
+/* This is the per-column portion of exp2bin_copyfrombinary */
 static stmt *
 emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_var, node *file_node, node *type_node)
 {
@@ -1277,11 +1274,11 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	int data_type = subtype->type->localtype;
 	int bat_type = newBatType(data_type);
 
-	// The sql.importColumn operator takes a 'method' string to determine how to
-	// load the data. This leaves the door open to have multiple loaders for the
-	// same backend type, for example nul- and newline terminated strings.
-	// For the time being we just use the name of the storage type as the method
-	// name.
+	/* The sql.importColumn operator takes a 'method' string to determine how to
+	 * load the data. This leaves the door open to have multiple loaders for the
+	 * same backend type, for example nul- and newline terminated strings.
+	 * For the time being we just use the name of the storage type as the method
+	 * name. */
 	const char *method = ATOMname(data_type);
 
 	int width;
@@ -1301,7 +1298,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	if (p != NULL) {
 		setArgType(mb, p, 0, bat_type);
 		p = pushReturn(mb, p, new_count_var);
-		//
+
 		p = pushStr(mb, p, method);
 		p = pushInt(mb, p, width);
 		p = pushArgument(mb, p, bswap_stmt->nr);
@@ -1314,8 +1311,8 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 		pushInstruction(mb, p);
 	}
 	if (p == NULL || mb->errors) {
-		if (be->mvc->sa->eb.enabled)
-			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+		if (sa_get_eb(be->mvc->sa)->enabled)
+			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 		return sql_error(be->mvc, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1325,7 +1322,7 @@ emit_loadcolumn(backend *be, stmt *onclient_stmt, stmt *bswap_stmt,  int *count_
 	return s;
 }
 
-// Try to predict which column will be quickest to load first
+/* Try to predict which column will be quickest to load first */
 static int
 node_type_score(node *n)
 {
@@ -1354,7 +1351,7 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	sql_exp *bswap_exp = arg_list->h->next->next->next->data;
 	stmt *bswap_stmt = exp_bin(be, bswap_exp, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
-	// If it's ON SERVER we can optimize by running the imports in parallel
+	/* If it's ON SERVER we can optimize by running the imports in parallel */
 	bool onserver = false;
 	if (onclient_exp->type == e_atom) {
 		atom *onclient_atom = onclient_exp->l;
@@ -1366,10 +1363,10 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 	node *const first_type = type_list->h;
 	node *file, *type;
 
-	// The first column we load determines the number of rows.
-	// We pass it on to the other columns.
-	// The first column to load should therefore be an 'easy' one.
-	// We identify the columns by the address of their type node.
+	/* The first column we load determines the number of rows.
+	 * We pass it on to the other columns.
+	 * The first column to load should therefore be an 'easy' one.
+	 * We identify the columns by the address of their type node. */
 	node *prototype_file = first_file;
 	node *prototype_type = first_type;
 	int score = node_type_score(prototype_type);
@@ -1382,7 +1379,7 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 		}
 	}
 
-	// Emit the columns
+	/* Emit the columns */
 	int count_var = -1;
 	list *columns = sa_list(sql->sa);
 	if (columns == NULL)
@@ -1402,8 +1399,8 @@ exp2bin_copyfrombinary(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *
 		}
 		list_append(columns, s);
 		if (onserver) {
-			// Not threading the count variable from one importColumn to the next
-			// makes it possible to run them in parallel in a dataflow region.
+			/* Not threading the count variable from one importColumn to the next
+			 * makes it possible to run them in parallel in a dataflow region. */
 			count_var = orig_count_var;
 		}
 	}
@@ -1635,7 +1632,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (!l)
 			return NULL;
 		if (from->type->eclass == EC_SEC && to->type->eclass == EC_SEC) {
-			// trivial conversion because EC_SEC is always in milliseconds
+			/* trivial conversion because EC_SEC is always in milliseconds */
 			s = l;
 		} else if (depth && sel && l->nrcols == 0 && left && left->nrcols && exp_unsafe(e, false, true)) {
 			stmt *rows = bin_find_smallest_column(be, left);
@@ -1785,15 +1782,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					return NULL;
 				append(l, stmt_project(be, u, a));
 			}
-			if (r) {
+			if (r) { /* check new ordered aggregation */
 				list *obe = r->h->data;
 				if (obe && obe->h) {
-					stmt *orderby = NULL, *orderby_vals, *orderby_ids, *orderby_grp;
+					stmt *orderby = NULL, *orderby_ids, *orderby_grp;
 					/* order by */
 					if (grp) {
 						orderby = stmt_order(be, grp, true, true);
 
-						orderby_vals = stmt_result(be, orderby, 0);
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
@@ -1808,7 +1804,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							orderby = stmt_reorder(be, os, is_ascending(oe), nulls_last(oe), orderby_ids, orderby_grp);
 						else
 							orderby = stmt_order(be, os, is_ascending(oe), nulls_last(oe));
-						orderby_vals = stmt_result(be, orderby, 0);
 						orderby_ids = stmt_result(be, orderby, 1);
 						orderby_grp = stmt_result(be, orderby, 2);
 					}
@@ -1817,7 +1812,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 						n->data = stmt_project(be, orderby_ids, n->data);
 					if (grp)
 						grp = stmt_project(be, orderby_ids, grp);
-					(void)orderby_vals;
 				}
 			}
 			as = stmt_list(be, l);
@@ -1841,10 +1835,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_column: {
 		if (right) /* check relation names */
-			//s = bin_find_column(be, right, e->l, e->r);
 			s = bin_find_column_nid(be, right, e->nid);
 		if (!s && left)
-			//s = bin_find_column(be, left, e->l, e->r);
 			s = bin_find_column_nid(be, left, e->nid);
 		if (s && grp)
 			s = stmt_project(be, ext, s);
@@ -1950,11 +1942,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (e->flag == cmp_in || e->flag == cmp_notin)
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), depth, reduce, push);
-		if (e->flag == cmp_or && (!right || right->nrcols == 1))
-			return exp_bin_or(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
-		if (e->flag == cmp_or && right) {  /* join */
-			assert(0);
-		}
+		if (e->flag == cmp_con)
+			return exp_bin_conjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
+		if (e->flag == cmp_dis)
+			return exp_bin_disjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
 
 		/* mark use of join indices */
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
@@ -2033,7 +2024,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							list_append(args, l);
 							list_append(args, r);
 							list_append(args, stmt_bool(be, 1));
-							s = stmt_Nop(be, stmt_list(be, args), sel, f, NULL);
+							s = stmt_Nop(be, stmt_list(be, args), NULL, f, NULL);
+							/* TODO cleanup once candidates api has been stabalized */
+							if (sel)
+								list_append(args, sel);
 						}
 					} else {
 						s = stmt_binop(be, l, r, sel, f);
@@ -2315,7 +2309,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		assert(!is_func(exp->type));
 		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
-			//const char *rnme = t->base.name;
 
 			if (col)
 				s = stmt_mirror(be, col);
@@ -2323,7 +2316,6 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 				s = dels?dels:stmt_tid(be, t, 0);
 				dels = NULL;
 			}
-			//s = stmt_alias(be, s, exp->alias.label, rnme, TID);
 		} else if (oname[0] == '%') {
 			sql_idx *i = find_sql_idx(t, oname+1);
 
@@ -2331,17 +2323,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
 			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
-			//s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
 		}
 		s = stmt_alias(be, s, exp->alias.label, rname, exp_name(exp));
-		//s->tname = rname;
-		//s->cname = exp_name(exp);
-		//s->flag = exp->alias.label;
 		list_append(l, s);
 	}
 	stmt *res = stmt_list(be, l);
@@ -2373,7 +2360,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	case e_psm:
 		return args;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -2464,7 +2451,6 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 
 	case op_inter:
 	case op_except:
-	case op_merge:
 		args = rel2bin_args(be, rel->l, args);
 		args = rel2bin_args(be, rel->r, args);
 		break;
@@ -2628,8 +2614,8 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						narg += list_length(ops);
 					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
 					if (q == NULL) {
-						if (be->mvc->sa->eb.enabled)
-							eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+						if (sa_get_eb(be->mvc->sa)->enabled)
+							eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 						return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					/* Generate output rowid column and output of function f */
@@ -3030,14 +3016,12 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl = NULL, *jr = NULL, *m = NULL, *ls = NULL, *res;
 	bool need_project = false, exist = true, mark = false;
 
-	if (rel->op == op_left) { /* left outer group join */
-		if (list_length(rel->attr) == 1) {
-			sql_exp *e = rel->attr->h->data;
-			if (exp_is_atom(e))
-				mark = true;
-			if (exp_is_atom(e) && exp_is_false(e))
-				exist = false;
-		}
+	if (list_length(rel->attr) == 1) {
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e))
+			mark = true;
+		if (exp_is_atom(e) && exp_is_false(e))
+			exist = false;
 	}
 
 	if (rel->l) /* first construct the left sub relation */
@@ -3122,7 +3106,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		/* first project using equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3132,7 +3116,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3189,7 +3173,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		assert(c->type == st_alias);
+		assert(c->label);
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, jl, column(be, c));
@@ -3200,7 +3184,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 	if (!mark && jr) {
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3261,7 +3245,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
+		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin);
 		if (is_equi_exp_(e))
 			list_append(new_exps, e);
 		else
@@ -3392,7 +3376,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		/* first project using equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3402,7 +3386,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3592,7 +3576,6 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			li = ls;
 
 		if (!en->next && (constval || stmt_has_null(ls) /*|| stmt_has_null(rs) (change into check for fk)*/)) {
-			assert(e->flag == cmp_equal);
 			join = stmt_tdiff2(be, ls, rs, NULL);
 			jexps = NULL;
 		} else {
@@ -3613,7 +3596,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		/* first project after equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3623,7 +3606,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3684,7 +3667,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	/* project all the left columns */
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
-		assert(c->type == st_alias);
+		assert(c->label);
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 		stmt *s = stmt_project(be, join, column(be, c));
@@ -3752,7 +3735,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				stmt *s = NULL;
 
 				/* only handle simple joins here */
-				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && is_anti(e))) {
+				if ((exp_has_func(e) && e->flag != cmp_filter) || (e->f && is_anti(e))) {
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_find_smallest_column(be, left);
 						stmt *r = bin_find_smallest_column(be, right);
@@ -3851,7 +3834,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		/* first project after equi-joins */
 		for (n = left->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jl, column(be, c));
@@ -3861,7 +3844,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		}
 		for (n = right->op4.lval->h; n; n = n->next) {
 			stmt *c = n->data;
-			assert(c->type == st_alias);
+			assert(c->label);
 			const char *rnme = table_name(sql->sa, c);
 			const char *nme = column_name(sql->sa, c);
 			stmt *s = stmt_project(be, jr, column(be, c));
@@ -3990,7 +3973,7 @@ rel2bin_single(backend *be, stmt *s)
 
 	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *t = n->data;
-		assert(t->type == st_alias);
+		assert(t->label);
 		const char *rnme = table_name(sql->sa, t);
 		const char *nme = column_name(sql->sa, t);
 		int label = t->label;
@@ -4056,6 +4039,8 @@ subres_assign_newresultvars(backend *be, stmt *rel_stmt)
 static stmt*
 subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 {
+	if (!rel_stmt)
+		return NULL;
 	list *stmts = rel_stmt->op4.lval;
 	list *nstmt = sa_list(be->mvc->sa);
 	for (node *n = stmts->h, *m = vars->h; n && m; n = n->next, m = m->next) {
@@ -4451,7 +4436,7 @@ rel2bin_except(backend *be, sql_rel *rel, list *refs)
 	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		const char *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
@@ -4551,7 +4536,7 @@ rel2bin_inter(backend *be, sql_rel *rel, list *refs)
 	stmts = sa_list(sql->sa);
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c1 = column(be, n->data);
-		assert(c1->type == st_alias);
+		assert(c1->label);
 		const char *rnme = NULL;
 		const char *nme = column_name(sql->sa, c1);
 		int label = c1->label;
@@ -4661,7 +4646,6 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			exp_label(sql->sa, exp, ++sql->label);
 		if (exp_name(exp)) {
 			s = stmt_rename(be, exp, s);
-			//column_name(sql->sa, s); /* save column name */
 			s->label = exp->alias.label;
 		}
 		list_append(pl, s);
@@ -4732,8 +4716,23 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 					return NULL;
 			}
 		}
+		if (!lpiv) {
+			stmt *orderbycolstmt = pl->h->data;
+			//stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!orderbycolstmt)
+				return NULL;
+
+			orderbycolstmt = column(be, orderbycolstmt);
+			limit = stmt_limit(be, orderbycolstmt, NULL, grp, stmt_atom_lng(be, 0), l, distinct, 0, 0, nr_obe, 1);
+			lpiv = limit;
+			if (!lpiv)
+				return NULL;
+		}
 
 		limit = lpiv;
+		if (!limit) /* partition/order by cols fully overlap */
+			limit = stmt_limit(be, pl->h->data, NULL, grp, stmt_atom_lng(be, 0), l, 0,0,0,0,1);
 		if (limit && grp)
 			limit = stmt_project(be, stmt_selectnonil(be, limit, NULL), limit);
 		stmt *s;
@@ -4909,7 +4908,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		for (n=sub->op4.lval->h; n; n = n->next) {
 			stmt *s = n->data;
-			assert(s->type == st_alias);
+			assert(s->label);
 			const char *cname = column_name(sql->sa, s);
 			const char *tname = table_name(sql->sa, s);
 			int label = s->label;
@@ -4926,7 +4925,6 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	/* Keep groupby columns, so that they can be looked up in the aggr list */
 	if (rel->r) {
 		list *exps = rel->r;
-
 		for (en = exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 			stmt *gbcol = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -4962,10 +4960,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 
 		/* first look in the current aggr list (l) and group by column list */
 		if (l && !aggrstmt && aggrexp->type == e_column)
-			//aggrstmt = list_find_column(be, l, aggrexp->l, aggrexp->r);
 			aggrstmt = list_find_column_nid(be, l, aggrexp->nid);
 		if (gbexps && !aggrstmt && aggrexp->type == e_column) {
-			//aggrstmt = list_find_column(be, gbexps, aggrexp->l, aggrexp->r);
 			aggrstmt = list_find_column_nid(be, gbexps, aggrexp->nid);
 			if (aggrstmt && groupby) {
 				aggrstmt = stmt_project(be, ext, aggrstmt);
@@ -5015,7 +5011,6 @@ static stmt *
 rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	sql_exp *oe = NULL, *le = NULL;
 	stmt *sub = NULL, *l = NULL, *o = NULL;
 	node *n;
 
@@ -5046,8 +5041,8 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 
-	le = topn_limit(rel);
-	oe = topn_offset(rel);
+	sql_exp *le = topn_limit(rel);
+	sql_exp *oe = topn_offset(rel);
 
 	n = sub->op4.lval->h;
 	if (n) {
@@ -5079,7 +5074,6 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
 			const char *cname = column_name(sql->sa, sc);
 			const char *tname = table_name(sql->sa, sc);
 			int label = sc->label;
@@ -5112,8 +5106,6 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 	if (n) {
 		stmt *sc = n->data;
-		//const char *cname = column_name(sql->sa, sc);
-		//const char *tname = table_name(sql->sa, sc);
 
 		 if (!(sample_size = exp_bin(be, rel->exps->h->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0)))
 			return NULL;
@@ -5129,7 +5121,7 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 
 		for ( ; n; n = n->next) {
 			stmt *sc = n->data;
-			assert(sc->type == st_alias);
+			assert(sc->label);
 			const char *cname = column_name(sql->sa, sc);
 			const char *tname = table_name(sql->sa, sc);
 			int label = sc->label;
@@ -5348,9 +5340,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		/* foreach column add predicate */
 		stmt_add_column_predicate(be, c->c);
 
-		// foreach column aggregate the nonil (literally 'null') values.
-		// mind that null values are valid fkeys with undefined value so
-		// we won't have an entry for them in the idx_inserts col
+		/* foreach column aggregate the nonil (literally 'null') values.
+		 * mind that null values are valid fkeys with undefined value so
+		 * we won't have an entry for them in the idx_inserts col */
 		s = list_fetch(inserts, c->c->colnr);
 		nonil_rows = stmt_selectnonil(be, s, nonil_rows);
 	}
@@ -5358,9 +5350,9 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	if (!s && pin && list_length(pin->op4.lval))
 		s = pin->op4.lval->h->data;
 
-	// we want to make sure that the data column(s) has the same number
-	// of (nonil) rows as the index column. if that is **not** the case
-	// then we are obviously dealing with an invalid foreign key
+	/* we want to make sure that the data column(s) has the same number
+	 * of (nonil) rows as the index column. if that is **not** the case
+	 * then we are obviously dealing with an invalid foreign key */
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
@@ -7206,8 +7198,8 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	atom *a = ((sql_exp*)argnode->data)->l;
 	int tpe = a->tpe.type->localtype;
 
-	// With regular COPY INTO <file>, the first argument is a string.
-	// With COPY INTO BINARY, it is an int.
+	/* With regular COPY INTO <file>, the first argument is a string.
+	 * With COPY INTO BINARY, it is an int. */
 	if (tpe == TYPE_str) {
 		atom *tatom = ((sql_exp*) argnode->data)->l;
 		const char *tsep  = sa_strdup(sql->sa, tatom->isnull ? "" : tatom->data.val.sval);
@@ -7255,133 +7247,6 @@ rel2bin_output(backend *be, sql_rel *rel, list *refs)
 	if (add_to_rowcount_accumulator(be, res->nr) < 0)
 		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return res;
-}
-
-static list *
-merge_stmt_join_projections(backend *be, stmt *left, stmt *right, stmt *jl, stmt *jr, stmt *diff)
-{
-	mvc *sql = be->mvc;
-	list *l = sa_list(sql->sa);
-
-	if (left)
-		for (node *n = left->op4.lval->h; n; n = n->next) {
-			stmt *c = n->data;
-			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
-			const char *nme = column_name(sql->sa, c);
-			stmt *s = stmt_project(be, jl ? jl : diff, column(be, c));
-
-			s = stmt_alias(be, s, c->label, rnme, nme);
-			list_append(l, s);
-		}
-	if (right)
-		for (node *n = right->op4.lval->h; n; n = n->next) {
-			stmt *c = n->data;
-			assert(c->type == st_alias);
-			const char *rnme = table_name(sql->sa, c);
-			const char *nme = column_name(sql->sa, c);
-			stmt *s = stmt_project(be, jr ? jr : diff, column(be, c));
-
-			s = stmt_alias(be, s, c->label, rnme, nme);
-			list_append(l, s);
-		}
-	return l;
-}
-
-static void
-validate_merge_delete_update(backend *be, bool delete, stmt *bt_stmt, sql_rel *bt, stmt *jl, stmt *ld)
-{
-	mvc *sql = be->mvc;
-	str msg;
-	sql_table *t = bt->l;
-	char *alias = (char *) rel_name(bt);
-	stmt *cnt1 = stmt_aggr(be, jl, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-	stmt *cnt2 = stmt_aggr(be, ld, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-	sql_subfunc *add = sql_bind_func(sql, "sys", "sql_add", tail_type(cnt1), tail_type(cnt2), F_FUNC, true, true);
-	stmt *s1 = stmt_binop(be, cnt1, cnt2, NULL, add);
-	stmt *cnt3 = stmt_aggr(be, bin_find_smallest_column(be, bt_stmt), NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-	sql_subfunc *bf = sql_bind_func(sql, "sys", ">", tail_type(s1), tail_type(cnt3), F_FUNC, true, true);
-	stmt *s2 = stmt_binop(be, s1, cnt3, NULL, bf);
-
-	if (alias && strcmp(alias, t->base.name) == 0) /* detect if alias is present */
-		alias = NULL;
-	msg = sa_message(sql->sa, SQLSTATE(40002) "MERGE %s: Multiple rows in the input relation match the same row in the target %s '%s%s%s'",
-					 delete ? "DELETE" : "UPDATE",
-					 alias ? "relation" : "table",
-					 alias ? alias : t->s ? t->s->base.name : "", alias ? "" : ".", alias ? "" : t->base.name);
-	(void)stmt_exception(be, s2, msg, 00001);
-}
-
-static stmt *
-rel2bin_merge_apply_update(backend *be, sql_rel *join, sql_rel *upd, list *refs, stmt *bt_stmt, stmt *target_stmt, stmt *jl, stmt *jr, stmt *ld, stmt **rd)
-{
-	if (is_insert(upd->op)) {
-		if (!*rd) {
-			*rd = stmt_tdiff(be, stmt_mirror(be, bin_find_smallest_column(be, target_stmt)), jr, NULL);
-		}
-		stmt *s = stmt_list(be, merge_stmt_join_projections(be, NULL, target_stmt, NULL, NULL, *rd));
-		refs_update_stmt(refs, join, s); /* project the differences on the target side for inserts */
-
-		return rel2bin_insert(be, upd, refs);
-	} else {
-		stmt *s = stmt_list(be, merge_stmt_join_projections(be, bt_stmt, is_update(upd->op) ? target_stmt : NULL, jl, is_update(upd->op) ? jr : NULL, NULL));
-		refs_update_stmt(refs, join, s); /* project the matched values on both sides for updates and deletes */
-
-		assert(is_update(upd->op) || is_delete(upd->op));
-		/* the left joined values + left difference must be smaller than the table count */
-		validate_merge_delete_update(be, is_update(upd->op), bt_stmt, join->l, jl, ld);
-
-		return is_update(upd->op) ? rel2bin_update(be, upd, refs) : rel2bin_delete(be, upd, refs);
-	}
-}
-
-static stmt *
-rel2bin_merge(backend *be, sql_rel *rel, list *refs)
-{
-	mvc *sql = be->mvc;
-	sql_rel *join;
-
-	if (is_project(((sql_rel*)rel->l)->op)) {
-		join = ((sql_rel*)rel->l)->l;
-	} else {
-		join = rel->l;
-	}
-
-	sql_rel *r = rel->r;
-	stmt *join_st, *bt_stmt, *target_stmt, *jl, *jr, *ld, *rd = NULL, *ns;
-	list *slist = sa_list(sql->sa);
-
-	assert(rel_is_ref(join) && is_left(join->op));
-	join_st = subrel_bin(be, join, refs);
-	if (!join_st)
-		return NULL;
-
-	/* grab generated left join outputs and generate updates accordingly to matched and not matched values */
-	assert(join_st->type == st_list && list_length(join_st->extra) == 5);
-	bt_stmt = join_st->extra->h->data;
-	target_stmt = join_st->extra->h->next->data;
-	jl = join_st->extra->h->next->next->data;
-	jr = join_st->extra->h->next->next->next->data;
-	ld = join_st->extra->h->next->next->next->next->data;
-
-	if (is_ddl(r->op)) {
-		assert(r->flag == ddl_list);
-		if (r->l) {
-			if ((ns = rel2bin_merge_apply_update(be, join, r->l, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)) == NULL)
-				return NULL;
-			list_append(slist, ns);
-		}
-		if (r->r) {
-			if ((ns = rel2bin_merge_apply_update(be, join, r->r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)) == NULL)
-				return NULL;
-			list_append(slist, ns);
-		}
-	} else {
-		if (!(ns = rel2bin_merge_apply_update(be, join, r, refs, bt_stmt, target_stmt, jl, jr, ld, &rd)))
-			return NULL;
-		list_append(slist, ns);
-	}
-	return stmt_list(be, slist);
 }
 
 static stmt *
@@ -7855,11 +7720,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		if (sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
-	case op_merge:
-		s = rel2bin_merge(be, rel, refs);
-		if (sql->type == Q_TABLE)
-			sql->type = Q_UPDATE;
-		break;
 	case op_ddl:
 		s = rel2bin_ddl(be, rel, refs);
 		break;
@@ -7884,8 +7744,8 @@ rel_bin(backend *be, sql_rel *rel)
 		sql->type = sqltype;  /* reset */
 
 	if (be->mb->errors) {
-		if (be->mvc->sa->eb.enabled)
-			eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
+		if (sa_get_eb(be->mvc->sa)->enabled)
+			eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors, 1000);
 		return NULL;
 	}
 	return s;

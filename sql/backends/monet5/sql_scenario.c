@@ -95,12 +95,13 @@ CLIENTprintinfo(void)
 	int nrun = 0, nfinish = 0, nblock = 0;
 	char mmbuf[64];
 	char tmbuf[64];
-	char trbuf[64];
+	char trbuf[128];
 	char chbuf[64];
 	char cabuf[64];
 	char clbuf[64];
 	char crbuf[64];
 	char cpbuf[64];
+	char qybuf[200];
 	struct tm tm;
 
 	if (!MT_lock_trytime(&mal_contextLock, 1000)) {
@@ -125,8 +126,21 @@ CLIENTprintinfo(void)
 				strftime(tmbuf, sizeof(tmbuf), ", busy since %F %H:%M:%S%z", &tm);
 			} else
 				tmbuf[0] = 0;
-			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc && ((backend *) c->sqlcontext)->mvc->session && ((backend *) c->sqlcontext)->mvc->session->tr && ((backend *) c->sqlcontext)->mvc->session->tr->active)
-				snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
+			if (c->query)
+				strconcat_len(qybuf, sizeof(qybuf), ", query: ", c->query, NULL);
+			else
+				qybuf[0] = 0;
+			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc &&
+				((backend *) c->sqlcontext)->mvc->session &&
+				((backend *) c->sqlcontext)->mvc->session->tr) {
+				int i = 0;
+				if (((backend *) c->sqlcontext)->mvc->session->tr->active)
+					i = snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
+				if (i < (int) sizeof(trbuf))
+					i += snprintf(trbuf + i, sizeof(trbuf) - i, ", prepared queries: %d", qc_size(((backend *) c->sqlcontext)->mvc->qc));
+				if (i < (int) sizeof(trbuf))
+					snprintf(trbuf + i, sizeof(trbuf) - i, ", open resultsets: %d", res_tables_count(((backend *) c->sqlcontext)->results));
+			}
 			else
 				trbuf[0] = 0;
 			if (c->client_hostname)
@@ -149,7 +163,7 @@ CLIENTprintinfo(void)
 				snprintf(cpbuf, sizeof(cpbuf), ", client pid: %ld", c->client_pid);
 			else
 				cpbuf[0] = 0;
-			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf);
+			printf("client %d, user %s, thread %s, using %"PRIu64" bytes of transient space%s%s%s%s%s%s%s%s%s\n", c->idx, c->username, c->mythread ? c->mythread : "?", (uint64_t) ATOMIC_GET(&c->qryctx.datasize), mmbuf, tmbuf, trbuf, chbuf, cabuf, clbuf, cpbuf, crbuf, qybuf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
@@ -930,11 +944,37 @@ SQLtrans(mvc *m)
 	return MAL_SUCCEED;
 }
 
+static bool
+shouldStop(void *data)
+{
+	if (GDKexiting())
+		return true;
+	Client c = data;
+	if (c) {
+		if (c->idletimeout &&
+			c->idle &&
+			c->sqlcontext &&
+			((backend *) c->sqlcontext)->mvc &&
+			((backend *) c->sqlcontext)->mvc->session &&
+			((backend *) c->sqlcontext)->mvc->session->tr &&
+			((backend *) c->sqlcontext)->mvc->session->tr->active &&
+			time(NULL)- c->idle > c->idletimeout)
+			return true;
+		if (c->sessiontimeout &&
+			c->session &&
+			(GDKusec() - c->session) > c->sessiontimeout)
+			return true;
+	}
+	return false;
+}
+
 str
 SQLinitClient(Client c, const char *passwd, const char *challenge, const char *algo)
 {
 	str msg = MAL_SUCCEED;
 
+	mnstr_settimeout(c->fdin->s, 50, shouldStop, c);
+	c->idletimeout = GDKgetenv_int("idle_timeout", 0);
 	MT_lock_set(&sql_contextLock);
 	if (!SQLstore) {
 		MT_lock_unset(&sql_contextLock);
@@ -1096,6 +1136,7 @@ SQLreader(Client c, backend *be)
 		MT_lock_unset(&mal_contextLock);
 		return MAL_SUCCEED;
 	}
+	c->idle = time(0);
 	MT_lock_unset(&mal_contextLock);
 	language = be->language;	/* 'S', 's' or 'X' */
 	m = be->mvc;
@@ -1121,11 +1162,6 @@ SQLreader(Client c, backend *be)
 				break;
 			commit_done = true;
 		}
-		if (m->session->tr && m->session->tr->active) {
-			MT_lock_set(&mal_contextLock);
-			c->idle = 0;
-			MT_lock_unset(&mal_contextLock);
-		}
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -1147,12 +1183,6 @@ SQLreader(Client c, backend *be)
 					if (msg)
 						break;
 					commit_done = true;
-					MT_lock_set(&mal_contextLock);
-					if (c->idle == 0 && (m->session->tr == NULL || !m->session->tr->active)) {
-						/* now the session is idle */
-						c->idle = time(0);
-					}
-					MT_lock_unset(&mal_contextLock);
 				}
 
 				if (go && ((!blocked && mnstr_write(c->fdout, c->prompt, c->promptlength, 1) != 1) || mnstr_flush(c->fdout, MNSTR_FLUSH_DATA))) {
@@ -1198,6 +1228,24 @@ SQLreader(Client c, backend *be)
 		MT_lock_unset(&mal_contextLock);
 		return msg;
 	}
+	if (msg == MAL_SUCCEED &&
+		c->idletimeout &&
+		c->idle &&
+		c->sqlcontext &&
+		((backend *) c->sqlcontext)->mvc &&
+		((backend *) c->sqlcontext)->mvc->session &&
+		((backend *) c->sqlcontext)->mvc->session->tr &&
+		((backend *) c->sqlcontext)->mvc->session->tr->active &&
+		time(NULL) - c->idle > c->idletimeout) {
+		in->pos = in->len;	/* skip rest of the input */
+		MT_lock_set(&mal_contextLock);
+		c->mode = FINISHCLIENT;
+		MT_lock_unset(&mal_contextLock);
+		throw(SQL, "SQLreader", "Session aborted due to idle timeout");
+	}
+	MT_lock_set(&mal_contextLock);
+	c->idle = 0;
+	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
 
@@ -1504,7 +1552,7 @@ SQLparser_body(Client c, backend *be)
 				pushEndInstruction(c->curprg->def);
 
 				/* check the query wrapper for errors */
-				if (msg == MAL_SUCCEED && !opt)
+				if (msg == MAL_SUCCEED)
 					msg = chkTypes(c->usermodule, c->curprg->def, TRUE);
 
 				if (msg == MAL_SUCCEED && opt) {
@@ -1587,10 +1635,8 @@ SQLparser_body(Client c, backend *be)
 				if (err) {
 					be->q->name = NULL; /* later remove cleanup from mal from qc code */
 					qc_delete(m->qc, be->q);
-					be->q = NULL;
 				}
-				if (be->q)
-					be->result_id = be->q->id;
+				be->result_id = be->q->id;
 				be->q = NULL;
 			}
 			if (err)
@@ -1602,7 +1648,7 @@ SQLparser_body(Client c, backend *be)
 	}
 finalize:
 	if (m->sa)
-		eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
+		eb_init(sa_get_eb(m->sa)); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;
@@ -1631,10 +1677,10 @@ SQLparser(Client c, backend *be)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 	}
-	if (eb_savepoint(&m->sa->eb)) {
-		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-		eb_init(&m->sa->eb);
-		// sa_reset(m->sa); sqlcleanup does the same
+	if (eb_savepoint(sa_get_eb(m->sa))) {
+		msg = createException(SQL, "SQLparser", "%s", sa_get_eb(m->sa)->msg);
+		eb_init(sa_get_eb(m->sa));
+		// sa_reset(m->sa);
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
 			freeException(c->curprg->def->errors);
 			c->curprg->def->errors = NULL;

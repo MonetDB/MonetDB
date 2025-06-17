@@ -59,3 +59,24 @@ body:
         Add any other context or screenshots about the problem here.
     validations:
       required: false
+  - type: markdown
+    attributes:
+      value: "Identity Disclosure:"
+  - type: input
+    attributes:
+      label: "Full Name:"
+      placeholder: e.g., Jane Doe
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: "Affiliation:"
+      placeholder: e.g., FooBar Corp
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        If the above is not given and is not obvious from your GitHub profile page,
+        we might close your issue without further review. Please refer to the
+        [reasoning behind this rule](https://berthub.eu/articles/posts/anonymous-help/) if you have questions.

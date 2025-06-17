@@ -621,7 +621,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 				/* if still the same, replace lastprint with current
 				 * time and print the query */
 				if (ATOMIC_CAS(&cntxt->lastprint, &lp, t)) {
-					const char *q = cntxt->query ? cntxt->query : NULL;
+					const char *q = cntxt->query;
 					TRC_INFO(MAL_SERVER,
 							 "%s: query already running " LLFMT "s: %.200s\n",
 							 cntxt->mythread ? cntxt->mythread : "?",

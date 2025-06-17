@@ -2061,6 +2061,13 @@ GDKprintinfo(void)
 	printf("SIGUSR1 info end\n");
 }
 
+void (*GDKtriggerusr1)(void);
+void
+GDKusr1triggerCB(void (*func)(void))
+{
+	GDKtriggerusr1 = func;
+}
+
 exception_buffer *
 eb_init(exception_buffer *eb)
 {
@@ -2289,7 +2296,7 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 	void *r = sa_alloc(sa, sz);
 
 	if (r)
-		memmove(r, p, oldsz);
+		memcpy(r, p, oldsz);
 	return r;
 }
 
@@ -2515,6 +2522,12 @@ sa_size(allocator *sa)
 	return sa->usedmem;
 }
 
+exception_buffer *
+sa_get_eb(allocator *sa)
+{
+	return &sa->eb;
+}
+
 void
 sa_open(allocator *sa)
 {
@@ -2545,4 +2558,16 @@ sa_free(allocator *sa, void *obj)
 	// blks are handled elsewhere
 	if (sz < SA_BLOCK_SIZE)
 		sa_free_obj(sa, ptr, sz);
+}
+
+bool
+allocator_tmp_active(const allocator *a)
+{
+    return a && a->tmp_active;
+}
+
+allocator *
+allocator_get_parent(const allocator *a)
+{
+    return a ? a->pa : NULL;
 }

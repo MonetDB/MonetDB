@@ -1,5 +1,9 @@
+# NB: GROUP_CONCAT and LISTAGG are expected to work exactly the same way.
+#     Hence, for every GROUP_CONCAT test, the same test should be added for
+#     LISTAGG, and vice versa
 groupconcat01
 groupconcat02
 groupconcat03
-groupconcat04
-groupconcat05
+listagg01
+listagg02
+listagg03

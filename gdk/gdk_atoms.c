@@ -649,11 +649,12 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	int sign = 1;
 
 	/* a valid number has the following syntax:
-	 * [-+]?[0-9]+([eE][0-9]+)?(LL)? -- PCRE syntax, or in other words
+	 * [-+]?[0-9]+(_[0-9]+)*([eE][0-9]+(_[0-9]+)*)?(LL)? -- PCRE syntax, or in other words
 	 * optional sign, one or more digits, optional exponent, optional LL
 	 * the exponent has the following syntax:
 	 * lower or upper case letter E, one or more digits
-	 * embedded spaces are not allowed
+	 * embedded spaces are not allowed but embedded underscores are
+	 * (but not more than one consecutively)
 	 * the optional LL at the end are only allowed for lng and hge
 	 * values */
 	atommem(sz);
@@ -675,7 +676,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 					return (ssize_t) (p - src);
 				}
 			}
-			GDKerror("not a number");
+			GDKerror("'%s' not a number\n", src);
 			goto bailout;
 		case '-':
 			sign = -1;
@@ -686,7 +687,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 			break;
 		}
 		if (!GDKisdigit(*p)) {
-			GDKerror("not a number");
+			GDKerror("'%s' not a number\n", src);
 			goto bailout;
 		}
 	}
@@ -699,6 +700,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 		}
 		base = 10 * base + dig;
 		p++;
+		if (*p == '_' && GDKisdigit(p[1]))
+			p++;
 	} while (GDKisdigit(*p));
 	if ((*p == 'e' || *p == 'E') && GDKisdigit(p[1])) {
 		p++;
@@ -717,6 +720,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 					goto overflow;
 				}
 				p++;
+				if (*p == '_' && GDKisdigit(p[1]))
+					p++;
 			} while (GDKisdigit(*p));
 			if (base > maxdiv[exp].maxval) {
 				/* overflow */
@@ -944,12 +949,12 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 			p += 2;
 		}
 		if (!GDKisxdigit(*p)) {
-			GDKerror("not a number\n");
+			GDKerror("'%s' not a number\n", src);
 			return -1;
 		}
 		while (GDKisxdigit(*p)) {
 			if (base >= ((size_t) 1 << (8 * sizeof(size_t) - 4))) {
-				GDKerror("overflow\n");
+				GDKerror("'%s' overflow\n", src);
 				return -1;
 			}
 			base = mult16(base) + base16(*p);
@@ -1013,7 +1018,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
 		    || !isfinite(d) /* no NaN or Infinite */
 		    ) {
-			GDKerror("overflow or not a number\n");
+			GDKerror("'%s' overflow or not a number\n", src);
 			return -1;
 		} else {
 			while (src[n] && GDKisspace(src[n]))
@@ -1092,7 +1097,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 		    || !isfinite(f) /* no NaN or infinite */) {
-			GDKerror("overflow or not a number\n");
+			GDKerror("'%s' overflow or not a number\n", src);
 			return -1;
 		} else {
 			while (src[n] && GDKisspace(src[n]))
@@ -1182,7 +1187,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 		}
 		p += pos;
 	} else {
-		GDKerror("not an OID\n");
+		GDKerror("'%s' not an OID\n", src);
 		return -1;
 	}
 	while (GDKisspace(*p))
@@ -1520,7 +1525,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		if (GDKisxdigit(instr[i]))
 			nitems++;
 		else if (!GDKisspace(instr[i])) {
-			GDKerror("Illegal char in blob\n");
+			GDKerror("Illegal char '%c' in blob\n", instr[i]);
 			return -1;
 		}
 	}

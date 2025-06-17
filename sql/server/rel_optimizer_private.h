@@ -17,7 +17,7 @@
 
 /* relations counts */
 typedef struct global_props {
-	int cnt[op_merge + 1];
+	int cnt[op_truncate + 1];
 	uint8_t
 		instantiate:1,
 		needs_mergetable_rewrite:1,

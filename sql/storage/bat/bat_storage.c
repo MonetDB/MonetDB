@@ -3016,6 +3016,67 @@ col_not_null(sql_trans *tr, sql_column *col, bool not_null)
 }
 
 static int
+swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
+{
+	bool update_conflict = false;
+
+	if (segments_in_transaction(tr, col->t))
+		return LOG_CONFLICT;
+
+	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
+
+	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
+		return update_conflict ? LOG_CONFLICT : LOG_ERR;
+	assert(d && d->cs.ts == tr->tid);
+	if (odelta != d)
+		trans_add_obj(tr, &col->base, d, &tc_gc_col, &commit_update_col, NOT_TO_BE_LOGGED(col->t)?NULL:&log_update_col);
+	if (d->cs.bid)
+		temp_destroy(d->cs.bid);
+	if (d->cs.uibid)
+		temp_destroy(d->cs.uibid);
+	if (d->cs.uvbid)
+		temp_destroy(d->cs.uvbid);
+	bat_set_access(bn, BAT_READ);
+	d->cs.bid = temp_create(bn);
+	d->cs.uibid = 0;
+	d->cs.uvbid = 0;
+	d->cs.ucnt = 0;
+	d->cs.cleared = true;
+	d->cs.ts = tr->tid;
+	ATOMIC_INIT(&d->cs.refcnt, 1);
+	return LOG_OK;
+}
+
+static int
+col_subtype(sql_trans *tr, sql_column *col, sql_subtype *t)
+{
+	int res = LOG_ERR;
+	assert(tr->active);
+	if (!isTable(col->t) || !col->t->s)
+		return res;
+
+	if (col && ATOMIC_PTR_GET(&col->data)) {
+		BAT *b = bind_col(tr, col, RDONLY);
+
+		if (!b)
+			return res;
+
+		BAT *bn = BATconvert(b, NULL /* could use tids, but need NILS */, t->type->localtype, col->type.scale, t->scale, t->type->eclass == EC_NUM ? 0 : t->digits);
+		if (!bn)
+			return res;
+		BBPreclaim(b);
+		b = COLcopy(bn, bn->ttype, true, PERSISTENT);
+		BBPreclaim(bn);
+		if ((bn = b) == NULL)
+			return res;
+
+		res = swap_bats(tr, col, bn);
+		BBPreclaim(bn);
+	}
+	return res;
+}
+
+static int
 load_cs(sql_trans *tr, column_storage *cs, int type, sqlid id)
 {
 	sqlstore *store = tr->store;
@@ -3468,7 +3529,8 @@ log_segments(sql_trans *tr, segments *segs, sqlid id)
 	lock_table(tr->store, id);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, id);
-		if (seg->ts == tr->tid && seg->end-seg->start) {
+		if (seg->ts == tr->tid && seg->end-seg->start &&
+			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts)) {
 			if (log_segment(tr, seg, id) != LOG_OK) {
 				return LOG_ERR;
 			}
@@ -4980,38 +5042,6 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 }
 
 static int
-swap_bats(sql_trans *tr, sql_column *col, BAT *bn)
-{
-	bool update_conflict = false;
-
-	if (segments_in_transaction(tr, col->t))
-		return LOG_CONFLICT;
-
-	sql_delta *d = NULL, *odelta = ATOMIC_PTR_GET(&col->data);
-
-	if ((d = bind_col_data(tr, col, &update_conflict)) == NULL)
-		return update_conflict ? LOG_CONFLICT : LOG_ERR;
-	assert(d && d->cs.ts == tr->tid);
-	if (odelta != d)
-		trans_add_obj(tr, &col->base, d, &tc_gc_col, &commit_update_col, NOT_TO_BE_LOGGED(col->t)?NULL:&log_update_col);
-	if (d->cs.bid)
-		temp_destroy(d->cs.bid);
-	if (d->cs.uibid)
-		temp_destroy(d->cs.uibid);
-	if (d->cs.uvbid)
-		temp_destroy(d->cs.uvbid);
-	bat_set_access(bn, BAT_READ);
-	d->cs.bid = temp_create(bn);
-	d->cs.uibid = 0;
-	d->cs.uvbid = 0;
-	d->cs.ucnt = 0;
-	d->cs.cleared = true;
-	d->cs.ts = tr->tid;
-	ATOMIC_INIT(&d->cs.refcnt, 1);
-	return LOG_OK;
-}
-
-static int
 vacuum_col(sql_trans *tr, sql_column *c, bool force)
 {
 	if (segments_in_transaction(tr, c->t))
@@ -5155,6 +5185,7 @@ bat_storage_init( store_functions *sf)
 	sf->col_stats = &col_stats;
 	sf->col_set_range = &col_set_range;
 	sf->col_not_null = &col_not_null;
+	sf->col_subtype = &col_subtype;
 
 	sf->col_dup = &col_dup;
 	sf->idx_dup = &idx_dup;

@@ -2014,10 +2014,10 @@ Tpos(BATiter *bi, BUN p)
 
 __attribute__((__pure__))
 static inline bool
-Tmskval(BATiter *bi, BUN p)
+Tmskval(const BATiter *bi, BUN p)
 {
 	assert(ATOMstorage(bi->type) == TYPE_msk);
-	return ((uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
+	return ((const uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 
 static inline void *
@@ -2492,6 +2492,7 @@ gdk_export gdk_return gdk_add_callback(const char *name, gdk_callback_func *f,
 				       int argc, void *argv[], int interval);
 gdk_export gdk_return gdk_remove_callback(const char *, gdk_callback_func *f);
 
+gdk_export void GDKusr1triggerCB(void (*func)(void));
 
 #define SQLSTATE(sqlstate)	#sqlstate "!"
 #define MAL_MALLOC_FAIL	"Could not allocate space"
@@ -2520,48 +2521,32 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #endif
 gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
-typedef struct allocator {
-	struct allocator *pa;
-	size_t size;	 /* size of the allocator in terms of blocks */
-	size_t nr;	 /* number of blocks allocated */
-	char **blks;
-	char *first_blk;
-	size_t used; 	 /* memory used in last block */
-	size_t usedmem;	 /* total used memory */
-	size_t blk_size; /* size of the last allocated block */
-	size_t objects;  /* number of objects */
-	size_t inuse;    /* number of objects in use*/
-	size_t free_obj_hits; /* number of object reuse*/
-	void *freelist;	/* list of freed objects */
-	void *freelist_blks;	/* list of freed blks */
-	size_t frees;
-	size_t free_blk_hits;
+typedef struct allocator allocator;
 
-	size_t tmp_used; /* keeps total of tmp allocated bytes */
-	bool tmp_active; /* currently only one level of temp usage */
-	exception_buffer eb;
-	MT_Lock lock;    /* lock for thread-safe allocations */
-	bool use_lock;
-} allocator;
+#include "gdk_calc.h"
 
 gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 	__attribute__((__access__(write_only, 1)));
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 1)));
 
-gdk_export allocator *create_allocator( allocator *pa, bool use_lock);
-gdk_export allocator *sa_reset( allocator *sa );
-gdk_export void *sa_alloc( allocator *sa,  size_t sz );
-gdk_export void *sa_zalloc( allocator *sa,  size_t sz );
-gdk_export void *sa_realloc( allocator *sa,  void *ptr, size_t sz, size_t osz );
-gdk_export void sa_destroy( allocator *sa );
-gdk_export char *sa_strndup( allocator *sa, const char *s, size_t l);
-gdk_export char *sa_strdup( allocator *sa, const char *s);
-gdk_export char *sa_strconcat( allocator *sa, const char *s1, const char *s2);
-gdk_export size_t sa_size( allocator *sa );
-gdk_export void sa_open( allocator *sa );  /* open new frame of tempory allocations */
-gdk_export void sa_close( allocator *sa ); /* close temporary frame, reset to old state */
-gdk_export void sa_free( allocator *sa, void *);
+gdk_export allocator *create_allocator(allocator *pa, bool use_lock);
+gdk_export allocator *allocator_get_parent(const allocator *alloc);
+gdk_export bool allocator_tmp_active(const allocator *alloc);
+gdk_export allocator *sa_reset(allocator *sa);
+gdk_export void *sa_alloc(allocator *sa,  size_t sz);
+gdk_export void *sa_zalloc(allocator *sa,  size_t sz);
+gdk_export void *sa_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
+gdk_export void sa_destroy(allocator *sa);
+gdk_export char *sa_strndup(allocator *sa, const char *s, size_t l);
+gdk_export char *sa_strdup(allocator *sa, const char *s);
+gdk_export char *sa_strconcat(allocator *sa, const char *s1, const char *s2);
+gdk_export size_t sa_size(allocator *sa);
+gdk_export void sa_open(allocator *sa);  /* open new frame of tempory allocations */
+gdk_export void sa_close(allocator *sa); /* close temporary frame, reset to old state */
+gdk_export void sa_free(allocator *sa, void *);
+gdk_export exception_buffer *sa_get_eb(allocator *sa)
+       __attribute__((__pure__));
 
 #define sa_create(pa)		create_allocator(pa, false)
 #define ma_create(pa)		create_allocator(pa, true)
@@ -2585,7 +2570,7 @@ gdk_export void sa_free( allocator *sa, void *);
 #if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
 #define sa_alloc(sa, sz)					\
 	({							\
-		allocator *_sa = (sa);			\
+		allocator *_sa = (sa);				\
 		size_t _sz = (sz);				\
 		void *_res = sa_alloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
@@ -2595,7 +2580,7 @@ gdk_export void sa_free( allocator *sa, void *);
 	})
 #define sa_zalloc(sa, sz)					\
 	({							\
-		allocator *_sa = (sa);			\
+		allocator *_sa = (sa);				\
 		size_t _sz = (sz);				\
 		void *_res = sa_zalloc(_sa, _sz);		\
 		TRC_DEBUG(ALLOC,				\
@@ -2605,7 +2590,7 @@ gdk_export void sa_free( allocator *sa, void *);
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
 	({								\
-		allocator *_sa = (sa);				\
+		allocator *_sa = (sa);					\
 		void *_ptr = (ptr);					\
 		size_t _sz = (sz);					\
 		size_t _osz = (osz);					\
@@ -2615,28 +2600,27 @@ gdk_export void sa_free( allocator *sa, void *);
 			  _sa, _ptr, _sz, _osz, _res);			\
 		_res;							\
 	})
-#define sa_strdup(sa, s)					\
-	({							\
-		allocator *_sa = (sa);			\
-		const char *_s = (s);				\
-		char *_res = sa_strdup(_sa, _s);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_strdup(%p,len=%zu) -> %p\n",	\
-				_sa, strlen(_s), _res);	\
-		_res;						\
+#define sa_strdup(sa, s)						\
+	({								\
+		allocator *_sa = (sa);					\
+		const char *_s = (s);					\
+		char *_res = sa_strdup(_sa, _s);			\
+		TRC_DEBUG(ALLOC,					\
+			  "sa_strdup(%p,len=%zu) -> %p\n",		\
+			  _sa, strlen(_s), _res);			\
+		_res;							\
 	})
-#define sa_strndup(sa, s, l)					\
-	({							\
-		allocator *_sa = (sa);			\
-		const char *_s = (s);				\
-		size_t _l = (l);				\
-		char *_res = sa_strndup(_sa, _s, _l);		\
-		TRC_DEBUG(ALLOC,				\
-				"sa_strndup(%p,len=%zu) -> %p\n", 	\
-				_sa, _l, _res);		\
-		_res;						\
+#define sa_strndup(sa, s, l)						\
+	({								\
+		allocator *_sa = (sa);					\
+		const char *_s = (s);					\
+		size_t _l = (l);					\
+		char *_res = sa_strndup(_sa, _s, _l);			\
+		TRC_DEBUG(ALLOC,					\
+			  "sa_strndup(%p,len=%zu) -> %p\n",		\
+			  _sa, _l, _res);				\
+		_res;							\
 	})
-#endif
 #endif
 
-#include "gdk_calc.h"
+#endif /* _GDK_H_ */

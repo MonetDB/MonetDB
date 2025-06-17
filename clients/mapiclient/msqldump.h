@@ -16,3 +16,4 @@ extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *s
 extern int dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, const char *fname, const char *id);
 extern int dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool describe, bool useInserts, bool noescape);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);
+extern char *sescape(const char *s);

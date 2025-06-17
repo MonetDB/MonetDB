@@ -247,6 +247,12 @@ emergencyBreakpoint(void)
 static volatile sig_atomic_t interrupted = 0;
 static volatile sig_atomic_t usr1_interrupted = 0;
 
+static void
+usr1trigger(void)
+{
+	usr1_interrupted = 1;
+}
+
 #ifdef _MSC_VER
 static BOOL WINAPI
 winhandler(DWORD type)
@@ -266,7 +272,7 @@ static void
 handler_usr1(int sig)
 {
 	(void) sig;
-	usr1_interrupted = 1;
+	usr1trigger();
 }
 #endif
 
@@ -321,6 +327,8 @@ main(int argc, char **av)
 		{"set", required_argument, NULL, 's'},
 		{"single-user", no_argument, NULL, 0},
 		{"version", no_argument, NULL, 0},
+
+		{"logging", required_argument, NULL, 0},
 
 		{"algorithms", no_argument, NULL, 0},
 		{"forcemito", no_argument, NULL, 0},
@@ -408,7 +416,7 @@ main(int argc, char **av)
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 							long_options, &option_index);
 
 		if (c == -1)
@@ -428,20 +436,41 @@ main(int argc, char **av)
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
-				if (dbpath == NULL)
+				if (dbpath == NULL) {
 					fprintf(stderr,
 							"#error: can not allocate memory for dbpath\n");
-				else
-					setlen = mo_add_option(&set, setlen, opt_cmdline,
-										   "gdk_dbpath", dbpath);
+					exit(1);
+				}
+				if (strlen(dbpath) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbpath name too long\n");
+					exit(1);
+				}
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "gdk_dbpath", dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
-				if (dbextra)
+				if (dbextra) {
 					fprintf(stderr,
 							"#warning: ignoring multiple --dbextra arguments\n");
-				else
-					dbextra = optarg;
+					break;
+				}
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0
+					   && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbextra = absolute_path(optarg);
+				if (dbextra == NULL) {
+					fprintf(stderr,
+							"#error: can not allocate memory for dbextra\n");
+					exit(1);
+				}
+				if (strlen(dbextra) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbextra name too long\n");
+					exit(1);
+				}
 				break;
 			}
 
@@ -452,7 +481,10 @@ main(int argc, char **av)
 					   && (optarg[optarglen - 1] == '/'
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
-				dbtrace = absolute_path(optarg);
+				if (strcmp(optarg, "stdout") == 0)
+					dbtrace = optarg;
+				else
+					dbtrace = absolute_path(optarg);
 				if (dbtrace == NULL)
 					fprintf(stderr,
 							"#error: can not allocate memory for dbtrace\n");
@@ -470,6 +502,19 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "version") == 0) {
 				monet_version();
 				exit(0);
+			}
+			if (strcmp(long_options[option_index].name, "logging") == 0) {
+				char *tmp = strchr(optarg, '=');
+				if (tmp) {
+					*tmp = 0;
+					if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
+						fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
+								optarg, tmp + 1);
+					}
+				} else {
+					fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
+				}
+				break;
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
@@ -581,8 +626,8 @@ main(int argc, char **av)
 									   tmp + 1);
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
-		}
 			break;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -642,7 +687,7 @@ main(int argc, char **av)
 		GDKfree(dbpath);
 	}
 
-	if (dbtrace) {
+	if (dbtrace && strcmp(dbtrace, "stdout") != 0) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
 		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n",
@@ -881,6 +926,8 @@ main(int argc, char **av)
 
 	/* return all our free bats to global pool */
 	BBPrelinquishbats();
+
+	GDKusr1triggerCB(usr1trigger);
 
 #ifdef _MSC_VER
 	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");

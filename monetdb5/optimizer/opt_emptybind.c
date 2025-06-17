@@ -153,13 +153,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (q && getModuleId(q) == sqlRef && isUpdateInstruction(q)) {
 					int c = getFunctionId(q) == claimRef;	/* claim has 2 results */
 					int cl = getFunctionId(q) == clear_tableRef;	/* clear table has no mvc dependency */
-					if (strcmp(getVarConstant(mb, getArg(q,
-														 2 - cl + c)).val.sval,
-							   sch) == 0
-						&& strcmp(getVarConstant(mb,
-												 getArg(q,
-														3 - cl + c)).val.sval,
-								  tbl) == 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2 - cl + c)).val.sval, sch) == 0
+						&& strcmp(getVarConstant(mb, getArg(q, 3 - cl + c)).val.sval, tbl) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -168,8 +163,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					}
 				}
 				if (q && getModuleId(q) == sqlcatalogRef) {
-					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch)
-						== 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;

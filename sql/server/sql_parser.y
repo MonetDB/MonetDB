@@ -1450,6 +1450,11 @@ alter_table_element:
 	  append_string(l, $1);
 	  append_string(l, NULL);
 	  $$ = _symbol_create_list( SQL_STORAGE, l); }
+ |	column data_type
+	{ dlist *l = L();
+	  append_string(l, $1);
+	  append_type(l, &$2);
+	  $$ = _symbol_create_list( SQL_TYPE, l); }
  ;
 
 drop_table_element:
@@ -4499,15 +4504,29 @@ scalar_exp:
 			  }
 			}
   | scalar_exp AND scalar_exp					 	%prec AND
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_symbol(l, $3);
-		  $$ = _symbol_create_list(SQL_AND, l ); }
+		{
+		  if ($1->token == SQL_AND) {
+ 			append_symbol($1->data.lval, $3);
+			$$ = $1;
+		  } else {
+ 		  	dlist *l = L();
+		  	append_symbol(l, $1);
+		  	append_symbol(l, $3);
+		  	$$ = _symbol_create_list(SQL_AND, l );
+		  }
+		}
   | scalar_exp OR scalar_exp
-		{ dlist *l = L();
-		  append_symbol(l, $1);
-		  append_symbol(l, $3);
-		  $$ = _symbol_create_list(SQL_OR, l ); }
+		{
+		  if ($1->token == SQL_OR) {
+ 			append_symbol($1->data.lval, $3);
+			$$ = $1;
+		  } else {
+ 		  	dlist *l = L();
+		  	append_symbol(l, $1);
+		  	append_symbol(l, $3);
+		  	$$ = _symbol_create_list(SQL_OR, l );
+		  }
+		}
   | NOT scalar_exp 	{ $$ = _symbol_create_symbol(SQL_NOT, $2); }
   | like_predicate
   | filter_exp
@@ -5480,18 +5499,7 @@ literal:
 		}
  |  sqlINT
 		{ 
-			char filtered[50] = {0};
-			int j = 0;
-			for (int i = 0; i < 50; i++) {
-				char d = $1[i];
-				if (!d)
-					break;
-				else if (d == '_')
-					continue;
-				filtered[j] = d;
-				++j;
-			}
-			int err = 0;
+		  int err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
 		  size_t len = sizeof(hge);
@@ -5502,10 +5510,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr(filtered, &len, &p, false) < 0 || is_hge_nil(value))
+		  if (hgeFromStr($1, &len, &p, false) < 0 || is_hge_nil(value))
 			err = 2;
 #else
-		  if (lngFromStr(filtered, &len, &p, false) < 0 || is_lng_nil(value))
+		  if (lngFromStr($1, &len, &p, false) < 0 || is_lng_nil(value))
 			err = 2;
 #endif
 
@@ -5539,19 +5547,7 @@ literal:
 		}
  |  INTNUM
 		{
-			char filtered[51] = {0};
-			int j = 0;
-			for (int i = 0; i < 50; i++) {
-				char d = $1[i];
-				if (!d)
-					break;
-				else if (d == '_')
-					continue;
-				filtered[j] = d;
-				++j;
-			}
-			filtered[j] = 0;
-			char *s = filtered;
+			char *s = $1;
 
 			int digits;
 			int scale;
@@ -5587,23 +5583,27 @@ literal:
 		}
  |  APPROXNUM
 		{
-		  char filtered[50] = {0};
-		  int j = 0;
-		  for (int i = 0; i < 50; i++) {
-				char d = $1[i];
-				if (!d)
-					break;
-				else if (d == '_')
-			continue;
-			filtered[j] = d;
-			++j;
+		  char *filtered = strdup($1);
+		  if (filtered == NULL) {
+			  sqlformaterror(m, SQLSTATE(HY013) "Malloc failed");
+			  $$ = NULL;
+			  YYABORT;
 		  }
+		  int j = 0;
+		  for (int i = 0; $1[i]; i++) {
+			  char d = $1[i];
+			  if (d == '_')
+				  continue;
+			  filtered[j++] = d;
+		  }
+		  filtered[j] = 0;
 		  sql_subtype t;
 		  char *p = filtered;
 		  double val;
 
 		  errno = 0;
 		  val = strtod(filtered,&p);
+		  free(filtered);
 		  if (p == filtered || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 			$$ = NULL;

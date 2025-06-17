@@ -662,6 +662,8 @@ TXTSIMminjarowinkler(Client ctx, bit *res, const char *const *x, const char *con
 	return MAL_SUCCEED;
 }
 
+#undef VALUE
+#undef APPEND
 #define VALUE(s, x) (s##vars + VarHeapVal(s##vals, (x), s##width))
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 

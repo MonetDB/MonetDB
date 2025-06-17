@@ -132,8 +132,10 @@ exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses)
 {
 	switch(e->type) {
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter)
+		if (e->flag == cmp_filter)
 			return exps_shares_exps(e->l, shared, uses) || exps_shares_exps(e->r, shared, uses);
+		else if (e->flag == cmp_con || e->flag == cmp_dis)
+			return exps_shares_exps(e->l, shared, uses);
 		else if (e->flag == cmp_in || e->flag == cmp_notin)
 			return exp_shares_exps(e->l, shared, uses) || exps_shares_exps(e->r, shared, uses);
 		else
@@ -410,9 +412,11 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			exp_propagate(sql->sa, ne, oe);
 		return ne;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			e->l = exps_rename(sql, e->l, f, t);
 			e->r = exps_rename(sql, e->r, f, t);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			e->l = exps_rename(sql, e->l, f, t);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = exp_rename(sql, e->l, f, t);
 			e->r = exps_rename(sql, e->r, f, t);
@@ -822,9 +826,11 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_cmp:
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
+		if (e->flag == cmp_filter) {
 			split_exps(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
+		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+			split_exps(sql, e->l, rel);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			e->l = split_exp(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
@@ -1150,7 +1156,7 @@ rel_merge_munion(visitor *v, sql_rel *rel)
 				}
 
 				/* merge, ie. add 'or exp' */
-				curs->exps = append(new_exp_list(v->sql->sa), exp_or(v->sql->sa, cur->exps, s->exps, 0));
+				curs->exps = append(new_exp_list(v->sql->sa), exp_disjunctive(v->sql->sa, list_merge(cur->exps, s->exps, (fdup)NULL)));
 				if (!nrels) {
 					nrels = sa_list(v->sql->sa);
 					append(nrels, cur);
@@ -1282,8 +1288,10 @@ exp_is_const_op(sql_exp *exp, sql_exp *tope, sql_rel *expr)
 		return exps_are_const_op(exp->l, tope, expr);
 	}
 	case e_cmp:
-		if (exp->flag == cmp_or || exp->flag == cmp_filter)
+		if (exp->flag == cmp_filter)
 			return exps_are_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
+		if (exp->flag == cmp_con || exp->flag == cmp_dis)
+			return exps_are_const_op(exp->l, tope, expr);
 		if (exp->flag == cmp_in || exp->flag == cmp_notin)
 			return exp_is_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
 		return exp_is_const_op(exp->l, tope, expr) && exp_is_const_op(exp->r, tope, expr) && (!exp->f || exp_is_const_op(exp->f, tope, expr));
@@ -1704,11 +1712,13 @@ exp_uses_exp(sql_exp *e, const char *rname, const char *name)
 				return list_exps_uses_exp(e->l, rname, name);
 		} 	break;
 		case e_cmp: {
-			if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (e->flag == cmp_con || e->flag == cmp_dis) {
+				return list_exps_uses_exp(e->l, rname, name);
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 				if ((res = exp_uses_exp(e->l, rname, name)))
 					return res;
 				return list_exps_uses_exp(e->r, rname, name);
-			} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			} else if (e->flag == cmp_filter) {
 				if ((res = list_exps_uses_exp(e->l, rname, name)))
 					return res;
 				return list_exps_uses_exp(e->r, rname, name);
@@ -2606,6 +2616,8 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 
 						n->data = w;
 						v->changes++;
+					} else {
+						break;
 					}
 				}
 			}
@@ -3626,7 +3638,6 @@ has_no_selectivity(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 	case op_join:
 	case op_left:
 	case op_right:

@@ -686,7 +686,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 		buf[i] = '\0';
 		if (GDKfilepath(fname, sizeof(fname), 0, BATDIR, buf, "c") != GDK_SUCCEED) {
-			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "cudf.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		oname = GDKstrdup(fname);
@@ -701,13 +701,13 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		memcpy(buf + prefix_size, SO_PREFIX, sizeof(char) * strlen(SO_PREFIX));
 		char libname[MAXPATH];
 		if (GDKfilepath(libname, sizeof(libname), 0, BATDIR, buf, SO_EXT[0] == '.' ? &SO_EXT[1] : SO_EXT) != GDK_SUCCEED) {
-			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "cudf.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 
 		// if TEMPDIR directory does not exist, create it
 		if (GDKfilepath(tempdirpath, sizeof(tempdirpath), 0, NULL, TEMPDIR, NULL) != GDK_SUCCEED) {
-			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "cudf.eval", GDK_EXCEPTION);
 			goto wrapup;
 		}
 		if (MT_mkdir(tempdirpath) < 0 && errno != EEXIST) {

@@ -74,7 +74,6 @@ has_remote_or_replica( sql_rel *rel )
 
 	case op_inter:
 	case op_except:
-	case op_merge:
 
 	case op_insert:
 	case op_update:
@@ -410,7 +409,6 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
 
 		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
 			return rel;

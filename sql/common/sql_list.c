@@ -648,14 +648,21 @@ list_position(list *l, void *val)
 	return -1;
 }
 
-void *
-list_fetch(list *l, int pos)
+node *
+list_fetch_node(list *l, int pos)
 {
 	node *n = NULL;
 	int i;
 
 	for (n = l->h, i=0; n && i<pos; n = n->next, i++)
 		;
+	return n;
+}
+
+void *
+list_fetch(list *l, int pos)
+{
+	node *n = list_fetch_node(l, pos);
 	if (n)
 		return n->data;
 	return NULL;
