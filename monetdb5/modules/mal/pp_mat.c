@@ -173,10 +173,8 @@ PARTprefixsum( bat *pos, const bat *gid, lng *max )
 
 	n = BATcount(g);
 	lng *id = (lng*)Tloc(g, 0);
-	for(i=0; i<n; i++) {
-		assert(id[i] >= 0 && id[i] < (lng)BATcount(g));
+	for(i=0; i<n; i++)
 		cnts[id[i]]++;
-	}
 	*pos = p->batCacheid;
 	BBPunfix(g->batCacheid);
 	BATnegateprops(p);

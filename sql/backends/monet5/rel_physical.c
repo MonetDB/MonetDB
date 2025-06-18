@@ -676,7 +676,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			} else {
 				rel->parallel = 1;
 				rel->spb = (res == REL_PARTITION);
-				if (pb || (p && p->op == op_topn && !topn_limit(p))) { /* nested */
+				if (pb || (p && p->op == op_topn && !topn_limit(p)) || !list_empty(rel->r)) { /* nested */
 					rel_dup(rel);
 					res = 0;
 					rel->partition = 1; // ??
@@ -898,9 +898,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				rel_hsh->exps = exps_hsh;
 			}
 			rel_prb->exps = exps_prb;
-			if (need_all && !is_base(rel_hsh->op)) /* add all missing rel_hsh->attr to rel_hsh->exps */
-				rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
-			if (!list_empty(other)) {
+			if (need_all && !is_base(rel_hsh->op)) /* add all exps */
+				rel_hsh->exps = rel_projections(v->sql, rel_hsh->l, NULL, 1, 1);
+			else if (!list_empty(other)) {
 				if (!is_base(rel_hsh->op)) {
 					sql_rel *l = rel_hsh->l;
 					if (!is_project(l->op) && !is_base(l->op))
