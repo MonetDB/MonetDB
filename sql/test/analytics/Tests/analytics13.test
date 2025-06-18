@@ -679,7 +679,7 @@ NULL
 0
 0
 
-query III nosort
+query III rowsort
 SELECT
     CASE WHEN t1.col1 IN (SELECT 1 FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
     CASE WHEN SUM(t1.col3) IN (SELECT MAX(t1.col3) FROM tbl_ProductSales tp LEFT JOIN another_T t2 ON tp.ColID = t1.col1) THEN 1 ELSE 2 END,
@@ -690,7 +690,7 @@ GROUP BY ROLLUP(t1.col1, t1.col2)
 1
 1
 2
-2
+1
 1
 2
 2
@@ -699,7 +699,7 @@ GROUP BY ROLLUP(t1.col1, t1.col2)
 2
 1
 2
-1
+2
 1
 2
 2
