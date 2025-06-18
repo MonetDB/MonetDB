@@ -448,6 +448,7 @@ error:
 					break; \
 			} \
 			if (i == SK->pinned_nr) { \
+				BBPfix(BT->tvheap->parentid); \
 				HEAPincref(BT->tvheap); \
 				SK->pinned[SK->pinned_nr++] = BT->tvheap; \
 				assert(SK->pinned_nr < 1024); \
