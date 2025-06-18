@@ -2410,7 +2410,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int r_is_atoms = rlist ? exps_are_atoms(e->r) : exp_is_atom(e->r);
 		int r_has_freevar = rlist ? exps_have_freevar(sql, e->r) : exp_has_freevar(sql, e->r);
 
-		if (rcard <= CARD_ATOM && (r_is_atoms || r_has_freevar || exp_has_freevar(sql, ls))) {
+		if ((rcard <= CARD_ATOM && r_is_atoms) || r_has_freevar || exp_has_freevar(sql, ls)) {
 			if ((exp_card(ls) == rcard) || rel->processed) /* bin compare op */
 				return rel_select(sql->sa, rel, e);
 
