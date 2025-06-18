@@ -8570,6 +8570,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 				else
 					s = rel2bin_slicer(be, s, 1);
 			}
+			if (rel->op == op_buildhash && s->op1)
+				return s->op1;
 			return s;
 		}
 		/*
