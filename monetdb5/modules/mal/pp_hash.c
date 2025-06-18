@@ -1697,6 +1697,7 @@ BAT_OAHASHhash_cmbd(bat *hsh, const bat *key, const bat *selected, const bat *pa
 		oid  *sl = Tloc(s, 0);
 		gid  *ps = Tloc(p, 0);
 		unsigned int prime = find_hash_prime(cnt);
+		//unsigned int prime = hash_prime_nr[ht->bits-5];
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2563,6 +2564,7 @@ error:
 
 #define BATvoprobe_cmbd() \
 	do { \
+		unsigned int prime = hash_prime_nr[ht->bits-5]; \
 		struct canditer ci; \
 		canditer_init(&ci, NULL, k); \
 		\
@@ -2605,7 +2607,19 @@ error:
 			} else { \
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
-				mark[i] = false; \
+				bit has_nil = false; \
+				if (any) { \
+					gid hsh = (gid)combine(gi[i], _hash_oid(oid_nil), prime)&ht->mask; \
+					slot = ATOMIC_GET(ht->gids+hsh); \
+					while (slot && (pgids[slot] != gi[i] || vals[slot] != oid_nil)) { \
+						hsh++; \
+						hsh &= ht->mask; \
+						slot = ATOMIC_GET(ht->gids+hsh); \
+					} \
+					if (slot) \
+						has_nil = bit_nil; \
+				} \
+				mark[i] = (any)?has_nil:false; \
 				mtdcnt2++; \
 			} \
 		} \
@@ -2613,6 +2627,7 @@ error:
 
 #define BAToprobe_cmbd(Type) \
 	do { \
+		unsigned int prime = hash_prime_nr[ht->bits-5]; \
 		Type *ky = Tloc(k, 0); \
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
@@ -2651,7 +2666,19 @@ error:
 			} else { \
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
-				mark[i] = false; \
+				bit has_nil = false; \
+				if (any) { \
+					gid hsh = (gid)combine(gi[i], _hash_##Type(Type##_nil), prime)&ht->mask; \
+					slot = ATOMIC_GET(ht->gids+hsh); \
+					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
+						hsh++; \
+						hsh &= ht->mask; \
+						slot = ATOMIC_GET(ht->gids+hsh); \
+					} \
+					if (slot) \
+						has_nil = bit_nil; \
+				} \
+				mark[i] = (any)?has_nil:false; \
 				mtdcnt2++; \
 			} \
 		} \
@@ -2659,6 +2686,7 @@ error:
 
 #define BATaoprobe_cmbd() \
 	do { \
+		unsigned int prime = hash_prime_nr[ht->bits-5]; \
 		BATiter bi = bat_iterator(k); \
 		gid *hs = Tloc(h, 0); \
 		oid *mt = Tloc(m, 0); \
@@ -2700,7 +2728,19 @@ error:
 			} else { \
 				mtd[mtdcnt2] = i; \
 				slt[mtdcnt2] = oid_nil; \
-				mark[i] = false; \
+				bit has_nil = false; \
+				if (any) { \
+					gid hsh = (gid)combine(gi[i], ht->hsh((void*)nil), prime)&ht->mask; \
+					slot = ATOMIC_GET(ht->gids+hsh); \
+					while (slot && (pgids[slot] != gi[i] || atomcmp(vals[slot], nil) != 0)) { \
+						hsh++; \
+						hsh &= ht->mask; \
+						slot = ATOMIC_GET(ht->gids+hsh); \
+					} \
+					if (slot) \
+						has_nil = bit_nil; \
+				} \
+				mark[i] = (any)?has_nil:false; \
 				mtdcnt2++; \
 			} \
 		} \
