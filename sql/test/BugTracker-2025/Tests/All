@@ -12,3 +12,5 @@ HAVE_HGE?7637_str_to_decimal
 7634_join_with_subquery_crash
 7635_name_propagation_missing
 7636_antijoin_crash
+7644_antijoin_crash
+7646_leftjoin_crash
