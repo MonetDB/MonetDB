@@ -4015,6 +4015,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					sql_subfunc *isnil = sql_bind_func(v->sql, "sys", "isnull", exp_subtype(e), NULL, F_FUNC, true, true), *ifthen;
 
 					ne = exp_unop(v->sql->sa, e, isnil);
+					e = exp_ref(v->sql, e);
 					set_has_no_nil(ne);
 					targs = sa_list(v->sql->sa);
 					append(targs, sql_bind_localtype("bit"));
