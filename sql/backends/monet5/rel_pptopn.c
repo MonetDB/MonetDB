@@ -340,7 +340,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 				if (!is_partitioning(gbe))
 					break;
 				/* build hash ! */
-				stmt *key = exp_bin(be, gbe, psub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+				stmt *key = exp_bin(be, gbe, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 				key = column(be, key);
 
 				InstrPtr q = NULL;
