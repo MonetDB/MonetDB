@@ -217,14 +217,19 @@ rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 	if (is_compare(e->type) && e->flag == cmp_equal && !is_semantics(e)) { /* predicate_func = TRUE */
 		sql_exp *l = e->l, *r = e->r;
-		if (is_func(l->type) && exp_is_true(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f))))
+		if (is_func(l->type) && exp_is_true(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f)))) {
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, l, e);
 			return l;
+		}
 		if (is_func(l->type) && exp_is_false(r) && exp_is_not_null(r) && (is_anyequal_func(((sql_subfunc*)l->f)) || is_exists_func(((sql_subfunc*)l->f)))) {
 			sql_subfunc *sf = l->f;
 			if (is_anyequal_func(sf))
-				return exp_in_func(v->sql, ((list*)l->l)->h->data, ((list*)l->l)->h->next->data, !is_anyequal(sf), 0);
-			if (is_exists_func(sf))
-				return exp_exists(v->sql, ((list*)l->l)->h->data, !is_exists(sf));
+				l = exp_in_func(v->sql, ((list*)l->l)->h->data, ((list*)l->l)->h->next->data, !is_anyequal(sf), 0);
+			else if (is_exists_func(sf))
+				l = exp_exists(v->sql, ((list*)l->l)->h->data, !is_exists(sf));
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, l, e);
 			return l;
 		}
 	}
