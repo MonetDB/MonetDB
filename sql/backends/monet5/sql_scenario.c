@@ -92,7 +92,7 @@ static str master_password = NULL;
 static void
 CLIENTprintinfo(void)
 {
-	int nrun = 0, nfinish = 0, nblock = 0, i = 0;
+	int nrun = 0, nfinish = 0, nblock = 0;
 	char mmbuf[64];
 	char tmbuf[64];
 	char trbuf[128];
@@ -133,10 +133,13 @@ CLIENTprintinfo(void)
 			if (c->sqlcontext && ((backend *) c->sqlcontext)->mvc &&
 				((backend *) c->sqlcontext)->mvc->session &&
 				((backend *) c->sqlcontext)->mvc->session->tr) {
+				int i = 0;
 				if (((backend *) c->sqlcontext)->mvc->session->tr->active)
 					i = snprintf(trbuf, sizeof(trbuf), ", active transaction, ts: "ULLFMT, ((backend *) c->sqlcontext)->mvc->session->tr->ts);
-				i += snprintf(trbuf + i, sizeof(trbuf) - i, ", prepared queries: %d", qc_size(((backend *) c->sqlcontext)->mvc->qc));
-				snprintf(trbuf + i, sizeof(trbuf) - i, ", open resultsets: %d", res_tables_count(((backend *) c->sqlcontext)->results));
+				if (i < (int) sizeof(trbuf))
+					i += snprintf(trbuf + i, sizeof(trbuf) - i, ", prepared queries: %d", qc_size(((backend *) c->sqlcontext)->mvc->qc));
+				if (i < (int) sizeof(trbuf))
+					snprintf(trbuf + i, sizeof(trbuf) - i, ", open resultsets: %d", res_tables_count(((backend *) c->sqlcontext)->results));
 			}
 			else
 				trbuf[0] = 0;
@@ -1638,7 +1641,7 @@ SQLparser_body(Client c, backend *be)
 	}
 finalize:
 	if (m->sa)
-		eb_init(&m->sa->eb); /* exiting the scope where the exception buffer can be used */
+		eb_init(sa_get_eb(m->sa)); /* exiting the scope where the exception buffer can be used */
 	if (msg) {
 		sqlcleanup(be, 0);
 		c->query = NULL;
@@ -1667,9 +1670,9 @@ SQLparser(Client c, backend *be)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(HY013) MAL_MALLOC_FAIL " for SQL allocator");
 	}
-	if (eb_savepoint(&m->sa->eb)) {
-		msg = createException(SQL, "SQLparser", "%s", m->sa->eb.msg);
-		eb_init(&m->sa->eb);
+	if (eb_savepoint(sa_get_eb(m->sa))) {
+		msg = createException(SQL, "SQLparser", "%s", sa_get_eb(m->sa)->msg);
+		eb_init(sa_get_eb(m->sa));
 		sa_reset(m->sa);
 		if (c && c->curprg && c->curprg->def && c->curprg->def->errors) {
 			freeException(c->curprg->def->errors);

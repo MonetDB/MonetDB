@@ -2360,3 +2360,9 @@ sa_size(allocator *sa)
 {
 	return sa->usedmem;
 }
+
+exception_buffer *
+sa_get_eb(allocator *sa)
+{
+	return &sa->eb;
+}

@@ -3068,10 +3068,15 @@ col_subtype(sql_trans *tr, sql_column *col, sql_subtype *t)
 		if (!b)
 			return res;
 
-		BAT *bn = BATconvert(b, NULL /* could use tids, but need NILS */, t->type->localtype, col->type.scale, t->scale, t->digits);
+		BAT *bn = BATconvert(b, NULL /* could use tids, but need NILS */, t->type->localtype, col->type.scale, t->scale, t->type->eclass == EC_NUM ? 0 : t->digits);
 		if (!bn)
 			return res;
 		BBPreclaim(b);
+		b = COLcopy(bn, bn->ttype, true, PERSISTENT);
+		BBPreclaim(bn);
+		if ((bn = b) == NULL)
+			return res;
+
 		res = swap_bats(tr, col, bn);
 		BBPreclaim(bn);
 	}

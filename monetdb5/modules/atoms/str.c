@@ -2154,7 +2154,7 @@ ng_create(size_t cnt, size_t ng_sz)
 		ng->idx  = GDKmalloc(ng_sz * sizeof(NG_TYPE));
 		ng->sigs = GDKmalloc(cnt * sizeof(NG_TYPE));
 		ng->histogram = GDKmalloc(ng_sz * sizeof(unsigned));
-		ng->lists = GDKmalloc(ng_sz * sizeof(oid));
+		ng->lists = GDKmalloc(ng_sz * sizeof(unsigned));
 		ng->rids = GDKmalloc(NG_MULTIPLE * cnt * sizeof(oid));
 	}
 	if (!ng || !ng->idx || !ng->sigs || !ng->histogram || !ng->lists || !ng->rids) {
@@ -2170,18 +2170,12 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 	NG_TYPE *idx = ng->idx;
 	NG_TYPE *sigs = ng->sigs;
 	unsigned *h = ng->histogram;
-	unsigned (*h_tmp)[NG_BITS] = GDKzalloc(BIGRAM_SZ * sizeof(unsigned));
+	unsigned h_tmp[NG_BITS][NG_BITS] = { 0 };
 	unsigned *h_tmp_ptr = (unsigned *) h_tmp;
-	unsigned *map = GDKmalloc(BIGRAM_SZ * sizeof(unsigned));
+	unsigned map[BIGRAM_SZ];
 	unsigned *lists = ng->lists;
 	oid *rids = ng->rids;
 	unsigned k = 1;
-
-	if (!h_tmp || !map) {
-		GDKfree(h_tmp);
-		GDKfree(map);
-		throw(MAL, "init_bigram_idx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
 
 	oid b_base = bi->b->hseqbase;
 	const char *b_vars = bi->vh->base, *b_vals = bi->base;
@@ -2201,7 +2195,7 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 		h[i] = h_tmp_ptr[i];
 	}
 
-	GDKqsort(h_tmp, map, NULL, BIGRAM_SZ,
+	GDKqsort(h_tmp_ptr, map, NULL, BIGRAM_SZ,
 			 sizeof(unsigned), sizeof(unsigned), TYPE_int, true, false);
 
 	unsigned j = BIGRAM_SZ - 1, sum = 0;
@@ -2210,8 +2204,11 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 			break;
 		sum += h_tmp_ptr[j];
 	}
+	unsigned larger_cnt = h_tmp_ptr[j];
+	for(; h_tmp_ptr[j] == larger_cnt; j++)
+		;
 	ng->max = h_tmp_ptr[0];
-	ng->min = h_tmp_ptr[j + 1];
+	ng->min = h_tmp_ptr[j];
 
 	for (NG_TYPE i = 0, n = 0; i < BIGRAM_SZ && h_tmp_ptr[i] > 0; i++) {
 		idx[map[i]] = (NG_TYPE)1 << n;
@@ -2250,8 +2247,6 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 		sigs++;
 	}
 
-	GDKfree(h_tmp);
-	GDKfree(map);
 	return MAL_SUCCEED;
 }
 

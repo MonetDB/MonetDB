@@ -39,6 +39,19 @@ enum range_comp_t {
 	range_inside,		/* search range inside bat range */
 };
 
+struct allocator {
+	struct allocator *pa;
+	size_t size;
+	size_t nr;
+	char **blks;
+	size_t used; 	/* memory used in last block */
+	size_t usedmem;	/* used memory */
+	void *freelist;	/* list of freed blocks */
+	exception_buffer eb;
+	char *first_block; /* the special block in blks that also holds our bookkeeping */
+	size_t reserved;  /* space in first_block is reserved up to here  */
+};
+
 bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 int ATOMunknown_find(const char *nme)

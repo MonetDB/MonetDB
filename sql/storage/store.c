@@ -6764,7 +6764,7 @@ sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t)
 		oid rid = store->table_api.column_find_row(tr, col_ids, &col->base.id, NULL);
 		sql_column *dup = NULL;
 		int digits = type_digits(t);
-		int scale = t->type->scale;
+		int scale = t->scale;
 
 		if (is_oid_nil(rid))
 			return -1;
