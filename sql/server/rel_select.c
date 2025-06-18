@@ -1708,7 +1708,8 @@ set_dependent_( sql_rel *r)
 }
 
 static sql_rel*
-find_union(visitor *v, sql_rel *rel) {
+find_union(visitor *v, sql_rel *rel)
+{
 	if (rel->op == op_munion)
 		v->data = rel;
 	return rel;
@@ -2666,7 +2667,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		int r_is_atoms = rlist ? exps_are_atoms(e->r) : exp_is_atom(e->r);
 		int r_has_freevar = rlist ? exps_have_freevar(sql, e->r) : exp_has_freevar(sql, e->r);
 
-		if (rcard <= CARD_ATOM && (r_is_atoms || r_has_freevar || exp_has_freevar(sql, ls))) {
+		if ((rcard <= CARD_ATOM && r_is_atoms) || r_has_freevar || exp_has_freevar(sql, ls)) {
 			if ((exp_card(ls) == rcard) || rel->processed) /* bin compare op */
 				return rel_select(sql->sa, rel, e);
 
@@ -2973,17 +2974,6 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 	case SQL_IS_NOT_NULL:
 	/* is (NOT) NULL */
 	{
-		/*
-		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
-
-		if (!le)
-			return NULL;
-		le = rel_unop_(sql, rel ? *rel : NULL, le, "sys", sc->token == SQL_IS_NULL ? "isnull" : "isnotnull", card_value);
-		if (!le)
-			return NULL;
-		set_has_no_nil(le);
-		return le;
-		*/
 		sql_exp *le = rel_value_exp(query, rel, sc->data.sym, f|sql_farg, ek);
 		sql_subtype *t;
 
