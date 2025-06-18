@@ -8453,21 +8453,22 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 
 	sql_rel *r = rel;
 	stmt *s = NULL;
+	bool is_materialized = false;
 
-	if (is_topn(r->op))
+	if (is_topn(r->op)) {
 		r = r->l;
+		is_materialized = true;
+	}
 
 	list *shared = NULL;
 	sql_rel *sharedproject = NULL;
-	if (r && r->l && (is_simple_project(r->op) || /*is_set(r->op) || is_mset(r->op)*/ is_munion(r->op) ||
-				(rel_is_ref(rel) && !is_groupby(r->op))
-				)) {
+	if (r && r->l && (is_simple_project(r->op) || is_munion(r->op) || (rel_is_ref(rel) && !is_groupby(r->op)))) {
 		sharedproject = r;
 		if (!is_project(r->op))
 			sharedproject = rel_project(be->mvc->sa, r, rel_projections(be->mvc, r, 0, 1, 1));
 		shared = rel2bin_project_prepare(be, sharedproject);
 
-		if (is_munion(r->op) && !be->pipeline)
+		if (!is_materialized && is_munion(r->op) && !be->pipeline)
 			set_need_pipeline(be);
 	}
 
@@ -8484,7 +8485,7 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 	stmt *pp = get_pipeline(be);
 	int pipeline = be->pipeline;
 	be->pipeline = 0;
-	if (pp && shared /*&& (is_simple_project(r->op) || is_set(r->op) || is_mset(r->op))*/) {
+	if (pp && shared) {
 		/* append results (later first claim position, then append)*/
 		list *res = sa_list(be->mvc->sa), *sub = s->op4.lval;
 
