@@ -1,0 +1,98 @@
+-- decimal values with more than 18 digits before or after the decimal separator used to fail when using MonetDB ODBC driver
+-- Failed to get C_type 1 data for col 1 of row 1. ODBCmsg: SQLSTATE 22003, Error code 0, Message [MonetDB][ODBC Driver 11.53.0][MonetDB-Test]Numeric value out of range
+
+-- decimal value with 20 digits before the decimal separator
+query TT
+select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1
+----
+12345678901234567890.123456789
+-12345678901234567890.123456789
+
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1'
+----
+12345678901234567890.123456789
+-12345678901234567890.123456789
+
+-- decimal value with 21 digits before the decimal separator
+query TT
+select cast(123456789012345678901.123456789 as decimal(38,9)) as dec16_val0, cast(-123456789012345678901.123456789 as decimal(38,9)) as dec16_val1
+----
+123456789012345678901.123456789
+-123456789012345678901.123456789
+
+-- decimal value with 21 digits before the decimal separator fail when using MonetDB ODBC driver
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(123456789012345678901.123456789 as decimal(38,9)) as dec16_val0, cast(-123456789012345678901.123456789 as decimal(38,9)) as dec16_val1'
+----
+123456789012345678901.123456789
+-123456789012345678901.123456789
+
+-- decimal value with 29 digits before the decimal separator fail when using MonetDB ODBC driver
+query T
+select cast(92345678901234567890123456789.123456789 as decimal(38,9)) as dec16_val
+----
+92345678901234567890123456789.123456789
+
+query I
+select cast(923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val
+----
+923456789012345678901234567890
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(92345678901234567890123456789.123456789 as decimal(38,9)) as dec16_val'
+----
+92345678901234567890123456789.123456789
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
+----
+923456789012345678901234567890.12345678
+
+-- negative decimals
+-- decimal value with 29 digits before the decimal separator fail when using MonetDB ODBC driver
+query T
+select cast(-92345678901234567890123456789.123456789 as decimal(38,9)) as dec16_val
+----
+-92345678901234567890123456789.123456789
+
+query I
+select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val
+----
+-923456789012345678901234567890
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-92345678901234567890123456789.123456789 as decimal(38,9)) as dec16_val'
+----
+-92345678901234567890123456789.123456789
+
+query T
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
+----
+-923456789012345678901234567890.12345678
+
+-- decimal value with 38 digits before the decimal separator
+query TT
+select cast(99999999909999999990999999999012345678. as decimal(38,0)) as val1, cast(-99999999909999999990999999999012345678. as decimal(38,0)) as val2
+----
+99999999909999999990999999999012345678
+-99999999909999999990999999999012345678
+
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(99999999909999999990999999999012345678. as decimal(38,0)) as val1, cast(-99999999909999999990999999999012345678. as decimal(38,0)) as val2'
+----
+99999999909999999990999999999012345678
+-99999999909999999990999999999012345678
+
+-- decimal value with 38 digits after the decimal separator
+query TT
+select cast(.99999999909999999990999999999012345678 as decimal(38,38)) as val1, cast(-.99999999909999999990999999999012345678 as decimal(38,38)) as val2
+----
+0.99999999909999999990999999999012345678
+-0.99999999909999999990999999999012345678
+
+query TT
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(.99999999909999999990999999999012345678 as decimal(38,38)) as val1, cast(-.99999999909999999990999999999012345678 as decimal(38,38)) as val2'
+----
+0.99999999909999999990999999999012345678
+-0.99999999909999999990999999999012345678

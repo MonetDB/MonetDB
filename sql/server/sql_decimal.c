@@ -60,7 +60,7 @@ fractional_sep_first_opp:
 		*has_errors = 1;
 		goto end_state;
 	}
-	while (*dec == '0'){
+	while (*dec == '0' || *dec == '_'){
 		// skip leading zeros in preceding digits, e.g. '0004563.1234' => '4563.1234'
 		dec++;
 		if (*dec == '.') {
@@ -68,7 +68,9 @@ fractional_sep_first_opp:
 			goto fractional_sep_first_opp;
 		}
 	}
-	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
+	for (; *dec && (*dec == '_' || isdigit((unsigned char) *dec)); dec++) {
+		if (*dec == '_')
+			continue;
 		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
 			*has_errors = 1;
 			return 0;
@@ -87,7 +89,9 @@ fractional_sep_first_opp:
 trailing_digits:
 	if (!isdigit((unsigned char) *dec))
 		goto trailing_whitespace;
-	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
+	for (; *dec && (*dec == '_' || isdigit((unsigned char) *dec)); dec++) {
+		if (*dec == '_')
+			continue;
 		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
 			*has_errors = 1;
 			return 0;

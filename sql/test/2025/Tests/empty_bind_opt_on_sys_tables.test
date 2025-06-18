@@ -1,0 +1,191 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE allnewtriples (id integer NOT NULL, subject integer NOT NULL, predicate integer NOT NULL, object integer NOT NULL, explicit boolean NOT NULL, PRIMARY KEY(id), CONSTRAINT unique_key UNIQUE(subject, predicate, object))
+
+statement ok
+CREATE INDEX allnewtriples_subject_idx ON allnewtriples (subject)
+
+statement ok
+CREATE INDEX allnewtriples_predicate_idx ON allnewtriples (predicate)
+
+statement ok
+CREATE INDEX allnewtriples_object_idx ON allnewtriples (object)
+
+statement ok
+CREATE TABLE "foreign" (id integer NOT NULL, subject integer NOT NULL, predicate integer NOT NULL, object integer NOT NULL, FOREIGN KEY (id) REFERENCES allnewtriples (id), FOREIGN KEY (subject, predicate, object) REFERENCES allnewtriples (subject, predicate, object))
+
+statement ok
+CREATE TABLE "triples" ("id" int NOT NULL, "subject" int NOT NULL, "predicate" int NOT NULL, "object" int NOT NULL, "explicit"  boolean NOT NULL, CONSTRAINT "triples_subject_predicate_object_unique" UNIQUE ("subject", "predicate", "object"))
+
+statement ok
+CREATE INDEX "triples_object_idx" ON "triples" ("object")
+
+statement ok
+CREATE INDEX "triples_predicate_idx" ON "triples" ("predicate")
+
+statement ok
+CREATE INDEX "triples_predicate_object_idx" ON "triples" ("predicate", "object")
+
+statement ok
+CREATE INDEX "triples_subject_idx" ON "triples" ("subject")
+
+statement ok
+CREATE INDEX "triples_subject_object_idx" ON "triples" ("subject", "object")
+
+statement ok
+CREATE INDEX "triples_subject_predicate_idx" ON "triples" ("subject", "predicate")
+
+statement ok
+CREATE View   subject_stats as SELECT "subject",   CAST(COUNT(*) AS BIGINT) AS counts, MIN("subject")   AS min_value, MAX("subject")   AS max_value FROM "triples" GROUP BY "subject"   ORDER BY "subject"
+
+statement ok
+CREATE View predicate_stats as SELECT "predicate", CAST(COUNT(*) AS BIGINT) AS counts, MIN("predicate") AS min_value, MAX("predicate") AS max_value FROM "triples" GROUP BY "predicate" ORDER BY "predicate"
+
+statement ok
+CREATE OR REPLACE View object_stats as SELECT "object", CAST(COUNT(*) AS BIGINT) AS counts, MIN("object") AS min_value, MAX("object")  AS max_value FROM "triples" GROUP BY "object"    ORDER BY "object"
+
+statement ok
+CREATE   MERGE TABLE mt    (id int primary key, nm varchar(123) NOT NULL)
+
+statement ok
+CREATE  REMOTE TABLE remt  (id int primary key, nm varchar(123) NOT NULL) ON 'mapi:monetdb://localhost:42001/mdb3'
+
+statement ok
+CREATE REPLICA TABLE replt (id int primary key, nm varchar(123) NOT NULL)
+
+statement ok
+CREATE GLOBAL TEMP TABLE gtmpt (id int primary key, nm varchar(123) NOT NULL) ON COMMIT PRESERVE ROWS
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+statement ok
+INSERT INTO allnewtriples VALUES(1, 1, 1, 1, false)
+
+statement ok
+INSERT INTO allnewtriples VALUES(2, 1, 1, 2, false)
+
+statement ok
+INSERT INTO allnewtriples VALUES(3, 1, 2, 1, false)
+
+statement ok
+INSERT INTO allnewtriples VALUES(4, 2, 1, 1, false)
+
+statement ok
+INSERT INTO allnewtriples VALUES(5, 1, 2, 2, false)
+
+statement ok
+INSERT INTO allnewtriples VALUES(6, 2, 2, 1, false)
+
+statement ok
+INSERT INTO allnewtriples VALUES(7, 2, 2, 2, false)
+
+statement ok
+INSERT INTO "foreign" VALUES(1, 1, 1, 1)
+
+statement ok
+INSERT INTO "foreign" VALUES(2, 2, 2, 2)
+
+statement ok
+INSERT INTO "foreign" VALUES(3, 1, 2, 2)
+
+statement ok
+INSERT INTO "foreign" VALUES(4, 2, 2, 1)
+
+statement ok
+INSERT INTO "foreign" VALUES(5, 2, 1, 1)
+
+statement ok
+INSERT INTO "foreign" VALUES(6, 1, 2, 1)
+
+statement ok
+INSERT INTO "foreign" VALUES(7, 1, 1, 2)
+
+statement ok
+SELECT * FROM allnewtriples
+
+statement ok
+SELECT * FROM "foreign"
+
+statement ok
+INSERT INTO triples SELECT id, subject, predicate, object, explicit FROM allnewtriples
+
+statement ok
+SELECT * FROM triples
+
+statement ok
+Select * from subject_stats
+
+statement ok
+Select * from predicate_stats
+
+statement ok
+Select * from object_stats
+
+statement ok
+COMMIT
+
+statement ok
+DROP View   subject_stats
+
+statement ok
+DROP View predicate_stats
+
+statement ok
+DROP View object_stats
+
+statement ok
+DROP INDEX allnewtriples_subject_idx
+
+statement ok
+DROP INDEX allnewtriples_predicate_idx
+
+statement ok
+DROP INDEX allnewtriples_object_idx
+
+statement ok
+DROP TABLE allnewtriples CASCADE
+
+statement ok
+DROP TABLE "foreign" CASCADE
+
+statement ok
+DROP INDEX "triples_object_idx"
+
+statement ok
+DROP INDEX "triples_predicate_idx"
+
+statement ok
+DROP INDEX "triples_predicate_object_idx"
+
+statement ok
+DROP INDEX "triples_subject_idx"
+
+statement ok
+DROP INDEX "triples_subject_object_idx"
+
+statement ok
+DROP INDEX "triples_subject_predicate_idx"
+
+statement ok
+DROP TABLE "triples" CASCADE
+
+statement ok
+DROP TABLE mt
+
+statement ok
+DROP TABLE remt
+
+statement ok
+DROP TABLE replt
+
+statement ok
+DROP TABLE gtmpt
+
+statement ok
+SELECT 'sys.dependency_tables_on_triggers.table_name' AS full_col_nm, 1024 AS max_allowed_length, length("table_name") AS data_length, "table_name" AS data_value FROM "sys"."dependency_tables_on_triggers" WHERE "table_name" IS NOT NULL AND length("table_name") > 1024

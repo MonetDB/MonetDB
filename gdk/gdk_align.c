@@ -202,16 +202,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 		VIEWboundsbi(&bi, bn, l, h);
 	MT_lock_unset(&b->theaplock);
 
-	if (BBPcacheit(bn, true) != GDK_SUCCEED) {	/* enter in BBP */
-		if (bn->tvheap)
-			HEAPdecref(bn->tvheap, false);
-		HEAPdecref(bn->theap, false);
-		MT_lock_destroy(&bn->theaplock);
-		MT_lock_destroy(&bn->batIdxLock);
-		MT_rwlock_destroy(&bn->thashlock);
-		GDKfree(bn);
-		return NULL;
-	}
+	BBPcacheit(bn, true);
 	BBPretain(bn->theap->parentid);
 	if (bn->tvheap)
 		BBPretain(bn->tvheap->parentid);

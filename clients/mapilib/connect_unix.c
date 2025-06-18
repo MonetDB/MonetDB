@@ -106,6 +106,16 @@ scan_unix_sockets(Mapi mid)
 				msettings_destroy(original);
 				free(namebuf);
 				return MOK;
+			} else if (msg == MSERVER && mid->errorstr &&
+				   strstr(mid->errorstr, "no such database") == NULL) {
+				/* connecting failed, but database not
+				 * unknown (no message "no such
+				 * database"), so skip further
+				 * attempts */
+				msettings_destroy(mid->settings);
+				mid->settings = NULL;
+				round = 2; /* to break out of outer loop */
+				break;
 			} else {
 				msettings_destroy(mid->settings);
 				mid->settings = NULL;

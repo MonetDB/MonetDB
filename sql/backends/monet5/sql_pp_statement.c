@@ -1103,8 +1103,8 @@ stmt_merge(backend *be, stmt *lobc, stmt *robc, bool asc, bool nlast, stmt *zl, 
 		s->label = lobc->label;
 		return s;
 	}
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1140,8 +1140,8 @@ stmt_mproject(backend *be, stmt *zl, stmt *lc, stmt *rc, int pipeline)
 		s->label = lc->label;
 		return s;
 	}
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 

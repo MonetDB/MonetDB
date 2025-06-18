@@ -106,6 +106,10 @@ scan_sockets(Mapi mid)
 
 	if (scan_unix_sockets(mid) == MOK)
 		return MOK;
+	/* if database was not unknown (no message "no such database"),
+	 * skip further attempts to connect */
+	if (mid->errorstr && strstr(mid->errorstr, "no such database") == NULL)
+		return MERROR;
 
 	errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
 	if (!errmsg)

@@ -276,10 +276,7 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 		HEAPfree(bn->theap, true);
 		goto bailout;
 	}
-	if (BBPcacheit(bn, true) != GDK_SUCCEED) {
-		/* cannot happen, function always returns success */
-		goto bailout;
-	}
+	BBPcacheit(bn, true);
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
   bailout:

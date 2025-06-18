@@ -1,3 +1,9 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Jun  3 2025 Sjoerd Mullender <sjoerd@acm.org>
+- It is now possible to change the type of a column by using a query
+  like ALTER TABLE t ALTER COLUMN c type;.  The content of the column
+  is converted to the new type using code similar to CAST(c AS type).
+  If the conversion fails, the column type isn't changed.
+

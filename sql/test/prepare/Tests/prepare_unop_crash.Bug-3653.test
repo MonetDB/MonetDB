@@ -1,0 +1,16 @@
+query TIITTT nosort
+PREPARE SELECT id FROM tables WHERE name = LOWER(?)
+----
+int
+13
+0
+(empty)
+tables
+id
+varchar
+0
+0
+NULL
+NULL
+NULL
+

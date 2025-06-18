@@ -1190,7 +1190,6 @@ fixhashashbat(BAT *b)
 	char srcdir[MAXPATH];
 
 	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
 	char *s;
@@ -1407,7 +1406,6 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	char srcdir[MAXPATH];
 
 	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
-		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 		return GDK_FAIL;
 	}
 
@@ -1756,14 +1754,12 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 		BBPtmlock();
 
 		if (GDKfilepath(bbpdirstr, sizeof(bbpdirstr), 0, BATDIR, "BBP", "dir") != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
 		}
 
 		if (GDKfilepath(backupbbpdirstr, sizeof(backupbbpdirstr), 0, BAKDIR, "BBP", "dir") != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "GDKmalloc failed\n");
 			BBPtmunlock();
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
@@ -1922,7 +1918,6 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 		char jsonupgradestr[MAXPATH];
 
 		if (GDKfilepath(jsonupgradestr, sizeof(jsonupgradestr), 0, BATDIR, "jsonupgradeneeded", NULL) != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "GDKfilepath failed\n");
 			ATOMIC_SET(&GDKdebug, dbg);
 			return GDK_FAIL;
 		}
@@ -2591,7 +2586,7 @@ BBPallocbat(int tt)
 	return i;
 }
 
-gdk_return
+void
 BBPcacheit(BAT *bn, bool lock)
 {
 	bat i = bn->batCacheid;
@@ -2611,7 +2606,6 @@ BBPcacheit(BAT *bn, bool lock)
 
 	if (lock)
 		MT_lock_unset(&GDKswapLock(i));
-	return GDK_SUCCEED;
 }
 
 /*
@@ -3798,7 +3792,7 @@ BBPcheckBBPdir(void)
  * The BBP.dir is also moved into the BAKDIR.
  */
 gdk_return
-BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng logno)
+BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng logno)
 {
 	gdk_return ret = GDK_SUCCEED;
 	lng t0 = 0, t1 = 0;

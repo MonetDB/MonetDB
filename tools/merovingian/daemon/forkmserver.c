@@ -322,6 +322,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&dp->fork_lock);
 		return(NO_ERR);
 	case SABdbCrashed:
+		if (!force && dp->crashcount > 4) {
+			state = (*stats)->state;
+			msab_freeStatus(stats);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&dp->fork_lock);
+			return newErr("too many startup failures for database %s: fix database and try `monetdb start %s'", database, database);
+		}
 		t = localtime(&info.lastcrash);
 		strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
 		secondsToString(upmin, info.minuptime, 1);
@@ -809,6 +817,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		if (dp->pid == -1) {
 			state = (*stats)->state;
 
+			/* do this while we still have the lock */
+			if (!force)
+				dp->crashcount++;
+
 			pthread_mutex_unlock(&_mero_topdp_lock);
 			pthread_mutex_unlock(&dp->fork_lock);
 
@@ -850,6 +862,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 				return(newErr("unknown state: %d", (int)state));
 			}
 		}
+
+		dp->crashcount = 0;
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 		pthread_mutex_unlock(&dp->fork_lock);

@@ -418,7 +418,7 @@ static PyMethodDef _emitObject_methods[] = {
 };
 
 PyTypeObject PyEmitType = {
-	.ob_base.ob_base.ob_refcnt = 1,
+	PyVarObject_HEAD_INIT(NULL, 0)
 	.tp_name = "monetdb._emit",
 	.tp_basicsize = sizeof(PyEmitObject),
 	.tp_hash = (hashfunc)PyObject_HashNotImplemented,

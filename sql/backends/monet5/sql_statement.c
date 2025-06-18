@@ -232,10 +232,10 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_group);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -256,8 +256,8 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -277,10 +277,10 @@ stmt_unique(backend *be, stmt *s)
 	q = pushArgument(mb, q, s->nr);
 	q = pushNilBat(mb, q); /* candidate list */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_unique);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -295,8 +295,8 @@ stmt_unique(backend *be, stmt *s)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -428,10 +428,10 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		q = pushNil(mb, q, tt);
 		q->retc++;
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_var);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -449,8 +449,8 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -478,8 +478,8 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 		s->nr = l[0];
 		return s;
 	}
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -496,10 +496,10 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	(void) snprintf(buf, sizeof(buf), "A%d", nr);
 	q = pushArgumentId(mb, q, buf);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_var);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -518,8 +518,8 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -554,8 +554,8 @@ stmt_table(backend *be, stmt *cols, int temp)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -570,10 +570,10 @@ stmt_temp(backend *be, sql_subtype *t)
 		goto bailout;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	q = pushType(mb, q, tt);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_temp);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 
 	if (s == NULL) {
 		freeInstruction(q);
@@ -587,8 +587,8 @@ stmt_temp(backend *be, sql_subtype *t)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -647,10 +647,10 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tid);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -665,8 +665,8 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -755,10 +755,10 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_bat);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -776,8 +776,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -820,10 +820,10 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_idxbat);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -841,8 +841,8 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -898,10 +898,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 	} else {
 		return b;
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append_col);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 
 	if (s == NULL) {
 		freeInstruction(q);
@@ -916,8 +916,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -945,10 +945,10 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	q = pushArgument(mb, q, b->nr);
 	be->mvc_var = getDestVar(q);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append_idx);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -963,8 +963,8 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1000,10 +1000,10 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		q = pushArgument(mb, q, upd->nr);
 		be->mvc_var = getDestVar(q);
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_update_col);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 
 	if (s == NULL) {
 		freeInstruction(q);
@@ -1018,8 +1018,8 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1044,10 +1044,10 @@ stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 	q = pushArgument(mb, q, tids->nr);
 	q = pushArgument(mb, q, upd->nr);
 	be->mvc_var = getDestVar(q);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_update_idx);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1062,8 +1062,8 @@ stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1096,10 +1096,10 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 		q = pushArgument(mb, q, tids->nr);
 		be->mvc_var = getDestVar(q);
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_delete);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1113,8 +1113,8 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1148,8 +1148,8 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		return ns;
 	}
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1180,8 +1180,8 @@ stmt_gen_group(backend *be, stmt *gids, stmt *cnts)
 		return ns;
 	}
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1210,8 +1210,8 @@ stmt_mirror(backend *be, stmt *s)
 		return ns;
 	}
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1418,8 +1418,8 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1444,10 +1444,10 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 		q = pushArgument(mb, q, seed->nr);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_sample);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1470,8 +1470,8 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1495,10 +1495,10 @@ stmt_order(backend *be, stmt *s, int direction, int nullslast)
 	q = pushBit(mb, q, nullslast);
 	q = pushBit(mb, q, FALSE);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_order);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1515,8 +1515,8 @@ stmt_order(backend *be, stmt *s, int direction, int nullslast)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1541,10 +1541,10 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	q = pushBit(mb, q, nullslast);
 	q = pushBit(mb, q, FALSE);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_reorder);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1563,8 +1563,8 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1593,10 +1593,10 @@ stmt_atom(backend *be, atom *a)
 	/* digits of the result timestamp/daytime */
 	if (EC_TEMP_FRAC(atom_type(a)->type->eclass))
 		q = pushInt(mb, q, atom_type(a)->digits);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_atom);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1610,8 +1610,8 @@ stmt_atom(backend *be, atom *a)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1705,10 +1705,10 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		q = pushBit(mb, q, anti);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1727,8 +1727,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1861,10 +1861,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -1885,8 +1885,8 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2111,8 +2111,8 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	return q;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2269,8 +2269,8 @@ stmt_tunion(backend *be, stmt *op1, stmt *op2)
 		return s;
 	}
 
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2296,10 +2296,10 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -2316,8 +2316,8 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2343,10 +2343,10 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	q = pushBit(mb, q, TRUE);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -2363,8 +2363,8 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2387,10 +2387,10 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 	q = pushBit(mb, q, single?TRUE:FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tinter);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -2407,8 +2407,8 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2547,8 +2547,8 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2588,10 +2588,10 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 	q = pushNil(mb, q, TYPE_lng);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_semijoin);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -2610,8 +2610,8 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2667,8 +2667,8 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->label = op2->label;
 		return s;
 	}
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2694,8 +2694,8 @@ stmt_project_delta(backend *be, stmt *col, stmt *upd)
 		return s;
 	}
 
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2714,10 +2714,10 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	q = pushArgument(mb, q, op2->nr);
 	q = pushArgument(mb, q, op3->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		goto bailout;
@@ -2735,8 +2735,8 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2755,10 +2755,10 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		return NULL;
@@ -2777,8 +2777,8 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2797,10 +2797,10 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, min_val->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
 		freeInstruction(q);
 		return NULL;
@@ -2819,8 +2819,8 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2914,8 +2914,8 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3084,8 +3084,8 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3114,8 +3114,8 @@ stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename,
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3153,10 +3153,10 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 	else
 		q = pushNil(mb, q, TYPE_str);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_trans);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3170,8 +3170,8 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3241,10 +3241,10 @@ stmt_catalog(backend *be, int type, stmt *args)
 		q = pushArgument(mb, q, c->nr);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_catalog);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3257,8 +3257,8 @@ stmt_catalog(backend *be, int type, stmt *args)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3441,10 +3441,10 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	q = pushArgument(mb, q, c->nr);
 	q = pushArgument(mb, q, a->nr);
 	q = pushBit(mb, q, TRUE);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3459,8 +3459,8 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3497,10 +3497,10 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 		stmt *a = n->data;
 		q = pushArgument(mb, q, a->nr);
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append_bulk);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3515,8 +3515,8 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3533,10 +3533,10 @@ stmt_pack(backend *be, stmt *c, int n)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
 	q = pushInt(mb, q, n);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3550,8 +3550,8 @@ stmt_pack(backend *be, stmt *c, int n)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 
 }
@@ -3569,10 +3569,10 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
 	q = pushArgument(mb, q, a->nr);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3587,8 +3587,8 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3610,10 +3610,10 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_claim);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3626,8 +3626,8 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3649,8 +3649,8 @@ stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt)
 	return;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 }
 
 void
@@ -3671,8 +3671,8 @@ stmt_add_column_predicate(backend *be, sql_column *c)
 	return;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 }
 
 stmt *
@@ -3691,10 +3691,10 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 	q = pushArgument(mb, q, id->nr);
 	q = pushArgument(mb, q, val->nr);
 	q = pushBit(mb, q, TRUE); /* forced */
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_replace);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3711,8 +3711,8 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3755,8 +3755,8 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3775,10 +3775,10 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 		goto bailout;
 	q = pushArgument(mb, q, cond->nr);
 	q = pushStr(mb, q, errstr);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_exception);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		return NULL;
@@ -3793,8 +3793,8 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3946,10 +3946,10 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_convert);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -3967,8 +3967,8 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4107,10 +4107,10 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_convert);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -4130,8 +4130,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4325,8 +4325,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4398,10 +4398,10 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	}
 
 	allocator *sa = be->mvc->sa;
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -4434,8 +4434,8 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4562,10 +4562,10 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 		q = pushBit(mb, q, no_nil);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_aggr);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -4589,8 +4589,8 @@ stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int re
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4970,10 +4970,10 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		q = pushArgument(mb, q, c);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_cond);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -4987,8 +4987,8 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5019,10 +5019,10 @@ stmt_control_end(backend *be, stmt *cond)
 		q->barrier = EXITsymbol;
 	}
 	be->mvc_var = cond->flag; /* restore old mvc_var from before the barrier */
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_control_end);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -5034,8 +5034,8 @@ stmt_control_end(backend *be, stmt *cond)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5090,10 +5090,10 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 		q = pushArgument(mb, q, val->nr);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_return);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -5106,8 +5106,8 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5155,10 +5155,10 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 	}
 	q = pushArgument(mb, q, val->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_assign);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		goto bailout;
 	}
@@ -5169,8 +5169,8 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5190,10 +5190,10 @@ const_column(backend *be, stmt *val)
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	q = pushArgument(mb, q, val->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_single);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -5210,8 +5210,8 @@ const_column(backend *be, stmt *val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5241,10 +5241,10 @@ stmt_fetch(backend *be, stmt *val)
 	q = pushArgument(mb, q, val->nr);
 	q = pushOid(mb, q, 0);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_single);
-	be->mvc->sa->eb.enabled = enabled;
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		freeInstruction(q);
 		goto bailout;
@@ -5262,8 +5262,8 @@ stmt_fetch(backend *be, stmt *val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (sa_get_eb(be->mvc->sa)->enabled)
+		eb_error(sa_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 

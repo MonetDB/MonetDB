@@ -14,36 +14,33 @@
 #include "gdk.h"
 
 #ifdef HAVE_HGE
-#define NGRAM_TYPE hge
-#define NGRAM_TYPENIL hge_nil
-#define NGRAM_CST(v) ((hge)LL_CONSTANT(v))
-#define NGRAM_BITS 127
-#define CHARMAP(s) (s & NGRAM_BITS)
-#define SZ 128
+#define NG_TYPE		uhge
+#define NG_TYPEID	TYPE_hge
+#define NG_TYPENIL	hge_nil
+#define NG_BITS		128
+#define NG_MASK(s)	(s & (NG_BITS - 1))
 #else
-#define NGRAM_TYPE lng
-#define NGRAM_TYPEID TYPE_lng
-#define NGRAM_TYPENIL lng_nil
-#define NGRAM_CST(v) LL_CONSTANT(v)
-#define NGRAM_BITS 63
-#define CHARMAP(s) (s & NGRAM_BITS)
-#define SZ 64
+#define NG_TYPE		ulng
+#define NG_TYPEID	TYPE_lng
+#define NG_TYPENIL	lng_nil
+#define NG_BITS		64
+#define NG_MASK(s)	(s & (NG_BITS - 1))
 #endif
 
-#define BIGRAM_SZ (SZ * SZ)
-#define NGRAM_MULTIPLE 16
-#define TOKEN1(s) (*s)
-#define TOKEN2(s) (*(s + 1))
-#define BIGRAM(s) (TOKEN1(s) && TOKEN2(s))
+#define BIGRAM_SZ	(NG_BITS * NG_BITS)
+#define NG_MULTIPLE 16
 
-#define ENC_TOKEN1(t) CHARMAP(*t)
-#define ENC_TOKEN2(t) CHARMAP(*(t + 1))
+#define TOKEN1(s)	(*s)
+#define TOKEN2(s)	(*(s + 1))
+#define BIGRAM(s)	(TOKEN1(s) && TOKEN2(s))
+#define ENC_TOKEN1(t) NG_MASK(*t)
+#define ENC_TOKEN2(t) NG_MASK(*(t + 1))
 
 typedef struct {
-	NGRAM_TYPE *idx;
-	NGRAM_TYPE *sigs;
+	NG_TYPE *idx;
+	NG_TYPE *sigs;
 	unsigned *histogram;
 	unsigned min, max;
 	unsigned *lists;
-	unsigned *rids;
-} Ngrams;
+	oid *rids;
+} NGrams;

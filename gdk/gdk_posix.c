@@ -326,7 +326,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	int fd;
 	void *ret;
 
-	fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
+	fd = open(path, ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0) {
 		GDKsyserror("open %s failed\n", path);
 		return NULL;
@@ -708,16 +708,12 @@ MT_getrss(void)
 	return 0;
 }
 
-/* Windows mmap keeps a global list of base addresses for complex
- * (remapped) memory maps the reason is that each remapped segment
- * needs to be unmapped separately in the end. */
-
 void *
 MT_mmap(const char *path, int mode, size_t len)
 {
 	DWORD mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
 	DWORD mode1 = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	DWORD mode2 = mode & MMAP_ADVISE;
+	DWORD mode2;
 	DWORD mode3 = PAGE_READONLY;
 	int mode4 = FILE_MAP_READ;
 	SECURITY_ATTRIBUTES sa;
@@ -731,16 +727,6 @@ MT_mmap(const char *path, int mode, size_t len)
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
 	}
-	if (mode2 == MMAP_RANDOM || mode2 == MMAP_DONTNEED) {
-		mode2 = FILE_FLAG_RANDOM_ACCESS;
-	} else if (mode2 == MMAP_SEQUENTIAL || mode2 == MMAP_WILLNEED) {
-		mode2 = FILE_FLAG_SEQUENTIAL_SCAN;
-	} else {
-		mode2 = FILE_FLAG_NO_BUFFERING;
-	}
-	if (mode & MMAP_SYNC) {
-		mode2 |= FILE_FLAG_WRITE_THROUGH;
-	}
 	if (mode & MMAP_COPY) {
 		mode3 = PAGE_WRITECOPY;
 		mode4 = FILE_MAP_COPY;
@@ -748,7 +734,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		mode3 = PAGE_READWRITE;
 		mode4 = FILE_MAP_WRITE;
 	}
-	mode2 |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+	mode2 = FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = 0;

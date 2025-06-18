@@ -43,74 +43,9 @@
 # include <sys/mman.h>
 #endif
 
-#ifdef __linux__
-/* on Linux, posix_madvise does not seem to work, fall back to classic
- * madvise */
-#undef HAVE_POSIX_MADVISE
-#undef HAVE_POSIX_FADVISE
-#undef POSIX_MADV_NORMAL
-#undef POSIX_MADV_RANDOM
-#undef POSIX_MADV_SEQUENTIAL
-#undef POSIX_MADV_WILLNEED
-#undef POSIX_MADV_DONTNEED
-#endif
-
-#ifndef HAVE_POSIX_MADVISE
-# ifdef HAVE_MADVISE
-#  define posix_madvise madvise
-#  define HAVE_POSIX_MADVISE 1
-#  ifndef MADV_RANDOM
-#   define MADV_RANDOM	0
-#  endif
-#  ifndef POSIX_MADV_NORMAL
-#   define POSIX_MADV_NORMAL     MADV_NORMAL
-#   define POSIX_MADV_RANDOM     MADV_RANDOM
-#   define POSIX_MADV_SEQUENTIAL MADV_SEQUENTIAL
-#   define POSIX_MADV_WILLNEED   MADV_WILLNEED
-#   define POSIX_MADV_DONTNEED   MADV_DONTNEED
-#  endif
-# else
-#  define posix_madvise(x,y,z)	0
-#  ifndef POSIX_MADV_NORMAL
-#   define POSIX_MADV_NORMAL     0
-#   define POSIX_MADV_RANDOM     0
-#   define POSIX_MADV_SEQUENTIAL 0
-#   define POSIX_MADV_WILLNEED   0
-#   define POSIX_MADV_DONTNEED   0
-#  endif
-# endif
-#endif
-
-/* in case they are still not defined, define these values as
- * something that doesn't do anything */
-#ifndef POSIX_MADV_NORMAL
-#define POSIX_MADV_NORMAL 0
-#endif
-#ifndef POSIX_MADV_RANDOM
-#define POSIX_MADV_RANDOM 0
-#endif
-#ifndef POSIX_MADV_SEQUENTIAL
-#define POSIX_MADV_SEQUENTIAL 0
-#endif
-#ifndef POSIX_MADV_WILLNEED
-#define POSIX_MADV_WILLNEED 0
-#endif
-#ifndef POSIX_MADV_DONTNEED
-#define POSIX_MADV_DONTNEED 0
-#endif
-
-/* the new mmap modes, mimic default MADV_* madvise POSIX constants */
-#define MMAP_NORMAL	POSIX_MADV_NORMAL	/* no further special treatment */
-#define MMAP_RANDOM	POSIX_MADV_RANDOM	/* expect random page references */
-#define MMAP_SEQUENTIAL	POSIX_MADV_SEQUENTIAL	/* expect sequential page references */
-#define MMAP_WILLNEED	POSIX_MADV_WILLNEED	/* will need these pages */
-#define MMAP_DONTNEED	POSIX_MADV_DONTNEED	/* don't need these pages */
-
 #define MMAP_READ		1024	/* region is readable (default if omitted) */
 #define MMAP_WRITE		2048	/* region may be written into */
 #define MMAP_COPY		4096	/* writable, but changes never reach file */
-#define MMAP_ASYNC		8192	/* asynchronous writes (default if omitted) */
-#define MMAP_SYNC		16384	/* writing is done synchronously */
 
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
