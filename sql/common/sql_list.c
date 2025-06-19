@@ -725,7 +725,8 @@ list_join(list *l, list *data)
 	assert(!l->ht);
 
 	if (!data->t) {
-		sa_free(data->sa, data);
+		// don't free anything but expr for now
+		//sa_free(data->sa, data);
 		return l;
 	}
 	if (!l->h)
@@ -734,7 +735,8 @@ list_join(list *l, list *data)
 		l->t->next = data->h;
 	l->cnt += data->cnt;
 	l->t = data->t;
-	sa_free(data->sa, data);
+	// don't free anything but expr for now
+	//sa_free(data->sa, data);
 	return l;
 }
 
