@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Jun 19 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- When a prepared statement is executed, sys.queue now shows the text
+  of the original PREPARE statement along with the EXEC and its arguments.
+
 * Wed May 14 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected reading decimal type columns from external ODBC data sources
   via proto_loader('odbc:...'). Those columns were mapped to varchar type
