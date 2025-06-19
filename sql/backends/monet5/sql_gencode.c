@@ -1040,8 +1040,8 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 			cq *cq = qc_find(m->qc, f->base.id);
 			cq_query = cq ? cq->f->query : NULL;
 			if (cq_query) {
-				size_t buf_sz = strlen(query) + strlen(cq_query);
-				buf = GDKmalloc(buf_sz);
+				size_t buf_sz = 2 + strlen(query) + strlen(cq_query);
+				buf = GDKmalloc(buf_sz * sizeof(char));
 				snprintf(buf, buf_sz, "%.*s %s", (int)strlen(query) - 1, query, cq_query);
 				query = buf;
 			}
