@@ -4938,7 +4938,7 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 
 	uint32_t *restrict dst = Tloc(b, 0);
 	for( ; s; s=ATOMIC_PTR_GET(&s->next)) {
-		if (s->end < start)
+		if (s->end < start || s->start == s->end)
 			continue;
 		if (s->start >= end)
 			break;
