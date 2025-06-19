@@ -1021,6 +1021,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 	InstrPtr q, querylog = NULL;
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
+	char *cq_query = NULL, *buf = NULL;
 
 	assert(mb->ma);
 	/* Always keep the SQL query around for monitoring */
@@ -1034,9 +1035,23 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
+		if (r->flag == ddl_psm && r->exps
+			&& exps_have_func(r->exps) && r->exps->cnt == 1) {
+			sql_func *f = r->exps->h->data;
+			cq *cq = qc_find(m->qc, f->base.id);
+			cq_query = cq ? cq->f->query : NULL;
+			if (cq_query) {
+				size_t buf_sz = strlen(query) + strlen(cq_query);
+				buf = GDKmalloc(buf_sz);
+				snprintf(buf, buf_sz, "%.*s %s", (int)strlen(query) - 1, query, cq_query);
+				query = buf;
+			}
+		}
 		q = pushStr(mb, q, query);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		pushInstruction(mb, q);
+		if (cq_query)
+			GDKfree(buf);
 	}
 
 	/* announce the transaction mode */

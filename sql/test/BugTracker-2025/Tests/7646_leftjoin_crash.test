@@ -1,0 +1,7 @@
+statement ok
+CREATE TABLE t1(c0 INT)
+
+query II
+SELECT * FROM t1 LEFT JOIN (SELECT 1) ON EXISTS (SELECT (VALUES (1)));
+----
+
