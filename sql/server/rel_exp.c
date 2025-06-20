@@ -3197,9 +3197,10 @@ exp_copy(mvc *sql, sql_exp * e)
 			list *l = exps_copy(sql, e->l);
 
 			if (e->flag == cmp_con)
-				return exp_conjunctive(sql->sa, l);
+				ne = exp_conjunctive(sql->sa, l);
 			else
-				return exp_disjunctive(sql->sa, l);
+				ne = exp_disjunctive(sql->sa, l);
+
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_copy(sql, e->l);
 			list *r = exps_copy(sql, e->r);
