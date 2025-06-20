@@ -1042,6 +1042,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								u = (BUN) p->value.dval;
 								break;
 							}
+						} else if (e->type == e_cmp && e->flag == cmp_in) {
+							int nr = list_length((list*)er);
+							/* use selectivity */
+							prop *p;
+							if ((p = find_prop(el->p, PROP_NUNIQUES))) {
+								u = (BUN) p->value.dval;
+								u *= nr;
+								break;
+							}
 						}
 					}
 					/* u is an *estimate*, so don't set count_prop to 0 unless cnt is 0 */
