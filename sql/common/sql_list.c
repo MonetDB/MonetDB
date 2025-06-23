@@ -96,7 +96,7 @@ list_new_(list *l)
 }
 
 int
-list_empty(list *l)
+list_empty(const list *l)
 {
 	if (l)
 		return list_length(l) == 0;
@@ -145,7 +145,7 @@ list_destroy(list *l)
 }
 
 int
-list_length(list *l)
+list_length(const list *l)
 {
 	if (l)
 		return l->cnt;

@@ -18,10 +18,8 @@ extern void set_pipeline(backend *be, stmt *pp);
 extern stmt * get_pipeline(backend *be);
 
 extern InstrPtr stmt_oahash_new(backend *be, int tt, int estimate, bit freq, int parent);
-extern InstrPtr stmt_oahash_new_payload(backend *be, int tt, int pld_size, int parent, int previous);
-extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, const stmt *key, const stmt *pp);
-extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, const stmt *key, int prnt_slts, int prnt_ht, const stmt *pp);
-extern InstrPtr stmt_oahash_add_payload(backend *be, int hp_sink, stmt *payload, int payload_pos, const stmt *pp);
+extern InstrPtr stmt_oahash_build_ht(backend *be, int ht_sink, int key, const stmt *pp);
+extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, int key, int prnt_slts, const stmt *pp);
 
 extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, const stmt *pp);
 extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp);
@@ -30,8 +28,7 @@ extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int 
 
 extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);
 extern InstrPtr stmt_oahash_expand(backend *be, stmt *col, int sel, int slotid, const stmt *freq_sink, bit append_vals, const stmt *pp);
-extern stmt *stmt_oahash_explode(backend *be, int slotid, const stmt *freq_sink, const stmt *norows_prb, int selected, bit outer, const stmt *pp, sql_subtype *st);
-extern stmt *stmt_oahash_fetch_payload(backend *be, stmt *hp_sink, int slotid, const stmt *freq_sink, int selected, bit outer, const stmt *pp, sql_subtype *st);
+extern stmt *stmt_oahash_explode(backend *be, int slotid, const stmt *freq_sink, const stmt *ht_sink, bit outer, sql_subtype *st);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern InstrPtr stmt_mat_new(backend *be, int tt, int nr_parts);

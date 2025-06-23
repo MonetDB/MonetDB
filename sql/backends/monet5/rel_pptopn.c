@@ -345,9 +345,9 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 
 				InstrPtr q = NULL;
 				if (prev_ht < 0) {
-					q = stmt_oahash_build_ht(be, gbe->shared, key, pp);
+					q = stmt_oahash_build_ht(be, gbe->shared, key->nr, pp);
 				} else {
-					q = stmt_oahash_build_combined_ht(be, gbe->shared, key, gids, prev_ht, pp);
+					q = stmt_oahash_build_combined_ht(be, gbe->shared, key->nr, gids, pp);
 				}
 				if (q == NULL) return NULL;
 
