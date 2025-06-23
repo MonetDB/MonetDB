@@ -53,24 +53,6 @@ log_base2(unsigned int n)
 	return l ;
 }
 
-// FIXME: need to rethink how to _always_ get the correct hash_prime_nr
-static unsigned int
-find_hash_prime(unsigned int n)
-{
-	// TODO better size estimation
-	unsigned int nn = n * 1.2 * 2.1;
-	if (nn < HT_MIN_SIZE)
-		nn = HT_MIN_SIZE;
-	if (nn > HT_MAX_SIZE)
-		nn = HT_MAX_SIZE;
-
-	unsigned int bits = log_base2(nn - 1);
-	if (bits >= GIDBITS)
-		bits = GIDBITS - 1;
-
-	return hash_prime_nr[bits - 5];
-}
-
 /* ***** HASH TABLE ***** */
 static hash_table *
 _ht_init(hash_table *h, bool freq)
@@ -1363,22 +1345,22 @@ error:
 	} while (0)
 
 static str
-BAT_OAHASHhash_cmbd(bat *hsh, const bat *key, const bat *selected, const bat *parent_slotid, const ptr *H)
+BAT_OAHASHhash_cmbd(bat *hsh, const bat *key, const bat *selected, const bat *parent_slotid, const bat *ht_sink)
 {
-	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL;
+	BAT *h = NULL, *k = NULL, *s = NULL, *p = NULL, *t = NULL;
 	BUN cnt;
 	str err = NULL;
-
-	(void) H;
 
 	k = BATdescriptor(*key);
 	s = BATdescriptor(*selected);
 	p = BATdescriptor(*parent_slotid);
-	if (!k || !s || !p) {
+	t = BATdescriptor(*ht_sink);
+	if (!k || !s || !p || !t) {
 		err = createException(SQL, "oahash.combined_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 
+	hash_table *ht = (hash_table*)t->tsink;
 	/* only compute hashes for the 'selected' ones */
 	cnt = BATcount(s);
 	h = COLnew(k->hseqbase, TYPE_lng, cnt, TRANSIENT);
@@ -1391,8 +1373,7 @@ BAT_OAHASHhash_cmbd(bat *hsh, const bat *key, const bat *selected, const bat *pa
 		int tt = k->ttype;
 		oid  *sl = Tloc(s, 0);
 		gid  *ps = Tloc(p, 0);
-		unsigned int prime = find_hash_prime(cnt);
-		//unsigned int prime = hash_prime_nr[ht->bits-5];
+		unsigned int prime = hash_prime_nr[ht->bits-5];
 
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -1458,6 +1439,7 @@ BAT_OAHASHhash_cmbd(bat *hsh, const bat *key, const bat *selected, const bat *pa
 	BBPunfix(k->batCacheid);
 	BBPunfix(s->batCacheid);
 	BBPunfix(p->batCacheid);
+	BBPunfix(t->batCacheid);
 	BATsetcount(h, cnt);
 	BATnegateprops(h);
 	*hsh = h->batCacheid;
@@ -1467,6 +1449,7 @@ error:
 	BBPreclaim(h);
 	BBPreclaim(k);
 	BBPreclaim(s);
+	BBPreclaim(t);
 	BBPreclaim(p);
 	return err;
 }
@@ -3513,7 +3496,7 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "mprobe", BAT_OAHASHmprobe, false, "Probe the (key, hash) pairs in the hash table. For a matched key, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(3,9, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batarg("mark", bit), batargany("LHS_key",1), batarg("LHS_hash",lng), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
 
- command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),arg("pipeline",ptr))),
+ command("oahash", "combined_hash", BAT_OAHASHhash_cmbd, false, "For the selected keys, compute the combined hash of key+parent_slotid", args(1,5, batarg("hsh",lng),batargany("key",1),batarg("selected",oid),batarg("parent_slotid",oid),batargany("ht_sink",2))),
 
  command("oahash", "combined_probe", BAT_OAHASHprobe_cmbd, false, "Probe the selected (key, hash) pairs in the hash table. For a matched item, return its OID in the left-hand-side column and the slot ID in the right-hand-side hash table", args(2,10, batarg("LHS_matched",oid), batarg("RHS_slotid",oid), batargany("LHS_key",1), batarg("LHS_hash",lng), batarg("LHS_selected",oid), batarg("RHS_pgids", oid), batargany("RHS_ht",2), arg("single",bit), arg("semantics",bit), arg("pipeline",ptr))),
 

@@ -531,7 +531,7 @@ stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit s
 }
 
 InstrPtr
-stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, const stmt *pp)
+stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, int ht)
 {
 	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("combined_hash"), 5);
 	if (q == NULL)
@@ -540,7 +540,7 @@ stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, const
 	q = pushArgument(be->mb, q, key->nr);
 	q = pushArgument(be->mb, q, sel);
 	q = pushArgument(be->mb, q, prnt_sltid);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
+	q = pushArgument(be->mb, q, ht);
 	pushInstruction(be->mb, q);
 	return q;
 }

@@ -304,7 +304,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 			if (nulls && stmt_has_null(key))
 				*nulls = stmt_selectnil(be, key, NULL);
 		} else {
-			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, pp);
+			q = stmt_oahash_combined_hash(be, key, matched, rhs_slts, rht);
 			if (q == NULL) return NULL;
 			q = stmt_oahash_combined_probe(be, key, getDestVar(q), matched, rhs_slts, rht, single, e2->semantics, outerm, groupjoin && is_any(e2), pp);
 			if (nulls && stmt_has_null(key))

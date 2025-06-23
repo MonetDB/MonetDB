@@ -6073,6 +6073,8 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 	/* we want to make sure that the data column(s) has the same number
 	 * of (nonil) rows as the index column. if that is **not** the case
 	 * then we are obviously dealing with an invalid foreign key */
+	int pp = be->pipeline;
+	be->pipeline = 0;
 	if (s->key && s->nrcols == 0) {
 		s = stmt_binop(be,
 			stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 1, 1),
@@ -6085,6 +6087,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 			stmt_aggr(be, column(be, nonil_rows), NULL, NULL, cnt, 1, 1, 1),
 			NULL, ne);
 	}
+	be->pipeline = pp;
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, SQLSTATE(40002) "INSERT INTO: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);

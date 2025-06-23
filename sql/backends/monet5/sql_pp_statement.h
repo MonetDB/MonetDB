@@ -23,7 +23,7 @@ extern InstrPtr stmt_oahash_build_combined_ht(backend *be, int ht_sink, int key,
 
 extern InstrPtr stmt_oahash_hash(backend *be, stmt *key, const stmt *pp);
 extern InstrPtr stmt_oahash_probe(backend *be, stmt *key, int hsh, int rhs_ht, bit single, bit semantics, bit eq, bool outer, bool groupedjoin, const stmt *pp);
-extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, const stmt *pp);
+extern InstrPtr stmt_oahash_combined_hash(backend *be, stmt *key, int sel, int prnt_sltid, int ht);
 extern InstrPtr stmt_oahash_combined_probe(backend *be, stmt *key, int hsh, int sel, int prnt_sltid, int rhs_ht, bit single, bit semantics, stmt *outer, const bool groupedjoin, const stmt *pp);
 
 extern InstrPtr stmt_oahash_project(backend *be, stmt *col, int sel, const stmt *pp);
