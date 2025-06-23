@@ -101,7 +101,7 @@ _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs)
 /* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
  */
 static list *
-oahash_prepare_bld_ht(backend *be, const list *exps, lng sz)
+oahash_prepare_bld_ht(backend *be, const list *exps, lng sz, bool need_freq)
 {
 	assert(exps && exps->cnt);
 
@@ -111,7 +111,7 @@ oahash_prepare_bld_ht(backend *be, const list *exps, lng sz)
 	for (node *n = exps->h; n; n = n->next) {
 		sql_subtype *t = exp_subtype((sql_exp*)n->data);
 		freq = (n->next == NULL); /* last ht also computes frequencies */
-		InstrPtr q = stmt_oahash_new(be, t->type->localtype, sz, freq, curhash);
+		InstrPtr q = stmt_oahash_new(be, t->type->localtype, sz, need_freq && freq, curhash);
 		if (q == NULL) return NULL;
 		q->inout = 0;
 		curhash = getArg(q, 0);
@@ -148,7 +148,7 @@ oahash_prepare_bld_hp(backend *be, const list *exps_prj_hsh, list *shared_ht, ln
 /* exps: hash-side of cmp exps or prj exps (e.g. in case of cross-product).
  */
 static stmt *
-oahash_build_ht(backend *be, int *slt_ids, const list *exps, const list *shared_ht, stmt *sub, const stmt *pp)
+oahash_build_ht(backend *be, int *slt_ids, const list *exps, const list *shared_ht, stmt *sub, const stmt *pp, bool need_freq)
 {
 	list *l = sa_list(be->mvc->sa);
 	node *n = NULL, *inout = NULL;
@@ -184,56 +184,36 @@ oahash_build_ht(backend *be, int *slt_ids, const list *exps, const list *shared_
 		first = false;
 	}
 	stmt *ht_stmts = stmt_list(be, l);
-	if (!n && inout) { /* frequencies */
+	if ((!n && inout) || need_freq) { /* frequencies */
 		InstrPtr q = newStmt(be->mb, putName("oahash"), putName("compute_frequencies"));
 		if (q == NULL)
 			return NULL;
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushReturn(be->mb, q, ht);
-		q->inout = 1;
+		if (!inout) {
+			getArg(q, 0) = ht;
+			q->inout = 0;
+		} else {
+			setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+			q = pushReturn(be->mb, q, ht);
+			q->inout = 1;
+		}
 		q = pushArgument(be->mb, q, *slt_ids);
 		q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
 		pushInstruction(be->mb, q);
-		int freq_nr = getArg(q, 0);
-		q = stmt_oahash_build_combined_ht(be, getArg((InstrPtr)inout->data,0), freq_nr, *slt_ids, pp);
-		if (q == NULL) return NULL;
-		*slt_ids = getArg(q,0);
+		if (inout) {
+			int freq_nr = getArg(q, 0);
+			q = stmt_oahash_build_combined_ht(be, getArg((InstrPtr)inout->data,0), freq_nr, *slt_ids, pp);
+			if (q == NULL) return NULL;
+			*slt_ids = getArg(q,0);
 
-		stmt *s = stmt_none(be);
-		if (s == NULL) return NULL;
-		s->nr = getArg(q, 1);
-		s->q = q;
-		ht_stmts->op2 = s;
+			stmt *s = stmt_none(be);
+			if (s == NULL) return NULL;
+			s->nr = getArg(q, 1);
+			s->q = q;
+			ht_stmts->op2 = s;
+		}
 	}
 	return ht_stmts;
 }
-
-#if 0
-static InstrPtr
-oahash_build_freq(backend *be, stmt *ht, int slt_ids, int compute_pos, const stmt *pp)
-{
-	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("compute_frequencies"));
-	if (q == NULL)
-		return NULL;
-	if (!compute_pos) {
-		/* No payload at the hash-side, hence no need to compute payload_pos.
-		 * The oahash.expand() at the probe-side only needs the frequencies.
-		 */
-		int tt = tail_type(ht)->type->localtype;
-		setVarType(be->mb, getArg(q, 0), newBatType(tt));
-		getArg(q, 0) = ht->nr;
-		q->inout = 0;
-	} else {
-		setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
-		q = pushReturn(be->mb, q, ht->nr);
-		q->inout = 1;
-	}
-	q = pushArgument(be->mb, q, slt_ids);
-	q = pushArgument(be->mb, q, getArg(pp->q, 2) /* pipeline ptr*/);
-	pushInstruction(be->mb, q);
-	return q;
-}
-#endif
 
 static stmt *
 oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, stmt *sub, const stmt *pp)
@@ -255,12 +235,6 @@ oahash_build_hp(backend *be, list *exps_prj_hsh, list *shared_hp, int pld_pos, s
 			getArg(q, 0) = res->nr;
 			q->inout = 0;
 			pushInstruction(be->mb, q);
-		/* pld_pos only exists when exps_prj_hsh->cnt > 0, which is True within
-		 * this for loop */
-				/*
-		InstrPtr q = stmt_oahash_add_payload(be, getArg((InstrPtr)inout->data,0), payload, pld_pos, pp);
-		if (q == NULL) return NULL;
-		*/
 
 		sql_exp *e = n->data;
 		stmt *s = stmt_none(be);
@@ -580,8 +554,9 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		return rel2bin_materialize(be, l, refs);
 	}
 
+	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2);
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
-	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
+	list *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz, need_freq);
 	list *shared_hp = NULL;
 	if (exps_prj_hsh)
 		shared_hp = oahash_prepare_bld_hp(be, exps_prj_hsh, shared_ht, bld_sz);
@@ -591,7 +566,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 
 	stmt *pp = get_pipeline(be);
 	int slt_ids = 0;
-	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp);
+	stmt *stmts_ht = oahash_build_ht(be, &slt_ids, exps_cmp_hsh, shared_ht, sub, pp, need_freq);
 	stmt *stmts_hp = NULL;
 	if (shared_hp) {
 		if (exps_prj_hsh)

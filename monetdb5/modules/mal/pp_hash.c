@@ -2728,7 +2728,7 @@ error:
 		keycnt = ci.ncand; \
 		\
 		oid *res = Tloc(e, 0); \
-		if (*outer) { \
+		if (*outer && ht->frequency) { \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 				oid s = sid[i]; \
 				oid val = canditer_idx(&ci, i); \
@@ -2743,7 +2743,7 @@ error:
 					res[idx++] = val; \
 				} \
 			} \
-		} else { \
+		} else if (ht->frequency) { \
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				oid val = canditer_idx(&ci, sel[i]); \
 				gid freq = (gid)ht->frequency[sid[i]]; \
@@ -2752,6 +2752,10 @@ error:
 					res[idx++] = val; \
 				} \
 			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+				res[idx++] = canditer_idx(&ci, sel[i]); \
+			} \
 		} \
 	} while (0)
 
@@ -2759,7 +2763,7 @@ error:
 	do { \
 		Type *val = Tloc(k, 0); \
 		Type *res = Tloc(e, 0); \
-		if (*outer) { \
+		if (*outer && ht->frequency) { \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 				oid s = sid[i]; \
 				Type v = val[i]; \
@@ -2773,7 +2777,7 @@ error:
 					res[idx++] = v; \
 				} \
 			} \
-		} else { \
+		} else if (ht->frequency) { \
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				Type v = val[sel[i]]; \
 				gid freq = (gid)ht->frequency[sid[i]]; \
@@ -2782,19 +2786,22 @@ error:
 					res[idx++] = v; \
 				} \
 			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+				res[idx++] = val[sel[i]]; \
+			} \
 		} \
 	} while (0)
 
 #define BATaexpand() \
 	do { \
 		BATiter bi = bat_iterator(k); \
-		if (*outer) { \
+		if (*outer && ht->frequency) { \
 			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 				oid s = sid[i]; \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
 				if (s != oid_nil) {\
 					gid freq = (gid)ht->frequency[s]; \
-					freq = freq?freq:1; \
 					TIMEOUT_LOOP_IDX_DECL(f, freq, qry_ctx) { \
 						if (BUNappend(e, v, false) != GDK_SUCCEED) { \
 							err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -2810,11 +2817,10 @@ error:
 					idx++; \
 				} \
 			} \
-		} else { \
+		} else if (ht->frequency) { \
 			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
 				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
 				gid freq = (gid)ht->frequency[sid[i]]; \
-				freq = freq?freq:1; \
 				TIMEOUT_LOOP_IDX_DECL(j, freq, qry_ctx) { \
 					if (BUNappend(e, v, false) != GDK_SUCCEED) { \
 						err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
@@ -2822,6 +2828,15 @@ error:
 					} \
 					idx++; \
 				} \
+			} \
+		} else { \
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) { \
+				void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,sel[i])); \
+				if (BUNappend(e, v, false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				} \
+				idx++; \
 			} \
 		} \
 		bat_iterator_end(&bi); \
@@ -2853,13 +2868,17 @@ BAT_OAHASHexpand(bat *expanded, const bat *key, const bat *selected, const bat *
 	keycnt = BATcount(k);
 	selcnt = BATcount(s);
 	if (selcnt) {
-		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			if (sid[i] != lng_nil && ht->frequency[sid[i]])
-				xpdcnt += ht->frequency[sid[i]];
-			else
-				xpdcnt++;
+		if (ht->frequency) {
+			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
+				if (sid[i] != lng_nil && ht->frequency[sid[i]])
+					xpdcnt += ht->frequency[sid[i]];
+				else
+					xpdcnt++;
+			}
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
+		} else {
+			xpdcnt = selcnt;
 		}
-		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}

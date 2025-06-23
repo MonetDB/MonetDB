@@ -1622,7 +1622,7 @@ str int_num2dec_lng(lng *res, const int *v, const int *d2, const int *s2);
 str int_num2dec_sht(sht *res, const int *v, const int *d2, const int *s2);
 list *list_append(list *l, void *data);
 void *list_fetch(list *l, int pos);
-int list_length(list *l);
+int list_length(const list *l);
 str lng_dec2_bte(bte *res, const int *s1, const lng *v);
 str lng_dec2_dbl(dbl *res, const int *s1, const lng *v);
 str lng_dec2_flt(flt *res, const int *s1, const lng *v);
