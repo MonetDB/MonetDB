@@ -388,11 +388,11 @@ rel_groupby_partition_safe(sql_rel *rel)
 
 			if (is_aggr(e->type)) {
 				sql_subfunc *sf = e->f;
-				int sum = 0;
 
 				if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 					strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
-					(sum = (strcmp(sf->func->base.name, "sum") == 0)) || strcmp(sf->func->base.name, "prod") == 0))
+					strcmp(sf->func->base.name, "null") == 0 ||
+					strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0))
 					return false;
 			}
 		}

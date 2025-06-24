@@ -107,6 +107,7 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 				return false;
 			if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 			    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			    strcmp(sf->func->base.name, "null") == 0 ||
 			    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
 				return false;
 			}
@@ -123,6 +124,7 @@ exp_need_serialize(sql_exp *e)
 
 		if (!(strcmp(sf->func->base.name, "min") == 0 || strcmp(sf->func->base.name, "max") == 0 ||
 		    strcmp(sf->func->base.name, "avg") == 0 || strcmp(sf->func->base.name, "count") == 0 ||
+			strcmp(sf->func->base.name, "null") == 0 ||
 		    strcmp(sf->func->base.name, "sum") == 0 || strcmp(sf->func->base.name, "prod") == 0)) {
 			return true;
 		}
@@ -450,6 +452,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			int avg = 0, sum = 0;
 			if (strcmp(sf->func->base.name, "min") == 0 ||
 			    strcmp(sf->func->base.name, "max") == 0 ||
+			    strcmp(sf->func->base.name, "null") == 0 ||
 			    (avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
 				(sum= (strcmp(sf->func->base.name, "sum") == 0)) ||
 			    strcmp(sf->func->base.name, "prod") == 0) {
@@ -526,6 +529,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 				int avg = 0, sum = 0;
 				if (strcmp(sf->func->base.name, "min") == 0 ||
 					strcmp(sf->func->base.name, "max") == 0 ||
+					strcmp(sf->func->base.name, "null") == 0 ||
 					(avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
 					(sum= (strcmp(sf->func->base.name, "sum") == 0)) ||
 					strcmp(sf->func->base.name, "prod") == 0) {

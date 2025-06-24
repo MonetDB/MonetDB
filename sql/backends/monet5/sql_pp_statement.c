@@ -97,7 +97,8 @@ stmt_pp_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int 
  		 * aggr. functions from the module 'iaggr' */
 		if (!grp && (strcmp(aggrfunc, "count") == 0 ||
 			     strcmp(aggrfunc, "min") == 0 ||
-			     strcmp(aggrfunc, "max") == 0)) /* incremental versions TODO do for other aggr functions */
+			     strcmp(aggrfunc, "max") == 0 ||
+				 strcmp(aggrfunc, "null") == 0 )) /* incremental versions TODO do for other aggr functions */
 			mod = putName("iaggr");
 		//else if (!grp && avg && restype == TYPE_dbl)
 			//mod = putName("batcalc");

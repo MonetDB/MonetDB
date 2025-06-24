@@ -799,6 +799,46 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+LOCKEDAGGRnull(bat *result, const ptr *h, const bit *hadnull)
+{
+	Pipeline *p = (Pipeline*)*h;
+	str err = MAL_SUCCEED;
+
+	pipeline_lock(p);
+	if (!is_bat_nil(*result)) {
+		BAT *b = BATdescriptor(*result);
+		if (b == NULL)
+			err = createException(MAL, "lockedaggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		if (!err) {
+			bit *n = Tloc(b, 0); /* b must have been initialised to bit_nil */
+			if (n[0] != true) {
+				if (is_bit_nil(n[0])) {
+					n[0] = *hadnull;
+				} else { /* n[0] == false */
+					if (*hadnull == true) {
+						n[0] = *hadnull;
+					}
+				}
+			}
+			if (!is_bit_nil(*hadnull)) {
+				pipeline_lock2(b);
+				b->tnil = false;
+				b->tnonil = true;
+				pipeline_unlock2(b);
+			}
+			//BBPkeepref(*res = b->batCacheid);
+			//leave writable
+			BBPretain(*result = b->batCacheid);
+			BBPunfix(b->batCacheid);
+		}
+	} else {
+		err = createException(SQL, "lockedaggr.null", "Result is not initialized");
+	}
+	pipeline_unlock(p);
+	return err;
+}
+
+static str
 LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 {
 	Pipeline *p = (Pipeline*)*h;
@@ -4160,6 +4200,144 @@ LALGmax(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	return err;
 }
 
+#define gNull(Type) \
+	do { \
+		Type *restrict in = (Type *)bi.base; \
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			o[grp[i]] = o[grp[i]] == true? o[grp[i]] : is_##Type##_nil(in[i]);\
+		} \
+	} while (0)
+static str
+LALGnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+{
+	(void) H; /* last arg should move to first argument .. */
+	BAT *g = NULL, *b = NULL, *r = NULL;
+	str err = NULL;
+	bool private = true, locked = false;
+
+	g = BATdescriptor(*gid);
+	b = BATdescriptor(*bid);
+	if (g == NULL || b == NULL) {
+		err = createException(MAL, "pp aggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	if (!is_bat_nil(*rid)) {
+		if ((r = BATdescriptor(*rid)) == NULL) {
+			err = createException(MAL, "pp aggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+	}
+
+	private = (!r || r->tprivate_bat);
+	if (!private) {
+		pipeline_lock1(r);
+		locked = true;
+	}
+
+	BAT *pg = BATdescriptor(*pid);
+	if (pg == NULL) {
+		err = createException(MAL, "pp aggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	oid max = BATcount(pg)?pg->tmaxval:0;
+	BBPunfix(pg->batCacheid);
+
+	if (!r) {
+		r = COLnew2(0, TYPE_bit, max, TRANSIENT, b->twidth);
+		if (r == NULL) {
+			err = createException(MAL, "pp aggr.null", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
+		r->tprivate_bat = 1;
+	}
+	BUN cnt = BATcount(r);
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED) {
+			err = createException(MAL, "pp aggr.null", MAL_MALLOC_FAIL);
+			goto error;
+		}
+	}
+	if (cnt < max) {
+		char *d = Tloc(r, 0);
+		const char *nil = ATOMnilptr(r->ttype);
+		for (BUN i=cnt; i<max; i++)
+			memcpy(d+(i*r->twidth), nil, r->twidth);
+	}
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	cnt = BATcount(g);
+	BATiter bi = bat_iterator(b);
+	oid *grp = Tloc(g, 0);
+	bit *o = Tloc(r, 0);
+	switch(ATOMbasetype(bi.type)){
+		case TYPE_bte:
+			gNull(bte);
+			break;
+		case TYPE_sht:
+			gNull(sht);
+			break;
+		case TYPE_int:
+			gNull(int);
+			break;
+		case TYPE_lng:
+			gNull(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			gNull(hge);
+			break;
+#endif
+		case TYPE_flt:
+			gNull(flt);
+			break;
+		case TYPE_dbl:
+			gNull(dbl);
+			break;
+		default: {
+			 int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			 const void *restrict nilp = ATOMnilptr(bi.type);
+
+			 TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+				 if (o[grp[i]] != true) {
+					 const void *restrict c = BUNtail(bi, i);
+					 o[grp[i]] = (ocmp(nilp, c) == 0);
+				 }
+			 }
+		}
+	}
+	bat_iterator_end(&bi);
+
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.null", RUNTIME_QRY_TIMEOUT));
+	if (err) {
+		goto error;
+	}
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+	if (!private)
+		pipeline_lock2(r);
+	if (BATcount(r) < max)
+		BATsetcount(r, max);
+	BATnegateprops(r);
+	if (!private)
+		pipeline_unlock2(r);
+	*rid = r->batCacheid;
+	BBPkeepref(r);
+
+	if (!private)
+		pipeline_unlock1(r);
+	return MAL_SUCCEED;
+  error:
+	if (locked) pipeline_unlock1(r);
+	if (g) BBPunfix(g->batCacheid);
+	if (b) BBPunfix(b->batCacheid);
+	if (r) BBPunfix(r->batCacheid);
+	return err;
+}
+
 /* return value position groupcount*p/100 */
 #define qfunc(Type, p, f) \
 	if (tt == TYPE_##Type) { \
@@ -4412,6 +4590,84 @@ ALGmaxany(ptr result, const bat *bid)
 	return ALGmaxany_skipnil(result, bid, &skipnil);
 }
 
+#define ALGnull_impl(TPE) \
+	do {		\
+		TPE *restrict bp = (TPE*)bi.base;	\
+		TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) { \
+			if (is_##TPE##_nil(bp[q])) { \
+				hasnull = TRUE; \
+				break; \
+			} \
+		} \
+	} while (0)
+
+static str
+ALGnull(bit *result, const bat *bid)
+{
+	BAT *b;
+	bit hasnull = false;
+	str msg = MAL_SUCCEED;
+
+	if (result == NULL || (b = BATdescriptor(*bid)) == NULL) {
+		BBPreclaim(b);
+		throw(MAL, "iaggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+
+	if (*result != true) {
+		if (BATcount(b) > 0) {
+			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+			BUN o = BATcount(b);
+			BATiter bi = bat_iterator(b);
+			switch (ATOMbasetype(bi.type)) {
+				case TYPE_bte:
+					ALGnull_impl(bte);
+					break;
+				case TYPE_sht:
+					ALGnull_impl(sht);
+					break;
+				case TYPE_int:
+					ALGnull_impl(int);
+					break;
+				case TYPE_lng:
+					ALGnull_impl(lng);
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+					ALGnull_impl(hge);
+					break;
+#endif
+				case TYPE_flt:
+					ALGnull_impl(flt);
+					break;
+				case TYPE_dbl:
+					ALGnull_impl(dbl);
+					break;
+				default: {
+					 int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+					 const void *restrict nilp = ATOMnilptr(bi.type);
+
+					 TIMEOUT_LOOP_IDX_DECL(q, o, qry_ctx) {
+						 const void *restrict c = BUNtail(bi, q);
+						 if (ocmp(nilp, c) == 0) {
+							 hasnull = true;
+							 break;
+						 }
+					 }
+				}
+			}
+			bat_iterator_end(&bi);
+			*result = hasnull;
+
+			TIMEOUT_CHECK(qry_ctx, msg = createException(SQL, "pp aggr.null", RUNTIME_QRY_TIMEOUT));
+		}
+	} /* else: (*result == null): we've found a NULL before, nothing to do */
+
+	BBPunfix(b->batCacheid);
+	return msg;
+}
+
 static str
 ALGfsum_skipnil_flt(flt *result, flt *rcom, lng *rcnt, const bat *bid, const bit *skipnil)
 {
@@ -4554,7 +4810,9 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("lockedaggr", "avg", LOCKEDAGGRavg, true, "Kahan/neumaier summation, using the bat lock", args(3,7, sharedbatarg("ravg", dbl), sharedbatarg("rcem", dbl), sharedbatarg("rcnt", lng), arg("pipeline", ptr), arg("val", dbl), arg("com", dbl), arg("cnt", lng))),
  pattern("lockedaggr", "min", LOCKEDAGGRmin, true, "min values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
  pattern("lockedaggr", "max", LOCKEDAGGRmax, true, "max values into bat (bat has value, update), using the bat lock", args(1,3, sharedbatargany("", 1), arg("pipeline", ptr), argany("val", 1))),
+ command("lockedaggr", "null", LOCKEDAGGRnull, true, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,3, sharedbatarg("",bit),arg("pipeline", ptr),arg("hadnull",bit))),
  command("lockedalgebra", "projection", LALGprojection, false, "Project left input onto right input.", args(1,4, batargany("",1), arg("pipeline", ptr), batarg("left",oid),batargany("right",1))),
+
  command("algebra", "unique", LALGunique, false, "Unique rows.", args(2,5, batarg("gid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid))),
  command("algebra", "unique", LALGgroup_unique, false, "Unique per group rows.", args(2,6, batarg("ngid", oid), batargany("",1), arg("pipeline", ptr), batargany("b",1), batarg("s",oid), batarg("gid",oid))),
  command("group", "group", LALGgroup, false, "Group input.", args(2,4, batarg("gid", oid), batargany("sink",1), arg("pipeline", ptr), batargany("b",1))),
@@ -4586,6 +4844,7 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("aggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
  command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "null", LALGnull, false, "has-null per group.", args(1,5, batarg("",bit), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
 
  /* Incremental aggregates */
  command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng), batargany("b",0))),
@@ -4598,6 +4857,7 @@ static mel_func pp_algebra_init_funcs[] = {
  command("iaggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
  command("iaggr", "max", ALGmaxany, false, "Return the highest tail value or nil.", args(1,2, argany("",2), batargany("b",2))),
  command("iaggr", "max", ALGmaxany_skipnil, false, "Return the highest tail value or nil.", args(1,3, argany("",2), batargany("b",2),arg("skipnil",bit))),
+ command("iaggr", "null", ALGnull, false, "Returns true or false if the input contains a NULL or not, nil if the input is empty..", args(1,2, arg("",bit), batargany("b",1))),
  command("aggr", "sum", ALGfsum_flt, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt))),
  command("aggr", "sum", ALGfsum_skipnil_flt, false, "Return the Kahan/Neumaier summation or nil.", args(3,5, arg("rsum", flt), arg("rcom", flt), arg("rcnt", lng), batarg("b", flt), arg("skipnil",bit))),
  command("aggr", "sum", ALGfsum, false, "Return the Kahan/Neumaier summation.", args(3,4, arg("rsum", dbl), arg("rcom", dbl), arg("rcnt", lng), batarg("b", flt))),
