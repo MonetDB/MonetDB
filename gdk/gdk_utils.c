@@ -2025,6 +2025,22 @@ GDKprintinfo(void)
 	printf("SIGUSR1 info start\n");
 	printf("Virtual memory allocated: %zu, of which %zu with malloc\n",
 	       vmallocated + allocated, allocated);
+#ifdef WITH_MALLOC
+#ifdef WITH_JEMALLOC
+	size_t jeallocated = 0, jeactive = 0, jemapped = 0, jeresident = 0, jeretained = 0;
+	if (mallctl("stats.allocated", &jeallocated, &(size_t){sizeof(jeallocated)}, NULL, 0) == 0 &&
+	    mallctl("stats.active", &jeactive, &(size_t){sizeof(jeactive)}, NULL, 0) == 0 &&
+	    mallctl("stats.mapped", &jemapped, &(size_t){sizeof(jemapped)}, NULL, 0) == 0 &&
+	    mallctl("stats.resident", &jeresident, &(size_t){sizeof(jeresident)}, NULL, 0) == 0 &&
+	    mallctl("stats.retained", &jeretained, &(size_t){sizeof(jeretained)}, NULL, 0) == 0)
+		printf("JEmalloc: allocated %zu, active %zu, mapped %zu, resident %zu, retained %zu\n", jeallocated, jeactive, jemapped, jeresident, jeretained);
+#endif
+#elif defined(HAVE_MALLINFO2)
+	struct mallinfo2 mi = mallinfo2();
+	printf("mallinfo: arena %zu, ordblks %zu, smblks %zu, hblks %zu, hblkhd %zu, fsmblks %zu, uordblks %zu, fordblks %zu, keepcost %zu\n",
+	       mi.arena, mi.ordblks, mi.smblks, mi.hblks, mi.hblkhd, mi.fsmblks, mi.uordblks, mi.fordblks, mi.keepcost);
+	printf("   total allocated (arena+hblkhd): %zu\n", mi.arena + mi.hblkhd);
+#endif
 	printf("gdk_vm_maxsize: %zu, gdk_mem_maxsize: %zu\n",
 	       GDK_vm_maxsize, GDK_mem_maxsize);
 	printf("gdk_mmap_minsize_persistent %zu, gdk_mmap_minsize_transient %zu\n",
