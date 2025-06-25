@@ -1705,26 +1705,22 @@ valid_decsep(const char *s)
 }
 
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape, dlist *decimal_seps)
+copyfrom(sql_query *query, CopyFromNode *copy)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
+	char *sname = qname_schema(copy->qname);
+	char *tname = qname_schema_object(copy->qname);
 	sql_table *t = NULL, *nt = NULL;
-	const char *tsep = seps->h->data.sval;
-	char *rsep = seps->h->next->data.sval; /* not const, might need adjusting */
-	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
-	const char *ns = (null_string)?null_string:"null";
-	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
-	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
+	const char *tsep = copy->tsep;
+	char *rsep = copy->rsep; /* not const, might need adjusting */
+	const char *ssep = copy->ssep;
+	const char *ns = copy->null_string ? copy->null_string : "null";
+	lng nr = copy->nrows;
+	lng offset = copy->offset;
 	list *collist;
 	int reorder = 0;
-	const char *decsep = decimal_seps->h->data.sval;
-	const char *decskip = decimal_seps->h->next ? decimal_seps->h->next->data.sval: NULL;
-
-	assert(!nr_offset || nr_offset->h->type == type_lng);
-	assert(!nr_offset || nr_offset->h->next->type == type_lng);
+	dlist *headers = copy->header_list;
 
 	if (strcmp(rsep, "\r\n") == 0) {
 		/* silently fix it */
@@ -1736,18 +1732,18 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				"that will never match, use '\\n' instead");
 	}
 
-	if (!valid_decsep(decsep))
+	if (!valid_decsep(copy->decsep))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid decimal separator");
-	if (decskip && !valid_decsep(decskip))
+	if (copy->decskip && !valid_decsep(copy->decskip))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid thousands separator");
-	if (decskip && strcmp(decsep, decskip) == 0)
+	if (copy->decskip && strcmp(copy->decsep, copy->decskip) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: decimal separator and thousands separator must be different");
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 
-	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
+	collist = check_table_columns(sql, t, copy->column_list, "COPY INTO", tname);
 	if (!collist)
 		return NULL;
 	/* If we have a header specification use intermediate table, for
@@ -1807,10 +1803,10 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			headers = NULL;
 		reorder = 1;
 	}
-	if (files) {
-		dnode *n = files->h;
+	if (copy->sources) {
+		dnode *n = copy->sources->h;
 
-		if (!onclient && !copy_allowed(sql, 1)) {
+		if (!copy->on_client && !copy_allowed(sql, 1)) {
 			return sql_error(sql, 02, SQLSTATE(42000)
 					 "COPY INTO: insufficient privileges: "
 					 "COPY INTO from file(s) requires database administrator rights, "
@@ -1821,7 +1817,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			const char *fname = n->data.sval;
 			sql_rel *nrel;
 
-			if (!onclient && fname && !MT_path_absolute(fname)) {
+			if (!copy->on_client && fname && !MT_path_absolute(fname)) {
 				char *fn = ATOMformat(TYPE_str, fname);
 				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					  "have absolute path: %s", fn);
@@ -1829,7 +1825,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape, decsep, decskip);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, copy->best_effort, copy->fwf_widths, copy->on_client, copy->escape, copy->decsep, copy->decskip);
 
 			if (!rel)
 				rel = nrel;
@@ -1843,8 +1839,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return rel;
 		}
 	} else {
-		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape, decsep, decskip);
+		assert(copy->on_client == 0);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, copy->best_effort, NULL, copy->on_client, copy->escape, copy->decsep, copy->decskip);
 	}
 	if (headers) {
 		dnode *n;
@@ -2239,21 +2235,8 @@ rel_updates(sql_query *query, symbol *s)
 	switch (s->token) {
 	case SQL_COPYFROM:
 	{
-		dlist *l = s->data.lval;
-
-		ret = copyfrom(query,
-				l->h->data.lval,
-				l->h->next->data.lval,
-				l->h->next->next->data.lval,
-				l->h->next->next->next->data.lval,
-				l->h->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->data.sval,
-				l->h->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->next->data.lval);
+		CopyFromNode *copy = (CopyFromNode*)s;
+		ret = copyfrom(query, copy);
 		sql->type = Q_UPDATE;
 	}
 		break;

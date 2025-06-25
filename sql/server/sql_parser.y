@@ -203,6 +203,7 @@ int yydebug=1;
 	check_search_condition
 	comment_on_statement
 	control_statement
+	copyload_stmt
 	copyfrom_stmt
 	copyto_stmt
 	create_statement
@@ -2961,7 +2962,7 @@ update_statement:
  | insert_stmt
  | update_stmt
  | merge_stmt
- | copyfrom_stmt
+ | copyload_stmt
  | copyto_stmt
  ;
 
@@ -3048,38 +3049,47 @@ opt_on_location:
 copyfrom_stmt:
 /*  1    2      3    4     5               6    7                8               9               10       11               12         13              14              15 */
     COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
-	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_list(l, $5);
-	  append_list(l, $7);
-	  append_list(l, $8);
-	  append_list(l, $10);
-	  append_list(l, $2);
-	  append_string(l, $13);
-	  append_int(l, $14);
-	  append_list(l, $15);
-	  append_int(l, $9);
-	  append_int(l, $12);
-	  append_list(l, $11);
-	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
+	{ CopyFromNode *copy = newCopyFromNode(SA,
+		/* qname */ $4,
+		/* column_list */ $5,
+		/* sources */ $7,
+		/* header_list */ $8,
+		/* nr_offset */ $2);
+	  copy->tsep = $10->h->data.sval;
+	  copy->rsep = $10->h->next->data.sval;
+	  copy->ssep = $10->cnt > 2 ? $10->h->next->next->data.sval : NULL;
+	  copy->null_string = $13,
+	  copy->best_effort = !!$14;
+	  copy->fwf_widths = $15;
+	  copy->on_client = !!$9;
+	  copy->escape = !!$12;
+	  copy->decsep = $11->h->data.sval;
+	  copy->decskip = $11->cnt > 1 ? $11->h->next->data.sval : NULL;
+	  $$ = (symbol*)copy; }
 /*  1    2      3    4     5               6    7      8               9        10               11         12              13*/
   | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort
-	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_list(l, $5);
-	  append_list(l, NULL);
-	  append_list(l, $8);
-	  append_list(l, $9);
-	  append_list(l, $2);
-	  append_string(l, $12);
-	  append_int(l, $13);
-	  append_list(l, NULL);
-	  append_int(l, 0);
-	  append_int(l, $11);
-	  append_list(l, $10);
-	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-/*  1    2         3    4     5    6 */
-  | COPY sqlLOADER INTO qname FROM func_ref
+	{ CopyFromNode *copy = newCopyFromNode(SA,
+		/* qname */ $4,
+		/* column_list */ $5,
+		/* sources */ NULL,
+		/* header_list */ $8,
+		/* nrows */ $2);
+	  copy->tsep = $9->h->data.sval;
+	  copy->rsep = $9->h->next->data.sval;
+	  copy->ssep = $9->cnt > 2 ? $9->h->next->next->data.sval : NULL;
+	  copy->null_string = $12,
+	  copy->best_effort = !!$13;
+	  copy->fwf_widths = NULL;
+	  copy->on_client = false;
+	  copy->escape = !!$11;
+	  copy->decsep = $10->h->data.sval;
+	  copy->decskip = $10->cnt > 1 ? $10->h->next->data.sval : NULL;
+	  $$ = (symbol*)copy; }
+
+copyload_stmt:
+   copyfrom_stmt { $$ = $1; }
+/*   1    2         3    4     5    6 */
+   | COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
