@@ -1732,6 +1732,16 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 				"that will never match, use '\\n' instead");
 	}
 
+	if (
+		strcmp(rsep, tsep) == 0
+		|| (ssep && strcmp(rsep, ssep) == 0)
+		|| (ssep && strcmp(tsep, ssep) == 0)
+	) {
+		return sql_error(sql, 02, SQLSTATE(42000)
+				"COPY INTO: row separator, column separator and quote character must be distinct");
+	}
+
+
 	if (!valid_decsep(copy->decsep))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid decimal separator");
 	if (copy->decskip && !valid_decsep(copy->decskip))
