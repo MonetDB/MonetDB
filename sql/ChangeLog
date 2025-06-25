@@ -7,3 +7,8 @@
   is converted to the new type using code similar to CAST(c AS type).
   If the conversion fails, the column type isn't changed.
 
+* Wed Jun 25 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- With COPY INTO, the USING DELIMITERS, DECIMAL, ESCAPE, NULL, BEST EFFORT and
+  FWF clauses can now be given in any order. If a clause occurs multiple times,
+  the last instance wins.
+
