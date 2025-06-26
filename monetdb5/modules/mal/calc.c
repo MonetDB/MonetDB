@@ -552,7 +552,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (ATOMextern(t1)) {
 		//*(ptr **) retval = ATOMdup(t1, *(ptr **) p);
-		size_t len = ATOMlen(t1, p);
+		size_t len = ATOMlen(t1, *(ptr **)p);
 		*(ptr **) retval = ma_realloc(cntxt->alloc, *(ptr **) p, len, len);
 		if (*(ptr **) retval == NULL)
 			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
