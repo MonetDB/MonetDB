@@ -2540,6 +2540,202 @@ store_readonly(sqlstore *store)
 	return store->readonly;
 }
 
+static bool
+table_must_be_omitted(bool omitunlogged, BAT *table_ids, sql_table *t)
+{
+	if (omitunlogged && t->type == tt_unlogged_table)
+		return true;
+	sqlid table_id = t->base.id;
+	if (table_ids != NULL && BUNfnd(table_ids, &table_id) != BUN_NONE)
+		return true;
+	return false;
+}
+
+static gdk_return
+forbid_fkey_to_omitted_table(sql_trans *tr, BAT *table_ids, bool omitunlogged, BAT *key_ids)
+{
+	sqlstore *store = tr->store;
+
+	struct os_iter schema_iter;
+	os_iterator(&schema_iter, store->cat->schemas, tr, NULL);
+	for (sql_schema *s = (sql_schema*)oi_next(&schema_iter); s; s = (sql_schema*)oi_next(&schema_iter)) {
+		char *sname = s->base.name;
+		struct os_iter table_iter;
+		os_iterator(&table_iter, s->tables, tr, NULL);
+		for (sql_table *t = (sql_table*)oi_next(&table_iter); t; t = (sql_table*)oi_next(&table_iter)) {
+			char *tname = t->base.name;
+			if (table_must_be_omitted(omitunlogged, table_ids, t)) {
+				// if the table will be omitted we don't care if it
+				// has foreign keys referencing other omitted tables.
+				continue;
+			}
+			for (node *n = ol_first_node(t->keys); n; n = n->next) {
+				sql_key *k = n->data;
+					if (k->type != fkey)
+					continue;
+				sql_fkey *fk = (sql_fkey*)k;
+				sqlid rkey = fk->rkey;
+				if (BUNfnd(key_ids, &rkey) == BUN_NONE) {
+					// this foreign key references a table that is not omitted.
+					continue;
+				}
+
+				GDKerror("table %s.%s has foreign key reference to omitted table\n", sname, tname);
+				return GDK_FAIL;
+			}
+		}
+	}
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+add_bat_to_omit(BAT *bat_ids, stream *col_ids, BAT *b, sql_base *obj)
+{
+	assert(b != NULL);
+	assert(b->batRole == PERSISTENT);
+	if (BUNappend(bat_ids, &b->batCacheid, 0) != GDK_SUCCEED) {
+		GDKerror("Cannot append to temp bat for table ids to omit");
+		return GDK_FAIL;
+	}
+
+	sqlid id = obj->id;
+	if (mnstr_printf(col_ids, "%d\n", id) < 1) {
+		GDKerror("Cannot append to temp buffer for table ids to omit");
+		return GDK_FAIL;
+	}
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+add_table_to_bats_to_omit(BAT *bat_ids, BAT *key_ids, stream *col_ids, sql_trans *tr, sql_schema *s, sql_table *t)
+{
+	gdk_return ret;
+	sqlstore *store = tr->store;
+
+	// Add the columns
+	for (node *n = t->columns->l->h; n; n = n->next) {
+		sql_column *c = n->data;
+		// with QUICK, the BAT pointer does not have to be BBPunfixed.
+		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
+		ret = add_bat_to_omit(bat_ids, col_ids, b, &c->base);
+		if (ret != GDK_SUCCEED)
+			return ret;
+	}
+
+	// Add the delete mask
+	bat bat_id = ((storage *) ATOMIC_PTR_GET(&t->data))->cs.bid;
+	BAT *b = BATdescriptor(bat_id);
+	if (b == NULL || b->batRole != PERSISTENT) {
+		GDKerror("Cannot find delete mask for table %s.%s (%d)", s->base.name, t->base.name, t->base.id);
+		return GDK_FAIL;
+	}
+	ret = add_bat_to_omit(bat_ids, col_ids, b, &t->base);
+	BBPunfix(bat_id);
+	if (ret != GDK_SUCCEED)
+		return ret;
+
+	// Add the indices
+	for (node *n = t->idxs->l->h; n; n = n->next) {
+		sql_idx *i = n->data;
+		// TODO maybe check i->type first
+		BAT *b = store->storage_api.bind_idx(tr, i, QUICK);
+		if (b == NULL || b->batRole != PERSISTENT)
+			continue;
+		ret = add_bat_to_omit(bat_ids, col_ids, b, &i->base);
+		if (ret != GDK_SUCCEED)
+			return ret;
+	}
+
+	// Enumerate the keys so we can check for foreign key constraints later
+	for (node *n = ol_first_node(t->keys); n; n = n->next) {
+		sql_key *k = n->data;
+		sqlid key_id = k->base.id;
+		if (BUNappend(key_ids, &key_id, 0) != GDK_SUCCEED) {
+			GDKerror("cannot append key id to list of keys to watch out for");
+			return GDK_FAIL;
+		}
+	}
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+find_bats_to_omit(sql_trans *tr, BAT *bat_ids, stream *col_ids, bool omitunlogged, const char *omitids)
+{
+	gdk_return ret = GDK_FAIL;
+	BAT *table_ids = NULL;
+	BAT *key_ids = NULL;
+	sqlstore *store = tr->store;
+
+	// parse omitids
+	if (omitids != NULL && omitids[0] != '\0') {
+		table_ids = COLnew(0, TYPE_int, 0, TRANSIENT);
+		if (table_ids == NULL) {
+			GDKerror("Cannot create temp bat for table ids to omit");
+			goto end;
+		}
+		const char *p = omitids;
+		while (1) {
+			char *rest;
+			long nn = strtol(p, &rest, 10);
+			if (nn < 0 || nn >= INT_MAX || (*rest != ',' && *rest != '\0')) {
+				GDKerror("Invalid table id in omitids: %s", omitids);
+				goto end;
+			}
+			int n = nn; // range check done above
+			if (BUNappend(table_ids, &n, 0) != GDK_SUCCEED) {
+				GDKerror("Cannot append to temp bat for table ids to omit");
+				goto end;
+			}
+			if (*rest == '\0')
+				break;
+			p = rest + 1;
+		}
+	}
+
+	if (!omitunlogged && table_ids == NULL) {
+		// exit early
+		ret = GDK_SUCCEED;
+		goto end;
+	}
+
+	key_ids = COLnew(0, TYPE_int, 0, TRANSIENT);
+	if (key_ids == NULL) {
+		GDKerror("Cannot create temp bat for key ids of omitted tables");
+		goto end;
+	}
+
+	// Iterate over the catalog to find the tables and add their various BATs
+	// (columns, delete mask, indices..) to bat_ids.
+	struct os_iter schema_iter;
+	os_iterator(&schema_iter, store->cat->schemas, tr, NULL);
+	for (sql_schema *s = (sql_schema*)oi_next(&schema_iter); s; s = (sql_schema*)oi_next(&schema_iter)) {
+		struct os_iter table_iter;
+		os_iterator(&table_iter, s->tables, tr, NULL);
+		for (sql_table *t = (sql_table*)oi_next(&table_iter); t; t = (sql_table*)oi_next(&table_iter)) {
+			if (!table_must_be_omitted(omitunlogged, table_ids, t))
+				continue;
+			if (add_table_to_bats_to_omit(bat_ids, key_ids, col_ids, tr, s, t) != GDK_SUCCEED) {
+				// gdk error has already been set, go straight to end
+				goto end;
+			}
+		}
+	}
+
+	if (forbid_fkey_to_omitted_table(tr, table_ids, omitunlogged, key_ids) != GDK_SUCCEED)
+		goto end;
+
+	ret = GDK_SUCCEED;
+end:
+	if (table_ids)
+		BBPreclaim(table_ids);
+	if (key_ids)
+		BBPreclaim(key_ids);
+	return ret;
+}
+
 // Helper function for tar_write_header.
 // Our stream.h makes sure __attribute__ exists.
 __attribute__((__format__(__printf__, 3, 4)))
@@ -2846,18 +3042,47 @@ pick_tmp_name(str filename)
 }
 
 lng
-store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
+store_hot_snapshot_to_stream(sql_trans *tr, stream *tar_stream, bool omitunlogged, const char *omitids)
 {
 	int locked = 0;
 	lng result = 0;
 	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
+	buffer *col_ids_buf = NULL;
+	stream *col_ids_stream = NULL;
+	BAT *bats_to_omit = NULL;
 	gdk_return r;
+	sqlstore *store = tr->store;
 
 	if (!store->logger_api.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
 		goto end;
 	}
+
+	bats_to_omit = COLnew(0, TYPE_int, 0, TRANSIENT);
+	if (bats_to_omit == NULL) {
+		GDKerror("Failed to allocate tmp bat");
+		goto end;
+	}
+
+	col_ids_buf = buffer_create(64 * 1024);
+	if (!col_ids_buf) {
+		GDKerror("Failed to allocate col_ids buffer");
+		goto end;
+	}
+	col_ids_stream = buffer_wastream(col_ids_buf, "write_snapshot_plan");
+	if (!col_ids_stream) {
+		GDKerror("Failed to allocate col_ids buffer stream");
+		goto end;
+	}
+
+	if (find_bats_to_omit(tr, bats_to_omit, col_ids_stream, omitunlogged, omitids) != GDK_SUCCEED) {
+		// GDKerror has already been set
+		goto end;
+	}
+	mnstr_writeBte(col_ids_stream, '\0');
+	close_stream(col_ids_stream);
+	col_ids_stream = NULL;
 
 	plan_buf = buffer_create(64 * 1024);
 	if (!plan_buf) {
@@ -2866,7 +3091,7 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 	}
 	plan_stream = buffer_wastream(plan_buf, "write_snapshot_plan");
 	if (!plan_stream) {
-		GDKerror("Failed to allocate buffer stream");
+		GDKerror("Failed to allocate plan buffer stream");
 		goto end;
 	}
 
@@ -2877,13 +3102,22 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 	if (GDKexiting())
 		goto end;
 
-	r = store->logger_api.get_snapshot_files(store, plan_stream);
+	r = store->logger_api.get_snapshot_files(store, bats_to_omit, plan_stream);
 	if (r != GDK_SUCCEED)
 		goto end; // should already have set a GDK error
-	close_stream(plan_stream);
-	plan_stream = NULL;
 	MT_lock_unset(&store->lock);
 	locked = 2;
+
+	if (col_ids_buf->buf[0] != '\0') {
+		if (mnstr_printf(plan_stream, "w %zu %s\n%s", col_ids_buf->pos-1, "sql_logs/sql/log.omitted", col_ids_buf->buf) < 0) {
+			GDKerror("Failed to write to plan stream");
+			goto end;
+		}
+	}
+
+	close_stream(plan_stream);
+	plan_stream = NULL;
+
 	r = hot_snapshot_write_tar(tar_stream, GDKgetenv("gdk_dbname"), buffer_get_buf(plan_buf));
 	if (r != GDK_SUCCEED)
 		goto end;
@@ -2904,16 +3138,22 @@ end:
 			MT_lock_unset(&store->lock);
 		MT_lock_unset(&store->flush);
 	}
+	if (bats_to_omit)
+		BBPunfix(bats_to_omit->batCacheid);
 	if (plan_stream)
 		close_stream(plan_stream);
 	if (plan_buf)
 		buffer_destroy(plan_buf);
+	if (col_ids_stream)
+		close_stream(col_ids_stream);
+	if (col_ids_buf)
+		buffer_destroy(col_ids_buf);
 	return result;
 }
 
 
 lng
-store_hot_snapshot(sqlstore *store, str tarfile)
+store_hot_snapshot(sql_trans *tx, str tarfile, bool omitunlogged, const char *omitids)
 {
 	lng result = 0;
 	struct stat st = {0};
@@ -2924,6 +3164,7 @@ store_hot_snapshot(sqlstore *store, str tarfile)
 	stream *tar_stream = NULL;
 	buffer *plan_buf = NULL;
 	stream *plan_stream = NULL;
+	sqlstore *store = tx->store;
 
 	if (!store->logger_api.get_snapshot_files) {
 		GDKerror("backend does not support hot snapshots");
@@ -2991,7 +3232,7 @@ store_hot_snapshot(sqlstore *store, str tarfile)
 	(void)dirpath;
 #endif
 
-	result = store_hot_snapshot_to_stream(store, tar_stream);
+	result = store_hot_snapshot_to_stream(tx, tar_stream, omitunlogged, omitids);
 	if (result == 0)
 		goto end;
 

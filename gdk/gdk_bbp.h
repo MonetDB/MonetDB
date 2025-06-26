@@ -107,4 +107,10 @@ gdk_export gdk_return BBPjson_upgrade(json_storage_conversion);
 #define BBPswappable(b) ((b) && (b)->batCacheid && BBP_refs((b)->batCacheid) == 0)
 #define BBPtrimmable(b) (BBPswappable(b) && isVIEW(b) == 0 && (BBP_status((b)->batCacheid)&BBPWAITING) == 0)
 
+/* low level support for patching BBP.dir */
+gdk_export gdk_return BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp);
+gdk_export bat BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize, FILE **obbpfp, FILE *nbbpf, BATiter *bi, int *nbatp);
+gdk_export gdk_return BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf);
+
+
 #endif /* _GDK_BBP_H_ */

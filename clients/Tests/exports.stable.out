@@ -215,6 +215,9 @@ gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, boo
 BBPrec *BBP[N_BBPINIT];
 gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror);
 void BBPcold(bat i);
+gdk_return BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp);
+gdk_return BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf);
+bat BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize, FILE **obbpfp, FILE *nbbpf, BATiter *bi, int *nbatp);
 int BBPfix(bat b);
 unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrade);
 bat BBPindex(const char *nme);
