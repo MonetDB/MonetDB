@@ -246,6 +246,7 @@ emergencyBreakpoint(void)
 
 static volatile sig_atomic_t interrupted = 0;
 static volatile sig_atomic_t usr1_interrupted = 0;
+static volatile sig_atomic_t usr2_interrupted = 0;
 
 static void
 usr1trigger(void)
@@ -273,6 +274,29 @@ handler_usr1(int sig)
 {
 	(void) sig;
 	usr1trigger();
+}
+static void
+handler_usr2(int sig)
+{
+	(void) sig;
+	usr2_interrupted = 1;
+}
+#endif
+
+#ifdef WITH_JEMALLOC
+static void
+writecb(void *data, const char *msg)
+{
+	(void) data;
+	printf("%s\n", msg);
+}
+#endif
+#ifdef WITH_MIMALLOC
+static void
+writecb(const char *msg, void *arg)
+{
+	(void) arg;
+	printf("mimalloc stats\n%s\nmimalloc stats end\n", msg);
 }
 #endif
 
@@ -820,6 +844,12 @@ main(int argc, char **av)
 		if (sigaction(SIGUSR1, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
 		}
+		(void) sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = handler_usr2;
+		if (sigaction(SIGUSR2, &sa, NULL) == -1) {
+			fprintf(stderr, "!unable to create signal handler for SIGUSR2\n");
+		}
 	}
 #else
 #ifdef _MSC_VER
@@ -836,6 +866,8 @@ main(int argc, char **av)
 		fprintf(stderr, "!unable to create signal handlers\n");
 	if (signal(SIGUSR1, handler_usr1) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
+	if (signal(SIGUSR2, handler_usr2) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handler for SIGUSR2\n");
 #endif
 #endif
 
@@ -940,6 +972,19 @@ main(int argc, char **av)
 			/* print some useful information */
 			GDKprintinfo();
 			fflush(stdout);
+		}
+		if (usr2_interrupted) {
+			usr2_interrupted = 0;
+#ifdef WITH_MALLOC
+#ifdef WITH_JEMALLOC
+			malloc_stats_print(writecb, NULL, "");
+#endif
+#ifdef WITH_MIMALLOC
+			mi_stats_print_out(writecb, NULL);
+#endif
+#elif defined(HAVE_MALLOC_INFO)
+			malloc_info(0, stdout);
+#endif
 		}
 		MT_sleep_ms(100);		/* pause(), except for sys.shutdown() */
 	}

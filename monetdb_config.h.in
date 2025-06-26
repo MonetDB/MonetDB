@@ -141,6 +141,8 @@
 #cmakedefine HAVE_STRERROR_R 1
 #cmakedefine HAVE_LOCKF 1
 #cmakedefine HAVE_MADVISE  1
+#cmakedefine HAVE_MALLINFO2 1
+#cmakedefine HAVE_MALLOC_INFO 1
 #cmakedefine HAVE_MREMAP  1
 #cmakedefine HAVE_NANOSLEEP  1
 #cmakedefine HAVE_NL_LANGINFO  1
@@ -191,6 +193,11 @@
 #cmakedefine HAVE_SHP 1
 #cmakedefine HAVE_LIBPY3 1
 #cmakedefine HAVE_OPENSSL 1
+
+#cmakedefine WITH_JEMALLOC 1
+#cmakedefine WITH_MIMALLOC 1
+#cmakedefine WITH_TCMALLOC 1
+#cmakedefine WITH_MALLOC "@WITH_MALLOC@"
 
 // #cmakedefine SOCKET_LIBRARIES
 #cmakedefine HAVE_GETADDRINFO 1
@@ -472,6 +479,17 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #else
 #define LIB_STARTUP_FUNC(f) \
 		__attribute__((__constructor__)) static void f(void)
+#endif
+
+#ifdef WITH_MALLOC
+#ifdef WITH_JEMALLOC
+#include <jemalloc/jemalloc.h>
+#endif
+#ifdef WITH_MIMALLOC
+#include <mimalloc.h>
+#endif
+#elif defined(HAVE_MALLOC_INFO)
+#include <malloc.h>
 #endif
 
 #endif /* MT_SEEN_MONETDB_CONFIG_H */
