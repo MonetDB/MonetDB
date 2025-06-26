@@ -1193,36 +1193,97 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 	return GDK_FAIL;
 }
 
+static gdk_return
+patch_bbpdir(BAT *bats_to_omit)
+{
+	gdk_return r, ret = GDK_FAIL;
+
+	FILE *in = NULL;
+	FILE *out = NULL;
+	int state = 0;
+	char buf[3000];
+	BAT *sorted = NULL;
+	BATiter item_iter;
+	bool item_iter_initialized = false;
+
+	assert(BATttype(bats_to_omit) == TYPE_int);
+
+	if (BBPdir_first(true, -1, &in, &out) != GDK_SUCCEED)
+		goto end;
+
+	r = BATsort(&sorted, NULL, NULL, bats_to_omit, NULL, NULL, false, false, false);
+	if (r != GDK_SUCCEED)
+		goto end;
+	item_iter = bat_iterator(sorted);
+	item_iter_initialized = true;
+	bat *items = item_iter.base;
+	for (BUN i = 0; i < item_iter.count; i++) {
+		bat id = items[i];
+		BATiter scratch = bat_iterator(BBP_desc(id));
+		state = BBPdir_step(id, 0, state, buf, sizeof(buf), &in, out, &scratch, NULL);
+		bat_iterator_end(&scratch);
+		if (state < -1)
+			goto end;
+	}
+
+	if (BBPdir_last(state, buf, sizeof(buf), in, out) == GDK_SUCCEED) {
+		/* _last closed them for us */
+		in = NULL;
+		out = NULL;
+	} else {
+		goto end;
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	if (item_iter_initialized)
+		bat_iterator_end(&item_iter);
+	if (sorted)
+		BBPreclaim(sorted);
+	if (in)
+		fclose(in);
+	if (out) {
+		fclose(out);
+	}
+	return ret;
+}
+
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
 __attribute__((__warn_unused_result__))
 static gdk_return
-snapshot_bats(stream *plan, const char *db_dir)
+snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 {
 	char bbpdir[FILENAME_MAX];
+	char dest_bbp[20];
 	FILE *fp = NULL;
-	int len;
-	gdk_return ret = GDK_FAIL;
+	gdk_return r, ret = GDK_FAIL;
 	int lineno = 0;
 	bat bbpsize = 0;
 	lng logno;
 	unsigned bbpversion;
 
-	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
-	if (len == -1 || len >= FILENAME_MAX) {
-		GDKerror("Could not open %s, filename is too large", bbpdir);
+	// bbpdir is the full path to the patched version of BBP.dir that we will
+	// be reading. dest_bbp is the path inside the snapshot where we will store it.
+	if (GDKfilepath(bbpdir, sizeof(bbpdir), 0, BATDIR, "BBP", "dir") != GDK_SUCCEED ||
+		GDKfilepath(dest_bbp, sizeof(dest_bbp), NOFARM, BAKDIR, "BBP", "dir") != GDK_SUCCEED)
 		return GDK_FAIL;
-	}
-	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
+
+	// At this point 'bbpdir' (bat/BBP.dir) does not exist, only BACKUP/bat/BBP.dir exists.
+	if (patch_bbpdir(bats_to_omit) != GDK_SUCCEED)
+		goto end;
+	// At this point, 'bbpdir' (bat/BBP.dir) does exist and is a modified copy of BACKUP/bat/BBP.dir
+
+	ret = snapshot_immediate_copy_file(plan, bbpdir, dest_bbp);
 	if (ret != GDK_SUCCEED)
-		return ret;
+		goto end;
 
 	// Open the catalog and parse the header
 	fp = fopen(bbpdir, "r");
 	if (fp == NULL) {
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
-		return GDK_FAIL;
+		goto end;
 	}
 	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0)
@@ -1254,29 +1315,37 @@ snapshot_bats(stream *plan, const char *db_dir)
 							   batname, filename, &options)) {
 		case 0:
 			/* end of file */
-			fclose(fp);
-			return GDK_SUCCEED;
+			ret = GDK_SUCCEED;
+			goto end;
 		case 1:
 			/* successfully read an entry */
 			break;
 		default:
 			/* error */
 			fclose(fp);
-			return GDK_FAIL;
+			ret = GDK_FAIL;
+			goto end;
 		}
 #ifdef GDKLIBRARY_HASHASH
 		assert(hashash == 0);
 #endif
+
+		if (b.batCount == 0) {
+			continue;
+		}
+
+		// Include the heaps in the plan
 		if (ATOMvarsized(b.ttype)) {
-			ret = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
-			if (ret != GDK_SUCCEED)
+			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
+			if (r != GDK_SUCCEED)
 				goto end;
 		}
-		ret = snapshot_heap(plan, db_dir, b.batCacheid, filename, BATtailname(&b), b.theap->free);
-		if (ret != GDK_SUCCEED)
+		r = snapshot_heap(plan, db_dir, b.batCacheid, filename, BATtailname(&b), b.theap->free);
+		if (r != GDK_SUCCEED)
 			goto end;
 	}
 
+	ret = GDK_SUCCEED;
 end:
 	if (fp) {
 		fclose(fp);
@@ -1310,7 +1379,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 }
 
 static gdk_return
-bl_snapshot(sqlstore *store, stream *plan)
+bl_snapshot(sqlstore *store, BAT *bats_to_omit, stream *plan)
 {
 	logger *bat_logger = store->logger;
 	gdk_return ret;
@@ -1336,7 +1405,7 @@ bl_snapshot(sqlstore *store, stream *plan)
 	if (ret != GDK_SUCCEED)
 		goto end;
 
-	ret = snapshot_bats(plan, db_dir);
+	ret = snapshot_bats(plan, bats_to_omit, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

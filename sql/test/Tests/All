@@ -132,6 +132,8 @@ HAVE_PYTHON_LZ4&HAVE_LIBLZ4&!NOWAL?hot_snapshot_lz4
 !HAVE_PYTHON_LZ4&HAVE_LIBLZ4&!NOWAL?hot_snapshot_lz4_lite
 HAVE_PYTHON_LZ4&HAVE_LIBLZ4&PYTHON_VERSION>=3.7&VMSIZE>=20000000000?hot_snapshot_huge_file
 
+!NOWAL?selective_snapshot
+
 # The following tests are some old tests moved from sql/test
 ## FOREIGN KEY reference to the same table
 foreign_key
