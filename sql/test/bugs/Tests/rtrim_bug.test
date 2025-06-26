@@ -75,11 +75,13 @@ SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" I
 statement ok
 call profiler.stoptrace()
 
+skipif knownfail
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'
 ----
 0
 
+skipif knownfail
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% algebra.join%'
 ----

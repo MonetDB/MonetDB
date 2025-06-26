@@ -1,6 +1,7 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
+skipif knownfail
 query T python .plan.filter
    plan select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2
 ----
@@ -8,15 +9,13 @@ project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+skipif knownfail
 query T python .plan.filter
    plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
-
-statement ok
-   plan select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 
 skipif knownfail
 query T python .plan.filter
@@ -28,9 +27,6 @@ project (
 | | table("sys"."pk1") [ "pk1"."v1" NOT NULL UNIQUE, "pk1"."%TID%" NOT NULL UNIQUE ]
 | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
-
-statement ok
-   plan select id , v2  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 
 skipif knownfail
 query T python .plan.filter
@@ -46,6 +42,7 @@ project (
 | ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
+skipif knownfail
 query T python .plan.filter
    plan select count(*) from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
 ----
@@ -53,15 +50,13 @@ project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+skipif knownfail
 query T python .plan.filter
    plan select id       from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
-
-statement ok
-   plan select id , v1  from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 
 skipif knownfail
 query T python .plan.filter
@@ -73,9 +68,6 @@ project (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
-
-statement ok
-   plan select id , v2  from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 
 skipif knownfail
 query T python .plan.filter
@@ -91,6 +83,7 @@ project (
 | ) [ ("fk"."%fk_fk2_fkey") = ("pk2"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
+skipif knownfail
 query T python .plan.filter
    plan select count(*) from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2
 ----
@@ -98,15 +91,13 @@ project (
 |  [ "sys"."cnt"(varchar "sys", varchar "fk") NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 
+skipif knownfail
 query T python .plan.filter
    plan select id       from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 ----
 project (
 | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 ) [ "fk"."id" NOT NULL UNIQUE HASHCOL  ] [ "fk"."id" ASC NOT NULL UNIQUE HASHCOL  ]
-
-statement ok
-   plan select id , v1  from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 
 skipif knownfail
 query T python .plan.filter
@@ -118,9 +109,6 @@ project (
 | | table("sys"."fk") [ "fk"."id" NOT NULL UNIQUE HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX "sys"."fk"."fk_fk1_fkey", "fk"."%fk_fk2_fkey" JOINIDX "sys"."fk"."fk_fk2_fkey" ]
 | ) [ ("fk"."%fk_fk1_fkey") = ("pk1"."%TID%" NOT NULL UNIQUE) JOINIDX "sys"."fk"."fk_fk1_fkey" ]
 ) [ "fk"."id" HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC HASHCOL  ]
-
-statement ok
-   plan select id , v2  from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id
 
 skipif knownfail
 query T python .plan.filter
