@@ -1053,8 +1053,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 		q = pushStr(mb, q, query);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		pushInstruction(mb, q);
-		if (cq_query)
-			GDKfree(buf);
+		GDKfree(buf);
 	}
 
 	/* announce the transaction mode */
