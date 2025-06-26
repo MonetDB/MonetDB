@@ -93,6 +93,27 @@ typedef struct AtomNode {
 	struct atom *a;
 } AtomNode;
 
+typedef struct CopyFromNode {
+	symbol s;
+
+	struct dlist *qname; /* never empty */
+	struct dlist *column_list; /* never empty */
+	struct dlist *sources; /* or NULL for FROM STDIN */
+	struct dlist *header_list; /* or NULL */
+	lng nrows; /* default -1, meaning not set */
+	lng offset; /* default 0 */
+	char *tsep; /* column separator, default "|" */
+	char *rsep; /* row separator, default "\n" */
+	char *ssep; /* quote character, default NULL */
+	char *null_string; /* default NULL, not "NULL"! */
+	bool best_effort; /* default false */
+	struct dlist *fwf_widths; /* must be NULL for FROM STDIN */
+	bool on_client; /* must be false for FROM STDIN */
+	bool escape; /* default true */
+	char *decsep; /* default "." */
+	char *decskip; /* default NULL */
+} CopyFromNode;
+
 extern symbol *symbol_create(allocator *sa, tokens token, char *data);
 extern symbol *symbol_create_list(allocator *sa, tokens token, dlist *data);
 extern symbol *symbol_create_int(allocator *sa, tokens token, int data);
@@ -103,6 +124,8 @@ extern dnode *node_string(allocator *sa, const char *s);
 extern dnode *node_symbol(allocator *sa, symbol *s);
 
 extern symbol *newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window, symbol *qualify);
+
+extern CopyFromNode *newCopyFromNode(allocator *sa, struct dlist *qname, struct dlist *column_list, struct dlist *sources, struct dlist *header_list, struct dlist *nr_offset);
 
 extern symbol *newAtomNode(allocator *sa, atom *a);
 

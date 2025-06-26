@@ -1497,9 +1497,7 @@ rel_push_select(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *e, int f)
 	node *n;
 	sql_rel *lrel = NULL, *p = NULL;
 
-	if (!l)
-		return NULL;
-	if (is_sql_or(f)) /* expression has no clear parent relation, so filter current with it */
+	if (!l || is_sql_or(f)) /* expression has no clear parent relation, so filter current with it */
 		return rel_select(sql->sa, rel, e);
 
 	for (n = l->h; n; n = n->next ) {

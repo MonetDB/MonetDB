@@ -376,7 +376,7 @@ struct offset {
 };
 
 static log_return
-log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
+log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bool skip_entry)
 {
 	log_return res = LOG_OK;
 	lng nr, pnr;
@@ -401,7 +401,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 		lng offset;
 
 		assert(nr <= (lng) BUN_MAX);
-		if (!lg->flushing && l->flag == LOG_UPDATE) {
+		if (!lg->flushing && !skip_entry && l->flag == LOG_UPDATE) {
 			uid = COLnew(0, TYPE_oid, (BUN) nr, PERSISTENT);
 			if (uid == NULL) {
 				TRC_CRITICAL(GDK, "creating bat failed\n");
@@ -417,12 +417,12 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			if (cands) {
 				/* This const range actually represents a segment of candidates corresponding to updated bat entries */
 
-				if (BATcount(*cands) == 0 || lg->flushing) {
+				if (BATcount(*cands) == 0 || lg->flushing || skip_entry) {
 					/* when flushing, we only need the offset and count of the last segment of inserts. */
 					assert((*cands)->ttype == TYPE_void);
 					BATtseqbase(*cands, (oid) offset);
 					BATsetcount(*cands, (BUN) nr);
-				} else if (!lg->flushing) {
+				} else if (!lg->flushing && !skip_entry) {
 					assert(BATcount(*cands) > 0);
 					BAT *dense = BATdense(0, (oid) offset, (BUN) nr);
 					BAT *newcands = NULL;
@@ -459,7 +459,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			}
 		}
 
-		if (!lg->flushing) {
+		if (!lg->flushing && !skip_entry) {
 			r = COLnew(0, tpe, (BUN) nr, PERSISTENT);
 			if (r == NULL) {
 				if (uid)
@@ -643,7 +643,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 			GDKfree(hv);
 		}
 
-		if (res == LOG_OK) {
+		if (res == LOG_OK && !skip_entry) {
 			if (tr_grow(tr) == GDK_SUCCEED) {
 				tr->changes[tr->nr].type = l->flag;
 				if (l->flag == LOG_UPDATE_BULK && offset == -1) {
@@ -654,7 +654,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands)
 					const oid last = canditer_last(&ci);
 					offset = (lng) first;
 					pnr = (lng) (last - first) + 1;
-					if (!lg->flushing) {
+					if (!lg->flushing && !skip_entry) {
 						assert(uid == NULL);
 						uid = *cands;
 						BBPfix((*cands)->batCacheid);
@@ -1282,12 +1282,13 @@ log_open_input(logger *lg, const char *filename, bool *filemissing)
 }
 
 static log_return
-log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated, time_t *t)
+log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupdated, time_t *t)
 {
 	logformat l;
 	trans *tr = NULL;
 	log_return err = LOG_OK;
 	bool ok = true;
+	bool skip_entry = false;
 	ATOMIC_BASE_TYPE dbg = ATOMIC_GET(&GDKdebug);
 	time_t t0 = 0;
 	size_t fs = 0;
@@ -1332,10 +1333,14 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated, time_t *t)
 			else
 				TRC_DEBUG_ENDIF(WAL, "%d %d", l.flag, l.id);
 		}
+		skip_entry = (ids_to_omit && BUNfnd(ids_to_omit, &l.id) != BUN_NONE);
 		switch (l.flag) {
 		case LOG_UPDATE_CONST:
 		case LOG_UPDATE_BULK:
 		case LOG_UPDATE:
+			if (skip_entry)
+				break;
+			/* fall through */
 		case LOG_CREATE:
 		case LOG_DESTROY:
 			if (tr != NULL && updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
@@ -1418,7 +1423,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated, time_t *t)
 			if (tr == NULL)
 				err = LOG_EOF;
 			else {
-				err = log_read_updates(lg, tr, &l, l.id, cands ? &cands : NULL);
+				err = log_read_updates(lg, tr, &l, l.id, cands ? &cands : NULL, skip_entry);
 			}
 			break;
 		case LOG_CREATE:
@@ -1483,7 +1488,7 @@ log_read_transaction(logger *lg, uint32_t *updated, BUN maxupdated, time_t *t)
 }
 
 static gdk_return
-log_readlog(logger *lg, const char *filename, bool *filemissing)
+log_readlog(logger *lg, const char *filename, BAT *ids_to_omit, bool *filemissing)
 {
 	log_return err = LOG_OK;
 	time_t t0;
@@ -1499,7 +1504,7 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 		GDKtracer_flush_buffer();
 	}
 	while (err != LOG_EOF && err != LOG_ERR) {
-		err = log_read_transaction(lg, NULL, 0, &t0);
+		err = log_read_transaction(lg, ids_to_omit, NULL, 0, &t0);
 	}
 	log_close_input(lg);
 	lg->input_log = NULL;
@@ -1515,6 +1520,55 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 	return err == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
+static gdk_return
+read_omitted_ids(const char *filename, BAT **ids_to_omit)
+{
+	gdk_return ret = GDK_FAIL;
+	BAT *ids_bat = NULL;
+	FILE *f = fopen(filename, "r");
+	if (!f) {
+		if (errno != ENOENT) {
+			GDKsyserror("fopen %s failed\n", filename);
+			goto end;
+		}
+		/* file does not exist, return NULL. */
+		ids_bat = NULL;
+		ret = GDK_SUCCEED;
+		goto end;
+	}
+
+	ids_bat = COLnew(0, TYPE_int, 0, TRANSIENT);
+	if (!ids_bat) {
+		GDKerror("read_omitted_ids: cannot create bat");
+		goto end;
+	}
+	while (1) {
+		int id;
+		if (fscanf(f, "%d", &id) == 1) {
+			if (BUNappend(ids_bat, &id, true) != GDK_SUCCEED) {
+				GDKerror("read_omitted_ids: cannot append to bat");
+				goto end;
+			}
+		} else {
+			break;
+		}
+	}
+	if (ferror(f)) {
+		GDKsyserror("fscanf %s failed\n", filename);
+		goto end;
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	if (f)
+		fclose(f);
+	if (ret == GDK_SUCCEED)
+		*ids_to_omit = ids_bat;
+	else if (ids_bat)
+		BBPunfix(ids_bat->batCacheid);
+	return ret;
+}
+
 /*
  * The log files are incrementally numbered, starting from 2. They are
  * processed in the same sequence.
@@ -1522,29 +1576,43 @@ log_readlog(logger *lg, const char *filename, bool *filemissing)
 static gdk_return
 log_readlogs(logger *lg, const char *filename)
 {
-	gdk_return res = GDK_SUCCEED;
+	gdk_return ret = GDK_FAIL;
+	char log_filename[FILENAME_MAX];
+	BAT *ids_to_omit = NULL;
 
 	assert(!lg->inmemory);
 	TRC_DEBUG(WAL, "logger id is " LLFMT " last logger id is " LLFMT "\n", lg->id, lg->saved_id);
 
-	char log_filename[FILENAME_MAX];
+	if (snprintf(log_filename, sizeof(log_filename), "%s.omitted", filename) >= FILENAME_MAX) {
+		GDKerror("Logger filename path is too large\n");
+		goto end;
+	}
+	if (read_omitted_ids(log_filename, &ids_to_omit) != GDK_SUCCEED)
+		goto end;
+
 	if (lg->saved_id >= lg->id) {
 		bool filemissing = false;
 
 		lg->id = lg->saved_id + 1;
+		gdk_return res = GDK_SUCCEED;
 		while (res == GDK_SUCCEED && !filemissing) {
 			if (snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id) >= FILENAME_MAX) {
 				GDKerror("Logger filename path is too large\n");
-				return GDK_FAIL;
+				goto end;
 			}
-			res = log_readlog(lg, log_filename, &filemissing);
+			res = log_readlog(lg, log_filename, ids_to_omit, &filemissing);
 			if (!filemissing) {
 				lg->saved_id++;
 				lg->id++;
 			}
 		}
 	}
-	return res;
+
+	ret = GDK_SUCCEED;
+end:
+	if (ids_to_omit)
+		BBPunfix(ids_to_omit->batCacheid);
+	return ret;
 }
 
 static gdk_return
@@ -2378,6 +2446,11 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 		if (log_commit(lg, NULL, NULL, 0) != GDK_SUCCEED) {
 			goto error;
 		}
+		// We can unconditionally GDKunlink because it's a no-op if the file does not exist
+		if (GDKunlink(0, lg->dir, LOGFILE ".omitted", NULL) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "couldn't remove file " LOGFILE ".omitted\n");
+			return GDK_FAIL;
+		}
 		ATOMIC_SET(&GDKdebug, dbg);
 		for (; log_id <= lg->saved_id; log_id++)
 			(void) log_cleanup(lg, log_id);	/* ignore error of removing file */
@@ -2825,7 +2898,7 @@ log_flush(logger *lg, ulng ts)
 			nupdated = n;
 		}
 		lg->flushing = true;
-		res = log_read_transaction(lg, updated, nupdated, NULL);
+		res = log_read_transaction(lg, NULL, updated, nupdated, NULL);
 		lg->flushing = false;
 		log_unlock(lg);
 		if (res == LOG_EOF) {

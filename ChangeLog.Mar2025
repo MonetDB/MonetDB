@@ -1,6 +1,15 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Jun 13 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add optional parameters omit_unlogged (bool) and omit_table_ids (str) to
+  sys.hot_snapshot(). If omit_unlogged is set to true, the data in UNLOGGED
+  tables is omitted from the snapshot. If omit_table_ids is given, it must
+  be a comma-separated list of table ids as found in sys.tables. The data in
+  each of those tables will be omitted from the snapshot.
+- Empty BATs are omitted from the snapshot, the restored server will created
+  them if necessary.
+
 * Thu May  8 2025 Sjoerd Mullender <sjoerd@acm.org>
 - It is now possible to specify an idle timeout using --set
   idle_timeout=<seconds> (see mserver5 manual page) which gets triggered

@@ -1642,6 +1642,10 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	} else {
 		node *n;
 
+		if (strncmp(op, "not_", 4) == 0) {
+			anti = !anti;
+			op += 4;
+		}
 		op = sa_strconcat(be->mvc->sa, op, selectRef);
 		q = newStmtArgs(mb, mod, convertMultiplexFcn(op), 9);
 		if (q == NULL)

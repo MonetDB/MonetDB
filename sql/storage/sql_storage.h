@@ -305,7 +305,7 @@ typedef int (*log_tsequence_fptr) (struct sqlstore *store, int seq, lng id);
 -- Using a stream (buffer) instead of a list data structure simplifies debugging
 -- and avoids a lot of tiny allocations and pointer manipulations.
 */
-typedef gdk_return (*logger_get_snapshot_files_fptr)(struct sqlstore *store, stream *plan);
+typedef gdk_return (*logger_get_snapshot_files_fptr)(struct sqlstore *store, BAT *bats_to_omit, stream *plan);
 
 typedef struct logger_functions {
 	log_create_fptr create;
@@ -343,8 +343,8 @@ extern void store_exit(struct sqlstore *store);
 
 extern void store_suspend_log(struct sqlstore *store);
 extern void store_resume_log(struct sqlstore *store);
-extern lng store_hot_snapshot(struct sqlstore *store, str tarfile);
-extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
+extern lng store_hot_snapshot(sql_trans *tx, str tarfile, bool omitunlogged, const char *omitids);
+extern lng store_hot_snapshot_to_stream(sql_trans *tx, stream *s, bool omitunlogged, const char *omitids);
 
 extern ulng store_function_counter(struct sqlstore *store);
 

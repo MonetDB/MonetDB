@@ -4866,6 +4866,38 @@ sql_update_mar2025_sp1(Client c, mvc *sql)
 	return err;
 }
 
+static str
+sql_update_snapshot(Client c, mvc *sql, sql_schema *s)
+{
+	char *err;
+	res_table *output;
+	BAT *b;
+
+	(void) sql;
+	(void) s;
+
+	/* json.isvalid(json) has been fixed to return NULL on NULL input */
+	err = SQLstatementIntern(c, "select id from sys.functions where name = 'hot_snapshot' and schema_id = 2000 and func like '%omitunlogged%';\n", "update", true, false, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) == 0) {
+			const char *query = "create procedure sys.hot_snapshot(tarfile string, onserver bool, omitunlogged bool)\n"
+				"external name sql.hot_snapshot;\n"
+				"create procedure sys.hot_snapshot(tarfile string, onserver bool, omitunlogged bool, omitids string)\n"
+				"external name sql.hot_snapshot;\n"
+				"update sys.functions set system = true where system <> true and name = 'hot_snapshot' and schema_id = 2000;\n";
+			printf("Running database upgrade commands:\n%s\n", query);
+			fflush(stdout);
+			err = SQLstatementIntern(c, query, "update", true, false, NULL);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_table_destroy(output);
+	return err;
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -4935,6 +4967,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_mar2025_sp1(c, m)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		goto handle_error;
+	}
+
+	if ((err = sql_update_snapshot(c, m, s)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		goto handle_error;
 	}
