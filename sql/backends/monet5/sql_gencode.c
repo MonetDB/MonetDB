@@ -1042,6 +1042,10 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 			if (cq_query) {
 				size_t buf_sz = 2 + strlen(query) + strlen(cq_query);
 				buf = GDKmalloc(buf_sz * sizeof(char));
+				if (buf == NULL) {
+					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return -1;
+				}
 				snprintf(buf, buf_sz, "%.*s %s", (int)strlen(query) - 1, query, cq_query);
 				query = buf;
 			}
