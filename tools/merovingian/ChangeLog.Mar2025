@@ -1,11 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Thu May 22 2025 Sjoerd Mullender <sjoerd@acm.org>
-- When mserver5 is started by monetdbd due to an implicit request
-  (application trying to connect to a database), and mserver5 crashes
-  or exits before a connection can be established, monetdbd will stop
-  trying to start the server after a few attempts.  When using an explicit
-  command to start the server (using monetdb start), monetdbd will always
-  attempt to start the server.
-
