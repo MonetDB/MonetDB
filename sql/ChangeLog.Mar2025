@@ -5,6 +5,15 @@
 - When a prepared statement is executed, sys.queue now shows the text
   of the original PREPARE statement along with the EXEC and its arguments.
 
+* Fri Jun 13 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Add optional parameters omit_unlogged (bool) and omit_table_ids (str) to
+  sys.hot_snapshot(). If omit_unlogged is set to true, the data in UNLOGGED
+  tables is omitted from the snapshot. If omit_table_ids is given, it must
+  be a comma-separated list of table ids as found in sys.tables. The data in
+  each of those tables will be omitted from the snapshot.
+- Empty BATs are omitted from the snapshot, the restored server will created
+  them if necessary.
+
 * Wed May 14 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Corrected reading decimal type columns from external ODBC data sources
   via proto_loader('odbc:...'). Those columns were mapped to varchar type
