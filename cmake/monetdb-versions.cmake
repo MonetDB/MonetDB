@@ -43,21 +43,21 @@ set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/utils)
 set(GDK_VERSION_MAJOR "30")
-set(GDK_VERSION_MINOR "0")
-set(GDK_VERSION_PATCH "1")
+set(GDK_VERSION_MINOR "1")
+set(GDK_VERSION_PATCH "0")
 set(GDK_VERSION "${GDK_VERSION_MAJOR}.${GDK_VERSION_MINOR}.${GDK_VERSION_PATCH}")
 
 # version of the MAPI library (subdirectory clients/mapilib)
 set(MAPI_VERSION_MAJOR "28")
 set(MAPI_VERSION_MINOR "0")
-set(MAPI_VERSION_PATCH "0")
+set(MAPI_VERSION_PATCH "1")
 set(MAPI_VERSION "${MAPI_VERSION_MAJOR}.${MAPI_VERSION_MINOR}.${MAPI_VERSION_PATCH}")
 
 # version of the MONETDB5 library (subdirectory monetdb5, not including
 # extras, and tools/utils/msabaoth.[ch])
 set(MONETDB5_VERSION_MAJOR "37")
 set(MONETDB5_VERSION_MINOR "0")
-set(MONETDB5_VERSION_PATCH "0")
+set(MONETDB5_VERSION_PATCH "1")
 set(MONETDB5_VERSION "${MONETDB5_VERSION_MAJOR}.${MONETDB5_VERSION_MINOR}.${MONETDB5_VERSION_PATCH}")
 
 # version of the MONETDBE library (subdirectory tools/monetdbe)
@@ -69,17 +69,17 @@ set(MONETDBE_VERSION "${MONETDBE_VERSION_MAJOR}.${MONETDBE_VERSION_MINOR}.${MONE
 # version of the MUTILS library (subdirectory common/utils)
 set(MUTILS_VERSION_MAJOR "1")
 set(MUTILS_VERSION_MINOR "0")
-set(MUTILS_VERSION_PATCH "0")
+set(MUTILS_VERSION_PATCH "1")
 set(MUTILS_VERSION "${MUTILS_VERSION_MAJOR}.${MUTILS_VERSION_MINOR}.${MUTILS_VERSION_PATCH}")
 
 # version of the SQL library (subdirectory sql)
 set(SQL_VERSION_MAJOR "16")
 set(SQL_VERSION_MINOR "1")
-set(SQL_VERSION_PATCH "0")
+set(SQL_VERSION_PATCH "1")
 set(SQL_VERSION "${SQL_VERSION_MAJOR}.${SQL_VERSION_MINOR}.${SQL_VERSION_PATCH}")
 
 # version of the STREAM library (subdirectory common/stream)
 set(STREAM_VERSION_MAJOR "28")
 set(STREAM_VERSION_MINOR "0")
-set(STREAM_VERSION_PATCH "0")
+set(STREAM_VERSION_PATCH "1")
 set(STREAM_VERSION "${STREAM_VERSION_MAJOR}.${STREAM_VERSION_MINOR}.${STREAM_VERSION_PATCH}")
