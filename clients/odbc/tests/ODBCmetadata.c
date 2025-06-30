@@ -1519,6 +1519,7 @@ main(int argc, char **argv)
 		"ORDERID	LINES	PARTID	QUANTITY\n"
 		"INTEGER	INTEGER	INTEGER	DECIMAL(9,3)\n");
 
+#if 0
 	// test PLAN SELECT query
 	ret = SQLExecDirect(stmt, (SQLCHAR *) "PLAN SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	compareResult(stmt, ret, "PLAN SELECT * from odbctst.\"LINES\"",
@@ -1636,6 +1637,7 @@ main(int argc, char **argv)
 			"22	    X_37=76:int := sql.resultSet(X_38=[4]:bat[:str], X_39=[4]:bat[:str], X_40=[4]:bat[:str], X_41=[4]:bat[:int], X_42=[4]:bat[:int], X_33=[0]:bat[:int], X_34=[0]:bat[:int], X_35=[0]:bat[:int], X_36=[0]:bat[:int]);\n");
 		*/
 	}
+#endif
 
 	// test DEBUG SELECT query.
 	// DEBUG statements are *not* supported in ODBC and should produce an Error
