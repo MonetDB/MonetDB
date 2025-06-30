@@ -1056,6 +1056,9 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Mon Jun 30 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.7-20250630
+- Rebuilt.
+
 * Fri Jun 27 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.5-20250627
 - Rebuilt.
 - GH#7625: Missing entry in sys.table_types table for new LOCAL TEMPORARY
