@@ -1510,6 +1510,7 @@ main(int argc, char **argv)
 
 
 	nrServerThreads = getNrOfServerThreads(dbc);
+	(void)nrServerThreads;
 
 	// test SELECT query
 	ret = SQLExecDirect(stmt, (SQLCHAR *) "SELECT * from odbctst.\"LINES\";", SQL_NTS);
