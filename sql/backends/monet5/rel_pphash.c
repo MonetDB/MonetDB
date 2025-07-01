@@ -772,19 +772,34 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 	/*** PROJECT RESULT PHASE ***/
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
 
-	/* Check that for single left/right outer join and crossproduct, rel->r returns no more than 1 value. */
+	stmt *rowrepeat = stmts_ht->op4.lval->h->data;
+	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
+	assert(rowrepeat && setrepeat); /* must find */
+
+	/* Check for single left/right outer join and crossproduct that either rel->r is single or rel->l is empty. */
 	if (rel->single && list_empty(rel->exps)) {
-		stmt *rhs_col = stmts_ht->op4.lval->h->data;
-		assert(rhs_col); /* must find */
-		if (rhs_col->nrcols > 0) {
+		if (rowrepeat->nrcols > 0) {
 			int ppln = be->pipeline;
 			be->pipeline = 0;
 			sql_subfunc *cnt_fnc = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
-			stmt *cnt = stmt_aggr(be, rhs_col, NULL, NULL, cnt_fnc, 1, 0, 1);
+			stmt *cnt = NULL;
+
+			cnt = stmt_aggr(be, rowrepeat, NULL, NULL, cnt_fnc, 1, 0, 1);
+			InstrPtr qR = newStmtArgs(be->mb, calcRef, ">", 3);
+			qR = pushArgument(be->mb, qR, cnt->nr);
+			qR = pushInt(be->mb, qR, 1);
+			pushInstruction(be->mb, qR);
+
+			cnt = stmt_aggr(be, setrepeat, NULL, NULL, cnt_fnc, 1, 0, 1);
+			InstrPtr qL = newStmtArgs(be->mb, calcRef, ">", 3);
+			qL = pushArgument(be->mb, qL, cnt->nr);
+			qL = pushInt(be->mb, qL, 0);
+			pushInstruction(be->mb, qL);
 			be->pipeline = ppln;
-			InstrPtr q = newStmtArgs(be->mb, calcRef, ">", 3);
-			q = pushArgument(be->mb, q, cnt->nr);
-			q = pushInt(be->mb, q, 1);
+
+			InstrPtr q = newStmtArgs(be->mb, calcRef, "and", 3);
+			q = pushArgument(be->mb, q, qR->argv[0]);
+			q = pushArgument(be->mb, q, qL->argv[0]);
 			pushInstruction(be->mb, q);
 			stmt *s = stmt_none(be);
 			s->nr = q->argv[0];
@@ -795,9 +810,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 	}
 
 	bit LRouter = (is_left(rel->op) || is_right(rel->op) || (rel->op == op_anti && list_empty(rel->exps)));
-	stmt *rowrepeat = stmts_ht->op4.lval->h->data;
 	list *lp = oahash_project_cart(be, "expand_cartesian", exps_prj_prb, stmts_prb_res, rowrepeat, LRouter, pp, probed_rowids);
-	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
 	list *lh = oahash_project_cart(be, "fetch_payload_cartesian", exps_prj_hsh, stmts_ht, setrepeat, LRouter, pp, hash_rowids);
 	assert(lh->cnt || lp->cnt);
 
