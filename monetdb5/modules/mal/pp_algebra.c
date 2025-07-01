@@ -4274,7 +4274,15 @@ LALGnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	bit *o = Tloc(r, 0);
 	switch(ATOMbasetype(bi.type)){
 		case TYPE_bte:
-			gNull(bte);
+			if (b->ttype == TYPE_bit && !private) {
+			/* for the final phase, we only have TYPE_bit to process */
+				bit *restrict in = (bit *)bi.base;
+				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+					o[grp[i]] = o[grp[i]] == true? o[grp[i]] : in[i];
+				}
+			} else {
+				gNull(bte);
+			}
 			break;
 		case TYPE_sht:
 			gNull(sht);
