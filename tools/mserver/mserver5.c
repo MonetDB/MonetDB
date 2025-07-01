@@ -731,6 +731,8 @@ main(int argc, char **av)
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED
+		|| GDKsetenv("monet_build_type", BUILD_TYPE) != GDK_SUCCEED
+		|| GDKsetenv("monet_extra_c_flags", EXTRA_C_FLAGS) != GDK_SUCCEED
 		|| GDKsetenv("monet_release",
 #ifdef MONETDB_RELEASE
 					 MONETDB_RELEASE
