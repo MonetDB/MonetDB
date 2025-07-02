@@ -190,6 +190,8 @@ query T nosort
 select elements from amb, unnest(elements) u
 ----
 {10,11}
+{10,11}
+{20,21}
 {20,21}
 
 ## variable-length type array
