@@ -194,6 +194,18 @@ select elements from amb, unnest(elements) u
 {20,21}
 {20,21}
 
+query T nosort 
+select elements, u.elements from amb, unnest(elements) u
+----
+{10,11}
+10
+{10,11}
+11
+{20,21}
+20
+{20,21}
+21
+
 ## variable-length type array
 
 statement ok
