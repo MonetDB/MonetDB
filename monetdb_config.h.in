@@ -194,6 +194,9 @@
 #cmakedefine HAVE_LIBPY3 1
 #cmakedefine HAVE_OPENSSL 1
 
+#cmakedefine BUILD_TYPE "@BUILD_TYPE@"
+#cmakedefine EXTRA_C_FLAGS "@EXTRA_C_FLAGS@"
+
 #cmakedefine WITH_JEMALLOC 1
 #cmakedefine WITH_MIMALLOC 1
 #cmakedefine WITH_TCMALLOC 1

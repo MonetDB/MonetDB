@@ -44,7 +44,7 @@ set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB
 # common/options and common/utils)
 set(GDK_VERSION_MAJOR "30")
 set(GDK_VERSION_MINOR "1")
-set(GDK_VERSION_PATCH "0")
+set(GDK_VERSION_PATCH "1")
 set(GDK_VERSION "${GDK_VERSION_MAJOR}.${GDK_VERSION_MINOR}.${GDK_VERSION_PATCH}")
 
 # version of the MAPI library (subdirectory clients/mapilib)
