@@ -123,10 +123,10 @@ newODBCStmt(ODBCDbc *dbc)
  * and save usage of the handle and prevent crashes as much as possible.
  *
  * Precondition: none
- * Postcondition: returns 1 if it is a valid statement handle,
- * 	returns 0 if is invalid and thus an unusable handle.
+ * Postcondition: returns true if it is a valid statement handle,
+ * 	returns false if is invalid and thus an unusable handle.
  */
-int
+bool
 isValidStmt(ODBCStmt *stmt)
 {
 #ifdef ODBCDEBUG
@@ -165,7 +165,7 @@ addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativ
  * The error object itself is removed from the error list.
  * The caller is now responsible for freeing the error object memory.
  *
- * Precondition: stmt and error must be valid
+ * Precondition: stmt must be valid
  * Postcondition: returns a ODBCError object or null when no error is available.
  */
 ODBCError *

@@ -66,10 +66,10 @@ newODBCEnv(void)
  * and save usage of the handle and prevent crashes as much as possible.
  *
  * Precondition: none
- * Postcondition: returns 1 if it is a valid environment handle,
- * 	returns 0 if is invalid and thus an unusable handle.
+ * Postcondition: returns true if it is a valid environment handle,
+ * 	returns false if is invalid and thus an unusable handle.
  */
-int
+bool
 isValidEnv(ODBCEnv *env)
 {
 #ifdef ODBCDEBUG
