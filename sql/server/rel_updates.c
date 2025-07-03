@@ -1825,7 +1825,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				char *fn = ATOMformat(TYPE_str, fname);
 				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					  "have absolute path: %s", fn);
-				GDKfree(fn);
+				// GDKfree(fn);
 				return NULL;
 			}
 

@@ -58,7 +58,7 @@ RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 						return NULL;
 					}
 					sprintf(msg + len, "%s:%s", cv, ATOMname(v->type));
-					GDKfree(cv);
+					// GDKfree(cv);
 				}
 
 			} else

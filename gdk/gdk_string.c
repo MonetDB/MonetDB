@@ -55,9 +55,9 @@
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			GDKfree(*dst);			\
+			/*GDKfree(*dst);*/			\
 			*len = (size);			\
-			*dst = GDKmalloc(*len);		\
+			*dst = ma_alloc(ma, *len);		\
 			if (*dst == NULL) {		\
 				*len = 0;		\
 				return -1;		\
@@ -560,6 +560,8 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
 	bool escaped = false;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	if (!external) {
 		size_t sz = strLen(src);
@@ -708,6 +710,8 @@ ssize_t
 strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 {
 	size_t sz;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	if (!external) {
 		sz = strLen(src);

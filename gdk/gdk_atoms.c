@@ -342,7 +342,7 @@ ATOMprint(int t, const void *p, stream *s)
 			res = (*tostr) (&buf, &sz, p, true);
 			if (res > 0)
 				res = mnstr_write(s, buf, (size_t) res, 1);
-			GDKfree(buf);
+			// GDKfree(buf);
 		}
 	} else {
 		res = mnstr_write(s, "nil", 1, 3);
@@ -357,18 +357,20 @@ char *
 ATOMformat(int t, const void *p)
 {
 	ssize_t (*tostr) (char **, size_t *, const void *, bool);
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	if (p && 0 <= t && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz = 0;
 		char *buf = NULL;
 		ssize_t res = (*tostr) (&buf, &sz, p, true);
 		if (res < 0 && buf) {
-			GDKfree(buf);
+			// GDKfree(buf);
 			buf = NULL;
 		}
 		return buf;
 	}
-	return GDKstrdup("nil");
+	return MA_STRDUP(ma, "nil");
 }
 
 ptr
@@ -1509,11 +1511,14 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	blob *result;
 	const char *s = instr;
 
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
+
 	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
-			GDKfree(*val);
-			if ((*val = GDKmalloc(nbytes)) == NULL)
+			// GDKfree(*val);
+			if ((*val = ma_alloc(ma, nbytes)) == NULL)
 				return -1;
 		}
 		**val = blob_nil;
@@ -1537,8 +1542,8 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	nbytes = blobsize(nitems);
 
 	if (*l < nbytes || *val == NULL) {
-		GDKfree(*val);
-		*val = GDKmalloc(nbytes);
+		// GDKfree(*val);
+		*val = ma_alloc(ma, nbytes);
 		if( *val == NULL)
 			return -1;
 		*l = nbytes;

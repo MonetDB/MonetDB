@@ -231,7 +231,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 						mnstr_printf(fout, "%s %s", t, s);
 					else if (s)
 						mnstr_printf(fout, "%s \"%s\"", t, s);
-					GDKfree(s);
+					// GDKfree(s);
 				}
 			}
 		} else { /* variables */
@@ -401,7 +401,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (e->comment) {
 		str s = ATOMformat(TYPE_str, e->comment);
 		mnstr_printf(fout,  " COMMENT %s ", s);
-		GDKfree(s);
+		// GDKfree(s);
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -975,7 +975,7 @@ readAtomString(int localtype, char *r, int *pos)
 	(*pos)++;
 
 	if (ATOMfromstr(rtype, &res, &nbytes, r + firstpos, true) < 0) {
-		GDKfree(res);
+		// GDKfree(res);
 		return NULL;
 	}
 	return res;
@@ -1180,7 +1180,7 @@ parse_atom(mvc *sql, char *r, int *pos, sql_subtype *tpe)
 		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		sql_exp *res = exp_atom(sql->sa, atom_general_ptr(sql->sa, tpe, ptr));
-		GDKfree(ptr);
+		// GDKfree(ptr);
 		return res;
 	}
 }

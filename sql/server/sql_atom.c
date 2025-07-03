@@ -292,7 +292,7 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				GDKfree(p);
+				// GDKfree(p);
 				GDKclrerr();
 				return NULL;
 			}
@@ -314,7 +314,7 @@ atom_general(allocator *sa, sql_subtype *tpe, const char *val, long tz_offset)
 				a->data.val.lval /= d;
 				a->data.val.lval *= d;
 			}
-			GDKfree(p);
+			// GDKfree(p);
 		}
 	} else {
 		VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
@@ -410,7 +410,7 @@ atom2string(allocator *sa, atom *a)
 			snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
-			 GDKfree(p);
+			 // GDKfree(p);
 			 return r;
 		}
 	}

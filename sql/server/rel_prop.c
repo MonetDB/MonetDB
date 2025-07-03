@@ -173,7 +173,7 @@ propvalue2string(allocator *sa, prop *p)
 				res = sa_alloc(sa, strlen(s) + 3);
 				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
-			GDKfree(s);
+			// GDKfree(s);
 		}
 		return res;
 	}

@@ -453,7 +453,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							if (c)	/* unlikely that this isn't true */
 								*c = 0;
 							ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
-							GDKfree(cv);
+							// GDKfree(cv);
 							if (!ok) {
 								BBPunfix(d->batCacheid);
 								goto cleanup_and_exit;
@@ -501,7 +501,7 @@ prepareMalEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					cv = format_val2json(cntxt, &stk->stk[getArg(pci, j)]);
 					if (cv)
 						ok = logadd(&logbuf, ",\"value\":%s", cv);
-					GDKfree(cv);
+					// GDKfree(cv);
 					if (!ok)
 						goto cleanup_and_exit;
 				}

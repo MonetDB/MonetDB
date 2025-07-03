@@ -261,8 +261,11 @@ char *
 VALformat(const ValRecord *res)
 {
 	if (res->bat) {
-		if (is_bat_nil(res->val.bval))
-			return GDKstrdup("nil");
+		if (is_bat_nil(res->val.bval)) {
+			allocator *ma = MT_thread_getallocator();
+			assert(ma);
+			return MA_STRDUP(ma, "nil");
+		}
 		else
 			return ATOMformat(TYPE_int, (const void *) &res->val.ival);
 	} else

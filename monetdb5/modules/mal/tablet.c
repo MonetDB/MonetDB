@@ -86,10 +86,10 @@ TABLETdestroy_format(Tablet *as)
 
 	for (p = 0; p < as->nr_attrs; p++) {
 		BBPreclaim(fmt[p].c);
-		if (fmt[p].data)
-			GDKfree(fmt[p].data);
+		//if (fmt[p].data)
+		//	GDKfree(fmt[p].data);
 	}
-	GDKfree(fmt);
+	// GDKfree(fmt);
 }
 
 static oid
@@ -1084,6 +1084,8 @@ SQLworker(void *arg)
 	GDKclrerr();
 	task->errbuf = GDKerrbuf;
 	MT_thread_set_qry_ctx(task->set_qry_ctx ? &task->cntxt->qryctx : NULL);
+	allocator *ma = task->cntxt ? ma_create(task->cntxt->alloc) : NULL;
+	MT_thread_setallocator(ma);
 
 	MT_sema_down(&task->sema);
 	while (task->top[task->cur] >= 0) {
@@ -1138,6 +1140,7 @@ SQLworker(void *arg)
 	GDKfree(GDKerrbuf);
 	GDKsetbuf(NULL);
 	MT_thread_set_qry_ctx(NULL);
+	MT_thread_setallocator(NULL);
 }
 
 static void
@@ -1574,6 +1577,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	int threads = 1;
 	lng tio, t1 = 0;
 	char name[MT_NAME_LEN];
+	allocator *ma = cntxt->alloc;
 
 	if (maxrow < 0 || maxrow > (LL_CONSTANT(1) << 16)) {
 		threads = GDKgetenv_int("tablet_threads", GDKnr_threads);
@@ -1607,9 +1611,9 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	assert(rsep);
 	assert(csep);
 	assert(maxrow < 0 || maxrow <= (lng) BUN_MAX);
-	task.fields = (char ***) GDKzalloc(as->nr_attrs * sizeof(char **));
-	task.cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
-	task.time = (lng *) GDKzalloc(as->nr_attrs * sizeof(lng));
+	task.fields = (char ***) ma_zalloc(ma, as->nr_attrs * sizeof(char **));
+	task.cols = (int *) ma_zalloc(ma, as->nr_attrs * sizeof(int));
+	task.time = (lng *) ma_zalloc(ma, as->nr_attrs * sizeof(lng));
 	if (task.fields == NULL || task.cols == NULL || task.time == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil,
 					 "memory allocation failed", "SQLload_file");
@@ -1617,7 +1621,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	}
 	task.cur = 0;
 	for (i = 0; i < MAXBUFFERS; i++) {
-		task.base[i] = GDKmalloc(MAXROWSIZE(2 * b->size) + 2);
+		task.base[i] = ma_alloc(ma, MAXROWSIZE(2 * b->size) + 2);
 		task.rowlimit[i] = MAXROWSIZE(2 * b->size);
 		if (task.base[i] == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
@@ -1658,7 +1662,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	/* the record separator is considered a column */
 	task.limit = (int) (b->size / as->nr_attrs + as->nr_attrs);
 	for (i = 0; i < as->nr_attrs; i++) {
-		task.fields[i] = GDKmalloc(sizeof(char *) * task.limit);
+		task.fields[i] = ma_alloc(ma, sizeof(char *) * task.limit);
 		if (task.fields[i] == NULL) {
 			if (task.as->error == NULL)
 				as->error = createException(MAL, "sql.copy_from",
@@ -1668,18 +1672,18 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		task.cols[i] = (int) (i + 1);	/* to distinguish non initialized later with zero */
 	}
 	for (i = 0; i < MAXBUFFERS; i++) {
-		task.rows[i] = GDKzalloc(sizeof(char *) * task.limit);
-		task.startlineno[i] = GDKzalloc(sizeof(lng) * task.limit);
+		task.rows[i] = ma_zalloc(ma, sizeof(char *) * task.limit);
+		task.startlineno[i] = ma_zalloc(ma, sizeof(lng) * task.limit);
 		if (task.rows[i] == NULL || task.startlineno[i] == NULL) {
-			GDKfree(task.rows[i]);
-			GDKfree(task.startlineno[i]);
+			//GDKfree(task.rows[i]);
+			//GDKfree(task.startlineno[i]);
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
 						 SQLSTATE(HY013) MAL_MALLOC_FAIL,
 						 "SQLload_file:failed to alloc buffers");
 			goto bailout;
 		}
 	}
-	task.rowerror = (bte *) GDKzalloc(sizeof(bte) * task.limit);
+	task.rowerror = (bte *) ma_zalloc(ma, sizeof(bte) * task.limit);
 	if (task.rowerror == NULL) {
 		tablet_error(&task, lng_nil, lng_nil, int_nil,
 					 SQLSTATE(HY013) MAL_MALLOC_FAIL,
@@ -1701,7 +1705,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 	for (j = 0; j < threads; j++) {
 		ptask[j] = task;
 		ptask[j].id = j;
-		ptask[j].cols = (int *) GDKzalloc(as->nr_attrs * sizeof(int));
+		ptask[j].cols = (int *) ma_zalloc(ma, as->nr_attrs * sizeof(int));
 		if (ptask[j].cols == NULL) {
 			tablet_error(&task, lng_nil, lng_nil, int_nil,
 						 SQLSTATE(HY013) MAL_MALLOC_FAIL, "SQLload_file");
@@ -1919,7 +1923,7 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 
 	for (j = 0; j < threads; j++) {
 		MT_join_thread(ptask[j].tid);
-		GDKfree(ptask[j].cols);
+		// GDKfree(ptask[j].cols);
 		MT_sema_destroy(&ptask[j].sema);
 		MT_sema_destroy(&ptask[j].reply);
 	}
@@ -1931,35 +1935,35 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 		BAT *b = task.as->format[i].c;
 		if (b)
 			BATsettrivprop(b);
-		GDKfree(task.fields[i]);
+		// GDKfree(task.fields[i]);
 	}
-	GDKfree(task.fields);
-	GDKfree(task.cols);
-	GDKfree(task.time);
-	for (i = 0; i < MAXBUFFERS; i++) {
-		GDKfree(task.base[i]);
-		GDKfree(task.rows[i]);
-		GDKfree(task.startlineno[i]);
-	}
-	if (task.rowerror)
-		GDKfree(task.rowerror);
+	// GDKfree(task.fields);
+	// GDKfree(task.cols);
+	// GDKfree(task.time);
+	// for (i = 0; i < MAXBUFFERS; i++) {
+	// 	GDKfree(task.base[i]);
+	// 	GDKfree(task.rows[i]);
+	// 	GDKfree(task.startlineno[i]);
+	// }
+	// if (task.rowerror)
+	// 	GDKfree(task.rowerror);
 	MT_sema_destroy(&task.producer);
 	MT_sema_destroy(&task.consumer);
 
 	return res < 0 ? BUN_NONE : cnt;
 
   bailout:
-	if (task.fields) {
-		for (i = 0; i < as->nr_attrs; i++)
-			GDKfree(task.fields[i]);
-		GDKfree(task.fields);
-	}
-	GDKfree(task.time);
-	GDKfree(task.cols);
-	GDKfree(task.base[task.cur]);
-	GDKfree(task.rowerror);
-	for (i = 0; i < MAXWORKERS; i++)
-		GDKfree(ptask[i].cols);
+	// if (task.fields) {
+	// 	for (i = 0; i < as->nr_attrs; i++)
+	// 		GDKfree(task.fields[i]);
+	// 	GDKfree(task.fields);
+	// }
+	// GDKfree(task.time);
+	// GDKfree(task.cols);
+	// GDKfree(task.base[task.cur]);
+	// GDKfree(task.rowerror);
+	// for (i = 0; i < MAXWORKERS; i++)
+	// 	GDKfree(ptask[i].cols);
 	return BUN_NONE;
 }
 

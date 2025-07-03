@@ -300,8 +300,10 @@ URLfromString(const char *src, size_t *len, void **U, bool external)
 	size_t l = strlen(src) + 1;
 
 	if (*len < l || *u == NULL) {
-		GDKfree(*u);
-		*u = GDKmalloc(l);
+		// GDKfree(*u);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*u = ma_alloc(ma, l);
 		if (*u == NULL)
 			return -1;
 		*len = l;
@@ -325,8 +327,10 @@ URLtoString(str *s, size_t *len, const void *SRC, bool external)
 	if (external)
 		l += 2;
 	if (l >= *len || *s == NULL) {
-		GDKfree(*s);
-		*s = GDKmalloc(l + 1);
+		// GDKfree(*s);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*s = ma_alloc(ma, l + 1);
 		if (*s == NULL)
 			return -1;
 		*len = l + 1;

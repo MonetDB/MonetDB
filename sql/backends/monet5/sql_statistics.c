@@ -488,7 +488,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	GDKfree(buf);
+	// GDKfree(buf);
 	*rcid = cid->batCacheid;
 	BBPkeepref(cid);
 	*rsch = sch->batCacheid;
@@ -517,7 +517,7 @@ sql_statistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(revsorted);
 	return MAL_SUCCEED;
 bailout:
-	GDKfree(buf);
+	// GDKfree(buf);
 	BBPreclaim(cid);
 	BBPreclaim(sch);
 	BBPreclaim(tab);

@@ -338,8 +338,10 @@ DFLOWworker(void *T)
 
 			allocator *pa = flow->mb->ma;
 			allocator *ta = ma_create(pa);
+			MT_thread_setallocator(ta);
 			error = runMALsequence(ta, flow->cntxt, flow->mb, fe->pc, fe->pc + 1,
 								   flow->stk, 0, 0);
+			MT_thread_setallocator(NULL);
 			ma_destroy(ta);
 
 			ATOMIC_DEC(&flow->cntxt->workers);

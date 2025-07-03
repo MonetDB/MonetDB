@@ -257,10 +257,10 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				GDKfree(buf);
+				// GDKfree(buf);
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			GDKfree(buf);
+			// GDKfree(buf);
 			buf = NULL;
 		}
 	}

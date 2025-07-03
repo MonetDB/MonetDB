@@ -398,7 +398,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 
 end:
 	*eof_reached = 0;
-	GDKfree(buffer);
+	// GDKfree(buffer);
 	if (bs != NULL) {
 		*eof_reached = (int)bs->eof;
 		bs->s = NULL;

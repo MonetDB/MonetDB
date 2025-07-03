@@ -84,17 +84,17 @@ int TYPE_json;
 
 /* Internal constructors. */
 static int jsonhint = 8;
-static JSON *JSONparse(Client ctx, const char *j);
+static JSON *JSONparse(allocator *ma, const char *j);
 
 static JSON *
-JSONnewtree(allocator *alloc)
+JSONnewtree(allocator *ma)
 {
 	JSON *js;
 
-	js = ma_zalloc(alloc, sizeof(JSON));
+	js = ma_zalloc(ma, sizeof(JSON));
 	if (js == NULL)
 		return NULL;
-	js->elm = ma_zalloc(alloc, sizeof(JSONterm) * jsonhint);
+	js->elm = ma_zalloc(ma, sizeof(JSONterm) * jsonhint);
 	if (js->elm == NULL) {
 		//GDKfree(js);
 		return NULL;
@@ -104,14 +104,14 @@ JSONnewtree(allocator *alloc)
 }
 
 static int
-JSONnew(Client ctx, JSON *js)
+JSONnew(allocator *ma, JSON *js)
 {
 	JSONterm *term;
 
 	size_t osz = sizeof(JSONterm) * js->size;
 	if (js->free == js->size) {
 		size_t nsz = sizeof(JSONterm) * (js->size + 8);
-		term = ma_realloc(ctx->alloc, js->elm, nsz, osz);
+		term = ma_realloc(ma, js->elm, nsz, osz);
 		if (term == NULL) {
 			js->error = createException(MAL, "json.new",
 										SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -242,9 +242,11 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 {
 	json *buf = (json *) J;
 	if(*buf) {
-		//GDKfree(*buf);
+		// GDKfree(*buf);
 		*buf = NULL;
 	}
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
 		*buf = GDKstrdup(str_nil);
 		if (*buf == NULL)
@@ -471,7 +473,7 @@ JSONdump(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bat *ret = getArgReference_bat(stk, pci, 0);
 	const json *val = (json *) getArgReference(stk, pci, 1);
-	JSON *jt = JSONparse(ctx, *val);
+	JSON *jt = JSONparse(ctx->alloc, *val);
 
 	CHECK_JSON(jt);
 	BAT *bn = JSONdumpInternal(ctx, jt, 0);
@@ -521,13 +523,16 @@ JSONstr2json(Client ctx, json *ret, const char *const*j)
 
 	JSON *jt = NULL;
 
+	allocator *ma = ctx ? ctx->alloc : MT_thread_getallocator();
+	assert(ma);
+
 	if (strNil(*j)) {
-		buf = MA_STRDUP(ctx->alloc, *j);
+		buf = MA_STRDUP(ma, *j);
 	} else {
-		jt = JSONparse(ctx, *j);
+		jt = JSONparse(ma, *j);
 		CHECK_JSON(jt);
 
-		buf = (json)ma_alloc(ctx->alloc, ln);
+		buf = (json)ma_alloc(ma, ln);
 	}
 	if (buf == NULL) {
 		msg = createException(MAL, "json.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -556,7 +561,7 @@ JSONisvalid(Client ctx, bit *ret, const char *const *j)
 	if (strNil(*j)) {
 		*ret = bit_nil;
 	} else {
-		JSON *jt = JSONparse(ctx, *j);
+		JSON *jt = JSONparse(ctx->alloc, *j);
 		if (jt == NULL)
 			throw(MAL, "json.isvalid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*ret = jt->error == MAL_SUCCEED;
@@ -618,11 +623,11 @@ jsonRead(str a, size_t *dstlen, stream *s, size_t cnt)
 
 	if ((msg = JSONstr2json(/*ctx*/NULL, &out, &(const char *){a})) != MAL_SUCCEED) {
 		freeException(msg);
-		//GDKfree(a);
+		GDKfree(a);
 		return NULL;
 	}
 	*dstlen = strlen(out) + 1;
-	//GDKfree(a);
+	GDKfree(a);
 
 	return out;
 }
@@ -658,12 +663,12 @@ JSONprelude(void)
 }
 
 static void
-JSONappend(Client ctx, JSON *jt, int idx, int nxt)
+JSONappend(allocator *ma, JSON *jt, int idx, int nxt)
 {
 	int chld;
 
 	if (jt->elm[nxt].kind == JSON_OBJECT || jt->elm[nxt].kind == JSON_ARRAY) {
-		chld = JSONnew(ctx, jt);
+		chld = JSONnew(ma, jt);
 		if (jt->error)
 			return;
 		jt->elm[chld].kind = jt->elm[nxt].kind;
@@ -978,7 +983,7 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 			throw(MAL, "JSONfilterInternal", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	jt = JSONparse(ctx, j);
+	jt = JSONparse(ctx->alloc, j);
 	CHECK_JSON(jt);
 	memset(terms, 0, sizeof(terms));
 	msg = JSONcompile(ctx, *expr, terms);
@@ -1242,10 +1247,10 @@ JSONnumberParser(const char *j, const char **next)
 }
 
 static int
-JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
+JSONtoken(allocator *ma, JSON *jt, const char *j, const char **next)
 {
 	str msg;
-	int nxt, idx = JSONnew(ctx, jt);
+	int nxt, idx = JSONnew(ma, jt);
 	const char *string_start = j;
 	int pidx;
 
@@ -1267,7 +1272,7 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			if (*j == '}')
 				break;
-			nxt = JSONtoken(ctx, jt, j, next);
+			nxt = JSONtoken(ma, jt, j, next);
 			if (jt->error)
 				return idx;
 			j = *next;
@@ -1282,7 +1287,7 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			jt->elm[nxt].kind = JSON_ELEMENT;
 			/* do in two steps since JSONtoken may realloc jt->elm */
-			int chld = JSONtoken(ctx, jt, j, next);
+			int chld = JSONtoken(ma, jt, j, next);
 			if (jt->error)
 				return idx;
 
@@ -1311,7 +1316,7 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 				jt->elm[nxt].child = chld;
 				jt->elm[nxt].value++;
 				jt->elm[nxt].valuelen -= 2;
-				JSONappend(ctx, jt, idx, nxt);
+				JSONappend(ma, jt, idx, nxt);
 				if (jt->error)
 					return idx;
 			}
@@ -1352,12 +1357,12 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 			skipblancs(j);
 			if (*j == ']')
 				break;
-			nxt = JSONtoken(ctx, jt, j, next);
+			nxt = JSONtoken(ma, jt, j, next);
 			if (jt->error)
 				return idx;
 			switch (jt->elm[nxt].kind) {
 			case JSON_ELEMENT:{
-				int k = JSONnew(ctx, jt);
+				int k = JSONnew(ma, jt);
 				if (jt->error)
 					return idx;
 				jt->elm[k].kind = JSON_OBJECT;
@@ -1369,10 +1374,10 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 			case JSON_ARRAY:
 				if (jt->elm[nxt].kind == JSON_OBJECT
 					|| jt->elm[nxt].kind == JSON_ARRAY) {
-					int k = JSONnew(ctx, jt);
+					int k = JSONnew(ma, jt);
 					if (jt->error)
 						return idx;
-					JSONappend(ctx, jt, idx, k);
+					JSONappend(ma, jt, idx, k);
 					if (jt->error)
 						return idx;
 					jt->elm[k].kind = JSON_VALUE;
@@ -1380,7 +1385,7 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 				}
 				break;
 			default:
-				JSONappend(ctx, jt, idx, nxt);
+				JSONappend(ma, jt, idx, nxt);
 				if (jt->error)
 					return idx;
 			}
@@ -1484,15 +1489,14 @@ JSONtoken(Client ctx, JSON *jt, const char *j, const char **next)
 
 
 static JSON *
-JSONparse(Client ctx, const char *j)
+JSONparse(allocator *ma, const char *j)
 {
-	JSON *jt = JSONnewtree(ctx->alloc);
+	JSON *jt = JSONnewtree(ma);
 
 	if (jt == NULL)
 		return NULL;
 	skipblancs(j);
-	JSONtoken(ctx, jt, j, &j);
-	if (jt->error)
+	JSONtoken(ma, jt, j, &j); if (jt->error)
 		return jt;
 	skipblancs(j);
 	if (*j)
@@ -1513,7 +1517,7 @@ JSONlength(Client ctx, int *ret, const json *j)
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(ctx, *j);
+	jt = JSONparse(ctx->alloc, *j);
 	CHECK_JSON(jt);
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
 		cnt++;
@@ -1844,7 +1848,7 @@ JSONjson2textSeparator(Client ctx, str *ret, const json *js, const char *const *
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(ctx, *js);
+	jt = JSONparse(ctx->alloc, *js);
 	CHECK_JSON(jt);
 	sep_len = strlen(*sep);
 	ilen = l = strlen(*js) + 1;
@@ -1881,7 +1885,7 @@ JSONjson2numberInternal(Client ctx, void **ret, const json *js,
 {
 	JSON *jt;
 
-	jt = JSONparse(ctx, *js);
+	jt = JSONparse(ctx->alloc, *js);
 	CHECK_JSON(jt);
 	switch (jt->elm[0].kind) {
 	case JSON_NUMBER:
@@ -2051,7 +2055,7 @@ JSONunfoldInternal(Client ctx, bat *od, bat *key, bat *val, const json *js)
 	oid o = 0;
 	str msg = MAL_SUCCEED;
 
-	JSON *jt = JSONparse(ctx, *js);
+	JSON *jt = JSONparse(ctx->alloc, *js);
 
 	CHECK_JSON(jt);
 	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
@@ -2111,7 +2115,7 @@ JSONkeyTable(Client ctx, bat *ret, const json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(ctx, *js);		// already validated
+	jt = JSONparse(ctx->alloc, *js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL) {
@@ -2150,7 +2154,7 @@ JSONkeyArray(Client ctx, json *ret, const json *js)
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(ctx, *js);		// already validated
+	jt = JSONparse(ctx->alloc, *js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
@@ -2210,7 +2214,7 @@ JSONvalueTable(Client ctx, bat *ret, const json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(ctx, *js);		// already validated
+	jt = JSONparse(ctx->alloc, *js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL) {
@@ -2252,7 +2256,7 @@ JSONvalueArray(Client ctx, json *ret, const json *js)
 		return MAL_SUCCEED;
 	}
 
-	jt = JSONparse(ctx, *js);		// already validated
+	jt = JSONparse(ctx->alloc, *js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
@@ -2336,13 +2340,14 @@ static str
 JSONrenderRowObject(Client ctx, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					BUN idx)
 {
+	(void) ctx;
 	int i, tpe;
 	char *row, *row2, *name = 0, *val = 0;
 	size_t len, lim, l;
 	void *p;
 	BATiter bi;
 
-	row = ma_alloc(ctx->alloc, lim = BUFSIZ);
+	row = ma_alloc(mb->ma, lim = BUFSIZ);
 	if (row == NULL)
 		return NULL;
 	row[0] = '{';
@@ -2370,7 +2375,7 @@ JSONrenderRowObject(Client ctx, BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		size_t osz = lim;
 		while (l > lim - len)
 			lim += BUFSIZ;
-		row2 = ma_realloc(ctx->alloc, row, lim, osz);
+		row2 = ma_realloc(mb->ma, row, lim, osz);
 		if (row2 == NULL) {
 			//GDKfree(row);
 			//GDKfree(val);

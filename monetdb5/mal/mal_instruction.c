@@ -257,7 +257,7 @@ resetMalBlk(MalBlkPtr mb)
 void
 freeMalBlk(MalBlkPtr mb)
 {
-	int i;
+	//int i;
 
 	/*
 	for (i = 0; i < mb->ssize; i++)
@@ -267,15 +267,15 @@ freeMalBlk(MalBlkPtr mb)
 		}
 	mb->stop = 0;
 	*/
-	for (i = 0; i < mb->vtop; i++) {
-		/*
-		if (mb->var[i].name)
-			GDKfree(mb->var[i].name);
-			*/
-		//mb->var[i].name = NULL;
-		if (isVarConstant(mb, i))
-			VALclear(&getVarConstant(mb, i));
-	}
+	//for (i = 0; i < mb->vtop; i++) {
+	//	/*
+	//	if (mb->var[i].name)
+	//		GDKfree(mb->var[i].name);
+	//		*/
+	//	//mb->var[i].name = NULL;
+	//	if (isVarConstant(mb, i))
+	//		VALclear(&getVarConstant(mb, i));
+	//}
 	freeException(mb->errors);
 	ma_destroy(mb->ma);
 #if 0

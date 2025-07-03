@@ -639,7 +639,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			.complaints = NULL,
 			.filename = m->scanner.rs == bs ? NULL : "",
 		};
-		fmt = GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
+		fmt = sa_zalloc(m->sa, sizeof(Column) * (as.nr_attrs + 1));
 		if (fmt == NULL)
 			throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		as.format = fmt;
@@ -655,20 +655,20 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].seplen = _strlen(fmt[i].sep);
 			fmt[i].decsep = decsep[0],
 			fmt[i].decskip = decskip != NULL ? decskip[0] : '\0',
-			fmt[i].type = sql_subtype_string(m->ta, &col->type);
+			fmt[i].type = sql_subtype_string(m->sa, &col->type);
 			fmt[i].adt = ATOMindex(col->type.type->impl);
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
 			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
-			fmt[i].data = GDKzalloc(fmt[i].len);
+			fmt[i].data = sa_zalloc(m->sa, fmt[i].len);
 			if(fmt[i].data == NULL || fmt[i].type == NULL) {
 				for (j = 0; j < i; j++) {
-					GDKfree(fmt[j].data);
+					// GDKfree(fmt[j].data);
 					BBPunfix(fmt[j].c->batCacheid);
 				}
-				GDKfree(fmt[i].data);
-				GDKfree(fmt);
+				// GDKfree(fmt[i].data);
+				// GDKfree(fmt);
 				throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			fmt[i].c = NULL;
@@ -693,7 +693,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		if ((msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED){
 			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape) != BUN_NONE &&
 				(best || !as.error))) {
-				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
+				*bats = (BAT**) sa_zalloc(m->sa, sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
 					TABLETdestroy_format(&as);
 					throw(IO, "sql.copy_from", SQLSTATE(HY013) MAL_MALLOC_FAIL);

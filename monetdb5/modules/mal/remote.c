@@ -966,6 +966,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MapiHdl mhdl = NULL;
 
 	(void) cntxt;
+	allocator *ma = mb->ma;
 
 	conn = *getArgReference_str(stk, pci, 1);
 	if (conn == NULL || strcmp(conn, (str) str_nil) == 0)
@@ -994,7 +995,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (type == TYPE_any || isAnyExpression(type)) {
 		char *tpe, *msg;
 		MT_lock_unset(&c->lock);
-		tpe = getTypeName(mb->ma, type);
+		tpe = getTypeName(ma, type);
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		//GDKfree(tpe);
 		return msg;
@@ -1008,7 +1009,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str tailv;
 		stream *sout;
 
-		tail = getTypeIdentifier(mb->ma, getBatType(type));
+		tail = getTypeIdentifier(ma, getBatType(type));
 		if (tail == NULL) {
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1056,7 +1057,7 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					mnstr_printf(sout, "%s\n", tailv);
 				else
 					mnstr_printf(sout, "\"%s\"\n", tailv);
-				GDKfree(tailv);
+				// GDKfree(tailv);
 			}
 			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
@@ -1093,16 +1094,16 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", GDK_EXCEPTION);
 		}
-		tpe = getTypeIdentifier(mb->ma, type);
+		tpe = getTypeIdentifier(ma, type);
 		if (tpe == NULL) {
 			MT_lock_unset(&c->lock);
-			GDKfree(val);
+			// GDKfree(val);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		l = strlen(val) + strlen(tpe) + strlen(ident) + 10;
-		if (l > (ssize_t) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
+		if (l > (ssize_t) sizeof(qbuf) && (nbuf = ma_alloc(ma, l)) == NULL) {
 			MT_lock_unset(&c->lock);
-			GDKfree(val);
+			// GDKfree(val);
 			//GDKfree(tpe);
 			throw(MAL, "remote.put", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -1111,12 +1112,12 @@ RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
 			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
-		//GDKfree(tpe);
-		GDKfree(val);
+		// GDKfree(tpe);
+		// GDKfree(val);
 		TRC_DEBUG(MAL_REMOTE, "Remote put: %s - %s\n", c->name, nbuf);
 		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
 		if (nbuf != qbuf)
-			GDKfree(nbuf);
+			// GDKfree(nbuf);
 		if (tmp != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return tmp;

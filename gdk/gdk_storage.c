@@ -947,7 +947,8 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		bat_iterator_end(&colinfo[i].i);
 	}
-	GDKfree(buf);
+	// buf came from allocator
+	// GDKfree(buf);
 	GDKfree(colinfo);
 
 	return rc;
