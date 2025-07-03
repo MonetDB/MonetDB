@@ -37940,19 +37940,19 @@ mvc_restart_seq
 restart the sequence with value start
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:any...):int
+unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:bat[:any]...):int
+mvc_result_set_wrap
+Prepare a table result set for the client in default CSV format
+sql
+resultSet
+unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:int], X_6:any...):int
 mvc_row_result_wrap
 Prepare a table result set for the client front-end
 sql
 resultSet
-unsafe pattern sql.resultSet(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:any):int
+unsafe pattern sql.resultSet(X_0:str, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int, X_7:any):int
 mvc_scalar_value_wrap
 Prepare a table result set for the client front-end.
-sql
-resultSet
-unsafe pattern sql.resultSet(X_0:bat[:str], X_1:bat[:str], X_2:bat[:str], X_3:bat[:int], X_4:bat[:int], X_5:bat[:any]...):int
-mvc_table_result_wrap
-Prepare a table result set for the client in default CSV format
 sql
 resume_log_flushing
 unsafe pattern sql.resume_log_flushing():void
