@@ -25,12 +25,11 @@ string(APPEND builtby "@" ${host})
 set(compilercall ${CMAKE_C_COMPILER})
 set(linkercall ${CMAKE_LINKER})
 
-if(${CMAKE_BUILD_TYPE})
+if(CMAKE_BUILD_TYPE)
   string(TOUPPER ${CMAKE_BUILD_TYPE} build_type)
-  string(APPEND compilercall " " ${CMAKE_C_FLAGS_${build_type}} ${CMAKE_C_FLAGS})
-else()
-  string(APPEND compilercall " " ${CMAKE_C_FLAGS})
+  string(APPEND compilercall " " ${CMAKE_C_FLAGS_${build_type}})
 endif()
+string(APPEND compilercall " " ${CMAKE_C_FLAGS})
 
 configure_file(monet_version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c

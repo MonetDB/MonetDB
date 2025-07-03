@@ -964,6 +964,7 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
 %endif
 
 %cmake3 \
+        -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
         -DASSERT=OFF \

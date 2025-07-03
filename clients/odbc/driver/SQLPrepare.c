@@ -299,7 +299,6 @@ MNDBPrepare(ODBCStmt *stmt,
 		/* unused fields */
 		rec->sql_desc_auto_unique_value = SQL_FALSE;
 		rec->sql_desc_data_ptr = NULL;
-		rec->sql_desc_display_size = 0;
 		rec->sql_desc_indicator_ptr = NULL;
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
