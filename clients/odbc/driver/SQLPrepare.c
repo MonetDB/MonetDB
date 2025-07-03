@@ -305,7 +305,6 @@ MNDBPrepare(ODBCStmt *stmt,
 		rec->sql_desc_literal_suffix = NULL;
 		rec->sql_desc_octet_length_ptr = NULL;
 		rec->sql_desc_catalog_name = NULL;
-		rec->sql_desc_schema_name = NULL;
 		rec->sql_desc_updatable = SQL_ATTR_READONLY;
 
 		/* this must come after other fields have been
