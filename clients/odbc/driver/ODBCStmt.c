@@ -130,10 +130,10 @@ int
 isValidStmt(ODBCStmt *stmt)
 {
 #ifdef ODBCDEBUG
-	if (!(stmt &&stmt->Type == ODBC_STMT_MAGIC_NR))
+	if (!(stmt && stmt->Type == ODBC_STMT_MAGIC_NR))
 		ODBCLOG("stmt %p not a valid statement handle\n", stmt);
 #endif
-	return stmt &&stmt->Type == ODBC_STMT_MAGIC_NR;
+	return stmt && stmt->Type == ODBC_STMT_MAGIC_NR;
 }
 
 
