@@ -810,15 +810,10 @@ LOCKEDAGGRnull(bat *result, const ptr *h, const bit *hadnull)
 		if (b == NULL)
 			err = createException(MAL, "lockedaggr.null", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		if (!err) {
+			assert(BATcount(b) == 1);
 			bit *n = Tloc(b, 0); /* b must have been initialised to bit_nil */
-			if (n[0] != true) {
-				if (is_bit_nil(n[0])) {
-					n[0] = *hadnull;
-				} else { /* n[0] == false */
-					if (*hadnull == true) {
-						n[0] = *hadnull;
-					}
-				}
+			if (is_bit_nil(n[0]) || (n[0] ==false && !is_bit_nil(*hadnull))) {
+				n[0] = *hadnull;
 			}
 			if (!is_bit_nil(*hadnull)) {
 				pipeline_lock2(b);
@@ -4274,15 +4269,7 @@ LALGnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	bit *o = Tloc(r, 0);
 	switch(ATOMbasetype(bi.type)){
 		case TYPE_bte:
-			if (b->ttype == TYPE_bit && !private) {
-			/* for the final phase, we only have TYPE_bit to process */
-				bit *restrict in = (bit *)bi.base;
-				TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-					o[grp[i]] = o[grp[i]] == true? o[grp[i]] : in[i];
-				}
-			} else {
-				gNull(bte);
-			}
+			gNull(bte);
 			break;
 		case TYPE_sht:
 			gNull(sht);
@@ -4343,6 +4330,95 @@ LALGnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
 	if (g) BBPunfix(g->batCacheid);
 	if (b) BBPunfix(b->batCacheid);
 	if (r) BBPunfix(r->batCacheid);
+	return err;
+}
+
+static str
+LALGcnull(bat *rid, bat *gid, bat *bid, const ptr *H, bat *pid)
+{
+	(void) H; /* last arg should move to first argument .. */
+	BAT *g = NULL, *b = NULL, *r = NULL;
+	str err = NULL;
+	bool locked = false;
+
+	g = BATdescriptor(*gid);
+	b = BATdescriptor(*bid);
+	if (g == NULL || b == NULL) {
+		err = createException(MAL, "pp aggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	if (is_bat_nil(*rid) || (r = BATdescriptor(*rid)) == NULL) {
+		err = createException(MAL, "pp aggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+
+	pipeline_lock1(r);
+	locked = true;
+
+	BAT *pg = BATdescriptor(*pid);
+	if (pg == NULL) {
+		err = createException(MAL, "pp aggr.cnull", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	oid max = BATcount(pg)?pg->tmaxval:0;
+	BBPunfix(pg->batCacheid);
+
+	BUN cnt = BATcount(r);
+	if (BATcapacity(r) < max) {
+		BUN sz = max*2;
+		if (BATextend(r, sz) != GDK_SUCCEED) {
+			err = createException(MAL, "pp aggr.cnull", MAL_MALLOC_FAIL);
+			goto error;
+		}
+	}
+	if (cnt < max) {
+		char *d = Tloc(r, 0);
+		const char *nil = ATOMnilptr(r->ttype);
+		for (BUN i=cnt; i<max; i++)
+			memcpy(d+(i*r->twidth), nil, r->twidth);
+	}
+
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	cnt = BATcount(g);
+	BATiter bi = bat_iterator(b);
+	oid *grp = Tloc(g, 0);
+	bit *o = Tloc(r, 0);
+	/* for the combine-phase, we only have TYPE_bit to process */
+	assert(b->ttype == TYPE_bit);
+	bit *restrict in = (bit *)bi.base;
+	TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+		if (is_bit_nil(o[grp[i]]) || (o[grp[i]] == false && !is_bit_nil(in[i]))) {
+			o[grp[i]] = in[i];
+		}
+	}
+	bat_iterator_end(&bi);
+	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp aggr.cnull", RUNTIME_QRY_TIMEOUT));
+	if (err) {
+		goto error;
+	}
+
+	BBPunfix(b->batCacheid);
+	BBPunfix(g->batCacheid);
+
+	pipeline_lock2(r);
+	if (BATcount(r) < max)
+		BATsetcount(r, max);
+	BATnegateprops(r);
+	pipeline_unlock2(r);
+
+	*rid = r->batCacheid;
+	BBPkeepref(r);
+
+	pipeline_unlock1(r);
+	return MAL_SUCCEED;
+  error:
+	if (locked) pipeline_unlock1(r);
+	BBPreclaim(g);
+	BBPreclaim(b);
+	BBPreclaim(r);
 	return err;
 }
 
@@ -4852,7 +4928,8 @@ static mel_func pp_algebra_init_funcs[] = {
  pattern("aggr", "compute_avg", compute_avg, false, "compute avg from floating point (sum + error)/count.", args(1,4, batarg("ravg",dbl), batarg("avg", dbl), batarg("error", dbl), batarg("cnt", lng))),
  command("aggr", "min", LALGmin, false, "Min per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
  command("aggr", "max", LALGmax, false, "Max per group.", args(1,5, batargany("",1), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
- command("aggr", "null", LALGnull, false, "has-null per group.", args(1,5, batarg("",bit), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "null", LALGnull, false, "has-null per group per partition.", args(1,5, batarg("",bit), batarg("gid", oid), batargany("", 1), arg("pipeline", ptr), batarg("pid", oid))),
+ command("aggr", "cnull", LALGcnull, false, "has-null per group all partition combined.", args(1,5, batarg("",bit), batarg("gid", oid), batarg("", bit), arg("pipeline", ptr), batarg("pid", oid))),
 
  /* Incremental aggregates */
  command("iaggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng), batargany("b",0))),

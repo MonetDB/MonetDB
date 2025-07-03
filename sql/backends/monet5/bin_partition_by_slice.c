@@ -450,17 +450,25 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			assert(e->type == e_aggr);
 			char *name = NULL;
 			int avg = 0, sum = 0;
-			if (strcmp(sf->func->base.name, "min") == 0 ||
-			    strcmp(sf->func->base.name, "max") == 0 ||
-			    strcmp(sf->func->base.name, "null") == 0 ||
-			    (avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
-				(sum= (strcmp(sf->func->base.name, "sum") == 0)) ||
-			    strcmp(sf->func->base.name, "prod") == 0) {
-				name = sf->func->base.name;
-			} else {
-				assert(strcmp(sf->func->base.name, "count") == 0);
+
+			/* just a sanity check that, at this point, we indeed only get these expected aggr. funcs. */
+			assert(strcmp(sf->func->base.name, "min") == 0
+				|| strcmp(sf->func->base.name, "max") == 0
+				|| strcmp(sf->func->base.name, "avg") == 0
+				|| strcmp(sf->func->base.name, "sum") == 0
+				|| strcmp(sf->func->base.name, "prod") == 0
+				|| strcmp(sf->func->base.name, "null") == 0
+				|| strcmp(sf->func->base.name, "count") == 0
+			);
+
+			if (strcmp(sf->func->base.name, "count") == 0) {
 				name = "sum";
+			} else {
+			    avg = (strcmp(sf->func->base.name, "avg") == 0);
+				sum = (strcmp(sf->func->base.name, "sum") == 0);
+				name = sf->func->base.name;
 			}
+
 			sum &= EC_APPNUM(tpe->type->eclass);
 			if (avg)
 				it = first_arg_subtype(e);
@@ -516,7 +524,7 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 		shared = sa_list(be->mvc->sa);
 		for (node *n = rel->exps->h, *m = o, *o = sub->h; n && m && o;
 				n = n->next, m = m->next, o = o->next) {
-			/* min -> min, max -> max, sum -> sum, count -> sum */
+			/* min -> min, max -> max, sum -> sum, count -> sum, null -> cnull */
 			sql_exp *e = n->data;
 			sql_subtype *tpe = exp_subtype(e), *it = NULL;
 			sql_subfunc *sf = e->f;
@@ -527,17 +535,26 @@ rel_groupby_combine_pp(backend *be, sql_rel *rel, list *gbstmts, stmt *grp, stmt
 			if (e->type == e_aggr) {
 				char *name = NULL;
 				int avg = 0, sum = 0;
-				if (strcmp(sf->func->base.name, "min") == 0 ||
-					strcmp(sf->func->base.name, "max") == 0 ||
-					strcmp(sf->func->base.name, "null") == 0 ||
-					(avg= (strcmp(sf->func->base.name, "avg") == 0)) ||
-					(sum= (strcmp(sf->func->base.name, "sum") == 0)) ||
-					strcmp(sf->func->base.name, "prod") == 0) {
-					name = sf->func->base.name;
-				} else {
-					assert(strcmp(sf->func->base.name, "count") == 0);
+
+				/* just a sanity check that, at this point, we indeed only get these expected aggr. funcs. */
+				assert(strcmp(sf->func->base.name, "min") == 0
+						|| strcmp(sf->func->base.name, "max") == 0
+						|| strcmp(sf->func->base.name, "avg") == 0
+						|| strcmp(sf->func->base.name, "sum") == 0
+						|| strcmp(sf->func->base.name, "prod") == 0
+						|| strcmp(sf->func->base.name, "null") == 0
+						|| strcmp(sf->func->base.name, "count") == 0
+					  );
+				if (strcmp(sf->func->base.name, "count") == 0) {
 					name = "sum";
+				} else if (strcmp(sf->func->base.name, "null") == 0) {
+					name = "cnull"; /* this name change is only needed in the per group case */
+				} else {
+					avg = (strcmp(sf->func->base.name, "avg") == 0);
+					sum = (strcmp(sf->func->base.name, "sum") == 0);
+					name = sf->func->base.name;
 				}
+
 				sum &= EC_APPNUM(tpe->type->eclass);
 				if (avg)
 					it = first_arg_subtype(e);
