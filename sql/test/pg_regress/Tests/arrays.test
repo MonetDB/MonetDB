@@ -168,11 +168,16 @@ SELECT t.f[1][3][1] AS "131", t.f[2][2][1] AS "221" FROM (
   SELECT ARRAY[[[111,112],[121,122],[131,132]],[[211,212],[221,122],[231,232]]] AS f
 ) AS t
 
-statement ok
+query T nosort
 SELECT ARRAY[[[[[['hello'],['world']]]]]]
+----
+{"world"}
 
-statement error
+query T nosort
 SELECT ARRAY[ARRAY['hello'],ARRAY['world']]
+----
+{"hello"}
+{"world"}
 
 statement error
 SELECT ARRAY(select f2 from arrtest_f order by f2) AS "ARRAY"
@@ -195,29 +200,46 @@ SELECT array_cat(ARRAY[[3,4],[5,6]], ARRAY[1,2]) AS "{{3,4},{5,6},{1,2}}"
 statement error
 SELECT a FROM arrtest WHERE b = ARRAY[[[113,142],[1,147]]]
 
-statement error
+query I nosort
 SELECT NOT ARRAY[1.1,1.2,1.3] = ARRAY[1.1,1.2,1.3] AS "FALSE"
+----
+0
 
-statement error
+query T nosort
 SELECT ARRAY[1,2] || 3 AS "{1,2,3}"
+----
+03
 
-statement error
+query T nosort
 SELECT 0 || ARRAY[1,2] AS "{0,1,2}"
+----
+00
 
-statement error
+query T nosort
 SELECT ARRAY[1,2] || ARRAY[3,4] AS "{1,2,3,4}"
+----
+00
 
-statement error
+statement error value too long for type (var)char(5)...
+SELECT ARRAY[[['happy','birthday']]] AS "ARRAY"
+
+statement error Error in optimizer defaultfast:...
 SELECT ARRAY[[['hello','world']]] || ARRAY[[['happy','birthday']]] AS "ARRAY"
 
-statement error
+query T nosort
 SELECT ARRAY[[1,2],[3,4]] || ARRAY[5,6] AS "{{1,2},{3,4},{5,6}}"
+----
+00
 
-statement error
+query T nosort
 SELECT ARRAY[0,0] || ARRAY[1,1] || ARRAY[2,2] AS "{0,0,1,1,2,2}"
+----
+000
 
-statement error
+query T nosort
 SELECT 0 || ARRAY[1,2] || 3 AS "{0,1,2,3}"
+----
+003
 
 statement error
 SELECT ARRAY[1,2,3]::text[]::int[]::double[] AS "{1,2,3}"
@@ -231,19 +253,19 @@ SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] AS "{{a,bc},{def,hijk
 statement error
 SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] is of (varchar[]) as "TRUE"
 
-statement error
+statement error value too long for type (var)char(1)
 SELECT CAST(ARRAY[[[[[['a','bb','ccc']]]]]] as text[]) as "{{{{{{a,bb,ccc}}}}}}"
 
-statement error
+statement error conversion of string '{1,2,3}' to type bte failed.
 select 33 = any ('{1,2,3}')
 
-statement error
+statement error conversion of string '{1,2,33}' to type bte failed.
 select 33 = any ('{1,2,33}')
 
-statement error
+statement error conversion of string '{1,2,33}' to type bte failed.
 select 33 = all ('{1,2,33}')
 
-statement error
+statement error conversion of string '{1,2,33}' to type bte failed.
 select 33 >= all ('{1,2,33}')
 
 statement error
@@ -255,11 +277,15 @@ select null::int >= all ('{}')
 statement error
 select null::int >= any ('{}')
 
-statement error
+query I nosort
 select 33.4 = any (array[1,2,3])
+----
+0
 
-statement error
+query I nosort
 select 33.4 > all (array[1,2,3])
+----
+1
 
 statement error
 select 33 * any ('{1,2,3}')
@@ -267,7 +293,7 @@ select 33 * any ('{1,2,3}')
 statement error
 select 33 * any (44)
 
-statement error
+statement error CONSTRAINT: constraints on multisets or composite types are not supported
 CREATE temp table arr_tbl (f1 int[] unique)
 
 statement error
