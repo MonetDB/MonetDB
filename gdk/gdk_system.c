@@ -194,6 +194,7 @@ struct thread_funcs {
 };
 
 struct mtthread {
+	allocator* thread_allocator;
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
@@ -567,6 +568,27 @@ MT_thread_getfreebats(void)
 	if (self == NULL)
 		self = &mainthread;
 	return &self->freebats;
+}
+
+void
+MT_thread_setallocator(allocator *allocator)
+{
+	if (!thread_initialized)
+		return;
+	struct mtthread *self = thread_self();
+
+	if (self)
+		self->thread_allocator = allocator;
+}
+
+allocator *
+MT_thread_getallocator(void)
+{
+	if (!thread_initialized)
+		return NULL;
+	struct mtthread *self = thread_self();
+
+	return self ? self->thread_allocator : NULL;
 }
 
 void

@@ -347,6 +347,7 @@ typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
 
+typedef struct allocator allocator;
 #include "gdk_system.h"
 #include "gdk_posix.h"
 #include "stream.h"
@@ -2521,7 +2522,6 @@ gdk_export exception_buffer *eb_init(exception_buffer *eb)
 #endif
 gdk_export _Noreturn void eb_error(exception_buffer *eb, const char *msg, int val);
 
-typedef struct allocator allocator;
 
 #include "gdk_calc.h"
 
