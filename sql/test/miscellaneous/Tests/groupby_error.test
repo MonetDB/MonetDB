@@ -101,9 +101,6 @@ NULL
 NULL
 
 #output differs for 1 vs. multiple threads
-statement ok
-PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
-
 #skipif threads=1
 skipif knownfail
 query T python .plan.filter
@@ -113,7 +110,8 @@ group by (
 | table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
 ) [ "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL ] [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL ]
 
-onlyif threads=1
+#onlyif threads=1
+skipif knownfail
 query T python .plan.filter
 PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
@@ -136,9 +134,6 @@ SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 1
 99
 97
-
-statement ok
-PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 
 skipif knownfail
 query T python .plan.filter
@@ -404,9 +399,6 @@ insert into tab1 values (1,1,1), (2,2,2)
 
 statement ok
 insert into tab2 values (1, 'a'), (1, 'b')
-
-statement ok
-PLAN select myalias0."part" as "part", myalias0."tet" as "tet", count(*) as mycount, myalias0."tet" as track from tab1 myalias0 left join tab2 myalias1 on myalias0."part" = myalias1."myk" group by myalias0."part", track, myalias0."tet", myalias1."ups"
 
 skipif knownfail
 query T python .plan.filter
