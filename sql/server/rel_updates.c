@@ -178,6 +178,17 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	need_nulls = 0;
 	/* NULL and NOT NULL, for 'SIMPLE MATCH' semantics */
 	/* AND joins expressions */
+
+	/* left outer join idx.l1 = idx.r1 and .. idx.ln = idx.rn
+	 *  then
+	 *		for full match only include idx.l1 IS NULL and ... idx.ln IS NULL
+	 *		for simple match include idx.l1 IS NULL or idx.ln IS NULL
+	 *
+	 *  for partial match the left join should include all partial matches, ie
+	 *		(idx.l1 = idx.r1 or idx.l1 IS NULL) and
+	 *
+	 *	For the constraint it self to fail we need the counts from count(r) == count(idx updates).
+	 */
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
@@ -289,8 +300,30 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 	r->card = inserts->card;
 	/* insert indices */
 	if (tab)
-		return rel_insert_idxs(sql, tab, rel_name(t), r);
+		r = rel_insert_idxs(sql, tab, rel_name(t), r);
+	if (r) {
+		set_processed(r);
+		r->exps = rel_projections(sql, r->r, NULL, 1, 1);
+		if (!list_empty(r->exps)) {
+			for(node *n = r->exps->h, *m = ol_first_node(tab->columns); n && m; n = n->next, m = m->next) {
+				sql_column *c = m->data;
+				exp_setname(sql, n->data, c->t->base.name, c->base.name);
+			}
+			/* TODO what to do with indices ? */
+		}
+	}
 	return r;
+}
+
+sql_rel *
+rel_update_count(mvc *sql, sql_rel *rel)
+{
+	rel = rel_groupby(sql, rel, NULL);
+	sql_subfunc *a = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+    sql_exp *e = exp_aggr(sql->sa, NULL, a, false, 0, CARD_ATOM, 0);
+	set_intern(e);
+	(void) rel_groupby_add_aggr(sql, rel, e);
+	return rel;
 }
 
 static sql_rel *
@@ -683,14 +716,13 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 static sql_rel *
 insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dlist *opt_returning)
 {
-	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
 
-	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "INSERT INTO", false);
-	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL)
+	t = find_table_or_view_on_scope(query->sql, NULL, sname, tname, "INSERT INTO", false);
+	if (insert_allowed(query->sql, t, tname, "INSERT INTO", "insert into") == NULL)
 		return NULL;
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
@@ -698,25 +730,19 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dl
 	sql_rel* ins = rel_insert_table(query, t, t->base.name, r);
 
 	if (opt_returning) {
-		mvc *sql = query->sql;
-		list *pexps = sa_list(sql->sa);
-		sql_rel* inner = ins->l;
+		list *pexps = sa_list(query->sql->sa);
 		for (dnode *n = opt_returning->h; n; n = n->next) {
-			sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+			sql_exp *ce = rel_column_exp(query, &ins, n->data.sym, sql_sel | sql_no_subquery);
 			if (ce == NULL)
 				return NULL;
 			pexps = append(pexps, ce);
 		}
-		ins->returning = 1;
-
-		if (is_groupby(inner->op)) {
-			inner->l = ins;
-			ins = rel_project(sql->sa, inner, pexps);
-		}
-		else
-			ins = rel_project(sql->sa, ins, pexps);
+		ins = rel_project(query->sql->sa, ins, pexps);
+		query->sql->type = Q_TABLE;
+	} else if (ins) {
+		ins = rel_update_count(query->sql, ins);
+		query->sql->type = Q_UPDATE;
 	}
-
 	return ins;
 }
 
@@ -1272,25 +1298,39 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			r = res;
 		}
 		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		if (!r)
+			return NULL;
 		if (opt_returning) {
+			/* we need to lookup all columns using the first column of the update result (row ids) */
+
 			query_processed(query);
-			r->returning = 1;
+			set_processed(r);
+
+			if (ol_first_node(t->columns)) {
+				list *l = r->attr = sa_list(sql->sa);
+				for (node *n = ol_first_node(t->columns); n; n = n->next) {
+					sql_column *c = n->data;
+					sql_exp *ne = NULL;
+
+					append(l, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
+					rel_base_use(sql, bt, c->colnr);
+					ne->nid = rel_base_nid(bt, c);
+					ne->alias.label = ne->nid;
+				}
+			}
 			list *pexps = sa_list(sql->sa);
-			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+				sql_exp *ce = rel_column_exp(query, &r, n->data.sym, sql_sel | sql_no_subquery);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			if (is_groupby(inner->op)) {
-				inner->l = r;
-				r = rel_project(sql->sa, inner, pexps);
-			}
-			else
-				r = rel_project(sql->sa, r, pexps);
+			r = rel_project(sql->sa, r, pexps);
+			sql->type = Q_TABLE;
+		} else {
+			r = rel_update_count(sql, r);
+			sql->type = Q_UPDATE;
 		}
-
 		return r;
 	}
 	return NULL;
@@ -1306,7 +1346,7 @@ rel_delete(allocator *sa, sql_rel *t, sql_rel *deletes)
 	r->op = op_delete;
 	r->l = t;
 	r->r = deletes;
-	r->card = deletes ? deletes->card : CARD_ATOM;
+	r->card = deletes ? deletes->card : CARD_MULTI;
 	return r;
 }
 
@@ -1359,23 +1399,34 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
 		}
+		r->exps = rel_projections(sql, r->r, NULL, 1, 1);
+		set_processed(r);
 		if (opt_returning) {
 			query_processed(query);
-			r->returning = 1;
+			if (ol_first_node(t->columns)) {
+				for (node *n = ol_first_node(t->columns); n; n = n->next) {
+					sql_column *c = n->data;
+					sql_exp *ne = NULL;
+
+					append(r->exps, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
+					rel_base_use(sql, bt, c->colnr);
+					ne->nid = rel_base_nid(bt, c);
+					ne->alias.label = ne->nid;
+				}
+			}
+
 			list *pexps = sa_list(sql->sa);
-			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+				sql_exp *ce = rel_column_exp(query, &r, n->data.sym, sql_sel | sql_no_subquery);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			if (is_groupby(inner->op)) {
-				inner->l = r;
-				r = rel_project(sql->sa, inner, pexps);
-			}
-			else
-				r = rel_project(sql->sa, r, pexps);
+			r = rel_project(sql->sa, r, pexps);
+			sql->type = Q_TABLE;
+		} else {
+			r = rel_update_count(sql, r);
+			sql->type = Q_UPDATE;
 		}
 		return r;
 	}
@@ -1398,7 +1449,15 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 static sql_rel *
 rel_merge(mvc *sql, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 {
+	sql_rel *outer1 = upd1, *outer2 = upd2;
+	if (upd2 && upd2->op == op_groupby)
+		upd2 = upd2->l;
+	if (upd1->op == op_groupby)
+		upd1 = upd1->l;
+
 	if (!upd2) { /* just insert or just update/delete ie just not match or match */
+		if (upd1->op == op_groupby)
+			upd1 = upd1->l;
 		if (upd1->op == op_insert) {
 			sql_rel *oj = upd1->l, *r = upd1->r;
 			sql_exp *le = NULL;
@@ -1414,11 +1473,11 @@ rel_merge(mvc *sql, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 			while (r->l != join)
 				r = r->l;
 			r->l = join = rel_select( sql->sa, join, ce);
-			return upd1;
+			return outer1;
 		} else if (upd1->op == op_delete || upd1->op == op_update) { /* 2 cases (one for now, ie matched) ? */
 			join->op = op_join;
 			set_single(join);
-			return upd1;
+			return outer1;
 		}
 	} else {
 		sql_rel *oj = upd2->l, *r;
@@ -1449,7 +1508,7 @@ rel_merge(mvc *sql, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 		while (r->l != join)
 			r = r->l;
 		r->l = rel_select( sql->sa, join, ce);
-		return rel_list(sql->sa, upd1, upd2);
+		return rel_list(sql->sa, outer1, outer2);
 	}
 	assert (0);
 	return NULL;
@@ -1549,6 +1608,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			}
 			if (!upd_del)
 				return NULL;
+			upd_del = rel_update_count(sql, upd_del);
 		} else if (token == SQL_MERGE_NO_MATCH) {
 			if ((processed & MERGE_INSERT) == MERGE_INSERT)
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
@@ -1578,6 +1638,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			ibt = rewrite_basetable(query->sql, ibt);
 			if (!(insert = rel_insert(query->sql, ibt, insert)))
 				return NULL;
+			insert = rel_update_count(sql, insert);
 		} else {
 			assert(0);
 		}
@@ -1906,6 +1967,8 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 			return NULL;
 	}
 	rel = rel_insert_table(query, t, tname, rel);
+	if (rel)
+		rel = rel_update_count(sql, rel);
 	return rel;
 }
 
@@ -1988,6 +2051,8 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	res = rel_project(sql->sa, res, exps);
 
 	res = rel_insert_table(query, t, t->base.name, res);
+	if (res)
+		res = rel_update_count(sql, res);
 	return res;
 }
 
@@ -2295,7 +2360,6 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = insert_into(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
-		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_UPDATE:
@@ -2304,7 +2368,6 @@ rel_updates(sql_query *query, symbol *s)
 
 		ret = update_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
 						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym, l->h->next->next->next->next->next->data.lval);
-		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_DELETE:
@@ -2312,7 +2375,6 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
-		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_TRUNCATE:

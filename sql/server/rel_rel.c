@@ -300,15 +300,19 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (is_insert(rel->op))
+	if (is_insert(rel->op) && !is_processed(rel))
 		rel = rel->r;
-	if ((is_project(rel->op) || is_base(rel->op))) {
+	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
+		list *exps = rel->exps;
+
+		if (rel->op == op_update)
+			exps = rel->attr;
 
 		if (is_base(rel->op) && !rel->exps)
 			return rel_base_bind_column(sql, rel, cname, no_tname);
-		if (!list_empty(rel->exps)) {
-			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (!list_empty(exps)) {
+			e = exps_bind_column(exps, cname, &ambiguous, &multi, no_tname);
 			if (ambiguous || multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
@@ -1439,6 +1443,9 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_groupby:
 	case op_project:
 	case op_table:
+	case op_insert:
+	case op_update:
+	case op_delete:
 		if (is_basetable(rel->op) && !rel->exps) {
 			assert(e->nid);
 			if (rel_base_has_nid(rel, e->nid))
@@ -1449,9 +1456,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 				found = 1;
 		}
 		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
 	case op_truncate:
 	case op_ddl:
 		break;
