@@ -152,12 +152,14 @@ sql_symbol2relation(backend *be, symbol *sym)
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = Tend;
-	if (rel)
-		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
-	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
-		be->no_mitosis = 1;
-	if (rel)
-		rel = rel_physical(be->mvc, rel);
+	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
+		if (rel)
+			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
+		if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
+			be->no_mitosis = 1;
+		if (rel)
+			rel = rel_physical(be->mvc, rel);
+	}
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
