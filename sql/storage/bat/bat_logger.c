@@ -1322,7 +1322,6 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 			break;
 		default:
 			/* error */
-			fclose(fp);
 			ret = GDK_FAIL;
 			goto end;
 		}
