@@ -59,9 +59,9 @@
 		ssize_t l;									\
 		if (is_##TYPE##_nil(v)) {					\
 			if (*Buf == NULL || *len < 5){			\
-				GDKfree(*Buf);						\
+				/*GDKfree(*Buf);*/						\
 				*len = 5;							\
-				*Buf = GDKzalloc(*len);				\
+				*Buf = sa_zalloc(sa, *len);				\
 				if (*Buf == NULL) {					\
 					return -1;						\
 				}									\
@@ -90,9 +90,9 @@
 			buf[cur--] = '-';						\
 		l = (64-cur-1);								\
 		if (*Buf == NULL || (ssize_t) *len < l) {	\
-			GDKfree(*Buf);							\
+			/*GDKfree(*Buf);*/							\
 			*len = (size_t) l+1;					\
-			*Buf = GDKzalloc(*len);					\
+			*Buf = sa_zalloc(sa, *len);					\
 			if (*Buf == NULL) {						\
 				return -1;							\
 			}										\
@@ -104,6 +104,8 @@
 static ssize_t
 dec_tostr(void *extra, char **Buf, size_t *len, int type, const void *a)
 {
+	allocator *sa = MT_thread_getallocator();
+	assert(sa);
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
 		DEC_TOSTR(bte);
@@ -148,8 +150,10 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
-			GDKfree(*buf);
-			*buf = GDKzalloc(*len = 4);
+			//GDKfree(*buf);
+			allocator *sa = MT_thread_getallocator();
+			assert(sa);
+			*buf = sa_zalloc(sa, *len = 4);
 			if (*buf == NULL)
 				return -1;
 		}
@@ -158,8 +162,10 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 	}
 
 	if (*buf == NULL || *len < (size_t) len1 + 8) {
-		GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = len1 + 8);
+		//GDKfree(*buf);
+		allocator *sa = MT_thread_getallocator();
+		assert(sa);
+		*buf = (str) sa_zalloc(sa, *len = len1 + 8);
 		if (*buf == NULL) {
 			return -1;
 		}
@@ -207,8 +213,10 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	if ((len1 == 3 && strcmp(s1, "nil") == 0) ||
 	    (len2 == 3 && strcmp(s2, "nil") == 0)) {
 		if (*len < 4 || *buf == NULL) {
-			GDKfree(*buf);
-			*buf = GDKzalloc(*len = 4);
+			//GDKfree(*buf);
+			allocator *sa = MT_thread_getallocator();
+			assert(sa);
+			*buf = sa_zalloc(sa, *len = 4);
 			if (*buf == NULL)
 				return -1;
 		}
@@ -217,8 +225,10 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	}
 
 	if (*buf == NULL || *len < (size_t) len1 + (size_t) len2 + 8) {
-		GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = (size_t) (len1 + len2 + 8));
+		//GDKfree(*buf);
+		allocator *sa = MT_thread_getallocator();
+		assert(sa);
+		*buf = (str) sa_zalloc(sa, *len = (size_t) (len1 + len2 + 8));
 		if (*buf == NULL) {
 			return -1;
 		}
@@ -351,7 +361,7 @@ bat_max_length(hge, hge)
 			return NULL;												\
 		r = c->data;													\
 		if (r == NULL &&												\
-		    (r = GDKzalloc(sizeof(X))) == NULL)							\
+		    (r = sa_zalloc(sa, sizeof(X))) == NULL)							\
 			return NULL;												\
 		c->data = r;													\
 		if (neg)														\
@@ -365,6 +375,8 @@ static void *
 dec_frstr(Column *c, int type, const char *s)
 {
 	assert(c->decsep != '\0');
+	allocator *sa = MT_thread_getallocator();
+	assert(sa);
 
 	/* support dec map to bte, sht, int and lng */
 	if( strcmp(s,"nil")== 0)
@@ -437,7 +449,9 @@ sec_frstr(Column *c, int type, const char *s)
 		res *= 10;
 	}
 	r = c->data;
-	if (r == NULL && (r = (lng *) GDKzalloc(sizeof(lng))) == NULL)
+	allocator *sa = MT_thread_getallocator();
+	assert(sa);
+	if (r == NULL && (r = (lng *) sa_zalloc(sa, sizeof(lng))) == NULL)
 		return NULL;
 	c->data = r;
 	if (neg)
@@ -563,9 +577,11 @@ _ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 		else
 			l = escapedStrlen(src, c->sep, c->rsep, 0);
 		if (l + 3 > *len) {
-			GDKfree(*buf);
+			//GDKfree(*buf);
+			allocator *sa = MT_thread_getallocator();
+			assert(sa);
 			*len = 2 * l + 3;
-			*buf = GDKzalloc(*len);
+			*buf = sa_zalloc(sa, *len);
 			if (*buf == NULL) {
 				return -1;
 			}
@@ -1256,11 +1272,11 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
-	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
+	fmt = as.format = (Column *) sa_zalloc(m->sa, sizeof(Column) * (as.nr_attrs + 1));
+	tres = sa_zalloc(m->sa, sizeof(struct time_res) * (as.nr_attrs));
 	if (fmt == NULL || tres == NULL) {
-		GDKfree(fmt);
-		GDKfree(tres);
+		//GDKfree(fmt);
+		//GDKfree(tres);
 		return -4;
 	}
 
@@ -1283,8 +1299,8 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 				bat_iterator_end(&fmt[i].ci);
 				BBPunfix(fmt[i].c->batCacheid);
 			}
-			GDKfree(fmt);
-			GDKfree(tres);
+			//GDKfree(fmt);
+			//GDKfree(tres);
 			return -2;
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
@@ -1373,7 +1389,7 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	for (i = 1; i <= t->nr_cols; i++)
 		bat_iterator_end(&fmt[i].ci);
 	TABLETdestroy_format(&as);
-	GDKfree(tres);
+	//GDKfree(tres);
 	if (ok < 0)
 		return ok;
 	if (mnstr_errnr(s) != MNSTR_NO__ERROR)
@@ -1984,7 +2000,9 @@ mvc_export_bin_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	if (res == NULL)
 		return 0;
 
-	colinfo = GDKzalloc(res->nr_cols * sizeof(*colinfo));
+	allocator *sa = MT_thread_getallocator();
+	assert(sa);
+	colinfo = ma_zalloc(sa, res->nr_cols * sizeof(*colinfo));
 	if (!colinfo) {
 		ret = -1;
 		goto end;
@@ -2055,7 +2073,7 @@ end:
 			if (colinfo[i].bat)
 				BBPunfix(colinfo[i].bat->batCacheid);
 		}
-		GDKfree(colinfo);
+		//GDKfree(colinfo);
 	}
 	mnstr_destroy(countstream);
 	return ret;

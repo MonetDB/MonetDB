@@ -1200,16 +1200,16 @@ soundex(Client ctx, str *res, const char *const *Name)
 	(void) ctx;
 	str msg = MAL_SUCCEED;
 
-	GDKfree(*res);
+	//GDKfree(*res);
 	RETURN_NIL_IF(strNil(*Name), TYPE_str);
 
-	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
+	*res = (str) ma_alloc(ctx->alloc, sizeof(char) * (SoundexLen + 1));
 	if (*res == NULL)
 		throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
 	if ((msg = soundex_code(*Name, *res))) {
-		GDKfree(*res);
+		//GDKfree(*res);
 		*res = NULL;
 		return msg;
 	}
@@ -1228,12 +1228,12 @@ stringdiff(Client ctx, int *res, const char *const *s1, const char *const *s2)
 		return r;
 	r = soundex(ctx, &S2, s2);
 	if (r != MAL_SUCCEED) {
-		GDKfree(S1);
+		//GDKfree(S1);
 		return r;
 	}
 	r = TXTSIMdameraulevenshtein1(ctx, res, &(const char *){S1}, &(const char *){S2});
-	GDKfree(S1);
-	GDKfree(S2);
+	//GDKfree(S1);
+	//GDKfree(S2);
 	return r;
 }
 
@@ -1256,9 +1256,9 @@ qgram_normalize(Client ctx, str *res, const char *const *Input)
 	int i, j = 0;
 	char c, last = ' ';
 
-	GDKfree(*res);
+	// GDKfree(*res);
 	RETURN_NIL_IF(strNil(input), TYPE_str);
-	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
+	*res = (str) ma_alloc(ctx->alloc, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
 		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 

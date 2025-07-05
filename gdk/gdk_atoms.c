@@ -402,9 +402,9 @@ ATOMdup(int t, const void *p)
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			GDKfree(*dst);			\
+			/*GDKfree(*dst);*/			\
 			*len = (size);			\
-			*dst = GDKmalloc(*len);		\
+			*dst = ma_alloc(ma, *len);		\
 			if (*dst == NULL) {		\
 				*len = 0;		\
 				return -1;		\
@@ -418,6 +418,8 @@ ATOMdup(int t, const void *p)
 ssize_t									\
 TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 {									\
+	allocator *ma = MT_thread_getallocator();			\
+	assert(ma);							\
 	atommem(TYPE##Strlen);						\
 	if (is_##TYPE##_nil(*src)) {					\
 		if (external) {						\
@@ -463,6 +465,8 @@ static ssize_t
 mskFromStr(const char *src, size_t *len, msk **dst, bool external)
 {
 	const char *p = src;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	(void) external;
 	atommem(sizeof(msk));
@@ -490,6 +494,8 @@ static ssize_t
 mskToStr(char **dst, size_t *len, const msk *src, bool external)
 {
 	(void) external;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	atommem(2);
 	strcpy(*dst, *src ? "1" : "0");
 	return 1;
@@ -499,6 +505,8 @@ ssize_t
 bitFromStr(const char *src, size_t *len, bit **dst, bool external)
 {
 	const char *p = src;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	atommem(sizeof(bit));
 
@@ -534,6 +542,8 @@ bitFromStr(const char *src, size_t *len, bit **dst, bool external)
 ssize_t
 bitToStr(char **dst, size_t *len, const bit *src, bool external)
 {
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	atommem(6);
 
 	if (is_bit_nil(*src)) {
@@ -659,6 +669,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	 * (but not more than one consecutively)
 	 * the optional LL at the end are only allowed for lng and hge
 	 * values */
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	atommem(sz);
 
 	if (strNil(src)) {
@@ -903,6 +915,8 @@ atom_io(lng, Lng, lng)
 ssize_t
 hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 {
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
 		if (external) {
@@ -935,6 +949,8 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 {
 	size_t base = 0;
 	const char *p = src;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	atommem(sizeof(ptr));
 
@@ -989,6 +1005,8 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 	ssize_t n = 0;
 	double d;
 
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	/* alloc memory */
 	atommem(sizeof(dbl));
 
@@ -1035,6 +1053,8 @@ ssize_t
 dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 {
 	int l = 0;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	atommem(dblStrlen);
 	if (is_dbl_nil(*src)) {
@@ -1068,6 +1088,8 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 	const char *p = src;
 	ssize_t n = 0;
 	float f;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	/* alloc memory */
 	atommem(sizeof(flt));
@@ -1116,6 +1138,8 @@ ssize_t
 fltToStr(char **dst, size_t *len, const flt *src, bool external)
 {
 	int l = 0;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	atommem(fltStrlen);
 	if (is_flt_nil(*src)) {
@@ -1158,6 +1182,8 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 	size_t l = sizeof(ui);
 	ssize_t pos = 0;
 	const char *p = src;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	atommem(sizeof(oid));
 
@@ -1200,6 +1226,8 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 ssize_t
 OIDtoStr(char **dst, size_t *len, const oid *src, bool external)
 {
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 	atommem(oidStrlen);
 
 	if (is_oid_nil(*src)) {
@@ -1231,8 +1259,10 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 	const char *s = svalue;
 
 	if (*len < UUID_SIZE || *retval == NULL) {
-		GDKfree(*retval);
-		if ((*retval = GDKmalloc(UUID_SIZE)) == NULL)
+		//GDKfree(*retval);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		if ((*retval = ma_alloc(ma, UUID_SIZE)) == NULL)
 			return -1;
 		*len = UUID_SIZE;
 	}
@@ -1322,9 +1352,11 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 {
 	const uuid *value = VALUE;
 	if (*len <= UUID_STRLEN || *retval == NULL) {
-		if (*retval)
-			GDKfree(*retval);
-		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		//if (*retval)
+		//	GDKfree(*retval);
+		if ((*retval = ma_alloc(ma, UUID_STRLEN + 1)) == NULL)
 			return -1;
 		*len = UUID_STRLEN + 1;
 	}

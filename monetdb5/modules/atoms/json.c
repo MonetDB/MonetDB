@@ -245,10 +245,10 @@ JSONfromString(const char *src, size_t *len, void **J, bool external)
 		// GDKfree(*buf);
 		*buf = NULL;
 	}
-	allocator *ma = MT_thread_getallocator();
-	assert(ma);
 	if (strNil(src) || (external && strncmp(src, "nil", 3) == 0)) {
-		*buf = GDKstrdup(str_nil);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*buf = MA_STRDUP(ma, str_nil);
 		if (*buf == NULL)
 			return -1;
 		*len = 2;
@@ -275,9 +275,11 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 
 	if (strNil(src)) {
 		if (*s == NULL || *len < 4) {
-			GDKfree(*s);
+			//GDKfree(*s);
+			allocator *ma = MT_thread_getallocator();
+			assert(ma);
 			*len = 4;
-			*s = GDKmalloc(4);
+			*s = ma_alloc(ma, 4);
 			if (*s == NULL)
 				return -1;
 		}
@@ -309,8 +311,10 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 	}
 
 	if (cnt > (size_t) *len) {
-		GDKfree(*s);
-		*s = GDKmalloc(cnt);
+		// GDKfree(*s);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*s = ma_alloc(ma, cnt);
 		if (*s == NULL)
 			return -1;
 		*len = cnt;

@@ -649,8 +649,10 @@ ssize_t
 date_fromstr(const char *buf, size_t *len, date **d, bool external)
 {
 	if (*len < sizeof(date) || *d == NULL) {
-		GDKfree(*d);
-		*d = (date *) GDKmalloc(*len = sizeof(date));
+		//GDKfree(*d);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*d = (date *) ma_alloc(ma, *len = sizeof(date));
 		if( *d == NULL)
 			return -1;
 	}
@@ -689,8 +691,10 @@ date_tostr(str *buf, size_t *len, const date *val, bool external)
 {
 	/* 15 bytes is more than enough */
 	if (*len < 15 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = GDKmalloc(15);
+		//GDKfree(*buf);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*buf = ma_alloc(ma, 15);
 		if( *buf == NULL)
 			return -1;
 		*len = 15;
@@ -781,8 +785,10 @@ ssize_t
 daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 {
 	if (*len < sizeof(daytime) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
+		//GDKfree(*ret);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*ret = (daytime *) ma_alloc(ma, *len = sizeof(daytime));
 		if (*ret == NULL)
 			return -1;
 	}
@@ -913,8 +919,10 @@ daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
 	if (precision < 0)
 		precision = 0;
 	if (*len < 10 + (size_t) precision || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 10 + (size_t) precision);
+		//GDKfree(*buf);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*buf = (str) ma_alloc(ma, *len = 10 + (size_t) precision);
 		if( *buf == NULL)
 			return -1;
 	}
@@ -936,8 +944,10 @@ timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool e
 	daytime tm;
 
 	if (*len < sizeof(timestamp) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
+		//GDKfree(*ret);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*ret = (timestamp *) ma_alloc(ma, *len = sizeof(timestamp));
 		if (*ret == NULL)
 			return -1;
 	}
@@ -1065,8 +1075,10 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 
 	if (is_timestamp_nil(val)) {
 		if (*len < 4 || *buf == NULL) {
-			GDKfree(*buf);
-			*buf = GDKmalloc(*len = 4);
+			//GDKfree(*buf);
+			allocator *ma = MT_thread_getallocator();
+			assert(ma);
+			*buf = ma_alloc(ma, *len = 4);
 			if( *buf == NULL)
 				return -1;
 		}
@@ -1087,8 +1099,10 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 		return -1;
 
 	if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = GDKmalloc(*len = (size_t) len1 + (size_t) len2 + 2);
+		//GDKfree(*buf);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*buf = ma_alloc(ma, *len = (size_t) len1 + (size_t) len2 + 2);
 		if( *buf == NULL)
 			return -1;
 	}

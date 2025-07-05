@@ -730,12 +730,12 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	GDKfree(dst);
+	// GDKfree(dst);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	BATsetcount(bn, ci->ncand);
 	return nils;
   bailout:
-	GDKfree(dst);
+	// GDKfree(dst);
 	return BUN_NONE + 2;
 }
 

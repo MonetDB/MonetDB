@@ -206,8 +206,8 @@ MANIFOLDjob(allocator *ma, MULTItask *mut)
 	default:
 		msg = createException(MAL, "mal.manifold", "manifold call limitation ");
 	}
-	if (ATOMextern(mut->args[0].type) && y)
-		GDKfree(y);
+	//if (ATOMextern(mut->args[0].type) && y)
+	//	GDKfree(y);
   bunins_failed:
 	//GDKfree(args);
 	return msg;

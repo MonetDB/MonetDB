@@ -87,8 +87,10 @@ INETfromString(const char *src, size_t *len, void **RETVAL, bool external)
 	type = 0;
 
 	if (*len < sizeof(inet) || *retval == NULL) {
-		GDKfree(*retval);
-		*retval = GDKzalloc(sizeof(inet));
+		// GDKfree(*retval);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*retval = ma_zalloc(ma, sizeof(inet));
 		if (*retval == NULL) {
 			*len = 0;
 			return -1;
@@ -205,8 +207,10 @@ INETtoString(str *retval, size_t *len, const void *handle, bool external)
 	const inet *value = (const inet *) handle;
 
 	if (*len < 20 || *retval == NULL) {
-		GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(char) * (*len = 20));
+		// GDKfree(*retval);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*retval = ma_alloc(ma, sizeof(char) * (*len = 20));
 		if (*retval == NULL)
 			return -1;
 	}

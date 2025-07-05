@@ -301,9 +301,11 @@ output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen,
 				p = *localbuf;
 			}
 			if (fill + l + f->seplen >= (ssize_t) * len) {
+				allocator *ma = MT_thread_getallocator();
+				assert(ma);
 				/* extend the buffer */
 				char *nbuf;
-				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
+				nbuf = ma_realloc(ma, *buf, fill + l + f->seplen + BUFSIZ, *len);
 				if (nbuf == NULL)
 					return -1;	/* *buf freed by caller */
 				*buf = nbuf;
@@ -432,13 +434,15 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 {
 	size_t len = BUFSIZ, locallen = BUFSIZ;
 	int res = 0;
-	char *buf = GDKmalloc(len);
-	char *localbuf = GDKmalloc(len);
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
+	char *buf = ma_alloc(ma, len);
+	char *localbuf = ma_alloc(ma, len);
 	BUN i = 0;
 
 	if (buf == NULL || localbuf == NULL) {
-		GDKfree(buf);
-		GDKfree(localbuf);
+		//GDKfree(buf);
+		//GDKfree(localbuf);
 		return -1;
 	}
 	for (i = 0; i < as->nr; i++) {
@@ -450,8 +454,8 @@ output_file_dense(Tablet *as, stream *fd, bstream *in)
 			break;
 		}
 	}
-	GDKfree(localbuf);
-	GDKfree(buf);
+	//GDKfree(localbuf);
+	//GDKfree(buf);
 	return res;
 }
 

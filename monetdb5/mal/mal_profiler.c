@@ -241,7 +241,7 @@ format_val2json(const Client c, const ValPtr res)
 		(!VALget(res)
 		 || BATatoms[res->vtype].atomCmp(VALget(res),
 										 BATatoms[res->vtype].atomNull) == 0))
-		return GDKstrdup("\"nil\"");
+		return MA_STRDUP(c->alloc, "\"nil\"");
 
 	bool use_external = true;
 
@@ -269,11 +269,11 @@ format_val2json(const Client c, const ValPtr res)
 	/* NOTE c->ta maybe active from caller */
 	allocator *ta = (allocator_tmp_active(c->ta)) ? c->ta : NULL;
 	if (VALinit(ta, &val, TYPE_str, buf) == NULL) {
-		GDKfree(buf);
+		//GDKfree(buf);
 		return NULL;
 	}
 
-	GDKfree(buf);
+	//GDKfree(buf);
 
 	char *buf2;
 	buf2 = VALformat(&val);

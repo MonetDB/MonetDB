@@ -106,7 +106,7 @@ clearStack(MalStkPtr s)
 			BBPrelease(v->val.bval);
 			v->bat = false;
 		} else if (v->allocated && ATOMextern(v->vtype) && v->val.pval) {
-			GDKfree(v->val.pval);
+			// GDKfree(v->val.pval);
 			v->vtype = 0;
 			v->val.pval = NULL;
 		}
