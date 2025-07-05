@@ -203,7 +203,10 @@ int yydebug=1;
 	check_search_condition
 	comment_on_statement
 	control_statement
+	import_stmt
+	load_stmt
 	copyfrom_stmt
+	copybinfrom_stmt
 	copyto_stmt
 	create_statement
 	create_statement_in_schema
@@ -453,7 +456,6 @@ int yydebug=1;
 	opt_column_list
 	opt_comma_XML_namespace_declaration_attributes_element_content
 	opt_corresponding
-	opt_fwf_widths
 	opt_header_list
 	limit_clause
 	opt_nr
@@ -461,7 +463,6 @@ int yydebug=1;
 	opt_referencing_list
 	opt_schema_element_list
 	opt_seps
-	opt_decimal_seps
 	opt_returning_clause
 	opt_seq_params
 	opt_typelist
@@ -591,12 +592,10 @@ int yydebug=1;
 	table_if_not_exists
 	opt_admin_for
 	opt_asc_desc
-	opt_best_effort
 	opt_brackets
 	opt_chain
 	all_distinct
 	opt_distinct
-	opt_escape
 	opt_grant_for
 	opt_nulls_first_last
 	opt_on_location
@@ -2961,7 +2960,7 @@ update_statement:
  | insert_stmt
  | update_stmt
  | merge_stmt
- | copyfrom_stmt
+ | import_stmt
  | copyto_stmt
  ;
 
@@ -3045,47 +3044,93 @@ opt_on_location:
   | ON SERVER		{ $$ = 0; }
   ;
 
+import_stmt:
+	copyfrom_stmt { $$ = $1; }
+  | copybinfrom_stmt { $$ = $1; }
+  | load_stmt { $$ = $1; }
+  ;
+
 copyfrom_stmt:
-/*  1    2      3    4     5               6    7                8               9               10       11               12         13              14              15 */
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort opt_fwf_widths
-	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_list(l, $5);
-	  append_list(l, $7);
-	  append_list(l, $8);
-	  append_list(l, $10);
-	  append_list(l, $2);
-	  append_string(l, $13);
-	  append_int(l, $14);
-	  append_list(l, $15);
-	  append_int(l, $9);
-	  append_int(l, $12);
-	  append_list(l, $11);
-	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-/*  1    2      3    4     5               6    7      8               9        10               11         12              13*/
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_decimal_seps opt_escape opt_null_string opt_best_effort
-	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_list(l, $5);
-	  append_list(l, NULL);
-	  append_list(l, $8);
-	  append_list(l, $9);
-	  append_list(l, $2);
-	  append_string(l, $12);
-	  append_int(l, $13);
-	  append_list(l, NULL);
-	  append_int(l, 0);
-	  append_int(l, $11);
-	  append_list(l, $10);
-	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-/*  1    2         3    4     5    6 */
-  | COPY sqlLOADER INTO qname FROM func_ref
+/*  1    2      3    4     5               6    7                8               9 */
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location
+	{ CopyFromNode *copy = newCopyFromNode(SA,
+		/* qname */ $4,
+		/* column_list */ $5,
+		/* sources */ $7,
+		/* header_list */ $8,
+		/* nr_offset */ $2);
+	  copy->on_client = !!$9;
+	  $$ = (symbol*)copy; }
+/*  1    2      3    4     5               6    7      8 */
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN opt_header_list
+	{ CopyFromNode *copy = newCopyFromNode(SA,
+		/* qname */ $4,
+		/* column_list */ $5,
+		/* sources */ NULL,
+		/* header_list */ $8,
+		/* nr_offset */ $2);
+	  $$ = (symbol*)copy; }
+  | copyfrom_stmt opt_using DELIMITERS string
+    { CopyFromNode *copy = (CopyFromNode*)$1;
+	  copy->tsep = $4;
+	  $$ = $1; }
+  | copyfrom_stmt opt_using DELIMITERS string ',' string
+    { CopyFromNode *copy = (CopyFromNode*)$1;
+	  copy->tsep = $4;
+	  copy->rsep = $6;
+	  $$ = $1; }
+  | copyfrom_stmt opt_using DELIMITERS string ',' string ',' string
+    { CopyFromNode *copy = (CopyFromNode*)$1;
+	  copy->tsep = $4;
+	  copy->rsep = $6;
+	  copy->ssep = $8;
+	  $$ = $1; }
+  | copyfrom_stmt sqlDECIMAL opt_as string
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    copy->decsep = $4;
+    $$ = $1;}
+  | copyfrom_stmt sqlDECIMAL opt_as string ',' string
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    copy->decsep = $4;
+    copy->decskip = $6;
+    $$ = $1;}
+  | copyfrom_stmt ESCAPE
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    copy->escape = true;
+    $$ = $1;}
+  | copyfrom_stmt NO ESCAPE
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    copy->escape = false;
+    $$ = $1;}
+  | copyfrom_stmt sqlNULL opt_as string
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    copy->null_string = $4;
+    $$ = $1;}
+  | copyfrom_stmt BEST EFFORT
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    copy->best_effort = true;
+    $$ = $1;}
+  | copyfrom_stmt FWF '(' fwf_widthlist ')'
+  { CopyFromNode *copy = (CopyFromNode*)$1;
+    if (copy->sources == NULL) {
+		yyerror(m, "cannot use FWF with FROM STDIN");
+		YYABORT;
+	}
+    copy->fwf_widths = $4;
+    $$ = $1;}
+  ;
+
+load_stmt:
+/*   1    2         3    4     5    6 */
+    COPY sqlLOADER INTO qname FROM func_ref
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
+
+copybinfrom_stmt:
 /*   1      2              3      4    5     6               7    8                9 */
-   | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location
+    COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location
 	{ dlist *l = L();
 	  append_list(l, $5);
 	  append_list(l, $6);
@@ -3123,11 +3168,6 @@ copyto_stmt:
 	  append_int(l, $7);
 	  $$ = _symbol_create_list( SQL_BINCOPYINTO, l ); }
   ;
-
-opt_fwf_widths:
-       /* empty */		{ $$ = NULL; }
- | FWF '(' fwf_widthlist ')' { $$ = $3; }
- ;
 
  fwf_widthlist:
     poslng		{ $$ = append_lng(L(), $1); }
@@ -3181,22 +3221,6 @@ opt_seps:
 				  $$ = l; }
  ;
 
-opt_decimal_seps:
-	/* empty */
-				{ dlist *l = L();
-				  append_string(l, sa_strdup(SA, "."));
-				  $$ = l; }
-	| sqlDECIMAL opt_as string
-				{ dlist *l = L();
-				  append_string(l, $3);
-				  $$ = l; }
-	| sqlDECIMAL opt_as string ',' string
-				{ dlist *l = L();
-				  append_string(l, $3);
-				  append_string(l, $5);
-				  $$ = l; }
-;
-
 opt_using:
     /* empty */			{ $$ = NULL; }
  |  USING			{ $$ = NULL; }
@@ -3215,17 +3239,6 @@ opt_nr:
 opt_null_string:
 	/* empty */		{ $$ = NULL; }
  |	sqlNULL opt_as string	{ $$ = $3; }
- ;
-
-opt_escape:
-	/* empty */	{ $$ = TRUE; }		/* ESCAPE is default */
- |	ESCAPE		{ $$ = TRUE; }
- |	NO ESCAPE	{ $$ = FALSE; }
- ;
-
-opt_best_effort:
-	/* empty */	{ $$ = FALSE; }
- |	BEST EFFORT	{ $$ = TRUE; }
  ;
 
 string_commalist:

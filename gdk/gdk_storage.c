@@ -232,6 +232,13 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 
 	if (strchr(mode, 'w')) {
 		flags |= O_WRONLY | O_CREAT;
+		/* HACK ALERT: text files also get truncated but binary
+		 * files not!  This is because mmap extend depends on
+		 * files not getting truncated, and a second hot
+		 * snapshot needs to completely overwrite a pre-existing
+		 * (from an earlier snapshot) BBP.dir file. */
+		if (strchr(mode, 'b') == NULL)
+			flags |= O_TRUNC;
 	} else if (!strchr(mode, '+')) {
 		flags |= O_RDONLY;
 	} else {

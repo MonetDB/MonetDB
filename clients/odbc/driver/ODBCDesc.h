@@ -79,7 +79,7 @@ typedef struct {
 #define isIPD(desc)	(isID(desc) && (desc)->Stmt->ImplParamDescr == (desc))
 
 ODBCDesc *newODBCDesc(ODBCDbc *dbc);
-int isValidDesc(ODBCDesc *desc);
+bool isValidDesc(ODBCDesc *desc);
 void addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg, int nativeErrCode);
 ODBCError *getDescError(ODBCDesc *desc);
 

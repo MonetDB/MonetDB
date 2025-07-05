@@ -95,7 +95,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Mar2025/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Mar2025-SP1/MonetDB-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -964,6 +964,7 @@ sed -i 's/1\.2/1.1/' misc/selinux/monetdb.te
 %endif
 
 %cmake3 \
+        -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_RUNSTATEDIR=/run \
         -DRELEASE_VERSION=ON \
         -DASSERT=OFF \
@@ -1056,6 +1057,81 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Fri Jul 04 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.9-20250704
+- Rebuilt.
+- GH#7629: monetdbd causes SELinux denial
+- GH#7654: Query remote table that targets remote server table not owned
+  by monetdb default user
+
+* Mon Jun 30 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.7-20250630
+- Rebuilt.
+
+* Fri Jun 27 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.5-20250627
+- Rebuilt.
+- GH#7625: Missing entry in sys.table_types table for new LOCAL TEMPORARY
+  VIEW
+- GH#7626: crash in window function with constant aggregation
+- GH#7627: Increased memory consumption, slowness and crash
+- GH#7632: Unexpected Left Join Crash
+- GH#7633: Unexpected Out of Memory of Inner Join
+- GH#7634: Join with subquery crash
+- GH#7636: Unexpected Anti Join Crash
+- GH#7638: PREPARE statement increases the memory use of the session even
+  when DEALLOCATEd
+- GH#7644: Unexpected anti join crash
+- GH#7646: Unexpected Left Join Crash
+
+* Thu Jun 19 2025 Lucas Pereira <lucas.pereira@monetdbsolutions.com> - 11.53.5-20250627
+- sql: When a prepared statement is executed, sys.queue now shows the text
+  of the original PREPARE statement along with the EXEC and its arguments.
+
+* Fri Jun 13 2025 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.53.5-20250627
+- sql: Add optional parameters omit_unlogged (bool) and omit_table_ids (str) to
+  sys.hot_snapshot(). If omit_unlogged is set to true, the data in UNLOGGED
+  tables is omitted from the snapshot. If omit_table_ids is given, it must
+  be a comma-separated list of table ids as found in sys.tables. The data in
+  each of those tables will be omitted from the snapshot.
+- sql: Empty BATs are omitted from the snapshot, the restored server will created
+  them if necessary.
+
+* Tue Jun  3 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.5-20250627
+- clients: When connecting to a database, if there are multiple monetdbd servers
+  running, mclient will try them all, and also both UNIX domain
+  sockets and then TCP, in order to find a server that accepts the
+  connection.  However, when a server that handles the requested
+  database does exist but refuses the connection for some other
+  reason, mclient would continue searching.  This has now been
+  changed.  If monetdbd reports an error other than database unknown,
+  mclient will now stop looking and report the error.  This is
+  actually a change in the "mapi" library, so any program using the
+  library gets the new behavior.
+- clients: There is a new option --quiet (or just -q) in mclient.  If used, the
+  welcome message that is normally printed in an interactive invocation
+  is suppressed.
+
+* Thu May 22 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.5-20250627
+- merovingian: When mserver5 is started by monetdbd due to an implicit request
+  (application trying to connect to a database), and mserver5 crashes
+  or exits before a connection can be established, monetdbd will stop
+  trying to start the server after a few attempts.  When using an explicit
+  command to start the server (using monetdb start), monetdbd will always
+  attempt to start the server.
+
+* Wed May 14 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.53.5-20250627
+- sql: Corrected reading decimal type columns from external ODBC data sources
+  via proto_loader('odbc:...'). Those columns were mapped to varchar type
+  columns. Now they will be mapped to decimal type, when possible.
+
+* Fri May  9 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.5-20250627
+- clients: There is now a \dm command in the interactive mclient to show
+  information about merge tables.
+
+* Thu May  8 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.5-20250627
+- MonetDB: It is now possible to specify an idle timeout using --set
+  idle_timeout=<seconds> (see mserver5 manual page) which gets triggered
+  if a connection to the server is idle (i.e. does not send any queries
+  to the server) while there is a SQL transaction active.
+
 * Mon Mar 24 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.3-20250324
 - Rebuilt.
 - GH#7622: In PREPARE queries with many parameters, information about

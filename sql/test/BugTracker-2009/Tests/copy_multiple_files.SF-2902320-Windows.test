@@ -7,36 +7,40 @@ plan copy into cm_tmp from '/file1','/file2'
 query T nosort
 plan copy into cm_tmp from E'\\file1',E'\\file2'
 ----
-insert(
-| table("sys"."cm_tmp") [ "cm_tmp"."i" NOT NULL UNIQUE, "cm_tmp"."%TID%" NOT NULL UNIQUE ]
-| munion (
-| | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "\\file1", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
-| | | ) [ "cm_tmp"."i" ]
-| | ) [ "cm_tmp"."i" ],
-| | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "\\file2", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
+group by (
+| insert(
+| | table("sys"."cm_tmp") [ "cm_tmp"."i" NOT NULL UNIQUE, "cm_tmp"."%TID%" NOT NULL UNIQUE ]
+| | munion (
+| | | project (
+| | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "/file1", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
+| | | | ) [ "cm_tmp"."i" ]
+| | | ) [ "cm_tmp"."i" ],
+| | | project (
+| | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "\\file2", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
+| | | | ) [ "cm_tmp"."i" ]
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
 | ) [ "cm_tmp"."i" ]
-)
+) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 
 query T nosort
 plan copy into cm_tmp from E'a:\\file1','Z:/file2'
 ----
-insert(
-| table("sys"."cm_tmp") [ "cm_tmp"."i" NOT NULL UNIQUE, "cm_tmp"."%TID%" NOT NULL UNIQUE ]
-| munion (
-| | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "a:\\file1", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
-| | | ) [ "cm_tmp"."i" ]
-| | ) [ "cm_tmp"."i" ],
-| | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "Z:/file2", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
+group by (
+| insert(
+| | table("sys"."cm_tmp") [ "cm_tmp"."i" NOT NULL UNIQUE, "cm_tmp"."%TID%" NOT NULL UNIQUE ]
+| | munion (
+| | | project (
+| | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "a:\\file1", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
+| | | | ) [ "cm_tmp"."i" ]
+| | | ) [ "cm_tmp"."i" ],
+| | | project (
+| | | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar NULL, varchar "null", varchar "Z:/file2", bigint(1) "-1", bigint(1) "0", int(1) "0", varchar NULL, int(1) "0", int(1) "1", varchar ".", varchar NULL), 
+| | | | ) [ "cm_tmp"."i" ]
 | | | ) [ "cm_tmp"."i" ]
 | | ) [ "cm_tmp"."i" ]
 | ) [ "cm_tmp"."i" ]
-)
+) [  ] [ "sys"."count"() NOT NULL as "%1"."%1" ]
 
 statement ok
 drop table cm_tmp

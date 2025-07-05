@@ -93,22 +93,18 @@ INSERT|DELETE|UPDATE|TRUNCATE 	(card ATOM, AGGR or MULTI (same card as the to be
 	-> flag		(if set don't insert (is done already))
 only (UPDATE)
 	-> exps		
-			Named columns to update
-only (TRUNCATE)
-	-> exps		
-			The first expression is a e_atom integer indicating to restart sequences, and the second is another e_atom integer telling to cascade the truncate if the table has fk dependents
+			UPDATE: Named columns to update 
+			DELETE:	deleted rows (for returning return all columns (the deleted content))
+			INSERT:	inserted values
+			TRUNCATE: The first expression is a e_atom integer indicating to restart sequences, and the second is another e_atom integer telling to cascade the truncate if the table has fk dependents
+	-> attr		UPDATE:	for returning all columns of updated rows		
 
-INSERT/UPDATE have a special case 	
+TODO cleanup
+UPDATE have a special case 	
 
 			for inserts/updates with indices a double
 			relation is used as we need to keep access to
 			the bottom value relation
-
-MERGE (card ATOM, AGGR or MULTI (max card of updates))
-	-> l 		left join between the target table and the source
-	-> r		a DDL list with an insert and update/delete, or a single relation update on the target table
-	-> flag		(0) no flags
-	->exps 		empty list, ie not used
 
 Expressions
 

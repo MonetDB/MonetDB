@@ -46,6 +46,7 @@ def worker_load(in_filename, workerrec, cmovies, ratings_table_def_fk):
     c.execute(cmovies)
     c.execute(screateq)
     c.execute(load_data)
+    c.execute("SELECT COUNT(*) FROM movies")
 
 # Setup and start workers
 def create_workers(TMPDIR, workers, fn_template, nworkers, cmovies, ratings_table_def_fk):

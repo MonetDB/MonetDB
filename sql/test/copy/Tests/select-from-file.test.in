@@ -2,11 +2,11 @@ query IT rowsort
 SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv'
 ----
 1
-aap
+Xaap
 2
-noot
+Xnoot
 3
-mies
+Xmies
 
 statement ok
 DROP TABLE IF EXISTS foo
@@ -21,41 +21,41 @@ query IT rowsort
 SELECT * FROM foo
 ----
 1
-aap
+Xaap
 2
-noot
+Xnoot
 3
-mies
+Xmies
 
 query IT nosort
 SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' ORDER BY name_1
 ----
 1
-aap
+Xaap
 3
-mies
+Xmies
 2
-noot
+Xnoot
 
 query IT nosort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' WHERE name_1 = 'aap'
+SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' WHERE name_1 = 'Xaap'
 ----
 1
-aap
+Xaap
 
 query IT rowsort
 SELECT count(name_0), name_1 FROM R'$TSTSRCDIR/aapnootmies.csv' GROUP BY name_1
 ----
 1
-aap
+Xaap
 1
-mies
+Xmies
 1
-noot
+Xnoot
 
 query IT nosort
-SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' a WHERE a.name_1 = 'aap'
+SELECT * FROM R'$TSTSRCDIR/aapnootmies.csv' a WHERE a.name_1 = 'Xaap'
 ----
 1
-aap
+Xaap
 
