@@ -52,7 +52,7 @@ typedef struct expression {
 	unsigned int
 	 card:2,	/* card (0 truth value!) (1 atoms) (2 aggr) (3 multi value) */
 	 freevar:8,	/* free variable, ie binds to the upper dependent join */
-	 intern:1,
+	 intern:1,		/* mark as internal expression, for example count aggregation for number of rows affected */
 	 selfref:1,		/* set when the expression references a expression in the same projection list */
 	 anti:1,
 	 partitioning:1,	/* partitioning */
@@ -315,7 +315,6 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 returning:1, /*update|delete|insert relations return modified records*/
 	 recursive:1;	/* recursive unions */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice

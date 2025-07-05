@@ -152,12 +152,14 @@ sql_symbol2relation(backend *be, symbol *sym)
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = Tend;
-	if (rel)
-		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
-	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
-		be->no_mitosis = 1;
-	if (rel)
-		rel = rel_physical(be->mvc, rel);
+	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
+		if (rel)
+			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
+		if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
+			be->no_mitosis = 1;
+		if (rel)
+			rel = rel_physical(be->mvc, rel);
+	}
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
@@ -4502,7 +4504,9 @@ str
 SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *filename;
-	bool onserver;
+	bool onserver = true;
+	bool omitunlogged = false;
+	str omitids = NULL;
 	char *msg = MAL_SUCCEED;
 	char buf[80];
 	mvc *mvc;
@@ -4512,15 +4516,23 @@ SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng result;
 
 	filename = *getArgReference_str(stk, pci, 1);
-	onserver = pci->argc == 3 ? *getArgReference_bit(stk, pci, 2) : true;
+	if (pci->argc > 2)
+		onserver = *getArgReference_bit(stk, pci, 2);
+	if (pci->argc > 3)
+		omitunlogged = *getArgReference_bit(stk, pci, 3);
+	if (pci->argc > 4) {
+		omitids = *getArgReference_str(stk, pci, 4);
+		if (strNil(omitids))
+			omitids = NULL;
+	}
 
 	msg = getSQLContext(cntxt, mb, &mvc, NULL);
 	if (msg)
 		return msg;
+	sql_trans *tr = mvc->session->tr;
 
-	sqlstore *store = mvc->session->tr->store;
 	if (onserver) {
-		lng result = store_hot_snapshot(store, filename);
+		lng result = store_hot_snapshot(tr, filename, omitunlogged, omitids);
 		if (result)
 			return MAL_SUCCEED;
 		else
@@ -4561,7 +4573,7 @@ SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// client is waiting for data now, send it.
-	result = store_hot_snapshot_to_stream(store, cb);
+	result = store_hot_snapshot_to_stream(tr, cb, omitunlogged, omitids);
 	if (result)
 		msg = MAL_SUCCEED;
 	else
@@ -5673,6 +5685,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "suspend_log_flushing", SQLsuspend_log_flushing, true, "Suspend WAL log flushing", args(1,1, arg("",void))),
  pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client", args(1,3, arg("",void),arg("tarfile", str),arg("onserver",bit))),
  pattern("sql", "persist_unlogged", SQLpersist_unlogged, true, "Persist deltas on append only table in schema s table t", args(3, 5, batarg("table", str), batarg("table_id", int), batarg("rowcount", lng), arg("s", str), arg("t", str))),
+ pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client, omitting some bats", args(1,4, arg("",void),arg("tarfile",str),arg("onserver",bit),arg("omitunlogged",bit))),
+ pattern("sql", "hot_snapshot", SQLhot_snapshot, true, "Write db snapshot to the given tar(.gz/.lz4/.bz/.xz) file on either server or client, omitting some bats", args(1,5, arg("",void),arg("tarfile",str),arg("onserver",bit),arg("omitunlogged",bit),arg("omitids",str))),
  pattern("sql", "assert", SQLassert, false, "Generate an exception when b==true", args(1,3, arg("",void),arg("b",bit),arg("msg",str))),
  pattern("sql", "assert", SQLassertInt, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",int),arg("msg",str))),
  pattern("sql", "assert", SQLassertLng, false, "Generate an exception when b!=0", args(1,3, arg("",void),arg("b",lng),arg("msg",str))),

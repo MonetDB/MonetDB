@@ -284,6 +284,38 @@ newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist
 	return s;
 }
 
+CopyFromNode *
+newCopyFromNode(allocator *sa, struct dlist *qname, struct dlist *column_list, struct dlist *sources, struct dlist *header_list, struct dlist *nr_offset)
+{
+	CopyFromNode *n = SA_NEW(sa, CopyFromNode);
+	if (n) {
+		*n = (CopyFromNode) {
+			.qname = qname,
+			.column_list = column_list,
+			.sources = sources,
+			.header_list = header_list,
+			.nrows = -1,
+			.offset = 0,
+			.tsep = "|",
+			.rsep = "\n",
+			.ssep = NULL,
+			.null_string = NULL,
+			.best_effort = false,
+			.fwf_widths = NULL,
+			.on_client = false,
+			.escape = true,
+			.decsep = ".",
+			.decskip = NULL,
+		};
+		symbol_init(&n->s, SQL_COPYFROM, type_symbol);
+		if (nr_offset) {
+			n->nrows = nr_offset->h->data.l_val;
+			n->offset = nr_offset->h->next->data.l_val;
+		}
+	}
+	return n;
+}
+
 symbol *
 newAtomNode(allocator *sa, atom *data)
 {

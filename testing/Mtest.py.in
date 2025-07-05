@@ -183,44 +183,6 @@ except ImportError:
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
 
-# Replace os.fork by a version that forks but also sets the process
-# group in the child.  This is done so that we can easily kill a
-# subprocess and its children in case of a timeout.
-# To use this, set the global variable setpgrp to True before calling
-# subprocess.Popen.  It is reset automatically to False so that
-# subprocess of our child don't get their own process group.
-try:
-    os.setpgrp
-except AttributeError:
-    try:
-        os.setpgid
-    except AttributeError:
-        # no function to set process group, so don't replace
-        pass
-    else:
-        # use os.setpgid to set process group
-        def myfork(osfork = os.fork):
-            global setpgrp
-            _setpgrp = setpgrp
-            setpgrp = False
-            pid = osfork()
-            if pid == 0 and _setpgrp:
-                os.setpgid(0, 0)
-            return pid
-        os.fork = myfork
-else:
-    # use os.setpgrp to set process group
-    def myfork(osfork = os.fork):
-        global setpgrp
-        _setpgrp = setpgrp
-        setpgrp = False
-        pid = osfork()
-        if pid == 0 and _setpgrp:
-            os.setpgrp()
-        return pid
-    os.fork = myfork
-setpgrp = False
-
 try:
     ttywidth = os.get_terminal_size(1).columns
 except:
@@ -1633,7 +1595,6 @@ def returnCode(proc, f = None):
     return None                 # no error
 
 def GetBitsAndModsAndThreads(env) :
-    global setpgrp
     rtrn = 0
     cmd = env['exe']['mserver5'].copy()
     dbpath = os.path.join(env['GDK_DBFARM'], TSTPREF)
@@ -1646,9 +1607,9 @@ def GetBitsAndModsAndThreads(env) :
     cmd.extend(mserver5_opts)
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-    setpgrp = True
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                       stderr=process.PIPE, text=True) as proc:
+                       stderr=process.PIPE, text=True,
+                       process_group=0) as proc:
         stderr = proc.stderr
         proc.stdout = process._BufferedPipe(proc.stdout)
         proc.stderr = process._BufferedPipe(proc.stderr)
@@ -1866,7 +1827,6 @@ relcond = {
 }
 
 def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, options) :
-    global setpgrp
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -2703,15 +2663,12 @@ class ServerClass:
                 self.lock.release()
 
     def LaunchIt(self):
-        global setpgrp
-
         self.outfile.flush()
         self.errfile.flush()
 
         cmd = self.cmd
         if procdebug:
             print('LaunchIt: starting process "%s" (inpipe)\n' % '" "'.join(cmd))
-        setpgrp = True
         stdin = open(os.devnull)
         stdout = self.outfile
         stderr = self.errfile
@@ -2738,7 +2695,7 @@ class ServerClass:
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
             proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
-                                 stderr=stderr, text=True)
+                                 stderr=stderr, text=True, process_group=0)
         # maybe buffer output as it comes to avoid deadlock
         if stdout == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
@@ -2811,7 +2768,6 @@ class ServerClass:
 ### LaunchIt(cmd, TestIn, TestOut, TestErr, TimeOut, pollfile, port) #
 
 def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr) :
-    global setpgrp
     if type(TestIn) is type(''):
         TestInput = TestIn
         TestIn = process.PIPE
@@ -2821,11 +2777,11 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr) :
     TestErr.flush()
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
-    setpgrp = True
     if TimeOut:
         os.environ['TIMEOUT'] = str(TimeOut)
     with process.Popen(cmd, stdin=TestIn, stdout=TestOut,
-                       stderr=TestErr, text=True) as proc:
+                       stderr=TestErr, text=True,
+                       process_group=0) as proc:
         proc.killed = False
         proc.onechild = onechild
         try:

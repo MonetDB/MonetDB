@@ -830,7 +830,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 
 	if (r && (is_topn(r->op) || is_sample(r->op)))
 		r = r->l;
-	if (r && is_project(r->op) && r->exps) {
+	if (q->type != Q_UPDATE && r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 		nrows += list_length(r->exps);
 

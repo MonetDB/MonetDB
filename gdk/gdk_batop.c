@@ -1315,7 +1315,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				continue;
 			}
 
-			bool isnil = atomcmp(new, nil) == 0;
+			bool isnil = !ni.nonil && atomcmp(new, nil) == 0;
 			anynil |= isnil;
 			MT_lock_set(&b->theaplock);
 			if (old == NULL ||

@@ -1,0 +1,6 @@
+statement ok
+CREATE TABLE IF NOT EXISTS database0_t2(c2 STRING)
+
+query TI
+SELECT * FROM database0_t2 JOIN (VALUES (INTERVAL '18115' MONTH)) ON (( (database0_t2.c2 NOT LIKE CAST(INTERVAL '20039' MONTH AS STRING(909))) OR (database0_t2.c2 LIKE database0_t2.c2) ))
+----
