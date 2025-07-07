@@ -579,14 +579,14 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 						/* in case of realloc failure, the original
 						 * pointers will be freed by the caller */
 						size_t nsz = sizeof(int) * 2 * size;
-						flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, size);
+						flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, sizeof(int) * size);
 						if (flow->nodes == NULL) {
 							// GDKfree(assign);
 							throw(MAL, "dataflow",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						//flow->nodes = tmp;
-						flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, size);
+						flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, sizeof(int) * size);
 						if (flow->edges == NULL) {
 							// GDKfree(assign);
 							throw(MAL, "dataflow",
@@ -625,14 +625,14 @@ DFLOWinitBlk(DataFlow flow, MalBlkPtr mb, int size)
 							size_t nsz = sizeof(int) * 2 * size;
 							/* in case of realloc failure, the original
 							 * pointers will be freed by the caller */
-							flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, size);
+							flow->nodes = (int *) ma_realloc(mb->ma, flow->nodes, nsz, sizeof(int) * size);
 							if (flow->nodes == NULL) {
 								//GDKfree(assign);
 								throw(MAL, "dataflow",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							}
 							//flow->nodes = tmp;
-							flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, size);
+							flow->edges = (int *) ma_realloc(mb->ma, flow->edges, nsz, sizeof(int) * size);
 							if (flow->edges == NULL) {
 								//GDKfree(assign);
 								throw(MAL, "dataflow",
