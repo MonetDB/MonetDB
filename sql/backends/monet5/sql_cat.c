@@ -2220,7 +2220,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = mvc_bind_schema(sql, "sys");
 		assert(s);
 
-		if (!sqlvar_set_string(find_global_var(sql, s, "current_schema"), new_name))
+		if (!sqlvar_set_string(mb->ma, find_global_var(sql, s, "current_schema"), new_name))
 			throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 

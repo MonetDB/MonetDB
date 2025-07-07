@@ -11,6 +11,7 @@
  */
 
 #include "monetdb_config.h"
+#include "sql_mem.h"
 #include "sql_mvc.h"
 #include "sql_scan.h"
 #include "sql_list.h"
@@ -645,21 +646,24 @@ stack_nr_of_declared_tables(mvc *sql)
 }
 
 str
-sqlvar_set_string(sql_var *var, const char *val)
+sqlvar_set_string(allocator *sa, sql_var *var, const char *val)
 {
 	atom *a = &var->var;
-	str new_val = _STRDUP(val);
 
-	if (a != NULL && new_val != NULL) {
-		ValRecord *v = &a->data;
+	if (a != NULL) {
+		allocator *ma = sa? sa : MT_thread_getallocator();
+		str new_val = SA_STRDUP(ma, val);
+		if (new_val) {
+			ValRecord *v = &a->data;
 
-		//if (v->val.sval)
-		//	_DELETE(v->val.sval);
-		v->val.sval = new_val;
-		return new_val;
-	} else if (new_val) {
+			//if (v->val.sval)
+			//	_DELETE(v->val.sval);
+			v->val.sval = new_val;
+			return new_val;
+		}
+	}/* else if (new_val) {
 		_DELETE(new_val);
-	}
+	}*/
 	return NULL;
 }
 

@@ -603,8 +603,8 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 
 	/* alloc new memory */
 	if (*dst == NULL || *len < l) {
-		GDKfree(*dst);
-		*dst = GDKmalloc(*len = l);
+		//GDKfree(*dst);
+		*dst = ma_alloc(ma, *len = l);
 		if (*dst == NULL) {
 			*len = 0;
 			return -1;

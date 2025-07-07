@@ -872,9 +872,9 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 
 
 	/* reset the user and schema names */
-	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_role"), userrole)) {
+	if (!sqlvar_set_string(m->sa, find_global_var(m, sys, "current_schema"), schema) ||
+		!sqlvar_set_string(m->sa, find_global_var(m, sys, "current_user"), username) ||
+		!sqlvar_set_string(m->sa, find_global_var(m, sys, "current_role"), userrole)) {
 		res = -1;
 	}
 	_DELETE(schema_path);

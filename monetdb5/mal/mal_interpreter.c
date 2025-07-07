@@ -995,6 +995,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(v->val.sval);	/* old exception */
 				VALset(v, TYPE_str, ret);
 				//v->allocated = true;
+				freeException(ret);
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {
