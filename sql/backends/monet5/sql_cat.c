@@ -317,7 +317,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 					goto finish;
 				}
 				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
-					if (!(conflict_err_min = GDKstrdup("absolute min value")))
+					if (!(conflict_err_min = SA_STRDUP(sql->sa, "absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_min, &length, err->part.range.minvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -326,7 +326,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 					goto finish;
 
 				if (!ATOMcmp(tp1, nil, err->part.range.maxvalue)) {
-					if (!(conflict_err_max = GDKstrdup("absolute max value")))
+					if (!(conflict_err_max = SA_STRDUP(sql->sa, "absolute max value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&conflict_err_max, &length, err->part.range.maxvalue, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -335,7 +335,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 					goto finish;
 
 				if (!ATOMcmp(tp1, nil, min)) {
-					if (!(err_min = GDKstrdup("absolute min value")))
+					if (!(err_min = SA_STRDUP(sql->sa, "absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_min, &length, min, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -344,7 +344,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 					goto finish;
 
 				if (!ATOMcmp(tp1, nil, max)) {
-					if (!(err_max = GDKstrdup("absolute max value")))
+					if (!(err_max = SA_STRDUP(sql->sa, "absolute max value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				} else if (atomtostr(&err_max, &length, max, true) < 0) {
 					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -362,14 +362,14 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
-	if (err_min)
-		GDKfree(err_min);
-	if (err_max)
-		GDKfree(err_max);
-	if (conflict_err_min)
-		GDKfree(conflict_err_min);
-	if (conflict_err_max)
-		GDKfree(conflict_err_max);
+	//if (err_min)
+	//	GDKfree(err_min);
+	//if (err_max)
+	//	GDKfree(err_max);
+	//if (conflict_err_min)
+	//	GDKfree(conflict_err_min);
+	//if (conflict_err_max)
+	//	GDKfree(conflict_err_max);
 	return msg;
 }
 

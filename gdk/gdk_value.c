@@ -130,10 +130,10 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-	if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
-		if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
-			GDKfree(v->val.pval);
-	}
+	//if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
+	//	if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
+	//		GDKfree(v->val.pval);
+	//}
 	VALempty(v);
 }
 
@@ -161,17 +161,19 @@ VALcopy(allocator *va, ValPtr d, const ValRecord *s)
 	if (d == s) {
 		return d;
 	}
+	allocator *ma = va? va : MT_thread_getallocator();
+	assert(ma);
 	*d = *s;
-	d->allocated = !va;
+	d->allocated = false;
 	if (s->bat || !ATOMextern(s->vtype)) {
 		//*d = *s;
 	} else if (s->val.pval == NULL) {
-		return VALinit(va, d, s->vtype, ATOMnilptr(s->vtype));
+		return VALinit(ma, d, s->vtype, ATOMnilptr(s->vtype));
 	} else if (s->vtype == TYPE_str) {
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = va?ma_alloc(va, d->len):GDKmalloc(d->len);
+		d->val.sval = ma_alloc(ma, d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, p, d->len);
@@ -179,7 +181,7 @@ VALcopy(allocator *va, ValPtr d, const ValRecord *s)
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = va?ma_alloc(va, d->len):GDKmalloc(d->len);
+		d->val.pval = ma_alloc(ma, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
@@ -196,8 +198,10 @@ VALcopy(allocator *va, ValPtr d, const ValRecord *s)
 ValPtr
 VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 {
+	allocator *ma = va? va : MT_thread_getallocator();
+	assert(ma);
 	d->bat = false;
-	d->allocated = !va;
+	d->allocated = false;
 	switch (ATOMstorage(d->vtype = tpe)) {
 	case TYPE_void:
 		d->val.oval = *(const oid *) s;
@@ -233,7 +237,7 @@ VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 		break;
 	case TYPE_str:
 		d->len = strLen(s);
-		d->val.sval = va?ma_alloc(va, d->len):GDKmalloc(d->len);
+		d->val.sval = ma_alloc(ma, d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, s, d->len);
@@ -245,7 +249,7 @@ VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
 		d->len = ATOMlen(tpe, s);
-		d->val.pval = va?ma_alloc(va, d->len):GDKmalloc(d->len);
+		d->val.pval = ma_alloc(ma, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, s, d->len);

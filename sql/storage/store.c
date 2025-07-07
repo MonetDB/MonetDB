@@ -2456,6 +2456,7 @@ store_manager(sqlstore *store)
 
 	// In the main loop we always hold the lock except when sleeping or doing cleanups
 	MT_lock_set(&store->flush);
+	MT_thread_setallocator(store->sa);
 
 	for (;;) {
 		const int idle = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 5000 : IDLE_TIME * 1000000;
@@ -2513,6 +2514,7 @@ store_manager(sqlstore *store)
 		TRC_DEBUG(SQL_STORE, "Store flusher done\n");
 	}
 
+	MT_thread_setallocator(NULL);
 	// End of loop, end of lock
 	MT_lock_unset(&store->flush);
 }

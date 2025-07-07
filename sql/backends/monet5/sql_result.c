@@ -205,8 +205,8 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 	len1 = date_tostr(&s1, &big, &days, true);
 	len2 = daytime_precision_tostr(&s2, &big, usecs, ts_res->fraction, true);
 	if (len1 < 0 || len2 < 0) {
-		GDKfree(s1);
-		GDKfree(s2);
+		//GDKfree(s1);
+		//GDKfree(s2);
 		return -1;
 	}
 
@@ -1272,8 +1272,10 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 	as.nr_attrs = t->nr_cols + 1;	/* for the leader */
 	as.nr = nr;
 	as.offset = offset;
-	fmt = as.format = (Column *) sa_zalloc(m->sa, sizeof(Column) * (as.nr_attrs + 1));
-	tres = sa_zalloc(m->sa, sizeof(struct time_res) * (as.nr_attrs));
+	allocator *sa = m->sa ? m->sa : MT_thread_getallocator();
+	assert(sa);
+	fmt = as.format = (Column *) sa_zalloc(sa, sizeof(Column) * (as.nr_attrs + 1));
+	tres = sa_zalloc(sa, sizeof(struct time_res) * (as.nr_attrs));
 	if (fmt == NULL || tres == NULL) {
 		//GDKfree(fmt);
 		//GDKfree(tres);
@@ -1320,13 +1322,13 @@ mvc_export_table_(mvc *m, int output_format, stream *s, res_table *t, BUN offset
 			 * represented as a json object.
 			 */
 			if (i == 1) {
-				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(btag));
+				bj = SA_NEW_ARRAY(sa, char, strlen(p->name) + strlen(btag));
 				snprintf(bj, strlen(p->name) + strlen(btag), btag, p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);
 				fmt[i - 1].rsep = NULL;
 			} else if (i <= t->nr_cols) {
-				bj = SA_NEW_ARRAY(m->sa, char, strlen(p->name) + strlen(sep));
+				bj = SA_NEW_ARRAY(sa, char, strlen(p->name) + strlen(sep));
 				snprintf(bj, strlen(p->name) + 10, sep, p->name);
 				fmt[i - 1].sep = bj;
 				fmt[i - 1].seplen = _strlen(fmt[i - 1].sep);

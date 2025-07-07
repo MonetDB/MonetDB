@@ -1091,7 +1091,7 @@ exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_
 		if (!ptr)
 			return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 		a = atom_general_ptr(sql->sa, tpe, ptr);
-		GDKfree(ptr);
+		//GDKfree(ptr);
 	}
 	if (!find_prop(exp->p, kind)) {
 		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
@@ -1113,7 +1113,7 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 	skipWS(r, pos);
 
 	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
-		GDKfree(ptr);
+		//GDKfree(ptr);
 		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 	}
 
@@ -1122,7 +1122,7 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 		p->value.dval = *(dbl*)ptr;
 	}
 	(*pos) += (int) res; /* it should always fit */
-	GDKfree(ptr);
+	//GDKfree(ptr);
 	skipWS(r, pos);
 	return exp;
 }
@@ -1842,7 +1842,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		skipWS(r, pos);
 		str comment = readAtomString(TYPE_str, r, pos);
 		exp->comment = sa_strdup(sql->sa, comment);
-		GDKfree(comment);
+		//GDKfree(comment);
 	}
 
 	return exp;
@@ -1895,13 +1895,13 @@ rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 	skipWS(r, pos);
 
 	if ((res = ATOMfromstr(tpe->type->localtype, &ptr, &nbytes, r + *pos, true)) < 0) {
-		GDKfree(ptr);
+		//GDKfree(ptr);
 		return sql_error(sql, -1, SQLSTATE(42000) "Invalid atom string\n");
 	}
 
 	set_count_prop(sql->sa, rel, *(BUN*)ptr);
 	(*pos) += (int) res; /* it should always fit */
-	GDKfree(ptr);
+	//GDKfree(ptr);
 	skipWS(r, pos);
 	return rel;
 }

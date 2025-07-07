@@ -653,8 +653,8 @@ sqlvar_set_string(sql_var *var, const char *val)
 	if (a != NULL && new_val != NULL) {
 		ValRecord *v = &a->data;
 
-		if (v->val.sval)
-			_DELETE(v->val.sval);
+		//if (v->val.sval)
+		//	_DELETE(v->val.sval);
 		v->val.sval = new_val;
 		return new_val;
 	} else if (new_val) {

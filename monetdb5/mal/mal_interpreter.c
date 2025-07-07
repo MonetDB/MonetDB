@@ -896,8 +896,8 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 					lhs->val.pval &&
 					lhs->val.pval != ATOMnilptr(lhs->vtype) &&
 					lhs->val.pval != stk->stk[getArg(pci, i)].val.pval) {
-					if (lhs->allocated)
-						GDKfree(lhs->val.pval);
+					//if (lhs->allocated)
+					//	GDKfree(lhs->val.pval);
 				}
 			}
 			if (ATOMIC_GET(&GDKdebug) & CHECKMASK && exceptionVar < 0) {
@@ -994,7 +994,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 				if (v->val.sval && v->allocated)
 					freeException(v->val.sval);	/* old exception */
 				VALset(v, TYPE_str, ret);
-				v->allocated = true;
+				//v->allocated = true;
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {
@@ -1431,11 +1431,11 @@ garbageElement(Client cntxt, ValPtr v)
 		BBPcold(bid);
 		BBPrelease(bid);
 	} else if (v->allocated && !v->bat && ATOMstorage(v->vtype) == TYPE_str) {
-		GDKfree(v->val.sval);
+		// GDKfree(v->val.sval);
 		v->val.sval = NULL;
 		v->len = 0;
 	} else if (v->allocated && 0 < v->vtype && v->vtype < MAXATOMS && ATOMextern(v->vtype)) {
-		GDKfree(v->val.pval);
+		// GDKfree(v->val.pval);
 		v->val.pval = 0;
 		v->len = 0;
 	}
