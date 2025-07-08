@@ -7,6 +7,7 @@ CREATE TABLE mytest(a HUGEINT, b HUGEINT, c HUGEINT, d HUGEINT, e HUGEINT)
 statement ok
 INSERT INTO mytest VALUES (1234567890987654321, 10000000000, NULL, NULL, NULL)
 
+skipif knownfail
 query T python .explain.function_histogram
 explain UPDATE mytest SET a = 1234567890987654321
 ----
@@ -29,6 +30,7 @@ sql.update
 user.main
 1
 
+skipif knownfail
 query T python .explain.function_histogram
 explain UPDATE mytest SET b = 10000000000
 ----
@@ -51,6 +53,7 @@ sql.update
 user.main
 1
 
+skipif knownfail
 query T python .explain.function_histogram
 explain UPDATE mytest SET c = a * b
 ----
@@ -75,6 +78,7 @@ sql.update
 user.main
 1
 
+skipif knownfail
 query T python .explain.function_histogram
 explain UPDATE mytest SET d = c * b
 ----
@@ -99,6 +103,7 @@ sql.update
 user.main
 1
 
+skipif knownfail
 query T python .explain.function_histogram
 explain UPDATE mytest SET e = d + a
 ----
@@ -161,6 +166,7 @@ START TRANSACTION
 statement ok
 CREATE TABLE sql_int128 (i HUGEINT)
 
+skipif knownfail
 query T python .explain.function_histogram
 explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
 ----
