@@ -514,7 +514,7 @@ new_segments(sql_trans *tr, size_t cnt)
 
 	if (n) {
 		n->nr_reused = 0;
-		n->deleted = 0;
+		ATOMIC_INIT(&n->deleted, 0);
 		n->h = n->t = new_segment(NULL, tr, cnt);
 		if (!n->h) {
 			GDKfree(n);
@@ -3963,7 +3963,7 @@ clear_table(sql_trans *tr, sql_table *t)
 	}
 	if (clear) {
 		d->segs->nr_reused = 0;
-		d->segs->deleted = 0;
+		ATOMIC_SET(&d->segs->deleted, 0);
 	}
 	return sz;
 }
@@ -4704,7 +4704,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		lock_table(tr->store, t->base.id);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
-	if (s->segs->deleted)
+	if (ATOMIC_GET(&s->segs->deleted) != 0)
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
 			if ((seg->end - seg->start) >= cnt) {
@@ -4800,7 +4800,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
-	if (s->segs->deleted)
+	if (ATOMIC_GET(&s->segs->deleted) != 0)
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* reuse old deleted or rolled back append */
 
@@ -5122,7 +5122,7 @@ vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 			return res;
 	}
 	s->segs->nr_reused = 0;
-	s->segs->deleted = 0;
+	ATOMIC_SET(&s->segs->deleted, 0);
 	return LOG_OK;
 }
 
