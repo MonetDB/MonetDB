@@ -39,6 +39,7 @@ import fnmatch
 import http
 import http.server
 import glob
+import datetime
 import pymonetdb # check for pymonetdb early: it is essential for our work
 
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
@@ -4176,11 +4177,7 @@ def main(argv) :
         compiler = ''
 
         # start of times.sql output preparation
-        try:
-            from mx import DateTime
-            now = "timestamp '" + str(DateTime.now()) + "'"
-        except ImportError:
-            now = 'now()'
+        now = "timestamp '" + str(datetime.datetime.now()) + "'"
 
         if env['TST_INT128'] != '':
             isInt128 = 'true'
