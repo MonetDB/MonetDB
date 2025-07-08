@@ -264,6 +264,11 @@ rollback_segments(segments *segs, sql_trans *tr, sql_change *change, ulng oldest
 	segment *cur = segs->h, *seg = NULL;
 	for (; cur; cur = ATOMIC_PTR_GET(&cur->next)) {
 		if (cur->ts == tr->tid) { /* revert */
+			if (!cur->deleted || cur->ts == cur->oldts)
+				ATOMIC_ADD(&segs->deleted, cur->end - cur->start);
+			else
+				ATOMIC_SUB(&segs->deleted, cur->end - cur->start);
+
 			cur->deleted = !cur->deleted || (cur->ts == cur->oldts);
 			cur->ts = cur->oldts==tr->tid?0:cur->oldts; /* need old ts */
 			cur->oldts = 0;
@@ -509,6 +514,7 @@ new_segments(sql_trans *tr, size_t cnt)
 
 	if (n) {
 		n->nr_reused = 0;
+		n->deleted = 0;
 		n->h = n->t = new_segment(NULL, tr, cnt);
 		if (!n->h) {
 			GDKfree(n);
@@ -2412,6 +2418,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 				unlock_table(tr->store, t->base.id);
 				return LOG_ERR;
 			}
+			ATOMIC_ADD(&s->segs->deleted, 1);
 			break;
 		}
 	}
@@ -2433,6 +2440,7 @@ seg_delete_range(sql_trans *tr, sql_table *t, storage *s, segment **Seg, size_t 
 			if (SEG_IS_DELETED(seg, tr)) {
 				start += lcnt;
 				cnt -= lcnt;
+				ATOMIC_ADD(&s->segs->deleted, lcnt);
 				continue;
 			} else if (!SEG_VALID_4_DELETE(seg, tr))
 				return LOG_CONFLICT;
@@ -2443,6 +2451,7 @@ seg_delete_range(sql_trans *tr, sql_table *t, storage *s, segment **Seg, size_t 
 				return LOG_ERR;
 			start += lcnt;
 			cnt -= lcnt;
+			ATOMIC_ADD(&s->segs->deleted, lcnt);
 		}
 		if (start+cnt <= seg->end)
 			break;
@@ -3952,8 +3961,10 @@ clear_table(sql_trans *tr, sql_table *t)
 				return clear_ok;
 		}
 	}
-	if (clear)
+	if (clear) {
 		d->segs->nr_reused = 0;
+		d->segs->deleted = 0;
+	}
 	return sz;
 }
 
@@ -4693,6 +4704,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		lock_table(tr->store, t->base.id);
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
+	if (s->segs->deleted)
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
 			if ((seg->end - seg->start) >= cnt) {
@@ -4706,6 +4718,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 						break;
 					}
 					s->segs->nr_reused += cnt;
+					ATOMIC_SUB(&s->segs->deleted, cnt);
 					cnt = 0;
 					break;
 				}
@@ -4725,8 +4738,10 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 				ok = LOG_ERR;
 				break;
 			}
-			s->segs->nr_reused += (seg->end - seg->start);
-			cnt -= (seg->end - seg->start);
+			size_t rcnt = seg->end - seg->start;
+			s->segs->nr_reused += rcnt;
+			cnt -= rcnt;
+			ATOMIC_SUB(&s->segs->deleted, rcnt);
 		}
 	}
 	if (ok == LOG_OK && cnt) {
@@ -4785,6 +4800,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
+	if (s->segs->deleted)
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* reuse old deleted or rolled back append */
 
@@ -4796,6 +4812,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 					p->end += cnt;
 					seg->start += cnt;
 					s->segs->nr_reused += cnt;
+					ATOMIC_SUB(&s->segs->deleted, cnt);
 					reused = 1;
 					break;
 				}
@@ -4809,6 +4826,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 			seg->deleted = false;
 			slot = seg->start;
 			s->segs->nr_reused += cnt;
+			ATOMIC_SUB(&s->segs->deleted, cnt);
 			reused = 1;
 			break;
 		}
@@ -5104,6 +5122,7 @@ vacuum_tab(sql_trans *tr, sql_table *t, bool force)
 			return res;
 	}
 	s->segs->nr_reused = 0;
+	s->segs->deleted = 0;
 	return LOG_OK;
 }
 
