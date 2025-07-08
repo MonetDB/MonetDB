@@ -1439,12 +1439,14 @@ BLOBread(void *A, size_t *dstlen, stream *s, size_t cnt)
 	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
 	if (a == NULL || *dstlen < (size_t) len) {
-		if ((a = GDKrealloc(a, (size_t) len)) == NULL)
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		if ((a = ma_realloc(ma, a, (size_t) len, *dstlen)) == NULL)
 			return NULL;
 		*dstlen = (size_t) len;
 	}
 	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
-		GDKfree(a);
+		//GDKfree(a);
 		return NULL;
 	}
 	return a;
@@ -1508,8 +1510,10 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	else
 		expectedlen = p->nitems * 2 + 1;
 	if (*l < expectedlen || *tostr == NULL) {
-		GDKfree(*tostr);
-		*tostr = GDKmalloc(expectedlen);
+		//GDKfree(*tostr);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		*tostr = ma_alloc(ma, expectedlen);
 		if (*tostr == NULL)
 			return -1;
 		*l = expectedlen;

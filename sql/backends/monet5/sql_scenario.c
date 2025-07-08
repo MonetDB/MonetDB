@@ -1632,11 +1632,12 @@ SQLparser_body(Client c, backend *be)
 					msg = createException(PARSE, "SQLparser", SQLSTATE(45000) "Export operation failed: %s", mvc_export_error(be, c->fdout, res));
 					err = 1;
 				}
+				int qc_id = be->q->id;
 				if (err) {
 					be->q->name = NULL; /* later remove cleanup from mal from qc code */
 					qc_delete(m->qc, be->q);
 				}
-				be->result_id = be->q->id;
+				be->result_id = qc_id;
 				be->q = NULL;
 			}
 			if (err)

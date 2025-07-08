@@ -341,11 +341,11 @@ runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 			throw(MAL, "mal.interpreter", "misalignment of symbols");
 		if (mb->vtop > stk->stksize)
 			throw(MAL, "mal.interpreter", "stack too small");
-		initStack(cntxt->alloc, env->stkbot, res);
+		initStack(mb->ma, env->stkbot, res);
 		if (!res)
 			throw(MAL, "mal.interpreter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
-		stk = prepareMALstack(cntxt->alloc, mb, mb->vsize);
+		stk = prepareMALstack(mb->ma, mb, mb->vsize);
 		if (stk == 0)
 			throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
 		stk->blk = mb;
@@ -689,9 +689,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 				assert(lhs->bat == isaBatType(getArgType(mb, pci, k)));
 				rhs = &stk->stk[pci->argv[i]];
 				assert(rhs->bat == isaBatType(getArgType(mb, pci, i)));
-				// Note: We use cntxt->alloc here
-				// some variables need to outlive tmp_alloc
-				if (VALcopy(cntxt->alloc, lhs, rhs) == NULL) {
+				if (VALcopy(mb->ma, lhs, rhs) == NULL) {
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;

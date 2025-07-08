@@ -4076,7 +4076,7 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = strchr(s, ' ');
 	if( ! t)
 		t = strchr(s, '\t');
-	*ret = GDKstrdup(t ? t + 1 : s);
+	*ret = SA_STRDUP(mb->ma, t ? t + 1 : s);
 	// GDKfree(s);
 	if(*ret == NULL)
 		throw(SQL, "sql.argRecord", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -5392,10 +5392,10 @@ SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c && c->storage_type)
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
-	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || (cname && !(cname_copy = GDKstrdup(cname)))) {
-		GDKfree(sname_copy);
-		GDKfree(tname_copy);
-		GDKfree(cname_copy);
+	if (!(sname_copy = SA_STRDUP(mb->ma, sname)) || !(tname_copy = SA_STRDUP(mb->ma, tname)) || (cname && !(cname_copy = SA_STRDUP(mb->ma, cname)))) {
+		//GDKfree(sname_copy);
+		//GDKfree(tname_copy);
+		//GDKfree(cname_copy);
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
@@ -5550,9 +5550,9 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!exp)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (exp->comment)
-				*r = GDKstrdup(exp->comment);
+				*r = SA_STRDUP(mb->ma, exp->comment);
 			else
-				*r = GDKstrdup(exp2sql(m, exp));
+				*r = SA_STRDUP(mb->ma, exp2sql(m, exp));
 			if (*r == NULL)
 				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			m->sp = sp;
@@ -5560,7 +5560,7 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		m->sp = sp;
 	}
-	if (!(*r = GDKstrdup(str_nil)))
+	if (!(*r = SA_STRDUP(mb->ma, str_nil)))
 		throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -5607,7 +5607,7 @@ SQLread_dump_rel(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (res == NULL)
 		goto bailout;
-	if (!(*r = GDKstrdup(res)))
+	if (!(*r = SA_STRDUP(mb->ma, res)))
 		goto bailout;
 
 	free(res);

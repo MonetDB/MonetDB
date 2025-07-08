@@ -86,15 +86,15 @@ UDFreverse(Client ctx, str *res, const str *arg)
 	assert(res && arg);
 	s = *arg;
 	if (strNil(s)) {
-		if (!(*res = GDKstrdup(str_nil)))
+		if (!(*res = SA_STRDUP(ctx->alloc, str_nil)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		size_t buflen = strlen(s) + 1;
 
-		if (!(*res = GDKmalloc(buflen)))
+		if (!(*res = sa_alloc(ctx->alloc, buflen)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = UDFreverse_(res, &buflen, s)) != MAL_SUCCEED) {
-			GDKfree(*res);
+			//GDKfree(*res);
 			*res = NULL;
 			return msg;
 		}
