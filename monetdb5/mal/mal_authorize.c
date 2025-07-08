@@ -126,7 +126,9 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
-	w = r = GDKmalloc(sizeof(char) * (strlen(value) + 1));
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
+	w = r = ma_alloc(ma, sizeof(char) * (strlen(value) + 1));
 	if (r == NULL)
 		throw(MAL, "decypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 

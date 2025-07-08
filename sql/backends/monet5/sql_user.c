@@ -131,10 +131,10 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 		GDKfree(passValue);
 		if (strcmp(oldpass, hash) != 0) {
 			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password mismatch");
-			GDKfree(hash);
+			//GDKfree(hash);
 			return LOG_ERR;
 		}
-		GDKfree(hash);
+		//GDKfree(hash);
 	}
 	return setUserPassword(m, rid, newpass);
 }
@@ -948,8 +948,8 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 	if (pwhash != NULL) {
 		if (!pw_encrypted)
 			free(pwhash);
-		else
-			GDKfree(pwhash);
+		//else
+		//	GDKfree(pwhash);
 	}
 	if (msg != MAL_SUCCEED)
 		return msg;

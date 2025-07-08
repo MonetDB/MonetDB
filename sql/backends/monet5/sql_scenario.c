@@ -421,7 +421,7 @@ userCheckCredentials( mvc *m, Client c, const char *pwhash, const char *challeng
 
 	/* generate the hash as the client should have done */
 	str hash = mcrypt_hashPassword(algo, pwd, challenge);
-	GDKfree(pwd);
+	//GDKfree(pwd);
 	if(!hash)
 		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 
