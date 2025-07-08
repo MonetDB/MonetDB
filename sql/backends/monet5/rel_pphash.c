@@ -1061,6 +1061,9 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		if (rel->op == op_anti && nulls)
 			probe_sub->cand = stmt_project(be, probe_sub->cand, c);
 		sub = subrel_project(be, probe_sub, refs, rel);
+		/* clean up temporary overwrite of REF result
+		 * TODO: find a more elegant way than this setting/unsetting of cand */
+		probe_sub->cand = NULL;
 	}
 	return sub;
 }
