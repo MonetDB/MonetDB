@@ -790,6 +790,63 @@ atom_cast(allocator *sa, atom *a, sql_subtype *tp)
 }
 
 atom *
+atom_cast_inplace(atom *a, sql_subtype *tp)
+{
+	sql_subtype *at = &a->tpe;
+
+	if (subtype_cmp(at, tp) == 0) {
+		/* it may be a subtype, but still a different one */
+		if (at->type->base.id != tp->type->base.id ||
+			at->digits != tp->digits || at->scale != tp->scale) {
+			a->data.vtype = tp->type->localtype;
+			a->tpe = *tp;
+		}
+		return a;
+	}
+	if (!a->isnull) {
+		/* need to do a cast, start simple is atom type a subtype of tp */
+		if ((at->type->eclass == tp->type->eclass ||
+		    (EC_VARCHAR(at->type->eclass) && EC_VARCHAR(tp->type->eclass))) &&
+		    at->type->localtype == tp->type->localtype &&
+		   (EC_TEMP(tp->type->eclass) || !tp->digits|| at->digits <= tp->digits) &&
+		   (!tp->type->scale || at->scale == tp->scale)) {
+			a->tpe = *tp;
+			a->data.vtype = tp->type->localtype;
+			return a;
+		}
+		if (((at->type->eclass == EC_DEC ||
+			  at->type->eclass == EC_NUM) &&
+			 (tp->type->eclass == EC_DEC ||
+			  tp->type->eclass == EC_NUM ||
+			  tp->type->eclass == EC_FLT)) ||
+			(EC_VARCHAR(at->type->eclass) &&
+			 (tp->type->eclass == EC_DATE ||
+			  EC_TEMP_NOFRAC(tp->type->eclass)))) {
+			ValRecord v = { .vtype = tp->type->localtype };
+			if (VARconvert(&v, &a->data, at->scale, tp->scale, tp->type->eclass == EC_DEC ? tp->digits : 0) != GDK_SUCCEED) {
+				GDKclrerr();
+				return NULL;
+			}
+			a->tpe = *tp;
+			a->isnull = 0;
+			VALcopy(NULL, &a->data, &v);
+			if (!v.bat && ATOMextern(v.vtype))
+				assert(0);
+			return a;
+		}
+	} else {
+		a->tpe = *tp;
+		a->isnull = 1;
+		if (a->data.vtype != tp->type->localtype &&
+			!VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype)))
+			return NULL;
+		a->data.vtype = tp->type->localtype;
+		return a;
+	}
+	return NULL;
+}
+
+atom *
 atom_neg(allocator *sa, atom *a)
 {
 

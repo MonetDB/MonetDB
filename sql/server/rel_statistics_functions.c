@@ -404,7 +404,7 @@ sql_sign_propagate_statistics(mvc *sql, sql_exp *e)
 	list *l = e->l;
 	sql_exp *first = l->h->data;
 	atom *omin, *omax;
-	sql_subtype *bte = sql_bind_localtype("bte");
+	sql_subtype *bte = sql_fetch_localtype(TYPE_bte);
 	bool properties_set = false;
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
@@ -516,8 +516,8 @@ sql_century_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), nmax));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), nmin));
 }
 
 static void
@@ -539,8 +539,8 @@ sql_decade_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), nmax));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), nmin));
 }
 
 static void
@@ -562,15 +562,15 @@ sql_year_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), nmax));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), nmin));
 }
 
 static void
 sql_quarter_propagate_statistics(mvc *sql, sql_exp *e)
 {
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), 4));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), 1));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 4));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 1));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 4;
 }
@@ -578,8 +578,8 @@ sql_quarter_propagate_statistics(mvc *sql, sql_exp *e)
 static void
 sql_month_propagate_statistics(mvc *sql, sql_exp *e)
 {
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), 12));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), 1));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 12));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 1));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 12;
 }
@@ -590,7 +590,7 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 	list *l = e->l;
 	sql_exp *first = l->h->data;
 	sql_subtype *tp = exp_subtype(first);
-	const char *localtype = tp->type->eclass == EC_SEC ? "lng" : "int";
+	int localtype = tp->type->eclass == EC_SEC ? TYPE_lng : TYPE_int;
 	atom *omin, *omax;
 	lng nmin = 1, nmax = 31;
 
@@ -601,8 +601,8 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(localtype), nmax));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(localtype), nmin));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = (dbl) (nmax - nmin + 1);
 }
@@ -610,8 +610,8 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 static void
 sql_dayofyear_propagate_statistics(mvc *sql, sql_exp *e)
 {
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), 366));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), 1));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 366));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 1));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 366;
 }
@@ -619,8 +619,8 @@ sql_dayofyear_propagate_statistics(mvc *sql, sql_exp *e)
 static void
 sql_weekofyear_propagate_statistics(mvc *sql, sql_exp *e)
 {
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), 53));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), 1));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 53));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 1));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 53;
 }
@@ -628,8 +628,8 @@ sql_weekofyear_propagate_statistics(mvc *sql, sql_exp *e)
 static void
 sql_dayofweek_propagate_statistics(mvc *sql, sql_exp *e)
 {
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), 7));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), 1));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 7));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 1));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 7;
 }
@@ -642,7 +642,7 @@ sql_hour_propagate_statistics(mvc *sql, sql_exp *e)
 	atom *omin, *omax;
 	int nmin = 0, nmax = 23;
 	sql_subtype *tp = exp_subtype(first);
-	const char *localtype = tp->type->eclass == EC_SEC ? "lng" : "int";
+	int localtype = tp->type->eclass == EC_SEC ? TYPE_lng : TYPE_int;
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
 		if (tp->type->eclass == EC_TIME) {
@@ -651,8 +651,8 @@ sql_hour_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(localtype), nmax));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(localtype), nmin));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 24;
 }
@@ -660,8 +660,8 @@ sql_hour_propagate_statistics(mvc *sql, sql_exp *e)
 static void
 sql_minute_propagate_statistics(mvc *sql, sql_exp *e)
 {
-	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), 59));
-	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), 0));
+	set_minmax_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 59));
+	set_minmax_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_fetch_localtype(TYPE_int), 0));
 	prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 	p->value.dval = 60;
 }
@@ -697,20 +697,20 @@ sql_epoch_ms_propagate_statistics(mvc *sql, sql_exp *e)
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
 		switch (tp->type->eclass) {
 		case EC_DATE: {
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), date_to_msec_since_epoch((date)omax->data.val.ival));
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), date_to_msec_since_epoch((date)omin->data.val.ival));
+			nmax = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), date_to_msec_since_epoch((date)omax->data.val.ival));
+			nmin = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), date_to_msec_since_epoch((date)omin->data.val.ival));
 		} break;
 		case EC_TIME: {
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_to_msec_since_epoch((daytime)omax->data.val.lval));
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_to_msec_since_epoch((daytime)omin->data.val.lval));
+			nmax = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), daytime_to_msec_since_epoch((daytime)omax->data.val.lval));
+			nmin = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), daytime_to_msec_since_epoch((daytime)omin->data.val.lval));
 		} break;
 		case EC_TIMESTAMP: {
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), timestamp_to_msec_since_epoch((timestamp)omax->data.val.lval));
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), timestamp_to_msec_since_epoch((timestamp)omin->data.val.lval));
+			nmax = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), timestamp_to_msec_since_epoch((timestamp)omax->data.val.lval));
+			nmin = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), timestamp_to_msec_since_epoch((timestamp)omin->data.val.lval));
 		} break;
 		case EC_SEC: {
-			nmax = atom_int(sql->sa, sql_bind_localtype("lng"), msec_since_epoch(omax->data.val.lval));
-			nmin = atom_int(sql->sa, sql_bind_localtype("lng"), msec_since_epoch(omin->data.val.lval));
+			nmax = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), msec_since_epoch(omax->data.val.lval));
+			nmin = atom_int(sql->sa, sql_fetch_localtype(TYPE_lng), msec_since_epoch(omin->data.val.lval));
 		} break;
 		default:
 			break;

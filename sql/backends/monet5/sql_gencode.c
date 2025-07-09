@@ -56,21 +56,6 @@
 #include "rel_physical.h"
 #include "sql_user.h"
 
-int
-constantAtom(backend *sql, MalBlkPtr mb, atom *a)
-{
-	int idx;
-	ValPtr vr = (ValPtr) &a->data;
-	ValRecord cst;
-
-	(void) sql;
-	cst.vtype = 0;
-	if (VALcopy(mb->ma, &cst, vr) == NULL)
-		return -1;
-	idx = defConstant(mb, vr->vtype, &cst);
-	return idx;
-}
-
 InstrPtr
 table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 {

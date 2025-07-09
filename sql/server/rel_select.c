@@ -569,7 +569,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		atp = exp_subtype(exps->h->data);
 
 	if ((atp && atp->type->localtype == TYPE_void) || !atp) /* NULL */
-		atp = sql_bind_localtype("str");
+		atp = sql_fetch_localtype(TYPE_str);
 
 	node *n, *m;
 	sql_arg *last = NULL;
@@ -706,7 +706,7 @@ file_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *r
 	str err = fl->add_types(sql, f, filename, res_exps, tname);
 	if (err)
 		return err;
-	sql_subtype *st = sql_bind_localtype("str");
+	sql_subtype *st = sql_fetch_localtype(TYPE_str);
 	sql_exp *ext_exp = exp_atom(sql->sa, atom_string(sql->sa, st, ext));
 	if (!ext_exp)
 		return MAL_MALLOC_FAIL;
@@ -776,7 +776,7 @@ proto_loader_add_table_column_types(mvc *sql, sql_subfunc *f, list *exps, list *
 	if (err)
 		return err;
 
-	sql_subtype *st = sql_bind_localtype("str");
+	sql_subtype *st = sql_fetch_localtype(TYPE_str);
 	sql_exp *proto_exp = exp_atom(sql->sa, atom_string(sql->sa, st, proto));
 	if (!proto_exp)
 		return MAL_MALLOC_FAIL;
@@ -2158,11 +2158,11 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 		sql_rel *r = exp_rel_get_rel(sql->sa, le);
 		if (is_project(r->op) && !list_empty(r->exps)) {
 			for (node *n = r->exps->h; n; n = n->next)
-				if (!exp_subtype(n->data) && rel_set_type_param(sql, sql_bind_localtype("bit"), r, n->data, 0) < 0) /* workaround */
+				if (!exp_subtype(n->data) && rel_set_type_param(sql, sql_fetch_localtype(TYPE_bit), r, n->data, 0) < 0) /* workaround */
 					return NULL;
 			le->tpe = *exp_subtype(r->exps->h->data); /* just take the first expression type */
 		}
-	} else if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) /* workaround */
+	} else if (!exp_subtype(le) && rel_set_type_param(sql, sql_fetch_localtype(TYPE_bit), rel, le, 0) < 0) /* workaround */
 		return NULL;
 	t = exp_subtype(le);
 
@@ -2502,7 +2502,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			append(l, rs);
 		}
 		if (l) {
-			sql_subtype *bt = sql_bind_localtype("bit");
+			sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 			l = exps_check_type(sql, bt, l);
 			if (!l)
 				return NULL;
@@ -2632,7 +2632,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		if (exp_is_null_no_value_opt(ls) && exp_is_null_no_value_opt(rs))
-			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL, 0));
+			return exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_bit), NULL, 0));
 
 		if (!quantifier)
 			return exp_compare(sql->sa, ls, rs, cmp_type);
@@ -2653,7 +2653,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
-		sql_subtype *st = sql_bind_localtype("str");
+		sql_subtype *st = sql_fetch_localtype(TYPE_str);
 		sql_exp *le = rel_value_exp(query, rel, lo, f|sql_farg, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
@@ -2832,7 +2832,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 			append(l, rs);
 		}
 		if (l) {
-			sql_subtype *bt = sql_bind_localtype("bit");
+			sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 			l = exps_check_type(sql, bt, l);
 			if (!l)
 				return NULL;
@@ -2924,7 +2924,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		symbol *ro = sc->data.lval->h->next->data.sym;
 		int insensitive = sc->data.lval->h->next->next->data.i_val;
 		int anti = (sc->token == SQL_NOT_LIKE) != (sc->data.lval->h->next->next->next->data.i_val != 0);
-		sql_subtype *st = sql_bind_localtype("str");
+		sql_subtype *st = sql_fetch_localtype(TYPE_str);
 		sql_exp *le = rel_value_exp(query, &rel, lo, f|sql_farg, ek), *re, *ee = NULL, *ie = exp_atom_bool(sql->sa, insensitive);
 
 		if (!le)
@@ -3320,7 +3320,6 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			sql_func *f = q?q->f:inplace_func(sql);
 			list *ops = q?f->ops:sql->params;
 
-			tl = sa_list(sql->sa);
 			if (list_length(ops) != list_length(exps))
 				return sql_error(sql, 02, SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", list_length(ops), list_length(exps));
 			if (split) {
@@ -3341,13 +3340,13 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 					if (!e)
 						return NULL;
 					append(nexps, e);
-					append(tl, exp_subtype(e));
 				}
 			}
+			assert(f->type == F_PROC);
 
 			if (q)
 				sql->type = q->type;
-			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, tl, NULL));
+			return exp_op(sql->sa, list_empty(nexps) ? NULL : nexps, sql_dup_subfunc(sql->sa, f, NULL, NULL));
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "EXEC: PREPARED Statement missing '%d'", nr);
 		}
@@ -3382,7 +3381,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			r->nrcols = list_length(exps);
 			sql_exp *e = exp_compare(sql->sa, le, re, cmp_equal);
 			r = rel_select(sql->sa, r, e);
-			r = rel_project(sql->sa, r, append(sa_list(sql->sa), exp_convert(sql, id, exp_subtype(id), sql_bind_localtype("int"))));
+			r = rel_project(sql->sa, r, append(sa_list(sql->sa), exp_convert(sql, id, exp_subtype(id), sql_fetch_localtype(TYPE_int))));
 			re = exp_rel(sql, r);
 			return re;
 		}
@@ -3517,7 +3516,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			}
 			if (!t->type->localtype) {
 				if (e->type == e_atom && !e->f) {
-					t = sql_bind_localtype("bte");
+					t = sql_fetch_localtype(TYPE_bte);
 					e->tpe = *t;
 					if (e->l)
 						e->l = atom_set_type(sql->sa, e->l, t);
@@ -3744,7 +3743,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'", toUpperCopy(uaname, aname), aname);
 		}
-		a = sql_bind_func(sql, "sys", aname, sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+		a = sql_bind_func(sql, "sys", aname, sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby?groupby->card:CARD_ATOM, 0);
 
 		if (!groupby)
@@ -3775,16 +3774,16 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		list *l = (list*) groupby->r;
 
 		if (list_length(l) <= 7)
-			tpe = sql_bind_localtype("bte");
+			tpe = sql_fetch_localtype(TYPE_bte);
 		else if (list_length(l) <= 15)
-			tpe = sql_bind_localtype("sht");
+			tpe = sql_fetch_localtype(TYPE_sht);
 		else if (list_length(l) <= 31)
-			tpe = sql_bind_localtype("int");
+			tpe = sql_fetch_localtype(TYPE_int);
 		else if (list_length(l) <= 63)
-			tpe = sql_bind_localtype("lng");
+			tpe = sql_fetch_localtype(TYPE_lng);
 #ifdef HAVE_HGE
 		else if (list_length(l) <= 127)
-			tpe = sql_bind_localtype("hge");
+			tpe = sql_fetch_localtype(TYPE_hge);
 #endif
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: GROUPING the number of grouping columns is larger"
@@ -3934,7 +3933,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		if (!restype)
 			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
-			restype = sql_bind_localtype("str");
+			restype = sql_fetch_localtype(TYPE_str);
 
 		if (!(res = exp_check_type(sql, restype, rel ? *rel : NULL, res, type_equal)))
 			return NULL;
@@ -3942,14 +3941,14 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		if (!restype)
 			return sql_error(sql, 02, SQLSTATE(42000) "Result type missing");
 		if (restype->type->localtype == TYPE_void) /* NULL */
-			restype = sql_bind_localtype("str");
+			restype = sql_fetch_localtype(TYPE_str);
 		res = exp_null(sql->sa, restype);
 	}
 
 	if (!condtype)
 		return sql_error(sql, 02, SQLSTATE(42000) "Condition type missing");
 	if (condtype->type->localtype == TYPE_void) /* NULL */
-		condtype = sql_bind_localtype("str");
+		condtype = sql_fetch_localtype(TYPE_str);
 	if (opt_cond_exp && !(opt_cond_exp = exp_check_type(sql, condtype, rel ? *rel : NULL, opt_cond_exp, type_equal)))
 		return NULL;
 	sql_find_subtype(&bt, "boolean", 0, 0);
@@ -4006,7 +4005,7 @@ rel_complex_case(sql_query *query, sql_rel **rel, dlist *case_args, int f, str f
 	if (!restype)
 		return sql_error(query->sql, 02, SQLSTATE(42000) "Result type missing");
 	if (restype->type->localtype == TYPE_void) /* NULL */
-		restype = sql_bind_localtype("str");
+		restype = sql_fetch_localtype(TYPE_str);
 	list *nargs = sa_list(query->sql->sa);
 	for (node *m = args->h; m; m = m->next) {
 		sql_exp *result = m->data;
@@ -4065,7 +4064,7 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 		sql_subtype *et = exp_subtype(e);
 		/* truncate only if the number of digits are smaller or from clob */
 		if (et && EC_VARCHAR(et->type->eclass) && (tpe->digits < et->digits || et->digits == 0)) {
-			sql_subfunc *c = sql_bind_func(sql, "sys", "truncate", et, sql_bind_localtype("int"), F_FUNC, true, true);
+			sql_subfunc *c = sql_bind_func(sql, "sys", "truncate", et, sql_fetch_localtype(TYPE_int), F_FUNC, true, true);
 			if (c)
 				e = exp_binop(sql->sa, e, exp_atom_int(sql->sa, tpe->digits), c);
 		}
@@ -4659,7 +4658,7 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_exp *
 {
 	list *rargs1 = sa_list(sql->sa), *rargs2 = sa_list(sql->sa), *targs1 = sa_list(sql->sa), *targs2 = sa_list(sql->sa);
 	sql_subfunc *dc1, *dc2;
-	sql_subtype *it = sql_bind_localtype("int");
+	sql_subtype *it = sql_fetch_localtype(TYPE_int);
 
 	if (pe) {
 		append(targs1, exp_subtype(pe));
@@ -4704,7 +4703,7 @@ static sql_exp*
 calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	mvc *sql = query->sql;
-	sql_subtype *bt, *bound_tp = sql_bind_localtype("lng"), *iet = exp_subtype(ie);
+	sql_subtype *bt, *bound_tp = sql_fetch_localtype(TYPE_lng), *iet = exp_subtype(ie);
 	sql_exp *res = NULL;
 
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
@@ -4928,7 +4927,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (dl)
 			for (dargs = dl->h ; dargs ; dargs = dargs->next) {
 				exp_kind ek = {type_value, card_column, FALSE};
-				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
+				sql_subtype *empty = sql_fetch_localtype(TYPE_void), *bte = sql_fetch_localtype(TYPE_bte);
 
 				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window | sql_farg, ek);
 				if (!in)
@@ -4961,7 +4960,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		dlist *dl = dn->next->next->data.lval;
 		for (dargs = dl?dl->h:NULL; dargs && dargs->data.sym ; dargs = dargs->next) {
 			exp_kind ek = {type_value, card_column, FALSE};
-			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
+			sql_subtype *empty = sql_fetch_localtype(TYPE_void), *bte = sql_fetch_localtype(TYPE_bte);
 
 			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window | sql_farg, ek);
 			if (!in)
@@ -5004,7 +5003,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	/* diff for partitions */
 	if (gbe) {
-		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 
 		for( n = gbe->h; n; n = n->next) {
 			sql_subfunc *df;
@@ -5032,7 +5031,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	/* diff for orderby */
 	if (obe) {
-		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 
 		for( n = obe->h; n; n = n->next) {
 			sql_subfunc *df;
@@ -5139,7 +5138,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
 		if (is_value) {
-			sql_subtype *bound_tp = sql_bind_localtype("lng"), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : exp_subtype(ie);
+			sql_subtype *bound_tp = sql_fetch_localtype(TYPE_lng), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : exp_subtype(ie);
 			unsigned char sclass = bt->type->eclass;
 
 			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : bound_tp));
@@ -5278,7 +5277,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		return exp_atom_ref(sql->sa, se->data.i_val, a?&a->type:NULL);
 	}
 	case SQL_NULL:
-		return exp_null(sql->sa, sql_bind_localtype("void"));
+		return exp_null(sql->sa, sql_fetch_localtype(TYPE_void));
 	case SQL_NEXT:
 		return rel_next_value_for(sql, se);
 	case SQL_CAST:
@@ -5624,7 +5623,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		return NULL;
 
 	if (sn->limit || sn->offset) {
-		sql_subtype *lng = sql_bind_localtype("lng");
+		sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
 		list *exps = new_exp_list(sql->sa);
 
 		if (sn->limit) {
@@ -5656,7 +5655,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 			sql_exp *s = rel_value_exp(query, NULL, sn->sample, 0, ek);
 			if (!s)
 				return NULL;
-			if (!exp_subtype(s) && rel_set_type_param(sql, sql_bind_localtype("lng"), NULL, s, 0) < 0)
+			if (!exp_subtype(s) && rel_set_type_param(sql, sql_fetch_localtype(TYPE_lng), NULL, s, 0) < 0)
 				return NULL;
 			list_append(exps, s);
 		} else {
@@ -5665,7 +5664,7 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		}
 		if (sn->seed) {
 			sql_exp *e = rel_value_exp(query, NULL, sn->seed, 0, ek);
-			if (!e || !(e=exp_check_type(sql, sql_bind_localtype("int"), NULL, e, type_equal)))
+			if (!e || !(e=exp_check_type(sql, sql_fetch_localtype(TYPE_int), NULL, e, type_equal)))
 				return NULL;
 			list_append(exps, e);
 		}

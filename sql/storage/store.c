@@ -806,7 +806,7 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	if (isPartitionedByExpressionTable(t)) {
 		t->part.pexp = ZNEW(sql_expression);
 		t->part.pexp->exp = exp;
-		t->part.pexp->type = *sql_bind_localtype("void"); /* initialized at initialize_sql_parts */
+		t->part.pexp->type = *sql_fetch_localtype(TYPE_void); /* initialized at initialize_sql_parts */
 		t->part.pexp->cols = list_create((fdestroy) &int_destroy);
 	}
 	for ( ; rt_cols->cur_row < rt_cols->nr_rows; rt_cols->cur_row++) {
@@ -6164,7 +6164,7 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 		}
 	if (isPartitionedByExpressionTable(t)) {
 		t->part.pexp = ZNEW(sql_expression);
-		t->part.pexp->type = *sql_bind_localtype("void"); /* leave it non-initialized, at the backend the copy of this table will get the type */
+		t->part.pexp->type = *sql_fetch_localtype(TYPE_void); /* leave it non-initialized, at the backend the copy of this table will get the type */
 		t->part.pexp->cols = list_create((fdestroy) &int_destroy);
 	}
 

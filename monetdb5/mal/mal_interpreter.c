@@ -513,7 +513,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 	if (startpc + 1 == stoppc) {
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
-			backup = ma_alloc(tmp_alloc, pci->argc * sizeof(ValRecord));
+			backup = ma_alloc(tmp_alloc, pci->retc * sizeof(ValRecord));
 			garbage = (int *) ma_zalloc(tmp_alloc, pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
 				//GDKfree(backup);
@@ -650,9 +650,8 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 		 * garbage collected are identified. In the post-execution
 		 * phase they are removed.
 		 */
-		for (int i = 0; i < pci->retc; i++) {
+		for (int i = 0; i < pci->retc; i++)
 			backup[i] = stk->stk[getArg(pci, i)];
-		}
 
 		if (garbageControl(pci)) {
 			for (int i = 0; i < pci->argc; i++) {
@@ -693,8 +692,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
-				}
-				if (lhs->bat && !is_bat_nil(lhs->val.bval))
+				} else if (lhs->bat && !is_bat_nil(lhs->val.bval))
 					BBPretain(lhs->val.bval);
 			}
 			break;
@@ -808,8 +806,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 					ret = createException(MAL, "mal.interpreter",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
-				}
-				if (lhs->bat)
+				} else if (lhs->bat)
 					BBPretain(lhs->val.bval);
 			}
 			if (ret == MAL_SUCCEED && ii == pci->argc) {
@@ -992,8 +989,6 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 				if (v->val.sval && v->allocated)
 					freeException(v->val.sval);	/* old exception */
 				VALset(v, TYPE_str, ret);
-				//v->allocated = true;
-				freeException(ret);
 				ret = MAL_SUCCEED;
 				MT_lock_unset(&mal_contextLock);
 			} else {
@@ -1225,8 +1220,7 @@ runMALsequence(allocator *tmp_alloc, Client cntxt, MalBlkPtr mb, int startpc,
 						ret = createException(MAL, "mal.interpreter",
 											  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						break;
-					}
-					if (lhs->bat)
+					} else if (lhs->bat)
 						BBPretain(lhs->val.bval);
 				}
 				if (garbageControl(getInstrPtr(mb, 0)))

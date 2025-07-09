@@ -113,10 +113,10 @@ sql_create_env(mvc *m, sql_schema *s)
 		f->instantiated = TRUE;
 
 	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "schema", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "type", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "value", sql_bind_localtype("str"), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "schema", sql_fetch_localtype(TYPE_str), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "name", sql_fetch_localtype(TYPE_str), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "type", sql_fetch_localtype(TYPE_str), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "value", sql_fetch_localtype(TYPE_str), ARG_OUT));
 
 	/* add function */
 	ops = sa_list(m->sa);

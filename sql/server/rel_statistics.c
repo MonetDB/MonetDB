@@ -730,7 +730,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 				(min = find_prop_and_get(e->p, PROP_MIN)) && (max = find_prop_and_get(e->p, PROP_MAX))) {
 				/* the range includes min and max, so the atom_inc call is needed */
 				/* if 'euniques' has number of distinct values, compute min between both */
-				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_bind_localtype("oid"))))
+				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_fetch_localtype(TYPE_oid))))
 					euniques = MIN(euniques, (BUN) sub->data.val.oval);
 			}
 			if (euniques != BUN_NONE)
@@ -767,7 +767,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		}
 		/* Set table row count. TODO? look for remote tables. Don't look at storage for declared tables, because it won't be cleaned */
 		if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, 10));
+			set_count_prop(v->sql->sa, rel, (BUN)store->storage_api.count_col(v->sql->session->tr, ol_first_node(t->columns)->data, CNT_ACTIVE));
 		break;
 	}
 	case op_inter:

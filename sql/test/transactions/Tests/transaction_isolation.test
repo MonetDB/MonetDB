@@ -7,7 +7,7 @@ statement ok
 insert into integers values (1),(2),(3),(NULL)
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -16,7 +16,7 @@ SELECT i FROM integers
 NULL
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -29,7 +29,7 @@ statement ok
 start transaction
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -38,7 +38,7 @@ SELECT i FROM integers
 NULL
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -56,7 +56,7 @@ SELECT i FROM integers
 ----
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -69,7 +69,7 @@ statement ok rowcount 3
 insert into integers values (4),(5),(6)
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
@@ -77,7 +77,7 @@ SELECT i FROM integers
 6
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -90,7 +90,7 @@ statement ok rowcount 1
 update integers set i = 7 where i = 6
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
@@ -98,7 +98,7 @@ SELECT i FROM integers
 7
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -111,14 +111,14 @@ statement ok rowcount 1
 delete from integers where i = 5
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
 7
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -131,7 +131,7 @@ statement ok
 rollback
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -140,7 +140,7 @@ SELECT i FROM integers
 NULL
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -153,7 +153,7 @@ statement ok
 start transaction
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -162,7 +162,7 @@ SELECT i FROM integers
 NULL
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -180,7 +180,7 @@ SELECT i FROM integers
 ----
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -193,7 +193,7 @@ statement ok rowcount 3
 insert into integers values (4),(5),(6)
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
@@ -201,7 +201,7 @@ SELECT i FROM integers
 6
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -214,7 +214,7 @@ statement ok rowcount 1
 update integers set i = 7 where i = 6
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
@@ -222,7 +222,7 @@ SELECT i FROM integers
 7
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -235,14 +235,14 @@ statement ok rowcount 1
 delete from integers where i = 5
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
 7
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 1
@@ -255,14 +255,14 @@ statement ok
 commit
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
 7
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers
 ----
 4
@@ -533,7 +533,7 @@ statement ok rowcount 270
 delete from integers where i > 99
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -558,7 +558,7 @@ statement ok
 commit
 
 @connection(id=mdb1)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -573,7 +573,7 @@ SELECT i FROM integers order by i
 50
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -602,7 +602,7 @@ SELECT count(*) FROM integers
 0
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -627,7 +627,7 @@ SELECT count(*) FROM integers
 100
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -652,7 +652,7 @@ SELECT count(*) FROM integers
 130
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -677,7 +677,7 @@ SELECT count(*) FROM integers
 110
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -702,7 +702,7 @@ SELECT count(*) FROM integers
 80
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -727,7 +727,7 @@ SELECT count(*) FROM integers
 90
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -752,7 +752,7 @@ SELECT count(*) FROM integers
 0
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 41
@@ -1009,7 +1009,7 @@ statement ok rowcount 2
 update integers set i = 3 where i = 2
 
 @connection(id=mdb2)
-query I nosort
+query I rowsort
 SELECT i FROM integers order by i
 ----
 3
