@@ -2986,7 +2986,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                 defines.append(f'TSTDB={TSTDB}')
                                 defines.append(f'MAPIPORT={pSrvr.port}')
                             try:
-                                sql.parse(os.path.join(TSTTRGDIR, testfile), approve=open(TST+'.newtest','w') if approve else None, defines=defines)
+                                sql.parse(os.path.join(TSTTRGDIR, testfile), approve=open(os.path.join(TSTTRGDIR, TST+'.newtest'),'w') if approve else None, defines=defines)
                             except KeyboardInterrupt:
                                 raise
                             except sqllogictest.SQLLogicSyntaxError:
