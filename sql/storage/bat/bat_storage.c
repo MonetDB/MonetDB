@@ -634,8 +634,6 @@ count_deletes( segment *s, sql_trans *tr)
 	return cnt;
 }
 
-#define CNT_ACTIVE 10
-
 static size_t
 count_col(sql_trans *tr, sql_column *c, int access)
 {
@@ -648,9 +646,9 @@ count_col(sql_trans *tr, sql_column *c, int access)
 	ds = col_timestamp_delta(tr, c);
 	if (!d ||!ds)
 		return 0;
-	if (access == 2)
+	if (access == RD_UPD_ID)
 		return ds?ds->cs.ucnt:0;
-	if (access == 1)
+	if (access == RD_INS)
 		return count_inserts(d->segs->h, tr);
 	if (access == QUICK)
 		return d->segs->t?d->segs->t->end:0;
@@ -676,9 +674,9 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 	ds = idx_timestamp_delta(tr, i);
 	if (!d || !ds)
 		return 0;
-	if (access == 2)
+	if (access == RD_UPD_ID)
 		return ds?ds->cs.ucnt:0;
-	if (access == 1)
+	if (access == RD_INS)
 		return count_inserts(d->segs->h, tr);
 	if (access == QUICK)
 		return d->segs->t?d->segs->t->end:0;
@@ -2818,11 +2816,11 @@ count_del(sql_trans *tr, sql_table *t, int access)
 	d = tab_timestamp_storage(tr, t);
 	if (!d)
 		return 0;
-	if (access == 2)
+	if (access == RD_UPD_ID)
 		return d->cs.ucnt;
-	if (access == 1)
+	if (access == RD_INS)
 		return count_inserts(d->segs->h, tr);
-	if (access == 10) /* special case for counting the number of segments */
+	if (access == CNT_ACTIVE) /* special case for counting the number of segments */
 		return count_segs(d->segs->h);
 	return count_deletes(d->segs->h, tr);
 }

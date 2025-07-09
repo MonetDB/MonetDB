@@ -1265,7 +1265,7 @@ SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	c = ol_first_node(t->columns)->data;
 	sqlstore *store = m->session->tr->store;
 
-	*res = store->storage_api.count_col(m->session->tr, c, 10);
+	*res = store->storage_api.count_col(m->session->tr, c, CNT_ACTIVE);
 	return msg;
 }
 

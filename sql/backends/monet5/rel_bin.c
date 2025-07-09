@@ -7075,7 +7075,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 						if (k->t != t && !cascade && isTable(t)) {
 							node *nnn = ol_first_node(t->columns);
 							sql_column *c = nnn->data;
-							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 10);
+							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, CNT_ACTIVE);
 							if (n_rows > 0) {
 								list_destroy(keys);
 								return sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);

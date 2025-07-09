@@ -163,7 +163,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	ba->basenr = sql->nid;
 	sql->nid += end;
 	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 10));
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, CNT_ACTIVE));
 	assert(atname);
 	if (strcmp(atname, t->base.name) != 0)
 		ba->name = sa_strdup(sa, atname);
