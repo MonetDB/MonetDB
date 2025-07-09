@@ -2751,9 +2751,15 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr, TSTTRGDIR, en
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     if TimeOut:
         environ['TIMEOUT'] = str(TimeOut)
+    executable = None
+    if os.name == 'nt' and isinstance(cmd, list):
+        executable = os.path.join(TSTTRGDIR, cmd[0])
+        if not os.path.exists(executable):
+            executable = None
     with process.Popen(cmd, stdin=TestIn, stdout=TestOut,
                        stderr=TestErr, text=True,
                        cwd=TSTTRGDIR, env=environ,
+                       executable=executable,
                        process_group=0) as proc:
         proc.killed = False
         proc.onechild = onechild
