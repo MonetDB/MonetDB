@@ -454,7 +454,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	if (!temp)
 		GDKfree(username);
 	pwlen = strlen(password);
-    pwhash = (char*)GDKmalloc(pwlen + 2);
+    pwhash = (char*)sa_alloc(m->ta, pwlen + 2);
 	if (pwhash == NULL) {
 		//if (!temp)
 		//	GDKfree(password);
@@ -467,7 +467,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		strconcat_len(pwhash, pwlen + 2, "", password, NULL);
 	}
 	p = pushStr(curBlk, p, pwhash);
-	GDKfree(pwhash);
+	//GDKfree(pwhash);
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 	pushInstruction(curBlk, p);
@@ -616,27 +616,27 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	pushInstruction(curBlk, p);
 
 	if (!GDKinmemory(0) && !GDKembedded() && (err = msab_getUUID(&mal_session_uuid)) == NULL) {
-		str lsupervisor_session = GDKstrdup(mal_session_uuid);
-		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		str lsupervisor_session = SA_STRDUP(m->sa, mal_session_uuid);
+		str rsupervisor_session = SA_STRDUP(m->sa, mal_session_uuid);
 		free(mal_session_uuid);
 		if (lsupervisor_session == NULL || rsupervisor_session == NULL) {
-			GDKfree(lsupervisor_session);
-			GDKfree(rsupervisor_session);
+			//GDKfree(lsupervisor_session);
+			//GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 
 		str rworker_plan_uuid = generateUUID();
-		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
+		str lworker_plan_uuid = SA_STRDUP(m->sa, rworker_plan_uuid);
 
 		/* remote.supervisor_register(connection, supervisor_uuid, plan_uuid) */
 		p = newInstruction(curBlk, remoteRef, execRef);
 		if (rworker_plan_uuid == NULL || lworker_plan_uuid == NULL || p == NULL) {
 			free(rworker_plan_uuid);
-			GDKfree(lworker_plan_uuid);
+			//GDKfree(lworker_plan_uuid);
 			freeInstruction(curBlk, p);
-			GDKfree(lsupervisor_session);
-			GDKfree(rsupervisor_session);
+			//GDKfree(lsupervisor_session);
+			//GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
@@ -652,9 +652,9 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		if (o == NULL) {
 			freeInstruction(curBlk, p);
 			free(rworker_plan_uuid);
-			GDKfree(lworker_plan_uuid);
-			GDKfree(lsupervisor_session);
-			GDKfree(rsupervisor_session);
+			//GDKfree(lworker_plan_uuid);
+			//GDKfree(lsupervisor_session);
+			//GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
@@ -667,9 +667,9 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		if (o == NULL) {
 			freeInstruction(curBlk, p);
 			free(rworker_plan_uuid);
-			GDKfree(lworker_plan_uuid);
-			GDKfree(lsupervisor_session);
-			GDKfree(rsupervisor_session);
+			//GDKfree(lworker_plan_uuid);
+			//GDKfree(lsupervisor_session);
+			//GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
@@ -682,9 +682,9 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		if (o == NULL) {
 			freeInstruction(curBlk, p);
 			free(rworker_plan_uuid);
-			GDKfree(lworker_plan_uuid);
-			GDKfree(lsupervisor_session);
-			GDKfree(rsupervisor_session);
+			//GDKfree(lworker_plan_uuid);
+			//GDKfree(lsupervisor_session);
+			//GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
@@ -699,9 +699,9 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		p = newStmt(curBlk, remoteRef, register_supervisorRef);
 		if (p == NULL) {
 			free(rworker_plan_uuid);
-			GDKfree(lworker_plan_uuid);
-			GDKfree(lsupervisor_session);
-			GDKfree(rsupervisor_session);
+			//GDKfree(lworker_plan_uuid);
+			//GDKfree(lsupervisor_session);
+			//GDKfree(rsupervisor_session);
 			sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
@@ -709,10 +709,10 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 		p = pushStr(curBlk, p, lworker_plan_uuid);
 		pushInstruction(curBlk, p);
 
-		GDKfree(lworker_plan_uuid);
 		free(rworker_plan_uuid);   /* This was created with strdup */
-		GDKfree(lsupervisor_session);
-		GDKfree(rsupervisor_session);
+		//GDKfree(lworker_plan_uuid);
+		//GDKfree(lsupervisor_session);
+		//GDKfree(rsupervisor_session);
 	} else if (err)
 		free(err);
 
@@ -1042,7 +1042,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 			cq_query = cq ? cq->f->query : NULL;
 			if (cq_query) {
 				size_t buf_sz = 2 + strlen(query) + strlen(cq_query);
-				buf = GDKmalloc(buf_sz * sizeof(char));
+				buf = sa_alloc(mb->ma, buf_sz * sizeof(char));
 				if (buf == NULL) {
 					sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					return -1;
@@ -1054,7 +1054,7 @@ backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_en
 		q = pushStr(mb, q, query);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		pushInstruction(mb, q);
-		GDKfree(buf);
+		//GDKfree(buf);
 	}
 
 	/* announce the transaction mode */
