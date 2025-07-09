@@ -863,7 +863,7 @@ exp_ref_by_label(mvc *sql, sql_exp *o)
 	if (o->virt)
 		e->virt = 1;
 	if ((o->type == e_column || o->type == e_convert ||
-		(o->type == e_psm && ((t->multiset == MS_ARRAY) || (t->multiset == MS_SETOF))))
+		(o->type == e_psm && ((t && t->multiset == MS_ARRAY) || (t && t->multiset == MS_SETOF))))
 		&& o->f)
 		e->f = o->f;
 	return exp_propagate(sa, e, o);
