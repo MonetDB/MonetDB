@@ -41,6 +41,7 @@ import http.server
 import glob
 import datetime
 import pymonetdb # check for pymonetdb early: it is essential for our work
+import concurrent.futures
 
 MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 
@@ -3510,6 +3511,7 @@ def main(argv) :
     parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
     parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
+    parser.add_argument('--parallel', action='store', type=int, default=1, metavar='<directories>', help='run multiple directories in parallel')
     global produce_html
     if produce_html:
         parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
@@ -4101,28 +4103,56 @@ def main(argv) :
             else:
                 if verbosity > 1:
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
-                for d in testdirs:
-                    t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], test_count, test_progress)
-                    t_ = t_ + t
-                    if elem is not None:
-                        if diff <= F_OK:
-                            body_good.append(elem)
-                        else:
-                            body_bad.append(elem)
-                    if not errseen and diff > F_WARN:
-                        errseen = True
-                    if interrupted:
-                        break
-                    if not testweb:
-                        if global_timeout and start_time + global_timeout < time.time():
-                            print('\nGlobal testing timeout reached\n')
+                if opts.parallel > 1:
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
+                        futures = {tp.submit(PerformDir, env, d, [], test_count, 0): d for d in testdirs}
+                    for future in concurrent.futures.as_completed(futures):
+                        d = futures[future]
+                        t, elem, diff, interrupted, tp = future.result()
+                        test_progress += tp
+                        t_ = t_ + t
+                        if elem is not None:
+                            if diff <= F_OK:
+                                body_good.append(elem)
+                            else:
+                                body_bad.append(elem)
+                        if not errseen and diff > F_WARN:
+                            errseen = True
+                        if interrupted:
                             break
-                        if produce_html:
-                            # after a directory has been tested, create
-                            # the index file so that we can look at test
-                            # results while the tests are running
-                            body = body_bad + body_good
-                            CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                        if not testweb:
+                            if global_timeout and start_time + global_timeout < time.time():
+                                print('\nGlobal testing timeout reached\n')
+                                break
+                            if produce_html:
+                                # after a directory has been tested, create
+                                # the index file so that we can look at test
+                                # results while the tests are running
+                                body = body_bad + body_good
+                                CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                else:
+                    for d in testdirs:
+                        t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], test_count, test_progress)
+                        t_ = t_ + t
+                        if elem is not None:
+                            if diff <= F_OK:
+                                body_good.append(elem)
+                            else:
+                                body_bad.append(elem)
+                        if not errseen and diff > F_WARN:
+                            errseen = True
+                        if interrupted:
+                            break
+                        if not testweb:
+                            if global_timeout and start_time + global_timeout < time.time():
+                                print('\nGlobal testing timeout reached\n')
+                                break
+                            if produce_html:
+                                # after a directory has been tested, create
+                                # the index file so that we can look at test
+                                # results while the tests are running
+                                body = body_bad + body_good
+                                CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
             if verbosity == 0:
                 print()
         except KeyboardInterrupt:
