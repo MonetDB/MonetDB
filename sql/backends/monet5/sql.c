@@ -6007,7 +6007,7 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 		case JSON_OBJECT:
 			nt = find_subtype_field(t, name, nlen, &offset, &index);
 			if (nt) {
-				bat_offset = start_offset + offset;
+				bat_offset = (int) (start_offset + offset);
 				if (nt->type->composite) {
 					if ((elm = insert_json_object(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
 						return elm;
@@ -6037,7 +6037,7 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 		case JSON_ARRAY:
 			nt = find_subtype_field(t, name, nlen, &offset, &index);
 			if (nt) {
-				bat_offset = start_offset + offset;
+				bat_offset = (int) (start_offset + offset);
 				if(nt->multiset) {
 					if ((elm = insert_json_array(msg, js, bats, &bat_offset, nr, elm, nt)) < 0)
 						return elm;
@@ -6076,7 +6076,7 @@ insert_json_element(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, 
 		case JSON_NULL:
 			nt = find_subtype_field(t, name, nlen, &offset, &index);
 			if (nt) {
-				bat_offset = start_offset + offset;
+				bat_offset = (int) (start_offset + offset);
 				if ((*msg = insert_json_value(jt, nt, bats[bat_offset])) != MAL_SUCCEED)
 					return -1;
 				used_mask[index] = 1;
@@ -6133,7 +6133,7 @@ insert_json_object(char **msg, JSON *js, BAT **bats, int *BO, int nr, int elm, s
 			size_t offset = 0;
 			sql_subtype *nt = find_subtype_field_by_index(t, i, &offset);
 			if (nt) {
-				int index = start_offset + offset;
+				int index = (int) (start_offset + offset);
 				if((index = fill_null(msg, nt, bats, index)) < 0) {
 					TRC_ERROR(SQL_EXECUTION, "fill_null failed");
 					return -1;
