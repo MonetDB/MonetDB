@@ -946,6 +946,7 @@ exp_list(backend *be, list *exps, stmt *l, stmt *r, stmt *grp, stmt *ext, stmt *
 static stmt *
 exp_count_no_nil_arg(sql_exp *e, stmt *ext, sql_exp *ae, stmt *as)
 {
+	stmt * old_as = as;
 	/* small optimization, ie use candidates directly on count(*) */
 	if (!need_distinct(e) && !ext && as && (!need_no_nil(e) || !ae || !has_nil(ae))) {
 		/* skip alias statements */
@@ -957,6 +958,8 @@ exp_count_no_nil_arg(sql_exp *e, stmt *ext, sql_exp *ae, stmt *as)
 				as = as->op1;
 		}
 	}
+	if (as->type == st_list)
+		return old_as;
 	return as;
 }
 
