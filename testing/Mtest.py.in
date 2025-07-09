@@ -62,6 +62,7 @@ mserver5_opts = []
 
 global_timeout = 0
 start_time = time.time()
+test_progress = 0
 
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
@@ -1062,7 +1063,8 @@ def find_test_dirs(thisdir, recursive=True) :
     return testdirs, tstcnt
 ### find_test_dirs(thisdir) #
 
-def PerformDir(env, testdir, testlist, total_tests, test_progress) :
+def PerformDir(env, testdir, testlist, total_tests) :
+    global test_progress
     interrupted = False
     td = 0
     elem = None
@@ -1124,7 +1126,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             testlist = alltests
         if not testlist:
             Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
-            return td, elem, max(FdOut, FdErr), interrupted, test_progress
+            return td, elem, max(FdOut, FdErr), interrupted
 
         # find length of longest test name
         length = 0
@@ -1159,14 +1161,14 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     raise
                 except:
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
+                    return td, elem, max(FdOut, FdErr), interrupted
             keyfile = os.path.join(LogDBdir, '.vaultkey')
             if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
                 try:
                     os.makedirs(LogDBdir)
                 except:
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
+                    return td, elem, max(FdOut, FdErr), interrupted
                 else:
                     if not initdb:
                         vaultkey = secrets.token_urlsafe(32).encode('ascii')
@@ -1179,14 +1181,14 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     z = zipfile.ZipFile(initdb)
                 except IOError:
                     Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
+                    return td, elem, max(FdOut, FdErr), interrupted
                 try:
                     z.extractall(LogDBdir)
                 except KeyboardInterrupt:
                     raise
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                    return td, elem, max(FdOut, FdErr), interrupted, test_progress
+                    return td, elem, max(FdOut, FdErr), interrupted
                 z.close()
                 if os.path.exists(keyfile):
                     vaultopt = ['--set', f'monet_vault_key={keyfile}']
@@ -1290,7 +1292,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
                     tt, FtOut, FtErr, bodyline, reason = -1,F_SKIP,F_SKIP,None,'as the global timeout has been reached'
                 else:
                     environ['TST'] = TST
-                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR)
+                    tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR)
                     alllinks.extend(links)
                 if tt >= 0:
                     t = '%7.3f' % tt
@@ -1393,8 +1395,7 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
         if ssout == F_ERROR or sserr == F_ERROR:
             if verbosity == 0:
-                print('\r', ' '*(ttywidth or 100), end='', sep='')
-                print('\r', end='', sep='')
+                print('\r', ' '*(ttywidth or 100), '\r', end='', sep='')
             prred('ERROR')
             print(f' in directory {TSTDIR}')
 
@@ -1432,11 +1433,11 @@ def PerformDir(env, testdir, testlist, total_tests, test_progress) :
             except:
                 pass
 
-        return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted, test_progress
+        return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted
     finally:
         # del sys.path[0]
         pass
-### PerformDir(env, testdir, testlist, total_tests, test_progress) #
+### PerformDir(env, testdir, testlist, total_tests) #
 
 # this function is a slightly modified copy of the posixpath version
 # the differences are the doubling of \'s in the replacement value
@@ -1807,7 +1808,7 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
-def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, test_progress, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR) :
+def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR) :
     Failed = F_SKIP
     FailedOut = F_SKIP
     FailedErr = F_SKIP
@@ -2168,7 +2169,7 @@ Password = {passwd or "monetdb"}-Wrong
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, test_progress, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, pSrvr, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ)
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
@@ -2800,16 +2801,15 @@ def mapi_ping(port, host='localhost', tries=3):
     return False
 ### mapi_ping() #
 
-def progress(count, total, test):
+def progress(count, total, test, spaces=' '*(ttywidth or 100)):
     perc = round((count/total) * 100) if total and count else 0
-    print('\r', ' '*(ttywidth or 100), end='', sep='')
     s = f'[{count}/{total}] ({perc}%)    {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
         s = f'[{count}/{total}] ({perc}%)    {test}'
-    print('\r', s, end='', sep='', flush=True)
+    sys.stdout.write('\r' + spaces + '\r' + s)
 
-def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, test_progress, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ) :
+def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, threads, user, passwd, COND, PSRVR, total_tests, options, TSTDB, TSTDIR, TSTTRGDIR, TSTSRCDIR, environ) :
     ATJOB2 = ''
     print(file=sys.stderr, end='', flush=True)
     if verbosity == 0:
@@ -3134,7 +3134,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
 
     return None
 
-### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito, test_progress) #
+### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, length, nomito) #
 
 def CheckClassPath() :
     if 'CLASSPATH' in os.environ:
@@ -4082,7 +4082,6 @@ def main(argv) :
         t_ = 0
         body_good = []
         body_bad = []
-        test_progress = 0
         errseen = False
         try:
             if len(testdirs) == 1:
@@ -4092,7 +4091,7 @@ def main(argv) :
                     tsts = 'all tests'
                 if verbosity > 1:
                     print('\nRunning %s in directory %s.\n' % (tsts , testdirs[0]))
-                t_, elem, diff, interrupted, test_progress = PerformDir(env, testdirs[0], testlist, test_count, test_progress)
+                t_, elem, diff, interrupted = PerformDir(env, testdirs[0], testlist, test_count)
                 if elem is not None:
                     if diff <= F_OK:
                         body_good.append(elem)
@@ -4105,11 +4104,10 @@ def main(argv) :
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
                 if opts.parallel > 1:
                     with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
-                        futures = {tp.submit(PerformDir, env, d, [], test_count, 0): d for d in testdirs}
+                        futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
                     for future in concurrent.futures.as_completed(futures):
                         d = futures[future]
-                        t, elem, diff, interrupted, tp = future.result()
-                        test_progress += tp
+                        t, elem, diff, interrupted = future.result()
                         t_ = t_ + t
                         if elem is not None:
                             if diff <= F_OK:
@@ -4132,7 +4130,7 @@ def main(argv) :
                                 CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
                 else:
                     for d in testdirs:
-                        t, elem, diff, interrupted, test_progress = PerformDir(env, d, [], test_count, test_progress)
+                        t, elem, diff, interrupted = PerformDir(env, d, [], test_count)
                         t_ = t_ + t
                         if elem is not None:
                             if diff <= F_OK:
