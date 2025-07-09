@@ -56,11 +56,25 @@ newGlobalStack(allocator *alloc, int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) alloc? ma_zalloc(alloc, stackSize(size)) : GDKzalloc(stackSize(size));
+	s = (MalStkPtr) alloc? ma_alloc(alloc, stackSize(size)) : GDKmalloc(stackSize(size));
 	if (!s)
 		return NULL;
 	s->allocated = !alloc;
 	s->stksize = size;
+	s->stktop = s->stkbot = s->stkdepth = s->calldepth = 0;
+    s->keepAlive = s->keepTmps = 0;
+    s->admit = s->wrapup = NULL;
+
+    s->status = 0;
+    s->pcup = 0;
+    s->tag = 0;
+    s->memory = 0;
+    s->up = NULL;
+	s->blk = NULL;
+	for(int i = 0; i < size; i++) {
+		s->stk[i].vtype = 0;
+		s->stk[i].bat = false;
+	}
 	return s;
 }
 

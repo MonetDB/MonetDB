@@ -662,7 +662,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		if (!strcmp(atomname, "str"))
 			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
-			sql_subtype *t = sql_bind_localtype(atomname);
+			sql_subtype *t = sql_fetch_localtype(b->ttype);
 			if (!t)
 				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
@@ -1535,7 +1535,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (nrows) {
 		if (tname) {
 			deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
-			segments = (lng) store->storage_api.count_del(m->session->tr, t, 10);
+			segments = (lng) store->storage_api.count_del(m->session->tr, t, CNT_ACTIVE);
 			if (cname) {
 				if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, segments, deletes)) != NULL)
 					goto cleanup;
@@ -1553,7 +1553,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				t = (sql_table *)b;
 				if (isTable(t)) {
 					deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
-					segments = (lng) store->storage_api.count_del(m->session->tr, t, 10);
+					segments = (lng) store->storage_api.count_del(m->session->tr, t, CNT_ACTIVE);
 
 					for (node *nn = ol_first_node(t->columns); nn ; nn = nn->next) {
 						c = (sql_column*) nn->data;

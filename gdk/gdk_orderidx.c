@@ -534,7 +534,7 @@ OIDXfree(BAT *b)
 void
 OIDXdestroy(BAT *b)
 {
-	if (b) {
+	if (b && b->torderidx) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);

@@ -122,7 +122,7 @@ do_replica_rewrite(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_
 			assert(0);
 		}
 	}
-	r = rewrite_basetable(sql, r);
+	r = rewrite_basetable(sql, r, true);
 	for (n = exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = n->data;
 		sql_exp *ne = m->data;

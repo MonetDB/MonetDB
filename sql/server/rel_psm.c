@@ -1305,17 +1305,17 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	if(!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, triggername, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, tname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, triggername, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, time));
 	append(exps, exp_atom_int(sql->sa, orientation));
 	append(exps, exp_atom_int(sql->sa, event));
-	append(exps, exp_atom_str(sql->sa, old_name, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, new_name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, old_name, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, new_name, sql_fetch_localtype(TYPE_str) ));
 	(void)condition;
-	append(exps, exp_atom_str(sql->sa, NULL, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, query, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, NULL, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, query, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, replace));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1332,7 +1332,7 @@ _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
 	rel_base_use_all(sql, r);
-	r = rewrite_basetable(sql, r);
+	r = rewrite_basetable(sql, r, false);
 	return stack_push_rel_view(sql, tname, r);
 }
 
@@ -1498,8 +1498,8 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname, int if_exists)
 	if(!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, tname, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, if_exists));
 	rel->l = NULL;
 	rel->r = NULL;

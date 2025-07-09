@@ -485,7 +485,7 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 				e = exp_atom_bool(v->sql->sa, flag);
 			} else {
 				/* always NULL */
-				e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
+				e = exp_null(v->sql->sa, sql_fetch_localtype(TYPE_bit));
 			}
 			v->changes++;
 		} else {
@@ -749,7 +749,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 				}
 			}
 			if (isnull) {
-				e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
+				e = exp_null(v->sql->sa, sql_fetch_localtype(TYPE_bit));
 				v->changes++;
 				return e;
 			} else if (rewrite) { /* rewrite to cmp_equal ! */
@@ -856,7 +856,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 			if (is_atom(l->type) && is_atom(r->type) && !is_semantics(e) && !is_any(e) && !e->f) {
 				/* compute comparisons on atoms */
 				if (exp_is_null(l) || exp_is_null(r)) {
-					e = exp_null(v->sql->sa, sql_bind_localtype("bit"));
+					e = exp_null(v->sql->sa, sql_fetch_localtype(TYPE_bit));
 					v->changes++;
 				} else if (l->l && r->l) {
 					int res = atom_cmp(l->l, r->l);

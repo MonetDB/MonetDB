@@ -51,6 +51,7 @@ typedef struct segment {
 typedef struct segments {
 	sql_ref r;
 	ulng nr_reused;
+	ATOMIC_TYPE deleted;
 	struct segment *h;
 	struct segment *t;
 } segments;
