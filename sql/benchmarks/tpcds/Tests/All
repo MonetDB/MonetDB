@@ -67,7 +67,7 @@ HAVE_DATA_PATH?q48
 HAVE_DATA_PATH?q49
 HAVE_DATA_PATH?q50
 HAVE_DATA_PATH?q51
-HAVE_DATA_PATH?q51a
+#HAVE_DATA_PATH?q51a old implementation of q51 when we didn't have support for unbounded preceding window frames.
 HAVE_DATA_PATH?q52
 HAVE_DATA_PATH?q53
 HAVE_DATA_PATH?q54
