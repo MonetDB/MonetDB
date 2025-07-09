@@ -167,20 +167,24 @@ MNDBGetDescField(ODBCDesc *desc,
 		WriteData(ValuePtr, (SQLUINTEGER) rec->sql_desc_length, SQLULEN);
 		return SQL_SUCCESS;
 	case SQL_DESC_LITERAL_PREFIX:		/* SQLCHAR * */
-		if (isIRD(desc))
+		if (isIRD(desc)) {
+			fillLiteralPrefixSuffix(rec);
 			copyString(rec->sql_desc_literal_prefix,
 				   strlen((char *) rec->sql_desc_literal_prefix),
 				   ValuePtr, BufferLength, StringLengthPtr,
 				   SQLINTEGER, addDescError, desc,
 				   return SQL_ERROR);
+		}
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LITERAL_SUFFIX:		/* SQLCHAR * */
-		if (isIRD(desc))
+		if (isIRD(desc)) {
+			fillLiteralPrefixSuffix(rec);
 			copyString(rec->sql_desc_literal_suffix,
 				   strlen((char *) rec->sql_desc_literal_suffix),
 				   ValuePtr, BufferLength, StringLengthPtr,
 				   SQLINTEGER, addDescError, desc,
 				   return SQL_ERROR);
+		}
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LOCAL_TYPE_NAME:		/* SQLCHAR * */
 		if (isID(desc))
