@@ -362,6 +362,11 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	case SQL_DESC_SCHEMA_NAME:
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
+		if (BufferLength < 0) {
+			/* Invalid string or buffer length */
+			addDescError(desc, "HY090", NULL, 0);
+			return SQL_ERROR;
+		}
 		ptr = (SQLPOINTER) malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
