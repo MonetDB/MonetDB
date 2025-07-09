@@ -269,7 +269,7 @@ testGetDataGUID(SQLHANDLE stmt)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
 			pos += snprintf(outp + pos, outp_len - pos, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-				guid_val.Data1, guid_val.Data2, guid_val.Data3,
+					(unsigned int) guid_val.Data1, guid_val.Data2, guid_val.Data3,
 				guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2], guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
 	}
@@ -361,7 +361,7 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 		if (vallen == SQL_NULL_DATA)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
-			pos += snprintf(outp + pos, outp_len - pos, "%d (type %d, sign %d)\n", itv_val.intval.day_second.day, itv_val.interval_type, itv_val.interval_sign);
+			pos += snprintf(outp + pos, outp_len - pos, "%lu (type %d, sign %d)\n", (unsigned long) itv_val.intval.day_second.day, itv_val.interval_type, itv_val.interval_sign);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col) as int");
 	}
 
