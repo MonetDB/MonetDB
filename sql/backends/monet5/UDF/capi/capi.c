@@ -1225,12 +1225,12 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_data->count = BATcount(input_bats[index]);
 			bat_data->null_value = NULL;
 			bat_data->data = bat_data->count == 0 ? NULL :
-				GDKzalloc(sizeof(char *) * bat_data->count);
+				ma_zalloc(mb->ma, sizeof(char *) * bat_data->count);
 			if (bat_data->count > 0 && !bat_data->data) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			bat_data->alloced = true;
+			bat_data->alloced = false;
 			j = 0;
 
 			li = bat_iterator(input_bats[index]);
