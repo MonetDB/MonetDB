@@ -814,7 +814,7 @@ create_prepare_result(backend *b, cq *q, int nrows)
 
 	if (r && (is_topn(r->op) || is_sample(r->op)))
 		r = r->l;
-	if (r && is_project(r->op) && r->exps) {
+	if (q->type != Q_UPDATE && r && is_project(r->op) && r->exps) {
 		unsigned int max2 = 10, max3 = 10;	/* to help calculate widths */
 		nrows += list_length(r->exps);
 
@@ -2389,7 +2389,7 @@ from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 		if (i < 0 || i >= nr)
 			return -10;
 		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = sql_bind_localtype("int");
+		fmt[i].extra = sql_fetch_localtype(TYPE_int);
 		fmt[i].adt = TYPE_int;
 		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 		fmt[i].c = bats[i];
@@ -2399,7 +2399,7 @@ from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 			if (i < 0 || i >= nr)
 				return -10;
 			fmt[i].frstr = &_ASCIIadt_frStr;
-			fmt[i].extra = sql_bind_localtype("int");
+			fmt[i].extra = sql_fetch_localtype(TYPE_int);
 			fmt[i].adt = TYPE_int;
 			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].c = bats[i];
@@ -2408,7 +2408,7 @@ from_string_cols(Column *fmt, BAT **bats, int nr, int cur, sql_subtype *t)
 		if (i < 0 || i >= nr)
 			return -10;
 		fmt[i].frstr = &_ASCIIadt_frStr;
-		fmt[i].extra = sql_bind_localtype("int");
+		fmt[i].extra = sql_fetch_localtype(TYPE_int);
 		fmt[i].adt = TYPE_int;
 		fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 		fmt[i].c = bats[i];

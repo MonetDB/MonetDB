@@ -47,7 +47,7 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 		a->type = *st;
 	a->inout = ARG_IN;
 	if (name && strcmp(name, "*") == 0)
-		a->type = *sql_bind_localtype("int");
+		a->type = *sql_fetch_localtype(TYPE_int);
 	if (!sql->params)
 		sql->params = sa_list(sql->sa);
 	list_append(sql->params, a);
@@ -271,7 +271,7 @@ _dup_subaggr(allocator *sa, sql_func *a, sql_subtype *member)
 	ares->func = a;
 	if (IS_FILT(a)) {
 		ares->res = sa_list(sa);
-        list_append(ares->res, sql_bind_localtype("bit"));
+        list_append(ares->res, sql_fetch_localtype(TYPE_bit));
 	} else if (IS_FUNC(a) || IS_UNION(a) || IS_ANALYTIC(a) || IS_AGGR(a)) { /* not needed for PROC */
 		if (a->res) {
 			ares->res = sa_list(sa);
@@ -717,7 +717,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 static sql_subfunc *
 sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype type, bool private, list *ops, sql_subtype *res)
 {
-	sql_subtype *tp = sql_bind_localtype("bit");
+	sql_subtype *tp = sql_fetch_localtype(TYPE_bit);
 	sql_func *cand = NULL;
 	int points = 0, npoints = 0;
 
@@ -769,7 +769,7 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 static sql_subfunc *
 os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, sql_ftype type, bool private, list *ops, sql_subtype *res)
 {
-	sql_subtype *tp = sql_bind_localtype("bit");
+	sql_subtype *tp = sql_fetch_localtype(TYPE_bit);
 	sql_func *cand = NULL;
 	int points = 0, npoints = 0;
 

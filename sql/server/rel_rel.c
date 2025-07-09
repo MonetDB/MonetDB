@@ -299,15 +299,19 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
-	if (is_insert(rel->op))
+	if (is_insert(rel->op) && !is_processed(rel))
 		rel = rel->r;
-	if ((is_project(rel->op) || is_base(rel->op))) {
+	if ((is_project(rel->op) || is_base(rel->op) || is_modify(rel->op))) {
 		sql_exp *e = NULL;
+		list *exps = rel->exps;
+
+		if (rel->op == op_update)
+			exps = rel->attr;
 
 		if (is_base(rel->op) && !rel->exps)
 			return rel_base_bind_column(sql, rel, cname, no_tname);
-		if (!list_empty(rel->exps)) {
-			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (!list_empty(exps)) {
+			e = exps_bind_column(exps, cname, &ambiguous, &multi, no_tname);
 			if (ambiguous || multi)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			if (!e && is_groupby(rel->op) && rel->r) {
@@ -1415,6 +1419,9 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 	case op_groupby:
 	case op_project:
 	case op_table:
+	case op_insert:
+	case op_update:
+	case op_delete:
 		if (is_basetable(rel->op) && !rel->exps) {
 			assert(e->nid);
 			if (rel_base_has_nid(rel, e->nid))
@@ -1425,9 +1432,6 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 				found = rel;
 		}
 		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
 	case op_truncate:
 	case op_ddl:
 		break;
@@ -1853,7 +1857,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			if (!has_label(e))
 				exp_label(sql->sa, e, ++sql->label);
 			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
-			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", t ? t : sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 
 			e = exp_ref(sql, e);
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));

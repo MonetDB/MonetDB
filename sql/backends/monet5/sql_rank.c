@@ -1271,7 +1271,7 @@ SQLbasecount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.count", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	sqlstore *store = m->session->tr->store;
 
-	*res = store->storage_api.count_col(m->session->tr, c, 10);
+	*res = store->storage_api.count_col(m->session->tr, c, CNT_ACTIVE);
 	return msg;
 }
 

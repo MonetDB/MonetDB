@@ -2985,9 +2985,11 @@ PROPdestroy_nolock(BAT *b)
 void
 PROPdestroy(BAT *b)
 {
-	MT_lock_set(&b->theaplock);
-	PROPdestroy_nolock(b);
-	MT_lock_unset(&b->theaplock);
+	if (b->tprops) {
+		MT_lock_set(&b->theaplock);
+		PROPdestroy_nolock(b);
+		MT_lock_unset(&b->theaplock);
+	}
 }
 
 ValPtr

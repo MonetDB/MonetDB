@@ -812,7 +812,7 @@ load_table(sql_trans *tr, sql_schema *s, res_table *rt_tables, res_table *rt_par
 	if (isPartitionedByExpressionTable(t)) {
 		t->part.pexp = ZNEW(sql_expression);
 		t->part.pexp->exp = exp;
-		t->part.pexp->type = *sql_bind_localtype("void"); /* initialized at initialize_sql_parts */
+		t->part.pexp->type = *sql_fetch_localtype(TYPE_void); /* initialized at initialize_sql_parts */
 		t->part.pexp->cols = list_create((fdestroy) &int_destroy);
 	}
 	for ( ; rt_cols->cur_row < rt_cols->nr_rows; rt_cols->cur_row++) {
@@ -4087,7 +4087,7 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 		}
 		if (tpe->multiset == MS_SETOF || tpe->multiset == MS_ARRAY) { /* sets and arrays need oid col */
 			char *name = MSID_NAME;
-			sql_subtype tp = *sql_bind_localtype("int");
+			sql_subtype tp = *sql_fetch_localtype(TYPE_int);
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
@@ -4095,7 +4095,7 @@ sql_trans_create_column_intern(sql_column **rcol, sql_trans *tr, sql_table *t, c
 		}
 		if (tpe->multiset == MS_ARRAY) { /* array need order */
 			char *name = MSNR_NAME;
-			sql_subtype tp = *sql_bind_localtype("int");
+			sql_subtype tp = *sql_fetch_localtype(TYPE_int);
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
@@ -4201,7 +4201,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		}
 		if (c->type.multiset == MS_SETOF || c->type.multiset == MS_ARRAY) { /* sets and arrays need oid col */
 			char *name = MSID_NAME;
-			sql_subtype tp = *sql_bind_localtype(MSID_TYPENAME);
+			sql_subtype tp = *sql_fetch_localtype(MSID_TYPE);
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
@@ -4209,7 +4209,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 		}
 		if (c->type.multiset == MS_ARRAY) { /* array need order */
 			char *name = MSNR_NAME;
-			sql_subtype tp = *sql_bind_localtype(MSNR_TYPENAME);
+			sql_subtype tp = *sql_fetch_localtype(MSNR_TYPE);
 			sql_column *ic = NULL;
 			if (sql_trans_create_column_intern( &ic, tr, tt, name, &tp, column_intern) < 0)
 				return -2;
@@ -6464,7 +6464,7 @@ sql_trans_create_table(sql_table **tres, sql_trans *tr, sql_schema *s, const cha
 		}
 	if (isPartitionedByExpressionTable(t)) {
 		t->part.pexp = ZNEW(sql_expression);
-		t->part.pexp->type = *sql_bind_localtype("void"); /* leave it non-initialized, at the backend the copy of this table will get the type */
+		t->part.pexp->type = *sql_fetch_localtype(TYPE_void); /* leave it non-initialized, at the backend the copy of this table will get the type */
 		t->part.pexp->cols = list_create((fdestroy) &int_destroy);
 	}
 

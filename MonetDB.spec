@@ -1057,6 +1057,12 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Fri Jul 04 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.9-20250704
+- Rebuilt.
+- GH#7629: monetdbd causes SELinux denial
+- GH#7654: Query remote table that targets remote server table not owned
+  by monetdb default user
+
 * Mon Jun 30 2025 Sjoerd Mullender <sjoerd@acm.org> - 11.53.7-20250630
 - Rebuilt.
 

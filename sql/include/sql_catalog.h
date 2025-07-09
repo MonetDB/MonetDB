@@ -96,6 +96,8 @@ typedef enum sql_dependency {
 #define QUICK  4
 #define RD_EXT 5
 
+#define CNT_ACTIVE 10
+
 #define MS_VALUE 0
 #define MS_SETOF 1
 #define MS_ARRAY 2
@@ -951,7 +953,7 @@ typedef int msindex_t;
 #define MSID_NAME "ms_id"
 #define MSROWID_NAME "ms_row_id"
 #define MSNR_NAME "ms_nr"
-#define MSID_TYPENAME "int"
-#define MSNR_TYPENAME "int"
+#define MSID_TYPE TYPE_int
+#define MSNR_TYPE TYPE_int
 
 #endif /* SQL_CATALOG_H */

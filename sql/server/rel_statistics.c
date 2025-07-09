@@ -730,7 +730,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 				(min = find_prop_and_get(e->p, PROP_MIN)) && (max = find_prop_and_get(e->p, PROP_MAX))) {
 				/* the range includes min and max, so the atom_inc call is needed */
 				/* if 'euniques' has number of distinct values, compute min between both */
-				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_bind_localtype("oid"))))
+				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_fetch_localtype(TYPE_oid))))
 					euniques = MIN(euniques, (BUN) sub->data.val.oval);
 			}
 			if (euniques != BUN_NONE)

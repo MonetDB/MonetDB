@@ -40,8 +40,8 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, nr));
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_ptr(sql->sa, t));
 	rel->l = rel_basetable(sql, t, a_create(sql->sa, t->base.name));
 	rel->r = NULL;
@@ -62,11 +62,11 @@ rel_create_remote(mvc *sql, int cat_type, const char *sname, sql_table *t, int p
 		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, pw_encrypted));
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_ptr(sql->sa, t));
-	append(exps, exp_atom_str(sql->sa, username, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, passwd, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, username, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, passwd, sql_fetch_localtype(TYPE_str) ));
 	rel->l = rel_basetable(sql, t, a_create(sql->sa, t->base.name));
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -1529,7 +1529,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = query;
-			t->part.pexp->type = *sql_bind_localtype("void");
+			t->part.pexp->type = *sql_fetch_localtype(TYPE_void);
 		}
 	}
 	return SQL_OK;
@@ -1840,8 +1840,8 @@ rel_type(allocator *sa, int cat_type, const char *sname, const char *name, list 
 	if (!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sa, name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sa, name, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_ptr(sa, fields));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -2186,7 +2186,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	e = exp_ref(sql, e);
 
 	/*
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	e->alias.label = rel_base_nid(bt, NULL);
 	*/
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
@@ -2544,7 +2544,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	sql_alias *ta = table_alias(sql->sa, nt, schema_alias(sql->sa, t->s));
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
-	e = exp_column(sql->sa, ta, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, ta, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	sql_rel *bt = rel_ddl_basetable_get(res);
 	e->alias.label = rel_base_nid(bt, NULL);
 	e->nid = e->alias.label;

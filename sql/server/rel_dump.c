@@ -754,6 +754,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		mnstr_printf(fout, ")");
 		if (rel->op != op_truncate && rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
+		if (rel->op == op_update && rel->attr)
+			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 	} 	break;
 	default:
 		assert(0);
@@ -1121,7 +1123,7 @@ exp_read_nuniques(mvc *sql, sql_exp *exp, char *r, int *pos)
 	void *ptr = NULL;
 	size_t nbytes = 0;
 	ssize_t res = 0;
-	sql_subtype *tpe = sql_bind_localtype("dbl");
+	sql_subtype *tpe = sql_fetch_localtype(TYPE_dbl);
 
 	(*pos)+= (int) strlen("NUNIQUES");
 	skipWS(r, pos);
@@ -1599,7 +1601,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					append(ops, exp_subtype(n->data));
 				f = sql_bind_func_(sql, tname, cname, ops, F_AGGR, true, false, true);
 			} else {
-				f = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR, true, true); /* count(*) */
+				f = sql_bind_func(sql, tname, cname, sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true); /* count(*) */
 			}
 			if (!f)
 				return function_error_string(sql, tname, cname, exps, false, F_AGGR);
@@ -1904,7 +1906,7 @@ rel_read_count(mvc *sql, sql_rel *rel, char *r, int *pos)
 	void *ptr = NULL;
 	size_t nbytes = 0;
 	ssize_t res = 0;
-	sql_subtype *tpe = sql_bind_localtype("oid");
+	sql_subtype *tpe = sql_fetch_localtype(TYPE_oid);
 
 	(*pos)+= (int) strlen("COUNT");
 	skipWS(r, pos);
@@ -2316,7 +2318,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 									 get_string_global_var(sql, "current_user"), s->base.name, tname);
 					}
 					rel_base_use_all(sql, rel);
-					rel = rewrite_basetable(sql, rel);
+					rel = rewrite_basetable(sql, rel, true);
 				}
 
 				if (!r[*pos])

@@ -153,12 +153,14 @@ sql_symbol2relation(backend *be, symbol *sym)
 
 	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = Tend;
-	if (rel)
-		rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
-	if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
-		be->no_mitosis = 1;
-	if (rel)
-		rel = rel_physical(be->mvc, rel);
+	if (rel && !(rel->op == op_ddl && rel->card == CARD_ATOM && rel->flag == ddl_psm && (be->mvc->emod & mod_exec) != 0)) { /* no need to optimize exec */
+		if (rel)
+			rel = sql_processrelation(be->mvc, rel, profile, 1, value_based_opt, storage_based_opt);
+		if (rel && (rel_no_mitosis(be->mvc, rel) || rel_need_distinct_query(rel)))
+			be->no_mitosis = 1;
+		if (rel)
+			rel = rel_physical(be->mvc, rel);
+	}
 	Tend = GDKusec();
 	be->reloptimizer = Tend - Tbegin;
 
@@ -663,7 +665,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		if (!strcmp(atomname, "str"))
 			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
-			sql_subtype *t = sql_bind_localtype(atomname);
+			sql_subtype *t = sql_fetch_localtype(b->ttype);
 			if (!t)
 				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
@@ -2412,7 +2414,6 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(res->batCacheid);
 			res = nres;
 			ret = BATappend(res, u, cminu, true);
-
 			BBPunfix(u->batCacheid);
 			BBPunfix(cminu->batCacheid);
 			cminu = NULL;

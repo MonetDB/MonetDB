@@ -1184,7 +1184,7 @@ sum_limit_offset(mvc *sql, sql_rel *rel)
 	if (is_sample(rel->op) || list_length(rel->exps) == 1)
 		return exps_copy(sql, rel->exps);
 	assert(list_length(rel->exps) == 2);
-	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
 	sql_exp *add = rel_binop_(sql, NULL, exp_copy(sql, rel->exps->h->data), exp_copy(sql, rel->exps->h->next->data), "sys", "sql_add", card_value, true);
 	/* for remote plans, make sure the output type is a bigint */
 	if (subtype_cmp(lng, exp_subtype(add)) != 0)
@@ -1262,7 +1262,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 						if (!c) /* error, don't apply optimization, WARNING because of this the offset optimization must come before the limit one */
 							return rel;
 						if (atom_cmp(c, b2) < 0) /* overflow */
-							c = atom_int(v->sql->sa, sql_bind_localtype("lng"), GDK_lng_max);
+							c = atom_int(v->sql->sa, sql_fetch_localtype(TYPE_lng), GDK_lng_max);
 						offset1->l = c;
 						changed = true;
 					}

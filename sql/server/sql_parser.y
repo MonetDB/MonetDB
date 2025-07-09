@@ -4130,17 +4130,17 @@ opt_rows:
 
 /* TODO add support for limit start, end */
 poslng_or_param:
-     poslng                { sql_subtype *t = sql_bind_localtype("lng");
+     poslng                { sql_subtype *t = sql_fetch_localtype(TYPE_lng);
 			     $$ = _newAtomNode( atom_int(SA, t, $1));
 			   }
  |   param                 { $$ = $1; }
  ;
 
 poslng_or_param_rows:
-     rows ONLY             { sql_subtype *t = sql_bind_localtype("lng");
+     rows ONLY             { sql_subtype *t = sql_fetch_localtype(TYPE_lng);
 		             $$ = _newAtomNode( atom_int(SA, t, 1));
 		           }
- |   nonzerolng rows ONLY  { sql_subtype *t = sql_bind_localtype("lng");
+ |   nonzerolng rows ONLY  { sql_subtype *t = sql_fetch_localtype(TYPE_lng);
 			     $$ = _newAtomNode( atom_int(SA, t, $1));
 			   }
 
@@ -4158,11 +4158,11 @@ limit_clause:
 
 sample:
     SAMPLE poslng	{
-			  sql_subtype *t = sql_bind_localtype("lng");
+			  sql_subtype *t = sql_fetch_localtype(TYPE_lng);
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SAMPLE INTNUM	{
-			  sql_subtype *t = sql_bind_localtype("dbl");
+			  sql_subtype *t = sql_fetch_localtype(TYPE_dbl);
 			  $$ = _newAtomNode( atom_float(SA, t, strtod($2, NULL)));
 			}
  |  SAMPLE param	{ $$ = $2; }
@@ -4176,7 +4176,7 @@ opt_sample:
 opt_seed:
 	/* empty */	{ $$ = NULL; }
  |  SEED intval	{
-			  sql_subtype *t = sql_bind_localtype("int");
+			  sql_subtype *t = sql_fetch_localtype(TYPE_int);
 			  $$ = _newAtomNode( atom_int(SA, t, $2));
 			}
  |  SEED param	{ $$ = $2; }
@@ -6583,7 +6583,7 @@ dealloc:
      deallocate opt_prepare dealloc_ref
 		{
 		  m->emode = m_deallocate;
-		  $$ = _newAtomNode(atom_int(SA, sql_bind_localtype("int"), $3)); }
+		  $$ = _newAtomNode(atom_int(SA, sql_fetch_localtype(TYPE_int), $3)); }
  ;
 
 exec_ref:

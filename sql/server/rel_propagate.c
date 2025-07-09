@@ -157,7 +157,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
@@ -218,7 +218,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
@@ -258,7 +258,7 @@ add_check_count(mvc *sql,  sql_exp *a, sql_exp *b)
 {
 	if (!a)
 		return b;
-	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
     sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 	return exp_binop(sql->sa, a, b, add);
 }
@@ -362,7 +362,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	}
 	append(exps, pmin);
 	append(exps, pmax);
-	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL, 0)) : exp_atom_bool(sql->sa, with_nills));
+	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_bit), NULL, 0)) : exp_atom_bool(sql->sa, with_nills));
 	append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
@@ -607,28 +607,31 @@ rel_truncate_duplicate(mvc *sql, sql_rel *table, sql_rel *ori)
 }
 
 static sql_rel*
-rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_generate_subdeletes(visitor *v, sql_rel *rel, sql_table *t)
 {
+	mvc *sql = v->sql;
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
 	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
-		sql_rel *s1, *dup = NULL;
+		sql_rel *s1;
 
 		if (!update_allowed(sql, sub, sub->base.name, is_delete(rel->op) ? "DELETE": "TRUNCATE",
 						   is_delete(rel->op) ? "delete": "truncate",  is_delete(rel->op) ? 1 : 2))
 			return NULL;
 
-		if (rel->r) {
-			dup = rel_copy(sql, rel->r, 1);
-			dup = rel_change_base_table(sql, dup, t, sub);
-		}
 		sql_alias *sa = a_create(sql->sa, sub->base.name);
-		if (is_delete(rel->op))
+		if (is_delete(rel->op)) {
+			sql_rel *dup = NULL;
+			if (rel->r) {
+				dup = rel_copy(sql, rel->r, 1);
+				dup = rel_change_base_table(sql, dup, t, sub);
+			}
 			s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sa), dup);
-		else
+			s1 = rel_update_count(sql, s1);
+		} else
 			s1 = rel_truncate_duplicate(sql, rel_basetable(sql, sub, sa), rel);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
@@ -636,22 +639,23 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			sel = s1;
 			just_one = 0;
 		}
-		(*changes)++;
+		v->changes++;
 	}
 	rel_destroy(rel);
 	return sel;
 }
 
 static sql_rel*
-rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_generate_subupdates(visitor *v, sql_rel *rel, sql_table *t)
 {
+	mvc *sql = v->sql;
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
 	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
-		sql_rel *s1, *dup = NULL;
+		sql_rel *s1;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
 		sql_alias *sa = a_create(sql->sa, sub->base.name);
 		sql_rel *bt = rel_basetable(sql, sub, sa);
@@ -675,37 +679,38 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			list_append(checked_updates, e);
 		}
 
+		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
+			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
+
+		sql_rel *dup = NULL;
 		if (rel->r) {
 			dup = rel_copy(sql, rel->r, 1);
 			dup = rel_change_base_table(sql, dup, t, sub);
 		}
-
-		for (node *ne = checked_updates->h ; ne ; ne = ne->next)
-			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
-
 		s1 = rel_update(sql, bt, dup, NULL, checked_updates);
+		s1 = rel_update_count(sql, s1);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
 			sel = s1;
 			just_one = 0;
 		}
-		(*changes)++;
+		v->changes++;
 	}
 	rel_destroy(rel);
 	return sel;
 }
 
 static sql_rel*
-rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *changes,
+rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 						const char *operation, const char *desc)
 {
-	mvc *sql = query->sql;
+	mvc *sql = v->sql;
 	int just_one = 1, found_nils = 0, found_all_range_values = 0;
 	sql_rel *new_table = NULL, *sel = NULL, *anti_rel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *anti_nils = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	sql_subtype tp;
 
@@ -825,8 +830,8 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 
 		new_table = rel_basetable(sql, sub, sa);
-		rel_base_use_all(query->sql, new_table);
-		new_table = rewrite_basetable(query->sql, new_table);
+		rel_base_use_all(v->sql, new_table);
+		new_table = rewrite_basetable(v->sql, new_table, false);
 		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
 
 		if (isPartitionedByExpressionTable(t)) {
@@ -836,14 +841,15 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			list_remove_data(dup->exps, NULL, del);
 		}
 
-		s1 = rel_insert(query->sql, new_table, dup);
+		s1 = rel_insert(v->sql, new_table, dup);
+		s1 = rel_update_count(sql, s1);
 		if (just_one == 0) {
 			sel = rel_list(sql->sa, sel, s1);
 		} else {
 			sel = s1;
 			just_one = 0;
 		}
-		(*changes)++;
+		v->changes++;
 	}
 
 	if (!found_all_range_values || !found_nils) {
@@ -884,22 +890,22 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				isRangePartitionTable(t) ? "range (NB higher limit exclusive)" : "list");
 
 		sql_exp *exception = exp_exception(sql->sa, aggr, buf);
-		sel = rel_exception(query->sql->sa, sel, anti_rel, list_append(new_exp_list(query->sql->sa), exception));
+		sel = rel_exception(v->sql->sa, sel, anti_rel, list_append(new_exp_list(v->sql->sa), exception));
 	}
 	rel_destroy(rel);
 	return sel;
 }
 
 static sql_rel*
-rel_propagate_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
+rel_propagate_insert(visitor *v, sql_rel *rel, sql_table *t)
 {
-	return rel_generate_subinserts(query, rel, t, changes, "INSERT", "insert");
+	return rel_generate_subinserts(v, rel, t, "INSERT", "insert");
 }
 
 static sql_rel*
-rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_propagate_delete(visitor *v, sql_rel *rel, sql_table *t)
 {
-	return rel_generate_subdeletes(sql, rel, t, changes);
+	return rel_generate_subdeletes(v, rel, t);
 }
 
 static bool
@@ -929,30 +935,34 @@ update_move_across_partitions(sql_rel *rel, sql_table *t)
 }
 
 static sql_rel*
-rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_propagate_update(visitor *v, sql_rel *rel, sql_table *t)
 {
 	bool found_partition_col = update_move_across_partitions(rel, t);
 	sql_rel *sel = NULL;
 
 	if (!found_partition_col) { /* easy scenario where the partitioned column is not being updated, just propagate */
-		sel = rel_generate_subupdates(sql, rel, t, changes);
+		sel = rel_generate_subupdates(v, rel, t);
 	} else { /* harder scenario, has to insert and delete across partitions. */
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
 
-		deletes = rel_generate_subdeletes(sql, rel, t, changes);
-		inserts = rel_generate_subinserts(query, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
-		inserts = rel_exception(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
-		return rel_list(sql->sa, deletes, inserts);*/
+		deletes = rel_generate_subdeletes(v, rel, t)
+		inserts = rel_generate_subinserts(v, rel, &anti_rel, &exception, t, "UPDATE", "update");
+		inserts = rel_exception(v->sql->sa, inserts, anti_rel, list_append(new_exp_list(v->sql->sa), exception));
+		return rel_list(v->sql->sa, deletes, inserts);*/
 		assert(0);
 	}
 	return sel;
 }
 
 static sql_rel*
-rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
+rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 {
-	mvc *sql = query->sql;
+	mvc *sql = v->sql;
+	sql_rel *rel = p;
+
+	if (is_groupby(p->op))
+		rel = rel->l;
 	sql_part *upper = partition_find_part(sql->session->tr, t, NULL);
 	if (!upper)
 		return NULL;
@@ -963,7 +973,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper->t), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
 	sql_subtype tp;
@@ -1060,9 +1070,9 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		exception = exp_exception(sql->sa, aggr, buf);
 
 		left->p = prop_create(sql->sa, PROP_USED, left->p);
-		(*changes)++;
+		v->changes++;
 
-		rel = rel_exception(sql->sa, rel, anti_dup, list_append(new_exp_list(sql->sa), exception));
+		rel = rel_exception(sql->sa, p, anti_dup, list_append(new_exp_list(sql->sa), exception));
 	}
 	return rel;
 }
@@ -1079,21 +1089,24 @@ rel_find_propagate( sql_rel *rel)
 }
 
 sql_rel *
-rel_propagate(sql_query *query, sql_rel *rel, int *changes)
+rel_propagate(visitor *v, sql_rel *rel)
 {
-	mvc *sql = query->sql;
+	mvc *sql = v->sql;
 	bool isSubtable = false;
+	sql_rel *p = rel;
+
+	if (is_groupby(p->op))
+		rel = rel->l;
 	sql_rel *l = rel->l, *propagate = rel;
 
 	if (l->op == op_basetable) {
 		sql_table *t = l->l;
 
 		if (partition_find_part(sql->session->tr, t, NULL) && !find_prop(l->p, PROP_USED)) {
-			isSubtable = true;
 			if (is_insert(rel->op)) { /* insertion directly to sub-table (must do validation) */
-				sql_rel *nrel = rel_subtable_insert(query, rel, t, changes);
+				sql_rel *nrel = rel_subtable_insert(v, p, t);
 				if (!nrel)
-					return rel;
+					return p;
 				rel = nrel;
 				propagate = rel_find_propagate(nrel);
 				isSubtable = (rel != propagate);
@@ -1102,23 +1115,28 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 		if (isMergeTable(t)) {
 			assert(list_length(t->members));
 			if (is_delete(propagate->op) || is_truncate(propagate->op)) { /* propagate deletions to the partitions */
-				rel = rel_propagate_delete(sql, rel, t, changes);
+				rel = rel_propagate_delete(v, rel, t);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {
+				if (propagate->op == op_groupby && isSubtable)
+					propagate = propagate->l;
 				if (is_insert(propagate->op)) { /* on inserts create a selection for each partition */
 					if (isSubtable) {
-						rel->r = rel_propagate_insert(query, propagate, t, changes);
+						rel->r = rel_propagate_insert(v, propagate, t);
 					} else {
-						rel = rel_propagate_insert(query, rel, t, changes);
+						rel = rel_propagate_insert(v, rel, t);
 					}
 				} else if (is_update(propagate->op)) { /* for updates propagate like in deletions */
-					rel = rel_propagate_update(sql, rel, t, changes);
+					rel = rel_propagate_update(v, rel, t);
 				} else {
 					assert(0);
 				}
 			} else {
 				assert(0);
 			}
+			return rel;
 		}
+		if (isSubtable)
+			return rel;
 	}
-	return rel;
+	return p;
 }
