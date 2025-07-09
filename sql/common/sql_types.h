@@ -37,7 +37,8 @@ sql_export int sql_find_subtype(sql_subtype *res, const char *name, unsigned int
 extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
 sql_export sql_subtype *sql_bind_subtype(allocator *sa, const char *name, unsigned int digits, unsigned int scale);
-extern sql_subtype *sql_bind_localtype(const char *name);
+extern sql_subtype *sql_fetch_localtype(int localtype);
+extern sql_subtype *sql_fetch_battype(void);
 extern sql_subtype *sql_create_subtype(allocator *sa, sql_type *t, unsigned int s, unsigned int d);
 sql_export void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
 

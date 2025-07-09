@@ -155,7 +155,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
@@ -216,7 +216,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
@@ -256,7 +256,7 @@ add_check_count(mvc *sql,  sql_exp *a, sql_exp *b)
 {
 	if (!a)
 		return b;
-	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
     sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 	return exp_binop(sql->sa, a, b, add);
 }
@@ -360,7 +360,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	}
 	append(exps, pmin);
 	append(exps, pmax);
-	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL, 0)) : exp_atom_bool(sql->sa, with_nills));
+	append(exps, is_bit_nil(with_nills) ? exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_bit), NULL, 0)) : exp_atom_bool(sql->sa, with_nills));
 	append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
@@ -706,7 +706,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 	sql_rel *new_table = NULL, *sel = NULL, *anti_rel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *anti_nils = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	sql_subtype tp;
 
@@ -826,7 +826,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 
 		new_table = rel_basetable(sql, sub, sub->base.name);
 		rel_base_use_all(v->sql, new_table);
-		new_table = rewrite_basetable(v->sql, new_table);
+		new_table = rewrite_basetable(v->sql, new_table, false);
 		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
 
 		if (isPartitionedByExpressionTable(t)) {
@@ -968,7 +968,7 @@ rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper->t), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
 	sql_subtype tp;

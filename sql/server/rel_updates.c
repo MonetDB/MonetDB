@@ -110,8 +110,8 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		return inserts;
 	}
 
-	it = sql_bind_localtype("int");
-	lng = sql_bind_localtype("lng");
+	it = sql_fetch_localtype(TYPE_int);
+	lng = sql_fetch_localtype(TYPE_lng);
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 		sql_exp *e = list_fetch(ins->exps, c->c->colnr);
@@ -161,7 +161,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	if (selfref)
 		TRC_DEBUG(SQL_TRANS, "Self-reference index\n");
 
-	sql_subtype *bt = sql_bind_localtype("bit");
+	sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 
 	sql_rel *_nlls = NULL, *nnlls, *ins = inserts->r;
@@ -233,7 +233,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_oid), NULL, 0));
 		exp_setname(sql, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -245,7 +245,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, brt);
 	exp_setname(sql, e, alias, iname);
 	e->nid = rel_base_nid(brt, NULL);
@@ -319,7 +319,7 @@ sql_rel *
 rel_update_count(mvc *sql, sql_rel *rel)
 {
 	rel = rel_groupby(sql, rel, NULL);
-	sql_subfunc *a = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+	sql_subfunc *a = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
     sql_exp *e = exp_aggr(sql->sa, NULL, a, false, 0, CARD_ATOM, 0);
 	set_intern(e);
 	(void) rel_groupby_add_aggr(sql, rel, e);
@@ -331,7 +331,7 @@ rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
 	sql_rel *rel = rel_basetable(query->sql, t, name);
 	rel_base_use_all(query->sql, rel);
-	rel = rewrite_basetable(query->sql, rel);
+	rel = rewrite_basetable(query->sql, rel, false);
 	return rel_insert(query->sql, rel, inserts);
 }
 
@@ -782,8 +782,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
-		it = sql_bind_localtype("int");
-		lng = sql_bind_localtype("lng");
+		it = sql_fetch_localtype(TYPE_int);
+		lng = sql_fetch_localtype(TYPE_lng);
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
 			sql_exp *e = list_fetch(ups->exps, c->c->colnr+1);
@@ -866,7 +866,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme)), *brt = rt;
 
-	sql_subtype *bt = sql_bind_localtype("bit");
+	sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
 
 	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
@@ -926,7 +926,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		set_processed(nnlls);
 		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
 		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
+		e = exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_oid), NULL, 0));
 		exp_setname(sql, e, alias, iname);
 		append(_nlls->exps, e);
 	} else {
@@ -939,7 +939,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	nnlls->flag |= LEFT_JOIN;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, brt);
 	exp_setname(sql, e, alias, iname);
 	e->nid = rel_base_nid(brt, NULL);
@@ -956,7 +956,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, e = exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0, 0));
+	append(updates->exps, e = exp_column(sql->sa, alias, iname, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 0, 0));
 	e->alias.label = rel_base_nid(brt, NULL);
 	e->nid = e->alias.label;
 	return updates;
@@ -1085,7 +1085,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 	}
 
 	/* first create the project */
-	exps = list_append(new_exp_list(sql->sa), ne=exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
+	exps = list_append(new_exp_list(sql->sa), ne=exp_column(sql->sa, rname = rel_name(r), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1));
 	ne->alias.label = rel_base_nid(bt, NULL);
 	ne->nid = ne->alias.label;
 
@@ -1234,7 +1234,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			rel_base_use(sql, bt, c->colnr);
 		}
 	}
-	sql_exp *v = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	sql_exp *v = exp_column(sql->sa, rname, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	if (!v)
 		return NULL;
 	v->alias.label = rel_base_nid(bt, NULL);
@@ -1391,7 +1391,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
-			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			e = exp_column(sql->sa, rel_name(r), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
@@ -1595,7 +1595,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 					set_processed(join_rel);
 				}
 
-				sql_exp *ne = exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+				sql_exp *ne = exp_column(sql->sa, bt_name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 				ne->nid = rel_base_nid(bt, NULL);
 				ne->alias.label = ne->nid;
 				sel_rel = join_rel;
@@ -1635,7 +1635,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			sql_rel *ibt = rel_dup(bt);
 			rel_base_use_all(query->sql, ibt);
-			ibt = rewrite_basetable(query->sql, ibt);
+			ibt = rewrite_basetable(query->sql, ibt, false);
 			if (!(insert = rel_insert(query->sql, ibt, insert)))
 				return NULL;
 			insert = rel_update_count(sql, insert);
@@ -1847,7 +1847,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 			if (!list_find_name(collist, cname)) {
 				char *name;
 				size_t len = strlen(cname) + 2;
-				sql_subtype *ctype = sql_bind_localtype("oid");
+				sql_subtype *ctype = sql_fetch_localtype(TYPE_oid);
 
 				name = sa_alloc(sql->sa, len);
 				snprintf(name, len, "%%cname");
@@ -1856,7 +1856,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 				cs = find_sql_column(t, cname);
 				res = mvc_create_column(&cs, sql, nt, cname, &cs->type);
 			} else { /* load as string, parse later */
-				sql_subtype *ctype = sql_bind_localtype("str");
+				sql_subtype *ctype = sql_fetch_localtype(TYPE_str);
 				res = mvc_create_column(&cs, sql, nt, cname, ctype);
 				has_formats = 1;
 			}

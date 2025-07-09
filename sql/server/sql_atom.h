@@ -40,6 +40,7 @@ extern unsigned int atom_num_digits(atom *a);
 
 /* cast atom a to type tp (success returns not NULL, fail returns NULL) */
 extern atom *atom_cast(allocator *sa, atom *a, sql_subtype *tp);
+extern atom *atom_cast_inplace(atom *a, sql_subtype *tp);
 
 extern char *atom2string(allocator *sa, atom *a);
 extern char *atom2sql(allocator *sa, atom *a, int timezone);

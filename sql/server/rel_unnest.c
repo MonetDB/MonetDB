@@ -634,7 +634,7 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 	sf = e->f;
 	/* window functions need to be run per freevars */
 	if (sf->func->type == F_ANALYTIC && strcmp(sf->func->base.name, "window_bound") != 0 && strcmp(sf->func->base.name, "diff") != 0 && ad) {
-		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 		list *rankopargs = e->l, *gbe = ((list*)e->r)->h->data;
 		sql_exp *pe = list_empty(gbe) ? NULL : (sql_exp*)gbe->t->data, *last;
 		bool has_pe = pe != NULL;
@@ -2367,7 +2367,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (rt->type->eclass == EC_DEC && rt->scale) {
 					int scale = (int) rt->scale; /* shift with scale */
-					sql_subtype *it = sql_bind_localtype(lt->type->impl);
+					sql_subtype *it = sql_fetch_localtype(lt->type->localtype);
 					sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", lt, it, F_FUNC, true, true);
 
 					if (!c) {
@@ -2400,7 +2400,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 #endif
 
 					if (lt->type->eclass == EC_SEC) {
-						sql_subtype *it = sql_bind_localtype(lt->type->impl);
+						sql_subtype *it = sql_fetch_localtype(lt->type->localtype);
 						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_up", lt, it, F_FUNC, true, true);
 
 						if (!c) {
@@ -2410,7 +2410,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						atom *a = atom_int(v->sql->sa, it, val);
 						ne = exp_binop(v->sql->sa, e, exp_atom(v->sql->sa, a), c);
 					} else { /* EC_MONTH */
-						sql_subtype *it = sql_bind_localtype(rt->type->impl);
+						sql_subtype *it = sql_fetch_localtype(rt->type->localtype);
 						sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", rt, it, F_FUNC, true, true);
 
 						if (!c) {
@@ -2622,7 +2622,7 @@ rel_set_type(visitor *v, sql_rel *rel)
 					} else if (te->type == e_atom && !te->f) {
 						sql_subtype *t = exp_subtype(te);
 						if (t && !t->type->localtype) {
-							te->tpe = *sql_bind_localtype("bte");
+							te->tpe = *sql_fetch_localtype(TYPE_bte);
 							if (te->l)
 								te->l = atom_set_type(v->sql->sa, te->l, &te->tpe);
 						} else if (!t && !te->l && !te->r) { /* parameter, set type, or return ERR?? */
@@ -4006,7 +4006,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 					ne = exp_unop(v->sql->sa, e, isnil);
 					set_has_no_nil(ne);
 					targs = sa_list(v->sql->sa);
-					append(targs, sql_bind_localtype("bit"));
+					append(targs, sql_fetch_localtype(TYPE_bit));
 					append(targs, exp_subtype(e));
 					append(targs, exp_subtype(e));
 					ifthen = sql_bind_func_(v->sql, "sys", "ifthenelse", targs, F_FUNC, true, true);
@@ -4162,7 +4162,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 				/* replace grouping calls with constants of value 0 */
 				sql_rel *nrel = rel_groupby(v->sql, rel_dup(rel->l), rel->r);
 				list *exps = sa_list(v->sql->sa), *pexps = sa_list(v->sql->sa);
-				sql_subtype *bt = sql_bind_localtype("bte");
+				sql_subtype *bt = sql_fetch_localtype(TYPE_bte);
 
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *e = (sql_exp*) n->data, *ne;
@@ -4580,7 +4580,7 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 	if (rel && v->sql->emode != m_deps)
 		rel = rel_inline_table_func(v, rel);
 	if (rel)
-		rel = rewrite_basetable(v->sql, rel);	/* add proper exps lists */
+		rel = rewrite_basetable(v->sql, rel, true);	/* add proper exps lists */
 	if (rel)
 		rel = rewrite_empty_project(v, rel); /* remove empty project/groupby */
 	if (rel)

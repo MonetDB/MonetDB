@@ -664,7 +664,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 		if (!strcmp(atomname, "str"))
 			sql_find_subtype(&tpe, "varchar", 0, 0);
 		else {
-			sql_subtype *t = sql_bind_localtype(atomname);
+			sql_subtype *t = sql_fetch_localtype(b->ttype);
 			if (!t)
 				throw(SQL, "sql.catalog", SQLSTATE(3F000) "CREATE TABLE: could not find type for column");
 			tpe = *t;
