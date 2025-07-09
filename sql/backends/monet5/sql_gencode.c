@@ -444,7 +444,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	if (p == NULL) {
 		if (!temp) {
 			GDKfree(username);
-			GDKfree(password);
+			//GDKfree(password);
 		}
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -456,13 +456,13 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	pwlen = strlen(password);
     pwhash = (char*)GDKmalloc(pwlen + 2);
 	if (pwhash == NULL) {
-		if (!temp)
-			GDKfree(password);
+		//if (!temp)
+		//	GDKfree(password);
 		goto cleanup;
 	}
 	if (!temp) {
 		strconcat_len(pwhash, pwlen + 2, "\1", password, NULL);
-		GDKfree(password);
+		//GDKfree(password);
 	} else {
 		strconcat_len(pwhash, pwlen + 2, "", password, NULL);
 	}
