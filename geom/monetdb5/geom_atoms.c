@@ -49,8 +49,10 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 			dstStrLen += 2;	/* add quotes */
 		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
 			*len = dstStrLen + 1;
-			GDKfree(*geomWKT);
-			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
+			////GDKfree(*geomWKT);
+			allocator *ma = MT_thread_getallocator();
+			assert(ma);
+			if ((*geomWKT = ma_alloc(ma, *len)) == NULL) {
 				GEOSFree_r(geoshandle, wkt);
 				return -1;
 			}
@@ -66,8 +68,10 @@ wkbTOSTR(char **geomWKT, size_t *len, const void *GEOMWKB, bool external)
 
 	/* geosGeometry == NULL */
 	if (*len < 4 || *geomWKT == NULL) {
-		GDKfree(*geomWKT);
-		if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
+		////GDKfree(*geomWKT);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		if ((*geomWKT = ma_alloc(ma, *len = 4)) == NULL)
 			return -1;
 	}
 	if (external) {
@@ -86,7 +90,7 @@ wkbFROMSTR(const char *geomWKT, size_t *len, void **GEOMWKB, bool external)
 	str err;
 
 	if (external && strncmp(geomWKT, "nil", 3) == 0) {
-		*geomWKB = wkbNULLcopy();
+		*geomWKB = wkbNULLcopy(MT_thread_getallocator());
 		if (*geomWKB == NULL)
 			return -1;
 		return 3;
@@ -171,7 +175,7 @@ wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 	a->len = len;
 	a->srid = srid;
 	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
-		GDKfree(a);
+		//GDKfree(a);
 		return NULL;
 	}
 	return a;
@@ -235,18 +239,20 @@ wkbHEAP(Heap *heap, size_t capacity)
 
 /* Non-atom WKB functions */
 wkb *
-wkbNULLcopy(void)
+wkbNULLcopy(allocator *ma)
 {
-	wkb *n = GDKmalloc(sizeof(wkb_nil));
+	assert(ma);
+	wkb *n = ma_alloc(ma, sizeof(wkb_nil));
 	if (n)
 		*n = wkb_nil;
 	return n;
 }
 
 wkb *
-wkbCopy(const wkb* src)
+wkbCopy(allocator *ma, const wkb* src)
 {
-	wkb *n = GDKmalloc(wkb_size(src->len));
+	assert(ma);
+	wkb *n = ma_alloc(ma, wkb_size(src->len));
 	if (n) {
 		n->len = src->len;
 		n->srid = src->srid;
@@ -280,12 +286,14 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	*nread = 0;
 
 	/* we always allocate new memory */
-	GDKfree(*geomWKB);
+	////GDKfree(*geomWKB);
 	*len = 0;
 	*geomWKB = NULL;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	if (strNil(geomWKT)) {
-		*geomWKB = wkbNULLcopy();
+		*geomWKB = wkbNULLcopy(ma);
 		if (*geomWKB == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		*len = sizeof(wkb_nil);
@@ -308,7 +316,7 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	//not work correctly.
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface) + strlen(multiPolygon) + 1;
-		geomWKT_new = GDKmalloc(sizeOfInfo);
+		geomWKT_new = ma_alloc(ma, sizeOfInfo);
 		if (geomWKT_new == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(geomWKT_new, sizeOfInfo, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
@@ -319,21 +327,21 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	WKT_reader = GEOSWKTReader_create_r(geoshandle);
 	if (WKT_reader == NULL) {
 		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+			//GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
 	geosGeometry = GEOSWKTReader_read_r(geoshandle, WKT_reader, geomWKT);
 	GEOSWKTReader_destroy_r(geoshandle, WKT_reader);
 
 	if (geosGeometry == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+		//if (geomWKT_new)
+			//GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
 	if (GEOSGeomTypeId_r(geoshandle, geosGeometry) == -1) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+		//if (geomWKT_new)
+			//GDKfree(geomWKT_new);
 		GEOSGeom_destroy_r(geoshandle, geosGeometry);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
@@ -347,8 +355,8 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	*geomWKB = geos2wkb(geosGeometry);
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 	if (*geomWKB == NULL) {
-		if (geomWKT_new)
-			GDKfree(geomWKT_new);
+		//if (geomWKT_new)
+			//GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
 	}
 
@@ -356,7 +364,7 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
 
-	GDKfree(geomWKT_new);
+	//GDKfree(geomWKT_new);
 
 	*nread = parsedCharacters;
 	return MAL_SUCCEED;
@@ -388,8 +396,10 @@ mbrTOSTR(char **dst, size_t *len, const void *ATOM, bool external)
 	}
 
 	if (*len < dstStrLen + 4 || *dst == NULL) {
-		GDKfree(*dst);
-		if ((*dst = GDKmalloc(*len = dstStrLen + 4)) == NULL)
+		////GDKfree(*dst);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		if ((*dst = ma_alloc(ma, *len = dstStrLen + 4)) == NULL)
 			return -1;
 	}
 
@@ -422,8 +432,10 @@ mbrFROMSTR(const char *src, size_t *len, void **ATOM, bool external)
 	const char *c;
 
 	if (*len < sizeof(mbr) || *atom == NULL) {
-		GDKfree(*atom);
-		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
+		// //GDKfree(*atom);
+		allocator *ma = MT_thread_getallocator();
+		assert(ma);
+		if ((*atom = ma_alloc(ma, *len = sizeof(mbr))) == NULL)
 			return -1;
 	}
 	if (external && strncmp(src, "nil", 3) == 0) {
@@ -529,7 +541,7 @@ mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 	for (i = 0, c = a; i < cnt; i++, c++) {
 		if (!mnstr_readIntArray(s, v, 4)) {
 			if (a != A)
-				GDKfree(a);
+				//GDKfree(a);
 			return NULL;
 		}
 		memcpy(vals, v, 4 * sizeof(int));
@@ -580,10 +592,12 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 	GEOSGeom geosGeometry;
 	str ret = MAL_SUCCEED;
 	bit empty;
+	allocator *ma = ctx->alloc;
+	assert(ma);
 
 	//check if the geometry is nil
 	if (is_wkb_nil(*geomWKB)) {
-		if ((*geomMBR = GDKmalloc(sizeof(mbr))) == NULL)
+		if ((*geomMBR = ma_alloc(ma, sizeof(mbr))) == NULL)
 			throw(MAL, "geom.MBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		**geomMBR = mbrNIL;
 		return MAL_SUCCEED;
@@ -593,7 +607,7 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 		return ret;
 	}
 	if (empty) {
-		if ((*geomMBR = GDKmalloc(sizeof(mbr))) == NULL)
+		if ((*geomMBR = ma_alloc(ma, sizeof(mbr))) == NULL)
 			throw(MAL, "geom.MBR", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		**geomMBR = mbrNIL;
 		return MAL_SUCCEED;
@@ -610,7 +624,7 @@ wkbMBR(Client ctx, mbr **geomMBR, wkb **geomWKB)
 	GEOSGeom_destroy_r(geoshandle, geosGeometry);
 
 	if (*geomMBR == NULL || is_mbr_nil(*geomMBR)) {
-		GDKfree(*geomMBR);
+		//GDKfree(*geomMBR);
 		*geomMBR = NULL;
 		throw(MAL, "wkb.mbr", SQLSTATE(38000) "Geos failed to create mbr");
 	}
@@ -625,10 +639,12 @@ wkbBox2D(Client ctx, mbr **box, wkb **point1, wkb **point2)
 	GEOSGeom point1_geom, point2_geom;
 	double xmin = 0.0, ymin = 0.0, xmax = 0.0, ymax = 0.0;
 	str err = MAL_SUCCEED;
+	allocator *ma = ctx->alloc;
+	assert(ma);
 
 	//check null input
 	if (is_wkb_nil(*point1) || is_wkb_nil(*point2)) {
-		if ((*box = GDKmalloc(sizeof(mbr))) == NULL)
+		if ((*box = ma_alloc(ma, sizeof(mbr))) == NULL)
 			throw(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		**box = mbrNIL;
 		return MAL_SUCCEED;
@@ -654,7 +670,7 @@ wkbBox2D(Client ctx, mbr **box, wkb **point1, wkb **point2)
 		err = createException(MAL, "geom.MakeBox2D", SQLSTATE(38000) "Geos error in reading the points' coordinates");
 	} else {
 		//Assign the coordinates. Ensure that they are in correct order
-		*box = GDKmalloc(sizeof(mbr));
+		*box = ma_alloc(ma, sizeof(mbr));
 		if (*box == NULL) {
 			err = createException(MAL, "geom.MakeBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
@@ -688,14 +704,14 @@ mbrrelation_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB, str (*func
 
 	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
-		GDKfree(geom1MBR);
+		//GDKfree(geom1MBR);
 		return ret;
 	}
 
 	ret = (*func) (ctx, out, &geom1MBR, &geom2MBR);
 
-	GDKfree(geom1MBR);
-	GDKfree(geom2MBR);
+	//GDKfree(geom1MBR);
+	//GDKfree(geom2MBR);
 
 	return ret;
 }
@@ -1002,14 +1018,14 @@ mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 
 	ret = wkbMBR(ctx, &geom2MBR, geom2WKB);
 	if (ret != MAL_SUCCEED) {
-		GDKfree(geom1MBR);
+		//GDKfree(geom1MBR);
 		return ret;
 	}
 
 	ret = mbrDistance(ctx, out, &geom1MBR, &geom2MBR);
 
-	GDKfree(geom1MBR);
-	GDKfree(geom2MBR);
+	//GDKfree(geom1MBR);
+	//GDKfree(geom2MBR);
 
 	return ret;
 }
@@ -1073,7 +1089,7 @@ wkbCoordinateFromWKB(Client ctx, dbl *coordinateValue, wkb **geomWKB, int *coord
 
 	ret = wkbCoordinateFromMBR(ctx, coordinateValue, &geomMBR, coordinateIdx);
 
-	GDKfree(geomMBR);
+	//GDKfree(geomMBR);
 
 	return ret;
 }
@@ -1088,7 +1104,7 @@ mbrFromString(Client ctx, mbr **w, const char **src)
 
 	if (mbrFROMSTR(*src, &len, (void **) w, false) >= 0)
 		return MAL_SUCCEED;
-	GDKfree(*w);
+	//GDKfree(*w);
 	*w = NULL;
 	errbuf = GDKerrbuf;
 	if (errbuf) {
@@ -1112,7 +1128,9 @@ mbrFromString(Client ctx, mbr **w, const char **src)
 str
 ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 {
-	if ((*res = GDKmalloc(sizeof(mbr))) == NULL)
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
+	if ((*res = ma_alloc(ma, sizeof(mbr))) == NULL)
 		throw(MAL, "geom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (is_flt_nil(*minX) || is_flt_nil(*minY) || is_flt_nil(*maxX) || is_flt_nil(*maxY))
 		**res = mbrNIL;

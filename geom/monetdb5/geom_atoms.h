@@ -32,8 +32,8 @@ void wkbDEL(Heap *h, var_t *index);
 size_t wkbLENGTH(const void *P);
 gdk_return wkbHEAP(Heap *heap, size_t capacity);
 /* Non-atom WKB functions */
-wkb * wkbNULLcopy(void);
-wkb * wkbCopy(const wkb* src);
+wkb * wkbNULLcopy(allocator *ma);
+wkb * wkbCopy(allocator *ma, const wkb* src);
 var_t wkb_size(size_t len);
 str wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread);
 
