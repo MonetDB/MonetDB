@@ -155,6 +155,12 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LENGTH) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
 		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_DISPLAY_SIZE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
 		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_DISPLAY_SIZE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttributeW(stmt, (UWORD)col, SQL_DESC_LITERAL_PREFIX, (PTR)&wbuf, (SQLLEN)99, NULL, &NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LITERAL_PREFIX, (PTR)&buf, (SQLLEN)99, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LITERAL_PREFIX: %s) returns %d, NumAttr " LLFMT "\n", col, buf, ret, (int64_t) NumAttr);
+		ret = SQLColAttributeW(stmt, (UWORD)col, SQL_DESC_LITERAL_SUFFIX, (PTR)&wbuf, (SQLLEN)99, NULL, &NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LITERAL_SUFFIX, (PTR)&buf, (SQLLEN)99, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LITERAL_SUFFIX: %s) returns %d, NumAttr " LLFMT "\n", col, buf, ret, (int64_t) NumAttr);
 
 		/* test SQLGetData(SQL_C_(W)CHAR, 20) with a restricted buffer size (20) for the queried string value (47) */
 		ret = SQLGetData(stmt, (UWORD)col, (SWORD)ctype, ctype == SQL_C_WCHAR ? (PTR)&wbuf : (PTR)&buf, (SQLLEN)20, &vallen);
@@ -191,6 +197,8 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -9\n"	/* -9 = SQL_WVARCHAR */
 			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 47\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 47\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: ') returns 0, NumAttr 47\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_CHAR, 20) returns 1, vallen 47, buf: '1234567890123456789'\n"
 			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n"
 			"SQLGetData(1, SQL_C_CHAR, 30) returns 0, vallen 28, buf: '0 abcdefghijklmnopqrstuvwxyz'\n");
@@ -201,6 +209,8 @@ testGetDataTruncatedString(SQLHANDLE stmt, SWORD ctype)
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -9\n"	/* -9 = SQL_WVARCHAR */
 			"SQLColAttribute(1, SQL_DESC_LENGTH) returns 0, NumAttr 47\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 47\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: ') returns 0, NumAttr 47\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 47\n"
 			"SQLGetData(1, SQL_C_WCHAR, 20) returns 1, vallen 94, buf: ''\n"
 			"SQLstate 01004, Errnr 0, Message [MonetDB][ODBC Driver 11.##.#][MonetDB-Test]String data, right truncated\n"
 			"SQLGetData(1, SQL_C_WCHAR, 30) returns 1, vallen 76, buf: ''\n"
@@ -255,6 +265,10 @@ testGetDataGUID(SQLHANDLE stmt)
 		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_CONCISE_TYPE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
 		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_DISPLAY_SIZE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
 		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_DISPLAY_SIZE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LITERAL_PREFIX, (PTR)&buf, (SQLLEN)99, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LITERAL_PREFIX: %s) returns %d, NumAttr " LLFMT "\n", col, buf, ret, (int64_t) NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LITERAL_SUFFIX, (PTR)&buf, (SQLLEN)99, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LITERAL_SUFFIX: %s) returns %d, NumAttr " LLFMT "\n", col, buf, ret, (int64_t) NumAttr);
 
 		/* test SQLGetData(SQL_C_CHAR) */
 		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_CHAR, (PTR)&guid_str_val, (SQLLEN)40, &vallen);
@@ -269,7 +283,7 @@ testGetDataGUID(SQLHANDLE stmt)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
 			pos += snprintf(outp + pos, outp_len - pos, "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x\n",
-				guid_val.Data1, guid_val.Data2, guid_val.Data3,
+					(unsigned int) guid_val.Data1, guid_val.Data2, guid_val.Data3,
 				guid_val.Data4[0], guid_val.Data4[1], guid_val.Data4[2], guid_val.Data4[3], guid_val.Data4[4], guid_val.Data4[5], guid_val.Data4[6], guid_val.Data4[7]);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col)");
 	}
@@ -278,14 +292,20 @@ testGetDataGUID(SQLHANDLE stmt)
 			"SQLExecDirect\nSQLRowCount is 1\nSQLNumResultCols is 3\nSQLFetch\n"
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -11\n"	/* -11 = SQL_GUID */
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: uuid ') returns 0, NumAttr 36\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 36\n"
 			"SQLGetData(1, SQL_C_CHAR, 36) returns 0, vallen -1, str_val: 'NULL'\n"
 			"SQLGetData(1, SQL_C_GUID, 16) returns 0, vallen -1, data_val: NULL\n"
 			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -11\n"	/* -11 = SQL_GUID */
 			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
+			"SQLColAttribute(2, SQL_DESC_LITERAL_PREFIX: uuid ') returns 0, NumAttr 36\n"
+			"SQLColAttribute(2, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 36\n"
 			"SQLGetData(2, SQL_C_CHAR, 36) returns 0, vallen 36, str_val: 'eda7b074-3e0f-4bef-bdec-19c61bedb18f'\n"
 			"SQLGetData(2, SQL_C_GUID, 16) returns 0, vallen 16, data_val: eda7b074-3e0f-4bef-bdec-19c61bedb18f\n"
 			"SQLColAttribute(3, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr -11\n"	/* -11 = SQL_GUID */
 			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 36\n"
+			"SQLColAttribute(3, SQL_DESC_LITERAL_PREFIX: uuid ') returns 0, NumAttr 36\n"
+			"SQLColAttribute(3, SQL_DESC_LITERAL_SUFFIX: ') returns 0, NumAttr 36\n"
 			"SQLGetData(3, SQL_C_CHAR, 36) returns 0, vallen 36, str_val: 'beefc4f7-0264-4735-9b7a-75fd371ef803'\n"
 			"SQLGetData(3, SQL_C_GUID, 16) returns 0, vallen 16, data_val: beefc4f7-0264-4735-9b7a-75fd371ef803\n");
 
@@ -328,6 +348,7 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 
 	for (SWORD col = 1; col <= NumResultCols; col++) {
 		char buf[99];
+		wchar_t wbuf[99];
 		char str_val[42];
 		int int_val;
 		SQL_INTERVAL_STRUCT itv_val;
@@ -339,6 +360,12 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_CONCISE_TYPE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
 		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_DISPLAY_SIZE, (PTR)&buf, (SQLLEN)20, NULL, &NumAttr);
 		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_DISPLAY_SIZE) returns %d, NumAttr " LLFMT "\n", col, ret, (int64_t) NumAttr);
+		ret = SQLColAttributeW(stmt, (UWORD)col, SQL_DESC_LITERAL_PREFIX, (PTR)&wbuf, (SQLLEN)99, NULL, &NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LITERAL_PREFIX, (PTR)&buf, (SQLLEN)99, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LITERAL_PREFIX: %s) returns %d, NumAttr " LLFMT "\n", col, buf, ret, (int64_t) NumAttr);
+		ret = SQLColAttributeW(stmt, (UWORD)col, SQL_DESC_LITERAL_SUFFIX, (PTR)&wbuf, (SQLLEN)99, NULL, &NumAttr);
+		ret = SQLColAttribute(stmt, (UWORD)col, SQL_DESC_LITERAL_SUFFIX, (PTR)&buf, (SQLLEN)99, NULL, &NumAttr);
+		pos += snprintf(outp + pos, outp_len - pos, "SQLColAttribute(%d, SQL_DESC_LITERAL_SUFFIX: %s) returns %d, NumAttr " LLFMT "\n", col, buf, ret, (int64_t) NumAttr);
 
 		/* test SQLGetData(SQL_C_CHAR) */
 		ret = SQLGetData(stmt, (UWORD)col, (SWORD)SQL_C_CHAR, (PTR)&str_val, (SQLLEN)41, &vallen);
@@ -361,7 +388,7 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 		if (vallen == SQL_NULL_DATA)
 			pos += snprintf(outp + pos, outp_len - pos, "NULL\n");
 		else
-			pos += snprintf(outp + pos, outp_len - pos, "%d (type %d, sign %d)\n", itv_val.intval.day_second.day, itv_val.interval_type, itv_val.interval_sign);
+			pos += snprintf(outp + pos, outp_len - pos, "%lu (type %d, sign %d)\n", (unsigned long) itv_val.intval.day_second.day, itv_val.interval_type, itv_val.interval_sign);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData(col) as int");
 	}
 
@@ -370,32 +397,44 @@ testGetDataIntervalDay(SQLHANDLE stmt, int sqlquery)
 		?	"SQLExecDirect query 1\nSQLRowCount is 1\nSQLNumResultCols is 3\nSQLFetch\n"
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: interval ') returns 0, NumAttr 21\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ' day) returns 0, NumAttr 21\n"
 			"SQLGetData(1, SQL_C_CHAR, 41) returns 0, vallen -1, str_val: 'NULL'\n"
 			"SQLGetData(1, SQL_C_SLONG) returns 0, vallen -1, int_val: NULL\n"
 			"SQLGetData(1, SQL_C_INTERVAL_DAY) returns 0, vallen -1, itv_day_val: NULL\n"
 			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
 			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLColAttribute(2, SQL_DESC_LITERAL_PREFIX: interval ') returns 0, NumAttr 21\n"
+			"SQLColAttribute(2, SQL_DESC_LITERAL_SUFFIX: ' day) returns 0, NumAttr 21\n"
 			"SQLGetData(2, SQL_C_CHAR, 41) returns 0, vallen 17, str_val: 'INTERVAL '99' DAY'\n"
 			"SQLGetData(2, SQL_C_SLONG) returns 0, vallen 4, int_val: 99\n"	/* SQLstate 07006 Restricted data type attribute violation */
 			"SQLGetData(2, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 99 (type 3, sign 0)\n"
 			"SQLColAttribute(3, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
 			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLColAttribute(3, SQL_DESC_LITERAL_PREFIX: interval ') returns 0, NumAttr 21\n"
+			"SQLColAttribute(3, SQL_DESC_LITERAL_SUFFIX: ' day) returns 0, NumAttr 21\n"
 			"SQLGetData(3, SQL_C_CHAR, 41) returns 0, vallen 18, str_val: 'INTERVAL -'99' DAY'\n"
 			"SQLGetData(3, SQL_C_SLONG) returns 0, vallen 4, int_val: -99\n"	/* SQLstate 07006 Restricted data type attribute violation */
 			"SQLGetData(3, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 99 (type 3, sign 1)\n"
 		:	"SQLExecDirect query 2\nSQLRowCount is 1\nSQLNumResultCols is 3\nSQLFetch\n"
 			"SQLColAttribute(1, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
 			"SQLColAttribute(1, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_PREFIX: interval ') returns 0, NumAttr 21\n"
+			"SQLColAttribute(1, SQL_DESC_LITERAL_SUFFIX: ' day) returns 0, NumAttr 21\n"
 			"SQLGetData(1, SQL_C_CHAR, 41) returns 0, vallen -1, str_val: 'NULL'\n"
 			"SQLGetData(1, SQL_C_SLONG) returns 0, vallen -1, int_val: NULL\n"
 			"SQLGetData(1, SQL_C_INTERVAL_DAY) returns 0, vallen -1, itv_day_val: NULL\n"
 			"SQLColAttribute(2, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
 			"SQLColAttribute(2, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLColAttribute(2, SQL_DESC_LITERAL_PREFIX: interval ') returns 0, NumAttr 21\n"
+			"SQLColAttribute(2, SQL_DESC_LITERAL_SUFFIX: ' day) returns 0, NumAttr 21\n"
 			"SQLGetData(2, SQL_C_CHAR, 41) returns 0, vallen 18, str_val: 'INTERVAL '101' DAY'\n"
 			"SQLGetData(2, SQL_C_SLONG) returns 0, vallen 4, int_val: 101\n"	/* SQLstate 07006 Restricted data type attribute violation */
 			"SQLGetData(2, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 101 (type 3, sign 0)\n"
 			"SQLColAttribute(3, SQL_DESC_CONCISE_TYPE) returns 0, NumAttr 103\n"
 			"SQLColAttribute(3, SQL_DESC_DISPLAY_SIZE) returns 0, NumAttr 21\n"
+			"SQLColAttribute(3, SQL_DESC_LITERAL_PREFIX: interval ') returns 0, NumAttr 21\n"
+			"SQLColAttribute(3, SQL_DESC_LITERAL_SUFFIX: ' day) returns 0, NumAttr 21\n"
 			"SQLGetData(3, SQL_C_CHAR, 41) returns 0, vallen 19, str_val: 'INTERVAL -'102' DAY'\n"
 			"SQLGetData(3, SQL_C_SLONG) returns 0, vallen 4, int_val: -102\n"	/* SQLstate 07006 Restricted data type attribute violation */
 			"SQLGetData(3, SQL_C_INTERVAL_DAY) returns 0, vallen 28, itv_day_val: 102 (type 3, sign 1)\n"
