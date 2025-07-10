@@ -396,7 +396,7 @@ typedef struct sql_type {
 	} d;
 	unsigned int digits;
 	unsigned int scale;	/* indicates how scale is used in functions */
-	char localtype;		/* localtype, need for coersions */
+	int8_t localtype;		/* localtype, need for coersions */
 	unsigned char
 		radix:6,
 		composite:1;
