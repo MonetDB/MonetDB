@@ -1743,5 +1743,7 @@ types_init(allocator *sa)
 	types = sa_list(sa);
 	funcs = sa_list(sa);
 	funcs->ht = hash_new(sa, 64*1024, (fkeyvalue)&base_key);
+	memset(localtype_array, 0, sizeof(localtype_array));
+	battype = NULL;
 	sqltypeinit( sa );
 }
