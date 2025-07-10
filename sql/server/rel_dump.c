@@ -77,22 +77,20 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	mnstr_printf(fout, " %s ", r);
 }
 
+__attribute__((__nonnull__(2)))
 static const char *
 dump_escape_ident(allocator *sa, const char *s)
 {
-	char *res = NULL;
-	if (s) {
-		size_t l = strlen(s);
-		char *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
+	size_t l = strlen(s);
+	char *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
+	char *res = r;
 
-		res = r;
-		while (*s) {
-			if (*s == '"' || *s == '\\')
-				*r++ = '\\';
-			*r++ = *s++;
-		}
-		*r = '\0';
+	while (*s) {
+		if (*s == '"' || *s == '\\')
+			*r++ = '\\';
+		*r++ = *s++;
 	}
+	*r = '\0';
 	return res;
 }
 
