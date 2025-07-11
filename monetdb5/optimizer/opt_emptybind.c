@@ -18,6 +18,7 @@
  *  where either argument is empty
  *
  */
+#include "mal.h"
 #include "monetdb_config.h"
 #include "opt_emptybind.h"
 #include "opt_aliases.h"
@@ -120,9 +121,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr *tmp = updated;
 				//updated = GDKrealloc(updated,
 				//					 (esize += 256) * sizeof(InstrPtr));
-				size_t old_size = updated_size;
 				updated = MA_RENEW_ARRAY(cntxt->ta, InstrPtr, updated,
-									 (esize += 256), old_size);
+									 (esize += 256), esize);
 				if (updated == NULL) {
 					// GDKfree(tmp);
 					updated = tmp;
