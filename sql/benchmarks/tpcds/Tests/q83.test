@@ -1,4 +1,4 @@
-query TIRIRIRR nosort
+query TIDIDIDD nosort
 -- query 83
 with sr_items as
  (select i_item_id item_id,
@@ -66,5 +66,5 @@ with sr_items as
          ,sr_item_qty
  limit 100
 ----
-168 values hashing to fad8a60156894d4930c82151ca2c8c2a
+168 values hashing to 8343a27c22f8aec65ddd5dbdd24400cd
 

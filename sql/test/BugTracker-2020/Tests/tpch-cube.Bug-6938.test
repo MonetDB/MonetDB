@@ -143,7 +143,7 @@ ALTER TABLE LINEITEM
 ADD CONSTRAINT LINEITEM_FK2 FOREIGN KEY (L_PARTKEY,L_SUPPKEY) references
         PARTSUPP
 
-query TTRRITT rowsort
+query TTDDITT rowsort
 SELECT
    DM_CustomerNation_N_NAME AS CustomerNation,
    DM_CustomerRegion_R_NAME AS CustomerRegion,

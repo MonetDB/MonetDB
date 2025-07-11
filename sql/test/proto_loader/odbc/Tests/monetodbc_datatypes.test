@@ -65,81 +65,81 @@ NULL
 
 ---- DECIMAL ----
 
-query T
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(0.34 as decimal(2,2)) as dec1_val'
 ----
 0.34
 
-query R
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-0.34 as decimal(2,2)) as dec1_val'
 ----
--0.340
+-0.34
 
-query TT
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234.0 as decimal(4,0)) as dec2_val, cast(34.56 as decimal(4,2)) as dec3_val'
 ----
 1234
 34.56
 
-query RR
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-1234.0 as decimal(4,0)) as dec2_val, cast(-34.56 as decimal(4,2)) as dec3_val'
 ----
--1234.000
--34.560
+-1234
+-34.56
 
-query T
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(90.123456 as decimal(8,6)) as dec4_val'
 ----
 90.123456
 
-query R
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-90.123456 as decimal(8,6)) as dec4_val'
 ----
--90.123
+-90.123456
 
-query TT
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as decimal(18,8)) as dec8_val, cast(-1234567890.12345678 as decimal(18,8)) as dec8n_val'
 ----
 1234567890.12345678
 -1234567890.12345678
 
-query RR
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9876543210.12345678 as decimal(18,8)) as dec8_val, cast(-9876543210.12345678 as decimal(18,8)) as dec8n_val'
 ----
-9876543210.123
--9876543210.123
+9876543210.12345678
+-9876543210.12345678
 
 onlyif has-hugeint
-query I
+query D nosort
 select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val
 ----
-923456789012345678
+923456789012345678.123456789
 
 onlyif has-hugeint
-query T
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val'
 ----
 923456789012345678.123456789
 
 onlyif has-hugeint
-query II
+query DD nosort
 select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1
 ----
-12345678901234567890
--12345678901234567890
+12345678901234567890.123456789
+-12345678901234567890.123456789
 
 onlyif has-hugeint
-query TT
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1'
 ----
 12345678901234567890.123456789
 -12345678901234567890.123456789
 
 onlyif has-hugeint
-query I
+query D nosort
 select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val
 ----
--923456789012345678901234567890
+-923456789012345678901234567890.12345678
 
 --query T
 --select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'

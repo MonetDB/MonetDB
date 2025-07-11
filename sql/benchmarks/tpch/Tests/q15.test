@@ -12,7 +12,7 @@ create view revenue0 (supplier_no, total_revenue) as
 	group by
 		l_suppkey
 
-query ITTTR nosort
+query ITTTD nosort
 select
 	s_suppkey,
 	s_name,
@@ -37,7 +37,7 @@ order by
 Supplier#000000021
 81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs
 12-253-590-5816
-1161099.464
+1161099.4636
 
 statement ok
 drop view revenue0

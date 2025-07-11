@@ -700,11 +700,11 @@ select 1, null intersect select 1, null
 1
 NULL
 
-query TR rowsort
+query TD rowsort
 select ifthenelse(false, 'abc', 'abcd'), ifthenelse(false, 1.23, 12.3)
 ----
 abcd
-12.300
+12.30
 
 query T rowsort
 select sql_min(a, uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F36') from (values (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34'), (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F35')) as a(a)

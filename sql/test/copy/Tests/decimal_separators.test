@@ -30,12 +30,12 @@ COPY 3 RECORDS INTO decimals FROM STDIN
 2|+123.45
 3|-123.45
 
-query R nosort
+query D nosort
 SELECT d FROM decimals ORDER BY id
 ----
-123.450
-123.450
--123.450
+123.45
+123.45
+-123.45
 
 statement ok
 DELETE FROM decimals
@@ -51,12 +51,12 @@ COPY 3 RECORDS INTO decimals FROM STDIN DECIMAL AS ','
 2|+123,45
 3|-123,45
 
-query R nosort
+query D nosort
 SELECT d FROM decimals ORDER BY id
 ----
-123.450
-123.450
--123.450
+123.45
+123.45
+-123.45
 
 statement ok
 DELETE FROM decimals
@@ -72,12 +72,12 @@ COPY 3 RECORDS INTO decimals FROM STDIN DECIMAL AS ',', '_'
 2|+1_23,45
 3|-1_23,45
 
-query R nosort
+query D nosort
 SELECT d FROM decimals ORDER BY id
 ----
-123.450
-123.450
--123.450
+123.45
+123.45
+-123.45
 
 statement ok
 DELETE FROM decimals
@@ -93,12 +93,12 @@ COPY 3 RECORDS INTO decimals FROM STDIN DECIMAL ',', '_'
 2|+1_23,4__5
 3|-1_23,_45
 
-query R nosort
+query D nosort
 SELECT d FROM decimals ORDER BY id
 ----
-123.450
-123.450
--123.450
+123.45
+123.45
+-123.45
 
 statement ok
 DELETE FROM decimals

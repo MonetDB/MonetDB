@@ -13,10 +13,10 @@ BEGIN
    RETURN SELECT value FROM payments WHERE payment_date = pdate AND state = st SAMPLE 400;
 END
 
-query R rowsort
+query D rowsort
 SELECT avg(v) FROM amostra('2011-01-01', 'DF')
 ----
-123.450
+123.45
 
 statement ok
 DROP FUNCTION amostra

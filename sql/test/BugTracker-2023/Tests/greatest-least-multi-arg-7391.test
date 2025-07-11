@@ -18,12 +18,12 @@ SELECT least(3, 4, 1, 2, '0', '5')
 ----
 0
 
-query T nosort
+query D nosort
 SELECT greatest(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 5.5432
 
-query T nosort
+query D nosort
 SELECT least(3.321, 4.4321, '0.210', '5.54321', -6.54321)
 ----
 -6.5432

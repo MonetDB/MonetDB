@@ -92,10 +92,10 @@ insert into hge_types values (123456789012345, 123456789012345, 123456789012345,
 statement ok
 insert into hge_types select -"hugeint", -"decimal", -"decimal38", -"decimal37_22", -"numeric", -"numeric38", -"numeric37_9" from hge_types
 
-query IRRRRRR nosort
+query IDDDDDD nosort
 select * from hge_types order by 1,2,3,4,5,6,7
 ----
-126 values hashing to 6b69889cff91611f65ade06ae10056de
+126 values hashing to 9f65765e6fbb2deacb7b0d5d429ff6ec
 
 statement ok
 create imprints index "hge_impidx_hugeint" on hge_types ("hugeint")
@@ -136,7 +136,7 @@ hge_impidx_numeric37_9
 4
 hge_impidx_numeric38
 
-query IRRRRRR nosort
+query IDDDDDD nosort
 select * from hge_types
  where "hugeint" between 1 and 12345678900987654322
     or "decimal" between 2 and 123456789012345.679
@@ -153,37 +153,37 @@ NULL
 NULL
 NULL
 NULL
-1234567890123456824475648.000
+1234567890123456789012345.123456789
 NULL
 NULL
 NULL
 NULL
 NULL
-12345678900987654144.000
+12345678900987654321
 NULL
 NULL
 NULL
 NULL
 NULL
-123456789012345.672
+123456789012345.678
 NULL
 NULL
 NULL
 NULL
 NULL
-123456789012345.125
+123456789012345.1234567890123456789012
 NULL
 NULL
 NULL
 NULL
 NULL
-12345678900987654144.000
+12345678900987654321
 NULL
 NULL
 NULL
 NULL
 NULL
-123456789012345.672
+123456789012345.678
 NULL
 NULL
 NULL
@@ -191,18 +191,18 @@ NULL
 NULL
 123456789012345
 123456789012345.000
-123456789012345.000
-123456789012345.000
-123456789012345.000
-123456789012345.000
+123456789012345
+123456789012345.0000000000000000000000
 123456789012345.000
 123456789012345
+123456789012345.000000000
+123456789012345
 123456789012345.000
+123456789012345
+123456789012345.0000000000000000000000
 123456789012345.000
-123456789012345.000
-123456789012345.000
-123456789012345.000
-123456789012345.000
+123456789012345
+123456789012345.000000000
 12345678900987654321
 NULL
 NULL
@@ -211,7 +211,7 @@ NULL
 NULL
 NULL
 
-query IRRRRRR nosort
+query IDDDDDD nosort
 select * from hge_types
  where "hugeint" >= -12345678900987654322
     or "decimal" >= -123456789012345.679
@@ -222,12 +222,12 @@ select * from hge_types
     or "numeric37_9"  >= -1234567890123456789012345.123456790
  order by 7 desc, 6 desc, 5 desc, 4 desc, 3 desc, 2 desc, 1 desc
 ----
-126 values hashing to 6c357feddee28c5d57bc96f4cc29166e
+126 values hashing to e7a4d23aff894e0e3f50f14d3d0fe170
 
 statement ok
 insert into hge_types select -"hugeint" + 123, -"decimal" + 123, -"decimal38" + 123, -"decimal37_22" + 123, -"numeric" + 123, -"numeric38" + 123, -"numeric37_9" + 123 from hge_types
 
-query IRRRRRR nosort
+query IDDDDDD nosort
 select * from hge_types
  where "hugeint" >= -12345678900987654322
     or "decimal" >= -123456789012345.679
@@ -238,7 +238,7 @@ select * from hge_types
     or "numeric37_9"  >= -1234567890123456789012345.123456790
  order by 7 desc, 6 desc, 5 desc, 4 desc, 3 desc, 2 desc, 1 desc
 ----
-252 values hashing to 960402551096b7f83297e9d3c6905d94
+252 values hashing to 18ff729780cae2b8a5f1802677096a56
 
 query IT nosort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'hge_types') order by name

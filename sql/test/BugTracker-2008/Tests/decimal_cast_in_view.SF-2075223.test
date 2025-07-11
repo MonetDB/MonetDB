@@ -14,15 +14,15 @@ select * from A
 ----
  54.
 
-query R rowsort
+query D rowsort
 select CAST (a as NUMERIC (5, 2)) from A
 ----
-54.000
+54.00
 
-query R rowsort
+query D rowsort
 select * from A_VIEW
 ----
-54.000
+54.00
 
 statement ok
 drop view A_VIEW
