@@ -6,7 +6,7 @@ select cast(123 as varchar(10))
 ----
 123
 
-query R rowsort
+query D rowsort
 select convert(123, decimal(10,3))
 ----
 123.000
@@ -32,10 +32,10 @@ select cast('123.45' as double precision)
 ----
 123.450
 
-query R rowsort
+query D rowsort
 select cast(23.45 as decimal(5,2))
 ----
-23.450
+23.45
 
 # date, time and timestamp
 query T rowsort

@@ -1,4 +1,4 @@
-query TIIIRITIIIRI nosort
+query TIIIDITIIIDI nosort
 -- query 14a-2
  with  cross_items as
  (select i_item_sk ss_item_sk
@@ -95,5 +95,5 @@ query TIIIRITIIIRI nosort
  order by this_year.channel, this_year.i_brand_id, this_year.i_class_id, this_year.i_category_id
  limit 100
 ----
-1200 values hashing to 072f47583c4624abc35db5c910b3a590
+1200 values hashing to fd4b66c8b03f66d107450dfa4ac499cd
 

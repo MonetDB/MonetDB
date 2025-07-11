@@ -42,12 +42,12 @@ CREATE TABLE decimals(d DECIMAL(18,3))
 statement ok
 INSERT INTO decimals VALUES (10.3), (10.5), (NULL), (10.7)
 
-query R rowsort
+query D rowsort
 SELECT capi11(d) FROM decimals
 ----
-10.300
-10.500
-10.700
+10.3
+10.5
+10.7
 NULL
 
 statement ok
@@ -95,7 +95,7 @@ CREATE TABLE doubles(d DOUBLE)
 statement ok
 INSERT INTO doubles VALUES (10.3), (10.5), (10.7)
 
-query R rowsort
+query D rowsort
 SELECT _dbl2dec(d) FROM doubles
 ----
 10.300

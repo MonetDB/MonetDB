@@ -10,10 +10,10 @@ create table testdec(testdec decimal(5,4))
 statement ok
 insert into testdec values (0.12345)
 
-query R nosort
+query D nosort
 select * from testdec
 ----
-0.123
+0.1235
 
 query TIITTT nosort
 PREPARE INSERT INTO testdec (testdec) values (?)
@@ -28,11 +28,11 @@ NULL
 statement ok
 exec <LAST_PREPARE_ID>(0.12345)
 
-query R nosort
+query D nosort
 select * from testdec
 ----
-0.123
-0.123
+0.1235
+0.1235
 
 statement ok
 drop table testdec

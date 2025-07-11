@@ -18,7 +18,6 @@ INSERT INTO sys."table_a" ("col1","col2","col3") VALUES
 	 ('68496e8de22d49608a03a72e;INST4;risk;9','INST4','115'),
 	 ('68496e8de22d49608a03a72e;INST3;risk;10','INST3','610')
 
-
 statement ok
 CREATE TABLE sys."table_b" (
 	"col1" varchar,

@@ -1,5 +1,5 @@
 #Q19
-query R rowsort
+query D rowsort
 select
 	sum(l_extendedprice* (1 - l_discount)) as revenue
 from
@@ -36,5 +36,5 @@ where
 		and l_shipinstruct = 'DELIVER IN PERSON'
 	)
 ----
-22923.028
+22923.0280
 

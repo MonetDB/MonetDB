@@ -1,5 +1,5 @@
 #Q2
-query RTTITTTT rowsort
+query DTTITTTT rowsort
 select
 	s_acctbal,
 	s_name,
@@ -45,7 +45,7 @@ order by
 	p_partkey
 limit 100
 ----
-1687.810
+1687.81
 Supplier#000000017
 ROMANIA
 1634
@@ -53,7 +53,7 @@ Manufacturer#2
 c2d,ESHRSkK3WYnxpgw6aOqN0q
 29-601-884-9219
 eep against the furiously bold ideas. fluffily bold packa
-1883.370
+1883.37
 Supplier#000000086
 ROMANIA
 1015
@@ -61,7 +61,7 @@ Manufacturer#4
 J1fgg5QaqnN
 29-903-665-7065
 cajole furiously special, final requests: furiously spec
-287.160
+287.16
 Supplier#000000052
 ROMANIA
 323
@@ -69,7 +69,7 @@ Manufacturer#4
 WCk XCHYzBA1dvJDSol4ZJQQcQN,
 29-974-934-4713
 dolites are slyly against the furiously regular packages. ironic, final deposits cajole quickly
-4186.950
+4186.95
 Supplier#000000077
 GERMANY
 249

@@ -1,4 +1,4 @@
-query RTTII nosort
+query DTTII nosort
 -- query 70a
 with results as
 ( select
@@ -41,17 +41,17 @@ with results as
   ,rank_within_parent
  limit 100
 ----
--440986113.220
+-440986113.22
 NULL
 NULL
 2
 1
--440986113.220
+-440986113.22
 TN
 NULL
 1
 1
--440986113.220
+-440986113.22
 TN
 Williamson County
 0

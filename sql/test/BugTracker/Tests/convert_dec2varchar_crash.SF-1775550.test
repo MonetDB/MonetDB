@@ -1,4 +1,4 @@
-query R rowsort
+query D rowsort
 select 11.456
 ----
 11.456

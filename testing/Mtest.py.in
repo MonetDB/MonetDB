@@ -3523,7 +3523,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
-    parser.add_argument('--approve+replace', action='store_true', dest='approve_replace', help='produce .newtest file in testing directory with calculated content')
+    parser.add_argument('--approve+replace', action='store_true', dest='approve_replace', help='produce new .test file in source directory with calculated content')
     parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
     parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')

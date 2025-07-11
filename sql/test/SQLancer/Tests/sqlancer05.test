@@ -58,7 +58,7 @@ NULL	0.692
 NULL	0.860
 NULL	0.230
 
-query R rowsort
+query D rowsort
 SELECT max(t2.c1) FROM t1 LEFT OUTER JOIN t2 ON CASE WHEN t2.c0 < t1.c0 OR t1.c0 THEN t1.c0 WHEN t1.c0 THEN t1.c0 END
 ----
 0.860
@@ -66,7 +66,7 @@ SELECT max(t2.c1) FROM t1 LEFT OUTER JOIN t2 ON CASE WHEN t2.c0 < t1.c0 OR t1.c0
 statement ok
 create view v0(c0) as (select all 7.948668E7 from t1) with check option
 
-query R rowsort
+query D rowsort
 SELECT max(t2.c1) FROM t0, t1 CROSS JOIN v0 LEFT OUTER JOIN t2
 ON CASE WHEN ((((((((v0.c0)=(v0.c0)))OR(((t1.c0)>=(t1.c0)))))AND(((t2.c0)<(t1.c0)))))OR(((((t1.c0)AND(t1.c0)))AND(t1.c0))))
 THEN t1.c0 WHEN COALESCE(COALESCE(TRUE, t2.c0, t1.c0), CASE t1.c1 WHEN t2.c1 THEN t2.c0 WHEN t1.c1 THEN t2.c0 ELSE t1.c0 END)
@@ -208,7 +208,7 @@ INSERT INTO t1(c0) VALUES(0.40), (0.75)
 statement error 40002!UPDATE: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
 UPDATE t1 SET c0 = 0.28 WHERE (CAST(INTERVAL '31' MONTH AS STRING)) NOT IN (COALESCE('靟', 'P먌+}I*CpQ'))
 
-query R rowsort
+query D rowsort
 SELECT c0 FROM t1
 ----
 0.400

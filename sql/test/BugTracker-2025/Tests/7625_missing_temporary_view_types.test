@@ -2,7 +2,7 @@ query TITIIIII nosort
 select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
 ----
 
-query IT
+query IT nosort
 select * from sys.table_types order by 1
 ----
 0
@@ -68,7 +68,6 @@ create temporary view tv as select name, schema_id, query, type, system, commit_
 
 statement error 42000!syntax error, unexpected VIEW, expecting TABLE in: "create global temporary view"
 CREATE GLOBAL TEMPORARY VIEW gtv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
-
 
 statement ok
 CREATE LOCAL TEMPORARY VIEW ltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
@@ -138,7 +137,6 @@ tv
 create temporary view tv as select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system@;
 31
 
-
 statement error 3F000!CREATE VIEW: local temporary views should be stored in the 'tmp' schema
 CREATE LOCAL TEMPORARY VIEW sys.sysltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
 
@@ -153,7 +151,6 @@ CREATE OR REPLACE GLOBAL TEMPORARY VIEW gtv AS select name, schema_id, query, ty
 
 statement ok
 CREATE OR REPLACE LOCAL TEMPORARY VIEW ltv AS select name, schema_id, query, type, system, commit_action, access, temporary from sys.tables where not system
-
 
 -- cleanup
 statement ok
