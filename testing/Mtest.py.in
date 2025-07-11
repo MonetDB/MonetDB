@@ -48,6 +48,7 @@ MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 procdebug = False
 verbosity = 0
 approve = False
+replace = False
 stop_crash = False
 
 initdb = None
@@ -2984,11 +2985,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             testfile = TST+EXT
                             if lang == 'sql' and os.path.exists(os.path.join(TSTTRGDIR, TST+'.test.in')):
                                 testfile = TST+'.test.in'
+                                defines.append(f'QTSTDATAPATH={TSTDATAPATH.replace("\\","\\\\")}')
                                 defines.append(f'TSTDATAPATH={TSTDATAPATH}')
-                                defines.append(f'TSTSRCBASE={TSTSRCBASE}')
-                                defines.append(f'TSTSRCDIR={TSTSRCDIR}')
-                                defines.append(f'TSTTRGDIR={TSTTRGDIR}')
                                 defines.append(f'UTSTSRCDIR=file://{url(TSTSRCDIR)}')
+                                defines.append(f'QTSTSRCDIR={TSTSRCDIR.replace("\\","\\\\")}')
+                                defines.append(f'TSTSRCDIR={TSTSRCDIR}')
+                                defines.append(f'QTSTTRGDIR={TSTTRGDIR.replace("\\","\\\\")}')
+                                defines.append(f'TSTTRGDIR={TSTTRGDIR}')
+                                defines.append(f'TSTSRCBASE={TSTSRCBASE}')
                                 defines.append(f'TSTDB={TSTDB}')
                                 defines.append(f'MAPIPORT={pSrvr.port}')
                             try:
@@ -3014,6 +3018,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     returncode = 'error'
                                 elif sql.timedout:
                                     returncode = 'timeout'
+                                if approve and replace and not sql.timedout:
+                                    with openutf8(os.path.join(TSTTRGDIR, TST+'.newtest')) as fin, \
+                                         openutf8(os.path.join(TSTSRCDIR, testfile + 'new'), 'w') as fout:
+                                        fout.write(fin.read())
+                                        fout.flush()
+                                    os.replace(os.path.join(TSTSRCDIR, testfile + 'new'), os.path.join(TSTSRCDIR, testfile))
             elif CALL == 'sql':
                 TSTs = []
                 test = re.compile('^'+TST+EXT+'$', re.MULTILINE)
@@ -3513,6 +3523,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
+    parser.add_argument('--approve+replace', action='store_true', dest='approve_replace', help='produce .newtest file in testing directory with calculated content')
     parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
     parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
@@ -3548,9 +3559,12 @@ def main(argv) :
     global procdebug
     procdebug = opts.procdebug
     global approve
-    approve = opts.approve
+    global replace
+    approve = opts.approve or opts.approve_replace
     if approve:
         os.environ['MTEST_APPROVE'] = 'TRUE'
+    if opts.approve_replace:
+        replace = True
     global stop_crash
     stop_crash = opts.stop_crash
     global ignore_conditions

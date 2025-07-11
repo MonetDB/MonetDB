@@ -1,0 +1,145 @@
+statement ok
+CREATE TABLE sys."table_a" (
+	"col1" varchar,
+	"col2" varchar,
+	"col3" varchar
+)
+
+statement ok
+INSERT INTO sys."table_a" ("col1","col2","col3") VALUES
+	 ('68496e8de22d49608a03a72e;INST1;risk;1','INST1','9.9999'),
+	 ('68496e8de22d49608a03a72e;INST1;risk;2','INST1','100'),
+	 ('68496e8de22d49608a03a72e;INST1;risk;3','INST1','110'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;4','INST2','310'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;5','INST2','111'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;6','INST2','10'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;7','INST2','140'),
+	 ('68496e8de22d49608a03a72e;INST1;risk;8','INST1','150'),
+	 ('68496e8de22d49608a03a72e;INST4;risk;9','INST4','115'),
+	 ('68496e8de22d49608a03a72e;INST3;risk;10','INST3','610')
+
+
+statement ok
+CREATE TABLE sys."table_b" (
+	"col1" varchar,
+	"col4" varchar
+)
+
+statement ok
+INSERT INTO sys."table_b" ("col1","col4") VALUES
+	 ('68496e8de22d49608a03a72e;INST1;risk;1','AA|BB|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST1;risk;2','AA|BC|20241231|1.2'),
+	 ('68496e8de22d49608a03a72e;INST1;risk;3','AA|CB|20241231|0.1'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;4','CA|BC|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;5','CA|BV|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;6','AA|AB|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST2;risk;7','AA|CV|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST1;risk;8','AA|XX|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST4;risk;9','VV|BC|20241231|1.1'),
+	 ('68496e8de22d49608a03a72e;INST3;risk;10','DD|VV|20241231|1.1')
+
+-- query without the (select 0) query parts
+query TTT nosort
+SELECT acol1,
+acol2,
+SPLIT_PART(bcol4, '|', 4) as rate
+FROM (
+    SELECT a.col1 as acol1,
+	a.col2 as acol2,
+	a.col3 as acol3,
+	b.col1 as bcol1,
+	b.col4 as bcol4
+    FROM table_a a
+    INNER JOIN table_b b
+	ON a.col1 = b.col1
+	where a.col2 = 'INST1'
+) abc
+order by rate asc
+LIMIT 2 offset 1
+----
+68496e8de22d49608a03a72e;INST1;risk;1
+INST1
+1.1
+68496e8de22d49608a03a72e;INST1;risk;8
+INST1
+1.1
+
+-- query with the added '(select 0)' query parts, fails.
+-- server crash: sql/backends/monet5/rel_bin.c:1858: exp_bin: Assertion `s' failed.
+-- Something wrong with the MAL optimizer, run the query with EXPLAIN
+skipif knownfail
+query TTTIIR nosort
+SELECT acol1,
+acol2,
+SPLIT_PART(bcol4, '|', 4) as rate,
+(select 0) as "col5",
+(select 0) as "col6",
+acol3 + (select 0) + ( select 0) as "total"
+FROM (
+    SELECT a.col1 as acol1,
+	a.col2 as acol2,
+	a.col3 as acol3,
+	b.col1 as bcol1,
+	b.col4 as bcol4
+    FROM table_a a
+    INNER JOIN table_b b
+	ON a.col1 = b.col1
+	where a.col2 = 'INST1'
+) abc
+order by rate asc
+LIMIT 2 offset 1
+----
+68496e8de22d49608a03a72e;INST1;risk;1
+INST1
+1.1
+0
+0
+10.000
+68496e8de22d49608a03a72e;INST1;risk;8
+INST1
+1.1
+0
+0
+150.000
+
+-- query without the 'select' in '(select 0)' query parts, works
+query TTTIIR nosort
+SELECT acol1,
+acol2,
+SPLIT_PART(bcol4, '|', 4) as rate,
+(0) as "col5",
+(0) as "col6",
+acol3 + (0) + (0) as "total"
+FROM (
+    SELECT a.col1 as acol1,
+	a.col2 as acol2,
+	a.col3 as acol3,
+	b.col1 as bcol1,
+	b.col4 as bcol4
+    FROM table_a a
+    INNER JOIN table_b b
+	ON a.col1 = b.col1
+	where a.col2 = 'INST1'
+) abc
+order by rate asc
+LIMIT 2 offset 1
+----
+68496e8de22d49608a03a72e;INST1;risk;1
+INST1
+1.1
+0
+0
+10.000
+68496e8de22d49608a03a72e;INST1;risk;8
+INST1
+1.1
+0
+0
+150.000
+
+statement ok
+DROP TABLE sys."table_b"
+
+statement ok
+DROP TABLE sys."table_a"
+

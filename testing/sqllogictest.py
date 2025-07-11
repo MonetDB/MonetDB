@@ -770,9 +770,7 @@ class SQLLogic:
                 val = val.strip()
                 defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
                              val, key))
-                defs.append((re.compile(r'\$(Q' + key + r'\b|{Q' + key + '})'),
-                             val.replace('\\', '\\\\'), 'Q'+key))
-        self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
+        self.defines = defs
         self.lines = []
 
     def readline(self):
@@ -802,10 +800,10 @@ class SQLLogic:
                     # line = line.replace('\''+val.replace('\\', '\\\\'),
                     #                     '\'${Q'+key+'}')
                     # line = line.replace(val, '${'+key+'}')
+                    if key.startswith('Q') and (("r'"+val) in line or ("R'"+val) in line):
+                        continue
                     line = line.replace("r'"+val, "r'$"+key)
                     line = line.replace("R'"+val, "R'$"+key)
-                    line = line.replace("'"+val.replace('\\', '\\\\'),
-                                        "'$Q"+key)
                     line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
@@ -1040,6 +1038,8 @@ class SQLLogic:
                 self.writeline()
             else:
                 self.raise_error(f'unrecognized command {words[0]}')
+        if approve:
+            approve.flush()
 
 if __name__ == '__main__':
     import argparse
