@@ -2986,8 +2986,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             if lang == 'sql' and os.path.exists(os.path.join(TSTTRGDIR, TST+'.test.in')):
                                 bs = '\\'
                                 testfile = TST+'.test.in'
-                                defines.append(f'QTSTDATAPATH={TSTDATAPATH.replace(bs,bs+bs)}')
-                                defines.append(f'TSTDATAPATH={TSTDATAPATH}')
+                                if TSTDATAPATH:
+                                    defines.append(f'QTSTDATAPATH={TSTDATAPATH.replace(bs,bs+bs)}')
+                                    defines.append(f'TSTDATAPATH={TSTDATAPATH}')
                                 defines.append(f'UTSTSRCDIR=file://{url(TSTSRCDIR)}')
                                 defines.append(f'QTSTSRCDIR={TSTSRCDIR.replace(bs,bs+bs)}')
                                 defines.append(f'TSTSRCDIR={TSTSRCDIR}')
