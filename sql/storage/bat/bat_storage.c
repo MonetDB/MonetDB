@@ -3532,23 +3532,29 @@ create_del(sql_trans *tr, sql_table *t)
 }
 
 static int
-log_segment(sql_trans *tr, segment *s, sqlid id)
+log_segment(sql_trans *tr, segment *s, sqlid id, size_t total)
 {
 	sqlstore *store = tr->store;
 	msk m = s->deleted;
-	return log_constant(store->logger, TYPE_msk, &m, id, s->start, s->end-s->start)==GDK_SUCCEED?LOG_OK:LOG_ERR;
+	return log_constant(store->logger, TYPE_msk, &m, id, s->start, s->end-s->start, total)==GDK_SUCCEED?LOG_OK:LOG_ERR;
 }
 
 static int
 log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
+	size_t total = 0;
 	/* log segments */
 	lock_table(tr->store, id);
+	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
+		if (seg->ts == tr->tid && seg->end-seg->start &&
+			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts))
+			total += seg->end-seg->start;
+	}
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start &&
 			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts)) {
-			if (log_segment(tr, seg, id) != LOG_OK) {
+			if (log_segment(tr, seg, id, total) != LOG_OK) {
 				return LOG_ERR;
 			}
 		}
@@ -4058,15 +4064,15 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	lock_table(tr->store, t->base.id);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
+		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted)
+			nr_appends += (seg->end - seg->start);
+	}
+	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, t->base.id);
 
-		if (seg->ts == tr->tid && seg->end-seg->start) {
-			if (!seg->deleted) {
-				if (log_segment(tr, seg, t->base.id) != LOG_OK)
-					return LOG_ERR;
-
-				nr_appends += (seg->end - seg->start);
-			}
+		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted) {
+			if (log_segment(tr, seg, t->base.id, nr_appends) != LOG_OK)
+				return LOG_ERR;
 		}
 		lock_table(tr->store, t->base.id);
 	}
