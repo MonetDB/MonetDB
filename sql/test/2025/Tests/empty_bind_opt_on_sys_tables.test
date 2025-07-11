@@ -189,3 +189,4 @@ DROP TABLE gtmpt
 
 statement ok
 SELECT 'sys.dependency_tables_on_triggers.table_name' AS full_col_nm, 1024 AS max_allowed_length, length("table_name") AS data_length, "table_name" AS data_value FROM "sys"."dependency_tables_on_triggers" WHERE "table_name" IS NOT NULL AND length("table_name") > 1024
+

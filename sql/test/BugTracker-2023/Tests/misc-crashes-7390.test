@@ -562,7 +562,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 
-query I
+query I nosort
 SELECT 2 FROM v0 AS v0 WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
 ----
 
