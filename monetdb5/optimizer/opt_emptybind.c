@@ -122,7 +122,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				//					 (esize += 256) * sizeof(InstrPtr));
 				size_t old_size = updated_size;
 				updated = MA_RENEW_ARRAY(cntxt->ta, InstrPtr, updated,
-									 (esize += 256) * sizeof(InstrPtr), old_size);
+									 (esize += 256), old_size);
 				if (updated == NULL) {
 					// GDKfree(tmp);
 					updated = tmp;
