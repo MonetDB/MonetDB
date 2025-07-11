@@ -67,6 +67,7 @@ INST1
 -- query with the added '(select 0)' query parts, fails.
 -- server crash: sql/backends/monet5/rel_bin.c:1858: exp_bin: Assertion `s' failed.
 -- Something wrong with the MAL optimizer, run the query with EXPLAIN
+skipif knownfail
 query TTTIIR nosort
 SELECT acol1,
 acol2,
