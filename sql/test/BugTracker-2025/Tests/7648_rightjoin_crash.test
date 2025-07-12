@@ -1,0 +1,8 @@
+statement ok
+CREATE TABLE IF NOT EXISTS t0(c0 INT)
+
+query II
+SELECT * FROM t0 RIGHT JOIN (VALUES (1)) AS subQuery1(col_1) ON EXISTS (VALUES (CASE subQuery1.col_1 WHEN subQuery1.col_1 THEN 1 END))
+----
+NULL
+1

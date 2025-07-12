@@ -931,13 +931,18 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					l = rel_project( sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 
 				if (is_left(rel->op) && !list_empty(rel->attr)) {
-					assert(list_length(rel->exps)==1);
-					sql_exp *e = rel->exps->h->data;
-					sql_exp *oe = rel->attr->h->data;
-					rel_project_add_exp(sql, l, e);
-					if (exp_is_atom(oe) && exp_is_false(oe))
-						e->flag = cmp_notequal;
-					exp_setalias(e, oe->alias.label, exp_relname(oe), exp_name(oe));
+				   	if (list_empty(rel->exps)) {
+						sql_exp *oe = rel->attr->h->data;
+						rel_project_add_exp(sql, l, oe);
+					} else {
+						assert(list_length(rel->exps)==1);
+						sql_exp *e = rel->exps->h->data;
+						sql_exp *oe = rel->attr->h->data;
+						rel_project_add_exp(sql, l, e);
+						if (exp_is_atom(oe) && exp_is_false(oe))
+							e->flag = cmp_notequal;
+						exp_setalias(e, oe->alias.label, exp_relname(oe), exp_name(oe));
+					}
 				}
 				if (!list_empty(r->exps)) {
 					for (m=r->exps->h; m; m = m->next) {
@@ -3674,19 +3679,18 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				return exp_rel(v->sql, sq);
 			}
 			if (is_project(rel->op) || depth > 0 || is_outerjoin(rel->op)) {
-				sql_rel *join = NULL, *rewrite = NULL;
+				sql_rel *rewrite = NULL;
 
 				(void)rewrite_inner(v->sql, rel, sq, op_left, &rewrite);
 				exp_reset_props(rewrite, le, is_left(rewrite->op));
-				join = (is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
-				if (!join)
+				if (!rewrite)
 					return NULL;
-				if (join && !join->exps)
-					join->exps = sa_list(v->sql->sa);
+				if (rewrite && !rewrite->exps)
+					rewrite->exps = sa_list(v->sql->sa);
 				v->changes++;
-				if (join) {
-					if (!join->attr)
-						join->attr = sa_list(v->sql->sa);
+				if (rewrite) {
+					if (!rewrite->attr)
+						rewrite->attr = sa_list(v->sql->sa);
 					sql_exp *a = exp_atom_bool(v->sql->sa, is_exists(sf));
 					set_no_nil(a);
 					if (!e->alias.label)
@@ -3695,7 +3699,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
 					le = exp_ref(v->sql, a);
 					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
-					append(join->attr, a);
+					append(rewrite->attr, a);
 					if ((is_project(rel->op) || depth))
 						return le;
 				}
