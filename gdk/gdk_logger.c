@@ -465,7 +465,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				if (lg->flushing || skip_entry) {
 					/* when flushing, we only need the offset and count of the last segment of inserts. */
 					assert((*cands)->ttype == TYPE_void);
-					BATtseqbase(*cands, (oid) offset);
+					BATtseqbase(*cands, (oid) 0);
 					BATsetcount(*cands, (BUN) nr);
 				}
 
