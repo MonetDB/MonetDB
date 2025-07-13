@@ -17,3 +17,4 @@ HAVE_HGE?7637_str_to_decimal
 7648_rightjoin_crash
 7654_non_monetdb_user_remote_table_exec
 7656_incorrect_error
+7659_trigger_crashes
