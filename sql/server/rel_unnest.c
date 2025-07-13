@@ -310,7 +310,7 @@ merge_freevar(list *l, list *r, bool all)
 	return list_distinct(r, (fcmp)freevar_equal, (fdup)NULL);
 }
 
-static list * exps_freevar(mvc *sql, list *exps);
+static list * exps_freevar(mvc *sql, list *exps, bool all);
 static list * rel_freevar(mvc *sql, sql_rel *rel);
 
 static list *
@@ -329,16 +329,16 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 	case e_aggr:
 	case e_func:
 		if (e->l)
-			return exps_freevar(sql, e->l);
+			return exps_freevar(sql, e->l, all);
 		break;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			list *l = exps_freevar(sql, e->l);
-			list *r = exps_freevar(sql, e->r);
+			list *l = exps_freevar(sql, e->l, all);
+			list *r = exps_freevar(sql, e->r, all);
 			return merge_freevar(l, r, all);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *l = exp_freevar(sql, e->l, all);
-			list *r = exps_freevar(sql, e->r);
+			list *r = exps_freevar(sql, e->r, all);
 			return merge_freevar(l, r, all);
 		} else {
 			list *l = exp_freevar(sql, e->l, all);
@@ -358,7 +358,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 		return NULL;
 	case e_atom:
 		if (e->f)
-			return exps_freevar(sql, e->f);
+			return exps_freevar(sql, e->f, all);
 		return NULL;
 	default:
 		return NULL;
@@ -367,7 +367,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 }
 
 static list *
-exps_freevar(mvc *sql, list *exps)
+exps_freevar(mvc *sql, list *exps, bool all)
 {
 	node *n;
 	list *c = NULL;
@@ -378,9 +378,9 @@ exps_freevar(mvc *sql, list *exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		list *var = exp_freevar(sql, e, false);
+		list *var = exp_freevar(sql, e, all);
 
-		c = merge_freevar(c,var, false);
+		c = merge_freevar(c,var, all);
 	}
 	return c;
 }
@@ -399,7 +399,7 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
 		lexps = merge_freevar(lexps, rexps, false);
@@ -412,20 +412,20 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		sql_exp *call = rel->r;
 		if (rel->flag != TRIGGER_WRAPPER && rel->l)
 			lexps = rel_freevar(sql, rel->l);
-		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
+		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l, false):NULL;
 		return merge_freevar(exps, lexps, false);
 	}
 	case op_union:
 	case op_except:
 	case op_inter:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
 		lexps = merge_freevar(lexps, rexps, false);
 		exps = merge_freevar(exps, lexps, false);
 		return exps;
 	case op_munion:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 			lexps = rel_freevar(sql, n->data);
 			exps = merge_freevar(exps, lexps, false);
@@ -441,11 +441,11 @@ rel_freevar(mvc *sql, sql_rel *rel)
 
 	case op_groupby:
 	case op_project:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		lexps = rel_freevar(sql, rel->l);
 		if (rel->r) {
 			if (is_groupby(rel->op) || is_simple_project(rel->op))
-				rexps = exps_freevar(sql, rel->r);
+				rexps = exps_freevar(sql, rel->r, false);
 			else
 				rexps = rel_freevar(sql, rel->r);
 			lexps = merge_freevar(lexps, rexps, false);
