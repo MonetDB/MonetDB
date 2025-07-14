@@ -28,8 +28,8 @@ GROUP BY cods, elrik, ether, jaelen, sora
 project (
 | group by (
 | | table("sys"."t2a") [ "t2a"."tib0" NOT NULL UNIQUE ]
-| ) [ tinyint(1) "0" as "cods" ] [ "cods" NOT NULL, "cods" NOT NULL as "elrik", "cods" NOT NULL as "ether", "cods" NOT NULL as "jaelen", "cods" NOT NULL as "sora", "sys"."min" no nil ("t2a"."tib0" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
-) [ "cods" NOT NULL UNIQUE, "elrik" NOT NULL, "ether" NOT NULL, "jaelen" NOT NULL, "sora" NOT NULL, "%1"."%1" NOT NULL ]
+| ) [ tinyint(1) "0" as "cods" ] [ "cods" NOT NULL UNIQUE, "cods" NOT NULL UNIQUE as "elrik", "cods" NOT NULL UNIQUE as "ether", "cods" NOT NULL UNIQUE as "jaelen", "cods" NOT NULL UNIQUE as "sora", "sys"."min" no nil ("t2a"."tib0" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+) [ "cods" NOT NULL UNIQUE, "elrik" NOT NULL UNIQUE, "ether" NOT NULL UNIQUE, "jaelen" NOT NULL UNIQUE, "sora" NOT NULL UNIQUE, "%1"."%1" NOT NULL ]
 
 statement ok
 drop table t2a

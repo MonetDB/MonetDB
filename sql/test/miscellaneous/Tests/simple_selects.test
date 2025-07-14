@@ -681,7 +681,7 @@ project (
 | | project (
 | | |  [ boolean(1) "true" as "%1"."%1" ]
 | | ) [ tinyint(1) "1" as "x"."x" ]
-| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
+| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL UNIQUE ]
 ) [ "z" NOT NULL UNIQUE, tinyint(2) "2" ]
 
 statement error

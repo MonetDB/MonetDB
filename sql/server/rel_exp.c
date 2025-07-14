@@ -777,8 +777,10 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_has_no_nil(ne);
 	if (has_nil(oe))
 		set_has_nil(ne);
+	/*
 	if (is_unique(oe))
 		set_unique(ne);
+		*/
 	if (is_basecol(oe))
 		set_basecol(ne);
 	ne->p = prop_copy(sa, oe->p);
@@ -806,8 +808,10 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		set_has_no_nil(e);
 	if (has_nil(o))
 		set_has_nil(e);
+	/*
 	if (is_unique(o))
 		set_unique(e);
+		*/
 	if (is_intern(o))
 		set_intern(e);
 	return exp_propagate(sa, e, o);

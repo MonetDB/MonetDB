@@ -408,7 +408,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		case op_project:
 		case op_groupby: {
 			sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e); /* labels may be found on the same projection, ugh */
-			if (!found && is_simple_project(rel->op))
+			if (!found && (is_simple_project(rel->op) || rel->op == op_groupby))
 				(void) rel_propagate_column_ref_statistics(sql, rel, e);
 			break;
 		}
@@ -1375,6 +1375,23 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 	int *scores = NULL;
 	sql_exp **exps = NULL;
 
+	if (v->parent && !is_topn(v->parent->op) && !is_sample(v->parent->op) &&
+			is_groupby(rel->op) && exps_unique(v->sql, rel, rel->r)) {
+		bool found = false;
+		for(node *n = rel->exps->h; n && !found; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type == e_aggr)
+				found = 1;
+		}
+		if (!found) {
+			/* no need to groupby on unique values */
+			rel->exps= list_merge(rel->r, rel->exps, (fdup)NULL);
+			rel->op = op_project;
+			rel->r = NULL;
+			return rel;
+		}
+	}
+
 	if (is_groupby(rel->op) && list_length(rel->r) > 1) {
 		node *n;
 		list *gbe = rel->r;
@@ -1421,7 +1438,7 @@ rel_final_optimization_loop_(visitor *v, sql_rel *rel)
 	   rel_distinct_project2groupby, rel_simplify_predicates, rel_simplify_math,
 	   rel_distinct_aggregate_on_unique_values */
 
-	rel = rel_groupby_order(v, rel);
+	rel = rel_groupby_order(v, rel); /* also removes groupby's on unique cols */
 	return rel;
 }
 
