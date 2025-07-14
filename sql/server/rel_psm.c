@@ -555,7 +555,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		return NULL;
 	if (!is_project(r->op))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
-	if (list_length(r->exps) != dlist_length(into))
+	if (!into || list_length(r->exps) != dlist_length(into))
 		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
 	r = rel_return_zero_or_one(sql, r, ek);
 	nl = sa_list(sql->sa);
@@ -1456,7 +1456,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			rel = stack_find_rel_view(sql, "old");
 		if (!rel)
 			rel = stack_find_rel_view(sql, "new");
-		rel = rel_logical_exp(query, rel, condition, sql_where);
+		if (rel)
+			rel = rel_logical_exp(query, rel, condition, sql_where);
 		if (!rel) {
 			if (!instantiate)
 				stack_pop_frame(sql);
@@ -1464,7 +1465,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 		/* transition tables */
 		/* insert: rel_select(table [new], searchcondition) */
-		/* delete: rel_select(table [old], searchcondition) */
+		/* delete/truncate: rel_select(table [old], searchcondition) */
 		/* update: rel_select(table [old,new]), searchcondition) */
 		if (new_name)
 			stack_update_rel_view(sql, new_name, rel);

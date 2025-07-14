@@ -1,29 +1,29 @@
-query RRRR rowsort
+query DDDD rowsort
 SELECT ROUND(748.58, -1),ROUND(748.58, -2),ROUND(748.58, -3),ROUND(748.58, -4)
 ----
-750.000
-700.000
-1000.000
-0.000
+750.00
+700.00
+1000.00
+0.00
 
-query RR rowsort
+query DD rowsort
 SELECT ROUND(123.9994, 3),ROUND(123.9995, 3)
 ----
-123.999
-124.000
+123.9990
+124.0000
 
-query R rowsort
+query D rowsort
 SELECT ROUND(123.4545, 2)
 ----
-123.450
+123.4500
 
-query R rowsort
+query D rowsort
 SELECT ROUND(123.45, -2)
 ----
-100.000
+100.00
 
-query R rowsort
+query D rowsort
 SELECT ROUND(150.75, 0)
 ----
-151.000
+151.00
 

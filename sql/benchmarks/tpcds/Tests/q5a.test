@@ -1,4 +1,4 @@
-query TTRRR nosort
+query TTDDD nosort
 -- query 5a
 with ssr as
  (select s_store_id,
@@ -133,5 +133,5 @@ with ssr as
 order by channel, id
 limit 100
 ----
-500 values hashing to 0ad51d1cc1629f2f07599b97b15c0515
+500 values hashing to 3393758ee2e590351b3acdc4bf4293a1
 

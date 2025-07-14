@@ -374,10 +374,10 @@ CREATE TABLE t(x DECIMAL(4,1))
 statement ok
 INSERT INTO t VALUES (42)
 
-query R rowsort
+query D rowsort
 SELECT CAST(SUM(x) / COUNT(x) AS DECIMAL(13,1)) FROM t
 ----
-42.000
+42.0
 
 statement ok
 ROLLBACK

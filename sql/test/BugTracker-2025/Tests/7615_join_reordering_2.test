@@ -20,7 +20,7 @@ statement ok
 CREATE VIEW result AS SELECT x1.a1 AS a1, x1.a2 AS a2, x5.a1 AS a3, x5.a2 AS a4, x5.a3 AS a5, x1.p * x5.p as p from x1, x5 where maxlevhelper( x1.a1,x1.a2, x5.a1,x5.a2,x5.a3)
 
 query T nosort
-plan select * from result;
+plan select * from result
 ----
 project (
 | project (
@@ -40,3 +40,4 @@ project (
 | | ) [  ]
 | ) [ "x1"."a1" NOT NULL as "a1", "x1"."a2" NOT NULL as "a2", "x4"."a1" NOT NULL as "a3", "x4"."a2" NOT NULL as "a4", "x4"."a3" NOT NULL as "a5", "sys"."sql_mul"("x1"."p" NOT NULL, "x4"."p" NOT NULL) NOT NULL as "p" ]
 ) [ "a1" NOT NULL as "result"."a1", "a2" NOT NULL as "result"."a2", "a3" NOT NULL as "result"."a3", "a4" NOT NULL as "result"."a4", "a5" NOT NULL as "result"."a5", "p" NOT NULL as "result"."p" ]
+

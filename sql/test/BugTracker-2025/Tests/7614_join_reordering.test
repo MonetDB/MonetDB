@@ -1,20 +1,20 @@
 statement ok
-CREATE OR REPLACE FILTER FUNCTION maxlev_helper(a1 INTEGER, a2 INTEGER, a3 INTEGER, a4 INTEGER, a5 DOUBLE) EXTERNAL NAME txtsim.maxlevenshtein;
+CREATE OR REPLACE FILTER FUNCTION maxlev_helper(a1 INTEGER, a2 INTEGER, a3 INTEGER, a4 INTEGER, a5 DOUBLE) EXTERNAL NAME txtsim.maxlevenshtein
 
 statement ok
-CREATE TABLE t1 (a1 INTEGER, a2 INTEGER, p DOUBLE);
+CREATE TABLE t1 (a1 INTEGER, a2 INTEGER, p DOUBLE)
 
 statement ok
-CREATE TABLE t2 (a1 INTEGER, p DOUBLE);
+CREATE TABLE t2 (a1 INTEGER, p DOUBLE)
 
 statement ok
-CREATE TABLE t3 (a1 INTEGER, a2 INTEGER, p DOUBLE);
+CREATE TABLE t3 (a1 INTEGER, a2 INTEGER, p DOUBLE)
 
 statement ok
-CREATE VIEW t4 AS SELECT t3.a1 AS a1, t3.a2 AS a2, t2.p AS a3, t2.p AS p FROM t3, t2 WHERE t3.a2 = t2.a1;
+CREATE VIEW t4 AS SELECT t3.a1 AS a1, t3.a2 AS a2, t2.p AS a3, t2.p AS p FROM t3, t2 WHERE t3.a2 = t2.a1
 
 query T nosort
-PLAN SELECT COUNT(*) FROM (SELECT t1.a1 AS a1, t1.a2 AS a2, t4.a1 AS a3, t4.a2 AS a4, t4.a3 AS a5, t1.p AS p FROM t1, t4 WHERE maxlev_helper (t1.a1, t1.a2, t4.a1,t4.a2,t4.a3)) AS foo;
+PLAN SELECT COUNT(*) FROM (SELECT t1.a1 AS a1, t1.a2 AS a2, t4.a1 AS a3, t4.a2 AS a4, t4.a3 AS a5, t1.p AS p FROM t1, t4 WHERE maxlev_helper (t1.a1, t1.a2, t4.a1,t4.a2,t4.a3)) AS foo
 ----
 project (
 | group by (
@@ -29,3 +29,4 @@ project (
 | | ) [ "t1"."a1" NOT NULL as "foo"."a1" ]
 | ) [  ] [ "sys"."count"() NOT NULL UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL UNIQUE ]
+

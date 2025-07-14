@@ -2275,6 +2275,13 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 	   but we don't care about that here. */
 	sub = rel_project(sql->sa, sub, rel_projections(sql, sub, NULL, 1, 0));
 
+	int nrcolumns = sub->nrcols;
+	int nrfilenames = filenames->cnt;
+	if (nrcolumns != nrfilenames) {
+		return sql_error(sql, 02, "COPY INTO BINARY: need %d file names, got %d",
+			nrcolumns, nrfilenames);
+	}
+
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
 	if (!rel || !exps)

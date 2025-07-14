@@ -7,7 +7,7 @@ create table testme (a int, b clob, c int)
 statement ok
 insert into testme values (1, 'another', 1), (5, '', 20), (5, 'if', 20), (2, 'two', 2), (4, 'a singleton', 10), (5, 'else', 20)
 
-query IT
+query IT nosort
 select a, listagg(b order by b) from testme where c > 3 group by a order by a
 ----
 4
@@ -15,7 +15,7 @@ a singleton
 5
 ,else,if
 
-query IT
+query IT nosort
 select a, listagg(b, E'XyZ\n' order by b) from testme where c > 3 group by a order by a
 ----
 4
@@ -23,37 +23,37 @@ a singleton
 5
 XyZ@elseXyZ@if
 
-query T
+query T nosort
 select '[' || listagg(a order by a) || ']' from testme
 ----
 [1,2,4,5,5,5]
 
-query T
+query T nosort
 select '[' || listagg(a order by a desc) || ']' from testme
 ----
 [5,5,5,4,2,1]
 
-query T
+query T nosort
 select '[' || listagg(a, '' order by a desc) || ']' from testme
 ----
 [555421]
 
-query T
+query T nosort
 select '[' || listagg(a, 'XyZ\n' order by a desc) || ']' from testme
 ----
 [5XyZ@5XyZ@5XyZ@4XyZ@2XyZ@1]
 
-query T
+query T nosort
 select listagg(a, a order by a) from testme
 ----
 12244555555
 
-query T
+query T nosort
 select listagg(a, 8 order by a) from testme
 ----
 18284858585
 
-query TT
+query TT nosort
 select listagg(a, NULL order by a),  listagg(b, NULL order by b) from testme
 ----
 124555
@@ -67,7 +67,7 @@ select listagg(c order by c desc) from testme where c < 3
 statement ok
 insert into testme values (6, '', 12), (7, '', 323), (4, 'not a singleton anymore', 7), (7, NULL, 323)
 
-query IT
+query IT nosort
 select a, listagg(b order by b) from testme where c > 3 group by a order by a
 ----
 4
@@ -85,13 +85,13 @@ create table othertest (a int, b clob)
 statement ok
 insert into othertest values (1, E'\\t a\t'), (1, E'\n\\n,'), (1, ',,,')
 
-query IT
+query IT nosort
 select a, listagg(b order by b) from othertest group by a
 ----
 1
 @\n,,,,,,\t a@
 
-query T
+query T nosort
 select listagg(b order by b) from othertest
 ----
 @\n,,,,,,\t a@

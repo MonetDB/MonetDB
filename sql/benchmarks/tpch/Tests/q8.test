@@ -1,5 +1,5 @@
 #Q8
-query IR nosort
+query ID nosort
 select
 	o_year,
 	sum(case
@@ -39,7 +39,7 @@ order by
 	o_year
 ----
 1995
-0.000
+0.0000
 1996
-0.000
+0.0000
 

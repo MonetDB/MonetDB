@@ -1470,7 +1470,7 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 					pe = exps_find_exp(rp->exps, pe);
 				if (pe)
 					pe = rel_find_exp(l, pe);
-				if (pe) {
+				if (pe && pe->type == e_column) {
 					if (exp_is_atom(pe))
 						return rel;
 					pe = exp_ref(v->sql, pe);

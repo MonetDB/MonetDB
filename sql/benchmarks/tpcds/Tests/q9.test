@@ -1,4 +1,4 @@
-query RRRRR rowsort
+query DDDDD rowsort
 -- query 9
 select case when (select count(*)
                   from store_sales
@@ -48,9 +48,9 @@ select case when (select count(*)
 from reason
 where r_reason_sk = 1
 ----
-39.650
-115.900
-191.630
-267.190
-341.990
+39.65
+115.90
+191.63
+267.19
+341.99
 

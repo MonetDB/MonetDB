@@ -1,4 +1,4 @@
-query TTTTTTTTTTTTTRTR nosort
+query TTTTTTTTTTTTTDTD nosort
 -- query 81
 with customer_total_return as
  (select cr_returning_customer_sk as ctr_customer_sk
@@ -29,5 +29,5 @@ with customer_total_return as
                   ,ca_location_type,ctr_total_return
  limit 100
 ----
-1600 values hashing to b13f5bef7e552d99217a5c69fd297984
+1600 values hashing to 77d688d58b0669956598e261a0f696f3
 

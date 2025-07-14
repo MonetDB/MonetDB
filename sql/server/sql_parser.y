@@ -3989,8 +3989,8 @@ table_ref:
 				  	append_symbol(l, $2);
 				  	$$ = _symbol_create_list(SQL_TABLE, l);
 				  } else {
-					append_int($2->data.lval, 0);
-					append_symbol($1->data.lval, $2);
+					append_int($$->data.lval, 0);
+					append_symbol($$->data.lval, $2);
 				  }
 				}
  |  LATERAL select_with_parens opt_table_name

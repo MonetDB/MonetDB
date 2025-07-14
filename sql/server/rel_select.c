@@ -1842,6 +1842,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
+				set_not_unique(exp);
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}
@@ -1940,6 +1941,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 				else
 					exp->card = CARD_ATOM;
 				set_freevar(exp, i);
+				set_not_unique(exp);
 				if (!is_sql_where(of) && !is_sql_aggr(of) && !is_sql_aggr(f) && !outer->grouped)
 					set_outer(outer);
 			}

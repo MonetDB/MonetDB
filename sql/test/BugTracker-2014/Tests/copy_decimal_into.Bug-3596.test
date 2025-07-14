@@ -8,15 +8,15 @@ t1,  0.1
 t2,0.2
 t3, 1.1
 
-query TR rowsort
+query TD rowsort
 select * from load_decimals
 ----
 t1
-0.100
+0.10
 t2
-0.200
+0.20
 t3
-1.100
+1.10
 
 statement ok
 drop table load_decimals

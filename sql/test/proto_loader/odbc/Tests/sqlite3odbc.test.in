@@ -9,16 +9,16 @@ select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=~/
 statement error 42000!SELECT: proto_loader function failed 'odbc_loader SQLExecDirect query failed. SQLSTATE HY000, Error code 1, Message [SQLite]no such table: INFORMATION_SCHEMA.TABLES (1)'
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM INFORMATION_SCHEMA.TABLES')
 
-query TTT
+query TTT nosort
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT type, name, tbl_name FROM sqlite_master ORDER BY 1,2,3')
 ----
 
-query TTTIT
+query TTTIT nosort
 select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=odbc_loader_test.db;QUERY=SELECT * FROM sqlite_master ORDER BY 1,2,3')
 ----
 
-query TTTT
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT tbl_name, type, name, sql FROM sqlite_master ORDER BY 1,2 DESC,3')
+query TTTT nosort
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT tbl_name, type, name, sql FROM sqlite_master ORDER BY 1,2 DESC,3')
 ----
 albums
 table
@@ -117,8 +117,8 @@ index
 IFK_TrackMediaTypeId
 CREATE INDEX [IFK_TrackMediaTypeId] ON "tracks" ([MediaTypeId])
 
-query IITTTTTTI
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoices limit 11')
+query IITTTTTTR nosort
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoices limit 11')
 ----
 1
 2
@@ -128,7 +128,7 @@ Stuttgart
 NULL
 Germany
 70174
-1
+1.980
 2
 4
 2009-01-02 00:00:00
@@ -137,7 +137,7 @@ Oslo
 NULL
 Norway
 0171
-3
+3.960
 3
 8
 2009-01-03 00:00:00
@@ -146,7 +146,7 @@ Brussels
 NULL
 Belgium
 1000
-5
+5.940
 4
 14
 2009-01-06 00:00:00
@@ -155,7 +155,7 @@ Edmonton
 AB
 Canada
 T6G 2C7
-8
+8.910
 5
 23
 2009-01-11 00:00:00
@@ -164,7 +164,7 @@ Boston
 MA
 USA
 2113
-13
+13.860
 6
 37
 2009-01-19 00:00:00
@@ -173,7 +173,7 @@ Frankfurt
 NULL
 Germany
 60316
-0
+0.990
 7
 38
 2009-02-01 00:00:00
@@ -182,7 +182,7 @@ Berlin
 NULL
 Germany
 10779
-1
+1.980
 8
 40
 2009-02-01 00:00:00
@@ -191,7 +191,7 @@ Paris
 NULL
 France
 75002
-1
+1.980
 9
 42
 2009-02-02 00:00:00
@@ -200,7 +200,7 @@ Bordeaux
 NULL
 France
 33000
-3
+3.960
 10
 46
 2009-02-03 00:00:00
@@ -209,7 +209,7 @@ Dublin
 Dublin
 Ireland
 NULL
-5
+5.940
 11
 52
 2009-02-06 00:00:00
@@ -218,10 +218,10 @@ London
 NULL
 United Kingdom
 N1 5LH
-8
+8.910
 
-query TI
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM sqlite_sequence')
+query TI nosort
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM sqlite_sequence')
 ----
 genres
 25
@@ -245,7 +245,7 @@ playlists
 18
 
 query TTT nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM sqlite_stat1')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM sqlite_stat1')
 ----
 tracks
 IFK_TrackMediaTypeId
@@ -294,22 +294,22 @@ IFK_InvoiceLineInvoiceId
 2240 6
 
 query ITI nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM albums')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM albums')
 ----
 1041 values hashing to 5629d90611e126ef86cf716bffff1fe9
 
 query IT nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM artists')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM artists')
 ----
 550 values hashing to f6d93e6eefe9276280048f02224c4b2f
 
 query ITTTTTTTTTTTI nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM customers')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM customers')
 ----
 767 values hashing to ac1c25f0abde32d6a592ad4c74375e6c
 
 query IT nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM genres')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM genres')
 ----
 1
 Rock
@@ -363,17 +363,17 @@ Classical
 Opera
 
 query IIIRI nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoice_items')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoice_items')
 ----
 11200 values hashing to a9e3a705e7d0f104f12537d7a4452fc8
 
 query IITTTTTTR nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoices')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM invoices')
 ----
 3708 values hashing to 6468e5558d61ab41f736750792ceb3a0
 
 query IT nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM media_types')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM media_types')
 ----
 1
 MPEG audio file
@@ -387,12 +387,12 @@ Purchased AAC audio file
 AAC audio file
 
 query II nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM playlist_track')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM playlist_track')
 ----
 17430 values hashing to b3662845bff3c7fd8568b8b25033d188
 
 query IT nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM playlists')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM playlists')
 ----
 1
 Music
@@ -432,7 +432,7 @@ Heavy Metal Classic
 On-The-Go 1
 
 query ITIIITIIR nosort
-select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$TSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM tracks')
+select * from proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;Database=$QTSTDATAPATH/sqlite3odbc/chinook.db;QUERY=SELECT * FROM tracks')
 ----
 31527 values hashing to 9bdd4fdb9d8b354b75169ce5bddbda76
 

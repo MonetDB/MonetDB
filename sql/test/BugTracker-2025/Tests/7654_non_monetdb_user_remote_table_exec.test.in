@@ -15,7 +15,8 @@ statement ok
 create remote table foo(value smallint) on 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/u1/foo' with user 'u1' password 'u1'
 
 @connection(id=c3, username=u2, password=u2)
-query I
+query I nosort
 select count(*) from foo
 ----
 1000
+

@@ -1,4 +1,4 @@
-query IITR rowsort
+query IITD rowsort
 -- query 52
 select  dt.d_year
  	,item.i_brand_id brand_id
@@ -20,5 +20,5 @@ select  dt.d_year
  	,brand_id
 limit 100
 ----
-400 values hashing to 098994548f767eef8fe45bf3d6624419
+400 values hashing to 2b1e71e1ec646ddc8b31d897a2824239
 

@@ -48,6 +48,7 @@ MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 procdebug = False
 verbosity = 0
 approve = False
+replace = False
 stop_crash = False
 
 initdb = None
@@ -1163,9 +1164,9 @@ def PerformDir(env, testdir, testlist, total_tests) :
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     return elem, max(FdOut, FdErr), interrupted
             keyfile = os.path.join(LogDBdir, '.vaultkey')
-            if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
+            if os.path.isabs(LogDBdir):
                 try:
-                    os.makedirs(LogDBdir)
+                    os.makedirs(LogDBdir, exist_ok=True)
                 except:
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     return elem, max(FdOut, FdErr), interrupted
@@ -1204,7 +1205,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
                     pSrvr.LaunchIt(env=environ)
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
-            os.makedirs(TSTTRGDIR)
+            os.makedirs(TSTTRGDIR, exist_ok=True)
 
         body_good = []
         body_bad = []
@@ -1590,8 +1591,7 @@ def GetBitsAndModsAndThreads(env) :
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                       stderr=process.PIPE, text=True,
-                       process_group=0) as proc:
+                       stderr=process.PIPE, text=True) as proc:
         stderr = proc.stderr
         proc.stdout = process._BufferedPipe(proc.stdout)
         proc.stderr = process._BufferedPipe(proc.stderr)
@@ -2453,10 +2453,6 @@ def killchildren(pid, procs = None):
         if procdebug:
             print('killing process %d failed' % pid)
 
-def reallyKill(proc):
-    # not called on Windows
-    killchildren(proc.pid, getkids())
-
 def stacktrace(proc, outfile):
     if os.name == 'nt':
         sym = ''
@@ -2666,8 +2662,7 @@ class ServerClass:
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
             proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
-                                 stderr=stderr, text=True, cwd=cwd, env=env,
-                                 process_group=0)
+                                 stderr=stderr, text=True, cwd=cwd, env=env)
         # maybe buffer output as it comes to avoid deadlock
         if stdout == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
@@ -2759,8 +2754,7 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr, TSTTRGDIR, en
     with process.Popen(cmd, stdin=TestIn, stdout=TestOut,
                        stderr=TestErr, text=True,
                        cwd=TSTTRGDIR, env=environ,
-                       executable=executable,
-                       process_group=0) as proc:
+                       executable=executable) as proc:
         proc.killed = False
         proc.onechild = onechild
         try:
@@ -2983,12 +2977,17 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                             defines = []
                             testfile = TST+EXT
                             if lang == 'sql' and os.path.exists(os.path.join(TSTTRGDIR, TST+'.test.in')):
+                                bs = '\\'
                                 testfile = TST+'.test.in'
-                                defines.append(f'TSTDATAPATH={TSTDATAPATH}')
-                                defines.append(f'TSTSRCBASE={TSTSRCBASE}')
-                                defines.append(f'TSTSRCDIR={TSTSRCDIR}')
-                                defines.append(f'TSTTRGDIR={TSTTRGDIR}')
+                                if TSTDATAPATH:
+                                    defines.append(f'QTSTDATAPATH={TSTDATAPATH.replace(bs,bs+bs)}')
+                                    defines.append(f'TSTDATAPATH={TSTDATAPATH}')
                                 defines.append(f'UTSTSRCDIR=file://{url(TSTSRCDIR)}')
+                                defines.append(f'QTSTSRCDIR={TSTSRCDIR.replace(bs,bs+bs)}')
+                                defines.append(f'TSTSRCDIR={TSTSRCDIR}')
+                                defines.append(f'QTSTTRGDIR={TSTTRGDIR.replace(bs,bs+bs)}')
+                                defines.append(f'TSTTRGDIR={TSTTRGDIR}')
+                                defines.append(f'TSTSRCBASE={TSTSRCBASE}')
                                 defines.append(f'TSTDB={TSTDB}')
                                 defines.append(f'MAPIPORT={pSrvr.port}')
                             try:
@@ -3014,6 +3013,12 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                                     returncode = 'error'
                                 elif sql.timedout:
                                     returncode = 'timeout'
+                                if approve and replace and not sql.timedout:
+                                    with openutf8(os.path.join(TSTTRGDIR, TST+'.newtest')) as fin, \
+                                         openutf8(os.path.join(TSTSRCDIR, testfile + 'new'), 'w') as fout:
+                                        fout.write(fin.read())
+                                        fout.flush()
+                                    os.replace(os.path.join(TSTSRCDIR, testfile + 'new'), os.path.join(TSTSRCDIR, testfile))
             elif CALL == 'sql':
                 TSTs = []
                 test = re.compile('^'+TST+EXT+'$', re.MULTILINE)
@@ -3463,8 +3468,7 @@ def main(argv) :
             res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
             if res is not None:
                 rdir = os.path.expanduser(res.group('dir'))
-                if not os.path.exists(rdir):
-                    os.makedirs(rdir)
+                os.makedirs(rdir, exist_ok=True)
     dft['RCLIENT'] = f"'R --vanilla {r_noecho}'"
 
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
@@ -3513,6 +3517,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
+    parser.add_argument('--approve+replace', action='store_true', dest='approve_replace', help='produce new .test file in source directory with calculated content')
     parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
     parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
@@ -3548,9 +3553,12 @@ def main(argv) :
     global procdebug
     procdebug = opts.procdebug
     global approve
-    approve = opts.approve
+    global replace
+    approve = opts.approve or opts.approve_replace
     if approve:
         os.environ['MTEST_APPROVE'] = 'TRUE'
+    if opts.approve_replace:
+        replace = True
     global stop_crash
     stop_crash = opts.stop_crash
     global ignore_conditions
@@ -4029,8 +4037,7 @@ def main(argv) :
                 raise
             except:
                 ErrXit('Failed to remove %s' % os.path.join(TSTTRGBASE, TSTPREF))
-        if not os.path.exists(env['GDK_DBFARM']):
-            os.makedirs(env['GDK_DBFARM'])
+        os.makedirs(env['GDK_DBFARM'], exist_ok=True)
 
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
             try:
@@ -4112,29 +4119,33 @@ def main(argv) :
                 if verbosity > 1:
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
                 with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
-                    futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
-                for future in concurrent.futures.as_completed(futures):
-                    d = futures[future]
-                    elem, diff, interrupted = future.result()
-                    if elem is not None:
-                        if diff <= F_OK:
-                            body_good.append(elem)
-                        else:
-                            body_bad.append(elem)
-                    if not errseen and diff > F_WARN:
-                        errseen = True
-                    if interrupted:
-                        break
-                    if not testweb:
-                        if global_timeout and start_time + global_timeout < time.time():
-                            print('\nGlobal testing timeout reached\n')
-                            break
-                        if produce_html:
-                            # after a directory has been tested, create
-                            # the index file so that we can look at test
-                            # results while the tests are running
-                            body = body_bad + body_good
-                            CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                    try:
+                        futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
+                        for future in concurrent.futures.as_completed(futures):
+                            d = futures[future]
+                            elem, diff, interrupted = future.result()
+                            if elem is not None:
+                                if diff <= F_OK:
+                                    body_good.append(elem)
+                                else:
+                                    body_bad.append(elem)
+                            if not errseen and diff > F_WARN:
+                                errseen = True
+                            if interrupted:
+                                break
+                            if not testweb:
+                                if global_timeout and start_time + global_timeout < time.time():
+                                    print('\nGlobal testing timeout reached\n')
+                                    break
+                                if produce_html:
+                                    # after a directory has been tested, create
+                                    # the index file so that we can look at test
+                                    # results while the tests are running
+                                    body = body_bad + body_good
+                                    CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                    except KeyboardInterrupt:
+                        tp.shutdown(cancel_futures=True)
+                        raise
             if verbosity == 0:
                 print()
         except KeyboardInterrupt:

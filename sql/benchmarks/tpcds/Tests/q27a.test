@@ -1,4 +1,4 @@
-query TTIRRRR rowsort
+query TTIRDDD rowsort
 -- query 27a
 with results as
  (select i_item_id,
@@ -34,5 +34,5 @@ with results as
   order by i_item_id, s_state
  limit 100
 ----
-700 values hashing to 4768cbb63a3c1944e5a2bfbd752ba99a
+700 values hashing to 0b08428af01bda2591587c2fb566df73
 
