@@ -1884,7 +1884,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	int file_count = dlist_length(files);
 	if (column_count != file_count) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY BINARY INTO: "
-			"number of files _umber of columns: "
+			"number of files does not match number of columns: "
 			"%d files, %d columns",
 			file_count, column_count);
 	}
