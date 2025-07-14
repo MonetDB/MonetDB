@@ -2453,10 +2453,6 @@ def killchildren(pid, procs = None):
         if procdebug:
             print('killing process %d failed' % pid)
 
-def reallyKill(proc):
-    # not called on Windows
-    killchildren(proc.pid, getkids())
-
 def stacktrace(proc, outfile):
     if os.name == 'nt':
         sym = ''
