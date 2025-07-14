@@ -27,14 +27,6 @@ except ImportError:
     DEVNULL = os.open(os.devnull, os.O_RDWR)
 __all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server', 'TimeoutExpired']
 
-try:
-    # on Windows, also make this available
-    from subprocess import CREATE_NEW_PROCESS_GROUP
-except ImportError:
-    pass
-else:
-    __all__.append('CREATE_NEW_PROCESS_GROUP')
-
 verbose = False
 
 def splitcommand(cmd):
@@ -258,13 +250,6 @@ class Popen(subprocess.Popen):
         if sys.hexversion < 0x03070000 and 'text' in kwargs:
             kwargs = kwargs.copy()
             kwargs['universal_newlines'] = kwargs.pop('text')
-        if sys.hexversion < 0x03110000 and 'process_group' in kwargs:
-            kwargs = kwargs.copy()
-            pgid = kwargs.pop('process_group')
-            try:
-                kwargs['preexec_fn'] = os.setpgrp
-            except AttributeError:
-                pass
         super().__init__(*args, **kwargs)
 
     def __exit__(self, exc_type, value, traceback):
@@ -577,10 +562,6 @@ class server(Popen):
             os.unlink(started)
         except OSError:
             pass
-        if os.name == 'nt':
-            kw = {'creationflags': CREATE_NEW_PROCESS_GROUP}
-        else:
-            kw = {}
         starttime = time.time()
         super().__init__(cmd + args,
                          stdin=stdin,
@@ -589,8 +570,7 @@ class server(Popen):
                          shell=False,
                          text=True,
                          bufsize=bufsize,
-                         encoding='utf-8',
-                         **kw)
+                         encoding='utf-8')
         self.isserver = True
         if stderr == PIPE:
             self.stderr = _BufferedPipe(self.stderr)
