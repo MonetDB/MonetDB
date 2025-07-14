@@ -2414,8 +2414,11 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 		r = sa->blks[sa->nr-1] + sa->used;
 		sa->used += sz;
 	}
-	sa->objects += 1;
-	sa->inuse += 1;
+	if (sz < SA_BLOCK_SIZE) {
+		// countig object only
+		sa->objects += 1;
+		sa->inuse += 1;
+	}
 	COND_UNLOCK_ALLOCATOR(sa);
 	return r;
 }
