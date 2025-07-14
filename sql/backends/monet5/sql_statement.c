@@ -5007,6 +5007,9 @@ stmt_control_end(backend *be, stmt *cond)
 
 	if (cond->loop) {	/* while */
 		/* redo barrier */
+		q = newStmt(mb, sqlRef, mvcRef);
+		q->argv[0] = be->mvc_var;
+		pushInstruction(mb, q);
 		q = newAssignment(mb);
 		if (q == NULL)
 			goto bailout;
@@ -5078,6 +5081,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 
 	if (val->nr < 0)
 		goto bailout;
+
 	int args = val->type == st_table ? 2 * list_length(val->op1->op4.lval) : 0;
 	if (args < MAXARG)
 		args = MAXARG;

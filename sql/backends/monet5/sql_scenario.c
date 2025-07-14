@@ -937,6 +937,8 @@ SQLtrans(mvc *m)
 				throw(SQL, "sql.trans", SQLSTATE(42000) "The session's schema was not found, this session is going to terminate");
 			}
 		}
+	} else {
+		m->session->tr->cnr++;
 	}
 	return MAL_SUCCEED;
 }
@@ -1567,6 +1569,8 @@ SQLparser_body(Client c, backend *be)
 							freeException(other);
 						goto finalize;
 					}
+				} else if (msg == MAL_SUCCEED && !opt) {
+					c->curprg->def->vsize = c->curprg->def->vtop; /* no optimizations, ie no need for extra variables */
 				}
 
 				/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */

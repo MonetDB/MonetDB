@@ -1,0 +1,105 @@
+
+statement ok
+DROP TABLE IF EXISTS foo
+
+statement ok
+CREATE TABLE foo(s TEXT, t TEXT)
+
+
+
+-- First show that the 'default' order works
+
+statement ok
+COPY INTO foo FROM R'$TSTSRCDIR/aapnootmies.csv'
+
+query TT rowsort
+SELECT * FROM foo
+----
+1
+Xaap
+2
+Xnoot
+3
+Xmies
+
+statement ok
+TRUNCATE foo
+
+
+
+-- add USING DELIMITERS and NULL clauses
+
+statement ok
+COPY INTO foo FROM R'$TSTSRCDIR/aapnootmies.csv'
+USING DELIMITERS 'X', E'\n'
+NULL AS 'noot'
+
+query TT rowsort
+SELECT * FROM foo
+----
+1|
+aap
+2|
+NULL
+3|
+mies
+
+
+
+-- add USING DELIMITERS and NULL clauses in a different order
+
+statement ok
+TRUNCATE foo
+
+statement ok
+COPY INTO foo FROM R'$TSTSRCDIR/aapnootmies.csv'
+NULL AS 'noot'
+USING DELIMITERS 'X', E'\n'
+
+query TT rowsort
+SELECT * FROM foo
+----
+1|
+aap
+2|
+NULL
+3|
+mies
+
+
+
+-- What happens if we duplicate a clause?
+
+statement ok
+TRUNCATE foo
+
+statement ok
+COPY INTO foo FROM R'$TSTSRCDIR/aapnootmies.csv'
+USING DELIMITERS '*', 'X'
+NULL AS 'noot'
+USING DELIMITERS 'X', E'\n'
+
+query TT rowsort
+SELECT * FROM foo
+----
+1|
+aap
+2|
+NULL
+3|
+mies
+
+
+-- What happens if a duplicate clause updates only part of the settings?
+
+statement ok
+TRUNCATE foo
+
+-- First we set it to colsep=* and rowsep=X.
+-- Then we set colsep=X and leave rowsep alone
+-- The result is colsep and rowsep are the same, which causes an error.
+statement error 42000!COPY INTO: row separator, column separator and quote character must be distinct
+COPY INTO foo FROM R'$TSTSRCDIR/aapnootmies.csv'
+USING DELIMITERS '*', 'X'
+NULL AS 'noot'
+USING DELIMITERS 'X';

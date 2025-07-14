@@ -551,7 +551,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		sql_rel *l = rel->l;
 		if (is_topn(l->op))
 			l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
-		return rel2bin_materialize(be, l, refs);
+		return rel2bin_materialize(be, l, refs, false);
 	}
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2);

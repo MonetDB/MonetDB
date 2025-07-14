@@ -118,7 +118,8 @@ target_link_libraries(bat
   $<$<PLATFORM_ID:Windows>:ws2_32>
   $<$<BOOL:${KVM_FOUND}>:KVM::KVM>
   ${CMAKE_DL_LIBS}
-  Threads::Threads)
+  Threads::Threads
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>)
 
 # This definition is also used in Linux
 target_compile_definitions(bat

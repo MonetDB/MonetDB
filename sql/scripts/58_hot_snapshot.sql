@@ -17,6 +17,12 @@ create procedure sys.hot_snapshot(tarfile string)
 create procedure sys.hot_snapshot(tarfile string, onserver bool)
 	external name sql.hot_snapshot;
 
+create procedure sys.hot_snapshot(tarfile string, onserver bool, omitunlogged bool)
+	external name sql.hot_snapshot;
+
+create procedure sys.hot_snapshot(tarfile string, onserver bool, omitunlogged bool, omitids string)
+	external name sql.hot_snapshot;
+
 -- We intentionally don't GRANT EXECUTE ON sys.hot_snapshot TO PUBLIC!
 
 -- We do however create a special user which is (only) allowed to

@@ -1961,6 +1961,9 @@ rel_find_nid(sql_rel *rel, int nid)
 		case op_except:
 		case op_project:
 		case op_groupby:
+		case op_insert:
+		case op_delete:
+		case op_update:
 			if (rel->exps) {
 				if (exps_bind_nid(rel->exps, nid))
 					return true;
@@ -1974,9 +1977,6 @@ rel_find_nid(sql_rel *rel, int nid)
 				return true;
 			break;
 		case op_ddl:
-		case op_insert:
-		case op_update:
-		case op_delete:
 		case op_truncate:
 		case op_buildhash:
 		case op_probehash:

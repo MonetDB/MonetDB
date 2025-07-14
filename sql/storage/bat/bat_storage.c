@@ -44,25 +44,31 @@ static lng merge_delta( sql_delta *obat);
  *  deleted && TS > tr->ts && OLDTS < tr->ts		deleted after current transaction
  */
 
+#define JUST_CHANGED(tr, seg) (seg->ts == tr->tid)
+
 #define VALID_4_READ(TS,tr) \
-	(TS == tr->tid || (tr->parent && tr_version_of_parent(tr, TS)) || TS < tr->ts)
+	((TS == tr->tid) || (tr->parent && tr_version_of_parent(tr, TS)) || TS < tr->ts)
+
+#define SEG_VALID_4_READ(seg, tr) \
+	((seg->ts == tr->tid && seg->cnr < tr->cnr) || (tr->parent && tr_version_of_parent(tr, seg->ts)) || seg->ts < tr->ts)
 
 /* when changed, check if the old status is still valid */
 #define OLD_VALID_4_READ(TS,OLDTS,tr) \
 		(OLDTS && TS != tr->tid && TS > tr->ts && OLDTS < tr->ts)
 
 #define SEG_VALID_4_DELETE(seg,tr) \
-	(!seg->deleted && VALID_4_READ(seg->ts, tr))
+	(!seg->deleted && SEG_VALID_4_READ(seg, tr))
 
 /* Delete (in current trans or by some other finished transaction, or re-used segment which used to be deleted */
 #define SEG_IS_DELETED(seg,tr) \
-	((seg->deleted && (VALID_4_READ(seg->ts, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
-	 (!seg->deleted && !VALID_4_READ(seg->ts, tr)))
+	((seg->deleted && (SEG_VALID_4_READ(seg, tr) || !OLD_VALID_4_READ(seg->ts, seg->oldts, tr))) || \
+	 (!seg->deleted && !SEG_VALID_4_READ(seg, tr)))
 
 /* A segment is part of the current transaction is someway or is deleted by some other transaction but use to be valid */
 #define SEG_IS_VALID(seg, tr) \
-		((!seg->deleted && VALID_4_READ(seg->ts, tr)) || \
+		((!seg->deleted && SEG_VALID_4_READ(seg, tr)) || \
 		 (seg->deleted && OLD_VALID_4_READ(seg->ts, seg->oldts, tr)))
+
 
 static inline BAT *
 transfer_to_systrans(BAT *b)
@@ -172,6 +178,7 @@ new_segment(segment *o, sql_trans *tr, size_t cnt)
 	if (n) {
 		*n = (segment) {
 			.ts = tr->tid,
+			.cnr = tr->cnr,
 			.oldts = 0,
 			.deleted = false,
 			.start = 0,
@@ -196,6 +203,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		assert(o->deleted != deleted || o->ts < TRANSACTION_ID_BASE);
 		o->oldts = o->ts;
 		o->ts = tr->tid;
+		o->cnr = tr->cnr;
 		o->deleted = deleted;
 		return o;
 	}
@@ -205,6 +213,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 		return NULL;
 	n->prev = NULL;
 
+	n->cnr = tr->cnr;
 	if (o->ts == tr->tid) {
 		n->oldts = 0;
 		n->ts = 1;
@@ -267,6 +276,7 @@ rollback_segments(segments *segs, sql_trans *tr, sql_change *change, ulng oldest
 			cur->deleted = !cur->deleted || (cur->ts == cur->oldts);
 			cur->ts = cur->oldts==tr->tid?0:cur->oldts; /* need old ts */
 			cur->oldts = 0;
+			cur->cnr = 0;
 		}
 		if (cur->ts <= oldest) { /* possibly merge range */
 			if (!seg) { /* skip first */
@@ -418,6 +428,7 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 			if (!cur->deleted)
 				cur->oldts = 0;
 			cur->ts = commit_ts;
+			cur->cnr = 0;
 		}
 		if (!seg) {
 			/* first segment */
@@ -2577,11 +2588,11 @@ segments_conflict(sql_trans *tr, segments *segs, int uncommitted)
 {
 	if (uncommitted) {
 		for (segment *s = segs->h; s; s = ATOMIC_PTR_GET(&s->next))
-			if (!VALID_4_READ(s->ts,tr))
+			if (s->end != s->start && !SEG_VALID_4_READ(s,tr))
 				return 1;
 	} else {
 		for (segment *s = segs->h; s; s = ATOMIC_PTR_GET(&s->next))
-			if (s->ts < TRANSACTION_ID_BASE && !VALID_4_READ(s->ts,tr))
+			if (s->ts < TRANSACTION_ID_BASE && !SEG_VALID_4_READ(s,tr))
 				return 1;
 	}
 
@@ -3597,7 +3608,10 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
 		assert(isTempTable(t));
 		if ((ok = clear_storage(tr, t, dbat)) == LOG_OK)
-			if (commit_ts) dbat->segs->h->ts = commit_ts;
+			if (commit_ts) {
+					dbat->segs->h->ts = commit_ts;
+					dbat->segs->h->cnr = 0;
+			}
 		return ok;
 	}
 
@@ -4422,7 +4436,10 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (t->commit_action == CA_DELETE || t->commit_action == CA_DROP) {
 		assert(isTempTable(t));
 		if ((ok = clear_storage(tr, t, dbat)) == LOG_OK)
-			if (commit_ts) dbat->segs->h->ts = commit_ts;
+			if (commit_ts) {
+				dbat->segs->h->ts = commit_ts;
+				dbat->segs->h->cnr = 0;
+			}
 		change->handled = true;
 		return ok;
 	}
@@ -4699,7 +4716,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
 			if ((seg->end - seg->start) >= cnt) {
 				/* if previous is claimed before we could simply adjust the end/start */
-				if (p && p->ts == tr->tid && !p->deleted) {
+				if (p && p->ts == tr->tid && p->cnr == tr->cnr && !p->deleted) {
 					slot = p->end;
 					p->end += cnt;
 					seg->start += cnt;
@@ -4721,6 +4738,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 				}
 			}
 			seg->ts = tr->tid;
+			seg->cnr = tr->cnr;
 			seg->deleted = false;
 			slot = seg->start;
 			if (add_offsets(slot, (seg->end-seg->start), total, offset, offsets) != LOG_OK) {
@@ -4732,7 +4750,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 		}
 	}
 	if (ok == LOG_OK && cnt) {
-		if (s->segs->t && s->segs->t->ts == tr->tid && !s->segs->t->deleted) {
+		if (s->segs->t && s->segs->t->ts == tr->tid && s->segs->t->cnr == tr->cnr && !s->segs->t->deleted) {
 			slot = s->segs->t->end;
 			s->segs->t->end += cnt;
 		} else {
@@ -4793,7 +4811,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 			if ((seg->end - seg->start) >= cnt) {
 
 				/* if previous is claimed before we could simply adjust the end/start */
-				if (p && p->ts == tr->tid && !p->deleted) {
+				if (p && p->ts == tr->tid && p->cnr == tr->cnr && !p->deleted) {
 					slot = p->end;
 					p->end += cnt;
 					seg->start += cnt;
@@ -4808,6 +4826,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 				}
 			}
 			seg->ts = tr->tid;
+			seg->cnr = tr->cnr;
 			seg->deleted = false;
 			slot = seg->start;
 			s->segs->nr_reused += cnt;
@@ -4816,7 +4835,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 		}
 	}
 	if (ok == LOG_OK && !reused) {
-		if (s->segs->t && s->segs->t->ts == tr->tid && !s->segs->t->deleted) {
+		if (s->segs->t && s->segs->t->ts == tr->tid && s->segs->t->cnr == tr->cnr && !s->segs->t->deleted) {
 			slot = s->segs->t->end;
 			s->segs->t->end += cnt;
 		} else {
@@ -4942,7 +4961,7 @@ segments2cands(storage *S, sql_trans *tr, sql_table *t, size_t start, size_t end
 			continue;
 		if (s->start >= end)
 			break;
-		msk m = (SEG_IS_VALID(s, tr));
+		msk m = SEG_IS_VALID(s, tr);
 		size_t lnr = s->end-s->start;
 		if (s->start < start)
 			lnr -= (start - s->start);

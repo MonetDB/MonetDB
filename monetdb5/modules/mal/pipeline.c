@@ -597,7 +597,7 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*resdummy = 0;
 	BAT *b = BATdescriptor(rb);
-	BAT *i = BATdescriptor(ib);
+	BAT *i = BATdescriptor(ib), *oi = i;
 	BAT *r = BATdescriptor(rs);
 
 	if (!b || !i || !rs) {
@@ -609,6 +609,16 @@ PPappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	pp_resultset *pp_rs = (pp_resultset*)r->tsink;
 	(void)pp_rs;
 
+	if (i && (i->ttype == TYPE_msk || mask_cand(i))) {
+		i = BATunmask(i);
+		BBPreclaim(oi);
+		if (!i) {
+			BBPreclaim(b);
+			BBPreclaim(i);
+			BBPreclaim(r);
+			throw(MAL, "bat.append", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+	}
 	if (BATcount(i)) {
 		while(BATcount(b) != (BUN)offset) {
 			/* TODO if error or other issue return */

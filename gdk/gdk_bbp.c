@@ -2159,7 +2159,7 @@ BBPdir_header(FILE *f, int n, lng logno)
 	return GDK_SUCCEED;
 }
 
-static gdk_return
+gdk_return
 BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp)
 {
 	FILE *obbpf = NULL, *nbbpf = NULL;
@@ -2203,6 +2203,8 @@ BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp)
 			GDKerror("cannot read BBPinfo in backup BBP.dir.");
 			goto bailout;
 		}
+		if (logno < 0)
+			logno = ologno;
 	}
 
 	if (n < (bat) ATOMIC_GET(&BBPsize))
@@ -2228,7 +2230,7 @@ BBPdir_first(bool subcommit, lng logno, FILE **obbpfp, FILE **nbbpfp)
 	return GDK_FAIL;
 }
 
-static bat
+bat
 BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 	    FILE **obbpfp, FILE *nbbpf, BATiter *bi, int *nbatp)
 {
@@ -2267,7 +2269,8 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			goto bailout;
 		nbat++;
 	}
-	*nbatp += nbat;
+	if (nbatp)
+		*nbatp += nbat;
 	return n == -1 ? -1 : n == bid ? 0 : n;
 
   bailout:
@@ -2277,7 +2280,7 @@ BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 	return -2;
 }
 
-static gdk_return
+gdk_return
 BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf, FILE *nbbpf)
 {
 	if (n > 0 && fputs(buf, nbbpf) == EOF) {

@@ -18,6 +18,7 @@ no_escape
 no_escape2
 crlf_normalization
 select-from-file
+flexible-order
 parse-misc
 parse-integer
 parse-decimal

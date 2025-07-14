@@ -803,13 +803,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 		}
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
-		if (rel->r /*&& rel->card <= CARD_AGGR*/)
+		if (rel->r)
 			res = rel_pipeline(v, rel->r, false, pb);
-		if (rel->returning) {
-			if (pb)
-				rel->spb = 1;
-			res = pb;
-		}
 	} else if (is_join(rel->op)) {
 		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);

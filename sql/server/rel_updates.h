@@ -25,6 +25,7 @@ extern sql_rel *rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updat
 extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts);
 extern sql_rel *rel_delete(allocator *sa, sql_rel *t, sql_rel *deletes);
 extern sql_rel *rel_truncate(allocator *sa, sql_rel *t, int restart_sequences, int drop_action);
+extern sql_rel *rel_update_count(mvc *sql, sql_rel *rel);
 
 extern sql_exp *rel_parse_val(mvc *m, sql_schema *s, char *query, sql_subtype *tpe, char emode, sql_rel *from);
 

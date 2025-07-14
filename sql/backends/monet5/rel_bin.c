@@ -603,6 +603,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 
 		/* The actual in-value-list should not contain duplicates to ensure that final join results are unique. */
 		s = distinct_value_list(be, nl, &last_null_value, depth+1, push);
+		assert(!last_null_value);
 		if (!s)
 			return NULL;
 
@@ -802,8 +803,6 @@ exp_bin_disjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 		}
 		cur = s;
 	}
-	//if (reduce)
-	//	return stmt_uselect(be, cur, stmt_bool(be, 1), cmp_equal, sel, 0/*anti*/, 0);
 	return cur;
 }
 
@@ -4865,7 +4864,6 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		}
 		if (!lpiv) {
 			stmt *orderbycolstmt = pl->h->data;
-			//stmt *orderbycolstmt = exp_bin(be, orderbycole, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 
 			if (!orderbycolstmt)
 				return NULL;
@@ -5658,6 +5656,12 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		(void)pp_counter_get(be, source);
 		cursub = rel2bin_slicer(be, cursub, 1);
 	}
+	if (!rel->r && list_length(aggrs) == 1) {
+		sql_exp *cnt = aggrs->h->data;
+		stmt *cntstmt = l->h->data;
+		if (cnt->type == e_aggr && !cnt->l && cnt->intern && add_to_rowcount_accumulator(be, cntstmt->nr) < 0)
+			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	return cursub;
 }
 
@@ -6258,15 +6262,6 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
 
-	if ((rel->flag&UPD_COMP)) {  /* special case ! */
-		idx_ins = 1;
-		prel = rel->l;
-		rel = rel->r;
-		tr = rel->l;
-	}
-	/* if run with pp, result count bat */
-	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
-
 	if (tr->op == op_buildhash || tr->op == op_probehash)
 		tr = tr->l;
 	if (tr->op == op_basetable) {
@@ -6282,13 +6277,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the inserts relation */
 		inserts = subrel_bin(be, rel->r, refs);
 	inserts = subrel_project(be, inserts, refs, rel->r);
-	stmt *pp = NULL;
-	pp = get_pipeline(be);
 
 	if (!inserts)
 		return NULL;
-
-	/* by now the sql.copy_from has been generated */
 
 	if (idx_ins)
 		pin = refs_find_rel(refs, prel);
@@ -6314,22 +6305,16 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	insert = inserts->op4.lval->h->data;
-	stmt *sum = NULL;
 	if (insert->nrcols == 0) {
 		cnt = stmt_atom_lng(be, 1);
-		sum = cnt;
 	} else {
 		int pp = be->pipeline;
 		be->pipeline = 0;
 		cnt = stmt_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
 		be->pipeline = pp;
-		/* incremental sum */
-		if (pp)
-			sum = stmt_pp_aggr(be, insert, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
 	}
 	insert = NULL;
 
-	/* by now the aggr.count has been generated */
 	l = sa_list(sql->sa);
 	if (t->idxs) {
 		idx_m = m;
@@ -6380,26 +6365,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		append(l,insert);
 	}
 	be->mvc_var = mvc_var;
-
-	/* by now the appends have been generated */
-
-
 	if (!insert)
 		return NULL;
-
-	if (rel->returning) {
-		list* il = sa_list(sql->sa);
-		sql_rel* inner = rel->l;
-		assert(inner->op == op_basetable);
-		for (n = inner->exps->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
-			sql_exp* ce	= n->data;
-			stmt* 	ins	= m->data;
-			stmt*	s	= stmt_rename(be, ce, ins);// label each insert statement with the corresponding col exp label
-			append(il, s);
-		}
-		returning = stmt_list(be, il);
-		sql->type = Q_TABLE;
-	}
 
 	if (!sql_insert_triggers(be, t, updates, 1))
 		return sql_error(sql, 10, SQLSTATE(27000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
@@ -6407,41 +6374,38 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
 
-	if (!rel->returning && pp) {
-		(void)stmt_pp_jump(be, pp, be->nrparts);
+	if (rel->exps) {
+		list *pl = sa_list(be->mvc->sa);
+		for (node *en = rel->exps->h; en; en = en->next) {
+			sql_exp *exp = en->data;
+			stmt *s = exp_bin(be, exp, inserts, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (!s) /* error */
+				return NULL;
+			/* single value with limit */
+			if (inserts && inserts->nrcols >= 1 && s->nrcols == 0)
+				s = stmt_const(be, bin_find_smallest_column(be, inserts), s);
+
+			if (!exp_name(exp))
+				exp_label(sql->sa, exp, ++sql->label);
+			if (exp_name(exp)) {
+				s = stmt_rename(be, exp, s);
+				s->label = exp->alias.label;
+			}
+			list_append(pl, s);
+		}
+		returning = stmt_list(be, pl);
+		sql->type = Q_TABLE;
 	}
 
 	if (ddl) {
 		ret = ddl;
 		list_prepend(l, ddl);
-		if (pp)
-			(void)stmt_pp_end(be, pp);
 		return stmt_list(be, l);
 	} else {
-		/* combine counts using locked.sum */
 		ret = cnt;
-		if (pp && !rel->returning) {
-			ret = stmt_pp_aggr(be, sum, NULL, NULL, sql_bind_func(sql, "sys", "sum", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
-			/* shared result */
-			ret->nr = getArg(ret->q, 0) = cc->nr;
-			ret->q->inout = 0;
-			int nr = getDestVar(ret->q);
-			/* change into bat */
-			getModuleId(ret->q) = getName("lockedaggr");
-			be->mb->var[nr].type = newBatType(TYPE_lng);
-			ret->q = pushArgument(be->mb, ret->q, be->pipeline);
-			/* swap value and pipeline */
-			int arg = getArg(ret->q, 1);
-			getArg(ret->q, 1) = getArg(ret->q, 2);
-			getArg(ret->q, 2) = arg;
-
-			(void)stmt_pp_end(be, pp);
-			ret = stmt_fetch(be, ret); /* fetch rowcount result */
-		}
-		if (add_to_rowcount_accumulator(be, ret->nr) < 0)
-			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if (t->s && isGlobal(t) && !isGlobalTemp(t))
-			stmt_add_dependency_change(be, t, ret);
+			stmt_add_dependency_change(be, t, ret?ret:returning);
 		return returning?returning:ret;
 	}
 }
@@ -7368,13 +7332,12 @@ static stmt *
 rel2bin_update(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *update = NULL, **updates = NULL, *tids, *ddl = NULL, *pup = NULL, *cnt;
-	list *l = sa_list(sql->sa);
+	stmt *update = NULL, **updates = NULL, *tids, *ddl = NULL, *pup = NULL;
+	list *l = sa_list(sql->sa), *attr = rel->attr;
 	int nr_cols, updcol, idx_ups = 0;
 	node *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
-	bool needs_returning = rel->returning;
 
 	if ((rel->flag&UPD_COMP)) {  /* special case ! */
 		idx_ups = 1;
@@ -7382,10 +7345,6 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
-
-	/* if run with pp, result count bat */
-	stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, sql_bind_localtype("lng"), NULL, 0))); /* row count */
-
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
@@ -7410,14 +7369,17 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the update relation */
 		update = subrel_bin(be, rel->r, refs);
 	update = subrel_project(be, update, refs, rel->r);
-	stmt *pp = NULL;
-	pp = get_pipeline(be);
 
 	if (!update)
 		return NULL;
 
-	if (idx_ups)
+	if (idx_ups) {
 		pup = refs_find_rel(refs, prel);
+		if (!pup) {
+			pup = subrel_bin(be, prel, refs);
+			pup = subrel_project(be, pup, refs, prel);
+		}
+	}
 
 	updates = table_update_stmts(sql, t, &nr_cols);
 	tids = update->op4.lval->h->data;
@@ -7476,19 +7438,18 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql_column *c = find_sql_column(t, exp_name(ce));
 
 		if (c)
-			append(l, stmt_update_col(be,  c, tids, updates[c->colnr]));
+			append(l, stmt_update_col(be,  c, tids, updates[c->colnr])); /* do the update */
 	}
 
 	stmt* returning = NULL;
-	if (needs_returning) {
+	if (!list_empty(attr)) {
 		sql_rel* b = rel->l;
-		int refcnt = b->ref.refcnt; // HACK: forces recalculation of base columns since they are assumed to be updated
+		int refcnt = b->ref.refcnt; /* clean basetable */
 		b->ref.refcnt = 1;
 		returning = subrel_bin(be, b, refs);
 		b->ref.refcnt = refcnt;
-		returning->cand = tids;
+		returning->cand = tids;	/* only updated rows */
 		returning = subrel_project(be, returning, refs, b);
-		sql->type = Q_TABLE;
 	}
 
 	if (cascade_updates(be, t, tids, updates)) {
@@ -7504,57 +7465,19 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		return sql_error(sql, 10, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 	}
 
-	if (ddl) {
-		list_prepend(l, ddl);
-		cnt = stmt_list(be, l);
-	} else {
-		int pp = be->pipeline;
-
-		if (!pp)
-			cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
-		else /* incremental sum */
-			cnt = stmt_pp_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
-	}
-
-	if (!rel->returning && pp) {
-		(void)stmt_pp_jump(be, pp, be->nrparts);
-	}
-	if (ddl) {
-		if (pp)
-			(void)stmt_pp_end(be, pp);
-	} else {
-		/* combine counts using locked.sum */
-		if (pp && !rel->returning) {
-			stmt *ret = stmt_pp_aggr(be, cnt, NULL, NULL, sql_bind_func(sql, "sys", "sum", sql_bind_localtype("lng"), NULL, F_AGGR, true, true), 1, 0, 1);
-			/* shared result */
-			ret->nr = getArg(ret->q, 0) = cc->nr;
-			ret->q->inout = 0;
-			int nr = getDestVar(ret->q);
-			/* change into bat */
-			getModuleId(ret->q) = getName("lockedaggr");
-			be->mb->var[nr].type = newBatType(TYPE_lng);
-			ret->q = pushArgument(be->mb, ret->q, be->pipeline);
-			/* swap value and pipeline */
-			int arg = getArg(ret->q, 1);
-			getArg(ret->q, 1) = getArg(ret->q, 2);
-			getArg(ret->q, 2) = arg;
-
-			(void)stmt_pp_end(be, pp);
-			ret = stmt_fetch(be, ret); /* fetch rowcount result */
-			cnt = ret;
-		}
-
-		if (add_to_rowcount_accumulator(be, cnt->nr) < 0)
-			return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (t->s && isGlobal(t) && !isGlobalTemp(t))
-			stmt_add_dependency_change(be, t, cnt);
-	}
-
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
-	return returning?returning:cnt;
+
+	if (!returning) {
+		returning = stmt_list(be, append(sa_list(sql->sa), tids));
+		if (t->s && isGlobal(t) && !isGlobalTemp(t)) {
+			stmt *cnt = stmt_aggr(be, tids, NULL, NULL, sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+			stmt_add_dependency_change(be, t, cnt);
+		}
+	}
+	return returning;
 }
 
 static int
@@ -7761,8 +7684,6 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 10, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
-	if (add_to_rowcount_accumulator(be, s->nr) < 0)
-		return sql_error(sql, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (t->s && isGlobal(t) && !isGlobalTemp(t))
 		stmt_add_dependency_change(be, t, s);
 	return s;
@@ -7789,14 +7710,14 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(rows->type == st_list);
 		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
 	}
-
-	if (rel->returning) {
+	if (list_length(rel->exps) > 1)
 		returning = subrel_bin(be, rel->l, refs);
-		returning->cand = tids;
-		returning = subrel_project(be, returning, refs, rel->l);
-		sql->type = Q_TABLE;
-	}
 
+	stmt *rows = tids;
+	if (!rows) {
+		rows = stmt_tid(be, t, 0);
+		rows->label = 1; /* todo find nid from basetable ba */
+	}
 	stdelete = sql_delete(be, t, tids);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
@@ -7805,6 +7726,36 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->r && !rel_predicates(be, rel->r))
 		return NULL;
+
+	if (list_length(rel->exps) > 1) {
+		list *pl = sa_list(be->mvc->sa);
+		node *n = rel->exps->h;
+
+		if (tids)
+			n = n->next;
+		for(; n; n = n->next) {
+			sql_exp *exp = n->data;
+			stmt *s = exp_bin(be, exp, returning, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+
+			if (tids && s)
+				s = stmt_project(be, tids, s);
+			if (!s) /* error */
+				return NULL;
+
+			if (!exp_name(exp))
+				exp_label(sql->sa, exp, ++sql->label);
+			if (exp_name(exp)) {
+				s = stmt_rename(be, exp, s);
+				s->label = exp->alias.label;
+			}
+			list_append(pl, s);
+		}
+		returning = stmt_list(be, pl);
+		sql->type = Q_TABLE;
+	} else {
+		returning = stmt_list(be, append(sa_list(sql->sa), rows));
+		sql->type = Q_TABLE;
+	}
 	return returning?returning:stdelete;
 }
 
@@ -8443,7 +8394,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
  */
 
 stmt *
-rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
+rel2bin_materialize(backend *be, sql_rel *rel, list *refs, bool top)
 {
 	if (rel->op == op_buildhash) {
 		stmt *s = rel2bin_oahash_build(be, rel, refs);
@@ -8465,7 +8416,8 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs)
 
 	list *shared = NULL;
 	sql_rel *sharedproject = NULL;
-	if (r && r->l && (is_simple_project(r->op) || is_munion(r->op) || (rel_is_ref(rel) && !is_groupby(r->op)))) {
+	if (r && r->l && (is_simple_project(r->op) || is_munion(r->op) || (rel_is_ref(rel) && !is_groupby(r->op))) &&
+			(!top || be->mvc->type != Q_UPDATE)) {
 		sharedproject = r;
 		if (!is_project(r->op))
 			sharedproject = rel_project(be->mvc->sa, r, rel_projections(be->mvc, r, 0, 1, 1));
@@ -8580,7 +8532,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		}
 		/*
 		if (neededpp) {
-			s = rel2bin_materialize(be, rel, refs);
+			s = rel2bin_materialize(be, rel, refs, false);
 			list_append(refs, rel);
 			list_append(refs, s);
 			return s;
@@ -8654,18 +8606,15 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		break;
 	case op_insert:
 		s = rel2bin_insert(be, rel, refs);
-		if (!(rel->returning) && sql->type == Q_TABLE)
-			sql->type = Q_UPDATE;
+		sql->type = Q_UPDATE;
 		break;
 	case op_update:
 		s = rel2bin_update(be, rel, refs);
-		if (!(rel->returning) && sql->type == Q_TABLE)
-			sql->type = Q_UPDATE;
+		sql->type = Q_UPDATE;
 		break;
 	case op_delete:
 		s = rel2bin_delete(be, rel, refs);
-		if (!(rel->returning) && sql->type == Q_TABLE)
-			sql->type = Q_UPDATE;
+		sql->type = Q_UPDATE;
 		break;
 	case op_truncate:
 		s = rel2bin_truncate(be, rel);
@@ -8774,13 +8723,13 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 			list *nrefs = sa_list(sql->sa);
 			for (node *n = refs->h; n; n = n->next) {
 				sql_rel *rel = n->data;
-				stmt *s = rel2bin_materialize(be, rel, nrefs);
+				stmt *s = rel2bin_materialize(be, rel, nrefs, false);
 				refs_update_stmt(nrefs, rel, s);
 			}
 			refs = nrefs;
 		}
 	}
-	s = rel2bin_materialize(be, rel, refs);
+	s = rel2bin_materialize(be, rel, refs, true);
 
 	if (!s)
 		return NULL;
@@ -8788,7 +8737,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 		sql->type = sqltype; /* reset */
 
 	if (!be->silent) { /* don't generate outputs when we are silent */
-		if (!is_ddl(rel->op) && sql->type == Q_TABLE && stmt_output(be, s) < 0) {
+		if (!is_ddl(rel->op) && sqltype == Q_TABLE && stmt_output(be, s) < 0) {
 			return NULL;
 		} else if (be->rowcount > 0 && sqltype == Q_UPDATE && stmt_affected_rows(be, be->rowcount) < 0) {
 			/* only call stmt_affected_rows outside functions and ddl */

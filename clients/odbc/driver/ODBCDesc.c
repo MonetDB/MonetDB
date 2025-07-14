@@ -52,10 +52,10 @@ newODBCDesc(ODBCDbc *dbc)
  * and save usage of the handle and prevent crashes as much as possible.
  *
  * Precondition: none
- * Postcondition: returns 1 if it is a valid statement handle,
- * 	returns 0 if is invalid and thus an unusable handle.
+ * Postcondition: returns true if it is a valid statement handle,
+ * 	returns false if is invalid and thus an unusable handle.
  */
-int
+bool
 isValidDesc(ODBCDesc *desc)
 {
 #ifdef ODBCDEBUG

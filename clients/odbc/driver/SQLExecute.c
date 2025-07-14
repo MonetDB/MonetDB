@@ -222,7 +222,11 @@ ODBCInitResult(ODBCStmt *stmt)
 				goto nomem;
 		} else {
 			rec->sql_desc_unnamed = SQL_UNNAMED;
+			if (rec->sql_desc_label)
+				free(rec->sql_desc_label);
 			rec->sql_desc_label = NULL;
+			if (rec->sql_desc_name)
+				free(rec->sql_desc_name);
 			rec->sql_desc_name = NULL;
 		}
 		if (rec->sql_desc_base_column_name)

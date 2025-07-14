@@ -255,12 +255,16 @@ class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
         self.isserver = False
-        if sys.version_info.major == 3 and sys.version_info.minor < 7:
-            kw = kwargs.copy()
-            if 'text' in kw:
-                kw['universal_newlines'] = kw['text']
-                del kw['text']
-            kwargs = kw
+        if sys.hexversion < 0x03070000 and 'text' in kwargs:
+            kwargs = kwargs.copy()
+            kwargs['universal_newlines'] = kwargs.pop('text')
+        if sys.hexversion < 0x03110000 and 'process_group' in kwargs:
+            kwargs = kwargs.copy()
+            pgid = kwargs.pop('process_group')
+            try:
+                kwargs['preexec_fn'] = os.setpgrp
+            except AttributeError:
+                pass
         super().__init__(*args, **kwargs)
 
     def __exit__(self, exc_type, value, traceback):

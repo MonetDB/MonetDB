@@ -457,6 +457,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		sql_rel *r;
 
 		m->sym = NULL;
+		m->session->tr->cnr++;
 		if ((err = sqlparse(m)) ||
 		    /* Only forget old errors on transaction boundaries */
 		    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {

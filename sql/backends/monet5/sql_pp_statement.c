@@ -975,6 +975,10 @@ stmt_pp_end(backend *be, stmt *label)
 	pushInstruction(be->mb, q);
 
 	if (q) {
+		q = newStmt(be->mb, sqlRef, mvcRef);
+		q->argv[0] = be->mvc_var;
+		pushInstruction(be->mb, q);
+
 		if (be->cleanup) {
 			q = newStmt(be->mb, "language", "pass");
 			q = pushArgument(be->mb, q, be->cleanup);
@@ -983,6 +987,7 @@ stmt_pp_end(backend *be, stmt *label)
 		}
 		return 0;
 	}
+
 	return -1;
 }
 

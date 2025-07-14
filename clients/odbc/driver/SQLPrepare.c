@@ -299,13 +299,11 @@ MNDBPrepare(ODBCStmt *stmt,
 		/* unused fields */
 		rec->sql_desc_auto_unique_value = SQL_FALSE;
 		rec->sql_desc_data_ptr = NULL;
-		rec->sql_desc_display_size = 0;
 		rec->sql_desc_indicator_ptr = NULL;
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
 		rec->sql_desc_octet_length_ptr = NULL;
 		rec->sql_desc_catalog_name = NULL;
-		rec->sql_desc_schema_name = NULL;
 		rec->sql_desc_updatable = SQL_ATTR_READONLY;
 
 		/* this must come after other fields have been

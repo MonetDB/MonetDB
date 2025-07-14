@@ -362,3 +362,10 @@ UPDATE sys._tables SET system = true where system <> true
  and schema_id = (select s.id from sys.schemas s where s.name = 'information_schema')
  and name in ('tables','views');
 
+Running database upgrade commands:
+create procedure sys.hot_snapshot(tarfile string, onserver bool, omitunlogged bool)
+external name sql.hot_snapshot;
+create procedure sys.hot_snapshot(tarfile string, onserver bool, omitunlogged bool, omitids string)
+external name sql.hot_snapshot;
+update sys.functions set system = true where system <> true and name = 'hot_snapshot' and schema_id = 2000;
+
