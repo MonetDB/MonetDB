@@ -2181,7 +2181,8 @@ sa_free_blk(allocator *sa, void *blk)
 		assert (i < sa->nr);
 
 		// all blks are GDKmalloc
-		size_t sz = GDKmallocated(blk);
+		size_t sz = GDKmallocated(blk) - (MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+		assert(sz > 0);
 		if (sz == SA_BLOCK_SIZE) {
 			freed_t *f = blk;
 			f->sz = sz;
@@ -2230,6 +2231,9 @@ sa_use_freed_obj(allocator *sa, size_t sz)
 	return NULL;
 }
 
+static int sa_double_num_blks(allocator *sa);
+
+
 /*
  * Free blocks are maintain at top level
  */
@@ -2240,8 +2244,18 @@ sa_use_freed_blk(allocator *sa, size_t sz)
 		return sa_use_freed_blk(sa->pa, sz);
 	COND_LOCK_ALLOCATOR(sa);
 	if (sa->freelist_blks && (sz == SA_BLOCK_SIZE)) {
+		if (sa->nr >= sa->size && sa_double_num_blks(sa) < 0) {
+			COND_UNLOCK_ALLOCATOR(sa);
+			if (sa->eb.enabled)
+				eb_error(&sa->eb, "out of memory", 1000);
+			return NULL;
+		}
 		freed_t *f = sa->freelist_blks;
 		sa->freelist_blks = f->n;
+		sa->blk_size = SA_BLOCK_SIZE;
+		sa->used = SA_BLOCK_SIZE;
+		sa->blks[sa->nr] = (char*)f;
+		sa->nr ++;
 		sa->free_blk_hits += 1;
 		COND_UNLOCK_ALLOCATOR(sa);
 		return f;
@@ -2317,7 +2331,7 @@ sa_realloc(allocator *sa, void *p, size_t sz, size_t oldsz)
 }
 
 static char *
-fill_in_header(char *r, size_t sz)
+sa_fill_in_header(char *r, size_t sz)
 {
 	if (r) {
 		// store size first
@@ -2327,6 +2341,31 @@ fill_in_header(char *r, size_t sz)
 		r += SA_HEADER_SIZE;
 	}
 	return r;
+}
+
+static int
+sa_double_num_blks(allocator *sa)
+{
+	char **tmp;
+	size_t osz = sa->size;
+	sa->size *=2;
+	if (sa->pa)
+		tmp = (char**)_sa_alloc_internal(sa->pa, sizeof(char*) * sa->size);
+	else {
+		tmp = GDKmalloc(sizeof(char*) * sa->size);
+	}
+	if (tmp) {
+		bool reallocated = sa->blks != (char **)sa->first_blk;
+		memcpy(tmp, sa->blks, sizeof(char*) * osz);
+		if (!sa->pa && reallocated) {
+			GDKfree(sa->blks);
+		}
+	} else {
+		sa->size /= 2; /* undo */
+		return -1;
+	}
+	sa->blks = tmp;
+	return 0;
 }
 
 
@@ -2358,32 +2397,13 @@ _sa_alloc_internal(allocator *sa, size_t sz)
 			return NULL;
 		}
 
-		if (sa->nr >= sa->size) {
-			char **tmp;
-			size_t osz = sa->size;
-			sa->size *=2;
-			if (sa->pa)
-				tmp = (char**)_sa_alloc_internal(sa->pa, sizeof(char*) * sa->size);
-			else {
-				tmp = GDKmalloc(sizeof(char*) * sa->size);
-			}
-			if (tmp && sa->blks) {
-				bool reallocated = sa->blks != (char **)sa->first_blk;
-				memcpy(tmp, sa->blks, sizeof(char*) * osz);
-				if (!sa->pa && reallocated) {
-					GDKfree(sa->blks);
-				}
-			}
-			if (tmp == NULL) {
-				sa->size /= 2; /* undo */
-				COND_UNLOCK_ALLOCATOR(sa);
-				if (sa->eb.enabled)
-					eb_error(&sa->eb, "out of memory", 1000);
-				if (!sa->pa)
-					GDKfree(r);
-				return NULL;
-			}
-			sa->blks = tmp;
+		if (sa->nr >= sa->size && sa_double_num_blks(sa) < 0) {
+			COND_UNLOCK_ALLOCATOR(sa);
+			if (sa->eb.enabled)
+				eb_error(&sa->eb, "out of memory", 1000);
+			if (!sa->pa)
+				GDKfree(r);
+			return NULL;
 		}
 		sa->blk_size = blk_size;
 		sa->blks[sa->nr] = r;
@@ -2413,7 +2433,7 @@ sa_alloc(allocator *sa, size_t sz)
 	//	*((size_t *) r + 1) = CANARY_VALUE;
 	//	return r + SA_HEADER_SIZE;
 	//}
-	return fill_in_header(r, sz);
+	return sa_fill_in_header(r, sz);
 }
 
 
@@ -2490,6 +2510,11 @@ sa_destroy(allocator *sa)
 		if (root_allocator) {
 			if (blks_relocated)
 				GDKfree(sa->blks);
+			while(sa->freelist_blks) {
+				freed_t *f = sa->freelist_blks;
+				sa->freelist_blks = f->n;
+				GDKfree(f);
+			}
 			GDKfree(sa->first_blk);
 		} else {
 			sa_free_blk(sa, sa->first_blk);
