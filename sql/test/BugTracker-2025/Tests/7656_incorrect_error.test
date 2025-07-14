@@ -1,0 +1,23 @@
+
+-- the primary key
+statement ok
+create table a(id int)
+
+statement ok
+insert into a values (1)
+
+statement ok
+alter table a add primary key(id)
+
+-- the foreign key
+statement ok
+create table b(i int)
+
+statement ok
+insert into b values (1)
+
+statement ok
+alter table b add foreign key(i) references a
+
+statement error 40000!DROP TABLE: FOREIGN KEY b.b_i_fkey depends on a
+drop table a

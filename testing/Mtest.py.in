@@ -1164,9 +1164,9 @@ def PerformDir(env, testdir, testlist, total_tests) :
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     return elem, max(FdOut, FdErr), interrupted
             keyfile = os.path.join(LogDBdir, '.vaultkey')
-            if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
+            if os.path.isabs(LogDBdir):
                 try:
-                    os.makedirs(LogDBdir)
+                    os.makedirs(LogDBdir, exist_ok=True)
                 except:
                     Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     return elem, max(FdOut, FdErr), interrupted
@@ -1205,7 +1205,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
                     pSrvr.LaunchIt(env=environ)
                     pSrvr.terminate()
         if not os.path.exists(TSTTRGDIR):
-            os.makedirs(TSTTRGDIR)
+            os.makedirs(TSTTRGDIR, exist_ok=True)
 
         body_good = []
         body_bad = []
@@ -3475,8 +3475,7 @@ def main(argv) :
             res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
             if res is not None:
                 rdir = os.path.expanduser(res.group('dir'))
-                if not os.path.exists(rdir):
-                    os.makedirs(rdir)
+                os.makedirs(rdir, exist_ok=True)
     dft['RCLIENT'] = f"'R --vanilla {r_noecho}'"
 
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
@@ -4045,8 +4044,7 @@ def main(argv) :
                 raise
             except:
                 ErrXit('Failed to remove %s' % os.path.join(TSTTRGBASE, TSTPREF))
-        if not os.path.exists(env['GDK_DBFARM']):
-            os.makedirs(env['GDK_DBFARM'])
+        os.makedirs(env['GDK_DBFARM'], exist_ok=True)
 
         if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
             try:
