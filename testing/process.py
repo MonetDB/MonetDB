@@ -26,6 +26,13 @@ try:
 except ImportError:
     DEVNULL = os.open(os.devnull, os.O_RDWR)
 __all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server', 'TimeoutExpired']
+try:
+    # only on Windows:
+    from subprocess import CREATE_NEW_PROCESS_GROUP
+except ImportError:
+    pass
+else:
+    __all__.append('CREATE_NEW_PROCESS_GROUP')
 
 verbose = False
 
@@ -562,6 +569,10 @@ class server(Popen):
             os.unlink(started)
         except OSError:
             pass
+        if os.name == 'nt':
+            kw = {'creationflags': CREATE_NEW_PROCESS_GROUP}
+        else:
+            kw = {}
         starttime = time.time()
         super().__init__(cmd + args,
                          stdin=stdin,
@@ -570,7 +581,8 @@ class server(Popen):
                          shell=False,
                          text=True,
                          bufsize=bufsize,
-                         encoding='utf-8')
+                         encoding='utf-8',
+                         **kw)
         self.isserver = True
         if stderr == PIPE:
             self.stderr = _BufferedPipe(self.stderr)

@@ -2662,7 +2662,8 @@ class ServerClass:
             stdout = process.PIPE
         if os.name == 'nt':
             proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
-                                 stderr=stderr, text=True, cwd=cwd, env=env)
+                                 stderr=stderr, text=True, cwd=cwd, env=env,
+                                 creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
             proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
                                  stderr=stderr, text=True, cwd=cwd, env=env)
