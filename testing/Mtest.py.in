@@ -1591,8 +1591,7 @@ def GetBitsAndModsAndThreads(env) :
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                       stderr=process.PIPE, text=True,
-                       process_group=0) as proc:
+                       stderr=process.PIPE, text=True) as proc:
         stderr = proc.stderr
         proc.stdout = process._BufferedPipe(proc.stdout)
         proc.stderr = process._BufferedPipe(proc.stderr)
@@ -2454,10 +2453,6 @@ def killchildren(pid, procs = None):
         if procdebug:
             print('killing process %d failed' % pid)
 
-def reallyKill(proc):
-    # not called on Windows
-    killchildren(proc.pid, getkids())
-
 def stacktrace(proc, outfile):
     if os.name == 'nt':
         sym = ''
@@ -2667,8 +2662,7 @@ class ServerClass:
                                  creationflags=process.CREATE_NEW_PROCESS_GROUP)
         else:
             proc = process.Popen(cmd, stdin=stdin, stdout=stdout,
-                                 stderr=stderr, text=True, cwd=cwd, env=env,
-                                 process_group=0)
+                                 stderr=stderr, text=True, cwd=cwd, env=env)
         # maybe buffer output as it comes to avoid deadlock
         if stdout == process.PIPE:
             proc.stdout = process._BufferedPipe(proc.stdout)
@@ -2760,8 +2754,7 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut, pSrvr, TSTTRGDIR, en
     with process.Popen(cmd, stdin=TestIn, stdout=TestOut,
                        stderr=TestErr, text=True,
                        cwd=TSTTRGDIR, env=environ,
-                       executable=executable,
-                       process_group=0) as proc:
+                       executable=executable) as proc:
         proc.killed = False
         proc.onechild = onechild
         try:
@@ -4126,29 +4119,33 @@ def main(argv) :
                 if verbosity > 1:
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
                 with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
-                    futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
-                for future in concurrent.futures.as_completed(futures):
-                    d = futures[future]
-                    elem, diff, interrupted = future.result()
-                    if elem is not None:
-                        if diff <= F_OK:
-                            body_good.append(elem)
-                        else:
-                            body_bad.append(elem)
-                    if not errseen and diff > F_WARN:
-                        errseen = True
-                    if interrupted:
-                        break
-                    if not testweb:
-                        if global_timeout and start_time + global_timeout < time.time():
-                            print('\nGlobal testing timeout reached\n')
-                            break
-                        if produce_html:
-                            # after a directory has been tested, create
-                            # the index file so that we can look at test
-                            # results while the tests are running
-                            body = body_bad + body_good
-                            CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                    try:
+                        futures = {tp.submit(PerformDir, env, d, [], test_count): d for d in testdirs}
+                        for future in concurrent.futures.as_completed(futures):
+                            d = futures[future]
+                            elem, diff, interrupted = future.result()
+                            if elem is not None:
+                                if diff <= F_OK:
+                                    body_good.append(elem)
+                                else:
+                                    body_bad.append(elem)
+                            if not errseen and diff > F_WARN:
+                                errseen = True
+                            if interrupted:
+                                break
+                            if not testweb:
+                                if global_timeout and start_time + global_timeout < time.time():
+                                    print('\nGlobal testing timeout reached\n')
+                                    break
+                                if produce_html:
+                                    # after a directory has been tested, create
+                                    # the index file so that we can look at test
+                                    # results while the tests are running
+                                    body = body_bad + body_good
+                                    CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
+                    except KeyboardInterrupt:
+                        tp.shutdown(cancel_futures=True)
+                        raise
             if verbosity == 0:
                 print()
         except KeyboardInterrupt:
