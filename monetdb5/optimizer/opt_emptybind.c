@@ -18,7 +18,6 @@
  *  where either argument is empty
  *
  */
-#include "mal.h"
 #include "monetdb_config.h"
 #include "opt_emptybind.h"
 #include "opt_aliases.h"
