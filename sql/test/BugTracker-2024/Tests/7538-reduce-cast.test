@@ -1,9 +1,9 @@
-query R nosort
+query D nosort
 select 37.000 /(37.0+65)*100 c1
 ----
 36.200
 
-query R nosort
+query D nosort
 select 37.000 /(37.0+65)*100 c1 limit 2
 ----
 36.200

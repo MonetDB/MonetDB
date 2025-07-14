@@ -1,4 +1,4 @@
-query TRRRR nosort
+query TRDDD nosort
 -- query 7
 select  i_item_id,
         avg(ss_quantity) agg1,
@@ -19,5 +19,5 @@ select  i_item_id,
  order by i_item_id
  limit 100
 ----
-500 values hashing to 9ebdc3171871db1a30ad38b69eee00cc
+500 values hashing to d4c86c98338838794d9808b4d0fddd9f
 

@@ -1,4 +1,4 @@
-query IRR nosort
+query IDD nosort
 -- query 16
 select
    count(distinct cs_order_number) as "order count"
@@ -30,6 +30,6 @@ order by count(distinct cs_order_number)
 limit 100
 ----
 236
-1062963.890
--214910.610
+1062963.89
+-214910.61
 

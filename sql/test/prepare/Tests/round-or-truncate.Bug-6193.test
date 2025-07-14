@@ -13,10 +13,10 @@ select cast(0.6 as integer)
 ----
 1
 
-query R nosort
+query D nosort
 select 1.7777777
 ----
-1.778
+1.7777777
 
 query I nosort
 select cast(1.7777777 as integer)
@@ -53,13 +53,13 @@ exec <LAST_PREPARE_ID> (-0.12341)
 statement ok
 exec <LAST_PREPARE_ID> (-0.12347)
 
-query R rowsort
+query D rowsort
 select * from testdec
 ----
--0.123
--0.123
--0.123
--0.123
+-0.1234
+-0.1234
+-0.1235
+-0.1235
 
 query I nosort
 select cast(13.8 as int)

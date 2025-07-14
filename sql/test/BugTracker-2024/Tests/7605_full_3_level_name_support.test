@@ -35,3 +35,4 @@ drop table test.mytable
 
 statement ok
 drop schema test
+

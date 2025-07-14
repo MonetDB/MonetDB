@@ -4,7 +4,7 @@ create table type_test ( dval double, nval numeric(5,3))
 statement ok
 insert into type_test values (5.4, 5.4),(1.3,1.3),(8.252, 8.252)
 
-query RR rowsort
+query RD rowsort
 select * from type_test
 ----
 1.300
@@ -20,13 +20,13 @@ select count(dval), count(nval) from type_test
 3
 3
 
-query RR rowsort
+query RD rowsort
 select avg(dval), avg(nval) from type_test
 ----
 4.984
 4.984
 
-query RR rowsort
+query RD rowsort
 select sum(dval), cast(sum(nval) as numeric(18,3)) from type_test
 ----
 14.952

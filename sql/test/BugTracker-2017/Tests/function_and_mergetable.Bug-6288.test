@@ -13,7 +13,7 @@ CREATE       TABLE t0 ( num DECIMAL(8,2) DEFAULT NULL )
 statement ok
 ALTER TABLE t ADD TABLE t0
 
-query R rowsort
+query D rowsort
 SELECT * FROM t
 ----
 
@@ -24,7 +24,7 @@ BEGIN
     RETURN SELECT * FROM t;
 END
 
-query R rowsort
+query D rowsort
 -- this fails unexpectedly
 SELECT * FROM foo()
 ----

@@ -1,4 +1,4 @@
-query TTR rowsort
+query TTD rowsort
 -- query 23-2
  with frequent_ss_items as
  (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
@@ -58,14 +58,14 @@ query TTR rowsort
 ----
 Brown
 Monika
-6031.520
+6031.52
 Collins
 Gordon
-727.570
+727.57
 Green
 Jesse
-9672.960
+9672.96
 NULL
 Robert
-598.860
+598.86
 

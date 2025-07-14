@@ -25,8 +25,9 @@
 # <threads> is the number of threads.
 
 # statement (ok|ok rowcount|error) [arg]
-# query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
-#       I: integer; T: text (string); R: real (decimal)
+# query (I|D|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
+#       I: integer; T: text (string); D: decimal; R: real
+#       -- note that type D is an extension
 #       nosort: do not sort
 #       rowsort: sort rows
 #       valuesort: sort individual values
@@ -447,6 +448,8 @@ class SQLLogic:
                                     else:
                                         nval.append(c)
                             nrow.append(''.join(nval))
+                    elif columns[i] == 'D':
+                        nrow.append(str(row[i]))
                     elif columns[i] == 'R':
                         nrow.append('%.3f' % row[i])
                     else:
@@ -546,7 +549,9 @@ class SQLLogic:
             for desc in crs.description:
                 if desc.type_code in ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'bit', 'sht', 'lng', 'hge', 'oid', 'void'):
                     rescols.append('I')
-                elif desc.type_code in ('decimal', 'double', 'real', 'flt', 'dbl'):
+                elif desc.type_code == 'decimal':
+                    rescols.append('D') # extension
+                elif desc.type_code in ('double', 'real', 'flt', 'dbl'):
                     rescols.append('R')
                 else:
                     rescols.append('T')
@@ -770,9 +775,7 @@ class SQLLogic:
                 val = val.strip()
                 defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
                              val, key))
-                defs.append((re.compile(r'\$(Q' + key + r'\b|{Q' + key + '})'),
-                             val.replace('\\', '\\\\'), 'Q'+key))
-        self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
+        self.defines = defs
         self.lines = []
 
     def readline(self):
@@ -802,10 +805,10 @@ class SQLLogic:
                     # line = line.replace('\''+val.replace('\\', '\\\\'),
                     #                     '\'${Q'+key+'}')
                     # line = line.replace(val, '${'+key+'}')
+                    if key.startswith('Q') and (("r'"+val) in line or ("R'"+val) in line):
+                        continue
                     line = line.replace("r'"+val, "r'$"+key)
                     line = line.replace("R'"+val, "R'$"+key)
-                    line = line.replace("'"+val.replace('\\', '\\\\'),
-                                        "'$Q"+key)
                     line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
@@ -1040,6 +1043,8 @@ class SQLLogic:
                 self.writeline()
             else:
                 self.raise_error(f'unrecognized command {words[0]}')
+        if approve:
+            approve.flush()
 
 if __name__ == '__main__':
     import argparse

@@ -2,8 +2,8 @@ statement ok
 create function decimal_function(i decimal(10,2)) returns decimal(10,2)
 begin return i; end
 
-query R rowsort
+query D rowsort
 select decimal_function(10)
 ----
-10.000
+10.00
 

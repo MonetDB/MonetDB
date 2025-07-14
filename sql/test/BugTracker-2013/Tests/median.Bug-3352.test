@@ -25,10 +25,10 @@ insert into t3352 values (111.6,111.6)
 statement ok
 insert into t3352 values (222.8,222.8)
 
-query R rowsort
+query D rowsort
 select median(a) from t3352
 ----
-41.180
+41.18
 
 query R rowsort
 select median(b) from t3352

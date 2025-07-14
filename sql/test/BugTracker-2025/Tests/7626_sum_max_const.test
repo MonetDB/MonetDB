@@ -1,10 +1,11 @@
 statement ok
 CREATE VIEW v0 AS SELECT CAST ( NULL AS INT ) INTERSECT SELECT CAST ( NULL AS INT )
 
-query I
-SELECT DISTINCT SUM ( max ( ( SELECT NULL AS v2 GROUP BY v2 ) ) ) OVER( ORDER BY '013' ) FROM v0 ;
+query R nosort
+SELECT DISTINCT SUM ( max ( ( SELECT NULL AS v2 GROUP BY v2 ) ) ) OVER( ORDER BY '013' ) FROM v0
 ----
 NULL
 
 statement ok
 drop view v0
+

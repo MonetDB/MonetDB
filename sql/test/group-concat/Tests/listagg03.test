@@ -16,7 +16,7 @@ insert into testmore values (3, 'even'), (2, 'more'), (1, '')
 statement ok
 insert into testmore values (3, 'even'), (2, NULL), (1, '')
 
-query T
+query T nosort
 select listagg('😀', '😁') as "😃" from (values (1),(2),(3), (NULL)) v
 ----
 😀😁😀😁😀😁😀
@@ -29,22 +29,22 @@ select listagg('😀', '😁') over () as "😃" from (values (1),(2),(3), (NULL
 😀😁😀😁😀😁😀
 😀😁😀😁😀😁😀
 
-query T
+query T nosort
 select listagg(null) || 'a'
 ----
 NULL
 
-query T
+query T nosort
 select listagg(null) || 'a' from testmore
 ----
 NULL
 
-query T
+query T nosort
 select listagg(null) over () || 'a'
 ----
 NULL
 
-query T
+query T nosort
 select listagg(null) over () || 'a' from testmore
 ----
 NULL
@@ -60,26 +60,26 @@ NULL
 NULL
 NULL
 
-query T
+query T nosort
 select listagg('') || 'a' where false
 ----
 NULL
 
-query T
+query T nosort
 select listagg('') over () || 'a' where false
 ----
 
-query T
+query T nosort
 select listagg('')
 ----
 (empty)
 
-query T
+query T nosort
 select listagg('') from testmore
 ----
 ,,,,,,,,,,,
 
-query T
+query T nosort
 select listagg('') over () from testmore
 ----
 ,,,,,,,,,,,
@@ -95,7 +95,7 @@ select listagg('') over () from testmore
 ,,,,,,,,,,,
 ,,,,,,,,,,,
 
-query T
+query T nosort
 select listagg('', '') over () from testmore
 ----
 (empty)

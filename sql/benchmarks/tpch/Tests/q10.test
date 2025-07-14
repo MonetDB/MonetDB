@@ -1,5 +1,5 @@
 #Q10
-query ITRRTTTT rowsort
+query ITDDTTTT rowsort
 select
 	c_custkey,
 	c_name,
@@ -33,5 +33,5 @@ order by
 	revenue desc
 limit 20
 ----
-160 values hashing to 60ee561ad7be1de29a74f2a426423e32
+160 values hashing to 14885de052cc160b69f6b1bc24b568fd
 

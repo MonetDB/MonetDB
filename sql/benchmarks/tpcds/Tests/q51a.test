@@ -1,5 +1,5 @@
 skipif bits=32bit
-query ITRRRR nosort
+query ITDDDD nosort
 -- query 51a
 WITH web_tv as (
 select
@@ -62,5 +62,5 @@ where web_cumulative > store_cumulative
 order by item_sk, d_date
 limit 100
 ----
-600 values hashing to f1cce2608f5e93697e23da9b25217519
+600 values hashing to 9189344e4926990467db1ce6ddc51090
 

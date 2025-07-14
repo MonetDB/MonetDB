@@ -1,4 +1,4 @@
-query TTTR nosort
+query TTTD nosort
 -- query 24-2
 with ssales as
 (select c_last_name
@@ -55,17 +55,17 @@ order by c_last_name
 Hamlin
 Heather
 able
-149.650
+149.65
 Martin
 Harold
 bar
-5834.880
+5834.88
 Nall
 Mike
 able
-999.700
+999.70
 Southern
 Jeannie
 bar
-446.310
+446.31
 

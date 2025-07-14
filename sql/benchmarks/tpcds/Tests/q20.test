@@ -1,4 +1,4 @@
-query TTTTRRR rowsort
+query TTTTDDD rowsort
 -- query 20
 select  i_item_id
        ,i_item_desc
@@ -28,5 +28,5 @@ select  i_item_id
          ,revenueratio
 limit 100
 ----
-700 values hashing to 78f72ae6989511bbf964b2458f74c99d
+700 values hashing to 6309deaf605fb18a5217e09ae1babbf8
 

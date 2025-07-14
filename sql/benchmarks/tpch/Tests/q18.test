@@ -1,5 +1,5 @@
 #Q18
-query TIITRR rowsort
+query TIITDD rowsort
 select
 	c_name,
 	c_custkey,
@@ -38,12 +38,12 @@ Customer#000000178
 178
 6882
 1997-04-09
-422359.650
-303.000
+422359.65
+303.00
 Customer#000000667
 667
 29158
 1995-10-21
-439687.230
-305.000
+439687.23
+305.00
 

@@ -32,7 +32,7 @@ COPY 20 RECORDS INTO "sensor_readings" FROM STDIN USING DELIMITERS ',',E'\n'
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:33.000000,L318,temperature,27.5
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:34.000000,L318,temperature,27.5
 
-query TTRR rowsort
+query TTDD rowsort
 SELECT location,
        CAST(SUBSTRING(emit_time, 0, 16) AS VARCHAR(16)) AS "time",
        MAX(CAST(value AS NUMERIC(5,2))) AS maxtemp,
@@ -45,8 +45,8 @@ GROUP BY location,
 ----
 L318
 2010-07-15 13:56
-27.560
-27.500
+27.56
+27.50
 
 statement ok
 DROP TABLE "sys"."sensor_readings"

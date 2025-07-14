@@ -119,19 +119,19 @@ NULL
 statement error
 SELECT f1, second(f1) FROM TIME_TBL
 
-query TR rowsort
+query TD rowsort
 SELECT f1, "second"(f1) FROM TIME_TBL
 ----
 00:00:00
-0.000
+0.000000
 01:00:00
-0.000
+0.000000
 12:00:00
-0.000
+0.000000
 12:01:00
-0.000
+0.000000
 23:59:00
-0.000
+0.000000
 NULL
 NULL
 
@@ -170,23 +170,23 @@ SELECT f1, extract(minute from f1) FROM TIME_TBL
 NULL
 NULL
 
-query TR rowsort
+query TD rowsort
 SELECT f1, extract(second from f1) FROM TIME_TBL
 ----
 00:00:00
-0.000
+0.000000
 01:00:00
-0.000
+0.000000
 12:00:00
-0.000
+0.000000
 12:01:00
-0.000
+0.000000
 23:59:00
-0.000
+0.000000
 NULL
 NULL
 
-query TR rowsort
+query TD rowsort
 SELECT f1, extract(epoch from f1) FROM TIME_TBL
 ----
 00:00:00

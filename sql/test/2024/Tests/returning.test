@@ -195,7 +195,7 @@ select (
 ) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000) UNIQUE NUNIQUES 1.000000 as "%1"."%1" ] COUNT 1
 ) [ "%1"."%1" UNIQUE NUNIQUES 1.000000 ] COUNT 1')
 ----
-@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@group by (@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE ]@) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE) UNIQUE as "%1"."%1" ]@) [ "%1"."%1" UNIQUE ]
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@group by (@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ]@) [  ] [ "sys"."sum" no nil ("foo"."i" NOT NULL UNIQUE) UNIQUE as "%1"."%1" ]@) [ "%1"."%1" UNIQUE ]
 
 # delete from foo where j > 10 returning sum(i)
 query T nosort
@@ -227,7 +227,7 @@ table("sys"."foo") [ "foo"."i" NOT NULL MIN "1" MAX "3" NUNIQUES 3.000000, "foo"
 )
 ) [ "foo"."i" NOT NULL NUNIQUES 3.000000 MAX "3" MIN "1" ]')
 ----
-@project (@insert(@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]@) [ "%4"."%4" as "foo"."i", "%1"."%1" as "foo"."j" ]@) [ "foo"."i" NOT NULL UNIQUE ]
+@project (@insert(@table("sys"."foo") [ "foo"."i" NOT NULL, "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]@) [ "%4"."%4" as "foo"."i", "%1"."%1" as "foo"."j" ]@) [ "foo"."i" NOT NULL ]
 
 # update foo set j = -j where j > 10 returning i
 query T nosort
@@ -245,7 +245,7 @@ select (
 ) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ]
 ) [ "foo"."i" NOT NULL UNIQUE MIN "1" MAX "3" NUNIQUES 3.000000 ]')
 ----
-@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE ]@) [ "foo"."i" NOT NULL UNIQUE ]
+@ REF 1 (2)@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL UNIQUE, "foo"."%TID%" NOT NULL UNIQUE ]@project (@update(@& REF 1 @project (@select (@& REF 1 @) [ ("foo"."j" NOT NULL UNIQUE) > (int(5) "10") ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "sys"."sql_neg"("foo"."j" NOT NULL UNIQUE) NOT NULL as "foo"."j" ]@) [ "foo"."%TID%" NOT NULL UNIQUE, "foo"."j" NOT NULL ]@) [ "foo"."i" NOT NULL UNIQUE ]
 
 # delete from foo where j > 10 returning i
 query T nosort

@@ -1,4 +1,4 @@
-query IR rowsort
+query ID rowsort
 -- query 93
 select  ss_customer_sk
             ,sum(act_sales) sumsales

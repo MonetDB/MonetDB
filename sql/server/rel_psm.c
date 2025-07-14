@@ -555,7 +555,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		return NULL;
 	if (!is_project(r->op))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
-	if (list_length(r->exps) != dlist_length(into))
+	if (!into || list_length(r->exps) != dlist_length(into))
 		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
 	r = rel_return_zero_or_one(sql, r, ek);
 	nl = sa_list(sql->sa);
@@ -1305,17 +1305,17 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	if(!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, triggername, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, tname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, triggername, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, time));
 	append(exps, exp_atom_int(sql->sa, orientation));
 	append(exps, exp_atom_int(sql->sa, event));
-	append(exps, exp_atom_str(sql->sa, old_name, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, new_name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, old_name, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, new_name, sql_fetch_localtype(TYPE_str) ));
 	(void)condition;
-	append(exps, exp_atom_str(sql->sa, NULL, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, query, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, NULL, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, query, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, replace));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1332,7 +1332,7 @@ _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
 	rel_base_use_all(sql, r);
-	r = rewrite_basetable(sql, r);
+	r = rewrite_basetable(sql, r, false);
 	return stack_push_rel_view(sql, tname, r);
 }
 
@@ -1456,7 +1456,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			rel = stack_find_rel_view(sql, "old");
 		if (!rel)
 			rel = stack_find_rel_view(sql, "new");
-		rel = rel_logical_exp(query, rel, condition, sql_where);
+		if (rel)
+			rel = rel_logical_exp(query, rel, condition, sql_where);
 		if (!rel) {
 			if (!instantiate)
 				stack_pop_frame(sql);
@@ -1464,7 +1465,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 		/* transition tables */
 		/* insert: rel_select(table [new], searchcondition) */
-		/* delete: rel_select(table [old], searchcondition) */
+		/* delete/truncate: rel_select(table [old], searchcondition) */
 		/* update: rel_select(table [old,new]), searchcondition) */
 		if (new_name)
 			stack_update_rel_view(sql, new_name, rel);
@@ -1498,8 +1499,8 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname, int if_exists)
 	if(!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, tname, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, if_exists));
 	rel->l = NULL;
 	rel->r = NULL;

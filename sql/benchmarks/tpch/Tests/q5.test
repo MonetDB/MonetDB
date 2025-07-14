@@ -1,5 +1,5 @@
 #Q5
-query TR rowsort
+query TD rowsort
 select
 	n_name,
 	sum(l_extendedprice * (1 - l_discount)) as revenue
@@ -26,13 +26,13 @@ order by
 	revenue desc
 ----
 CHINA
-740210.757
+740210.7570
 INDIA
-422874.684
+422874.6844
 INDONESIA
-566379.528
+566379.5276
 JAPAN
-660651.243
+660651.2425
 VIETNAM
-1000926.700
+1000926.6999
 

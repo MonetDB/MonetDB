@@ -1,4 +1,4 @@
-query TTTR nosort
+query TTTD nosort
 -- query 24-1
 with ssales as
 (select c_last_name
@@ -55,13 +55,13 @@ order by c_last_name
 Martins
 Cara
 bar
-241.960
+241.96
 Smallwood
 Rhonda
 bar
-3089.280
+3089.28
 Terry
 Sandra
 bar
-509.420
+509.42
 

@@ -1,4 +1,4 @@
-query R rowsort
+query D rowsort
 -- query 32
 select  sum(cs_ext_discount_amt)  as "excess discount amount"
 from
@@ -26,5 +26,5 @@ and cs_ext_discount_amt
       )
 limit 100
 ----
-28038.140
+28038.14
 

@@ -363,7 +363,7 @@ dump_table(allocator *sa, backend *be, sql_table *t)
 		return NULL;
 
 	/* tid column */
-	stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), -1);
+	stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), -1);
 	if (!s || (l[i++] = s->nr) < 0)
 		return NULL;
 
@@ -1251,9 +1251,9 @@ stmt_result(backend *be, stmt *s, int nr)
 	if (!nr && (s->type == st_order || s->type == st_reorder))
 		ns->op4.typeval = *tail_type(s->op1);
 	else if (nr && ((s->type == st_join && s->flag == MARKJOIN) || (s->type == st_uselect2 && s->flag == MARKJOIN)))
-		ns->op4.typeval = *sql_bind_localtype("bit");
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_bit);
 	else
-		ns->op4.typeval = *sql_bind_localtype("oid");
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_oid);
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
@@ -1568,9 +1568,51 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	return NULL;
 }
 
+static int
+constantAtom(MalBlkPtr mb, atom *a)
+{
+	int idx, tpe = atom_type(a)->type->localtype;
+	ValPtr vr = (ValPtr) &a->data;
+	ValRecord cst;
+
+	if (atom_null(a)) {
+		VALinit(&cst, tpe, ATOMnilptr(tpe));
+	} else {
+		cst.vtype = 0;
+		if (VALcopy(&cst, vr) == NULL)
+			return -1;
+	}
+	idx = defConstant(mb, tpe, &cst);
+	return idx;
+}
+
+
+static stmt *
+stmt_atom_const(backend *be, atom *a)
+{
+	int k;
+	if ((k = constantAtom(be->mb, a)) == -1)
+		return NULL;
+	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
+	sa_get_eb(be->mvc->sa)->enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_atom);
+	sa_get_eb(be->mvc->sa)->enabled = enabled;
+	if (s == NULL)
+		return NULL;
+
+	s->op4.aval = a;
+	s->key = 1;		/* values are also unique */
+	s->q = NULL;
+	s->nr = k;
+	return s;
+}
+
 stmt *
 stmt_atom(backend *be, atom *a)
 {
+	if (!EC_TEMP_FRAC(atom_type(a)->type->eclass) && atom_type(a)->type->localtype <= TYPE_str)
+		return stmt_atom_const(be, a);
+
 	MalBlkPtr mb = be->mb;
 
 	if (a == NULL)
@@ -1584,7 +1626,7 @@ stmt_atom(backend *be, atom *a)
 		q = pushNil(mb, q, atom_type(a)->type->localtype);
 	} else {
 		int k;
-		if ((k = constantAtom(be, mb, a)) == -1) {
+		if ((k = constantAtom(mb, a)) == -1) {
 			freeInstruction(q);
 			goto bailout;
 		}
@@ -4230,7 +4272,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
 		}
 
@@ -4667,11 +4709,11 @@ tail_type(stmt *st)
 		case st_tunion:
 		case st_tdiff:
 		case st_tinter:
-			return sql_bind_localtype("oid");
+			return sql_fetch_localtype(TYPE_oid);
 		case st_uselect2:
 			if (!st->reduce)
-				return sql_bind_localtype("bit");
-			return sql_bind_localtype("oid");
+				return sql_fetch_localtype(TYPE_bit);
+			return sql_fetch_localtype(TYPE_oid);
 		case st_alias:
 			if (!st->op1)
 				return &st->op4.typeval;
@@ -4690,9 +4732,9 @@ tail_type(stmt *st)
 			return &st->op4.cval->type;
 		case st_idxbat:
 			if (hash_index(st->op4.idxval->type)) {
-				return sql_bind_localtype("lng");
+				return sql_fetch_localtype(TYPE_lng);
 			} else if (oid_index(st->op4.idxval->type)) {
-				return sql_bind_localtype("oid");
+				return sql_fetch_localtype(TYPE_oid);
 			}
 			/* fall through */
 		case st_join:
@@ -4707,11 +4749,11 @@ tail_type(stmt *st)
 		case st_group:
 		case st_tid:
 		case st_mirror:
-			return sql_bind_localtype("oid");
+			return sql_fetch_localtype(TYPE_oid);
 		case st_result:
 			return &st->op4.typeval;
 		case st_table_clear:
-			return sql_bind_localtype("lng");
+			return sql_fetch_localtype(TYPE_lng);
 		case st_aggr:
 		case st_Nop: {
 			list *res = st->op4.funcval->res;
@@ -4735,7 +4777,7 @@ tail_type(stmt *st)
 		case st_exception:
 			return NULL;
 		case st_table:
-			return sql_bind_localtype("bat");
+			return sql_fetch_battype();
 		default:
 			if (st->op4.typeval.type)
 				return &st->op4.typeval;
@@ -4938,7 +4980,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 	if (cond->nr < 0)
 		goto bailout;
 	if (anti) {
-		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
 		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true, true);
 		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true, true);

@@ -730,7 +730,7 @@ stmt_no_slices(backend *be, stmt *col, bool hash)
 	ns->aggr = 1;
 	ns->q = q;
 	ns->nr = getArg(q, 0);
-	ns->op4.typeval = *sql_bind_localtype("int");
+	ns->op4.typeval = *sql_fetch_localtype(TYPE_int);
 	return ns;
 }
 

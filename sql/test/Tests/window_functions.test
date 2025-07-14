@@ -49,66 +49,66 @@ INSERT INTO employee VALUES (11,  'Samantha','Sales',       4100, 38)
 statement ok
 COMMIT WORK
 
-query RTTRR nosort
+query DTTDD nosort
 SELECT * FROM employee order by 1
 ----
 1.000
 Matthew
 Management
-4500.000
-55.000
+4500.00
+55
 2.000
 Olivia
 Management
-4400.000
-61.000
+4400.00
+61
 3.000
 Grace
 Management
-4000.000
-42.000
+4000.00
+42
 4.000
 Jim
 Production
-3700.000
-35.000
+3700.00
+35
 5.000
 Alice
 Production
-3500.000
-24.000
+3500.00
+24
 6.000
 Michael
 Production
-3600.000
-28.000
+3600.00
+28
 7.000
 Tom
 Production
-3800.000
-35.000
+3800.00
+35
 8.000
 Kevin
 Production
-4000.000
-52.000
+4000.00
+52
 9.000
 Elvis
 Service
-4100.000
-40.000
+4100.00
+40
 10.000
 Sophia
 Sales
-4300.000
-36.000
+4300.00
+36
 11.000
 Samantha
 Sales
-4100.000
-38.000
+4100.00
+38
 
-query RTTRRIRR nosort
+query DTTDDIDD nosort
 SELECT id,
        emp_name,
        dep_name,
@@ -210,7 +210,7 @@ Service
 NULL
 NULL
 
-query RTTITT nosort
+query DTTITT nosort
 SELECT id,
        emp_name,
        dep_name,
@@ -286,7 +286,7 @@ Service
 NULL
 NULL
 
-query RTRRR nosort
+query DTDDD nosort
 SELECT id, dep_name, salary,
        cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as DECIMAL(7,2)) as growing_sum,
@@ -296,61 +296,61 @@ FROM   employee
 ----
 3.000
 Management
-4000.000
-4000.000
-4000.000
+4000.00
+4000.00
+4000.00
 2.000
 Management
-4400.000
-8400.000
-8400.000
+4400.00
+8400.00
+8400.00
 1.000
 Management
-4500.000
-12900.000
-12900.000
+4500.00
+12900.00
+12900.00
 5.000
 Production
-3500.000
-3500.000
-3500.000
+3500.00
+3500.00
+3500.00
 6.000
 Production
-3600.000
-7100.000
-7100.000
+3600.00
+7100.00
+7100.00
 4.000
 Production
-3700.000
-10800.000
-10800.000
+3700.00
+10800.00
+10800.00
 7.000
 Production
-3800.000
-14600.000
-11100.000
+3800.00
+14600.00
+11100.00
 8.000
 Production
-4000.000
-18600.000
-11500.000
+4000.00
+18600.00
+11500.00
 11.000
 Sales
-4100.000
-4100.000
-4100.000
+4100.00
+4100.00
+4100.00
 10.000
 Sales
-4300.000
-8400.000
-8400.000
+4300.00
+8400.00
+8400.00
 9.000
 Service
-4100.000
-4100.000
-4100.000
+4100.00
+4100.00
+4100.00
 
-query RTRR nosort
+query DTDD nosort
 SELECT id, dep_name, salary,
        cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
                            GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) as DECIMAL(7,2)) AS sum_over_groups
@@ -358,50 +358,50 @@ FROM   employee
 ----
 3.000
 Management
-4000.000
-8400.000
+4000.00
+8400.00
 2.000
 Management
-4400.000
-12900.000
+4400.00
+12900.00
 1.000
 Management
-4500.000
-8900.000
+4500.00
+8900.00
 5.000
 Production
-3500.000
-7100.000
+3500.00
+7100.00
 6.000
 Production
-3600.000
-10800.000
+3600.00
+10800.00
 4.000
 Production
-3700.000
-11100.000
+3700.00
+11100.00
 7.000
 Production
-3800.000
-11500.000
+3800.00
+11500.00
 8.000
 Production
-4000.000
-7800.000
+4000.00
+7800.00
 11.000
 Sales
-4100.000
-8400.000
+4100.00
+8400.00
 10.000
 Sales
-4300.000
-8400.000
+4300.00
+8400.00
 9.000
 Service
-4100.000
-4100.000
+4100.00
+4100.00
 
-query RTRR nosort
+query DTDD nosort
 SELECT id, dep_name, salary,
        cast(SUM(salary)  OVER  (PARTITION BY dep_name ORDER BY salary
                            RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) as DECIMAL(7,2)) AS sum_over_range
@@ -409,48 +409,48 @@ FROM   employee
 ----
 3.000
 Management
-4000.000
-4000.000
+4000.00
+4000.00
 2.000
 Management
-4400.000
-4400.000
+4400.00
+4400.00
 1.000
 Management
-4500.000
-8900.000
+4500.00
+8900.00
 5.000
 Production
-3500.000
-3500.000
+3500.00
+3500.00
 6.000
 Production
-3600.000
-7100.000
+3600.00
+7100.00
 4.000
 Production
-3700.000
-7300.000
+3700.00
+7300.00
 7.000
 Production
-3800.000
-7500.000
+3800.00
+7500.00
 8.000
 Production
-4000.000
-4000.000
+4000.00
+4000.00
 11.000
 Sales
-4100.000
-4100.000
+4100.00
+4100.00
 10.000
 Sales
-4300.000
-4300.000
+4300.00
+4300.00
 9.000
 Service
-4100.000
-4100.000
+4100.00
+4100.00
 
 statement ok
 DROP TABLE employee

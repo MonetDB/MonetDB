@@ -1,5 +1,5 @@
-query R rowsort
+query D rowsort
 select cast(bit_and(1, power(2, 1)) as decimal(17,2))
 ----
-0.000
+0.00
 

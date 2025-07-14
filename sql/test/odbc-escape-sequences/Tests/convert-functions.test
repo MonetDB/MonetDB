@@ -30,10 +30,10 @@ select { fn convert('2022-11-10', SQL_DATE) }
 ----
 2022-11-10
 
-query R rowsort
+query D rowsort
 select { fn convert('3.12345', SQL_DECIMAL) }
 ----
-3.123
+3.12345
 
 query R rowsort
 select { fn convert('3.12345', SQL_DOUBLE) }
@@ -150,10 +150,10 @@ select { fn convert('abc', SQL_LONGVARCHAR) }
 ----
 abc
 
-query R rowsort
+query D rowsort
 select { fn convert('3.12345', SQL_NUMERIC) }
 ----
-3.123
+3.12345
 
 query R rowsort
 select { fn convert('3.123456', SQL_REAL) }

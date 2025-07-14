@@ -13,8 +13,10 @@ PLAN select quantile(y, 0.0) from x
 ----
 project (
 | group by (
-| | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
-| ) [  ] [ "sys"."quantile" no nil ("x"."y" NOT NULL UNIQUE, double(53) "0") UNIQUE as "%1"."%1" ]
+| | project (
+| | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
+| | ) [ "x"."y" NOT NULL ] [ "x"."y" ASC NOT NULL UNIQUE ]
+| ) [  ] [ "sys"."quantile" no nil ("x"."y" ASC NOT NULL, double(53) "0") UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" UNIQUE ]
 
 statement ok
@@ -26,8 +28,10 @@ PLAN select quantile(y, 0) from x
 ----
 project (
 | group by (
-| | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
-| ) [  ] [ "sys"."quantile" no nil ("x"."y" NOT NULL UNIQUE, double(53) "0") UNIQUE as "%1"."%1" ]
+| | project (
+| | | table("sys"."x") [ "x"."y" NOT NULL UNIQUE ]
+| | ) [ "x"."y" NOT NULL ] [ "x"."y" ASC NOT NULL UNIQUE ]
+| ) [  ] [ "sys"."quantile" no nil ("x"."y" ASC NOT NULL, double(53) "0") UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" UNIQUE ]
 
 statement ok

@@ -3,8 +3,8 @@ select 5 % 3
 ----
 2
 
-query R rowsort
+query D rowsort
 select 5.0 % 3
 ----
-2.000
+2.0
 

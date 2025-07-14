@@ -1,7 +1,7 @@
 statement ok
 create table count_case_crash(id int, key int)
 
-query IT
+query IT nosort
 SELECT count(*),
     CASE WHEN now() < (now() + interval '1' day) THEN
         'yes'
@@ -13,3 +13,4 @@ FROM
 ----
 0
 yes
+

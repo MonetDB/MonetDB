@@ -10,6 +10,7 @@ INSERT INTO database0_t2 VALUES(1.0)
 statement ok
 INSERT INTO database0_t4 VALUES(1.0)
 
-query I
+query R nosort
 SELECT * FROM database0_t2 WHERE NOT EXISTS(SELECT 1 FROM database0_t4 WHERE (database0_t2.c0) IN (database0_t4.c0, database0_t2.c0))
 ----
+

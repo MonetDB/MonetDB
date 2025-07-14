@@ -304,35 +304,35 @@ SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM rt3 where rt3.c0 = 1
 ----
 18
 
-query R nosort
+query D nosort
 SELECT 3 / 0.84 FROM t3 where t3.c0 = 1
 ----
 3.571
 
-query R nosort
+query D nosort
 SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1
 ----
 3.571
 
-query R nosort
+query D nosort
 SELECT CAST(2 AS DECIMAL) * 0.010 FROM t3 where t3.c0 = 1
 ----
 0.020
 
-query R nosort
+query D nosort
 SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1
 ----
 0.020
 
-query R nosort
+query D nosort
 SELECT sql_min(4, 7 - 0.5207499) FROM t3 where t3.c0 = 1
 ----
-4.000
+4.0000000
 
-query R nosort
+query D nosort
 SELECT sql_min(4, 7 - 0.5207499) FROM rt3 where rt3.c0 = 1
 ----
-4.000
+4.0000000
 
 query T nosort
 SELECT "insert"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1
@@ -1075,18 +1075,18 @@ NULL
 NULL
 NULL
 
-query RTTT nosort
+query DTTT nosort
 SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM t3 where t3.c0 = 1
 ----
-2.470
+2.47
 1
 (empty)
 1
 
-query RTTT nosort
+query DTTT nosort
 SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM rt3 where rt3.c0 = 1
 ----
-2.470
+2.47
 1
 (empty)
 1

@@ -17,7 +17,7 @@ select i,1/(i-1) from table2894 where i > 1
 4
 0
 
-query IR rowsort
+query ID rowsort
 select i,cast(1/(i-1.0) as decimal(18,3)) from table2894 where i > 1
 ----
 2

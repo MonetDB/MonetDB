@@ -1,4 +1,4 @@
-query TTRRRT rowsort
+query TTDDDT rowsort
 -- query 65
 select
 	s_store_name,
@@ -27,5 +27,5 @@ select
  order by s_store_name, i_item_desc
 limit 100
 ----
-600 values hashing to 5e6c06af5f55860519200ef936e1e664
+600 values hashing to 3b51122f1c954d71acf3a0793f6b6a33
 

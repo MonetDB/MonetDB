@@ -78,8 +78,7 @@ MNDBPrepare(ODBCStmt *stmt,
 	}
 
 	fixODBCstring(StatementText, TextLength, SQLINTEGER, addStmtError, stmt, return SQL_ERROR);
-	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength,
-				 stmt->noScan);
+	query = ODBCTranslateSQL(stmt->Dbc, StatementText, (size_t) TextLength, stmt->noScan);
 	if (query == NULL) {
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", NULL, 0);
@@ -185,7 +184,7 @@ MNDBPrepare(ODBCStmt *stmt,
 				rec->sql_desc_base_table_name = NULL;
 				rec->sql_desc_base_column_name = NULL;
 			}
-			rec->sql_desc_parameter_type = 0;
+			rec->sql_desc_parameter_type = SQL_PARAM_TYPE_UNKNOWN;	/* if possible set it to SQL_RESULT_COL or SQL_PARAM_INPUT */
 		}
 
 		s = mapi_fetch_field(hdl, 0); /* type */
@@ -280,7 +279,10 @@ MNDBPrepare(ODBCStmt *stmt,
 		    rec->sql_desc_concise_type == SQL_WCHAR ||
 		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
 		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR) {
-			rec->sql_desc_case_sensitive = SQL_TRUE;
+			if (strcmp("inet", (char *)rec->sql_desc_type_name) == 0)
+				rec->sql_desc_case_sensitive = SQL_FALSE;
+			else
+				rec->sql_desc_case_sensitive = SQL_TRUE;
 
 			/* For large varchar column definitions conditionally
 			 * change type to SQL_WLONGVARCHAR when mapToLongVarchar is set (e.g. to 4000)
@@ -293,18 +295,22 @@ MNDBPrepare(ODBCStmt *stmt,
 		} else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
-		rec->sql_desc_local_type_name = NULL;
+		/* initialise fields */
+		rec->sql_desc_auto_unique_value = SQL_FALSE;	/* SQL_TRUE for serial and bigserial columns */
 		rec->sql_desc_rowver = SQL_FALSE;
-
-		/* unused fields */
-		rec->sql_desc_auto_unique_value = SQL_FALSE;
+		rec->sql_desc_local_type_name = NULL;
+		rec->sql_desc_catalog_name = NULL;
 		rec->sql_desc_data_ptr = NULL;
 		rec->sql_desc_indicator_ptr = NULL;
+		rec->sql_desc_octet_length_ptr = NULL;
+		rec->sql_desc_updatable = SQL_ATTR_READONLY;
 		rec->sql_desc_literal_prefix = NULL;
 		rec->sql_desc_literal_suffix = NULL;
-		rec->sql_desc_octet_length_ptr = NULL;
-		rec->sql_desc_catalog_name = NULL;
-		rec->sql_desc_updatable = SQL_ATTR_READONLY;
+
+		/* rec->sql_desc_literal_prefix and
+		 * rec->sql_desc_literal_suffix are filled once when
+		 * SQLColAttribute(SQL_DESC_LITERAL_...FIX) or
+		 * SQLGetDescField(SQL_DESC_LITERAL_...FIX) is called */
 
 		/* this must come after other fields have been
 		 * initialized */
@@ -374,7 +380,7 @@ SQLPrepareW(SQLHSTMT StatementHandle,
 #endif
 
 	if (!isValidStmt(stmt))
-		 return SQL_INVALID_HANDLE;
+		return SQL_INVALID_HANDLE;
 
 	clearStmtErrors(stmt);
 

@@ -1,4 +1,4 @@
-query IIRR rowsort
+query IIDR rowsort
 select foo,
        sum(foo) over () as s1,
        1.0 * sum(foo) over () as s2,
@@ -7,11 +7,11 @@ select foo,
 ----
 3
 10
-10.000
+10
 10.000
 7
 10
-10.000
+10
 10.000
 
 query II rowsort
@@ -24,7 +24,7 @@ select foo,
 7
 5
 
-query IIR nosort
+query IID nosort
 select foo,
        sum(foo) over (order by foo) as sumsum1,
        1.0 * sum(foo) over (order by foo) as cumsum2
@@ -32,20 +32,20 @@ select foo,
 ----
 1
 1
-1.000
+1
 2
 3
-3.000
+3
 3
 6
-6.000
+6
 4
 10
-10.000
+10
 5
 15
-15.000
+15
 6
 21
-21.000
+21
 

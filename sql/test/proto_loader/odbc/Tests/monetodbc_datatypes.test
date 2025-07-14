@@ -1,6 +1,6 @@
 ---- BOOLEAN ----
 
-query IIIII
+query IIIII nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(false as boolean) as valf, cast(true as boolean) as valt, cast(0 as boolean) as val0, cast(1 as boolean) as val1, cast(NULL as boolean) as valnil'
 ----
 0
@@ -11,7 +11,7 @@ NULL
 
 ---- TINYINT, SMALLINT, INT, BIGINT ----
 
-query IIII
+query IIII nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(127 as tinyint) as val1, cast(-127 as tinyint) as val2, cast(0 as tinyint) as val0, cast(NULL as tinyint) as valnil'
 ----
 127
@@ -19,7 +19,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(127 as tinyint) as val1, 
 0
 NULL
 
-query IIII
+query IIII nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(32767 as smallint) as val1, cast(-32767 as smallint) as val2, cast(0 as smallint) as val0, cast(NULL as smallint) as valnil'
 ----
 32767
@@ -27,7 +27,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(32767 as smallint) as val
 0
 NULL
 
-query IIII
+query IIII nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(2147483647 as int) as val1, cast(-2147483647 as int) as val2, cast(0 as int) as val0, cast(NULL as int) as valnil'
 ----
 2147483647
@@ -35,7 +35,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(2147483647 as int) as val
 0
 NULL
 
-query IIII
+query IIII nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9223372036854775807 as bigint) as val1, cast(-9223372036854775807 as bigint) as val2, cast(0 as bigint) as val0, cast(NULL as bigint) as valnil'
 ----
 9223372036854775807
@@ -46,7 +46,7 @@ NULL
 ---- HUGEINT -----
 
 onlyif has-hugeint
-query IIII
+query IIII nosort
 select cast(170141183460469231731687303715884105727 as hugeint) as val1, cast(-170141183460469231731687303715884105727 as hugeint) as val2, cast(0 as hugeint) as val0, cast(NULL as hugeint) as valnil
 ----
 170141183460469231731687303715884105727
@@ -55,7 +55,7 @@ select cast(170141183460469231731687303715884105727 as hugeint) as val1, cast(-1
 NULL
 
 onlyif has-hugeint
-query IIII
+query IIII nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(170141183460469231731687303715884105727 as hugeint) as val1, cast(-170141183460469231731687303715884105727 as hugeint) as val2, cast(0 as hugeint) as val0, cast(NULL as hugeint) as valnil'
 ----
 170141183460469231731687303715884105727
@@ -65,81 +65,81 @@ NULL
 
 ---- DECIMAL ----
 
-query T
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(0.34 as decimal(2,2)) as dec1_val'
 ----
 0.34
 
-query R
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-0.34 as decimal(2,2)) as dec1_val'
 ----
--0.340
+-0.34
 
-query TT
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234.0 as decimal(4,0)) as dec2_val, cast(34.56 as decimal(4,2)) as dec3_val'
 ----
 1234
 34.56
 
-query RR
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-1234.0 as decimal(4,0)) as dec2_val, cast(-34.56 as decimal(4,2)) as dec3_val'
 ----
--1234.000
--34.560
+-1234
+-34.56
 
-query T
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(90.123456 as decimal(8,6)) as dec4_val'
 ----
 90.123456
 
-query R
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-90.123456 as decimal(8,6)) as dec4_val'
 ----
--90.123
+-90.123456
 
-query TT
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(1234567890.12345678 as decimal(18,8)) as dec8_val, cast(-1234567890.12345678 as decimal(18,8)) as dec8n_val'
 ----
 1234567890.12345678
 -1234567890.12345678
 
-query RR
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(9876543210.12345678 as decimal(18,8)) as dec8_val, cast(-9876543210.12345678 as decimal(18,8)) as dec8n_val'
 ----
-9876543210.123
--9876543210.123
+9876543210.12345678
+-9876543210.12345678
 
 onlyif has-hugeint
-query I
+query D nosort
 select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val
 ----
-923456789012345678
+923456789012345678.123456789
 
 onlyif has-hugeint
-query T
+query D nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(923456789012345678.123456789 as decimal(27,9)) as dec16_val'
 ----
 923456789012345678.123456789
 
 onlyif has-hugeint
-query II
+query DD nosort
 select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1
 ----
-12345678901234567890
--12345678901234567890
+12345678901234567890.123456789
+-12345678901234567890.123456789
 
 onlyif has-hugeint
-query TT
+query DD nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234567890.123456789 as decimal(38,9)) as dec16_val0, cast(-12345678901234567890.123456789 as decimal(38,9)) as dec16_val1'
 ----
 12345678901234567890.123456789
 -12345678901234567890.123456789
 
 onlyif has-hugeint
-query I
+query D nosort
 select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val
 ----
--923456789012345678901234567890
+-923456789012345678901234567890.12345678
 
 --query T
 --select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_val'
@@ -148,7 +148,7 @@ select cast(-923456789012345678901234567890.12345678 as decimal(38,8)) as dec16_
 
 ---- REAL ----
 
-query RRRR
+query RRRR nosort
 select cast(2147483647 as real) as val1, cast(-2147483647 as real) as val2, cast(0.00000000 as real) as val0, cast(NULL as real) as valnil
 ----
 2147483600.000
@@ -156,7 +156,7 @@ select cast(2147483647 as real) as val1, cast(-2147483647 as real) as val2, cast
 0.000
 NULL
 
-query RRRR
+query RRRR nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(2147483647 as real) as val1, cast(-2147483647 as real) as val2, cast(0.00000000 as real) as val0, cast(NULL as real) as valnil'
 ----
 2147483600.000
@@ -166,7 +166,7 @@ NULL
 
 ---- DOUBLE ----
 
-query RRRR
+query RRRR nosort
 select cast(12345678901234.5678 as double) as val1, cast(-12345678901234.5678 as double) as val2, cast(0.00000000 as double) as val0, cast(NULL as double) as valnil
 ----
 12345678901234.568
@@ -174,7 +174,7 @@ select cast(12345678901234.5678 as double) as val1, cast(-12345678901234.5678 as
 0.000
 NULL
 
-query RRRR
+query RRRR nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(12345678901234.5678 as double) as val1, cast(-12345678901234.5678 as double) as val2, cast(0.00000000 as double) as val0, cast(NULL as double) as valnil'
 ----
 12345678901234.568
@@ -184,7 +184,7 @@ NULL
 
 ---- DATE ----
 
-query TTTT
+query TTTT nosort
 select cast('2025-02-25' as date) as val1, cast('0101-01-01' as date) as val2, cast('0001-01-01' as date) as val0, cast(NULL as date) as valnil
 ----
 2025-02-25
@@ -192,7 +192,7 @@ select cast('2025-02-25' as date) as val1, cast('0101-01-01' as date) as val2, c
 0001-01-01
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''2025-02-25'' as date) as val1, cast(''0101-01-01'' as date) as val2, cast(''0001-01-01'' as date) as val0, cast(NULL as date) as valnil'
 ----
 2025-02-25
@@ -202,7 +202,7 @@ NULL
 
 ---- TIME ----
 
-query TTTT
+query TTTT nosort
 select cast('08:09:05' as time) as val1, cast('23:59:59' as time) as val2, cast('00:00:00' as time) as val0, cast(NULL as time) as valnil
 ----
 08:09:05
@@ -210,7 +210,7 @@ select cast('08:09:05' as time) as val1, cast('23:59:59' as time) as val2, cast(
 00:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''08:09:05'' as time) as val1, cast(''23:59:59'' as time) as val2, cast(''00:00:00'' as time) as val0, cast(NULL as time) as valnil'
 ----
 08:09:05
@@ -220,7 +220,7 @@ NULL
 
 ---- TIMESTAMP ----
 
-query TTTT
+query TTTT nosort
 select cast('2025-02-25 08:09:05' as timestamp) as val1, cast('0101-01-01 23:59:59' as timestamp) as val2, cast('0001-01-01 00:00:00' as timestamp) as val0, cast(NULL as timestamp) as valnil
 ----
 2025-02-25 08:09:05
@@ -228,7 +228,7 @@ select cast('2025-02-25 08:09:05' as timestamp) as val1, cast('0101-01-01 23:59:
 0001-01-01 00:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''2025-02-25 08:09:05'' as timestamp) as val1, cast(''0101-01-01 23:59:59'' as timestamp) as val2, cast(''0001-01-01 00:00:00'' as timestamp) as val0, cast(NULL as timestamp) as valnil'
 ----
 2025-02-25 08:09:05
@@ -238,7 +238,7 @@ NULL
 
 ---- INTERVAL ----
 
-query IIII
+query TTTT nosort
 select cast('66' as interval month) as val1, cast('-66' as interval month) as val2, cast('0' as interval month) as val0, cast(NULL as interval month) as valnil
 ----
 66
@@ -246,7 +246,7 @@ select cast('66' as interval month) as val1, cast('-66' as interval month) as va
 0
 NULL
 
-query IIII
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''66'' as interval month) as val1, cast(''-66'' as interval month) as val2, cast(''0'' as interval month) as val0, cast(NULL as interval month) as valnil'
 ----
 66
@@ -254,7 +254,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''66'' as interval month)
 0
 NULL
 
-query IIII
+query TTTT nosort
 select cast('12-6' as interval year to month) as val1, cast('-19-11' as interval year to month) as val2, cast('0-0' as interval year to month) as val0, cast(NULL as interval year to month) as valnil
 ----
 150
@@ -262,7 +262,7 @@ select cast('12-6' as interval year to month) as val1, cast('-19-11' as interval
 0
 NULL
 
-query IIII
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''12-6'' as interval year to month) as val1, cast(''-19-11'' as interval year to month) as val2, cast(''0-0'' as interval year to month) as val0, cast(NULL as interval year to month) as valnil'
 ----
 150
@@ -270,7 +270,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''12-6'' as interval year
 0
 NULL
 
-query IIII
+query TTTT nosort
 select cast('66' as interval year) as val1, cast('-66' as interval year) as val2, cast('0' as interval year) as val0, cast(NULL as interval year) as valnil
 ----
 792
@@ -278,7 +278,7 @@ select cast('66' as interval year) as val1, cast('-66' as interval year) as val2
 0
 NULL
 
-query IIII
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''66'' as interval year) as val1, cast(''-66'' as interval year) as val2, cast(''0'' as interval year) as val0, cast(NULL as interval year) as valnil'
 ----
 792
@@ -286,7 +286,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''66'' as interval year) 
 0
 NULL
 
-query IIII
+query TTTT nosort
 select cast('32' as interval day) as val1, cast('-32' as interval day) as val2, cast('0' as interval day) as val0, cast(NULL as interval day) as valnil
 ----
 32
@@ -294,7 +294,7 @@ select cast('32' as interval day) as val1, cast('-32' as interval day) as val2, 
 0
 NULL
 
-query IIII
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval day) as val1, cast(''-32'' as interval day) as val2, cast(''0'' as interval day) as val0, cast(NULL as interval day) as valnil'
 ----
 32
@@ -302,55 +302,55 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval day) a
 0
 NULL
 
-query II
+query TT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99'' as interval day) as val1, cast(''-99'' as interval day) as val2'
 ----
 99
 -99
 
-query TT
+query TT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99'' as interval day) as val1, cast(''-99'' as interval day) as val2'
 ----
 99
 -99
 
-query II
+query TT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''101'' as interval day) as val1, cast(''-102'' as interval day) as val2'
 ----
 101
 -102
 
-query RR
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''101'' as interval day) as val1, cast(''-102'' as interval day) as val2'
-----
-101.000
--102.000
-
-query TT
+query TT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''101'' as interval day) as val1, cast(''-102'' as interval day) as val2'
 ----
 101
 -102
 
-query II
+query TT nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''101'' as interval day) as val1, cast(''-102'' as interval day) as val2'
+----
+101
+-102
+
+query TT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9101'' as interval day) as val1, cast(''-9102'' as interval day) as val2'
 ----
 9101
 -9102
 
-query RR
-select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9101'' as interval day) as val1, cast(''-9102'' as interval day) as val2'
-----
-9101.000
--9102.000
-
-query TT
+query TT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9101'' as interval day) as val1, cast(''-9102'' as interval day) as val2'
 ----
 9101
 -9102
 
-query TTTT
+query TT nosort
+select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9101'' as interval day) as val1, cast(''-9102'' as interval day) as val2'
+----
+9101
+-9102
+
+query TTTT nosort
 select cast('32' as interval hour) as val1, cast('-32' as interval hour) as val2, cast('0' as interval hour) as val0, cast(NULL as interval hour) as valnil
 ----
 1 day, 8:00:00
@@ -358,7 +358,7 @@ select cast('32' as interval hour) as val1, cast('-32' as interval hour) as val2
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval hour) as val1, cast(''-32'' as interval hour) as val2, cast(''0'' as interval hour) as val0, cast(NULL as interval hour) as valnil'
 ----
 1 day, 8:00:00
@@ -366,7 +366,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32'' as interval hour) 
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('92' as interval minute) as val1, cast('-92' as interval minute) as val2, cast('0' as interval minute) as val0, cast(NULL as interval minute) as valnil
 ----
 1:32:00
@@ -374,7 +374,7 @@ select cast('92' as interval minute) as val1, cast('-92' as interval minute) as 
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''92'' as interval minute) as val1, cast(''-92'' as interval minute) as val2, cast(''0'' as interval minute) as val0, cast(NULL as interval minute) as valnil'
 ----
 1:32:00
@@ -382,7 +382,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''92'' as interval minute
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('61.2468' as interval second) as val1, cast('-61.987' as interval second) as val2, cast('0' as interval second) as val0, cast(NULL as interval second) as valnil
 ----
 0:01:01.246000
@@ -390,7 +390,7 @@ select cast('61.2468' as interval second) as val1, cast('-61.987' as interval se
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''61.2468'' as interval second) as val1, cast(''-61.987'' as interval second) as val2, cast(''0'' as interval second) as val0, cast(NULL as interval second) as valnil'
 ----
 0:01:01.246000
@@ -398,7 +398,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''61.2468'' as interval s
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('32 23' as interval day to hour) as val1, cast('-32 23' as interval day to hour) as val2, cast('0 0' as interval day to hour) as val0, cast(NULL as interval day to hour) as valnil
 ----
 32 days, 23:00:00
@@ -406,7 +406,7 @@ select cast('32 23' as interval day to hour) as val1, cast('-32 23' as interval 
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32 23'' as interval day to hour) as val1, cast(''-32 23'' as interval day to hour) as val2, cast(''0 0'' as interval day to hour) as val0, cast(NULL as interval day to hour) as valnil'
 ----
 32 days, 23:00:00
@@ -414,7 +414,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''32 23'' as interval day
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('9 23:59' as interval day to minute) as val1, cast('-9 23:59' as interval day to minute) as val2, cast('0 0:0' as interval day to minute) as val0, cast(NULL as interval day to minute) as valnil
 ----
 9 days, 23:59:00
@@ -422,7 +422,7 @@ select cast('9 23:59' as interval day to minute) as val1, cast('-9 23:59' as int
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9 23:59'' as interval day to minute) as val1, cast(''-9 23:59'' as interval day to minute) as val2, cast(''0 0:0'' as interval day to minute) as val0, cast(NULL as interval day to minute) as valnil'
 ----
 9 days, 23:59:00
@@ -430,7 +430,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9 23:59'' as interval d
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('9 23:59:59.507' as interval day to second) as val1, cast('-9 13:58:59.507' as interval day to second) as val2, cast('0 0:0:0' as interval day to second) as val0, cast(NULL as interval day to second) as valnil
 ----
 9 days, 23:59:59.507000
@@ -438,7 +438,7 @@ select cast('9 23:59:59.507' as interval day to second) as val1, cast('-9 13:58:
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9 23:59:59.507'' as interval day to second) as val1, cast(''-9 13:58:59.507'' as interval day to second) as val2, cast(''0 0:0:0'' as interval day to second) as val0, cast(NULL as interval day to second) as valnil'
 ----
 9 days, 23:59:59.507000
@@ -446,7 +446,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''9 23:59:59.507'' as int
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('23:59' as interval hour to minute) as val1, cast('-23:59' as interval hour to minute) as val2, cast('0:0' as interval hour to minute) as val0, cast(NULL as interval hour to minute) as valnil
 ----
 23:59:00
@@ -454,7 +454,7 @@ select cast('23:59' as interval hour to minute) as val1, cast('-23:59' as interv
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''23:59'' as interval hour to minute) as val1, cast(''-23:59'' as interval hour to minute) as val2, cast(''0:0'' as interval hour to minute) as val0, cast(NULL as interval hour to minute) as valnil'
 ----
 23:59:00
@@ -462,7 +462,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''23:59'' as interval hou
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('24:59:59.85' as interval hour to second) as val1, cast('-24:59:59.507' as interval hour to second) as val2, cast('0:0:0.000' as interval hour to second) as val0, cast(NULL as interval hour to second) as valnil
 ----
 1 day, 0:59:59.850000
@@ -470,7 +470,7 @@ select cast('24:59:59.85' as interval hour to second) as val1, cast('-24:59:59.5
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''24:59:59.85'' as interval hour to second) as val1, cast(''-24:59:59.507'' as interval hour to second) as val2, cast(''0:0:0.000'' as interval hour to second) as val0, cast(NULL as interval hour to second) as valnil'
 ----
 1 day, 0:59:59.850000
@@ -478,7 +478,7 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''24:59:59.85'' as interv
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select cast('99:59.999' as interval minute to second) as val1, cast('-99:59.123' as interval minute to second) as val2, cast('0:0.000' as interval minute to second) as val0, cast(NULL as interval minute to second) as valnil
 ----
 1:39:59.999000
@@ -486,7 +486,7 @@ select cast('99:59.999' as interval minute to second) as val1, cast('-99:59.123'
 0:00:00
 NULL
 
-query TTTT
+query TTTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''99:59.999'' as interval minute to second) as val1, cast(''-99:59.123'' as interval minute to second) as val2, cast(''0:0.000'' as interval minute to second) as val0, cast(NULL as interval minute to second) as valnil'
 ----
 1:39:59.999000
@@ -496,14 +496,14 @@ NULL
 
 ---- UUID ----
 
-query TTT
+query TTT nosort
 select cast('eda7b074-3e0f-4bef-bdec-19c61bedb18f' as uuid) as val1, cast('beefc4f7-0264-4735-9b7a-75fd371ef803' as uuid) as val2, cast(NULL as uuid) as valnil
 ----
 eda7b074-3e0f-4bef-bdec-19c61bedb18f
 beefc4f7-0264-4735-9b7a-75fd371ef803
 NULL
 
-query TTT
+query TTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''eda7b074-3e0f-4bef-bdec-19c61bedb18f'' as uuid) as val1, cast(''beefc4f7-0264-4735-9b7a-75fd371ef803'' as uuid) as val2, cast(NULL as uuid) as valnil'
 ----
 eda7b074-3e0f-4bef-bdec-19c61bedb18f
@@ -512,14 +512,14 @@ NULL
 
 ---- BLOB ----
 
-query TTT
+query TTT nosort
 select cast('eda7b0743e0f4befbdec19c61bedb18f' as blob) as val1, cast('beefc4f7026447359b7a75fd371ef8030001020304FCFDFEFF' as blob) as val2, cast(NULL as blob) as valnil
 ----
 EDA7B0743E0F4BEFBDEC19C61BEDB18F
 BEEFC4F7026447359B7A75FD371EF8030001020304FCFDFEFF
 NULL
 
-query TTT
+query TTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''eda7b0743e0f4befbdec19c61bedb18f'' as blob) as val1, cast(''beefc4f7026447359b7a75fd371ef8030001020304FCFDFEFF'' as blob) as val2, cast(NULL as blob) as valnil'
 ----
 EDA7B0743E0F4BEFBDEC19C61BEDB18F
@@ -528,14 +528,14 @@ NULL
 
 ---- URL ----
 
-query TTT
+query TTT nosort
 select cast('https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example' as url) as val1, cast('https://me:pw@www.monetdb.org/Doc' as url) as val2, cast(NULL as url) as valnil
 ----
 https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example
 https://me:pw@www.monetdb.org/Doc
 NULL
 
-query TTT
+query TTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example'' as url) as val1, cast(''https://me:pw@www.monetdb.org/Doc'' as url) as val2, cast(NULL as url) as valnil'
 ----
 https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example
@@ -544,16 +544,17 @@ NULL
 
 ---- JSON ----
 
-query TTT
+query TTT nosort
 select cast('{"a":"abc", "b":"def", "c" : ["abc2", "def2"]}' as json) as val1, cast('{"track":{"segments":[{"location":[ 47.763,13.4034 ],"start time":"2018-10-14 10:05:14","HR":73},{"location":[ 47.706,13.2635 ],"start time":"2018-10-14 10:39:21","HR":135}]}}' as json) as val2, cast(NULL as json) as valnil
 ----
 {"a":"abc","b":"def","c":["abc2","def2"]}
 {"track":{"segments":[{"location":[47.763,13.4034],"start time":"2018-10-14 10:05:14","HR":73},{"location":[47.706,13.2635],"start time":"2018-10-14 10:39:21","HR":135}]}}
 NULL
 
-query TTT
+query TTT nosort
 select * from 'odbc:DSN=MonetDB-Test;QUERY=select cast(''{"a":"abc", "b":"def", "c" : ["abc2", "def2"]}'' as json) as val1, cast(''{"track":{"segments":[{"location":[ 47.763,13.4034 ],"start time":"2018-10-14 10:05:14","HR":73},{"location":[ 47.706,13.2635 ],"start time":"2018-10-14 10:39:21","HR":135}]}}'' as json) as val2, cast(NULL as json) as valnil'
 ----
 {"a":"abc","b":"def","c":["abc2","def2"]}
 {"track":{"segments":[{"location":[47.763,13.4034],"start time":"2018-10-14 10:05:14","HR":73},{"location":[47.706,13.2635],"start time":"2018-10-14 10:39:21","HR":135}]}}
 NULL
+

@@ -18,7 +18,7 @@ copy 10 records into tmpcopy from stdin delimiters ',',E'\n'
 0,67 
 0,890
 
-query IR nosort
+query ID nosort
 select * from tmpcopy
 ----
 0

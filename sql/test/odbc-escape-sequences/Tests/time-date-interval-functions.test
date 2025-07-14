@@ -145,10 +145,10 @@ select { fn extract(minute from time'15:45:59') }
 ----
 45
 
-query R rowsort
+query D rowsort
 select { fn extract(second from time'15:45:59') }
 ----
-59.000
+59.000000
 
 query I rowsort
 select { fn extract(day from timestamp'2022-01-02 15:45:59') }
@@ -185,10 +185,10 @@ select { fn extract(minute from timestamp'2022-01-02 15:45:59') }
 ----
 45
 
-query R rowsort
+query D rowsort
 select { fn extract(second from timestamp'2022-01-02 15:45:59') }
 ----
-59.000
+59.000000
 
 query I rowsort
 select { fn hour(time'12:00:00') }
@@ -250,20 +250,20 @@ select { fn quarter(timestamp'2022-06-02 15:45:59') }
 ----
 2
 
-query R rowsort
+query D rowsort
 select { fn second(time'12:30:33') }
 ----
-33.000
+33.000000
 
-query R rowsort
+query D rowsort
 select { fn second(timestamp'2022-01-02 15:45:59') }
 ----
-59.000
+59.000000
 
-query R rowsort
+query D rowsort
 select { fn second(timestamp'2022-11-14 12:30:34') }
 ----
-34.000
+34.000000
 
 query I rowsort
 select { fn week(date'2022-11-14') }

@@ -1,4 +1,4 @@
-query R rowsort
+query D rowsort
 -- query 23-1
  with frequent_ss_items as
  (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
@@ -50,5 +50,5 @@ from
          and ws_bill_customer_sk in (select c_customer_sk from best_ss_customer)) sq2
  limit 100
 ----
-17030.910
+17030.91
 

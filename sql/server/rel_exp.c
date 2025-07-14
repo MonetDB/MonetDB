@@ -608,7 +608,7 @@ exp_atom_clob(allocator *sa, const char *s)
 sql_exp *
 exp_atom_ptr(allocator *sa, void *s)
 {
-	sql_subtype *t = sql_bind_localtype("ptr");
+	sql_subtype *t = sql_fetch_localtype(TYPE_ptr);
 	return exp_atom(sa, atom_ptr(sa, t, s));
 }
 
@@ -790,8 +790,10 @@ exp_propagate(allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_has_no_nil(ne);
 	if (has_nil(oe))
 		set_has_nil(ne);
+	/*
 	if (is_unique(oe))
 		set_unique(ne);
+		*/
 	if (is_basecol(oe))
 		set_basecol(ne);
 	ne->p = prop_copy(sa, oe->p);
@@ -819,8 +821,10 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		set_has_no_nil(e);
 	if (has_nil(o))
 		set_has_nil(e);
+	/*
 	if (is_unique(o))
 		set_unique(e);
+		*/
 	if (is_intern(o))
 		set_intern(e);
 	return exp_propagate(sa, e, o);
@@ -1141,7 +1145,7 @@ exp_subtype( sql_exp *e )
 		return NULL;
 	}
 	case e_cmp:
-		return sql_bind_localtype("bit");
+		return sql_fetch_localtype(TYPE_bit);
 	case e_psm:
 		if (e->tpe.type)
 			return &e->tpe;
@@ -3486,11 +3490,11 @@ exps_sum_scales(sql_subfunc *f, list *exps)
 		if (ares->type.type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
 			if (ares->type.type->localtype == TYPE_hge && res->digits == 127)
-				t = *sql_bind_localtype("hge");
+				t = *sql_fetch_localtype(TYPE_hge);
 			else
 #endif
 			if (ares->type.type->localtype == TYPE_lng && res->digits == 63)
-				t = *sql_bind_localtype("lng");
+				t = *sql_fetch_localtype(TYPE_lng);
 			else if (res->type->digits >= res->digits)
 				t = *res; /* we cannot reduce types! */
 			else
@@ -3739,12 +3743,12 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
 	/* use largest numeric types */
 	if (upcast && type->type->eclass == EC_NUM)
 #ifdef HAVE_HGE
-		type = sql_bind_localtype("hge");
+		type = sql_fetch_localtype(TYPE_hge);
 #else
-		type = sql_bind_localtype("lng");
+		type = sql_fetch_localtype(TYPE_lng);
 #endif
 	else if (upcast && type->type->eclass == EC_FLT)
-		type = sql_bind_localtype("dbl");
+		type = sql_fetch_localtype(TYPE_dbl);
 
 	/* TODO we could use the sql_query* struct to set parameters used as freevars,
 	   but it requires to change a lot of interfaces */
@@ -3759,8 +3763,8 @@ rel_set_type_param(mvc *sql, sql_subtype *type, sql_rel *rel, sql_exp *exp, int 
  * This is only done to be able to map more cached queries onto the same
  * interface.
  */
-sql_exp *
-exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
+static sql_exp *
+exp_convert_inplace(sql_subtype *t, sql_exp *exp)
 {
 	atom *a, *na;
 
@@ -3772,7 +3776,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	if (!a->isnull && t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
-	if ((na = atom_cast(sql->sa, a, t))) {
+	if ((na = atom_cast_inplace(a, t))) {
 		exp->l = na;
 		return exp;
 	}
@@ -3785,15 +3789,15 @@ exp_numeric_supertype(mvc *sql, sql_exp *e )
 	sql_subtype *tp = exp_subtype(e);
 
 	if (tp->type->eclass == EC_DEC) {
-		sql_subtype *dtp = sql_bind_localtype("dbl");
+		sql_subtype *dtp = sql_fetch_localtype(TYPE_dbl);
 
 		return exp_check_type(sql, dtp, NULL, e, type_cast);
 	}
 	if (tp->type->eclass == EC_NUM) {
 #ifdef HAVE_HGE
-		sql_subtype *ltp = sql_bind_localtype("hge");
+		sql_subtype *ltp = sql_fetch_localtype(TYPE_hge);
 #else
-		sql_subtype *ltp = sql_bind_localtype("lng");
+		sql_subtype *ltp = sql_fetch_localtype(TYPE_lng);
 #endif
 
 		return exp_check_type(sql, ltp, NULL, e, type_cast);
@@ -3812,7 +3816,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		return exp;
 
 	/* first try cheap internal (in-place) conversions ! */
-	if ((nexp = exp_convert_inplace(sql, t, exp)) != NULL)
+	if ((nexp = exp_convert_inplace(t, exp)) != NULL)
 		return nexp;
 
 	if (fromtype && subtype_cmp(t, fromtype) != 0) {

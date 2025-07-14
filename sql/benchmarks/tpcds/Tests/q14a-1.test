@@ -1,4 +1,4 @@
-query TIIIRI rowsort
+query TIIIDI rowsort
 -- query 14a-1
 with  cross_items as
  (select i_item_sk ss_item_sk
@@ -118,5 +118,5 @@ from (
 order by channel, i_brand_id, i_class_id, i_category_id
  limit 100
 ----
-600 values hashing to 921d62692c44049ed3bc8157bb3c9f4c
+600 values hashing to e42e443a8065970eeb83df338de6bf15
 

@@ -1,4 +1,4 @@
-query RTTII rowsort
+query DTTII rowsort
 -- query 86a
 with results as
 ( select sum(ws_net_paid) as total_sum, i_category, i_class, 0 as g_category, 0 as g_class
@@ -32,5 +32,5 @@ with results as
    rank_within_parent
  limit 100
 ----
-500 values hashing to bd455b6eba3bfe95edf8f99b3cf14374
+500 values hashing to 8719a9308f29def674cfd5176bfffbcc
 

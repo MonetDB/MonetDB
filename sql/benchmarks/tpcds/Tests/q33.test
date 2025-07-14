@@ -1,4 +1,4 @@
-query IR rowsort
+query ID rowsort
 -- query 33
 with ss as (
  select
@@ -73,5 +73,5 @@ where i_category in ('Electronics'))
  order by total_sales
 limit 100
 ----
-200 values hashing to cb0042b696c91912080cb5edb1ca409d
+200 values hashing to 8df6445d9a2937ae92d458623fe65082
 

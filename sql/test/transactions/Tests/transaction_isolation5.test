@@ -291,22 +291,22 @@ statement error 40001!COMMIT: transaction is aborted because of concurrency conf
 commit
 
 @connection(id=mdb4)
-query II nosort
+query II rowsort
 select * from parent
 ----
-2
-2
 1
 1
+2
+2
 
 @connection(id=mdb5)
-query II nosort
+query II rowsort
 select * from parent
 ----
-2
-2
 1
 1
+2
+2
 
 @connection(id=mdb4)
 statement ok
@@ -337,22 +337,22 @@ statement error 40001!COMMIT: transaction is aborted because of concurrency conf
 commit
 
 @connection(id=mdb4)
-query II nosort
+query II rowsort
 select * from parent
 ----
-2
-2
 1
 1
+2
+2
 
 @connection(id=mdb5)
-query II nosort
+query II rowsort
 select * from parent
 ----
-2
-2
 1
 1
+2
+2
 
 @connection(id=mdb4)
 statement ok
@@ -419,14 +419,14 @@ statement ok
 create view myview as (select a from parent)
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
 2
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
@@ -437,28 +437,28 @@ statement ok
 commit
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
 2
 
 @connection(id=mdb7, username=monetdb, password=monetdb)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
 2
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
 2
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
@@ -473,28 +473,28 @@ statement ok
 start transaction
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
 2
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
 2
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
 2
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
@@ -505,14 +505,14 @@ statement ok
 ALTER TABLE parent ADD table child2
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
 2
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
@@ -521,14 +521,14 @@ SELECT a from myfunc()
 4
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
 2
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
@@ -545,7 +545,7 @@ statement ok
 commit
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
@@ -554,7 +554,7 @@ SELECT a from myfunc()
 4
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myfunc()
 ----
 1
@@ -563,7 +563,7 @@ SELECT a from myfunc()
 4
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
@@ -572,7 +572,7 @@ SELECT a from myview
 4
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 SELECT a from myview
 ----
 1
@@ -809,7 +809,7 @@ statement error 40001!COMMIT: transaction is aborted because of concurrency conf
 commit
 
 @connection(id=mdb6)
-query I nosort
+query I rowsort
 select c0 from t0
 ----
 1
@@ -817,7 +817,7 @@ select c0 from t0
 3
 
 @connection(id=mdb7)
-query I nosort
+query I rowsort
 select c0 from t0
 ----
 1

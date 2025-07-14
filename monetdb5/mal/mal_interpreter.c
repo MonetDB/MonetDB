@@ -512,7 +512,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	if (startpc + 1 == stoppc) {
 		pci = getInstrPtr(mb, startpc);
 		if (pci->argc > 16) {
-			backup = GDKmalloc(pci->argc * sizeof(ValRecord));
+			backup = GDKmalloc(pci->retc * sizeof(ValRecord));
 			garbage = (int *) GDKzalloc(pci->argc * sizeof(int));
 			if (backup == NULL || garbage == NULL) {
 				GDKfree(backup);

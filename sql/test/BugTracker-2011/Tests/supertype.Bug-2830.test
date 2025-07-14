@@ -1,4 +1,4 @@
-query R rowsort
+query D rowsort
 select 30. - 0.025
 ----
 29.975

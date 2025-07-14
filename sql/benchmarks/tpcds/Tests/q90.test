@@ -1,4 +1,4 @@
-query R nosort
+query D nosort
 -- query 90
 select  cast(amc as decimal(15,4))/cast(pmc as decimal(15,4)) am_pm_ratio
  from ( select count(*) amc
@@ -20,5 +20,5 @@ select  cast(amc as decimal(15,4))/cast(pmc as decimal(15,4)) am_pm_ratio
  order by am_pm_ratio
  limit 100
 ----
-0.612
+0.6124
 

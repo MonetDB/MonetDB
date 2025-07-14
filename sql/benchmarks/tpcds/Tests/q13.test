@@ -1,4 +1,4 @@
-query RRRR rowsort
+query RDDD rowsort
 -- query 13
 select avg(ss_quantity)
        ,avg(ss_ext_sales_price)
@@ -50,7 +50,7 @@ select avg(ss_quantity)
      ))
 ----
 31.000
-2551.860
-2365.940
-14195.660
+2551.86
+2365.94
+14195.66
 

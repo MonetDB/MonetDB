@@ -95,6 +95,7 @@ void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
 
 SQLULEN ODBCLength(ODBCDescRec *rec, int lengthtype);
+void fillLiteralPrefixSuffix(ODBCDescRec *rec);
 
 SQLRETURN MNDBGetDescField(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN MNDBSetDescField(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);

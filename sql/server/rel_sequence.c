@@ -63,8 +63,8 @@ rel_seq(allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *r, s
 		append(exps, val);
 	else
 		append(exps, exp_atom_int(sa, 0));
-	append(exps, exp_atom_str(sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sa, s->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sa, s->base.name, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_ptr(sa, s));
 	rel->l = r;
 	rel->r = NULL;
@@ -314,7 +314,7 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, seq->start);
 	} else if (start_type == 1) { /* value (exp) */
 		exp_kind ek = {type_value, card_value, FALSE};
-		sql_subtype *lng_t = sql_bind_localtype("lng");
+		sql_subtype *lng_t = sql_fetch_localtype(TYPE_lng);
 
 		val = rel_value_exp2(query, &r, start_list->h->next->data.sym, sql_sel, ek);
 		if (!val || !(val = exp_check_type(sql, lng_t, r, val, type_equal)))

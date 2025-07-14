@@ -1085,7 +1085,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		if (e && e->type == e_column)
 			ea = exps_find_exp(rel->exps, e);
 		if (!ea || !list_empty(ea->l)) {
-			sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+			sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 
 			e = exp_aggr(sql->sa, NULL, cf, 0, 0, CARD_AGGR, 0);
 
@@ -1184,7 +1184,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 			cnt_d = cnt;
 
 			sql_subtype *avg_t = exp_subtype(avg);
-			sql_subtype *dbl_t = sql_bind_localtype("dbl");
+			sql_subtype *dbl_t = sql_fetch_localtype(TYPE_dbl);
 			if (subtype_cmp(avg_t, dbl_t) == 0 || EC_INTERVAL(avg_t->type->eclass)) {
 				/* check for count = 0 (or move into funcs) */
 				args = new_exp_list(sql->sa);
@@ -1217,7 +1217,7 @@ rel_avg_rewrite(visitor *v, sql_rel *rel)
 					sum = exp_convert(sql, sum, st, ct);
 				} else if (st->type->eclass == EC_FLT) {
 					if (ct->type != st->type) {
-						sql_subtype *dbl_t = sql_bind_localtype("dbl");
+						sql_subtype *dbl_t = sql_fetch_localtype(TYPE_dbl);
 						if (ct->type->eclass != EC_FLT || st->type == dbl_t->type)
 							cnt_d = exp_convert(sql, cnt_d, exp_subtype(cnt_d), st);
 					}
@@ -1376,7 +1376,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 				sql_exp *e = n->data;
 
 				if (exp_subtype(e)->type->localtype == TYPE_hge) /* down cast */
-					e = n->data = exp_convert(sql, e, exp_subtype(e), sql_bind_localtype("lng"));
+					e = n->data = exp_convert(sql, e, exp_subtype(e), sql_fetch_localtype(TYPE_lng));
 			}
 		}
 	}

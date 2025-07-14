@@ -111,7 +111,7 @@ NULL
 statement error
 SELECT f1, second(f1) FROM TIMETZ_TBL
 
-query TR rowsort
+query TD rowsort
 SELECT f1, "second"(f1) FROM TIMETZ_TBL
 ----
 NULL
@@ -132,13 +132,13 @@ SELECT f1, extract(minute from f1) FROM TIMETZ_TBL
 NULL
 NULL
 
-query TR rowsort
+query TD rowsort
 SELECT f1, extract(second from f1) FROM TIMETZ_TBL
 ----
 NULL
 NULL
 
-query TR rowsort
+query TD rowsort
 SELECT f1, extract(epoch from f1) FROM TIMETZ_TBL
 ----
 NULL

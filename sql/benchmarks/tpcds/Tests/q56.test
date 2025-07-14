@@ -1,4 +1,4 @@
-query TR rowsort
+query TD rowsort
 -- query 56
 with ss as (
  select i_item_id,sum(ss_ext_sales_price) total_sales
@@ -67,5 +67,5 @@ where i_color in ('slate','blanched','burnished'))
           i_item_id
  limit 100
 ----
-200 values hashing to 33d911ad1033ffbead691fca0a9b1e36
+200 values hashing to 868e2266de8979062332a7cfc087dd22
 

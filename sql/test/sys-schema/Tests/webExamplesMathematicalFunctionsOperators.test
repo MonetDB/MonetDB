@@ -1,4 +1,4 @@
-query IIIIRI nosort
+query IIIIDI nosort
 select 2 + 3 as add23, 2 - 3 as sub23, 2 * 3 as mul23, 5 / 2 as div52, 5.0 / 2 as div502, 5 % 4 as mod54
 ----
 5
@@ -128,10 +128,10 @@ select right_shift(16, 2)
 statement error
 SELECT 10 DIV 5
 
-query R nosort
+query D nosort
 select abs(-17.4)
 ----
-17.400
+17.4
 
 query IIII nosort
 select bit_and(91, 15), bit_not(1), bit_or(32, 3), bit_xor(17, 5)
@@ -266,13 +266,13 @@ select right_shift(8, 2)
 ----
 2
 
-query RRRR nosort
+query DDDD nosort
 select sql_min(1.2, 5), least(1.2, 5), sql_max(1.2, 5), greatest(1.2, 5)
 ----
-1.200
-1.200
-5.000
-5.000
+1.2
+1.2
+5.0
+5.0
 
 query RRRRRR nosort
 select log(2.0), ln(2), log(64.0, 2), log(2, 64.0), log10(100.0), log2(64.0)
@@ -284,10 +284,10 @@ select log(2.0), ln(2), log(64.0, 2), log(2, 64.0), log10(100.0), log2(64.0)
 2.000
 6.000
 
-query R nosort
+query D nosort
 select mod(5.0, 2.1)
 ----
-0.800
+0.8
 
 query R nosort
 select pi()
@@ -330,7 +330,7 @@ select right_shift(16, 2), right_shift(8.0, 2), right_shift(8.2, 2)
 statement error
 select round(41.538)
 
-query R nosort
+query D nosort
 select round(41.538, 2)
 ----
 41.540
@@ -348,39 +348,39 @@ select sign(-8.4), sign(-0), sign(+0), sign(+8.4)
 0
 1
 
-query RI nosort
+query DI nosort
 select sql_add(2, 3.4), sql_sub(5, 7)
 ----
-5.400
+5.4
 -2
 
-query RR nosort
+query DD nosort
 select sql_div(3.4, 2), sql_mul(1.2, 5)
 ----
 1.700
-6.000
+6.0
 
-query RR nosort
+query DD nosort
 select sql_max(1.2, 5), sql_min(1.2, 5)
 ----
-5.000
-1.200
+5.0
+1.2
 
-query R nosort
+query D nosort
 select sql_max(1.2, sql_max(3.3, 5))
 ----
-5.000
+5.0
 
-query R nosort
+query D nosort
 select sql_min(1.2, sql_min(3.3, 5))
 ----
-1.200
+1.2
 
-query RR nosort
+query DD nosort
 select sql_neg(-2.5), sql_neg(2.5)
 ----
-2.500
--2.500
+2.5
+-2.5
 
 query R nosort
 select sqrt(2.0)

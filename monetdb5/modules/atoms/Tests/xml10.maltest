@@ -65,7 +65,7 @@ statement error
 io.print(l)
 
 statement ok
-ag:= xml.subaggr(te,g,e,true)
+ag:= aggr.subxmlaggr(te,g,e,true)
 
 statement error
 io.print(ag)
@@ -93,7 +93,7 @@ io.print("book construction")
 "book construction"
 
 statement ok
-be:= xml.aggr(ae)
+be:= aggr.xmlaggr(ae)
 
 query T rowsort
 io.print(be)

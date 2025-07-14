@@ -1,4 +1,4 @@
-query TTTTIRR nosort
+query TTTTIDD nosort
 -- query 46
 select  c_last_name
        ,c_first_name
@@ -33,5 +33,5 @@ select  c_last_name
           ,ss_ticket_number
   limit 100
 ----
-700 values hashing to c5a2e04f73f6da7a2d06c5baf192fc0a
+700 values hashing to 0b443fdb47f248935719aa20f8fcaa2f
 

@@ -1,4 +1,4 @@
-query TTR nosort
+query TTD nosort
 -- query 45
 select  ca_zip, ca_city, sum(ws_sales_price)
  from web_sales, customer, customer_address, date_dim, item
@@ -20,59 +20,59 @@ select  ca_zip, ca_city, sum(ws_sales_price)
 ----
 10150
 Bunker Hill
-20.250
+20.25
 16098
 Five Points
-18.050
+18.05
 28048
 Salem
-9.810
+9.81
 29584
 Oakdale
-41.210
+41.21
 31289
 Lincoln
-1.260
+1.26
 34975
 Kingston
-56.670
+56.67
 36971
 Wilson
-202.630
+202.63
 38354
 Sulphur Springs
-25.680
+25.68
 44975
 Kingston
-12.620
+12.62
 62808
 Hamilton
-85.390
+85.39
 62812
 Shady Grove
-48.770
+48.77
 66557
 Arlington
-2.680
+2.68
 68252
 Maple Grove
-11.370
+11.37
 69583
 Jackson
-54.420
+54.42
 73003
 Hillcrest
-36.030
+36.03
 78222
 Clinton
-85.870
+85.87
 83683
 Plainview
-43.820
+43.82
 84536
 Friendship
-64.440
+64.44
 88370
 Oak Grove
-52.420
+52.42
 

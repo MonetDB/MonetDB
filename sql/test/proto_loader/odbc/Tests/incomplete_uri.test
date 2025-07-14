@@ -27,7 +27,6 @@ select * from proto_loader('odbc:/tmp/FileNotFound.csv.gz') as file(col1, col2)
 statement error 42000!SELECT: proto_loader function failed 'Invalid ODBC connection string. Must start with 'DSN=' or 'FILEDSN=' or 'DRIVER='.'
 select * from proto_loader('odbc:/tmp/FileNotFound.csv') file(col1, col2)
 
-
 statement error 42000!SELECT: no such table returning function 'sys'.'proto_loader'(varchar(5))
 select * from sys.proto_loader('odbc:')
 
@@ -36,7 +35,6 @@ select * from sys.proto_loader('odbc:FileNotFound')
 
 statement error 42000!SELECT: no such table returning function 'sys'.'proto_loader'(varchar(21))
 select * from sys.proto_loader('odbc:FileNotFound.csv')
-
 
 statement error 42000!SELECT: proto_loader function failed 'Incomplete ODBC URI string. Missing 'QUERY=' part to specify the SQL SELECT query to execute.'
 select * from proto_loader('odbc:DSN=MonetDB')

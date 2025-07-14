@@ -1,4 +1,4 @@
-query TTRRR nosort
+query TTDDD nosort
 -- query 80
 with ssr as
  (select  s_store_id as store_id,
@@ -94,5 +94,5 @@ group by web_site_id)
          ,id
  limit 100
 ----
-500 values hashing to ec51ef61f9f5a57ec1c722c114d8d88d
+500 values hashing to c916a85cb8a9f7e4f5b350a56398c612
 

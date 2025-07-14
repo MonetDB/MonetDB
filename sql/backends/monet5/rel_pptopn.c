@@ -368,7 +368,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 		int i = 2;
 		if (grouped) {
 			q = pushReturn(be->mb, q, newTmpVariable(be->mb, oidbat)); /* group result bat */
-			sql_subtype *t = sql_bind_localtype("oid");
+			sql_subtype *t = sql_fetch_localtype(TYPE_oid);
 			stmt *s = stmt_blackbox_result(be, q, i++, t);
 			append(nosl, s);
 		}

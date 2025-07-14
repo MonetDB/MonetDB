@@ -21,6 +21,7 @@
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
 #define CATALOG_AUG2024 52303	/* first in Aug2024 */
+#define CATALOG_MAR2025 52304	/* first in Mar2025 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
@@ -59,6 +60,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #ifdef CATALOG_AUG2024
 	if (oldversion == CATALOG_AUG2024) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_MAR2025
+	if (oldversion == CATALOG_MAR2025) {
 		/* upgrade to default releases */
 		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
@@ -939,6 +948,12 @@ bl_postversion(void *Store, logger *lg)
 				   2086, str_nil,			/* sys._columns.storage */
 				   0) != GDK_SUCCEED)
 			return GDK_FAIL;
+	}
+#endif
+
+#ifdef CATALOG_MAR2025
+	if (store->catalog_version <= CATALOG_MAR2025) {
+		/* nothing to do */
 	}
 #endif
 

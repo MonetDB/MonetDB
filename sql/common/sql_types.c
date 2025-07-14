@@ -29,7 +29,9 @@ list *types = NULL;
 list *funcs = NULL;
 
 static sql_type *BIT = NULL;
-static list *localtypes = NULL;
+#define MAX_LTYPE 64
+static sql_subtype *localtype_array[MAX_LTYPE] = {0};
+static sql_subtype *battype = NULL;
 
 sql_ref *
 sql_ref_init(sql_ref *r)
@@ -385,20 +387,15 @@ sql_bind_subtype(allocator *sa, const char *name, unsigned int digits, unsigned 
 }
 
 sql_subtype *
-sql_bind_localtype(const char *name)
+sql_fetch_localtype(int type)
 {
-	node *n = localtypes->h;
+	return localtype_array[type];
+}
 
-	while (n) {
-		sql_subtype *t = n->data;
-
-		if (strcmp(t->type->impl, name) == 0) {
-			return t;
-		}
-		n = n->next;
-	}
-	assert(0);
-	return NULL;
+sql_subtype *
+sql_fetch_battype(void)
+{
+	return battype;
 }
 
 int
@@ -680,7 +677,7 @@ sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 	fres->func = f;
 	if (IS_FILT(f)) {
 		fres->res = sa_list(sa);
-		list_append(fres->res, sql_bind_localtype("bit"));
+		list_append(fres->res, sql_fetch_localtype(TYPE_bit));
 	} else if (IS_FUNC(f) || IS_UNION(f) || IS_ANALYTIC(f) || IS_AGGR(f)) { /* not needed for PROC */
 		unsigned int mscale = 0, mdigits = 0;
 
@@ -776,8 +773,10 @@ sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigne
 		(void) keywords_insert(t->base.name, KW_TYPE);
 	list_append(types, t);
 
-	list_append(localtypes, sql_create_subtype(sa, t, 0, 0));
-
+	if (t->localtype >= 0 && t->localtype < MAX_LTYPE && !localtype_array[t->localtype])
+		localtype_array[t->localtype] = sql_create_subtype(sa, t, 0, 0);
+	else if (strcmp(impl,"bat") == 0)
+		battype = sql_create_subtype(sa, t, 0, 0);
 	return t;
 }
 
@@ -1360,7 +1359,7 @@ sqltypeinit( allocator *sa)
 
 	/* functions for interval types */
 	for (t = dates; *t != TME; t++) {
-		sql_subtype *lt = sql_bind_localtype((*t)->impl);
+		sql_subtype *lt = sql_fetch_localtype((*t)->localtype);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
@@ -1404,7 +1403,7 @@ sqltypeinit( allocator *sa)
 		if (*t == OID)
 			continue;
 
-		lt = sql_bind_localtype((*t)->impl);
+		lt = sql_fetch_localtype((*t)->localtype);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
@@ -1743,8 +1742,9 @@ types_init(allocator *sa)
 {
 	local_id = 4;				/* 1 to 3 are user id's */
 	types = sa_list(sa);
-	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
 	funcs->ht = hash_new(sa, 64*1024, (fkeyvalue)&base_key);
+	memset(localtype_array, 0, sizeof(localtype_array));
+	battype = NULL;
 	sqltypeinit( sa );
 }

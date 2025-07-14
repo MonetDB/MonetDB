@@ -5,16 +5,16 @@ statement ok
 INSERT INTO A VALUES (
 TIMESTAMP '1996-08-24 16:03:00.999999')
 
-query R rowsort
+query D rowsort
 SELECT CAST( EXTRACT (SECOND FROM FIPS2)
 * 1000000 - 999990 as decimal(18,6)) FROM A
 ----
-9.000
+9.000000
 
-query R rowsort
+query D rowsort
 select EXTRACT (SECOND FROM FIPS2) FROM A
 ----
-1.000
+0.999999
 
 statement ok
 drop table A

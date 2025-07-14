@@ -1055,87 +1055,87 @@ SELECT v, convert(v, double precision) from T_tinyint
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(7)) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(9)) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(12,0)) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(15,3)) from T_tinyint
 ----
 -1
@@ -1436,87 +1436,87 @@ SELECT v, cast(v as double precision) from T_tinyint
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(7)) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(9)) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(12,0)) from T_tinyint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(15,3)) from T_tinyint
 ----
 -1
@@ -1879,107 +1879,107 @@ SELECT v, convert(v, double precision) from T_smallint
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(7)) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(9)) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(12,0)) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(15,3)) from T_smallint
 ----
 -1
@@ -2338,107 +2338,107 @@ SELECT v, cast(v as double precision) from T_smallint
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(7)) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(9)) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(12,0)) from T_smallint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(15,3)) from T_smallint
 ----
 -1
@@ -2857,127 +2857,127 @@ SELECT v, convert(v, double precision) from T_int
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(10)) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(11)) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(12,0)) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(15,3)) from T_int
 ----
 -1
@@ -3390,127 +3390,127 @@ SELECT v, cast(v as double precision) from T_int
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(10)) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(11)) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(12,0)) from T_int
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(15,3)) from T_int
 ----
 -1
@@ -3949,127 +3949,127 @@ SELECT v, convert(v, double precision) from T_bigint
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(10)) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(11)) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, numeric(12,0)) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, convert(v, decimal(15,3)) from T_bigint
 ----
 -1
@@ -4482,127 +4482,127 @@ SELECT v, cast(v as double precision) from T_bigint
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(10)) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(11)) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as numeric(12,0)) from T_bigint
 ----
 -1
--1.000
+-1
 -127
--127.000
+-127
 -2147483647
--2147483647.000
+-2147483647
 -32767
--32767.000
+-32767
 0
-0.000
+0
 1
-1.000
+1
 127
-127.000
+127
 2147483647
-2147483647.000
+2147483647
 32767
-32767.000
+32767
 NULL
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT v, cast(v as decimal(15,3)) from T_bigint
 ----
 -1
@@ -5020,7 +5020,7 @@ SELECT v, convert(v, double precision) from T_float
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric) from T_float
 ----
 -1.000
@@ -5044,7 +5044,7 @@ SELECT v, convert(v, numeric) from T_float
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal) from T_float
 ----
 -1.000
@@ -5068,79 +5068,79 @@ SELECT v, convert(v, decimal) from T_float
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric(10)) from T_float
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal(11)) from T_float
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_float
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_float
 ----
 -1.000
@@ -5532,7 +5532,7 @@ SELECT v, cast(v as double precision) from T_float
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric) from T_float
 ----
 -1.000
@@ -5556,7 +5556,7 @@ SELECT v, cast(v as numeric) from T_float
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal) from T_float
 ----
 -1.000
@@ -5580,79 +5580,79 @@ SELECT v, cast(v as decimal) from T_float
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric(10)) from T_float
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal(11)) from T_float
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_float
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_float
 ----
 -1.000
@@ -6087,7 +6087,7 @@ SELECT v, convert(v, double precision) from T_real
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric) from T_real
 ----
 -1.000
@@ -6115,7 +6115,7 @@ SELECT v, convert(v, numeric) from T_real
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal) from T_real
 ----
 -1.000
@@ -6143,91 +6143,91 @@ SELECT v, convert(v, decimal) from T_real
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric(10)) from T_real
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483600.000
--2147483648.000
+-2147483648
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483600.000
-2147483648.000
+2147483648
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal(11)) from T_real
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483600.000
--2147483648.000
+-2147483648
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483600.000
-2147483648.000
+2147483648
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_real
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483600.000
--2147483648.000
+-2147483648
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483600.000
-2147483648.000
+2147483648
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_real
 ----
 -1.000
@@ -6649,7 +6649,7 @@ SELECT v, cast(v as double precision) from T_real
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric) from T_real
 ----
 -1.000
@@ -6677,7 +6677,7 @@ SELECT v, cast(v as numeric) from T_real
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal) from T_real
 ----
 -1.000
@@ -6705,91 +6705,91 @@ SELECT v, cast(v as decimal) from T_real
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric(10)) from T_real
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483600.000
--2147483648.000
+-2147483648
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483600.000
-2147483648.000
+2147483648
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal(11)) from T_real
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483600.000
--2147483648.000
+-2147483648
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483600.000
-2147483648.000
+2147483648
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_real
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483600.000
--2147483648.000
+-2147483648
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483600.000
-2147483648.000
+2147483648
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_real
 ----
 -1.000
@@ -7264,7 +7264,7 @@ SELECT v, convert(v, double precision) from T_double
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric) from T_double
 ----
 -1.000
@@ -7292,7 +7292,7 @@ SELECT v, convert(v, numeric) from T_double
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal) from T_double
 ----
 -1.000
@@ -7320,91 +7320,91 @@ SELECT v, convert(v, decimal) from T_double
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric(10)) from T_double
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal(11)) from T_double
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_double
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_double
 ----
 -1.000
@@ -7851,7 +7851,7 @@ SELECT v, cast(v as double precision) from T_double
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric) from T_double
 ----
 -1.000
@@ -7879,7 +7879,7 @@ SELECT v, cast(v as numeric) from T_double
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal) from T_double
 ----
 -1.000
@@ -7907,91 +7907,91 @@ SELECT v, cast(v as decimal) from T_double
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric(10)) from T_double
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal(11)) from T_double
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_double
 ----
 -1.000
--1.000
+-1
 -127.000
--127.000
+-127
 -2147483647.000
--2147483647.000
+-2147483647
 -3.142
--3.000
+-3
 -32767.000
--32767.000
+-32767
 0.000
-0.000
+0
 0.120
-0.000
+0
 1.000
-1.000
+1
 127.000
-127.000
+127
 2147483647.000
-2147483647.000
+2147483647
 32767.000
-32767.000
+32767
 NULL
 NULL
 
-query RR rowsort
+query RD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_double
 ----
 -1.000
@@ -8179,21 +8179,21 @@ INSERT into T_num VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (3
 statement ok
 INSERT into T_num VALUES (null)
 
-query R nosort
+query D nosort
 SELECT v FROM T_num ORDER BY v
 ----
 NULL
--2147483647.000
--32767.000
--127.000
--3.000
--1.000
-0.000
-0.000
-1.000
-127.000
-32767.000
-2147483647.000
+-2147483647
+-32767
+-127
+-3
+-1
+0
+0
+1
+127
+32767
+2147483647
 
 statement error
 SELECT v, convert(v, boolean) from T_num
@@ -8201,501 +8201,501 @@ SELECT v, convert(v, boolean) from T_num
 statement error
 SELECT v, convert(v, bit) from T_num
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, tinyint) from T_num where v between -127 and 127
 ----
--1.000
 -1
--127.000
+-1
 -127
--3.000
+-127
 -3
-0.000
+-3
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
+127
 127
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, smallint) from T_num where v between -32767 and 32767
 ----
--1.000
 -1
--127.000
+-1
 -127
--3.000
+-127
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-32767.000
+127
+32767
 32767
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, integer) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, bigint) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
 onlyif has-hugeint
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, hugeint) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, float) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, float(24)) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
--2147483647.000
+-2147483647
 -2147483600.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
-2147483647.000
+2147483647
 2147483600.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, real) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
--2147483647.000
+-2147483647
 -2147483600.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
-2147483647.000
+2147483647
 2147483600.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, double) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, double precision) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, numeric) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, decimal) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, numeric(10)) from T_num
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RR rowsort
-SELECT v, convert(v, decimal(11)) from T_num
-----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RR rowsort
-SELECT v, convert(v, numeric(12,0)) from T_num
-----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RR rowsort
-SELECT v, convert(v, decimal(15,3)) from T_num
-----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RT rowsort
-SELECT v, convert(v, char) from T_num where v between 0 and 1
-----
-0.000
-0
-0.000
-0
-1.000
-1
-
-query RT rowsort
-SELECT v, convert(v, varchar) from T_num
-----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RT rowsort
+query DD rowsort
+SELECT v, convert(v, decimal(11)) from T_num
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-3
+-3
+-32767
+-32767
+0
+0
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
+
+query DD rowsort
+SELECT v, convert(v, numeric(12,0)) from T_num
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-3
+-3
+-32767
+-32767
+0
+0
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
+
+query DD rowsort
+SELECT v, convert(v, decimal(15,3)) from T_num
+----
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-3
+-3.000
+-32767
+-32767.000
+0
+0.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
+
+query DT rowsort
+SELECT v, convert(v, char) from T_num where v between 0 and 1
+----
+0
+0
+0
+0
+1
+1
+
+query DT rowsort
+SELECT v, convert(v, varchar) from T_num
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-3
+-3
+-32767
+-32767
+0
+0
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
+
+query DT rowsort
 SELECT v, convert(v, varchar(16)) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
@@ -8706,58 +8706,58 @@ SELECT v, convert(v, longvarchar) from T_num
 statement error
 SELECT v, convert(v, long varchar) from T_num
 
-query RT rowsort
+query DT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RT rowsort
+query DT rowsort
 SELECT v, convert(v, Clob) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
@@ -8795,501 +8795,501 @@ SELECT v, cast(v as boolean) from T_num
 statement error
 SELECT v, cast(v as bit) from T_num
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as tinyint) from T_num where v between -127 and 127
 ----
--1.000
 -1
--127.000
+-1
 -127
--3.000
+-127
 -3
-0.000
+-3
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
+127
 127
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as smallint) from T_num where v between -32767 and 32767
 ----
--1.000
 -1
--127.000
+-1
 -127
--3.000
+-127
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-32767.000
+127
+32767
 32767
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as integer) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as bigint) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
 onlyif has-hugeint
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as hugeint) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as float) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as float(24)) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
--2147483647.000
+-2147483647
 -2147483600.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
-2147483647.000
+2147483647
 2147483600.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as real) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
--2147483647.000
+-2147483647
 -2147483600.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
-2147483647.000
+2147483647
 2147483600.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as double) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as double precision) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as numeric) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as decimal) from T_num
 ----
+-1
 -1.000
--1.000
+-127
 -127.000
--127.000
+-2147483647
 -2147483647.000
--2147483647.000
+-3
 -3.000
--3.000
+-32767
 -32767.000
--32767.000
+0
 0.000
+0
 0.000
-0.000
-0.000
+1
 1.000
-1.000
+127
 127.000
-127.000
+2147483647
 2147483647.000
-2147483647.000
-32767.000
+32767
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as numeric(10)) from T_num
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RR rowsort
-SELECT v, cast(v as decimal(11)) from T_num
-----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RR rowsort
-SELECT v, cast(v as numeric(12,0)) from T_num
-----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RR rowsort
-SELECT v, cast(v as decimal(15,3)) from T_num
-----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.000
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.000
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
-NULL
-NULL
-
-query RT rowsort
-SELECT v, cast(v as char) from T_num where v between 0 and 1
-----
-0.000
-0
-0.000
-0
-1.000
-1
-
-query RT rowsort
-SELECT v, cast(v as varchar) from T_num
-----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RT rowsort
+query DD rowsort
+SELECT v, cast(v as decimal(11)) from T_num
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-3
+-3
+-32767
+-32767
+0
+0
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
+
+query DD rowsort
+SELECT v, cast(v as numeric(12,0)) from T_num
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-3
+-3
+-32767
+-32767
+0
+0
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
+
+query DD rowsort
+SELECT v, cast(v as decimal(15,3)) from T_num
+----
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-3
+-3.000
+-32767
+-32767.000
+0
+0.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
+
+query DT rowsort
+SELECT v, cast(v as char) from T_num where v between 0 and 1
+----
+0
+0
+0
+0
+1
+1
+
+query DT rowsort
+SELECT v, cast(v as varchar) from T_num
+----
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-3
+-3
+-32767
+-32767
+0
+0
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
+
+query DT rowsort
 SELECT v, cast(v as varchar(16)) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
@@ -9300,58 +9300,58 @@ SELECT v, cast(v as longvarchar) from T_num
 statement error
 SELECT v, cast(v as long varchar) from T_num
 
-query RT rowsort
+query DT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
 
-query RT rowsort
+query DT rowsort
 SELECT v, cast(v as Clob) from T_num
 ----
--1.000
 -1
--127.000
+-1
 -127
--2147483647.000
+-127
 -2147483647
--3.000
+-2147483647
 -3
--32767.000
+-3
 -32767
-0.000
+-32767
 0
-0.000
 0
-1.000
+0
+0
 1
-127.000
+1
 127
-2147483647.000
+127
 2147483647
-32767.000
+2147483647
+32767
 32767
 NULL
 NULL
@@ -9395,21 +9395,21 @@ INSERT into T_dec VALUES (1.0), (0.0), (-1.0), (-127.0), (127.0), (-32767.0), (3
 statement ok
 INSERT into T_dec VALUES (null)
 
-query R nosort
+query D nosort
 SELECT v FROM T_dec ORDER BY v
 ----
 NULL
--2147483647.000
--32767.000
--127.000
--3.142
--1.000
-0.000
-0.120
-1.000
-127.000
-32767.000
-2147483647.000
+-2147483647.0000000
+-32767.0000000
+-127.0000000
+-3.1415629
+-1.0000000
+0E-7
+0.1200000
+1.0000000
+127.0000000
+32767.0000000
+2147483647.0000000
 
 statement error
 SELECT v, convert(v, boolean) from T_dec
@@ -9417,435 +9417,435 @@ SELECT v, convert(v, boolean) from T_dec
 statement error
 SELECT v, convert(v, bit) from T_dec
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, tinyint) from T_dec where v between -127 and 127
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--3.142
+-3.1415629
 -3
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, smallint) from T_dec where v between -32767 and 32767
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-32767.000
+32767.0000000
 32767
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, integer) from T_dec
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--2147483647.000
+-2147483647.0000000
 -2147483647
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-2147483647.000
+2147483647.0000000
 2147483647
-32767.000
+32767.0000000
 32767
 NULL
 NULL
 
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, bigint) from T_dec
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--2147483647.000
+-2147483647.0000000
 -2147483647
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-2147483647.000
+2147483647.0000000
 2147483647
-32767.000
+32767.0000000
 32767
 NULL
 NULL
 
 onlyif has-hugeint
-query RI rowsort
+query DI rowsort
 SELECT v, convert(v, hugeint) from T_dec
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--2147483647.000
+-2147483647.0000000
 -2147483647
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-2147483647.000
+2147483647.0000000
 2147483647
-32767.000
+32767.0000000
 32767
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, float) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, float(24)) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
--2147483647.000
+-2147483647.0000000
 -2147483600.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
-2147483647.000
+2147483647.0000000
 2147483600.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, real) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
--2147483647.000
+-2147483647.0000000
 -2147483600.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
-2147483647.000
+2147483647.0000000
 2147483600.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, double) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, convert(v, double precision) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, numeric) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, decimal) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, numeric(10)) from T_dec
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.142
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.120
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
+-1.0000000
+-1
+-127.0000000
+-127
+-2147483647.0000000
+-2147483647
+-3.1415629
+-3
+-32767.0000000
+-32767
+0.1200000
+0
+0E-7
+0
+1.0000000
+1
+127.0000000
+127
+2147483647.0000000
+2147483647
+32767.0000000
+32767
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, decimal(11)) from T_dec
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.142
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.120
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
+-1.0000000
+-1
+-127.0000000
+-127
+-2147483647.0000000
+-2147483647
+-3.1415629
+-3
+-32767.0000000
+-32767
+0.1200000
+0
+0E-7
+0
+1.0000000
+1
+127.0000000
+127
+2147483647.0000000
+2147483647
+32767.0000000
+32767
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_dec
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.142
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.120
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
+-1.0000000
+-1
+-127.0000000
+-127
+-2147483647.0000000
+-2147483647
+-3.1415629
+-3
+-32767.0000000
+-32767
+0.1200000
+0
+0E-7
+0
+1.0000000
+1
+127.0000000
+127
+2147483647.0000000
+2147483647
+32767.0000000
+32767
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
@@ -9853,58 +9853,58 @@ NULL
 statement error
 SELECT v, convert(v, char) from T_dec where v between 0 and 1
 
-query RT rowsort
+query DT rowsort
 SELECT v, convert(v, varchar) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
 
-query RT rowsort
+query DT rowsort
 SELECT v, convert(v, varchar(20)) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
@@ -9915,58 +9915,58 @@ SELECT v, convert(v, longvarchar) from T_dec
 statement error
 SELECT v, convert(v, long varchar) from T_dec
 
-query RT rowsort
+query DT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
 
-query RT rowsort
+query DT rowsort
 SELECT v, convert(v, Clob) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
@@ -10004,435 +10004,435 @@ SELECT v, cast(v as boolean) from T_dec
 statement error
 SELECT v, cast(v as bit) from T_dec
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as tinyint) from T_dec where v between -127 and 127
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--3.142
+-3.1415629
 -3
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as smallint) from T_dec where v between -32767 and 32767
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-32767.000
+32767.0000000
 32767
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as integer) from T_dec
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--2147483647.000
+-2147483647.0000000
 -2147483647
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-2147483647.000
+2147483647.0000000
 2147483647
-32767.000
+32767.0000000
 32767
 NULL
 NULL
 
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as bigint) from T_dec
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--2147483647.000
+-2147483647.0000000
 -2147483647
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-2147483647.000
+2147483647.0000000
 2147483647
-32767.000
+32767.0000000
 32767
 NULL
 NULL
 
 onlyif has-hugeint
-query RI rowsort
+query DI rowsort
 SELECT v, cast(v as hugeint) from T_dec
 ----
--1.000
+-1.0000000
 -1
--127.000
+-127.0000000
 -127
--2147483647.000
+-2147483647.0000000
 -2147483647
--3.142
+-3.1415629
 -3
--32767.000
+-32767.0000000
 -32767
-0.000
+0.1200000
 0
-0.120
+0E-7
 0
-1.000
+1.0000000
 1
-127.000
+127.0000000
 127
-2147483647.000
+2147483647.0000000
 2147483647
-32767.000
+32767.0000000
 32767
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as float) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as float(24)) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
--2147483647.000
+-2147483647.0000000
 -2147483600.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
-2147483647.000
+2147483647.0000000
 2147483600.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as real) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
--2147483647.000
+-2147483647.0000000
 -2147483600.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
-2147483647.000
+2147483647.0000000
 2147483600.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as double) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DR rowsort
 SELECT v, cast(v as double precision) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as numeric) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as decimal) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as numeric(10)) from T_dec
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.142
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.120
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
+-1.0000000
+-1
+-127.0000000
+-127
+-2147483647.0000000
+-2147483647
+-3.1415629
+-3
+-32767.0000000
+-32767
+0.1200000
+0
+0E-7
+0
+1.0000000
+1
+127.0000000
+127
+2147483647.0000000
+2147483647
+32767.0000000
+32767
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as decimal(11)) from T_dec
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.142
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.120
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
+-1.0000000
+-1
+-127.0000000
+-127
+-2147483647.0000000
+-2147483647
+-3.1415629
+-3
+-32767.0000000
+-32767
+0.1200000
+0
+0E-7
+0
+1.0000000
+1
+127.0000000
+127
+2147483647.0000000
+2147483647
+32767.0000000
+32767
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_dec
 ----
--1.000
--1.000
--127.000
--127.000
--2147483647.000
--2147483647.000
--3.142
--3.000
--32767.000
--32767.000
-0.000
-0.000
-0.120
-0.000
-1.000
-1.000
-127.000
-127.000
-2147483647.000
-2147483647.000
-32767.000
-32767.000
+-1.0000000
+-1
+-127.0000000
+-127
+-2147483647.0000000
+-2147483647
+-3.1415629
+-3
+-32767.0000000
+-32767
+0.1200000
+0
+0E-7
+0
+1.0000000
+1
+127.0000000
+127
+2147483647.0000000
+2147483647
+32767.0000000
+32767
 NULL
 NULL
 
-query RR rowsort
+query DD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_dec
 ----
+-1.0000000
 -1.000
--1.000
+-127.0000000
 -127.000
--127.000
+-2147483647.0000000
 -2147483647.000
--2147483647.000
+-3.1415629
 -3.142
--3.142
+-32767.0000000
 -32767.000
--32767.000
-0.000
-0.000
+0.1200000
 0.120
-0.120
+0E-7
+0.000
+1.0000000
 1.000
-1.000
+127.0000000
 127.000
-127.000
+2147483647.0000000
 2147483647.000
-2147483647.000
-32767.000
+32767.0000000
 32767.000
 NULL
 NULL
@@ -10440,58 +10440,58 @@ NULL
 statement error
 SELECT v, cast(v as char) from T_dec where v between 0 and 1
 
-query RT rowsort
+query DT rowsort
 SELECT v, cast(v as varchar) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
 
-query RT rowsort
+query DT rowsort
 SELECT v, cast(v as varchar(20)) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
@@ -10502,58 +10502,58 @@ SELECT v, cast(v as longvarchar) from T_dec
 statement error
 SELECT v, cast(v as long varchar) from T_dec
 
-query RT rowsort
+query DT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
 
-query RT rowsort
+query DT rowsort
 SELECT v, cast(v as Clob) from T_dec
 ----
--1.000
 -1.0000000
--127.000
+-1.0000000
 -127.0000000
--2147483647.000
+-127.0000000
 -2147483647.0000000
--3.142
+-2147483647.0000000
 -3.1415629
--32767.000
+-3.1415629
 -32767.0000000
-0.000
-0.0000000
-0.120
+-32767.0000000
 0.1200000
-1.000
+0.1200000
+0E-7
+0.0000000
 1.0000000
-127.000
+1.0000000
 127.0000000
-2147483647.000
+127.0000000
 2147483647.0000000
-32767.000
+2147483647.0000000
+32767.0000000
 32767.0000000
 NULL
 NULL
@@ -10700,7 +10700,7 @@ SELECT v, convert(v, double precision) from T_char where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric) from T_char where v in ('0', '1')
 ----
 0
@@ -10708,7 +10708,7 @@ SELECT v, convert(v, numeric) from T_char where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal) from T_char where v in ('0', '1')
 ----
 0
@@ -10716,31 +10716,31 @@ SELECT v, convert(v, decimal) from T_char where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric(10)) from T_char where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal(11)) from T_char where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_char where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_char where v in ('0', '1')
 ----
 0
@@ -10956,7 +10956,7 @@ SELECT v, cast(v as double precision) from T_char where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric) from T_char where v in ('0', '1')
 ----
 0
@@ -10964,7 +10964,7 @@ SELECT v, cast(v as numeric) from T_char where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal) from T_char where v in ('0', '1')
 ----
 0
@@ -10972,31 +10972,31 @@ SELECT v, cast(v as decimal) from T_char where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric(10)) from T_char where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal(11)) from T_char where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_char where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_char where v in ('0', '1')
 ----
 0
@@ -11235,7 +11235,7 @@ SELECT v, convert(v, double precision) from T_varchar where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric) from T_varchar where v in ('0', '1')
 ----
 0
@@ -11243,7 +11243,7 @@ SELECT v, convert(v, numeric) from T_varchar where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal) from T_varchar where v in ('0', '1')
 ----
 0
@@ -11251,31 +11251,31 @@ SELECT v, convert(v, decimal) from T_varchar where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric(10)) from T_varchar where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal(11)) from T_varchar where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_varchar where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_varchar where v in ('0', '1')
 ----
 0
@@ -11491,7 +11491,7 @@ SELECT v, cast(v as double precision) from T_varchar where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric) from T_varchar where v in ('0', '1')
 ----
 0
@@ -11499,7 +11499,7 @@ SELECT v, cast(v as numeric) from T_varchar where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal) from T_varchar where v in ('0', '1')
 ----
 0
@@ -11507,31 +11507,31 @@ SELECT v, cast(v as decimal) from T_varchar where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric(10)) from T_varchar where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal(11)) from T_varchar where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_varchar where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_varchar where v in ('0', '1')
 ----
 0
@@ -11770,7 +11770,7 @@ SELECT v, convert(v, double precision) from T_clob where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric) from T_clob where v in ('0', '1')
 ----
 0
@@ -11778,7 +11778,7 @@ SELECT v, convert(v, numeric) from T_clob where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal) from T_clob where v in ('0', '1')
 ----
 0
@@ -11786,31 +11786,31 @@ SELECT v, convert(v, decimal) from T_clob where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric(10)) from T_clob where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal(11)) from T_clob where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, numeric(12,0)) from T_clob where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, convert(v, decimal(15,3)) from T_clob where v in ('0', '1')
 ----
 0
@@ -12026,7 +12026,7 @@ SELECT v, cast(v as double precision) from T_clob where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric) from T_clob where v in ('0', '1')
 ----
 0
@@ -12034,7 +12034,7 @@ SELECT v, cast(v as numeric) from T_clob where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal) from T_clob where v in ('0', '1')
 ----
 0
@@ -12042,31 +12042,31 @@ SELECT v, cast(v as decimal) from T_clob where v in ('0', '1')
 1
 1.000
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric(10)) from T_clob where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal(11)) from T_clob where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as numeric(12,0)) from T_clob where v in ('0', '1')
 ----
 0
-0.000
+0
 1
-1.000
+1
 
-query TR rowsort
+query TD rowsort
 SELECT v, cast(v as decimal(15,3)) from T_clob where v in ('0', '1')
 ----
 0

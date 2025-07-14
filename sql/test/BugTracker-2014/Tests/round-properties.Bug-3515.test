@@ -13,7 +13,7 @@ INSERT INTO ceil_floor_round VALUES ('-5.499')
 statement ok
 INSERT INTO ceil_floor_round VALUES ('0.0')
 
-query RR rowsort
+query DD rowsort
 SELECT a, round(a, 0) FROM ceil_floor_round
 ----
 -5.499

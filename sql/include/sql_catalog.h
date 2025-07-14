@@ -96,6 +96,8 @@ typedef enum sql_dependency {
 #define QUICK  4
 #define RD_EXT 5
 
+#define CNT_ACTIVE 10
+
 /* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
 #define UNBOUNDED_FOLLOWING_BOUND 1

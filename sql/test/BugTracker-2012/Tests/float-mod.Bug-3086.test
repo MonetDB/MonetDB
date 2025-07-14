@@ -7,7 +7,7 @@ create table t3086 (d double)
 statement ok
 insert into t3086 values (0.011)
 
-query R rowsort
+query D rowsort
 select mod(0.011 + 180, 360)
 ----
 180.011

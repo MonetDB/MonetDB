@@ -1,24 +1,24 @@
-query RI nosort
+query DI nosort
 SELECT o_totalprice, count(*) FROM sys.orders GROUP BY o_totalprice HAVING count(*) >1 order by o_totalprice limit 10
 ----
-14623.670
+14623.67
 2
-16236.690
+16236.69
 2
-126476.160
+126476.16
 2
-169049.460
+169049.46
 2
 
-query R rowsort
+query D rowsort
 SELECT max(o_totalprice) FROM sys.orders
 ----
-466001.280
+466001.28
 
-query R rowsort
+query D rowsort
 SELECT min(o_totalprice) FROM sys.orders
 ----
-874.890
+874.89
 
 query I rowsort
 SELECT count(*) FROM sys.orders WHERE o_totalprice BETWEEN 38451.0 AND 38452.0

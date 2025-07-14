@@ -24,7 +24,7 @@ select case when not (a is null) and a > 0.0 then r/a else -1 end as s from t
 -1
 0
 
-query R rowsort
+query D rowsort
 select case when not (a is null) and a > 0.0 then 1.0*r/a else -1 end as r from t
 ----
 -1.000

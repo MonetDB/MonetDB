@@ -314,7 +314,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		matched = getArg(q, 0);
 		rhs_slts = getArg(q, 1);
 		if (m && marked)
-			outerm = stmt_blackbox_result(be, q, 2, sql_bind_localtype("bit"));
+			outerm = stmt_blackbox_result(be, q, 2, sql_fetch_localtype(TYPE_bit));
 	}
 	if (m && marked)
 		*m = outerm;
@@ -342,7 +342,7 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 
 		stmt *s = stmt_none(be);
 		if (s == NULL) return NULL;
-		s->op4.typeval = *sql_bind_localtype("bit");
+		s->op4.typeval = *sql_fetch_localtype(TYPE_bit);
 		s->nr = getArg(q, 0);
 		s->nrcols = (*m)->nrcols;
 		s->q = q;
@@ -351,7 +351,7 @@ oahash_project_hsh(backend *be, list *exps_prj_hsh, stmt *stmts_hp, int rhs_slts
 	if (list_empty(exps_prj_hsh))
 		return l;
 	assert(ht_sink);
-	stmt *sel = stmt_oahash_explode(be, rhs_slts, freq_sink, ht_sink, outer, sql_bind_localtype("oid"));
+	stmt *sel = stmt_oahash_explode(be, rhs_slts, freq_sink, ht_sink, outer, sql_fetch_localtype(TYPE_oid));
 
 	for (node *o = exps_prj_hsh->h; o; o = o->next) {
 		sql_exp *e = o->data;
@@ -660,7 +660,7 @@ rel2bin_oahash_select(backend *be, stmt *sub, list *sexps, sql_rel *rel)
 		if (rel->op == op_anti) {
 			s = exp_bin(be, en->data, sub, NULL, NULL, NULL, NULL, NULL /* sel */, 0, 0/* just the project call not the select*/, 0);
 		    /* ifthenelse if (not(predicate)) then false else true (needed for antijoin) */
-            sql_subtype *bt = sql_bind_localtype("bit");
+            sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
             sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
             s = stmt_unop(be, s, NULL, not);
             s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
@@ -697,12 +697,12 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, In
 	if (hash_ids) {
 		/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
 		if (cart) {
-			stmt *rids = stmt_blackbox_result(be, hash_ids, 0, sql_bind_localtype("oid"));
+			stmt *rids = stmt_blackbox_result(be, hash_ids, 0, sql_fetch_localtype(TYPE_oid));
 			m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", rids), stmt_bool(be, false), stmt_bool(be, true), NULL);
 		}
 	}
 	if (probed_ids)
-		gids = stmt_blackbox_result(be, probed_ids, 0, sql_bind_localtype("oid"));
+		gids = stmt_blackbox_result(be, probed_ids, 0, sql_fetch_localtype(TYPE_oid));
 	for (node *en = sexps->h ; en; en = en->next) {
 		stmt *s = NULL;
 		sql_exp *e = en->data;
@@ -781,7 +781,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 		if (rowrepeat->nrcols > 0) {
 			int ppln = be->pipeline;
 			be->pipeline = 0;
-			sql_subfunc *cnt_fnc = sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true);
+			sql_subfunc *cnt_fnc = sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 			stmt *cnt = NULL;
 
 			stmt *s = stmt_none(be);
@@ -888,14 +888,14 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 			const char *rnme = exp_relname(e);
 			const char *nme = exp_name(e);
 			if (list_empty(jexps) && !m) {
-				stmt *rids = stmt_blackbox_result(be, hash_ids, 0, sql_bind_localtype("oid"));
+				stmt *rids = stmt_blackbox_result(be, hash_ids, 0, sql_fetch_localtype(TYPE_oid));
 				m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", rids), stmt_bool(be, !exist), stmt_bool(be, exist), NULL);
 			} else {
 				assert(m);
 				if (exp_is_atom(e) && need_no_nil(e)) /* exclude nulls */
 					m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", m), stmt_bool(be, false), m, NULL);
 				if (!exist) {
-					sql_subtype *bt = sql_bind_localtype("bit");
+					sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
 					m = stmt_unop(be, m, NULL, not);
 				}
@@ -982,7 +982,7 @@ rel2bin_oahash_outerjoin(backend *be, sql_rel *rel, list *refs)
 				m = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", m), stmt_bool(be, false), m, NULL);
 			/*
 			if (!exist) {
-				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 				sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
 				m = stmt_unop(be, m, NULL, not);
             }
@@ -1043,7 +1043,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	}
 	/* continue with non equi-joins */
 	if (!list_empty(sexps) || (rel->op == op_anti && !anti)) {
-		stmt *rids = stmt_blackbox_result(be, probed_ids, 0, sql_bind_localtype("oid"));
+		stmt *rids = stmt_blackbox_result(be, probed_ids, 0, sql_fetch_localtype(TYPE_oid));
 		if (!list_empty(sexps)) {
 			stmt *sel = rel2bin_oahash_select(be, sub, sexps, rel);
 			rids = stmt_project(be, sel, rids);

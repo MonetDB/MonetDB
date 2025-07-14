@@ -278,7 +278,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 
 		list *gbexps = rel->r;
 		if (need_serialize) {
-			stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
+			stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), estimate*1.1);
 			if (!s)
 				return NULL;
 			append(*serializedresults, s);
@@ -320,7 +320,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				int need_distinct = need_distinct(e);
 
 				if (need_distinct) { /* need reduced group (ids) result */
-					stmt *s = stmt_bat_new(be, sql_bind_localtype("oid"), estimate*1.1);
+					stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), estimate*1.1);
 					if (!s)
 						return NULL;
 					append(*serializedresults, s);
@@ -378,13 +378,13 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			append(*aggrresults, &s->nr);
 
 			if (avg || sum) { /* remainder (or compensation) and count */
-				s = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_bind_localtype("lng"), estimate*1.1);
+				s = stmt_bat_new(be, EC_APPNUM(t->type->eclass) ? t: sql_fetch_localtype(TYPE_lng), estimate*1.1);
 				if (s == NULL)
 					return NULL;
 				append(shared, &s->nr);
 				append(*aggrresults, &s->nr);
 
-				s = stmt_bat_new(be, sql_bind_localtype("lng"), estimate*1.1);
+				s = stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), estimate*1.1);
 				if (s == NULL)
 					return NULL;
 				append(shared, &s->nr);

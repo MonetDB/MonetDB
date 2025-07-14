@@ -1,4 +1,4 @@
-query IRRRRRRR nosort
+query IDDDDDDD nosort
 -- query 2
 with wscs as
  (select sold_date_sk
@@ -58,5 +58,5 @@ with wscs as
  where d_week_seq1=d_week_seq2-53
  order by d_week_seq1
 ----
-20104 values hashing to d389792e8b24a6c5158cc3543fc1a10d
+20104 values hashing to 4136a7e14f212f75fa9fdf421828ea49
 

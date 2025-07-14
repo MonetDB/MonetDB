@@ -1,24 +1,24 @@
 statement ok
 CREATE VIEW x AS SELECT 1.0 as score, 'a' as avalue, 'b' AS displayname
 
-query RTT rowsort
+query DTT rowsort
 SELECT * FROM x
 ----
-1.000
+1.0
 a
 b
 
-query RTT nosort
+query DTT nosort
 SELECT * FROM x ORDER BY score
 ----
-1.000
+1.0
 a
 b
 
-query R nosort
+query D nosort
 SELECT * FROM (SELECT 1.0 as score) AS x ORDER BY x.score
 ----
-1.000
+1.0
 
 statement ok
 drop view x

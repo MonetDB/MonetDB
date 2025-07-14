@@ -141,7 +141,7 @@ partition_groupby_part(backend *be, sql_rel *rel, InstrPtr part, list *mats, stm
 	list *gbes = rel->r;
 	list *res = sa_list(be->mvc->sa);
 	stmt *h = NULL;
-	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
 	if (!res)
 		return NULL;
 	for(node *n = gbes->h; n; n = NULL) { /* first only for now */

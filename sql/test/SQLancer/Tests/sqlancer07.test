@@ -365,7 +365,7 @@ CREATE TABLE "t2" ("c0" INTEGER)
 statement ok rowcount 3
 INSERT INTO "t2" VALUES (1), (2), (3)
 
-query R rowsort
+query D rowsort
 SELECT t0.c1 FROM t0 WHERE (VALUES (t0.c1 = (SELECT t0.c1 FROM t0)))
 ----
 0.553
@@ -391,21 +391,21 @@ select 1 from (values (0.86), ((select 3 from t1))) as sub0(c0)
 1
 1
 
-query R rowsort
+query D rowsort
 select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0)
 ----
-0.860
+0.86
 NULL
 
-query R rowsort
+query D rowsort
 select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0) WHERE NOT TRUE
 ----
 
-query R rowsort
+query D rowsort
 select sub0.c0 from (values (0.86), ((select 3))) as sub0(c0)
 ----
-0.860
-3.000
+0.86
+3.00
 
 statement ok
 ROLLBACK

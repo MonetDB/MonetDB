@@ -1,0 +1,18 @@
+statement ok
+CREATE TABLE IF NOT EXISTS t0(c0 INT)
+
+query II
+SELECT * FROM t0 RIGHT JOIN (VALUES (1)) AS subQuery1(col_1) ON EXISTS (VALUES (CASE subQuery1.col_1 WHEN subQuery1.col_1 THEN 1 END))
+----
+NULL
+1
+
+statement ok
+CREATE TABLE IF NOT EXISTS t1(c0 DOUBLE )
+
+statement ok
+CREATE TABLE IF NOT EXISTS t2(c0 DOUBLE )
+
+query II
+SELECT * FROM t1 INNER JOIN t2 ON (NOT EXISTS (VALUES (((t1.c0)+(t2.c0))))) IS NULL;
+----

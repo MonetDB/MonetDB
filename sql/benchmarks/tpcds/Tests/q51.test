@@ -1,4 +1,4 @@
-query ITRRRR nosort
+query ITDDDD nosort
 -- query 51
 WITH web_v1 as (
 select
@@ -43,5 +43,5 @@ order by item_sk
         ,d_date
 limit 100
 ----
-600 values hashing to f1cce2608f5e93697e23da9b25217519
+600 values hashing to 9189344e4926990467db1ce6ddc51090
 

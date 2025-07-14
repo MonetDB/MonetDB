@@ -198,7 +198,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		int concise_type;
 		char *s;
 
-		rec->sql_desc_auto_unique_value = SQL_FALSE;
+		rec->sql_desc_auto_unique_value = SQL_FALSE;	/* SQL_TRUE for serial and bigserial columns */
 		rec->sql_desc_nullable = SQL_NULLABLE_UNKNOWN;
 		rec->sql_desc_rowver = SQL_FALSE;
 		rec->sql_desc_searchable = SQL_PRED_SEARCHABLE;
@@ -324,9 +324,12 @@ ODBCInitResult(ODBCStmt *stmt)
 		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
 		    rec->sql_desc_concise_type == SQL_WCHAR ||
 		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
-		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR)
-			rec->sql_desc_case_sensitive = SQL_TRUE;
-		else
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR) {
+			if (strcmp("inet", (char *)rec->sql_desc_type_name) == 0)
+				rec->sql_desc_case_sensitive = SQL_FALSE;
+			else
+				rec->sql_desc_case_sensitive = SQL_TRUE;
+		} else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
 		s = mapi_get_table(hdl, i);
@@ -369,19 +372,20 @@ ODBCInitResult(ODBCStmt *stmt)
 		    (rec->sql_desc_length = mapi_get_digits(hdl, i)) == 0)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
+		/* initialise fields */
 		rec->sql_desc_local_type_name = NULL;
 		rec->sql_desc_catalog_name = NULL;
-		rec->sql_desc_literal_prefix = NULL;
-		rec->sql_desc_literal_suffix = NULL;
-
-		/* unused fields */
 		rec->sql_desc_data_ptr = NULL;
 		rec->sql_desc_indicator_ptr = NULL;
 		rec->sql_desc_octet_length_ptr = NULL;
 		rec->sql_desc_parameter_type = 0;
 
-		/* this must come after other fields have been
-		 * initialized */
+		/* rec->sql_desc_literal_prefix and rec->sql_desc_literal_suffix
+		 * are used. Do not set to NULL. They are filled once when
+		 * SQLColAttribute(SQL_DESC_LITERAL_...FIX) or
+		 * SQLGetDescField(SQL_DESC_LITERAL_...FIX) is called */
+
+		/* this must come after other fields have been initialized */
 		if (rec->sql_desc_concise_type == SQL_CHAR ||
 		    rec->sql_desc_concise_type == SQL_VARCHAR ||
 		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||

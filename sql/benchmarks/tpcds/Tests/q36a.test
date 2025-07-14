@@ -1,4 +1,4 @@
-query RTTII rowsort
+query DTTII rowsort
 -- query 36a
 with results as
  (select
@@ -40,5 +40,5 @@ with results as
   ,rank_within_parent
   limit 100
 ----
-500 values hashing to 8bf249172f3ee398ec688900d66afe7f
+500 values hashing to 034a53b9352372d93625ffe365ea696c
 

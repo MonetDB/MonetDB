@@ -15,10 +15,10 @@ select sys.median(cast (p_retailprice as double)) from part
 ----
 903.000
 
-query R rowsort
+query D rowsort
 select sys.median(p_retailprice) from part
 ----
-903.000
+903.00
 
 statement ok
 drop table part

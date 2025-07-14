@@ -50,12 +50,12 @@ copy 1 records into null_as_string from stdin delimiters ',',E'\n' NULL as ''
 <COPY_INTO_DATA>
 2,two,NULL
 
-query ITR rowsort
+query ITD rowsort
 select * from null_as_string
 ----
 1
 NULL
-1.000
+1.00
 
 statement ok
 delete from null_as_string
@@ -120,15 +120,15 @@ copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort
 <COPY_INTO_DATA>
 2,two,
 
-query ITR rowsort
+query ITD rowsort
 select * from null_as_string
 ----
 1
 (empty)
-1.000
+1.00
 2
 two
-0.000
+0.00
 
 statement ok
 delete from null_as_string

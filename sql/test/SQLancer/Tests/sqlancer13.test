@@ -456,13 +456,13 @@ START TRANSACTION
 statement ok
 CREATE TABLE "sys"."t1" ("c3" BOOLEAN)
 
-query R rowsort
+query D rowsort
 select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 union all
 select (345*(case when t1.c3 then 0 else 58.9 end))*3 from t1
 ----
 
-query R rowsort
+query D rowsort
 select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 union all
 select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
@@ -471,10 +471,10 @@ select (11*(case when t1.c3 then 0 else 0.57 end))*3 from t1
 statement ok
 ROLLBACK
 
-query R rowsort
+query D rowsort
 select round((0.52)*(0.10), -8)
 ----
-0.000
+0.0000
 
 statement ok
 START TRANSACTION

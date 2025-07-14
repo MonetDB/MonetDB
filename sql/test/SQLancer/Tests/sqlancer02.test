@@ -148,7 +148,7 @@ COPY 41 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.722
 0.819
 
-query R rowsort
+query D rowsort
 select t0.c0 from t0 where ((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest('0.29269552476776495', E'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
 between asymmetric (t0.c0) and (t0.c0))) union all
 select all t0.c0 from t0 where not (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest('0.29269552476776495', E'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
@@ -198,11 +198,11 @@ between asymmetric (t0.c0) and (t0.c0)))) is null
 0.920
 0.939
 
-query RRI rowsort
+query DDI rowsort
 SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length('>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower('[]'), rtrim('..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT) FROM t0 WHERE FALSE
 ----
 NULL
-0.519
+0.5186927954967
 0
 
 statement ok

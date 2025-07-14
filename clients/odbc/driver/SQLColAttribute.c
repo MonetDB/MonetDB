@@ -138,6 +138,7 @@ MNDBColAttribute(ODBCStmt *stmt,
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_length;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
+		fillLiteralPrefixSuffix(rec);
 		copyString(rec->sql_desc_literal_prefix,
 			   strlen((char *) rec->sql_desc_literal_prefix),
 			   CharacterAttributePtr, BufferLength,
@@ -145,7 +146,12 @@ MNDBColAttribute(ODBCStmt *stmt,
 			   stmt, return SQL_ERROR);
 		break;
 	case SQL_DESC_LITERAL_SUFFIX:
-		copyString(rec->sql_desc_literal_suffix, strlen((char *) rec->sql_desc_literal_suffix), CharacterAttributePtr, BufferLength, StringLengthPtr, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+		fillLiteralPrefixSuffix(rec);
+		copyString(rec->sql_desc_literal_suffix,
+			   strlen((char *) rec->sql_desc_literal_suffix),
+			   CharacterAttributePtr, BufferLength,
+			   StringLengthPtr, SQLSMALLINT, addStmtError,
+			   stmt, return SQL_ERROR);
 		break;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		copyString(rec->sql_desc_local_type_name,
@@ -370,7 +376,12 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		ptr = malloc(BufferLength);
+		if (BufferLength < 0) {
+			/* Invalid string or buffer length */
+			addStmtError(stmt, "HY090", NULL, 0);
+			return SQL_ERROR;
+		}
+		ptr = (SQLPOINTER) malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addStmtError(stmt, "HY001", NULL, 0);

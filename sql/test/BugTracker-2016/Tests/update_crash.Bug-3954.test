@@ -4,12 +4,12 @@ create table temp (t timestamp, sensor integer, val decimal(8,2))
 statement ok
 insert into temp values(timestamp '2016-03-13 08:58:14', 1, 23.4)
 
-query TIR rowsort
+query TID rowsort
 select * from temp
 ----
 2016-03-13 08:58:14
 1
-23.400
+23.40
 
 statement ok
 create table temp_aggregate(temp_total decimal(8,2), temp_count decimal(8,2))

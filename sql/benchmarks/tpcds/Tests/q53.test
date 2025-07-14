@@ -1,4 +1,4 @@
-query IRR rowsort
+query IDD rowsort
 -- query 53
 select  * from
 (select i_manufact_id,
@@ -26,5 +26,5 @@ order by avg_quarterly_sales,
 	 i_manufact_id
 limit 100
 ----
-300 values hashing to 6b49c8feb3cd39a17fa240e0af947229
+300 values hashing to 2a4380a773405dcb26d56c60135e7cf0
 

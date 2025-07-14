@@ -460,3 +460,154 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 	}
 	return SQL_NO_TOTAL;
 }
+
+/* the literal prefix and suffix strings depend on the sql_desc_concise_type
+   and for specific MonetDB types (inet, url, json, timetz, timestamptz)
+   on the sql_desc_type_name.
+ */
+void
+fillLiteralPrefixSuffix(ODBCDescRec *rec)
+{
+	switch (rec->sql_desc_concise_type) {
+	case SQL_CHAR:
+	case SQL_VARCHAR:
+	case SQL_LONGVARCHAR:
+	case SQL_WCHAR:
+	case SQL_WVARCHAR:
+	case SQL_WLONGVARCHAR:
+		if (rec->sql_desc_literal_prefix == NULL) {
+			if (strcmp("inet", (char *)rec->sql_desc_type_name) == 0) {
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("inet '");
+			} else
+			if (strcmp("url", (char *)rec->sql_desc_type_name) == 0) {
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("url '");
+			} else
+			if (strcmp("json", (char *)rec->sql_desc_type_name) == 0) {
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("json '");
+			} else {
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("'");
+			}
+		}
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("'");
+		break;
+	case SQL_TYPE_DATE:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("date '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("'");
+		break;
+	case SQL_TYPE_TIME:
+		if (rec->sql_desc_literal_prefix == NULL) {
+			if (strcmp("timetz", (char *)rec->sql_desc_type_name) == 0)
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("timetz '");
+			else
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("time '");
+		}
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("'");
+		break;
+	case SQL_TYPE_TIMESTAMP:
+		if (rec->sql_desc_literal_prefix == NULL) {
+			if (strcmp("timestamptz", (char *)rec->sql_desc_type_name) == 0)
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("timestamptz '");
+			else
+				rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("timestamp '");
+		}
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("'");
+		break;
+	case SQL_INTERVAL_YEAR:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' year");
+		break;
+	case SQL_INTERVAL_YEAR_TO_MONTH:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' year to month");
+		break;
+	case SQL_INTERVAL_MONTH:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' month");
+		break;
+	case SQL_INTERVAL_DAY:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' day");
+		break;
+	case SQL_INTERVAL_DAY_TO_HOUR:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' day to hour");
+		break;
+	case SQL_INTERVAL_DAY_TO_MINUTE:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' day to minute");
+		break;
+	case SQL_INTERVAL_DAY_TO_SECOND:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' day to second");
+		break;
+	case SQL_INTERVAL_HOUR:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' hour");
+		break;
+	case SQL_INTERVAL_HOUR_TO_MINUTE:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' hour to minute");
+		break;
+	case SQL_INTERVAL_HOUR_TO_SECOND:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' hour to second");
+		break;
+	case SQL_INTERVAL_MINUTE:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' minute");
+		break;
+	case SQL_INTERVAL_MINUTE_TO_SECOND:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' minute to second");
+		break;
+	case SQL_INTERVAL_SECOND:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("interval '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("' second");
+		break;
+	case SQL_GUID:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("uuid '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("'");
+		break;
+	case SQL_LONGVARBINARY:
+		if (rec->sql_desc_literal_prefix == NULL)
+			rec->sql_desc_literal_prefix = (SQLCHAR *) strdup("blob '");
+		if (rec->sql_desc_literal_suffix == NULL)
+			rec->sql_desc_literal_suffix = (SQLCHAR *) strdup("'");
+		break;
+	default:
+		break;
+	}
+}

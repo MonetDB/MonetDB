@@ -414,7 +414,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 				throw(SQL, SQLSTATE(42000), "parquet: " "Data type (%s) not supported for column %s", str_logical_type(tpe), nme);
 			}
 			if (!t)
-				t = sql_bind_localtype("oid");
+				t = sql_fetch_localtype(TYPE_oid);
 			list_append(types, t);
 			char *name = NULL;
 			if (e->name) {

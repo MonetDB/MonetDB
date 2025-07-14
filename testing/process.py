@@ -26,9 +26,8 @@ try:
 except ImportError:
     DEVNULL = os.open(os.devnull, os.O_RDWR)
 __all__ = ['PIPE', 'DEVNULL', 'Popen', 'client', 'server', 'TimeoutExpired']
-
 try:
-    # on Windows, also make this available
+    # only on Windows:
     from subprocess import CREATE_NEW_PROCESS_GROUP
 except ImportError:
     pass
@@ -258,13 +257,6 @@ class Popen(subprocess.Popen):
         if sys.hexversion < 0x03070000 and 'text' in kwargs:
             kwargs = kwargs.copy()
             kwargs['universal_newlines'] = kwargs.pop('text')
-        if sys.hexversion < 0x03110000 and 'process_group' in kwargs:
-            kwargs = kwargs.copy()
-            pgid = kwargs.pop('process_group')
-            try:
-                kwargs['preexec_fn'] = os.setpgrp
-            except AttributeError:
-                pass
         super().__init__(*args, **kwargs)
 
     def __exit__(self, exc_type, value, traceback):

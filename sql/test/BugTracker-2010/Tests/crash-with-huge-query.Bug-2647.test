@@ -359,7 +359,7 @@ ALTER TABLE line_items
   ADD CONSTRAINT for_key_line_items_on_variant_id
   FOREIGN KEY (variant_id) REFERENCES variants(id)
 
-query IITRRRRRTIITRRRRRTIIR rowsort
+query IITDDDDDTIITDDDDDTIID rowsort
 WITH
 yv(id, product_id, sku, price, weight,
    height, width, depth, deleted_at,

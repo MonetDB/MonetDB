@@ -26,7 +26,7 @@ CREATE TABLE testnullsb (a date, b time, c time with time zone, d timestamp, e t
 statement ok
 INSERT INTO testnullsb VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
-query TTTTTTTR rowsort
+query TTTTTTTD rowsort
 SELECT a, b, c, d, e, f, g, h FROM testnullsb
 ----
 NULL
