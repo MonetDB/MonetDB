@@ -814,20 +814,29 @@ SOPfetch(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	} else {
 		MT_lock_set(&q->l);
 		e = q->h;
-		q->h = e->next;
+		if (e)
+			q->h = e->next;
 		if (!q->h)
 			q->t = NULL;
 		q->nr--;
 		MT_lock_unset(&q->l);
 	}
-	assert(e);
-
-	assert(e->nr == nr);
-	for(int i = 0; i < nr; i++){
-		bat *b = getArgReference_bat(stk, p, i);
-		*b = e->bats[i];
+	if (e) {
+		assert(e->nr == nr);
+		for(int i = 0; i < nr; i++){
+			bat *b = getArgReference_bat(stk, p, i);
+			*b = e->bats[i];
+		}
+		GDKfree(e);
+	} else {
+		for(int i = 0; i < nr; i++){
+			bat *b = getArgReference_bat(stk, p, i);
+			int type = getBatType(getArgType(mb, p, i));
+			BAT *bp = COLnew(0, type, 0, TRANSIENT);
+			*b = bp->batCacheid;
+			BBPkeepref(bp);
+		}
 	}
-	GDKfree(e);
 	return MAL_SUCCEED;
 }
 
