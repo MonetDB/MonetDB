@@ -4116,6 +4116,15 @@ def main(argv) :
                 if not errseen and diff > F_WARN:
                     errseen = True
             else:
+                td = []
+                for d in testdirs:
+                    try:
+                        with openutf8(os.path.join(d, TSTSUFF, 'prio')) as f:
+                            prio = int(f.read())
+                    except:
+                        prio = 1000
+                    td.append((prio, d))
+                testdirs = [d for (prio, d) in sorted(td)]
                 if verbosity > 1:
                     print('\nRunning all tests in directories %s.\n' % str(testdirs))
                 with concurrent.futures.ThreadPoolExecutor(max_workers=opts.parallel) as tp:
