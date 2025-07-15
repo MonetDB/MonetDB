@@ -183,6 +183,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			int tt = t->type->localtype;
 			int avg = e->type == e_aggr && strcmp(sf->func->base.name, "avg") == 0;
 			int sum = e->type == e_aggr && strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(t->type->eclass);
+			int cnt = e->type == e_aggr && !e->l && strcmp(sf->func->base.name, "count") == 0;
 			bool serialize = need_serialize && exp_need_serialize(e);
 
 			if (serialize) {
@@ -232,7 +233,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			if (avg && EC_APPNUM(t->type->eclass) && it && !EC_APPNUM(it->type->eclass))
 				t = it;
 
-			stmt *cc = const_column(be, stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)));
+			stmt *cc = const_column(be, cnt? stmt_atom_lng(be, 0) : stmt_atom(be, atom_general(be->mvc->sa, t, NULL, 0)));
 			if (!cc)
 				return NULL;
 			append(shared, &cc->nr);

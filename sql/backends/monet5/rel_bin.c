@@ -52,7 +52,7 @@ clean_mal_statements(backend *be, int oldstop, int oldvtop)
 	be->mvc->errstr[0] = '\0';
 }
 
-int
+static int
 add_to_rowcount_accumulator(backend *be, int nr)
 {
 	if (be->silent)
@@ -5101,6 +5101,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (sub && sub->type == st_list && sub->op4.lval->h && !((stmt*)sub->op4.lval->h->data)->nrcols) {
+		/*
 		if (!rel->r && list_length(rel->exps) == 1) {
 			sql_exp *cnt = rel->exps->h->data;
 			if (cnt->type == e_aggr && !cnt->l && cnt->intern) {
@@ -5110,6 +5111,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				return stmt_list(be, append(sa_list(sql->sa), cntstmt));
 			}
 		}
+		*/
 		list *newl = sa_list(sql->sa);
 		node *n;
 
