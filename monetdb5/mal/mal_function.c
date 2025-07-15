@@ -536,7 +536,7 @@ setVariableScope(MalBlkPtr mb)
 			if (getModuleId(p) && getFunctionId(p)
 				&& strcmp(getModuleId(p), "language") == 0
 				&& (strcmp(getFunctionId(p), "dataflow") == 0
-					|| (pp = (strcmp(getFunctionId(p), "pipelines") == 0)))) {
+				|| strcmp(getFunctionId(p), "pipelines") == 0)) {
 				if (dflow != -1)
 					addMalException(mb,
 									"setLifeSpan nested dataflow blocks not allowed");
@@ -552,13 +552,15 @@ setVariableScope(MalBlkPtr mb)
 			if (isVarConstant(mb, v) && getVarUpdated(mb, v) == 0)
 				setVarUpdated(mb, v, pc);
 
-			if (getVarDeclared(mb, v) == 0 && k < p->retc) {
+			if (getVarDeclared(mb, v) == 0 && (pp < 0 || k < p->retc)) {
 				setVarDeclared(mb, v, pc);
 				setVarScope(mb, v, depth);
 			}
 			if (k < p->retc)
 				setVarUpdated(mb, v, pc);
-			if (getVarEolife(mb, v) < pc && getVarScope(mb, v) == depth)
+			if (pp < 0 && getVarScope(mb, v) == depth)
+				setVarEolife(mb, v, pc);
+			if (pp >= 0 && getVarEolife(mb, v) < pc && getVarScope(mb, v) == depth)
 				setVarEolife(mb, v, (((k >= p->retc && getVarDeclared(mb, v) < pp) || (k >= p->inout && k < p->retc)) && jump > 0) ? jump : pc);
 
 			if (k >= p->retc && getVarScope(mb, v) < depth)
