@@ -1,4 +1,3 @@
-
 statement ok
 CREATE TABLE food_store (id INT, "name" TEXT, new_item BOOL)
 
