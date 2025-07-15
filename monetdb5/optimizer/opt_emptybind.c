@@ -120,8 +120,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				InstrPtr *tmp = updated;
 				//updated = GDKrealloc(updated,
 				//					 (esize += 256) * sizeof(InstrPtr));
+				size_t osz = esize;
+				esize += 256;
 				updated = MA_RENEW_ARRAY(cntxt->ta, InstrPtr, updated,
-									 (esize += 256), esize);
+									 esize, osz);
 				if (updated == NULL) {
 					// GDKfree(tmp);
 					updated = tmp;

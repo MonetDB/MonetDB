@@ -2279,7 +2279,7 @@ sa_use_freed(allocator *sa, size_t sz)
 
 
 /*
- * Reset child allocator to initial state
+ * Reset allocator to initial state
  */
 allocator *sa_reset(allocator *sa)
 {
@@ -2288,7 +2288,7 @@ allocator *sa_reset(allocator *sa)
 	char **blks = sa->blks;
 
 	// only child allocators
-	assert(sa->pa);
+	//assert(sa->pa);
 
 	// free all but 1st
 	for (i = 1; i < n_blks; i++) {
