@@ -2040,6 +2040,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *res = NULL;
 
 	(void)cntxt;
+	allocator *ma = mb->ma;
 	if (pci->argc != 7 && pci->argc != 8)
 		throw(SQL, "sql.strgroup_concat", ILLEGAL_ARGUMENT "sql.strgroup_concat requires 7 or 8 arguments");
 
@@ -2109,12 +2110,12 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str in = *getArgReference_str(stk, pci, 1);
 
 		if (strNil(in)) {
-			*res = GDKstrdup(str_nil);
+			*res = sa_strdup(ma, str_nil);
 		} else if (separator_offset) {
 			str sep = *getArgReference_str(stk, pci, 2);
 			size_t l1 = strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
 
-			if ((*res = GDKmalloc(l1+l2+1))) {
+			if ((*res = sa_alloc(ma, l1+l2+1))) {
 				if (l1)
 					memcpy(*res, in, l1);
 				if (l2)
@@ -2122,7 +2123,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				(*res)[l1+l2] = '\0';
 			}
 		} else {
-			*res = GDKstrdup(in);
+			*res = sa_strdup(ma, in);
 		}
 		if (!*res)
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);

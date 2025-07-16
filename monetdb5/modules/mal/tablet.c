@@ -1260,6 +1260,8 @@ SQLproducer(void *p)
 	lng lineno = 1;
 	lng startlineno = 1;
 	int more = 0;
+	allocator *ma = task->cntxt ? ma_create(task->cntxt->alloc) : NULL;
+	MT_thread_setallocator(ma);
 
 	MT_sema_down(&task->producer);
 	if (task->id < 0) {
@@ -1534,6 +1536,7 @@ SQLproducer(void *p)
 	}
 	GDKfree(rdfa);
 	MT_thread_set_qry_ctx(NULL);
+	MT_thread_setallocator(NULL);
 
 	return;
 

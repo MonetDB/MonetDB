@@ -1559,13 +1559,14 @@ SERVERfetch_all_rows(Client ctx, lng *ret, const int *key)
 static str
 SERVERfetch_field_str(Client ctx, str *ret, const int *key, const int *fnr)
 {
-	(void) ctx;
+	allocator *ma = ctx? ctx->alloc : MT_thread_getallocator();
+	assert(ma);
 	Mapi mid;
 	int i;
 	str fld;
 	accessTest(*key, "fetch_field");
 	fld = mapi_fetch_field(SERVERsessions[i].hdl, *fnr);
-	*ret = GDKstrdup(fld ? fld : str_nil);
+	*ret = MA_STRDUP(ma, fld ? fld : str_nil);
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_field_str", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if (mapi_error(mid))
@@ -1693,7 +1694,8 @@ SERVERfetch_field_bte(Client ctx, bte *ret, const int *key, const int *fnr)
 static str
 SERVERfetch_line(Client ctx, str *ret, const int *key)
 {
-	(void) ctx;
+	allocator *ma = ctx? ctx->alloc : MT_thread_getallocator();
+	assert(ma);
 	Mapi mid;
 	int i;
 	str fld;
@@ -1702,7 +1704,7 @@ SERVERfetch_line(Client ctx, str *ret, const int *key)
 	if (mapi_error(mid))
 		throw(MAL, "mapi.fetch_line", "%s",
 			  mapi_result_error(SERVERsessions[i].hdl));
-	*ret = GDKstrdup(fld ? fld : str_nil);
+	*ret = MA_STRDUP(ma, fld ? fld : str_nil);
 	if (*ret == NULL)
 		throw(MAL, "mapi.fetch_line", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -1783,11 +1785,12 @@ SERVERerror(Client ctx, int *ret, const int *key)
 static str
 SERVERgetError(Client ctx, str *ret, const int *key)
 {
-	(void) ctx;
+	allocator *ma = ctx? ctx->alloc : MT_thread_getallocator();
+	assert(ma);
 	Mapi mid;
 	int i;
 	accessTest(*key, "getError");
-	*ret = GDKstrdup(mapi_error_str(mid));
+	*ret = MA_STRDUP(ma, mapi_error_str(mid));
 	if (*ret == NULL)
 		throw(MAL, "mapi.get_error", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -1796,12 +1799,13 @@ SERVERgetError(Client ctx, str *ret, const int *key)
 static str
 SERVERexplain(Client ctx, str *ret, const int *key)
 {
-	(void) ctx;
+	allocator *ma = ctx? ctx->alloc : MT_thread_getallocator();
+	assert(ma);
 	Mapi mid;
 	int i;
 
 	accessTest(*key, "explain");
-	*ret = GDKstrdup(mapi_error_str(mid));
+	*ret = MA_STRDUP(ma, mapi_error_str(mid));
 	if (*ret == NULL)
 		throw(MAL, "mapi.explain", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -1908,7 +1912,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	MapiHdl hdl;
 	char *s, *fld, *qry = 0;
 
-	(void) cntxt;
+	allocator *ta = cntxt->ta;
 	key = *getArgReference_int(stk, pci, pci->retc);
 	accessTest(key, "rpc");
 #ifdef MAPI_TEST
@@ -1918,22 +1922,22 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (i = pci->retc + 1; i < pci->argc; i++) {
 		fld = *getArgReference_str(stk, pci, i);
 		if (qry == 0) {
-			qry = GDKstrdup(fld);
+			qry = MA_STRDUP(ta, fld);
 			if (qry == NULL)
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		} else {
-			s = (char *) GDKmalloc(strlen(qry) + strlen(fld) + 1);
+			s = (char *) ma_alloc(ta, strlen(qry) + strlen(fld) + 1);
 			if (s == NULL) {
-				GDKfree(qry);
+				//GDKfree(qry);
 				throw(MAL, "mapi.rpc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			stpcpy(stpcpy(s, qry), fld);
-			GDKfree(qry);
+			//GDKfree(qry);
 			qry = s;
 		}
 	}
 	hdl = mapi_query(mid, qry);
-	GDKfree(qry);
+	//GDKfree(qry);
 	catchErrors("mapi.rpc");
 
 	i = 0;
@@ -2122,7 +2126,7 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		// GDKfree(w);
 		break;
 	}
-	*ret = GDKstrdup(buf);
+	*ret = MA_STRDUP(mb->ma, buf);
 	if (*ret == NULL)
 		throw(MAL, "mapi.glue", GDK_EXCEPTION);
 	return MAL_SUCCEED;

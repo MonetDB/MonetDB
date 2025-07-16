@@ -133,9 +133,9 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 BLOBtoblob(Client ctx, blob **retval, const char *const *s)
 {
-	(void) ctx;
+	allocator *ma = ctx->alloc;
 	size_t len = strLen(*s);
-	blob *b = (blob *) GDKmalloc(blobsize(len));
+	blob *b = (blob *) ma_alloc(ma, blobsize(len));
 
 	if (b == NULL)
 		throw(MAL, "blob.toblob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -148,11 +148,11 @@ BLOBtoblob(Client ctx, blob **retval, const char *const *s)
 static str
 BLOBblob_blob(Client ctx, blob **d, const blob *const*s)
 {
-	(void) ctx;
+	allocator *ma = ctx->alloc;
 	size_t len = blobsize((*s)->nitems);
 	blob *b;
 
-	*d = b = GDKmalloc(len);
+	*d = b = ma_alloc(ma, len);
 	if (b == NULL)
 		throw(MAL, "blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = (*s)->nitems;

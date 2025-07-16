@@ -836,7 +836,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, bool enc, char *fullname, ch
 			e++;
 		}
 		r = createException(SQL,"sql.create_user", SQLSTATE(M0M27) "CREATE USER: %s", e);
-		_DELETE(err);
+		//_DELETE(err);
 		return r;
 	}
 

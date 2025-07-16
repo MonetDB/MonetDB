@@ -94,7 +94,9 @@ createExceptionInternal(enum malexception type, const char *fcn,
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 		len = 0;
 	}
-	msg = GDKmalloc(msglen + len + 2);
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
+	msg = ma_alloc(ma, msglen + len + 2);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
 		(void) strconcat_len(msg, msglen + 1,
@@ -184,8 +186,9 @@ createException(enum malexception type, const char *fcn, const char *format,
 void
 freeException(str msg)
 {
-	if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
-		GDKfree(msg);
+	(void)msg;
+	//if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
+	//	GDKfree(msg);
 }
 
 /**
@@ -222,7 +225,9 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 	int len = vsnprintf(NULL, 0, format, ap);
 	if (len < 0)
 		len = 0;
-	char *msg = GDKmalloc(msglen + len + 1);
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
+	char *msg = ma_alloc(ma, msglen + len + 1);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
 		if (prev) {

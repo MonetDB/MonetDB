@@ -506,12 +506,14 @@ INSPECTgetEnvironmentKey(Client ctx, str *ret, const char *const *key)
 	(void) ctx;
 	const char *s;
 	*ret = 0;
+	allocator *ma = ctx ? ctx->alloc : MT_thread_getallocator();
+	assert(ma);
 
 	s = GDKgetenv(*key);
 	if (s == 0)
 		throw(MAL, "inspect.getEnvironment",
 			  "environment variable '%s' not found", *key);
-	*ret = GDKstrdup(s);
+	*ret = MA_STRDUP(ma, s);
 	if (*ret == NULL)
 		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
