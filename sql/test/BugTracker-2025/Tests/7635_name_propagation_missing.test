@@ -4,14 +4,15 @@ CREATE TABLE t0(c0 INT)
 statement ok
 INSERT INTO t0 VALUES (1)
 
-query II
+query II nosort
 SELECT * FROM t0 INNER JOIN (SELECT (1 = ANY(VALUES (1)))) AS sub ON TRUE
 ----
 1
 1
 
-query II
+query II nosort
 SELECT * FROM t0 INNER JOIN (SELECT (1 = ANY(VALUES (1)) = TRUE)) AS sub ON TRUE
 ----
 1
 1
+

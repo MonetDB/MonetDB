@@ -644,7 +644,7 @@ create or replace view v102(vc0) as (select 1 from v101)
 statement ok
 commit
 
-query I
+query I nosort
 SELECT 1 FROM v100 AS vx WHERE vx.vc0 = ANY(SELECT 1 FROM v100 HAVING count(vx.vc0 = vx.vc0 AND (SELECT TRUE FROM v102)))
 ----
 

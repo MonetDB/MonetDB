@@ -10,7 +10,7 @@ COPY 992001 RECORDS INTO creative_work_title FROM E'$QTSTDATAPATH/spinque/creati
 statement ok
 COPY 5490 RECORDS INTO wo2_thesaurus FROM E'$QTSTDATAPATH/spinque/wo2_thesaurus.txt' NULL AS ''
 
-query I
+query I nosort
 select count(*) from creative_work_title c, wo2_thesaurus w where [c.s] contains [w.s]
 ----
 142819
@@ -20,3 +20,4 @@ drop table creative_work_title
 
 statement ok
 drop table wo2_thesaurus
+

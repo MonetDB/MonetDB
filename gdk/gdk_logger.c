@@ -469,7 +469,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					BATsetcount(*cands, (BUN) nr);
 				}
 
-				size_t snr = (size_t) nr;
+				BUN snr = (BUN) nr;
 				BUN total = snr;
 
 				if (append && (*cands)->ttype == TYPE_void) {
@@ -477,7 +477,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					*cands = COLnew(0, TYPE_oid, (BUN) nr, TRANSIENT);
 				}
 				oid *c = append?Tloc((*cands), 0):NULL;
-				while(snr) {
+				while (snr) {
 					if (mnstr_readLng(lg->input_log, &nr) != 1 ||
 					    mnstr_readLng(lg->input_log, &offset) != 1) {
 						TRC_CRITICAL(GDK, "read failed\n");
@@ -492,9 +492,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 						lg->rbuf = t;
 						lg->rbufsize = tlen;
 						for (BUN p = 0; p < (BUN) nr; p++)
-							*c++ = offset++;
+							*c++ = (oid) offset++;
 					}
-					snr -= nr;
+					snr -= (BUN) nr;
 				}
 				if (append) {
 					BATsetcount( *cands, total );
@@ -539,7 +539,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				}
 			}
 		} else if (l->flag == LOG_UPDATE_CB) {
-			size_t snr = (size_t) nr;
+			BUN snr = (BUN) nr;
 
 			uid = COLnew(0, TYPE_oid, (BUN) nr, TRANSIENT);
 			if (r && uid == NULL) {
@@ -549,7 +549,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 			}
 			oid *c = uid?Tloc(uid, 0):NULL;
 			BUN total = snr;
-			while(snr) {
+			while (snr) {
 				if (mnstr_readLng(lg->input_log, &nr) != 1 ||
 				    mnstr_readLng(lg->input_log, &offset) != 1) {
 					if (r)
@@ -571,11 +571,11 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 								TRC_CRITICAL(GDK, "append to bat failed\n");
 								res = LOG_ERR;
 							}
-							*c++ = offset++;
+							*c++ = (oid) offset++;
 						}
 					}
 				}
-				snr -= nr;
+				snr -= (BUN) nr;
 			}
 			if (uid) {
 				BATsetcount( uid, total );

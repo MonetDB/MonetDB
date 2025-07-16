@@ -1,4 +1,3 @@
-
 -- the primary key
 statement ok
 create table a(id int)
@@ -21,3 +20,4 @@ alter table b add foreign key(i) references a
 
 statement error 40000!DROP TABLE: FOREIGN KEY b.b_i_fkey depends on a
 drop table a
+

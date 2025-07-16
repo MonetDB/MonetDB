@@ -183,7 +183,7 @@ SELECT SUBSTRING('abcdefg' FROM 'a#"(b_d)#"%' FOR '#') AS "bcd"
 statement error
 SELECT SUBSTRING('abcdefg' FROM '#"(b_d)#"%' FOR '#') IS NULL AS "True"
 
-query I
+query I nosort
 SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True"
 ----
 1
@@ -191,7 +191,7 @@ SELECT SUBSTRING('abcdefg' FROM '(b|c)' FOR NULL) IS NULL AS "True"
 statement error
 SELECT SUBSTRING(NULL FROM '(b|c)' FOR '#') IS NULL AS "True"
 
-query I
+query I nosort
 SELECT SUBSTRING('abcdefg' FROM NULL FOR '#') IS NULL AS "True"
 ----
 1
