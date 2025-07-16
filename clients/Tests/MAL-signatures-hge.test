@@ -2554,6 +2554,16 @@ command aggr.subvariancep(X_0:bat[:sht], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat
 AGGRsubvariancepcand_dbl
 Grouped variance (population/biased) aggregate with candidates list
 aggr
+subxmlaggr
+command aggr.subxmlaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:xml]
+AGGRsubxml
+Grouped aggregation of XML values.
+aggr
+subxmlaggr
+command aggr.subxmlaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:xml]
+AGGRsubxmlcand
+Grouped aggregation of XML values with candidates list.
+aggr
 subzero_or_one
 command aggr.subzero_or_one(X_0:bat[:any_1], X_1:bat[:oid], X_2:bat[:oid], X_3:bit):bat[:any_1]
 SQLsubzero_or_one
@@ -3328,6 +3338,11 @@ variancep
 command aggr.variancep(X_0:bat[:any_2]):dbl
 ALGvariancep
 Gives the variance of all tail values
+aggr
+xmlaggr
+command aggr.xmlaggr(X_0:bat[:xml]):xml
+BATXMLgroup
+Aggregate the XML values.
 aggr
 zero_or_one
 command aggr.zero_or_one(X_0:bat[:any_1]):any_1
@@ -50809,11 +50824,6 @@ command uuid.uuid(X_0:str):uuid
 UUIDstr2uuid
 Coerce a string to a uuid, validating its format
 xml
-aggr
-command xml.aggr(X_0:bat[:xml]):xml
-BATXMLgroup
-Aggregate the XML values.
-xml
 attribute
 command xml.attribute(X_0:str, X_1:str):xml
 XMLattribute
@@ -50883,16 +50893,6 @@ str
 command xml.str(X_0:xml):str
 XMLxml2str
 Cast the string to an xml compliant string
-xml
-subaggr
-command xml.subaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bit):bat[:xml]
-AGGRsubxml
-Grouped aggregation of XML values.
-xml
-subaggr
-command xml.subaggr(X_0:bat[:xml], X_1:bat[:oid], X_2:bat[:any_1], X_3:bat[:oid], X_4:bit):bat[:xml]
-AGGRsubxmlcand
-Grouped aggregation of XML values with candidates list.
 xml
 text
 command xml.text(X_0:xml):str
