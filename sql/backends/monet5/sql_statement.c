@@ -4994,7 +4994,6 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 			goto bailout;
 		q->barrier = BARRIERsymbol;
 		q = pushArgument(mb, q, cond->nr);
-		getArg(q, 0) = cond->nr;
 	} else {	/* while */
 		int c;
 
@@ -5028,7 +5027,6 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 	s->loop = loop;
 	s->op1 = cond;
 	s->nr = getArg(q, 0);
-	s->q = q;
 	pushInstruction(mb, q);
 	return s;
 
@@ -5078,7 +5076,6 @@ stmt_control_end(backend *be, stmt *cond)
 	}
 	s->op1 = cond;
 	s->nr = getArg(q, 0);
-	s->q = q;
 	pushInstruction(mb, q);
 	return s;
 
@@ -5123,7 +5120,6 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 
 	if (val->nr < 0)
 		goto bailout;
-
 	int args = val->type == st_table ? 2 * list_length(val->op1->op4.lval) : 0;
 	if (args < MAXARG)
 		args = MAXARG;
