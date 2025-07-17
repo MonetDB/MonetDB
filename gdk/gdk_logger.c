@@ -462,13 +462,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 		} else if (l->flag == LOG_UPDATE_CB) {
 			if (cands) {
 				bool append = (!lg->flushing && !skip_entry);
-				if (lg->flushing || skip_entry) {
-					/* when flushing, we only need the offset and count of the last segment of inserts. */
-					assert((*cands)->ttype == TYPE_void);
-					BATtseqbase(*cands, (oid) 0);
-					BATsetcount(*cands, (BUN) nr);
-				}
-
 				BUN snr = (BUN) nr;
 				BUN total = snr;
 
@@ -493,7 +486,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 						lg->rbufsize = tlen;
 						for (BUN p = 0; p < (BUN) nr; p++)
 							*c++ = (oid) offset++;
-					}
+					} else
+						offset += nr;
 					snr -= (BUN) nr;
 				}
 				if (append) {
@@ -506,6 +500,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					(*cands)->trevsorted = false;
 					(*cands)->tnorevsorted = 0;
 					(*cands)->tmaxpos = (*cands)->tminpos = BUN_NONE;
+				} else {
+					assert((*cands)->ttype == TYPE_void);
+					BATtseqbase(*cands, (oid) (offset - total));
+					BATsetcount(*cands, total);
 				}
 				return res;
 			}
@@ -541,13 +539,14 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 		} else if (l->flag == LOG_UPDATE_CB) {
 			BUN snr = (BUN) nr;
 
-			uid = COLnew(0, TYPE_oid, (BUN) nr, TRANSIENT);
-			if (r && uid == NULL) {
-				if (r)
+			if (r) {
+				uid = COLnew(0, TYPE_oid, (BUN) nr, TRANSIENT);
+				if (uid == NULL) {
 					BBPreclaim(r);
-				return LOG_ERR;
+					return LOG_ERR;
+				}
 			}
-			oid *c = uid?Tloc(uid, 0):NULL;
+			oid *c = uid ? Tloc(uid, 0) : NULL;
 			BUN total = snr;
 			while (snr) {
 				if (mnstr_readLng(lg->input_log, &nr) != 1 ||
@@ -573,7 +572,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 							}
 							*c++ = (oid) offset++;
 						}
-					}
+					} else
+						offset += nr;
 				}
 				snr -= (BUN) nr;
 			}
