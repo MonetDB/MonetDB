@@ -91,19 +91,19 @@ if isatty:
         GREEN = '\033[0;32m'
         PURPLE = '\033[1;35m'       # actually magenta
         BLACK = '\033[0;0m'
-        def prred(str):
+        def prred(str, *, RED=RED, BLACK=BLACK):
             try:
                 print(RED, end='')
                 print(str, end='')
             finally:
                 print(BLACK, end='')
-        def prgreen(str):
+        def prgreen(str, *, GREEN=GREEN, BLACK=BLACK):
             try:
                 print(GREEN, end='')
                 print(str, end='')
             finally:
                 print(BLACK, end='')
-        def prpurple(str):
+        def prpurple(str, *, PURPLE=PURPLE, BLACK=BLACK):
             try:
                 print(PURPLE, end='')
                 print(str, end='')
@@ -130,7 +130,7 @@ if isatty:
                     left, top, right, bottom, maxx, maxy) = struct.unpack('hhhhHhhhhhh', csbi.raw)
                     return wattr
                 reset = get_csbi_attributes(handle)
-                def prred(str,
+                def prred(str, *,
                           scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
                         print(end='', flush=True)
@@ -138,7 +138,7 @@ if isatty:
                         print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
-                def prgreen(str,
+                def prgreen(str, *,
                             scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
                         print(end='', flush=True)
@@ -146,7 +146,7 @@ if isatty:
                         print(str, end='', flush=True)
                     finally:
                         scta(handle, reset)
-                def prpurple(str,
+                def prpurple(str, *,
                              scta=ctypes.windll.kernel32.SetConsoleTextAttribute):
                     try:
                         print(end='', flush=True)
@@ -1130,10 +1130,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
             return elem, max(FdOut, FdErr), interrupted
 
         # find length of longest test name
-        length = 0
-        for tst in testlist:
-            if len(tst[0]) > length:
-                length = len(tst[0])
+        length = max([len(tst[0]) for tst in testlist])
 
         if TSTDIR == os.curdir:
             RELSRCDIR = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
@@ -1808,6 +1805,17 @@ relcond = {
                              'last hugeint chained empty'),
 }
 
+tests = (
+    # file extension  EXT        CALL      SERVER
+    ('.test',         '.test',   'sqltest','SQL'),
+    ('.maltest',      '.maltest','maltest','SQL'),
+    ('.py',           '.py',     'python', ''),
+    ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+    ('.sql',          '.sql',    'sql',    'SQL'),
+    ('.R',            '.R',      'R',      'SQL'),
+    ('.rb',           '.rb',     'ruby',   'SQL'),
+)
+
 def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR) :
     Failed = F_SKIP
     FailedOut = F_SKIP
@@ -1831,16 +1839,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         CALL = 'other'
         SERVER = 'SQL'
     else:
-        tests = (
-            # file extension  EXT        CALL      SERVER
-            ('.test',         '.test',   'sqltest','SQL'),
-            ('.maltest',      '.maltest','maltest','SQL'),
-            ('.py',           '.py',     'python', ''),
-            ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.sql',          '.sql',    'sql',    'SQL'),
-            ('.R',            '.R',      'R',      'SQL'),
-            ('.rb',           '.rb',     'ruby',   'SQL'),
-        )
         for tst, ext, cll, srv in tests:
             if os.path.isfile(os.path.join(TSTSRCDIR, TST + tst)) or \
                os.path.isfile(os.path.join(TSTSRCDIR, TST + tst + '.src')) or \
