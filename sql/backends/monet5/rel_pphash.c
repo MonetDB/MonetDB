@@ -551,7 +551,10 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		sql_rel *l = rel->l;
 		if (is_topn(l->op))
 			l = rel_project(be->mvc->sa, l, rel_projections(be->mvc, l, NULL, 1, 1));
-		return rel2bin_materialize(be, l, refs, false);
+		stmt *sub = rel2bin_materialize(be, l, refs, false);
+		if (sub->cand)
+			sub = subrel_project(be, sub, refs, rel);
+		return sub;
 	}
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2);
@@ -757,6 +760,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, InstrPtr *probed_rowi
 	/*** (pseudo) HASH PHASE ***/
 	/* nothing to hash, we just want to have a materialised table for this side */
 	stmt *stmts_ht = subrel_bin(be, rel_hsh, refs);
+	stmts_ht = subrel_project(be, stmts_ht, refs, rel);
 
 	/*** (pseudo) PROBE PHASE ***/
 	stmt *stmts_prb_res = _start_pp(be, rel_prb->l, false, refs);
