@@ -1540,7 +1540,7 @@ constantAtom(MalBlkPtr mb, atom *a)
 	ValRecord cst;
 
 	if (atom_null(a)) {
-		VALinit(NULL, &cst, tpe, ATOMnilptr(tpe));
+		VALinit(mb->ma, &cst, tpe, ATOMnilptr(tpe));
 	} else {
 		cst.vtype = 0;
 		if (SA_VALcopy(mb->ma, &cst, vr) == NULL)
