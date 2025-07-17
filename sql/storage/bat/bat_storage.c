@@ -50,7 +50,7 @@ static lng merge_delta( sql_delta *obat);
 	((TS == tr->tid) || (tr->parent && tr_version_of_parent(tr, TS)) || TS < tr->ts)
 
 #define SEG_VALID_4_READ(seg, tr) \
-	((seg->ts == tr->tid && seg->cnr < tr->cnr) || (tr->parent && tr_version_of_parent(tr, seg->ts)) || seg->ts < tr->ts)
+	((seg->ts == tr->tid && (!seg->cnr || seg->cnr < tr->cnr)) || (tr->parent && tr_version_of_parent(tr, seg->ts)) || seg->ts < tr->ts)
 
 /* when changed, check if the old status is still valid */
 #define OLD_VALID_4_READ(TS,OLDTS,tr) \
@@ -3481,8 +3481,10 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 		}
 		if (ok == LOG_OK)
 			for (segment *seg = s->segs->h; seg; seg = ATOMIC_PTR_GET(&seg->next))
-				if (seg->ts == tr->tid)
+				if (seg->ts == tr->tid) {
 					seg->ts = 1;
+					seg->cnr = 0;
+				}
 	} else {
 		if (ok == LOG_OK) {
 			BAT *bb = quick_descriptor(s->cs.bid);
@@ -3491,8 +3493,10 @@ load_storage(sql_trans *tr, sql_table *t, storage *s, sqlid id)
 				ok = LOG_ERR;
 			} else {
 				segment *seg = s->segs->h;
-				if (seg->ts == tr->tid)
+				if (seg->ts == tr->tid) {
 					seg->ts = 1;
+					seg->cnr = 0;
+				}
 			}
 		}
 	}

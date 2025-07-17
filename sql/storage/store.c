@@ -2184,6 +2184,7 @@ store_load(sqlstore *store, allocator *pa)
 
 	/* load remaining schemas, tables, columns etc */
 	tr->active = 1;
+	tr->cnr = 0;
 	if (!store->first && !load_trans(tr)) {
 		TRC_CRITICAL(SQL_STORE, "Cannot load catalog tables\n");
 		sql_trans_destroy(tr);
