@@ -138,7 +138,7 @@ LANGUAGE PYTHON
     return result
 }
 
-query R rowsort
+query D rowsort
 SELECT * FROM pyapi_ret_decimal()
 ----
 100.330

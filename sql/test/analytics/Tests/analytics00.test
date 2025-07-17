@@ -1850,17 +1850,17 @@ O_COMMENT        VARCHAR(79) NOT NULL)
 statement ok
 insert into myorders values (1, 1, '1', 1, date '2010-01-01', '1', '1', 1, '1'), (2, 2, '2', 2, date '2010-01-02', '2', '2', 2, '2')
 
-query IIR nosort
+query IID nosort
 SELECT o_custkey, EXTRACT(MONTH FROM o_orderdate) AS purchase_month,
        CAST(SUM(o_totalprice) OVER (PARTITION BY o_custkey  ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS DECIMAL(15,2))
 FROM myorders
 ----
 1
 1
-1.000
+1.00
 2
 1
-2.000
+2.00
 
 query T nosort
 PLAN SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM myorders
@@ -1875,11 +1875,11 @@ project (
 | ) [ "%1"."%1" NOT NULL, "sys"."diff"("myorders"."o_custkey" PART NOT NULL UNIQUE) as "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL) as "%3"."%3", "sys"."min"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2", "sys"."diff"("%1"."%1" NOT NULL), int(1) "0", "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(1) "0", int(1) "0", bigint(63) "9223372036854775807"), "sys"."window_bound"("%2"."%2", "%3"."%3", int(1) "0", int(3) "5", int(1) "0", bigint(63) "0")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 
-query R nosort
+query D nosort
 SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM myorders
 ----
-1.000
-2.000
+1.00
+2.00
 
 query T nosort
 PLAN SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders
@@ -1894,11 +1894,11 @@ project (
 | ) [ "%1"."%1" NOT NULL, boolean(1) "false" as "%2"."%2", "sys"."max"("myorders"."o_totalprice" NOT NULL UNIQUE, "%2"."%2" NOT NULL, "sys"."diff"("%1"."%1" NOT NULL), int(1) "1", "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(1) "1", int(1) "0", int(1) "0", tinyint(7) "2"), "sys"."window_bound"("%1"."%1" ASC NOT NULL, int(1) "1", int(3) "5", int(1) "0", tinyint(7) "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 
-query R nosort
+query D nosort
 SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders
 ----
-1.000
-2.000
+1.00
+2.00
 
 query T nosort
 PLAN SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders

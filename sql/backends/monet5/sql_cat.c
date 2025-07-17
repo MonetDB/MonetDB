@@ -699,7 +699,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 
 					/* make sure it is not a self referencing key */
 					if (fk->t != t)
-						throw(SQL,"sql.drop_table", SQLSTATE(40000) "DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
+						throw(SQL,"sql.drop_table", SQLSTATE(40000) "DROP TABLE: FOREIGN KEY %s.%s depends on %s", fk->t->base.name, fk->base.name, tname);
 				}
 			}
 		}

@@ -29,7 +29,8 @@ list *types = NULL;
 list *funcs = NULL;
 
 static sql_type *BIT = NULL;
-static sql_subtype *localtype_array[64] = {0};
+#define MAX_LTYPE 64
+static sql_subtype *localtype_array[MAX_LTYPE] = {0};
 static sql_subtype *battype = NULL;
 
 sql_ref *
@@ -772,7 +773,7 @@ sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigne
 		(void) keywords_insert(t->base.name, KW_TYPE);
 	list_append(types, t);
 
-	if (t->localtype >= 0 && t->localtype < 64 && !localtype_array[t->localtype])
+	if (t->localtype >= 0 && t->localtype < MAX_LTYPE && !localtype_array[t->localtype])
 		localtype_array[t->localtype] = sql_create_subtype(sa, t, 0, 0);
 	else if (strcmp(impl,"bat") == 0)
 		battype = sql_create_subtype(sa, t, 0, 0);
@@ -1742,5 +1743,7 @@ types_init(allocator *sa)
 	types = sa_list(sa);
 	funcs = sa_list(sa);
 	funcs->ht = hash_new(sa, 64*1024, (fkeyvalue)&base_key);
+	memset(localtype_array, 0, sizeof(localtype_array));
+	battype = NULL;
 	sqltypeinit( sa );
 }

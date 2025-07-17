@@ -4,21 +4,21 @@ CREATE TABLE baz (a INT, b INT)
 statement ok
 INSERT INTO baz (a, b) VALUES (42, 1), (31, 6), (32, 6), (36, 7), (57, 3)
 
-query I rowsort 
+query R rowsort
 SELECT avg(b) FROM baz GROUP BY b
 ----
-1
-3
-6
-7
+1.000
+3.000
+6.000
+7.000
 
-query I rowsort 
-select avg(3) from generate_series(cast(0 as integer), 10, 1);
+query R rowsort
+select avg(3) from generate_series(cast(0 as integer), 10, 1)
 ----
-3
+3.000
 
 query T nosort
-PLAN SELECT avg(3) FROM generate_series(cast(0 as integer), 10, 1);
+PLAN SELECT avg(3) FROM generate_series(cast(0 as integer), 10, 1)
 ----
 project (
 | group by (
@@ -27,7 +27,7 @@ project (
 | ) [  ] [ "sys"."avg" no nil (tinyint(2) "3") UNIQUE as "%2"."%2" ]
 ) [ "%2"."%2" UNIQUE ]
 
-query I rowsort 
+query I rowsort
 SELECT avg(3) FROM baz GROUP BY b
 ----
 3
@@ -44,13 +44,13 @@ project (
 | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
 ) [ tinyint(2) "3" as "%1"."%1" ]
 
-query I rowsort 
+query R rowsort
 SELECT 1 + avg(3) FROM baz GROUP BY b
 ----
-4
-4
-4
-4
+4.000
+4.000
+4.000
+4.000
 
 query T nosort
 PLAN SELECT 1 + avg(3) FROM baz GROUP BY b
@@ -61,7 +61,7 @@ project (
 | ) [ "baz"."b" NOT NULL ] [ "baz"."b" NOT NULL ]
 ) [ "sys"."sql_add"(double(53) "1", tinyint(2) "3") NOT NULL ]
 
-query I rowsort 
+query I rowsort
 SELECT avg(NULL) FROM baz GROUP BY b
 ----
 NULL
@@ -69,17 +69,17 @@ NULL
 NULL
 NULL
 
-query II rowsort
+query RR rowsort
 SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
 ----
-4
-30
-4
-30
-4
-30
-4
-30
+4.000
+30.000
+4.000
+30.000
+4.000
+30.000
+4.000
+30.000
 
 query T nosort
 PLAN SELECT 1 + avg(3), avg(3) * 10 FROM baz GROUP BY b
@@ -92,17 +92,17 @@ project (
 | ) [ tinyint(2) "3" as "%1"."%1" ]
 ) [ "sys"."sql_add"(double(53) "1", "%1"."%1" NOT NULL) NOT NULL, "sys"."sql_mul"("%1"."%1" NOT NULL, double(53) "10") NOT NULL ]
 
-query II rowsort
+query IR rowsort
 SELECT avg(3), avg(b) FROM baz GROUP BY b
 ----
 3
-1
+1.000
 3
+3.000
 3
+6.000
 3
-6
-3
-7
+7.000
 
 query I rowsort
 SELECT count(3) FROM baz GROUP BY b
@@ -122,7 +122,7 @@ project (
 ) [ "%1"."%1" NOT NULL ]
 
 query T nosort
-plan select prod(cast(1 as real)) from baz group by b;
+plan select prod(cast(1 as real)) from baz group by b
 ----
 project (
 | group by (
@@ -184,3 +184,4 @@ select count(null) + 3 from baz group by a
 3
 3
 3
+

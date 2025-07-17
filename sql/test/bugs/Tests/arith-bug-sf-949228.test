@@ -1,19 +1,19 @@
-query R rowsort
+query D rowsort
 select 1.0001/1.0001
 ----
-1.000
+1.0000
 
-query R rowsort
+query D rowsort
 select 1.000/1.0001
 ----
-1.000
+0.9999
 
-query R rowsort
+query D rowsort
 select 1.00001/1.00001
 ----
-1.000
+1.00000
 
-query R rowsort
+query D rowsort
 select 1.0/0.1
 ----
 10.000

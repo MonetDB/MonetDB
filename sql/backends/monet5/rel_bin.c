@@ -3266,7 +3266,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	list *l, *sexps = NULL, *l2 = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
-	int need_left = (rel->flag & LEFT_JOIN);
 
 	if (rel->attr && list_length(rel->attr) > 0)
 		return rel2bin_groupjoin(be, rel, refs);
@@ -3352,10 +3351,10 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				list_append(exps, e);
 			}
 			if (list_length(lje) > 1) {
-				join = releqjoin(be, lje, rje, exps, used_hash, need_left, 0);
-			} else if (!join || need_left) {
+				join = releqjoin(be, lje, rje, exps, used_hash, 0, 0);
+			} else if (!join) {
 				sql_exp *e = exps->h->data;
-				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, need_left, is_semantics(e), false);
+				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, 0, is_semantics(e), false);
 			}
 		}
 	} else {

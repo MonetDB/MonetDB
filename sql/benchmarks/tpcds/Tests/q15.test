@@ -1,4 +1,4 @@
-query TR rowsort
+query TD rowsort
 -- query 15
 select  ca_zip
        ,sum(cs_sales_price)
@@ -18,5 +18,5 @@ select  ca_zip
  order by ca_zip
  limit 100
 ----
-200 values hashing to 84948a87a3387b914146971155fa42f7
+200 values hashing to 1eb8034e0f3120ca4acf56451263ee52
 

@@ -157,25 +157,14 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name), *brt = rt;
 	int selfref = (rk->t->base.id == i->t->base.id);
-	int need_nulls = 0;
 	if (selfref)
 		TRC_DEBUG(SQL_TRANS, "Self-reference index\n");
 
-	sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
-
-	sql_rel *_nlls = NULL, *nnlls, *ins = inserts->r;
-	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
+	sql_rel *ins = inserts->r;
+	sql_exp *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	assert(is_project(ins->op) || ins->op == op_table);
-	for (m = i->columns->h; m; m = m->next) {
-		sql_kc *c = m->data;
-
-		if (c->c->null)
-			need_nulls = 1;
-	}
-	need_nulls = 0;
 	/* NULL and NOT NULL, for 'SIMPLE MATCH' semantics */
 	/* AND joins expressions */
 
@@ -192,8 +181,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
-		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
+		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *je;
 
 		if (rel_base_use(sql, brt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -201,67 +189,31 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		}
 		int unique = list_length(i->columns) == 1 && list_length(rk->columns) == 1 && is_column_unique(rc->c);
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, unique, 0);
-		rtc->nid = rel_base_nid(brt, rc->c);
-		rtc->alias.label = rtc->nid;
+		rtc->alias.label = rel_base_nid(brt, rc->c);
+		rtc->nid = rtc->alias.label;
 
 		_is = exp_ref(sql, _is);
-		lnl = exp_unop(sql->sa, _is, isnil);
-		set_has_no_nil(lnl);
-		rnl = exp_unop(sql->sa, _is, isnil);
-		set_has_no_nil(rnl);
-		if (need_nulls) {
-			if (lnll_exps) {
-				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
-				rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
-			} else {
-				lnll_exps = lnl;
-				rnll_exps = rnl;
-			}
-		}
-
 		if (rel_convert_types(sql, rt, ins, &rtc, &_is, 1, type_equal) < 0)
 			return NULL;
 		je = exp_compare(sql->sa, rtc, _is, cmp_equal);
+		if (c->c->null)
+			set_any(je);
 		append(join_exps, je);
 	}
-	if (need_nulls) {
-		_nlls = rel_select( sql->sa, rel_dup(ins),
-				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
-		set_processed(_nlls);
-		nnlls = rel_select( sql->sa, rel_dup(ins),
-				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
-		set_processed(nnlls);
-		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
-		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_oid), NULL, 0));
-		exp_setname(sql, e, alias, iname);
-		append(_nlls->exps, e);
-	} else {
-		nnlls = ins;
-	}
 
-	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
-	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_left/*op_join*/);
-	nnlls->exps = join_exps;
-	nnlls = rel_project(sql->sa, nnlls, pexps);
+	pexps = rel_projections(sql, ins, NULL, 1, 1);
+	ins = rel_crossproduct(sql->sa, ins, rt, op_left/*op_join*/);
+	ins->exps = join_exps;
+	ins = rel_project(sql->sa, ins, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, brt);
 	exp_setname(sql, e, alias, iname);
 	e->nid = rel_base_nid(brt, NULL);
-	append(nnlls->exps, e);
-	set_processed(nnlls);
+	append(ins->exps, e);
+	set_processed(ins);
 
-	if (need_nulls) {
-		rel_destroy(sql, ins);
-		rt = inserts->r = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), _nlls), nnlls), op_munion );
-
-		rel_setop_n_ary_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
-
-		set_processed(rt);
-	} else {
-		inserts->r = nnlls;
-	}
+	inserts->r = ins;
 	return inserts;
 }
 
@@ -860,31 +812,21 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	char name[16], *nme = number2name(name, sizeof(name), nr);
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 
-	int need_nulls = 0;
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme)), *brt = rt;
 
-	sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
-
-	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
-	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
+	sql_rel *ups = updates->r;
+	sql_exp *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	assert(is_project(ups->op) || ups->op == op_table);
-	for (m = i->columns->h; m; m = m->next) {
-		sql_kc *c = m->data;
-
-		if (c->c->null)
-			need_nulls = 1;
-	}
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
-		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
+		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *je;
+
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
 			return NULL;
@@ -897,63 +839,29 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_ref(sql, upd);
-		lnl = exp_unop(sql->sa, upd, isnil);
-		set_has_no_nil(lnl);
-		rnl = exp_unop(sql->sa, upd, isnil);
-		set_has_no_nil(rnl);
-		if (need_nulls) {
-			if (lnll_exps) {
-				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
-				rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
-			} else {
-				lnll_exps = lnl;
-				rnll_exps = rnl;
-			}
-		}
 		if (rel_convert_types(sql, rt, updates, &rtc, &upd, 1, type_equal) < 0) {
 			list_destroy(join_exps);
 			return NULL;
 		}
 		je = exp_compare(sql->sa, rtc, upd, cmp_equal);
+		if (c->c->null)
+			set_any(je);
 		append(join_exps, je);
 	}
-	if (need_nulls) {
-		_nlls = rel_select( sql->sa, rel_dup(ups),
-				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
-		set_processed(_nlls);
-		nnlls = rel_select( sql->sa, rel_dup(ups),
-				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
-		set_processed(nnlls);
-		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
-		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_oid), NULL, 0));
-		exp_setname(sql, e, alias, iname);
-		append(_nlls->exps, e);
-	} else {
-		nnlls = ups;
-	}
 
-	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
-	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_join);
-	nnlls->exps = join_exps;
-	nnlls->flag |= LEFT_JOIN;
-	nnlls = rel_project(sql->sa, nnlls, pexps);
+	pexps = rel_projections(sql, ups, NULL, 1, 1);
+	ups = rel_crossproduct(sql->sa, ups, rt, op_left/*op_join*/);
+	ups->exps = join_exps;
+	ups = rel_project(sql->sa, ups, pexps);
 	/* add row numbers */
 	e = exp_column(sql->sa, rel_name(rt), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, brt);
 	exp_setname(sql, e, alias, iname);
 	e->nid = rel_base_nid(brt, NULL);
-	append(nnlls->exps, e);
-	set_processed(nnlls);
+	append(ups->exps, e);
+	set_processed(ups);
 
-	if (need_nulls) {
-		rel_destroy(sql, ups);
-		rt = updates->r = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), _nlls), nnlls), op_munion );
-		rel_setop_n_ary_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
-		set_processed(rt);
-	} else {
-		updates->r = nnlls;
-	}
+	updates->r = ups;
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
 	append(updates->exps, e = exp_column(sql->sa, alias, iname, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 0, 0));
@@ -2175,6 +2083,13 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 	/* Again, copy-pasted. copyto() uses this to check for duplicate column names
 	   but we don't care about that here. */
 	sub = rel_project(sql->sa, sub, rel_projections(sql, sub, NULL, 1, 0));
+
+	int nrcolumns = sub->nrcols;
+	int nrfilenames = filenames->cnt;
+	if (nrcolumns != nrfilenames) {
+		return sql_error(sql, 02, "COPY INTO BINARY: need %d file names, got %d",
+			nrcolumns, nrfilenames);
+	}
 
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);

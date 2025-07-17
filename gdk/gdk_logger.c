@@ -39,6 +39,7 @@ static gdk_return log_del_bat(logger *lg, log_bid bid);
 #define LOG_SEQ		7
 #define LOG_CLEAR	8	/* DEPRECATED */
 #define LOG_BAT_GROUP	9
+#define LOG_UPDATE_CB  10
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
@@ -65,6 +66,7 @@ static const char *log_commands[] = {
 	"LOG_SEQ",
 	"",			/* LOG_CLEAR IS DEPRECATED */
 	"LOG_BAT_GROUP",
+	"LOG_UPDATE_CB",
 };
 
 typedef struct logaction {
@@ -457,6 +459,56 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 				}
 				return res;
 			}
+		} else if (l->flag == LOG_UPDATE_CB) {
+			if (cands) {
+				bool append = (!lg->flushing && !skip_entry);
+				if (lg->flushing || skip_entry) {
+					/* when flushing, we only need the offset and count of the last segment of inserts. */
+					assert((*cands)->ttype == TYPE_void);
+					BATtseqbase(*cands, (oid) 0);
+					BATsetcount(*cands, (BUN) nr);
+				}
+
+				BUN snr = (BUN) nr;
+				BUN total = snr;
+
+				if (append && (*cands)->ttype == TYPE_void) {
+					BBPreclaim(*cands);
+					*cands = COLnew(0, TYPE_oid, (BUN) nr, TRANSIENT);
+				}
+				oid *c = append?Tloc((*cands), 0):NULL;
+				while (snr) {
+					if (mnstr_readLng(lg->input_log, &nr) != 1 ||
+					    mnstr_readLng(lg->input_log, &offset) != 1) {
+						TRC_CRITICAL(GDK, "read failed\n");
+						return LOG_EOF;
+					}
+					size_t tlen = lg->rbufsize;
+					void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+					if (t == NULL) {
+						TRC_CRITICAL(GDK, "read failed\n");
+						return LOG_EOF;
+					} else if (append) {
+						lg->rbuf = t;
+						lg->rbufsize = tlen;
+						for (BUN p = 0; p < (BUN) nr; p++)
+							*c++ = (oid) offset++;
+					}
+					snr -= (BUN) nr;
+				}
+				if (append) {
+					BATsetcount( *cands, total );
+					(*cands)->tnonil = true;
+					(*cands)->tnil = false;
+					(*cands)->tseqbase = oid_nil;
+					(*cands)->tkey = true;
+					(*cands)->tsorted = true;
+					(*cands)->trevsorted = false;
+					(*cands)->tnorevsorted = 0;
+					(*cands)->tmaxpos = (*cands)->tminpos = BUN_NONE;
+				}
+				return res;
+			}
 		}
 
 		if (!lg->flushing && !skip_entry) {
@@ -486,6 +538,58 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 					}
 				}
 			}
+		} else if (l->flag == LOG_UPDATE_CB) {
+			BUN snr = (BUN) nr;
+
+			uid = COLnew(0, TYPE_oid, (BUN) nr, TRANSIENT);
+			if (r && uid == NULL) {
+				if (r)
+					BBPreclaim(r);
+				return LOG_ERR;
+			}
+			oid *c = uid?Tloc(uid, 0):NULL;
+			BUN total = snr;
+			while (snr) {
+				if (mnstr_readLng(lg->input_log, &nr) != 1 ||
+				    mnstr_readLng(lg->input_log, &offset) != 1) {
+					if (r)
+						BBPreclaim(r);
+					TRC_CRITICAL(GDK, "read failed\n");
+					return LOG_EOF;
+				}
+				size_t tlen = lg->rbufsize;
+				void *t = rt(lg->rbuf, &tlen, lg->input_log, 1);
+				if (t == NULL) {
+					TRC_CRITICAL(GDK, "read failed\n");
+					res = LOG_EOF;
+				} else {
+					lg->rbuf = t;
+					lg->rbufsize = tlen;
+					if (r) {
+						for (BUN p = 0; p < (BUN) nr; p++) {
+							if (BUNappend(r, t, true) != GDK_SUCCEED) {
+								TRC_CRITICAL(GDK, "append to bat failed\n");
+								res = LOG_ERR;
+							}
+							*c++ = (oid) offset++;
+						}
+					}
+				}
+				snr -= (BUN) nr;
+			}
+			if (uid) {
+				BATsetcount( uid, total );
+				uid->tnonil = true;
+				uid->tnil = false;
+				uid->tseqbase = oid_nil;
+				uid->tkey = true;
+				uid->tsorted = true;
+				uid->trevsorted = false;
+				uid->tnorevsorted = 0;
+				uid->tmaxpos = uid->tminpos = BUN_NONE;
+			}
+			offset -= pnr;
+			/* change into */
 		} else if (l->flag == LOG_UPDATE_BULK) {
 			if (mnstr_readLng(lg->input_log, &offset) != 1) {
 				if (r)
@@ -661,7 +765,10 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, BAT **cands, bo
 						tr->changes[tr->nr].type = LOG_UPDATE;
 					}
 				}
-				if (l->flag == LOG_UPDATE_CONST) {
+				if (uid && l->flag == LOG_UPDATE_CB) {
+					assert(!cands);	/* TODO: This might change in the future. */
+					tr->changes[tr->nr].type = LOG_UPDATE;
+				} else if (l->flag == LOG_UPDATE_CONST || l->flag == LOG_UPDATE_CB) {
 					assert(!cands);	/* TODO: This might change in the future. */
 					tr->changes[tr->nr].type = LOG_UPDATE_BULK;
 				}
@@ -792,7 +899,6 @@ la_bat_updates(logger *lg, logaction *la, int tid)
 							b->tmaxpos = BUN_NONE;
 						b->tkey = false;
 						b->tsorted = false;
-						b->tkey = false;
 						if (BUNreplace(b, q, t, true) != GDK_SUCCEED) {
 							logbat_destroy(b);
 							bat_iterator_end(&vi);
@@ -1335,6 +1441,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 		}
 		skip_entry = (ids_to_omit && BUNfnd(ids_to_omit, &l.id) != BUN_NONE);
 		switch (l.flag) {
+		case LOG_UPDATE_CB:
 		case LOG_UPDATE_CONST:
 		case LOG_UPDATE_BULK:
 		case LOG_UPDATE:
@@ -1417,6 +1524,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 		case LOG_SEQ:
 			err = log_read_seq(lg, &l);
 			break;
+		case LOG_UPDATE_CB:
 		case LOG_UPDATE_CONST:
 		case LOG_UPDATE_BULK:
 		case LOG_UPDATE:
@@ -2962,16 +3070,55 @@ log_sequence(logger *lg, int seq, lng *id)
 	return 0;
 }
 
-gdk_return
-log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt)
+static gdk_return
+log_constant_bulk(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt, lng total_cnt)
 {
 	bte tpe = find_type(lg, type);
 	gdk_return ok = GDK_SUCCEED;
-	logformat l;
-	lng nr;
-	l.flag = LOG_UPDATE_CONST;
-	l.id = id;
-	nr = cnt;
+	lng nr = cnt;
+
+	gdk_return(*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
+
+	assert(mnstr_errnr(lg->current->output_log) == MNSTR_NO__ERROR);
+	if (lg->total_cnt == 0) {
+		logformat l;
+		l.flag = LOG_UPDATE_CB;
+		l.id = id;
+		if (mnstr_errnr(lg->current->output_log) != MNSTR_NO__ERROR ||
+		    log_write_format(lg, &l) != GDK_SUCCEED ||
+		    !mnstr_writeLng(lg->current->output_log, total_cnt) ||
+		    mnstr_write(lg->current->output_log, &tpe, 1, 1) != 1) {
+			ok = GDK_FAIL;
+			goto bailout;
+		}
+	}
+	lg->total_cnt += cnt;
+	if (lg->total_cnt == total_cnt)	/* This is the last to be logged part of this bat, we can already reset the total_cnt */
+		lg->total_cnt = 0;
+	if (!mnstr_writeLng(lg->current->output_log, cnt) ||
+	    !mnstr_writeLng(lg->current->output_log, offset)) {	/* offset = -1 indicates bat was logged in parts */
+		ok = GDK_FAIL;
+		goto bailout;
+	}
+
+	ok = wt(val, lg->current->output_log, 1);
+
+	TRC_DEBUG(WAL, "Logged %d " LLFMT " inserts\n", id, nr);
+
+  bailout:
+	if (ok != GDK_SUCCEED) {
+		ATOMIC_DEC(&lg->current->refcount);
+		const char *err = mnstr_peek_error(lg->current->output_log);
+		TRC_CRITICAL(GDK, "write failed%s%s\n", err ? ": " : "", err ? err : "");
+	}
+	return ok;
+}
+
+gdk_return
+log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt, lng total_cnt)
+{
+	lng nr = cnt;
+	gdk_return ok = GDK_SUCCEED;
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
@@ -2982,6 +3129,14 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 		}
 		return ok;
 	}
+
+	if (cnt != total_cnt)
+		return log_constant_bulk(lg, type, val, id, offset, cnt, total_cnt);
+
+	bte tpe = find_type(lg, type);
+	logformat l;
+	l.flag = LOG_UPDATE_CONST;
+	l.id = id;
 
 	gdk_return(*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
 

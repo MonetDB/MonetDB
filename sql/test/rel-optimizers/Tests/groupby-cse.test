@@ -79,8 +79,8 @@ GROUP BY
 project (
 | group by (
 | | table("sys"."foo") [ "foo"."c1" NOT NULL ]
-| ) [ "foo"."c1" NOT NULL as "c1_alias1" ] [ "c1_alias1" NOT NULL, "c1_alias1" NOT NULL as "c1_alias2", "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "c1_alias1" NOT NULL UNIQUE, "c1_alias2" NOT NULL, "%1"."%1" NOT NULL ]
+| ) [ "foo"."c1" NOT NULL as "c1_alias1" ] [ "c1_alias1" NOT NULL UNIQUE, "c1_alias1" NOT NULL UNIQUE as "c1_alias2", "sys"."count"() NOT NULL as "%1"."%1" ]
+) [ "c1_alias1" NOT NULL UNIQUE, "c1_alias2" NOT NULL UNIQUE, "%1"."%1" NOT NULL ]
 
 query III rowsort gb-over-bt
 SELECT

@@ -1199,10 +1199,10 @@ BATXMLgroup(Client ctx, xml *ret, const bat *bid)
 	const char *err = NULL;
 
 	if (buf == NULL)
-		throw(MAL, "xml.aggr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "aggr.xmlaggr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
-		throw(MAL, "xml.aggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.xmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	strcpy(buf, str_nil);
@@ -1250,7 +1250,7 @@ BATXMLgroup(Client ctx, xml *ret, const bat *bid)
 	BBPunfix(b->batCacheid);
 	if (buf != NULL)
 		GDKfree(buf);
-	throw(MAL, "xml.aggr", "%s", err);
+	throw(MAL, "aggr.xmlaggr", "%s", err);
 }
 
 static const char *
@@ -1484,7 +1484,7 @@ AGGRsubxmlcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const ba
 		BBPreclaim(b);
 		BBPreclaim(g);
 		BBPreclaim(e);
-		throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.subxmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && !is_bat_nil(*sid)) {
 		s = BATdescriptor(*sid);
@@ -1492,7 +1492,7 @@ AGGRsubxmlcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const ba
 			BBPunfix(b->batCacheid);
 			BBPreclaim(g);
 			BBPreclaim(e);
-			throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "aggr.subxmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	} else {
 		s = NULL;
@@ -1503,7 +1503,7 @@ AGGRsubxmlcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const ba
 	BBPreclaim(e);
 	BBPreclaim(s);
 	if (err !=NULL)
-		throw(MAL, "aggr.subxml", "%s", err);
+		throw(MAL, "aggr.subxmlaggr", "%s", err);
 
 	*retval = bn->batCacheid;
 	BBPkeepref(bn);
@@ -1781,9 +1781,9 @@ mel_func batxml_init_funcs[] = {
  pattern("batxml", "forest", BATXMLforest, false, "Construct an element list.", args(1,2, batarg("",xml),batvararg("val",xml))),
  command("batxml", "root", BATXMLroot, false, "Construct the root nodes.", args(1,4, batarg("",xml),batarg("val",xml),arg("version",str),arg("standalone",str))),
  command("batxml", "isdocument", BATXMLisdocument, false, "Validate the string as a XML document.", args(1,2, batarg("",bit),batarg("val",str))),
- command("xml", "aggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
- command("xml", "subaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("xml", "subaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "xmlaggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
+ command("aggr", "subxmlaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subxmlaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
  command("batcalc", "xml", BATXMLstr2xml, false, "", args(1,2, batarg("",xml),batarg("src",str))),
  { .imp=NULL }
 };

@@ -20,3 +20,4 @@ project (
 | | ) [ ("y"."a1" NOT NULL UNIQUE) = ("foo_x0"."a1" NOT NULL) ]
 | ) [ "y"."a1" NOT NULL as "foo_x4"."a1", "sys"."sql_mul"("y"."p" NOT NULL, "foo_x0"."p" NOT NULL) NOT NULL as "foo_x4"."p" ]
 ) [ "foo_x4"."a1" NOT NULL, "foo_x4"."p" NOT NULL ]
+

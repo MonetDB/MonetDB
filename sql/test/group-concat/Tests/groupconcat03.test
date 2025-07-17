@@ -16,7 +16,7 @@ insert into testmore values (3, 'even'), (2, 'more'), (1, '')
 statement ok
 insert into testmore values (3, 'even'), (2, NULL), (1, '')
 
-query T
+query T nosort
 select group_concat('😀', '😁') as "😃" from (values (1),(2),(3), (NULL)) v
 ----
 😀😁😀😁😀😁😀
@@ -29,22 +29,22 @@ select group_concat('😀', '😁') over () as "😃" from (values (1),(2),(3), 
 😀😁😀😁😀😁😀
 😀😁😀😁😀😁😀
 
-query T
+query T nosort
 select group_concat(null) || 'a'
 ----
 NULL
 
-query T
+query T nosort
 select group_concat(null) || 'a' from testmore
 ----
 NULL
 
-query T
+query T nosort
 select group_concat(null) over () || 'a'
 ----
 NULL
 
-query T
+query T nosort
 select group_concat(null) over () || 'a' from testmore
 ----
 NULL
@@ -60,26 +60,26 @@ NULL
 NULL
 NULL
 
-query T
+query T nosort
 select group_concat('') || 'a' where false
 ----
 NULL
 
-query T
+query T nosort
 select group_concat('') over () || 'a' where false
 ----
 
-query T
+query T nosort
 select group_concat('')
 ----
 (empty)
 
-query T
+query T nosort
 select group_concat('') from testmore
 ----
 ,,,,,,,,,,,
 
-query T
+query T nosort
 select group_concat('') over () from testmore
 ----
 ,,,,,,,,,,,
@@ -95,7 +95,7 @@ select group_concat('') over () from testmore
 ,,,,,,,,,,,
 ,,,,,,,,,,,
 
-query T
+query T nosort
 select group_concat('', '') over () from testmore
 ----
 (empty)

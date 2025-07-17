@@ -1,13 +1,14 @@
 statement ok
 CREATE TABLE t0(c0 INT)
 
-query II
+query II nosort
 SELECT * FROM t0 INNER JOIN (VALUES (1)) ON EXISTS (SELECT ALL * FROM t0)
 ----
 
-query II
+query II nosort
 SELECT * FROM t0 LEFT JOIN (VALUES (1)) ON EXISTS (SELECT ALL * FROM t0)
 ----
 
 statement ok
 drop table t0
+

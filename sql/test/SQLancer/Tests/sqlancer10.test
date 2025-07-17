@@ -823,7 +823,7 @@ SELECT 1 FROM t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c
 ----
 132 values hashing to 421ece02fd1d5b93ec74b250381a9e64
 
-query R rowsort
+query D rowsort
 SELECT t1.c3 FROM t2, t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0)))
 ----
 120 values hashing to 879a831ae9fcb0a40db88988eb6e428b

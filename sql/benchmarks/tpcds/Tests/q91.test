@@ -1,4 +1,4 @@
-query TTTR nosort
+query TTTD nosort
 -- query 91
 select
         cc_call_center_id Call_Center,
@@ -32,5 +32,5 @@ order by sum(cr_net_loss) desc
 AAAAAAAACAAAAAAA
 Mid Atlantic
 Felipe Perkins
-109.740
+109.74
 

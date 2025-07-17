@@ -545,7 +545,7 @@ gdk_return log_bat_group_start(logger *lg, log_id id);
 gdk_return log_bat_persists(logger *lg, BAT *b, log_id id);
 gdk_return log_bat_transient(logger *lg, log_id id);
 lng log_changes(logger *lg);
-gdk_return log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt);
+gdk_return log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt, lng total_cnt);
 logger *log_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 void log_destroy(logger *lg);

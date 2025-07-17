@@ -150,25 +150,25 @@ SELECT * from generate_series(5,1,cast(-2 as double))
 3.000
 
 @connection(id=c2, username=test, password=test)
-query R nosort
+query D nosort
 SELECT * from generate_series(cast(1 as decimal(9)),3,1)
 ----
-1.000
-2.000
+1.00
+2.00
 
 @connection(id=c2, username=test, password=test)
-query R nosort
+query D nosort
 SELECT * from generate_series(1,cast(4 as decimal(9)),2)
 ----
-1.000
-3.000
+1.00
+3.00
 
 @connection(id=c2, username=test, password=test)
-query R nosort
+query D nosort
 SELECT * from generate_series(5,1,cast(-2 as decimal(9)))
 ----
-5.000
-3.000
+5.00
+3.00
 
 @connection(id=c2, username=test, password=test)
 query T nosort

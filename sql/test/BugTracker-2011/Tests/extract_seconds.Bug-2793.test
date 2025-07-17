@@ -1,7 +1,7 @@
-query R rowsort
+query D rowsort
 select extract(second from timestamp '2011-3-10 9:30:42.246')
 ----
-42.246
+42.246000
 
 query I rowsort
 select extract(minute from timestamp '2011-3-10 9:30:42.246')
@@ -23,10 +23,10 @@ select extract(year from timestamp '2011-3-10 9:30:42.246')
 ----
 2011
 
-query R rowsort
+query D rowsort
 select extract(second from timestamp '2011-3-10 9:30:42.246+01:00')
 ----
-42.246
+42.246000
 
 query I rowsort
 select extract(minute from timestamp '2011-3-10 9:30:42.246+01:00')

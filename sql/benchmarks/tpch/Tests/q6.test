@@ -1,5 +1,5 @@
 #Q6
-query R rowsort
+query D rowsort
 select
 	sum(l_extendedprice * l_discount) as revenue
 from
@@ -10,5 +10,5 @@ where
 	and l_discount between .06 - 0.01 and .06 + 0.01
 	and l_quantity < 24
 ----
-1193053.225
+1193053.2253
 

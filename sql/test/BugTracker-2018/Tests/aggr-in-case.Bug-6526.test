@@ -34,7 +34,7 @@ A
 339
 555
 
-query TIIR rowsort
+query TIID rowsort
 select
     "c1",
     cast(sum("d1")as bigint)as "d1",
@@ -60,7 +60,7 @@ D
 0
 NULL
 
-query TIIR rowsort
+query TIID rowsort
 select
     "c1",
     cast(sum("d1")as bigint)as "d1",

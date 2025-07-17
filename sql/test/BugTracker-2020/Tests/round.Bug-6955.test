@@ -4,30 +4,30 @@ CREATE TABLE decimals(d DECIMAL(4,1), prec INTEGER)
 statement ok
 INSERT INTO decimals VALUES ('999.9', 0)
 
-query R rowsort
+query D rowsort
 SELECT ROUND(d, prec) FROM decimals
 ----
-1000.000
+1000.0
 
-query R rowsort
+query D rowsort
 SELECT ROUND(CAST(999.9 AS DECIMAL(4,1)), 0)
 ----
-1000.000
+1000.0
 
-query R rowsort
+query D rowsort
 SELECT ROUND(d, 0) FROM decimals
 ----
-1000.000
+1000.0
 
-query R rowsort
+query D rowsort
 SELECT ROUND(d, 0.1) FROM decimals
 ----
-1000.000
+1000.0
 
-query R rowsort
+query D rowsort
 SELECT ROUND(CAST(999.9 AS DECIMAL(4,1)), 0.1)
 ----
-1000.000
+1000.0
 
 statement ok
 drop table decimals

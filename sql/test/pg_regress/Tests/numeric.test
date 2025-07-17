@@ -1412,7 +1412,7 @@ statement ok
 INSERT INTO num_result SELECT t1.id, t2.id, t1.val + t2.val
     FROM num_data t1, num_data t2
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
@@ -1426,7 +1426,7 @@ statement ok
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val + t2.val, 20)
     FROM num_data t1, num_data t2
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 20) as expected
     FROM num_result t1, num_exp_add t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
@@ -1440,7 +1440,7 @@ statement ok
 INSERT INTO num_result SELECT t1.id, t2.id, t1.val - t2.val
     FROM num_data t1, num_data t2
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
@@ -1454,7 +1454,7 @@ statement ok
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val - t2.val, 40)
     FROM num_data t1, num_data t2
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40) as expected
     FROM num_result t1, num_exp_sub t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
@@ -1468,7 +1468,7 @@ statement ok
 INSERT INTO num_result SELECT t1.id, t2.id, t1.val * t2.val
     FROM num_data t1, num_data t2 ORDER BY 1, 2
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_mul t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
@@ -1482,7 +1482,7 @@ statement ok
 INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val * t2.val, 30)
     FROM num_data t1, num_data t2 ORDER BY 1, 2
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
     FROM num_result t1, num_exp_mul t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
@@ -1497,14 +1497,14 @@ INSERT INTO num_result SELECT t1.id, t2.id, t1.val / t2.val
     FROM num_data t1, num_data t2
     WHERE t2.val <> '0.0'
 
-query IIRR nosort
+query IIDD nosort
 SELECT t1.id1, t1.id2, t1.result, t2.expected
     FROM num_result t1, num_exp_div t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
     AND t1.result <> t2.expected
  ORDER BY 1,2,3,4
 ----
-224 values hashing to bc71ea7bd04b4430ba3d2407640d030a
+224 values hashing to e5c54f86cc42ffd00037ee7a449a5c15
 
 statement ok
 DELETE FROM num_result
@@ -1514,13 +1514,13 @@ INSERT INTO num_result SELECT t1.id, t2.id, round(t1.val / t2.val, 80)
     FROM num_data t1, num_data t2
     WHERE t2.val <> '0.0'
 
-query IIRR rowsort
+query IIDD rowsort
 SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 80) as expected
     FROM num_result t1, num_exp_div t2
     WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
     AND t1.result <> round(t2.expected, 80)
 ----
-224 values hashing to bc71ea7bd04b4430ba3d2407640d030a
+224 values hashing to e5c54f86cc42ffd00037ee7a449a5c15
 
 statement ok
 DELETE FROM num_result
@@ -1529,36 +1529,13 @@ statement ok
 INSERT INTO num_result SELECT id, 0, SQRT(ABS(val))
     FROM num_data
 
-query IRR rowsort
+query IDD rowsort
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_sqrt t2
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
+    AND ABS(t2.expected - t1.result) > t2.expected / 100000
 ----
-2
-5859.905
-5859.905
-3
-2.076
-2.076
-4
-2792.752
-2792.752
-5
-128.051
-128.051
-6
-306.434
-306.434
-7
-9111.997
-9111.997
-8
-273.644
-273.644
-9
-4992.675
-4992.675
 
 statement ok
 DELETE FROM num_result
@@ -1568,36 +1545,13 @@ INSERT INTO num_result SELECT id, 0, LOG(ABS(val))
     FROM num_data
     WHERE val <> '0.0'
 
-query IRR rowsort
+query IDD rowsort
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_ln t2
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
+    AND ABS(t2.expected - t1.result) > t2.expected / 100000
 ----
-2
-17.352
-17.352
-3
-1.461
-1.461
-4
-15.870
-15.870
-5
-9.705
-9.705
-6
-11.450
-11.450
-7
-18.235
-18.235
-8
-11.224
-11.224
-9
-17.031
-17.031
 
 statement ok
 DELETE FROM num_result
@@ -1607,36 +1561,13 @@ INSERT INTO num_result SELECT id, 0, LOG10(ABS(val))
     FROM num_data
     WHERE val <> '0.0'
 
-query IRR rowsort
+query IDD rowsort
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_log10 t2
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
+    AND ABS(t2.expected - t1.result) > t2.expected / 100000
 ----
-2
-7.536
-7.536
-3
-0.634
-0.634
-4
-6.892
-6.892
-5
-4.215
-4.215
-6
-4.973
-4.973
-7
-7.919
-7.919
-8
-4.874
-4.874
-9
-7.397
-7.397
 
 statement ok
 DELETE FROM num_result
@@ -1647,41 +1578,18 @@ INSERT INTO num_result SELECT id, 0, POWER(cast('10.0' as numeric(3,0)), LOG(ABS
     WHERE val <> '0.0'
 
 skipif system=FreeBSD
-query IRR rowsort
+query IDD rowsort
 SELECT t1.id1, t1.result, t2.expected
     FROM num_result t1, num_exp_power_10_ln t2
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
+    AND ABS(t2.expected - t1.result) > t2.expected / 1000000
 ----
-2
-224790267919917472.000
-224790267919917952.000
-3
-28.903
-28.903
-4
-7405685069595001.000
-7405685069594999.000
-5
-5068226527.321
-5068226527.321
-6
-281839893606.994
-281839893606.994
-7
-1716699575118595840.000
-1716699575118597120.000
-8
-167361463828.075
-167361463828.075
-9
-107511333880051856.000
-107511333880052000.000
 
-query R rowsort
+query D rowsort
 SELECT AVG(val) FROM num_data
 ----
--13430913.592
+-13430913.592242321
 
 statement error
 SELECT STDDEV(val) FROM num_data
@@ -1716,21 +1624,21 @@ INSERT INTO fract_only VALUES (7, '0.00001')
 statement ok
 INSERT INTO fract_only VALUES (8, '0.00017')
 
-query IR rowsort
+query ID rowsort
 SELECT * FROM fract_only
 ----
 1
-0.000
+0.0000
 2
-0.100
+0.1000
 4
--1.000
+-0.9999
 5
-1.000
+0.9999
 7
-0.000
+0.0000
 8
-0.000
+0.0002
 
 statement ok
 DROP TABLE fract_only
@@ -1762,7 +1670,7 @@ INSERT INTO ceil_floor_round VALUES ('-0.000001')
 statement error
 SELECT a, ceil(a), ceiling(a), floor(a), round(a) FROM ceil_floor_round
 
-query RRRR rowsort
+query DRRR rowsort
 SELECT a, ceil(a), ceiling(a), floor(a) FROM ceil_floor_round
 ----
 -5.500
@@ -1797,7 +1705,7 @@ SELECT a, ceil(a), ceiling(a), floor(a) FROM ceil_floor_round
 statement error
 SELECT a, round(a) FROM ceil_floor_round
 
-query RR rowsort
+query DD rowsort
 SELECT a, round(a, 0) FROM ceil_floor_round
 ----
 -5.500
@@ -2028,7 +1936,7 @@ INSERT INTO num_input_test(n1) VALUES ('')
 statement error
 INSERT INTO num_input_test(n1) VALUES (' N aN ')
 
-query R rowsort
+query D rowsort
 SELECT * FROM num_input_test
 ----
 -555.500

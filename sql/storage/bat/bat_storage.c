@@ -119,6 +119,23 @@ unlock_column(sqlstore *store, sqlid id)
 }
 
 static void
+trans_add_obj_(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
+{
+	bool found = false;
+	MT_lock_set(&tr->lock);
+	if (tr->changes) {
+		for(node *n = tr->changes->h; n && !found; n = n->next) {
+			sql_change *c = n->data;
+			if (c->obj->id == b->id)
+				found = true;
+		}
+	}
+ 	MT_lock_unset(&tr->lock);
+	if (!found)
+		trans_add(tr, dup_base(b), data, cleanup, commit, log);
+}
+
+static void
 trans_add_obj(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
 	assert(cleanup);
@@ -3522,23 +3539,29 @@ create_del(sql_trans *tr, sql_table *t)
 }
 
 static int
-log_segment(sql_trans *tr, segment *s, sqlid id)
+log_segment(sql_trans *tr, segment *s, sqlid id, size_t total)
 {
 	sqlstore *store = tr->store;
 	msk m = s->deleted;
-	return log_constant(store->logger, TYPE_msk, &m, id, s->start, s->end-s->start)==GDK_SUCCEED?LOG_OK:LOG_ERR;
+	return log_constant(store->logger, TYPE_msk, &m, id, s->start, s->end-s->start, total)==GDK_SUCCEED?LOG_OK:LOG_ERR;
 }
 
 static int
 log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
+	size_t total = 0;
 	/* log segments */
 	lock_table(tr->store, id);
+	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
+		if (seg->ts == tr->tid && seg->end-seg->start &&
+			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts))
+			total += seg->end-seg->start;
+	}
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start &&
 			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts)) {
-			if (log_segment(tr, seg, id) != LOG_OK) {
+			if (log_segment(tr, seg, id, total) != LOG_OK) {
 				return LOG_ERR;
 			}
 		}
@@ -4048,15 +4071,15 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	lock_table(tr->store, t->base.id);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
+		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted)
+			nr_appends += (seg->end - seg->start);
+	}
+	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, t->base.id);
 
-		if (seg->ts == tr->tid && seg->end-seg->start) {
-			if (!seg->deleted) {
-				if (log_segment(tr, seg, t->base.id) != LOG_OK)
-					return LOG_ERR;
-
-				nr_appends += (seg->end - seg->start);
-			}
+		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted) {
+			if (log_segment(tr, seg, t->base.id, nr_appends) != LOG_OK)
+				return LOG_ERR;
 		}
 		lock_table(tr->store, t->base.id);
 	}
@@ -4707,7 +4730,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 
 	if (!locked)
 		lock_table(tr->store, t->base.id);
-	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
+	int ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, use deleted segments or create new segment at the end */
 	if (ATOMIC_GET(&s->segs->deleted) != 0)
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
@@ -4770,11 +4793,8 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 
 	if (ok == LOG_OK) {
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
-		if (!in_transaction) {
-			trans_add_obj(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
-			in_transaction = true;
-		}
-		if (in_transaction && !NOT_TO_BE_LOGGED(t))
+		trans_add_obj_(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
+		if (!NOT_TO_BE_LOGGED(t))
 			tr->logchanges += (lng) total;
 		if (*offsets) {
 			BAT *pos = *offsets;
@@ -4802,7 +4822,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 
 	if (!locked)
 		lock_table(tr->store, t->base.id);
-	int in_transaction = segments_in_transaction(tr, t), ok = LOG_OK;
+	int ok = LOG_OK;
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
 	if (ATOMIC_GET(&s->segs->deleted) != 0)
@@ -4855,11 +4875,8 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 
 	if (ok == LOG_OK) {
 		/* hard to only add this once per transaction (probably want to change to once per new segment) */
-		if (!in_transaction) {
-			trans_add_obj(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
-			in_transaction = true;
-		}
-		if (in_transaction && !NOT_TO_BE_LOGGED(t))
+		trans_add_obj_(tr, &t->base, s, &tc_gc_del, &commit_update_del, NOT_TO_BE_LOGGED(t) ? NULL : &log_update_del);
+		if (!NOT_TO_BE_LOGGED(t))
 			tr->logchanges += (lng) cnt;
 		*offset = slot;
 	}

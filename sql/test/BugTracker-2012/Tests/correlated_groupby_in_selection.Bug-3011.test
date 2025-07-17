@@ -15,7 +15,7 @@ CREATE TABLE "sys"."test" (
         "productformulatype" VARCHAR(4)
 )
 
-query TTTRTII nosort
+query TTTDTII nosort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -30,7 +30,7 @@ from test order by dataownercode, lineplanningnumber, journeypatterncode,
 timinglinkorder limit 20
 ----
 
-query TTTRTII nosort
+query TTTDTII nosort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -58,7 +58,7 @@ COPY 10 RECORDS INTO "test" FROM STDIN USING DELIMITERS ',', E'\n'
 1,true,CXX,A001,0,8,40002690,40002770,santro,A00100998,false,,34
 1,true,CXX,A001,0,9,40002770,40009591,santro,A00100998,false,,34
 
-query TTTRTII nosort
+query TTTDTII nosort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -75,75 +75,75 @@ timinglinkorder limit 20
 CXX
 A001
 0
-0.000
+0
 40000010
 1
 NULL
 CXX
 A001
 0
-1.000
+1
 40004015
 0
 NULL
 CXX
 A001
 0
-2.000
+2
 40004021
 0
 NULL
 CXX
 A001
 0
-3.000
+3
 40002570
 0
 NULL
 CXX
 A001
 0
-4.000
+4
 40002550
 0
 NULL
 CXX
 A001
 0
-5.000
+5
 40002590
 0
 NULL
 CXX
 A001
 0
-6.000
+6
 40002610
 0
 NULL
 CXX
 A001
 0
-7.000
+7
 40002630
 0
 NULL
 CXX
 A001
 0
-8.000
+8
 40002690
 0
 NULL
 CXX
 A001
 0
-9.000
+9
 40002770
 0
 NULL
 
-query TTTRTII nosort
+query TTTDTII nosort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -159,70 +159,70 @@ timinglinkorder limit 20
 CXX
 A001
 0
-0.000
+0
 40000010
 1
 0
 CXX
 A001
 0
-1.000
+1
 40004015
 0
 0
 CXX
 A001
 0
-2.000
+2
 40004021
 0
 0
 CXX
 A001
 0
-3.000
+3
 40002570
 0
 0
 CXX
 A001
 0
-4.000
+4
 40002550
 0
 0
 CXX
 A001
 0
-5.000
+5
 40002590
 0
 0
 CXX
 A001
 0
-6.000
+6
 40002610
 0
 0
 CXX
 A001
 0
-7.000
+7
 40002630
 0
 0
 CXX
 A001
 0
-8.000
+8
 40002690
 0
 0
 CXX
 A001
 0
-9.000
+9
 40002770
 0
 0
