@@ -1067,7 +1067,7 @@ def find_test_dirs(thisdir, recursive=True) :
 def PerformDir(env, testdir, testlist, total_tests) :
     global test_progress
     interrupted = False
-    td = 0
+    td = time.time()
     elem = None
     FdOut = F_SKIP
     FdErr = F_SKIP
@@ -1292,13 +1292,7 @@ def PerformDir(env, testdir, testlist, total_tests) :
                     environ['TST'] = TST
                     tt, FtOut, FtErr, bodyline, reason, links = RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, environ, TSTDB, TSTDIR, TSTSRCDIR, RELSRCDIR, TSTTRGDIR)
                     alllinks.extend(links)
-                if tt >= 0:
-                    t = '%7.3f' % tt
-                else:
-                    t = '-.---'
-                    tt = 0
-                TIMES.append((TSTDIR, TST, t, tt, FtOut, FtErr, reason))
-                td += tt
+                TIMES.append((TSTDIR, TST, tt, FtOut, FtErr, reason))
                 FdOut = max(FdOut,FtOut)
                 FdErr = max(FdErr,FtErr)
                 if bodyline is not None:
@@ -1382,7 +1376,8 @@ def PerformDir(env, testdir, testlist, total_tests) :
                                     sserr = F_ERROR
                                 break
 
-        TIMES.append((TSTDIR, '', '%7.3f' % td, td, FdOut, FdErr, None))
+        td = time.time() - td
+        TIMES.append((TSTDIR, '', td, FdOut, FdErr, None))
         if testweb:
             for f in alllinks:
                 remove(os.path.join(TSTTRGDIR, f))
@@ -2171,7 +2166,7 @@ Password = {passwd or "monetdb"}-Wrong
         t1 = time.time()
         TX = t1 - t0
         if verbosity > 0:
-            print(' %7.3fs ' % TX, end='')
+            print(f' {TX:7.3f}s ', end='')
 
         if odbc:
             if orig_odbcsysini is not None:
@@ -4163,27 +4158,25 @@ def main(argv) :
 
         if not os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
             os.mkdir(os.path.join(TSTTRGBASE, TSTPREF))
-        fn = os.path.join(TSTTRGBASE, TSTPREF, 'times.')
-        with openutf8(fn+'lst','w') as fl:
+        with openutf8(os.path.join(TSTTRGBASE, TSTPREF, 'times.lst'),'w') as fl:
             Failure = [[] for i in FAILURES]
-            for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
+            for TSTDIR, TST, ms, FtOut, FtErr, reason in TIMES:
                 fl.write('%s:\t%s\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
-                                                    tt,
+                                                    f'{ms:7.3f}' if ms >= 0 else '  -.---',
                                                     FAILURES[FtOut][0],
                                                     FAILURES[FtErr][0],
                                                     reason or ''))
                 if TST != '':
                     Failure[max(FtOut,FtErr)].append(os.path.join(TSTDIR,TST))
-            fl.write(':\t%7.3f\t\n' % t_)
+            fl.write(f':\t{t_:7.3f}\t\n')
 
-        fl = openutf8(fn+'sql','w')
         host = socket.gethostname()
         product = os.path.split(TSTSRCBASE)[-1]
 
         compiler = ''
 
         # start of times.sql output preparation
-        now = "timestamp '" + str(datetime.datetime.now()) + "'"
+        now = f"timestamp '{datetime.datetime.now()}'"
 
         if env['TST_INT128'] != '':
             isInt128 = 'true'
@@ -4211,28 +4204,25 @@ def main(argv) :
             ccname = os.path.split(compiler)[-1]
             ccopts = ''
 
-        for TSTDIR, TST, tt, ms, FtOut, FtErr, reason in TIMES:
-            if FtOut == F_SKIP and FtErr == F_SKIP:
-                tms = 'NULL'
-            else:
-                tms = '%d' % ms
+        with openutf8(os.path.join(TSTTRGBASE, TSTPREF, 'times.sql'),'w') as fl:
+            for TSTDIR, TST, ms, FtOut, FtErr, reason in TIMES:
+                tms = '%d' % ms if ms >= 0 else 'NULL'
 
-            if TST != '':
-                # target is a platform and compilation options etc
-                fl.write("""
-INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
-    \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \"static\",
-    \"product\", \"dir\", \"test\",
-    \"time\", \"stdout\", \"stderr\")
-VALUES (%s, '%s', '%s', '%s',
-    '%s', '%s', %s, %s, %s, %s, %s,
-    '%s', '%s', '%s',
-    %s, '%s', '%s');
-""" % (now, host, env['SYST'], env['RELEASE'],
-       ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
-       product, TSTDIR, TST,
-       tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
-        fl.close()
+                if TST != '':
+                    # target is a platform and compilation options etc
+                    fl.write("""
+    INSERT INTO mtest (\"date\", \"machine\", \"os\", \"release\",
+        \"compiler\", \"compiler_opts\", \"bits\", \"oid\", \"int128\", \"single\", \"static\",
+        \"product\", \"dir\", \"test\",
+        \"time\", \"stdout\", \"stderr\")
+    VALUES (%s, '%s', '%s', '%s',
+        '%s', '%s', %s, %s, %s, %s, %s,
+        '%s', '%s', '%s',
+        %s, '%s', '%s');
+    """ % (now, host, env['SYST'], env['RELEASE'],
+           ccname, ccopts, bits, bits, isInt128, isSingle, 'false',
+           product, TSTDIR, TST,
+           tms, FAILURES[FtOut][1], FAILURES[FtErr][1]))
 
         if not testweb and produce_html:
             CreateHtmlIndex(env, '', os.path.join(TSTTRGBASE, TSTPREF), F_SKIP, F_SKIP, *body)
@@ -4268,7 +4258,7 @@ VALUES (%s, '%s', '%s', '%s',
             print(f'failed={Failed}, skipped={len(Failure[F_SKIP])}')
             if produce_html and (Failed or errseen):
                 print(f'see {urllib.parse.urlunsplit(("file", "", urllib.request.pathname2url(os.path.join(TSTTRGBASE, TSTPREF, "index.html")), "", ""))}')
-            print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:7.3f}s')
+            print(f'Ran {num_tests - len(Failure[F_SKIP])} tests in {t_:.3f}s')
         elif Failed:
             print('''\
 
