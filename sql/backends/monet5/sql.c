@@ -5009,11 +5009,11 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MalStkPtr env = NULL;
 		InstrPtr q = NULL;
 
-		if (!(input = GDKzalloc(sizeof(BAT*) * nrinput))) {
+		if (!(input = sa_zalloc(nmb->ma, sizeof(BAT*) * nrinput))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
-		if (!(bi = GDKmalloc(sizeof(BATiter) * nrinput))) {
+		if (!(bi = sa_alloc(nmb->ma, sizeof(BATiter) * nrinput))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5027,7 +5027,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					bat_iterator_end(&bi[i]);
 					BBPunfix(input[i]->batCacheid);
 				}
-				GDKfree(input);
+				//GDKfree(input);
 				input = NULL;
 				goto finalize;
 			}
@@ -5036,7 +5036,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		/* create result bats */
-		if (!(res = GDKzalloc(sizeof(BAT*) * pci->retc))) {
+		if (!(res = sa_zalloc(nmb->ma, sizeof(BAT*) * pci->retc))) {
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5056,7 +5056,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto finalize;
 			}
 		}
-		if (!(env = prepareMALstack(mb->ma, nmb, nmb->vsize))) { /* needed for result */
+		if (!(env = prepareMALstack(nmb->ma, nmb, nmb->vsize))) { /* needed for result */
 			ret = createException(MAL, "sql.unionfunc", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto finalize;
 		}
@@ -5065,16 +5065,18 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int start = 1;
 		if (nmb->stop == 1 && (omb || !npci->fcn || npci->token != PATcall)) {
 			InstrPtr *stmt = nmb->stmt;
-			nmb->stmt = (InstrPtr*)GDKmalloc(sizeof(InstrPtr*)*3);
+			nmb->stmt = (InstrPtr*)sa_alloc(nmb->instr_allocator, sizeof(InstrPtr*)*3);
 			nmb->stmt[0] = NULL; /* no main() */
 			nmb->stmt[1] = NULL; /* no profiling */
 			nmb->stmt[2] = stmt[0];
 			nmb->stop = nmb->ssize = 3;
-			GDKfree(stmt);
+			//GDKfree(stmt);
 			start = 2;
 		}
+		allocator *ta = sa_create(nmb->ma);
 		for (BUN cur = 0; cur<cnt && !ret; cur++ ) {
-			MalStkPtr nstk = prepareMALstack(mb->ma, nmb, nmb->vsize);
+			sa_reset(ta);
+			MalStkPtr nstk = prepareMALstack(ta, nmb, nmb->vsize);
 			int i,ii;
 
 			if (!nstk) { /* needed for result */
@@ -5093,7 +5095,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if (!omb && npci->fcn && npci->token == PATcall) /* pattern */
 						ret = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr))npci->fcn)(cntxt, nmb, nstk, npci);
 					else
-						ret = runMALsequence(cntxt->alloc, cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
+						ret = runMALsequence(ta, cntxt, nmb, start, nmb->stop, nstk, env /* copy result in nstk first instruction*/, q);
 
 					if (!ret) {
 						/* insert into result */
@@ -5132,10 +5134,6 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 finalize:
 		freeStack(env);
-		if (nmb)
-			freeMalBlk(nmb);
-		if (omb)
-			freeMalBlk(omb);
 		if (res)
 			for (int i = 0; i<pci->retc; i++) {
 				bat *b = getArgReference_bat(stk, pci, i);
@@ -5147,7 +5145,7 @@ finalize:
 						BBPkeepref(res[i]);
 				}
 			}
-		GDKfree(res);
+		//GDKfree(res);
 		if (input) {
 			for (int i = 0; i<nrinput; i++) {
 				if (input[i]) {
@@ -5155,9 +5153,13 @@ finalize:
 					BBPunfix(input[i]->batCacheid);
 				}
 			}
-			GDKfree(input);
+			//GDKfree(input);
 		}
-		GDKfree(bi);
+		//GDKfree(bi);
+		if (nmb)
+			freeMalBlk(nmb);
+		if (omb)
+			freeMalBlk(omb);
 	}
 	return ret;
 }
