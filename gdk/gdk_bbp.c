@@ -1322,7 +1322,7 @@ fixhashashbat(BAT *b)
 		}
 		const char *s = vh1.base + o;
 		var_t no = strPut(b, &o, s);
-		if (no == 0) {
+		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
 			HEAPdecref(h2, false);
@@ -1525,7 +1525,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 		}
 		var_t no = strPut(b, &o, ns);
 		GDKfree(ns);
-		if (no == 0) {
+		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
 			HEAPfree(&vh1, false);
 			HEAPdecref(h2, false);
