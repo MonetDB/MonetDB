@@ -3639,7 +3639,7 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 }
 
 stmt *
-stmt_claim(backend *be, sql_table *t, stmt *cnt)
+stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3656,6 +3656,11 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
+	if (sync) {
+		q = pushArgument(mb, q, sync);
+		q = pushArgument(mb, q, be->pp);
+		q = pushArgument(mb, q, be->pipeline);
+	}
 	bool enabled = sa_get_eb(be->mvc->sa)->enabled;
 	sa_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_claim);

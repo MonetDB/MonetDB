@@ -89,18 +89,24 @@ BATswap_heaps(BAT *u, BAT *b, Pipeline *p)
 		BBPrelease(old);
 }
 
-/*
-static str
-PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static void
+sleep_ns( int ns)
 {
-	int *res = getArgReference_int(stk, pci, 0);
-	Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 1);
+#ifdef HAVE_NANOSLEEP
+        struct timespec ts;
 
-	*res = PIPELINEnext_counter(p);
-	(void)cntxt; (void)mb;
-	return MAL_SUCCEED;
+        ts.tv_sec = (time_t) 0;
+        ts.tv_nsec = ns;
+        while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+                ;
+#else
+        struct timeval tv;
+
+        tv.tv_sec = 0;
+        tv.tv_usec = ((ns+999)/1000);
+        (void) select(0, NULL, NULL, NULL, &tv);
+#endif
 }
-*/
 
 #define COUNTER_SINK 98
 typedef struct pp_counter_t {
@@ -191,6 +197,27 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*rb = b->batCacheid;
 	BBPkeepref(b);
 	return MAL_SUCCEED;
+}
+
+void
+counter_wait(Sink *s, int nr, Pipeline *p)
+{
+	pp_counter *c = (pp_counter*)s;
+	assert(s->type == COUNTER_SINK);
+
+	while (c->current < nr && !ATOMIC_PTR_GET(&p->p->error))
+		sleep_ns(10);
+}
+
+void
+counter_next(Sink *s)
+{
+	pp_counter *c = (pp_counter*)s;
+	assert(s->type == COUNTER_SINK);
+
+	MT_lock_set(&c->l);
+	c->current++;
+	MT_lock_unset(&c->l);
 }
 
 static str
@@ -562,25 +589,6 @@ PPclaim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 	}
 	return MAL_SUCCEED;
-}
-
-static void
-sleep_ns( int ns)
-{
-#ifdef HAVE_NANOSLEEP
-        struct timespec ts;
-
-        ts.tv_sec = (time_t) 0;
-        ts.tv_nsec = ns;
-        while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
-                ;
-#else
-        struct timeval tv;
-
-        tv.tv_sec = 0;
-        tv.tv_usec = ((ns+999)/1000);
-        (void) select(0, NULL, NULL, NULL, &tv);
-#endif
 }
 
 static str

@@ -47,6 +47,8 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 #include "mal_authorize.h"
+#include "mal_pipelines.h"
+#include "pipeline.h"
 
 static inline void
 BBPnreclaim(int nargs, ...)
@@ -545,6 +547,7 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *pos = NULL;
 	sql_schema *s;
 	sql_table *t;
+	Sink *sync = NULL;
 
 	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -560,14 +563,29 @@ mvc_claim_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.claim", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 	if (!isTable(t))
 		throw(SQL, "sql.claim", SQLSTATE(42000) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
+	if (pci->argc > 6) {
+		bat *sid = getArgReference_bat(stk, pci, 6);
+		BAT *b;
+		if (!(b = BATdescriptor(*sid)))
+			msg = createException(SQL, "sql.claim", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		sync = b->tsink;
+		BBPreclaim(b);
+		int nr = *getArgReference_int(stk, pci, 7);
+		Pipeline *p = (Pipeline*)*getArgReference_ptr(stk, pci, 8);
+		counter_wait(sync, nr, p);
+	}
 	if (mvc_claim_slots(m->session->tr, t, (size_t)cnt, offset, &pos) == LOG_OK) {
 		*res = bat_nil;
 		if (pos) {
 			*res = pos->batCacheid;
 			BBPkeepref(pos);
 		}
+		if (sync)
+			counter_next(sync);
 		return MAL_SUCCEED;
 	}
+	if (sync)
+		counter_next(sync);
 	throw(SQL, "sql.claim", SQLSTATE(3F000) "Could not claim slots");
 }
 
@@ -5747,6 +5765,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, batarg("res",oid),batarg("tid",oid),argany("",1))),
  pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,6, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng))),
+ pattern("sql", "claim", mvc_claim_wrap, true, "Claims slots for appending rows.", args(2,9, arg("",oid),batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cnt",lng),batarg("counter",bte),arg("nr", int),arg("pipeline",ptr))),
  pattern("sql", "depend", mvc_add_dependency_change, true, "Set dml dependency on current transaction for a table.", args(0,3, arg("sname",str),arg("tname",str),arg("cnt",lng))),
  pattern("sql", "predicate", mvc_add_column_predicate, true, "Add predicate on current transaction for a table column.", args(0,3, arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,8, arg("",int), arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),arg("offset",oid),batarg("pos",oid),argany("ins",0))),

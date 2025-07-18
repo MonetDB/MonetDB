@@ -6271,6 +6271,10 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	node *n, *m, *idx_m = NULL;
 	sql_rel *tr = rel->l, *prel = rel->r;
 	sql_table *t = NULL;
+	int sync = 0;
+
+	if (be->need_pipeline)
+		sync = pp_counter(be, -1, -1);
 
 	if (tr->op == op_buildhash || tr->op == op_probehash)
 		tr = tr->l;
@@ -6348,7 +6352,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (t->s) /* only not declared tables, need this */
-		pos = stmt_claim(be, t, cnt);
+		pos = stmt_claim(be, t, cnt, sync);
 
 	if (t->idxs) {
 		for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next, m = m->next) {
