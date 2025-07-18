@@ -1593,10 +1593,18 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			return res;
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
+			be->updates = false;
 			stmt *r = rel_bin(be, rel);
 
 			if (!r)
 				return NULL;
+			if (be->updates) {
+				InstrPtr q = newStmt(be->mb, sqlRef, mvcRef);
+				q->argv[1] = be->mvc_var;
+				be->mvc_var = q->argv[0];
+				pushInstruction(be->mb, q);
+				be->updates = false;
+			}
 			if (is_modify(rel->op) || is_ddl(rel->op))
 				return r;
 			return stmt_table(be, r, 1);
@@ -6264,6 +6272,7 @@ table_update_stmts(mvc *sql, sql_table *t, int *Len)
 static stmt *
 rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
+	be->updates = true;
 	mvc *sql = be->mvc;
 	list *l;
 	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL, *returning = NULL;
@@ -7345,6 +7354,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 static stmt *
 rel2bin_update(backend *be, sql_rel *rel, list *refs)
 {
+	be->updates = true;
 	mvc *sql = be->mvc;
 	stmt *update = NULL, **updates = NULL, *tids, *ddl = NULL, *pup = NULL;
 	list *l = sa_list(sql->sa), *attr = rel->attr;
@@ -7706,6 +7716,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 static stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
+	be->updates = true;
 	mvc *sql = be->mvc;
 	stmt *stdelete = NULL, *tids = NULL, *returning = NULL;
 	sql_rel *tr = rel->l;
@@ -7922,6 +7933,7 @@ finalize:
 static stmt *
 rel2bin_truncate(backend *be, sql_rel *rel)
 {
+	be->updates = true;
 	mvc *sql = be->mvc;
 	stmt *truncate = NULL;
 	sql_rel *tr = rel->l;

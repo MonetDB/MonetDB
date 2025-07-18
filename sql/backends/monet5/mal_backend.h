@@ -69,6 +69,7 @@ typedef struct backend {
 	int source;		/* use source.done instead of pipeline.counter */
 	int cleanup;	/* variable which needs cleanup at end of block */
 	void *ppstmt;
+	bool updates;
 
 	int result_id;
 	res_table *results;
