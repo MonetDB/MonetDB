@@ -977,8 +977,9 @@ stmt_pp_end(backend *be, stmt *label)
 	if (q) {
 		if (be->updates) {
 			q = newStmt(be->mb, sqlRef, mvcRef);
+			q->argv[0] = be->mvc_var;
 			q->argv[1] = be->mvc_var;
-			be->mvc_var = q->argv[0];
+			q->argc++;
 			pushInstruction(be->mb, q);
 			be->updates = false;
 		}

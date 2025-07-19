@@ -1600,8 +1600,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return NULL;
 			if (be->updates) {
 				InstrPtr q = newStmt(be->mb, sqlRef, mvcRef);
+				q->argv[0] = be->mvc_var;
 				q->argv[1] = be->mvc_var;
-				be->mvc_var = q->argv[0];
+				q->argc++;
 				pushInstruction(be->mb, q);
 				be->updates = false;
 			}

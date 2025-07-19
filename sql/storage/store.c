@@ -7615,7 +7615,6 @@ sql_trans_begin(sql_session *s)
 	store_lock(store);
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	tr->ts = store_timestamp(store);
-	tr->cnr = 1;
 	if (s->schema_name && !(s->schema = find_sql_schema(tr, s->schema_name)))
 		s->schema_name = s->def_schema_name;
 	if (!s->schema_name)
@@ -7626,6 +7625,7 @@ sql_trans_begin(sql_session *s)
 		return -3;
 	}
 	tr->active = 1;
+	tr->cnr = 0;
 
 	int res = ATOMIC_GET(&s->schema_version) ?
 		ATOMIC_GET(&s->schema_version) != ATOMIC_GET(&tr->cat->schema_version) : 0;
