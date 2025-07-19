@@ -1577,76 +1577,146 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 					if (!nui || !nuv) {
 						res = LOG_ERR;
 					} else {
-						BATiter ovi = bat_iterator(uv);
+						if (negoid_cand(tids)) {
+							struct canditer ci;
 
-						/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
-						BUN uip = 0, uie = BATcount(ui);
-						BUN nip = 0, nie = BATcount(tids);
-						oid uiseqb = ui->tseqbase;
-						oid niseqb = tids->tseqbase;
-						oid *uipt = NULL, *nipt = NULL;
-						BATiter uii = bat_iterator(ui);
-						BATiter tidsi = bat_iterator(tids);
-						if (!BATtdensebi(&uii))
-							uipt = uii.base;
-						if (!BATtdensebi(&tidsi))
-							nipt = tidsi.base;
-						while (uip < uie && nip < nie && res == LOG_OK) {
-							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
-							oid niv = (nipt)?nipt[nip]: niseqb+nip;
+							canditer_init(&ci, NULL, tids);
+							BATiter ovi = bat_iterator(uv);
 
-							if (uiv < niv) {
-								upd = BUNtail(ovi, uip);
-								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
-											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
-									res = LOG_ERR;
-								uip++;
-							} else if (uiv == niv) {
-								/* handle == */
-								if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
-									upd = BUNtail(upi, nip);
-									if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
-													BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
-										res = LOG_ERR;
-								} else {
+							/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
+							BUN uip = 0, uie = BATcount(ui);
+							oid uiseqb = ui->tseqbase;
+							oid *uipt = NULL;
+							BATiter uii = bat_iterator(ui);
+							if (!BATtdensebi(&uii))
+								uipt = uii.base;
+							while (uip < uie && ci.next < ci.ncand && res == LOG_OK) {
+								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								oid niv = canditer_peek(&ci);
+
+								if (uiv < niv) {
 									upd = BUNtail(ovi, uip);
 									if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
-													BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+										res = LOG_ERR;
+									uip++;
+								} else if (uiv == niv) {
+									/* handle == */
+									if (!msk || (msk[ci.next/32] & (1U<<(ci.next%32))) == 0) {
+										upd = BUNtail(upi, ci.next);
+										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											res = LOG_ERR;
+									} else {
+										upd = BUNtail(ovi, uip);
+										if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											res = LOG_ERR;
+									}
+									uip++;
+									(void)canditer_next(&ci);
+								} else { /* uiv > niv */
+									if (!msk || (msk[ci.next/32] & (1U<<(ci.next%32))) == 0) {
+										upd = BUNtail(upi, ci.next);
+										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											res = LOG_ERR;
+									}
+									(void)canditer_next(&ci);
+								}
+							}
+							while (uip < uie && res == LOG_OK) {
+								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								upd = BUNtail(ovi, uip);
+								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+										BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+									res = LOG_ERR;
+								uip++;
+							}
+							while (ci.next < ci.ncand && res == LOG_OK) {
+								oid niv = canditer_peek(&ci);
+								if (!msk || (msk[ci.next/32] & (1U<<(ci.next%32))) == 0) {
+									upd = BUNtail(upi, ci.next);
+									if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 										res = LOG_ERR;
 								}
+								(void)canditer_next(&ci);
+							}
+							bat_iterator_end(&uii);
+							bat_iterator_end(&ovi);
+						} else {
+							BATiter ovi = bat_iterator(uv);
+
+							/* handle dense (void) cases together as we need to merge updates (which is slower anyway) */
+							BUN uip = 0, uie = BATcount(ui);
+							BUN nip = 0, nie = BATcount(tids);
+							oid uiseqb = ui->tseqbase;
+							oid niseqb = tids->tseqbase;
+							oid *uipt = NULL, *nipt = NULL;
+							BATiter uii = bat_iterator(ui);
+							BATiter tidsi = bat_iterator(tids);
+							if (!BATtdensebi(&uii))
+								uipt = uii.base;
+							if (!BATtdensebi(&tidsi))
+								nipt = tidsi.base;
+							while (uip < uie && nip < nie && res == LOG_OK) {
+								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								oid niv = (nipt)?nipt[nip]: niseqb+nip;
+
+								if (uiv < niv) {
+									upd = BUNtail(ovi, uip);
+									if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+										res = LOG_ERR;
+									uip++;
+								} else if (uiv == niv) {
+									/* handle == */
+									if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
+										upd = BUNtail(upi, nip);
+										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											res = LOG_ERR;
+									} else {
+										upd = BUNtail(ovi, uip);
+										if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											res = LOG_ERR;
+									}
+									uip++;
+									nip++;
+								} else { /* uiv > niv */
+									if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
+										upd = BUNtail(upi, nip);
+										if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
+												BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											res = LOG_ERR;
+									}
+									nip++;
+								}
+							}
+							while (uip < uie && res == LOG_OK) {
+								oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
+								upd = BUNtail(ovi, uip);
+								if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
+										BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+									res = LOG_ERR;
 								uip++;
-								nip++;
-							} else { /* uiv > niv */
+							}
+							while (nip < nie && res == LOG_OK) {
+								oid niv = (nipt)?nipt[nip]: niseqb+nip;
 								if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
 									upd = BUNtail(upi, nip);
 									if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
-													BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
+											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
 										res = LOG_ERR;
 								}
 								nip++;
 							}
+							bat_iterator_end(&uii);
+							bat_iterator_end(&tidsi);
+							bat_iterator_end(&ovi);
 						}
-						while (uip < uie && res == LOG_OK) {
-							oid uiv = (uipt)?uipt[uip]: uiseqb+uip;
-							upd = BUNtail(ovi, uip);
-							if (BUNappend(nui, (ptr) &uiv, true) != GDK_SUCCEED ||
-									BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
-								res = LOG_ERR;
-							uip++;
-						}
-						while (nip < nie && res == LOG_OK) {
-							oid niv = (nipt)?nipt[nip]: niseqb+nip;
-							if (!msk || (msk[nip/32] & (1U<<(nip%32))) == 0) {
-								upd = BUNtail(upi, nip);
-								if (BUNappend(nui, (ptr) &niv, true) != GDK_SUCCEED ||
-											BUNappend(nuv, (ptr) upd, true) != GDK_SUCCEED)
-									res = LOG_ERR;
-							}
-							nip++;
-						}
-						bat_iterator_end(&uii);
-						bat_iterator_end(&tidsi);
-						bat_iterator_end(&ovi);
 						if (res == LOG_OK) {
 							temp_destroy(cs->uibid);
 							temp_destroy(cs->uvbid);
