@@ -508,6 +508,7 @@ static str
 pcre_replace(allocator *ma, str *res, const char *origin_str, const char *pattern,
 			 const char *replacement, const char *flags, bool global)
 {
+	(void) ma;
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	pcre *pcre_code = NULL;
@@ -619,6 +620,7 @@ static str
 pcre_replace_bat(allocator *ma, BAT **res, BAT *origin_strs, const char *pattern,
 				 const char *replacement, const char *flags, bool global)
 {
+	(void) ma;
 #ifdef HAVE_LIBPCRE
 	const char *err_p = NULL;
 	char *tmpres;
