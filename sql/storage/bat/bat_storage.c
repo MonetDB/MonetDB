@@ -2874,7 +2874,7 @@ static int
 col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	int ok = 0;
-	BAT *b = NULL, *off = NULL, *upv = NULL;
+	BAT *b = NULL, *off = NULL;
 	sql_delta *d = NULL;
 
 	(void) tr;
@@ -2925,17 +2925,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			}
 			bat_iterator_end(&bi);
 			bat_destroy(b);
-			if (*nonil && d->cs.ucnt > 0) {
-				/* This could use a quick descriptor */
-				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
-					*nonil = false;
-				} else {
-					MT_lock_set(&upv->theaplock);
-					*nonil &= upv->tnonil && !upv->tnil;
-					MT_lock_unset(&upv->theaplock);
-					bat_destroy(upv);
-				}
-			}
+			if (*nonil && d->cs.ucnt > 0)
+				*nonil = false;
 		}
 	}
 	return ok;
