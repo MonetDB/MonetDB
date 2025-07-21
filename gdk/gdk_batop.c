@@ -30,7 +30,6 @@ unshare_varsized_heap(BAT *b)
 		Heap *h = GDKmalloc(sizeof(Heap));
 		if (h == NULL)
 			return GDK_FAIL;
-		MT_thread_setalgorithm("unshare vheap");
 		*h = (Heap) {
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, TYPE_str, varheap),
@@ -38,6 +37,74 @@ unshare_varsized_heap(BAT *b)
 		};
 		strconcat_len(h->filename, sizeof(h->filename),
 			      BBP_physical(b->batCacheid), ".theap", NULL);
+		/* if parent bat is much larger (currently more than
+		 * twice) than the view, we copy the strings
+		 * individually so that the resulting vheap is reduced
+		 * in size
+		 * we do this only if there are no other references to
+		 * the bat since we're changing the offset heap and the
+		 * values are going to be temporarily incorrect */
+		MT_lock_set(&GDKswapLock(b->batCacheid));
+		if (BBP_refs(b->batCacheid) == 1 &&
+		    BATcount(BBP_desc(b->tvheap->parentid)) > 2 * BATcount(b)) {
+			MT_thread_setalgorithm("unshare vheap reinsert strings");
+			MT_lock_set(&b->theaplock);
+			strHeap(h, b->batCapacity);
+			Heap *oh = b->tvheap;
+			b->tvheap = h;
+			var_t o;
+			switch (b->twidth) {
+			case 1:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = (var_t) ((uint8_t *) b->theap->base)[i] + GDK_VAROFFSET;
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((uint8_t *) b->theap->base)[i] = (uint8_t) (o - GDK_VAROFFSET);
+				}
+				break;
+			case 2:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = (var_t) ((uint16_t *) b->theap->base)[i] + GDK_VAROFFSET;
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((uint16_t *) b->theap->base)[i] = (uint16_t) (o - GDK_VAROFFSET);
+				}
+				break;
+#if SIZEOF_VAR_T == 8
+			case 4:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = (var_t) ((uint32_t *) b->theap->base)[i];
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((uint32_t *) b->theap->base)[i] = (uint32_t) o;
+				}
+				break;
+#endif
+			case SIZEOF_VAR_T:
+				for (BUN i = 0; i < b->batCount; i++) {
+					o = ((var_t *) b->theap->base)[i];
+					if (strPut(b, &o, oh->base + o) == (var_t) -1)
+						goto bailout;
+					((var_t *) b->theap->base)[i] = o;
+				}
+				break;
+			default:
+				MT_UNREACHABLE();
+			}
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&GDKswapLock(b->batCacheid));
+			BBPrelease(oh->parentid);
+			HEAPdecref(oh, false);
+			return GDK_SUCCEED;
+		  bailout:
+			MT_lock_unset(&b->theaplock);
+			MT_lock_unset(&GDKswapLock(b->batCacheid));
+			BBPrelease(oh->parentid);
+			HEAPdecref(oh, false);
+			return GDK_FAIL;
+		}
+		MT_lock_unset(&GDKswapLock(b->batCacheid));
+		MT_thread_setalgorithm("unshare vheap by copying");
 		if (HEAPcopy(h, b->tvheap, 0) != GDK_SUCCEED) {
 			HEAPfree(h, true);
 			GDKfree(h);
