@@ -86,7 +86,6 @@ typedef struct expression {
 #define UPD_COMP		2
 
 #define REL_PARTITION		8
-#define MERGE_LEFT		16 /* used by merge statements */
 #define OUTER_ZERO		32
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */

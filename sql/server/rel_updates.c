@@ -202,7 +202,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	}
 
 	pexps = rel_projections(sql, ins, NULL, 1, 1);
-	ins = rel_crossproduct(sql->sa, ins, rt, op_left/*op_join*/);
+	ins = rel_crossproduct(sql->sa, ins, rt, op_left);
+	set_single(ins);
 	ins->exps = join_exps;
 	ins = rel_project(sql->sa, ins, pexps);
 	/* add row numbers */
@@ -850,7 +851,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 
 	pexps = rel_projections(sql, ups, NULL, 1, 1);
-	ups = rel_crossproduct(sql->sa, ups, rt, op_left/*op_join*/);
+	ups = rel_crossproduct(sql->sa, ups, rt, op_left);
+	set_single(ups);
 	ups->exps = join_exps;
 	ups = rel_project(sql->sa, ups, pexps);
 	/* add row numbers */
@@ -1046,7 +1048,6 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					reset_processed(rel_val);
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
-				r->flag |= MERGE_LEFT;
 				set_dependent(r);
 				set_processed(r);
 				if (single) {
@@ -1554,7 +1555,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	if (!join_rel)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: an insert or update or delete clause is required");
-	join_rel->flag |= MERGE_LEFT;
 	if (processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
 		res = rel_merge(sql, rel_dup(join_rel), upd_del, insert);
 	} else if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
