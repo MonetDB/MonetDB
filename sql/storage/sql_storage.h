@@ -123,8 +123,8 @@ typedef struct table_functions {
 -- binds for column,idx (rdonly, inserts, updates) and deletes
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
-typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
-typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BAT **ui, BAT **uv);
+typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BUN l, BUN h, BAT **ui, BAT **uv);
+typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BUN l, BUN h, BAT **ui, BAT **uv);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 

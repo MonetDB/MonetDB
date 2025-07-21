@@ -713,7 +713,7 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 
 #define BATtdense2(b) (b->ttype == TYPE_void && b->tseqbase != oid_nil)
 static BAT *
-cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max position < cnt */)
+cs_bind_ubat( column_storage *cs, int access, int type, BUN l, BUN h /* ie max position < cnt */)
 {
 	BAT *b;
 
@@ -723,11 +723,9 @@ cs_bind_ubat( column_storage *cs, int access, int type, size_t cnt /* ie max pos
 		if (access == RD_UPD_ID) {
 			if (!(b = temp_descriptor(cs->uibid)))
 				return NULL;
-			if (!b->tsorted || ((BATtdense2(b) && (b->tseqbase + BATcount(b)) >= cnt) ||
-			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= cnt))) {
-					oid nil = oid_nil;
-					/* less then cnt */
-					BAT *s = BATselect(b, NULL, &nil, &cnt, false, false, false, false);
+			if (!b->tsorted || ((BATtdense2(b) && (b->tseqbase + BATcount(b)) >= h) ||
+			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= h))) {
+					BAT *s = BATselect(b, NULL, &l, &h, true, false, false, false);
 					if (!s) {
 						bat_destroy(b);
 						return NULL;
@@ -856,16 +854,16 @@ older_delta( sql_delta *d, sql_trans *tr)
 }
 
 static BAT *
-bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
+bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, BUN l, BUN h)
 {
 	assert(tr->active);
 	sql_delta *o = NULL;
 	BAT *ui = NULL, *uv = NULL;
 
-	if (!(ui = cs_bind_ubat(&d->cs, RD_UPD_ID, type, cnt)))
+	if (!(ui = cs_bind_ubat(&d->cs, RD_UPD_ID, type, l, h)))
 		return NULL;
 	if (access == RD_UPD_VAL) {
-		if (!(uv = cs_bind_ubat(&d->cs, RD_UPD_VAL, type, cnt))) {
+		if (!(uv = cs_bind_ubat(&d->cs, RD_UPD_VAL, type, l, h))) {
 			bat_destroy(ui);
 			return NULL;
 		}
@@ -873,9 +871,9 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 	while ((o = older_delta(d, tr)) != NULL) {
 		BAT *oui = NULL, *ouv = NULL;
 		if (!oui)
-			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type, cnt);
+			oui = cs_bind_ubat(&o->cs, RD_UPD_ID, type, l, h);
 		if (access == RD_UPD_VAL)
-			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type, cnt);
+			ouv = cs_bind_ubat(&o->cs, RD_UPD_VAL, type, l, h);
 		if (!ui || !oui || (access == RD_UPD_VAL && (!uv || !ouv))) {
 			bat_destroy(ui);
 			bat_destroy(uv);
@@ -917,10 +915,11 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 }
 
 static int
-bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
+bind_updates(sql_trans *tr, sql_column *c, BUN l, BUN h, BAT **ui, BAT **uv)
 {
 	lock_column(tr->store, c->base.id);
-	size_t cnt = count_col(tr, c, 0);
+	if (h == BUN_NONE)
+		h = count_col(tr, c, 0);
 	sql_delta *d = col_timestamp_delta(tr, c);
 	int type = c->type.type->localtype;
 
@@ -934,8 +933,8 @@ bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
 		type = b->ttype;
 	}
 
-	*ui = bind_ubat(tr, d, RD_UPD_ID, type, cnt);
-	*uv = bind_ubat(tr, d, RD_UPD_VAL, type, cnt);
+	*ui = bind_ubat(tr, d, RD_UPD_ID, type, l, h);
+	*uv = bind_ubat(tr, d, RD_UPD_VAL, type, l, h);
 
 	unlock_column(tr->store, c->base.id);
 
@@ -948,10 +947,11 @@ bind_updates(sql_trans *tr, sql_column *c, BAT **ui, BAT **uv)
 }
 
 static int
-bind_updates_idx(sql_trans *tr, sql_idx *i, BAT **ui, BAT **uv)
+bind_updates_idx(sql_trans *tr, sql_idx *i, BUN l, BUN h, BAT **ui, BAT **uv)
 {
 	lock_column(tr->store, i->base.id);
-	size_t cnt = count_idx(tr, i, 0);
+	if (h == BUN_NONE)
+		h = count_idx(tr, i, 0);
 	sql_delta *d = idx_timestamp_delta(tr, i);
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 
@@ -960,8 +960,8 @@ bind_updates_idx(sql_trans *tr, sql_idx *i, BAT **ui, BAT **uv)
 		return LOG_ERR;
 	}
 
-	*ui = bind_ubat(tr, d, RD_UPD_ID, type, cnt);
-	*uv = bind_ubat(tr, d, RD_UPD_VAL, type, cnt);
+	*ui = bind_ubat(tr, d, RD_UPD_ID, type, l, h);
+	*uv = bind_ubat(tr, d, RD_UPD_VAL, type, l, h);
 
 	unlock_column(tr->store, i->base.id);
 
@@ -2016,25 +2016,34 @@ destroy_delta(sql_delta *b, bool recursive)
 static sql_delta *
 bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 {
+	lock_column(tr->store, c->base.id);
 	sql_delta *obat = ATOMIC_PTR_GET(&c->data);
 
-	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) /* on append there are no conflicts */
+	if (obat->cs.ts == tr->tid || ((obat->cs.ts < TRANSACTION_ID_BASE || tr_version_of_parent(tr, obat->cs.ts)) && !update_conflict)) { /* on append there are no conflicts */
+		unlock_column(tr->store, c->base.id);
 		return obat;
+	}
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->cs.ts)) && obat->cs.ts >= TRANSACTION_ID_BASE) {
 		/* abort */
+		unlock_column(tr->store, c->base.id);
 		if (update_conflict)
 			*update_conflict = true;
 		else if (!obat->cs.cleared) /* concurrent appends are only allowed on concurrent updates */
 			return timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
 		return NULL;
 	}
-	if (!(obat = timestamp_delta(tr, ATOMIC_PTR_GET(&c->data))))
+	if (!(obat = timestamp_delta(tr, ATOMIC_PTR_GET(&c->data)))) {
+		unlock_column(tr->store, c->base.id);
 		return NULL;
+	}
 	sql_delta* bat = ZNEW(sql_delta);
-	if (!bat)
+	if (!bat) {
+		unlock_column(tr->store, c->base.id);
 		return NULL;
+	}
 	ATOMIC_INIT(&bat->cs.refcnt, 1);
 	if (dup_cs(tr, &obat->cs, &bat->cs, c->type.type->localtype, 0) != LOG_OK) {
+		unlock_column(tr->store, c->base.id);
 		destroy_delta(bat, false);
 		return NULL;
 	}
@@ -2044,12 +2053,14 @@ bind_col_data(sql_trans *tr, sql_column *c, bool *update_conflict)
 	if (obat)
 		bat->nr_updates = obat->nr_updates;
 	if (!ATOMIC_PTR_CAS(&c->data, (void**)&bat->next, bat)) {
+		unlock_column(tr->store, c->base.id);
 		bat->next = NULL;
 		destroy_delta(bat, false);
 		if (update_conflict)
 			*update_conflict = true;
 		return NULL;
 	}
+	unlock_column(tr->store, c->base.id);
 	return bat;
 }
 

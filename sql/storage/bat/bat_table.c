@@ -38,7 +38,7 @@ full_column(sql_trans *tr, sql_column *c)
 	*/
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *ui = NULL, *uv = NULL;
-	int res = store->storage_api.bind_updates(tr, c, &ui, &uv);
+	int res = store->storage_api.bind_updates(tr, c, 0, BUN_NONE, &ui, &uv);
 
 	if (!b || !ui || !uv || res == LOG_ERR) {
 		bat_destroy(b);

@@ -1331,62 +1331,15 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (upd) {
 			BAT *ui = NULL, *uv = NULL;
-			if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
+			if (store->storage_api.bind_updates(m->session->tr, c, l, h, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
-
-			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
-			if(bn == NULL) {
-				BBPunfix(ui->batCacheid);
-				BBPunfix(uv->batCacheid);
-				throw(SQL, "sql.bind", GDK_EXCEPTION);
-			}
-
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (BATcount(bn)) {
-				BAT *id;
-				BAT *vl;
-				if (ui == NULL || uv == NULL) {
-					bat_destroy(uv);
-					bat_destroy(ui);
-					BBPunfix(bn->batCacheid);
-					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the insert column %s.%s.%s",
-						sname, tname, cname);
-				}
-				assert(uv->batCount == ui->batCount);
-				id = BATproject(bn, ui);
-				vl = BATproject(bn, uv);
-				bat_destroy(ui);
-				bat_destroy(uv);
-				if (id == NULL || vl == NULL) {
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bind", GDK_EXCEPTION);
-				}
-				if ( BATcount(id) != BATcount(vl)){
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bind", SQLSTATE(0000) "Inconsistent BAT count");
-				}
-				BBPkeepref(id);
-				BBPkeepref(vl);
-				*bid = id->batCacheid;
-				*uvl = vl->batCacheid;
-			} else {
-				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat(c->type.type->localtype);
-				if (*bid == BID_NIL || *uvl == BID_NIL) {
-					if (*bid)
-						BBPunfix(*bid);
-					if (*uvl)
-						BBPunfix(*uvl);
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			}
+			BBPkeepref(ui);
+			BBPkeepref(uv);
+			*bid = ui->batCacheid;
+			*uvl = uv->batCacheid;
+			return MAL_SUCCEED;
 		} else {
 			int coltype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_col(m->session->tr, c, access);
@@ -1411,7 +1364,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	else if (upd) { /*unpartitioned access to update bats*/
 		BAT *ui = NULL, *uv = NULL;
-		if (store->storage_api.bind_updates(m->session->tr, c, &ui, &uv) == LOG_ERR)
+		if (store->storage_api.bind_updates(m->session->tr, c, 0, BUN_NONE, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
@@ -1685,61 +1638,16 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (upd) {
 			BAT *ui = NULL, *uv = NULL;
-			if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
+			if (store->storage_api.bind_updates_idx(m->session->tr, i, l, h, &ui, &uv) == LOG_ERR)
 				throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
-
-			h--;
-			BAT* bn = BATselect(ui, NULL, &l, &h, true, true, false, false);
-			if(bn == NULL) {
-				BBPunfix(ui->batCacheid);
-				BBPunfix(uv->batCacheid);
-				throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-			}
 
 			bat *uvl = getArgReference_bat(stk, pci, 1);
 
-			if (BATcount(bn)) {
-				BAT *id;
-				BAT *vl;
-				if (ui == NULL || uv == NULL) {
-					bat_destroy(uv);
-					bat_destroy(ui);
-					BBPunfix(bn->batCacheid);
-					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-				}
-				assert(uv->batCount == ui->batCount);
-				id = BATproject(bn, ui);
-				vl = BATproject(bn, uv);
-				bat_destroy(ui);
-				bat_destroy(uv);
-				if (id == NULL || vl == NULL) {
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bindidx", GDK_EXCEPTION);
-				}
-				if ( BATcount(id) != BATcount(vl)){
-					BBPunfix(bn->batCacheid);
-					bat_destroy(id);
-					bat_destroy(vl);
-					throw(SQL, "sql.bindidx", SQLSTATE(0000) "Inconsistent BAT count");
-				}
-				BBPkeepref(id);
-				BBPkeepref(vl);
-				*bid = id->batCacheid;
-				*uvl = vl->batCacheid;
-			} else {
-				*bid = e_bat(TYPE_oid);
-				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
-				if (*bid == BID_NIL || *uvl == BID_NIL) {
-					if (*bid)
-						BBPunfix(*bid);
-					if (*uvl)
-						BBPunfix(*uvl);
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.bindidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
-			}
+			BBPkeepref(ui);
+			BBPkeepref(uv);
+			*bid = ui->batCacheid;
+			*uvl = uv->batCacheid;
+			return MAL_SUCCEED;
 		} else {
 			int idxtype = getBatType(getArgType(mb, pci, 0));
 			b = store->storage_api.bind_idx(m->session->tr, i, access);
@@ -1762,7 +1670,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	else if (upd) { /*unpartitioned access to update bats*/
 		BAT *ui = NULL, *uv = NULL;
-		if (store->storage_api.bind_updates_idx(m->session->tr, i, &ui, &uv) == LOG_ERR)
+		if (store->storage_api.bind_updates_idx(m->session->tr, i, 0, BUN_NONE, &ui, &uv) == LOG_ERR)
 			throw(SQL,"sql.bindidx",SQLSTATE(HY005) "Cannot access the update columns");
 
 		bat *uvl = getArgReference_bat(stk, pci, 1);
