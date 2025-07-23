@@ -180,7 +180,7 @@ list_create_seq(
 				size_t number_valid_types = sizeof(valid_types) / sizeof(valid_types[0]);
 
 				if ((used&(1<<SEQ_TYPE)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: AS type found should be used as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: AS type should be specified at most once");
 				used |= (1<<SEQ_TYPE);
 				t = &s->data.lval->h->data.typeval;
 				for (size_t i = 0; i < number_valid_types; i++) {
@@ -190,31 +190,31 @@ list_create_seq(
 					}
 				}
 				if (!found)
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: The type of the sequence must be either tinyint, smallint, int or bigint");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: Invalid data type. Must be: int or bigint or smallint or tinyint");
 			} break;
 			case SQL_START:
 				if ((used&(1<<SEQ_START)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: START value should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: START value should be specified at most once");
 				used |= (1<<SEQ_START);
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: START value may not be NULL");
 				start = s->data.l_val;
 				break;
 			case SQL_INC:
 				if ((used&(1<<SEQ_INC)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: INCREMENT value should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: INCREMENT value should be specified at most once");
 				used |= (1<<SEQ_INC);
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: INCREMENT must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: INCREMENT value may not be NULL");
 				inc = s->data.l_val;
 				break;
 			case SQL_MINVALUE:
 				if ((used&(1<<SEQ_MIN)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MINVALUE or NO MINVALUE should be specified at most once");
 				used |= (1<<SEQ_MIN);
 				if (s->type == type_lng) {
 					 if (is_lng_nil(s->data.l_val))
-					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MINVALUE must not be null");
+					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MINVALUE may not be NULL");
 				}
 				assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 				// int_nil signals NO MINVALUE
@@ -222,11 +222,11 @@ list_create_seq(
 				break;
 			case SQL_MAXVALUE:
 				if ((used&(1<<SEQ_MAX)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: MAXVALUE or NO MAXVALUE should be specified at most once");
 				used |= (1<<SEQ_MAX);
 				if (s->type == type_lng) {
 					 if (is_lng_nil(s->data.l_val))
-					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE must not be null");
+					 	return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: MAXVALUE may not be NULL");
 				}
 				assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 				// int_nil signals NO MAXVALUE
@@ -234,16 +234,16 @@ list_create_seq(
 				break;
 			case SQL_CYCLE:
 				if ((used&(1<<SEQ_CYCLE)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CYCLE or NO CYCLE should be specified at most once");
 				used |= (1<<SEQ_CYCLE);
 				cycle = s->data.i_val != 0;
 				break;
 			case SQL_CACHE:
 				if ((used&(1<<SEQ_CACHE)))
-					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CACHE value should be passed as most once");
+					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: CACHE value should be specified at most once");
 				used |= (1<<SEQ_CACHE);
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: CACHE must be non-NULL");
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: CACHE value may not be NULL");
 				cache = s->data.l_val;
 				break;
 			default:
@@ -356,33 +356,33 @@ list_alter_seq(
 		switch(s->token) {
 		case SQL_TYPE:
 			if ((used&(1<<SEQ_TYPE)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: AS type found should be used as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: AS type should be specified at most once");
 			used |= (1<<SEQ_TYPE);
 			t = &s->data.lval->h->data.typeval;
 			break;
 		case SQL_START:
 			if ((used&(1<<SEQ_START)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: START value should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: START value should be specified at most once");
 			used |= (1<<SEQ_START);
 			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: START must be non-NULL");
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: START value may not be NULL");
 			start = s->data.lval;
 			break;
 		case SQL_INC:
 			if ((used&(1<<SEQ_INC)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: INCREMENT value should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: INCREMENT value should be specified at most once");
 			used |= (1<<SEQ_INC);
 			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: INCREMENT must be non-NULL");
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: INCREMENT value may not be NULL");
 			inc = s->data.l_val;
 			break;
 		case SQL_MINVALUE:
 			if ((used&(1<<SEQ_MIN)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MINVALUE or NO MINVALUE should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MINVALUE or NO MINVALUE should be specified at most once");
 			used |= (1<<SEQ_MIN);
 			if (s->type == type_lng) {
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MINVALUE must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MINVALUE may not be NULL");
 			}
 			assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 			min = s;
@@ -390,11 +390,11 @@ list_alter_seq(
 			break;
 		case SQL_MAXVALUE:
 			if ((used&(1<<SEQ_MAX)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MAXVALUE or NO MAXVALUE should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: MAXVALUE or NO MAXVALUE should be specified at most once");
 			used |= (1<<SEQ_MAX);
 			if (s->type == type_lng) {
 				if (is_lng_nil(s->data.l_val))
-					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE must not be null");
+					return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE may not be NULL");
 			}
 			assert(s->type == type_lng || (s->type == type_int && is_int_nil(s->data.i_val)));
 			// int_nil signals NO MAXVALUE
@@ -402,16 +402,16 @@ list_alter_seq(
 			break;
 		case SQL_CYCLE:
 			if ((used&(1<<SEQ_CYCLE)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CYCLE or NO CYCLE should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CYCLE or NO CYCLE should be specified at most once");
 			used |= (1<<SEQ_CYCLE);
 			cycle = s->data.i_val != 0;
 			break;
 		case SQL_CACHE:
 			if ((used&(1<<SEQ_CACHE)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CACHE value should be passed as most once");
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: CACHE value should be specified at most once");
 			used |= (1<<SEQ_CACHE);
 			if (is_lng_nil(s->data.l_val))
-				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: CACHE must be non-NULL");
+				return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: CACHE value may not be NULL");
 			cache = s->data.l_val;
 			break;
 		default:
