@@ -95,7 +95,7 @@ select * from vb
 
 # cte in set operation node
 #SELECT 1 UNION ALL (WITH cte AS (SELECT 42) SELECT * FROM cte);
-query I nosort
+query I rowsort
 SELECT 1 UNION ALL (select * from (WITH cte AS (SELECT 42) SELECT * FROM cte) as a)
 ----
 1
