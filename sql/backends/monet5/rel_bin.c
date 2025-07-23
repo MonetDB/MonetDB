@@ -4202,7 +4202,10 @@ subres_assign_resultvars(backend *be, stmt *rel_stmt, list *vars)
 
 		if (r->nrcols == 0)
 			r = const_column(be, r);
-		ns = stmt_alias(be, r, label, rnme, nme);
+		if (label)
+			ns = stmt_alias(be, r, label, rnme, nme);
+		else
+			ns = r;
 		a->argv[0] = v->nr;
 		a = pushArgument(be->mb, a, ns->nr);
 		pushInstruction(be->mb, a);
@@ -5459,6 +5462,13 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 						getArg(aggrstmt->q, 2) = *(int*)m->data;
 						m = m->next;
 					}
+				}
+				sql_subtype *t = exp_subtype(aggrexp);
+				if (strcmp(sf->func->base.name, "sum") == 0 && EC_APPNUM(t->type->eclass)) {
+					getArg(aggrstmt->q, 1) = *(int*)m->data;
+					m = m->next;
+					getArg(aggrstmt->q, 2) = *(int*)m->data;
+					m = m->next;
 				}
 			}
 		}
