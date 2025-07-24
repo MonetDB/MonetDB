@@ -106,7 +106,7 @@ statement ok
 DROP TABLE v0
 
 -- 06.sql
-statement error HY013!Could not allocate space
+statement error HY013!Could not allocate memory
 CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0)
 
 -- 07.sql
