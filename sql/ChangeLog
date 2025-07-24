@@ -20,7 +20,7 @@
     CREATE ORDERED INDEX IF NOT EXISTS index_name ON ...
 
   With IF NOT EXISTS specified these CREATE statements will not return
-  an error when an object with the same name already exist.  See doc:
+  an error when an object with the same name already exists.  See doc:
   https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/
 
 - Added the possibility to specify IF EXISTS for the following DROP statements:
@@ -36,7 +36,7 @@
     DROP INDEX IF EXISTS index_name
 
   With IF EXISTS specified these statements will not return an error
-  when the object does not exist.  See doc:
+  when the object does not exists.  See doc:
   https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/drop-statement/
 
 - Added the possibility to specify IF EXISTS for two ALTER statements:
@@ -46,7 +46,7 @@
     ALTER USER IF EXISTS user_name ...
 
   With IF EXISTS specified these statements will not return an error
-  when the object does not exist.  See doc:
+  when the object does not exists.  See doc:
   https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/
   and
   https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/
