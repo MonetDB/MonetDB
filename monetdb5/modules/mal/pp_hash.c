@@ -3004,6 +3004,19 @@ error:
 		bat_iterator_end(&bi); \
 	} while (0)
 
+#define expand_fixed() \
+	do { \
+		int w = k->twidth; \
+		char *val = Tloc(k, 0); \
+		char *res = Tloc(e, 0); \
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			TIMEOUT_LOOP_IDX_DECL(j, repcnt, qry_ctx) { \
+				memcpy(res+(w*idx), val+(w*i), w); \
+				idx++; \
+			} \
+		} \
+	} while (0)
+
 static str
 BAT_OAHASHexpand_cart(bat *expanded, const bat *col, const bat *rowrepeat, const bit *LRouter, const ptr *H)
 {
@@ -3036,58 +3049,32 @@ BAT_OAHASHexpand_cart(bat *expanded, const bat *col, const bat *rowrepeat, const
 	}
 
 	BUN idx = 0;
-	switch(tt) {
-		case TYPE_void:
-			vexpand_cart();
-			break;
-		case TYPE_bit:
-			expand_cart(bit);
-			break;
-		case TYPE_bte:
+	if (ATOMvarsized(tt)) {
+		aexpand_cart();
+	} else if (tt == TYPE_void) {
+		vexpand_cart();
+	} else {
+		switch(ATOMsize(tt)) {
+		case 1:
 			expand_cart(bte);
 			break;
-		case TYPE_sht:
+		case 2:
 			expand_cart(sht);
 			break;
-		case TYPE_int:
+		case 4:
 			expand_cart(int);
 			break;
-		case TYPE_date:
-			expand_cart(date);
-			break;
-		case TYPE_lng:
+		case 8:
 			expand_cart(lng);
 			break;
-		case TYPE_oid:
-			if (BATtdense(k))
-				vexpand_cart();
-			else
-				expand_cart(oid);
-			break;
-		case TYPE_daytime:
-			expand_cart(daytime);
-			break;
-		case TYPE_timestamp:
-			expand_cart(timestamp);
-			break;
 #ifdef HAVE_HGE
-		case TYPE_hge:
-		case TYPE_uuid:
+		case 16:
 			expand_cart(hge);
 			break;
 #endif
-		case TYPE_flt:
-			expand_cart(flt);
-			break;
-		case TYPE_dbl:
-			expand_cart(dbl);
-			break;
 		default:
-			if (ATOMvarsized(tt)) {
-				aexpand_cart();
-			} else {
-				err = createException(MAL, "oahash.expand_cart", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-			}
+			expand_fixed();
+		}
 	}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand_cart", RUNTIME_QRY_TIMEOUT));
 	if (err)
