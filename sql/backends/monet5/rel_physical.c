@@ -762,7 +762,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (is_recursive(rel) || need_distinct(rel) || is_single(rel)) {
 			res = 0;
 		} else {
-			pb |= materialize;
+			if (rel_is_ref(rel))
+				pb = 0;
+			else
+				pb |= materialize;
 			for(node *n = rels->h; n; n = n->next) {
 				//int lres = rel_pipeline(v, n->data, false, pb?CPB:0);
 				int lres = rel_pipeline(v, n->data, false, pb?SPB:0);
@@ -832,7 +835,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 
 			if (!rel_hsh) {
 				/* treat all single joins as left-outer join */
-				if (rel->single || rel->op == op_left)
+				if ((rel->single /*&& rel->op != op_right*/) || rel->op == op_left)
 					rel->oahash = 2;
 				else if (rel->op == op_right)
 					rel->oahash = 1;
