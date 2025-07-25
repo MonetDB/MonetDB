@@ -196,7 +196,7 @@ subheap_newroot( heapn *hp, subheap *sh, size_t p)
 		void *val = BUNtvar(sh->bi, p);
  		cmp = sh->cmp(BUNtvar(sh->vbi, hp->pos[0]), val, sh);
 	} else
- 		cmp = sh->cmp(vals+hp->pos[0], ivals+(p*sh->width), sh);
+ 		cmp = sh->cmp(vals+(hp->pos[0]*sh->width), ivals+(p*sh->width), sh);
 	bool newroot = false;
 
 	if (!cmp && sh->sub)
@@ -371,7 +371,7 @@ gsubheap_newroot( heapn *hp, subheap *sh, gid g, size_t p)
 		void *val = BUNtvar(sh->bi, p);
  		cmp = sh->cmp(BUNtvar(sh->vbi, pos[0]), val, sh);
 	} else
- 		cmp = sh->cmp(vals+pos[0], ivals+(p*sh->width), sh);
+ 		cmp = sh->cmp(vals+(pos[0]*sh->width), ivals+(p*sh->width), sh);
 	bool newroot = false;
 
 	if (!cmp && sh->sub)
