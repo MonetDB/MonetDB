@@ -1,8 +1,58 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Jul 24 2025 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added the possibility to specify IF NOT EXISTS for the following
+  CREATE statements:
+
+    CREATE SEQUENCE IF NOT EXISTS seq_name ...
+
+    CREATE USER IF NOT EXISTS user_name ...
+
+    CREATE ROLE IF NOT EXISTS role_name ...
+
+    CREATE TYPE IF NOT EXISTS type_name ...
+
+    CREATE INDEX IF NOT EXISTS index_name ON ...
+
+    CREATE IMPRINTS INDEX IF NOT EXISTS index_name ON ...
+
+    CREATE ORDERED INDEX IF NOT EXISTS index_name ON ...
+
+  With IF NOT EXISTS specified these CREATE statements will not return
+  an error when an object with the same name already exists.  See doc:
+  https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/
+
+- Added the possibility to specify IF EXISTS for the following DROP statements:
+
+    DROP SEQUENCE IF EXISTS seq_name ...
+
+    DROP USER IF EXISTS user_name
+
+    DROP ROLE IF EXISTS role_name
+
+    DROP TYPE IF EXISTS type_name ...
+
+    DROP INDEX IF EXISTS index_name
+
+  With IF EXISTS specified these statements will not return an error
+  when the object does not exists.  See doc:
+  https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/drop-statement/
+
+- Added the possibility to specify IF EXISTS for two ALTER statements:
+
+    ALTER SEQUENCE IF EXISTS seq_name ...
+
+    ALTER USER IF EXISTS user_name ...
+
+  With IF EXISTS specified these statements will not return an error
+  when the object does not exists.  See doc:
+  https://www.monetdb.org/documentation/user-guide/sql-manual/data-types/serial-types/
+  and
+  https://www.monetdb.org/documentation/user-guide/sql-manual/data-definition/privileges/
+
 * Tue Jun  3 2025 Sjoerd Mullender <sjoerd@acm.org>
-- It is now possible to change the type of a column by using a query
+- It is now possible to change the type of a column by using a statement
   like ALTER TABLE t ALTER COLUMN c type;.  The content of the column
   is converted to the new type using code similar to CAST(c AS type).
   If the conversion fails, the column type isn't changed.

@@ -14,7 +14,19 @@ statement error 0P000!Role 'role1' already exists
 CREATE ROLE role1
 
 statement ok
+CREATE ROLE IF NOT EXISTS role3
+
+statement ok
+CREATE ROLE IF NOT EXISTS role2
+
+statement ok
+CREATE ROLE IF NOT EXISTS role1
+
+statement ok
 CREATE USER alice with password 'alice' name 'alice' schema sys
+
+statement ok
+CREATE USER IF NOT EXISTS alice with password 'alice' name 'alice' schema sys
 
 statement ok
 GRANT role1 TO alice
@@ -42,6 +54,9 @@ DROP ROLE role2
 statement error 01006!REVOKE: User 'alice' does not have ROLE 'role3'
 REVOKE role3 FROM alice
 
+statement ok
+DROP ROLE IF EXISTS role2
+
 @connection(id=alice2, username=alice, password=alice)
 statement error HY009!Role (role1) missing
 SET ROLE role1
@@ -54,11 +69,31 @@ statement error M1M05!GRANT: no such role 'non_existing_role' or grantee 'alice'
 GRANT non_existing_role TO alice
 
 statement ok
-DROP ROLE role1
+DROP ROLE IF EXISTS role1
 
 statement ok
+DROP ROLE IF EXISTS role1
+
+statement ok
+DROP ROLE IF EXISTS role3
+
+statement ok
+DROP ROLE IF EXISTS role3
+
+statement error 0P000!DROP ROLE: no such role 'role3'
 DROP ROLE role3
+
+statement error 0P000!DROP ROLE: no such role 'role1'
+DROP ROLE role1
+
+statement error 0P000!DROP ROLE: no such role 'role2'
+DROP ROLE role2
 
 statement ok
 DROP USER alice
 
+statement error 0P000!DROP USER: no such user role 'alice'
+DROP USER alice
+
+statement ok
+DROP USER IF EXISTS alice

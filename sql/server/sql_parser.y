@@ -589,6 +589,7 @@ int yydebug=1;
 	create
 	create_or_replace
 	if_exists
+	if_not_exists
 	table_if_not_exists
 	opt_admin_for
 	opt_asc_desc
@@ -947,6 +948,11 @@ if_exists:
 |	IF EXISTS     { $$ = TRUE; }
 ;
 
+if_not_exists:
+	/* empty */   { $$ = FALSE; }
+|	IF NOT_EXISTS { $$ = TRUE; }
+;
+
 table_if_not_exists:
 	TABLE   { $$ = FALSE; }
 |	TABLE IF NOT_EXISTS { $$ = TRUE; }
@@ -1073,21 +1079,13 @@ set_statement:
  ;
 
 schema:
-    create SCHEMA schema_name_clause opt_schema_default_char_set opt_path_specification	opt_schema_element_list
+    create SCHEMA if_not_exists schema_name_clause opt_schema_default_char_set opt_path_specification opt_schema_element_list
 		{ dlist *l = L();
-		append_list(l, $3);
-		append_symbol(l, $4);
+		append_list(l, $4);
 		append_symbol(l, $5);
-		append_list(l, $6);
-		append_int(l, FALSE);
-		$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
-  | create SCHEMA IF NOT_EXISTS schema_name_clause opt_schema_default_char_set opt_path_specification opt_schema_element_list
-		{ dlist *l = L();
-		append_list(l, $5);
 		append_symbol(l, $6);
-		append_symbol(l, $7);
-		append_list(l, $8);
-		append_int(l, TRUE);
+		append_list(l, $7);
+		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_CREATE_SCHEMA, l); }
   | drop SCHEMA if_exists qname drop_action
 		{ dlist *l = L();
@@ -1360,27 +1358,29 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER column_id opt_with_encrypted_password user_schema opt_schema_path opt_default_role opt_max_memory_max_workers
+ | ALTER USER if_exists column_id opt_with_encrypted_password user_schema opt_schema_path opt_default_role opt_max_memory_max_workers
 	{ dlist *l = L(), *p = L();
-	  if (!$4 && !$5 && !$6 && !$7 && $8[0] < 0 && $8[1] < 0) {
+	  if (!$5 && !$6 && !$7 && !$8 && $9[0] < 0 && $9[1] < 0) {
 		yyerror(m, "ALTER USER: At least one property should be updated");
 		YYABORT;
 	  }
-	  append_string(l, $3);
-	  append_string(p, $4 ? $4->h->data.sval : NULL);
-	  append_string(p, $5);
+	  append_string(l, $4);
+	  append_string(p, $5 ? $5->h->data.sval : NULL);
 	  append_string(p, $6);
-	  append_int(p, $4 ? $4->h->next->data.i_val : 0);
+	  append_string(p, $7);
+	  append_int(p, $5 ? $5->h->next->data.i_val : 0);
 	  append_string(p, NULL);
 	  append_list(l, p);
-	  append_string(l, $7);
-	  append_lng(l, $8[0]);
-	  append_int(l, (int)$8[1]);
+	  append_string(l, $8);
+	  append_lng(l, $9[0]);
+	  append_int(l, (int)$9[1]);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
- | ALTER USER column_id RENAME TO column_id
+ | ALTER USER if_exists column_id RENAME TO column_id
 	{ dlist *l = L();
-	  append_string(l, $3);
-	  append_string(l, $6);
+	  append_string(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_RENAME_USER, l ); }
  | ALTER USER SET opt_encrypted PASSWORD string USING OLD PASSWORD string
 	{ dlist *l = L();
@@ -1395,6 +1395,7 @@ alter_statement:
 	  append_string(l, NULL);
 	  append_lng(l, -1);
 	  append_int(l, -1);
+	  append_int(l, FALSE);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER SCHEMA if_exists column_id RENAME TO column_id
 	{ dlist *l = L();
@@ -1512,7 +1513,7 @@ create_statement_in_schema:
 /*=== BEGIN SEQUENCES ===*/
 seq_def:
 /*
- * CREATE SEQUENCE name
+ * CREATE SEQUENCE [ IF NOT EXISTS ] name
  *      [ AS datatype ]
  *	[ START WITH start ]
  *	[ INCREMENT BY increment ]
@@ -1522,25 +1523,27 @@ seq_def:
  *	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-    create SEQUENCE qname opt_seq_params
+    create SEQUENCE if_not_exists qname opt_seq_params
 	{
 		dlist *l = L();
-		append_list(l, $3);
 		append_list(l, $4);
+		append_list(l, $5);
 		append_int(l, 0); /* to be dropped */
+		append_int(l, $3);
 		$$ = _symbol_create_list(SQL_CREATE_SEQ, l);
 	}
 /*
- * DROP SEQUENCE name
+ * DROP SEQUENCE [ IF EXISTS ] name
  */
-  | drop SEQUENCE qname
+  | drop SEQUENCE if_exists qname
 	{
 		dlist *l = L();
-		append_list(l, $3);
+		append_list(l, $4);
+		append_int(l, $3);
 		$$ = _symbol_create_list(SQL_DROP_SEQ, l);
 	}
 /*
- * ALTER SEQUENCE name
+ * ALTER SEQUENCE [ IF EXISTS ] name
  *      [ AS datatype ]
  *	[ RESTART [ WITH start ] ]
  *	[ INCREMENT BY increment ]
@@ -1550,11 +1553,12 @@ seq_def:
  *	[ [ NO ] CYCLE ]
  * start may be a value or subquery
  */
-  | ALTER SEQUENCE qname opt_alt_seq_params
+  | ALTER SEQUENCE if_exists qname opt_alt_seq_params
 	{
 		dlist *l = L();
-		append_list(l, $3);
 		append_list(l, $4);
+		append_list(l, $5);
+		append_int(l, $3);
 		$$ = _symbol_create_list(SQL_ALTER_SEQ, l);
 	}
   ;
@@ -1602,12 +1606,13 @@ opt_seq_common_param:
 
 
 index_def:
-    create opt_index_type INDEX ident ON qname '(' ident_commalist ')'
+    create opt_index_type INDEX if_not_exists ident ON qname '(' ident_commalist ')'
 	{ dlist *l = L();
-	  append_string(l, $4);
+	  append_string(l, $5);
 	  append_int(l, $2);
-	  append_list(l, $6);
-	  append_list(l, $8);
+	  append_list(l, $7);
+	  append_list(l, $9);
+	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_INDEX, l); }
   ;
 
@@ -1635,22 +1640,24 @@ CREATE [ UNIQUE ] INDEX index_name
 */
 
 role_def:
-    ROLE column_id opt_grantor
+    ROLE if_not_exists column_id opt_grantor
 	{ dlist *l = L();
-	  append_string(l, $2);
-	  append_int(l, $3);
-	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER column_id WITH opt_encrypted PASSWORD string sqlNAME string opt_schema_details_list opt_max_memory_max_workers opt_optimizer opt_default_role
-    { dlist *l = L();
-	  append_string(l, $2);
-	  append_string(l, $6);
-	  append_string(l, $8);
-	  append_list(l, $9);
+	  append_string(l, $3);
 	  append_int(l, $4);
-	  append_lng(l, $10[0]);
-	  append_int(l, (int)$10[1]);
-	  append_string(l, $11);
+	  append_int(l, $2);
+	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
+ |  USER if_not_exists column_id WITH opt_encrypted PASSWORD string sqlNAME string opt_schema_details_list opt_max_memory_max_workers opt_optimizer opt_default_role
+    { dlist *l = L();
+	  append_string(l, $3);
+	  append_string(l, $7);
+	  append_string(l, $9);
+	  append_list(l, $10);
+	  append_int(l, $5);
+	  append_lng(l, $11[0]);
+	  append_int(l, (int)$11[1]);
 	  append_string(l, $12);
+	  append_string(l, $13);
+	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
 
@@ -2007,6 +2014,7 @@ column_def:
 			append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 			append_list(l, o);
 			append_int(l, 1); /* to be dropped */
+			append_int(l, 0); /* if not exists */
 
 			if (m->sym) {
 				stmts = m->sym->data.lval;
@@ -2106,6 +2114,7 @@ generated_column:
 		/* finally all the options */
 		append_list(l, $5);
 		append_int(l, 1); /* to be dropped */
+		append_int(l, 0); /* if not exists */
 		$$ = _symbol_create_symbol(SQL_DEFAULT, _symbol_create_list(SQL_NEXT, append_string(L(), sn)));
 
 		if (m->sym) {
@@ -2138,6 +2147,7 @@ generated_column:
 		append_symbol(o, _symbol_create_list(SQL_TYPE, append_type(L(),&it)));
 		append_list(l, o);
 		append_int(l, 1); /* to be dropped */
+		append_int(l, 0); /* if not exists */
 		if (m->scanner.schema)
 			append_string(seqn2, m->scanner.schema);
 		append_string(seqn2, sn);
@@ -2331,11 +2341,12 @@ variable_ref_commalist_parens:
  ;
 
 type_def:
-    create TYPE qname EXTERNAL sqlNAME ident
-			{ dlist *l = L();
-				append_list(l, $3);
-				append_string(l, $6);
-			  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
+    create TYPE if_not_exists qname EXTERNAL sqlNAME ident
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_string(l, $7);
+	  append_int(l, $3);
+	  $$ = _symbol_create_list( SQL_CREATE_TYPE, l ); }
  ;
 
 external_function_name:
@@ -2912,14 +2923,27 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
- |  drop TYPE qname drop_action
+ |  drop TYPE if_exists qname drop_action
 	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, $4 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_TYPE, l ); }
- |  drop ROLE column_id	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
- |  drop USER column_id	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
- |  drop INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
+ |  drop ROLE if_exists column_id
+	{ dlist *l = L();
+	  append_string(l, $4 );
+	  append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_ROLE, l ); }
+ |  drop USER if_exists column_id
+	{ dlist *l = L();
+	  append_string(l, $4 );
+	  append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_USER, l ); }
+ |  drop INDEX if_exists qname
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_INDEX, l ); }
  |  drop TRIGGER if_exists qname
 	{ dlist *l = L();
 	  append_list(l, $4 );

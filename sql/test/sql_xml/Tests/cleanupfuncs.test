@@ -3,6 +3,34 @@
 statement error 42000!DROP TYPE: unable to drop type xml (there are database objects which depend on it)
 DROP TYPE xml
 
+query TT nosort
+SELECT used_by_obj_type, used_by_name FROM dependencies_vw where name = 'xml' AND depend_type = 15
+----
+function
+xml
+function
+str
+function
+comment
+function
+parse
+function
+pi
+function
+root
+function
+attribute
+function
+element
+function
+concat
+function
+forest
+function
+isdocument
+aggregate
+xmlagg
+
 statement ok
 DROP FUNCTION xml(STRING)
 
@@ -34,7 +62,13 @@ statement ok
 CREATE INDEX z4 ON z(z)
 
 statement ok rowcount 1
-INSERT INTO z VALUES (NULL, NULL, 1)
+INSERT INTO z VALUES (NULL, '', 1)
+
+statement ok
+CREATE IMPRINTS INDEX z5 ON z(z)
+
+statement ok
+CREATE ORDERED INDEX z6 ON z(y)
 
 query T nosort
 SELECT "sqlname" FROM "types" WHERE "sqlname" = 'xml'
@@ -52,20 +86,26 @@ query TTI nosort
 SELECT * FROM z
 ----
 NULL
-NULL
+(empty)
 1
 
-query T nosort
-SELECT "name" FROM "sys"."idxs" WHERE "name" IN ('z1', 'z2', 'z3', 'z4')
+query T rowsort
+SELECT "name" FROM "sys"."idxs" WHERE "name" IN ('z1', 'z2', 'z3', 'z4', 'z5', 'z6')
 ----
 z1
 z2
 z3
 z4
+z5
+z6
 
--- quicker way to drop all functions which use xml datatype
+-- quicker way to drop all functions/columns which use xml datatype
 statement ok
 DROP TYPE xml CASCADE
+
+query TT nosort
+SELECT used_by_obj_type, used_by_name FROM dependencies_vw where name = 'xml' AND depend_type = 15
+----
 
 query T nosort
 SELECT "sqlname" FROM "types" WHERE "sqlname" = 'xml'
@@ -89,6 +129,12 @@ z4
 statement ok
 DROP INDEX z4
 
+statement error 42S12!DROP INDEX: no such index 'z4'
+DROP INDEX z4
+
+statement ok
+DROP INDEX IF EXISTS z4
+
 statement ok
 DROP TABLE z
 
@@ -105,3 +151,41 @@ DROP FUNCTION attribute (STRING, STRING)
 statement error 42000!DROP FUNCTION: no such function 'isdocument' (varchar)
 DROP FUNCTION isdocument (STRING)
 
+statement ok
+DROP FUNCTION IF EXISTS parse (STRING, STRING, STRING)
+
+statement ok
+DROP FUNCTION IF EXISTS pi (STRING, STRING)
+
+statement ok
+DROP FUNCTION IF EXISTS attribute (STRING, STRING)
+
+statement ok
+DROP FUNCTION IF EXISTS isdocument (STRING)
+
+statement ok
+DROP TYPE IF EXISTS xml
+
+statement error 42S01!DROP TYPE: no such type 'xml'
+DROP TYPE xml
+
+statement error 0D000!CREATE TYPE: unknown external type 'xml2'
+CREATE TYPE xml2 EXTERNAL NAME xml2
+
+statement ok
+CREATE TYPE IF NOT EXISTS xml2 EXTERNAL NAME xml
+
+statement error 42S01!CREATE TYPE: name 'xml2' already in use
+CREATE TYPE xml2 EXTERNAL NAME xml2
+
+statement ok
+CREATE TYPE IF NOT EXISTS xml2 EXTERNAL NAME xml
+
+statement ok
+DROP TYPE IF EXISTS xml2
+
+statement error 42S01!DROP TYPE: no such type 'xml2'
+DROP TYPE xml2
+
+statement ok
+DROP TYPE IF EXISTS xml2
