@@ -278,6 +278,9 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 		err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
+	if (BATcount(lcol) == 0 && BATcount(rcol) == 0) {
+		goto done;
+	}
 	if (BATcount(lcol) && BATcount(rcol) == 0) {
 		int v1 = (int)BATcount(lcol), v2 = (int)0;
 		if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
@@ -619,14 +622,14 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	BUN sz = BATcount(cl) + BATcount(cr);
 	if (ATOMvarsized(cl->ttype)) {
-		res = COLnew2(0, cl->ttype, sz, TRANSIENT, cl->twidth);
+		res = COLnew2(0, cl->ttype, sz, TRANSIENT, cl->ttype==TYPE_str?cl->twidth:0);
 		if (res == NULL) {
 			BBPreclaim(cl);
 			BBPreclaim(cr);
 			BBPreclaim(zzl);
 			throw(MAL, "sort.mproject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		if (cl->tvheap->parentid == cr->tvheap->parentid && (BATcount(cl) || BATcount(cr)))
+		if (res->ttype == TYPE_str && cl->tvheap->parentid == cr->tvheap->parentid && (BATcount(cl) || BATcount(cr)))
 			BATswap_heaps(res, cl, NULL);
 		else if (res->tvheap != NULL && res->tvheap->base == NULL) {
 			/* this combination can happen since the last
