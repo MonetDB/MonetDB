@@ -3255,7 +3255,7 @@ error:
 		} \
 	} while (0)
 
-#define afetch_cart() \
+#define sfetch_cart() \
 	do { \
 		if (append_nulls) { \
 			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
@@ -3270,6 +3270,33 @@ error:
 			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
 				TIMEOUT_LOOP_IDX_DECL(j, keycnt, qry_ctx) { \
 					void *v =  (void *) ((bi).vh->base+BUNtvaroff(bi,j)); \
+					if (BUNappend(f, v, false) != GDK_SUCCEED) { \
+						err = createException(SQL, "oahash.fetch", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+						break; \
+					} \
+					idx++; \
+				} \
+			} \
+			bat_iterator_end(&bi); \
+		} \
+	} while (0)
+
+#define afetch_cart() \
+	do { \
+		if (append_nulls) { \
+			const void *nil = ATOMnilptr(f->ttype); \
+			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
+				if (BUNappend(f, nil, false) != GDK_SUCCEED) { \
+					err = createException(SQL, "oahash.fetch", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					break; \
+				} \
+				idx++; \
+			} \
+		} else { \
+			BATiter bi = bat_iterator(k); \
+			TIMEOUT_LOOP_IDX_DECL(i, repcnt, qry_ctx) { \
+				TIMEOUT_LOOP_IDX_DECL(j, keycnt, qry_ctx) { \
+					void *v =  BUNtail(bi, j); \
 					if (BUNappend(f, v, false) != GDK_SUCCEED) { \
 						err = createException(SQL, "oahash.fetch", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 						break; \
@@ -3366,11 +3393,10 @@ BAT_OAHASHfetch_pld_cart(bat *fetched, const bat *col, const bat *setrepeat, con
 				fetch_cart(dbl);
 				break;
 			default:
-				if (ATOMvarsized(tt)) {
+				if (tt == TYPE_str)
+					sfetch_cart();
+				else
 					afetch_cart();
-				} else {
-					err = createException(MAL, "oahash.fetch_payload_cartesian", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				}
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.fetch_payload_cartesian", RUNTIME_QRY_TIMEOUT));
 		if (err)
