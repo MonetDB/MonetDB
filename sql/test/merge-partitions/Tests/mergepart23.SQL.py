@@ -51,7 +51,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('ALTER TABLE anothertest ADD TABLE subtable4 AS PARTITION FROM 21 TO 30;').assertSucceeded()
             tc.execute("INSERT INTO testme VALUES (5, 'one'), (12, 'two'), (13, 'three'), (15, 'four'), (NULL, 'five');").assertSucceeded().assertRowCount(5)
             tc.execute("INSERT INTO anothertest VALUES (11, 'one'), (12, 'two'), (13, 'three'), (15, 'four');").assertSucceeded().assertRowCount(4)
-            tc.execute('SELECT a,b FROM testme;').assertSucceeded().assertDataResultMatch([(5,"one"),(None,"five"),(12,"two"),(13,"three"),(15,"four")])
+            tc.execute('SELECT a,b FROM testme order by a asc,b;').assertSucceeded().assertDataResultMatch([(None,"five"),(5,"one"),(12,"two"),(13,"three"),(15,"four")])
             tc.execute('SELECT a,b FROM anothertest;').assertSucceeded().assertDataResultMatch([(11,"one"),(12,"two"),(13,"three"),(15,"four")])
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20"),("11","20"),("21","30")])
             tc.execute('ALTER TABLE testme DROP TABLE subtable1;').assertSucceeded()
