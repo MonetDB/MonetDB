@@ -1286,6 +1286,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DELETE FROM", false);
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname), *bt = r;
+		sql_rel *p = NULL;
 
 		if (opt_where) {
 			sql_exp *e;
@@ -1303,7 +1304,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			e = exp_column(sql->sa, rel_name(r), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
-			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
+			p = r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
 			r = rel_delete(sql->sa, /*rel_basetable(sql, t, alias ? alias : tname)*//*rel_dup(bt)*/bt, r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
@@ -1313,14 +1314,19 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 		if (opt_returning) {
 			query_processed(query);
 			if (ol_first_node(t->columns)) {
+				list *exps = r->exps;
+				if (p)
+					exps = p->exps;
 				for (node *n = ol_first_node(t->columns); n; n = n->next) {
 					sql_column *c = n->data;
 					sql_exp *ne = NULL;
 
-					append(r->exps, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
+					append(exps, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
 					rel_base_use(sql, bt, c->colnr);
 					ne->nid = rel_base_nid(bt, c);
 					ne->alias.label = ne->nid;
+					if (p)
+						append(r->exps, exp_ref(sql, ne));
 				}
 			}
 
@@ -1491,7 +1497,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 					return NULL;
 				extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, join_rel, NULL, 1, 1));
-				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
+				upd_del = update_generate_assignments(query, t, extra_project, bt /*rel_dup(bt)*/ /*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
@@ -1502,7 +1508,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
 					return NULL;
 				extra_project = rel_project(sql->sa, sel_rel, list_append(new_exp_list(sql->sa), ne));
-				upd_del = rel_delete(sql->sa, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, extra_project);
+				upd_del = rel_delete(sql->sa, bt/*rel_dup(bt)*/ /*rel_basetable(sql, t, bt_name)*/, extra_project);
 			} else {
 				assert(0);
 			}
@@ -1526,7 +1532,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, joined, NULL, 1, 0));
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-			sql_rel *ibt = rel_dup(bt);
+			sql_rel *ibt = bt;//rel_dup(bt);
 			rel_base_use_all(query->sql, ibt);
 			ibt = rewrite_basetable(query->sql, ibt, false);
 			if (!(insert = rel_insert(query->sql, ibt, insert)))

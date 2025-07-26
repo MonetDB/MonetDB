@@ -7483,13 +7483,12 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	stmt* returning = NULL;
 	if (!list_empty(attr)) {
-		sql_rel* b = rel->l;
-		int refcnt = b->ref.refcnt; /* clean basetable */
-		b->ref.refcnt = 1;
-		returning = subrel_bin(be, b, refs);
-		b->ref.refcnt = refcnt;
+		sql_rel b = *(sql_rel*)rel->l;
+		b.ref.refcnt = 1;
+		b.spb = b.parallel = b.partition = 0;
+		returning = subrel_bin(be, &b, refs);
 		returning->cand = tids;	/* only updated rows */
-		returning = subrel_project(be, returning, refs, b);
+		returning = subrel_project(be, returning, refs, &b);
 	}
 
 	if (cascade_updates(be, t, tids, updates)) {
@@ -7750,9 +7749,11 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		assert(rows->type == st_list);
 		tids = rows->op4.lval->h->data; /* TODO this should be the candidate list instead */
-	}
-	if (list_length(rel->exps) > 1)
+		if (list_length(rel->exps) > 1)
+			returning = rows;
+	} else if (list_length(rel->exps) > 1) {
 		returning = subrel_bin(be, rel->l, refs);
+	}
 
 	stmt *rows = tids;
 	if (!rows) {
@@ -7778,8 +7779,6 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 			sql_exp *exp = n->data;
 			stmt *s = exp_bin(be, exp, returning, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 
-			if (tids && s)
-				s = stmt_project(be, tids, s);
 			if (!s) /* error */
 				return NULL;
 

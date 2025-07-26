@@ -604,7 +604,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		bool safe = rel_groupby_partition_safe(rel);
 		if (rel->l)
 			/* if `safe`, process this GROUP BY + subtree in a `pb`. */
-			res = rel_pipeline(v, rel->l, safe, safe?SPB:0);
+			res = rel_pipeline(v, rel->l, !safe, safe?SPB:0);
 		if (safe) {
 			rel->parallel = 1;
 			if (res == REL_PARTITION)
@@ -619,6 +619,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				 */
 				res = EPB;
 			}
+		} else if (res == SPB) {
+			rel_dup(rel->l); /* materialize ! */
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
@@ -649,8 +651,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		 * the upper tree to end it, and this topN might be computed
 		 * multiple times */
 	} else if (is_simple_project(rel->op) || is_select(rel->op) || is_sample(rel->op)) {
-		if (rel->card <= CARD_ATOM)
-			return 0;
 		if (pb && (is_simple_project(rel->op) || is_select(rel->op)) && exps_have_unsafe(rel->exps, 1, false)) {
 			if (p && (p->op != op_topn || !topn_limit(p)))
 				rel_dup(rel); // inc-ref unsafe exps (ie order dependent)
@@ -808,6 +808,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_insert(rel->op) || is_update(rel->op) || is_delete(rel->op) || is_truncate(rel->op)) {
 		if (rel->r)
 			res = rel_pipeline(v, rel->r, false, pb);
+		if (is_delete(rel->op) && !rel->r && pb)
+			rel_dup(rel);
 	} else if (is_join(rel->op)) {
 		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);
