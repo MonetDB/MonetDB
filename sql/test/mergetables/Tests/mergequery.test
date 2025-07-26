@@ -233,7 +233,7 @@ munion (
 | ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 ) [ "complete"."x" NOT NULL, "complete"."y" NOT NULL, "complete"."z" NOT NULL ]
 
-query RRR nosort
+query RRR rowsort
 SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
 1.000
