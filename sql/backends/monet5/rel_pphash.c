@@ -1041,6 +1041,14 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!sub)
 		return NULL;
+	if (list_empty(jexps) && list_empty(sexps) && rel->op == op_anti) {
+		assert(hash_side->h);
+		nulls = stmt_selectnil(be, hash_side->h->data, NULL);
+
+		sub->cand = nulls;
+		sub = subrel_project(be, sub, refs, rel);
+		return sub;
+	}
 	if (list_empty(jexps) && list_empty(sexps)) {
 		sql_exp *e = exp_atom_bool(be->mvc->sa, true);
 		append(sexps,e);
