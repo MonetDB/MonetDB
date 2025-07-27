@@ -467,6 +467,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 
 	/* Find out if a sub-expression of the (compare) exps belong to rel_hsh or
 	 * rel_prb or is a constant. */
+	(void)rel_prb;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
