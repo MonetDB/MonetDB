@@ -748,8 +748,7 @@ static sql_rel *
 rel_get_statistics_(visitor *v, sql_rel *rel)
 {
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
-	uint8_t has_special_modify = *(uint8_t*) v->data;
-	bool can_be_pruned = !has_special_modify && v->storage_based_opt;
+	bool can_be_pruned = v->storage_based_opt;
 
 	/* Don't look at the same relation twice */
 	if (are_statistics_gathered(rel->used))
@@ -1166,8 +1165,6 @@ static sql_rel *
 rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 {
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
-	uint8_t has_special_modify = (uint8_t) gp->has_special_modify;
-	v->data = &has_special_modify;
 	rel = rel_visitor_bottomup(v, rel, &rel_get_statistics_);
 	v->data = gp;
 	return rel;

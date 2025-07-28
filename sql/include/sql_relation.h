@@ -83,8 +83,6 @@ typedef struct expression {
 #define IS_TABLE_PROD_FUNC(X)  ((X & TABLE_PROD_FUNC) == TABLE_PROD_FUNC)
 
 /* or-ed with the above TABLE_PROD_FUNC */
-#define UPD_COMP		2
-
 #define REL_PARTITION		8
 #define OUTER_ZERO		32
 
