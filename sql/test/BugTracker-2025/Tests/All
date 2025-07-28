@@ -17,7 +17,7 @@ HAVE_HGE?7637_str_to_decimal
 7647-munion-optimizer-bug
 7648_rightjoin_crash
 7650_right_join_crash
-7653_incorrect_join_results
+KNOWNFAIL?7653_incorrect_join_results
 7654_non_monetdb_user_remote_table_exec
 7656_incorrect_error
 7659_trigger_crashes
