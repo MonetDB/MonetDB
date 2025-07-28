@@ -878,8 +878,6 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 static sql_rel *
 rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
-	sql_rel *p = relup->r;
-
 	if (!ol_length(t->idxs))
 		return relup;
 
@@ -902,17 +900,6 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		} else if (i->type == join_idx) {
 			rel_update_join_idx(sql, alias, i, relup);
 		}
-	}
-	if (relup->r != p) {
-		sql_rel *r = rel_create(sql->sa);
-		if(!r)
-			return NULL;
-		r->op = op_update;
-		r->l = rel_dup(p);
-		r->r = relup;
-		r->card = relup->card;
-		r->flag |= UPD_COMP; /* mark as special update */
-		return r;
 	}
 	return relup;
 }

@@ -119,8 +119,6 @@ rel_destroy_(sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
-		if (rel->flag == UPD_COMP && rel->l) /* cleanup nested updates */
-			rel_destroy(rel->l);
 		if (rel->r)
 			rel_destroy(rel->r);
 		break;

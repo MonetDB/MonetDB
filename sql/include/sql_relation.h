@@ -84,8 +84,6 @@ typedef struct expression {
 #define IS_TABLE_PROD_FUNC(X)  ((X & TABLE_PROD_FUNC) == TABLE_PROD_FUNC)
 
 /* or-ed with the above TABLE_PROD_FUNC */
-#define UPD_COMP		2
-
 #define OUTER_ZERO		32
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
@@ -291,9 +289,6 @@ typedef enum operator_type {
 #define reset_freevar(e) 	(e)->freevar = 0
 
 #define rel_is_ref(rel)		(((sql_rel*)(rel))->ref.refcnt > 1)
-
-#define is_blocking(rel)   (rel->parallel && \
-		(is_join(rel->op) || is_groupby(rel->op) || (is_simple_project(rel->op) && rel->r)))
 
 typedef struct relation {
 	sql_ref ref;

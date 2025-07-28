@@ -121,7 +121,7 @@ insert into kvk(kvk, bedrijfsnaam) values (1, 'ones')
 statement ok
 insert into kvk(kvk, bedrijfsnaam) values (2, 'toos')
 
-query IIT rowsort
+query IIT nosort
 select * from kvk order by 1,2,3
 ----
 1
@@ -145,7 +145,7 @@ insert into kvk_cp(kvk, bedrijfsnaam) values (3, 'dries')
 statement ok
 insert into kvk_cp(kvk, bedrijfsnaam) values (4, 'viers')
 
-query IIT rowsort
+query IIT nosort
 select * from kvk_cp order by 1,2,3
 ----
 3
@@ -161,7 +161,7 @@ drop TABLE kvk
 statement ok
 insert into kvk_cp(kvk, bedrijfsnaam) values (5, 'vijfs')
 
-query IIT rowsort
+query IIT nosort
 select * from kvk_cp order by 1,2,3
 ----
 3
