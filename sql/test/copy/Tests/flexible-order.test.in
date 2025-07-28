@@ -1,11 +1,8 @@
-
 statement ok
 DROP TABLE IF EXISTS foo
 
 statement ok
 CREATE TABLE foo(s TEXT, t TEXT)
-
-
 
 -- First show that the 'default' order works
 
@@ -25,8 +22,6 @@ Xmies
 statement ok
 TRUNCATE foo
 
-
-
 -- add USING DELIMITERS and NULL clauses
 
 statement ok
@@ -43,8 +38,6 @@ aap
 NULL
 3|
 mies
-
-
 
 -- add USING DELIMITERS and NULL clauses in a different order
 
@@ -65,8 +58,6 @@ aap
 NULL
 3|
 mies
-
-
 
 -- What happens if we duplicate a clause?
 
@@ -89,7 +80,6 @@ NULL
 3|
 mies
 
-
 -- What happens if a duplicate clause updates only part of the settings?
 
 statement ok
@@ -102,4 +92,5 @@ statement error 42000!COPY INTO: row separator, column separator and quote chara
 COPY INTO foo FROM R'$TSTSRCDIR/aapnootmies.csv'
 USING DELIMITERS '*', 'X'
 NULL AS 'noot'
-USING DELIMITERS 'X';
+USING DELIMITERS 'X'
+

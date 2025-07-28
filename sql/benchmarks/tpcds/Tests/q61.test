@@ -1,4 +1,4 @@
-query RRR nosort
+query DDD nosort
 -- query 61
 select  promotions,total,cast(promotions as decimal(15,4))/cast(total as decimal(15,4))*100
 from
@@ -42,7 +42,7 @@ from
 order by promotions, total
 limit 100
 ----
-2894229.700
-5493575.410
-52.680
+2894229.70
+5493575.41
+52.6800
 

@@ -1,4 +1,4 @@
-query TRRR nosort
+query TRDD nosort
 -- query 85
 select  substr(r_reason_desc,1,20)
        ,avg(ws_quantity)
@@ -84,26 +84,26 @@ limit 100
 ----
 Gift exchange
 76.000
-464.360
-8.620
+464.36
+8.62
 Not the product that
 70.000
-876.670
-46.670
+876.67
+46.67
 Parts missing
 7.000
-129.420
-38.650
+129.42
+38.65
 reason 23
 47.000
-734.610
-6.170
+734.61
+6.17
 reason 25
 5.000
-48.940
-53.150
+48.94
+53.15
 reason 28
 8.000
-306.200
-37.060
+306.20
+37.06
 

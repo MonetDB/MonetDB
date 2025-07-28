@@ -1,5 +1,5 @@
 #Q15a
-query ITTTR nosort
+query ITTTD nosort
 with revenue (supplier_no, total_revenue) as (
 		select
 			l_suppkey,
@@ -36,5 +36,5 @@ order by
 Supplier#000000021
 81CavellcrJ0PQ3CPBID0Z0JwyJm0ka5igEs
 12-253-590-5816
-1161099.464
+1161099.4636
 

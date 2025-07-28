@@ -20,7 +20,7 @@ select { fn IFNULL('abc', 'def') }
 ----
 abc
 
-query R rowsort
+query D rowsort
 select { fn IFNULL(NULLIF(3,3), -9.0/+4) }
 ----
 -2.250
@@ -35,7 +35,7 @@ select IFNULL('abc', 'def')
 ----
 abc
 
-query R rowsort
+query D rowsort
 select IFNULL(NULLIF(3,3), -9.0/+4)
 ----
 -2.250

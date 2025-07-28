@@ -187,6 +187,9 @@ alter user testu03 schema path '"sys"'
 statement error M1M05!DROP USER: 'testu03' owns a schema
 drop user testu03
 
+statement ok
+alter user IF EXISTS testu03 schema path '"sys"'
+
 -- try to drop the schema first
 statement ok
 drop schema testu03
@@ -195,6 +198,9 @@ drop schema testu03
 statement ok
 drop user testu03
 -- finally the created user (and implictly created schema) can be dropped
+
+statement ok
+drop user IF EXISTS testu03
 
 statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu05b' (there are database users using it as session's default schema)
 drop schema testu05b
@@ -208,6 +214,12 @@ drop schema testu05b
 statement ok
 drop user testu05b
 
+statement ok
+drop schema IF EXISTS testu05b
+
+statement ok
+drop user IF EXISTS testu05b
+
 statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu06' (there are database users using it as session's default schema)
 drop schema testu06
 
@@ -219,6 +231,15 @@ drop schema testu06
 
 statement ok
 drop user testu06
+
+statement ok
+alter user IF EXISTS testu06 set schema sys
+
+statement ok
+drop schema IF EXISTS testu06
+
+statement ok
+drop user IF EXISTS testu06
 
 statement error 2BM37!DROP SCHEMA: unable to drop schema 'testu07' (there are database users using it as session's default schema)
 drop schema testu07

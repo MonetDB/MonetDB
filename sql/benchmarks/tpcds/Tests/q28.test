@@ -1,4 +1,4 @@
-query RIIRIIRIIRIIRIIRII rowsort
+query DIIDIIDIIDIIDIIDII rowsort
 -- query 28
 select  *
 from (select avg(ss_list_price) B1_LP
@@ -51,22 +51,22 @@ from (select avg(ss_list_price) B1_LP
           or ss_wholesale_cost between 7 and 7+20)) B6
 limit 100
 ----
-77.720
+77.72
 36142
 9210
-69.500
+69.50
 35250
 6592
-134.010
+134.01
 27875
 9741
-82.550
+82.55
 31422
 7678
-61.830
+61.83
 36100
 8664
-39.280
+39.28
 29776
 5210
 

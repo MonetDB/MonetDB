@@ -56,10 +56,10 @@ project (
 | crossproduct (
 | | table (
 | | | REMOTE("sys"."foo_r2") [ "foo_r2"."n" as "foo_rpl_rmt_node2"."n", "foo_r2"."m" as "foo_rpl_rmt_node2"."m", "foo_r2"."%TID%" NOT NULL UNIQUE as "foo_rpl_rmt_node2"."%TID%" ] REMOTE monetdb://localhost.:50002/node2
-| | ) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "foo_rpl_rmt_node2"."%TID%" NOT NULL UNIQUE ],
+| | ) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "foo_rpl_rmt_node2"."%TID%" NOT NULL ],
 | | table (
 | | | REMOTE("sys"."bar_r3") [ "bar_r3"."n" as "bar_rpl_rmt_node3"."n", "bar_r3"."m" as "bar_rpl_rmt_node3"."m", "bar_r3"."%TID%" NOT NULL UNIQUE as "bar_rpl_rmt_node3"."%TID%" ] REMOTE monetdb://localhost:50003/node3
-| | ) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "bar_rpl_rmt_node3"."%TID%" NOT NULL UNIQUE ]
+| | ) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "bar_rpl_rmt_node3"."%TID%" NOT NULL ]
 | ) [  ]
 ) [ "foo_rpl_rmt_node2"."n", "foo_rpl_rmt_node2"."m", "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m" ]
 
@@ -82,7 +82,7 @@ project (
 | crossproduct (
 | | table (
 | | | REMOTE("sys"."bar_r3") [ "bar_r3"."n" as "bar_rpl_rmt_node3"."n", "bar_r3"."m" as "bar_rpl_rmt_node3"."m", "bar_r3"."%TID%" NOT NULL UNIQUE as "bar_rpl_rmt_node3"."%TID%" ] REMOTE monetdb://localhost:50003/node3
-| | ) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "bar_rpl_rmt_node3"."%TID%" NOT NULL UNIQUE ],
+| | ) [ "bar_rpl_rmt_node3"."n", "bar_rpl_rmt_node3"."m", "bar_rpl_rmt_node3"."%TID%" NOT NULL ],
 | | table (
 | | | REMOTE("sys"."buz_rmt") [ "buz_rmt"."l" ] REMOTE monetdb://localhost.:50002/node2
 | | ) [ "buz_rmt"."l" ]

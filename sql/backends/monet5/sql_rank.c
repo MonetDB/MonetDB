@@ -1143,17 +1143,21 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 				goto bailout;
 			}
 			bpi = bat_iterator(d);
-			p = BUNtail(bpi, 0);
-			default_size = ATOMlen(tp3, p);
-			default_value = GDKmalloc(default_size);
-			if (default_value)
-				memcpy(default_value, p, default_size);
+			if (bpi.count > 0) {
+				p = BUNtail(bpi, 0);
+				default_size = ATOMlen(tp3, p);
+				default_value = GDKmalloc(default_size);
+				if (default_value)
+					memcpy(default_value, p, default_size);
+				free_default_value = true;
+			} else {
+				default_value = (void *)ATOMnilptr(bpi.type);
+			}
 			bat_iterator_end(&bpi);
 			if (!default_value) {
 				msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
-			free_default_value = true;
 		} else {
 			ValRecord *in = &(stk)->stk[(pci)->argv[3]];
 			default_value = VALget(in);

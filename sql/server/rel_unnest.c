@@ -316,7 +316,7 @@ merge_freevar(list *l, list *r, bool all)
 	return list_distinct(r, (fcmp)freevar_equal, (fdup)NULL);
 }
 
-static list * exps_freevar(mvc *sql, list *exps);
+static list * exps_freevar(mvc *sql, list *exps, bool all);
 static list * rel_freevar(mvc *sql, sql_rel *rel);
 
 static list *
@@ -335,18 +335,18 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 	case e_aggr:
 	case e_func:
 		if (e->l)
-			return exps_freevar(sql, e->l);
+			return exps_freevar(sql, e->l, all);
 		break;
 	case e_cmp:
 		if (e->flag == cmp_filter) {
-			list *l = exps_freevar(sql, e->l);
-			list *r = exps_freevar(sql, e->r);
+			list *l = exps_freevar(sql, e->l, all);
+			list *r = exps_freevar(sql, e->r, all);
 			return merge_freevar(l, r, all);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
-			return exps_freevar(sql, e->l);
+			return exps_freevar(sql, e->l, all);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *l = exp_freevar(sql, e->l, all);
-			list *r = exps_freevar(sql, e->r);
+			list *r = exps_freevar(sql, e->r, all);
 			return merge_freevar(l, r, all);
 		} else {
 			list *l = exp_freevar(sql, e->l, all);
@@ -366,7 +366,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 		return NULL;
 	case e_atom:
 		if (e->f)
-			return exps_freevar(sql, e->f);
+			return exps_freevar(sql, e->f, all);
 		return NULL;
 	default:
 		return NULL;
@@ -375,7 +375,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 }
 
 static list *
-exps_freevar(mvc *sql, list *exps)
+exps_freevar(mvc *sql, list *exps, bool all)
 {
 	node *n;
 	list *c = NULL;
@@ -386,9 +386,9 @@ exps_freevar(mvc *sql, list *exps)
 		return NULL;
 	for (n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		list *var = exp_freevar(sql, e, false);
+		list *var = exp_freevar(sql, e, all);
 
-		c = merge_freevar(c,var, false);
+		c = merge_freevar(c,var, all);
 	}
 	return c;
 }
@@ -407,7 +407,7 @@ rel_freevar(mvc *sql, sql_rel *rel)
 	case op_left:
 	case op_right:
 	case op_full:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
 		lexps = merge_freevar(lexps, rexps, false);
@@ -420,19 +420,19 @@ rel_freevar(mvc *sql, sql_rel *rel)
 		sql_exp *call = rel->r;
 		if (rel->flag != TRIGGER_WRAPPER && rel->l)
 			lexps = rel_freevar(sql, rel->l);
-		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l):NULL;
+		exps = (rel->flag != TRIGGER_WRAPPER && call)?exps_freevar(sql, call->l, false):NULL;
 		return merge_freevar(exps, lexps, false);
 	}
 	case op_except:
 	case op_inter:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		lexps = rel_freevar(sql, rel->l);
 		rexps = rel_freevar(sql, rel->r);
 		lexps = merge_freevar(lexps, rexps, false);
 		exps = merge_freevar(exps, lexps, false);
 		return exps;
 	case op_munion:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		for (node *n = ((list*)rel->l)->h; n; n = n->next) {
 			lexps = rel_freevar(sql, n->data);
 			exps = merge_freevar(exps, lexps, false);
@@ -448,11 +448,11 @@ rel_freevar(mvc *sql, sql_rel *rel)
 
 	case op_groupby:
 	case op_project:
-		exps = exps_freevar(sql, rel->exps);
+		exps = exps_freevar(sql, rel->exps, false);
 		lexps = rel_freevar(sql, rel->l);
 		if (rel->r) {
 			if (is_groupby(rel->op) || is_simple_project(rel->op))
-				rexps = exps_freevar(sql, rel->r);
+				rexps = exps_freevar(sql, rel->r, false);
 			else
 				rexps = rel_freevar(sql, rel->r);
 			lexps = merge_freevar(lexps, rexps, false);
@@ -941,13 +941,18 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 					l = rel_project( sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 
 				if (is_left(rel->op) && !list_empty(rel->attr)) {
-					assert(list_length(rel->exps)==1);
-					sql_exp *e = rel->exps->h->data;
-					sql_exp *oe = rel->attr->h->data;
-					rel_project_add_exp(sql, l, e);
-					if (exp_is_atom(oe) && exp_is_false(oe))
-						e->flag = cmp_notequal;
-					exp_setalias(e, oe->alias.label, exp_relname(oe), exp_name(oe));
+				   	if (list_empty(rel->exps)) {
+						sql_exp *oe = rel->attr->h->data;
+						rel_project_add_exp(sql, l, oe);
+					} else {
+						assert(list_length(rel->exps)==1);
+						sql_exp *e = rel->exps->h->data;
+						sql_exp *oe = rel->attr->h->data;
+						rel_project_add_exp(sql, l, e);
+						if (exp_is_atom(oe) && exp_is_false(oe))
+							e->flag = cmp_notequal;
+						exp_setalias(e, oe->alias.label, exp_relname(oe), exp_name(oe));
+					}
 				}
 				if (!list_empty(r->exps)) {
 					for (m=r->exps->h; m; m = m->next) {
@@ -3737,21 +3742,18 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				return exp_rel(v->sql, sq);
 			}
 			if (is_project(rel->op) || depth > 0 || is_outerjoin(rel->op)) {
-				sql_rel *join = NULL, *rewrite = NULL;
-				sql_rel *bl = rel->l;
+				sql_rel *rewrite = NULL;
 
 				(void)rewrite_inner(v->sql, rel, sq, op_left, &rewrite);
 				exp_reset_props(rewrite, le, is_left(rewrite->op));
-				join = (rel->l == bl)?rel->r:rel->l;//(is_full(rel->op)||is_left(rel->op))?rel->r:rel->l;
-				if (!join)
+				if (!rewrite)
 					return NULL;
-				if (join && !join->exps)
-					join->exps = sa_list(v->sql->sa);
+				if (rewrite && !rewrite->exps)
+					rewrite->exps = sa_list(v->sql->sa);
 				v->changes++;
-				if (join) {
-					assert(is_join(join->op));
-					if (!join->attr)
-						join->attr = sa_list(v->sql->sa);
+				if (rewrite) {
+					if (!rewrite->attr)
+						rewrite->attr = sa_list(v->sql->sa);
 					sql_exp *a = exp_atom_bool(v->sql->sa, is_exists(sf));
 					set_no_nil(a);
 					if (!e->alias.label)
@@ -3760,7 +3762,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
 					le = exp_ref(v->sql, a);
 					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
-					append(join->attr, a);
+					append(rewrite->attr, a);
 					if ((is_project(rel->op) || depth))
 						return le;
 				}
@@ -4245,7 +4247,7 @@ add_null_projects(visitor *v, sql_rel *prel, sql_rel *irel, bool end)
 static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
-	if (is_outerjoin(rel->op) && rel->flag != MERGE_LEFT) {
+	if (is_outerjoin(rel->op)) {
 		int nrcols = rel->nrcols;
 
 		nrcols = include_tid(rel->l);

@@ -1,4 +1,4 @@
-query IIIIIIIIIR rowsort
+query IIIIIIIIID rowsort
 -- query 75
 WITH all_sales AS (
  SELECT d_year
@@ -68,5 +68,5 @@ WITH all_sales AS (
  ORDER BY sales_cnt_diff,sales_amt_diff
  limit 100
 ----
-1000 values hashing to 81bde80d202baba5a28a23a6f69fc5c3
+1000 values hashing to 5447d1c74fec8c2d6a93b69d35410775
 

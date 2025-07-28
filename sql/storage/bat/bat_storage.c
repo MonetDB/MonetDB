@@ -884,43 +884,6 @@ bind_ubat(sql_trans *tr, sql_delta *d, int access, int type, size_t cnt)
 }
 
 static BAT *
-bind_ucol(sql_trans *tr, sql_column *c, int access, size_t cnt)
-{
-	lock_column(tr->store, c->base.id);
-	sql_delta *d = col_timestamp_delta(tr, c);
-	int type = c->type.type->localtype;
-
-	if (!d) {
-		unlock_column(tr->store, c->base.id);
-		return NULL;
-	}
-	if (d->cs.st == ST_DICT) {
-		BAT *b = quick_descriptor(d->cs.bid);
-
-		type = b->ttype;
-	}
-	BAT *bn = bind_ubat(tr, d, access, type, cnt);
-	unlock_column(tr->store, c->base.id);
-	return bn;
-}
-
-static BAT *
-bind_uidx(sql_trans *tr, sql_idx * i, int access, size_t cnt)
-{
-	lock_column(tr->store, i->base.id);
-	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	sql_delta *d = idx_timestamp_delta(tr, i);
-
-	if (!d) {
-		unlock_column(tr->store, i->base.id);
-		return NULL;
-	}
-	BAT *bn = bind_ubat(tr, d, access, type, cnt);
-	unlock_column(tr->store, i->base.id);
-	return bn;
-}
-
-static BAT *
 cs_bind_bat( column_storage *cs, int access, size_t cnt)
 {
 	BAT *b;
@@ -1009,8 +972,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	if (!d)
 		return NULL;
 	size_t cnt = count_col(tr, c, 0);
-	if (access == RD_UPD_ID || access == RD_UPD_VAL)
-		return bind_ucol(tr, c, access, cnt);
+	assert (access != RD_UPD_ID && access != RD_UPD_VAL);
 	BAT *b = cs_bind_bat( &d->cs, access, cnt);
 	assert(!b || ((c->storage_type && access != RD_EXT) || b->ttype == c->type.type->localtype) || (access == QUICK && b->ttype < 0));
 	return b;
@@ -1026,8 +988,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	if (!d)
 		return NULL;
 	size_t cnt = count_idx(tr, i, 0);
-	if (access == RD_UPD_ID || access == RD_UPD_VAL)
-		return bind_uidx(tr, i, access, cnt);
+	assert (access != RD_UPD_ID && access != RD_UPD_VAL);
 	return cs_bind_bat( &d->cs, access, cnt);
 }
 
@@ -2913,7 +2874,7 @@ static int
 col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max)
 {
 	int ok = 0;
-	BAT *b = NULL, *off = NULL, *upv = NULL;
+	BAT *b = NULL, *off = NULL;
 	sql_delta *d = NULL;
 
 	(void) tr;
@@ -2964,17 +2925,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			}
 			bat_iterator_end(&bi);
 			bat_destroy(b);
-			if (*nonil && d->cs.ucnt > 0) {
-				/* This could use a quick descriptor */
-				if (!(upv = bind_col(tr, c, RD_UPD_VAL)) || !(upv = bind_no_view(upv, false))) {
-					*nonil = false;
-				} else {
-					MT_lock_set(&upv->theaplock);
-					*nonil &= upv->tnonil && !upv->tnil;
-					MT_lock_unset(&upv->theaplock);
-					bat_destroy(upv);
-				}
-			}
+			if (*nonil && d->cs.ucnt > 0)
+				*nonil = false;
 		}
 	}
 	return ok;
@@ -3532,23 +3484,29 @@ create_del(sql_trans *tr, sql_table *t)
 }
 
 static int
-log_segment(sql_trans *tr, segment *s, sqlid id)
+log_segment(sql_trans *tr, segment *s, sqlid id, size_t total)
 {
 	sqlstore *store = tr->store;
 	msk m = s->deleted;
-	return log_constant(store->logger, TYPE_msk, &m, id, s->start, s->end-s->start)==GDK_SUCCEED?LOG_OK:LOG_ERR;
+	return log_constant(store->logger, TYPE_msk, &m, id, s->start, s->end-s->start, total)==GDK_SUCCEED?LOG_OK:LOG_ERR;
 }
 
 static int
 log_segments(sql_trans *tr, segments *segs, sqlid id)
 {
+	size_t total = 0;
 	/* log segments */
 	lock_table(tr->store, id);
+	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
+		if (seg->ts == tr->tid && seg->end-seg->start &&
+			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts))
+			total += seg->end-seg->start;
+	}
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, id);
 		if (seg->ts == tr->tid && seg->end-seg->start &&
 			(ATOMIC_PTR_GET(&seg->next) || !seg->deleted || seg->ts != seg->oldts)) {
-			if (log_segment(tr, seg, id) != LOG_OK) {
+			if (log_segment(tr, seg, id, total) != LOG_OK) {
 				return LOG_ERR;
 			}
 		}
@@ -4058,15 +4016,15 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	lock_table(tr->store, t->base.id);
 	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
+		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted)
+			nr_appends += (seg->end - seg->start);
+	}
+	for (segment *seg = segs->h; seg; seg=ATOMIC_PTR_GET(&seg->next)) {
 		unlock_table(tr->store, t->base.id);
 
-		if (seg->ts == tr->tid && seg->end-seg->start) {
-			if (!seg->deleted) {
-				if (log_segment(tr, seg, t->base.id) != LOG_OK)
-					return LOG_ERR;
-
-				nr_appends += (seg->end - seg->start);
-			}
+		if (seg->ts == tr->tid && seg->end-seg->start && !seg->deleted) {
+			if (log_segment(tr, seg, t->base.id, nr_appends) != LOG_OK)
+				return LOG_ERR;
 		}
 		lock_table(tr->store, t->base.id);
 	}

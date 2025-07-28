@@ -134,10 +134,10 @@ select * from dbgen_version limit 9
 17:17:42
 -DIR qual 
 
-query ITTTTTTTTTTRT rowsort
+query ITTTTTTTTTTDT rowsort
 select * from customer_address limit 9
 ----
-117 values hashing to 699e2323610e3d58d692a16a2e957aa1
+117 values hashing to 80773b266492865dfe2a221a7fcb7ae4
 
 query ITTTITIII rowsort
 select * from customer_demographics limit 9
@@ -229,7 +229,7 @@ select * from date_dim limit 9
 ----
 252 values hashing to 9a77044233e9b983225afdb7df9d48c1
 
-query ITTITTTTTTTTTR rowsort
+query ITTITTTTTTTTTD rowsort
 select * from warehouse limit 9
 ----
 1
@@ -245,7 +245,7 @@ Williamson County
 TN
 35709
 United States
--5.000
+-5.00
 2
 AAAAAAAACAAAAAAA
 Important issues liv
@@ -259,7 +259,7 @@ Williamson County
 TN
 35709
 United States
--5.000
+-5.00
 3
 AAAAAAAADAAAAAAA
 Doors canno
@@ -273,7 +273,7 @@ Williamson County
 TN
 35709
 United States
--5.000
+-5.00
 4
 AAAAAAAAEAAAAAAA
 Bad cards must make.
@@ -287,7 +287,7 @@ Williamson County
 TN
 35709
 United States
--5.000
+-5.00
 5
 AAAAAAAAFAAAAAAA
 NULL
@@ -517,35 +517,35 @@ select * from income_band limit 9
 80001
 90000
 
-query ITTTTRRITITITITTTTTTIT rowsort
+query ITTTTDDITITITITTTTTTIT rowsort
 select * from item limit 9
 ----
-198 values hashing to 3792ef6170a1cf9074112439aba19cef
+198 values hashing to 34bb88cdab1b7c0344fa2aebf8d467d7
 
-query ITTTITIITTITTTITITTTTTTTTTTRR rowsort
+query ITTTITIITTITTTITITTTTTTTTTTDD rowsort
 select * from store limit 9
 ----
-261 values hashing to 77d3e633166079a386481c224243e831
+261 values hashing to ad5a30d17b5287471ffcc73d5e0ea7e2
 
-query ITTTIITTIITTITTTITITTTTTTTTTTRR rowsort
+query ITTTIITTIITTITTTITITTTTTTTTTTDD rowsort
 select * from call_center limit 9
 ----
-186 values hashing to 53fd228aa424055e0bbb13b699cd7c0f
+186 values hashing to 0e6c1f807bdf748475f69a2de161898f
 
 query ITIIIIITTTTIIITTTI rowsort
 select * from customer limit 9
 ----
 162 values hashing to a891ab1aab4581851c4d5bdcd66e88c7
 
-query ITTTTIITTITTTITTTTTTTTTTRR rowsort
+query ITTTTIITTITTTITTTTTTTTTTDD rowsort
 select * from web_site limit 9
 ----
-234 values hashing to 0d8462fd7ce57f8b66b6f9092b24cf28
+234 values hashing to fe46843edc2ae32c57cb33539a6267c5
 
-query IIIIIIIIIIIRRRRRRRRR rowsort
+query IIIIIIIIIIIDDDDDDDDD rowsort
 select * from store_returns limit 9
 ----
-180 values hashing to fe29770554c3542a69d3f0cb10b2615e
+180 values hashing to 3a5b884f9c6af1d84dc9fa19da82983c
 
 query IITII rowsort
 select * from household_demographics limit 9
@@ -601,10 +601,10 @@ select * from web_page limit 9
 ----
 126 values hashing to 0520e4b68668e115811687af6813aa53
 
-query ITIIIRITTTTTTTTTTTT rowsort
+query ITIIIDITTTTTTTTTTTT rowsort
 select * from promotion limit 9
 ----
-171 values hashing to 614bba13244a6461b472279604124e05
+171 values hashing to 47e0cc19935da51c93f9a073281f4e94
 
 query ITIITIITT rowsort
 select * from catalog_page limit 9
@@ -731,30 +731,30 @@ select * from inventory limit 9
 1
 891
 
-query IIIIIIIIIIIIIIIIIIRRRRRRRRR rowsort
+query IIIIIIIIIIIIIIIIIIDDDDDDDDD rowsort
 select * from catalog_returns limit 9
 ----
-243 values hashing to b5470519d6d8483324b94e74c7e2c50a
+243 values hashing to 83fc585bf8ae1e3475c9d3bc6acb3baa
 
-query IIIIIIIIIIIIIIIRRRRRRRRR rowsort
+query IIIIIIIIIIIIIIIDDDDDDDDD rowsort
 select * from web_returns limit 9
 ----
-216 values hashing to 0fb3e59b4c9d18ead9318af7a31ff6f8
+216 values hashing to 58e12ed10dae560e5f3fb33fd4dd2340
 
-query IIIIIIIIIIIIIIIIIIIRRRRRRRRRRRRRRR rowsort
+query IIIIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDD rowsort
 select * from web_sales limit 9
 ----
-306 values hashing to 947e7e52b78fe6f829f7672ce01d2b9d
+306 values hashing to 3d21e844caaaec0912809d5a78d80419
 
-query IIIIIIIIIIIIIIIIIIIRRRRRRRRRRRRRRR rowsort
+query IIIIIIIIIIIIIIIIIIIDDDDDDDDDDDDDDD rowsort
 select * from catalog_sales limit 9
 ----
-306 values hashing to 9e4dce72a0d4b7aa37688bcbcdf675d9
+306 values hashing to 3dc0529699fa57637a279e6995f6eccc
 
-query IIIIIIIIIIIRRRRRRRRRRRR rowsort
+query IIIIIIIIIIIDDDDDDDDDDDD rowsort
 select * from store_sales limit 9
 ----
-207 values hashing to a4f563459be7a003337ac1df4774041e
+207 values hashing to 4be2923b90c105f3ff961dcd3ade1324
 
 statement ok
 rollback

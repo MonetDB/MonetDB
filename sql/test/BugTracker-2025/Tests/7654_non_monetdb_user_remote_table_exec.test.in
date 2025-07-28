@@ -1,8 +1,6 @@
-@connection(id=c1, username=monetdb, password=monetdb)
 statement ok
 create user u1 with password 'u1' name 'u1'
 
-@connection(id=c1, username=monetdb, password=monetdb)
 statement ok
 create user u2 with password 'u2' name 'u2'
 
@@ -14,8 +12,9 @@ create table foo as select * from generate_series(0, 1000)
 statement ok
 create remote table foo(value smallint) on 'mapi:monetdb://localhost:$MAPIPORT/$TSTDB/u1/foo' with user 'u1' password 'u1'
 
-@connection(id=c3, username=u2, password=u2)
-query I
+@connection(id=c3)
+query I nosort
 select count(*) from foo
 ----
 1000
+

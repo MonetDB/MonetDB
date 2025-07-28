@@ -1,4 +1,4 @@
-query TIRRRR nosort
+query TIDDDD nosort
 -- query 31
 -- added a bunch of "*1.0000"
 with ss as
@@ -51,5 +51,5 @@ with ss as
        > case when ss2.store_sales > 0 then (ss3.store_sales*1.0000)/ss2.store_sales else null end
  order by ss1.ca_county
 ----
-306 values hashing to 3c2b865e9edc0c5ed36db40cee00eed5
+306 values hashing to 08f310a53b962c163587040583f9261e
 

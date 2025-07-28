@@ -106,7 +106,7 @@ statement ok
 DROP TABLE v0
 
 -- 06.sql
-statement error HY013!Could not allocate space
+statement error HY013!Could not allocate memory
 CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0)
 
 -- 07.sql
@@ -321,7 +321,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
 
-query R nosort
+query D nosort
 SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
 ----
 
@@ -431,7 +431,7 @@ CREATE TABLE v0(v1 DECIMAL NOT NULL)
 statement ok
 INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
 
-query R nosort
+query D nosort
 SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
 ----
 0.000
@@ -458,7 +458,7 @@ DROP TABLE v0
 
 -- 31.sql
 onlyif has-hugeint
-query I
+query I nosort
 SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
 ----
 15
@@ -565,7 +565,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 
-query I
+query I nosort
 SELECT 2 FROM v0 AS v0 WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
 ----
 

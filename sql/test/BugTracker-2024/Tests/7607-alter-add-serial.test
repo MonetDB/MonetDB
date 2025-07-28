@@ -14,7 +14,7 @@ statement ok
 alter table t add column c int auto_increment
 
 statement ok
-alter table t add column d serial;
+alter table t add column d serial
 
 statement ok
 create table tb(a int, b int auto_increment)
@@ -30,3 +30,4 @@ set schema sys
 
 statement ok
 drop schema s7607
+

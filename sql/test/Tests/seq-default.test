@@ -67,13 +67,7 @@ statement ok
 insert into seqdeftest(d) values ('2005-10-01')
 
 statement ok
-insert into seqdeftest(d) values ('2005-10-01')
-
-statement ok
-insert into seqdeftest(d) values ('2005-10-01')
-
-statement ok
-insert into seqdeftest(d) values ('2005-10-01')
+insert into seqdeftest(d) values ('2005-10-01'), ('2005-10-01'), ('2005-10-01')
 
 query TIII rowsort
 select * from seqdeftest
@@ -106,6 +100,10 @@ select * from seqdeftest
 statement ok
 drop table seqdeftest
 
+query T nosort
+select name from sys.sequences
+----
+
 statement ok
 CREATE SEQUENCE seq_5700 AS INTEGER
 
@@ -123,8 +121,8 @@ insert into kvk(kvk, bedrijfsnaam) values (1, 'ones')
 statement ok
 insert into kvk(kvk, bedrijfsnaam) values (2, 'toos')
 
-query IIT rowsort
-select * from kvk
+query IIT nosort
+select * from kvk order by 1,2,3
 ----
 1
 1
@@ -147,8 +145,8 @@ insert into kvk_cp(kvk, bedrijfsnaam) values (3, 'dries')
 statement ok
 insert into kvk_cp(kvk, bedrijfsnaam) values (4, 'viers')
 
-query IIT rowsort
-select * from kvk_cp
+query IIT nosort
+select * from kvk_cp order by 1,2,3
 ----
 3
 3
@@ -163,8 +161,8 @@ drop TABLE kvk
 statement ok
 insert into kvk_cp(kvk, bedrijfsnaam) values (5, 'vijfs')
 
-query IIT rowsort
-select * from kvk_cp
+query IIT nosort
+select * from kvk_cp order by 1,2,3
 ----
 3
 3
@@ -176,11 +174,18 @@ viers
 5
 vijfs
 
+--skipif knownfail
+statement error DROP SEQUENCE: unable to drop sequence seq_75700 (there are database objects which depend on it)
+drop SEQUENCE seq_5700
+
 statement ok
 drop TABLE kvk_cp
 
 statement ok
 drop SEQUENCE seq_5700
+
+statement ok
+drop SEQUENCE if exists seq_5700
 
 statement ok
 ROLLBACK

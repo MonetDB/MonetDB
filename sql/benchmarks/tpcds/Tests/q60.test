@@ -1,4 +1,4 @@
-query TR nosort
+query TD nosort
 -- query 60
 with ss as (
  select
@@ -76,5 +76,5 @@ where i_category in ('Music'))
       ,total_sales
  limit 100
 ----
-200 values hashing to 61dc8bd82f5598a1c23cc53927e9fdf8
+200 values hashing to 5c3bd4ecefe68c3cf5ed875c57cd4ded
 

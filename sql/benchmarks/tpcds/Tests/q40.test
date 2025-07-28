@@ -1,4 +1,4 @@
-query TTRR nosort
+query TTDD nosort
 -- query 40
 select
    w_state
@@ -26,5 +26,5 @@ select
  order by w_state,i_item_id
 limit 100
 ----
-400 values hashing to fedfc1a4e548149beb25b4fe990c1dad
+400 values hashing to 28978392e44085fd12bd67a76a23fd37
 

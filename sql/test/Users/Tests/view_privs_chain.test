@@ -60,30 +60,30 @@ CREATE VIEW v2 AS SELECT v1.name, v1.ssn, e.salary
 FROM v1, employee e
 WHERE v1.name = e.name
 
-query TTR nosort
+query TTD nosort
 SELECT * FROM v2
 ----
 alice
 ********A
-888.420
+888.42
 bob
 ********0
-444.420
+444.42
 
 statement ok
 CREATE VIEW v3 AS SELECT v1.name, v1.yr, v2.salary
 FROM v1, v2
 WHERE v1.name = v2.name
 
-query TIR nosort
+query TID nosort
 SELECT * FROM v3
 ----
 alice
 1980
-888.420
+888.42
 bob
 1970
-444.420
+444.42
 
 statement ok
 CREATE VIEW v4 AS SELECT yr,
@@ -129,15 +129,15 @@ statement ok
 GRANT SELECT on your_schema.v3 to usr1
 
 @connection(id=usr1)
-query TIR nosort
+query TID nosort
 SELECT * FROM your_schema.v3
 ----
 alice
 1980
-888.420
+888.42
 bob
 1970
-444.420
+444.42
 
 @connection(id=usr1)
 statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v2'
@@ -151,15 +151,15 @@ statement ok
 GRANT SELECT on your_schema.v2 to usr1
 
 @connection(id=usr1)
-query TTR nosort
+query TTD nosort
 SELECT * FROM your_schema.v2
 ----
 alice
 ********A
-888.420
+888.42
 bob
 ********0
-444.420
+444.42
 
 @connection(id=usr1)
 statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v1'
@@ -220,15 +220,15 @@ statement ok
 GRANT SELECT on your_schema.v3 to usr2
 
 @connection(id=usr2)
-query TIR nosort
+query TID nosort
 SELECT * FROM your_schema.v3
 ----
 alice
 1980
-888.420
+888.42
 bob
 1970
-444.420
+444.42
 
 @connection(id=usr2)
 statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v2'
@@ -242,15 +242,15 @@ statement ok
 GRANT SELECT on your_schema.v2 to usr2
 
 @connection(id=usr2)
-query TTR nosort
+query TTD nosort
 SELECT * FROM your_schema.v2
 ----
 alice
 ********A
-888.420
+888.42
 bob
 ********0
-444.420
+444.42
 
 @connection(id=usr2)
 statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v1'
