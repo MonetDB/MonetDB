@@ -248,17 +248,25 @@ project (
 | group by (
 | | munion (
 | | | group by (
-| | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
+| | | | munion (
+| | | | | group by (
+| | | | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
+| | | | | group by (
+| | | | | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | | | ) [ "f_merge_rec"."n" NOT NULL, "%1"."%1" NOT NULL ]
+| | | ) [ "f_merge_rec"."n" NOT NULL ] [ "f_merge_rec"."n" NOT NULL, "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ],
 | | | group by (
-| | | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
-| | | group by (
-| | | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
-| | | group by (
-| | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | | | munion (
+| | | | | group by (
+| | | | | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ],
+| | | | | group by (
+| | | | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
+| | | | | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ] [ "f_merge_rec"."n" NOT NULL UNIQUE, "sys"."count" no nil ("f_merge_rec"."n" NOT NULL UNIQUE) NOT NULL as "%1"."%1" ]
+| | | | ) [ "f_merge_rec"."n" NOT NULL, "%1"."%1" NOT NULL ]
+| | | ) [ "f_merge_rec"."n" NOT NULL ] [ "f_merge_rec"."n" NOT NULL, "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "f_merge_rec"."n" NOT NULL, "%1"."%1" NOT NULL ]
 | ) [ "f_merge_rec"."n" NOT NULL ] [ "f_merge_rec"."n" NOT NULL, "sys"."sum" no nil ("%1"."%1" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "f_merge_rec"."n" NOT NULL UNIQUE, "%1"."%1" NOT NULL ]

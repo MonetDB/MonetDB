@@ -3288,19 +3288,13 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 		list *l = rel->l;
 		for(node *n = l->h; n; ) {
 			node *next = n->next;
-			sql_rel *oc = n->data;
-			sql_rel *c = oc;
-
-			/* account for any group-bys pushed down between stacked munions */
-			if (oc->op == op_groupby)
-				c = oc->l;
-
+			sql_rel *c = n->data;
 			if (is_munion(c->op)) {
 				c = rel_dup(c);
 				list_remove_node(l, NULL, n);
 				l = list_merge(l, c->l, (fdup)NULL);
 				c->l = NULL;
-				rel_destroy(oc);
+				rel_destroy(c);
 				if (!next)
 					next = l->h;
 				v->changes++;
