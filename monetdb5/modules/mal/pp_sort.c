@@ -15,7 +15,7 @@
 #include "pipeline.h"
 
 static int
-var_atom_cmp(int type, void *l, void *r, bool desc)
+var_atom_cmp(int type, void *l, void *r, bool nilsmallest)
 {
 	void *nil = (void*)ATOMnilptr(type);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(type);
@@ -26,9 +26,9 @@ var_atom_cmp(int type, void *l, void *r, bool desc)
 	if (lnil && rnil)
 		return 0;
 	if (lnil)
-		return desc?-1:1;
+		return nilsmallest?-1:1;
 	if (rnil)
-		return desc?1:-1;
+		return nilsmallest?1:-1;
 	return cmp(l, r);
 }
 
@@ -37,6 +37,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 {
 	BAT *rzzl = NULL, *rzzb = NULL, *rzza = NULL;
 	str err = MAL_SUCCEED;
+	bool nilsmallest = desc == nlast; /* (desc && nlast) || (!desc && !nlast); */
 
 	/* sofar the ANY type case, later add optimized versions */
 	/* need new output bats */
@@ -63,12 +64,8 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	BATiter li = bat_iterator(lcol);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(rcol->ttype);
 
-	if (desc && nlast)
-		nlast = false;
-	if (desc && !nlast)
-		nlast = true;
 	if (nlast && ri.nonil && li.nonil)
-		nlast = false;
+		nilsmallest = true;
 
 	int side = 0;
 	int *gp = Tloc(zzl, 0);
@@ -103,7 +100,7 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 			for(;p < e; ) {
 				void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 				void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-				int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, desc);
+				int c = nilsmallest?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, nilsmallest);
 				if (desc)
 					c = -c;
 				if (c <= 0) {
@@ -265,6 +262,7 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 {
 	BAT *rzzl = NULL, *rzzb = NULL, *rzza = NULL;
 	str err = MAL_SUCCEED;
+	bool nilsmallest = desc == nlast; /* (desc && nlast) || (!desc && !nlast); */
 
 	/* sofar the ANY type case, later add optimized versions */
 	/* need new output bats */
@@ -295,18 +293,14 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	BATiter li = bat_iterator(lcol);
 	int (*cmp)(const void *v1,const void *v2) = ATOMcompare(rcol->ttype);
 
-	if (desc && nlast)
-		nlast = false;
-	if (desc && !nlast)
-		nlast = true;
 	if (nlast && ri.nonil && li.nonil)
-		nlast = false;
+		nilsmallest = false;
 
 	int side = 0;
 	for(; p<e; ) {
 		void *vc = !side?BUNtail(ri, cur):BUNtail(li, cur);
 		void *vp =  side?BUNtail(ri, p):BUNtail(li, p);
-		int c = !nlast?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, desc);
+		int c = nilsmallest?cmp(vp,vc):var_atom_cmp(rcol->ttype, vp, vc, nilsmallest);
 		if (desc)
 			c = -c;
 		if (c <= 0) {
