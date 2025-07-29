@@ -327,7 +327,7 @@ class TestCaseResult(object):
 
         return self
 
-    def assertDataResultMatch(self, data=[], index=None):
+    def assertDataResultMatch(self, data=[], index=None, rowsort=False):
         """Assert on a match of a subset of the result. When index is provided it
         starts comparing from that row index onward.
         """
@@ -342,14 +342,17 @@ class TestCaseResult(object):
             msg = 'expected result but received empty!'
             self.fail(msg, data=self.data)
 
-        data = list(map(mapfn, data))
-        if index is None:
-            if len(data) > 0:
-                first = data[0]
-                for i, v in enumerate(self.data):
-                    if first == v:
-                        index = i
-                        break
+        if rowsort:
+            self.data = sorted(self.data, key=lambda x: (x[0] is None, x[0]))
+
+        # data = list(map(mapfn, data))
+        # if index is None:
+        #     if len(data) > 0:
+        #         first = data[0]
+        #         for i, v in enumerate(self.data):
+        #             if first == v:
+        #                 index = i
+        #                 break
         index = index or 0
         # align sequences
         idx_mis = get_index_mismatch(data, self.data[index:])
