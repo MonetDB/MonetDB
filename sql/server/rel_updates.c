@@ -1661,7 +1661,7 @@ copyfrom(sql_query *query, CopyFromNode *copy)
 	const char *tsep = copy->tsep;
 	char *rsep = copy->rsep; /* not const, might need adjusting */
 	const char *ssep = copy->ssep;
-	const char *ns = copy->null_string ? copy->null_string : "null";
+	const char *ns = copy->null_string ? copy->null_string : "NULL";
 	lng nr = copy->nrows;
 	lng offset = copy->offset;
 	list *collist;
