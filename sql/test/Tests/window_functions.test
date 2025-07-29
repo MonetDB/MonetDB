@@ -552,7 +552,7 @@ SELECT start_terminal,
          AS running_total
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
- ORDER BY start_terminal
+ ORDER BY start_terminal, duration_seconds, running_total
 ----
 AMS
 55
@@ -564,11 +564,11 @@ DIEMEN
 155
 320
 DIEMEN
-165
-320
-DIEMEN
 155
 640
+DIEMEN
+165
+320
 DIEMEN
 165
 640
@@ -657,6 +657,7 @@ SELECT start_terminal,
          AS running_avg
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
+ORDER BY start_terminal, duration_seconds, running_total
 ----
 AMS
 55
@@ -674,14 +675,14 @@ DIEMEN
 2
 160.000
 DIEMEN
-165
-320
-2
-160.000
-DIEMEN
 155
 640
 4
+160.000
+DIEMEN
+165
+320
+2
 160.000
 DIEMEN
 165
