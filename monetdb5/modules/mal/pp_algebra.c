@@ -1755,7 +1755,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, NULL);
+		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL);
 		if (u->tsink == NULL) {
 			err = createException(MAL, "pp group.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -2148,7 +2148,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			goto error;
 		}
 		/* Lookup parent hash */
-		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, false, (hash_table*)H->tsink);
+		u->tsink = (Sink*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->tsink);
 		if (u->tsink == NULL) {
 			BBPunfix(H->batCacheid);
 			err = createException(MAL, "pp group.group(derive)", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2504,7 +2504,19 @@ LALGproject(bat *rid, bat *gid, bat *bid, const ptr *H)
 		vproject()
 			project(bte)
 			project(sht)
-			project(int)
+			//project(int)
+if (ATOMstorage(tt) == TYPE_int) {
+	int *v = Tloc(b, 0);
+	int *o = Tloc(r, 0);
+	if (g->ttype == TYPE_void) {
+		oid gi = g->tseqbase;
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
+			o[gi + i] = v[i];
+	} else {
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
+			o[gp[i]] = v[i];
+	}
+}
 			project(lng)
 #ifdef HAVE_HGE
 			project(hge)

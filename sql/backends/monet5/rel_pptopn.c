@@ -178,7 +178,7 @@ rel_topn_prepare_pp(backend *be, sql_rel *rel, stmt *all)
 				if (card > INT_MAX)
 					card = INT_MAX;
 
-				InstrPtr q = stmt_oahash_new(be, tt, card, false, curhash);
+				InstrPtr q = stmt_oahash_new(be, tt, card, curhash);
 				if (q == NULL)
 					return NULL;
 				curhash = e->shared = q->argv[0]; /* pass hash table statment via expression */

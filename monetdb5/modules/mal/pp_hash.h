@@ -118,10 +118,6 @@ typedef struct hash_table {
 	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
 	gid *pgids;			/* id of the parent hash */
 
-	/* Only allocated when specific join ops need them. */
-	ATOMIC_TYPE *frequency; /* frequencies of GIDs in the hashed column */
-	bool *matched;          /* for outer joins: has it been matched with the probe side? */
-
 	struct hash_table *p;	/* parent hash */
 	int bits;
 	ATOMIC_TYPE last;
@@ -132,27 +128,6 @@ typedef struct hash_table {
 	mallocator **allocators;
 	int nr_allocators;
 } hash_table;
-
-typedef struct hash_payload {
-	Sink s;
-	int type;
-	int width;
-	fcmp cmp;
-	fhsh hsh;
-	flen len;
-	bool rehash;
-
-	void *payload;		/* hash(ed) payload values */
-
-	hash_table *parent;
-	int bits;
-	size_t nr_payloads;
-	gid mask;
-	Heap **pinned;		/* sharing variable objects means keep reference to varheaps */
-	int pinned_nr;
-	mallocator **allocators;
-	int nr_allocators;
-} hash_payload;
 
 //extern lng str_hsh(str v);
 static inline lng
@@ -168,10 +143,7 @@ str_hsh( str v )
     return h;
 }
 
-extern hash_table *ht_create(int type, int size, bool freq, hash_table *p);
+extern hash_table *ht_create(int type, int size, hash_table *p);
 extern void ht_rehash(hash_table *ht);
-
-extern hash_payload *hp_create(int type, size_t nr_payloads, hash_table *p);
-extern void hp_rehash(hash_payload *hp);
 
 #endif /*_PP_HASH_H_*/
