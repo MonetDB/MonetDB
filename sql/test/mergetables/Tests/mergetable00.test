@@ -52,7 +52,7 @@ commit
 statement error
 commit
 
-query I nosort
+query I rowsort
 select * from parent
 ----
 1
