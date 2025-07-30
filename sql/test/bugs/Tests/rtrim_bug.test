@@ -80,7 +80,7 @@ select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'
 0
 
 query I rowsort
-select count(*) from sys.tracelog() where stmt like '% algebra.join%'
+select count(*) from sys.tracelog() where stmt like '% algebra.intersect%'
 ----
 1
 

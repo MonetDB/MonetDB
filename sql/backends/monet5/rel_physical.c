@@ -225,7 +225,9 @@ rel_partition(mvc *sql, sql_rel *rel)
 		break;
 	case op_semi:
 	case op_anti:
-
+		if (rel->l)
+			rel_partition(sql, rel->l);
+		break;
 	case op_inter:
 	case op_except:
 		if (rel->l)
