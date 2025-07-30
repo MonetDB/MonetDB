@@ -24,7 +24,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute("set optimizer='default_pipe';").assertSucceeded()
             tc.execute("select optimizer;").assertSucceeded().assertRowCount(1).assertDataResultMatch([("default_pipe",)])
             tc.execute("select tab1.group_by_col,SUM(fuse(cast (tab1.f as INT),cast (tab2.f as INT))) from tab2 inner join tab1 on tab1.index_col = tab2.index_col group by tab1.group_by_col;") \
-                .assertSucceeded().assertRowCount(3).assertDataResultMatch([(1, 12884902221),(2, 30064771405),(3, 47244640589)])
+                .assertSucceeded().assertRowCount(3).assertDataResultMatch([(1, 12884902221),(2, 30064771405),(3, 47244640589)], rowsort=True)
             tc.execute("drop table tab1;").assertSucceeded()
             tc.execute("drop table tab2;").assertSucceeded()
         s.communicate()
