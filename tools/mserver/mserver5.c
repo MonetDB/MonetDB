@@ -76,16 +76,18 @@ static void
 usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options]\n", prog);
-	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
-	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
-	fprintf(stderr, "    --dbtrace=<file>          File for produced traces\n");
+	fprintf(stderr, "    --dbpath <directory>      Specify database location\n");
+	fprintf(stderr, "    --dbextra <directory>     Directory for transient BATs\n");
+	fprintf(stderr, "    --dbtrace <file>          File for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
-	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
+	fprintf(stderr, "    --config <config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
-	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
+	fprintf(stderr, "    --loadmodule <module>     Load extra <module> from lib/monetdb5\n");
 	fprintf(stderr, "    --without-geom            Do not enable geom module\n");
+	fprintf(stderr, "    --logging <comp>=<level>  Set logging level for component\n");
+	fprintf(stderr, "    --process-wal-and-exit    Only process the write-ahead log\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
