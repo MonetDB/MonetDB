@@ -2071,9 +2071,15 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                     if not env.get('NOCLEAN'):
                         raise
 
+        myenv = env.copy()
+        myenv['TSTDB'] = TSTDB
+        myenv['TSTDIR'] = TSTDIR
+        myenv['TSTSRCDIR'] = TSTSRCDIR
+        myenv['RELSRCDIR'] = RELSRCDIR
+        myenv['TSTTRGDIR'] = TSTTRGDIR
         if os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT+'.src')) and not os.path.isfile(os.path.join(TSTTRGDIR, TST+EXT)):
             with openutf8(os.path.join(TSTTRGDIR, TST+EXT+'.src'),'r') as f:
-                TSTSRC = expandvars(path(f.readline().strip()), env)
+                TSTSRC = expandvars(path(f.readline().strip()), myenv)
             if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
                 try:
                     SymlinkOrCopy(TSTSRC, TST + EXT, TSTTRGDIR)
@@ -2089,7 +2095,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
         for ff in listdir(TSTTRGDIR):
             if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, ff[:-4])):
                 with openutf8(os.path.join(TSTTRGDIR, ff),'r') as f:
-                    TSTSRC = expandvars(path(f.readline().strip()), env)
+                    TSTSRC = expandvars(path(f.readline().strip()), myenv)
                 if os.path.isfile(os.path.join(TSTTRGDIR, TSTSRC)):
                     try:
                         SymlinkOrCopy(TSTSRC, ff[:-4], TSTTRGDIR)
@@ -2105,7 +2111,7 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
             if test.match(ff) and not os.path.isfile(os.path.join(TSTTRGDIR, fff)) and not ff.endswith('.test.in'):
                 with openutf8(os.path.join(TSTTRGDIR, fff),'w') as f:
                     for l in openutf8(os.path.join(TSTTRGDIR, ff)):
-                        f.write(expandvars(l, env))
+                        f.write(expandvars(l, myenv))
 
         if odbc:
             with openutf8(os.path.join(TSTTRGDIR, 'odbcinst.ini'), 'w') as f:
