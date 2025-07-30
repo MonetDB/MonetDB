@@ -1677,7 +1677,17 @@ batcalc_init(void)
 			.comment_v_ = "Return B != V",
 		}
 	};
-	int newtypes[6] = { ATOMindex("json"), ATOMindex("inet"), ATOMindex("uuid"), TYPE_date, TYPE_daytime, TYPE_timestamp };
+	int newtypes[] = {
+		ATOMindex("json"),
+		ATOMindex("inet"),
+		ATOMindex("uuid"),
+		TYPE_date,
+		TYPE_daytime,
+		TYPE_timestamp,
+		TYPE_inet4,
+		TYPE_inet6,
+		0						/* sentinel */
+	};
 	for (int f=0; f<6; f++) {
 		mel_func_arg ret = { .type = TYPE_bit, .isbat =1 };
 		mel_func_arg arg = { .type = TYPE_any, .isbat =1, .nr=1 };
@@ -1701,8 +1711,8 @@ batcalc_init(void)
 			err += melFunction(false, "batcalc", cmps[f].op, cmps[f].fcn, cmps[f].fname, false, cmps[f].comment_v_, 1, 5, ret, varg, arg, cand, nil_matches);
 		}
 
-		/* uuid, json, inet and mtime (date, daytime, timestamp) */
-		for (int nt = 0; nt < 6; nt++) {
+		/* uuid, json, inet, inet4, inet6 and mtime (date, daytime, timestamp) */
+		for (int nt = 0; newtypes[nt] != 0; nt++) {
 			mel_func_arg ret = { .type = TYPE_bit, .isbat =1 };
 			mel_func_arg arg = { .type = newtypes[nt], .isbat =1, .nr=1 };
 			mel_func_arg varg = { .type = newtypes[nt], .nr=1 };

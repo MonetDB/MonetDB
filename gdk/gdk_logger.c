@@ -1188,6 +1188,7 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 	int id = 0;
 	char atom_name[IDLENGTH];
 	bool seen_geom = false;
+	bool seen_inet = false;
 
 	/* scanf should use IDLENGTH somehow */
 	while (fscanf(fp, "%d,%63s\n", &id, atom_name) == 2) {
@@ -1207,6 +1208,7 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 			*needsnew = true;
 			continue;
 		}
+		seen_inet |= strcmp(atom_name, "inet4") == 0;
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {
@@ -1217,6 +1219,8 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 		lg->type_id[i] = (int8_t) id;
 		lg->type_nr[id < 0 ? 256 + id : id] = i;
 	}
+	if (!seen_inet)
+		*needsnew = true;
 #ifdef HAVE_GEOM
 	if (!seen_geom && ATOMindex("mbr") > 0) {
 		GDKerror("incompatible database: server supports GEOM, but database does not\n");

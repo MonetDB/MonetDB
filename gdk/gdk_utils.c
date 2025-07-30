@@ -1004,6 +1004,10 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
 	static_assert(sizeof(uuid) == 16,
 		      "sizeof(uuid) should be equal to 16");
+	static_assert(sizeof(inet4) == 4,
+		      "sizeof(inet4) should be equal to 4");
+	static_assert(sizeof(inet6) == 16,
+		      "sizeof(inet6) should be equal to 16");
 
 	if (first) {
 		/* some things are really only initialized once */

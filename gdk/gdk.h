@@ -434,6 +434,8 @@ enum {
 	TYPE_daytime,
 	TYPE_timestamp,
 	TYPE_uuid,
+	TYPE_inet4,
+	TYPE_inet6,
 	TYPE_str,
 	TYPE_blob,
 	TYPE_any = 255,		/* limit types to <255! */
@@ -445,6 +447,18 @@ typedef int8_t bte;
 typedef int16_t sht;
 /* typedef int64_t lng; -- defined in gdk_system.h */
 typedef uint64_t ulng;
+typedef union {
+	uint32_t align;		/* force alignment, only used for equality */
+	uint8_t quad[4] __attribute__((__nonstring__));
+} inet4;
+typedef union {
+#ifdef HAVE_HGE
+	hge align;		/* force alignment, only used for equality */
+#else
+	lng align[2];		/* force alignment, not otherwise used */
+#endif
+	uint16_t oct[8];
+} inet6;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
@@ -463,7 +477,7 @@ typedef char *str;
 
 typedef union {
 #ifdef HAVE_HGE
-	hge h;			/* force alignment, not otherwise used */
+	hge h;			/* force alignment, only used for equality */
 #else
 	lng l[2];		/* force alignment, not otherwise used */
 #endif
@@ -631,6 +645,8 @@ typedef struct {
 		hge hval;
 #endif
 		uuid uval;
+		inet4 ip4val;
+		inet6 ip6val;
 	} val;
 	size_t len;
 	short vtype;
@@ -1929,6 +1945,8 @@ VALptr(const ValRecord *v)
 	case TYPE_hge: return (const void *) &v->val.hval;
 #endif
 	case TYPE_uuid: return (const void *) &v->val.uval;
+	case TYPE_inet4: return (const void *) &v->val.ip4val;
+	case TYPE_inet6: return (const void *) &v->val.ip6val;
 	case TYPE_ptr: return (const void *) &v->val.pval;
 	case TYPE_str: return (const void *) v->val.sval;
 	default:       return (const void *) v->val.pval;

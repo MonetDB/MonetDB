@@ -106,6 +106,7 @@ set(include_sql_files
   39_analytics
   40_json
   42_md5sum
+  44_inet46
   45_uuid
   46_profiler
   47_regexp

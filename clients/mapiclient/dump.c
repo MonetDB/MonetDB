@@ -2647,7 +2647,7 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"WHERE t.eclass = 18 "
 		  "AND (t.schema_id <> 2000 "
 		        "OR (t.schema_id = 2000 "
-		             "AND t.sqlname NOT IN ('geometrya','mbr','url','inet','json','uuid')))"
+		             "AND t.sqlname NOT IN ('mbr','url','inet','json','uuid','inet4','inet6')))"
 		"ORDER BY s.name, t.sqlname";
 	const char *users =
 		has_schema_max_memory(mid) ?

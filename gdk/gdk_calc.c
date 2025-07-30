@@ -863,6 +863,12 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	case TYPE_uuid:
 		ISNIL_TYPE(uuid, notnil);
 		break;
+	case TYPE_inet4:
+		ISNIL_TYPE(inet4, notnil);
+		break;
+	case TYPE_inet6:
+		ISNIL_TYPE(inet6, notnil);
+		break;
 	default:
 	{
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(bi.type);
