@@ -1744,6 +1744,15 @@ rel_uses_exp_outside_subrel(sql_rel *rel, list *l, sql_rel *c)
 static inline sql_rel *
 rel_join2semijoin(visitor *v, sql_rel *rel)
 {
+	if (!rel_is_ref(rel) && is_simple_project(rel->op) && need_distinct(rel) && rel->l) {
+		sql_rel *l = rel->l;
+
+		if (!rel_is_ref(l) && l->op == op_join && rel_has_all_exps(l->l, rel->exps)) {
+			l->op = op_semi;
+			v->changes++;
+			return rel;
+		}
+	}
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		bool swap = false;
 		sql_rel *l = rel->l;

@@ -3783,7 +3783,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					if (be->no_mitosis && list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
+					if (/*be->no_mitosis &&*/ list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
 						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
 						semijoin_only = 1;
 						en = NULL;
