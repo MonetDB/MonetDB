@@ -232,7 +232,7 @@ detect_time(const char *s, const char *e)
 	 *       or format HH:MI     00:00 - 23:59 */
 	/* TODO accept time with milliseconds, HH:MI:SS.sss 00:00:00.000 - 23:59:59.999 */
 	/* TODO detect time with timezone */
-	int len = e-s;
+	size_t len = e-s;
 	if (len != 5 && len != 8)
 		return false;
 	if (s[2] != ':' || (len == 8 && s[5] != ':'))
@@ -276,7 +276,7 @@ detect_timestamp(const char *s, const char *e)
 	 *       or format YYYY-MM-DD HH:MI */
 	/* https://en.wikipedia.org/wiki/ISO_8601 */
 	/* TODO detect negative years */
-	int len = e-s;
+	size_t len = e-s;
 	if (len != 16 && len != 19)
 		return false;
 	if (s[10] != ' ' && s[10] != 'T')
