@@ -1,4 +1,4 @@
-query DTT nosort
+query TTT nosort
 select * from file_loader(r'$TSTSRCDIR/date_time_timestamp.tsv')
 ----
 2025-01-31
