@@ -24,9 +24,9 @@
 # PCRE_VERSION	- The version found.
 # PCRE_FOUND	- True if pcre found.
 
-find_path(PCRE_INCLUDE_DIR NAMES pcre.h)
+find_path(PCRE_INCLUDE_DIR NAMES pcre2.h)
 
-find_library(PCRE_LIBRARIES NAMES pcre)
+find_library(PCRE_LIBRARIES NAMES pcre2-8)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PCRE
@@ -37,9 +37,9 @@ find_package_handle_standard_args(PCRE
 mark_as_advanced(PCRE_INCLUDE_DIR PCRE_LIBRARIES PCRE_VERSION)
 
 if(PCRE_FOUND)
-  file(STRINGS "${PCRE_INCLUDE_DIR}/pcre.h" PCRE_VERSION_LINES REGEX "[ \t]*#define[ \t]+PCRE_(MAJOR|MINOR)")
-  string(REGEX REPLACE ".*PCRE_MAJOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MAJOR "${PCRE_VERSION_LINES}")
-  string(REGEX REPLACE ".*PCRE_MINOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MINOR "${PCRE_VERSION_LINES}")
+  file(STRINGS "${PCRE_INCLUDE_DIR}/pcre2.h" PCRE_VERSION_LINES REGEX "[ \t]*#define[ \t]+PCRE2_(MAJOR|MINOR)")
+  string(REGEX REPLACE ".*PCRE2_MAJOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MAJOR "${PCRE_VERSION_LINES}")
+  string(REGEX REPLACE ".*PCRE2_MINOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MINOR "${PCRE_VERSION_LINES}")
   set(PCRE_VERSION "${PCRE_VERSION_MAJOR}.${PCRE_VERSION_MINOR}")
 
   if(NOT TARGET PCRE::PCRE AND

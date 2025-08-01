@@ -15,7 +15,8 @@
 #include "monet_version.h"
 #include "mutils.h"
 #ifdef HAVE_LIBPCRE
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
@@ -82,12 +83,14 @@ monet_version(void)
 	 * combination and the date), we need to resort to some
 	 * run-time trickery since we can't do it with the
 	 * preprocessor */
+	char pcre_version[32];
+	pcre2_config(PCRE2_CONFIG_VERSION, pcre_version);
 	print_libversion("libpcre",
-			 pcre_version(),
-			 XSTRING(Z PCRE_PRERELEASE)[1] == 0
-			 ? XSTRING(PCRE_MAJOR.PCRE_MINOR PCRE_DATE)
-			 : XSTRING(PCRE_MAJOR.PCRE_MINOR)
-			   XSTRING(PCRE_PRERELEASE PCRE_DATE));
+			 pcre_version,
+			 XSTRING(Z PCRE2_PRERELEASE)[1] == 0
+			 ? XSTRING(PCRE2_MAJOR.PCRE2_MINOR PCRE2_DATE)
+			 : XSTRING(PCRE2_MAJOR.PCRE2_MINOR)
+			   XSTRING(PCRE2_PRERELEASE PCRE2_DATE));
 #endif
 #ifdef HAVE_LIBXML
 	/* no run-time version available, so only compile time */
