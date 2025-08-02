@@ -22,4 +22,5 @@ KNOWNFAIL?7653_incorrect_join_results
 7656_incorrect_error
 7659_trigger_crashes
 7671-lag-over-empty-bat
+7674-rel_find_designated_index_crash
 7680-union-all
