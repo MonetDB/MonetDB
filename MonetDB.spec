@@ -140,7 +140,7 @@ BuildRequires: pkgconfig(openssl) >= 1.1.1
 %global with_openssl 1
 %endif
 %if %{with pcre}
-BuildRequires: pkgconfig(libpcre) >= 4.5
+BuildRequires: pkgconfig(libpcre2-8)
 %endif
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8

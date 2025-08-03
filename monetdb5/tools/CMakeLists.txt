@@ -46,7 +46,7 @@ if (NOT WIN32)
   endif()
 
   if(PCRE_FOUND)
-    set(PKG_PCRE "libpcre")
+    set(PKG_PCRE "libpcre2-8")
   endif()
 
   configure_file(monetdb5.pc.in
