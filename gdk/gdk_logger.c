@@ -1207,6 +1207,10 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 			*needsnew = true;
 			continue;
 		}
+		if (version < 52306 && strcmp(atom_name, "pcre") == 0) {
+			*needsnew = true;
+			continue;
+		}
 		int i = ATOMindex(atom_name);
 
 		if (id < -127 || id > 127 || i < 0) {

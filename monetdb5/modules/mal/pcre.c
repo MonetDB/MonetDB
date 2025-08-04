@@ -840,16 +840,6 @@ PCREimatch(bit *ret, const char *const *val, const char *const *pat)
 	return pcre_match_with_flags(ret, *val, *pat, "i");
 }
 
-typedef void *pcre;				/* to be removed, together with the pcre atom */
-static str
-PCREindex(int *res, const pcre *pattern, const char *const *s)
-{
-	(void) res;
-	(void) pattern;
-	(void) s;
-	throw(MAL, "pcre.index", "This function is deprecated.");
-}
-
 static str
 PCREpatindex(int *ret, const char *const *pat, const char *const *val)
 {
@@ -1806,11 +1796,7 @@ LIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *elid,
 }
 
 #include "mel.h"
-mel_atom pcre_init_atoms[] = {
- { .name="pcre", },  { .cmp=NULL }
-};
 mel_func pcre_init_funcs[] = {
- command("pcre", "index", PCREindex, false, "match a pattern, return matched position (or 0 when not found)", args(1,3, arg("",int),arg("pat",pcre),arg("s",str))),
  command("pcre", "match", PCREmatch, false, "Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),
@@ -1840,4 +1826,4 @@ mel_func pcre_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pcre_mal)
-{ mal_module("pcre", pcre_init_atoms, pcre_init_funcs); }
+{ mal_module("pcre", NULL, pcre_init_funcs); }
