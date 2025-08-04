@@ -503,6 +503,10 @@ heapinit(BAT *b, const char *buf,
 		TRC_CRITICAL(GDK, "type wkba (SQL name: GeometryA) has been removed\n");
 		return -1;
 	}
+	if (strcmp(type, "pcre") == 0) {
+		TRC_CRITICAL(GDK, "type pcre has been removed\n");
+		return -1;
+	}
 #ifdef HAVE_GEOM
 #if GDKLIBRARY <= 061050U
 	if (strcmp(type, "wkb") == 0) {

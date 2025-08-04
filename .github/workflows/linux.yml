@@ -109,7 +109,7 @@ jobs:
       - name: choco packages
         run: |
           choco install winflexbison3
-          vcpkg install libiconv bzip2 libxml2 pcre zlib getopt 
+          vcpkg install libiconv bzip2 libxml2 pcre2 zlib getopt 
         if: runner.os == 'Windows'
 
       - name: make MonetDB on Windows
