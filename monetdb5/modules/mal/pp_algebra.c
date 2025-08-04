@@ -4700,7 +4700,7 @@ ALGmaxany(ptr result, const bat *bid)
 static str
 ALGnull(bit *result, const bat *bid)
 {
-	BAT *b;
+	BAT *b = NULL;
 	bit hasnull = false;
 	str msg = MAL_SUCCEED;
 
