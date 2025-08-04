@@ -380,7 +380,11 @@ delete from sys.privileges where (obj_id) not in (select id from (SELECT id FROM
 
 Running database upgrade commands:
 ALTER TABLE sys.table_types SET READ WRITE;
+COMMIT;
+
+Running database upgrade commands:
 INSERT INTO sys.table_types VALUES (31, 'LOCAL TEMPORARY VIEW');
+COMMIT;
 
 Running database upgrade commands:
 ALTER TABLE sys.table_types SET READ ONLY;

@@ -16,6 +16,7 @@ HAVE_HGE?7637_str_to_decimal
 7644_antijoin_crash
 7645_not_likeselect
 7646_leftjoin_crash
+7647-munion-optimizer-bug
 7648_rightjoin_crash
 7650_right_join_crash
 7653_incorrect_join_results
@@ -23,3 +24,5 @@ HAVE_HGE?7637_str_to_decimal
 7656_incorrect_error
 7659_trigger_crashes
 7671-lag-over-empty-bat
+7674-rel_find_designated_index_crash
+7680-union-all

@@ -3766,7 +3766,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					if (be->no_mitosis && list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
+					if (/*be->no_mitosis &&*/ list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !is_anti(e) && is_equi_exp_(e)) {
 						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
 						semijoin_only = 1;
 						en = NULL;
@@ -5543,9 +5543,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	list *l;
 	stmt *inserts = NULL, *insert = NULL, *ddl = NULL, *pin = NULL, **updates, *ret = NULL, *cnt = NULL, *pos = NULL, *returning = NULL;
-	int idx_ins = 0, len = 0;
+	int len = 0;
 	node *n, *m, *idx_m = NULL;
-	sql_rel *tr = rel->l, *prel = rel->r;
+	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
 	if (tr->op == op_basetable) {
@@ -5564,9 +5564,6 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	if (!inserts)
 		return NULL;
-
-	if (idx_ins)
-		pin = refs_find_rel(refs, prel);
 
 	for (n = ol_first_node(t->keys); n; n = n->next) {
 		sql_key * key = n->data;
@@ -6615,17 +6612,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	stmt *update = NULL, **updates = NULL, *tids, *ddl = NULL, *pup = NULL;
 	list *l = sa_list(sql->sa), *attr = rel->attr;
-	int nr_cols, updcol, idx_ups = 0;
+	int nr_cols, updcol;
 	node *m;
-	sql_rel *tr = rel->l, *prel = rel->r;
+	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
-	if ((rel->flag&UPD_COMP)) {  /* special case ! */
-		idx_ups = 1;
-		prel = rel->l;
-		rel = rel->r;
-		tr = rel->l;
-	}
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
@@ -6654,14 +6645,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	if (!update)
 		return NULL;
 
-	if (idx_ups) {
-		pup = refs_find_rel(refs, prel);
-		if (!pup) {
-			pup = subrel_bin(be, prel, refs);
-			pup = subrel_project(be, pup, refs, prel);
-		}
-	}
-
+	pup = update;
 	updates = table_update_stmts(sql, t, &nr_cols);
 	tids = update->op4.lval->h->data;
 

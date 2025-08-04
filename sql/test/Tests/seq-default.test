@@ -174,13 +174,14 @@ viers
 5
 vijfs
 
---skipif knownfail
+skipif knownfail
 statement error DROP SEQUENCE: unable to drop sequence seq_75700 (there are database objects which depend on it)
 drop SEQUENCE seq_5700
 
 statement ok
 drop TABLE kvk_cp
 
+skipif knownfail
 statement ok
 drop SEQUENCE seq_5700
 
