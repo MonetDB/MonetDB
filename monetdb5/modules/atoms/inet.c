@@ -63,7 +63,7 @@ typedef struct _inet {
 #else
 #define is_inet_nil(i) ((i)->q1 == 0 && (i)->q2 == 0 && (i)->q3 == 0 && (i)->q4 == 0 && (i)->mask == 0 && (i)->isnil != 0)
 #endif
-#define in_setnil(i) ((i) = (inet) {.isnil = 1})
+#define in_setnil(i) (*(i) = (inet) {.isnil = 1})
 
 static const inet inet_nil = (inet) {.isnil = 1};
 
