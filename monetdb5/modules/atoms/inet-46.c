@@ -520,7 +520,23 @@ INETinet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const b
 							const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
 	return inet4containsinet4_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
+								   true, false);
+}
+
+static str
+INETinet4containsorequalinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+							const bat *bip2, const bat *bmsk2, const bat *sid2)
+{
+	return inet4containsinet4_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   false, false);
+}
+
+static str
+INETinet4containssymmetricinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+							const bat *bip2, const bat *bmsk2, const bat *sid2)
+{
+	return inet4containsinet4_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
+								   false, true);
 }
 
 static str
@@ -1125,7 +1141,23 @@ INETinet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const b
 							const bat *bip2, const bat *bmsk2, const bat *sid2)
 {
 	return inet6containsinet6_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
+								   true, false);
+}
+
+static str
+INETinet6containsorequalinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+								   const bat *bip2, const bat *bmsk2, const bat *sid2)
+{
+	return inet6containsinet6_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
 								   false, false);
+}
+
+static str
+INETinet6containssymmetricinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
+								   const bat *bip2, const bat *bmsk2, const bat *sid2)
+{
+	return inet6containsinet6_bulk(ret, bip1, bmsk1, sid1, bip2, bmsk2, sid2,
+								   false, true);
 }
 
 #include "mel.h"
@@ -1159,7 +1191,11 @@ mel_func inet46_init_funcs[] = {
  command("inet46", "inet6containsorequalinet6", INETinet6containsorequalinet6nomask, false, "", args(1,4, arg("",bit),arg("ip1",inet6),arg("ip2",inet6),arg("msk2",bte))),
  command("inet46", "inet6containssymmetricinet6", INETinet6containssymmetricinet6, false, "", args(1,5, arg("",bit),arg("ip1",inet6),arg("msk1",bte),arg("ip2",inet6),arg("msk2",bte))),
  command("inet46", "inet4containsinet4", INETinet4containsinet4_bulk, false, "", args(1,7, batarg("",bit),batarg("ip1",inet4),batarg("msk1",bte),batarg("c1",oid),batarg("ip2",inet4),batarg("msk2",bte),batarg("c2",oid))),
+ command("inet46", "inet4containsorequalinet4", INETinet4containsorequalinet4_bulk, false, "", args(1,7, batarg("",bit),batarg("ip1",inet4),batarg("msk1",bte),batarg("c1",oid),batarg("ip2",inet4),batarg("msk2",bte),batarg("c2",oid))),
+ command("inet46", "inet4containssymmetricinet4", INETinet4containssymmetricinet4_bulk, false, "", args(1,7, batarg("",bit),batarg("ip1",inet4),batarg("msk1",bte),batarg("c1",oid),batarg("ip2",inet4),batarg("msk2",bte),batarg("c2",oid))),
  command("inet46", "inet6containsinet6", INETinet6containsinet6_bulk, false, "", args(1,7, batarg("",bit),batarg("ip1",inet6),batarg("msk1",sht),batarg("c1",oid),batarg("ip2",inet6),batarg("msk2",sht),batarg("c2",oid))),
+ command("inet46", "inet6containsorequalinet6", INETinet6containsorequalinet6_bulk, false, "", args(1,7, batarg("",bit),batarg("ip1",inet6),batarg("msk1",sht),batarg("c1",oid),batarg("ip2",inet6),batarg("msk2",sht),batarg("c2",oid))),
+ command("inet46", "inet6containssymmetricinet6", INETinet6containssymmetricinet6_bulk, false, "", args(1,7, batarg("",bit),batarg("ip1",inet6),batarg("msk1",sht),batarg("c1",oid),batarg("ip2",inet6),batarg("msk2",sht),batarg("c2",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"
