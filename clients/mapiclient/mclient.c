@@ -2505,19 +2505,20 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							}
 						} else {
 							if (tname == NULL)
-								tname = p;
+								tname = q;
 							if (!escaped) {
-								*q++ = tolower((int) *p);
 								if (*p == '*') {
-									*p = '%';
+									*q++ = '%';
 									hasWildcard = true;
 								} else if (*p == '?') {
-									*p = '_';
+									*q++ = '_';
 									hasWildcard = true;
 								} else if (*p == '.') {
-									*p = '\0';
+									*q++ = '\0';
 									sname = tname;
 									tname = NULL;
+								} else {
+									*q++ = tolower((unsigned char) *p);
 								}
 							} else {
 								*q++ = *p;

@@ -85,7 +85,7 @@ monet_version(void)
 	 * preprocessor */
 	char pcre_version[32];
 	pcre2_config(PCRE2_CONFIG_VERSION, pcre_version);
-	print_libversion("libpcre",
+	print_libversion("libpcre2",
 			 pcre_version,
 			 XSTRING(Z PCRE2_PRERELEASE)[1] == 0
 			 ? XSTRING(PCRE2_MAJOR.PCRE2_MINOR PCRE2_DATE)

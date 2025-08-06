@@ -3386,6 +3386,13 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		bat_iterator_end(&bi);
 		return GDK_SUCCEED;
 	}
+	if (bi.key) {
+		/* trivial: all values are distinct */
+		*cnt1 = half;
+		*cnt2 = ci.ncand;
+		bat_iterator_end(&bi);
+		return GDK_SUCCEED;
+	}
 
 	assert(bi.type != TYPE_void);
 
@@ -3536,16 +3543,32 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 static double
 guess_uniques(BAT *b, struct canditer *ci)
 {
-	BUN cnt1, cnt2;
+	BUN cnt1 = 0, cnt2;
 	BAT *s1;
 
 	MT_lock_set(&b->theaplock);
 	bool key = b->tkey;
 	double unique_est = b->tunique_est;
 	BUN batcount = BATcount(b);
+	if (b->ttype == TYPE_str && GDK_ELIMDOUBLES(b->tvheap)) {
+		cnt1 = countStrings(b->tvheap);
+		if (ci->s == NULL ||
+		    (ci->tpe == cand_dense && ci->ncand == batcount)) {
+			if (b->tunique_est == 0)
+				b->tunique_est = cnt1;
+		}
+	}
 	MT_lock_unset(&b->theaplock);
-	if (key)
+	if (key || ci->ncand <= 1)
 		return (double) ci->ncand;
+
+	if (cnt1 > 0) {
+		if (cnt1 >= batcount) {
+			/* we may be able to set some properties */
+			(void) BATordered(b);
+		}
+		return (double) (cnt1 < ci->ncand ? cnt1 : ci->ncand);
+	}
 
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == batcount)) {
@@ -3589,6 +3612,10 @@ guess_uniques(BAT *b, struct canditer *ci)
 BUN
 BATguess_uniques(BAT *b, struct canditer *ci)
 {
+	if (b->batCount == 0 || (ci && ci->ncand == 0))
+		return 0;
+	if (b->batCount == 1 || (ci && ci->ncand == 1))
+		return 1;
 	struct canditer lci;
 	if (ci == NULL) {
 		canditer_init(&lci, b, NULL);

@@ -1323,6 +1323,11 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 	bool locked = false;
 
 	if (b->tvheap) {
+		const void *prevnew = NULL;
+		var_t prevoff = 0;
+		const bool hasdel = BATatoms[b->ttype].atomDel != NULL;
+		bool minupdated = false;
+		bool maxupdated = false;
 		for (BUN i = 0; i < ni.count; i++) {
 			oid updid;
 			if (positions) {
@@ -1399,13 +1404,22 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			b->tnil |= isnil;
 			MT_lock_unset(&b->theaplock);
 			if (bi.maxpos != BUN_NONE) {
+				/* if new value is the same as the
+				 * previous new value, we've already
+				 * dealt with it; if we've already
+				 * updated the maxpos, it cannot be the
+				 * same as the old value, so we can skip
+				 * that check */
 				if (!isnil &&
+				    (prevnew == NULL || prevnew != new) &&
 				    atomcmp(BUNtvar(bi, bi.maxpos), new) < 0) {
 					/* new value is larger than
 					 * previous largest */
 					bi.maxpos = updid;
+					maxupdated = true;
 				} else if (old == NULL ||
-					   (atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
+					   (!maxupdated &&
+					    atomcmp(BUNtvar(bi, bi.maxpos), old) == 0 &&
 					    atomcmp(new, old) != 0)) {
 					/* old value is equal to
 					 * largest and new value is
@@ -1417,12 +1431,15 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			}
 			if (bi.minpos != BUN_NONE) {
 				if (!isnil &&
+				    (prevnew == NULL || prevnew != new) &&
 				    atomcmp(BUNtvar(bi, bi.minpos), new) > 0) {
 					/* new value is smaller than
 					 * previous smallest */
 					bi.minpos = updid;
+					minupdated = true;
 				} else if (old == NULL ||
-					   (atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
+					   (!minupdated &&
+					    atomcmp(BUNtvar(bi, bi.minpos), old) == 0 &&
 					    atomcmp(new, old) != 0)) {
 					/* old value is equal to
 					 * smallest and new value is
@@ -1463,7 +1480,16 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 				MT_UNREACHABLE();
 			}
 			MT_lock_set(&b->theaplock);
-			gdk_return rc = ATOMreplaceVAR(b, &d, new);
+			gdk_return rc = GDK_SUCCEED;
+			bool skip = false;
+			if (new == prevnew && !hasdel) {
+				d = prevoff;
+				skip = true;
+			} else {
+				rc = ATOMreplaceVAR(b, &d, new);
+				prevnew = new;
+				prevoff = d;
+			}
 			MT_lock_unset(&b->theaplock);
 			if (rc != GDK_SUCCEED) {
 				goto bailout;
@@ -1478,7 +1504,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 			/* in case ATOMreplaceVAR and/or
 			 * GDKupgradevarheap replaces a heap, we need to
 			 * reinitialize the iterator */
-			{
+			if (!skip) {
 				/* save and restore minpos/maxpos */
 				BUN minpos = bi.minpos;
 				BUN maxpos = bi.maxpos;
