@@ -36,6 +36,12 @@ checkbats(BATiter *b1i, BATiter *b2i, const char *func)
 
 #define NOT(x)		(~(x))
 #define NOTBIT(x)	(!(x))
+#define NOTINET4(x)	((inet4) {.align = ~(x).align})
+#ifdef HAVE_HGE
+#define NOTINET6(x)	((inet6) {.align = ~(x).align})
+#else
+#define NOTINET6(x)	((inet6) {.align[0] = ~(x).align[0], .align[1] = ~(x).align[1]})
+#endif
 
 BAT *
 BATcalcnot(BAT *b, BAT *s)
@@ -116,6 +122,12 @@ BATcalcnot(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC_nilcheck(hge, hge, NOT, ON_OVERFLOW1(hge, "NOT"));
 		break;
 #endif
+	case TYPE_inet4:
+		UNARY_2TYPE_FUNC_nilcheck(inet4, inet4, NOTINET4, nils++);
+		break;
+	case TYPE_inet6:
+		UNARY_2TYPE_FUNC_nilcheck(inet6, inet6, NOTINET6, nils++);
+		break;
 	default:
 		GDKerror("type %s not supported.\n", ATOMname(bi.type));
 		goto bailout;
@@ -217,6 +229,18 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 		}
 		break;
 #endif
+	case TYPE_inet4:
+		if (is_inet4_nil(v->val.ip4val))
+			ret->val.ip4val = inet4_nil;
+		else
+			ret->val.ip4val = NOTINET4(v->val.ip4val);
+		break;
+	case TYPE_inet6:
+		if (is_inet6_nil(v->val.ip6val))
+			ret->val.ip6val = inet6_nil;
+		else
+			ret->val.ip6val = NOTINET6(v->val.ip6val);
+		break;
 	default:
 		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
