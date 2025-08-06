@@ -1208,6 +1208,10 @@ log_read_types_file(logger *lg, FILE *fp, int version, bool *needsnew)
 			*needsnew = true;
 			continue;
 		}
+		if (version < 52306 && strcmp(atom_name, "pcre") == 0) {
+			*needsnew = true;
+			continue;
+		}
 		seen_inet |= strcmp(atom_name, "inet4") == 0;
 		int i = ATOMindex(atom_name);
 

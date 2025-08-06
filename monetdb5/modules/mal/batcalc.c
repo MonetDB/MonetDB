@@ -1306,7 +1306,7 @@ batcalc_init(void)
 		err += melFunction(false, "batcalc", "iszero", (MALfcn)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat", 1, 2, ret, arg);
 		err += melFunction(false, "batcalc", "iszero", (MALfcn)&CMDbatISZERO, "CMDbatISZERO", false, "Unary check for zero over the tail of the bat with candidates list", 1, 3, ret, arg, cand);
 	}
-	for(tp = types; tp < extra && !err; tp++) { /* bit + numeric */
+	for(tp = types; tp < floats && !err; tp++) { /* bit + numeric */
 		mel_func_arg ret = { .type = *tp, .isbat =1 };
 		mel_func_arg arg = { .type = *tp, .isbat =1 };
 
