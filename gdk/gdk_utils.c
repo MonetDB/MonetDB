@@ -2018,6 +2018,22 @@ GDKprintinforegister(void (*func)(void))
 	*pp = p;
 }
 
+char *
+humansize(size_t val, char *buf, size_t buflen)
+{
+	static const char q[] = " kMGTPE";
+	double v = (double) val;
+	int i = 0;
+	if (val < 1000)
+		return "";
+	while (v >= 1000.0 && i < 6) {
+		v /= 1024.0;
+		i++;
+	}
+	snprintf(buf, buflen, " (%.3f %ciB)", v, q[i]);
+	return buf;
+}
+
 void
 GDKprintinfo(void)
 {
@@ -2025,8 +2041,8 @@ GDKprintinfo(void)
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
 
 	printf("SIGUSR1 info start\n");
-	printf("Virtual memory allocated: %zu, of which %zu with malloc\n",
-	       vmallocated + allocated, allocated);
+	printf("Virtual memory allocated: %zu%s, of which %zu%s with malloc\n",
+	       vmallocated + allocated, humansize(vmallocated + allocated, (char[24]){0}, 24), allocated, humansize(allocated, (char[24]){0}, 24));
 #ifdef WITH_MALLOC
 #ifdef WITH_JEMALLOC
 	size_t jeallocated = 0, jeactive = 0, jemapped = 0, jeresident = 0, jeretained = 0;
@@ -2039,14 +2055,28 @@ GDKprintinfo(void)
 #endif
 #elif defined(HAVE_MALLINFO2)
 	struct mallinfo2 mi = mallinfo2();
-	printf("mallinfo: arena %zu, ordblks %zu, smblks %zu, hblks %zu, hblkhd %zu, fsmblks %zu, uordblks %zu, fordblks %zu, keepcost %zu\n",
-	       mi.arena, mi.ordblks, mi.smblks, mi.hblks, mi.hblkhd, mi.fsmblks, mi.uordblks, mi.fordblks, mi.keepcost);
-	printf("   total allocated (arena+hblkhd): %zu\n", mi.arena + mi.hblkhd);
+	printf("mallinfo: arena %zu%s, ordblks %zu, smblks %zu, hblks %zu, "
+	       "hblkhd %zu%s, fsmblks %zu%s, uordblks %zu%s, fordblks %zu%s, "
+	       "keepcost %zu\n",
+	       mi.arena, humansize(mi.arena, (char[24]){0}, 24),
+	       mi.ordblks, mi.smblks, mi.hblks,
+	       mi.hblkhd, humansize(mi.hblkhd, (char[24]){0}, 24),
+	       mi.fsmblks, humansize(mi.fsmblks, (char[24]){0}, 24),
+	       mi.uordblks, humansize(mi.uordblks, (char[24]){0}, 24),
+	       mi.fordblks, humansize(mi.fordblks, (char[24]){0}, 24),
+	       mi.keepcost);
+	printf("   total allocated (arena+hblkhd): %zu%s\n",
+	       mi.arena + mi.hblkhd,
+	       humansize(mi.arena + mi.hblkhd, (char[24]){0}, 24));
 #endif
-	printf("gdk_vm_maxsize: %zu, gdk_mem_maxsize: %zu\n",
-	       GDK_vm_maxsize, GDK_mem_maxsize);
-	printf("gdk_mmap_minsize_persistent %zu, gdk_mmap_minsize_transient %zu\n",
-	       GDK_mmap_minsize_persistent, GDK_mmap_minsize_transient);
+	printf("gdk_vm_maxsize: %zu%s, gdk_mem_maxsize: %zu%s\n",
+	       GDK_vm_maxsize, humansize(GDK_vm_maxsize, (char[24]){0}, 24),
+	       GDK_mem_maxsize, humansize(GDK_mem_maxsize, (char[24]){0}, 24));
+	printf("gdk_mmap_minsize_persistent %zu%s, gdk_mmap_minsize_transient %zu%s\n",
+	       GDK_mmap_minsize_persistent,
+	       humansize(GDK_mmap_minsize_persistent, (char[24]){0}, 24),
+	       GDK_mmap_minsize_transient,
+	       humansize(GDK_mmap_minsize_transient, (char[24]){0}, 24));
 #ifdef __linux__
 	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
 	if (fd >= 0) {
@@ -2061,8 +2091,15 @@ GDKprintinfo(void)
 				size *= MT_pagesize();
 				resident *= MT_pagesize();
 				shared *= MT_pagesize();
-				printf("Virtual size: %zu, anonymous RSS: %zu, shared RSS: %zu (together: %zu)\n",
-				       size, resident - shared, shared, resident);
+				printf("Virtual size: %zu%s, anonymous RSS: %zu%s, shared RSS: %zu%s (together: %zu%s)\n",
+				       size,
+				       humansize(size, (char[24]){0}, 24),
+				       resident - shared,
+				       humansize(resident - shared, (char[24]){0}, 24),
+				       shared,
+				       humansize(shared, (char[24]){0}, 24),
+				       resident,
+				       humansize(resident, (char[24]){0}, 24));
 			}
 		}
 	}
