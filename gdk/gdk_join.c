@@ -3555,7 +3555,7 @@ guess_uniques(BAT *b, struct canditer *ci)
 		if (ci->s == NULL ||
 		    (ci->tpe == cand_dense && ci->ncand == batcount)) {
 			if (b->tunique_est == 0)
-				b->tunique_est = cnt1;
+				b->tunique_est = (double) cnt1;
 		}
 	}
 	MT_lock_unset(&b->theaplock);
