@@ -122,6 +122,8 @@ BUN binsearch_flt(const oid *restrict indir, oid offset, const flt *restrict val
 	__attribute__((__visibility__("hidden")));
 BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *restrict vals, BUN lo, BUN hi, dbl v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
+BUN countStrings(const Heap *h)
+	__attribute__((__visibility__("hidden")));
 Heap *createOIDXheap(BAT *b, bool stable)
 	__attribute__((__visibility__("hidden")));
 void doHASHdestroy(BAT *b, Hash *hs)
