@@ -20625,26 +20625,6 @@ CMDbatNOT
 Unary bitwise not over the tail of the bat with candidates list
 batcalc
 not
-pattern batcalc.not(X_0:bat[:dbl]):bat[:dbl]
-CMDbatNOT
-Unary bitwise not over the tail of the bat
-batcalc
-not
-pattern batcalc.not(X_0:bat[:dbl], X_1:bat[:oid]):bat[:dbl]
-CMDbatNOT
-Unary bitwise not over the tail of the bat with candidates list
-batcalc
-not
-pattern batcalc.not(X_0:bat[:flt]):bat[:flt]
-CMDbatNOT
-Unary bitwise not over the tail of the bat
-batcalc
-not
-pattern batcalc.not(X_0:bat[:flt], X_1:bat[:oid]):bat[:flt]
-CMDbatNOT
-Unary bitwise not over the tail of the bat with candidates list
-batcalc
-not
 pattern batcalc.not(X_0:bat[:int]):bat[:int]
 CMDbatNOT
 Unary bitwise not over the tail of the bat
