@@ -1,0 +1,15 @@
+# crash of issue 7682
+statement ok
+CREATE OR REPLACE TRIGGER trigALogin AFTER LOGIN BEGIN ATOMIC SET SCHEMA dwh; END
+
+query T nosort
+select name from sys.triggers where name like 'tri%'
+----
+trigalogin
+
+skipif knownfail
+statement ok
+CREATE OR REPLACE TRIGGER trigALogin AFTER LOGIN BEGIN ATOMIC SET SCHEMA dwh; END
+
+-- crashed mserver5  in create_trigger ()
+
