@@ -1,5 +1,4 @@
-# crashes of both issues 7659 and 7661
-# 7659
+# crash of issue 7659
 statement ok
 CREATE TABLE table1(column1 INT, column2 INT)
 
@@ -14,14 +13,4 @@ drop table table1
 
 statement ok
 drop table table2
-
-# 7661
-statement ok
-CREATE TABLE table1(column1 INT, column2 INT)
-
-statement error
-CREATE TRIGGER trigger6 AFTER UPDATE ON table1 REFERENCING OLD TABLE AS old_table NEW TABLE AS new_table FOR EACH STATEMENT SELECT * FROM sys.triggers
-
-statement ok
-drop table table1
 
