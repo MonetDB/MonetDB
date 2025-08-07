@@ -264,7 +264,7 @@ detect_timestamp(const char *s, const char *e)
 	if ((e-s) != 16)
 		return false;
 	/* DATE TIME */
-	if (detect_date(s, s+5) && detect_time(s+6, e))
+	if (detect_date(s, s+10) && detect_time(s+11, e))
 		return true;
 	return false;
 }
