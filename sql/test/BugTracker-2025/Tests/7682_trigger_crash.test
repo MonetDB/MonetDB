@@ -7,9 +7,18 @@ select name from sys.triggers where name like 'tri%'
 ----
 trigalogin
 
-skipif knownfail
+-- next statement used to crash the server
 statement ok
 CREATE OR REPLACE TRIGGER trigALogin AFTER LOGIN BEGIN ATOMIC SET SCHEMA dwh; END
 
--- crashed mserver5  in create_trigger ()
+statement ok
+DROP TRIGGER trigALogin
 
+statement ok
+CREATE TRIGGER trigALogin AFTER LOGIN BEGIN ATOMIC SET SCHEMA dwh; END
+
+statement ok
+CREATE OR REPLACE TRIGGER trigALogin AFTER LOGIN BEGIN ATOMIC SET SCHEMA dwh; END
+
+statement ok
+DROP TRIGGER trigALogin
