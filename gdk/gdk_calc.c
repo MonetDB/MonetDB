@@ -2402,6 +2402,12 @@ BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
 
 #define XOR(a, b)	((a) ^ (b))
 #define XORBIT(a, b)	(((a) == 0) != ((b) == 0))
+#define XORINET4(a, b)	((inet4) {.align = (a).align ^ (b).align})
+#ifdef HAVE_HGE
+#define XORINET6(a, b)	((inet6) {.align = (a).align ^ (b).align})
+#else
+#define XORINET6(a, b)	((inet6) {.align[0] = (a).align[0] ^ (b).align[0],.align[1] = (a).align[1] ^ (b).align[1]})
+#endif
 
 static BUN
 xor_typeswitchloop(const void *lft, bool incr1,
@@ -2457,6 +2463,12 @@ xor_typeswitchloop(const void *lft, bool incr1,
 			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
 		break;
 #endif
+	case TYPE_inet4:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet4, inet4, inet4, XORINET4, nils++);
+		break;
+	case TYPE_inet6:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet6, inet6, inet6, XORINET6, nils++);
+		break;
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -2620,6 +2632,12 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define or3(a,b)	((a) == 1 || (b) == 1 ? 1 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 0)
 
 #define OR(a, b)	((a) | (b))
+#define ORINET4(a, b)	((inet4) {.align = (a).align | (b).align})
+#ifdef HAVE_HGE
+#define ORINET6(a, b)	((inet6) {.align = (a).align | (b).align})
+#else
+#define ORINET6(a, b)	((inet6) {.align[0] = (a).align[0] | (b).align[0],.align[1] = (a).align[1] | (b).align[1]})
+#endif
 
 static BUN
 or_typeswitchloop(const void *lft, bool incr1,
@@ -2688,6 +2706,12 @@ or_typeswitchloop(const void *lft, bool incr1,
 			BINARY_3TYPE_FUNC(hge, hge, hge, OR);
 		break;
 #endif
+	case TYPE_inet4:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet4, inet4, inet4, ORINET4, nils++);
+		break;
+	case TYPE_inet6:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet6, inet6, inet6, ORINET6, nils++);
+		break;
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -2856,6 +2880,12 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define and3(a,b)	((a) == 0 || (b) == 0 ? 0 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 1)
 
 #define AND(a, b)	((a) & (b))
+#define ANDINET4(a, b)	((inet4) {.align = (a).align & (b).align})
+#ifdef HAVE_HGE
+#define ANDINET6(a, b)	((inet6) {.align = (a).align & (b).align})
+#else
+#define ANDINET6(a, b)	((inet6) {.align[0] = (a).align[0] & (b).align[0],.align[1] = (a).align[1] & (b).align[1]})
+#endif
 
 static BUN
 and_typeswitchloop(const void *lft, bool incr1,
@@ -2919,6 +2949,12 @@ and_typeswitchloop(const void *lft, bool incr1,
 			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
 		break;
 #endif
+	case TYPE_inet4:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet4, inet4, inet4, ANDINET4, nils++);
+		break;
+	case TYPE_inet6:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet6, inet6, inet6, ANDINET6, nils++);
+		break;
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;

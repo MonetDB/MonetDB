@@ -1272,11 +1272,10 @@ batcalc_init(void)
 {
 	int types[20], cur = 0, *tp;
 	int specials[4];
-	int *bittype, *integer, *floats, *extra;
+	int *integer, *floats, *extra;
 
 	types[cur++] = TYPE_inet4;
 	types[cur++] = TYPE_inet6;
-	bittype = types+cur;
 	types[cur++] = TYPE_bit;
 	integer = types+cur;
 	types[cur++] = TYPE_bte;
@@ -1571,7 +1570,7 @@ batcalc_init(void)
 		}
 	};
 	for (int f=0; f<3; f++) {
-		for(tp = bittype+0; tp < extra && !err; tp++) {
+		for(tp = types+0; tp < extra && !err; tp++) {
 			mel_func_arg ret = { .type = *tp, .isbat =1 };
 			mel_func_arg arg = { .type = *tp, .isbat =1 };
 			mel_func_arg varg = { .type = *tp };
