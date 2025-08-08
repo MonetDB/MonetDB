@@ -567,11 +567,12 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	}
 
-	if ((other = mvc_bind_trigger(sql, s, triggername)) && !replace)
+	other = mvc_bind_trigger(sql, s, triggername);
+	if (other && !replace)
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: name '%s' already in use", base, triggername);
 
-	if (replace && other) {
-		if (other->t->base.id != t->base.id) /* defensive line */
+	if (other && replace) {
+		if (t && other->t && other->t->base.id != t->base.id) /* defensive line */
 			throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "%s: the to be replaced trigger '%s' is not from table '%s'", base, triggername, tname);
 		switch (mvc_drop_trigger(sql, s, other)) {
 			case -1:

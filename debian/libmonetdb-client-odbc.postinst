@@ -18,8 +18,8 @@ if [ "$1" = configure ]; then
 	odbcinst -i -d -r <<EOF
 [MonetDB]
 Description = ODBC for MonetDB
-Driver = /usr/lib/libMonetODBC.so
-Setup = /usr/lib/libMonetODBCs.so
+Driver = /usr/lib/x86_64-linux-gnu/libMonetODBC.so
+Setup = /usr/lib/x86_64-linux-gnu/libMonetODBCs.so
 EOF
     fi
 fi
