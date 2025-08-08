@@ -65,7 +65,7 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (*(i) = (inet) {.isnil = 1})
 
-static const inet inet_nil = (inet) {.isnil = 1};
+static const inet inet_nil = {.isnil = 1};
 
 /**
  * Creates a new inet from the given string.
