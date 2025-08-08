@@ -1542,8 +1542,12 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 		return count;
 	} else if (eclass == EC_BIT) {
 		return 5;	/* max(strlen("true"), strlen("false")) */
-	} else if (strcmp(ATOMname(mtype), "uuid") == 0) {
-		return 36;	/* xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx */
+	} else if (mtype == TYPE_uuid) {
+		return 36;	/* 3a0200f8-351f-4e4e-801d-b2d1fbde6ab7 */
+	} else if (mtype == TYPE_inet4) {
+		return 15;	/* 255.255.255.255 */
+	} else if (mtype == TYPE_inet6) {
+		return 39;	/* ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff */
 	} else {
 		return 0;
 	}
