@@ -1517,10 +1517,11 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 	}
 	int dcolpos = -1;
 	int i;
+	int maybeip4 = 0;
 	for (i = 0; i < 8; i++) {
 		if (s[0] == ':' && s[1] == ':') {
 			if (dcolpos >= 0) {
-				GDKerror("Invalid IPv6 address.");
+				GDKerror("Invalid IPv6 address: multiple ::.");
 				goto bailout;
 			}
 			dcolpos = i;
@@ -1531,13 +1532,54 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 		if (*s == 0 || (brkt && *s == ']'))
 			break;
 		char *e;
-		unsigned long ul = strtoul(s, &e, 16);
+		unsigned long ul;
+		if (maybeip4 == 1 && (dcolpos == -1 ? i == 6 : i < 6)) {
+			ul = strtoul(s, &e, 10);
+			if (e > s && *e == '.') {
+				/* address such as ::ffff:192.0.2.128
+				 * i.e. an IPv4 address inside an
+				 * IPv6 */
+				if (ul > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				s = e + 1;
+				unsigned long u2 = strtoul(s, &e, 10);
+				if (e == s || *e != '.' || u2 > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				i6.oct[i++] = (uint16_t) ((ul << 8) | u2);
+				s = e + 1;
+				ul = strtoul(s, &e, 10);
+				if (e == s || *e != '.' || ul > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				s = e + 1;
+				u2 = strtoul(s, &e, 10);
+				if (e == s || u2 > 255) {
+					GDKerror("Invalid IPv6 address.");
+					goto bailout;
+				}
+				i6.oct[i++] = (uint16_t) ((ul << 8) | u2);
+				s = e;
+				break;
+			}
+		}
+		ul = strtoul(s, &e, 16);
 		if (e == s || ul > 65535) {
 			GDKerror("Invalid IPv6 address.");
 			goto bailout;
 		}
 		i6.oct[i] = (uint16_t) ul;
 		s = e;
+		if (maybeip4 == 0) {
+			if (ul == 0xFFFF)
+				maybeip4 = 1;
+			else if (ul != 0)
+				maybeip4 = -1;
+		}
 	}
 	if (brkt) {
 		if (*s != ']') {
@@ -1559,6 +1601,10 @@ INET6fromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 	}
 	while (GDKisspace(*s))
 		s++;
+	if (*s) {
+		GDKerror("Garbage at end of IPv6 address.");
+		goto bailout;
+	}
 
 	**retval = i6;
 	return (ssize_t) (s - svalue);
@@ -1634,6 +1680,14 @@ INET6toString(str *retval, size_t *len, const void *VALUE, bool external)
 	if (mrl1 < 0)
 		mrl1 = 8;
 	int pos = 0;
+	if (mrl1 == 0 && mrl == 5 && value->oct[5] == 0xFFFF) {
+		pos += snprintf(*retval + pos, *len - pos,
+				"::%x:%d.%d.%d.%d",
+				value->oct[5], value->oct[6] >> 8,
+				value->oct[6] & 0xFF, value->oct[7] >> 8,
+				value->oct[7] & 0xFF);
+		return pos;
+	}
 	for (int i = 0; i < mrl1; i++) {
 		if (i > 0)
 			(*retval)[pos++] = ':';
