@@ -84,7 +84,7 @@ FROM (
 	ON a.col1 = b.col1
 	where a.col2 = 'INST1'
 ) abc
-order by rate asc
+order by rate asc, total
 LIMIT 2 offset 1
 ----
 68496e8de22d49608a03a72e;INST1;risk;1
