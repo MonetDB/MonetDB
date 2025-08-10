@@ -217,7 +217,10 @@ LOCKEDAGGRprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				pipeline_lock2(b);
 				BATnegateprops(b);
 				pipeline_unlock2(b);
-				BBPkeepref(b);
+				//BBPkeepref(*res = b->batCacheid);
+				//leave writable
+				BBPretain(*res = b->batCacheid);
+				BBPunfix(b->batCacheid);
 			} else
 				BBPunfix(b->batCacheid);
 		}
@@ -848,6 +851,8 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 /* TODO unique: rehash iff too many probes need to be done, in the linear chain */
 #define unique(Type) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
@@ -857,27 +862,43 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 			for(; !fnd; ) { \
 				gid k = (gid)_hash_##Type(bp[i])&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && vals[k] != bp[i];) { \
+				for(;g && vals[g] != bp[i];) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bp[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 	}
 
 #define funique(Type, BaseType) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
@@ -887,27 +908,43 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 			for(; !fnd; ) { \
 				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]);) { \
+				for(;g && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bp[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 	}
 
 #define cunique(Type, BaseType) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
@@ -917,28 +954,44 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 			for(; !fnd; ) { \
 				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && h->cmp(vals+k, bp+i) != 0);) { \
+				for(;g && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bp[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 	}
 
 /* todo handle all any types */
 #define aunique_(Type) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		mallocator *ma = h->allocators[p->wid]; \
@@ -950,28 +1003,44 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				Type bpi = BUNtvar(bi, i); \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (h->cmp(vals[k], bpi) != 0);) { \
+				for(;g && (h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = ma_strdup(ma, bpi); \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) {\
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = ma_strdup(ma, bpi); \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 		bat_iterator_end(&bi); \
 	}
 
 #define aunique(Type) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
@@ -982,22 +1051,36 @@ LALGprojection(bat *result, const ptr *h, const bat *lid, const bat *rid)
 				Type bpi = BUNtvar(bi, i); \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (h->cmp(vals[k], bpi) != 0);) { \
+				for(;g && (h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bpi; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bpi; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 		bat_iterator_end(&bi); \
 	}
@@ -1069,8 +1152,9 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
-		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
+
+		ATOMIC_BASE_TYPE expected = 0;
 		BUN r = 0;
 
 		BAT *g = COLnew(0, TYPE_oid, cnt, TRANSIENT);
@@ -1079,6 +1163,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			goto error;
 		}
 		if (cnt && !err) {
+			ht_activate(h);
 			/* probably need bat resize and create hash */
 			int tt = b->ttype;
 			oid *gp = Tloc(g, 0);
@@ -1106,6 +1191,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			} else {
 				aunique(str)
 			}
+			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
@@ -1133,6 +1219,8 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 /* TODO gunique: rehash iff too many probes need to be done, in the linear chain */
 #define gunique(Type) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
@@ -1140,30 +1228,48 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
-				gid k = (gid)combine(p[i], _hash_##Type(bp[i]), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (pgids[k] != p[i] || vals[k] != bp[i]);) { \
+				for(;g && (pgids[g] != gi[i] || vals[g] != bp[i]);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bp[i]; \
-					pgids[k] = p[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
+					pgids[g] = gi[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 	}
 
 #define gfunique(Type, BaseType) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
@@ -1171,30 +1277,48 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
-				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && vals[k] != bp[i]));) { \
+				for(;g && (pgids[g] != gi[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]));) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bp[i]; \
-					pgids[k] = p[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
+					pgids[g] = gi[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 	}
 
 #define gcunique(Type, BaseType) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
@@ -1202,92 +1326,144 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 			bool new = 0, fnd = 0; \
 			\
 			for(; !fnd; ) { \
-				gid k = (gid)combine(p[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (pgids[k] != p[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[k])) && h->cmp(vals+k, bp+i) != 0));) { \
+				for(;g && (pgids[g] != gi[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0));) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bp[i]; \
-					pgids[k] = p[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bp[i]; \
+					pgids[g] = gi[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 	}
 
 /* todo handle all any types */
 #define gaunique_(Type) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
-		mallocator *ma = h->allocators[P->wid]; \
+		mallocator *ma = h->allocators[p->wid]; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
+			Type bpi = BUNtvar(bi, i); \
 			\
 			for(; !fnd; ) { \
-				Type bpi = BUNtvar(bi, i); \
-				gid k = (gid)combine(p[i], h->hsh(bpi), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (pgids[k] != p[i] || h->cmp(vals[k], bpi) != 0);) { \
+				for(;g && (pgids[g] != gi[i] || h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = ma_strdup(ma, bpi); \
-					pgids[k] = p[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = ma_strdup(ma, bpi); \
+					pgids[g] = gi[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 		bat_iterator_end(&bi); \
 	}
 
 #define gaunique(Type) \
 	if (tt == TYPE_##Type) { \
+		int slots = 0; \
+		gid slot = 0; \
 		BATiter bi = bat_iterator(b); \
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool new = 0, fnd = 0; \
+			Type bpi = BUNtvar(bi, i); \
 			\
 			for(; !fnd; ) { \
-				Type bpi = BUNtvar(bi, i); \
-				gid k = (gid)combine(p[i], h->hsh(bpi), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 				gid g = ATOMIC_GET(h->gids+k); \
-				for(;g&1 && (pgids[k] != p[i] || h->cmp(vals[k], bpi) != 0);) { \
+				for(;g && (pgids[g] != gi[i] || h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
 					k &= h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 				} \
-				if (!g && ATOMIC_CAS(h->gids+k, &expected, ((k+1)<<1))) { \
-					vals[k] = bpi; \
-					pgids[k] = p[i]; \
+				if (!g) { \
+					if (slots == 0) { \
+						slots = HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
+							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
+					} \
+					slots--; \
+					g = ++slot; \
+					vals[g] = bpi; \
+					pgids[g] = gi[i]; \
 					new = 1; \
-					g = ATOMIC_INC(h->gids+k); \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
+						new = 0; \
+						continue; \
+					} \
 				} \
-				if ((g&1) == 0) \
-					continue; \
 				fnd = 1; \
 			} \
 			if (new) \
-			gp[r++] = b->hseqbase + i; \
+				gp[r++] = b->hseqbase + i; \
 		} \
 		bat_iterator_end(&bi); \
 	}
@@ -1295,7 +1471,7 @@ LALGunique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid)
 static str
 LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 {
-	Pipeline *P = (Pipeline*)*H;
+	Pipeline *p = (Pipeline*)*H;
 	assert(!is_bat_nil(*uid));
 	str err = NULL;
 	assert(is_bat_nil(*sid)); /* no cands jet */
@@ -1318,21 +1494,21 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
-		pipeline_lock(P);
+		pipeline_lock(p);
 		if (!h->allocators) {
-			h->allocators = (mallocator**)GDKzalloc(P->p->nr_workers*sizeof(mallocator*));
+			h->allocators = (mallocator**)GDKzalloc(p->p->nr_workers*sizeof(mallocator*));
 			if (!h->allocators) {
-				pipeline_unlock(P);
+				pipeline_unlock(p);
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			} else
-				h->nr_allocators = P->p->nr_workers;
+				h->nr_allocators = p->p->nr_workers;
 		}
-		pipeline_unlock(P);
-		assert(P->wid < P->p->nr_workers);
-		if (!h->allocators[P->wid]) {
-			h->allocators[P->wid] = ma_create();
-			if (!h->allocators[P->wid]) {
+		pipeline_unlock(p);
+		assert(p->wid < p->p->nr_workers);
+		if (!h->allocators[p->wid]) {
+			h->allocators[p->wid] = ma_create();
+			if (!h->allocators[p->wid]) {
 				err = createException(MAL, "pp algebra.(group )unique", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto error;
 			}
@@ -1340,7 +1516,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	} else if (ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid) {
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
-		BATswap_heaps(u, b, P);
+		BATswap_heaps(u, b, p);
 	} else if (ATOMvarsized(u->ttype) && u->tvheap->parentid != b->tvheap->parentid) {
 		int i = 0;
 		for(i = 0; i < h->pinned_nr; i++) {
@@ -1361,6 +1537,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	}
 	if (h) {
 		BUN cnt = BATcount(b);
+
 		BUN r = 0;
 
 		BAT *ng = COLnew(0, TYPE_oid, cnt, TRANSIENT);
@@ -1369,11 +1546,12 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			goto error;
 		}
 		if (cnt && !err) {
+			ht_activate(h);
 			ATOMIC_BASE_TYPE expected = 0;
 			/* probably need bat resize and create hash */
 			int tt = b->ttype;
 			oid *gp = Tloc(ng, 0);
-			gid *p = Tloc(G, 0);
+			gid *gi = Tloc(G, 0);
 			gid *pgids = h->pgids;
 			int prime = hash_prime_nr[h->bits-5];
 
@@ -1400,6 +1578,7 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			} else {
 				gaunique(str)
 			}
+			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.(group_)unique", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err) {
@@ -1426,7 +1605,6 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 	return err;
 }
 
-#define PRE_CLAIM 256
 #define group(Type) \
 	if (tt == TYPE_##Type) { \
 		int slots = 0; \
@@ -1436,10 +1614,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			gid k = (gid)_hash_##Type(bp[i])&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)_hash_##Type(bp[i])&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && vals[g] != bp[i];) { \
 					k++; \
@@ -1448,16 +1625,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1475,10 +1658,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			oid *vals = h->vals; \
 			\
 			bool fnd = 0; \
-			gid k = (gid)_hash_oid(oid_nil)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)_hash_oid(oid_nil)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && vals[g] != bpi;) { \
 					k++; \
@@ -1487,16 +1669,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1512,10 +1700,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 			\
 			for(BUN i = 0; i<cnt; i++, bpi++) { \
 				bool fnd = 0; \
-				gid k = (gid)_hash_oid(bpi)&h->mask; \
 				gid g = 0; \
-				\
 				for(; !fnd; ) { \
+					gid k = (gid)_hash_oid(bpi)&h->mask; \
 					g = ATOMIC_GET(h->gids+k); \
 					for(;g && vals[g] != bpi;) { \
 						k++; \
@@ -1524,16 +1711,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 					} \
 					if (!g) { \
 						if (slots == 0) { \
-							slots = private?1:PRE_CLAIM; \
-							slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-							if (((slot*100)/70) >= (gid)h->size) \
+							slots = private?1:HT_PRE_CLAIM; \
+							slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+							if (((slot*100)/70) >= (gid)h->size) { \
 								hash_rehash(h, p, err); \
+								vals = h->vals; \
+								continue; \
+							} \
 						} \
 						slots--; \
 						g = ++slot; \
 						vals[g] = bpi; \
-						if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+							slot--; \
+							slots++; \
 							continue; \
+						} \
 					} \
 					fnd = 1; \
 				} \
@@ -1551,10 +1744,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]);) { \
 					k++; \
@@ -1563,16 +1755,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1590,10 +1788,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)h->hsh(bpi)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)h->hsh(bpi)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (vals[g] && h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
@@ -1602,16 +1799,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1631,10 +1834,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)str_hsh(bpi)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)str_hsh(bpi)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (vals[g] && h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
@@ -1643,16 +1845,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = ma_strdup(ma, bpi); \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1669,10 +1877,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			void *bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)h->hsh(bpi)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)h->hsh(bpi)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (vals[g] && h->cmp(vals[g], bpi) != 0);) { \
 					k++; \
@@ -1681,23 +1888,29 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = ma_copy(ma, bpi, h->len(bpi)); \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
 		} \
 		bat_iterator_end(&bi); \
-	}
+	} \
 
 #define afgroup() \
 	    assert(h->hsh && h->cmp); \
@@ -1708,10 +1921,9 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			gid k = (gid)h->hsh(ivals+(i*w))&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)h->hsh(ivals+(i*w))&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && h->cmp(vals+(g*w), ivals+(i*w)) != 0;) { \
 					k++; \
@@ -1720,16 +1932,22 @@ LALGgroup_unique(bat *rid, bat *uid, const ptr *H, bat *bid, bat *sid, bat *Gid)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 				   	memcpy(vals+(g*w), ivals+(i*w), w); \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1811,8 +2029,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		MT_lock_unset(&u->theaplock);
 	}
 	if (h) {
-		ATOMIC_BASE_TYPE expected = 0;
 		BUN cnt = BATcount(b);
+
+		ATOMIC_BASE_TYPE expected = 0;
 		BAT *g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 		if (g == NULL) {
 			err = createException(MAL, "pp group.group", MAL_MALLOC_FAIL);
@@ -1820,6 +2039,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		}
 
 		if (cnt && !err) {
+			ht_activate(h);
 			int tt = b->ttype;
 			oid *gp = Tloc(g, 0);
 
@@ -1849,6 +2069,7 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 			} else {
 				afgroup()
 			}
+			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
@@ -1890,10 +2111,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (pgids[g] != gi[i] || vals[g] != bp[i]);) { \
 					k++; \
@@ -1902,17 +2122,25 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
 						if (((slot*100)/70) >= (gid)h->size) \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, p, err); { \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
 					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1926,13 +2154,12 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		gid slot = 0; \
 		oid bpi = b->tseqbase; \
 		oid *vals = h->vals; \
+		gid g = 0; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
-			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (pgids[g] != gi[i] || vals[g] != bpi);) { \
 					k++; \
@@ -1941,17 +2168,25 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
 					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -1968,10 +2203,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
-			gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (pgids[g] != gi[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]));) { \
 					k++; \
@@ -1980,17 +2214,25 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bp[i]; \
 					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -2008,10 +2250,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
 					k++; \
@@ -2020,17 +2261,25 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/100) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/100) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = bpi; \
 					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -2050,10 +2299,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
 					k++; \
@@ -2062,17 +2310,25 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/100) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/100) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = ma_strdup(ma, bpi); \
 					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
@@ -2089,10 +2345,9 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
 			bool fnd = 0; \
 			Type bpi = (void *) ((bi).vh->base+BUNtvaroff(bi,i)); \
-			gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 			gid g = 0; \
-			\
 			for(; !fnd; ) { \
+				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
 				g = ATOMIC_GET(h->gids+k); \
 				for(;g && (pgids[g] != gi[i] || (vals[g] && h->cmp(vals[g], bpi) != 0));) { \
 					k++; \
@@ -2101,25 +2356,32 @@ LALGgroup(bat *rid, bat *uid, const ptr *H, bat *bid/*, bat *sid*/)
 				} \
 				if (!g) { \
 					if (slots == 0) { \
-						slots = private?1:PRE_CLAIM; \
-						slot = ATOMIC_ADD(&h->last, private?1:PRE_CLAIM); \
-						if (((slot*100)/70) >= (gid)h->size) \
+						slots = private?1:HT_PRE_CLAIM; \
+						slot = ATOMIC_ADD(&h->last, private?1:HT_PRE_CLAIM); \
+						if (((slot*100)/70) >= (gid)h->size) { \
 							hash_rehash(h, p, err); \
+							vals = h->vals; \
+							pgids = h->pgids; \
+							prime = hash_prime_nr[h->bits-5]; \
+							continue; \
+						} \
 					} \
 					slots--; \
 					g = ++slot; \
 					vals[g] = ma_copy(ma, bpi, h->len(bpi)); \
 					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) \
+					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+						slot--; \
+						slots++; \
 						continue; \
+					} \
 				} \
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
 		} \
 		bat_iterator_end(&bi); \
-	}
-
+	} \
 
 static str
 LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat *sid*/)
@@ -2171,6 +2433,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 	assert(h && h->s.type == OA_HASH_TABLE_SINK);
 	MT_lock_set(&u->theaplock);
 	MT_lock_set(&b->theaplock);
+
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
 	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
 		(ATOMvarsized(u->ttype) && u->twidth != b->twidth)) {
@@ -2213,6 +2476,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			goto error;
 		}
 		if (cnt && !err) {
+			ht_activate(h);
 			ATOMIC_BASE_TYPE expected = 0;
 			int tt = b->ttype;
 			oid *gp = Tloc(g, 0);
@@ -2246,6 +2510,7 @@ LALGderive(bat *rid, bat *uid, const ptr *H, bat *Gid, bat *Ph, bat *bid /*, bat
 			} else {
 				err = createException(MAL, "pp group.derive", "Type (%s) not handled yet\n", ATOMname(tt));
 			}
+			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp group.group(derive)", RUNTIME_QRY_TIMEOUT));
 		}
 		if (err || p->p->status) {
@@ -2533,9 +2798,9 @@ if (ATOMstorage(tt) == TYPE_int) {
 				aproject_(str)
 			} else {
 				aproject(str,1,uint8_t)
-					aproject(str,2,uint16_t)
-					aproject(str,4,uint32_t)
-					aproject(str,8,var_t)
+				aproject(str,2,uint16_t)
+				aproject(str,4,uint32_t)
+				aproject(str,8,var_t)
 			}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "pp algebra.projection", RUNTIME_QRY_TIMEOUT));
 	}
@@ -2750,7 +3015,7 @@ LALGcount(bat *rid, bat *gid, bat *bid, bit *nonil, const ptr *H, bat *pid)
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	oid *v = Tloc(g, 0);
 	lng *o = Tloc(r, 0);
-	if (b->tnonil) {
+	if (BATtdense(b) && b->tnonil) {
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)
 			o[v[i]]++;
 	} else { /* per type */
