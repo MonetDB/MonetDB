@@ -192,11 +192,11 @@ select count(*) from "groupings" order by rank() over ()
 ----
 3
 
-query I nosort
+query I rowsort
 select "aa" + "bb" from "groupings" order by case when "aa" > 1 then "aa" else "aa" + 10 end
 ----
-4
 2
+4
 4
 
 query I nosort
@@ -204,14 +204,14 @@ select cast(sum("aa") + sum("bb") as bigint) from "groupings" order by sum("aa" 
 ----
 10
 
-query I nosort
+query I rowsort
 select "aa" + "bb" from "groupings" order by "aa" between "bb" and NULL
 ----
 2
 4
 4
 
-query II nosort
+query II rowsort
 select "aa", "bb" from "groupings" order by "aa" > "bb" + 10, "aa"
 ----
 1
@@ -221,15 +221,15 @@ select "aa", "bb" from "groupings" order by "aa" > "bb" + 10, "aa"
 2
 2
 
-query II nosort
+query II rowsort
 select "aa", "bb" from "groupings" order by "aa" > all(select count("bb") from "groupings")
 ----
 1
 1
-2
-2
 1
 3
+2
+2
 
 query I nosort
 select cast(sum("aa"+"bb") as bigint) from "groupings" order by 1
@@ -283,25 +283,25 @@ select 1 order by 1 < any(select sum("bb") from "groupings")
 ----
 1
 
-query II nosort
+query II rowsort
 select "aa", "bb" from "groupings" order by "aa" - "bb"
 ----
 1
+1
+1
 3
-1
-1
 2
 2
 
-query II nosort
+query II rowsort
 select "aa", "bb" from "groupings" order by "aa" - "bb" desc nulls last
 ----
 1
 1
-2
-2
 1
 3
+2
+2
 
 query I rowsort
 select 1 group by 1
