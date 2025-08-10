@@ -2945,19 +2945,21 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		if (d->cs.st == ST_DICT) {
 			BAT *b = bind_col(tr, col, QUICK);
 			if (b && b->ttype == TYPE_bte)
-				de = 1;
+				de = 255;
 			else if (b && b->ttype == TYPE_sht)
-				de = 2;
+				de = 65535;
 		}
 	} else if (col && ATOMstorage(col->type.type->localtype) == TYPE_str && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b && ATOMstorage(b->ttype) == TYPE_str) { /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
-			if (de)
-				de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);
+			if (de) {
+				int bytes = b->tvheap->free - GDK_VAROFFSET;
+				if (bytes > 0)
+					de = bytes/b->twidth;
+			}
 		}
-		assert(de >= 0 && de <= 16);
 	}
 	return de;
 }

@@ -3241,7 +3241,7 @@ rel2bin_groupjoin(backend *be, sql_rel *rel, list *refs)
 				li = stmt_project(be, sel, li);
 			osel = sel;
 			if (en->next) {
-				join = stmt_outerselect(be, li, m, p, is_any(e), false);
+				join = stmt_outerselect(be, li, m, p, is_any(e), is_single(rel) && !en->next);
 			} else {
 				join = stmt_markselect(be, li, m, p, is_any(e));
 			}
@@ -6740,7 +6740,10 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		assert(0);
 		cur = stmt_col(be, c->c, dels, dels->partition);
 	}
+	int pp = be->pipeline;
+	be->pipeline = 0;
 	s = stmt_binop(be, stmt_aggr(be, idx_updates, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, cur, NULL, NULL, cnt, 1, 0, 1), NULL, ne);
+	be->pipeline = pp;
 
 	for (m = k->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
@@ -6762,6 +6765,8 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 				null = nn;
 		}
 	}
+	pp = be->pipeline;
+	be->pipeline = 0;
 	if (null) {
 		cntnulls = stmt_aggr(be, null, NULL, NULL, cnt, 1, 0, 1);
 	} else {
@@ -6769,6 +6774,7 @@ update_check_fkey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 	}
 	s = stmt_binop(be, s,
 		stmt_binop(be, stmt_aggr(be, stmt_selectnil(be, idx_updates, NULL), NULL, NULL, cnt, 1, 0, 1), cntnulls, NULL, ne), NULL, or);
+	be->pipeline = pp;
 
 	/* s should be empty */
 	msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: FOREIGN KEY constraint '%s.%s' violated", k->t->base.name, k->base.name);

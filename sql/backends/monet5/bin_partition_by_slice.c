@@ -52,7 +52,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
-			if (de)
+			if (de < cnt)
 				cnt = de;
 		}
 	}
@@ -397,11 +397,13 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				sql_exp *a = el->h->data;
 				sql_subtype *t = exp_subtype(a);
 
-				int estimate = exp_getcard(be->mvc, rel->l /* count before group by */, a);
+				lng estimate = exp_getcard(be->mvc, rel->l /* count before group by */, a);
 				if (estimate<0) {
 					assert(0);
 					estimate = 85000000;
 				}
+				if ((BUN)estimate < est) /* unique count * current (group) card */
+					estimate *= card;
 
 				InstrPtr q = stmt_oahash_new(be, t->type->localtype, estimate, curhash);
 				if (q == NULL)

@@ -709,7 +709,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 	if (lv == 0)
 		return 0;
 	if (!list_empty(exps)) {
-		BUN nuniques = 0;
+		BUN nuniques = 1;
 		/* compute the highest number of unique values */
 		for (node *n = exps->h ; n && nuniques != BUN_NONE ; n = n->next) {
 			sql_exp *e = n->data;
@@ -734,12 +734,15 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 					euniques = MIN(euniques, (BUN) sub->data.val.oval);
 			}
 			if (euniques != BUN_NONE)
-				nuniques = MAX(nuniques, euniques); /* the highest cardinality sets the estimation */
+				nuniques = nuniques * euniques; /* the highest cardinality sets the estimation */
 			else
 				nuniques = BUN_NONE;
 		}
-		if (nuniques != BUN_NONE)
+		if (nuniques != BUN_NONE) {
+			if (nuniques > lv)
+				return lv;
 			return nuniques;
+		}
 	}
 	return lv;
 }
@@ -966,6 +969,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 		case op_right:
 		case op_full: {
 			BUN lv = get_rel_count(l), rv = get_rel_count(r), uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
+			BUN lu = 0, ru = 0;
 
 			if (!list_empty(rel->exps) && !is_single(rel)) {
 				for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -976,7 +980,6 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					} else if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* if one of the sides is unique, the cardinality will be that exact number, but look for nulls */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-							BUN lu = 0, ru = 0;
 							prop *p = NULL;
 							if ((p = find_prop(el->p, PROP_NUNIQUES)))
 								lu = (BUN) p->value.dval;
@@ -1014,6 +1017,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 				set_count_prop(v->sql->sa, rel, (is_right(rel->op) || is_full(rel->op)) ? rv : 0);
 			} else if (rv == 0) {
 				set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
+			} else if (lu != 0 && ru != 0) {
+				lv = lv/lu;
+				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			} else if (lv != BUN_NONE && rv != BUN_NONE) {
 				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX / lv)) ? BUN_MAX : (lv * rv)); /* overflow check */
 			}
@@ -1290,8 +1296,8 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 	case TYPE_dbl:
 		return 75 - 53;
 	default:
-		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
-			return 150 - de * 8;
+		if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)) < 1200)
+			return 150 - (de / 8);
 		/* strings and blobs not duplicate eliminated don't get any points here */
 		return 0;
 	}

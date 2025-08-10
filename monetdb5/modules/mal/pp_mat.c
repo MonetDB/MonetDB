@@ -274,18 +274,18 @@ MATproject( bat *mat, const bat *pos, const bat *lid, const bat *gid, const bat 
 	assert(BATcount(g) == BATcount(d));
 
 	MT_lock_set(&m->theaplock);
-	if (d->ttype == TYPE_str && BATcount(mt->bat[0]) == 0) {
-		for (int i = 0; i < mt->nr; i++) {
-            if (mt->bat[i]->twidth < d->twidth) {
-                int m = d->twidth / mt->bat[i]->twidth;
-                mt->bat[i]->twidth = d->twidth;
-                mt->bat[i]->tshift = d->tshift;
-                mt->bat[i]->batCapacity /= m;
-            }
-			BATswap_heaps(mt->bat[i], d, NULL);
-		}
-	}
 	if (BATcount(d)) {
+		if (d->ttype == TYPE_str && BATcount(mt->bat[0]) == 0) {
+			for (int i = 0; i < mt->nr; i++) {
+				if (mt->bat[i]->twidth < d->twidth) {
+					int m = d->twidth / mt->bat[i]->twidth;
+					mt->bat[i]->twidth = d->twidth;
+					mt->bat[i]->tshift = d->tshift;
+					mt->bat[i]->batCapacity /= m;
+				}
+				BATswap_heaps(mt->bat[i], d, NULL);
+			}
+		}
 		switch(d->twidth) {
 		case 1:
 			mat_project(bte);

@@ -13,18 +13,21 @@
 
 #define GIDBITS 63
 
-#define HT_MIN_SIZE 1024*64*8
+//#define HT_MIN_SIZE 1024*64*8
+#define HT_MIN_SIZE 1024*8
+//#define HT_MIN_SIZE 256
+#define HT_PRE_CLAIM 7
 #define HT_MAX_SIZE 1024*1024*1024
 #define HP_MIN_SIZE HT_MIN_SIZE
 #define HP_MAX_SIZE HT_MAX_SIZE
 
-
-#define hash_rehash(ht, p, err) 							\
-	{ 										\
-		p->p->status = 1; 							\
-		ht_rehash(ht); 								\
-		err = createException(MAL, "oahash.rehash", "hash table needs rehash"); 	\
-		break; 									\
+#define hash_rehash(ht, p, err)		\
+	{ 								\
+		if (ht_rehash(ht)) {		\
+			p->p->status = 1; 		\
+			err = createException(MAL, "oahash.rehash", MAL_MALLOC_FAIL); 	\
+			break;					\
+		}							\
 	}
 
 #define _hash_bit(X)  ((unsigned int)X)
@@ -111,7 +114,6 @@ typedef struct hash_table {
 	fcmp cmp;
 	fhsh hsh;
 	flen len;
-	bool rehash;
 	bool empty;
 
 	void *vals;			/* hash(ed) values */
@@ -127,6 +129,9 @@ typedef struct hash_table {
 	int pinned_nr;
 	mallocator **allocators;
 	int nr_allocators;
+	int processed;
+
+	MT_RWLock rwlock;	/* needed for save resizing */
 } hash_table;
 
 //extern lng str_hsh(str v);
@@ -144,6 +149,9 @@ str_hsh( str v )
 }
 
 extern hash_table *ht_create(int type, int size, hash_table *p);
-extern void ht_rehash(hash_table *ht);
+extern int ht_rehash(hash_table *ht);
+
+extern void ht_activate(hash_table *ht);
+extern void ht_deactivate(hash_table *ht);
 
 #endif /*_PP_HASH_H_*/
