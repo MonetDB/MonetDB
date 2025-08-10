@@ -60,7 +60,7 @@ CREATE VIEW v2 AS SELECT v1.name, v1.ssn, e.salary
 FROM v1, employee e
 WHERE v1.name = e.name
 
-query TTD nosort
+query TTD rowsort
 SELECT * FROM v2
 ----
 alice
@@ -75,7 +75,7 @@ CREATE VIEW v3 AS SELECT v1.name, v1.yr, v2.salary
 FROM v1, v2
 WHERE v1.name = v2.name
 
-query TID nosort
+query TID rowsort
 SELECT * FROM v3
 ----
 alice
@@ -90,13 +90,13 @@ CREATE VIEW v4 AS SELECT yr,
   ifthenelse((salary > 500), 'high', 'low') as salary
 FROM v3
 
-query IT nosort
+query IT rowsort
 SELECT * FROM v4
 ----
-1980
-high
 1970
 low
+1980
+high
 
 statement ok
 SET SCHEMA sys
@@ -105,13 +105,13 @@ statement ok
 GRANT SELECT on your_schema.v4 to usr1
 
 @connection(id=usr1, username=usr1, password=p1)
-query IT nosort
+query IT rowsort
 SELECT * FROM your_schema.v4
 ----
-1980
-high
 1970
 low
+1980
+high
 
 @connection(id=usr1)
 statement error 42000!SELECT: access denied for usr1 to view 'your_schema.v3'
@@ -129,7 +129,7 @@ statement ok
 GRANT SELECT on your_schema.v3 to usr1
 
 @connection(id=usr1)
-query TID nosort
+query TID rowsort
 SELECT * FROM your_schema.v3
 ----
 alice
@@ -151,7 +151,7 @@ statement ok
 GRANT SELECT on your_schema.v2 to usr1
 
 @connection(id=usr1)
-query TTD nosort
+query TTD rowsort
 SELECT * FROM your_schema.v2
 ----
 alice
@@ -169,7 +169,7 @@ statement ok
 GRANT SELECT on your_schema.v1 to usr1
 
 @connection(id=usr1)
-query TITT nosort
+query TITT rowsort
 SELECT * FROM your_schema.v1
 ----
 alice
@@ -196,13 +196,13 @@ statement ok
 GRANT SELECT on your_schema.v4 to usr2
 
 @connection(id=usr2, username=usr2, password=p2)
-query IT nosort
+query IT rowsort
 SELECT * FROM your_schema.v4
 ----
-1980
-high
 1970
 low
+1980
+high
 
 @connection(id=usr2)
 statement error 42000!SELECT: access denied for usr2 to view 'your_schema.v3'
@@ -220,7 +220,7 @@ statement ok
 GRANT SELECT on your_schema.v3 to usr2
 
 @connection(id=usr2)
-query TID nosort
+query TID rowsort
 SELECT * FROM your_schema.v3
 ----
 alice
@@ -242,7 +242,7 @@ statement ok
 GRANT SELECT on your_schema.v2 to usr2
 
 @connection(id=usr2)
-query TTD nosort
+query TTD rowsort
 SELECT * FROM your_schema.v2
 ----
 alice
@@ -260,7 +260,7 @@ statement ok
 GRANT SELECT on your_schema.v1 to usr2
 
 @connection(id=usr2)
-query TITT nosort
+query TITT rowsort
 SELECT * FROM your_schema.v1
 ----
 alice
