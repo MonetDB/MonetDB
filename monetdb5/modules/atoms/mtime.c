@@ -1073,7 +1073,7 @@ local_timezone(int *isdstp)
 	}
 #elif defined(HAVE_TM_GMTOFF)
 	time_t t;
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = { 0 };
 
 	if ((t = time(NULL)) != (time_t) - 1 && localtime_r(&t, &tm)) {
 		tzone = (int) tm.tm_gmtoff;
@@ -1081,7 +1081,7 @@ local_timezone(int *isdstp)
 	}
 #else
 	time_t t;
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = { 0 };
 
 	if ((t = time(NULL)) != (time_t) - 1 && gmtime_r(&t, &tm)) {
 		timestamp lt, gt;
@@ -1170,7 +1170,7 @@ static str
 str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const long gmtoff, const char *type,
 				 const char *malfunc)
 {
-	struct tm tm = (struct tm) {
+	struct tm tm = {
 		.tm_isdst = -1,
 		.tm_mday = 1,
 #ifdef HAVE_TM_GMTOFF

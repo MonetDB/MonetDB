@@ -469,7 +469,7 @@ acceptConnections(int socks[3])
 		}
 
 		/* Wait up to 5 seconds */
-		struct timeval tv = (struct timeval) {.tv_sec = 5};
+		struct timeval tv = {.tv_sec = 5};
 		retval = select(sock + 1, &fds, NULL, NULL, &tv);
 		sock = -1;
 #endif

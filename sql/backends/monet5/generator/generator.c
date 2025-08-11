@@ -472,7 +472,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	oid o1, o2;
 	BUN n = 0;
 	BAT *bn, *cand = NULL;
-	struct canditer ci = (struct canditer) {.tpe = cand_dense};
+	struct canditer ci = {.tpe = cand_dense};
 	InstrPtr p;
 	int tpe;
 
@@ -892,7 +892,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	int tpe;
 	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
-	struct canditer ci = (struct canditer) {.tpe = cand_dense};
+	struct canditer ci = {.tpe = cand_dense};
 	BUN cap,j, c = 0;
 	oid o = 0;
 	InstrPtr p;

@@ -82,7 +82,7 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static void
 CLTtimeConvert(time_t l, char *s)
 {
-	struct tm localt = (struct tm) { 0 };
+	struct tm localt = { 0 };
 
 	(void) localtime_r(&l, &localt);
 
