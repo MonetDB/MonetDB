@@ -18,7 +18,7 @@ insert into employees values
     ('mgmt', 'Johnson',100,str_to_date('12-07-2019', '%d-%m-%Y'))
 
 query TTRI nosort
-SELECT dep, name, salary, NTILE(4) OVER (ORDER BY hire_date) FROM employees
+SELECT dep, name, salary, NTILE(4) OVER (ORDER BY hire_date) FROM employees ORDER BY 4, hire_date
 ----
 mgmt
 Davies
@@ -62,7 +62,7 @@ Wilson
 4
 
 query TTRI nosort
-SELECT dep, name, salary, NTILE(4) OVER (PARTITION by dep ORDER BY salary) FROM employees
+SELECT dep, name, salary, NTILE(4) OVER (PARTITION by dep ORDER BY salary) FROM employees ORDER BY dep, salary
 ----
 dev
 Jones
@@ -106,32 +106,32 @@ Evans
 4
 
 query TTRI rowsort
-SELECT dep, name, salary, NTILE(4) OVER (PARTITION BY dep) FROM employees
+SELECT dep, name, salary, NTILE(4) OVER (PARTITION BY dep ORDER BY name) FROM employees ORDER BY dep, name
 ----
 dev
 Brown
 62.000
-2
+1
 dev
 Jones
 55.000
-1
+2
 mgmt
 Davies
 84.000
-2
+1
 mgmt
 Johnson
 100.000
-3
+2
 mgmt
 Smith
 81.000
-1
+3
 sls
 Evans
 87.000
-2
+1
 sls
 Taylor
 62.000
@@ -139,15 +139,15 @@ Taylor
 sls
 Thomas
 72.000
-4
+2
 sls
 Williams
 55.000
-1
+3
 sls
 Wilson
 72.000
-3
+4
 
 statement ok
 rollback
