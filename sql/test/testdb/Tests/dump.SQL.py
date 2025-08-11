@@ -30,7 +30,7 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
     stableout = '{}.stable.out'.format(sys.argv[1])
     stable = open(stableout, encoding='utf-8').readlines()
     import difflib
-    for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
+    for line in difflib.unified_diff(sorted(stable), sorted(output), fromfile='test', tofile=stableout):
         sys.stderr.write(line)
 else:
     sys.stdout.writelines(out)
