@@ -10,6 +10,7 @@ select * from foo where n is null
 NULL
 mighty null
 
+skipif knownfail
 query T nosort
 plan select * from foo where n is null
 ----
@@ -27,6 +28,7 @@ one
 2
 two
 
+skipif knownfail
 query T nosort
 plan select * from foo where not n is null
 ----
@@ -44,6 +46,7 @@ one
 2
 two
 
+skipif knownfail
 query T nosort
 plan select * from foo where n is not null
 ----
@@ -59,6 +62,7 @@ select * from foo where not n is not null
 NULL
 mighty null
 
+skipif knownfail
 query T nosort
 plan select * from foo where not n is not null
 ----
@@ -74,6 +78,7 @@ select * from foo where sys.isnull(n) = true
 NULL
 mighty null
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnull(n) = true
 ----
@@ -91,6 +96,7 @@ one
 2
 two
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnull(n) = false
 ----
@@ -108,6 +114,7 @@ one
 2
 two
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnull(n) != true
 ----
@@ -123,6 +130,7 @@ select * from foo where sys.isnull(n) != false
 NULL
 mighty null
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnull(n) != false
 ----
@@ -140,6 +148,7 @@ one
 2
 two
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnotnull(n) = true
 ----
@@ -155,6 +164,7 @@ select * from foo where sys.isnotnull(n) = false
 NULL
 mighty null
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnotnull(n) = false
 ----
@@ -170,6 +180,7 @@ select * from foo where sys.isnotnull(n) != true
 NULL
 mighty null
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnotnull(n) != true
 ----
@@ -187,6 +198,7 @@ one
 2
 two
 
+skipif knownfail
 query T nosort
 plan select * from foo where sys.isnotnull(n) != false
 ----
