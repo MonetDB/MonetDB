@@ -7699,10 +7699,9 @@ convert_part_values(sql_trans *tr, sql_table *mt )
 			if (isListPartitionTable(mt)) {
 				for (node *m = p->part.values->h; m; m = m->next) {
 					sql_part_value *v = (sql_part_value*) m->data, ov = *v;
-					ValRecord vvalue;
+					ValRecord vvalue = {.vtype = TYPE_void,};
 					ptr ok;
 
-					vvalue = (ValRecord) {.vtype = TYPE_void,};
 					ok = VALinit(&vvalue, TYPE_str, v->value);
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
