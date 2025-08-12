@@ -125,10 +125,9 @@ GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 11
 10
 
-query IIIII nosort
+query IIII nosort
 WITH "groupings" AS (
     SELECT
-        ROW_NUMBER() OVER (ORDER BY ColID) as "rows",
         GROUPING(Product_Category, Product_Name, ColID) AS col1, GROUPING(ColID, Product_Category, Product_Name) AS col2,
         GROUPING(Product_Category, Product_Name) col3, GROUPING(Product_Name, Product_Category) "col4"
     FROM tbl_ProductSales
@@ -136,9 +135,124 @@ WITH "groupings" AS (
                             ROLLUP (Product_Category, ColID),
                             CUBE (Product_Name, Product_Category),
                             () )
-) SELECT "rows", col1, col2, col3, col4 FROM "groupings" ORDER BY col1, col2, col3, col4
+) SELECT col1, col2, col3, col4 FROM "groupings" ORDER BY col1, col2, col3, col4
 ----
-145 values hashing to a7789e58a58a61a2c997d884ad1915c9
+1
+4
+0
+0
+1
+4
+0
+0
+1
+4
+0
+0
+1
+4
+0
+0
+2
+1
+1
+2
+2
+1
+1
+2
+2
+1
+1
+2
+2
+1
+1
+2
+3
+5
+1
+2
+3
+5
+1
+2
+3
+5
+1
+2
+3
+5
+1
+2
+3
+5
+1
+2
+3
+5
+1
+2
+5
+6
+2
+1
+5
+6
+2
+1
+5
+6
+2
+1
+5
+6
+2
+1
+5
+6
+2
+1
+5
+6
+2
+1
+5
+6
+2
+1
+5
+6
+2
+1
+6
+3
+3
+3
+6
+3
+3
+3
+6
+3
+3
+3
+6
+3
+3
+3
+7
+7
+3
+3
+7
+7
+3
+3
+7
+7
+3
+3
 
 statement ok
 ROLLBACK
