@@ -1772,6 +1772,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				/* insert single value into a column */
 				if (as && as->nrcols <= 0 && !left)
 					as = const_column(be, as);
+				if (as && as->key && pipeline) /* aggregate on group by col */
+					grp = stmt_mirror(be, as);
 
 				if (!as)
 					return NULL;
@@ -5675,6 +5677,20 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 		}
 	}
 
+	/*
+	if (!(GDKdebug & 4) && pp) {
+		InstrPtr q = newStmt(be->mb, ioRef, printRef);
+		for( n = aggrs->h, m = cursub->op4.lval->h; n && m; n = n->next, m = m->next ) {
+			sql_exp *aggrexp = n->data;
+			stmt *s = m->data;
+			if (is_aggr(aggrexp->type)) {
+				(void) pushArgument(be->mb, q, getArg(s->q, 0));
+			}
+		}
+		pushInstruction(be->mb, q);
+	}
+	*/
+
 	/* GROUP BY ends the current pipeline() block.  If needed, start a new
 	 * block to partition the result of this GROUP BY for the upper-level
 	 * operators, e.g. topN. */
@@ -7382,6 +7398,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
+	if (tr->op == op_buildhash || tr->op == op_probehash)
+		tr = tr->l;
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
