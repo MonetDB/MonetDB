@@ -307,7 +307,7 @@ SERVERlistenThread(SOCKET *Sock)
 			}
 		}
 		/* Wait up to 0.1 seconds (0.01 if testing) */
-		struct timeval tv = (struct timeval) {
+		struct timeval tv = {
 			.tv_usec = ATOMIC_GET(&GDKdebug) & TESTINGMASK ? 10000 : 100000,
 		};
 

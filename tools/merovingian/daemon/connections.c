@@ -41,7 +41,7 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 	const char *msghost = bindaddr ? bindaddr : "any"; /* for messages */
 	int ipv6_vs6only = -1;
 
-	struct addrinfo hints = (struct addrinfo) {
+	struct addrinfo hints = {
 		.ai_family = AF_INET6,
 		.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM,
 		.ai_flags = AI_PASSIVE | AI_NUMERICSERV,

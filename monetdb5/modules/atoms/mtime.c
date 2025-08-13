@@ -239,7 +239,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
-	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
+	BATiter b1i, b2i = { .vh = NULL };									\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
@@ -513,7 +513,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL; \
 	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);						\
-	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
+	BATiter b1i, b2i = { .vh = NULL };									\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
@@ -1073,7 +1073,7 @@ local_timezone(int *isdstp)
 	}
 #elif defined(HAVE_TM_GMTOFF)
 	time_t t;
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = { 0 };
 
 	if ((t = time(NULL)) != (time_t) - 1 && localtime_r(&t, &tm)) {
 		tzone = (int) tm.tm_gmtoff;
@@ -1081,7 +1081,7 @@ local_timezone(int *isdstp)
 	}
 #else
 	time_t t;
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = { 0 };
 
 	if ((t = time(NULL)) != (time_t) - 1 && gmtime_r(&t, &tm)) {
 		timestamp lt, gt;
@@ -1123,7 +1123,6 @@ timestamp_to_str_withtz(str *buf, const timestamp *d, const char *const *format,
 {
 	date dt;
 	daytime t;
-	struct tm tm;
 
 	if (is_timestamp_nil(*d) || strNil(*format)) {
 		strcpy(*buf, str_nil);
@@ -1131,7 +1130,7 @@ timestamp_to_str_withtz(str *buf, const timestamp *d, const char *const *format,
 	}
 	dt = timestamp_date(*d);
 	t = timestamp_daytime(*d);
-	tm = (struct tm) {
+	struct tm tm = {
 		.tm_year = date_year(dt) - 1900,
 		.tm_mon = date_month(dt) - 1,
 		.tm_mday = date_day(dt),
@@ -1170,7 +1169,7 @@ static str
 str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const long gmtoff, const char *type,
 				 const char *malfunc)
 {
-	struct tm tm = (struct tm) {
+	struct tm tm = {
 		.tm_isdst = -1,
 		.tm_mday = 1,
 #ifdef HAVE_TM_GMTOFF
