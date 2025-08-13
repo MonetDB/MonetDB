@@ -668,6 +668,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				res = rel_pipeline(v, rel->l, materialize, pb?pb:!list_empty(rel->r)?SPB:0);
 			/* handle streaming projections and blocking order by */
 			if (list_empty(rel->r) || (p && p->op == op_topn && topn_limit(p))) {
+				if (res && p && p->op == op_project && exps_have_unsafe(p->exps, 1, false)) {
+					rel_dup(rel);
+					res = 0;
+				} else
 				if (pb) {
 					rel->spb = (res == REL_PARTITION);
 					if (rel->spb)
@@ -679,7 +683,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			} else {
 				rel->parallel = 1;
 				rel->spb = (res == REL_PARTITION);
-				if (pb || (p && p->op == op_topn && !topn_limit(p)) || !list_empty(rel->r)) { /* nested */
+				if (pb || (p && p->op == op_topn && !topn_limit(p))
+					   || (p && p->op == op_project && exps_have_unsafe(p->exps, 1, false))
+					   || !list_empty(rel->r)) { /* nested */
 					rel_dup(rel);
 					res = 0;
 					rel->partition = 1; // ??
