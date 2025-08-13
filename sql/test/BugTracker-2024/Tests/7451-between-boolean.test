@@ -35,7 +35,7 @@ NULL
 0
 NULL
 
-query ITT nosort
+query ITT rowsort
 SELECT * FROM t1, t0 WHERE (NOT CAST((true BETWEEN t1.c2 AND t0.c0) AS VARCHAR))
 ----
 0

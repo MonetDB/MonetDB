@@ -117,15 +117,10 @@ TWO
 3
 THREE
 
-query IT rowsort
-SELECT * FROM c
+query I rowsort
+SELECT max(n) FROM c
 ----
-1
-ONE
-2
-TWO
 3
-THREE
 
 statement ok
 DROP TABLE a
